@@ -28,6 +28,14 @@ Orencio Matas y Hnos, S.L.
 Av. Alfred Nobel, 2  
 13005 Ciudad Real
 
+## Historia
+Más de 100 años de historia ofreciendo productos de calidad y servicio profesional en Ciudad Real.
+
+## Horario comercial
+Lunes a Viernes: 9:00 – 14:00 y 16:30 – 19:30
+Sábados: 9:00 – 13:00
+Domingos: Cerrado
+
 ## Actividad
 Empresa especializada en:
 

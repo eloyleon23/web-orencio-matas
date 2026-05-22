@@ -18,7 +18,7 @@ Título:
 Droguería, perfumería, pinturas y suministros para carrocería
 
 Subtítulo:
-Más de 30 años ofreciendo productos de calidad y servicio profesional en Ciudad Real.
+Más de 100 años ofreciendo productos de calidad y servicio profesional en Ciudad Real.
 
 CTAs:
 - Ver catálogo

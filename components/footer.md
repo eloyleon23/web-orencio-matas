@@ -49,7 +49,7 @@ Contenido:
 - Redes sociales
 
 Texto:
-"Más de 30 años ofreciendo soluciones profesionales en droguería, perfumería, pinturas y suministros para automoción."
+"Más de 100 años ofreciendo soluciones profesionales en droguería, perfumería, pinturas y suministros para automoción."
 
 Redes:
 - Facebook
@@ -96,8 +96,9 @@ correo@orenciomatas.es
 
 Horario:
 Lunes a Viernes
-08:00 - 14:00
-16:00 - 19:00
+9:00 – 14:00 y 16:30 – 19:30
+Sábados: 9:00 – 13:00
+Domingos: Cerrado
 
 ---
 
