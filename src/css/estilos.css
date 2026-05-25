@@ -57,6 +57,24 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+body::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70vw;
+  max-width: 650px;
+  height: 70vh;
+  background-image: url("../../assets/logos/logo-orencio.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.15;
+  z-index: -1;
+  pointer-events: none;
+}
+
 img,
 picture,
 svg,
@@ -863,6 +881,7 @@ ol {
   transform: translateY(-5px);
   box-shadow: var(--shadow-hover);
 }
+
 
 .contact-section {
   padding: var(--section-padding-desktop);

@@ -26,42 +26,60 @@
             color: inherit;
         }
 
-        .page-header {
-            position: sticky;
+        /* --- CABECERA COMÚN PÁGINAS INTERNAS --- */
+        .main-header {
+            position: fixed;
             top: 0;
-            z-index: 100;
+            left: 0;
+            width: 100%;
+            height: 90px;
+            background-color: #ffffff;
             border-bottom: 1px solid #e2e8f0;
-            background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(14px);
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+            z-index: 1000;
         }
 
-        .page-header::before {
-            content: '';
-            display: block;
-            height: 6px;
-            background: linear-gradient(90deg, #D32F2F 0%, #D32F2F 25%, #1976D2 25%, #1976D2 50%, #388E3C 50%, #388E3C 75%, #FBC02D 75%);
-        }
-
-        .nav-shell {
+        .header-container {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            max-width: 1180px;
+            align-items: center;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 18px 24px;
+            padding: 0 40px;
+            height: 100%;
+            position: relative;
         }
 
-        .brand-link img {
-            display: block;
-            width: 180px;
-            height: auto;
-        }
-
-        .nav-links {
+        .btn-back-home {
             display: flex;
             align-items: center;
-            gap: 24px;
+            gap: 10px;
+            background-color: #ffffff;
+            color: #1e293b;
+            text-decoration: none;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+        }
+
+        .btn-back-home:hover {
+            background-color: #f8fafc;
+            transform: translateX(-3px);
+        }
+
+        .btn-back-home i {
+            color: #D32F2F;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 25px;
             font-family: 'Montserrat', sans-serif;
             font-size: 13px;
             font-weight: 800;
@@ -69,35 +87,18 @@
             text-transform: uppercase;
         }
 
-        .nav-links a {
+        .nav-menu a {
             text-decoration: none;
         }
 
-        .btn-back-home {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            background-color: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            color: #1e293b;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .btn-back-home:hover {
-            background-color: #f8fafc;
-            transform: translateX(-4px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-        }
-
-        .btn-back-home i {
-            color: #D32F2F;
+        .logo-container img {
+            height: 50px;
+            width: auto;
+            object-fit: contain;
         }
 
         main {
+            padding-top: 112px;
             overflow: hidden;
         }
 
@@ -317,12 +318,6 @@
         }
 
         @media (max-width: 900px) {
-            .nav-shell,
-            .nav-links {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
             .hero-grid,
             .split-grid,
             .features-grid {
@@ -339,20 +334,55 @@
                 min-height: 340px;
             }
         }
+
+        @media (max-width: 768px) {
+            .main-header {
+                height: 65px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }
+
+            .header-container {
+                padding: 0 15px;
+            }
+
+            .nav-menu {
+                display: none !important;
+            }
+
+            .btn-back-home {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+
+            .logo-container {
+                position: absolute;
+                right: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+
+            .logo-container img {
+                height: 38px;
+            }
+        }
     </style>
 </head>
 <body>
-    <header class="page-header">
-        <nav class="nav-shell" aria-label="Navegación principal">
-            <a class="brand-link" href="index.html" aria-label="Volver al inicio">
-                <img src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L.">
+    <header class="main-header">
+        <nav class="header-container" aria-label="Navegación principal">
+            <a href="index.html" class="btn-back-home">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Inicio
             </a>
-            <div class="nav-links">
-                <a href="index.html" class="btn-back-home"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
+
+            <div class="nav-menu">
                 <a href="servicios.html">Servicios</a>
                 <a href="index.html#productos">Productos</a>
                 <a href="index.html#contacto">Contacto</a>
             </div>
+
+            <a class="logo-container" href="index.html" aria-label="Volver al inicio">
+                <img src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L.">
+            </a>
         </nav>
     </header>
 
