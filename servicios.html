@@ -8,319 +8,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        /* 1. CONFIGURACIÓN BASE */
+        <style>
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
             background-color: #f8fafc;
-            display: grid;
-            gap: 40px;
-            grid-template-columns: 1fr;
-            margin: 0;
-            min-height: 100vh;
-            padding: 40px 0;
-            place-items: center;
-        }
-
-        .slide-container {
-            align-items: flex-start;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-direction: column;
             font-family: 'Open Sans', sans-serif;
-            height: 720px;
-            justify-content: flex-start;
-            overflow: hidden;
-            padding: 60px 80px;
-            position: relative;
-            width: 1280px;
-        }
-
-        /* LOGO CORPORATIVO FIJO */
-        .slide-logo {
-            height: 65px;
-            position: absolute;
-            right: 60px;
-            top: 55px;
-            z-index: 100;
-        }
-
-        .slide-logo img {
-            height: 100%;
-            object-fit: contain;
-        }
-
-        /* Barra superior con los colores corporativos */
-        .slide-container::before {
-            background: linear-gradient(90deg, #D32F2F 0%, #D32F2F 25%, #1976D2 25%, #1976D2 50%, #388E3C 50%, #388E3C 75%, #FBC02D 75%);
-            content: '';
-            height: 6px;
-            left: 0;
-            position: absolute;
-            top: 0;
-            width: 100%;
-            z-index: 101;
-        }
-
-        /* 2. TIPOGRAFA Y DISEÑO RESALTADO */
-        h1, h2, h3 {
-            color: #1e293b;
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-            text-transform: uppercase;
-        }
-
-        h1 {
-            font-size: 72px;
-            font-weight: 700;
-            line-height: 1.1;
-        }
-
-        .slide-title {
-            border-left: 10px solid #D32F2F;
-            font-size: 42px;
-            font-weight: 700;
-            margin-bottom: 40px;
-            padding-left: 20px;
-            text-align: left;
-            width: 100%;
-        }
-
-        h3 {
-            color: #1976D2;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
-
-        p, li {
             color: #475569;
-            font-size: 20px;
-            line-height: 1.6;
         }
 
-        .content-area {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            justify-content: center;
-            width: 100%;
-        }
-
-        /* 3. GRID LAYOUTS */
-        .title-layout {
-            justify-content: center;
-            text-align: left;
-        }
-
-        .title-layout .subtitle {
-            border-top: 1px solid #e2e8f0;
-            color: #64748b;
-            display: inline-block;
-            font-size: 24px;
-            font-weight: 600;
-            margin-top: 30px;
-            padding-top: 20px;
-        }
-
-        .two-column {
-            align-items: center;
-            display: grid;
-            gap: 60px;
-            grid-template-columns: 1fr 1fr;
-            width: 100%;
-        }
-
-        .tiled-content {
-            align-items: stretch;
-            display: flex;
-            gap: 30px;
-            width: 100%;
-        }
-
-        .tile {
-            background-color: #f8fafc;
-            border-bottom: 5px solid #1976D2;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            padding: 40px 30px;
-            text-align: center;
-        }
-
-        .tile .icon {
-            color: #D32F2F;
-            font-size: 50px;
-            margin-bottom: 25px;
-        }
-
-        .image-wrapper {
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            height: 450px;
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .image-wrapper img {
-            height: 100%;
-            object-fit: cover;
-            width: 100%;
-        }
-
-        .section-title-layout {
-            align-items: center;
-            text-align: center;
-        }
-
-        .section-title-layout hr {
-            background-color: #D32F2F;
-            border: none;
-            height: 8px;
-            margin: 30px auto;
-            width: 100px;
-        }
-
-        /* Bleed Image Right Layout */
-        .bleed-image-layout {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            padding: 0;
-        }
-
-        .bleed-image-layout .content-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            justify-content: center;
-            padding: 60px 80px;
-        }
-
-        .bleed-image-layout .image-container {
-            height: 720px;
-            overflow: hidden;
-        }
-
-        .bleed-image-layout img.bleed-image-side {
-            height: 720px;
-            object-fit: cover;
-            width: 100%;
-        }
-
-        /* Highlighted Numbers */
-        .highlight-numbers-layout {
-            align-items: center;
-            display: flex;
-            gap: 80px;
-        }
-
-        .highlight-numbers-layout .number {
-            color: #D32F2F;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 160px;
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .highlight-numbers-layout .number-label {
-            color: #1e293b;
-            font-size: 32px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        /* Chart */
-        .doughnut-chart-container {
-            align-items: center;
-            display: flex;
-            gap: 80px;
-            justify-content: center;
-        }
-
-        .doughnut-chart {
-            border-radius: 50%;
-            height: 380px;
-            width: 380px;
-        }
-
-        .legend {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            list-style: none;
-            padding: 0;
-        }
-
-        .legend li {
-            align-items: center;
-            display: flex;
-            font-size: 22px;
-            font-weight: 600;
-        }
-
-        .legend .color-box {
-            border-radius: 4px;
-            height: 25px;
-            margin-right: 15px;
-            width: 25px;
-        }
-
-        /* Tablas */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        th, td {
-            border-bottom: 1px solid #e2e8f0;
-            padding: 20px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f8fafc;
-            color: #1e293b;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        /* Bloque de Contacto */
-        .qa-layout {
-            align-items: center;
-            text-align: center;
-        }
-
-        .contact-info {
-            display: flex;
-            gap: 40px;
-            justify-content: center;
-            margin-top: 50px;
-        }
-
-        .contact-item {
-            background-color: #f8fafc;
-            border-radius: 12px;
-            padding: 30px;
-            width: 350px;
-        }
-
-        .contact-item i {
-            color: #1976D2;
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
-
+        /* BOTÓN FLOTANTE VOLVER */
         .btn-back-home {
             position: fixed;
-            top: 55px;
-            left: 60px;
+            top: 25px;
+            left: 25px;
             z-index: 200;
             display: flex;
             align-items: center;
@@ -329,34 +34,218 @@
             color: #1e293b;
             text-decoration: none;
             font-family: 'Montserrat', sans-serif;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             text-transform: uppercase;
-            padding: 12px 20px;
+            padding: 10px 18px;
             border-radius: 6px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             border: 1px solid #e2e8f0;
             transition: all 0.2s ease;
         }
-
         .btn-back-home:hover {
             background-color: #f8fafc;
-            transform: translateX(-4px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+            transform: translateX(-3px);
         }
-
         .btn-back-home i {
             color: #D32F2F;
-            font-size: 16px;
         }
 
-        @media (max-width: 768px) {
-            .btn-back-home {
-                top: 20px;
-                left: 20px;
-                padding: 8px 14px;
-                font-size: 12px;
+        /* CONTENEDOR DE CADA DIAPOSITIVA (AHORA FLUIDO) */
+        .slide-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 1200px; /* Se adapta a pantallas grandes sin romperse */
+            min-height: auto;
+            margin: 40px auto;
+            padding: 60px 40px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* BARRA DE COLOR CORPORATIVA */
+        .slide-container::before {
+            background: linear-gradient(90deg, #D32F2F 0%, #D32F2F 25%, #1976D2 25%, #1976D2 50%, #388E3C 50%, #388E3C 75%, #FBC02D 75%);
+            content: '';
+            height: 5px;
+            left: 0;
+            position: absolute;
+            top: 0;
+            width: 100%;
+        }
+
+        /* LOGOTIPO ADAPTABLE */
+        .slide-logo {
+            height: 50px;
+            margin-bottom: 30px;
+            text-align: right;
+            width: 100%;
+        }
+        .slide-logo img {
+            height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        /* TIPOGRAFÍAS ADAPTABLES CON EM/REM */
+        h1, h2, h3 {
+            color: #1e293b;
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+        }
+        h1 { font-size: 2.8rem; line-height: 1.2; font-weight: 700; margin-bottom: 20px; }
+        h2 { font-size: 2.2rem; font-weight: 700; }
+        h3 { color: #1976D2; font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; }
+        p, li { font-size: 1.15rem; line-height: 1.6; }
+
+        .slide-title {
+            border-left: 8px solid #D32F2F;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 35px;
+            padding-left: 15px;
+            width: 100%;
+        }
+
+        .content-area {
+            width: 100%;
+        }
+
+        /* LAYOUTS RESPONSIVE (De columnas a filas en móvil) */
+        .title-layout {
+            padding-top: 40px;
+        }
+        .title-layout .subtitle {
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            display: inline-block;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-top: 20px;
+            padding-top: 15px;
+        }
+
+        .section-title-layout {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .section-title-layout hr {
+            background-color: #D32F2F;
+            border: none;
+            height: 6px;
+            margin: 20px auto;
+            width: 80px;
+        }
+
+        .tiled-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            width: 100%;
+        }
+        .tile {
+            background-color: #f8fafc;
+            border-bottom: 5px solid #1976D2;
+            border-radius: 10px;
+            padding: 35px 25px;
+            text-align: center;
+        }
+        .tile .icon { color: #D32F2F; font-size: 45px; margin-bottom: 20px; }
+
+        .two-column, .bleed-image-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            width: 100%;
+        }
+        .bleed-image-layout .content-container { padding: 0; }
+
+        .image-wrapper, .image-container {
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            height: 380px;
+            overflow: hidden;
+            width: 100%;
+        }
+        .image-wrapper img, img.bleed-image-side {
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .highlight-numbers-layout {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        .highlight-numbers-layout .number { color: #D32F2F; font-size: 7rem; font-weight: 700; line-height: 1; }
+        .highlight-numbers-layout .number-label { font-size: 1.6rem; font-weight: 700; }
+
+        /* GRÁFICO Y TABLAS */
+        .doughnut-chart-container {
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .doughnut-chart { border-radius: 50%; height: 280px; width: 280px; flex-shrink: 0; }
+        .legend { display: flex; flex-direction: column; gap: 15px; list-style: none; }
+        .legend li { display: flex; align-items: center; font-size: 1.1rem; font-weight: 600; }
+        .legend .color-box { border-radius: 4px; height: 20px; margin-right: 12px; width: 20px; flex-shrink: 0; }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; min-width: 600px; }
+        th, td { border-bottom: 1px solid #e2e8f0; padding: 15px; text-align: left; }
+        th { background-color: #f8fafc; font-size: 1.1rem; font-weight: 700; }
+
+        .qa-layout { text-align: center; }
+        .contact-info { display: flex; gap: 25px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
+        .contact-item { background-color: #f8fafc; border-radius: 10px; padding: 25px; width: 100%; max-width: 320px; }
+        .contact-item i { color: #1976D2; font-size: 35px; margin-bottom: 12px; }
+
+        /* CRONOLOGÍA HORIZONTAL/VERTICAL */
+        .timeline-wrapper { display: flex; justify-content: space-between; gap: 20px; padding: 20px 0; position: relative; }
+        .timeline-item { text-align: center; flex: 1; background: #fff; z-index: 1; }
+        .timeline-dot { width: 16px; height: 16px; background-color: #1976D2; border-radius: 50%; margin: 0 auto 15px; }
+
+        /* 📱 RESPONSIVE MEDIA QUERIES (MÓVILES Y TABLETS) */
+        @media (max-width: 992px) {
+            .two-column, .bleed-image-layout {
+                grid-template-columns: 1fr; /* Pasa a una sola columna */
+                gap: 30px;
             }
+            .bleed-image-layout {
+                display: flex;
+                flex-direction: column;
+            }
+            .slide-logo {
+                text-align: left; /* El logo se alinea mejor en móviles */
+                margin-top: 40px;
+            }
+            .timeline-wrapper {
+                flex-direction: column; /* Cronología de arriba a abajo */
+                align-items: flex-start;
+                gap: 30px;
+                padding-left: 20px;
+            }
+            .timeline-item { text-align: left; display: flex; gap: 15px; align-items: flex-start; }
+            .timeline-dot { margin: 5px 0 0 0; }
+        }
+
+        @media (max-width: 576px) {
+            body { padding: 10px 0; }
+            .slide-container { padding: 40px 20px; margin: 15px auto; width: 95%; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.7rem; }
+            .slide-title { font-size: 1.5rem; }
+            .highlight-numbers-layout .number { font-size: 4.5rem; }
+            .highlight-numbers-layout .number-label { font-size: 1.2rem; }
+            .btn-back-home { top: 15px; left: 15px; padding: 8px 12px; font-size: 11px; }
         }
     </style>
 </head>
@@ -469,7 +358,8 @@
     </div>
     <h2 class="slide-title">Líneas de Servicio</h2>
     <div class="content-area">
-        <table>
+        <div class="table-responsive">
+            <table>
             <thead>
                 <tr>
                     <th>Sector</th>
@@ -499,7 +389,8 @@
                     <td>Catálogo extenso con respuesta logística inmediata.</td>
                 </tr>
             </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -522,7 +413,7 @@
                     </li>
                     <li style="margin-bottom: 0; display: flex; align-items: flex-start; gap: 15px;">
                         <i class="fa-solid fa-check" style="color: #388E3C; font-size: 24px; margin-top: 5px;"></i>
-                        <span><strong>Atención gil:</strong> Rutas diseñadas eficientemente para acortar tiempos de entrega.</span>
+                        <span><strong>Atención Ágil:</strong> Rutas diseñadas eficientemente para acortar tiempos de entrega.</span>
                     </li>
                 </ul>
             </div>
@@ -538,31 +429,39 @@
         <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
     </div>
     <h2 class="slide-title">Un Siglo de Evolución</h2>
-    <div class="content-area" style="position: relative; height: 300px; display: flex; align-items: center; justify-content: space-between; padding: 0 50px;">
-        <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 4px; background-color: #e2e8f0; z-index: 0;"></div>
-        
-        <div style="z-index: 1; text-align: center; width: 220px; background: white; padding: 10px;">
-            <div style="width: 20px; height: 20px; background-color: #D32F2F; border-radius: 50%; margin: 0 auto 20px;"></div>
-            <h3 style="font-size: 20px; color: #D32F2F;">Orígenes</h3>
-            <p style="font-size: 16px;">Fundación y primeros pasos en la distribución comercial del sector.</p>
+    <div class="content-area">
+        <div class="timeline-wrapper">
+        <div class="timeline-item">
+            <div class="timeline-dot" style="background-color: #D32F2F;"></div>
+            <div>
+                <h3 style="font-size: 20px; color: #D32F2F;">Orígenes</h3>
+                <p style="font-size: 16px;">Fundación y primeros pasos en la distribución comercial del sector.</p>
+            </div>
         </div>
 
-        <div style="z-index: 1; text-align: center; width: 220px; background: white; padding: 10px;">
-            <div style="width: 20px; height: 20px; background-color: #1976D2; border-radius: 50%; margin: 0 auto 20px;"></div>
-            <h3 style="font-size: 20px; color: #1976D2;">Consolidación</h3>
-            <p style="font-size: 16px;">Referencia indiscutible en droguería, higiene y gran consumo.</p>
+        <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+                <h3 style="font-size: 20px; color: #1976D2;">Consolidación</h3>
+                <p style="font-size: 16px;">Referencia indiscutible en droguería, higiene y gran consumo.</p>
+            </div>
         </div>
 
-        <div style="z-index: 1; text-align: center; width: 220px; background: white; padding: 10px;">
-            <div style="width: 20px; height: 20px; background-color: #388E3C; border-radius: 50%; margin: 0 auto 20px;"></div>
-            <h3 style="font-size: 20px; color: #388E3C;">Especialización</h3>
-            <p style="font-size: 16px;">Líderes en suministro técnico para pintura de carrocería industrial.</p>
+        <div class="timeline-item">
+            <div class="timeline-dot" style="background-color: #388E3C;"></div>
+            <div>
+                <h3 style="font-size: 20px; color: #388E3C;">Especialización</h3>
+                <p style="font-size: 16px;">Líderes en suministro técnico para pintura de carrocería industrial.</p>
+            </div>
         </div>
 
-        <div style="z-index: 1; text-align: center; width: 220px; background: white; padding: 10px;">
-            <div style="width: 20px; height: 20px; background-color: #FBC02D; border-radius: 50%; margin: 0 auto 20px;"></div>
-            <h3 style="font-size: 20px; color: #FBC02D;">Vanguardia</h3>
-            <p style="font-size: 16px;">Nuevas instalaciones optimizadas y salto logístico de futuro.</p>
+        <div class="timeline-item">
+            <div class="timeline-dot" style="background-color: #FBC02D;"></div>
+            <div>
+                <h3 style="font-size: 20px; color: #FBC02D;">Vanguardia</h3>
+                <p style="font-size: 16px;">Nuevas instalaciones optimizadas y salto logístico de futuro.</p>
+            </div>
+        </div>
         </div>
     </div>
 </div>

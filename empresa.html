@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Empresa Orencio Matas y Hnos, S.L.: más de 100 años de historia, instalaciones, logística y atención profesional.">
+    <title>Empresa - Orencio Matas y Hnos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Open Sans', sans-serif;
+            line-height: 1.7;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .page-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+        }
+
+        .page-header::before {
+            content: '';
+            display: block;
+            height: 6px;
+            background: linear-gradient(90deg, #D32F2F 0%, #D32F2F 25%, #1976D2 25%, #1976D2 50%, #388E3C 50%, #388E3C 75%, #FBC02D 75%);
+        }
+
+        .nav-shell {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 18px 24px;
+        }
+
+        .brand-link img {
+            display: block;
+            width: 180px;
+            height: auto;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+        }
+
+        .btn-back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            color: #1e293b;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back-home:hover {
+            background-color: #f8fafc;
+            transform: translateX(-4px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+
+        .btn-back-home i {
+            color: #D32F2F;
+        }
+
+        main {
+            overflow: hidden;
+        }
+
+        .section {
+            padding: 90px 24px;
+        }
+
+        .section-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            padding: 110px 24px 80px;
+            background: radial-gradient(circle at top right, rgba(25, 118, 210, 0.12), transparent 34%), #ffffff;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 56px;
+            align-items: center;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            color: #D32F2F;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow::before {
+            content: '';
+            width: 42px;
+            height: 4px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #D32F2F, #1976D2, #388E3C, #FBC02D);
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.12;
+        }
+
+        h1 {
+            max-width: 760px;
+            font-size: clamp(44px, 7vw, 78px);
+            font-weight: 800;
+            letter-spacing: -0.05em;
+        }
+
+        h2 {
+            font-size: clamp(32px, 4vw, 52px);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        h3 {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .lead {
+            margin: 26px 0 0;
+            color: #475569;
+            font-size: clamp(18px, 2vw, 22px);
+            font-weight: 600;
+        }
+
+        .hero-card {
+            padding: 36px;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #f8fafc;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+        }
+
+        .hero-card strong {
+            display: block;
+            color: #D32F2F;
+            font-family: 'Montserrat', sans-serif;
+            font-size: clamp(72px, 10vw, 120px);
+            line-height: 0.9;
+        }
+
+        .hero-card span {
+            display: block;
+            margin-top: 14px;
+            color: #1e293b;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .content-card {
+            padding: 42px;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
+        }
+
+        .content-card p {
+            margin: 18px 0 0;
+            color: #475569;
+            font-size: 18px;
+        }
+
+        .split-grid {
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .image-frame {
+            position: relative;
+            overflow: hidden;
+            min-height: 520px;
+            border-radius: 22px;
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.16);
+        }
+
+        .image-frame img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            min-height: 520px;
+            object-fit: cover;
+        }
+
+        .image-badge {
+            position: absolute;
+            left: 24px;
+            bottom: 24px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.94);
+            color: #1e293b;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            padding: 38px;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
+        }
+
+        .feature-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            margin-bottom: 24px;
+            border-radius: 16px;
+            background: #f8fafc;
+            color: #1976D2;
+            font-size: 30px;
+        }
+
+        .feature-card:nth-child(2) .feature-icon {
+            color: #388E3C;
+        }
+
+        .feature-card p {
+            margin: 16px 0 0;
+            color: #475569;
+            font-size: 18px;
+        }
+
+        .cta-strip {
+            border-top: 1px solid #e2e8f0;
+            background: #1e293b;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        .cta-strip p {
+            margin: 18px auto 0;
+            max-width: 720px;
+            color: #cbd5e1;
+            font-size: 18px;
+        }
+
+        .cta-strip a {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 28px;
+            padding: 14px 22px;
+            border-radius: 8px;
+            background: #D32F2F;
+            color: #ffffff;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 900px) {
+            .nav-shell,
+            .nav-links {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .hero-grid,
+            .split-grid,
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section,
+            .hero {
+                padding: 64px 20px;
+            }
+
+            .image-frame,
+            .image-frame img {
+                min-height: 340px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <nav class="nav-shell" aria-label="Navegación principal">
+            <a class="brand-link" href="index.html" aria-label="Volver al inicio">
+                <img src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L.">
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="btn-back-home"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
+                <a href="servicios.html">Servicios</a>
+                <a href="index.html#productos">Productos</a>
+                <a href="index.html#contacto">Contacto</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero" aria-labelledby="empresa-title">
+            <div class="section-inner hero-grid">
+                <div>
+                    <p class="eyebrow">Empresa familiar y profesional</p>
+                    <h1 id="empresa-title">Más de 100 años de solidez, evolución y servicio</h1>
+                    <p class="lead">Orencio Matas y Hnos, S.L. combina tradición empresarial, capacidad logística y atención especializada para acompañar a profesionales, empresas y particulares.</p>
+                </div>
+                <aside class="hero-card" aria-label="Trayectoria de Orencio Matas">
+                    <strong>+100</strong>
+                    <span>Años de historia</span>
+                    <p class="lead">Una trayectoria construida sobre confianza, adaptación y compromiso con cada cliente.</p>
+                </aside>
+            </div>
+        </section>
+
+        <section class="section" aria-labelledby="trayectoria-title">
+            <div class="section-inner">
+                <article class="content-card">
+                    <p class="eyebrow">Introducción / Trayectoria</p>
+                    <h2 id="trayectoria-title">Una empresa preparada para seguir creciendo</h2>
+                    <p>Durante más de un siglo, Orencio Matas y Hnos, S.L. ha evolucionado junto a sus clientes, ampliando líneas de producto, especializándose en nuevos sectores y manteniendo una forma de trabajar basada en la cercanía, la solvencia y la respuesta profesional.</p>
+                    <p>Esta página queda preparada para incorporar en el futuro hitos históricos, fotografías corporativas, equipo humano y detalles específicos sobre la evolución de la empresa.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section" aria-labelledby="instalaciones-title">
+            <div class="section-inner split-grid">
+                <div class="image-frame">
+                    <img src="assets/placeholders/image_3.png" alt="Nave logística de Orencio Matas y Hnos, S.L.">
+                    <div class="image-badge">Nave y exteriores</div>
+                </div>
+                <article class="content-card">
+                    <p class="eyebrow">Instalaciones</p>
+                    <h2 id="instalaciones-title">Nueva sede logística para un suministro ágil</h2>
+                    <p>Las instalaciones de la empresa están concebidas como base operativa para la recepción, almacenamiento y expedición de mercancías. La nave permite organizar el stock y preparar pedidos con una estructura más eficiente.</p>
+                    <p>Este bloque está listo para ampliar con galerías de exteriores, almacén, zona de carga, exposición o cualquier otro contenido visual corporativo.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section" aria-labelledby="bloques-empresa-title">
+            <div class="section-inner">
+                <p class="eyebrow">Capacidad operativa</p>
+                <h2 id="bloques-empresa-title">Logística, transporte y atención directa</h2>
+                <div class="features-grid" style="margin-top: 34px;">
+                    <article class="feature-card">
+                        <div class="feature-icon" aria-hidden="true"><i class="fa-solid fa-truck-fast"></i></div>
+                        <h3>Logística y Transporte</h3>
+                        <p>Bloque preparado para detallar la flota propia, rutas de distribución, capacidad de reparto, cobertura comercial y tiempos de respuesta para clientes profesionales.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon" aria-hidden="true"><i class="fa-solid fa-store"></i></div>
+                        <h3>Tienda y Atención al Público</h3>
+                        <p>Espacio reservado para presentar el punto de venta físico, el asesoramiento directo, la atención a cliente técnico y particular, y la disponibilidad de productos en tienda.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section cta-strip" aria-labelledby="cta-title">
+            <div class="section-inner">
+                <h2 id="cta-title">Seguimos construyendo futuro</h2>
+                <p>Esta página corporativa queda preparada para crecer con más contenido visual, histórico y operativo de Orencio Matas y Hnos, S.L.</p>
+                <a href="index.html"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
