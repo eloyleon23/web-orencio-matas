@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="./css/estilos.css" />
   </head>
   <body>
-                        <header class="site-header" id="inicio">
+                            <header class="site-header" id="inicio">
       <div class="topbar" aria-label="Información de contacto">
         <div class="container topbar__inner">
           <address class="topbar__contact">
@@ -42,7 +42,7 @@
             <ul class="navbar__menu">
               <li><a href="#empresa">Empresa</a></li>
               <li><a href="#productos">Productos</a></li>
-              <li><a href="#servicios">Servicios</a></li>
+              <li><a href="../servicios.html">Servicios</a></li>
               <li><a href="#contacto">Contacto</a></li>
             </ul>
             <a class="btn-primary navbar__cta" href="#contacto">CONTACTAR</a>
@@ -280,7 +280,7 @@
         </div>
       </section>
 
-            <section class="contact-section" id="contacto" aria-labelledby="contacto-title">
+                        <section class="contact-section" id="contacto" aria-labelledby="contacto-title">
         <div class="container contact-section__inner">
           <div class="contact-info">
             <p class="section-heading__eyebrow">CONTACTO</p>
@@ -331,13 +331,17 @@
               <span>Mensaje</span>
               <textarea class="form-input" name="mensaje" rows="5" placeholder="Cuéntanos en qué podemos ayudarte"></textarea>
             </label>
+            <label class="form-consent">
+              <input type="checkbox" name="privacidad" required />
+              <span>Acepto la <a href="../politica-privacidad.html">Política de Privacidad</a></span>
+            </label>
             <button class="btn-primary" type="submit">ENVIAR MENSAJE →</button>
           </form>
         </div>
       </section>
     </main>
 
-                <footer class="site-footer">
+                        <footer class="site-footer">
       <div class="container site-footer__grid">
         <div class="site-footer__brand">
           <a href="#inicio" aria-label="Ir al inicio">
@@ -388,9 +392,9 @@
         <div class="container site-footer__bottom-inner">
           <p>© 2026 Orencio Matas y Hnos, S.L. Todos los derechos reservados.</p>
           <nav aria-label="Enlaces legales">
-            <a href="#">Política de Privacidad</a>
-            <a href="#">Aviso Legal</a>
-            <a href="#">Cookies</a>
+            <a href="../politica-privacidad.html">Política de Privacidad</a>
+            <a href="../aviso-legal.html">Aviso Legal</a>
+            <a href="../politica-cookies.html">Cookies</a>
           </nav>
         </div>
       </div>
