@@ -36,6 +36,9 @@ Lunes a Viernes: 9:00 – 14:00 y 16:30 – 19:30
 Sábados: 9:00 – 13:00
 Domingos: Cerrado
 
+## Red social activa
+Instagram es la única red social activa para el MVP: https://www.instagram.com/orenciomatas/
+
 ## Actividad
 Empresa especializada en:
 
