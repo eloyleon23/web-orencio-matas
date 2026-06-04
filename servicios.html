@@ -196,6 +196,45 @@
         }
         .tile .icon { color: #D32F2F; font-size: 45px; margin-bottom: 20px; }
 
+        .badge-centenary {
+            display: inline-flex;
+            width: fit-content;
+            margin: 0 0 22px;
+            padding: 9px 14px;
+            border: 1px solid rgba(241, 179, 0, 0.34);
+            border-radius: 999px;
+            color: #9a6a00;
+            background: rgba(241, 179, 0, 0.12);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .subtle-paint-bg {
+            position: relative;
+            background: linear-gradient(45deg, #ffffff, #e0f2fe, #dcfce7, #fef9c3);
+            background-size: 300% 300%;
+            animation: gradientServicios 8s ease-in-out infinite;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .subtle-paint-bg:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes gradientServicios {
+            0% { background-position: 100% 50%; }
+            50% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
         .two-column, .bleed-image-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -448,6 +487,7 @@
         <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
     </div>
     <div class="content-area title-layout">
+        <span class="badge-centenary">Desde 1919 • Más de un siglo de tradición industrial</span>
         <h1>Servicios de<br>Distribución Profesional</h1>
         <p class="subtitle">Suministro Integral • Pinturas de Carrocería • Droguería Industrial</p>
     </div>
@@ -471,17 +511,17 @@
     <h2 class="slide-title">Especialización Técnica</h2>
     <div class="content-area">
         <div class="tiled-content">
-            <div class="tile">
+            <div class="tile subtle-paint-bg">
                 <div class="icon"><i class="fa-solid fa-pump-soap"></i></div>
                 <h3>Droguería e Higiene</h3>
                 <p>Distribución mayorista de productos de limpieza profesional, perfumería y consumibles industriales para empresas, colectividades y retail.</p>
             </div>
-            <div class="tile">
+            <div class="tile subtle-paint-bg">
                 <div class="icon"><i class="fa-solid fa-paint-roller"></i></div>
                 <h3>Pinturas y Carrocería</h3>
                 <p>Sistemas de repintado de alta precisión y anexos para talleres. Especialistas en colorimetría, preparación de superficies y acabado profesional.</p>
             </div>
-            <div class="tile">
+            <div class="tile subtle-paint-bg">
                 <div class="icon"><i class="fa-solid fa-toolbox"></i></div>
                 <h3>Maquinaria y Taller</h3>
                 <p>Equipamiento técnico, herramientas y suministros específicos para optimizar la actividad diaria de la industria y talleres mecánicos.</p>
@@ -497,13 +537,13 @@
     <h2 class="slide-title">Instalaciones Logísticas</h2>
     <div class="content-area">
         <div class="two-column">
-            <div>
+            <div class="subtle-paint-bg">
                 <h3>Nave Industrial</h3>
                 <p>Nuestra sede central está diseñada para optimizar los flujos de recepción y expedición de mercancías, asegurando una gestión de stock continua.</p>
                 <p>Esta capacidad de almacenamiento interno nos permite responder con la máxima rapidez a los pedidos, evitando paradas en vuestra actividad.</p>
             </div>
             <div class="image-wrapper">
-                <img src="assets/placeholders/image_3.png" alt="Nave Orencio Matas y Hnos">
+                <img src="assets/placeholders/image_6.JPG" alt="Instalaciones logísticas de Orencio Matas y Hnos">
             </div>
         </div>
     </div>
@@ -515,7 +555,7 @@
             <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
         </div>
         <h2 class="slide-title" style="border: none; padding: 0;">Compromiso Logístico</h2>
-        <div class="content-area">
+        <div class="content-area subtle-paint-bg">
             <h3>Distribución Directa</h3>
             <p>Contamos con rutas organizadas y vehículos preparados para asegurar el suministro de consumibles directamente en tus instalaciones.</p>
             <p>La solidez de nuestra nave es la base operativa idónea para garantizar la fiabilidad del servicio que vuestro negocio necesita.</p>
@@ -532,7 +572,7 @@
     </div>
     <h2 class="slide-title">Trayectoria y Confianza</h2>
     <div class="content-area">
-        <div class="highlight-numbers-layout">
+        <div class="highlight-numbers-layout subtle-paint-bg">
             <div class="number">+100</div>
             <div class="number-label">Años de Historia<br>al Servicio del Profesional</div>
         </div>

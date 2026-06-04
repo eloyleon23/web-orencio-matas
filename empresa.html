@@ -209,6 +209,45 @@
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
         }
 
+        .badge-centenary {
+            display: inline-flex;
+            width: fit-content;
+            margin: 0 0 18px;
+            padding: 9px 14px;
+            border: 1px solid rgba(241, 179, 0, 0.34);
+            border-radius: 999px;
+            color: #9a6a00;
+            background: rgba(241, 179, 0, 0.12);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .subtle-paint-bg {
+            position: relative;
+            background: linear-gradient(-45deg, #ffffff, #e0f2fe, #f3e8ff, #fef9c3);
+            background-size: 300% 300%;
+            animation: gradientEmpresa 8s ease-in-out infinite;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .subtle-paint-bg:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes gradientEmpresa {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         .content-card p {
             margin: 18px 0 0;
             color: #475569;
@@ -249,6 +288,21 @@
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
             box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+        }
+
+        .installations-image {
+            width: min(100%, 760px);
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
+            background: #ffffff;
+        }
+
+        .installations-image img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
         }
 
         .features-grid {
@@ -333,6 +387,10 @@
             .image-frame img {
                 min-height: 340px;
             }
+
+            .installations-image {
+                width: 100%;
+            }
         }
 
         @media (max-width: 768px) {
@@ -391,10 +449,11 @@
             <div class="section-inner hero-grid">
                 <div>
                     <p class="eyebrow">Empresa familiar y profesional</p>
+                    <span class="badge-centenary">Desde 1919 • Más de un siglo de tradición industrial</span>
                     <h1 id="empresa-title">Más de 100 años de solidez, evolución y servicio</h1>
                     <p class="lead">Orencio Matas y Hnos, S.L. combina tradición empresarial, capacidad logística y atención especializada para acompañar a profesionales, empresas y particulares.</p>
                 </div>
-                <aside class="hero-card" aria-label="Trayectoria de Orencio Matas">
+                <aside class="hero-card subtle-paint-bg" aria-label="Trayectoria de Orencio Matas">
                     <strong>+100</strong>
                     <span>Años de historia</span>
                     <p class="lead">Una trayectoria construida sobre confianza, adaptación y compromiso con cada cliente.</p>
@@ -404,8 +463,9 @@
 
         <section class="section" aria-labelledby="trayectoria-title">
             <div class="section-inner">
-                <article class="content-card">
+                <article class="content-card subtle-paint-bg">
                     <p class="eyebrow">Introducción / Trayectoria</p>
+                    <span class="badge-centenary badge-centenary--light">Desde 1919 • Más de un siglo de tradición industrial</span>
                     <h2 id="trayectoria-title">Una empresa preparada para seguir creciendo</h2>
                     <p>Durante más de un siglo, Orencio Matas y Hnos, S.L. ha evolucionado junto a sus clientes, ampliando líneas de producto, especializándose en nuevos sectores y manteniendo una forma de trabajar basada en la cercanía, la solvencia y la respuesta profesional.</p>
                     <p>Esta página queda preparada para incorporar en el futuro hitos históricos, fotografías corporativas, equipo humano y detalles específicos sobre la evolución de la empresa.</p>
@@ -415,11 +475,10 @@
 
         <section class="section" aria-labelledby="instalaciones-title">
             <div class="section-inner split-grid">
-                <div class="image-frame">
-                    <img src="assets/placeholders/image_3.png" alt="Nave logística de Orencio Matas y Hnos, S.L.">
-                    <div class="image-badge">Nave y exteriores</div>
+                <div class="installations-image">
+                    <img src="assets/placeholders/image_6.JPG" alt="Fachada moderna de las instalaciones logísticas de Orencio Matas y Hnos">
                 </div>
-                <article class="content-card">
+                <article class="content-card subtle-paint-bg">
                     <p class="eyebrow">Instalaciones</p>
                     <h2 id="instalaciones-title">Nueva sede logística para un suministro ágil</h2>
                     <p>Las instalaciones de la empresa están concebidas como base operativa para la recepción, almacenamiento y expedición de mercancías. La nave permite organizar el stock y preparar pedidos con una estructura más eficiente.</p>
@@ -433,12 +492,12 @@
                 <p class="eyebrow">Capacidad operativa</p>
                 <h2 id="bloques-empresa-title">Logística, transporte y atención directa</h2>
                 <div class="features-grid" style="margin-top: 34px;">
-                    <article class="feature-card">
+                    <article class="feature-card subtle-paint-bg">
                         <div class="feature-icon" aria-hidden="true"><i class="fa-solid fa-truck-fast"></i></div>
                         <h3>Logística y Transporte</h3>
                         <p>Bloque preparado para detallar la flota propia, rutas de distribución, capacidad de reparto, cobertura comercial y tiempos de respuesta para clientes profesionales.</p>
                     </article>
-                    <article class="feature-card">
+                    <article class="feature-card subtle-paint-bg">
                         <div class="feature-icon" aria-hidden="true"><i class="fa-solid fa-store"></i></div>
                         <h3>Tienda y Atención al Público</h3>
                         <p>Espacio reservado para presentar el punto de venta físico, el asesoramiento directo, la atención a cliente técnico y particular, y la disponibilidad de productos en tienda.</p>
