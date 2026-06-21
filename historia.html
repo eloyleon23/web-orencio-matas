@@ -331,6 +331,180 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             letter-spacing: 0.08em;
         }
 
+        .heritage-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 22px;
+            margin-top: 34px;
+        }
+
+        .heritage-card {
+            display: grid;
+            gap: 16px;
+            min-width: 0;
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+        }
+
+        .heritage-card--wide {
+            grid-column: 1 / -1;
+        }
+
+        .heritage-card__media {
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+            border-radius: 18px;
+            background: var(--sepia);
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.12);
+        }
+
+        .heritage-card__media img {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            cursor: zoom-in;
+        }
+
+        .heritage-card__media--cover {
+            aspect-ratio: 4 / 3;
+        }
+
+        .heritage-card__media--cover img {
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .heritage-card h3 {
+            color: var(--dark);
+        }
+
+        .heritage-card p,
+        .heritage-card figcaption {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.98rem;
+        }
+
+        .heritage-card figcaption {
+            padding-top: 12px;
+            font-weight: 700;
+        }
+
+        .heritage-pdf {
+            display: grid;
+            gap: 14px;
+        }
+
+        .heritage-pdf__frame {
+            width: 100%;
+            min-height: 420px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--white);
+        }
+
+        .heritage-pdf__actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .heritage-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: fit-content;
+            padding: 11px 16px;
+            border-radius: 999px;
+            color: var(--white);
+            background: var(--red);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 900;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        .future-placeholder {
+            min-height: 260px;
+            display: grid;
+            place-items: center;
+            padding: 28px;
+            border: 2px dashed rgba(120, 82, 43, 0.24);
+            border-radius: 18px;
+            color: #7a5a38;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(243, 234, 223, 0.86)),
+                repeating-linear-gradient(45deg, rgba(120, 82, 43, 0.04) 0 8px, rgba(120, 82, 43, 0.08) 8px 16px);
+            text-align: center;
+        }
+
+        .future-placeholder i {
+            display: block;
+            margin-bottom: 12px;
+            font-size: 2.4rem;
+        }
+
+        .future-placeholder strong {
+            display: block;
+            color: var(--dark);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.05rem;
+            text-transform: uppercase;
+        }
+
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            inset: 0;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.9);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .lightbox-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .lightbox-overlay.active .lightbox-content {
+            transform: scale(1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #ffffff;
+            font-size: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .lightbox-close:hover {
+            color: #ccc;
+        }
+
         .memory-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -470,6 +644,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             .memory-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
+
+            .heritage-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         @media (min-width: 1024px) {
@@ -545,19 +723,157 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
 
         @media (max-width: 768px) {
-            .memory-grid {
+            html,
+            body {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            h1 {
+                font-size: clamp(2.05rem, 11vw, 3rem);
+                letter-spacing: -0.045em;
+                overflow-wrap: anywhere;
+            }
+
+            h2 {
+                font-size: clamp(1.75rem, 9vw, 2.35rem);
+                letter-spacing: -0.035em;
+                overflow-wrap: anywhere;
+            }
+
+            .hero,
+            .section {
+                padding: 54px 16px;
+            }
+
+            .section-inner,
+            .hero-grid,
+            .story-stack,
+            .memory-grid,
+            .heritage-grid,
+            .timeline {
+                width: 100%;
+                max-width: 100%;
                 grid-template-columns: 1fr;
             }
 
             .story-card,
             .hero-card,
+            .memory-card,
+            .heritage-card,
+            .timeline-card,
             .subtle-paint-bg {
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
                 border-radius: 16px;
+            }
+
+            .story-card,
+            .hero-card,
+            .subtle-paint-bg,
+            .heritage-card {
+                padding: 18px;
+            }
+
+            .story-card__text,
+            .timeline-card p,
+            .heritage-card p {
+                overflow-wrap: break-word;
+                word-break: normal;
+            }
+
+            .memory-grid,
+            .heritage-grid {
+                gap: 18px;
+            }
+
+            .heritage-card__media,
+            .archive-placeholder {
+                width: 100%;
+                max-width: 100%;
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            .heritage-card__media img,
+            .js-lightbox-image {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                display: block;
+            }
+
+            .heritage-card__media--cover {
+                aspect-ratio: 4 / 3;
+            }
+
+            .heritage-card__media--cover img {
+                height: 100%;
+                object-fit: cover;
             }
 
             .archive-placeholder {
                 aspect-ratio: 4 / 3;
                 padding: 18px;
+            }
+
+            .timeline {
+                padding-left: 24px;
+                gap: 18px;
+                margin-bottom: 3rem;
+            }
+
+            .timeline::before {
+                left: 7px;
+                transform: none;
+            }
+
+            .timeline-card,
+            .timeline-card:nth-child(odd),
+            .timeline-card:nth-child(even) {
+                margin-left: 0;
+                margin-right: 0;
+                transform: none;
+            }
+
+            .timeline-card::before,
+            .timeline-card:nth-child(odd)::before,
+            .timeline-card:nth-child(even)::before {
+                left: -25px;
+                right: auto;
+            }
+
+            .heritage-pdf__frame {
+                min-height: 320px;
+            }
+
+            .heritage-pdf__actions,
+            .heritage-link {
+                width: 100%;
+            }
+
+            .lightbox-overlay {
+                padding: 16px;
+            }
+
+            .lightbox-content {
+                max-width: 94%;
+                max-height: 76%;
+            }
+
+            .lightbox-close {
+                top: 12px;
+                right: 14px;
+                width: 48px;
+                height: 48px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.12);
+                font-size: 38px;
+                line-height: 1;
             }
         }
     </style>
@@ -603,6 +919,80 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <span>Origen familiar</span>
                     <p class="lead">Un legado que evoluciona desde el mostrador tradicional hasta la alta logística industrial B2B.</p>
                 </aside>
+            </div>
+        </section>
+
+        <section class="section" aria-labelledby="archivo-historico-title">
+            <div class="section-inner">
+                <p class="eyebrow">Archivo familiar recuperado</p>
+                <h2 id="archivo-historico-title">Rostros, testimonios y memoria documental</h2>
+                <p class="lead">Una selección de documentos históricos que refuerzan el origen humano de la firma, la cultura comercial de la familia Matas y el punto de inflexión que marcó su evolución empresarial.</p>
+
+                <div class="heritage-grid">
+                    <article class="heritage-card subtle-paint-bg">
+                        <figure class="heritage-card__media heritage-card__media--cover">
+                            <img class="js-lightbox-image" src="assets/fotos/Historia/Abuelo_Eloy.jpg" alt="Retrato histórico del abuelo Eloy Matas, origen familiar de la firma" loading="lazy">
+                        </figure>
+                        <div class="story-card__text">
+                            <h3>A Eloy Matas</h3>
+                            <p>La trayectoria de Orencio Matas y Hnos encuentra su raíz en la figura de Eloy Matas, símbolo del oficio comercial, la palabra dada y el trabajo paciente que permitió levantar una casa de confianza desde Ciudad Real.</p>
+                        </div>
+                    </article>
+
+                    <article class="heritage-card subtle-paint-bg">
+                        <figure class="heritage-card__media heritage-card__media--cover">
+                            <img class="js-lightbox-image" src="assets/fotos/Historia/Hermanos_Tienda.jpg" alt="Equipo histórico de la tienda antigua de la familia Matas" loading="lazy">
+                        </figure>
+                        <div class="story-card__text">
+                            <h3>La tienda antigua y la saga familiar</h3>
+                            <p>Esta imagen conserva el ambiente del comercio familiar en su etapa tradicional. En ella aparecen retratados, de izquierda a derecha, <strong>Manuel Matas Moraga, Francisco Matas Moraga, Eloy Matas (fundador) y Eloy Matas Moraga</strong>. Falta en la fotografía Orencio Matas Moraga, fundador principal y persona por quien toma nombre la empresa actual, Orencio Matas y Hermanos, ya que en ese preciso momento se encontraba visitando a clientes.</p>
+                        </div>
+                    </article>
+
+                    <article class="heritage-card subtle-paint-bg">
+                        <figure class="heritage-card__media">
+                            <img class="js-lightbox-image" src="assets/fotos/Historia/Carta_a_Eloy.jpg" alt="Carta de reconocimiento profesional dedicada a Eloy Matas" loading="lazy">
+                        </figure>
+                        <div class="story-card__text">
+                            <h3>Testimonio profesional</h3>
+                            <p>La carta de reconocimiento dedicada a Eloy Matas deja constancia de sus virtudes como profesional y comercial intachable, una forma de entender el negocio basada en la honestidad, la cercanía y el cumplimiento.</p>
+                        </div>
+                    </article>
+
+                    <article class="heritage-card heritage-card--wide subtle-paint-bg">
+                        <div class="story-card__text">
+                            <h3>Diario Lanza: incendio de 1966</h3>
+                            <p>El diario provincial Lanza recogió la noticia del histórico incendio ocurrido en las instalaciones de la Calle Calatrava, publicado el 1 de septiembre de 1966. Este documento ayuda a comprender la magnitud del suceso y la posterior transformación estratégica de la empresa.</p>
+                        </div>
+                        <div class="heritage-pdf">
+                            <iframe class="heritage-pdf__frame" src="assets/fotos/Historia/Lanza-1-9-1966-16.pdf" title="Recorte del diario Lanza sobre el incendio de la Calle Calatrava en 1966"></iframe>
+                            <div class="heritage-pdf__actions">
+                                <a class="heritage-link" href="assets/fotos/Historia/Lanza-1-9-1966-16.pdf" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf"></i> Abrir PDF histórico</a>
+                                <a class="heritage-link" href="assets/fotos/Historia/Lanza-1-9-1966-16.pdf" download><i class="fa-solid fa-download"></i> Descargar documento</a>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="heritage-card">
+                        <div class="future-placeholder">
+                            <div>
+                                <i class="fa-regular fa-image" aria-hidden="true"></i>
+                                <strong>Orencio Matas Moraga</strong>
+                                <p>Espacio reservado para incorporar la futura fotografía del fundador principal que da nombre a Orencio Matas y Hermanos.</p>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="heritage-card">
+                        <div class="future-placeholder">
+                            <div>
+                                <i class="fa-solid fa-users" aria-hidden="true"></i>
+                                <strong>Equipo actual</strong>
+                                <p>Espacio preparado para la fotografía del equipo actual, liderado con orgullo por Ángel Matas Rubio y Ángela Matas Rubio.</p>
+                            </div>
+                        </div>
+                    </article>
+                </div>
             </div>
         </section>
 
@@ -760,6 +1150,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </nav>
         </div>
     </footer>
+    <div id="custom-lightbox" class="lightbox-overlay" aria-hidden="true">
+        <span class="lightbox-close" aria-label="Cerrar">&times;</span>
+        <img class="lightbox-content" id="lightbox-img" src="" alt="Vista ampliada">
+    </div>
+    <script>
+        const lightbox = document.getElementById('custom-lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+
+        document.querySelectorAll('.js-lightbox-image').forEach(img => {
+            img.addEventListener('click', () => {
+                lightboxImg.src = img.src;
+                lightboxImg.alt = img.alt || 'Vista ampliada';
+                lightbox.classList.add('active');
+                lightbox.setAttribute('aria-hidden', 'false');
+            });
+        });
+
+        lightbox.addEventListener('click', (event) => {
+            if (event.target !== lightboxImg) {
+                lightbox.classList.remove('active');
+                lightbox.setAttribute('aria-hidden', 'true');
+            }
+        });
+    </script>
     <script src="./src/js/analytics-consent.js"></script>
 </body>
 </html>
