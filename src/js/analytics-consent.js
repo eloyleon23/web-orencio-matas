@@ -189,6 +189,12 @@
     });
   };
 
+  const initCurrentYear = () => {
+    document.querySelectorAll('.current-year').forEach((element) => {
+      element.textContent = new Date().getFullYear();
+    });
+  };
+
   const initTrackedInteractions = () => {
     document.addEventListener('submit', (event) => {
       const form = event.target.closest('form');
@@ -219,6 +225,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     initCookieConsent();
+    initCurrentYear();
     initTrackedInteractions();
   });
 })();

@@ -338,9 +338,9 @@ ol {
   overflow: hidden;
   padding: var(--section-padding-desktop);
   color: var(--primary-white);
-  background: linear-gradient(-45deg, #1e293b, #1976d2, #d32f2f, #fbc02d, #388e3c);
-  background-size: 400% 400%;
-  animation: gradientPaint 6s ease-in-out infinite;
+  background: linear-gradient(-45deg, #0f172a 0%, #d91b1b 18%, #f1b300 36%, #008743 54%, #006dae 74%, #00a7dc 100%);
+  background-size: 520% 520%;
+  animation: gradientPaint 8s ease-in-out infinite;
   isolation: isolate;
 }
 
@@ -461,8 +461,20 @@ ol {
     background-position: 0% 50%;
   }
 
-  50% {
-    background-position: 100% 50%;
+  20% {
+    background-position: 28% 48%;
+  }
+
+  40% {
+    background-position: 56% 54%;
+  }
+
+  60% {
+    background-position: 78% 46%;
+  }
+
+  80% {
+    background-position: 100% 52%;
   }
 
   100% {

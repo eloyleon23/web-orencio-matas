@@ -47,6 +47,12 @@
   });
 };
 
+const initCurrentYear = () => {
+  document.querySelectorAll('.current-year').forEach((element) => {
+    element.textContent = new Date().getFullYear();
+  });
+};
+
 const initScrollAnimations = () => {
   const animatedElements = document.querySelectorAll('.animate-on-scroll');
 
@@ -76,5 +82,6 @@ const initScrollAnimations = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
+  initCurrentYear();
   initScrollAnimations();
 });
