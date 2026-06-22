@@ -16,6 +16,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./src/css/estilos.css" />
+  <script src="./config.js"></script>
   </head>
   <body>
 <!-- Google Tag Manager (noscript) -->
@@ -390,30 +391,101 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
           </div>
 
-          <form class="quote-form" action="mailto:correo@orenciomatas.es" method="post" enctype="text/plain">
+          <form class="quote-form" id="contacto-form" novalidate>
             <h2>Contacta con nosotros</h2>
             <label>
               <span>Nombre</span>
-              <input class="form-input" type="text" name="nombre" autocomplete="name" placeholder="Tu nombre" />
+              <input class="form-input" type="text" name="nombre" id="form-nombre" autocomplete="name" placeholder="Tu nombre" required />
             </label>
             <label>
               <span>Teléfono</span>
-              <input class="form-input" type="tel" name="telefono" autocomplete="tel" placeholder="Tu teléfono" />
+              <input class="form-input" type="tel" name="telefono" id="form-telefono" autocomplete="tel" placeholder="Tu teléfono" />
             </label>
             <label>
               <span>Email</span>
-              <input class="form-input" type="email" name="email" autocomplete="email" placeholder="tu@email.com" />
+              <input class="form-input" type="email" name="email" id="form-email" autocomplete="email" placeholder="tu@email.com" required />
             </label>
             <label>
               <span>Mensaje</span>
-              <textarea class="form-input" name="mensaje" rows="5" placeholder="Cuéntanos en qué podemos ayudarte"></textarea>
+              <textarea class="form-input" name="mensaje" id="form-mensaje" rows="5" placeholder="Cuéntanos en qué podemos ayudarte" required></textarea>
             </label>
             <label class="form-consent">
-              <input type="checkbox" name="privacidad" required />
+              <input type="checkbox" name="privacidad" id="form-privacidad" required />
               <span>Acepto la <a href="politica-privacidad.html">Política de Privacidad</a></span>
             </label>
-            <button class="btn-primary" type="submit">ENVIAR MENSAJE →</button>
+            <div id="form-mensaje-estado" style="display:none; margin-bottom:12px; padding:12px 16px; border-radius:6px; font-weight:600; font-size:0.95rem;"></div>
+            <button class="btn-primary" type="submit" id="form-btn-enviar">ENVIAR MENSAJE →</button>
           </form>
+
+          <script>
+            (function () {
+              var form = document.getElementById('contacto-form');
+              var btn = document.getElementById('form-btn-enviar');
+              var estado = document.getElementById('form-mensaje-estado');
+
+              form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                var nombre = document.getElementById('form-nombre').value.trim();
+                var telefono = document.getElementById('form-telefono').value.trim();
+                var email = document.getElementById('form-email').value.trim();
+                var mensaje = document.getElementById('form-mensaje').value.trim();
+                var privacidad = document.getElementById('form-privacidad').checked;
+
+                if (!nombre || !email || !mensaje || !privacidad) {
+                  mostrarEstado('Por favor, rellena todos los campos obligatorios y acepta la política de privacidad.', '#c0392b', '#fdf0ef');
+                  return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'ENVIANDO...';
+
+                var cuerpo = '<p><strong>Nombre:</strong> ' + nombre + '</p>' +
+                  (telefono ? '<p><strong>Teléfono:</strong> ' + telefono + '</p>' : '') +
+                  '<p><strong>Email:</strong> ' + email + '</p>' +
+                  '<p><strong>Mensaje:</strong><br>' + mensaje.replace(/\n/g, '<br>') + '</p>';
+
+                fetch('https://api.brevo.com/v3/smtp/email', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'api-key': window.BREVO_API_KEY
+                  },
+                  body: JSON.stringify({
+                    sender: { name: nombre, email: 'correo@orenciomatas.es' },
+                    to: [{ email: 'correo@orenciomatas.es', name: 'Orencio Matas y Hnos' }],
+                    replyTo: { email: email, name: nombre },
+                    subject: 'Nuevo mensaje de contacto web - ' + nombre,
+                    htmlContent: cuerpo
+                  })
+                })
+                .then(function (res) {
+                  if (res.ok) {
+                    mostrarEstado('✓ Mensaje enviado correctamente. Nos pondremos en contacto contigo pronto.', '#1a7a4a', '#edfaf3');
+                    form.reset();
+                  } else {
+                    return res.json().then(function(err) { throw err; });
+                  }
+                })
+                .catch(function () {
+                  mostrarEstado('Ha ocurrido un error al enviar el mensaje. Por favor, inténtalo de nuevo o llámanos al 926 221 217.', '#c0392b', '#fdf0ef');
+                })
+                .finally(function () {
+                  btn.disabled = false;
+                  btn.textContent = 'ENVIAR MENSAJE →';
+                });
+              });
+
+              function mostrarEstado(texto, color, fondo) {
+                estado.textContent = texto;
+                estado.style.color = color;
+                estado.style.backgroundColor = fondo;
+                estado.style.border = '1px solid ' + color;
+                estado.style.display = 'block';
+                estado.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+            })();
+          </script>
         </div>
       </section>
     </main>
