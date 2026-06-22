@@ -1008,22 +1008,27 @@ ol {
 .brand-logo {
   display: inline-flex;
   flex: 0 0 auto;
-  min-height: 74px;
-  min-width: 150px;
+  width: 166px;
+  height: 82px;
   align-items: center;
   justify-content: center;
   padding: 16px;
   border: 1px solid rgba(18, 20, 23, 0.06);
   border-radius: 16px;
-  color: #30343a;
-  background: var(--bg-light-gray);
-  font-family: var(--font-heading);
-  font-size: clamp(0.92rem, 1.3vw, 1.12rem);
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  text-align: center;
+  background: var(--primary-white);
   cursor: default;
   box-shadow: 0 10px 24px rgba(18, 20, 23, 0.04);
+}
+
+.brand-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: none;
+  opacity: 1;
+  user-select: none;
+  pointer-events: none;
 }
 
 @keyframes marquee {

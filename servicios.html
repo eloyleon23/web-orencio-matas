@@ -305,8 +305,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
         .providers-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 16px;
             width: 100%;
         }
 
@@ -314,75 +314,54 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #f8fafc;
+            height: 96px;
+            min-width: 0;
+            padding: 16px;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px;
-            text-decoration: none;
-            transition: all 0.25s ease-in-out;
-            height: 85px;
+            border-radius: 14px;
+            background-color: #ffffff;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
         .provider-item img {
-            width: 54px;
-            height: 54px;
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-width: 140px;
             object-fit: contain;
-            filter: grayscale(100%);
-            opacity: 0.75;
-            transition: all 0.25s ease-in-out;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            color: #475569;
-            text-transform: uppercase;
+            filter: none;
+            opacity: 1;
         }
 
         .provider-item:hover {
-            background-color: #ffffff;
             border-color: #1976D2;
             transform: translateY(-3px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+            box-shadow: 0 14px 30px rgba(25, 118, 210, 0.12);
         }
 
-        .provider-item:hover img {
-            filter: grayscale(0%);
-            opacity: 1;
-            transform: scale(1.08);
+        @media (max-width: 1200px) {
+            .providers-grid {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
         }
 
-        .provider-item:hover span {
-            color: #1976D2 !important;
+        @media (max-width: 992px) {
+            .providers-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
         }
 
-        .provider-item {
-            position: relative;
-            display: inline-block;
-        }
+        @media (max-width: 768px) {
+            .providers-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 12px;
+            }
 
-        .provider-item::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 105%;
-            left: 50%;
-            transform: translateX(-50%) translateY(5px);
-            background: rgba(30, 41, 59, 0.95);
-            color: #ffffff;
-            padding: 6px 12px;
-            font-size: 11px;
-            font-weight: 500;
-            border-radius: 6px;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-        }
-
-        .provider-item:hover::after {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(-50%) translateY(0);
+            .provider-item {
+                height: 86px;
+                padding: 12px;
+            }
         }
 
         /* CRONOLOGÍA HORIZONTAL/VERTICAL */
@@ -447,12 +426,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
         @media (max-width: 480px) {
             .providers-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 10px;
             }
 
             .provider-item {
-                height: 70px;
+                height: 78px;
                 padding: 10px;
             }
         }
@@ -728,42 +707,42 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <section class="providers-section">
         <h2 class="slide-title" style="margin-left: 0;">Principales Marcas y Partners</h2>
         <div class="providers-grid">
-            <a href="https://www.sika.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Sika"><img src="https://www.google.com/s2/favicons?sz=128&domain=sika.com" alt="Sika" onerror="handleLogoError(this, 'Sika')"></a>
-            <a href="https://www.akzonobel.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="AkzoNobel"><img src="https://www.google.com/s2/favicons?sz=128&domain=akzonobel.com" alt="AkzoNobel" onerror="handleLogoError(this, 'AkzoNobel')"></a>
-            <a href="https://www.baixens.com/inicio" target="_blank" rel="noopener" class="provider-item" data-tooltip="Baixens"><img src="https://www.google.com/s2/favicons?sz=128&domain=baixens.com" alt="Baixens" onerror="handleLogoError(this, 'Baixens')"></a>
-            <a href="https://www.pentrilo.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Pentrilo"><img src="https://www.google.com/s2/favicons?sz=128&domain=pentrilo.com" alt="Pentrilo" onerror="handleLogoError(this, 'Pentrilo')"></a>
-            <a href="https://www.nespoligroup.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Nespoli"><img src="https://www.google.com/s2/favicons?sz=128&domain=nespoligroup.es" alt="Nespoli" onerror="handleLogoError(this, 'Nespoli')"></a>
-            <a href="https://barnices-mora.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Mora"><img src="https://www.google.com/s2/favicons?sz=128&domain=barnices-mora.com" alt="Mora" onerror="handleLogoError(this, 'Mora')"></a>
-            <a href="https://www.thomil.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Thomil"><img src="https://www.google.com/s2/favicons?sz=128&domain=thomil.com" alt="Thomil" onerror="handleLogoError(this, 'Thomil')"></a>
-            <a href="https://www.vinfer.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Vinfer"><img src="https://www.google.com/s2/favicons?sz=128&domain=vinfer.com" alt="Vinfer" onerror="handleLogoError(this, 'Vinfer')"></a>
-            <a href="https://storecasitems.shop/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Caselli"><img src="https://www.google.com/s2/favicons?sz=128&domain=storecasitems.shop" alt="Caselli" onerror="handleLogoError(this, 'Caselli')"></a>
-            <a href="https://www.hiladosbiete.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Ressol"><img src="https://www.google.com/s2/favicons?sz=128&domain=hiladosbiete.com" alt="Ressol" onerror="handleLogoError(this, 'Ressol')"></a>
-            <a href="https://www.jofel.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Jofel"><img src="https://www.google.com/s2/favicons?sz=128&domain=jofel.com" alt="Jofel" onerror="handleLogoError(this, 'Jofel')"></a>
-            <a href="https://www.losdi.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Losdi"><img src="https://www.google.com/s2/favicons?sz=128&domain=losdi.com" alt="Losdi" onerror="handleLogoError(this, 'Losdi')"></a>
-            <a href="https://www.renova.pt/es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Renova"><img src="https://www.google.com/s2/favicons?sz=128&domain=renova.pt" alt="Renova" onerror="handleLogoError(this, 'Renova')"></a>
-            <a href="https://www.vijusa.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Vijusa"><img src="https://www.google.com/s2/favicons?sz=128&domain=vijusa.com" alt="Vijusa" onerror="handleLogoError(this, 'Vijusa')"></a>
-            <a href="https://www.compo.com/es-es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Compo"><img src="https://www.google.com/s2/favicons?sz=128&domain=compo.com" alt="Compo" onerror="handleLogoError(this, 'Compo')"></a>
-            <a href="https://www.fairydishwashing.com.au/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Fairy"><img src="https://www.google.com/s2/favicons?sz=128&domain=fairydishwashing.com.au" alt="Fairy" onerror="handleLogoError(this, 'Fairy')"></a>
-            <a href="https://www.ariel.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Ariel"><img src="https://www.google.com/s2/favicons?sz=128&domain=ariel.es" alt="Ariel" onerror="handleLogoError(this, 'Ariel')"></a>
-            <a href="https://wiop.unilever.es/brands/mimosin/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Mimosín"><img src="https://www.google.com/s2/favicons?sz=128&domain=wiop.unilever.es" alt="Mimosín" onerror="handleLogoError(this, 'Mimosín')"></a>
-            <a href="https://www.asevi.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Asevi"><img src="https://www.google.com/s2/favicons?sz=128&domain=asevi.com" alt="Asevi" onerror="handleLogoError(this, 'Asevi')"></a>
-            <a href="https://www.cif.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Cif"><img src="https://www.google.com/s2/favicons?sz=128&domain=cif.es" alt="Cif" onerror="handleLogoError(this, 'Cif')"></a>
-            <a href="https://www.3m.com.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="3M"><img src="https://www.google.com/s2/favicons?sz=128&domain=3m.com.es" alt="3M" onerror="handleLogoError(this, '3M')"></a>
-            <a href="https://www.vileda.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Vileda"><img src="https://www.google.com/s2/favicons?sz=128&domain=vileda.es" alt="Vileda" onerror="handleLogoError(this, 'Vileda')"></a>
-            <a href="https://www.massoagro.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Massó"><img src="https://www.google.com/s2/favicons?sz=128&domain=massoagro.com" alt="Massó" onerror="handleLogoError(this, 'Massó')"></a>
-            <a href="https://productosflower.com/es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Flower"><img src="https://www.google.com/s2/favicons?sz=128&domain=productosflower.com" alt="Flower" onerror="handleLogoError(this, 'Flower')"></a>
-            <a href="https://www.kelsia.net/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Kelsia"><img src="https://www.google.com/s2/favicons?sz=128&domain=kelsia.net" alt="Kelsia" onerror="handleLogoError(this, 'Kelsia')"></a>
-            <a href="https://babaria.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Babaria"><img src="https://www.google.com/s2/favicons?sz=128&domain=babaria.es" alt="Babaria" onerror="handleLogoError(this, 'Babaria')"></a>
-            <a href="https://www.arom.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Arrixaca"><img src="https://www.google.com/s2/favicons?sz=128&domain=arom.es" alt="Arrixaca" onerror="handleLogoError(this, 'Arrixaca')"></a>
-            <a href="https://productosdoscastillas.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Saeclor"><img src="https://www.google.com/s2/favicons?sz=128&domain=productosdoscastillas.es" alt="Saeclor" onerror="handleLogoError(this, 'Saeclor')"></a>
-            <a href="https://www.polimerosdelvalles.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Polímeros del Vallés"><img src="https://www.google.com/s2/favicons?sz=128&domain=polimerosdelvalles.es" alt="Polímeros del Vallés" onerror="handleLogoError(this, 'Polímeros del Vallés')"></a>
-            <a href="https://www.cisent.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Cisent"><img src="https://www.google.com/s2/favicons?sz=128&domain=cisent.com" alt="Cisent" onerror="handleLogoError(this, 'Cisent')"></a>
-            <a href="https://www.gomacamps.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Goma Camps"><img src="https://www.google.com/s2/favicons?sz=128&domain=gomacamps.com" alt="Goma Camps" onerror="handleLogoError(this, 'Goma Camps')"></a>
-            <a href="https://www.muropapel.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Muropapel"><img src="https://www.google.com/s2/favicons?sz=128&domain=muropapel.com" alt="Muropapel" onerror="handleLogoError(this, 'Muropapel')"></a>
-            <a href="https://www.betik.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Industrias Betik"><img src="https://www.google.com/s2/favicons?sz=128&domain=betik.es" alt="Industrias Betik" onerror="handleLogoError(this, 'Industrias Betik')"></a>
-            <a href="https://www.beter.es/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Industrias Beter"><img src="https://www.google.com/s2/favicons?sz=128&domain=beter.es" alt="Industrias Beter" onerror="handleLogoError(this, 'Industrias Beter')"></a>
-            <a href="https://www.alvarezgomez.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="Álvarez Gómez"><img src="https://www.google.com/s2/favicons?sz=128&domain=alvarezgomez.com" alt="Álvarez Gómez" onerror="handleLogoError(this, 'Álvarez Gómez')"></a>
-            <a href="https://www.desengrasanteelmilagrito.com/" target="_blank" rel="noopener" class="provider-item" data-tooltip="El Milagrito"><img src="https://www.google.com/s2/favicons?sz=128&domain=desengrasanteelmilagrito.com" alt="El Milagrito" onerror="handleLogoError(this, 'El Milagrito')"></a>
+            <div class="provider-item" aria-label="Sika"><img src="assets/marcas/logo_sika.png" alt="Sika" loading="lazy"></div>
+            <div class="provider-item" aria-label="AkzoNobel"><img src="assets/marcas/logo_akzonobel.png" alt="AkzoNobel" loading="lazy"></div>
+            <div class="provider-item" aria-label="Baixens"><img src="assets/marcas/logo_baixens.jpg" alt="Baixens" loading="lazy"></div>
+            <div class="provider-item" aria-label="Pentrilo"><img src="assets/marcas/logo_pentrilo.png" alt="Pentrilo" loading="lazy"></div>
+            <div class="provider-item" aria-label="Nespoli"><img src="assets/marcas/logo_nespoli.png" alt="Nespoli" loading="lazy"></div>
+            <div class="provider-item" aria-label="Mora"><img src="assets/marcas/logo_mora.png" alt="Mora" loading="lazy"></div>
+            <div class="provider-item" aria-label="Thomil"><img src="assets/marcas/logo_thomil.png" alt="Thomil" loading="lazy"></div>
+            <div class="provider-item" aria-label="Vinfer"><img src="assets/marcas/logo_vinfer.png" alt="Vinfer" loading="lazy"></div>
+            <div class="provider-item" aria-label="Caselli"><img src="assets/marcas/logo_caselli.jpg" alt="Caselli" loading="lazy"></div>
+            <div class="provider-item" aria-label="Ressol"><img src="assets/marcas/logo_ressol.jpg" alt="Ressol" loading="lazy"></div>
+            <div class="provider-item" aria-label="Jofel"><img src="assets/marcas/logo_jofel.png" alt="Jofel" loading="lazy"></div>
+            <div class="provider-item" aria-label="Losdi"><img src="assets/marcas/logo_losdi.jpg" alt="Losdi" loading="lazy"></div>
+            <div class="provider-item" aria-label="Renova"><img src="assets/marcas/logo_renova.svg" alt="Renova" loading="lazy"></div>
+            <div class="provider-item" aria-label="Vijusa"><img src="assets/marcas/logo_vijusa.png" alt="Vijusa" loading="lazy"></div>
+            <div class="provider-item" aria-label="Compo"><img src="assets/marcas/logo_compo.png" alt="Compo" loading="lazy"></div>
+            <div class="provider-item" aria-label="Fairy"><img src="assets/marcas/logo_fairy.jpg" alt="Fairy" loading="lazy"></div>
+            <div class="provider-item" aria-label="Ariel"><img src="assets/marcas/logo_ariel.jpg" alt="Ariel" loading="lazy"></div>
+            <div class="provider-item" aria-label="Mimosín"><img src="assets/marcas/logo_mimosin.jpg" alt="Mimosín" loading="lazy"></div>
+            <div class="provider-item" aria-label="Asevi"><img src="assets/marcas/logo_asevi.jpg" alt="Asevi" loading="lazy"></div>
+            <div class="provider-item" aria-label="Cif"><img src="assets/marcas/logo_cif.jpg" alt="Cif" loading="lazy"></div>
+            <div class="provider-item" aria-label="3M"><img src="assets/marcas/logo_3m.png" alt="3M" loading="lazy"></div>
+            <div class="provider-item" aria-label="Vileda"><img src="assets/marcas/logo_vileda.jpg" alt="Vileda" loading="lazy"></div>
+            <div class="provider-item" aria-label="Massó"><img src="assets/marcas/logo_masso.webp" alt="Massó" loading="lazy"></div>
+            <div class="provider-item" aria-label="Flower"><img src="assets/marcas/logo_flower.png" alt="Flower" loading="lazy"></div>
+            <div class="provider-item" aria-label="Kelsia"><img src="assets/marcas/logo_kelsia.webp" alt="Kelsia" loading="lazy"></div>
+            <div class="provider-item" aria-label="Babaria"><img src="assets/marcas/logo_babaria.webp" alt="Babaria" loading="lazy"></div>
+            <div class="provider-item" aria-label="Arrixaca"><img src="assets/marcas/logo_arrixaca.jpg" alt="Arrixaca" loading="lazy"></div>
+            <div class="provider-item" aria-label="Saeclor"><img src="assets/marcas/logor_2castillas.jpg" alt="Saeclor" loading="lazy"></div>
+            <div class="provider-item" aria-label="Polímeros del Vallés"><img src="assets/marcas/logo_polmeros_del_valls.jpg" alt="Polímeros del Vallés" loading="lazy"></div>
+            <div class="provider-item" aria-label="Cisent"><img src="assets/marcas/logo_cisent.png" alt="Cisent" loading="lazy"></div>
+            <div class="provider-item" aria-label="Goma Camps"><img src="assets/marcas/logo_gomacamps.jpg" alt="Goma Camps" loading="lazy"></div>
+            <div class="provider-item" aria-label="Muropapel"><img src="assets/marcas/logo_muropapel.jpg" alt="Muropapel" loading="lazy"></div>
+            <div class="provider-item" aria-label="Industrias Betik"><img src="assets/marcas/logo_industrias_betik.jpg" alt="Industrias Betik" loading="lazy"></div>
+            <div class="provider-item" aria-label="Industrias Beter"><img src="assets/marcas/logo_industrias_beter.jpg" alt="Industrias Beter" loading="lazy"></div>
+            <div class="provider-item" aria-label="Álvarez Gómez"><img src="assets/marcas/logo_alvarezgomez.png" alt="Álvarez Gómez" loading="lazy"></div>
+            <div class="provider-item" aria-label="El Milagrito"><img src="assets/marcas/logo_elmilagrito.png" alt="El Milagrito" loading="lazy"></div>
         </div>
     </section>
 </div>
@@ -789,22 +768,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 
-<script>
-    function handleLogoError(imageElement, brandName) {
-        const textContainer = document.createElement('span');
-        textContainer.innerText = brandName;
-        textContainer.style.fontFamily = "'Montserrat', sans-serif";
-        textContainer.style.fontSize = "14px";
-        textContainer.style.fontWeight = "700";
-        textContainer.style.color = "#475569";
-        textContainer.style.textTransform = "uppercase";
-        textContainer.style.letterSpacing = "0.5px";
-        textContainer.style.transition = "color 0.25s ease";
-
-        const parentLink = imageElement.parentNode;
-        parentLink.replaceChild(textContainer, imageElement);
-    }
-</script>
     <script src="./src/js/analytics-consent.js"></script>
 </body>
 </html>
