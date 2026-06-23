@@ -16,7 +16,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="./src/css/estilos.css">
     <style>
         * {
             box-sizing: border-box;
@@ -722,44 +721,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
-    <header class="site-header">
-      <div class="topbar" aria-label="Información de contacto">
-        <div class="container topbar__inner">
-          <address class="topbar__contact">
-            <a href="https://www.google.com/maps/search/?api=1&query=Av.%20Alfred%20Nobel%2C%202%2C%20Ciudad%20Real">Av. Alfred Nobel, 2, Ciudad Real</a>
-            <a href="tel:+34926221217">926 221 217</a>
-            <a href="mailto:correo@orenciomatas.es">correo@orenciomatas.es</a>
-            <span>Lun a Vie: 9:00-14:00 | 16:30-19:30 • Sáb: 9:00-13:00</span>
-          </address>
-          <nav class="topbar__social" aria-label="Redes sociales">
-            <a href="https://www.instagram.com/orenciomatas/" aria-label="Instagram de Orencio Matas">Instagram</a>
-          </nav>
-        </div>
-      </div>
-      <div class="navbar" data-navbar>
-        <div class="container navbar__inner">
-          <a class="navbar__logo" href="index.html" aria-label="Ir al inicio">
-            <img class="navbar__logo-image" src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
-          </a>
-          <button class="navbar__toggle" type="button" aria-label="Abrir menú de navegación" aria-controls="main-navigation" aria-expanded="false" data-menu-toggle>
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-          <nav class="navbar__nav" id="main-navigation" aria-label="Navegación principal" data-mobile-menu>
-            <ul class="navbar__menu">
-              <li><a href="index.html">Inicio</a></li>
-              <li><a href="empresa.html">Empresa</a></li>
-              <li><a href="historia.html">Historia</a></li>
-              <li><a href="productos.html">Productos</a></li>
-              <li><a href="servicios.html">Servicios</a></li>
-              <li><a href="actualidad.html">Actualidad</a></li>
-              <li><a href="index.html#contacto">Contacto</a></li>
-            </ul>
-            <a class="btn-primary navbar__cta" href="index.html#contacto">CONTACTAR</a>
-          </nav>
-        </div>
-      </div>
+    <header class="main-header">
+        <nav class="header-container" aria-label="Navegación principal">
+            <a href="index.html" class="btn-back-home">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Inicio
+            </a>
+
+            <div class="nav-menu">
+                <a href="index.html">Inicio</a>
+                
+                <a href="empresa.html">Empresa</a>
+                <a href="historia.html">Historia</a>
+                <a href="productos.html">Productos</a>
+                <a href="servicios.html">Servicios</a>
+                <a href="actualidad.html">Actualidad</a>
+                <a href="index.html#contacto">Contacto</a>
+            </div>
+
+            <a class="logo-container" href="index.html" aria-label="Volver al inicio">
+                <img src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L.">
+            </a>
+        </nav>
     </header>
 
     <main>
@@ -983,24 +965,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             }
         });
     </script>
-    <script src="./src/js/app.js"></script>
     <script src="./src/js/analytics-consent.js"></script>
-
-    <footer class="site-footer">
-        <div class="site-footer__inner">
-            <a href="index.html" aria-label="Volver al inicio">
-                <img src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L.">
-            </a>
-            <nav aria-label="Navegación del footer">
-                <a href="index.html">Inicio</a>
-                <a href="empresa.html">Empresa</a>
-                <a href="historia.html">Historia</a>
-                <a href="productos.html">Productos</a>
-                <a href="servicios.html">Servicios</a>
-                <a href="actualidad.html">Actualidad</a>
-                <a href="index.html#contacto">Contacto</a>
-            </nav>
-        </div>
-    </footer>
 </body>
 </html>
