@@ -114,6 +114,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             overflow: hidden;
         }
 
+        .slide-container:first-of-type {
+            margin-top: 0;
+        }
+
         /* BARRA DE COLOR CORPORATIVA */
         .slide-container::before {
             background: linear-gradient(90deg, #D32F2F 0%, #D32F2F 25%, #1976D2 25%, #1976D2 50%, #388E3C 50%, #388E3C 75%, #FBC02D 75%);
@@ -455,14 +459,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 
-    <header class="navbar-wrapper">
+        <header class="navbar-wrapper">
       <div class="navbar__inner">
         <a class="navbar__logo" href="index.html" aria-label="Ir al inicio">
           <img class="navbar__logo-image" src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
         </a>
-        <button class="navbar__toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
         <nav class="navbar__nav" aria-label="Navegación principal">
           <ul class="navbar__menu">
             <li><a href="index.html">Inicio</a></li>
@@ -475,6 +476,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </ul>
           <a class="navbar__cta" href="index.html#contacto">CONTACTAR</a>
         </nav>
+        <button class="navbar__toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
 

@@ -70,6 +70,11 @@
 
 .navbar__menu li {
   font-size: 0.94rem !important;
+  line-height: normal !important;
+}
+
+.navbar__menu a {
+  font-size: 0.94rem !important;
 }
 
 .navbar__menu a {
