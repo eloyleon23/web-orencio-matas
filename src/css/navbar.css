@@ -11,6 +11,11 @@
   --container-max-width: 1200px;
 }
 
+.container {
+  width: min(100% - 40px, var(--container-max-width));
+  margin-inline: auto;
+}
+
 .navbar-wrapper {
   position: sticky;
   top: 0;
