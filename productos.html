@@ -449,33 +449,68 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
 
         @media (max-width: 768px) {
-            .main-header {
+                        .main-header {
                 height: 65px;
             }
 
             .header-container {
                 width: 100%;
+                max-width: 100%;
                 padding: 0 15px;
             }
 
-            .nav-menu {
-                display: none !important;
-            }
-
             .btn-back-home {
-                padding: 8px 12px;
-                font-size: 11px;
+                display: none;
             }
 
             .logo-container {
-                position: absolute;
-                right: 15px;
-                top: 50%;
-                transform: translateY(-50%);
+                position: static !important;
+                transform: none !important;
+                order: -1;
             }
 
             .logo-container img {
                 height: 38px;
+            }
+
+            .nav-toggle {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 5px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 8px;
+                margin-left: auto;
+            }
+
+            .nav-toggle span {
+                display: block;
+                width: 24px;
+                height: 2px;
+                background: #1a1a1a;
+                border-radius: 2px;
+                transition: all 0.3s ease;
+            }
+
+            .nav-menu {
+                display: none !important;
+                flex-direction: column !important;
+                position: absolute;
+                top: 65px;
+                left: 0;
+                right: 0;
+                background: white;
+                border-bottom: 1px solid #e2e8f0;
+                padding: 16px 20px;
+                gap: 14px !important;
+                z-index: 100;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            }
+
+            .nav-menu.open {
+                display: flex !important;
             }
 
             .hero,
@@ -656,5 +691,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
     </footer>
     <script src="./src/js/analytics-consent.js"></script>
+    <script>
+        (function() {
+            var toggle = document.getElementById('nav-toggle');
+            var menu = document.querySelector('.nav-menu');
+            if (toggle && menu) {
+                toggle.addEventListener('click', function() {
+                    menu.classList.toggle('open');
+                    toggle.setAttribute('aria-expanded', menu.classList.contains('open'));
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
