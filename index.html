@@ -440,10 +440,49 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 btn.disabled = true;
                 btn.textContent = 'ENVIANDO...';
 
-                var cuerpo = '<p><strong>Nombre:</strong> ' + nombre + '</p>' +
-                  (telefono ? '<p><strong>Teléfono:</strong> ' + telefono + '</p>' : '') +
-                  '<p><strong>Email:</strong> ' + email + '</p>' +
-                  '<p><strong>Mensaje:</strong><br>' + mensaje.replace(/\n/g, '<br>') + '</p>';
+                var logoUrl = 'https://eloyleon23.github.io/web-orencio-matas/assets/logos/logo-orencio.png';
+                var logoCalUrl = 'https://eloyleon23.github.io/web-orencio-matas/assets/logos/logo_calidad.svg';
+
+                var cuerpo = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f0f0f0;font-family:Arial,sans-serif;">' +
+                  '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f0f0;padding:20px 0;">' +
+                  '<tr><td align="center">' +
+                  '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">' +
+
+                  // Cabecera negra
+                  '<tr><td style="background:#1a1a1a;padding:20px;text-align:center;">' +
+                  '<img src="' + logoUrl + '" alt="Orencio Matas y Hnos" style="height:44px;width:auto;" />' +
+                  '</td></tr>' +
+
+                  // Franja roja
+                  '<tr><td style="background:#d91b1b;height:5px;font-size:0;">&nbsp;</td></tr>' +
+
+                  // Cuerpo
+                  '<tr><td style="background:#ffffff;padding:32px;">' +
+                  '<h2 style="margin:0 0 6px;font-size:18px;color:#1a1a1a;">&#128236; Nueva consulta desde la web</h2>' +
+                  '<p style="margin:0 0 20px;font-size:11px;color:#888888;">Has recibido un nuevo mensaje a través del formulario de contacto de orenciomatas.es</p>' +
+                  '<hr style="border:none;border-top:1px solid #e0e0e0;margin:0 0 16px;" />' +
+
+                  '<table width="100%" cellpadding="0" cellspacing="0">' +
+                  '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;width:100px;">Nombre</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombre + '</td></tr>' +
+                  (telefono ? '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Teléfono</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + telefono + '</td></tr>' : '') +
+                  '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Email</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + email + '</td></tr>' +
+                  '<tr><td style="padding:8px 0;color:#888;font-size:11px;vertical-align:top;">Mensaje</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;">' + mensaje.replace(/\n/g, '<br>') + '</td></tr>' +
+                  '</table>' +
+                  '</td></tr>' +
+
+                  // Pie
+                  '<tr><td style="background:#f7f7f7;border-top:1px solid #e0e0e0;padding:14px 20px;">' +
+                  '<table cellpadding="0" cellspacing="0"><tr>' +
+                  '<td style="padding-right:14px;vertical-align:middle;">' +
+                  '<img src="' + logoCalUrl + '" alt="Logo calidad" style="height:44px;width:auto;" />' +
+                  '</td>' +
+                  '<td style="vertical-align:middle;font-size:10px;color:#888;line-height:1.6;">Orencio Matas y Hermanos, S.L.<br>orenciomatas.es · 926 221 217</td>' +
+                  '</tr></table>' +
+                  '</td></tr>' +
+
+                  '</table>' +
+                  '</td></tr></table>' +
+                  '</body></html>';
 
                 fetch('https://api.brevo.com/v3/smtp/email', {
                   method: 'POST',
@@ -453,9 +492,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   },
                   body: JSON.stringify({
                     sender: { name: nombre, email: 'eloyleon23@gmail.com' },
-                    to: [{ email: 'correo@orenciomatas.es', name: 'Orencio Matas y Hnos' }],
+                    to: [{ email: 'eloyleon23@gmail.com', name: 'Eloy León' }],
                     replyTo: { email: email, name: nombre },
-                    subject: 'Nuevo mensaje de contacto web - ' + nombre,
+                    subject: 'Consulta recibida a través del formulario web — Orencio Matas y Hermanos',
                     htmlContent: cuerpo
                   })
                 })
