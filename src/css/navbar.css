@@ -16,6 +16,12 @@
   margin-inline: auto;
 }
 
+@media (max-width: 767px) {
+  .container {
+    width: min(100% - 32px, var(--container-max-width));
+  }
+}
+
 .navbar-wrapper {
   position: sticky;
   top: 0;
