@@ -748,6 +748,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             .site-footer__inner { flex-direction: column; text-align: center; }
             .site-footer nav { justify-content: center; }
         }
+
+        /* Grid marcas responsive */
+        .marcas-grid { grid-template-columns: repeat(6, 1fr) !important; }
+        @media (max-width: 900px) {
+            .marcas-grid { grid-template-columns: repeat(4, 1fr) !important; }
+        }
+        @media (max-width: 576px) {
+            .marcas-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .marcas-grid > div img { max-height: 50px !important; }
+        }
     </style>
     <link rel="stylesheet" href="./src/css/navbar.css" />
 </head>
@@ -935,7 +945,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <h2 id="marcas-title">Principales Marcas y Partners</h2>
                 <div class="installations-intro"><p style="color:#475569; font-size:18px; margin-top:16px;">Trabajamos con los fabricantes más reconocidos para garantizar la máxima calidad en cada suministro.</p></div>
                 <div class="facility-carousel">
-                    <div class="carousel-container" style="display:grid; grid-template-columns:repeat(6,1fr); gap:16px; overflow:visible; flex-wrap:wrap;">
+                    <div class="carousel-container marcas-grid" style="display:grid; grid-template-columns:repeat(6,1fr); gap:16px; overflow:visible; flex-wrap:wrap;">
                         <div class="subtle-paint-bg" style="padding:16px; display:flex; align-items:center; justify-content:center; min-height:70px; border-radius:8px;"><img src="assets/marcas/logo_sika.png" alt="Sika" loading="lazy" style="max-height:40px; max-width:100%; object-fit:contain;"></div>
                         <div class="subtle-paint-bg" style="padding:16px; display:flex; align-items:center; justify-content:center; min-height:70px; border-radius:8px;"><img src="assets/marcas/logo_akzonobel.png" alt="AkzoNobel" loading="lazy" style="max-height:40px; max-width:100%; object-fit:contain;"></div>
                         <div class="subtle-paint-bg" style="padding:16px; display:flex; align-items:center; justify-content:center; min-height:70px; border-radius:8px;"><img src="assets/marcas/logo_baixens.jpg" alt="Baixens" loading="lazy" style="max-height:40px; max-width:100%; object-fit:contain;"></div>
