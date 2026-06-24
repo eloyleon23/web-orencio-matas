@@ -18,472 +18,386 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <style>
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
         }
 
         body {
+            margin: 0;
             background-color: #f8fafc;
+            color: #1e293b;
             font-family: 'Open Sans', sans-serif;
-            color: #475569;
-            padding-top: 0;
+            line-height: 1.7;
+            overflow-x: clip;
         }
 
-        /* --- CABECERA COMÚN PÁGINAS INTERNAS --- */
-        .main-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 90px;
-            background-color: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            z-index: 1000;
-        }
+        a { color: inherit; }
 
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
+        /* LAYOUT */
+        .page-content {
+            max-width: 1180px;
             margin: 0 auto;
-            padding: 0 40px;
-            height: 100%;
-            position: relative;
+            padding: 0 24px;
         }
 
-        .btn-back-home {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background-color: #ffffff;
-            color: #1e293b;
-            text-decoration: none;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            padding: 10px 16px;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-            transition: all 0.2s ease;
+        /* HERO */
+        .section-hero {
+            background: linear-gradient(135deg, #1e293b 0%, #111827 100%);
+            color: #ffffff;
+            padding: 80px 24px;
+            text-align: center;
         }
 
-        .btn-back-home:hover {
-            background-color: #f8fafc;
-            transform: translateX(-3px);
-        }
-
-        .btn-back-home i {
-            color: #D32F2F;
-        }
-
-        .nav-menu {
-            display: flex;
-            align-items: center;
-            gap: 25px;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-        }
-
-        .logo-container img {
-            height: 50px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        /* CONTENEDOR DE CADA DIAPOSITIVA (AHORA FLUIDO) */
-        .slide-container {
-            background-color: #ffffff;
-            width: 100%;
-            max-width: 1200px; /* Se adapta a pantallas grandes sin romperse */
-            min-height: auto;
-            margin: 40px auto;
-            padding: 60px 40px;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .slide-container:first-of-type {
-            margin-top: 0;
-        }
-
-        /* BARRA DE COLOR CORPORATIVA */
-        .slide-container::before {
-            background: linear-gradient(90deg, #D32F2F 0%, #D32F2F 25%, #1976D2 25%, #1976D2 50%, #388E3C 50%, #388E3C 75%, #FBC02D 75%);
-            content: '';
-            height: 5px;
-            left: 0;
-            position: absolute;
-            top: 0;
-            width: 100%;
-        }
-
-        /* LOGOTIPO ADAPTABLE */
-        .slide-logo {
-            height: 50px;
-            margin-bottom: 30px;
-            text-align: right;
-            width: 100%;
-        }
-        .slide-logo img {
-            height: 100%;
-            max-width: 100%;
-            object-fit: contain;
-        }
-
-        /* TIPOGRAFÍAS ADAPTABLES CON EM/REM */
-        h1, h2, h3 {
-            color: #1e293b;
-            font-family: 'Montserrat', sans-serif;
-            text-transform: uppercase;
-        }
-        h1 { font-size: 2.8rem; line-height: 1.2; font-weight: 700; margin-bottom: 20px; }
-        h2 { font-size: 2.2rem; font-weight: 700; }
-        h3 { color: #1976D2; font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; }
-        p, .content-area li { font-size: 1.15rem; line-height: 1.6; }
-
-        .slide-title {
-            border-left: 8px solid #D32F2F;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 35px;
-            padding-left: 15px;
-            width: 100%;
-        }
-
-        .content-area {
-            width: 100%;
-        }
-
-        /* LAYOUTS RESPONSIVE (De columnas a filas en móvil) */
-        .title-layout {
-            padding-top: 40px;
-        }
-        .title-layout .subtitle {
-            border-top: 1px solid #e2e8f0;
-            color: #64748b;
+        .section-hero .badge {
             display: inline-block;
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-top: 20px;
-            padding-top: 15px;
-        }
-
-        .section-title-layout {
-            text-align: center;
-            padding: 40px 0;
-        }
-        .section-title-layout hr {
-            background-color: #D32F2F;
-            border: none;
-            height: 6px;
-            margin: 20px auto;
-            width: 80px;
-        }
-
-        .tiled-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            width: 100%;
-        }
-        .tile {
-            background-color: #f8fafc;
-            border-bottom: 5px solid #1976D2;
-            border-radius: 10px;
-            padding: 35px 25px;
-            text-align: center;
-        }
-        .tile .icon { color: #D32F2F; font-size: 45px; margin-bottom: 20px; }
-
-        .badge-centenary {
-            display: inline-flex;
-            width: fit-content;
-            margin: 0 0 22px;
-            padding: 9px 14px;
-            border: 1px solid rgba(241, 179, 0, 0.34);
-            border-radius: 999px;
-            color: #9a6a00;
-            background: rgba(241, 179, 0, 0.12);
+            background: rgba(217,27,27,0.15);
+            color: #f87171;
+            border: 1px solid rgba(217,27,27,0.3);
+            border-radius: 99px;
+            padding: 6px 18px;
             font-family: 'Montserrat', sans-serif;
             font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.12em;
+            font-weight: 700;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
+            margin-bottom: 24px;
         }
 
-        .subtle-paint-bg {
-            position: relative;
-            background: linear-gradient(45deg, #ffffff, #e0f2fe, #dcfce7, #fef9c3);
-            background-size: 300% 300%;
-            animation: gradientServicios 8s ease-in-out infinite;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .subtle-paint-bg:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        }
-
-        @keyframes gradientServicios {
-            0% { background-position: 100% 50%; }
-            50% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-
-        .two-column, .bleed-image-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            align-items: center;
-            width: 100%;
-        }
-        .bleed-image-layout .content-container { padding: 0; }
-
-        .image-wrapper, .image-container {
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            height: 380px;
-            overflow: hidden;
-            width: 100%;
-        }
-        .image-wrapper img, img.bleed-image-side {
-            height: 100%;
-            width: 100%;
-            object-fit: cover;
-        }
-
-        .highlight-numbers-layout {
-            display: flex;
-            align-items: center;
-            gap: 40px;
-            flex-wrap: wrap;
-        }
-        .highlight-numbers-layout .number { color: #D32F2F; font-size: 7rem; font-weight: 700; line-height: 1; }
-        .highlight-numbers-layout .number-label { font-size: 1.6rem; font-weight: 700; }
-
-        /* GRÁFICO Y TABLAS */
-        .doughnut-chart-container {
-            display: flex;
-            align-items: center;
-            gap: 50px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .doughnut-chart { border-radius: 50%; height: 280px; width: 280px; flex-shrink: 0; }
-        .legend { display: flex; flex-direction: column; gap: 15px; list-style: none; }
-        .legend li { display: flex; align-items: center; font-size: 1.1rem; font-weight: 600; }
-        .legend .color-box { border-radius: 4px; height: 20px; margin-right: 12px; width: 20px; flex-shrink: 0; }
-
-        .table-responsive { width: 100%; overflow-x: auto; }
-        table { border-collapse: collapse; width: 100%; min-width: 600px; }
-        th, td { border-bottom: 1px solid #e2e8f0; padding: 15px; text-align: left; }
-        th { background-color: #f8fafc; font-size: 1.1rem; font-weight: 700; }
-
-        .qa-layout { text-align: center; }
-        .contact-info { display: flex; gap: 25px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
-        .contact-item { background-color: #f8fafc; border-radius: 10px; padding: 25px; width: 100%; max-width: 380px; margin: 0 auto; word-break: normal; overflow-wrap: break-word; }
-        .contact-item i { color: #1976D2; font-size: 35px; margin-bottom: 12px; }
-
-
-        .providers-section {
-            width: 100%;
-            margin-top: 50px;
-            padding-top: 20px;
-        }
-
-        .providers-grid {
-            display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
-            gap: 16px;
-            width: 100%;
-        }
-
-        .provider-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 96px;
-            min-width: 0;
-            padding: 16px;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            background-color: #ffffff;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-        }
-
-        .provider-item img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            max-width: 140px;
-            object-fit: contain;
-            filter: none;
-            opacity: 1;
-        }
-
-        .provider-item:hover {
-            border-color: #1976D2;
-            transform: translateY(-3px);
-            box-shadow: 0 14px 30px rgba(25, 118, 210, 0.12);
-        }
-
-        @media (max-width: 1200px) {
-            .providers-grid {
-                grid-template-columns: repeat(5, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 992px) {
-            .providers-grid {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 768px) {
-            .providers-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 12px;
-            }
-
-            .provider-item {
-                height: 86px;
-                padding: 12px;
-            }
-        }
-
-        /* CRONOLOGÍA HORIZONTAL/VERTICAL */
-        .timeline-wrapper { display: flex; justify-content: space-between; gap: 20px; padding: 20px 0; position: relative; }
-        .timeline-item { text-align: center; flex: 1; background: #fff; z-index: 1; }
-        .timeline-dot { width: 16px; height: 16px; background-color: #1976D2; border-radius: 50%; margin: 0 auto 15px; }
-
-        /* 📱 RESPONSIVE MEDIA QUERIES (MÓVILES Y TABLETS) */
-        @media (max-width: 992px) {
-            .two-column, .bleed-image-layout {
-                grid-template-columns: 1fr; /* Pasa a una sola columna */
-                gap: 30px;
-            }
-            .bleed-image-layout {
-                display: flex;
-                flex-direction: column;
-            }
-            .slide-logo {
-                text-align: left; /* El logo se alinea mejor en móviles */
-                margin-top: 40px;
-            }
-            .timeline-wrapper {
-                flex-direction: column; /* Cronología de arriba a abajo */
-                align-items: flex-start;
-                gap: 30px;
-                padding-left: 20px;
-            }
-            .timeline-item { text-align: left; display: flex; gap: 15px; align-items: flex-start; }
-            .timeline-dot { margin: 5px 0 0 0; }
-        }
-
-        @media (max-width: 768px) {
-            .main-header {
-                height: 65px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            }
-
-            .header-container {
-                padding: 0 15px;
-            }
-
-            .nav-menu {
-                display: none !important;
-            }
-
-            .btn-back-home {
-                padding: 8px 12px;
-                font-size: 11px;
-            }
-
-            .logo-container {
-                position: absolute;
-                right: 15px;
-                top: 50%;
-                transform: translateY(-50%);
-            }
-
-            .logo-container img {
-                height: 38px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .providers-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 10px;
-            }
-
-            .provider-item {
-                height: 78px;
-                padding: 10px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            body { padding: 0; }
-            .slide-container { padding: 40px 20px; margin: 15px auto; width: 95%; }
-            h1 { font-size: 2rem; }
-            h2 { font-size: 1.7rem; }
-            .slide-title { font-size: 1.5rem; }
-            .highlight-numbers-layout .number { font-size: 4.5rem; }
-            .highlight-numbers-layout .number-label { font-size: 1.2rem; }
-            .contact-item h3 { font-size: 1.15rem; overflow-wrap: break-word; }
-        }
-
-        /* === PIE DE PÁGINA === */
-        .site-footer {
-            padding: 34px 24px;
-            background: #111827;
+        .section-hero h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin: 0 0 16px;
             color: #ffffff;
         }
-        .site-footer__inner {
-            width: min(100%, 1180px);
+
+        .section-hero .subtitle {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        /* SECCIONES */
+        .section {
+            padding: 72px 24px;
+        }
+
+        .section--alt {
+            background: #ffffff;
+        }
+
+        .section__inner {
+            max-width: 1180px;
             margin: 0 auto;
+        }
+
+        .section__eyebrow {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #d91b1b;
+            margin-bottom: 12px;
+        }
+
+        .section__title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0 0 16px;
+            line-height: 1.2;
+        }
+
+        .section__lead {
+            font-size: 1.05rem;
+            color: #64748b;
+            max-width: 680px;
+            margin: 0 0 48px;
+            line-height: 1.7;
+        }
+
+        /* CARDS DE 3 COLUMNAS */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 32px 28px;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            transform: translateY(-3px);
+        }
+
+        .card__icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: #fef2f2;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 28px;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: #d91b1b;
         }
-        .site-footer img {
-            width: 170px;
-            height: auto;
-            filter: brightness(0) invert(1);
-        }
-        .site-footer nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
+
+        .card h3 {
             font-family: 'Montserrat', sans-serif;
-            font-size: 13px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 10px;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.65;
+        }
+
+        /* DOS COLUMNAS */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .two-col img {
+            width: 100%;
+            border-radius: 12px;
+            object-fit: cover;
+            max-height: 340px;
+        }
+
+        .two-col h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 14px;
+        }
+
+        .two-col p {
+            font-size: 0.95rem;
+            color: #64748b;
+            margin: 0 0 14px;
+            line-height: 1.7;
+        }
+
+        /* NÚMERO DESTACADO */
+        .stat-block {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 32px;
+        }
+
+        .stat-block .number {
+            font-family: 'Montserrat', sans-serif;
+            font-size: clamp(3rem, 6vw, 4.5rem);
             font-weight: 800;
-            text-transform: uppercase;
+            color: #d91b1b;
+            line-height: 1;
+            white-space: nowrap;
         }
-        .site-footer a { color: #ffffff; text-decoration: none; }
-        @media (max-width: 768px) {
-            .site-footer__inner { flex-direction: column; text-align: center; }
-            .site-footer nav { justify-content: center; }
+
+        .stat-block .label {
+            font-size: 1.05rem;
+            color: #1e293b;
+            font-weight: 600;
+            line-height: 1.5;
         }
+
+        .stat-block p {
+            font-size: 0.95rem;
+            color: #64748b;
+            margin: 8px 0 0;
+            line-height: 1.6;
+        }
+
+        /* TABLA */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead { background: #1e293b; color: #ffffff; }
+        th { padding: 14px 20px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #f8fafc; }
+
+        /* LISTA DE VENTAJAS */
+        .check-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .check-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .check-list li i {
+            color: #16a34a;
+            font-size: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .check-list li strong { color: #1e293b; }
+
+        /* TIMELINE */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            border-left: 2px solid #e2e8f0;
+            padding-left: 28px;
+            margin-left: 8px;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 36px;
+        }
+
+        .timeline-item:last-child { padding-bottom: 0; }
+
+        .timeline-dot {
+            position: absolute;
+            left: -36px;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #d91b1b;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 2px #d91b1b;
+        }
+
+        .timeline-item h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0 0 6px;
+        }
+
+        .timeline-item p {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        /* CONTACTO */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .contact-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 36px;
+            text-align: center;
+        }
+
+        .contact-card i {
+            font-size: 32px;
+            color: #d91b1b;
+            margin-bottom: 14px;
+        }
+
+        .contact-card h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        /* MARCAS GRID */
+        .brands-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+        }
+
+        .brand-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .brand-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+        .brand-item img {
+            max-height: 40px;
+            max-width: 100%;
+            width: auto;
+            object-fit: contain;
+            filter: grayscale(30%);
+            transition: filter 0.2s ease;
+        }
+
+        .brand-item:hover img { filter: grayscale(0%); }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .cards-grid { grid-template-columns: 1fr 1fr; }
+            .brands-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .section { padding: 48px 20px; }
+            .cards-grid { grid-template-columns: 1fr; }
+            .two-col { grid-template-columns: 1fr; gap: 28px; }
+            .two-col img { max-height: 220px; }
+            .contact-grid { grid-template-columns: 1fr; }
+            .brands-grid { grid-template-columns: repeat(3, 1fr); }
+            .stat-block { flex-direction: column; text-align: center; padding: 28px; }
+            .table-wrap { font-size: 0.82rem; }
+            th, td { padding: 10px 14px; }
+        }
+
     </style>
     <link rel="stylesheet" href="./src/css/navbar.css" />
 </head>
@@ -516,295 +430,202 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
     </header>
 
-<div class="slide-container" id="slide1">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
-    </div>
-    <div class="content-area title-layout">
-        <span class="badge-centenary">Desde 1919 • Más de un siglo de tradición industrial</span>
-        <h1>Servicios de<br>Distribución Profesional</h1>
-        <p class="subtitle">Suministro Integral • Pinturas de Carrocería • Droguería Industrial</p>
-    </div>
-</div>
 
-<div class="slide-container" id="slide2">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
-    </div>
-    <div class="content-area section-title-layout">
-        <hr>
-        <h2>Líneas de Negocio</h2>
-        <p>Dividimos nuestra actividad en tres áreas clave para garantizar la excelencia en el servicio técnico y comercial.</p>
-    </div>
-</div>
+<!-- HERO -->
+<section class="section-hero">
+  <div class="page-content">
+    <div class="badge">Desde 1919 · Más de un siglo de tradición industrial</div>
+    <h1>Servicios de Distribución Profesional</h1>
+    <p class="subtitle">Suministro Integral · Pinturas de Carrocería · Droguería Industrial</p>
+  </div>
+</section>
 
-<div class="slide-container" id="slide3">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
+<!-- LÍNEAS DE NEGOCIO -->
+<section class="section">
+  <div class="section__inner">
+    <p class="section__eyebrow">Lo que hacemos</p>
+    <h2 class="section__title">Líneas de Negocio</h2>
+    <p class="section__lead">Dividimos nuestra actividad en tres áreas clave para garantizar la excelencia en el servicio técnico y comercial.</p>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card__icon"><i class="fa-solid fa-pump-soap"></i></div>
+        <h3>Droguería e Higiene</h3>
+        <p>Distribución mayorista de productos de limpieza profesional, perfumería y consumibles industriales para empresas, colectividades y retail.</p>
+      </div>
+      <div class="card">
+        <div class="card__icon"><i class="fa-solid fa-paint-roller"></i></div>
+        <h3>Pinturas y Carrocería</h3>
+        <p>Sistemas de repintado de alta precisión y anexos para talleres. Especialistas en colorimetría, preparación de superficies y acabado profesional.</p>
+      </div>
+      <div class="card">
+        <div class="card__icon"><i class="fa-solid fa-toolbox"></i></div>
+        <h3>Maquinaria y Taller</h3>
+        <p>Equipamiento técnico, herramientas y suministros específicos para optimizar la actividad diaria de la industria y talleres mecánicos.</p>
+      </div>
     </div>
-    <h2 class="slide-title">Especialización Técnica</h2>
-    <div class="content-area">
-        <div class="tiled-content">
-            <div class="tile subtle-paint-bg">
-                <div class="icon"><i class="fa-solid fa-pump-soap"></i></div>
-                <h3>Droguería e Higiene</h3>
-                <p>Distribución mayorista de productos de limpieza profesional, perfumería y consumibles industriales para empresas, colectividades y retail.</p>
-            </div>
-            <div class="tile subtle-paint-bg">
-                <div class="icon"><i class="fa-solid fa-paint-roller"></i></div>
-                <h3>Pinturas y Carrocería</h3>
-                <p>Sistemas de repintado de alta precisión y anexos para talleres. Especialistas en colorimetría, preparación de superficies y acabado profesional.</p>
-            </div>
-            <div class="tile subtle-paint-bg">
-                <div class="icon"><i class="fa-solid fa-toolbox"></i></div>
-                <h3>Maquinaria y Taller</h3>
-                <p>Equipamiento técnico, herramientas y suministros específicos para optimizar la actividad diaria de la industria y talleres mecánicos.</p>
-            </div>
-        </div>
-    </div>
-</div>
+  </div>
+</section>
 
-<div class="slide-container" id="slide4">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
+<!-- INSTALACIONES -->
+<section class="section section--alt">
+  <div class="section__inner">
+    <p class="section__eyebrow">Infraestructura</p>
+    <h2 class="section__title">Instalaciones Logísticas</h2>
+    <div class="two-col">
+      <div>
+        <h3>Nave Industrial</h3>
+        <p>Nuestra sede central está diseñada para optimizar los flujos de recepción y expedición de mercancías, asegurando una gestión de stock continua.</p>
+        <p>Esta capacidad de almacenamiento interno nos permite responder con la máxima rapidez a los pedidos, evitando paradas en vuestra actividad.</p>
+        <h3 style="margin-top:28px;">Distribución Directa</h3>
+        <p>Contamos con rutas organizadas y vehículos preparados para asegurar el suministro de consumibles directamente en tus instalaciones.</p>
+      </div>
+      <img src="assets/fotos/Exteriores/79eb7592-f33f-41f4-96b3-1aaf5e54f28e.JPG" alt="Instalaciones Orencio Matas" />
     </div>
-    <h2 class="slide-title">Instalaciones Logísticas</h2>
-    <div class="content-area">
-        <div class="two-column">
-            <div class="subtle-paint-bg">
-                <h3>Nave Industrial</h3>
-                <p>Nuestra sede central está diseñada para optimizar los flujos de recepción y expedición de mercancías, asegurando una gestión de stock continua.</p>
-                <p>Esta capacidad de almacenamiento interno nos permite responder con la máxima rapidez a los pedidos, evitando paradas en vuestra actividad.</p>
-            </div>
-            <div class="image-wrapper">
-                <img src="assets/fotos/Exteriores/79eb7592-f33f-41f4-96b3-1aaf5e54f28e.JPG" alt="Instalaciones modernas de Orencio Matas">
-            </div>
-        </div>
-    </div>
-</div>
+  </div>
+</section>
 
-<div class="slide-container bleed-image-layout" id="slide5">
-    <div class="content-container">
-        <div class="slide-logo" style="position: static; margin-bottom: 40px; height: 80px;">
-            <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
-        </div>
-        <h2 class="slide-title" style="border: none; padding: 0;">Compromiso Logístico</h2>
-        <div class="content-area subtle-paint-bg">
-            <h3>Distribución Directa</h3>
-            <p>Contamos con rutas organizadas y vehículos preparados para asegurar el suministro de consumibles directamente en tus instalaciones.</p>
-            <p>La solidez de nuestra nave es la base operativa idónea para garantizar la fiabilidad del servicio que vuestro negocio necesita.</p>
-        </div>
+<!-- TRAYECTORIA -->
+<section class="section">
+  <div class="section__inner">
+    <p class="section__eyebrow">Más de un siglo</p>
+    <h2 class="section__title">Trayectoria y Confianza</h2>
+    <div class="stat-block">
+      <div class="number">+100</div>
+      <div>
+        <div class="label">Años de Historia al Servicio del Profesional</div>
+        <p>Una trayectoria marcada por la adaptación a los nuevos mercados, la calidad del producto y un compromiso firme con cada cliente.</p>
+      </div>
     </div>
-    <div class="image-container">
-        <img class="bleed-image-side" src="assets/placeholders/image_3.png" alt="Fachada Nave Orencio Matas y Hnos">
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#d91b1b;box-shadow:0 0 0 2px #d91b1b;"></div>
+        <h3 style="color:#d91b1b;">Orígenes</h3>
+        <p>Fundación y primeros pasos en la distribución comercial del sector.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#1976D2;box-shadow:0 0 0 2px #1976D2;"></div>
+        <h3 style="color:#1976D2;">Consolidación</h3>
+        <p>Referencia indiscutible en droguería, higiene y gran consumo.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#16a34a;box-shadow:0 0 0 2px #16a34a;"></div>
+        <h3 style="color:#16a34a;">Especialización</h3>
+        <p>Líderes en suministro técnico para pintura de carrocería industrial.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#d97706;box-shadow:0 0 0 2px #d97706;"></div>
+        <h3 style="color:#d97706;">Vanguardia</h3>
+        <p>Nuevas instalaciones optimizadas y salto logístico de futuro.</p>
+      </div>
     </div>
-</div>
+  </div>
+</section>
 
-<div class="slide-container" id="slide6">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
+<!-- LÍNEAS DE SERVICIO -->
+<section class="section section--alt">
+  <div class="section__inner">
+    <p class="section__eyebrow">Catálogo</p>
+    <h2 class="section__title">Líneas de Servicio</h2>
+    <p class="section__lead">Cobertura integral para los sectores más exigentes del mercado profesional.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sector</th><th>Especialidad Comercial</th><th>Valor Añadido</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Automoción y Carrocería</td><td>Sistemas de repintado, barnices y anexos</td><td>Asesoramiento en color y optimización técnica.</td></tr>
+          <tr><td>Droguería Profesional</td><td>Higiene profesional y químicos</td><td>Grandes volúmenes con marcas líderes oficiales.</td></tr>
+          <tr><td>Maquinaria Técnica</td><td>Equipamiento y herramientas de taller</td><td>Soluciones duraderas para el profesional.</td></tr>
+          <tr><td>Perfumería y Gran Consumo</td><td>Cuidado personal y limpieza masiva</td><td>Catálogo extenso con respuesta logística inmediata.</td></tr>
+        </tbody>
+      </table>
     </div>
-    <h2 class="slide-title">Trayectoria y Confianza</h2>
-    <div class="content-area">
-        <div class="highlight-numbers-layout subtle-paint-bg">
-            <div class="number">+100</div>
-            <div class="number-label">Años de Historia<br>al Servicio del Profesional</div>
-        </div>
-        <p style="margin-top: 40px; font-size: 24px; font-weight: 600;">Una trayectoria marcada por la adaptación a los nuevos mercados, la calidad del producto y un compromiso firme con cada cliente.</p>
-    </div>
-</div>
+  </div>
+</section>
 
-<div class="slide-container" id="slide7">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
+<!-- VENTAJAS -->
+<section class="section">
+  <div class="section__inner">
+    <p class="section__eyebrow">Por qué elegirnos</p>
+    <h2 class="section__title">Ventajas Competitivas</h2>
+    <div class="two-col">
+      <ul class="check-list">
+        <li><i class="fa-solid fa-check"></i><span><strong>Stock Permanente:</strong> Disponibilidad asegurada en almacén de los productos críticos de uso diario.</span></li>
+        <li><i class="fa-solid fa-check"></i><span><strong>Marcas Oficiales:</strong> Acceso a los catálogos de proveedores líderes del mercado global.</span></li>
+        <li><i class="fa-solid fa-check"></i><span><strong>Atención Ágil:</strong> Rutas diseñadas eficientemente para acortar tiempos de entrega.</span></li>
+      </ul>
+      <img src="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9763.JPG" alt="Tienda de Droguería y Perfumería" />
     </div>
-    <h2 class="slide-title">Líneas de Servicio</h2>
-    <div class="content-area">
-        <div class="table-responsive">
-            <table>
-            <thead>
-                <tr>
-                    <th>Sector</th>
-                    <th>Especialidad Comercial</th>
-                    <th>Valor Añadido</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Automoción y Carrocería</td>
-                    <td>Sistemas de repintado, barnices y anexos</td>
-                    <td>Asesoramiento en color y optimización técnica.</td>
-                </tr>
-                <tr>
-                    <td>Droguería Profesional</td>
-                    <td>Higiene profesional y químicos</td>
-                    <td>Grandes volúmenes con marcas líderes oficiales.</td>
-                </tr>
-                <tr>
-                    <td>Maquinaria Técnica</td>
-                    <td>Equipamiento y herramientas de taller</td>
-                    <td>Soluciones duraderas para el profesional.</td>
-                </tr>
-                <tr>
-                    <td>Perfumería y Gran Consumo</td>
-                    <td>Cuidado personal y limpieza masiva</td>
-                    <td>Catálogo extenso con respuesta logística inmediata.</td>
-                </tr>
-            </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+  </div>
+</section>
 
-<div class="slide-container" id="slide9">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
+<!-- MARCAS -->
+<section class="section section--alt">
+  <div class="section__inner">
+    <p class="section__eyebrow">Partners</p>
+    <h2 class="section__title">Principales Marcas y Partners</h2>
+    <p class="section__lead">Trabajamos con los fabricantes más reconocidos para garantizar la máxima calidad en cada suministro.</p>
+    <div class="brands-grid">
+      <div class="brand-item"><img src="assets/marcas/logo_sika.png" alt="Sika" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_akzonobel.png" alt="AkzoNobel" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_baixens.jpg" alt="Baixens" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_pentrilo.png" alt="Pentrilo" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_nespoli.png" alt="Nespoli" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_mora.png" alt="Mora" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_thomil.png" alt="Thomil" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_vinfer.png" alt="Vinfer" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_caselli.jpg" alt="Caselli" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_ressol.jpg" alt="Ressol" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_jofel.png" alt="Jofel" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_losdi.jpg" alt="Losdi" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_renova.svg" alt="Renova" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_vijusa.png" alt="Vijusa" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_compo.png" alt="Compo" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_fairy.jpg" alt="Fairy" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_ariel.jpg" alt="Ariel" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_mimosin.jpg" alt="Mimosín" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_asevi.jpg" alt="Asevi" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_cif.jpg" alt="Cif" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_3m.png" alt="3M" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_vileda.jpg" alt="Vileda" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_masso.webp" alt="Massó" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_flower.png" alt="Flower" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_kelsia.webp" alt="Kelsia" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_babaria.webp" alt="Babaria" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_arrixaca.jpg" alt="Arrixaca" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logor_2castillas.jpg" alt="Saeclor" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_polmeros_del_valls.jpg" alt="Polímeros del Vallés" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_cisent.png" alt="Cisent" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_gomacamps.jpg" alt="Goma Camps" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_muropapel.jpg" alt="Muropapel" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_industrias_betik.jpg" alt="Industrias Betik" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_industrias_beter.jpg" alt="Industrias Beter" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_alvarezgomez.png" alt="Álvarez Gómez" loading="lazy"></div>
+      <div class="brand-item"><img src="assets/marcas/logo_elmilagrito.png" alt="El Milagrito" loading="lazy"></div>
     </div>
-    <h2 class="slide-title">Ventajas Competitivas</h2>
-    <div class="content-area">
-        <div class="two-column">
-            <div style="background-color: #f8fafc; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li style="margin-bottom: 25px; display: flex; align-items: flex-start; gap: 15px;">
-                        <i class="fa-solid fa-check" style="color: #388E3C; font-size: 24px; margin-top: 5px;"></i>
-                        <span><strong>Stock Permanente:</strong> Disponibilidad asegurada en almacén de los productos críticos de uso diario.</span>
-                    </li>
-                    <li style="margin-bottom: 25px; display: flex; align-items: flex-start; gap: 15px;">
-                        <i class="fa-solid fa-check" style="color: #388E3C; font-size: 24px; margin-top: 5px;"></i>
-                        <span><strong>Marcas Oficiales:</strong> Acceso a los catálogos de proveedores líderes del mercado global.</span>
-                    </li>
-                    <li style="margin-bottom: 0; display: flex; align-items: flex-start; gap: 15px;">
-                        <i class="fa-solid fa-check" style="color: #388E3C; font-size: 24px; margin-top: 5px;"></i>
-                        <span><strong>Atención Ágil:</strong> Rutas diseñadas eficientemente para acortar tiempos de entrega.</span>
-                    </li>
-                </ul>
-            </div>
-            <div class="image-wrapper">
-                <img src="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9763.JPG" alt="Expositor de Tienda de Droguería y Perfumería">
-            </div>
-        </div>
-    </div>
-</div>
+  </div>
+</section>
 
-<div class="slide-container" id="slide10">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
+<!-- CONTACTO -->
+<section class="section">
+  <div class="section__inner">
+    <p class="section__eyebrow">Contacto</p>
+    <h2 class="section__title">¿Hablamos?</h2>
+    <p class="section__lead">Contacta con nuestro equipo para abrir cuenta o consultar tarifas comerciales.</p>
+    <div class="contact-grid">
+      <div class="contact-card">
+        <i class="fa-solid fa-phone"></i>
+        <h3>926 221 217</h3>
+      </div>
+      <div class="contact-card">
+        <i class="fa-solid fa-envelope"></i>
+        <h3>correo@orenciomatas.es</h3>
+      </div>
     </div>
-    <h2 class="slide-title">Un Siglo de Evolución</h2>
-    <div class="content-area">
-        <div class="timeline-wrapper">
-        <div class="timeline-item">
-            <div class="timeline-dot" style="background-color: #D32F2F;"></div>
-            <div>
-                <h3 style="font-size: 20px; color: #D32F2F;">Orígenes</h3>
-                <p style="font-size: 16px;">Fundación y primeros pasos en la distribución comercial del sector.</p>
-            </div>
-        </div>
+  </div>
+</section>
 
-        <div class="timeline-item">
-            <div class="timeline-dot"></div>
-            <div>
-                <h3 style="font-size: 20px; color: #1976D2;">Consolidación</h3>
-                <p style="font-size: 16px;">Referencia indiscutible en droguería, higiene y gran consumo.</p>
-            </div>
-        </div>
 
-        <div class="timeline-item">
-            <div class="timeline-dot" style="background-color: #388E3C;"></div>
-            <div>
-                <h3 style="font-size: 20px; color: #388E3C;">Especialización</h3>
-                <p style="font-size: 16px;">Líderes en suministro técnico para pintura de carrocería industrial.</p>
-            </div>
-        </div>
-
-        <div class="timeline-item">
-            <div class="timeline-dot" style="background-color: #FBC02D;"></div>
-            <div>
-                <h3 style="font-size: 20px; color: #FBC02D;">Vanguardia</h3>
-                <p style="font-size: 16px;">Nuevas instalaciones optimizadas y salto logístico de futuro.</p>
-            </div>
-        </div>
-        </div>
-    </div>
-</div>
-
-<div class="slide-container" id="slide11">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
-    </div>
-    <div class="content-area section-title-layout">
-        <hr>
-        <h2>Compromiso con el Profesional</h2>
-        <p>Soluciones integrales de suministro y marcas de primer nivel diseñadas para respaldar tu negocio técnico.</p>
-    </div>
-</div>
-
-<div class="slide-container" id="slide-providers">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
-    </div>
-    <section class="providers-section">
-        <h2 class="slide-title" style="margin-left: 0;">Principales Marcas y Partners</h2>
-        <div class="providers-grid">
-            <div class="provider-item" aria-label="Sika"><img src="assets/marcas/logo_sika.png" alt="Sika" loading="lazy"></div>
-            <div class="provider-item" aria-label="AkzoNobel"><img src="assets/marcas/logo_akzonobel.png" alt="AkzoNobel" loading="lazy"></div>
-            <div class="provider-item" aria-label="Baixens"><img src="assets/marcas/logo_baixens.jpg" alt="Baixens" loading="lazy"></div>
-            <div class="provider-item" aria-label="Pentrilo"><img src="assets/marcas/logo_pentrilo.png" alt="Pentrilo" loading="lazy"></div>
-            <div class="provider-item" aria-label="Nespoli"><img src="assets/marcas/logo_nespoli.png" alt="Nespoli" loading="lazy"></div>
-            <div class="provider-item" aria-label="Mora"><img src="assets/marcas/logo_mora.png" alt="Mora" loading="lazy"></div>
-            <div class="provider-item" aria-label="Thomil"><img src="assets/marcas/logo_thomil.png" alt="Thomil" loading="lazy"></div>
-            <div class="provider-item" aria-label="Vinfer"><img src="assets/marcas/logo_vinfer.png" alt="Vinfer" loading="lazy"></div>
-            <div class="provider-item" aria-label="Caselli"><img src="assets/marcas/logo_caselli.jpg" alt="Caselli" loading="lazy"></div>
-            <div class="provider-item" aria-label="Ressol"><img src="assets/marcas/logo_ressol.jpg" alt="Ressol" loading="lazy"></div>
-            <div class="provider-item" aria-label="Jofel"><img src="assets/marcas/logo_jofel.png" alt="Jofel" loading="lazy"></div>
-            <div class="provider-item" aria-label="Losdi"><img src="assets/marcas/logo_losdi.jpg" alt="Losdi" loading="lazy"></div>
-            <div class="provider-item" aria-label="Renova"><img src="assets/marcas/logo_renova.svg" alt="Renova" loading="lazy"></div>
-            <div class="provider-item" aria-label="Vijusa"><img src="assets/marcas/logo_vijusa.png" alt="Vijusa" loading="lazy"></div>
-            <div class="provider-item" aria-label="Compo"><img src="assets/marcas/logo_compo.png" alt="Compo" loading="lazy"></div>
-            <div class="provider-item" aria-label="Fairy"><img src="assets/marcas/logo_fairy.jpg" alt="Fairy" loading="lazy"></div>
-            <div class="provider-item" aria-label="Ariel"><img src="assets/marcas/logo_ariel.jpg" alt="Ariel" loading="lazy"></div>
-            <div class="provider-item" aria-label="Mimosín"><img src="assets/marcas/logo_mimosin.jpg" alt="Mimosín" loading="lazy"></div>
-            <div class="provider-item" aria-label="Asevi"><img src="assets/marcas/logo_asevi.jpg" alt="Asevi" loading="lazy"></div>
-            <div class="provider-item" aria-label="Cif"><img src="assets/marcas/logo_cif.jpg" alt="Cif" loading="lazy"></div>
-            <div class="provider-item" aria-label="3M"><img src="assets/marcas/logo_3m.png" alt="3M" loading="lazy"></div>
-            <div class="provider-item" aria-label="Vileda"><img src="assets/marcas/logo_vileda.jpg" alt="Vileda" loading="lazy"></div>
-            <div class="provider-item" aria-label="Massó"><img src="assets/marcas/logo_masso.webp" alt="Massó" loading="lazy"></div>
-            <div class="provider-item" aria-label="Flower"><img src="assets/marcas/logo_flower.png" alt="Flower" loading="lazy"></div>
-            <div class="provider-item" aria-label="Kelsia"><img src="assets/marcas/logo_kelsia.webp" alt="Kelsia" loading="lazy"></div>
-            <div class="provider-item" aria-label="Babaria"><img src="assets/marcas/logo_babaria.webp" alt="Babaria" loading="lazy"></div>
-            <div class="provider-item" aria-label="Arrixaca"><img src="assets/marcas/logo_arrixaca.jpg" alt="Arrixaca" loading="lazy"></div>
-            <div class="provider-item" aria-label="Saeclor"><img src="assets/marcas/logor_2castillas.jpg" alt="Saeclor" loading="lazy"></div>
-            <div class="provider-item" aria-label="Polímeros del Vallés"><img src="assets/marcas/logo_polmeros_del_valls.jpg" alt="Polímeros del Vallés" loading="lazy"></div>
-            <div class="provider-item" aria-label="Cisent"><img src="assets/marcas/logo_cisent.png" alt="Cisent" loading="lazy"></div>
-            <div class="provider-item" aria-label="Goma Camps"><img src="assets/marcas/logo_gomacamps.jpg" alt="Goma Camps" loading="lazy"></div>
-            <div class="provider-item" aria-label="Muropapel"><img src="assets/marcas/logo_muropapel.jpg" alt="Muropapel" loading="lazy"></div>
-            <div class="provider-item" aria-label="Industrias Betik"><img src="assets/marcas/logo_industrias_betik.jpg" alt="Industrias Betik" loading="lazy"></div>
-            <div class="provider-item" aria-label="Industrias Beter"><img src="assets/marcas/logo_industrias_beter.jpg" alt="Industrias Beter" loading="lazy"></div>
-            <div class="provider-item" aria-label="Álvarez Gómez"><img src="assets/marcas/logo_alvarezgomez.png" alt="Álvarez Gómez" loading="lazy"></div>
-            <div class="provider-item" aria-label="El Milagrito"><img src="assets/marcas/logo_elmilagrito.png" alt="El Milagrito" loading="lazy"></div>
-        </div>
-    </section>
-</div>
-
-<div class="slide-container" id="slide12">
-    <div class="slide-logo">
-        <img src="assets/logos/logo-orencio.png" alt="Logo Orencio Matas y Hnos">
-    </div>
-    <div class="content-area qa-layout">
-        <h1>¿Hablamos?</h1>
-        <p style="font-size: 24px; margin-top: 10px;">Contacta con nuestro equipo para abrir cuenta o consultar tarifas comerciales.</p>
-        <div class="contact-info">
-            <div class="contact-item">
-                <i class="fa-solid fa-phone"></i>
-                <h3 style="margin-top: 10px; color: #1e293b;">926 221 217</h3>
-            </div>
-            <div class="contact-item">
-                <i class="fa-solid fa-envelope"></i>
-                <h3 style="margin-top: 10px; color: #1e293b; text-transform: lowercase;">correo@orenciomatas.es</h3>
-            </div>
-        </div>
-    </div>
-</div>
 
 
     <script src="./src/js/analytics-consent.js"></script>
