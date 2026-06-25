@@ -70,7 +70,6 @@ def descargar_imagen(drive_id, max_px=800):
     if not drive_id:
         return None
     try:
-        # URL de descarga directa de Drive
         url = f"https://drive.google.com/uc?export=download&id={drive_id}"
         resp = requests.get(url, timeout=20)
         if resp.status_code != 200:
@@ -84,6 +83,43 @@ def descargar_imagen(drive_id, max_px=800):
     except Exception as e:
         print(f"  ⚠ Error descargando {drive_id}: {e}")
         return None
+
+def añadir_etiqueta_oferta(img):
+    """Superpone una etiqueta roja 'Oferta' en la esquina superior izquierda."""
+    from PIL import ImageDraw, ImageFont
+    img = img.copy()
+    w, h = img.size
+    draw = ImageDraw.Draw(img)
+
+    # Dimensiones de la etiqueta: ~28% del ancho, ~12% del alto
+    tag_w = int(w * 0.28)
+    tag_h = int(h * 0.12)
+    margin = int(w * 0.03)
+
+    # Fondo rojo con esquinas redondeadas (simulado con rectángulo)
+    x1, y1 = margin, margin
+    x2, y2 = margin + tag_w, margin + tag_h
+
+    # Sombra suave
+    draw.rectangle([x1+2, y1+2, x2+2, y2+2], fill=(0, 0, 0, 80) if img.mode == 'RGBA' else (30, 30, 30))
+    # Etiqueta roja
+    draw.rectangle([x1, y1, x2, y2], fill=(211, 47, 47))
+
+    # Texto "OFERTA"
+    font_size = max(10, tag_h // 2)
+    try:
+        font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', font_size)
+    except:
+        font = ImageFont.load_default()
+
+    texto = 'OFERTA'
+    bbox = draw.textbbox((0, 0), texto, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    tx = x1 + (tag_w - tw) // 2
+    ty = y1 + (tag_h - th) // 2
+    draw.text((tx, ty), texto, fill='white', font=font)
+
+    return img
 
 # ── Convertir PIL a bytes JPEG ──────────────────────────────────────────────
 def pil_to_bytes(img):
@@ -174,6 +210,9 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
         pil = descargar_imagen(img_id) if img_id else None
         
         if pil:
+            es_oferta = p.get('oferta', '').lower().strip() in ('sí','si','yes','true','1','✓')
+            if es_oferta:
+                pil = añadir_etiqueta_oferta(pil)
             img_bytes = pil_to_bytes(pil)
             iw, ih = pil.size
             ratio = min(cel_w/iw, img_h/ih)
