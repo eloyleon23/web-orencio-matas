@@ -138,6 +138,32 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-weight: 600;
         }
 
+        .mobile-pdf-link {
+            display: none;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .btn-mobile-pdf {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--red);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-mobile-pdf:hover {
+            background: #c62828;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+        }
+
         .catalog-actions {
             text-align: center;
             margin-top: 24px;
@@ -172,6 +198,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 font-size: 1.5rem;
             }
 
+            .mobile-pdf-link {
+                display: block;
+            }
+
             .catalog-viewer {
                 height: 60vh;
                 min-height: 400px;
@@ -199,6 +229,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="catalog-header">
         <h1>Catálogo de Droguería Profesional</h1>
         <p>Productos técnicos para limpieza, higiene, mantenimiento y consumo diario</p>
+    </div>
+
+    <div class="mobile-pdf-link">
+        <a href="assets/productos/catalogo_drogueria_2025.pdf" target="_blank" class="btn-mobile-pdf">
+            <i class="fa-solid fa-external-link-alt"></i> Abrir catálogo en nueva pestaña
+        </a>
     </div>
 
     <div class="catalog-viewer">
