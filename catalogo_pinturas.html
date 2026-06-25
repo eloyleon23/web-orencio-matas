@@ -270,7 +270,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 const asset = release.assets.find(a => a.name === PDF);
                 if (!asset) { showNoCatalogo(); return; }
                 const url = asset.browser_download_url;
-                document.getElementById('pdf-iframe').src = url;
+                const viewerUrl = 'https://docs.google.com/viewer?embedded=true&url=' + encodeURIComponent(url);
+                document.getElementById('pdf-iframe').src = viewerUrl;
                 document.getElementById('btn-abrir').href = url;
                 document.getElementById('btn-descargar').href = url;
                 document.getElementById('mobile-link').style.display = '';
