@@ -220,6 +220,11 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
 # ── Portada ─────────────────────────────────────────────────────────────────
 def portada(story, area_cfg, logo_png, st):
     from reportlab.platypus import Image as RLImg
+    import datetime
+    ahora = datetime.datetime.utcnow()
+    año_actual = ahora.year
+    fecha_generacion = ahora.strftime('%d/%m/%Y a las %H:%M UTC')
+
     story.append(Spacer(1, 18*mm))
     if logo_png and os.path.exists(logo_png):
         lh = 70*mm
@@ -230,7 +235,7 @@ def portada(story, area_cfg, logo_png, st):
     story.append(Spacer(1, 6*mm))
     story.append(Paragraph(area_cfg['titulo'], st['titulo_port']))
     story.append(Paragraph(area_cfg['subtitulo'], st['sub_port']))
-    story.append(Paragraph('2025-2026', st['año']))
+    story.append(Paragraph(f'{año_actual}-{año_actual + 1}', st['año']))
     story.append(Spacer(1, 6*mm))
     story.append(HRFlowable(width=60*mm, thickness=2, color=COLOR_ROJO, hAlign='CENTER'))
     story.append(Spacer(1, 6*mm))
@@ -258,6 +263,8 @@ def portada(story, area_cfg, logo_png, st):
         ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
     ]))
     story.append(ct)
+    story.append(Spacer(1, 8*mm))
+    story.append(Paragraph(f'Catálogo generado el {fecha_generacion}', st['nota']))
     story.append(PageBreak())
 
 # ── Generar un catálogo ─────────────────────────────────────────────────────
