@@ -119,6 +119,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             height: 800px;
             border: none;
             display: block;
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
         }
 
         .catalog-disclaimer {
@@ -170,9 +172,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 font-size: 1.5rem;
             }
 
+            .catalog-viewer {
+                height: 60vh;
+                min-height: 400px;
+            }
+
             .catalog-viewer iframe {
-                height: 100vh;
-                min-height: 600px;
+                height: 100%;
             }
         }
     </style>
