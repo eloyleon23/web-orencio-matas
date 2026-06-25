@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TWX6NRXN');</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Catálogo de perfumería y cosmética de Orencio Matas y Hnos, S.L.">
+    <title>Catálogo Perfumería | Orencio Matas y Hnos, S.L.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --red: #D32F2F;
+            --blue: #1976D2;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            overflow-x: clip;
+        }
+
+        body {
+            margin: 0;
+            color: var(--dark);
+            background: var(--light);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+        }
+
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--light);
+            color: var(--dark);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back-home:hover {
+            background: var(--border);
+            transform: translateX(-3px);
+        }
+
+        .btn-back-home i {
+            color: var(--red);
+        }
+
+        .catalog-container {
+            padding: 80px 20px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .catalog-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .catalog-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin: 0 0 8px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .catalog-header p {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .catalog-viewer {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .catalog-viewer iframe {
+            width: 100%;
+            height: 800px;
+            border: none;
+            display: block;
+        }
+
+        .catalog-actions {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--blue);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-download:hover {
+            background: #1565c0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .catalog-container {
+                padding: 70px 16px 30px;
+            }
+
+            .catalog-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .catalog-viewer iframe {
+                height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<header class="main-header">
+    <a href="productos.html" class="btn-back-home">
+        <i class="fa-solid fa-arrow-left"></i> Volver a Productos
+    </a>
+</header>
+
+<main class="catalog-container">
+    <div class="catalog-header">
+        <h1>Catálogo de Perfumería y Cosmética</h1>
+        <p>Selección de artículos de perfumería, cuidado personal y cosmética</p>
+    </div>
+
+    <div class="catalog-viewer">
+        <iframe src="assets/productos/catalogo_drogueria_perfumeria_2025.pdf#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf"></iframe>
+    </div>
+
+    <div class="catalog-actions">
+        <a href="assets/productos/catalogo_drogueria_perfumeria_2025.pdf" download="catalogo_perfumeria_2025.pdf" class="btn-download">
+            <i class="fa-solid fa-download"></i> Descargar Catálogo
+        </a>
+    </div>
+</main>
+
+<script src="./src/js/analytics-consent.js"></script>
+</body>
+</html>
