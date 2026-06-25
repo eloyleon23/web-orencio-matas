@@ -235,7 +235,7 @@ def portada(story, area_cfg, logo_png, st):
     story.append(Spacer(1, 6*mm))
     story.append(Paragraph(area_cfg['titulo'], st['titulo_port']))
     story.append(Paragraph(area_cfg['subtitulo'], st['sub_port']))
-    story.append(Paragraph(f'{año_actual}-{año_actual + 1}', st['año']))
+    story.append(Paragraph(f'{año_actual}', st['año']))
     story.append(Spacer(1, 6*mm))
     story.append(HRFlowable(width=60*mm, thickness=2, color=COLOR_ROJO, hAlign='CENTER'))
     story.append(Spacer(1, 6*mm))
