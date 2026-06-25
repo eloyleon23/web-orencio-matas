@@ -576,7 +576,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             <li>Útiles de limpieza profesional</li>
                             <li>Productos para hostelería, industria y comercio</li>
                         </ul>
-                        <a class="btn-product" href="index.html#contacto">Solicitar Información <i class="fa-solid fa-arrow-right"></i></a>
+                        <a id="btn-drogueria" class="btn-product" href="index.html#contacto">Solicitar Información <i class="fa-solid fa-arrow-right"></i></a>
                     </article>
 
                     <article class="product-group subtle-paint-bg">
@@ -592,7 +592,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             <li>Higiene personal</li>
                             <li>Marcas de consumo y rotación</li>
                         </ul>
-                        <a class="btn-product" href="index.html#contacto">Solicitar Información <i class="fa-solid fa-arrow-right"></i></a>
+                        <a id="btn-perfumeria" class="btn-product" href="index.html#contacto">Solicitar Información <i class="fa-solid fa-arrow-right"></i></a>
                     </article>
 
                     <article class="product-group subtle-paint-bg">
@@ -608,7 +608,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             <li>Pulimento y acabado</li>
                             <li>Colorimetría y procesos de taller</li>
                         </ul>
-                        <a class="btn-product" href="index.html#contacto">Solicitar Información <i class="fa-solid fa-arrow-right"></i></a>
+                        <a id="btn-pinturas" class="btn-product" href="index.html#contacto">Solicitar Información <i class="fa-solid fa-arrow-right"></i></a>
                     </article>
 
                     <article class="product-group subtle-paint-bg">
@@ -658,5 +658,47 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </footer>
     <script src="./src/js/analytics-consent.js"></script>
     <script src="./src/js/navbar-secondary.js"></script>
+    <script>
+    /**
+     * Detecta si existen catálogos publicados en GitHub Releases
+     * y actualiza los botones dinámicamente.
+     */
+    (function() {
+        const REPO   = 'eloyleon23/web-orencio-matas';
+        const API    = `https://api.github.com/repos/${REPO}/releases/latest`;
+        const BOTONES = {
+            'drogueria':  document.getElementById('btn-drogueria'),
+            'perfumeria': document.getElementById('btn-perfumeria'),
+            'pinturas':   document.getElementById('btn-pinturas'),
+            'talleres':   document.getElementById('btn-talleres'),
+        };
+        const NOMBRES_PDF = {
+            'drogueria':  'catalogo_drogueria.pdf',
+            'perfumeria': 'catalogo_perfumeria.pdf',
+            'pinturas':   'catalogo_pinturas.pdf',
+            'talleres':   'catalogo_talleres.pdf',
+        };
+
+        fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+            .then(r => r.ok ? r.json() : null)
+            .then(release => {
+                if (!release || !release.assets) return;
+                const assets = release.assets.map(a => a.name);
+
+                Object.entries(BOTONES).forEach(([area, btn]) => {
+                    if (!btn) return;
+                    const pdf = NOMBRES_PDF[area];
+                    if (assets.includes(pdf)) {
+                        const asset = release.assets.find(a => a.name === pdf);
+                        btn.href = asset.browser_download_url;
+                        btn.setAttribute('target', '_blank');
+                        btn.setAttribute('rel', 'noopener');
+                        btn.innerHTML = 'Ver Catálogo <i class="fa-solid fa-file-pdf"></i>';
+                    }
+                });
+            })
+            .catch(() => { /* Sin catálogos disponibles: mantener botones de contacto */ });
+    })();
+    </script>
 </body>
 </html>
