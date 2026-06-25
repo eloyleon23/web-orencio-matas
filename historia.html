@@ -298,6 +298,43 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             color: var(--dark);
         }
 
+        /* Grid fotos incendio 1966 */
+        .incendio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .incendio-grid__item {
+            margin: 0;
+            overflow: hidden;
+            border-radius: 10px;
+            line-height: 0;
+        }
+
+        .incendio-grid__item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            cursor: zoom-in;
+            border-radius: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .incendio-grid__item img:hover {
+            transform: scale(1.02);
+        }
+
+        @media (max-width: 640px) {
+            .incendio-grid {
+                grid-template-columns: 1fr;
+            }
+            .incendio-grid__item img {
+                height: 220px;
+            }
+        }
+
         .archive-placeholder {
             width: 100%;
             max-width: 820px;
@@ -1044,13 +1081,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <p>La evolución del negocio exigió separar con criterio la venta de mostrador y la operativa de almacenaje. La Calle de las Cañas se convirtió en un verdadero pulmón logístico, conectado con la Estación de Ferrocarril y con una red de transporte que forma parte de la memoria industrial de la provincia.</p>
                         <p>Camiones Pegaso “Mofletes”, Barreiros o Ebro movían bidones de 200 litros, sacos de arpillera de 50 kilos y damajuanas de vidrio protegidas por mimbre, en una logística física, exigente y profundamente artesanal.</p>
                     </div>
-                    <div class="archive-placeholder">
-                        <div>
-                            <i class="fa-regular fa-image" aria-hidden="true"></i>
-                            <span>Archivo Histórico Orencio Matas - Próximamente disponible</span>
-                        </div>
-                    </div>
-                </article>
+                    </article>
 
                 <article class="story-card subtle-paint-bg">
                     <div class="story-card__text">
@@ -1060,11 +1091,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <p>La respuesta de la saga Matas transformó la catástrofe en estrategia. El cierre del menudeo abrió paso a una refundación orientada al canal profesional: <strong>Orencio Matas y Hermanos, S.L.</strong> dio el salto al sector industrial y consolidó una alianza clave como concesionario oficial exclusivo de Pinturas Glasurit, integrada en el universo BASF.</p>
                         <p>A partir de esa metamorfosis, la compañía incorporó sistemas tintométricos computarizados y empezó a construir una posición técnica especializada en pintura, carrocería y suministro profesional.</p>
                     </div>
-                    <div class="archive-placeholder">
-                        <div>
-                            <i class="fa-regular fa-image" aria-hidden="true"></i>
-                            <span>Archivo Histórico Orencio Matas - Próximamente disponible</span>
-                        </div>
+                                        <div class="incendio-grid">
+                        <figure class="incendio-grid__item">
+                            <img class="js-lightbox-image" src="assets/fotos/Historia/IMG_9841.png" alt="Incendio Calle Calatrava 1966 - Imagen 1" loading="lazy">
+                        </figure>
+                        <figure class="incendio-grid__item">
+                            <img class="js-lightbox-image" src="assets/fotos/Historia/IMG_9842.png" alt="Incendio Calle Calatrava 1966 - Imagen 2" loading="lazy">
+                        </figure>
+                        <figure class="incendio-grid__item">
+                            <img class="js-lightbox-image" src="assets/fotos/Historia/IMG_9843.png" alt="Incendio Calle Calatrava 1966 - Imagen 3" loading="lazy">
+                        </figure>
+                        <figure class="incendio-grid__item">
+                            <img class="js-lightbox-image" src="assets/fotos/Historia/IMG_9844.png" alt="Incendio Calle Calatrava 1966 - Imagen 4" loading="lazy">
+                        </figure>
                     </div>
                 </article>
 
