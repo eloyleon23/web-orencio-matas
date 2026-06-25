@@ -231,25 +231,59 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <p>Productos técnicos para limpieza, higiene, mantenimiento y consumo diario</p>
     </div>
 
-    <div class="mobile-pdf-link">
-        <a href="assets/productos/catalogo_drogueria_2025.pdf" target="_blank" class="btn-mobile-pdf">
+    <div class="mobile-pdf-link" id="mobile-link" style="display:none">
+        <a id="btn-abrir" href="#" target="_blank" class="btn-mobile-pdf">
             <i class="fa-solid fa-external-link-alt"></i> Abrir catálogo en nueva pestaña
         </a>
     </div>
 
-    <div class="catalog-viewer">
-        <iframe src="assets/productos/catalogo_drogueria_2025.pdf" type="application/pdf"></iframe>
+    <div class="catalog-viewer" id="viewer" style="display:none">
+        <iframe id="pdf-iframe" src="" type="application/pdf"></iframe>
+    </div>
+
+    <div id="no-catalogo" style="text-align:center;padding:60px 20px;display:none">
+        <i class="fa-solid fa-clock" style="font-size:2.5rem;color:#64748b;margin-bottom:16px;display:block"></i>
+        <p style="color:#64748b;font-size:1.1rem">El catálogo está siendo preparado.<br>Mientras tanto puedes contactar con nosotros.</p>
+        <a href="index.html#contacto" class="btn-download" style="margin-top:16px;display:inline-block">Solicitar información</a>
     </div>
 
     <div class="catalog-disclaimer">
-        <strong>Disponibilidad:</strong> Los productos mostrados en este catálogo están sujetos a disponibilidad. Consulta con nuestro equipo para confirmar stock actual.
+        <strong>Disponibilidad:</strong> Los productos mostrados están sujetos a disponibilidad. Consulta con nuestro equipo para confirmar stock actual.
     </div>
 
-    <div class="catalog-actions">
-        <a href="assets/productos/catalogo_drogueria_2025.pdf" download="catalogo_drogueria_2025.pdf" class="btn-download">
+    <div class="catalog-actions" id="actions" style="display:none">
+        <a id="btn-descargar" href="#" download="catalogo_drogueria.pdf" class="btn-download">
             <i class="fa-solid fa-download"></i> Descargar Catálogo
         </a>
     </div>
+
+    <script>
+    (function() {
+        const REPO   = 'eloyleon23/web-orencio-matas';
+        const PDF    = 'catalogo_drogueria.pdf';
+        const API    = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+
+        fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+            .then(r => r.ok ? r.json() : null)
+            .then(release => {
+                if (!release || !release.assets) { showNoCatalogo(); return; }
+                const asset = release.assets.find(a => a.name === PDF);
+                if (!asset) { showNoCatalogo(); return; }
+                const url = asset.browser_download_url;
+                document.getElementById('pdf-iframe').src = url;
+                document.getElementById('btn-abrir').href = url;
+                document.getElementById('btn-descargar').href = url;
+                document.getElementById('mobile-link').style.display = '';
+                document.getElementById('viewer').style.display = '';
+                document.getElementById('actions').style.display = '';
+            })
+            .catch(() => showNoCatalogo());
+
+        function showNoCatalogo() {
+            document.getElementById('no-catalogo').style.display = '';
+        }
+    })();
+    </script>
 </main>
 
 <script src="./src/js/analytics-consent.js"></script>

@@ -679,6 +679,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             'talleres':   'catalogo_talleres.pdf',
         };
 
+        const PAGINAS = {
+            'drogueria':  'catalogo_drogueria.html',
+            'perfumeria': 'catalogo_perfumeria.html',
+            'pinturas':   'catalogo_pinturas.html',
+            'talleres':   'catalogo_talleres.html',
+        };
+
         fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
             .then(r => r.ok ? r.json() : null)
             .then(release => {
@@ -689,15 +696,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     if (!btn) return;
                     const pdf = NOMBRES_PDF[area];
                     if (assets.includes(pdf)) {
-                        const asset = release.assets.find(a => a.name === pdf);
-                        btn.href = asset.browser_download_url;
-                        btn.setAttribute('target', '_blank');
-                        btn.setAttribute('rel', 'noopener');
+                        btn.href = PAGINAS[area];
+                        btn.removeAttribute('target');
                         btn.innerHTML = 'Ver Catálogo <i class="fa-solid fa-file-pdf"></i>';
                     }
                 });
             })
-            .catch(() => { /* Sin catálogos disponibles: mantener botones de contacto */ });
+            .catch(() => {});
     })();
     </script>
 </body>
