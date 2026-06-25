@@ -1,42 +1,41 @@
 name: Generar Catálogos PDF
 
 on:
-repository_dispatch:
-types: [generar_catalogos]
-workflow_dispatch:
+  repository_dispatch:
+    types: [generar_catalogos]
+  workflow_dispatch:
 
 jobs:
-generar:
-runs-on: ubuntu-latest
-permissions:
-contents: write
+  generar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
-steps:
-- name: Checkout
-uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-- name: Python setup
-uses: actions/setup-python@v5
-with:
-python-version: '3.11'
+      - name: Python setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-- name: Instalar dependencias
-run: pip install reportlab pillow requests cairosvg
+      - name: Instalar dependencias
+        run: pip install reportlab pillow requests cairosvg
 
-- name: Generar PDFs
-env:
-SHEET_ID: ${{ secrets.SHEET_ID }}
-DRIVE_API_KEY: ${{ secrets.DRIVE_API_KEY }}
-run: python scripts/generar_catalogos.py
+      - name: Generar PDFs
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          DRIVE_API_KEY: ${{ secrets.DRIVE_API_KEY }}
+        run: python scripts/generar_catalogos.py
 
-- name: Publicar como Release
-uses: softprops/action-gh-release@v2
-with:
-tag_name: catalogos-latest
-name: Catálogos Orencio Matas
-body: "Catálogos generados automáticamente desde Google Sheets"
-files: catalogos_output/*.pdf
-make_latest: true
-env:
-GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Publicar como Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: catalogos-latest
+          name: Catálogos Orencio Matas
+          body: "Catálogos generados automáticamente desde Google Sheets"
+          files: catalogos_output/*.pdf
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
