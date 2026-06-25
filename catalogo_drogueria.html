@@ -110,7 +110,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: var(--white);
             border-radius: 12px;
             border: 1px solid var(--border);
-            overflow: hidden;
+            overflow: auto;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
@@ -171,7 +171,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             }
 
             .catalog-viewer iframe {
-                height: 600px;
+                height: 100vh;
+                min-height: 600px;
             }
         }
     </style>
