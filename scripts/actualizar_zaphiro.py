@@ -17,14 +17,18 @@ def leer_config_zaphiro():
     resp = requests.get(url, timeout=20)
     resp.raise_for_status()
 
+    print(f"DEBUG respuesta raw:\n{resp.text[:500]}")
+
     import csv, io
     reader = csv.DictReader(io.StringIO(resp.text))
     config = {}
     for row in reader:
+        print(f"DEBUG fila: {dict(row)}")
         clave = row.get('clave', '').strip().lower()
         valor = row.get('valor', '').strip()
         if clave and valor:
             config[clave] = valor
+    print(f"DEBUG config final: {config}")
     return config
 
 def main():
