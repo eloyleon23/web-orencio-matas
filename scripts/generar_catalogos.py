@@ -258,7 +258,7 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm):
         nombre = p.get('nombre', '')
         ref    = p.get('referencia', '').strip()
         precio_sin = p.get('precio_sin_iva', '').strip().replace(',', '.')
-        precio_con = p.get('precio_con _iva', p.get('precio_con_iva', '')).strip().replace(',', '.')
+        precio_con = p.get('precio_con_iva', '').strip().replace(',', '.')
         ver_precio = p.get('mostrar_precio','').lower().strip() in ('sí','si','yes','true','1')
 
         contenido = [rl_img, Paragraph(nombre, st['nombre_prod'])]
