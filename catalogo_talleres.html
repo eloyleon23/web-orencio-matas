@@ -318,7 +318,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 (function() {
     const REPO = 'eloyleon23/web-orencio-matas';
     const API  = 'https://api.github.com/repos/' + REPO + '/releases/latest';
-    const RAW  = 'https://raw.githubusercontent.com/' + REPO + '/main/zaphiro_config.json';
+    const ZAPHIRO_CFG_API = 'https://api.github.com/repos/' + REPO + '/contents/zaphiro_config.json';
 
     // ── Catálogo interno desde GitHub Releases ──
     fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
@@ -342,10 +342,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         document.getElementById('no-catalogo-interno').style.display = '';
     }
 
-    // ── Catálogo Zaphiro desde zaphiro_config.json ──
-    fetch(RAW + '?t=' + Date.now())
+    // ── Catálogo Zaphiro desde API GitHub ──
+    const ZAPHIRO_API = `https://api.github.com/repos/${REPO}/contents/zaphiro_config.json`;
+    fetch(ZAPHIRO_API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
         .then(r => r.ok ? r.json() : null)
-        .then(cfg => {
+        .then(data => {
+            if (!data || !data.content) { showNoZaphiro(); return; }
+            const cfg = JSON.parse(atob(data.content));
             if (!cfg || !cfg.url) { showNoZaphiro(); return; }
             const url = cfg.url;
             const viewer = 'https://docs.google.com/viewer?embedded=true&url=' + encodeURIComponent(url);
