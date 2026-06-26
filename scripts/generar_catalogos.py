@@ -91,15 +91,13 @@ def añadir_etiqueta_oferta(img):
     w, h = img.size
     draw = ImageDraw.Draw(img)
 
-    tag_w = int(w * 0.30)
+    tag_w = int(w * 0.34)   # algo más ancho para que quepa el texto
     tag_h = int(h * 0.13)
 
-    # Polígono en banderín: arranca del borde izquierdo, punta hacia la derecha
-    pts = [(0, 0), (tag_w, 0), (tag_w - int(tag_h * 0.55), tag_h), (0, tag_h)]
-    # Sombra
+    # Polígono en banderín
+    pts    = [(0, 0), (tag_w, 0), (tag_w - int(tag_h * 0.55), tag_h), (0, tag_h)]
     shadow = [(x+3, y+3) for x, y in pts]
     draw.polygon(shadow, fill=(80, 0, 0))
-    # Cuerpo rojo
     draw.polygon(pts, fill=(211, 27, 27))
     # Franja inferior oscura
     franja = [(0, tag_h - int(tag_h*0.18)),
@@ -108,18 +106,26 @@ def añadir_etiqueta_oferta(img):
               (0, tag_h)]
     draw.polygon(franja, fill=(160, 10, 10))
 
-    # Texto "★ OFERTA"
-    font_size = max(12, tag_h // 2)
+    # Texto: reducir font_size hasta que quepa con margen
+    texto = '★ OFERTA'
+    area_texto_w = int(tag_w * 0.78)   # zona segura sin llegar a la punta
+    font_size = max(10, tag_h // 2)
     try:
         font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', font_size)
+        # Reducir hasta que quepa
+        while font_size > 8:
+            bbox = draw.textbbox((0, 0), texto, font=font)
+            if bbox[2] - bbox[0] <= area_texto_w:
+                break
+            font_size -= 1
+            font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', font_size)
     except:
         font = ImageFont.load_default()
 
-    texto = '★ OFERTA'
     bbox = draw.textbbox((0, 0), texto, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    tx = int((tag_w * 0.42 - tw) // 2)
-    ty = (tag_h - th) // 2 - int(tag_h * 0.08)
+    tx = (area_texto_w - tw) // 2
+    ty = (tag_h - th) // 2
     draw.text((tx+1, ty+1), texto, fill=(100, 0, 0), font=font)
     draw.text((tx, ty), texto, fill='white', font=font)
 
@@ -205,10 +211,14 @@ def banner(titulo, sub, color_hex, st):
 
 # ── Grid de productos ───────────────────────────────────────────────────────
 def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False):
-    """Genera un grid respetando espacios_a_ocupar (1-3) por producto."""
+    """Genera un grid respetando espacios_a_ocupar (1-6) por producto.
+    1-3: ocupan columnas en la fila actual.
+    4-6: ocupan columnas adicionales desbordando a la fila siguiente (imagen más alta).
+    """
+    MAX_SPAN = cols * 2  # 6 = página completa
     cel_w_unit = (CW - (cols-1)*4*mm) / cols
+    base_h = img_h
 
-    # Construir items con span
     items = []
     for p in productos_area:
         img_id = p.get('imagen_drive_id', '').strip()
@@ -219,17 +229,21 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
             pil = añadir_etiqueta_oferta(pil)
 
         try:
-            span = max(1, min(cols, int(p.get('espacios_a_ocupar', 1) or 1)))
+            span = max(1, min(MAX_SPAN, int(p.get('espacios_a_ocupar', 1) or 1)))
         except:
             span = 1
 
-        cel_w = cel_w_unit * span + (span - 1) * 4 * mm
-        cell_img_h = img_h * (1 + (span - 1) * 0.6)
+        # Span en columnas y filas
+        col_span = min(span, cols)          # columnas que ocupa (1-3)
+        row_span = (span - 1) // cols + 1  # filas de altura (1 o 2)
+
+        cel_w    = cel_w_unit * col_span + (col_span - 1) * 4 * mm
+        cel_img_h = base_h * row_span * (1 + (col_span - 1) * 0.2)
 
         if pil:
             img_bytes = pil_to_bytes(pil)
             iw, ih = pil.size
-            ratio = min(cel_w / iw, cell_img_h / ih)
+            ratio = min(cel_w / iw, cel_img_h / ih)
             rl_img = RLImage(io.BytesIO(img_bytes), width=iw*ratio, height=ih*ratio)
             rl_img.hAlign = 'CENTER'
         else:
@@ -249,15 +263,14 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
             if precio:
                 contenido.append(Paragraph(f'{precio} €', st['nota']))
 
-        items.append((contenido, span, cel_w))
+        items.append((contenido, col_span, cel_w))
 
-    # Distribuir en filas respetando spans
-    rows = []
-    widths_rows = []
+    # Distribuir en filas respetando col_spans
+    rows, widths_rows = [], []
     cur_row, cur_widths, cur_sum = [], [], 0
 
-    for (contenido, span, cel_w) in items:
-        if cur_sum + span > cols:
+    for (contenido, col_span, cel_w) in items:
+        if cur_sum + col_span > cols:
             while cur_sum < cols:
                 cur_row.append(Paragraph('', st['nota']))
                 cur_widths.append(cel_w_unit)
@@ -268,7 +281,7 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
 
         cur_row.append(contenido)
         cur_widths.append(cel_w)
-        cur_sum += span
+        cur_sum += col_span
 
     if cur_row:
         while cur_sum < cols:
@@ -281,8 +294,6 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
     if not rows:
         return Spacer(1, 1*mm)
 
-    # Cada fila puede tener anchos distintos — generar tabla por fila y agrupar
-    from reportlab.platypus import KeepTogether
     tablas = []
     for row, widths in zip(rows, widths_rows):
         t = Table([row], colWidths=widths)
@@ -296,8 +307,6 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
             ('LINEBELOW',    (0,0),(-1,-1), 0.4, COLOR_BORDE),
         ]))
         tablas.append(t)
-
-    from reportlab.platypus import ListFlowable
     return tablas
 
 # ── Portada ─────────────────────────────────────────────────────────────────
