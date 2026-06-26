@@ -187,7 +187,7 @@ def make_header_footer(logo_png_path):
         canvas.setFont('Helvetica-Bold', 9)
         canvas.drawString(MARGIN+14*mm, H-10*mm, 'ORENCIO MATAS Y HERMANOS, S.L.')
         canvas.setFont('Helvetica', 7.5)
-        canvas.drawRightString(W-MARGIN, H-9.5*mm, 'Catálogo de Productos 2025-2026')
+        canvas.drawRightString(W-MARGIN, H-9.5*mm, f'Catálogo de Productos {datetime.datetime.now().year}')
         canvas.setFillColor(COLOR_FONDO)
         canvas.rect(0, 0, W, 10*mm, fill=1, stroke=0)
         canvas.setStrokeColor(COLOR_BORDE)
