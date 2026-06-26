@@ -19,18 +19,28 @@ def leer_config_zaphiro():
 
     import csv, io
     config = {}
-    texto = resp.text
-    print(f"DEBUG raw:\n{repr(texto[:600])}")
-    
-    for row in csv.reader(io.StringIO(texto)):
+
+    for row in csv.reader(io.StringIO(resp.text)):
         if len(row) < 2:
             continue
-        clave = row[0].strip().lower().replace(' ', '_')
+
+        # Limpiar clave: quitar prefijos espurios como "clave "
+        clave = row[0].strip().lower()
+        for prefijo in ('clave ', 'key '):
+            if clave.startswith(prefijo):
+                clave = clave[len(prefijo):]
+        clave = clave.replace(' ', '_')
+
+        # Limpiar valor: quitar prefijos espurios como "valor "
         valor = row[1].strip()
-        print(f"DEBUG fila → clave={repr(clave)} valor={repr(valor[:60])}")
+        for prefijo in ('valor ', 'value '):
+            if valor.lower().startswith(prefijo):
+                valor = valor[len(prefijo):]
+
         if clave.startswith('zaphiro_') and valor:
             config[clave] = valor
-    
+
+    print(f"DEBUG config: {config}")
     return config
 
 def main():
