@@ -19,19 +19,18 @@ def leer_config_zaphiro():
 
     import csv, io
     config = {}
-    for row in csv.reader(io.StringIO(resp.text)):
+    texto = resp.text
+    print(f"DEBUG raw:\n{repr(texto[:600])}")
+    
+    for row in csv.reader(io.StringIO(texto)):
         if len(row) < 2:
             continue
-        # La clave está en col A, el valor en col B
-        # Puede que la primera fila sea "clave | valor | descripcion" (cabecera real)
-        # o "zaphiro_url | https://..." (dato)
         clave = row[0].strip().lower().replace(' ', '_')
         valor = row[1].strip()
-        # Solo nos interesan filas cuya clave empiece por zaphiro_
+        print(f"DEBUG fila → clave={repr(clave)} valor={repr(valor[:60])}")
         if clave.startswith('zaphiro_') and valor:
             config[clave] = valor
     
-    print(f"DEBUG config: {config}")
     return config
 
 def main():
