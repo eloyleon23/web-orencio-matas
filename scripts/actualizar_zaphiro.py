@@ -40,7 +40,6 @@ def leer_config_zaphiro():
         if clave.startswith('zaphiro_') and valor:
             config[clave] = valor
 
-    print(f"DEBUG config: {config}")
     return config
 
 def main():
