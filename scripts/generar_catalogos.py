@@ -326,9 +326,9 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
 def portada(story, area_cfg, logo_png, st):
     from reportlab.platypus import Image as RLImg
     import datetime
-    ahora = datetime.datetime.utcnow()
+    ahora = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=2)))
     año_actual = ahora.year
-    fecha_generacion = ahora.strftime('%d/%m/%Y a las %H:%M UTC')
+    fecha_generacion = ahora.strftime('%d/%m/%Y a las %H:%M (hora Madrid)')
 
     story.append(Spacer(1, 18*mm))
     if logo_png and os.path.exists(logo_png):
