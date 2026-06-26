@@ -162,6 +162,8 @@ def estilos():
                                       textColor=COLOR_GRIS, alignment=TA_CENTER),
         'tipo_prod':   ParagraphStyle('tip', fontName='Helvetica', fontSize=6,
                                       textColor=COLOR_GRIS, alignment=TA_CENTER, spaceBefore=2),
+        'ref_prod':    ParagraphStyle('ref', fontName='Helvetica', fontSize=6,
+                                      textColor=COLOR_GRIS, alignment=TA_CENTER, spaceBefore=1),
     }
 
 # ── Header y footer de página ───────────────────────────────────────────────
@@ -252,12 +254,15 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
         nombre = p.get('nombre', '')
         marca  = p.get('marca', '')
         tipo   = p.get('tipologia', '')
+        ref    = p.get('referencia', '').strip()
 
         contenido = [rl_img,
                      Paragraph(nombre, st['nombre_prod']),
                      Paragraph(marca,  st['marca_prod'])]
         if tipo:
             contenido.append(Paragraph(tipo, st['tipo_prod']))
+        if ref:
+            contenido.append(Paragraph(f'Ref: {ref}', st['ref_prod']))
         if mostrar_precio and p.get('mostrar_precio','').lower() in ('sí','si','yes','true','1'):
             precio = p.get('precio_con _iva', p.get('precio_con_iva',''))
             if precio:
