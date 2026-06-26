@@ -712,7 +712,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 .then(r => r.ok ? r.json() : null)
                 .then(data => {
                     if (!data || !data.content) return;
-                    const cfg = JSON.parse(atob(data.content));
+                    const cfg = JSON.parse(new TextDecoder('utf-8').decode(Uint8Array.from(atob(data.content.replace(/\\n/g,'')), c => c.charCodeAt(0))));
                     if (cfg && cfg.url && cfg.activo !== false) {
                         btnTalleres.href = 'catalogo_talleres.html';
                         btnTalleres.removeAttribute('target');
