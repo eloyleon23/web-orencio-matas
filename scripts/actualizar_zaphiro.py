@@ -11,24 +11,27 @@ CONFIG_PATH = 'zaphiro_config.json'
 SHEET_ID    = os.environ.get('SHEET_ID', '')
 
 def leer_config_zaphiro():
-    """Lee la hoja 'Configuracion' del Google Sheet."""
+    """Lee la hoja 'Configuracion' del Google Sheet fila a fila."""
     url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
            f"/gviz/tq?tqx=out:csv&sheet=Configuracion")
     resp = requests.get(url, timeout=20)
     resp.raise_for_status()
 
-    print(f"DEBUG respuesta raw:\n{resp.text[:500]}")
-
     import csv, io
-    reader = csv.DictReader(io.StringIO(resp.text))
     config = {}
-    for row in reader:
-        print(f"DEBUG fila: {dict(row)}")
-        clave = row.get('clave', '').strip().lower()
-        valor = row.get('valor', '').strip()
-        if clave and valor:
+    for row in csv.reader(io.StringIO(resp.text)):
+        if len(row) < 2:
+            continue
+        # La clave está en col A, el valor en col B
+        # Puede que la primera fila sea "clave | valor | descripcion" (cabecera real)
+        # o "zaphiro_url | https://..." (dato)
+        clave = row[0].strip().lower().replace(' ', '_')
+        valor = row[1].strip()
+        # Solo nos interesan filas cuya clave empiece por zaphiro_
+        if clave.startswith('zaphiro_') and valor:
             config[clave] = valor
-    print(f"DEBUG config final: {config}")
+    
+    print(f"DEBUG config: {config}")
     return config
 
 def main():
