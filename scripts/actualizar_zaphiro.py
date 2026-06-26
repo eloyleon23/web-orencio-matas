@@ -1,63 +1,44 @@
 #!/usr/bin/env python3
 """
-Detecta automáticamente la URL más reciente del catálogo Zaphiro
-probando URLs predecibles por año y mes, sin depender de scraping.
+Lee la configuración del catálogo Zaphiro desde Google Sheets
+y actualiza zaphiro_config.json.
 """
 
 import json, sys, os, datetime
 import requests
 
 CONFIG_PATH = 'zaphiro_config.json'
-BASE_URL    = 'https://www.zaphirogroup.com/wp-content/uploads'
+SHEET_ID    = os.environ.get('SHEET_ID', '')
 
-def construir_urls_candidatas(año):
-    """Genera todas las URLs posibles para el catálogo de un año dado."""
-    urls = []
-    for mes in range(12, 0, -1):  # de diciembre a enero
-        mes_str = f'{mes:02d}'
-        urls.append(f'{BASE_URL}/{año}/{mes_str}/CATALOGO-ZAPHIRO-{año}_web.pdf')
-        # Variantes de nombre que Zaphiro ha usado
-        urls.append(f'{BASE_URL}/{año}/{mes_str}/CATALOGO-ZAPHIRO-{año}.pdf')
-        urls.append(f'{BASE_URL}/{año}/{mes_str}/catalogo-zaphiro-{año}.pdf')
-    return urls
+def leer_config_zaphiro():
+    """Lee la hoja 'Configuracion' del Google Sheet."""
+    url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+           f"/gviz/tq?tqx=out:csv&sheet=Configuracion")
+    resp = requests.get(url, timeout=20)
+    resp.raise_for_status()
 
-def verificar_url(url):
-    """Comprueba si una URL de PDF es accesible (HEAD request)."""
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0 (compatible; OrencioMatasBot/1.0)'}
-        resp = requests.head(url, headers=headers, timeout=15, allow_redirects=True)
-        return resp.status_code == 200
-    except Exception:
-        return False
-
-def encontrar_url_catalogo():
-    """Busca la URL del catálogo probando año actual y anterior."""
-    ahora     = datetime.datetime.now()
-    años      = [ahora.year, ahora.year + 1, ahora.year - 1]  # actual, siguiente, anterior
-
-    for año in años:
-        print(f"  Probando año {año}...")
-        for url in construir_urls_candidatas(año):
-            print(f"    → {url}")
-            if verificar_url(url):
-                print(f"  ✓ Encontrado: {url}")
-                return url, str(año)
-
-    return None, None
+    import csv, io
+    reader = csv.DictReader(io.StringIO(resp.text))
+    config = {}
+    for row in reader:
+        clave = row.get('clave', '').strip().lower()
+        valor = row.get('valor', '').strip()
+        if clave and valor:
+            config[clave] = valor
+    return config
 
 def main():
-    print("🔍 Buscando catálogo Zaphiro por URL predecible...")
+    print("📋 Leyendo configuración Zaphiro desde Google Sheets...")
 
-    url, año = encontrar_url_catalogo()
+    config_sheet = leer_config_zaphiro()
+
+    url   = config_sheet.get('zaphiro_url', '')
+    año   = config_sheet.get('zaphiro_año', str(datetime.datetime.now().year))
+    activo = config_sheet.get('zaphiro_activo', 'si').lower()
 
     if not url:
-        # Si no encontramos nada, mantener la config anterior sin fallar
-        if os.path.exists(CONFIG_PATH):
-            print("⚠ No se encontró nueva URL. Manteniendo config anterior.")
-            sys.exit(0)
-        else:
-            print("⚠ No se encontró URL y no hay config previa.")
-            sys.exit(1)
+        print("⚠ No se encontró zaphiro_url en la hoja Configuracion")
+        sys.exit(1)
 
     # Leer config anterior
     config_anterior = {}
@@ -69,6 +50,7 @@ def main():
         'url':          url,
         'año':          año,
         'titulo':       f'Catálogo Zaphiro {año}',
+        'activo':       activo == 'si',
         'actualizado':  datetime.datetime.utcnow().isoformat() + 'Z',
         'url_anterior': config_anterior.get('url', ''),
     }
@@ -81,7 +63,7 @@ def main():
     else:
         print("ℹ URL sin cambios")
 
-    print(f"✓ {CONFIG_PATH} actualizado — año: {año}")
+    print(f"✓ {CONFIG_PATH} actualizado — año: {año}, activo: {activo}")
 
 if __name__ == '__main__':
     main()
