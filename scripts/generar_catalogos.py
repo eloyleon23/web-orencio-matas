@@ -164,6 +164,10 @@ def estilos():
                                       textColor=COLOR_GRIS, alignment=TA_CENTER, spaceBefore=2),
         'ref_prod':    ParagraphStyle('ref', fontName='Helvetica', fontSize=6,
                                       textColor=COLOR_GRIS, alignment=TA_CENTER, spaceBefore=1),
+        'precio_con':  ParagraphStyle('pc', fontName='Helvetica-Bold', fontSize=11,
+                                      textColor=COLOR_ROJO, alignment=TA_CENTER, spaceBefore=3),
+        'precio_sin':  ParagraphStyle('ps', fontName='Helvetica', fontSize=6,
+                                      textColor=COLOR_GRIS, alignment=TA_CENTER, spaceBefore=1),
     }
 
 # ── Header y footer de página ───────────────────────────────────────────────
@@ -212,7 +216,7 @@ def banner(titulo, sub, color_hex, st):
     return t
 
 # ── Grid de productos ───────────────────────────────────────────────────────
-def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False):
+def grid_productos(productos_area, st, cols=3, img_h=60*mm):
     """Genera un grid respetando espacios_a_ocupar (1-6) por producto.
     1-3: ocupan columnas en la fila actual.
     4-6: ocupan columnas adicionales desbordando a la fila siguiente (imagen más alta).
@@ -252,21 +256,25 @@ def grid_productos(productos_area, st, cols=3, img_h=60*mm, mostrar_precio=False
             rl_img = Paragraph('[ sin imagen ]', st['nota'])
 
         nombre = p.get('nombre', '')
-        marca  = p.get('marca', '')
-        tipo   = p.get('tipologia', '')
         ref    = p.get('referencia', '').strip()
+        precio_sin = p.get('precio_sin_iva', '').strip().replace(',', '.')
+        precio_con = p.get('precio_con _iva', p.get('precio_con_iva', '')).strip().replace(',', '.')
+        ver_precio = p.get('mostrar_precio','').lower().strip() in ('sí','si','yes','true','1')
 
-        contenido = [rl_img,
-                     Paragraph(nombre, st['nombre_prod']),
-                     Paragraph(marca,  st['marca_prod'])]
-        if tipo:
-            contenido.append(Paragraph(tipo, st['tipo_prod']))
+        contenido = [rl_img, Paragraph(nombre, st['nombre_prod'])]
         if ref:
             contenido.append(Paragraph(f'Ref: {ref}', st['ref_prod']))
-        if mostrar_precio and p.get('mostrar_precio','').lower() in ('sí','si','yes','true','1'):
-            precio = p.get('precio_con _iva', p.get('precio_con_iva',''))
-            if precio:
-                contenido.append(Paragraph(f'{precio} €', st['nota']))
+        if ver_precio:
+            if precio_con:
+                try:
+                    contenido.append(Paragraph(f'{float(precio_con):.2f} € <font size="5">(IVA inc.)</font>', st['precio_con']))
+                except:
+                    contenido.append(Paragraph(f'{precio_con} €', st['precio_con']))
+            if precio_sin:
+                try:
+                    contenido.append(Paragraph(f'{float(precio_sin):.2f} € sin IVA', st['precio_sin']))
+                except:
+                    contenido.append(Paragraph(f'{precio_sin} € sin IVA', st['precio_sin']))
 
         items.append((contenido, col_span, cel_w))
 
