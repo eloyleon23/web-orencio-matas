@@ -216,12 +216,12 @@ def banner(titulo, sub, color_hex, st):
     return t
 
 # ── Grid de productos ───────────────────────────────────────────────────────
-def grid_productos(productos_area, st, cols=3, img_h=60*mm):
+def grid_productos(productos_area, st, cols=4, img_h=55*mm):
     """Genera un grid respetando espacios_a_ocupar (1-6) por producto.
     1-3: ocupan columnas en la fila actual.
     4-6: ocupan columnas adicionales desbordando a la fila siguiente (imagen más alta).
     """
-    MAX_SPAN = cols * 2  # 6 = página completa
+    MAX_SPAN = cols * 2  # 8 = página completa (4 cols × 2 filas)
     cel_w_unit = (CW - (cols-1)*4*mm) / cols
     base_h = img_h
 
@@ -411,7 +411,7 @@ def generar_catalogo(area, productos, logo_png):
             story.append(PageBreak())
         story.append(banner(cfg['titulo'], tipo, cfg['color'], st))
         story.append(Spacer(1, 5*mm))
-        resultado = grid_productos(prods, st, cols=3)
+        resultado = grid_productos(prods, st, cols=4)
         if isinstance(resultado, list):
             story.extend(resultado)
         else:
