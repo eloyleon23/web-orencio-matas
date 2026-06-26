@@ -703,6 +703,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 });
             })
             .catch(() => {});
+
+        // Talleres: activar botón si existe zaphiro_config.json (catálogo externo)
+        const RAW_ZAPHIRO = `https://raw.githubusercontent.com/${REPO}/main/zaphiro_config.json`;
+        const btnTalleres = document.getElementById('btn-talleres');
+        if (btnTalleres) {
+            fetch(RAW_ZAPHIRO + '?t=' + Date.now())
+                .then(r => r.ok ? r.json() : null)
+                .then(cfg => {
+                    if (cfg && cfg.url && cfg.activo !== false) {
+                        btnTalleres.href = 'catalogo_talleres.html';
+                        btnTalleres.removeAttribute('target');
+                        btnTalleres.innerHTML = 'Ver Catálogo <i class="fa-solid fa-file-pdf"></i>';
+                    }
+                })
+                .catch(() => {});
+        }
     })();
     </script>
 </body>
