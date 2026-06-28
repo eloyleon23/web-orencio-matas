@@ -4,7 +4,7 @@ Generador de catálogos PDF para Orencio Matas y Hermanos, S.L.
 Lee productos de Google Sheets, descarga imágenes de Drive y genera PDFs por área.
 """
 
-import os, io, json, requests
+import os, io, json, requests, datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
