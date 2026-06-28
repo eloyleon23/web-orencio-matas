@@ -63,6 +63,187 @@ function dispararWorkflow() {
 
 function generarAhora() { dispararWorkflow(); }
 
+// ── SINCRONIZACIÓN RegistroProductos → Productos ───────────────────────────
+function sincronizarRegistroProductos() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetReg  = ss.getSheetByName('RegistroProductos');
+  const sheetProd = ss.getSheetByName('Productos');
+
+  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos". Créala y pega los datos del Excel primero.'); return; }
+  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+
+  const regHeaderRow = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+
+  if (!regHeaderRow.includes('Procesado')) {
+    sheetReg.getRange(1, regHeaderRow.length + 1).setValue('Procesado');
+    regHeaderRow.push('Procesado');
+  }
+  if (!regHeaderRow.includes('Error')) {
+    sheetReg.getRange(1, regHeaderRow.length + 1).setValue('Error');
+    regHeaderRow.push('Error');
+  }
+
+  const COL = {};
+  regHeaderRow.forEach((h, i) => { COL[h] = i; });
+
+  const prodHeaderRow = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+
+  if (!prodHeaderRow.includes('fecha_registro')) {
+    sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('fecha_registro');
+    prodHeaderRow.push('fecha_registro');
+  }
+
+  const PROD = {};
+  prodHeaderRow.forEach((h, i) => { PROD[h] = i; });
+
+  const prodData  = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow() - 1, 1), sheetProd.getLastColumn()).getValues();
+  const prodIndex = {};
+  prodData.forEach((row, i) => {
+    const ref = row[PROD['referencia']];
+    if (ref) prodIndex[ref.toString().trim()] = i;
+  });
+
+  const imagenesCache = cargarCacheImagenes_();
+
+  const lastRow = sheetReg.getLastRow();
+  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos no tiene datos. Pega primero el contenido del Excel.'); return; }
+
+  const regData = sheetReg.getRange(2, 1, lastRow - 1, regHeaderRow.length).getValues();
+  let nuevos = 0, actualizados = 0, saltados = 0, errores = 0;
+  const hoy = new Date();
+
+  for (let i = 0; i < regData.length; i++) {
+    const fila   = regData[i];
+    const rowNum = i + 2;
+    const procesado = COL['Procesado'] !== undefined ? fila[COL['Procesado']].toString().trim() : '';
+    const errorPrev = COL['Error']     !== undefined ? fila[COL['Error']].toString().trim()     : '';
+
+    if (procesado === 'si') { saltados++; continue; }
+    if (errorPrev && errorPrev !== '') { saltados++; continue; }
+
+    const ean          = fila[COL['CodigoEAN']]          ? fila[COL['CodigoEAN']].toString().trim()          : '';
+    const desc         = fila[COL['DescripcionArticulo']] ? fila[COL['DescripcionArticulo']].toString().trim() : '';
+    const precioSinIva = parseFloat(fila[COL['PrecioMayorSinIVA']]) || 0;
+    const iva          = parseFloat(fila[COL['IVA']])               || 21;
+    const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
+    const familia      = fila[COL['Familia']] ? fila[COL['Familia']].toString().trim() : '';
+
+    if (!ean) { marcarRegistro_(sheetReg, rowNum, COL, 'no', 'EAN vacío'); errores++; continue; }
+
+    try {
+      if (prodIndex.hasOwnProperty(ean)) {
+        const prodRowIdx = prodIndex[ean];
+        const prodRow    = prodData[prodRowIdx];
+        const prodRowNum = prodRowIdx + 2;
+        let cambios = false;
+
+        const checks = [
+          ['precio_sin_iva', formatPrecio_(precioSinIva)],
+          ['iva',            iva],
+          ['precio_con_iva', formatPrecio_(precioConIva)],
+          ['nombre',         desc],
+          ['tipologia',      familia],
+        ];
+        checks.forEach(([col, val]) => {
+          if (PROD[col] !== undefined && val && prodRow[PROD[col]].toString().trim() != val.toString()) {
+            sheetProd.getRange(prodRowNum, PROD[col] + 1).setValue(val);
+            cambios = true;
+          }
+        });
+        if (cambios && PROD['fecha_registro'] !== undefined)
+          sheetProd.getRange(prodRowNum, PROD['fecha_registro'] + 1).setValue(hoy);
+
+        actualizados++;
+        marcarRegistro_(sheetReg, rowNum, COL, 'si', '');
+
+      } else {
+        const area     = inferirArea_(desc, familia);
+        const imagenId = imagenesCache[ean] || '';
+        const nuevaFila = new Array(prodHeaderRow.length).fill('');
+        const set = (col, val) => { if (PROD[col] !== undefined) nuevaFila[PROD[col]] = val; };
+
+        set('referencia',          ean);
+        set('nombre',              desc);
+        set('marca',               desc);
+        set('area',                area);
+        set('tipologia',           familia);
+        set('precio_sin_iva',      formatPrecio_(precioSinIva));
+        set('iva',                 iva);
+        set('precio_con_iva',      formatPrecio_(precioConIva));
+        set('mostrar_precio',      'si');
+        set('incluir_en_catalogo', 'si');
+        set('oferta',              'no');
+        set('espacios_a_ocupar',   1);
+        set('imagen_drive_id',     imagenId || 'NO_TIENE_FOTO');
+        set('fecha_registro',      hoy);
+
+        sheetProd.appendRow(nuevaFila);
+        prodData.push(nuevaFila);
+        prodIndex[ean] = prodData.length - 1;
+
+        nuevos++;
+        marcarRegistro_(sheetReg, rowNum, COL, 'si', '');
+      }
+    } catch (err) {
+      marcarRegistro_(sheetReg, rowNum, COL, 'no', err.message);
+      errores++;
+    }
+  }
+
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Saltados: ${saltados} | Errores: ${errores}`,
+    '📥 Sincronización completada', 8
+  );
+}
+
+function marcarRegistro_(sheet, rowNum, COL, procesado, error) {
+  if (COL['Procesado'] !== undefined) sheet.getRange(rowNum, COL['Procesado'] + 1).setValue(procesado);
+  if (COL['Error']     !== undefined) sheet.getRange(rowNum, COL['Error']     + 1).setValue(error);
+}
+
+function formatPrecio_(num) {
+  return num.toString().replace('.', ',');
+}
+
+function inferirArea_(nombre, familia) {
+  const txt = (nombre + ' ' + familia).toLowerCase();
+  const pinturas   = ['pintura','barniz','esmalte','laca','aguarras','disolvente','brocha','rodillo',
+                      'masilla','silicona','sellador','imprimacion','imprimación','anticorrosivo',
+                      'pincel','espátula','espatula','fijador','estuco','revoque','pintar'];
+  const talleres   = ['taller','aceite motor','lubricante','grasa','anticongelante','limpiametales',
+                      'desengrasante industrial','herramienta','tornillo','tuerca','arandela',
+                      'llave','taladro','soldadura','spray taller','wd','mechero','encendedor'];
+  const perfumeria = ['perfume','colonia','eau de','edt','edp','desodorante','deo','gel de ducha',
+                      'gel ducha','champú','champu','acondicionador','crema corporal','crema facial',
+                      'loción','locion','serum','maquillaje','cosmética','cosmetica','after shave',
+                      'afeitado','espuma afeitar','cera cabello','mascarilla capilar','tinte cabello',
+                      'laca cabello','suavizante cabello','higiene intima','higiene íntima',
+                      'compresas','tampones','pañales','pañal','colonia infantil'];
+  for (const kw of pinturas)   if (txt.includes(kw)) return 'pinturas';
+  for (const kw of talleres)   if (txt.includes(kw)) return 'talleres';
+  for (const kw of perfumeria) if (txt.includes(kw)) return 'perfumeria';
+  return 'drogueria';
+}
+
+function cargarCacheImagenes_() {
+  const cache = {};
+  try {
+    const folder = DriveApp.getFolderById(DRIVE_IMAGENES_ID);
+    const files  = folder.getFiles();
+    while (files.hasNext()) {
+      const file = files.next();
+      const ean  = file.getName().replace(/\.[^.]+$/, '');
+      cache[ean] = file.getId();
+    }
+  } catch (err) {
+    console.warn('No se pudo cargar caché de imágenes: ' + err.message);
+  }
+  return cache;
+}
+
 // ── Actualizar Zaphiro ─────────────────────────────────────────────────────
 function actualizarZaphiro() {
   const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`;
