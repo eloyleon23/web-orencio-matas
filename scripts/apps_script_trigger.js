@@ -469,9 +469,9 @@ function mostrarFormularioProducto() {
     </div>
   </div>
 
-  <div class="seccion">Imagen <span id="badge-img" style="display:none" class="badge badge-img"></span></div>
+  <div class="seccion" id="seccion-imagen">Imagen <span id="badge-img" style="display:none" class="badge badge-img"></span></div>
 
-  <div class="field">
+  <div class="field" id="campo-imagen">
     <input id="imagen_drive_id" type="text" placeholder="ID de imagen en Drive (se busca automáticamente)">
     <p class="hint" id="hint-imagen">Se busca automáticamente al introducir la referencia</p>
   </div>
@@ -523,50 +523,54 @@ function mostrarFormularioProducto() {
     }
 
     function aplicarResultado(r) {
-      // r = { producto: {...} | null, imagen: { id, encontrada } }
       const { producto, imagen } = r;
 
-      // Actualizar badge e indicador de modo
+      const seccionImg = document.getElementById('seccion-imagen');
+      const campoImg   = document.getElementById('campo-imagen');
+      const badgeImg   = document.getElementById('badge-img');
+      const inputImg   = document.getElementById('imagen_drive_id');
+      const hintImg    = document.getElementById('hint-imagen');
+
       if (producto) {
+        // ── Modo EDICIÓN ──
         _filaExistente = producto._fila;
         document.getElementById('badge-modo').textContent = 'EDITAR';
-        document.getElementById('badge-modo').className = 'badge badge-editar';
+        document.getElementById('badge-modo').className   = 'badge badge-editar';
         document.getElementById('btn-guardar').textContent = 'Actualizar producto';
         mostrarEstado('Producto encontrado — editando fila ' + producto._fila, 'warn');
         rellenarCampos(producto);
+
+        // Ocultar completamente la sección de imagen — no editable en modo edición
+        seccionImg.style.display = 'none';
+        campoImg.style.display   = 'none';
+        inputImg.value           = producto.imagen_drive_id || '';
+        _imagenBloqueada         = true;
+
       } else {
+        // ── Modo NUEVO ──
         _filaExistente = null;
         document.getElementById('badge-modo').textContent = 'NUEVO';
-        document.getElementById('badge-modo').className = 'badge badge-nuevo';
+        document.getElementById('badge-modo').className   = 'badge badge-nuevo';
         document.getElementById('btn-guardar').textContent = 'Guardar producto';
         mostrarEstado('Referencia no encontrada — se registrará como nuevo', 'info');
-      }
 
-      // Imagen
-      const badgeImg = document.getElementById('badge-img');
-      const campoImg = document.getElementById('imagen_drive_id');
-      const hintImg  = document.getElementById('hint-imagen');
+        // Mostrar sección de imagen para producto nuevo
+        seccionImg.style.display = '';
+        campoImg.style.display   = '';
+        _imagenBloqueada         = false;
 
-      if (imagen.encontrada) {
-        campoImg.value    = imagen.id;
-        badgeImg.textContent = '✓ Imagen encontrada en Drive';
-        badgeImg.style.display = 'inline-block';
-        // Bloquear edición si ya tiene imagen y es producto existente
-        if (producto) {
-          campoImg.disabled = true;
-          _imagenBloqueada  = true;
-          hintImg.textContent = 'Imagen vinculada automáticamente. Para cambiarla edita directamente en Drive.';
+        if (imagen.encontrada) {
+          inputImg.value           = imagen.id;
+          badgeImg.textContent     = '✓ Imagen encontrada en Drive';
+          badgeImg.style.display   = 'inline-block';
+          inputImg.disabled        = false;
+          hintImg.textContent      = '✓ Imagen encontrada automáticamente en Drive';
         } else {
-          campoImg.disabled = false;
-          _imagenBloqueada  = false;
-          hintImg.textContent = '✓ Imagen encontrada automáticamente en Drive';
+          inputImg.value         = '';
+          inputImg.disabled      = false;
+          badgeImg.style.display = 'none';
+          hintImg.textContent    = 'No se encontró imagen en Drive para esta referencia';
         }
-      } else {
-        campoImg.value    = '';
-        campoImg.disabled = false;
-        _imagenBloqueada  = false;
-        badgeImg.style.display = 'none';
-        hintImg.textContent = 'No se encontró imagen en Drive para esta referencia';
       }
     }
 
@@ -597,12 +601,14 @@ function mostrarFormularioProducto() {
         if (el) { el.value = ''; el.disabled = false; }
       });
       document.getElementById('area').value = '';
-      document.getElementById('iva').value = '';
-      document.getElementById('badge-modo').textContent = 'NUEVO';
-      document.getElementById('badge-modo').className = 'badge badge-nuevo';
+      document.getElementById('iva').value  = '';
+      document.getElementById('badge-modo').textContent  = 'NUEVO';
+      document.getElementById('badge-modo').className    = 'badge badge-nuevo';
       document.getElementById('badge-img').style.display = 'none';
       document.getElementById('btn-guardar').textContent = 'Guardar producto';
       document.getElementById('hint-imagen').textContent = 'Se busca automáticamente al introducir la referencia';
+      document.getElementById('seccion-imagen').style.display = '';
+      document.getElementById('campo-imagen').style.display   = '';
       mostrarEstado('', '');
     }
 
