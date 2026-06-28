@@ -533,25 +533,50 @@ function crearHojaAyuda() {
     ['', '1. Escribe la referencia del producto'],
     ['', '2. El sistema busca automáticamente si ya existe en el listado'],
     ['', '3. También busca la imagen en Drive por el nombre de la referencia'],
-    ['', '4. Si el producto existe, carga sus datos para editar'],
+    ['', '4. Si el producto existe, carga sus datos para editar. La imagen queda bloqueada si ya existe'],
     ['', '5. Si no existe, se registrará como nuevo al guardar'],
     ['', '6. Si no hay imagen en Drive, el campo quedará como NO_TIENE_FOTO'],
+    ['', '7. La fecha_registro se actualiza automáticamente en cada alta o modificación'],
     ['', ''],
-    ['DESCRIPCIÓN DE COLUMNAS', ''],
-    ['referencia', 'Código interno del producto. Ej: DRO001. Debe coincidir con el nombre del archivo de imagen en Drive'],
+    ['SINCRONIZACIÓN MASIVA DESDE REGISTRO DE PRODUCTOS', ''],
+    ['', 'Menú → "📥 Sincronizar RegistroProductos → Productos"'],
+    ['', 'Procesa todas las filas de la hoja RegistroProductos:'],
+    ['', '  · EAN existente → actualiza precios, nombre y familia si han cambiado'],
+    ['', '  · EAN nuevo → registra el producto con imagen de Drive asignada automáticamente'],
+    ['', '  · El área se infiere del nombre y familia del producto'],
+    ['Reanudación', 'La columna "Procesado" permite reanudar si el proceso se interrumpe sin repetir filas ya completadas'],
+    ['Errores', 'La columna "Error" recoge los problemas para revisión manual'],
+    ['', ''],
+    ['BAJA DE PRODUCTOS', ''],
+    ['', 'Menú → "🚫 Procesar bajas de BajaProductos"'],
+    ['', 'Lee la hoja "BajaProductos" y por cada referencia:'],
+    ['', '  · Marca "no" en la columna incluir_en_catalogo de la hoja Productos'],
+    ['', '  · Registra la fecha y hora de baja en la columna fecha_baja'],
+    ['', '  · Marca "si" en la columna Procesado de BajaProductos al completar'],
+    ['', '  · Si la referencia no existe en Productos lo indica en la columna Error'],
+    ['Reanudación', 'Las filas con Procesado = "si" se saltan automáticamente. Si el proceso se interrumpe, al relanzarlo continúa desde donde lo dejó'],
+    ['', ''],
+    ['ESTRUCTURA HOJA BajaProductos', ''],
+    ['Referencia', 'EAN o código del producto a dar de baja — único campo que debes rellenar'],
+    ['Procesado', 'Gestionado automáticamente: "si" = completado, "no encontrado" = referencia no existe en Productos'],
+    ['Error', 'Gestionado automáticamente: describe el problema si falla el proceso'],
+    ['', ''],
+    ['DESCRIPCIÓN DE COLUMNAS — HOJA PRODUCTOS', ''],
+    ['referencia', 'Código EAN del producto. Clave única de identificación'],
     ['nombre', 'Nombre comercial del producto'],
-    ['marca', 'Marca del producto'],
+    ['marca', 'Marca del producto (uso interno, no aparece en el catálogo)'],
     ['area', 'Área: drogueria / perfumeria / pinturas / talleres (sin tildes, minúsculas)'],
-    ['tipologia', 'Subcategoría. Debe coincidir con la columna Familia de la hoja FamiliasProductos para respetar el orden'],
+    ['tipologia', 'Subcategoría. Debe coincidir con la columna Familia de FamiliasProductos para respetar el orden'],
     ['precio_sin_iva', 'Precio base sin impuestos (coma decimal). Ej: 2,45'],
     ['iva', 'Tipo de IVA: 4, 10 o 21'],
     ['precio_con_iva', 'Precio con IVA (coma decimal). Se calcula automáticamente en el formulario'],
-    ['mostrar_precio', 'si / no — si el precio aparece en el PDF'],
-    ['incluir_en_catalogo', 'si / no — si el producto aparece en el catálogo generado'],
+    ['mostrar_precio', 'si / no — si el precio aparece en el PDF del catálogo'],
+    ['incluir_en_catalogo', 'si / no — si el producto aparece en el catálogo. El proceso de bajas lo pone a "no" automáticamente'],
     ['oferta', 'si / no — muestra banderín rojo "★ OFERTA" sobre la imagen'],
-    ['espacios_a_ocupar', 'Espacio que ocupa en el catálogo (ver tabla abajo)'],
+    ['espacios_a_ocupar', 'Espacio que ocupa en el catálogo — ver tabla abajo'],
     ['imagen_drive_id', 'ID del archivo en Drive. Se asigna automáticamente. NO_TIENE_FOTO si no existe imagen'],
-    ['fecha_registro', 'Fecha y hora de alta o última modificación (zona horaria Madrid). Se rellena automáticamente'],
+    ['fecha_registro', 'Fecha y hora de alta o última modificación (Madrid). Gestionada automáticamente'],
+    ['fecha_baja', 'Fecha y hora en que se dio de baja el producto. Gestionada automáticamente por el proceso de bajas'],
     ['', ''],
     ['VALORES DE ESPACIOS A OCUPAR', ''],
     ['', 'El catálogo usa 4 columnas por fila. Máximo 8 (4 cols × 2 filas = página completa)'],
@@ -566,14 +591,14 @@ function crearHojaAyuda() {
     ['', ''],
     ['IMÁGENES DE PRODUCTOS', ''],
     ['', 'Carpeta Drive: Catalogos/imagenes_catalogo (ID: 13O7N_q6IisAhsvSoXogKJ2PUDVQfUKRe)'],
-    ['', 'El nombre del archivo debe ser exactamente igual a la referencia del producto (sin extensión)'],
-    ['', 'Ej: referencia DRO001 → archivo llamado DRO001 en Drive'],
-    ['', 'El formulario busca la imagen automáticamente al escribir la referencia'],
+    ['', 'El nombre del archivo debe ser exactamente la referencia del producto (sin extensión)'],
+    ['', 'Ej: referencia 8410104022 → archivo llamado 8410104022 en Drive'],
+    ['', 'El formulario busca la imagen automáticamente al introducir la referencia'],
     ['', ''],
-    ['FAMILIAS DE PRODUCTOS Y ORDEN EN CATÁLOGO', ''],
-    ['', 'La hoja "FamiliasProductos" define el orden en que aparecen las secciones en el catálogo'],
-    ['', 'La columna "Familia" debe coincidir con la columna "tipologia" de la hoja Productos'],
-    ['', 'Si una tipología no está en FamiliasProductos aparecerá al final del catálogo'],
+    ['FAMILIAS Y ORDEN EN CATÁLOGO', ''],
+    ['', 'La hoja "FamiliasProductos" define el orden de las secciones en el catálogo'],
+    ['', 'La columna "Familia" debe coincidir con la columna "tipologia" de Productos'],
+    ['', 'Si una tipología no está en FamiliasProductos aparecerá al final'],
     ['', ''],
     ['CATÁLOGO ZAPHIRO', ''],
     ['', 'Menú → "Actualizar catálogo Zaphiro" para forzar la actualización'],
@@ -587,11 +612,13 @@ function crearHojaAyuda() {
     ['', 'Para cambios en diseño del PDF o comportamiento de la web, contactar con el equipo de desarrollo.'],
   ];
 
+  const seccionFilas = [3, 8, 15, 19, 29, 39, 49, 56, 71, 82, 88, 92, 96, 100];
+
   sheet.getRange(1, 1, datos.length, 2).setValues(datos);
   sheet.getRange(1, 1, 1, 2).merge()
     .setFontSize(13).setFontWeight('bold').setFontColor('#d91b1b');
 
-  [3, 8, 15, 19, 28, 44, 51, 57, 63, 67, 71, 75].forEach(row => {
+  seccionFilas.forEach(row => {
     if (row <= datos.length)
       sheet.getRange(row, 1, 1, 2).merge()
         .setBackground('#1a1a1a').setFontColor('white').setFontWeight('bold').setFontSize(10);
@@ -599,7 +626,8 @@ function crearHojaAyuda() {
 
   sheet.getRange(1, 1, datos.length, 1).setFontWeight('bold');
   sheet.setColumnWidth(1, 240);
-  sheet.setColumnWidth(2, 500);
+  sheet.setColumnWidth(2, 520);
+  sheet.setRowHeightsForced(1, datos.length, 21);
   sheet.protect().setDescription('Hoja de ayuda').setWarningOnly(true);
   SpreadsheetApp.getActiveSpreadsheet().toast('✓ Hoja de Ayuda actualizada', 'Listo', 4);
   SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(sheet);
