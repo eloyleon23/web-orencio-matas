@@ -45,7 +45,7 @@ W, H   = A4
 MARGIN = 18 * mm
 CW     = W - 2 * MARGIN
 
-# ── Leer productos del Sheet ────────────────────────────────────────────────
+# ── Leer familias del Sheet ─────────────────────────────────────────────────
 def leer_familias():
     """Lee la hoja 'FamiliasProductos' y devuelve un dict {familia: orden}."""
     url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
@@ -57,7 +57,6 @@ def leer_familias():
         reader = csv.DictReader(sio.StringIO(resp.text))
         familias = {}
         for row in reader:
-            # Limpiar claves
             clean = {k.strip().lower(): v.strip() for k, v in row.items()}
             familia = clean.get('familia', '').strip().upper()
             orden_raw = clean.get('orden', '999')
@@ -72,20 +71,22 @@ def leer_familias():
     except Exception as e:
         print(f"⚠ No se pudo leer FamiliasProductos: {e}")
         return {}
+
+# ── Leer productos del Sheet ────────────────────────────────────────────────
+def leer_productos():
     """Lee la hoja 'Productos' del Google Sheet exportada como CSV."""
     url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
            f"/gviz/tq?tqx=out:csv&sheet=Productos")
     resp = requests.get(url, timeout=30)
     resp.raise_for_status()
-    
+
     import csv, io as sio
     reader = csv.DictReader(sio.StringIO(resp.text))
     productos = []
     for row in reader:
-        # Limpiar claves (strip espacios)
         clean = {k.strip().lower().replace(' ', '_'): v.strip() for k, v in row.items()}
         productos.append(clean)
-    
+
     print(f"✓ {len(productos)} productos leídos del Sheet")
     return productos
 
