@@ -46,7 +46,32 @@ MARGIN = 18 * mm
 CW     = W - 2 * MARGIN
 
 # ── Leer productos del Sheet ────────────────────────────────────────────────
-def leer_productos():
+def leer_familias():
+    """Lee la hoja 'FamiliasProductos' y devuelve un dict {familia: orden}."""
+    url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+           f"/gviz/tq?tqx=out:csv&sheet=FamiliasProductos")
+    try:
+        resp = requests.get(url, timeout=20)
+        resp.raise_for_status()
+        import csv, io as sio
+        reader = csv.DictReader(sio.StringIO(resp.text))
+        familias = {}
+        for row in reader:
+            # Limpiar claves
+            clean = {k.strip().lower(): v.strip() for k, v in row.items()}
+            familia = clean.get('familia', '').strip().upper()
+            orden_raw = clean.get('orden', '999')
+            try:
+                orden = int(orden_raw)
+            except:
+                orden = 999
+            if familia:
+                familias[familia] = orden
+        print(f"✓ {len(familias)} familias leídas")
+        return familias
+    except Exception as e:
+        print(f"⚠ No se pudo leer FamiliasProductos: {e}")
+        return {}
     """Lee la hoja 'Productos' del Google Sheet exportada como CSV."""
     url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
            f"/gviz/tq?tqx=out:csv&sheet=Productos")
@@ -374,7 +399,7 @@ def portada(story, area_cfg, logo_png, st):
     story.append(PageBreak())
 
 # ── Generar un catálogo ─────────────────────────────────────────────────────
-def generar_catalogo(area, productos, logo_png):
+def generar_catalogo(area, productos, logo_png, familias={}):
     cfg = AREAS[area]
     out_path = os.path.join(OUTPUT_DIR, cfg['filename'])
     st = estilos()
@@ -406,8 +431,12 @@ def generar_catalogo(area, productos, logo_png):
     for p in productos_area:
         t = p.get('tipologia', 'General').strip() or 'General'
         tipologias.setdefault(t, []).append(p)
-    
-    for i, (tipo, prods) in enumerate(sorted(tipologias.items())):
+
+    def orden_tipologia(nombre):
+        """Devuelve el orden según FamiliasProductos, o 9999 si no está."""
+        return familias.get(nombre.upper(), 9999)
+
+    for i, (tipo, prods) in enumerate(sorted(tipologias.items(), key=lambda x: (orden_tipologia(x[0]), x[0]))):
         if i > 0:
             story.append(PageBreak())
         story.append(banner(cfg['titulo'], tipo, cfg['color'], st))
@@ -437,11 +466,12 @@ def main():
             logo_png = None
     
     productos = leer_productos()
-    
+    familias  = leer_familias()
+
     generados = []
     for area in AREAS:
         print(f"\n▶ Área: {area}")
-        ok = generar_catalogo(area, productos, logo_png)
+        ok = generar_catalogo(area, productos, logo_png, familias)
         if ok:
             generados.append(area)
     
