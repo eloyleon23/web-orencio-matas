@@ -172,6 +172,7 @@ def estilos():
 
 # ── Header y footer de página ───────────────────────────────────────────────
 def make_header_footer(logo_png_path):
+    año = datetime.datetime.now().year
     def hf(canvas, doc):
         canvas.saveState()
         canvas.setFillColor(COLOR_NEGRO)
@@ -187,7 +188,7 @@ def make_header_footer(logo_png_path):
         canvas.setFont('Helvetica-Bold', 9)
         canvas.drawString(MARGIN+14*mm, H-10*mm, 'ORENCIO MATAS Y HERMANOS, S.L.')
         canvas.setFont('Helvetica', 7.5)
-        canvas.drawRightString(W-MARGIN, H-9.5*mm, f'Catálogo de Productos {datetime.datetime.now().year}')
+        canvas.drawRightString(W-MARGIN, H-9.5*mm, f'Catálogo de Productos {año}')
         canvas.setFillColor(COLOR_FONDO)
         canvas.rect(0, 0, W, 10*mm, fill=1, stroke=0)
         canvas.setStrokeColor(COLOR_BORDE)
