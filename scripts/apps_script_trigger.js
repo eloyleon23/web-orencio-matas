@@ -13,6 +13,9 @@ function onOpen() {
     .addSeparator()
     .addItem('➕ Añadir / Editar producto', 'mostrarFormularioProducto')
     .addSeparator()
+    .addItem('📥 Sincronizar RegistroProductos → Productos', 'sincronizarRegistroProductos')
+    .addItem('🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
+    .addSeparator()
     .addItem('🔄 Actualizar catálogo Zaphiro', 'actualizarZaphiro')
     .addSeparator()
     .addItem('📖 Ver guía de uso', 'abrirAyuda')
@@ -600,6 +603,145 @@ function crearHojaAyuda() {
   sheet.protect().setDescription('Hoja de ayuda').setWarningOnly(true);
   SpreadsheetApp.getActiveSpreadsheet().toast('✓ Hoja de Ayuda actualizada', 'Listo', 4);
   SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(sheet);
+}
+
+// ── BAJA DE PRODUCTOS desde BajaProductos ─────────────────────────────────
+//
+// La hoja "BajaProductos" contiene:
+//   A: Referencia (EAN) — obligatorio
+//   B: Procesado        — gestionado por el script (si / vacío)
+//   C: Error            — gestionado por el script
+//
+// El script marca en Productos: incluir_en_catalogo = "no" y fecha_baja = ahora
+// Solo procesa filas sin "si" en Procesado, permitiendo reanudar si se interrumpe.
+
+function darDeBajaProductos() {
+  const ss         = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetBaja  = ss.getSheetByName('BajaProductos');
+  const sheetProd  = ss.getSheetByName('Productos');
+
+  if (!sheetBaja) {
+    SpreadsheetApp.getUi().alert('No existe la hoja "BajaProductos". Créala con las referencias a dar de baja.');
+    return;
+  }
+  if (!sheetProd) {
+    SpreadsheetApp.getUi().alert('No existe la hoja "Productos".');
+    return;
+  }
+
+  // ── Asegurar columnas Procesado y Error en BajaProductos ─────────────────
+  let bajaHeaders = sheetBaja.getRange(1, 1, 1, sheetBaja.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+
+  // Si la hoja está vacía o solo tiene datos sin cabecera, inicializar cabeceras
+  if (!bajaHeaders[0] || bajaHeaders[0].toLowerCase() === '') {
+    sheetBaja.getRange(1, 1, 1, 3).setValues([['Referencia', 'Procesado', 'Error']]);
+    bajaHeaders = ['Referencia', 'Procesado', 'Error'];
+  } else {
+    if (!bajaHeaders.includes('Procesado')) {
+      sheetBaja.getRange(1, bajaHeaders.length + 1).setValue('Procesado');
+      bajaHeaders.push('Procesado');
+    }
+    if (!bajaHeaders.includes('Error')) {
+      sheetBaja.getRange(1, bajaHeaders.length + 1).setValue('Error');
+      bajaHeaders.push('Error');
+    }
+  }
+
+  const BAJA = {};
+  bajaHeaders.forEach((h, i) => { BAJA[h] = i; });
+
+  // ── Cabeceras de Productos ────────────────────────────────────────────────
+  const prodHeaders = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+
+  // Añadir columna fecha_baja si no existe
+  if (!prodHeaders.includes('fecha_baja')) {
+    sheetProd.getRange(1, prodHeaders.length + 1).setValue('fecha_baja');
+    prodHeaders.push('fecha_baja');
+  }
+
+  const PROD = {};
+  prodHeaders.forEach((h, i) => { PROD[h] = i; });
+
+  const colIncluir   = PROD['incluir_en_catalogo'];
+  const colFechaBaja = PROD['fecha_baja'];
+  const colRef       = PROD['referencia'];
+
+  if (colRef === undefined || colIncluir === undefined) {
+    SpreadsheetApp.getUi().alert('La hoja Productos no tiene las columnas "referencia" o "incluir_en_catalogo".');
+    return;
+  }
+
+  // ── Índice de Productos por referencia ───────────────────────────────────
+  const prodData  = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow() - 1, 1), sheetProd.getLastColumn()).getValues();
+  const prodIndex = {};
+  prodData.forEach((row, i) => {
+    const ref = row[colRef];
+    if (ref) prodIndex[ref.toString().trim().toUpperCase()] = i;
+  });
+
+  // ── Procesar bajas ────────────────────────────────────────────────────────
+  const lastRow = sheetBaja.getLastRow();
+  if (lastRow < 2) {
+    SpreadsheetApp.getUi().alert('La hoja BajaProductos no tiene referencias. Añade EANs en la columna Referencia.');
+    return;
+  }
+
+  const bajaData = sheetBaja.getRange(2, 1, lastRow - 1, bajaHeaders.length).getValues();
+  const ahora    = Utilities.formatDate(new Date(), 'Europe/Madrid', 'dd/MM/yyyy HH:mm');
+  let bajas = 0, noEncontrados = 0, saltados = 0, errores = 0;
+
+  for (let i = 0; i < bajaData.length; i++) {
+    const fila   = bajaData[i];
+    const rowNum = i + 2;
+
+    const ref       = fila[BAJA['Referencia']] ? fila[BAJA['Referencia']].toString().trim() : '';
+    const procesado = BAJA['Procesado'] !== undefined ? fila[BAJA['Procesado']].toString().trim() : '';
+
+    // Saltar filas ya procesadas o sin referencia
+    if (procesado === 'si') { saltados++; continue; }
+    if (!ref) {
+      sheetBaja.getRange(rowNum, BAJA['Error'] + 1).setValue('Referencia vacía');
+      errores++;
+      continue;
+    }
+
+    try {
+      const idx = prodIndex[ref.toUpperCase()];
+
+      if (idx === undefined) {
+        // No encontrado en Productos
+        sheetBaja.getRange(rowNum, BAJA['Procesado'] + 1).setValue('no encontrado');
+        sheetBaja.getRange(rowNum, BAJA['Error'] + 1).setValue('Referencia no existe en Productos');
+        noEncontrados++;
+        continue;
+      }
+
+      const prodRowNum = idx + 2; // fila real en Productos (1-based + cabecera)
+
+      // Marcar como baja
+      sheetProd.getRange(prodRowNum, colIncluir + 1).setValue('no');
+      if (colFechaBaja !== undefined)
+        sheetProd.getRange(prodRowNum, colFechaBaja + 1).setValue(ahora);
+
+      // Marcar como procesado en BajaProductos
+      sheetBaja.getRange(rowNum, BAJA['Procesado'] + 1).setValue('si');
+      sheetBaja.getRange(rowNum, BAJA['Error'] + 1).setValue('');
+      bajas++;
+
+    } catch (err) {
+      sheetBaja.getRange(rowNum, BAJA['Procesado'] + 1).setValue('no');
+      sheetBaja.getRange(rowNum, BAJA['Error'] + 1).setValue(err.message);
+      errores++;
+    }
+  }
+
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `🚫 Bajas: ${bajas} | No encontrados: ${noEncontrados} | Saltados: ${saltados} | Errores: ${errores}`,
+    '✓ Proceso de bajas completado', 8
+  );
 }
 
 // ── Crear hoja de configuración ────────────────────────────────────────────
