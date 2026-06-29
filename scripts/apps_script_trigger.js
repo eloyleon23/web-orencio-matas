@@ -18,6 +18,8 @@ function onOpen() {
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addItem('🗂️ Reevaluar áreas de todos los productos', 'reevaluarAreasProductos')
+    .addItem('⛔ Deshabilitar productos con foto incorrecta', 'deshabilitarProductosSinFoto')
+    .addItem('🔄 Actualizar imágenes corregidas desde Drive', 'actualizarImagenesCorregidas')
     .addSeparator()
     .addItem('🔄 Actualizar catálogo Zaphiro', 'actualizarZaphiro')
     .addSeparator()
@@ -1103,6 +1105,253 @@ function actualizarImagenesDrive() {
   SpreadsheetApp.getActiveSpreadsheet().toast(
     `✓ Con imagen: ${actualizados} | Sin imagen: ${sinImagen} | Ya tenían ID: ${yaTenian}`,
     '🖼️ Actualización completada', 10
+  );
+}
+
+// ── DESHABILITAR PRODUCTOS CON FOTO INCORRECTA ────────────────────────────
+//
+// Lee RegistroProductos donde TieneFoto = "no" Y Procesado = "no"
+// y pone incluir_en_catalogo = "no" en la hoja Productos.
+// Marca la fila en RegistroProductos con Procesado = "deshabilitado"
+// para distinguirla de las pendientes de sincronizar.
+
+function deshabilitarProductosSinFoto() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetReg  = ss.getSheetByName('RegistroProductos');
+  const sheetProd = ss.getSheetByName('Productos');
+
+  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos".'); return; }
+  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+
+  // Cabeceras RegistroProductos
+  const regHeaders = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+  const REGCOL = {};
+  regHeaders.forEach((h, i) => { REGCOL[h] = i; });
+
+  // Cabeceras Productos
+  const prodHeaders = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
+  const PROD = {};
+  prodHeaders.forEach((h, i) => { PROD[h] = i; });
+
+  const colRef      = PROD['referencia'];
+  const colIncluir  = PROD['incluir_en_catalogo'];
+  if (colRef === undefined || colIncluir === undefined) {
+    SpreadsheetApp.getUi().alert('Faltan columnas "referencia" o "incluir_en_catalogo" en Productos.');
+    return;
+  }
+
+  // Índice de productos por EAN
+  const prodData  = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow()-1,1), sheetProd.getLastColumn()).getValues();
+  const prodIndex = {};
+  prodData.forEach((row, i) => {
+    const ref = row[colRef];
+    if (ref) prodIndex[ref.toString().trim()] = i;
+  });
+
+  // Leer RegistroProductos
+  const lastRow = sheetReg.getLastRow();
+  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos está vacío.'); return; }
+  const regData = sheetReg.getRange(2, 1, lastRow-1, regHeaders.length).getValues();
+
+  let deshabilitados = 0, noEncontrados = 0, saltados = 0;
+
+  for (let i = 0; i < regData.length; i++) {
+    const fila   = regData[i];
+    const rowNum = i + 2;
+
+    const tieneFoto = REGCOL['TieneFoto']  !== undefined ? fila[REGCOL['TieneFoto']].toString().trim().toLowerCase()  : '';
+    const procesado = REGCOL['Procesado']  !== undefined ? fila[REGCOL['Procesado']].toString().trim().toLowerCase()  : '';
+    const ean       = REGCOL['CodigoEAN']  !== undefined ? fila[REGCOL['CodigoEAN']].toString().trim()                : '';
+
+    // Solo procesar: TieneFoto = no Y Procesado = no (o vacío)
+    if (tieneFoto !== 'no') { saltados++; continue; }
+    if (procesado !== 'no' && procesado !== '') { saltados++; continue; }
+    if (!ean) { saltados++; continue; }
+
+    const idx = prodIndex[ean];
+    if (idx === undefined) {
+      noEncontrados++;
+      if (REGCOL['Error'] !== undefined)
+        sheetReg.getRange(rowNum, REGCOL['Error']+1).setValue('No encontrado en Productos');
+      continue;
+    }
+
+    // Deshabilitar en Productos
+    sheetProd.getRange(idx+2, colIncluir+1).setValue('no');
+
+    // Marcar en RegistroProductos como deshabilitado
+    if (REGCOL['Procesado'] !== undefined)
+      sheetReg.getRange(rowNum, REGCOL['Procesado']+1).setValue('deshabilitado');
+
+    deshabilitados++;
+
+    if (deshabilitados % 100 === 0) {
+      SpreadsheetApp.flush();
+      SpreadsheetApp.getActiveSpreadsheet()
+        .toast(`Deshabilitando... ${deshabilitados} productos`, '⛔ En proceso', 5);
+    }
+  }
+
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `⛔ Deshabilitados: ${deshabilitados} | No encontrados: ${noEncontrados} | Saltados: ${saltados}`,
+    '✓ Completado', 10
+  );
+}
+
+// ── ACTUALIZAR IMÁGENES CORREGIDAS DESDE DRIVE ────────────────────────────
+//
+// Lee RegistroProductos donde Procesado = "deshabilitado" (foto incorrecta)
+// Busca en la carpeta "imagenes_nuevas_pendientes_procesar" un archivo con
+// el nombre del EAN. Si lo encuentra:
+//   - Comparte el archivo públicamente
+//   - Actualiza imagen_drive_id en Productos
+//   - Reactiva incluir_en_catalogo = "si"
+//   - Marca Procesado = "imagen_actualizada" en RegistroProductos
+// Si no encuentra la imagen nueva, deja el producto deshabilitado.
+
+const DRIVE_IMAGENES_NUEVAS_ID = '1DL_2XvpR4IyOjRNyqAZvav5uy2WV3d7n';
+
+function actualizarImagenesCorregidas() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetReg  = ss.getSheetByName('RegistroProductos');
+  const sheetProd = ss.getSheetByName('Productos');
+
+  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos".'); return; }
+  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+
+  // Cabeceras
+  const regHeaders = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+  const REGCOL = {};
+  regHeaders.forEach((h, i) => { REGCOL[h] = i; });
+
+  const prodHeaders = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
+  const PROD = {};
+  prodHeaders.forEach((h, i) => { PROD[h] = i; });
+
+  const colRef     = PROD['referencia'];
+  const colIncluir = PROD['incluir_en_catalogo'];
+  const colImg     = PROD['imagen_drive_id'];
+  const colFecha   = PROD['fecha_registro'];
+
+  if (colRef === undefined || colIncluir === undefined || colImg === undefined) {
+    SpreadsheetApp.getUi().alert('Faltan columnas necesarias en Productos.');
+    return;
+  }
+
+  // Cargar caché de imágenes nuevas
+  SpreadsheetApp.getActiveSpreadsheet()
+    .toast('Cargando imágenes nuevas de Drive...', '🔄 Actualizando', 5);
+
+  const cacheNuevas = {};
+  try {
+    const folder = DriveApp.getFolderById(DRIVE_IMAGENES_NUEVAS_ID);
+    const files  = folder.getFiles();
+    while (files.hasNext()) {
+      const file = files.next();
+      const ean  = file.getName().replace(/\.[^.]+$/, '').trim();
+      cacheNuevas[ean] = file;  // guardar el objeto File para compartirlo
+    }
+  } catch(e) {
+    SpreadsheetApp.getUi().alert('Error accediendo a la carpeta de imágenes nuevas: ' + e.message);
+    return;
+  }
+
+  const totalNuevas = Object.keys(cacheNuevas).length;
+  if (totalNuevas === 0) {
+    SpreadsheetApp.getUi().alert('No hay imágenes en la carpeta "imagenes_nuevas_pendientes_procesar".');
+    return;
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet()
+    .toast(`${totalNuevas} imágenes nuevas encontradas. Procesando...`, '🔄 Actualizando', 5);
+
+  // Índice de productos
+  const prodData  = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow()-1,1), sheetProd.getLastColumn()).getValues();
+  const prodIndex = {};
+  prodData.forEach((row, i) => {
+    const ref = row[colRef];
+    if (ref) prodIndex[ref.toString().trim()] = i;
+  });
+
+  // Leer RegistroProductos
+  const lastRow = sheetReg.getLastRow();
+  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos está vacío.'); return; }
+  const regData = sheetReg.getRange(2, 1, lastRow-1, regHeaders.length).getValues();
+
+  let actualizados = 0, sinImagenNueva = 0, noEncontrados = 0, saltados = 0;
+  const ahora = Utilities.formatDate(new Date(), 'Europe/Madrid', 'dd/MM/yyyy HH:mm');
+
+  for (let i = 0; i < regData.length; i++) {
+    const fila   = regData[i];
+    const rowNum = i + 2;
+
+    const procesado = REGCOL['Procesado'] !== undefined ? fila[REGCOL['Procesado']].toString().trim().toLowerCase() : '';
+    const ean       = REGCOL['CodigoEAN'] !== undefined ? fila[REGCOL['CodigoEAN']].toString().trim()               : '';
+
+    // Solo procesar los marcados como "deshabilitado"
+    if (procesado !== 'deshabilitado') { saltados++; continue; }
+    if (!ean) { saltados++; continue; }
+
+    // Buscar imagen nueva en Drive
+    const fileNuevo = cacheNuevas[ean] || cacheNuevas[ean.toUpperCase()] || cacheNuevas[ean.toLowerCase()];
+
+    if (!fileNuevo) {
+      sinImagenNueva++;
+      continue; // Sin imagen nueva — mantener deshabilitado
+    }
+
+    // Buscar producto en Productos
+    const idx = prodIndex[ean];
+    if (idx === undefined) {
+      noEncontrados++;
+      if (REGCOL['Error'] !== undefined)
+        sheetReg.getRange(rowNum, REGCOL['Error']+1).setValue('No encontrado en Productos');
+      continue;
+    }
+
+    try {
+      // Compartir imagen nueva públicamente
+      fileNuevo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+      const nuevoId  = fileNuevo.getId();
+      const prodRowNum = idx + 2;
+
+      // Actualizar imagen_drive_id, reactivar y actualizar fecha
+      sheetProd.getRange(prodRowNum, colImg+1).setValue(nuevoId);
+      sheetProd.getRange(prodRowNum, colIncluir+1).setValue('si');
+      if (colFecha !== undefined)
+        sheetProd.getRange(prodRowNum, colFecha+1).setValue(ahora);
+
+      // Marcar en RegistroProductos
+      if (REGCOL['Procesado'] !== undefined)
+        sheetReg.getRange(rowNum, REGCOL['Procesado']+1).setValue('imagen_actualizada');
+      if (REGCOL['TieneFoto'] !== undefined)
+        sheetReg.getRange(rowNum, REGCOL['TieneFoto']+1).setValue('si');
+      if (REGCOL['Error'] !== undefined)
+        sheetReg.getRange(rowNum, REGCOL['Error']+1).setValue('');
+
+      actualizados++;
+
+      if (actualizados % 50 === 0) {
+        SpreadsheetApp.flush();
+        SpreadsheetApp.getActiveSpreadsheet()
+          .toast(`Actualizando... ${actualizados} imágenes`, '🔄 En proceso', 5);
+      }
+    } catch(e) {
+      if (REGCOL['Error'] !== undefined)
+        sheetReg.getRange(rowNum, REGCOL['Error']+1).setValue(e.message);
+    }
+  }
+
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `✓ Actualizados: ${actualizados} | Sin imagen nueva: ${sinImagenNueva} | No encontrados: ${noEncontrados} | Saltados: ${saltados}`,
+    '✓ Actualización completada', 12
   );
 }
 
