@@ -111,7 +111,7 @@ def get_session():
     return _session
 
 # ── Descargar imagen de Google Drive ───────────────────────────────────────
-def descargar_imagen(drive_id, max_px=600):
+def descargar_imagen(drive_id, max_px=400):
     """Descarga una imagen de Drive por su ID y la devuelve como objeto PIL."""
     if not drive_id or drive_id == 'NO_TIENE_FOTO':
         return None
@@ -142,7 +142,7 @@ def descargar_imagen(drive_id, max_px=600):
         _img_cache[drive_id] = None
         return None
 
-def precargar_imagenes(productos_area, max_workers=16):
+def precargar_imagenes(productos_area, max_workers=8):
     """Descarga en paralelo todas las imágenes de un área antes de generar el PDF."""
     ids = list({p.get('imagen_drive_id','').strip() for p in productos_area
                 if p.get('imagen_drive_id','').strip() and
@@ -536,6 +536,11 @@ def main():
         ok = generar_catalogo(area, productos, logo_png, familias)
         if ok:
             generados.append(area)
+        # Liberar caché de imágenes entre áreas para no agotar RAM
+        _img_cache.clear()
+        import gc
+        gc.collect()
+        print(f"  Memoria liberada.")
     
     # Escribir manifiesto JSON con las áreas disponibles
     manifiesto = {
