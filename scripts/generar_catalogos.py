@@ -49,7 +49,7 @@ CW     = W - 2 * MARGIN
 def leer_familias():
     """Lee la hoja 'FamiliasProductos' y devuelve un dict {familia: orden}."""
     url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
-           f"/gviz/tq?tqx=out:csv&sheet=FamiliasProductos")
+           f"/gviz/tq?tqx=out:csv&sheet=FamiliaProductos")
     try:
         resp = requests.get(url, timeout=20)
         resp.raise_for_status()
