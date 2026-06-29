@@ -55,13 +55,17 @@ def leer_familias():
         resp.raise_for_status()
         import csv, io as sio
         reader = csv.DictReader(sio.StringIO(resp.text))
+        # Normalizar cabeceras
+        raw_headers = reader.fieldnames or []
+        print(f"  FamiliasProductos cabeceras: {raw_headers}")
         familias = {}
         for row in reader:
+            # Buscar columnas de forma flexible (case-insensitive)
             clean = {k.strip().lower(): v.strip() for k, v in row.items()}
-            familia = clean.get('familia', '').strip().upper()
-            orden_raw = clean.get('orden', '999')
+            familia = (clean.get('familia') or clean.get('family') or '').strip().upper()
+            orden_raw = (clean.get('orden') or clean.get('order') or '999').strip()
             try:
-                orden = int(orden_raw)
+                orden = int(float(orden_raw))
             except:
                 orden = 999
             if familia:
@@ -101,15 +105,21 @@ def descargar_imagen(drive_id, max_px=600):
     if drive_id in _img_cache:
         return _img_cache[drive_id]
     try:
-        # Usar Drive API si hay clave disponible (más rápido y fiable)
-        if API_KEY:
-            url = f"https://www.googleapis.com/drive/v3/files/{drive_id}?alt=media&key={API_KEY}"
-        else:
-            url = f"https://drive.google.com/uc?export=download&id={drive_id}"
-        resp = requests.get(url, timeout=15)
+        # URL de descarga directa para archivos compartidos públicamente
+        url = f"https://drive.google.com/uc?export=download&id={drive_id}"
+        resp = requests.get(url, timeout=15, allow_redirects=True)
         if resp.status_code != 200:
             _img_cache[drive_id] = None
             return None
+        # Google Drive a veces devuelve HTML con aviso de virus para archivos grandes
+        content_type = resp.headers.get('Content-Type', '')
+        if 'text/html' in content_type:
+            # Intentar con URL alternativa
+            url2 = f"https://lh3.googleusercontent.com/d/{drive_id}"
+            resp = requests.get(url2, timeout=15, allow_redirects=True)
+            if resp.status_code != 200 or 'text/html' in resp.headers.get('Content-Type',''):
+                _img_cache[drive_id] = None
+                return None
         img = PILImage.open(io.BytesIO(resp.content)).convert('RGB')
         w, h = img.size
         if max(w, h) > max_px:
