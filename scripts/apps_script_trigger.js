@@ -17,6 +17,7 @@ function onOpen() {
     .addItem('🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
+    .addItem('🗂️ Reevaluar áreas de todos los productos', 'reevaluarAreasProductos')
     .addSeparator()
     .addItem('🔄 Actualizar catálogo Zaphiro', 'actualizarZaphiro')
     .addSeparator()
@@ -207,22 +208,152 @@ function formatPrecio_(num) {
 
 function inferirArea_(nombre, familia) {
   const txt = (nombre + ' ' + familia).toLowerCase();
-  const pinturas   = ['pintura','barniz','esmalte','laca','aguarras','disolvente','brocha','rodillo',
-                      'masilla','silicona','sellador','imprimacion','imprimación','anticorrosivo',
-                      'pincel','espátula','espatula','fijador','estuco','revoque','pintar'];
-  const talleres   = ['taller','aceite motor','lubricante','grasa','anticongelante','limpiametales',
-                      'desengrasante industrial','herramienta','tornillo','tuerca','arandela',
-                      'llave','taladro','soldadura','spray taller','wd','mechero','encendedor'];
-  const perfumeria = ['perfume','colonia','eau de','edt','edp','desodorante','deo','gel de ducha',
-                      'gel ducha','champú','champu','acondicionador','crema corporal','crema facial',
-                      'loción','locion','serum','maquillaje','cosmética','cosmetica','after shave',
-                      'afeitado','espuma afeitar','cera cabello','mascarilla capilar','tinte cabello',
-                      'laca cabello','suavizante cabello','higiene intima','higiene íntima',
-                      'compresas','tampones','pañales','pañal','colonia infantil'];
+
+  // ── Pinturas: keywords + marcas conocidas ──────────────────────────────
+  const pinturas = [
+    // Genéricos
+    'pintura','barniz','esmalte','laca','aguarras','disolvente','brocha','rodillo',
+    'masilla','silicona','sellador','imprimacion','imprimación','anticorrosivo',
+    'pincel','espátula','espatula','fijador','estuco','revoque','pintar',
+    'lija','lija ','lijado','pintura plástica','pintura esmalte','barnizado',
+    'decapante','quitapintura','cinta de enmascarar','krepp','cinta adhesiva',
+    'cubeta','cubeta pintura','rodillo pintura','alargador','palo telescópico',
+    'imprimador','aparejos','spray pintura','aerosol pintura',
+    'pintura al agua','pintura al aceite','esmalte sintético','esmalte acrilico',
+    // Marcas
+    'titanlux','titankote','titan ','oxiron','bruguer','xyladecor','xylamon',
+    'valentí','valenti','hempel','jotun','montó','monto','isaval','lepanto',
+    'beissier','sinteplast','polycell','rustoleum','rust-oleum','hammerite',
+    'rücker','rucker','cetabever','sikkens','dyrup','bondex','comex',
+    'revetón','reveton','ceys','pattex','loctite','bostik',
+  ];
+
+  // ── Talleres: keywords + marcas ────────────────────────────────────────
+  const talleres = [
+    // Genéricos
+    'aceite motor','lubricante','grasa ','anticongelante','limpiametales',
+    'desengrasante industrial','herramienta','tornillo','tuerca','arandela',
+    'llave inglesa','taladro','soldadura','spray taller','mechero','encendedor',
+    'carrocería','carroceria','lija carrocería','masilla poliéster','aparejo',
+    'pintura carrocería','fondo aparejo','imprimación carrocería',
+    'laca carrocería','barniz carrocería','disolvente nitro','diluyente',
+    'silicona taller','desengrasante taller','limpia frenos','limpia contactos',
+    'grasa litio','aceite cadena','pasta pulidora','pulimento','abrillantador',
+    'cristalizado','cera carrocería','espuma limpiadora',
+    // Marcas
+    'wurth','würth','motul','castrol','total oil','repsol','mobil','shell',
+    'bardahl','liqui moly','valvoline','eni oil','mannol','dynamo',
+    '3m taller','norton abrasivos','mirka','indasa','sia abrasives',
+  ];
+
+  // ── Perfumería: keywords + marcas ─────────────────────────────────────
+  const perfumeria = [
+    // Genéricos
+    'perfume','colonia','eau de','edt','edp','desodorante','deo ',
+    'gel de ducha','gel ducha','champú','champu','acondicionador',
+    'crema corporal','crema facial','loción','locion','serum','sérum',
+    'maquillaje','cosmética','cosmetica','after shave','afeitado',
+    'espuma afeitar','cera cabello','mascarilla capilar','tinte cabello',
+    'laca cabello','suavizante cabello','higiene intima','higiene íntima',
+    'compresas','tampones','pañales','pañal','colonia infantil',
+    'crema manos','crema hidratante','leche corporal','aceite corporal',
+    'jabón pastilla','jabón líquido','gel íntimo','toallitas húmedas',
+    'papel higiénico','pañuelos','algodón','bastoncillos','esponjas baño',
+    'maquinilla','cuchilla afeitar','espuma afeitado','after shave',
+    'fijador cabello','gomina','laca pelo','tinte pelo','decoloración',
+    'quitaesmalte','esmalte uñas','laca uñas','pintalabios','rimmel',
+    // Marcas
+    'nivea','dove','fa ','rexona','sanex','axe ','gillette','venus ',
+    'oral-b','colgate','sensodyne','listerine','elmex','vademecum',
+    'pantene','head shoulders','elvive','fructis','herbal essences',
+    'palmolive','johnson','neutrogena','garnier','l\'oreal','loreal',
+    'maybelline','max factor','bourjois','revlon','rimmel london',
+    'tulipán negro','tulipan negro','heno de pravia','la toja',
+    'floid','williams','legrain','puig ','myrurgia','parera',
+    'instituto español','interapothek','mercadona','deliplus',
+  ];
+
   for (const kw of pinturas)   if (txt.includes(kw)) return 'pinturas';
   for (const kw of talleres)   if (txt.includes(kw)) return 'talleres';
   for (const kw of perfumeria) if (txt.includes(kw)) return 'perfumeria';
   return 'drogueria';
+}
+
+// ── REEVALUAR ÁREAS DE TODOS LOS PRODUCTOS ────────────────────────────────
+//
+// Recorre todos los productos y recalcula el campo "area" usando inferirArea_.
+// Muestra un resumen de cuántos cambios se han realizado por área.
+// Solo actualiza el campo "area" — no toca ningún otro campo.
+
+function reevaluarAreasProductos() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+
+  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
+
+  const colNombre   = headers.indexOf('nombre');
+  const colTipologia = headers.indexOf('tipologia');
+  const colArea     = headers.indexOf('area');
+  const colRef      = headers.indexOf('referencia');
+
+  if (colArea === -1) { SpreadsheetApp.getUi().alert('No existe la columna "area" en Productos.'); return; }
+
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos.'); return; }
+
+  const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
+
+  const cambios    = { drogueria: 0, perfumeria: 0, pinturas: 0, talleres: 0 };
+  const sinCambio  = { drogueria: 0, perfumeria: 0, pinturas: 0, talleres: 0 };
+  let totalCambios = 0;
+
+  // Preparar array de actualizaciones en lote
+  const updates = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row       = data[i];
+    const nombre    = colNombre    >= 0 ? row[colNombre].toString().trim()    : '';
+    const tipologia = colTipologia >= 0 ? row[colTipologia].toString().trim() : '';
+    const areaActual = row[colArea].toString().trim().toLowerCase();
+
+    if (!nombre) continue;
+
+    const areaNueva = inferirArea_(nombre, tipologia);
+
+    if (areaNueva !== areaActual) {
+      updates.push({ row: i + 2, area: areaNueva });
+      cambios[areaNueva] = (cambios[areaNueva] || 0) + 1;
+      totalCambios++;
+    } else {
+      sinCambio[areaActual] = (sinCambio[areaActual] || 0) + 1;
+    }
+
+    // Progreso cada 1000
+    if ((i + 1) % 1000 === 0) {
+      SpreadsheetApp.getActiveSpreadsheet()
+        .toast(`Analizando... ${i+1}/${data.length}`, '🔄 Reevaluando áreas', 5);
+    }
+  }
+
+  // Aplicar cambios en lote
+  if (updates.length > 0) {
+    SpreadsheetApp.getActiveSpreadsheet()
+      .toast(`Aplicando ${updates.length} cambios...`, '🔄 Guardando', 5);
+    for (const u of updates) {
+      sheetProd.getRange(u.row, colArea + 1).setValue(u.area);
+    }
+    SpreadsheetApp.flush();
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `✓ ${totalCambios} productos reclasificados\n` +
+    `→ Pinturas: ${cambios.pinturas || 0} | Perfumería: ${cambios.perfumeria || 0} | ` +
+    `Talleres: ${cambios.talleres || 0} | Droguería: ${cambios.drogueria || 0}`,
+    '✓ Reevaluación completada', 12
+  );
 }
 
 function cargarCacheImagenes_() {
