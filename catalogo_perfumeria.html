@@ -231,14 +231,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <p>Selección de artículos de perfumería, cuidado personal y cosmética</p>
     </div>
 
+    
     <div class="mobile-pdf-link" id="mobile-link" style="display:none">
         <a id="btn-abrir" href="#" target="_blank" class="btn-mobile-pdf">
             <i class="fa-solid fa-external-link-alt"></i> Abrir catálogo en nueva pestaña
         </a>
-    </div>
-
-    <div class="catalog-viewer" id="viewer" style="display:none">
-        <iframe id="pdf-iframe" src="" type="application/pdf"></iframe>
     </div>
 
     <div id="no-catalogo" style="text-align:center;padding:60px 20px;display:none">
@@ -247,21 +244,89 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <a href="index.html#contacto" class="btn-download" style="margin-top:16px;display:inline-block">Solicitar información</a>
     </div>
 
+    <!-- Visor PDF.js — carga página a página sin descargar el PDF completo -->
+    <div id="visor-pdfjs" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button id="btn-prev" onclick="cambiarPagina(-1)"
+                    style="padding:6px 14px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
+                    ‹ Anterior
+                </button>
+                <span id="info-pagina" style="font-size:13px;color:#64748b;white-space:nowrap;">
+                    Pág. <span id="pagina-actual">1</span> / <span id="total-paginas">—</span>
+                </span>
+                <button id="btn-next" onclick="cambiarPagina(1)"
+                    style="padding:6px 14px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
+                    Siguiente ›
+                </button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button onclick="cambiarZoom(-0.2)"
+                    style="padding:6px 10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:13px;">−</button>
+                <span id="info-zoom" style="font-size:12px;color:#64748b;min-width:40px;text-align:center;">100%</span>
+                <button onclick="cambiarZoom(0.2)"
+                    style="padding:6px 10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:13px;">+</button>
+            </div>
+        </div>
+        <div style="background:#525659;padding:16px;border-radius:8px;text-align:center;min-height:600px;display:flex;align-items:center;justify-content:center;">
+            <canvas id="pdf-canvas" style="max-width:100%;box-shadow:0 4px 20px rgba(0,0,0,0.4);background:white;"></canvas>
+        </div>
+        <div id="cargando-pdf" style="color:white;font-size:14px;">Cargando catálogo...</div>
+    </div>
+
     <div class="catalog-disclaimer">
         <strong>Disponibilidad:</strong> Los productos mostrados están sujetos a disponibilidad. Consulta con nuestro equipo para confirmar stock actual.
     </div>
 
     <div class="catalog-actions" id="actions" style="display:none">
-        <a id="btn-descargar" href="#" download="catalogo_perfumeria.pdf" class="btn-download">
-            <i class="fa-solid fa-download"></i> Descargar Catálogo
+        <a id="btn-descargar" href="#" target="_blank" rel="noopener" class="btn-download">
+            <i class="fa-solid fa-download"></i> Descargar Catálogo PDF
         </a>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
     (function() {
-        const REPO   = 'eloyleon23/web-orencio-matas';
-        const PDF    = 'catalogo_perfumeria.pdf';
-        const API    = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+        const REPO = 'eloyleon23/web-orencio-matas';
+        const PDF  = 'catalogo_perfumeria.pdf';
+        const API  = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let pdfDoc = null, paginaActual = 1, zoom = 1.2;
+        const canvas  = document.getElementById('pdf-canvas');
+        const ctx     = canvas.getContext('2d');
+        const cargando = document.getElementById('cargando-pdf');
+
+        function renderPagina(num) {
+            pdfDoc.getPage(num).then(page => {
+                const vp = page.getViewport({ scale: zoom });
+                canvas.width  = vp.width;
+                canvas.height = vp.height;
+                page.render({ canvasContext: ctx, viewport: vp }).promise.then(() => {
+                    cargando.style.display = 'none';
+                    canvas.style.display   = 'block';
+                    document.getElementById('pagina-actual').textContent = num;
+                    document.getElementById('total-paginas').textContent = pdfDoc.numPages;
+                    document.getElementById('info-zoom').textContent = Math.round(zoom*100) + '%';
+                    document.getElementById('btn-prev').disabled = num <= 1;
+                    document.getElementById('btn-next').disabled = num >= pdfDoc.numPages;
+                });
+            });
+        }
+
+        window.cambiarPagina = function(delta) {
+            const nueva = paginaActual + delta;
+            if (nueva < 1 || nueva > pdfDoc.numPages) return;
+            paginaActual = nueva;
+            renderPagina(paginaActual);
+        };
+
+        window.cambiarZoom = function(delta) {
+            zoom = Math.max(0.5, Math.min(3, zoom + delta));
+            renderPagina(paginaActual);
+        };
 
         fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
             .then(r => r.ok ? r.json() : null)
@@ -270,13 +335,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 const asset = release.assets.find(a => a.name === PDF);
                 if (!asset) { showNoCatalogo(); return; }
                 const url = asset.browser_download_url;
-                const viewerUrl = 'https://docs.google.com/viewer?embedded=true&url=' + encodeURIComponent(url);
-                document.getElementById('pdf-iframe').src = viewerUrl;
-                document.getElementById('btn-abrir').href = url;
+
+                document.getElementById('btn-abrir').href    = url;
                 document.getElementById('btn-descargar').href = url;
                 document.getElementById('mobile-link').style.display = '';
-                document.getElementById('viewer').style.display = '';
-                document.getElementById('actions').style.display = '';
+                document.getElementById('visor-pdfjs').style.display = '';
+                document.getElementById('actions').style.display     = '';
+
+                pdfjsLib.getDocument({ url: url, withCredentials: false }).promise
+                    .then(pdf => {
+                        pdfDoc = pdf;
+                        renderPagina(1);
+                    })
+                    .catch(() => {
+                        cargando.textContent = 'Error al cargar el PDF. Usa el botón de descarga.';
+                    });
             })
             .catch(() => showNoCatalogo());
 
@@ -285,6 +358,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         }
     })();
     </script>
+
 </main>
 
 <script src="./src/js/analytics-consent.js"></script>

@@ -248,7 +248,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </a>
             </div>
             <div class="catalog-viewer" id="viewer-interno" style="display:none">
-                <iframe id="iframe-interno" src="" type="application/pdf"></iframe>
+                <div style="background:#525659;padding:16px;border-radius:8px;text-align:center;min-height:500px;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                <canvas id="canvas-interno" style="max-width:100%;box-shadow:0 4px 20px rgba(0,0,0,0.4);background:white;display:none;"></canvas>
+                <div id="cargando-interno" style="color:white;font-size:14px;">Cargando catálogo...</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                <button onclick="cambiarPagInterna(-1)" style="padding:6px 14px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;">‹ Anterior</button>
+                <span id="pag-interna" style="font-size:13px;color:#64748b;">Pág. 1 / —</span>
+                <button onclick="cambiarPagInterna(1)" style="padding:6px 14px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;">Siguiente ›</button>
+            </div>
             </div>
             <div id="no-catalogo-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
                 <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
@@ -313,6 +321,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 <link rel="stylesheet" href="./src/css/navbar.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="./src/js/navbar-secondary.js"></script>
 <script>
 (function() {
@@ -351,6 +360,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             const cfg = JSON.parse(new TextDecoder('utf-8').decode(Uint8Array.from(atob(data.content.replace(/\\n/g,'')), c => c.charCodeAt(0))));
             if (!cfg || !cfg.url) { showNoZaphiro(); return; }
             const url = cfg.url;
+            // Zaphiro: usar Google Docs viewer ya que es PDF externo
             const viewer = 'https://docs.google.com/viewer?embedded=true&url=' + encodeURIComponent(url);
             document.getElementById('iframe-zaphiro').src = viewer;
             document.getElementById('btn-abrir-zaphiro').href = url;
