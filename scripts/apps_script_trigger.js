@@ -23,15 +23,10 @@ function onOpen() {
 }
 
 // ── Trigger de edición ─────────────────────────────────────────────────────
+// La generación de catálogos es MANUAL — usar el menú "Generar catálogos ahora"
+// Se mantiene el trigger para posibles usos futuros pero no dispara el workflow
 function onEdit(e) {
-  const sheet = e.source.getActiveSheet();
-  if (sheet.getName() !== 'Productos') return;
-  const props = PropertiesService.getScriptProperties();
-  const ultima = props.getProperty('ultima_ejecucion');
-  const ahora  = Date.now();
-  if (ultima && (ahora - parseInt(ultima)) < COOLDOWN_MINUTOS * 60 * 1000) return;
-  props.setProperty('ultima_ejecucion', ahora.toString());
-  dispararWorkflow();
+  // Generación desactivada por volumen de productos — lanzar manualmente
 }
 
 // ── Disparar GitHub Actions ─────────────────────────────────────────────────
