@@ -155,13 +155,18 @@ def precargar_imagenes(productos_area, max_workers=16):
     ok = 0
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futuros = {ex.submit(descargar_imagen, id_): id_ for id_ in ids}
-        for f in as_completed(futuros, timeout=300):  # máx 5 min por área
-            try:
-                if f.result() is not None:
-                    ok += 1
-            except Exception:
-                pass
-    print(f"  ✓ {ok}/{len(ids)} imágenes descargadas")
+        try:
+            for f in as_completed(futuros, timeout=480):  # 8 min por área
+                try:
+                    if f.result() is not None:
+                        ok += 1
+                except Exception:
+                    pass
+        except TimeoutError:
+            # Continuar con las imágenes ya descargadas — no abortar
+            ok = sum(1 for id_ in ids if _img_cache.get(id_) is not None)
+            print(f"  ⚠ Timeout — continuando con {ok}/{len(ids)} imágenes descargadas")
+    print(f"  ✓ {ok}/{len(ids)} imágenes disponibles")
 
 def añadir_etiqueta_oferta(img):
     """Superpone una etiqueta en forma de banderín rojo pegada al borde sup-izq."""
