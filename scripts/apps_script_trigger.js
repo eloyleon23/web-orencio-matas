@@ -15,6 +15,7 @@ function onOpen() {
     .addSeparator()
     .addItem('📥 Sincronizar RegistroProductos → Productos', 'sincronizarRegistroProductos')
     .addItem('🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
+    .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addSeparator()
     .addItem('🔄 Actualizar catálogo Zaphiro', 'actualizarZaphiro')
     .addSeparator()
@@ -813,6 +814,101 @@ function crearHojaAyuda() {
   sheet.protect().setDescription('Hoja de ayuda').setWarningOnly(true);
   SpreadsheetApp.getActiveSpreadsheet().toast('✓ Hoja de Ayuda actualizada', 'Listo', 4);
   SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(sheet);
+}
+
+// ── ACTUALIZAR IDs DE IMAGEN DESDE DRIVE ──────────────────────────────────
+//
+// Recorre todos los productos de la hoja Productos y para cada uno busca
+// en la carpeta Drive si existe un archivo con el mismo nombre que la referencia.
+// Si lo encuentra, actualiza imagen_drive_id. Si no, pone NO_TIENE_FOTO.
+// Solo actualiza filas donde imagen_drive_id esté vacío o sea NO_TIENE_FOTO,
+// respetando las que ya tienen un ID válido.
+
+function actualizarImagenesDrive() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+
+  if (!sheetProd) {
+    SpreadsheetApp.getUi().alert('No existe la hoja "Productos".');
+    return;
+  }
+
+  // ── Cabeceras ─────────────────────────────────────────────────────────────
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+
+  const colRef = headers.indexOf('referencia');
+  const colImg = headers.indexOf('imagen_drive_id');
+
+  if (colRef === -1 || colImg === -1) {
+    SpreadsheetApp.getUi().alert('La hoja Productos debe tener las columnas "referencia" e "imagen_drive_id".');
+    return;
+  }
+
+  // ── Cargar caché de imágenes de Drive ────────────────────────────────────
+  SpreadsheetApp.getActiveSpreadsheet()
+    .toast('Cargando imágenes de Drive...', '🖼️ Actualizando', 5);
+
+  const cache = cargarCacheImagenes_();
+  const totalEnDrive = Object.keys(cache).length;
+  console.log(`Imágenes en Drive: ${totalEnDrive}`);
+
+  if (totalEnDrive === 0) {
+    SpreadsheetApp.getUi().alert('No se encontraron imágenes en la carpeta de Drive. Verifica el ID de carpeta.');
+    return;
+  }
+
+  // ── Leer productos ────────────────────────────────────────────────────────
+  const lastRow  = sheetProd.getLastRow();
+  if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos en la hoja.'); return; }
+
+  const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
+
+  let actualizados = 0, sinImagen = 0, yaTenian = 0, procesados = 0;
+  const BATCH = 50; // escribir en lotes para evitar timeout
+
+  for (let i = 0; i < data.length; i++) {
+    const row        = data[i];
+    const ref        = row[colRef] ? row[colRef].toString().trim() : '';
+    const imgActual  = row[colImg] ? row[colImg].toString().trim() : '';
+    const rowNum     = i + 2;
+
+    // Saltar filas sin referencia
+    if (!ref) continue;
+
+    // Saltar si ya tiene un ID válido (no vacío y no NO_TIENE_FOTO)
+    if (imgActual && imgActual !== 'NO_TIENE_FOTO' && imgActual !== '') {
+      yaTenian++;
+      procesados++;
+      continue;
+    }
+
+    // Buscar imagen por referencia en la caché de Drive
+    const driveId = cache[ref] || cache[ref.toUpperCase()] || cache[ref.toLowerCase()] || '';
+
+    if (driveId) {
+      sheetProd.getRange(rowNum, colImg + 1).setValue(driveId);
+      actualizados++;
+    } else {
+      sheetProd.getRange(rowNum, colImg + 1).setValue('NO_TIENE_FOTO');
+      sinImagen++;
+    }
+
+    procesados++;
+
+    // Flush cada BATCH filas para no perder progreso si hay timeout
+    if (procesados % BATCH === 0) {
+      SpreadsheetApp.flush();
+      SpreadsheetApp.getActiveSpreadsheet()
+        .toast(`Procesados: ${procesados}/${data.length}...`, '🖼️ Actualizando', 10);
+    }
+  }
+
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `✓ Con imagen: ${actualizados} | Sin imagen: ${sinImagen} | Ya tenían ID: ${yaTenian}`,
+    '🖼️ Actualización completada', 10
+  );
 }
 
 // ── BAJA DE PRODUCTOS desde BajaProductos ─────────────────────────────────
