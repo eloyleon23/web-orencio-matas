@@ -97,6 +97,19 @@ def leer_productos():
 # ── Caché local de imágenes ─────────────────────────────────────────────────
 _img_cache = {}
 
+# Sesión reutilizable con retry automático
+_session = None
+def get_session():
+    global _session
+    if _session is None:
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        _session = requests.Session()
+        retry = Retry(total=2, backoff_factor=0.5,
+                      status_forcelist=[429, 500, 502, 503, 504])
+        _session.mount('https://', HTTPAdapter(max_retries=retry))
+    return _session
+
 # ── Descargar imagen de Google Drive ───────────────────────────────────────
 def descargar_imagen(drive_id, max_px=600):
     """Descarga una imagen de Drive por su ID y la devuelve como objeto PIL."""
@@ -105,18 +118,16 @@ def descargar_imagen(drive_id, max_px=600):
     if drive_id in _img_cache:
         return _img_cache[drive_id]
     try:
-        # URL de descarga directa para archivos compartidos públicamente
+        session = get_session()
         url = f"https://drive.google.com/uc?export=download&id={drive_id}"
-        resp = requests.get(url, timeout=15, allow_redirects=True)
+        resp = session.get(url, timeout=(5, 10), allow_redirects=True)
         if resp.status_code != 200:
             _img_cache[drive_id] = None
             return None
-        # Google Drive a veces devuelve HTML con aviso de virus para archivos grandes
         content_type = resp.headers.get('Content-Type', '')
         if 'text/html' in content_type:
-            # Intentar con URL alternativa
             url2 = f"https://lh3.googleusercontent.com/d/{drive_id}"
-            resp = requests.get(url2, timeout=15, allow_redirects=True)
+            resp = session.get(url2, timeout=(5, 10), allow_redirects=True)
             if resp.status_code != 200 or 'text/html' in resp.headers.get('Content-Type',''):
                 _img_cache[drive_id] = None
                 return None
@@ -128,11 +139,10 @@ def descargar_imagen(drive_id, max_px=600):
         _img_cache[drive_id] = img
         return img
     except Exception as e:
-        print(f"  ⚠ Error descargando {drive_id}: {e}")
         _img_cache[drive_id] = None
         return None
 
-def precargar_imagenes(productos_area, max_workers=12):
+def precargar_imagenes(productos_area, max_workers=16):
     """Descarga en paralelo todas las imágenes de un área antes de generar el PDF."""
     ids = list({p.get('imagen_drive_id','').strip() for p in productos_area
                 if p.get('imagen_drive_id','').strip() and
@@ -141,10 +151,16 @@ def precargar_imagenes(productos_area, max_workers=12):
     if not ids:
         return
     print(f"  Descargando {len(ids)} imágenes en paralelo ({max_workers} hilos)...")
-    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
+    ok = 0
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futuros = {ex.submit(descargar_imagen, id_): id_ for id_ in ids}
-        ok = sum(1 for f in as_completed(futuros) if f.result() is not None)
+        for f in as_completed(futuros, timeout=300):  # máx 5 min por área
+            try:
+                if f.result() is not None:
+                    ok += 1
+            except Exception:
+                pass
     print(f"  ✓ {ok}/{len(ids)} imágenes descargadas")
 
 def añadir_etiqueta_oferta(img):
