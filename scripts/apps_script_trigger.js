@@ -16,6 +16,7 @@ function onOpen() {
     .addItem('📥 Sincronizar RegistroProductos → Productos', 'sincronizarRegistroProductos')
     .addItem('🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
+    .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addSeparator()
     .addItem('🔄 Actualizar catálogo Zaphiro', 'actualizarZaphiro')
     .addSeparator()
@@ -814,6 +815,69 @@ function crearHojaAyuda() {
   sheet.protect().setDescription('Hoja de ayuda').setWarningOnly(true);
   SpreadsheetApp.getActiveSpreadsheet().toast('✓ Hoja de Ayuda actualizada', 'Listo', 4);
   SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(sheet);
+}
+
+// ── COMPARTIR TODAS LAS IMÁGENES DE DRIVE PÚBLICAMENTE ────────────────────
+//
+// Aplica permisos "cualquiera con el enlace puede ver" a todos los archivos
+// de la carpeta de imágenes. Necesario para que el script Python pueda
+// descargarlas desde GitHub Actions.
+// Procesa en lotes y puede relanzarse si se interrumpe — usa PropertiesService
+// para guardar el cursor de progreso entre ejecuciones.
+
+function compartirImagenesDrive() {
+  const props       = PropertiesService.getScriptProperties();
+  const folder      = DriveApp.getFolderById(DRIVE_IMAGENES_ID);
+  const files       = folder.getFiles();
+  const continuationToken = props.getProperty('compartir_token');
+
+  let iterator;
+  if (continuationToken) {
+    iterator = DriveApp.continueFileIterator(continuationToken);
+    SpreadsheetApp.getActiveSpreadsheet()
+      .toast('Reanudando desde donde se dejó...', '🔓 Compartiendo imágenes', 5);
+  } else {
+    iterator = folder.getFiles();
+    SpreadsheetApp.getActiveSpreadsheet()
+      .toast('Iniciando — puede tardar varios minutos con 9500 archivos...', '🔓 Compartiendo imágenes', 8);
+  }
+
+  let procesados = parseInt(props.getProperty('compartir_count') || '0');
+  let errores    = 0;
+  const START    = Date.now();
+  const MAX_MS   = 5 * 60 * 1000; // 5 minutos máximo por ejecución
+
+  while (iterator.hasNext()) {
+    // Parar antes de agotar el tiempo y guardar progreso
+    if (Date.now() - START > MAX_MS) {
+      props.setProperty('compartir_token', iterator.getContinuationToken());
+      props.setProperty('compartir_count', procesados.toString());
+      SpreadsheetApp.getActiveSpreadsheet().toast(
+        `Pausado en ${procesados} archivos. Vuelve a ejecutar para continuar.`,
+        '⏸️ Progreso guardado', 10
+      );
+      return;
+    }
+
+    try {
+      const file = iterator.next();
+      // Aplicar permiso público de lectura
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      procesados++;
+    } catch(e) {
+      errores++;
+      console.warn('Error en archivo: ' + e.message);
+    }
+  }
+
+  // Proceso completado — limpiar estado
+  props.deleteProperty('compartir_token');
+  props.deleteProperty('compartir_count');
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `✓ ${procesados} imágenes compartidas públicamente. Errores: ${errores}`,
+    '🔓 Completado', 10
+  );
 }
 
 // ── ACTUALIZAR IDs DE IMAGEN DESDE DRIVE ──────────────────────────────────
