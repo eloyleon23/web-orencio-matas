@@ -8,6 +8,7 @@ on:
 jobs:
   generar:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     permissions:
       contents: write
 
