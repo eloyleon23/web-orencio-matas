@@ -90,25 +90,52 @@ def leer_productos():
     print(f"✓ {len(productos)} productos leídos del Sheet")
     return productos
 
+# ── Caché local de imágenes ─────────────────────────────────────────────────
+_img_cache = {}
+
 # ── Descargar imagen de Google Drive ───────────────────────────────────────
-def descargar_imagen(drive_id, max_px=800):
+def descargar_imagen(drive_id, max_px=600):
     """Descarga una imagen de Drive por su ID y la devuelve como objeto PIL."""
-    if not drive_id:
+    if not drive_id or drive_id == 'NO_TIENE_FOTO':
         return None
+    if drive_id in _img_cache:
+        return _img_cache[drive_id]
     try:
-        url = f"https://drive.google.com/uc?export=download&id={drive_id}"
-        resp = requests.get(url, timeout=20)
+        # Usar Drive API si hay clave disponible (más rápido y fiable)
+        if API_KEY:
+            url = f"https://www.googleapis.com/drive/v3/files/{drive_id}?alt=media&key={API_KEY}"
+        else:
+            url = f"https://drive.google.com/uc?export=download&id={drive_id}"
+        resp = requests.get(url, timeout=15)
         if resp.status_code != 200:
+            _img_cache[drive_id] = None
             return None
         img = PILImage.open(io.BytesIO(resp.content)).convert('RGB')
         w, h = img.size
         if max(w, h) > max_px:
             ratio = max_px / max(w, h)
             img = img.resize((int(w*ratio), int(h*ratio)), PILImage.LANCZOS)
+        _img_cache[drive_id] = img
         return img
     except Exception as e:
         print(f"  ⚠ Error descargando {drive_id}: {e}")
+        _img_cache[drive_id] = None
         return None
+
+def precargar_imagenes(productos_area, max_workers=12):
+    """Descarga en paralelo todas las imágenes de un área antes de generar el PDF."""
+    ids = list({p.get('imagen_drive_id','').strip() for p in productos_area
+                if p.get('imagen_drive_id','').strip() and
+                   p.get('imagen_drive_id','') != 'NO_TIENE_FOTO' and
+                   p.get('imagen_drive_id','') not in _img_cache})
+    if not ids:
+        return
+    print(f"  Descargando {len(ids)} imágenes en paralelo ({max_workers} hilos)...")
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        futuros = {ex.submit(descargar_imagen, id_): id_ for id_ in ids}
+        ok = sum(1 for f in as_completed(futuros) if f.result() is not None)
+    print(f"  ✓ {ok}/{len(ids)} imágenes descargadas")
 
 def añadir_etiqueta_oferta(img):
     """Superpone una etiqueta en forma de banderín rojo pegada al borde sup-izq."""
@@ -417,6 +444,9 @@ def generar_catalogo(area, productos, logo_png, familias={}):
         return False
     
     print(f"  → {len(productos_area)} productos en '{area}'")
+
+    # Precargar todas las imágenes en paralelo antes de generar el PDF
+    precargar_imagenes(productos_area)
     
     doc = SimpleDocTemplate(out_path, pagesize=A4,
                             topMargin=20*mm, bottomMargin=14*mm,
