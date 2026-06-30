@@ -750,8 +750,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <script src="./src/js/navbar-secondary.js"></script>
-<script src="./src/js/config-buscador.js"></script>
 <script>
+// ── Configuración del buscador ──
+// Token de GitHub para disparar workflows (dejar vacío si no se usa)
+window.GITHUB_WORKFLOW_TOKEN = '';
+
+// Botón temporal para reportar imágenes incorrectas (fase de desarrollo)
+window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true;
+
+// URL del web app de Google Apps Script para registrar productos
+window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzDHfP6N2n_nBqhBWOP9dGy9IP9e0Sit7JgitMm-lrLxRGrxJE2RLfLN46rqjJkzsXN/exec';
+
+console.log('Configuración cargada');
+console.log('Token configurado:', window.GITHUB_WORKFLOW_TOKEN ? 'Sí' : 'No');
+console.log('Longitud del token:', window.GITHUB_WORKFLOW_TOKEN.length);
+
 (function() {
     const REPO = 'eloyleon23/web-orencio-matas';
     const API_RELEASE = 'https://api.github.com/repos/' + REPO + '/releases/latest';
@@ -1266,6 +1279,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         // Disparar workflow de GitHub Actions
         const GITHUB_TOKEN = window.GITHUB_WORKFLOW_TOKEN || '';
+        console.log('Token configurado:', GITHUB_TOKEN ? 'Sí' : 'No');
+        console.log('Longitud del token:', GITHUB_TOKEN.length);
+
         if (!GITHUB_TOKEN) {
             alert('Error: No se ha configurado el token de GitHub para enviar catálogos. Por favor, contacta con el administrador.');
             $('modal-enviar').textContent = 'Enviar solicitud';

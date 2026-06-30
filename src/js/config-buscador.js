@@ -34,11 +34,16 @@
  *    - Columnas: Referencia | FechaRevision
  */
 
+console.log('config-buscador.js cargado');
+
 // Descomentar y configurar para activar el envío de catálogos
 // window.GITHUB_WORKFLOW_TOKEN = 'TU_TOKEN_AQUI';
 
 // Por ahora, mantener desactivado para evitar exponer credenciales
 window.GITHUB_WORKFLOW_TOKEN = '';
+
+console.log('Token configurado:', window.GITHUB_WORKFLOW_TOKEN ? 'Sí' : 'No');
+console.log('Longitud del token:', window.GITHUB_WORKFLOW_TOKEN.length);
 
 // Botón temporal para reportar imágenes incorrectas (fase de desarrollo)
 window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true; // Cambiar a true para activar
