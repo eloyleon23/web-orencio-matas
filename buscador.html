@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TWX6NRXN');</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Buscador de productos de Orencio Matas y Hnos, S.L.: encuentra productos de droguería, perfumería, pinturas y talleres por nombre, referencia, familia o precio.">
+    <title>Buscador de Productos | Orencio Matas y Hnos, S.L.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="./src/css/navbar.css" />
+    <style>
+        :root {
+            --red: #D32F2F;
+            --blue: #1976D2;
+            --green: #388E3C;
+            --yellow: #FBC02D;
+            --dark: #1e293b;
+            --muted: #475569;
+            --light: #f8fafc;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            color: var(--dark);
+            background: var(--light);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+        }
+        a { color: inherit; }
+
+        .buscador-header {
+            background: linear-gradient(135deg,#1e293b,#0f172a);
+            padding: 36px 0 28px;
+            color: white;
+        }
+        .buscador-header .inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .buscador-header h1 {
+            margin: 0 0 6px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .buscador-header p {
+            margin: 0;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+        .btn-volver {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 14px;
+        }
+        .btn-volver:hover { color: white; }
+
+        .layout {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 20px 60px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+        @media (max-width: 880px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+
+        /* ── Filtros ── */
+        .filtros {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            position: sticky;
+            top: 90px;
+        }
+        @media (max-width: 880px) {
+            .filtros { position: static; }
+        }
+        .filtros h3 {
+            margin: 0 0 16px;
+            font-size: 1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filtro-grupo { margin-bottom: 20px; }
+        .filtro-grupo label.titulo {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-bottom: 8px;
+        }
+        .input-texto {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .input-texto:focus { outline: none; border-color: var(--red); }
+
+        .select-area {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: white;
+        }
+
+        .familias-lista {
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .familia-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .familia-item input { cursor: pointer; }
+        .familia-item:hover { background: var(--light); border-radius: 4px; }
+
+        .rango-precio {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rango-precio input {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .check-oferta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .check-oferta input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--red); }
+        .check-oferta span { font-size: 0.88rem; font-weight: 600; color: #991b1b; }
+
+        .btn-limpiar {
+            width: 100%;
+            padding: 10px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+        }
+        .btn-limpiar:hover { background: #eef2f7; }
+
+        /* ── Resultados ── */
+        .resultados-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .resultados-count {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+        .resultados-count strong { color: var(--dark); }
+
+        .btn-solicitar-catalogo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: var(--dark);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-solicitar-catalogo:hover { background: #0f172a; }
+
+        .familia-seccion { margin-bottom: 32px; }
+        .familia-titulo {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin: 0 0 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .familia-titulo .count {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--light);
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        .grid-productos {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        @media (max-width: 880px) {
+            .grid-productos { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .grid-productos { grid-template-columns: 1fr; }
+        }
+
+        .producto-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            transition: box-shadow .15s, transform .15s;
+        }
+        .producto-card:hover {
+            box-shadow: 0 8px 20px -4px rgba(15,23,42,0.12);
+            transform: translateY(-2px);
+        }
+        .producto-img-wrap {
+            aspect-ratio: 1;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .producto-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 10px;
+        }
+        .producto-sin-img {
+            color: #94a3b8;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        .badge-oferta {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: var(--red);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 9px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .producto-info { padding: 12px; }
+        .producto-nombre {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+            min-height: 2.1em;
+        }
+        .producto-ref {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin: 0 0 6px;
+        }
+        .producto-precio-con {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--red);
+        }
+        .producto-precio-sin {
+            font-size: 0.7rem;
+            color: var(--muted);
+        }
+        .producto-sin-precio {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .btn-cargar-mas {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 32px;
+            background: var(--dark);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-cargar-mas:hover { background: #0f172a; }
+        .btn-cargar-mas:disabled { opacity: .5; cursor: not-allowed; }
+
+        .sin-resultados {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+        .sin-resultados i {
+            font-size: 2.5rem;
+            margin-bottom: 14px;
+            display: block;
+            color: #cbd5e1;
+        }
+
+        .cargando-inicial {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--muted);
+        }
+        .cargando-inicial i {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            display: block;
+            animation: girar 1s linear infinite;
+        }
+        @keyframes girar { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+
+        /* Modal solicitud catálogo */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(15,23,42,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.activo { display: flex; }
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 440px;
+            width: 100%;
+        }
+        .modal-box h3 {
+            margin: 0 0 8px;
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+        .modal-box p {
+            margin: 0 0 18px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .modal-resumen {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 18px;
+            line-height: 1.7;
+        }
+        .modal-acciones { display: flex; gap: 10px; }
+        .modal-acciones a, .modal-acciones button {
+            flex: 1;
+            padding: 11px;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .modal-cancelar { background: var(--light); color: var(--muted); }
+        .modal-enviar { background: var(--red); color: white; }
+    </style>
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<header class="navbar-wrapper">
+  <div class="container navbar__inner">
+    <a class="navbar__logo" href="index.html" aria-label="Ir al inicio">
+      <img class="navbar__logo-image" src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
+    </a>
+    <nav class="navbar__nav" aria-label="Navegación principal">
+      <ul class="navbar__menu">
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="empresa.html">Empresa</a></li>
+        <li><a href="historia.html">Historia</a></li>
+        <li><a href="productos.html">Productos</a></li>
+        <li><a href="servicios.html">Servicios</a></li>
+        <li><a href="actualidad.html">Actualidad</a></li>
+        <li><a href="index.html#contacto">Contacto</a></li>
+      </ul>
+      <a class="navbar__cta" href="index.html#contacto">CONTACTAR</a>
+    </nav>
+    <button class="navbar__toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="buscador-header">
+    <div class="inner">
+        <a href="productos.html" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver a Productos</a>
+        <h1><i class="fa-solid fa-magnifying-glass"></i> Buscador de Productos</h1>
+        <p>Encuentra cualquier producto del catálogo por nombre, referencia, familia o precio.</p>
+    </div>
+</div>
+
+<main class="layout">
+
+    <!-- ── FILTROS ── -->
+    <aside class="filtros">
+        <h3><i class="fa-solid fa-filter"></i> Filtros</h3>
+
+        <div class="filtro-grupo">
+            <label class="titulo" for="f-texto">Nombre o referencia</label>
+            <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001...">
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="titulo" for="f-area">Área</label>
+            <select id="f-area" class="select-area">
+                <option value="">Todas las áreas</option>
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="titulo">Familia</label>
+            <div class="familias-lista" id="f-familias"></div>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="titulo">Rango de precio (€ con IVA)</label>
+            <div class="rango-precio">
+                <input type="number" id="f-precio-min" placeholder="Mín" min="0" step="0.01">
+                <span style="color:var(--muted);">–</span>
+                <input type="number" id="f-precio-max" placeholder="Máx" min="0" step="0.01">
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="check-oferta">
+                <input type="checkbox" id="f-oferta">
+                <span><i class="fa-solid fa-star"></i> Solo productos en oferta</span>
+            </label>
+        </div>
+
+        <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
+    </aside>
+
+    <!-- ── RESULTADOS ── -->
+    <section>
+        <div class="resultados-header">
+            <div class="resultados-count">
+                <strong id="num-resultados">—</strong> productos encontrados
+            </div>
+            <button class="btn-solicitar-catalogo" id="btn-solicitar">
+                <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
+            </button>
+        </div>
+
+        <div id="cargando-inicial" class="cargando-inicial">
+            <i class="fa-solid fa-spinner"></i>
+            <p>Cargando catálogo de productos…</p>
+        </div>
+
+        <div id="contenedor-resultados" style="display:none;"></div>
+
+        <div id="sin-resultados" class="sin-resultados" style="display:none;">
+            <i class="fa-solid fa-box-open"></i>
+            <p>No se han encontrado productos con estos filtros.<br>Prueba a ampliar la búsqueda.</p>
+        </div>
+
+        <button class="btn-cargar-mas" id="btn-cargar-mas" style="display:none;">Cargar más productos</button>
+    </section>
+
+</main>
+
+<!-- Modal solicitud de catálogo personalizado -->
+<div class="modal-overlay" id="modal-overlay">
+    <div class="modal-box">
+        <h3>Solicitar catálogo personalizado</h3>
+        <p>Te enviaremos un PDF con los productos de esta búsqueda. Resumen de tu selección:</p>
+        <div class="modal-resumen" id="modal-resumen"></div>
+        <div class="modal-acciones">
+            <button class="modal-cancelar" id="modal-cancelar">Cancelar</button>
+            <a class="modal-enviar" id="modal-enviar" href="#">Enviar solicitud</a>
+        </div>
+    </div>
+</div>
+
+<script src="./src/js/navbar-secondary.js"></script>
+<script>
+(function() {
+    const REPO = 'eloyleon23/web-orencio-matas';
+    const API_RELEASE = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+
+    const AREAS_NOMBRE = {
+        drogueria:  'Droguería',
+        perfumeria: 'Perfumería',
+        pinturas:   'Pinturas',
+        talleres:   'Talleres',
+    };
+
+    let TODOS = [];          // todos los productos cargados
+    let FAMILIAS_ORDEN = {}; // {familia: orden}
+    let resultadosActuales = []; // tras aplicar filtros
+    let familiasMostradas = 0;   // cuántas familias ya se han pintado (paginación)
+    const FAMILIAS_POR_CARGA = 3; // cuántas familias se cargan cada vez (~12 productos aprox)
+
+    const $ = (id) => document.getElementById(id);
+
+    // ── Normalizar texto para búsqueda fuzzy (sin tildes, minúsculas) ──
+    function normalizar(txt) {
+        return (txt || '').toString()
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    }
+
+    // ── Similitud simple: ¿el texto de búsqueda está contenido o es muy parecido? ──
+    function coincide(texto, busqueda) {
+        if (!busqueda) return true;
+        const t = normalizar(texto);
+        const b = normalizar(busqueda);
+        if (t.includes(b)) return true;
+        // Coincidencia por palabras parciales (cualquier palabra de la búsqueda en el texto)
+        const palabrasBusqueda = b.split(/\s+/).filter(Boolean);
+        return palabrasBusqueda.every(p => t.includes(p));
+    }
+
+    // ── Cargar productos.json desde el último Release ──
+    fetch(API_RELEASE, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(release => {
+            if (!release || !release.assets) throw new Error('Sin release');
+            const asset = release.assets.find(a => a.name === 'productos.json');
+            if (!asset) throw new Error('Sin productos.json');
+            return fetch(asset.browser_download_url);
+        })
+        .then(r => r.json())
+        .then(data => {
+            TODOS = data.productos || [];
+            FAMILIAS_ORDEN = data.familias_orden || {};
+            inicializarFiltros();
+            aplicarFiltros();
+            $('cargando-inicial').style.display = 'none';
+            $('contenedor-resultados').style.display = '';
+        })
+        .catch(err => {
+            console.error(err);
+            $('cargando-inicial').innerHTML =
+                '<i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo cargar el catálogo de productos. Inténtalo de nuevo más tarde.</p>';
+        });
+
+    // ── Inicializar selects de área y lista de familias ──
+    function inicializarFiltros() {
+        // Áreas presentes en los datos
+        const areasPresentes = [...new Set(TODOS.map(p => p.area).filter(Boolean))];
+        const selectArea = $('f-area');
+        areasPresentes.sort().forEach(area => {
+            const opt = document.createElement('option');
+            opt.value = area;
+            opt.textContent = AREAS_NOMBRE[area] || area;
+            selectArea.appendChild(opt);
+        });
+
+        renderFamilias();
+
+        // Listeners
+        $('f-texto').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
+        $('f-area').addEventListener('change', () => { renderFamilias(); resetPaginacion(); aplicarFiltros(); });
+        $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
+        $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
+        $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+        $('btn-limpiar').addEventListener('click', limpiarFiltros);
+        $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
+        $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
+        $('modal-cancelar').addEventListener('click', () => $('modal-overlay').classList.remove('activo'));
+        $('modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-overlay') $('modal-overlay').classList.remove('activo'); });
+
+        // Scroll infinito
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
+                cargarMasFamilias();
+            }
+        });
+    }
+
+    function debounce(fn, ms) {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    // ── Renderizar checkboxes de familia según el área seleccionada ──
+    function renderFamilias() {
+        const areaSel = $('f-area').value;
+        const cont = $('f-familias');
+        cont.innerHTML = '';
+
+        const base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        const familias = [...new Set(base.map(p => p.familia).filter(Boolean))];
+
+        familias.sort((a, b) => {
+            const oa = FAMILIAS_ORDEN[a.toUpperCase()] ?? 9999;
+            const ob = FAMILIAS_ORDEN[b.toUpperCase()] ?? 9999;
+            if (oa !== ob) return oa - ob;
+            return a.localeCompare(b);
+        });
+
+        familias.forEach(fam => {
+            const label = document.createElement('label');
+            label.className = 'familia-item';
+            label.innerHTML = `<input type="checkbox" value="${fam.replace(/"/g,'&quot;')}"> ${fam}`;
+            label.querySelector('input').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+            cont.appendChild(label);
+        });
+    }
+
+    function familiasSeleccionadas() {
+        return [...document.querySelectorAll('#f-familias input:checked')].map(i => i.value);
+    }
+
+    function resetPaginacion() { familiasMostradas = 0; }
+
+    function limpiarFiltros() {
+        $('f-texto').value = '';
+        $('f-area').value = '';
+        $('f-precio-min').value = '';
+        $('f-precio-max').value = '';
+        $('f-oferta').checked = false;
+        renderFamilias();
+        resetPaginacion();
+        aplicarFiltros();
+    }
+
+    // ── Aplicar todos los filtros ──
+    function aplicarFiltros() {
+        const texto    = $('f-texto').value.trim();
+        const area     = $('f-area').value;
+        const familias = familiasSeleccionadas();
+        const pMin     = parseFloat($('f-precio-min').value);
+        const pMax     = parseFloat($('f-precio-max').value);
+        const soloOferta = $('f-oferta').checked;
+
+        resultadosActuales = TODOS.filter(p => {
+            if (area && p.area !== area) return false;
+            if (familias.length && !familias.includes(p.familia)) return false;
+            if (soloOferta && !p.oferta) return false;
+
+            if (texto) {
+                const enNombre = coincide(p.nombre, texto);
+                const enRef    = coincide(p.ref, texto);
+                if (!enNombre && !enRef) return false;
+            }
+
+            if (!isNaN(pMin) || !isNaN(pMax)) {
+                const precio = parseFloat((p.precio_con || '0').replace(',', '.'));
+                if (!isNaN(pMin) && precio < pMin) return false;
+                if (!isNaN(pMax) && precio > pMax) return false;
+            }
+
+            return true;
+        });
+
+        // Si no hay texto de búsqueda activo: priorizar últimos añadidos/editados (fecha_registro)
+        if (!texto) {
+            resultadosActuales.sort((a, b) => {
+                const fa = parseFecha(a.fecha);
+                const fb = parseFecha(b.fecha);
+                return fb - fa; // más reciente primero
+            });
+        }
+
+        renderResultados();
+    }
+
+    function parseFecha(str) {
+        if (!str) return 0;
+        // formato dd/mm/yyyy HH:mm
+        const m = str.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+        if (!m) return 0;
+        return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0)).getTime();
+    }
+
+    // ── Agrupar resultados por familia respetando orden ──
+    function agruparPorFamilia(lista) {
+        const grupos = {};
+        lista.forEach(p => {
+            const fam = p.familia || 'Sin clasificar';
+            if (!grupos[fam]) grupos[fam] = [];
+            grupos[fam].push(p);
+        });
+
+        // Dentro de cada familia: ofertas primero
+        Object.values(grupos).forEach(arr => {
+            arr.sort((a, b) => (b.oferta ? 1 : 0) - (a.oferta ? 1 : 0));
+        });
+
+        // Ordenar familias según FAMILIAS_ORDEN
+        const nombresFamilias = Object.keys(grupos).sort((a, b) => {
+            const oa = FAMILIAS_ORDEN[a.toUpperCase()] ?? 9999;
+            const ob = FAMILIAS_ORDEN[b.toUpperCase()] ?? 9999;
+            if (oa !== ob) return oa - ob;
+            return a.localeCompare(b);
+        });
+
+        return nombresFamilias.map(nombre => ({ nombre, productos: grupos[nombre] }));
+    }
+
+    // ── Renderizar resultados (con paginación de 12 en 12 aprox) ──
+    function renderResultados() {
+        $('num-resultados').textContent = resultadosActuales.length;
+
+        const cont = $('contenedor-resultados');
+        const sinResultados = $('sin-resultados');
+        const btnMas = $('btn-cargar-mas');
+
+        if (resultadosActuales.length === 0) {
+            cont.innerHTML = '';
+            sinResultados.style.display = '';
+            btnMas.style.display = 'none';
+            return;
+        }
+        sinResultados.style.display = 'none';
+
+        const grupos = agruparPorFamilia(resultadosActuales);
+
+        // Calcular cuántos productos mostrar en total (paginación ~12 por carga)
+        if (familiasMostradas === 0) familiasMostradas = calcularFamiliasIniciales(grupos);
+
+        const gruposVisibles = grupos.slice(0, familiasMostradas);
+        cont.innerHTML = '';
+
+        gruposVisibles.forEach(grupo => {
+            const seccion = document.createElement('div');
+            seccion.className = 'familia-seccion';
+            seccion.innerHTML = `
+                <h3 class="familia-titulo">${grupo.nombre} <span class="count">${grupo.productos.length}</span></h3>
+                <div class="grid-productos"></div>
+            `;
+            const grid = seccion.querySelector('.grid-productos');
+            grupo.productos.forEach(p => grid.appendChild(crearTarjeta(p)));
+            cont.appendChild(seccion);
+        });
+
+        btnMas.style.display = familiasMostradas < grupos.length ? '' : 'none';
+    }
+
+    // Calcular cuántas familias mostrar para sumar ~12 productos la primera vez
+    function calcularFamiliasIniciales(grupos) {
+        let total = 0, i = 0;
+        while (i < grupos.length && total < 12) {
+            total += grupos[i].productos.length;
+            i++;
+        }
+        return Math.max(i, 1);
+    }
+
+    function cargarMasFamilias() {
+        const grupos = agruparPorFamilia(resultadosActuales);
+        if (familiasMostradas >= grupos.length) return;
+        familiasMostradas = Math.min(familiasMostradas + FAMILIAS_POR_CARGA, grupos.length);
+        renderResultados();
+    }
+
+    // ── Crear tarjeta de producto (mismo criterio visual que el catálogo PDF) ──
+    function crearTarjeta(p) {
+        const card = document.createElement('div');
+        card.className = 'producto-card';
+
+        const imgHtml = p.img
+            ? `<img src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;producto-sin-img&quot;>Sin imagen</span>'">`
+            : `<span class="producto-sin-img">Sin imagen</span>`;
+
+        const ofertaBadge = p.oferta ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
+
+        let precioHtml = '<p class="producto-sin-precio">Consultar precio</p>';
+        if (p.mostrar_precio) {
+            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2) : null;
+            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2) : null;
+            if (con) {
+                precioHtml = `<div class="producto-precio-con">${con} €</div>`;
+                if (sin) precioHtml += `<div class="producto-precio-sin">${sin} € sin IVA</div>`;
+            }
+        }
+
+        card.innerHTML = `
+            <div class="producto-img-wrap">${ofertaBadge}${imgHtml}</div>
+            <div class="producto-info">
+                <p class="producto-nombre">${escapeHtml(p.nombre)}</p>
+                <p class="producto-ref">Ref: ${escapeHtml(p.ref)}</p>
+                ${precioHtml}
+            </div>
+        `;
+        return card;
+    }
+
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+    }
+
+    // ── Modal de solicitud de catálogo personalizado ──
+    function abrirModalSolicitud() {
+        if (resultadosActuales.length === 0) {
+            alert('No hay productos en la búsqueda actual.');
+            return;
+        }
+
+        const texto    = $('f-texto').value.trim();
+        const area     = $('f-area').value;
+        const familias = familiasSeleccionadas();
+        const pMin     = $('f-precio-min').value;
+        const pMax     = $('f-precio-max').value;
+        const soloOferta = $('f-oferta').checked;
+
+        let resumenLineas = [`<strong>${resultadosActuales.length}</strong> productos encontrados`];
+        if (texto)    resumenLineas.push(`Búsqueda: "${escapeHtml(texto)}"`);
+        if (area)     resumenLineas.push(`Área: ${AREAS_NOMBRE[area] || area}`);
+        if (familias.length) resumenLineas.push(`Familias: ${familias.map(escapeHtml).join(', ')}`);
+        if (pMin || pMax) resumenLineas.push(`Precio: ${pMin || '0'}€ – ${pMax || '∞'}€`);
+        if (soloOferta) resumenLineas.push(`Solo productos en oferta`);
+
+        $('modal-resumen').innerHTML = resumenLineas.join('<br>');
+
+        // Construir email mailto con el resumen de filtros
+        const asunto = encodeURIComponent('Solicitud de catálogo personalizado');
+        const refsMuestra = resultadosActuales.slice(0, 30).map(p => p.ref).join(', ');
+        const masTexto = resultadosActuales.length > 30 ? ` y ${resultadosActuales.length - 30} más` : '';
+        const cuerpo = encodeURIComponent(
+            `Hola,\n\nMe gustaría solicitar un catálogo PDF personalizado con los siguientes filtros de búsqueda:\n\n` +
+            `- Total de productos: ${resultadosActuales.length}\n` +
+            (texto ? `- Texto buscado: ${texto}\n` : '') +
+            (area ? `- Área: ${AREAS_NOMBRE[area] || area}\n` : '') +
+            (familias.length ? `- Familias: ${familias.join(', ')}\n` : '') +
+            (pMin || pMax ? `- Rango de precio: ${pMin || '0'}€ - ${pMax || 'sin límite'}€\n` : '') +
+            (soloOferta ? `- Solo productos en oferta\n` : '') +
+            `\nReferencias incluidas (primeras 30): ${refsMuestra}${masTexto}\n\n` +
+            `Gracias.`
+        );
+
+        $('modal-enviar').href = `mailto:correo@orenciomatas.es?subject=${asunto}&body=${cuerpo}`;
+        $('modal-overlay').classList.add('activo');
+    }
+})();
+</script>
+</body>
+</html>

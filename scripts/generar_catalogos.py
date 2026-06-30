@@ -569,8 +569,66 @@ def main():
     }
     with open(os.path.join(OUTPUT_DIR, 'manifiesto.json'), 'w') as f:
         json.dump(manifiesto, f, ensure_ascii=False, indent=2)
-    
+
+    # ── Exportar productos.json para el buscador web ────────────────────────
+    exportar_productos_json(productos, familias)
+
     print(f"\n✓ Completado: {len(generados)} catálogos generados → {OUTPUT_DIR}/")
+
+
+def exportar_productos_json(productos, familias):
+    """Genera un JSON ligero con los productos visibles en catálogo, para el buscador web."""
+    print("\n▶ Exportando productos.json para el buscador...")
+
+    def es_si(val):
+        return str(val).strip().lower() in ('sí', 'si', 'yes', 'true', '1', '✓')
+
+    exportados = []
+    for p in productos:
+        # Excluir productos dados de baja o no visibles en catálogo
+        if p.get('fecha_baja', '').strip():
+            continue
+        if not es_si(p.get('incluir_en_catalogo', '')):
+            continue
+
+        ref = p.get('referencia', '').strip()
+        if not ref:
+            continue
+
+        img_id = p.get('imagen_drive_id', '').strip()
+        if img_id == 'NO_TIENE_FOTO':
+            img_id = ''
+
+        precio_sin = p.get('precio_sin_iva', '').strip()
+        precio_con = p.get('precio_con_iva', '').strip()
+
+        exportados.append({
+            'ref':       ref,
+            'nombre':    p.get('nombre', '').strip(),
+            'area':      p.get('area', '').strip().lower(),
+            'familia':   p.get('tipologia', '').strip(),
+            'img':       img_id,
+            'oferta':    es_si(p.get('oferta', '')),
+            'mostrar_precio': es_si(p.get('mostrar_precio', '')),
+            'precio_sin': precio_sin,
+            'precio_con': precio_con,
+            'fecha':     p.get('fecha_registro', '').strip(),
+            'espacios':  p.get('espacios_a_ocupar', '1').strip() or '1',
+        })
+
+    payload = {
+        'generado': __import__('datetime').datetime.utcnow().isoformat() + 'Z',
+        'total': len(exportados),
+        'familias_orden': familias,  # {familia: orden}
+        'productos': exportados,
+    }
+
+    out_path = os.path.join(OUTPUT_DIR, 'productos.json')
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, ensure_ascii=False, separators=(',', ':'))
+
+    size_kb = os.path.getsize(out_path) // 1024
+    print(f"  ✓ {len(exportados)} productos exportados → {out_path} ({size_kb} KB)")
 
 if __name__ == '__main__':
     main()
