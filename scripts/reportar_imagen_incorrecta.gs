@@ -60,6 +60,10 @@ function doPost(e) {
 function procesarReportarImagen(data) {
   const referencia = data.referencia;
   const fecha = data.fecha;
+  const area = data.area || '';
+  const nombre = data.nombre || '';
+  const familia = data.familia || '';
+  const idImagen = data.idImagen || '';
 
   if (!referencia) {
     console.log('Error: Falta referencia');
@@ -76,16 +80,16 @@ function procesarReportarImagen(data) {
   if (!sheet) {
     console.log('Creando hoja:', SHEET_NAME_IMAGENES);
     sheet = ss.insertSheet(SHEET_NAME_IMAGENES);
-    sheet.appendRow(['Referencia', 'FechaRevision']);
+    sheet.appendRow(['Referencia', 'FechaRevision', 'Area', 'Nombre', 'Familia', 'IdImagen']);
   }
 
   // Verificar columnas
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   console.log('Headers:', headers);
-  if (!headers.includes('Referencia') || !headers.includes('FechaRevision')) {
+  if (!headers.includes('Referencia') || !headers.includes('FechaRevision') || !headers.includes('IdImagen')) {
     console.log('Reconfigurando headers');
     sheet.clear();
-    sheet.appendRow(['Referencia', 'FechaRevision']);
+    sheet.appendRow(['Referencia', 'FechaRevision', 'Area', 'Nombre', 'Familia', 'IdImagen']);
   }
 
   // Verificar si el producto ya está registrado
@@ -99,14 +103,18 @@ function procesarReportarImagen(data) {
 
     for (let i = 0; i < dataValues.length; i++) {
       if (dataValues[i][0] === referencia) {
-        // Producto ya registrado, actualizar fecha
-        console.log('Producto ya existe, actualizando fecha');
+        // Producto ya registrado, actualizar fecha y campos adicionales
+        console.log('Producto ya existe, actualizando fecha y campos adicionales');
         const fechaFormateada = Utilities.formatDate(
           new Date(fecha),
           'Europe/Madrid',
           'dd/MM/yyyy HH:mm'
         );
         sheet.getRange(i + 2, 2).setValue(fechaFormateada);
+        sheet.getRange(i + 2, 3).setValue(area);
+        sheet.getRange(i + 2, 4).setValue(nombre);
+        sheet.getRange(i + 2, 5).setValue(familia);
+        sheet.getRange(i + 2, 6).setValue(idImagen);
 
         return ContentService.createTextOutput(
           JSON.stringify({ success: true, message: 'Producto actualizado' })
@@ -122,7 +130,7 @@ function procesarReportarImagen(data) {
     'Europe/Madrid',
     'dd/MM/yyyy HH:mm'
   );
-  sheet.appendRow([referencia, fechaFormateada]);
+  sheet.appendRow([referencia, fechaFormateada, area, nombre, familia, idImagen]);
   console.log('Producto registrado correctamente');
 
   return ContentService.createTextOutput(
@@ -282,7 +290,11 @@ function testReportarImagen() {
       contents: JSON.stringify({
         accion: 'reportar_imagen',
         referencia: 'TEST001',
-        fecha: new Date().toISOString()
+        fecha: new Date().toISOString(),
+        area: 'drogueria',
+        nombre: 'Producto de prueba',
+        familia: 'LEJIAS',
+        idImagen: 'imagen_test_001.jpg'
       })
     }
   };

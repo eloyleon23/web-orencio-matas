@@ -1174,7 +1174,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const data = {
             accion: 'reportar_imagen',
             referencia: p.ref,
-            fecha: new Date().toISOString()
+            fecha: new Date().toISOString(),
+            area: p.area || '',
+            nombre: p.nombre || '',
+            familia: p.familia || '',
+            idImagen: p.imagen || ''
         };
 
         console.log('Enviando datos a Google Apps Script:', data);
