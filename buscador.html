@@ -777,7 +777,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="familias-lista" id="f-familias"></div>
         </div>
 
-        <div class="filtro-grupo collapsable collapsed" id="grupo-subfamilias" style="display: none;">
+        <div class="filtro-grupo collapsable" id="grupo-subfamilias" style="display: none;">
             <label class="titulo">Subfamilia</label>
             <div class="familias-lista" id="f-subfamilias"></div>
         </div>
@@ -1213,7 +1213,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const familiasSel = familiasSeleccionadas();
         const cont = $('f-subfamilias');
         const grupo = $('grupo-subfamilias');
-        
+
         cont.innerHTML = '';
 
         if (familiasSel.length === 0) {
@@ -1223,10 +1223,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         grupo.style.display = 'block';
 
+        // Normalizar familias seleccionadas a mayúsculas para comparación consistente
+        const familiasSelUpper = familiasSel.map(f => f.toUpperCase());
+
         // Obtener subfamilias de las familias seleccionadas
         const subfamiliasSet = new Set();
         TODOS.forEach(p => {
-            if (familiasSel.includes(p.familia) && p.subfamilia) {
+            if (p.familia && familiasSelUpper.includes(p.familia.toUpperCase()) && p.subfamilia) {
                 subfamiliasSet.add(p.subfamilia);
             }
         });
@@ -1237,14 +1240,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         subfamilias.sort((a, b) => {
             let minOrdenA = 9999;
             let minOrdenB = 9999;
-            
-            for (const fam of familiasSel) {
+
+            for (const fam of familiasSelUpper) {
                 const ordenA = SUBFAMILIAS_ORDEN[fam]?.[a] ?? 9999;
                 const ordenB = SUBFAMILIAS_ORDEN[fam]?.[b] ?? 9999;
                 if (ordenA < minOrdenA) minOrdenA = ordenA;
                 if (ordenB < minOrdenB) minOrdenB = ordenB;
             }
-            
+
             if (minOrdenA !== minOrdenB) return minOrdenA - minOrdenB;
             return a.localeCompare(b);
         });
@@ -1253,9 +1256,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const label = document.createElement('label');
             label.className = 'familia-item';
             label.innerHTML = `<input type="checkbox" value="${subfam.replace(/"/g,'&quot;')}"> ${subfam}`;
-            label.querySelector('input').addEventListener('change', () => { 
-                resetPaginacion(); 
-                aplicarFiltros(); 
+            label.querySelector('input').addEventListener('change', () => {
+                resetPaginacion();
+                aplicarFiltros();
             });
             cont.appendChild(label);
         });
