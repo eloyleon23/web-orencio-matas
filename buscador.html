@@ -111,6 +111,41 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-weight: 700;
             color: var(--muted);
             text-transform: uppercase;
+        }
+        .filtro-grupo.collapsable label.titulo {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .filtro-grupo.collapsable label.titulo::after {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            transition: transform 0.2s;
+        }
+        .filtro-grupo.collapsable.collapsed label.titulo::after {
+            transform: rotate(-90deg);
+        }
+        .filtro-grupo.collapsable .familias-lista {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 220px;
+            opacity: 1;
+        }
+        .filtro-grupo.collapsable.collapsed .familias-lista {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            padding: 0;
+            border: none;
+        }
+        @media (max-width: 768px) {
+            .filtro-grupo.collapsable .familias-lista {
+                max-height: 120px;
+            }
+        }
+        .filtro-grupo label.titulo {
             letter-spacing: .04em;
             margin-bottom: 8px;
         }
@@ -739,12 +774,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </select>
         </div>
 
-        <div class="filtro-grupo">
+        <div class="filtro-grupo collapsable" id="grupo-familias">
             <label class="titulo">Familia</label>
             <div class="familias-lista" id="f-familias"></div>
         </div>
 
-        <div class="filtro-grupo" id="grupo-subfamilias" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-subfamilias" style="display: none;">
             <label class="titulo">Subfamilia</label>
             <div class="familias-lista" id="f-subfamilias"></div>
         </div>
@@ -1013,6 +1048,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
 
         renderFamilias();
+
+        // Toggle de filtros colapsables
+        document.querySelectorAll('.filtro-grupo.collapsable .titulo').forEach(titulo => {
+            titulo.addEventListener('click', function() {
+                const grupo = this.closest('.filtro-grupo');
+                grupo.classList.toggle('collapsed');
+            });
+        });
 
         // Listeners
         $('f-texto').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
