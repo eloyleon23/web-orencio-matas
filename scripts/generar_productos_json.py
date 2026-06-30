@@ -88,10 +88,10 @@ def leer_productos():
 
     productos = []
     for row in reader:
-        # Buscar columnas de forma flexible (case-insensitive)
-        clean = {k.strip().lower(): v.strip() for k, v in row.items()}
+        # Normalizar claves: minúsculas, sin espacios extra, espacios reemplazados por guiones
+        clean = {k.strip().lower().replace(' ', '_'): v.strip() for k, v in row.items()}
         productos.append(clean)
-    
+
     print(f"✓ {len(productos)} productos leídos")
     return productos
 
