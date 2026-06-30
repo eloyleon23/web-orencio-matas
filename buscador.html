@@ -1167,20 +1167,37 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             fecha: new Date().toISOString()
         };
 
+        console.log('Enviando datos a Google Apps Script:', data);
+        console.log('URL:', url);
+
         fetch(url, {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
         })
-        .then(() => {
-            alert('✓ Producto registrado correctamente en la hoja de evaluación de imágenes.');
+        .then(response => {
+            console.log('Respuesta recibida:', response);
+            return response.text();
+        })
+        .then(text => {
+            console.log('Respuesta del servidor:', text);
+            try {
+                const result = JSON.parse(text);
+                if (result.success) {
+                    alert('✓ ' + result.message);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (e) {
+                console.log('No se pudo parsear JSON, respuesta:', text);
+                alert('✓ Producto registrado (sin respuesta del servidor)');
+            }
         })
         .catch(err => {
             console.error('Error al registrar producto:', err);
-            alert('Error al registrar el producto. Por favor, inténtalo de nuevo.');
+            alert('Error al registrar el producto: ' + err.message + '. Por favor, revisa la consola para más detalles.');
         })
         .finally(() => {
             btn.innerHTML = originalText;
