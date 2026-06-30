@@ -127,7 +127,7 @@ function sincronizarRegistroProductos() {
 
     const ean          = fila[COL['CodigoEAN']]          ? fila[COL['CodigoEAN']].toString().trim()          : '';
     const desc         = fila[COL['DescripcionArticulo']] ? fila[COL['DescripcionArticulo']].toString().trim() : '';
-    const precioSinIva = parseFloat(fila[COL['PrecioMayorSinIVA']]) || 0;
+    const precioSinIva = parseFloat(fila[COL['PrecioPublicoSinIVA']]) || 0;
     const iva          = parseFloat(fila[COL['IVA']])               || 21;
     const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
     const familia      = fila[COL['Familia']] ? fila[COL['Familia']].toString().trim() : '';
