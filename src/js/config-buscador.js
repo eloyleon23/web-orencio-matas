@@ -50,4 +50,4 @@ window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true; // Cambiar a true para activar
 
 // URL del web app de Google Apps Script para registrar productos
 // window.GOOGLE_APPS_SCRIPT_URL = 'TU_WEB_APP_URL_AQUI';
-window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhO-sCqjHPoSj6hzAcnT5RMMnBem24mfTlsUB41pDiv6UxsLCjGzXHoSsQplJoqgcv/exec';
+window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyicpKr-1x8Od1V5j_1nE98d-qS-JALQnqVrWnZXz9TrGwZx8s-TbDHWiGGPBrgLpRe/exec';
