@@ -1,0 +1,37 @@
+name: Generar productos.json
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Ejecutar cada hora para mantener datos actualizados
+    - cron: '0 * * * *'
+
+jobs:
+  generar_json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Generar productos.json
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+        run: |
+          python scripts/generar_productos_json.py
+
+      - name: Commit and push cambios
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/productos.json
+          git diff --staged --quiet || git commit -m "Auto: actualizar productos.json desde Google Sheets"
+          git push
