@@ -38,7 +38,7 @@
 // window.GITHUB_WORKFLOW_TOKEN = 'TU_TOKEN_AQUI';
 
 // Por ahora, mantener desactivado para evitar exponer credenciales
-window.GITHUB_WORKFLOW_TOKEN = '';
+window.GITHUB_WORKFLOW_TOKEN = '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';
 
 // Botón temporal para reportar imágenes incorrectas (fase de desarrollo)
 window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true; // Cambiar a true para activar
