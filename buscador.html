@@ -221,6 +221,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             text-decoration: none;
         }
         .btn-solicitar-catalogo:hover { background: #0f172a; }
+        .btn-solicitar-catalogo:disabled {
+            background: #cbd5e1;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+        .btn-solicitar-catalogo:disabled:hover { background: #cbd5e1; }
 
         .familia-seccion { margin-bottom: 32px; }
         .familia-titulo {
@@ -370,6 +376,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-size: 2rem;
             margin-bottom: 12px;
             display: block;
+        }
+        .cargando-inicial #icono-cargando {
             animation: girar 1s linear infinite;
         }
         @keyframes girar { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
@@ -512,13 +520,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="resultados-count">
                 <strong id="num-resultados">—</strong> productos encontrados
             </div>
-            <button class="btn-solicitar-catalogo" id="btn-solicitar">
+            <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled>
                 <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
             </button>
         </div>
 
         <div id="cargando-inicial" class="cargando-inicial">
-            <i class="fa-solid fa-spinner"></i>
+            <i id="icono-cargando" class="fa-solid fa-spinner"></i>
             <p>Cargando catálogo de productos…</p>
         </div>
 
@@ -769,6 +777,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // ── Renderizar resultados (con paginación de 12 en 12 aprox) ──
     function renderResultados() {
         $('num-resultados').textContent = resultadosActuales.length;
+        $('btn-solicitar').disabled = resultadosActuales.length === 0;
 
         const cont = $('contenedor-resultados');
         const sinResultados = $('sin-resultados');
@@ -862,10 +871,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     // ── Modal de solicitud de catálogo personalizado ──
     function abrirModalSolicitud() {
-        if (resultadosActuales.length === 0) {
-            alert('No hay productos en la búsqueda actual.');
-            return;
-        }
+        if (resultadosActuales.length === 0) return;
 
         const texto    = $('f-texto').value.trim();
         const area     = $('f-area').value;
