@@ -92,9 +92,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             padding: 20px;
             position: sticky;
             top: 90px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
         }
         @media (max-width: 880px) {
-            .filtros { position: static; }
+            .filtros { position: static; max-height: none; overflow-y: visible; }
         }
         .filtros h3 {
             margin: 0 0 16px;
