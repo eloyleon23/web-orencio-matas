@@ -731,6 +731,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="familias-lista" id="f-familias"></div>
         </div>
 
+        <div class="filtro-grupo" id="grupo-subfamilias" style="display: none;">
+            <label class="titulo">Subfamilia</label>
+            <div class="familias-lista" id="f-subfamilias"></div>
+        </div>
+
         <div class="filtro-grupo">
             <label class="titulo">Rango de precio (€ con IVA)</label>
             <div class="rango-precio">
@@ -871,6 +876,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     let TODOS = [];          // todos los productos cargados
     let FAMILIAS_ORDEN = {}; // {familia: orden}
+    let SUBFAMILIAS_ORDEN = {}; // {familia: {subfamilia: orden}}
     let resultadosActuales = []; // tras aplicar filtros
     let familiasMostradas = 0;   // cuántas familias ya se han pintado (paginación)
     const FAMILIAS_POR_CARGA = 3; // cuántas familias se cargan cada vez (~12 productos aprox)
@@ -969,6 +975,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         .then(data => {
             TODOS = data.productos || [];
             FAMILIAS_ORDEN = data.familias_orden || {};
+            SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
             inicializarFiltros();
             aplicarFiltros();
             $('cargando-inicial').style.display = 'none';
@@ -1115,7 +1122,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
     }
 
-    // ── Renderizar checkboxes de familia según el área seleccionada ──
+    // ── Renderizar checkboxes de familia según el área seleccionado ──
     function renderFamilias() {
         const areaSel = $('f-area').value;
         const cont = $('f-familias');
@@ -1135,13 +1142,77 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const label = document.createElement('label');
             label.className = 'familia-item';
             label.innerHTML = `<input type="checkbox" value="${fam.replace(/"/g,'&quot;')}"> ${fam}`;
-            label.querySelector('input').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+            label.querySelector('input').addEventListener('change', () => { 
+                resetPaginacion(); 
+                renderSubfamilias(); // Actualizar subfamilias cuando cambia la familia
+                aplicarFiltros(); 
+            });
+            cont.appendChild(label);
+        });
+
+        // Mostrar/ocultar filtro de subfamilia según si hay familias seleccionadas
+        renderSubfamilias();
+    }
+
+    // ── Renderizar checkboxes de subfamilia según las familias seleccionadas ──
+    function renderSubfamilias() {
+        const familiasSel = familiasSeleccionadas();
+        const cont = $('f-subfamilias');
+        const grupo = $('grupo-subfamilias');
+        
+        cont.innerHTML = '';
+
+        if (familiasSel.length === 0) {
+            grupo.style.display = 'none';
+            return;
+        }
+
+        grupo.style.display = 'block';
+
+        // Obtener subfamilias de las familias seleccionadas
+        const subfamiliasSet = new Set();
+        TODOS.forEach(p => {
+            if (familiasSel.includes(p.familia) && p.subfamilia) {
+                subfamiliasSet.add(p.subfamilia);
+            }
+        });
+
+        const subfamilias = Array.from(subfamiliasSet);
+
+        // Ordenar subfamilias según SUBFAMILIAS_ORDEN
+        subfamilias.sort((a, b) => {
+            let minOrdenA = 9999;
+            let minOrdenB = 9999;
+            
+            for (const fam of familiasSel) {
+                const ordenA = SUBFAMILIAS_ORDEN[fam]?.[a] ?? 9999;
+                const ordenB = SUBFAMILIAS_ORDEN[fam]?.[b] ?? 9999;
+                if (ordenA < minOrdenA) minOrdenA = ordenA;
+                if (ordenB < minOrdenB) minOrdenB = ordenB;
+            }
+            
+            if (minOrdenA !== minOrdenB) return minOrdenA - minOrdenB;
+            return a.localeCompare(b);
+        });
+
+        subfamilias.forEach(subfam => {
+            const label = document.createElement('label');
+            label.className = 'familia-item';
+            label.innerHTML = `<input type="checkbox" value="${subfam.replace(/"/g,'&quot;')}"> ${subfam}`;
+            label.querySelector('input').addEventListener('change', () => { 
+                resetPaginacion(); 
+                aplicarFiltros(); 
+            });
             cont.appendChild(label);
         });
     }
 
     function familiasSeleccionadas() {
         return [...document.querySelectorAll('#f-familias input:checked')].map(i => i.value);
+    }
+
+    function subfamiliasSeleccionadas() {
+        return [...document.querySelectorAll('#f-subfamilias input:checked')].map(i => i.value);
     }
 
     function resetPaginacion() { familiasMostradas = 0; }
@@ -1153,6 +1224,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-precio-max').value = '';
         $('f-oferta').checked = false;
         renderFamilias();
+        renderSubfamilias(); // Limpiar subfamilias
         resetPaginacion();
         aplicarFiltros();
     }
@@ -1162,6 +1234,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const texto    = $('f-texto').value.trim();
         const area     = $('f-area').value;
         const familias = familiasSeleccionadas();
+        const subfamilias = subfamiliasSeleccionadas();
         const pMin     = parseFloat($('f-precio-min').value);
         const pMax     = parseFloat($('f-precio-max').value);
         const soloOferta = $('f-oferta').checked;
@@ -1169,6 +1242,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
+            if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
             if (soloOferta && !p.oferta) return false;
 
             if (texto) {
@@ -1340,7 +1414,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-img').alt = escapeHtml(p.nombre);
         $('modal-producto-nombre').textContent = p.nombre;
         $('modal-producto-ref').textContent = `Ref: ${p.ref}`;
-        $('modal-producto-familia').textContent = p.familia || '—';
+        const familiaTexto = p.familia || '—';
+        const subfamiliaTexto = p.subfamilia ? ` (${p.subfamilia})` : '';
+        $('modal-producto-familia').textContent = familiaTexto + subfamiliaTexto;
         $('modal-producto-area').textContent = AREAS_NOMBRE[p.area] || p.area || '—';
 
         let precioHtml = '';
@@ -1473,6 +1549,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             texto: texto,
             area: area,
             familias: familias,
+            subfamilias: subfamilias,
             precio_min: pMin,
             precio_max: pMax,
             solo_oferta: soloOferta,
@@ -1484,6 +1561,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (texto) resumenFiltros += `<li>Texto: ${texto}</li>`;
         if (area) resumenFiltros += `<li>Área: ${AREAS_NOMBRE[area] || area}</li>`;
         if (familias.length) resumenFiltros += `<li>Familias: ${familias.join(', ')}</li>`;
+        if (subfamilias.length) resumenFiltros += `<li>Subfamilias: ${subfamilias.join(', ')}</li>`;
         if (pMin || pMax) resumenFiltros += `<li>Rango de precio: ${pMin || '0'}€ - ${pMax || 'sin límite'}€</li>`;
         if (soloOferta) resumenFiltros += `<li>Solo productos en oferta</li>`;
         resumenFiltros += `<li>Total de productos: ${resultadosActuales.length}</li>`;
