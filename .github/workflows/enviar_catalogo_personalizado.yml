@@ -1,0 +1,54 @@
+name: Enviar Catálogo Personalizado
+
+on:
+  repository_dispatch:
+    types: [enviar_catalogo_personalizado]
+  workflow_dispatch:
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install reportlab pillow requests
+
+      - name: Guardar filtros en archivo JSON
+        run: |
+          echo '${{ github.event.client_payload.filtros }}' > filtros_temp.json
+
+      - name: Generar PDF personalizado
+        run: python scripts/generar_catalogo_personalizado.py filtros_temp.json
+
+      - name: Enviar PDF vía Brevo
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: |
+          EMAIL="${{ github.event.client_payload.email }}"
+          PDF_FILE="catalogos_output/catalogo_personalizado.pdf"
+          
+          # Enviar email con PDF adjunto usando Brevo API
+          curl -X POST 'https://api.brevo.com/v3/smtp/email' \
+            -H 'Content-Type: application/json' \
+            -H 'api-key: $BREVO_API_KEY' \
+            -d '{
+              "sender": {"name":"Orencio Matas y Hnos","email":"correo@orenciomatas.es"},
+              "to": [{"email":"'$EMAIL'"}],
+              "subject": "Tu catálogo personalizado de Orencio Matas",
+              "htmlContent": "<html><body><h2>Tu catálogo personalizado</h2><p>Hola,</p><p>Adjunto encontrarás el catálogo personalizado con los productos que solicitaste.</p><p><strong>Filtros aplicados:</strong></p><ul>${{ github.event.client_payload.resumen_filtros }}</ul><p>Si tienes alguna pregunta o necesitas más información, no dudes en contactarnos.</p><p>Saludos,<br/>Equipo de Orencio Matas y Hnos</p><p><small>Los precios pueden variar y los productos están sujetos a disponibilidad.</small></p></body></html>",
+              "attachment": [{
+                "name": "catalogo_personalizado.pdf",
+                "content": "'"$(base64 -w 0 $PDF_FILE)"'"
+              }]
+            }'

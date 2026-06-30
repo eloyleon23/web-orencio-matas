@@ -566,6 +566,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <script src="./src/js/navbar-secondary.js"></script>
+<script src="./src/js/config-buscador.js"></script>
 <script>
 (function() {
     const REPO = 'eloyleon23/web-orencio-matas';
@@ -962,24 +963,71 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const pMax     = $('f-precio-max').value;
         const soloOferta = $('f-oferta').checked;
 
-        const asunto = encodeURIComponent('Solicitud de catálogo personalizado');
-        const refsMuestra = resultadosActuales.slice(0, 30).map(p => p.ref).join(', ');
-        const masTexto = resultadosActuales.length > 30 ? ` y ${resultadosActuales.length - 30} más` : '';
-        const cuerpo = encodeURIComponent(
-            `Hola,\n\nMe gustaría solicitar un catálogo PDF personalizado con los siguientes filtros de búsqueda:\n\n` +
-            `- Email de contacto: ${email}\n` +
-            `- Total de productos: ${resultadosActuales.length}\n` +
-            (texto ? `- Texto buscado: ${texto}\n` : '') +
-            (area ? `- Área: ${AREAS_NOMBRE[area] || area}\n` : '') +
-            (familias.length ? `- Familias: ${familias.join(', ')}\n` : '') +
-            (pMin || pMax ? `- Rango de precio: ${pMin || '0'}€ - ${pMax || 'sin límite'}€\n` : '') +
-            (soloOferta ? `- Solo productos en oferta\n` : '') +
-            `\nReferencias incluidas (primeras 30): ${refsMuestra}${masTexto}\n\n` +
-            `Gracias.`
-        );
+        // Preparar filtros y referencias para el workflow
+        const filtros = {
+            texto: texto,
+            area: area,
+            familias: familias,
+            precio_min: pMin,
+            precio_max: pMax,
+            solo_oferta: soloOferta,
+            referencias: resultadosActuales.slice(0, 100).map(p => p.ref) // Enviar hasta 100 referencias
+        };
 
-        window.location.href = `mailto:correo@orenciomatas.es?subject=${asunto}&body=${cuerpo}`;
-        $('modal-overlay').classList.remove('activo');
+        // Preparar resumen de filtros para el email
+        let resumenFiltros = '';
+        if (texto) resumenFiltros += `<li>Texto: ${texto}</li>`;
+        if (area) resumenFiltros += `<li>Área: ${AREAS_NOMBRE[area] || area}</li>`;
+        if (familias.length) resumenFiltros += `<li>Familias: ${familias.join(', ')}</li>`;
+        if (pMin || pMax) resumenFiltros += `<li>Rango de precio: ${pMin || '0'}€ - ${pMax || 'sin límite'}€</li>`;
+        if (soloOferta) resumenFiltros += `<li>Solo productos en oferta</li>`;
+        resumenFiltros += `<li>Total de productos: ${resultadosActuales.length}</li>`;
+
+        // Mostrar estado de carga
+        $('modal-enviar').textContent = 'Enviando...';
+        $('modal-enviar').disabled = true;
+
+        // Disparar workflow de GitHub Actions
+        const GITHUB_TOKEN = window.GITHUB_WORKFLOW_TOKEN || '';
+        if (!GITHUB_TOKEN) {
+            alert('Error: No se ha configurado el token de GitHub para enviar catálogos. Por favor, contacta con el administrador.');
+            $('modal-enviar').textContent = 'Enviar solicitud';
+            $('modal-enviar').disabled = false;
+            return;
+        }
+
+        fetch('https://api.github.com/repos/eloyleon23/web-orencio-matas/dispatches', {
+            method: 'POST',
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                event_type: 'enviar_catalogo_personalizado',
+                client_payload: {
+                    email: email,
+                    filtros: filtros,
+                    resumen_filtros: resumenFiltros
+                }
+            })
+        })
+        .then(r => {
+            if (r.ok) {
+                alert('✓ Solicitud enviada correctamente. Recibirás el catálogo personalizado en tu correo en unos minutos.');
+                $('modal-overlay').classList.remove('activo');
+            } else {
+                return r.json().then(err => { throw err; });
+            }
+        })
+        .catch(err => {
+            console.error('Error al enviar solicitud:', err);
+            alert('Error al enviar la solicitud. Por favor, inténtalo de nuevo más tarde o contacta con nosotros directamente.');
+        })
+        .finally(() => {
+            $('modal-enviar').textContent = 'Enviar solicitud';
+            $('modal-enviar').disabled = false;
+        });
     }
 })();
 </script>
