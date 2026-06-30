@@ -463,11 +463,10 @@ def generar_catalogo(area, productos, logo_png, familias={}):
     out_path = os.path.join(OUTPUT_DIR, cfg['filename'])
     st = estilos()
     
-    # Filtrar productos: incluir_en_catalogo = sí/si/yes/true/1 y área correcta
+    # Filtrar productos: solo por área correcta (sin filtro incluir_en_catalogo)
     productos_area = [
         p for p in productos
         if p.get('area','').lower().strip() == area
-        and p.get('incluir_en_catalogo','').lower().strip() in ('sí','si','yes','true','1','✓')
     ]
     
     if not productos_area:
