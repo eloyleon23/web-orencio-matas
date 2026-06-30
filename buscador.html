@@ -1170,34 +1170,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         console.log('Enviando datos a Google Apps Script:', data);
         console.log('URL:', url);
 
+        // Google Apps Script Web Apps no soportan CORS correctamente
+        // Usamos no-cors y asumimos éxito si no hay error de red
         fetch(url, {
             method: 'POST',
+            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
         })
-        .then(response => {
-            console.log('Respuesta recibida:', response);
-            return response.text();
-        })
-        .then(text => {
-            console.log('Respuesta del servidor:', text);
-            try {
-                const result = JSON.parse(text);
-                if (result.success) {
-                    alert('✓ ' + result.message);
-                } else {
-                    alert('Error: ' + result.error);
-                }
-            } catch (e) {
-                console.log('No se pudo parsear JSON, respuesta:', text);
-                alert('✓ Producto registrado (sin respuesta del servidor)');
-            }
+        .then(() => {
+            console.log('Petición enviada (modo no-cors, respuesta no visible)');
+            alert('✓ Producto enviado a la hoja de evaluación. Verifica en Google Sheets.');
         })
         .catch(err => {
             console.error('Error al registrar producto:', err);
-            alert('Error al registrar el producto: ' + err.message + '. Por favor, revisa la consola para más detalles.');
+            alert('Error al registrar el producto: ' + err.message + '.\n\nVerifica:\n1. La URL del web app es correcta\n2. El web app está desplegado con acceso "Cualquier persona"\n3. Revisa los logs en Google Apps Script');
         })
         .finally(() => {
             btn.innerHTML = originalText;
