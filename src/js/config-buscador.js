@@ -41,8 +41,8 @@
 window.GITHUB_WORKFLOW_TOKEN = '';
 
 // Botón temporal para reportar imágenes incorrectas (fase de desarrollo)
-window.MOSTRAR_BOTON_REPORTAR_IMAGEN = false; // Cambiar a true para activar
+window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true; // Cambiar a true para activar
 
 // URL del web app de Google Apps Script para registrar productos
 // window.GOOGLE_APPS_SCRIPT_URL = 'TU_WEB_APP_URL_AQUI';
-window.GOOGLE_APPS_SCRIPT_URL = '';
+window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzEp3AwuW3vCbCuSpUx9cr7SoXh9F3tyKfdF-v_rRQXMP8DwjzcQSNaYT6M08rS_M7X/exec';
