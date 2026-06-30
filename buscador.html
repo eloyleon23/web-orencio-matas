@@ -173,10 +173,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             justify-content: center;
         }
         .btn-escanear-codigo:active { background: #0f172a; }
-        /* Solo visible en vista responsive móvil */
-        @media (max-width: 640px) {
-            .btn-escanear-codigo.disponible { display: flex; }
-        }
+        /* Visible cuando tiene la clase disponible (tanto en móvil como en PC) */
+        .btn-escanear-codigo.disponible { display: flex; }
 
         .modal-scanner-overlay {
             display: none;
@@ -1097,7 +1095,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!btn) return;
 
         const soportaCamara = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-        if (esMovil() && soportaCamara) {
+        if (soportaCamara) {
             btn.classList.add('disponible');
         }
 
