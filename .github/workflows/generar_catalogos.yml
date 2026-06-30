@@ -36,7 +36,10 @@ jobs:
           tag_name: catalogos-latest
           name: Catálogos Orencio Matas
           body: "Catálogos generados automáticamente desde Google Sheets"
-          files: catalogos_output/*.pdf
+          files: |
+            catalogos_output/*.pdf
+            catalogos_output/manifiesto.json
+            catalogos_output/productos.json
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
