@@ -277,7 +277,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 document.getElementById('mobile-link').style.display = '';
                 document.getElementById('visor-pdfjs').style.display = '';
                 document.getElementById('actions').style.display     = '';
-                document.getElementById('pdf-iframe-nativo').src = url + '#view=FitH';
+                document.getElementById('pdf-iframe-nativo').src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(url);
             })
             .catch(() => showNoCatalogo());
 

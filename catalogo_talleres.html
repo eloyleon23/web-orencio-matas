@@ -333,7 +333,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             document.getElementById('mobile-link-interno').style.display = '';
             document.getElementById('viewer-interno').style.display = '';
             document.getElementById('actions-interno').style.display = '';
-            document.getElementById('iframe-interno-nativo').src = url + '#view=FitH';
+            document.getElementById('iframe-interno-nativo').src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(url);
         })
         .catch(showNoInterno);
 
