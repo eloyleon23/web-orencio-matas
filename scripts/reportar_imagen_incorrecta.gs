@@ -5,11 +5,20 @@
 // Configuración del despliegue:
 // - Ejecutar como: Yo
 // - Quién tiene acceso: Cualquier persona
+//
+// CONFIGURACIÓN:
+// 1. En el editor de Google Apps Script, ve a Archivo → Propiedades del proyecto
+// 2. Añade una propiedad llamada 'GITHUB_TOKEN' con tu token de GitHub
+// 3. El token debe tener permisos: repo y workflow
 
 // ID de la hoja de Google Sheets
 const SHEET_ID = '1T-MZUPPmhh_t4miezHVCfRCxVpWcxQgdZGNVvFeA_cw';
 const SHEET_NAME_IMAGENES = 'ProductosPendientesEvaluarImagen';
 const SHEET_NAME_CATALOGOS = 'SolicitudesCatalogos';
+
+// Configuración de GitHub
+const GITHUB_REPO = 'eloyleon23/web-orencio-matas';
+const GITHUB_WORKFLOW_EVENT = 'enviar_catalogo_personalizado';
 
 function doPost(e) {
   try {
@@ -157,20 +166,86 @@ function procesarSolicitarCatalogo(data) {
     fechaFormateada,
     JSON.stringify(filtros),
     resumen_filtros,
-    'Pendiente'
+    'Procesando'
   ]);
 
   console.log('Solicitud de catálogo registrada');
 
-  // TODO: Aquí se podría disparar un workflow de GitHub Actions
-  // usando UrlFetchApp para generar el PDF y enviarlo por email
+  // Disparar workflow de GitHub Actions para generar y enviar el PDF
+  const resultadoWorkflow = dispararWorkflowGitHub(email, filtros, resumen_filtros);
 
-  return ContentService.createTextOutput(
-    JSON.stringify({
-      success: true,
-      message: 'Solicitud registrada. Recibirás el catálogo en breve.'
-    })
-  ).setMimeType(ContentService.MimeType.JSON);
+  if (resultadoWorkflow.success) {
+    console.log('Workflow disparado correctamente');
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        success: true,
+        message: 'Solicitud registrada. Recibirás el catálogo personalizado en tu correo en unos minutos.'
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+  } else {
+    console.error('Error al disparar workflow:', resultadoWorkflow.error);
+    // Actualizar estado a error
+    const lastRow = sheet.getLastRow();
+    sheet.getRange(lastRow, 5).setValue('Error');
+
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        success: false,
+        error: 'Error al procesar la solicitud. Contacta con nosotros directamente.'
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Disparar workflow de GitHub Actions ──
+function dispararWorkflowGitHub(email, filtros, resumen_filtros) {
+  try {
+    const token = PropertiesService.getScriptProperties().getProperty('GITHUB_TOKEN');
+
+    if (!token) {
+      console.error('Error: GITHUB_TOKEN no configurado en propiedades del script');
+      return { success: false, error: 'Token de GitHub no configurado' };
+    }
+
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/dispatches`;
+    const payload = {
+      event_type: GITHUB_WORKFLOW_EVENT,
+      client_payload: {
+        email: email,
+        filtros: filtros,
+        resumen_filtros: resumen_filtros
+      }
+    };
+
+    const options = {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    console.log('Disparando workflow de GitHub Actions...');
+    const response = UrlFetchApp.fetch(url, options);
+    const responseCode = response.getResponseCode();
+    const responseText = response.getContentText();
+
+    console.log('Respuesta GitHub:', responseCode, responseText);
+
+    if (responseCode === 204) {
+      return { success: true };
+    } else {
+      console.error('Error en respuesta de GitHub:', responseText);
+      return { success: false, error: responseText };
+    }
+
+  } catch (error) {
+    console.error('Error al disparar workflow:', error);
+    return { success: false, error: error.toString() };
+  }
 }
 
 // ── Función de prueba para ejecutar desde el editor de scripts ──
