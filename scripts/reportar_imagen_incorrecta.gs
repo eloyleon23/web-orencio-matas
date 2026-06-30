@@ -263,3 +263,18 @@ function testDoPost() {
   const result = doPost(testData);
   console.log(result.getContent());
 }
+
+// ── Función de prueba para reportar imagen ──
+function testReportarImagen() {
+  const testData = {
+    postData: {
+      contents: JSON.stringify({
+        accion: 'reportar_imagen',
+        referencia: 'TEST001',
+        fecha: new Date().toISOString()
+      })
+    }
+  };
+  const result = doPost(testData);
+  console.log(result.getContent());
+}
