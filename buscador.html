@@ -525,6 +525,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </div>
 
+        <div class="catalog-disclaimer" style="background: #fff7ed; border-left: 4px solid var(--yellow); padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; font-size: 0.85rem; color: #64748b;">
+            <i class="fa-solid fa-circle-info" style="color: var(--yellow); margin-right: 8px;"></i>
+            <strong>Nota:</strong> Los precios pueden variar y los productos mostrados están sujetos a disponibilidad. Consulta con nuestro equipo para confirmar stock actual.
+        </div>
+
         <div id="cargando-inicial" class="cargando-inicial">
             <i id="icono-cargando" class="fa-solid fa-spinner"></i>
             <p>Cargando catálogo de productos…</p>
@@ -548,9 +553,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <h3>Solicitar catálogo personalizado</h3>
         <p>Te enviaremos un PDF con los productos de esta búsqueda. Resumen de tu selección:</p>
         <div class="modal-resumen" id="modal-resumen"></div>
+        <div class="modal-form">
+            <label for="modal-email" style="display:block;font-size:0.85rem;font-weight:600;color:var(--dark);margin-bottom:6px;">Tu correo electrónico:</label>
+            <input type="email" id="modal-email" class="input-texto" placeholder="ejemplo@correo.com" required>
+            <p id="email-error" style="color:var(--red);font-size:0.8rem;margin-top:4px;display:none;">Por favor, introduce un correo válido</p>
+        </div>
         <div class="modal-acciones">
             <button class="modal-cancelar" id="modal-cancelar">Cancelar</button>
-            <a class="modal-enviar" id="modal-enviar" href="#">Enviar solicitud</a>
+            <button class="modal-enviar" id="modal-enviar">Enviar solicitud</button>
         </div>
     </div>
 </div>
@@ -584,15 +594,63 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             .trim();
     }
 
-    // ── Similitud simple: ¿el texto de búsqueda está contenido o es muy parecido? ──
+    // ── Distancia de Levenshtein para fuzzy matching ──
+    function levenshtein(a, b) {
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) {
+            matrix[i] = [i];
+        }
+        for (let j = 0; j <= a.length; j++) {
+            matrix[0][j] = j;
+        }
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+
+    // ── Similitud fuzzy: búsqueda por aproximación ──
     function coincide(texto, busqueda) {
         if (!busqueda) return true;
         const t = normalizar(texto);
         const b = normalizar(busqueda);
+
+        // Coincidencia exacta o por inclusión
         if (t.includes(b)) return true;
-        // Coincidencia por palabras parciales (cualquier palabra de la búsqueda en el texto)
+
+        // Coincidencia por palabras parciales
         const palabrasBusqueda = b.split(/\s+/).filter(Boolean);
-        return palabrasBusqueda.every(p => t.includes(p));
+        if (palabrasBusqueda.every(p => t.includes(p))) return true;
+
+        // Fuzzy matching: distancia de Levenshtein
+        // Si la búsqueda es corta (<= 4 caracteres), permitir 1 error
+        // Si es media (5-8 caracteres), permitir 2 errores
+        // Si es larga (> 8 caracteres), permitir hasta 3 errores
+        const maxErrores = b.length <= 4 ? 1 : (b.length <= 8 ? 2 : 3);
+        const distancia = levenshtein(t, b);
+        if (distancia <= maxErrores) return true;
+
+        // También buscar coincidencias parciales con fuzzy en palabras individuales
+        const palabrasTexto = t.split(/\s+/).filter(Boolean);
+        for (const pBusqueda of palabrasBusqueda) {
+            for (const pTexto of palabrasTexto) {
+                const dist = levenshtein(pTexto, pBusqueda);
+                const maxErr = pBusqueda.length <= 4 ? 1 : (pBusqueda.length <= 8 ? 2 : 3);
+                if (dist <= maxErr) return true;
+            }
+        }
+
+        return false;
     }
 
     // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
@@ -637,6 +695,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('modal-cancelar').addEventListener('click', () => $('modal-overlay').classList.remove('activo'));
+        $('modal-enviar').addEventListener('click', enviarSolicitud);
         $('modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-overlay') $('modal-overlay').classList.remove('activo'); });
 
         // Scroll infinito
@@ -882,13 +941,33 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         if (soloOferta) resumenLineas.push(`Solo productos en oferta`);
 
         $('modal-resumen').innerHTML = resumenLineas.join('<br>');
+        $('modal-email').value = '';
+        $('email-error').style.display = 'none';
+        $('modal-overlay').classList.add('activo');
+    }
 
-        // Construir email mailto con el resumen de filtros
+    function enviarSolicitud() {
+        const email = $('modal-email').value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!email || !emailRegex.test(email)) {
+            $('email-error').style.display = 'block';
+            return;
+        }
+
+        const texto    = $('f-texto').value.trim();
+        const area     = $('f-area').value;
+        const familias = familiasSeleccionadas();
+        const pMin     = $('f-precio-min').value;
+        const pMax     = $('f-precio-max').value;
+        const soloOferta = $('f-oferta').checked;
+
         const asunto = encodeURIComponent('Solicitud de catálogo personalizado');
         const refsMuestra = resultadosActuales.slice(0, 30).map(p => p.ref).join(', ');
         const masTexto = resultadosActuales.length > 30 ? ` y ${resultadosActuales.length - 30} más` : '';
         const cuerpo = encodeURIComponent(
             `Hola,\n\nMe gustaría solicitar un catálogo PDF personalizado con los siguientes filtros de búsqueda:\n\n` +
+            `- Email de contacto: ${email}\n` +
             `- Total de productos: ${resultadosActuales.length}\n` +
             (texto ? `- Texto buscado: ${texto}\n` : '') +
             (area ? `- Área: ${AREAS_NOMBRE[area] || area}\n` : '') +
@@ -899,8 +978,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             `Gracias.`
         );
 
-        $('modal-enviar').href = `mailto:correo@orenciomatas.es?subject=${asunto}&body=${cuerpo}`;
-        $('modal-overlay').classList.add('activo');
+        window.location.href = `mailto:correo@orenciomatas.es?subject=${asunto}&body=${cuerpo}`;
+        $('modal-overlay').classList.remove('activo');
     }
 })();
 </script>

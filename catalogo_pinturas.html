@@ -292,26 +292,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 document.getElementById('btn-descargar').href = url;
                 document.getElementById('mobile-link').style.display     = '';
                 document.getElementById('preview-catalogo').style.display = '';
-                // Manifiesto con páginas/productos/fecha
-                const manifiestoAsset = release.assets.find(a => a.name === 'manifiesto.json');
-                if (manifiestoAsset) {
-                    fetch(manifiestoAsset.browser_download_url)
-                        .then(r => r.json())
-                        .then(m => {
-                            const area = PDF.replace('catalogo_', '').replace('.pdf', '');
-                            const info = m.catalogos && m.catalogos[area];
-                            if (info) {
-                                document.getElementById('info-paginas').textContent   = info.paginas || '—';
-                                document.getElementById('info-productos').textContent = info.productos || '—';
-                            }
-                            if (m.generado) {
-                                const fecha = new Date(m.generado);
-                                document.getElementById('info-fecha').textContent =
-                                    fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-                            }
-                        })
-                        .catch(() => {});
-                }
+                // Manifiesto con páginas/productos/fecha - cargar desde data/ (CORS habilitado)
+                fetch('./data/manifiesto.json')
+                    .then(r => r.json())
+                    .then(m => {
+                        const area = PDF.replace('catalogo_', '').replace('.pdf', '');
+                        const info = m.catalogos && m.catalogos[area];
+                        if (info) {
+                            document.getElementById('info-paginas').textContent   = info.paginas || '—';
+                            document.getElementById('info-productos').textContent = info.productos || '—';
+                        }
+                        if (m.generado) {
+                            const fecha = new Date(m.generado);
+                            document.getElementById('info-fecha').textContent =
+                                fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+                        }
+                    })
+                    .catch(() => {});
             })
             .catch(() => showNoCatalogo());
 
