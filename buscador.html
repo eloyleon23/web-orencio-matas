@@ -612,6 +612,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             object-fit: contain;
             border-radius: 8px;
         }
+        .modal-producto-imagen-aviso {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #d97706;
+            text-align: center;
+            background: #fffbeb;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #fcd34d;
+        }
+        .modal-producto-imagen-aviso i {
+            margin-right: 6px;
+        }
         .modal-producto-info {
             padding: 30px;
             display: flex;
@@ -876,6 +889,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-producto-content">
             <div class="modal-producto-imagen">
                 <img id="modal-producto-img" src="" alt="" loading="lazy">
+                <p class="modal-producto-imagen-aviso">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    La imagen puede no coincidir exactamente con el producto real
+                </p>
             </div>
             <div class="modal-producto-info">
                 <h3 id="modal-producto-nombre"></h3>
