@@ -536,6 +536,29 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .modal-producto-disclaimer i {
             color: var(--yellow);
         }
+        .modal-producto-reportar {
+            margin-top: auto;
+            padding: 12px 16px;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .modal-producto-reportar:hover {
+            background: #fde68a;
+            border-color: #fbbf24;
+        }
+        .modal-producto-reportar:active {
+            background: #fcd34d;
+        }
 
         /* Responsive del modal de producto */
         @media (max-width: 768px) {
@@ -717,6 +740,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-circle-info"></i>
                     Los precios pueden variar y este producto está sujeto a disponibilidad.
                 </p>
+                <button class="modal-producto-reportar" id="modal-producto-reportar" style="display:none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Reportar imagen incorrecta
+                </button>
             </div>
         </div>
     </div>
@@ -1106,12 +1133,59 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         }
         $('modal-producto-precio').innerHTML = precioHtml;
 
+        // Mostrar botón de reportar imagen si está activado en configuración
+        if (window.MOSTRAR_BOTON_REPORTAR_IMAGEN) {
+            $('modal-producto-reportar').style.display = 'flex';
+            $('modal-producto-reportar').onclick = () => reportarImagenIncorrecta(p);
+        } else {
+            $('modal-producto-reportar').style.display = 'none';
+        }
+
         $('modal-producto-overlay').classList.add('activo');
     }
 
     // ── Cerrar modal de producto ──
     function cerrarModalProducto() {
         $('modal-producto-overlay').classList.remove('activo');
+    }
+
+    // ── Reportar imagen incorrecta en Google Sheets ──
+    function reportarImagenIncorrecta(p) {
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) {
+            alert('Error: No se ha configurado la URL del web app de Google Apps Script.');
+            return;
+        }
+
+        const btn = $('modal-producto-reportar');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+        btn.disabled = true;
+
+        const data = {
+            referencia: p.ref,
+            fecha: new Date().toISOString()
+        };
+
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            alert('✓ Producto registrado correctamente en la hoja de evaluación de imágenes.');
+        })
+        .catch(err => {
+            console.error('Error al registrar producto:', err);
+            alert('Error al registrar el producto. Por favor, inténtalo de nuevo.');
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
     }
 
     function escapeHtml(str) {
