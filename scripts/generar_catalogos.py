@@ -511,7 +511,23 @@ def generar_catalogo(area, productos, logo_png, familias={}):
     
     doc.build(story, onFirstPage=hf, onLaterPages=hf)
     print(f"  ✓ Generado: {out_path}")
-    return True
+
+    num_paginas = 0
+    # Generar imagen de portada (primera página) para vista previa en la web
+    try:
+        import fitz  # PyMuPDF
+        pdf_doc = fitz.open(out_path)
+        num_paginas = len(pdf_doc)
+        pagina = pdf_doc[0]
+        pix = pagina.get_pixmap(matrix=fitz.Matrix(2, 2))
+        portada_path = out_path.replace('.pdf', '_portada.jpg')
+        pix.save(portada_path)
+        pdf_doc.close()
+        print(f"  ✓ Portada generada: {portada_path} ({num_paginas} páginas)")
+    except Exception as e:
+        print(f"  ⚠ No se pudo generar portada: {e}")
+
+    return {'paginas': num_paginas, 'productos': len(productos_area)}
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 def main():
@@ -531,11 +547,13 @@ def main():
     familias  = leer_familias()
 
     generados = []
+    info_catalogos = {}
     for area in AREAS:
         print(f"\n▶ Área: {area}")
-        ok = generar_catalogo(area, productos, logo_png, familias)
-        if ok:
+        resultado = generar_catalogo(area, productos, logo_png, familias)
+        if resultado and resultado.get('paginas', 0) > 0:
             generados.append(area)
+            info_catalogos[area] = resultado
         # Liberar caché de imágenes entre áreas para no agotar RAM
         _img_cache.clear()
         import gc
@@ -543,10 +561,16 @@ def main():
         print(f"  Memoria liberada.")
     
     # Escribir manifiesto JSON con las áreas disponibles
+    import datetime as _dt
     manifiesto = {
-        'generado': __import__('datetime').datetime.utcnow().isoformat() + 'Z',
+        'generado': _dt.datetime.utcnow().isoformat() + 'Z',
         'catalogos': {
-            area: AREAS[area]['filename'] for area in generados
+            area: {
+                'archivo':  AREAS[area]['filename'],
+                'portada':  AREAS[area]['filename'].replace('.pdf', '_portada.jpg'),
+                'paginas':  info_catalogos[area]['paginas'],
+                'productos': info_catalogos[area]['productos'],
+            } for area in generados
         }
     }
     with open(os.path.join(OUTPUT_DIR, 'manifiesto.json'), 'w') as f:
