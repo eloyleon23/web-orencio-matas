@@ -342,7 +342,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 document.getElementById('visor-pdfjs').style.display = '';
                 document.getElementById('actions').style.display     = '';
 
-                pdfjsLib.getDocument({ url: url, withCredentials: false }).promise
+                pdfjsLib.getDocument({ url: 'https://corsproxy.io/?url=' + encodeURIComponent(url) }).promise
                     .then(pdf => {
                         pdfDoc = pdf;
                         renderPagina(1);

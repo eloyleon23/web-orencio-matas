@@ -329,6 +329,33 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const API  = 'https://api.github.com/repos/' + REPO + '/releases/latest';
     const ZAPHIRO_CFG_API = 'https://api.github.com/repos/' + REPO + '/contents/zaphiro_config.json';
 
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    let pdfInterno = null, pagIntActual = 1;
+    const canvasI = document.getElementById('canvas-interno');
+    const ctxI    = canvasI.getContext('2d');
+    const cargI   = document.getElementById('cargando-interno');
+
+    window.cambiarPagInterna = function(d) {
+        if (!pdfInterno) return;
+        const n = pagIntActual + d;
+        if (n < 1 || n > pdfInterno.numPages) return;
+        pagIntActual = n;
+        renderInt(n);
+    };
+    function renderInt(num) {
+        pdfInterno.getPage(num).then(p => {
+            const vp = p.getViewport({ scale: 1.2 });
+            canvasI.width = vp.width; canvasI.height = vp.height;
+            p.render({ canvasContext: ctxI, viewport: vp }).promise.then(() => {
+                cargI.style.display   = 'none';
+                canvasI.style.display = 'block';
+                document.getElementById('pag-interna').textContent =
+                    'Pág. ' + num + ' / ' + pdfInterno.numPages;
+            });
+        });
+    }
+
     // ── Catálogo interno desde GitHub Releases ──
     fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
         .then(r => r.ok ? r.json() : null)
@@ -337,13 +364,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             const asset = release.assets.find(a => a.name === 'catalogo_talleres.pdf');
             if (!asset) { showNoInterno(); return; }
             const url = asset.browser_download_url;
-            const viewer = 'https://docs.google.com/viewer?embedded=true&url=' + encodeURIComponent(url);
-            document.getElementById('iframe-interno').src = viewer;
             document.getElementById('btn-abrir-interno').href = url;
             document.getElementById('btn-descargar-interno').href = url;
             document.getElementById('mobile-link-interno').style.display = '';
             document.getElementById('viewer-interno').style.display = '';
             document.getElementById('actions-interno').style.display = '';
+
+            pdfjsLib.getDocument({ url: 'https://corsproxy.io/?url=' + encodeURIComponent(url) }).promise
+                .then(pdf => { pdfInterno = pdf; renderInt(1); })
+                .catch(() => { cargI.textContent = 'Error al cargar el PDF. Usa el botón de descarga.'; });
         })
         .catch(showNoInterno);
 
