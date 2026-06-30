@@ -200,7 +200,11 @@ function procesarSolicitarCatalogo(data) {
 // ── Disparar workflow de GitHub Actions ──
 function dispararWorkflowGitHub(email, filtros, resumen_filtros) {
   try {
+    console.log('=== Iniciando dispararWorkflowGitHub ===');
+    console.log('Email:', email);
+
     const token = PropertiesService.getScriptProperties().getProperty('GITHUB_TOKEN');
+    console.log('Token encontrado:', token ? 'SÍ' : 'NO');
 
     if (!token) {
       console.error('Error: GITHUB_TOKEN no configurado en propiedades del script');
@@ -208,6 +212,8 @@ function dispararWorkflowGitHub(email, filtros, resumen_filtros) {
     }
 
     const url = `https://api.github.com/repos/${GITHUB_REPO}/dispatches`;
+    console.log('URL:', url);
+
     const payload = {
       event_type: GITHUB_WORKFLOW_EVENT,
       client_payload: {
@@ -216,6 +222,7 @@ function dispararWorkflowGitHub(email, filtros, resumen_filtros) {
         resumen_filtros: resumen_filtros
       }
     };
+    console.log('Payload:', JSON.stringify(payload));
 
     const options = {
       method: 'POST',
@@ -233,17 +240,21 @@ function dispararWorkflowGitHub(email, filtros, resumen_filtros) {
     const responseCode = response.getResponseCode();
     const responseText = response.getContentText();
 
-    console.log('Respuesta GitHub:', responseCode, responseText);
+    console.log('Código de respuesta:', responseCode);
+    console.log('Texto de respuesta:', responseText);
 
     if (responseCode === 204) {
+      console.log('=== Workflow disparado correctamente ===');
       return { success: true };
     } else {
       console.error('Error en respuesta de GitHub:', responseText);
+      console.log('=== Error al disparar workflow ===');
       return { success: false, error: responseText };
     }
 
   } catch (error) {
-    console.error('Error al disparar workflow:', error);
+    console.error('Error al disparar workflow:', error.toString());
+    console.log('=== Excepción al disparar workflow ===');
     return { success: false, error: error.toString() };
   }
 }
