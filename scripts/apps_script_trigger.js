@@ -1728,234 +1728,365 @@ function darDeBajaProductos() {
 //   En Apps Script → Configuración del proyecto → Propiedades de script → Añadir:
 //   Clave: ANTHROPIC_API_KEY  |  Valor: tu clave API de Anthropic (sk-ant-...)
 //
-// El proceso:
-//   1. Lee todos los productos de la hoja Productos
-//   2. Los agrupa por familia
-//   3. Para cada familia, envía los productos en lotes de 80 a Claude
-//   4. Claude devuelve JSON con {referencia: subfamilia} para cada producto
-//   5. Escribe la subfamilia en la columna "subfamilia" de Productos
-//   6. Al finalizar, genera/actualiza la hoja SubfamiliaProductos
+// ── CLASIFICACIÓN AUTOMÁTICA DE SUBFAMILIAS (por keywords, sin coste) ────
 //
-// REANUDACIÓN: Los productos que ya tienen subfamilia asignada se saltan.
-// Para reclasificar todo desde cero, borra la columna subfamilia antes de ejecutar.
+// Analiza el nombre de cada producto y le asigna una subfamilia dentro de
+// su familia usando reglas de palabras clave predefinidas.
+// Sin coste adicional — funciona totalmente offline.
+//
+// REANUDACIÓN: Los productos que ya tienen subfamilia se saltan.
+// Para reclasificar todo, borra la columna subfamilia antes de ejecutar.
 
 function clasificarSubfamiliasConIA() {
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const sheetProd = ss.getSheetByName('Productos');
-
   if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
 
-  // Obtener clave API desde Script Properties
-  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
-  if (!apiKey) {
-    SpreadsheetApp.getUi().alert(
-      'Falta la clave API de Anthropic.\n\n' +
-      'Ve a Apps Script → Configuración del proyecto → Propiedades de script\n' +
-      'y añade: ANTHROPIC_API_KEY = sk-ant-...'
-    );
-    return;
-  }
+  const REGLAS = obtenerReglasSubfamilias_();
 
-  // ── Cabeceras Productos ────────────────────────────────────────────────
   const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
-
-  // Añadir columna subfamilia si no existe
   if (!headers.includes('subfamilia')) {
     sheetProd.getRange(1, headers.length + 1).setValue('subfamilia');
     headers.push('subfamilia');
   }
-
   const PROD = {};
   headers.forEach((h, i) => { PROD[h] = i; });
 
-  const colRef       = PROD['referencia'];
-  const colNombre    = PROD['nombre'];
-  const colFamilia   = PROD['tipologia'];
-  const colArea      = PROD['area'];
-  const colSubfam    = PROD['subfamilia'];
-  const colIncluir   = PROD['incluir_en_catalogo'];
+  const colNombre  = PROD['nombre'];
+  const colFamilia = PROD['tipologia'];
+  const colSubfam  = PROD['subfamilia'];
 
-  if (colRef === undefined || colNombre === undefined || colFamilia === undefined) {
-    SpreadsheetApp.getUi().alert('Faltan columnas necesarias en Productos (referencia, nombre, tipologia).');
+  if (colNombre === undefined || colFamilia === undefined) {
+    SpreadsheetApp.getUi().alert('Faltan columnas necesarias (nombre, tipologia) en Productos.');
     return;
   }
 
-  // ── Leer todos los productos ──────────────────────────────────────────
   const lastRow = sheetProd.getLastRow();
   if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos.'); return; }
 
+  SpreadsheetApp.getActiveSpreadsheet()
+    .toast('Clasificando subfamilias por keywords...', '🗂️ Procesando', 10);
+
   const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
 
-  // Agrupar productos por familia (solo los que no tienen subfamilia aún)
-  const grupos = {}; // {familia: [{rowNum, ref, nombre}]}
+  let clasificados = 0, saltados = 0;
+  const updates = [];
+
   data.forEach((row, i) => {
     const subfamActual = colSubfam !== undefined ? row[colSubfam].toString().trim() : '';
-    if (subfamActual) return; // ya clasificado, saltar
+    if (subfamActual) { saltados++; return; }
 
-    const ref     = row[colRef]     ? row[colRef].toString().trim()     : '';
-    const nombre  = row[colNombre]  ? row[colNombre].toString().trim()  : '';
-    const familia = row[colFamilia] ? row[colFamilia].toString().trim().toUpperCase() : 'SIN FAMILIA';
+    const nombre  = row[colNombre]  ? row[colNombre].toString().trim().toLowerCase()  : '';
+    const familia = row[colFamilia] ? row[colFamilia].toString().trim().toUpperCase() : '';
+    if (!nombre || !familia) return;
 
-    if (!ref || !nombre) return;
-
-    if (!grupos[familia]) grupos[familia] = [];
-    grupos[familia].push({ rowNum: i + 2, ref, nombre });
+    const reglas = REGLAS[familia] || [['General', []]];
+    const subfam = inferirSubfamilia_(nombre, reglas);
+    updates.push({ row: i + 2, val: subfam });
+    clasificados++;
   });
 
-  const totalFamilias = Object.keys(grupos).length;
-  if (totalFamilias === 0) {
-    SpreadsheetApp.getUi().alert('Todos los productos ya tienen subfamilia asignada.');
-    return;
-  }
-
-  SpreadsheetApp.getActiveSpreadsheet()
-    .toast(`Clasificando ${totalFamilias} familias con IA... (puede tardar varios minutos)`,
-           '🤖 Iniciando', 10);
-
-  let totalClasificados = 0, totalErrores = 0;
-  const LOTE = 80; // productos por llamada a la API
-
-  Object.entries(grupos).forEach(([familia, productos]) => {
-    SpreadsheetApp.getActiveSpreadsheet()
-      .toast(`Procesando: ${familia} (${productos.length} productos)...`, '🤖 Clasificando', 15);
-
-    // Dividir en lotes
-    for (let i = 0; i < productos.length; i += LOTE) {
-      const lote = productos.slice(i, i + LOTE);
-
-      try {
-        const resultado = clasificarLoteConClaude_(apiKey, familia, lote);
-        if (!resultado) { totalErrores += lote.length; continue; }
-
-        // Escribir resultados en el Sheet
-        lote.forEach(prod => {
-          const subfam = resultado[prod.ref] || resultado[prod.ref.toUpperCase()] || '';
-          if (subfam && colSubfam !== undefined) {
-            sheetProd.getRange(prod.rowNum, colSubfam + 1).setValue(subfam);
-            totalClasificados++;
-          } else {
-            totalErrores++;
-          }
-        });
-
-        SpreadsheetApp.flush();
-        Utilities.sleep(500); // pausa entre llamadas a la API
-      } catch (e) {
-        console.error(`Error en familia ${familia}, lote ${i}: ${e.message}`);
-        totalErrores += lote.length;
-      }
-    }
-  });
-
-  // Generar/actualizar hoja SubfamiliaProductos
+  updates.forEach(u => sheetProd.getRange(u.row, colSubfam + 1).setValue(u.val));
+  SpreadsheetApp.flush();
   generarHojaSubfamilias_();
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    `✓ Clasificados: ${totalClasificados} | Errores: ${totalErrores}\n` +
-    `Hoja "SubfamiliaProductos" actualizada.`,
-    '🤖 Clasificación completada', 15
+    `✓ Clasificados: ${clasificados} | Ya tenían subfamilia: ${saltados}\nHoja "SubfamiliaProductos" actualizada.`,
+    '✓ Clasificación completada', 12
   );
 }
 
-// ── Llamada a Claude API para clasificar un lote de productos ─────────────
-function clasificarLoteConClaude_(apiKey, familia, productos) {
-  // Subfamilias predefinidas por familia (fuente de verdad para la IA)
-  const SUBFAMILIAS = {
-    // PINTURAS
-    'PINTURAS Y BARNICES':          ['Pinturas al agua', 'Pinturas plásticas', 'Esmaltes sintéticos', 'Barnices y lasures', 'Imprimaciones y aparejos', 'Pinturas anticorrosión', 'Pinturas para suelos', 'Pinturas para exterior', 'Lacas', 'Spray pintura', 'Otros pinturas y barnices'],
-    'AKZONOBEL':                    ['Xyladecor / Xylamon madera', 'Sikkens acabados madera', 'Bondex madera', 'Hammerite metal', 'Bruguer interior', 'Bruguer exterior', 'Bruguer renovación', 'Spray AkzoNobel', 'Imprimaciones AkzoNobel', 'Otros AkzoNobel'],
-    'PINTURAS TITAN':               ['Titanlux esmalte sintético', 'Titan plástico al agua', 'Oxiron anticorrosión', 'Imprimaciones Titan', 'Spray Titan', 'Titan madera', 'Otros Titan'],
-    'PINTURAS DURAVAL':             ['Pinturas plásticas Duraval', 'Esmaltes Duraval', 'Imprimaciones Duraval', 'Acabados Duraval', 'Otros Duraval'],
-    'BROCHAS Y UTILES DE APLICACION': ['Brochas y pinceles', 'Rodillos y accesorios rodillo', 'Cubetas y bandejas', 'Cintas de enmascarar', 'Espátulas y rasquetas', 'Plásticos protección y papel', 'Otros útiles aplicación'],
-    'LIJAS':                        ['Lijas en hoja', 'Lijas en rollo', 'Lijas al agua', 'Esponjas abrasivas', 'Otros abrasivos'],
-    'PEGAMENTOS Y COLA CONTACTO':   ['Colas de contacto', 'Pegamentos instantáneos cianocrilato', 'Siliconas y selladores', 'Adhesivos de montaje', 'Espumas de poliuretano', 'Cinta doble cara', 'Otros adhesivos'],
-    'AGUARRAS Y DISOLVENTES':       ['Aguarrás mineral', 'Disolvente nitro', 'Disolventes universales', 'Diluyentes al agua', 'Quitapinturas y decapantes', 'Otros disolventes'],
-    'PRODUCTOS QUIMICOS':           ['Ácidos', 'Bases y álcalis', 'Agua destilada', 'Productos para piscinas', 'Alcoholes', 'Otros productos químicos'],
-    // DROGUERÍA
-    'DETERGENTES ROPA':             ['Detergente líquido', 'Detergente en polvo', 'Detergente en cápsulas', 'Detergente color', 'Detergente bebé / delicado', 'Detergente industrial / profesional', 'Detergente ecológico'],
-    'LAVAVAJILLAS AUTOMATICOS':     ['Pastillas lavavajillas', 'Gel / líquido lavavajillas máquina', 'Abrillantador lavavajillas', 'Sal lavavajillas', 'Otros lavavajillas máquina'],
-    'LAVAVAJILLAS A MANO':          ['Lavavajillas líquido a mano', 'Lavavajillas concentrado', 'Otros lavavajillas mano'],
-    'LEJIAS':                       ['Lejía normal', 'Lejía con detergente', 'Lejía perfumada', 'Lejía concentrada', 'Lejía en pastillas'],
-    'SUAVIZANTES ROPA':             ['Suavizante normal', 'Suavizante concentrado', 'Suavizante para bebé', 'Suavizante profesional'],
-    'LIMPIACRISTALES Y MULTIUSOS':  ['Limpiacristales', 'Multiusos hogar', 'Spray multiusos', 'Otros limpiadores multiusos'],
-    'LIMPIADORES LIQUIDOS':         ['Desengrasantes', 'Limpiadores suelos', 'Limpiadores baño', 'Limpiadores cocina', 'Limpiadores industriales', 'Otros limpiadores líquidos'],
-    'DESINFECTANTES':               ['Desinfectantes para superficies', 'Desinfectantes de manos', 'Desinfectantes alimentarios', 'Otros desinfectantes'],
-    'AMBIENTADORES':                ['Ambientadores spray', 'Ambientadores eléctricos', 'Ambientadores de varillas', 'Ambientadores para ropa y textil', 'Otros ambientadores'],
-    'INSECTICIDAS':                 ['Insecticidas voladores', 'Insecticidas rastreros', 'Antimosquitos', 'Insecticidas jardín', 'Trampas insectos', 'Otros insecticidas'],
-    'PAPELES Y CELULOSAS':          ['Papel higiénico doméstico', 'Papel higiénico industrial', 'Papel de cocina', 'Pañuelos faciales', 'Servilletas'],
-    'UTILES DE LIMPIEZA PROFESIONAL': ['Carros de limpieza', 'Cubos y accesorios', 'Dispensadores papel e higiene', 'Dosificadores jabón', 'Papeleras y contenedores', 'Escurridores y limpiadores cristal', 'Friegas y mopas profesional', 'Señalización y seguridad', 'Otros útiles profesional'],
-    'PRODUCTOS LIMPIEZA INDUSTRIALES': ['Detergentes industriales ropa', 'Limpiadores suelos industriales', 'Desengrasantes industriales', 'Desinfectantes industriales', 'Lavavajillas industrial máquina', 'Productos higiene de manos profesional', 'Abrillantadores y decapantes industriales', 'Otros productos limpieza industrial'],
-    // PERFUMERÍA
-    'GELES Y JABONES BAÑO':         ['Gel de ducha', 'Gel íntimo', 'Exfoliante corporal', 'Baño de burbujas', 'Otros geles y jabones baño'],
-    'CHAMPUS':                       ['Champú uso frecuente', 'Champú cabello seco', 'Champú cabello graso', 'Champú anticaspa', 'Champú para teñido', 'Champú infantil', 'Champú 2en1', 'Otros champús'],
-    'DESODORANTES':                  ['Desodorante spray', 'Desodorante roll-on', 'Desodorante stick', 'Desodorante crema', 'Antitranspirante'],
-    'CREMAS DE MANOS':               ['Crema de manos hidratante', 'Crema de manos reparadora', 'Crema de manos urea', 'Otras cremas de manos'],
-    'ACEITES Y LECHES CORPORALES':   ['Aceite corporal', 'Leche corporal hidratante', 'Crema nutritiva corporal', 'Productos bebé cuerpo', 'Loción corporal urea', 'Otros aceites y leches'],
-    'CREMAS DE BELLEZA':             ['Crema facial día', 'Crema facial noche', 'Crema anti-edad', 'Sérum facial', 'Contorno de ojos', 'Crema solar facial', 'Limpieza facial', 'Otras cremas de belleza'],
-    'ANEXOS Y VARIOS DE PERFUMERIA': ['Accesorios manicura y pedicura', 'Espejos', 'Algodones y desmaquillantes', 'Botiquines y primeros auxilios', 'Mascarillas protección', 'Material desechable higiene', 'Estuches y sets', 'Otros accesorios perfumería'],
-    'COLONIAS MUJER':                ['Eau de toilette mujer', 'Eau de parfum mujer', 'Colonia mujer clásica', 'Sets colonia mujer'],
-    'COLONIAS HOMBRE':               ['Eau de toilette hombre', 'Eau de parfum hombre', 'Colonia hombre clásica', 'After shave colonia'],
-    'TINTES PELO':                   ['Tinte permanente', 'Tinte semipermanente', 'Coloración vegetal', 'Decoloración', 'Matizador'],
-  };
-
-  // Subfamilias genéricas para familias no predefinidas
-  const subfamDefault = ['Formato pequeño / individual', 'Formato mediano', 'Formato grande / familiar',
-                         'Formato profesional / industrial', 'Pack / Ahorro', 'Ecológico / Natural', 'Otros'];
-
-  const subfamsParaFamilia = SUBFAMILIAS[familia] || subfamDefault;
-
-  const listaProductos = productos.map(p => `${p.ref}|${p.nombre}`).join('\n');
-
-  const prompt = `Eres un experto en catalogación de productos para droguería, perfumería y pinturas.
-
-Familia de productos: "${familia}"
-Subfamilias disponibles: ${subfamsParaFamilia.map((s,i) => `${i+1}. ${s}`).join(', ')}
-
-Clasifica cada producto en la subfamilia más adecuada.
-Si ninguna encaja bien, usa la última opción ("Otros...").
-Responde SOLO con un objeto JSON válido con este formato exacto, sin texto adicional:
-{"REFERENCIA1":"Nombre subfamilia exacto","REFERENCIA2":"Nombre subfamilia exacto"}
-
-Productos a clasificar (formato: REFERENCIA|NOMBRE_PRODUCTO):
-${listaProductos}`;
-
-  const payload = JSON.stringify({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4000,
-    messages: [{ role: 'user', content: prompt }]
-  });
-
-  const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method: 'post',
-    contentType: 'application/json',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    payload: payload,
-    muteHttpExceptions: true
-  });
-
-  if (response.getResponseCode() !== 200) {
-    console.error('Error API Claude:', response.getContentText());
-    return null;
+function inferirSubfamilia_(nombre, reglas) {
+  const n = nombre.toLowerCase();
+  for (const [subfam, keywords] of reglas) {
+    if (keywords.length === 0) return subfam;
+    for (const kw of keywords) {
+      if (n.includes(kw.toLowerCase())) return subfam;
+    }
   }
-
-  try {
-    const data = JSON.parse(response.getContentText());
-    const texto = data.content[0].text.trim();
-    // Extraer JSON aunque venga con texto alrededor
-    const match = texto.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    return JSON.parse(match[0]);
-  } catch (e) {
-    console.error('Error parseando respuesta:', e.message);
-    return null;
-  }
+  return reglas[reglas.length - 1][0];
 }
 
-// ── Generar/actualizar hoja SubfamiliaProductos ──────────────────────────
+function obtenerReglasSubfamilias_() {
+  return {
+    'PINTURAS Y BARNICES': [
+      ['Spray / Aerosol',           ['spray', 'aerosol']],
+      ['Imprimaciones y aparejos',  ['imprim', 'aparejo', 'fondo anticor', 'sellador', 'tapaporos']],
+      ['Lacas',                     ['laca ']],
+      ['Barnices y lasures',        ['barniz', 'lasur', 'saturador']],
+      ['Pinturas anticorrosión',    ['anticorr', 'oxido', 'óxido', 'oxiron']],
+      ['Pinturas para suelos',      ['suelo', 'pavimento', 'tráfico', 'trafico', 'garaje']],
+      ['Pinturas para exterior',    ['exterior', 'fachada', 'siloxan', 'monocapa']],
+      ['Esmaltes sintéticos',       ['esmalte', 'sintet']],
+      ['Pinturas al agua',          ['plastica', 'plástica', 'acrilica', 'acrílica', 'al agua', 'latex', 'látex']],
+      ['Otros pinturas',            []],
+    ],
+    'AKZONOBEL': [
+      ['Spray AkzoNobel',           ['spray']],
+      ['Xyladecor / Xylamon',       ['xyladecor', 'xylamon']],
+      ['Sikkens',                   ['sikkens', 'cetol', 'rubbol']],
+      ['Bondex',                    ['bondex']],
+      ['Hammerite',                 ['hammerite']],
+      ['Bruguer Renovación',        ['renov']],
+      ['Bruguer exterior',          ['exterior', 'fachada', 'siloxan']],
+      ['Imprimaciones AkzoNobel',   ['imprim', 'aparejo', 'fondo']],
+      ['Bruguer interior',          []],
+    ],
+    'PINTURAS TITAN': [
+      ['Spray Titan',               ['spray']],
+      ['Oxiron anticorrosión',      ['oxiron', 'anticorr']],
+      ['Imprimaciones Titan',       ['imprim', 'aparejo', 'fondo']],
+      ['Titan madera',              ['madera', 'lasur', 'barniz']],
+      ['Titanlux esmalte',          ['titanlux', 'esmalte', 'sintet']],
+      ['Titan Plástico al agua',    []],
+    ],
+    'PINTURAS DURAVAL': [
+      ['Imprimaciones Duraval',     ['imprim', 'aparejo', 'fondo']],
+      ['Esmaltes Duraval',          ['esmalte']],
+      ['Pinturas plásticas Duraval',[]],
+    ],
+    'BROCHAS Y UTILES DE APLICACION': [
+      ['Cintas de enmascarar',      ['cinta', 'krepp', 'enmascarar', 'masking']],
+      ['Espátulas y rasquetas',     ['espátula', 'espatula', 'rasquet']],
+      ['Cubetas y bandejas',        ['cubeta', 'bandeja']],
+      ['Rodillos y accesorios',     ['rodillo', 'mango', 'alargador', 'telesc']],
+      ['Plásticos y protección',    ['plástico', 'plastico', 'lona', 'protec']],
+      ['Brochas y pinceles',        []],
+    ],
+    'LIJAS': [
+      ['Lijas al agua',             ['agua', 'wet']],
+      ['Esponjas abrasivas',        ['esponja', 'fibra abras', 'scotch']],
+      ['Lijas en rollo',            ['rollo']],
+      ['Lijas en hoja',             []],
+    ],
+    'PEGAMENTOS Y COLA CONTACTO': [
+      ['Espumas de poliuretano',    ['espuma', 'poliuret', 'foam']],
+      ['Siliconas y selladores',    ['silicona', 'sellador', 'mastic']],
+      ['Adhesivos de montaje',      ['montaje', 'construcc', 'panel']],
+      ['Pegamentos instantáneos',   ['instant', 'cianoacr', 'super glue', 'loctite']],
+      ['Cinta adhesiva doble cara', ['cinta']],
+      ['Colas de contacto',         []],
+    ],
+    'AGUARRAS Y DISOLVENTES': [
+      ['Quitapinturas y decapantes',['quitapint', 'decapant']],
+      ['Diluyentes al agua',        ['al agua', 'acrilico', 'acrílico']],
+      ['Disolvente nitro',          ['nitro']],
+      ['Aguarrás mineral',          ['aguarras', 'aguarrás', 'mineral', 'esencia trementina']],
+      ['Disolventes universales',   []],
+    ],
+    'PRODUCTOS QUIMICOS': [
+      ['Ácidos',                    ['acido', 'ácido', 'nitric', 'sulfur', 'muriatic']],
+      ['Agua destilada',            ['destilada', 'desmineral', 'metanol']],
+      ['Alcoholes',                 ['alcohol', 'etanol', 'isoprop']],
+      ['Otros productos químicos',  []],
+    ],
+    'DETERGENTES ROPA': [
+      ['Detergente industrial/profesional', ['prof', 'saco ', 'industri']],
+      ['Detergente bebé/delicado',  ['bebé', 'bebe', 'delicado', 'infantil']],
+      ['Detergente en cápsulas',    ['cápsula', 'capsula', 'pods', 'bolita']],
+      ['Detergente en polvo',       ['polvo', 'saco']],
+      ['Detergente ecológico',      ['eco', 'ecológico', 'vegetal']],
+      ['Detergente color',          ['color', 'negro', 'oscuro']],
+      ['Detergente líquido',        []],
+    ],
+    'LAVAVAJILLAS AUTOMATICOS': [
+      ['Abrillantador lavavajillas',['abrillant']],
+      ['Sal lavavajillas',          ['sal ']],
+      ['Pastillas lavavajillas',    ['pastill', 'tableta']],
+      ['Gel / líquido máquina',     []],
+    ],
+    'LAVAVAJILLAS A MANO': [
+      ['Concentrado',               ['concentr', 'ultra']],
+      ['Ecológico',                 ['eco', 'vegetal', 'natural']],
+      ['Lavavajillas mano',         []],
+    ],
+    'LEJIAS': [
+      ['Lejía con detergente',      ['detergente', 'limpiadora', 'multiusos']],
+      ['Lejía concentrada',         ['concentr', 'fuerte', 'reforzada']],
+      ['Lejía perfumada',           ['colonia', 'pino', 'lavanda', 'floral', 'perfum']],
+      ['Lejía en pastillas',        ['pastill']],
+      ['Lejía normal',              []],
+    ],
+    'SUAVIZANTES ROPA': [
+      ['Suavizante profesional',    ['prof', '10 l', '20 l']],
+      ['Suavizante para bebé',      ['bebé', 'bebe', 'infantil']],
+      ['Suavizante concentrado',    ['concentr']],
+      ['Suavizante normal',         []],
+    ],
+    'LIMPIACRISTALES Y MULTIUSOS': [
+      ['Limpiacristales',           ['cristal', 'vidrio', 'glass', 'ventana']],
+      ['Spray multiusos',           ['spray', 'pistola']],
+      ['Multiusos hogar',           []],
+    ],
+    'LIMPIADORES LIQUIDOS': [
+      ['Limpiadores baño / WC',     ['baño', 'wc', 'inodoro', 'sanit', 'antical', 'desincrustante']],
+      ['Limpiadores cocina',        ['cocina', 'horno', 'campana', 'grill']],
+      ['Desengrasantes',            ['desengras', 'grasa', 'kh-7']],
+      ['Limpiadores industriales',  ['industri', 'prof', 'garrafa', '5 l', '20 l']],
+      ['Limpiadores suelos',        ['suelo', 'fregasuelos', 'parquet', 'terrazo', 'mármol', 'marmol']],
+      ['Otros limpiadores',         []],
+    ],
+    'DESINFECTANTES': [
+      ['Desinfectantes de manos',   ['manos', 'gel', 'hidroalcohol', 'bactericida']],
+      ['Desinfectantes alimentarios',['aliment', 'hostelería', 'hosteleria']],
+      ['Desinfectantes superficies',[]],
+    ],
+    'AMBIENTADORES': [
+      ['Eléctricos',                ['eléctric', 'electrico', 'enchufe', 'aparato']],
+      ['Varillas difusoras',        ['varilla', 'mikado', 'difusor']],
+      ['Para ropa y textil',        ['ropa', 'tela', 'textil', 'armario']],
+      ['Spray',                     ['spray', 'aerosol']],
+      ['Otros ambientadores',       []],
+    ],
+    'INSECTICIDAS': [
+      ['Antiparasitarios mascotas', ['mascota', 'perro', 'gato', 'pulgas', 'garrapatac']],
+      ['Trampas insectos',          ['trampa', 'cebo gel']],
+      ['Insecticidas jardín',       ['jardín', 'jardin', 'planta', 'pulgón']],
+      ['Insecticidas rastreros',    ['rast', 'cucarach', 'hormiga', 'jeringa']],
+      ['Antimosquitos',             ['mosquito', 'tigre']],
+      ['Insecticidas voladores',    ['mosca', 'avispa', 'volad']],
+      ['Otros insecticidas',        []],
+    ],
+    'PAPELES Y CELULOSAS': [
+      ['Papel higiénico industrial',['industri', 'jumbo', 'maxi']],
+      ['Papel de cocina',           ['cocina', 'multiusos']],
+      ['Pañuelos faciales',         ['facial', 'pañuelos', 'pañuelo']],
+      ['Servilletas',               ['servilleta']],
+      ['Papel higiénico doméstico', []],
+    ],
+    'UTILES DE LIMPIEZA PROFESIONAL': [
+      ['Carros de limpieza',        ['carro ']],
+      ['Contenedores y papeleras',  ['contenedor', 'papelera', 'cubo basura']],
+      ['Cubos y accesorios',        ['cubo ', 'prensa', 'rueda', 'saco tela', 'pinza']],
+      ['Secadores de manos',        ['secador', 'secamanos']],
+      ['Dispensadores papel',       ['dispensador papel', 'portarrollos']],
+      ['Dosificadores jabón',       ['dosificador', 'dispensador']],
+      ['Limpiacristales prof.',     ['lavavidrios', 'haragan', 'haragán', 'goma repuesto', 'vellon']],
+      ['Señalización',              ['señal', 'señaliz']],
+      ['Otros útiles profesional',  []],
+    ],
+    'PRODUCTOS LIMPIEZA INDUSTRIALES': [
+      ['Lavavajillas industrial',   ['lavavajillas', 'sumadish', 'rinse', 'abrillant', 'scale', 'special l4']],
+      ['Detergentes ropa industrial',['detergente', 'suaviz', 'mimosin', 'flor suav']],
+      ['Desengrasantes industriales',['desengras', 'kh-7']],
+      ['Limpiadores suelos industr.',['suelos', 'ceras', 'decapante', 'abrillantad', 'jontec', 'sprint', 'emerel']],
+      ['Productos higiene manos',   ['jabón manos', 'jabon manos', 'gel manos', 'silk', 'klint']],
+      ['Desinfectantes industriales',[]],
+    ],
+    'BAYETAS, GAMUZAS Y PAÑOS': [
+      ['Bayetas microfibra',        ['microfibra']],
+      ['Gamuzas',                   ['gamuza']],
+      ['Bayetas desechables',       ['desechable']],
+      ['Bayetas y paños',           []],
+    ],
+    'ESTROPAJOS': [
+      ['Con esponja',               ['esponja']],
+      ['Fibra metálica',            ['acero', 'metal', 'inox']],
+      ['Estropajos',                []],
+    ],
+    'GELES Y JABONES BAÑO': [
+      ['Formato profesional',       ['5 l', '5l', 'garrafa', 'prof', '10 l']],
+      ['Gel íntimo',                ['íntimo', 'intimo', 'femenino']],
+      ['Exfoliante corporal',       ['exfoli', 'scrub', 'peeling']],
+      ['Baño de burbujas',          ['burbujas']],
+      ['Gel de ducha',              []],
+    ],
+    'CHAMPUS': [
+      ['Gran formato profesional',  ['5 l', '10 l', 'prof', 'garrafa', 'granel']],
+      ['Champú 2 en 1',             ['2en1', '2 en 1', '2&1']],
+      ['Champú infantil',           ['infantil', 'bebé', 'bebe', 'niño', 'kids']],
+      ['Champú anticaspa',          ['anticaspa', 'caspa']],
+      ['Champú cabello teñido',     ['color', 'teñido', 'tinte', 'rubio']],
+      ['Champú cabello seco/dañado',['seco', 'dañado', 'reparad', 'nutriti']],
+      ['Champú cabello graso',      ['graso', 'grasa', 'purific']],
+      ['Champú uso frecuente',      []],
+    ],
+    'DESODORANTES': [
+      ['Antitranspirante',          ['antitransp', 'anti-transp', 'sudor']],
+      ['Stick',                     ['stick', 'barra']],
+      ['Roll-on',                   ['roll', 'bola']],
+      ['Spray',                     ['spray', 'aerosol']],
+      ['Otros desodorantes',        []],
+    ],
+    'CREMAS DE BELLEZA': [
+      ['Protector solar facial',    ['solar', 'spf', 'uv', 'sun']],
+      ['Sérum y tratamientos',      ['serum', 'sérum', 'tratami', 'ampolla']],
+      ['Contorno de ojos',          ['ojos', 'contorno']],
+      ['Crema anti-edad',           ['anti-edad', 'antiedad', 'reafirm', 'lifting']],
+      ['Crema facial noche',        ['noche']],
+      ['Limpieza facial',           ['limpiadora', 'desmaquill', 'tónico', 'espuma limpiadora']],
+      ['Crema facial día',          []],
+    ],
+    'ACEITES Y LECHES CORPORALES': [
+      ['Productos bebé cuerpo',     ['bebé', 'bebe', 'baby', 'infantil', 'nenuco', 'johnsons']],
+      ['Loción con urea',           ['urea']],
+      ['Aceite corporal',           ['aceite']],
+      ['Crema nutritiva corporal',  ['nutritiv', 'mantequilla', 'karité', 'karite']],
+      ['Leche corporal hidratante', []],
+    ],
+    'COLONIAS MUJER': [
+      ['Eau de parfum mujer',       ['edp', 'eau de parfum', 'eau parfum']],
+      ['Set / Pack mujer',          ['set', 'pack', 'estuche', 'lote']],
+      ['Eau de toilette mujer',     []],
+    ],
+    'COLONIAS HOMBRE': [
+      ['Eau de parfum hombre',      ['edp', 'eau de parfum']],
+      ['After shave',               ['after', 'afeitado']],
+      ['Set / Pack hombre',         ['set', 'pack', 'estuche']],
+      ['Eau de toilette hombre',    []],
+    ],
+    'PASTA DE DIENTES Y ELIXIR': [
+      ['Enjuague bucal / Elixir',   ['enjuague', 'elixir', 'colutorio', 'listerine']],
+      ['Pasta blanqueadora',        ['blanquead', 'white']],
+      ['Pasta infantil',            ['infantil', 'bebé', 'bebe', 'niño', 'kids']],
+      ['Pasta sensible',            ['sensib']],
+      ['Pasta dental',              []],
+    ],
+    'TINTES PELO': [
+      ['Decoloración',              ['decolor']],
+      ['Matizador',                 ['matiz', 'tonaliz']],
+      ['Tinte semipermanente',      ['semi', 'temporal']],
+      ['Tinte permanente',          []],
+    ],
+    'CREMAS Y MASCARILLAS PELO': [
+      ['Mascarilla capilar',        ['mascarilla']],
+      ['Sin aclarado / Leave-in',   ['sin aclarado', 'leave-in']],
+      ['Acondicionador',            ['acondicionador']],
+      ['Tratamiento reparador',     ['tratami', 'repar', 'reconstruc']],
+      ['Otros cuidado capilar',     []],
+    ],
+    'LACAS, ESPUMAS Y GOMINAS': [
+      ['Laca para el pelo',         ['laca']],
+      ['Cera y pomada',             ['cera', 'pomada', 'wax']],
+      ['Espuma / Mousse',           ['espuma', 'mousse']],
+      ['Gomina y gel',              []],
+    ],
+    'MAQUILLAJES': [
+      ['Ojos',                      ['ojos', 'máscara', 'mascara', 'sombra', 'delineador']],
+      ['Labios',                    ['labios', 'barra labios', 'pintalabios', 'gloss']],
+      ['Base y corrector',          ['base', 'corrector', 'bb cream']],
+      ['Maquillaje otros',          []],
+    ],
+    'CREMAS DE MANOS': [
+      ['Crema manos urea',          ['urea']],
+      ['Crema manos reparadora',    ['reparad', 'intens', 'barrier']],
+      ['Crema manos hidratante',    []],
+    ],
+    'ANEXOS Y VARIOS DE PERFUMERIA': [
+      ['Mascarillas protección FFP',['ffp', 'mascarilla ffp']],
+      ['Botiquines y primeros auxilios', ['botiquín', 'botiquin', 'maletin']],
+      ['Accesorios manicura/pedicura', ['cortauñas', 'lima', 'cortapieles', 'alicate', 'cortacallos']],
+      ['Espejos',                   ['espejo']],
+      ['Algodones y desmaquillantes',['algodón', 'algodon', 'disco', 'desmaquill']],
+      ['Material desechable higiene',['desechable', 'bata', 'calzas', 'gorros']],
+      ['Estuches y sets manicura',  ['estuche', 'manicura']],
+      ['Otros accesorios',          []],
+    ],
+  };
+}
+
+// ── Generar/actualizar hoja SubfamiliaProductos ───────────────────────────
 function generarHojaSubfamilias_() {
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const sheetProd = ss.getSheetByName('Productos');
@@ -1965,45 +2096,35 @@ function generarHojaSubfamilias_() {
     .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
   const PROD = {};
   headers.forEach((h, i) => { PROD[h] = i; });
+  if (PROD['tipologia'] === undefined || PROD['subfamilia'] === undefined) return;
 
   const data = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow()-1,1), sheetProd.getLastColumn()).getValues();
 
-  // Recopilar combinaciones únicas Familia → Subfamilia con conteo
-  const mapa = {}; // {familia: {subfamilia: count}}
+  const mapa = {};
   data.forEach(row => {
-    const familia  = row[PROD['tipologia']] ? row[PROD['tipologia']].toString().trim().toUpperCase() : '';
-    const subfam   = PROD['subfamilia'] !== undefined ? row[PROD['subfamilia']].toString().trim() : '';
+    const familia = row[PROD['tipologia']] ? row[PROD['tipologia']].toString().trim().toUpperCase() : '';
+    const subfam  = row[PROD['subfamilia']] ? row[PROD['subfamilia']].toString().trim() : '';
     if (!familia || !subfam) return;
     if (!mapa[familia]) mapa[familia] = {};
     mapa[familia][subfam] = (mapa[familia][subfam] || 0) + 1;
   });
 
-  // Construir filas ordenadas
   const filas = [['Familia', 'Subfamilia', 'Orden', 'NumProductos']];
   Object.keys(mapa).sort().forEach(familia => {
-    const subs = Object.entries(mapa[familia]).sort((a,b) => b[1] - a[1]); // más productos primero
-    subs.forEach(([subfam, count], idx) => {
+    Object.entries(mapa[familia]).sort((a,b) => b[1]-a[1]).forEach(([subfam, count], idx) => {
       filas.push([familia, subfam, idx + 1, count]);
     });
   });
 
-  // Crear o limpiar la hoja SubfamiliaProductos
   let sheetSub = ss.getSheetByName('SubfamiliaProductos');
-  if (sheetSub) {
-    sheetSub.clearContents();
-  } else {
-    sheetSub = ss.insertSheet('SubfamiliaProductos');
-  }
-
+  if (sheetSub) { sheetSub.clearContents(); } else { sheetSub = ss.insertSheet('SubfamiliaProductos'); }
   sheetSub.getRange(1, 1, filas.length, 4).setValues(filas);
-  sheetSub.getRange(1, 1, 1, 4)
-    .setBackground('#1a1a1a').setFontColor('white').setFontWeight('bold');
-  sheetSub.setColumnWidth(1, 280);
+  sheetSub.getRange(1, 1, 1, 4).setBackground('#1a1a1a').setFontColor('white').setFontWeight('bold');
+  sheetSub.setColumnWidth(1, 300);
   sheetSub.setColumnWidth(2, 280);
-  sheetSub.setColumnWidth(3, 80);
+  sheetSub.setColumnWidth(3, 70);
   sheetSub.setColumnWidth(4, 120);
-
-  console.log(`SubfamiliaProductos generada: ${filas.length - 1} combinaciones`);
+  ss.setActiveSheet(sheetSub);
 }
 
 
