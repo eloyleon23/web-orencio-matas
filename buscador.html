@@ -595,16 +595,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         return palabrasBusqueda.every(p => t.includes(p));
     }
 
-    // ── Cargar productos.json desde el último Release ──
-    fetch(API_RELEASE, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+    // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
+    const PRODUCTOS_URL = './data/productos.json';
+    fetch(PRODUCTOS_URL)
         .then(r => r.ok ? r.json() : null)
-        .then(release => {
-            if (!release || !release.assets) throw new Error('Sin release');
-            const asset = release.assets.find(a => a.name === 'productos.json');
-            if (!asset) throw new Error('Sin productos.json');
-            return fetch(asset.browser_download_url);
-        })
-        .then(r => r.json())
         .then(data => {
             TODOS = data.productos || [];
             FAMILIAS_ORDEN = data.familias_orden || {};

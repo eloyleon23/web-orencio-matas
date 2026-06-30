@@ -30,6 +30,22 @@ jobs:
           DRIVE_API_KEY: ${{ secrets.DRIVE_API_KEY }}
         run: python scripts/generar_catalogos.py
 
+      - name: Crear directorio data/
+        run: mkdir -p data
+
+      - name: Copiar JSON a data/
+        run: |
+          cp catalogos_output/productos.json data/
+          cp catalogos_output/manifiesto.json data/
+
+      - name: Commit JSON en repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --staged --quiet || git commit -m "Auto: actualizar JSON de catálogos $(date +'%Y-%m-%d %H:%M')"
+          git push
+
       - name: Publicar como Release
         uses: softprops/action-gh-release@v2
         with:

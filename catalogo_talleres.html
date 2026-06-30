@@ -340,19 +340,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             document.getElementById('preview-interno').style.display = '';
             document.getElementById('actions-interno').style.display = '';
 
-            const manifiestoAsset = release.assets.find(a => a.name === 'manifiesto.json');
-            if (manifiestoAsset) {
-                fetch(manifiestoAsset.browser_download_url)
-                    .then(r => r.json())
-                    .then(m => {
-                        const info = m.catalogos && m.catalogos['talleres'];
-                        if (info) {
-                            document.getElementById('info-paginas-interno').textContent   = info.paginas || '—';
-                            document.getElementById('info-productos-interno').textContent = info.productos || '—';
-                        }
-                    })
-                    .catch(() => {});
-            }
+            // Cargar manifiesto desde data/ (CORS habilitado en GitHub Pages)
+            fetch('./data/manifiesto.json')
+                .then(r => r.json())
+                .then(m => {
+                    const info = m.catalogos && m.catalogos['talleres'];
+                    if (info) {
+                        document.getElementById('info-paginas-interno').textContent   = info.paginas || '—';
+                        document.getElementById('info-productos-interno').textContent = info.productos || '—';
+                    }
+                })
+                .catch(() => {});
         })
         .catch(showNoInterno);
 
