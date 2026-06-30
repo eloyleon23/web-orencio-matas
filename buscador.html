@@ -1162,7 +1162,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function reportarImagenIncorrecta(p) {
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) {
-            alert('Error: No se ha configurado la URL del web app de Google Apps Script.');
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
             return;
         }
 
@@ -1196,11 +1196,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         })
         .then(() => {
             console.log('Petición enviada (modo no-cors, respuesta no visible)');
-            alert('✓ Producto enviado a la hoja de evaluación. Verifica en Google Sheets.');
+            mostrarToast('✓ Producto enviado a la hoja de evaluación. Verifica en Google Sheets.');
         })
         .catch(err => {
             console.error('Error al registrar producto:', err);
-            alert('Error al registrar el producto: ' + err.message + '.\n\nVerifica:\n1. La URL del web app es correcta\n2. El web app está desplegado con acceso "Cualquier persona"\n3. Revisa los logs en Google Apps Script');
+            mostrarToast('Error al registrar el producto. Verifica la URL del web app y los logs en Google Apps Script.', 'error');
         })
         .finally(() => {
             btn.innerHTML = originalText;
@@ -1281,7 +1281,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Enviar solicitud a Google Apps Script (sin necesidad de token de GitHub)
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) {
-            alert('Error: No se ha configurado la URL del web app de Google Apps Script. Por favor, contacta con el administrador.');
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script. Por favor, contacta con el administrador.', 'error');
             $('modal-enviar').textContent = 'Enviar solicitud';
             $('modal-enviar').disabled = false;
             return;
@@ -1306,19 +1306,67 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         })
         .then(() => {
             console.log('Solicitud enviada (modo no-cors)');
-            alert('✓ Solicitud enviada correctamente. Recibirás el catálogo personalizado en tu correo en breve.');
+            mostrarToast('✓ Solicitud enviada correctamente. Recibirás el catálogo personalizado en tu correo en breve.');
             $('modal-overlay').classList.remove('activo');
         })
         .catch(err => {
             console.error('Error al enviar solicitud:', err);
-            alert('Error al enviar la solicitud. Por favor, inténtalo de nuevo más tarde o contacta con nosotros directamente.');
+            mostrarToast('Error al enviar la solicitud. Por favor, inténtalo de nuevo más tarde o contacta con nosotros directamente.', 'error');
         })
         .finally(() => {
             $('modal-enviar').textContent = 'Enviar solicitud';
             $('modal-enviar').disabled = false;
         });
     }
+
+    // ── Sistema de notificaciones toast ──
+    function mostrarToast(mensaje, tipo = 'success') {
+        const container = $('toast-container');
+        const toast = document.createElement('div');
+        
+        const colores = {
+            success: { bg: '#10b981', borde: '#059669' },
+            error: { bg: '#ef4444', borde: '#dc2626' }
+        };
+        
+        const estilo = colores[tipo] || colores.success;
+        
+        toast.style.cssText = `
+            min-width: 300px;
+            max-width: 400px;
+            padding: 16px 20px;
+            background: ${estilo.bg};
+            border-left: 4px solid ${estilo.borde};
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            word-wrap: break-word;
+        `;
+        
+        toast.innerHTML = mensaje;
+        container.appendChild(toast);
+        
+        // Animar entrada
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(0)';
+        });
+        
+        // Eliminar después de 4 segundos
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
 })();
 </script>
+    <!-- Contenedor de notificaciones toast -->
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;"></div>
 </body>
 </html>
