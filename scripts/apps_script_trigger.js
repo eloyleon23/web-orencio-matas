@@ -290,50 +290,77 @@ function inferirArea_(nombre, familia) {
 function reevaluarAreasProductos() {
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const sheetProd = ss.getSheetByName('Productos');
+  const sheetFam  = ss.getSheetByName('FamiliaProductos');
 
   if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+  if (!sheetFam)  { SpreadsheetApp.getUi().alert('No existe la hoja "FamiliaProductos".'); return; }
 
+  // ── Construir mapa Familia → Área desde FamiliaProductos ──────────────────
+  const famHeaders = sheetFam.getRange(1, 1, 1, sheetFam.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase());
+  const colFamFamilia = famHeaders.indexOf('familia');
+  const colFamArea    = famHeaders.indexOf('area');
+
+  if (colFamFamilia === -1 || colFamArea === -1) {
+    SpreadsheetApp.getUi().alert('La hoja "FamiliaProductos" debe tener columnas "Familia" y "Area".');
+    return;
+  }
+
+  const famLastRow = sheetFam.getLastRow();
+  if (famLastRow < 2) { SpreadsheetApp.getUi().alert('La hoja "FamiliaProductos" está vacía.'); return; }
+
+  const famData = sheetFam.getRange(2, 1, famLastRow - 1, sheetFam.getLastColumn()).getValues();
+  const mapaFamiliaArea = {};
+  famData.forEach(row => {
+    const familia = row[colFamFamilia].toString().trim().toUpperCase();
+    const area    = row[colFamArea].toString().trim().toLowerCase();
+    if (familia && area) mapaFamiliaArea[familia] = area;
+  });
+
+  if (Object.keys(mapaFamiliaArea).length === 0) {
+    SpreadsheetApp.getUi().alert('No se encontraron familias con área asignada en "FamiliaProductos".');
+    return;
+  }
+
+  // ── Recorrer Productos y actualizar área según su tipología/familia ──────
   const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
 
-  const colNombre   = headers.indexOf('nombre');
   const colTipologia = headers.indexOf('tipologia');
-  const colArea     = headers.indexOf('area');
-  const colRef      = headers.indexOf('referencia');
+  const colArea       = headers.indexOf('area');
 
-  if (colArea === -1) { SpreadsheetApp.getUi().alert('No existe la columna "area" en Productos.'); return; }
+  if (colArea === -1)      { SpreadsheetApp.getUi().alert('No existe la columna "area" en Productos.'); return; }
+  if (colTipologia === -1) { SpreadsheetApp.getUi().alert('No existe la columna "tipologia" en Productos.'); return; }
 
   const lastRow = sheetProd.getLastRow();
   if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos.'); return; }
 
   const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
 
-  const cambios    = { drogueria: 0, perfumeria: 0, pinturas: 0, talleres: 0 };
-  const sinCambio  = { drogueria: 0, perfumeria: 0, pinturas: 0, talleres: 0 };
-  let totalCambios = 0;
-
-  // Preparar array de actualizaciones en lote
+  const cambios = {};
+  let totalCambios = 0, sinFamiliaCoincidente = 0;
   const updates = [];
 
   for (let i = 0; i < data.length; i++) {
-    const row       = data[i];
-    const nombre    = colNombre    >= 0 ? row[colNombre].toString().trim()    : '';
-    const tipologia = colTipologia >= 0 ? row[colTipologia].toString().trim() : '';
+    const row        = data[i];
+    const tipologia  = row[colTipologia].toString().trim().toUpperCase();
     const areaActual = row[colArea].toString().trim().toLowerCase();
 
-    if (!nombre) continue;
+    if (!tipologia) continue;
 
-    const areaNueva = inferirArea_(nombre, tipologia);
+    const areaNueva = mapaFamiliaArea[tipologia];
+
+    if (!areaNueva) {
+      sinFamiliaCoincidente++;
+      continue; // Familia no encontrada en FamiliaProductos — no tocar el área
+    }
 
     if (areaNueva !== areaActual) {
       updates.push({ row: i + 2, area: areaNueva });
       cambios[areaNueva] = (cambios[areaNueva] || 0) + 1;
       totalCambios++;
-    } else {
-      sinCambio[areaActual] = (sinCambio[areaActual] || 0) + 1;
     }
 
-    // Progreso cada 1000
     if ((i + 1) % 1000 === 0) {
       SpreadsheetApp.getActiveSpreadsheet()
         .toast(`Analizando... ${i+1}/${data.length}`, '🔄 Reevaluando áreas', 5);
@@ -350,10 +377,13 @@ function reevaluarAreasProductos() {
     SpreadsheetApp.flush();
   }
 
+  const resumenAreas = Object.entries(cambios)
+    .map(([area, n]) => `${area}: ${n}`)
+    .join(' | ') || 'ninguno';
+
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    `✓ ${totalCambios} productos reclasificados\n` +
-    `→ Pinturas: ${cambios.pinturas || 0} | Perfumería: ${cambios.perfumeria || 0} | ` +
-    `Talleres: ${cambios.talleres || 0} | Droguería: ${cambios.drogueria || 0}`,
+    `✓ ${totalCambios} productos reclasificados (${resumenAreas})\n` +
+    `⚠ ${sinFamiliaCoincidente} sin familia coincidente en FamiliaProductos`,
     '✓ Reevaluación completada', 12
   );
 }
