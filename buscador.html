@@ -178,10 +178,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             position: relative;
             overflow: hidden;
         }
-        #scanner-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        #scanner-video-wrap video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
         }
         .scanner-guia {
             position: absolute;
@@ -808,7 +808,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button class="modal-scanner-cerrar" id="modal-scanner-cerrar"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-scanner-video-wrap">
-        <video id="scanner-video" autoplay playsinline muted></video>
+        <div id="scanner-video-wrap" style="width:100%;height:100%;"></div>
         <div class="scanner-guia"></div>
     </div>
     <div class="scanner-estado" id="scanner-estado">Enfoca el código de barras del producto</div>
@@ -845,6 +845,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="./src/js/navbar-secondary.js"></script>
 <script>
 // ── Configuración del buscador ──
@@ -1020,9 +1021,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         inicializarEscanerCodigoBarras();
     }
 
-    // ── Escáner de código de barras (solo móvil) ──────────────────────────
-    let scannerStream = null;
-    let scannerDetectorRAF = null;
+    // ── Escáner de código de barras (multiplataforma, vía html5-qrcode) ──
+    let html5QrCode = null;
+    let escanerActivo = false;
 
     function esMovil() {
         return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 640;
@@ -1032,7 +1033,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const btn = $('btn-escanear');
         if (!btn) return;
 
-        // Solo mostrar el botón en dispositivos móviles y si el navegador soporta cámara
         const soportaCamara = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
         if (esMovil() && soportaCamara) {
             btn.classList.add('disponible');
@@ -1047,58 +1047,49 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     async function abrirEscaner() {
         const overlay = $('modal-scanner-overlay');
-        const video    = $('scanner-video');
         const estado   = $('scanner-estado');
 
         overlay.classList.add('activo');
         estado.textContent = 'Activando cámara...';
 
-        try {
-            scannerStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-            });
-            video.srcObject = scannerStream;
-            estado.textContent = 'Enfoca el código de barras del producto';
-
-            if ('BarcodeDetector' in window) {
-                iniciarDeteccionNativa(video, estado);
-            } else {
-                estado.textContent = 'Tu navegador no soporta lectura automática. Introduce la referencia manualmente.';
-            }
-        } catch (err) {
-            estado.textContent = 'No se pudo acceder a la cámara. Comprueba los permisos.';
-            console.error('Error cámara:', err);
-        }
-    }
-
-    function iniciarDeteccionNativa(video, estado) {
-        const formatos = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'];
-        let detector;
-        try {
-            detector = new BarcodeDetector({ formats: formatos });
-        } catch (e) {
-            estado.textContent = 'Lector de códigos no disponible en este navegador.';
+        if (typeof Html5Qrcode === 'undefined') {
+            estado.textContent = 'No se pudo cargar el lector de códigos. Inténtalo de nuevo.';
             return;
         }
 
-        const detectar = async () => {
-            if (!scannerStream) return; // se cerró el escáner
-            try {
-                const codigos = await detector.detect(video);
-                if (codigos.length > 0) {
-                    const valor = codigos[0].rawValue;
-                    if (valor) {
-                        codigoDetectado(valor);
-                        return; // no seguir el bucle, ya se cerró
-                    }
-                }
-            } catch (e) { /* ignorar fallos puntuales de frame */ }
-            scannerDetectorRAF = requestAnimationFrame(detectar);
-        };
-        scannerDetectorRAF = requestAnimationFrame(detectar);
+        try {
+            html5QrCode = new Html5Qrcode('scanner-video-wrap');
+            escanerActivo = true;
+
+            await html5QrCode.start(
+                { facingMode: 'environment' },
+                {
+                    fps: 10,
+                    qrbox: { width: 260, height: 130 },
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                    ],
+                },
+                (decodedText) => {
+                    if (escanerActivo) codigoDetectado(decodedText);
+                },
+                () => { /* fallo de frame puntual, ignorar */ }
+            );
+
+            estado.textContent = 'Enfoca el código de barras del producto';
+        } catch (err) {
+            console.error('Error cámara:', err);
+            estado.textContent = 'No se pudo acceder a la cámara. Comprueba los permisos.';
+        }
     }
 
     function codigoDetectado(valor) {
+        escanerActivo = false;
         $('scanner-estado').textContent = '✓ Código detectado: ' + valor;
         $('f-texto').value = valor;
         resetPaginacion();
@@ -1108,13 +1099,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function cerrarEscaner() {
         $('modal-scanner-overlay').classList.remove('activo');
-        if (scannerDetectorRAF) {
-            cancelAnimationFrame(scannerDetectorRAF);
-            scannerDetectorRAF = null;
-        }
-        if (scannerStream) {
-            scannerStream.getTracks().forEach(t => t.stop());
-            scannerStream = null;
+        escanerActivo = false;
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+                html5QrCode = null;
+            }).catch(() => {
+                html5QrCode = null;
+            });
         }
     }
 
