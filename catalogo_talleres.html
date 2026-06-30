@@ -247,16 +247,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-external-link-alt"></i> Abrir catálogo en nueva pestaña
                 </a>
             </div>
-            <div class="catalog-viewer" id="viewer-interno" style="display:none">
-                <iframe id="iframe-interno-nativo" src="" style="width:100%;height:80vh;min-height:500px;border:none;border-radius:8px;"></iframe>
-            </div>
+
             <div id="no-catalogo-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
                 <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
                 <p style="color:#64748b;">El catálogo interno está siendo preparado.<br>
                 <a href="index.html#contacto" style="color:#d91b1b;font-weight:600;">Solicitar información</a></p>
             </div>
+
+            <div id="preview-interno" style="display:none">
+                <div style="display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border:1px solid #e2e8f0;">
+                    <img id="img-portada-interno" src="" alt="Portada del catálogo"
+                         style="width:100%;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);border:1px solid #e2e8f0;">
+                    <div>
+                        <h3 style="font-size:1.15rem;font-weight:800;color:#1e293b;margin:0 0 8px;">Vista previa</h3>
+                        <p style="color:#64748b;margin:0 0 16px;font-size:0.9rem;line-height:1.6;">
+                            Descarga el catálogo completo para consultarlo con tu visor de PDF habitual.
+                        </p>
+                        <div style="display:flex;gap:16px;margin-bottom:16px;font-size:0.85rem;color:#64748b;">
+                            <span><strong id="info-paginas-interno" style="color:#d91b1b;">—</strong> páginas</span>
+                            <span><strong id="info-productos-interno" style="color:#d91b1b;">—</strong> productos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="catalog-actions" id="actions-interno" style="display:none">
-                <a id="btn-descargar-interno" href="#" download="catalogo_talleres.pdf" class="btn-download">
+                <a id="btn-descargar-interno" href="#" target="_blank" rel="noopener" class="btn-download">
                     <i class="fa-solid fa-download"></i> Descargar Catálogo
                 </a>
             </div>
@@ -331,9 +347,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             document.getElementById('btn-abrir-interno').href = url;
             document.getElementById('btn-descargar-interno').href = url;
             document.getElementById('mobile-link-interno').style.display = '';
-            document.getElementById('viewer-interno').style.display = '';
+            document.getElementById('preview-interno').style.display = '';
             document.getElementById('actions-interno').style.display = '';
-            document.getElementById('iframe-interno-nativo').src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(url);
+
+            const portadaAsset = release.assets.find(a => a.name === 'catalogo_talleres_portada.jpg');
+            if (portadaAsset) {
+                document.getElementById('img-portada-interno').src = portadaAsset.browser_download_url;
+            }
+
+            const manifiestoAsset = release.assets.find(a => a.name === 'manifiesto.json');
+            if (manifiestoAsset) {
+                fetch(manifiestoAsset.browser_download_url)
+                    .then(r => r.json())
+                    .then(m => {
+                        const info = m.catalogos && m.catalogos['talleres'];
+                        if (info) {
+                            document.getElementById('info-paginas-interno').textContent   = info.paginas || '—';
+                            document.getElementById('info-productos-interno').textContent = info.productos || '—';
+                        }
+                    })
+                    .catch(() => {});
+            }
         })
         .catch(showNoInterno);
 
