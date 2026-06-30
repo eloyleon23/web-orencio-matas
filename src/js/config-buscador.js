@@ -40,7 +40,7 @@ console.log('config-buscador.js cargado');
 // window.GITHUB_WORKFLOW_TOKEN = 'TU_TOKEN_AQUI';
 
 // Por ahora, mantener desactivado para evitar exponer credenciales
-window.GITHUB_WORKFLOW_TOKEN = '';
+window.GITHUB_WORKFLOW_TOKEN = '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';
 
 console.log('Token configurado:', window.GITHUB_WORKFLOW_TOKEN ? 'Sí' : 'No');
 console.log('Longitud del token:', window.GITHUB_WORKFLOW_TOKEN.length);
@@ -50,4 +50,4 @@ window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true; // Cambiar a true para activar
 
 // URL del web app de Google Apps Script para registrar productos
 // window.GOOGLE_APPS_SCRIPT_URL = 'TU_WEB_APP_URL_AQUI';
-window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxmVVWK8OV_hiyYVtGbqEiWwpqauUojn3CNkWTHWR7CQ0uSWELkduZWQi6ayH10PzkG/exec';
+window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhO-sCqjHPoSj6hzAcnT5RMMnBem24mfTlsUB41pDiv6UxsLCjGzXHoSsQplJoqgcv/exec';
