@@ -40,7 +40,7 @@ console.log('config-buscador.js cargado');
 // window.GITHUB_WORKFLOW_TOKEN = 'TU_TOKEN_AQUI';
 
 // Por ahora, mantener desactivado para evitar exponer credenciales
-window.GITHUB_WORKFLOW_TOKEN = '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';
+window.GITHUB_WORKFLOW_TOKEN = '';
 
 console.log('Token configurado:', window.GITHUB_WORKFLOW_TOKEN ? 'Sí' : 'No');
 console.log('Longitud del token:', window.GITHUB_WORKFLOW_TOKEN.length);

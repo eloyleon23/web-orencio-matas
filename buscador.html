@@ -752,18 +752,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="./src/js/navbar-secondary.js"></script>
 <script>
 // ── Configuración del buscador ──
-// Token de GitHub para disparar workflows (dejar vacío si no se usa)
-window.GITHUB_WORKFLOW_TOKEN = '';
-
 // Botón temporal para reportar imágenes incorrectas (fase de desarrollo)
 window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true;
 
-// URL del web app de Google Apps Script para registrar productos
+// URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzDHfP6N2n_nBqhBWOP9dGy9IP9e0Sit7JgitMm-lrLxRGrxJE2RLfLN46rqjJkzsXN/exec';
 
 console.log('Configuración cargada');
-console.log('Token configurado:', window.GITHUB_WORKFLOW_TOKEN ? 'Sí' : 'No');
-console.log('Longitud del token:', window.GITHUB_WORKFLOW_TOKEN.length);
+console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_URL ? 'Sí' : 'No');
 
 (function() {
     const REPO = 'eloyleon23/web-orencio-matas';
@@ -1176,6 +1172,7 @@ console.log('Longitud del token:', window.GITHUB_WORKFLOW_TOKEN.length);
         btn.disabled = true;
 
         const data = {
+            accion: 'reportar_imagen',
             referencia: p.ref,
             fecha: new Date().toISOString()
         };
@@ -1277,41 +1274,36 @@ console.log('Longitud del token:', window.GITHUB_WORKFLOW_TOKEN.length);
         $('modal-enviar').textContent = 'Enviando...';
         $('modal-enviar').disabled = true;
 
-        // Disparar workflow de GitHub Actions
-        const GITHUB_TOKEN = window.GITHUB_WORKFLOW_TOKEN || '';
-        console.log('Token configurado:', GITHUB_TOKEN ? 'Sí' : 'No');
-        console.log('Longitud del token:', GITHUB_TOKEN.length);
-
-        if (!GITHUB_TOKEN) {
-            alert('Error: No se ha configurado el token de GitHub para enviar catálogos. Por favor, contacta con el administrador.');
+        // Enviar solicitud a Google Apps Script (sin necesidad de token de GitHub)
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) {
+            alert('Error: No se ha configurado la URL del web app de Google Apps Script. Por favor, contacta con el administrador.');
             $('modal-enviar').textContent = 'Enviar solicitud';
             $('modal-enviar').disabled = false;
             return;
         }
 
-        fetch('https://api.github.com/repos/eloyleon23/web-orencio-matas/dispatches', {
+        const data = {
+            accion: 'solicitar_catalogo',
+            email: email,
+            filtros: filtros,
+            resumen_filtros: resumenFiltros
+        };
+
+        console.log('Enviando solicitud a Google Apps Script:', data);
+
+        fetch(url, {
             method: 'POST',
+            mode: 'no-cors',
             headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                event_type: 'enviar_catalogo_personalizado',
-                client_payload: {
-                    email: email,
-                    filtros: filtros,
-                    resumen_filtros: resumenFiltros
-                }
-            })
+            body: JSON.stringify(data)
         })
-        .then(r => {
-            if (r.ok) {
-                alert('✓ Solicitud enviada correctamente. Recibirás el catálogo personalizado en tu correo en unos minutos.');
-                $('modal-overlay').classList.remove('activo');
-            } else {
-                return r.json().then(err => { throw err; });
-            }
+        .then(() => {
+            console.log('Solicitud enviada (modo no-cors)');
+            alert('✓ Solicitud enviada correctamente. Recibirás el catálogo personalizado en tu correo en breve.');
+            $('modal-overlay').classList.remove('activo');
         })
         .catch(err => {
             console.error('Error al enviar solicitud:', err);
