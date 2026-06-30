@@ -372,12 +372,20 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
             rl_img = Paragraph('[ sin imagen ]', st['nota'])
 
         nombre = p.get('nombre', '')
+        tipologia = p.get('tipologia', '').strip()
+        subfamilia = p.get('subfamilia', '').strip()
         ref    = p.get('referencia', '').strip()
         precio_sin = p.get('precio_sin_iva', '').strip().replace(',', '.')
         precio_con = p.get('precio_con_iva', '').strip().replace(',', '.')
         ver_precio = p.get('mostrar_precio','').lower().strip() in ('sí','si','yes','true','1')
 
         contenido = [rl_img, Paragraph(nombre, st['nombre_prod'])]
+        # Mostrar familia y subfamilia (ej: "Familia (Subfamilia)")
+        if tipologia:
+            familia_texto = tipologia
+            if subfamilia:
+                familia_texto += f' ({subfamilia})'
+            contenido.append(Paragraph(familia_texto, st['tipo_prod']))
         if ref:
             contenido.append(Paragraph(f'Ref: {ref}', st['ref_prod']))
         if ver_precio:
