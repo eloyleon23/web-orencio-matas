@@ -248,15 +248,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </a>
             </div>
             <div class="catalog-viewer" id="viewer-interno" style="display:none">
-                <div style="background:#525659;padding:16px;border-radius:8px;text-align:center;min-height:500px;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-                <canvas id="canvas-interno" style="max-width:100%;box-shadow:0 4px 20px rgba(0,0,0,0.4);background:white;display:none;"></canvas>
-                <div id="cargando-interno" style="color:white;font-size:14px;">Cargando catálogo...</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
-                <button onclick="cambiarPagInterna(-1)" style="padding:6px 14px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;">‹ Anterior</button>
-                <span id="pag-interna" style="font-size:13px;color:#64748b;">Pág. 1 / —</span>
-                <button onclick="cambiarPagInterna(1)" style="padding:6px 14px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;">Siguiente ›</button>
-            </div>
+                <iframe id="iframe-interno-nativo" src="" style="width:100%;height:80vh;min-height:500px;border:none;border-radius:8px;"></iframe>
             </div>
             <div id="no-catalogo-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
                 <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
@@ -321,40 +313,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 <link rel="stylesheet" href="./src/css/navbar.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="./src/js/navbar-secondary.js"></script>
 <script>
 (function() {
     const REPO = 'eloyleon23/web-orencio-matas';
     const API  = 'https://api.github.com/repos/' + REPO + '/releases/latest';
     const ZAPHIRO_CFG_API = 'https://api.github.com/repos/' + REPO + '/contents/zaphiro_config.json';
-
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    let pdfInterno = null, pagIntActual = 1;
-    const canvasI = document.getElementById('canvas-interno');
-    const ctxI    = canvasI.getContext('2d');
-    const cargI   = document.getElementById('cargando-interno');
-
-    window.cambiarPagInterna = function(d) {
-        if (!pdfInterno) return;
-        const n = pagIntActual + d;
-        if (n < 1 || n > pdfInterno.numPages) return;
-        pagIntActual = n;
-        renderInt(n);
-    };
-    function renderInt(num) {
-        pdfInterno.getPage(num).then(p => {
-            const vp = p.getViewport({ scale: 1.2 });
-            canvasI.width = vp.width; canvasI.height = vp.height;
-            p.render({ canvasContext: ctxI, viewport: vp }).promise.then(() => {
-                cargI.style.display   = 'none';
-                canvasI.style.display = 'block';
-                document.getElementById('pag-interna').textContent =
-                    'Pág. ' + num + ' / ' + pdfInterno.numPages;
-            });
-        });
-    }
 
     // ── Catálogo interno desde GitHub Releases ──
     fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
@@ -369,10 +333,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             document.getElementById('mobile-link-interno').style.display = '';
             document.getElementById('viewer-interno').style.display = '';
             document.getElementById('actions-interno').style.display = '';
-
-            pdfjsLib.getDocument({ url: 'https://corsproxy.io/?url=' + encodeURIComponent(url) }).promise
-                .then(pdf => { pdfInterno = pdf; renderInt(1); })
-                .catch(() => { cargI.textContent = 'Error al cargar el PDF. Usa el botón de descarga.'; });
+            document.getElementById('iframe-interno-nativo').src = url + '#view=FitH';
         })
         .catch(showNoInterno);
 

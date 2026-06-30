@@ -244,34 +244,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <a href="index.html#contacto" class="btn-download" style="margin-top:16px;display:inline-block">Solicitar información</a>
     </div>
 
-    <!-- Visor PDF.js — carga página a página sin descargar el PDF completo -->
     <div id="visor-pdfjs" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <button id="btn-prev" onclick="cambiarPagina(-1)"
-                    style="padding:6px 14px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
-                    ‹ Anterior
-                </button>
-                <span id="info-pagina" style="font-size:13px;color:#64748b;white-space:nowrap;">
-                    Pág. <span id="pagina-actual">1</span> / <span id="total-paginas">—</span>
-                </span>
-                <button id="btn-next" onclick="cambiarPagina(1)"
-                    style="padding:6px 14px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
-                    Siguiente ›
-                </button>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-                <button onclick="cambiarZoom(-0.2)"
-                    style="padding:6px 10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:13px;">−</button>
-                <span id="info-zoom" style="font-size:12px;color:#64748b;min-width:40px;text-align:center;">100%</span>
-                <button onclick="cambiarZoom(0.2)"
-                    style="padding:6px 10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:13px;">+</button>
-            </div>
-        </div>
-        <div style="background:#525659;padding:16px;border-radius:8px;text-align:center;min-height:600px;display:flex;align-items:center;justify-content:center;">
-            <canvas id="pdf-canvas" style="max-width:100%;box-shadow:0 4px 20px rgba(0,0,0,0.4);background:white;"></canvas>
-        </div>
-        <div id="cargando-pdf" style="color:white;font-size:14px;">Cargando catálogo...</div>
+        <iframe id="pdf-iframe-nativo" src="" style="width:100%;height:85vh;min-height:600px;border:none;border-radius:8px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);"></iframe>
     </div>
 
     <div class="catalog-disclaimer">
@@ -284,49 +258,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </a>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
     (function() {
         const REPO = 'eloyleon23/web-orencio-matas';
         const PDF  = 'catalogo_pinturas.pdf';
         const API  = 'https://api.github.com/repos/' + REPO + '/releases/latest';
-
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-        let pdfDoc = null, paginaActual = 1, zoom = 1.2;
-        const canvas  = document.getElementById('pdf-canvas');
-        const ctx     = canvas.getContext('2d');
-        const cargando = document.getElementById('cargando-pdf');
-
-        function renderPagina(num) {
-            pdfDoc.getPage(num).then(page => {
-                const vp = page.getViewport({ scale: zoom });
-                canvas.width  = vp.width;
-                canvas.height = vp.height;
-                page.render({ canvasContext: ctx, viewport: vp }).promise.then(() => {
-                    cargando.style.display = 'none';
-                    canvas.style.display   = 'block';
-                    document.getElementById('pagina-actual').textContent = num;
-                    document.getElementById('total-paginas').textContent = pdfDoc.numPages;
-                    document.getElementById('info-zoom').textContent = Math.round(zoom*100) + '%';
-                    document.getElementById('btn-prev').disabled = num <= 1;
-                    document.getElementById('btn-next').disabled = num >= pdfDoc.numPages;
-                });
-            });
-        }
-
-        window.cambiarPagina = function(delta) {
-            const nueva = paginaActual + delta;
-            if (nueva < 1 || nueva > pdfDoc.numPages) return;
-            paginaActual = nueva;
-            renderPagina(paginaActual);
-        };
-
-        window.cambiarZoom = function(delta) {
-            zoom = Math.max(0.5, Math.min(3, zoom + delta));
-            renderPagina(paginaActual);
-        };
 
         fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
             .then(r => r.ok ? r.json() : null)
@@ -341,15 +277,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 document.getElementById('mobile-link').style.display = '';
                 document.getElementById('visor-pdfjs').style.display = '';
                 document.getElementById('actions').style.display     = '';
-
-                pdfjsLib.getDocument({ url: 'https://corsproxy.io/?url=' + encodeURIComponent(url) }).promise
-                    .then(pdf => {
-                        pdfDoc = pdf;
-                        renderPagina(1);
-                    })
-                    .catch(() => {
-                        cargando.textContent = 'Error al cargar el PDF. Usa el botón de descarga.';
-                    });
+                document.getElementById('pdf-iframe-nativo').src = url + '#view=FitH';
             })
             .catch(() => showNoCatalogo());
 
