@@ -38,6 +38,13 @@ jobs:
           EMAIL="${{ github.event.client_payload.email }}"
           PDF_FILE="catalogos_output/catalogo_personalizado.pdf"
           
+          # Debug: verificar si la API key está configurada
+          if [ -z "$BREVO_API_KEY" ]; then
+            echo "ERROR: BREVO_API_KEY no está configurada"
+            exit 1
+          fi
+          echo "BREVO_API_KEY configurada: ${BREVO_API_KEY:0:10}..."
+          
           # Enviar email con PDF adjunto usando Brevo API
           curl -X POST 'https://api.brevo.com/v3/smtp/email' \
             -H 'Content-Type: application/json' \
