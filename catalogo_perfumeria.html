@@ -244,28 +244,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <a href="index.html#contacto" class="btn-download" style="margin-top:16px;display:inline-block">Solicitar información</a>
     </div>
 
-    <!-- Vista previa: portada + información + descarga -->
+    <!-- Información del catálogo + descarga -->
     <div id="preview-catalogo" style="display:none">
-        <div style="display:grid;grid-template-columns:280px 1fr;gap:32px;align-items:start;background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border:1px solid #e2e8f0;">
+        <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border:1px solid #e2e8f0;text-align:center;">
 
-            <div style="text-align:center;">
-                <img id="img-portada" src="" alt="Portada del catálogo"
-                     style="width:100%;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);border:1px solid #e2e8f0;">
+            <div style="display:flex;gap:32px;justify-content:center;flex-wrap:wrap;margin-bottom:28px;">
+                <div>
+                    <div style="font-size:1.8rem;font-weight:800;color:#d91b1b;" id="info-paginas">—</div>
+                    <div style="font-size:0.85rem;color:#64748b;">páginas</div>
+                </div>
+                <div>
+                    <div style="font-size:1.8rem;font-weight:800;color:#d91b1b;" id="info-productos">—</div>
+                    <div style="font-size:0.85rem;color:#64748b;">productos</div>
+                </div>
+                <div>
+                    <div style="font-size:1.05rem;font-weight:700;color:#1e293b;padding-top:8px;" id="info-fecha">—</div>
+                    <div style="font-size:0.85rem;color:#64748b;">actualizado</div>
+                </div>
             </div>
 
-            <div>
-                <h2 style="font-size:1.4rem;font-weight:800;color:#1e293b;margin:0 0 12px;">Vista previa del catálogo</h2>
-                <p style="color:#64748b;margin:0 0 20px;line-height:1.6;">
-                    Por el volumen de productos incluidos, el catálogo completo se descarga directamente
-                    en lugar de visualizarse en pantalla — así te aseguras de tener la versión completa
-                    y poder consultarlo sin conexión, navegando con tu visor de PDF habitual.
-                </p>
-
-                <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:24px;padding:16px;background:#f8fafc;border-radius:10px;">
-                    <div>
-                        <div style="font-size:1.6rem;font-weight:800;color:#d91b1b;" id="info-paginas">—</div>
-                        <div style="font-size:0.8rem;color:#64748b;">páginas</div>
-                    </div>
+            <a id="btn-descargar" href="#" target="_blank" rel="noopener" class="btn-download"
+               style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;">
+                <i class="fa-solid fa-download"></i> Descargar Catálogo Completo (PDF)
+            </a>
+        </div>
+    </div>
                     <div>
                         <div style="font-size:1.6rem;font-weight:800;color:#d91b1b;" id="info-productos">—</div>
                         <div style="font-size:0.8rem;color:#64748b;">productos</div>
@@ -306,13 +309,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 document.getElementById('btn-descargar').href = url;
                 document.getElementById('mobile-link').style.display     = '';
                 document.getElementById('preview-catalogo').style.display = '';
-
-                // Portada
-                const portadaAsset = release.assets.find(a => a.name === PDF.replace('.pdf', '_portada.jpg'));
-                if (portadaAsset) {
-                    document.getElementById('img-portada').src = portadaAsset.browser_download_url;
-                }
-
                 // Manifiesto con páginas/productos/fecha
                 const manifiestoAsset = release.assets.find(a => a.name === 'manifiesto.json');
                 if (manifiestoAsset) {

@@ -513,19 +513,14 @@ def generar_catalogo(area, productos, logo_png, familias={}):
     print(f"  ✓ Generado: {out_path}")
 
     num_paginas = 0
-    # Generar imagen de portada (primera página) para vista previa en la web
     try:
         import fitz  # PyMuPDF
         pdf_doc = fitz.open(out_path)
         num_paginas = len(pdf_doc)
-        pagina = pdf_doc[0]
-        pix = pagina.get_pixmap(matrix=fitz.Matrix(2, 2))
-        portada_path = out_path.replace('.pdf', '_portada.jpg')
-        pix.save(portada_path)
         pdf_doc.close()
-        print(f"  ✓ Portada generada: {portada_path} ({num_paginas} páginas)")
+        print(f"  ✓ {num_paginas} páginas")
     except Exception as e:
-        print(f"  ⚠ No se pudo generar portada: {e}")
+        print(f"  ⚠ No se pudo contar páginas: {e}")
 
     return {'paginas': num_paginas, 'productos': len(productos_area)}
 
@@ -567,7 +562,6 @@ def main():
         'catalogos': {
             area: {
                 'archivo':  AREAS[area]['filename'],
-                'portada':  AREAS[area]['filename'].replace('.pdf', '_portada.jpg'),
                 'paginas':  info_catalogos[area]['paginas'],
                 'productos': info_catalogos[area]['productos'],
             } for area in generados
