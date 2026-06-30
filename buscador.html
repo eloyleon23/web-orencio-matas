@@ -433,6 +433,136 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .modal-cancelar { background: var(--light); color: var(--muted); }
         .modal-enviar { background: var(--red); color: white; }
+
+        /* Modal detalle de producto */
+        .modal-producto-box {
+            background: white;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .modal-producto-cerrar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--light);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--muted);
+            z-index: 10;
+            transition: background 0.2s, color 0.2s;
+        }
+        .modal-producto-cerrar:hover {
+            background: var(--red);
+            color: white;
+        }
+        .modal-producto-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+        .modal-producto-imagen {
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            padding: 20px;
+        }
+        .modal-producto-imagen img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .modal-producto-info {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-producto-info h3 {
+            font-size: 1.5rem;
+            color: var(--dark);
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+        }
+        .modal-producto-ref {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0 0 16px 0;
+        }
+        .modal-producto-precio {
+            margin-bottom: 20px;
+        }
+        .modal-producto-precio-con {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--red);
+        }
+        .modal-producto-precio-sin {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        .modal-producto-detalles p {
+            margin: 8px 0;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        .modal-producto-detalles strong {
+            color: var(--dark);
+        }
+        .modal-producto-disclaimer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-producto-disclaimer i {
+            color: var(--yellow);
+        }
+
+        /* Responsive del modal de producto */
+        @media (max-width: 768px) {
+            .modal-producto-box {
+                width: 95%;
+                max-height: 90vh;
+            }
+            .modal-producto-content {
+                grid-template-columns: 1fr;
+            }
+            .modal-producto-imagen {
+                min-height: 250px;
+                padding: 15px;
+            }
+            .modal-producto-imagen img {
+                max-height: 300px;
+            }
+            .modal-producto-info {
+                padding: 20px;
+            }
+            .modal-producto-info h3 {
+                font-size: 1.2rem;
+            }
+            .modal-producto-precio-con {
+                font-size: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -561,6 +691,33 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-acciones">
             <button class="modal-cancelar" id="modal-cancelar">Cancelar</button>
             <button class="modal-enviar" id="modal-enviar">Enviar solicitud</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal detalle de producto -->
+<div class="modal-overlay" id="modal-producto-overlay">
+    <div class="modal-producto-box" id="modal-producto-box">
+        <button class="modal-producto-cerrar" id="modal-producto-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="modal-producto-content">
+            <div class="modal-producto-imagen">
+                <img id="modal-producto-img" src="" alt="" loading="lazy">
+            </div>
+            <div class="modal-producto-info">
+                <h3 id="modal-producto-nombre"></h3>
+                <p class="modal-producto-ref" id="modal-producto-ref"></p>
+                <div class="modal-producto-precio" id="modal-producto-precio"></div>
+                <div class="modal-producto-detalles">
+                    <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
+                    <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
+                </div>
+                <p class="modal-producto-disclaimer">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Los precios pueden variar y este producto está sujeto a disponibilidad.
+                </p>
+            </div>
         </div>
     </div>
 </div>
@@ -698,6 +855,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         $('modal-cancelar').addEventListener('click', () => $('modal-overlay').classList.remove('activo'));
         $('modal-enviar').addEventListener('click', enviarSolicitud);
         $('modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-overlay') $('modal-overlay').classList.remove('activo'); });
+
+        // Event listeners del modal de producto
+        $('modal-producto-cerrar').addEventListener('click', cerrarModalProducto);
+        $('modal-producto-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-producto-overlay') cerrarModalProducto(); });
 
         // Scroll infinito
         window.addEventListener('scroll', () => {
@@ -889,6 +1050,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     function crearTarjeta(p) {
         const card = document.createElement('div');
         card.className = 'producto-card';
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => abrirModalProducto(p));
 
         const imgHtml = p.img
             ? `<img src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;producto-sin-img&quot;>Sin imagen</span>'">`
@@ -915,6 +1078,40 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         `;
         return card;
+    }
+
+    // ── Abrir modal con detalle del producto ──
+    function abrirModalProducto(p) {
+        const imgSrc = p.img
+            ? `https://drive.google.com/thumbnail?id=${p.img}&sz=w800`
+            : '';
+
+        $('modal-producto-img').src = imgSrc;
+        $('modal-producto-img').alt = escapeHtml(p.nombre);
+        $('modal-producto-nombre').textContent = p.nombre;
+        $('modal-producto-ref').textContent = `Ref: ${p.ref}`;
+        $('modal-producto-familia').textContent = p.familia || '—';
+        $('modal-producto-area').textContent = AREAS_NOMBRE[p.area] || p.area || '—';
+
+        let precioHtml = '';
+        if (p.mostrar_precio) {
+            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2) : null;
+            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2) : null;
+            if (con) {
+                precioHtml = `<div class="modal-producto-precio-con">${con} €</div>`;
+                if (sin) precioHtml += `<div class="modal-producto-precio-sin">${sin} € sin IVA</div>`;
+            }
+        } else {
+            precioHtml = '<p class="producto-sin-precio">Consultar precio</p>';
+        }
+        $('modal-producto-precio').innerHTML = precioHtml;
+
+        $('modal-producto-overlay').classList.add('activo');
+    }
+
+    // ── Cerrar modal de producto ──
+    function cerrarModalProducto() {
+        $('modal-producto-overlay').classList.remove('activo');
     }
 
     function escapeHtml(str) {
