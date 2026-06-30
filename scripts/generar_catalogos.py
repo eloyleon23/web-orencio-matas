@@ -76,6 +76,37 @@ def leer_familias():
         print(f"⚠ No se pudo leer FamiliasProductos: {e}")
         return {}
 
+# ── Leer subfamilias del Sheet ─────────────────────────────────────────────────
+def leer_subfamilias():
+    """Lee la hoja 'SubfamiliaProductos' y devuelve un dict {(familia, subfamilia): orden}."""
+    url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+           f"/gviz/tq?tqx=out:csv&sheet=SubfamiliaProductos")
+    try:
+        resp = requests.get(url, timeout=20)
+        resp.raise_for_status()
+        import csv, io as sio
+        reader = csv.DictReader(sio.StringIO(resp.text))
+        raw_headers = reader.fieldnames or []
+        print(f"  SubfamiliaProductos cabeceras: {raw_headers}")
+        subfamilias = {}
+        for row in reader:
+            # Buscar columnas de forma flexible (case-insensitive)
+            clean = {k.strip().lower(): v.strip() for k, v in row.items()}
+            familia = (clean.get('familia') or clean.get('family') or '').strip().upper()
+            subfamilia = (clean.get('subfamilia') or clean.get('subcategory') or '').strip()
+            orden_raw = (clean.get('orden') or clean.get('order') or '999').strip()
+            try:
+                orden = int(float(orden_raw))
+            except:
+                orden = 999
+            if familia and subfamilia:
+                subfamilias[(familia, subfamilia)] = orden
+        print(f"✓ {len(subfamilias)} subfamilias leídas")
+        return subfamilias
+    except Exception as e:
+        print(f"⚠ No se pudo leer SubfamiliaProductos: {e}")
+        return {}
+
 # ── Leer productos del Sheet ────────────────────────────────────────────────
 def leer_productos():
     """Lee la hoja 'Productos' del Google Sheet exportada como CSV."""
@@ -539,6 +570,7 @@ def main():
     
     productos = leer_productos()
     familias  = leer_familias()
+    subfamilias = leer_subfamilias()
 
     generados = []
     info_catalogos = {}
@@ -570,17 +602,24 @@ def main():
         json.dump(manifiesto, f, ensure_ascii=False, indent=2)
 
     # ── Exportar productos.json para el buscador web ────────────────────────
-    exportar_productos_json(productos, familias)
+    exportar_productos_json(productos, familias, subfamilias)
 
     print(f"\n✓ Completado: {len(generados)} catálogos generados → {OUTPUT_DIR}/")
 
 
-def exportar_productos_json(productos, familias):
+def exportar_productos_json(productos, familias, subfamilias):
     """Genera un JSON ligero con los productos visibles en catálogo, para el buscador web."""
     print("\n▶ Exportando productos.json para el buscador...")
 
     def es_si(val):
         return str(val).strip().lower() in ('sí', 'si', 'yes', 'true', '1', '✓')
+
+    # Generar subfamilias_por_familia: {familia: {subfamilia: orden}}
+    subfamilias_por_familia = {}
+    for (familia, subfamilia), orden in subfamilias.items():
+        if familia not in subfamilias_por_familia:
+            subfamilias_por_familia[familia] = {}
+        subfamilias_por_familia[familia][subfamilia] = orden
 
     exportados = []
     for p in productos:
@@ -606,6 +645,7 @@ def exportar_productos_json(productos, familias):
             'nombre':    p.get('nombre', '').strip(),
             'area':      p.get('area', '').strip().lower(),
             'familia':   p.get('tipologia', '').strip(),
+            'subfamilia': p.get('subfamilia', '').strip(),
             'img':       img_id,
             'oferta':    es_si(p.get('oferta', '')),
             'mostrar_precio': es_si(p.get('mostrar_precio', '')),
@@ -619,6 +659,7 @@ def exportar_productos_json(productos, familias):
         'generado': __import__('datetime').datetime.utcnow().isoformat() + 'Z',
         'total': len(exportados),
         'familias_orden': familias,  # {familia: orden}
+        'subfamilias_orden': subfamilias_por_familia,  # {familia: {subfamilia: orden}}
         'productos': exportados,
     }
 
