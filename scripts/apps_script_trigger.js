@@ -18,6 +18,7 @@ function onOpen() {
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addItem('🗂️ Reevaluar áreas de todos los productos', 'reevaluarAreasProductos')
+    .addItem('🤖 Clasificar subfamilias con IA', 'clasificarSubfamiliasConIA')
     .addItem('⛔ Deshabilitar productos con foto incorrecta', 'deshabilitarProductosSinFoto')
     .addItem('🔄 Actualizar imágenes corregidas desde Drive', 'actualizarImagenesCorregidas')
     .addItem('📦 Mover imágenes nuevas a carpeta principal', 'moverImagenesNuevasACarpetaPrincipal')
@@ -1718,7 +1719,294 @@ function darDeBajaProductos() {
   );
 }
 
-// ── Crear hoja de configuración ────────────────────────────────────────────
+// ── CLASIFICACIÓN AUTOMÁTICA DE SUBFAMILIAS CON IA ───────────────────────
+//
+// Usa la API de Claude (Anthropic) para analizar el nombre de cada producto
+// y asignarle automáticamente una subfamilia dentro de su familia.
+//
+// CONFIGURACIÓN PREVIA (una sola vez):
+//   En Apps Script → Configuración del proyecto → Propiedades de script → Añadir:
+//   Clave: ANTHROPIC_API_KEY  |  Valor: tu clave API de Anthropic (sk-ant-...)
+//
+// El proceso:
+//   1. Lee todos los productos de la hoja Productos
+//   2. Los agrupa por familia
+//   3. Para cada familia, envía los productos en lotes de 80 a Claude
+//   4. Claude devuelve JSON con {referencia: subfamilia} para cada producto
+//   5. Escribe la subfamilia en la columna "subfamilia" de Productos
+//   6. Al finalizar, genera/actualiza la hoja SubfamiliaProductos
+//
+// REANUDACIÓN: Los productos que ya tienen subfamilia asignada se saltan.
+// Para reclasificar todo desde cero, borra la columna subfamilia antes de ejecutar.
+
+function clasificarSubfamiliasConIA() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+
+  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+
+  // Obtener clave API desde Script Properties
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) {
+    SpreadsheetApp.getUi().alert(
+      'Falta la clave API de Anthropic.\n\n' +
+      'Ve a Apps Script → Configuración del proyecto → Propiedades de script\n' +
+      'y añade: ANTHROPIC_API_KEY = sk-ant-...'
+    );
+    return;
+  }
+
+  // ── Cabeceras Productos ────────────────────────────────────────────────
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
+
+  // Añadir columna subfamilia si no existe
+  if (!headers.includes('subfamilia')) {
+    sheetProd.getRange(1, headers.length + 1).setValue('subfamilia');
+    headers.push('subfamilia');
+  }
+
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+
+  const colRef       = PROD['referencia'];
+  const colNombre    = PROD['nombre'];
+  const colFamilia   = PROD['tipologia'];
+  const colArea      = PROD['area'];
+  const colSubfam    = PROD['subfamilia'];
+  const colIncluir   = PROD['incluir_en_catalogo'];
+
+  if (colRef === undefined || colNombre === undefined || colFamilia === undefined) {
+    SpreadsheetApp.getUi().alert('Faltan columnas necesarias en Productos (referencia, nombre, tipologia).');
+    return;
+  }
+
+  // ── Leer todos los productos ──────────────────────────────────────────
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos.'); return; }
+
+  const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
+
+  // Agrupar productos por familia (solo los que no tienen subfamilia aún)
+  const grupos = {}; // {familia: [{rowNum, ref, nombre}]}
+  data.forEach((row, i) => {
+    const subfamActual = colSubfam !== undefined ? row[colSubfam].toString().trim() : '';
+    if (subfamActual) return; // ya clasificado, saltar
+
+    const ref     = row[colRef]     ? row[colRef].toString().trim()     : '';
+    const nombre  = row[colNombre]  ? row[colNombre].toString().trim()  : '';
+    const familia = row[colFamilia] ? row[colFamilia].toString().trim().toUpperCase() : 'SIN FAMILIA';
+
+    if (!ref || !nombre) return;
+
+    if (!grupos[familia]) grupos[familia] = [];
+    grupos[familia].push({ rowNum: i + 2, ref, nombre });
+  });
+
+  const totalFamilias = Object.keys(grupos).length;
+  if (totalFamilias === 0) {
+    SpreadsheetApp.getUi().alert('Todos los productos ya tienen subfamilia asignada.');
+    return;
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet()
+    .toast(`Clasificando ${totalFamilias} familias con IA... (puede tardar varios minutos)`,
+           '🤖 Iniciando', 10);
+
+  let totalClasificados = 0, totalErrores = 0;
+  const LOTE = 80; // productos por llamada a la API
+
+  Object.entries(grupos).forEach(([familia, productos]) => {
+    SpreadsheetApp.getActiveSpreadsheet()
+      .toast(`Procesando: ${familia} (${productos.length} productos)...`, '🤖 Clasificando', 15);
+
+    // Dividir en lotes
+    for (let i = 0; i < productos.length; i += LOTE) {
+      const lote = productos.slice(i, i + LOTE);
+
+      try {
+        const resultado = clasificarLoteConClaude_(apiKey, familia, lote);
+        if (!resultado) { totalErrores += lote.length; continue; }
+
+        // Escribir resultados en el Sheet
+        lote.forEach(prod => {
+          const subfam = resultado[prod.ref] || resultado[prod.ref.toUpperCase()] || '';
+          if (subfam && colSubfam !== undefined) {
+            sheetProd.getRange(prod.rowNum, colSubfam + 1).setValue(subfam);
+            totalClasificados++;
+          } else {
+            totalErrores++;
+          }
+        });
+
+        SpreadsheetApp.flush();
+        Utilities.sleep(500); // pausa entre llamadas a la API
+      } catch (e) {
+        console.error(`Error en familia ${familia}, lote ${i}: ${e.message}`);
+        totalErrores += lote.length;
+      }
+    }
+  });
+
+  // Generar/actualizar hoja SubfamiliaProductos
+  generarHojaSubfamilias_();
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `✓ Clasificados: ${totalClasificados} | Errores: ${totalErrores}\n` +
+    `Hoja "SubfamiliaProductos" actualizada.`,
+    '🤖 Clasificación completada', 15
+  );
+}
+
+// ── Llamada a Claude API para clasificar un lote de productos ─────────────
+function clasificarLoteConClaude_(apiKey, familia, productos) {
+  // Subfamilias predefinidas por familia (fuente de verdad para la IA)
+  const SUBFAMILIAS = {
+    // PINTURAS
+    'PINTURAS Y BARNICES':          ['Pinturas al agua', 'Pinturas plásticas', 'Esmaltes sintéticos', 'Barnices y lasures', 'Imprimaciones y aparejos', 'Pinturas anticorrosión', 'Pinturas para suelos', 'Pinturas para exterior', 'Lacas', 'Spray pintura', 'Otros pinturas y barnices'],
+    'AKZONOBEL':                    ['Xyladecor / Xylamon madera', 'Sikkens acabados madera', 'Bondex madera', 'Hammerite metal', 'Bruguer interior', 'Bruguer exterior', 'Bruguer renovación', 'Spray AkzoNobel', 'Imprimaciones AkzoNobel', 'Otros AkzoNobel'],
+    'PINTURAS TITAN':               ['Titanlux esmalte sintético', 'Titan plástico al agua', 'Oxiron anticorrosión', 'Imprimaciones Titan', 'Spray Titan', 'Titan madera', 'Otros Titan'],
+    'PINTURAS DURAVAL':             ['Pinturas plásticas Duraval', 'Esmaltes Duraval', 'Imprimaciones Duraval', 'Acabados Duraval', 'Otros Duraval'],
+    'BROCHAS Y UTILES DE APLICACION': ['Brochas y pinceles', 'Rodillos y accesorios rodillo', 'Cubetas y bandejas', 'Cintas de enmascarar', 'Espátulas y rasquetas', 'Plásticos protección y papel', 'Otros útiles aplicación'],
+    'LIJAS':                        ['Lijas en hoja', 'Lijas en rollo', 'Lijas al agua', 'Esponjas abrasivas', 'Otros abrasivos'],
+    'PEGAMENTOS Y COLA CONTACTO':   ['Colas de contacto', 'Pegamentos instantáneos cianocrilato', 'Siliconas y selladores', 'Adhesivos de montaje', 'Espumas de poliuretano', 'Cinta doble cara', 'Otros adhesivos'],
+    'AGUARRAS Y DISOLVENTES':       ['Aguarrás mineral', 'Disolvente nitro', 'Disolventes universales', 'Diluyentes al agua', 'Quitapinturas y decapantes', 'Otros disolventes'],
+    'PRODUCTOS QUIMICOS':           ['Ácidos', 'Bases y álcalis', 'Agua destilada', 'Productos para piscinas', 'Alcoholes', 'Otros productos químicos'],
+    // DROGUERÍA
+    'DETERGENTES ROPA':             ['Detergente líquido', 'Detergente en polvo', 'Detergente en cápsulas', 'Detergente color', 'Detergente bebé / delicado', 'Detergente industrial / profesional', 'Detergente ecológico'],
+    'LAVAVAJILLAS AUTOMATICOS':     ['Pastillas lavavajillas', 'Gel / líquido lavavajillas máquina', 'Abrillantador lavavajillas', 'Sal lavavajillas', 'Otros lavavajillas máquina'],
+    'LAVAVAJILLAS A MANO':          ['Lavavajillas líquido a mano', 'Lavavajillas concentrado', 'Otros lavavajillas mano'],
+    'LEJIAS':                       ['Lejía normal', 'Lejía con detergente', 'Lejía perfumada', 'Lejía concentrada', 'Lejía en pastillas'],
+    'SUAVIZANTES ROPA':             ['Suavizante normal', 'Suavizante concentrado', 'Suavizante para bebé', 'Suavizante profesional'],
+    'LIMPIACRISTALES Y MULTIUSOS':  ['Limpiacristales', 'Multiusos hogar', 'Spray multiusos', 'Otros limpiadores multiusos'],
+    'LIMPIADORES LIQUIDOS':         ['Desengrasantes', 'Limpiadores suelos', 'Limpiadores baño', 'Limpiadores cocina', 'Limpiadores industriales', 'Otros limpiadores líquidos'],
+    'DESINFECTANTES':               ['Desinfectantes para superficies', 'Desinfectantes de manos', 'Desinfectantes alimentarios', 'Otros desinfectantes'],
+    'AMBIENTADORES':                ['Ambientadores spray', 'Ambientadores eléctricos', 'Ambientadores de varillas', 'Ambientadores para ropa y textil', 'Otros ambientadores'],
+    'INSECTICIDAS':                 ['Insecticidas voladores', 'Insecticidas rastreros', 'Antimosquitos', 'Insecticidas jardín', 'Trampas insectos', 'Otros insecticidas'],
+    'PAPELES Y CELULOSAS':          ['Papel higiénico doméstico', 'Papel higiénico industrial', 'Papel de cocina', 'Pañuelos faciales', 'Servilletas'],
+    'UTILES DE LIMPIEZA PROFESIONAL': ['Carros de limpieza', 'Cubos y accesorios', 'Dispensadores papel e higiene', 'Dosificadores jabón', 'Papeleras y contenedores', 'Escurridores y limpiadores cristal', 'Friegas y mopas profesional', 'Señalización y seguridad', 'Otros útiles profesional'],
+    'PRODUCTOS LIMPIEZA INDUSTRIALES': ['Detergentes industriales ropa', 'Limpiadores suelos industriales', 'Desengrasantes industriales', 'Desinfectantes industriales', 'Lavavajillas industrial máquina', 'Productos higiene de manos profesional', 'Abrillantadores y decapantes industriales', 'Otros productos limpieza industrial'],
+    // PERFUMERÍA
+    'GELES Y JABONES BAÑO':         ['Gel de ducha', 'Gel íntimo', 'Exfoliante corporal', 'Baño de burbujas', 'Otros geles y jabones baño'],
+    'CHAMPUS':                       ['Champú uso frecuente', 'Champú cabello seco', 'Champú cabello graso', 'Champú anticaspa', 'Champú para teñido', 'Champú infantil', 'Champú 2en1', 'Otros champús'],
+    'DESODORANTES':                  ['Desodorante spray', 'Desodorante roll-on', 'Desodorante stick', 'Desodorante crema', 'Antitranspirante'],
+    'CREMAS DE MANOS':               ['Crema de manos hidratante', 'Crema de manos reparadora', 'Crema de manos urea', 'Otras cremas de manos'],
+    'ACEITES Y LECHES CORPORALES':   ['Aceite corporal', 'Leche corporal hidratante', 'Crema nutritiva corporal', 'Productos bebé cuerpo', 'Loción corporal urea', 'Otros aceites y leches'],
+    'CREMAS DE BELLEZA':             ['Crema facial día', 'Crema facial noche', 'Crema anti-edad', 'Sérum facial', 'Contorno de ojos', 'Crema solar facial', 'Limpieza facial', 'Otras cremas de belleza'],
+    'ANEXOS Y VARIOS DE PERFUMERIA': ['Accesorios manicura y pedicura', 'Espejos', 'Algodones y desmaquillantes', 'Botiquines y primeros auxilios', 'Mascarillas protección', 'Material desechable higiene', 'Estuches y sets', 'Otros accesorios perfumería'],
+    'COLONIAS MUJER':                ['Eau de toilette mujer', 'Eau de parfum mujer', 'Colonia mujer clásica', 'Sets colonia mujer'],
+    'COLONIAS HOMBRE':               ['Eau de toilette hombre', 'Eau de parfum hombre', 'Colonia hombre clásica', 'After shave colonia'],
+    'TINTES PELO':                   ['Tinte permanente', 'Tinte semipermanente', 'Coloración vegetal', 'Decoloración', 'Matizador'],
+  };
+
+  // Subfamilias genéricas para familias no predefinidas
+  const subfamDefault = ['Formato pequeño / individual', 'Formato mediano', 'Formato grande / familiar',
+                         'Formato profesional / industrial', 'Pack / Ahorro', 'Ecológico / Natural', 'Otros'];
+
+  const subfamsParaFamilia = SUBFAMILIAS[familia] || subfamDefault;
+
+  const listaProductos = productos.map(p => `${p.ref}|${p.nombre}`).join('\n');
+
+  const prompt = `Eres un experto en catalogación de productos para droguería, perfumería y pinturas.
+
+Familia de productos: "${familia}"
+Subfamilias disponibles: ${subfamsParaFamilia.map((s,i) => `${i+1}. ${s}`).join(', ')}
+
+Clasifica cada producto en la subfamilia más adecuada.
+Si ninguna encaja bien, usa la última opción ("Otros...").
+Responde SOLO con un objeto JSON válido con este formato exacto, sin texto adicional:
+{"REFERENCIA1":"Nombre subfamilia exacto","REFERENCIA2":"Nombre subfamilia exacto"}
+
+Productos a clasificar (formato: REFERENCIA|NOMBRE_PRODUCTO):
+${listaProductos}`;
+
+  const payload = JSON.stringify({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 4000,
+    messages: [{ role: 'user', content: prompt }]
+  });
+
+  const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    payload: payload,
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() !== 200) {
+    console.error('Error API Claude:', response.getContentText());
+    return null;
+  }
+
+  try {
+    const data = JSON.parse(response.getContentText());
+    const texto = data.content[0].text.trim();
+    // Extraer JSON aunque venga con texto alrededor
+    const match = texto.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    return JSON.parse(match[0]);
+  } catch (e) {
+    console.error('Error parseando respuesta:', e.message);
+    return null;
+  }
+}
+
+// ── Generar/actualizar hoja SubfamiliaProductos ──────────────────────────
+function generarHojaSubfamilias_() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  if (!sheetProd) return;
+
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+
+  const data = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow()-1,1), sheetProd.getLastColumn()).getValues();
+
+  // Recopilar combinaciones únicas Familia → Subfamilia con conteo
+  const mapa = {}; // {familia: {subfamilia: count}}
+  data.forEach(row => {
+    const familia  = row[PROD['tipologia']] ? row[PROD['tipologia']].toString().trim().toUpperCase() : '';
+    const subfam   = PROD['subfamilia'] !== undefined ? row[PROD['subfamilia']].toString().trim() : '';
+    if (!familia || !subfam) return;
+    if (!mapa[familia]) mapa[familia] = {};
+    mapa[familia][subfam] = (mapa[familia][subfam] || 0) + 1;
+  });
+
+  // Construir filas ordenadas
+  const filas = [['Familia', 'Subfamilia', 'Orden', 'NumProductos']];
+  Object.keys(mapa).sort().forEach(familia => {
+    const subs = Object.entries(mapa[familia]).sort((a,b) => b[1] - a[1]); // más productos primero
+    subs.forEach(([subfam, count], idx) => {
+      filas.push([familia, subfam, idx + 1, count]);
+    });
+  });
+
+  // Crear o limpiar la hoja SubfamiliaProductos
+  let sheetSub = ss.getSheetByName('SubfamiliaProductos');
+  if (sheetSub) {
+    sheetSub.clearContents();
+  } else {
+    sheetSub = ss.insertSheet('SubfamiliaProductos');
+  }
+
+  sheetSub.getRange(1, 1, filas.length, 4).setValues(filas);
+  sheetSub.getRange(1, 1, 1, 4)
+    .setBackground('#1a1a1a').setFontColor('white').setFontWeight('bold');
+  sheetSub.setColumnWidth(1, 280);
+  sheetSub.setColumnWidth(2, 280);
+  sheetSub.setColumnWidth(3, 80);
+  sheetSub.setColumnWidth(4, 120);
+
+  console.log(`SubfamiliaProductos generada: ${filas.length - 1} combinaciones`);
+}
+
+
 function crearHojaConfiguracion() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName('Configuracion');
