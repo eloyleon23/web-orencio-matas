@@ -219,6 +219,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             border-radius: 8px;
             padding: 8px;
         }
+        @media (max-width: 768px) {
+            .familias-lista {
+                max-height: 120px;
+                padding: 6px;
+            }
+        }
         .familia-item {
             display: flex;
             align-items: center;
@@ -226,6 +232,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             padding: 5px 4px;
             font-size: 0.85rem;
             cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .familia-item {
+                padding: 3px 2px;
+                font-size: 0.8rem;
+                gap: 6px;
+            }
         }
         .familia-item input { cursor: pointer; }
         .familia-item:hover { background: var(--light); border-radius: 4px; }
