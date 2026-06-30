@@ -124,6 +124,84 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .input-texto:focus { outline: none; border-color: var(--red); }
 
+        .btn-escanear-codigo {
+            display: none;
+            flex-shrink: 0;
+            width: 44px;
+            background: var(--dark);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-escanear-codigo:active { background: #0f172a; }
+        /* Solo visible en vista responsive móvil */
+        @media (max-width: 640px) {
+            .btn-escanear-codigo.disponible { display: flex; }
+        }
+
+        .modal-scanner-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 2000;
+            flex-direction: column;
+        }
+        .modal-scanner-overlay.activo { display: flex; }
+        .modal-scanner-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            color: white;
+        }
+        .modal-scanner-header h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .modal-scanner-cerrar {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .modal-scanner-video-wrap {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #scanner-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .scanner-guia {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 320px;
+            aspect-ratio: 3/1.4;
+            border: 3px solid #fff;
+            border-radius: 12px;
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        .scanner-estado {
+            text-align: center;
+            color: white;
+            padding: 14px;
+            font-size: 0.85rem;
+        }
+
         .select-area {
             width: 100%;
             padding: 10px 12px;
@@ -633,7 +711,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="filtro-grupo">
             <label class="titulo" for="f-texto">Nombre o referencia</label>
-            <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001...">
+            <div style="display:flex;gap:8px;align-items:stretch;">
+                <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001..." style="flex:1;">
+                <button type="button" id="btn-escanear" class="btn-escanear-codigo" aria-label="Escanear código de barras" style="display:none;">
+                    <i class="fa-solid fa-barcode"></i>
+                </button>
+            </div>
         </div>
 
         <div class="filtro-grupo">
@@ -716,6 +799,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="modal-enviar" id="modal-enviar">Enviar solicitud</button>
         </div>
     </div>
+</div>
+
+<!-- Modal escáner de código de barras (solo móvil) -->
+<div class="modal-scanner-overlay" id="modal-scanner-overlay">
+    <div class="modal-scanner-header">
+        <h4><i class="fa-solid fa-barcode"></i> Escanear código de barras</h4>
+        <button class="modal-scanner-cerrar" id="modal-scanner-cerrar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-scanner-video-wrap">
+        <video id="scanner-video" autoplay playsinline muted></video>
+        <div class="scanner-guia"></div>
+    </div>
+    <div class="scanner-estado" id="scanner-estado">Enfoca el código de barras del producto</div>
 </div>
 
 <!-- Modal detalle de producto -->
@@ -847,6 +943,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return false;
     }
 
+    // ── Detecta si el texto de búsqueda es predominantemente numérico (código/referencia) ──
+    function esBusquedaNumerica(busqueda) {
+        const limpio = busqueda.replace(/\s+/g, '');
+        if (!limpio) return false;
+        const digitos = (limpio.match(/\d/g) || []).length;
+        // Si al menos el 70% de los caracteres son dígitos, se trata como código
+        return digitos / limpio.length >= 0.7;
+    }
+
+    // ── Coincidencia estricta para referencias/códigos: solo inclusión exacta, sin fuzzy ──
+    function coincideReferencia(referencia, busqueda) {
+        if (!busqueda) return true;
+        const r = normalizar(referencia).replace(/[^a-z0-9]/g, '');
+        const b = normalizar(busqueda).replace(/[^a-z0-9]/g, '');
+        if (!b) return true;
+        return r.includes(b);
+    }
+
     // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
     const PRODUCTOS_URL = './data/productos.json';
     fetch(PRODUCTOS_URL)
@@ -902,6 +1016,106 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 cargarMasFamilias();
             }
         });
+
+        inicializarEscanerCodigoBarras();
+    }
+
+    // ── Escáner de código de barras (solo móvil) ──────────────────────────
+    let scannerStream = null;
+    let scannerDetectorRAF = null;
+
+    function esMovil() {
+        return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 640;
+    }
+
+    function inicializarEscanerCodigoBarras() {
+        const btn = $('btn-escanear');
+        if (!btn) return;
+
+        // Solo mostrar el botón en dispositivos móviles y si el navegador soporta cámara
+        const soportaCamara = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+        if (esMovil() && soportaCamara) {
+            btn.classList.add('disponible');
+        }
+
+        btn.addEventListener('click', abrirEscaner);
+        $('modal-scanner-cerrar').addEventListener('click', cerrarEscaner);
+        $('modal-scanner-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-scanner-overlay') cerrarEscaner();
+        });
+    }
+
+    async function abrirEscaner() {
+        const overlay = $('modal-scanner-overlay');
+        const video    = $('scanner-video');
+        const estado   = $('scanner-estado');
+
+        overlay.classList.add('activo');
+        estado.textContent = 'Activando cámara...';
+
+        try {
+            scannerStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            video.srcObject = scannerStream;
+            estado.textContent = 'Enfoca el código de barras del producto';
+
+            if ('BarcodeDetector' in window) {
+                iniciarDeteccionNativa(video, estado);
+            } else {
+                estado.textContent = 'Tu navegador no soporta lectura automática. Introduce la referencia manualmente.';
+            }
+        } catch (err) {
+            estado.textContent = 'No se pudo acceder a la cámara. Comprueba los permisos.';
+            console.error('Error cámara:', err);
+        }
+    }
+
+    function iniciarDeteccionNativa(video, estado) {
+        const formatos = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'];
+        let detector;
+        try {
+            detector = new BarcodeDetector({ formats: formatos });
+        } catch (e) {
+            estado.textContent = 'Lector de códigos no disponible en este navegador.';
+            return;
+        }
+
+        const detectar = async () => {
+            if (!scannerStream) return; // se cerró el escáner
+            try {
+                const codigos = await detector.detect(video);
+                if (codigos.length > 0) {
+                    const valor = codigos[0].rawValue;
+                    if (valor) {
+                        codigoDetectado(valor);
+                        return; // no seguir el bucle, ya se cerró
+                    }
+                }
+            } catch (e) { /* ignorar fallos puntuales de frame */ }
+            scannerDetectorRAF = requestAnimationFrame(detectar);
+        };
+        scannerDetectorRAF = requestAnimationFrame(detectar);
+    }
+
+    function codigoDetectado(valor) {
+        $('scanner-estado').textContent = '✓ Código detectado: ' + valor;
+        $('f-texto').value = valor;
+        resetPaginacion();
+        aplicarFiltros();
+        setTimeout(cerrarEscaner, 600);
+    }
+
+    function cerrarEscaner() {
+        $('modal-scanner-overlay').classList.remove('activo');
+        if (scannerDetectorRAF) {
+            cancelAnimationFrame(scannerDetectorRAF);
+            scannerDetectorRAF = null;
+        }
+        if (scannerStream) {
+            scannerStream.getTracks().forEach(t => t.stop());
+            scannerStream = null;
+        }
     }
 
     function debounce(fn, ms) {
@@ -966,9 +1180,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (soloOferta && !p.oferta) return false;
 
             if (texto) {
-                const enNombre = coincide(p.nombre, texto);
-                const enRef    = coincide(p.ref, texto);
-                if (!enNombre && !enRef) return false;
+                if (esBusquedaNumerica(texto)) {
+                    // Texto predominantemente numérico → tratar como referencia/código exacto
+                    // (sin fuzzy, para que cada dígito introducido afine la búsqueda al instante)
+                    const enRefExacta = coincideReferencia(p.ref, texto);
+                    const enNombreFuzzy = coincide(p.nombre, texto);
+                    if (!enRefExacta && !enNombreFuzzy) return false;
+                } else {
+                    const enNombre = coincide(p.nombre, texto);
+                    const enRef    = coincide(p.ref, texto);
+                    if (!enNombre && !enRef) return false;
+                }
             }
 
             if (!isNaN(pMin) || !isNaN(pMax)) {
