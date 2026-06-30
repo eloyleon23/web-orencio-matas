@@ -14,7 +14,8 @@ function onOpen() {
     .addItem('➕ Añadir / Editar producto', 'mostrarFormularioProducto')
     .addSeparator()
     .addItem('📥 Sincronizar RegistroProductos → Productos', 'sincronizarRegistroProductos')
-    .addItem('🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
+    .addItem('� Actualizar precios de productos', 'actualizarPreciosProductos')
+    .addItem('�🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addItem('🗂️ Reevaluar áreas de todos los productos', 'reevaluarAreasProductos')
@@ -198,6 +199,114 @@ function sincronizarRegistroProductos() {
   SpreadsheetApp.getActiveSpreadsheet().toast(
     `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Saltados: ${saltados} | Errores: ${errores}`,
     '📥 Sincronización completada', 8
+  );
+}
+
+// ── ACTUALIZAR PRECIOS DE PRODUCTOS ───────────────────────────────────────────
+function actualizarPreciosProductos() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetReg  = ss.getSheetByName('RegistroProductos');
+  const sheetProd = ss.getSheetByName('Productos');
+
+  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos".'); return; }
+  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+
+  const regHeaderRow = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+
+  if (!regHeaderRow.includes('ActualizarPrecio')) {
+    SpreadsheetApp.getUi().alert('No existe la columna "ActualizarPrecio" en RegistroProductos.');
+    return;
+  }
+
+  const COL = {};
+  regHeaderRow.forEach((h, i) => { COL[h] = i; });
+
+  const prodHeaderRow = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+
+  const PROD = {};
+  prodHeaderRow.forEach((h, i) => { PROD[h] = i; });
+
+  const prodData  = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow() - 1, 1), sheetProd.getLastColumn()).getValues();
+  const prodIndex = {};
+  prodData.forEach((row, i) => {
+    const ref = row[PROD['referencia']];
+    if (ref) prodIndex[ref.toString().trim()] = i;
+  });
+
+  const lastRow = sheetReg.getLastRow();
+  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos no tiene datos.'); return; }
+
+  const regData = sheetReg.getRange(2, 1, lastRow - 1, regHeaderRow.length).getValues();
+  let actualizados = 0, saltados = 0, errores = 0;
+  const hoy = new Date();
+
+  for (let i = 0; i < regData.length; i++) {
+    const fila   = regData[i];
+    const rowNum = i + 2;
+    const actualizarPrecio = COL['ActualizarPrecio'] !== undefined ? fila[COL['ActualizarPrecio']].toString().trim().toLowerCase() : '';
+
+    if (actualizarPrecio !== 'si') { saltados++; continue; }
+
+    const ean = fila[COL['CodigoEAN']] ? fila[COL['CodigoEAN']].toString().trim() : '';
+
+    if (!ean) {
+      sheetReg.getRange(rowNum, COL['ActualizarPrecio'] + 1).setValue('no');
+      saltados++;
+      continue;
+    }
+
+    try {
+      if (prodIndex.hasOwnProperty(ean)) {
+        const prodRowIdx = prodIndex[ean];
+        const prodRow    = prodData[prodRowIdx];
+        const prodRowNum = prodRowIdx + 2;
+
+        const precioSinIva = parseFloat(fila[COL['PrecioPublicoSinIVA']]) || 0;
+        const iva          = parseFloat(fila[COL['IVA']]) || 21;
+        const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
+
+        // Actualizar precio sin IVA
+        if (PROD['precio_sin_iva'] !== undefined) {
+          sheetProd.getRange(prodRowNum, PROD['precio_sin_iva'] + 1).setValue(formatPrecio_(precioSinIva));
+        }
+
+        // Actualizar IVA
+        if (PROD['iva'] !== undefined) {
+          sheetProd.getRange(prodRowNum, PROD['iva'] + 1).setValue(iva);
+        }
+
+        // Actualizar precio con IVA
+        if (PROD['precio_con_iva'] !== undefined) {
+          sheetProd.getRange(prodRowNum, PROD['precio_con_iva'] + 1).setValue(formatPrecio_(precioConIva));
+        }
+
+        // Actualizar fecha_registro
+        if (PROD['fecha_registro'] !== undefined) {
+          sheetProd.getRange(prodRowNum, PROD['fecha_registro'] + 1).setValue(hoy);
+        }
+
+        // Marcar ActualizarPrecio como "no"
+        sheetReg.getRange(rowNum, COL['ActualizarPrecio'] + 1).setValue('no');
+
+        actualizados++;
+
+      } else {
+        // Producto no existe en hoja Productos
+        sheetReg.getRange(rowNum, COL['ActualizarPrecio'] + 1).setValue('no');
+        saltados++;
+      }
+    } catch (err) {
+      sheetReg.getRange(rowNum, COL['ActualizarPrecio'] + 1).setValue('no');
+      errores++;
+    }
+  }
+
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `✓ Precios actualizados: ${actualizados} | Saltados: ${saltados} | Errores: ${errores}`,
+    '💰 Actualización de precios completada', 8
   );
 }
 
