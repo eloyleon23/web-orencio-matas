@@ -1097,8 +1097,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         let precioHtml = '<p class="producto-sin-precio">Consultar precio</p>';
         if (p.mostrar_precio) {
-            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2) : null;
-            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2) : null;
+            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2).replace('.', ',') : null;
+            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2).replace('.', ',') : null;
             if (con) {
                 precioHtml = `<div class="producto-precio-con">${con} €</div>`;
                 if (sin) precioHtml += `<div class="producto-precio-sin">${sin} € sin IVA</div>`;
@@ -1131,8 +1131,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         let precioHtml = '';
         if (p.mostrar_precio) {
-            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2) : null;
-            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2) : null;
+            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2).replace('.', ',') : null;
+            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2).replace('.', ',') : null;
             if (con) {
                 precioHtml = `<div class="modal-producto-precio-con">${con} €</div>`;
                 if (sin) precioHtml += `<div class="modal-producto-precio-sin">${sin} € sin IVA</div>`;
