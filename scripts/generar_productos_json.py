@@ -112,10 +112,8 @@ def exportar_productos_json(productos, familias, subfamilias):
 
     exportados = []
     for p in productos:
-        # Excluir productos dados de baja o no visibles en catálogo
+        # Excluir solo productos dados de baja
         if p.get('fecha_baja', '').strip():
-            continue
-        if not es_si(p.get('incluir_en_catalogo', '')):
             continue
 
         ref = p.get('referencia', '').strip()
