@@ -974,10 +974,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-circle-info"></i>
                     Los precios pueden variar y este producto está sujeto a disponibilidad, así como la imagen puede no coincidir exactamente con el producto real.
                 </p>
-                <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none;">
-                    <i class="fa-solid fa-image"></i>
-                    Actualizar imagen del producto
-                </button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none;">
+                        <i class="fa-solid fa-image"></i>
+                        Actualizar imagen
+                    </button>
+                    <button class="modal-producto-reportar" id="modal-producto-validar-imagen" style="display:none;">
+                        <i class="fa-solid fa-check-circle"></i>
+                        Validar imagen
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1016,6 +1022,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 // ── Configuración del buscador ──
 // Botón temporal para reportar imágenes incorrectas (fase de desarrollo)
 window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true;
+// Botón para validar imágenes (fase de desarrollo)
+window.MOSTRAR_BOTON_VALIDAR_IMAGEN = true;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -1611,6 +1619,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('modal-producto-actualizar-imagen').style.display = 'none';
         }
 
+        // Mostrar botón de validar imagen si está activado en configuración
+        if (window.MOSTRAR_BOTON_VALIDAR_IMAGEN) {
+            $('modal-producto-validar-imagen').style.display = 'flex';
+            $('modal-producto-validar-imagen').onclick = () => validarImagen(p);
+        } else {
+            $('modal-producto-validar-imagen').style.display = 'none';
+        }
+
         $('modal-producto-overlay').classList.add('activo');
     }
 
@@ -1716,6 +1732,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         };
         reader.readAsDataURL(file);
     });
+
+    // ── Validar imagen de producto ──
+    function validarImagen(p) {
+        if (!confirm('¿Validar la imagen de este producto como correcta?')) return;
+
+        const data = {
+            accion: 'validar_imagen',
+            referencia: p.ref
+        };
+
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            return;
+        }
+
+        mostrarToast('Validando imagen...');
+
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            console.log('Imagen validada correctamente');
+            mostrarToast('✓ Imagen validada correctamente.');
+        })
+        .catch(err => {
+            console.error('Error al validar imagen:', err);
+            mostrarToast('Error al validar la imagen. Verifica la conexión y los logs.', 'error');
+        });
+    }
 
     function escapeHtml(str) {
         const d = document.createElement('div');
