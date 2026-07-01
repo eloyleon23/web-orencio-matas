@@ -2288,6 +2288,11 @@ function doPost(e) {
       return procesarActualizarImagen(data);
     }
 
+    if (accion === 'validar_imagen') {
+      console.log('Acción: validar_imagen');
+      return procesarValidarImagen(data);
+    }
+
     console.log('Acción no reconocida:', accion);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Acción no reconocida: ' + accion }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -2395,6 +2400,9 @@ function procesarActualizarImagen(data) {
     sheetProd.getRange(prodRowNum, PROD['fecha_actualizacion_imagen'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
     console.log('fecha_actualizacion_imagen actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
 
+    sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
+    console.log('imagen_validada actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
+
     // Disparar workflow de generar productos.json
     console.log('Disparando workflow generar_productos_json');
     dispararWorkflowProductosJson();
@@ -2463,6 +2471,60 @@ function testActualizarImagen() {
 
   const result = procesarActualizarImagen(testData);
   console.log('Resultado del test:', result);
+}
+
+// ── Procesar validación de imagen ─────────────────────────────────────────────
+function procesarValidarImagen(data) {
+  try {
+    console.log('procesarValidarImagen iniciado');
+    console.log('data:', data);
+
+    const referencia = data.referencia;
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    console.log('Cabeceras de Productos:', PROD);
+
+    let prodRowIdx = -1;
+    for (let i = 1; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    console.log('Producto encontrado en fila', prodRowIdx + 2);
+
+    const prodRowNum = prodRowIdx + 2;
+
+    const ahora = new Date();
+    sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
+    console.log('imagen_validada actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
+
+    console.log('procesarValidarImagen completado exitosamente');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Imagen validada correctamente' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al procesar validación de imagen:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 // ── Disparar workflow de generar productos.json ───────────────────────────
