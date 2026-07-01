@@ -722,106 +722,118 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         /* Modal para actualizar imagen */
         #modal-actualizar-imagen-overlay {
             z-index: 2000;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
         }
         #modal-actualizar-imagen-box {
-            max-width: 420px;
+            max-width: 480px;
             width: 90%;
             background: white;
-            border-radius: 12px;
-            padding: 28px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border-radius: 16px;
+            padding: 0;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
         }
         #modal-actualizar-imagen-box h3 {
-            font-size: 1.25rem;
+            font-size: 1.35rem;
             font-weight: 600;
             color: #1f2937;
-            margin: 0 0 8px 0;
+            margin: 0;
+            padding: 24px 28px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             text-align: center;
         }
         #modal-actualizar-imagen-nombre {
             font-size: 0.9rem;
-            color: #6b7280;
-            margin: 0 0 24px 0;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            padding: 0 28px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             text-align: center;
+            font-weight: 400;
+        }
+        .modal-actualizar-imagen-content {
+            padding: 28px;
         }
         .modal-actualizar-imagen-upload {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
         .modal-actualizar-imagen-label {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
-            padding: 14px 20px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
+            padding: 18px 24px;
+            background: white;
+            color: #6366f1;
+            border: 2px dashed #a5b4fc;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
             font-size: 0.95rem;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
         .modal-actualizar-imagen-label:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: #f5f3ff;
+            border-color: #6366f1;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
         }
         .modal-actualizar-imagen-label:active {
             transform: translateY(0);
         }
         .modal-actualizar-imagen-label i {
-            font-size: 1rem;
+            font-size: 1.2rem;
         }
         #modal-actualizar-imagen-file-name {
-            margin-top: 12px;
+            margin-top: 14px;
             font-size: 0.85rem;
             color: #6b7280;
             text-align: center;
-            padding: 8px;
+            padding: 10px 14px;
             background: #f9fafb;
-            border-radius: 6px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
         }
         #modal-actualizar-imagen-preview {
-            margin-bottom: 20px;
-            padding: 16px;
+            margin-bottom: 24px;
+            padding: 20px;
             background: #f8fafc;
-            border: 2px dashed #e2e8f0;
-            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
             text-align: center;
             display: none;
         }
         #modal-actualizar-imagen-preview img {
             max-width: 100%;
-            max-height: 200px;
+            max-height: 220px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         #modal-actualizar-imagen-submit {
             width: 100%;
-            padding: 14px 20px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
         #modal-actualizar-imagen-submit:hover:not(:disabled) {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            background: linear-gradient(135deg, #5568d3 0%, #6b4194 100%);
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
         #modal-actualizar-imagen-submit:active:not(:disabled) {
             transform: translateY(0);
         }
         #modal-actualizar-imagen-submit:disabled {
-            background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+            background: #d1d5db;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -1067,9 +1079,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button class="modal-producto-cerrar" id="modal-actualizar-imagen-cerrar">
             <i class="fa-solid fa-xmark"></i>
         </button>
-        <div class="modal-producto-content">
-            <h3>Actualizar imagen del producto</h3>
-            <p id="modal-actualizar-imagen-nombre" style="margin-bottom: 20px; color: var(--muted);"></p>
+        <h3>Actualizar imagen del producto</h3>
+        <p id="modal-actualizar-imagen-nombre"></p>
+        <div class="modal-actualizar-imagen-content">
             <div class="modal-actualizar-imagen-upload">
                 <input type="file" id="modal-actualizar-imagen-file" accept="image/*" style="display: none;">
                 <label for="modal-actualizar-imagen-file" class="modal-actualizar-imagen-label">
