@@ -686,6 +686,34 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: #fcd34d;
         }
 
+        /* Modal para actualizar imagen */
+        .modal-actualizar-imagen-upload {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .modal-actualizar-imagen-upload:hover {
+            border-color: var(--primary);
+            background: #f8fafc;
+        }
+        .modal-actualizar-imagen-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .modal-actualizar-imagen-label i {
+            font-size: 1.1rem;
+        }
+
         /* Responsive del modal de producto */
         @media (max-width: 768px) {
             .modal-producto-box {
@@ -889,11 +917,38 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-circle-info"></i>
                     Los precios pueden variar y este producto está sujeto a disponibilidad, así como la imagen puede no coincidir exactamente con el producto real.
                 </p>
-                <button class="modal-producto-reportar" id="modal-producto-reportar" style="display:none;">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    Reportar imagen incorrecta
+                <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none;">
+                    <i class="fa-solid fa-image"></i>
+                    Actualizar imagen del producto
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para actualizar imagen de producto -->
+<div class="modal-overlay" id="modal-actualizar-imagen-overlay">
+    <div class="modal-producto-box" id="modal-actualizar-imagen-box">
+        <button class="modal-producto-cerrar" id="modal-actualizar-imagen-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="modal-producto-content">
+            <h3>Actualizar imagen del producto</h3>
+            <p id="modal-actualizar-imagen-nombre" style="margin-bottom: 20px; color: var(--muted);"></p>
+            <div class="modal-actualizar-imagen-upload">
+                <input type="file" id="modal-actualizar-imagen-file" accept="image/*" style="display: none;">
+                <label for="modal-actualizar-imagen-file" class="modal-actualizar-imagen-label">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    Seleccionar nueva imagen
+                </label>
+                <p id="modal-actualizar-imagen-file-name" style="margin-top: 10px; font-size: 0.9rem; color: var(--muted);"></p>
+            </div>
+            <div id="modal-actualizar-imagen-preview" style="margin-top: 20px; display: none;">
+                <img id="modal-actualizar-imagen-preview-img" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+            </div>
+            <button id="modal-actualizar-imagen-submit" style="margin-top: 20px; width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; display: none;">
+                <i class="fa-solid fa-upload"></i> Actualizar imagen
+            </button>
         </div>
     </div>
 </div>
@@ -1491,12 +1546,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         $('modal-producto-precio').innerHTML = precioHtml;
 
-        // Mostrar botón de reportar imagen si está activado en configuración
+        // Mostrar botón de actualizar imagen si está activado en configuración
         if (window.MOSTRAR_BOTON_REPORTAR_IMAGEN) {
-            $('modal-producto-reportar').style.display = 'flex';
-            $('modal-producto-reportar').onclick = () => reportarImagenIncorrecta(p);
+            $('modal-producto-actualizar-imagen').style.display = 'flex';
+            $('modal-producto-actualizar-imagen').onclick = () => abrirModalActualizarImagen(p);
         } else {
-            $('modal-producto-reportar').style.display = 'none';
+            $('modal-producto-actualizar-imagen').style.display = 'none';
         }
 
         $('modal-producto-overlay').classList.add('activo');
@@ -1507,55 +1562,103 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-overlay').classList.remove('activo');
     }
 
-    // ── Reportar imagen incorrecta en Google Sheets ──
-    function reportarImagenIncorrecta(p) {
-        const url = window.GOOGLE_APPS_SCRIPT_URL;
-        if (!url) {
-            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
-            return;
-        }
+    // ── Actualizar imagen de producto ──
+    let productoActual = null;
 
-        const btn = $('modal-producto-reportar');
+    function abrirModalActualizarImagen(p) {
+        productoActual = p;
+        $('modal-actualizar-imagen-nombre').textContent = p.nombre + ' (Ref: ' + p.ref + ')';
+        $('modal-actualizar-imagen-file').value = '';
+        $('modal-actualizar-imagen-file-name').textContent = '';
+        $('modal-actualizar-imagen-preview').style.display = 'none';
+        $('modal-actualizar-imagen-submit').style.display = 'none';
+        $('modal-actualizar-imagen-overlay').classList.add('activo');
+    }
+
+    function cerrarModalActualizarImagen() {
+        $('modal-actualizar-imagen-overlay').classList.remove('activo');
+        productoActual = null;
+    }
+
+    // Event listeners para la modal de actualizar imagen
+    $('modal-actualizar-imagen-cerrar').addEventListener('click', cerrarModalActualizarImagen);
+    $('modal-actualizar-imagen-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-actualizar-imagen-overlay') cerrarModalActualizarImagen();
+    });
+
+    $('modal-actualizar-imagen-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            $('modal-actualizar-imagen-file-name').textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('modal-actualizar-imagen-preview-img').src = e.target.result;
+                $('modal-actualizar-imagen-preview').style.display = 'block';
+                $('modal-actualizar-imagen-submit').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    $('modal-actualizar-imagen-submit').addEventListener('click', function() {
+        const file = $('modal-actualizar-imagen-file').files[0];
+        if (!file || !productoActual) return;
+
+        const btn = $('modal-actualizar-imagen-submit');
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo imagen...';
         btn.disabled = true;
 
-        const data = {
-            accion: 'reportar_imagen',
-            referencia: p.ref,
-            fecha: new Date().toISOString(),
-            area: p.area || '',
-            nombre: p.nombre || '',
-            familia: p.familia || '',
-            idImagen: p.imagen || ''
+        // Convertir archivo a base64
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Data = e.target.result.split(',')[1];
+
+            const data = {
+                accion: 'actualizar_imagen',
+                referencia: productoActual.ref,
+                nombre: productoActual.nombre,
+                area: productoActual.area || '',
+                familia: productoActual.familia || '',
+                archivo: {
+                    nombre: file.name,
+                    tipo: file.type,
+                    datos: base64Data
+                }
+            };
+
+            const url = window.GOOGLE_APPS_SCRIPT_URL;
+            if (!url) {
+                mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(() => {
+                console.log('Imagen enviada correctamente');
+                mostrarToast('✓ Imagen actualizada. Se regenerará el listado de productos en unos minutos.');
+                cerrarModalActualizarImagen();
+            })
+            .catch(err => {
+                console.error('Error al subir imagen:', err);
+                mostrarToast('Error al subir la imagen. Verifica la conexión y los logs.', 'error');
+            })
+            .finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
         };
-
-        console.log('Enviando datos a Google Apps Script:', data);
-        console.log('URL:', url);
-
-        // Google Apps Script Web Apps no soportan CORS correctamente
-        // Usamos no-cors y asumimos éxito si no hay error de red
-        fetch(url, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(() => {
-            console.log('Petición enviada (modo no-cors, respuesta no visible)');
-            mostrarToast('✓ Producto enviado a la hoja de evaluación. Verifica en Google Sheets.');
-        })
-        .catch(err => {
-            console.error('Error al registrar producto:', err);
-            mostrarToast('Error al registrar el producto. Verifica la URL del web app y los logs en Google Apps Script.', 'error');
-        })
-        .finally(() => {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        });
-    }
+        reader.readAsDataURL(file);
+    });
 
     function escapeHtml(str) {
         const d = document.createElement('div');
