@@ -885,6 +885,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </label>
         </div>
 
+        <div class="filtro-grupo" id="grupo-imagenes-revisadas" style="display: none;">
+            <label class="check-oferta">
+                <input type="checkbox" id="f-imagenes-revisadas">
+                <span><i class="fa-solid fa-check-circle"></i> Solo imágenes revisadas</span>
+            </label>
+        </div>
+
         <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
     </aside>
 
@@ -1024,6 +1031,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true;
 // Botón para validar imágenes (fase de desarrollo)
 window.MOSTRAR_BOTON_VALIDAR_IMAGEN = true;
+// Filtro para mostrar solo imágenes revisadas (fase de desarrollo)
+window.MOSTRAR_FILTRO_IMAGENES_REVISADAS = true;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -1183,6 +1192,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+        
+        // Mostrar filtro de imágenes revisadas si está activado en configuración
+        if (window.MOSTRAR_FILTRO_IMAGENES_REVISADAS) {
+            $('grupo-imagenes-revisadas').style.display = 'block';
+            $('f-imagenes-revisadas').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+        }
+        
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
@@ -1402,6 +1418,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-precio-min').value = '';
         $('f-precio-max').value = '';
         $('f-oferta').checked = false;
+        $('f-imagenes-revisadas').checked = false;
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
         resetPaginacion();
@@ -1417,12 +1434,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const pMin     = parseFloat($('f-precio-min').value);
         const pMax     = parseFloat($('f-precio-max').value);
         const soloOferta = $('f-oferta').checked;
+        const soloImagenesRevisadas = $('f-imagenes-revisadas').checked;
 
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
             if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
             if (soloOferta && !p.oferta) return false;
+            if (soloImagenesRevisadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
 
             if (texto) {
                 if (esBusquedaNumerica(texto)) {
