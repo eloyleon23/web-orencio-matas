@@ -2272,14 +2272,24 @@ function setupTrigger() {
 // ── Web App: Manejar peticiones POST (actualizar imagen) ───────────────────
 function doPost(e) {
   try {
+    console.log('doPost ejecutado');
+    console.log('e.postData:', e.postData);
+
+    if (!e || !e.postData) {
+      throw new Error('No se recibieron datos en la petición');
+    }
+
     const data = JSON.parse(e.postData.contents);
+    console.log('Datos recibidos:', data);
     const accion = data.accion;
 
     if (accion === 'actualizar_imagen') {
+      console.log('Acción: actualizar_imagen');
       return procesarActualizarImagen(data);
     }
 
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Acción no reconocida' }))
+    console.log('Acción no reconocida:', accion);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Acción no reconocida: ' + accion }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en doPost:', err);
@@ -2291,12 +2301,18 @@ function doPost(e) {
 // ── Procesar actualización de imagen ───────────────────────────────────────
 function procesarActualizarImagen(data) {
   try {
+    console.log('procesarActualizarImagen iniciado');
+    console.log('data:', data);
+
     const referencia = data.referencia;
     const archivo = data.archivo;
 
     if (!referencia || !archivo) {
       throw new Error('Faltan datos requeridos: referencia o archivo');
     }
+
+    console.log('Referencia:', referencia);
+    console.log('Archivo:', archivo.nombre, 'Tipo:', archivo.tipo, 'Tamaño datos:', archivo.datos.length);
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheetProd = ss.getSheetByName('Productos');
@@ -2305,26 +2321,34 @@ function procesarActualizarImagen(data) {
       throw new Error('No existe la hoja Productos');
     }
 
+    console.log('Hoja Productos encontrada');
+
     // Verificar si existe la columna fecha_actualizacion_imagen
     const headerRow = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
       .map(h => h.toString().trim());
 
+    console.log('Cabeceras:', headerRow);
+
     if (!headerRow.includes('fecha_actualizacion_imagen')) {
+      console.log('Añadiendo columna fecha_actualizacion_imagen');
       sheetProd.getRange(1, headerRow.length + 1).setValue('fecha_actualizacion_imagen');
       headerRow.push('fecha_actualizacion_imagen');
     }
 
     const PROD = {};
     headerRow.forEach((h, i) => { PROD[h] = i; });
+    console.log('Índices de columnas:', PROD);
 
     // Buscar el producto por referencia
     const prodData = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow() - 1, 1), sheetProd.getLastColumn()).getValues();
     let prodRowIdx = -1;
 
+    console.log('Buscando producto con referencia:', referencia);
     for (let i = 0; i < prodData.length; i++) {
       const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
       if (ref === referencia.toString().trim()) {
         prodRowIdx = i;
+        console.log('Producto encontrado en fila:', i + 2);
         break;
       }
     }
@@ -2337,31 +2361,67 @@ function procesarActualizarImagen(data) {
     const extension = archivo.nombre.split('.').pop().toLowerCase();
     const nuevoNombre = referencia + '.' + extension;
 
+    console.log('Nuevo nombre del archivo:', nuevoNombre);
+
     // Decodificar base64 y crear blob
     const decoded = Utilities.base64Decode(archivo.datos);
     const blob = Utilities.newBlob(decoded, archivo.tipo, nuevoNombre);
 
+    console.log('Blob creado, tamaño:', blob.getBytes().length);
+
     // Guardar en Drive en la carpeta de imágenes
     const driveFolder = DriveApp.getFolderById(DRIVE_IMAGENES_ID);
+    console.log('Carpeta Drive obtenida');
+
     const driveFile = driveFolder.createFile(blob);
+    console.log('Archivo creado en Drive, ID:', driveFile.getId());
+
     driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    console.log('Archivo compartido públicamente');
 
     // Actualizar la hoja Productos
     const prodRowNum = prodRowIdx + 2;
+    console.log('Actualizando fila', prodRowNum);
+
     sheetProd.getRange(prodRowNum, PROD['imagen_drive_id'] + 1).setValue(driveFile.getId());
+    console.log('imagen_drive_id actualizado:', driveFile.getId());
+
     sheetProd.getRange(prodRowNum, PROD['fecha_actualizacion_imagen'] + 1).setValue(new Date());
+    console.log('fecha_actualizacion_imagen actualizada');
 
     // Disparar workflow de generar productos.json
+    console.log('Disparando workflow generar_productos_json');
     dispararWorkflowProductosJson();
 
+    console.log('procesarActualizarImagen completado exitosamente');
     return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Imagen actualizada correctamente' }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
     console.error('Error al procesar actualización de imagen:', err);
+    console.error('Stack trace:', err.stack);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// ── Test de actualización de imagen (ejecutar desde editor) ───────────────
+function testActualizarImagen() {
+  const testData = {
+    accion: 'actualizar_imagen',
+    referencia: 'TEST001',
+    nombre: 'Producto de prueba',
+    area: 'Pinturas',
+    familia: 'Pinturas',
+    archivo: {
+      nombre: 'test.jpg',
+      tipo: 'image/jpeg',
+      datos: '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////wAALCAACAgBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACv/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AT//Z' // Base64 de una imagen 1x1 roja
+    }
+  };
+
+  const result = procesarActualizarImagen(testData);
+  console.log('Resultado del test:', result);
 }
 
 // ── Disparar workflow de generar productos.json ───────────────────────────
