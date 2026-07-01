@@ -140,6 +140,8 @@ def exportar_productos_json(productos, familias, subfamilias):
             'precio_con': precio_con,
             'fecha':     p.get('fecha_registro', '').strip(),
             'espacios':  p.get('espacios_a_ocupar', '1').strip() or '1',
+            'imagen_validada': p.get('imagen_validada', '').strip(),
+            'fecha_actualizacion_imagen': p.get('fecha_actualizacion_imagen', '').strip(),
         })
 
     payload = {
