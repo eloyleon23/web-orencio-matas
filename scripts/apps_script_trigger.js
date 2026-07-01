@@ -2391,8 +2391,9 @@ function procesarActualizarImagen(data) {
     sheetProd.getRange(prodRowNum, PROD['imagen_drive_id'] + 1).setValue(driveFile.getId());
     console.log('imagen_drive_id actualizado:', driveFile.getId());
 
-    sheetProd.getRange(prodRowNum, PROD['fecha_actualizacion_imagen'] + 1).setValue(new Date());
-    console.log('fecha_actualizacion_imagen actualizada');
+    const ahora = new Date();
+    sheetProd.getRange(prodRowNum, PROD['fecha_actualizacion_imagen'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
+    console.log('fecha_actualizacion_imagen actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
 
     // Disparar workflow de generar productos.json
     console.log('Disparando workflow generar_productos_json');
