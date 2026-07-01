@@ -2376,8 +2376,13 @@ function procesarActualizarImagen(data) {
     const driveFile = driveFolder.createFile(blob);
     console.log('Archivo creado en Drive, ID:', driveFile.getId());
 
-    driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    console.log('Archivo compartido públicamente');
+    // Intentar compartir el archivo públicamente (puede fallar por permisos)
+    try {
+      driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      console.log('Archivo compartido públicamente');
+    } catch (sharingError) {
+      console.log('No se pudo compartir el archivo públicamente:', sharingError.message);
+    }
 
     // Actualizar la hoja Productos
     const prodRowNum = prodRowIdx + 2;
