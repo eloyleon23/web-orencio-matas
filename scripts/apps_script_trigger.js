@@ -2407,12 +2407,47 @@ function procesarActualizarImagen(data) {
 
 // ── Test de actualización de imagen (ejecutar desde editor) ───────────────
 function testActualizarImagen() {
+  // Buscar un producto real existente
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  const headerRow = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+
+  const PROD = {};
+  headerRow.forEach((h, i) => { PROD[h] = i; });
+
+  const prodData = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow() - 1, 1), sheetProd.getLastColumn()).getValues();
+
+  // Buscar el primer producto con imagen_drive_id
+  let referenciaTest = null;
+  let nombreTest = null;
+  let areaTest = null;
+  let familiaTest = null;
+
+  for (let i = 0; i < prodData.length; i++) {
+    const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+    if (ref && prodData[i][PROD['imagen_drive_id']]) {
+      referenciaTest = ref;
+      nombreTest = prodData[i][PROD['nombre']];
+      areaTest = prodData[i][PROD['area']];
+      familiaTest = prodData[i][PROD['familia']];
+      break;
+    }
+  }
+
+  if (!referenciaTest) {
+    console.log('No se encontró ningún producto con imagen para hacer el test');
+    return;
+  }
+
+  console.log('Usando producto de prueba:', referenciaTest, nombreTest);
+
   const testData = {
     accion: 'actualizar_imagen',
-    referencia: 'TEST001',
-    nombre: 'Producto de prueba',
-    area: 'Pinturas',
-    familia: 'Pinturas',
+    referencia: referenciaTest,
+    nombre: nombreTest,
+    area: areaTest,
+    familia: familiaTest,
     archivo: {
       nombre: 'test.jpg',
       tipo: 'image/jpeg',
