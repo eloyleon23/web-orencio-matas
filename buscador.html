@@ -691,91 +691,87 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             z-index: 2000;
         }
         #modal-actualizar-imagen-box {
-            max-width: 500px;
+            max-width: 400px;
             width: 90%;
-            border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
         }
         #modal-actualizar-imagen-box h3 {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 8px;
+            color: #1f2937;
+            margin: 0 0 8px 0;
         }
         #modal-actualizar-imagen-nombre {
-            font-size: 0.95rem;
-            color: #64748b;
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0 0 20px 0;
         }
         .modal-actualizar-imagen-upload {
-            border: 2px dashed #e2e8f0;
-            border-radius: 12px;
-            padding: 40px 20px;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 32px 16px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8fafc;
+            transition: border-color 0.2s;
+            background: #f9fafb;
         }
         .modal-actualizar-imagen-upload:hover {
             border-color: var(--primary);
-            background: #f1f5f9;
-            transform: translateY(-2px);
+            background: #f3f4f6;
         }
         .modal-actualizar-imagen-label {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 14px 28px;
-            background: linear-gradient(135deg, var(--primary), #2563eb);
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--primary);
             color: white;
-            border-radius: 10px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 0.95rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-        .modal-actualizar-imagen-label:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-            transform: translateY(-1px);
+            font-weight: 500;
+            font-size: 0.875rem;
         }
         .modal-actualizar-imagen-label i {
-            font-size: 1.2rem;
+            font-size: 1rem;
         }
         #modal-actualizar-imagen-file-name {
             margin-top: 12px;
-            font-size: 0.85rem;
-            color: #475569;
-            font-weight: 500;
+            font-size: 0.8rem;
+            color: #6b7280;
         }
         #modal-actualizar-imagen-preview {
-            margin-top: 24px;
-            padding: 16px;
-            background: #f1f5f9;
-            border-radius: 12px;
+            margin-top: 20px;
+            padding: 12px;
+            background: #f3f4f6;
+            border-radius: 8px;
             text-align: center;
         }
+        #modal-actualizar-imagen-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+        }
         #modal-actualizar-imagen-submit {
-            margin-top: 24px;
+            margin-top: 20px;
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 12px;
+            background: #10b981;
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
-            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.2s;
         }
         #modal-actualizar-imagen-submit:hover {
-            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
-            transform: translateY(-1px);
+            background: #059669;
         }
         #modal-actualizar-imagen-submit:disabled {
-            opacity: 0.6;
+            background: #d1d5db;
             cursor: not-allowed;
-            transform: none;
         }
 
         /* Responsive del modal de producto */
