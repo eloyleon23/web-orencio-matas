@@ -304,6 +304,39 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .check-oferta input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--red); }
         .check-oferta span { font-size: 0.88rem; font-weight: 600; color: #991b1b; }
 
+        .gestion-imagenes-header {
+            padding: 8px 12px;
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #0369a1;
+            margin-bottom: 0;
+        }
+        .gestion-imagenes-filtros {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 8px 12px;
+        }
+        .check-imagen-validada,
+        .check-imagen-sin-validar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .check-imagen-validada:hover,
+        .check-imagen-sin-validar:hover { background: #f1f5f9; }
+        .check-imagen-validada input { width: 18px; height: 18px; cursor: pointer; accent-color: #059669; }
+        .check-imagen-validada span { font-size: 0.85rem; font-weight: 600; color: #047857; }
+        .check-imagen-sin-validar input { width: 18px; height: 18px; cursor: pointer; accent-color: #dc2626; }
+        .check-imagen-sin-validar span { font-size: 0.85rem; font-weight: 600; color: #b91c1c; }
+
         .btn-limpiar {
             width: 100%;
             padding: 10px;
@@ -885,11 +918,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </label>
         </div>
 
-        <div class="filtro-grupo" id="grupo-imagenes-revisadas" style="display: none;">
-            <label class="check-oferta">
-                <input type="checkbox" id="f-imagenes-revisadas">
-                <span><i class="fa-solid fa-check-circle"></i> Solo imágenes revisadas</span>
-            </label>
+        <div class="filtro-grupo" id="grupo-gestion-imagenes" style="display: none;">
+            <div class="gestion-imagenes-header">
+                <strong><i class="fa-solid fa-images"></i> Gestión de imágenes</strong>
+            </div>
+            <div class="gestion-imagenes-filtros">
+                <label class="check-imagen-validada">
+                    <input type="checkbox" id="f-imagenes-validadas">
+                    <span><i class="fa-solid fa-check-circle"></i> Solo imágenes validadas</span>
+                </label>
+                <label class="check-imagen-sin-validar">
+                    <input type="checkbox" id="f-imagenes-sin-validar">
+                    <span><i class="fa-solid fa-circle-xmark"></i> Solo imágenes sin validar</span>
+                </label>
+            </div>
         </div>
 
         <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
@@ -1193,10 +1235,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         
-        // Mostrar filtro de imágenes revisadas si está activado en configuración
+        // Mostrar bloque de gestión de imágenes si está activado en configuración
         if (window.MOSTRAR_FILTRO_IMAGENES_REVISADAS) {
-            $('grupo-imagenes-revisadas').style.display = 'block';
-            $('f-imagenes-revisadas').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+            $('grupo-gestion-imagenes').style.display = 'block';
+            $('f-imagenes-validadas').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+            $('f-imagenes-sin-validar').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         }
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
@@ -1418,7 +1461,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-precio-min').value = '';
         $('f-precio-max').value = '';
         $('f-oferta').checked = false;
-        $('f-imagenes-revisadas').checked = false;
+        $('f-imagenes-validadas').checked = false;
+        $('f-imagenes-sin-validar').checked = false;
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
         resetPaginacion();
@@ -1434,14 +1478,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const pMin     = parseFloat($('f-precio-min').value);
         const pMax     = parseFloat($('f-precio-max').value);
         const soloOferta = $('f-oferta').checked;
-        const soloImagenesRevisadas = $('f-imagenes-revisadas').checked;
+        const soloImagenesValidadas = $('f-imagenes-validadas').checked;
+        const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
 
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
             if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
             if (soloOferta && !p.oferta) return false;
-            if (soloImagenesRevisadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
+            if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
+            if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
 
             if (texto) {
                 if (esBusquedaNumerica(texto)) {
