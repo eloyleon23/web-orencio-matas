@@ -2267,6 +2267,125 @@ function setupTrigger() {
       ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('onEdit').forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet()).onEdit().create();
-  ScriptApp.newTrigger('onOpen').forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet()).onOpen().create();
-  SpreadsheetApp.getActiveSpreadsheet().toast('✓ Triggers activados', 'Configurado', 4);
+}
+
+// ── Web App: Manejar peticiones POST (actualizar imagen) ───────────────────
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const accion = data.accion;
+
+    if (accion === 'actualizar_imagen') {
+      return procesarActualizarImagen(data);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Acción no reconocida' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en doPost:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Procesar actualización de imagen ───────────────────────────────────────
+function procesarActualizarImagen(data) {
+  try {
+    const referencia = data.referencia;
+    const archivo = data.archivo;
+
+    if (!referencia || !archivo) {
+      throw new Error('Faltan datos requeridos: referencia o archivo');
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+
+    if (!sheetProd) {
+      throw new Error('No existe la hoja Productos');
+    }
+
+    // Verificar si existe la columna fecha_actualizacion_imagen
+    const headerRow = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+      .map(h => h.toString().trim());
+
+    if (!headerRow.includes('fecha_actualizacion_imagen')) {
+      sheetProd.getRange(1, headerRow.length + 1).setValue('fecha_actualizacion_imagen');
+      headerRow.push('fecha_actualizacion_imagen');
+    }
+
+    const PROD = {};
+    headerRow.forEach((h, i) => { PROD[h] = i; });
+
+    // Buscar el producto por referencia
+    const prodData = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow() - 1, 1), sheetProd.getLastColumn()).getValues();
+    let prodRowIdx = -1;
+
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia.toString().trim()) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      throw new Error('Producto no encontrado con referencia: ' + referencia);
+    }
+
+    // Obtener extensión del archivo original
+    const extension = archivo.nombre.split('.').pop().toLowerCase();
+    const nuevoNombre = referencia + '.' + extension;
+
+    // Decodificar base64 y crear blob
+    const decoded = Utilities.base64Decode(archivo.datos);
+    const blob = Utilities.newBlob(decoded, archivo.tipo, nuevoNombre);
+
+    // Guardar en Drive en la carpeta de imágenes
+    const driveFolder = DriveApp.getFolderById(DRIVE_IMAGENES_ID);
+    const driveFile = driveFolder.createFile(blob);
+    driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    // Actualizar la hoja Productos
+    const prodRowNum = prodRowIdx + 2;
+    sheetProd.getRange(prodRowNum, PROD['imagen_drive_id'] + 1).setValue(driveFile.getId());
+    sheetProd.getRange(prodRowNum, PROD['fecha_actualizacion_imagen'] + 1).setValue(new Date());
+
+    // Disparar workflow de generar productos.json
+    dispararWorkflowProductosJson();
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Imagen actualizada correctamente' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al procesar actualización de imagen:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Disparar workflow de generar productos.json ───────────────────────────
+function dispararWorkflowProductosJson() {
+  const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`;
+  const payload = JSON.stringify({
+    event_type: 'generar_productos_json',
+    client_payload: { triggered_by: 'actualizar_imagen', timestamp: new Date().toISOString() }
+  });
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      'Authorization': `Bearer ${GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    payload: payload,
+    muteHttpExceptions: true
+  };
+  const resp = UrlFetchApp.fetch(url, options);
+  if (resp.getResponseCode() === 204) {
+    console.log('Workflow generar_productos_json disparado correctamente');
+  } else {
+    console.error('Error al disparar workflow generar_productos_json:', resp.getContentText());
+  }
 }
