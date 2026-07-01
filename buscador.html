@@ -1504,6 +1504,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const soloImagenesValidadas = $('f-imagenes-validadas').checked;
         const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
 
+        console.log('Filtros de imágenes activos:', { soloImagenesValidadas, soloImagenesSinValidar });
+
+        // Verificar si los productos tienen los campos de validación
+        if (TODOS.length > 0) {
+            const primerProducto = TODOS[0];
+            console.log('Primer producto tiene campos:', {
+                imagen_validada: primerProducto.imagen_validada,
+                fecha_actualizacion_imagen: primerProducto.fecha_actualizacion_imagen
+            });
+        }
+
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
