@@ -1109,6 +1109,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Modal de confirmación para validar imagen -->
+<div class="modal-overlay" id="modal-confirmar-validacion-overlay" style="z-index: 2100;">
+    <div class="modal-producto-box" id="modal-confirmar-validacion-box" style="max-width: 400px;">
+        <button class="modal-producto-cerrar" id="modal-confirmar-validacion-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 style="text-align: center; margin-bottom: 16px;">Validar imagen</h3>
+        <p style="text-align: center; color: #6b7280; margin-bottom: 24px;">
+            ¿Confirmar que la imagen del producto es correcta?
+        </p>
+        <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+            <p style="margin: 0 0 8px 0; font-size: 0.85rem; color: #6b7280;">Producto:</p>
+            <p id="modal-confirmar-validacion-nombre" style="margin: 0 0 4px 0; font-weight: 600; color: #1f2937;"></p>
+            <p id="modal-confirmar-validacion-ref" style="margin: 0; font-size: 0.85rem; color: #9ca3af;"></p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button id="modal-confirmar-validacion-cancelar" style="flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
+                Cancelar
+            </button>
+            <button id="modal-confirmar-validacion-confirmar" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="./src/js/navbar-secondary.js"></script>
 <script>
@@ -1779,6 +1805,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (e.target.id === 'modal-actualizar-imagen-overlay') cerrarModalActualizarImagen();
     });
 
+    // Modal de confirmación de validación
+    $('modal-confirmar-validacion-cerrar').addEventListener('click', () => {
+        $('modal-confirmar-validacion-overlay').classList.remove('activo');
+    });
+    $('modal-confirmar-validacion-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-confirmar-validacion-overlay') {
+            $('modal-confirmar-validacion-overlay').classList.remove('activo');
+        }
+    });
+
     $('modal-actualizar-imagen-file').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -1855,7 +1891,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Validar imagen de producto ──
     function validarImagen(p) {
-        if (!confirm('¿Validar la imagen de este producto como correcta?')) return;
+        // Mostrar modal de confirmación
+        $('modal-confirmar-validacion-overlay').classList.add('activo');
+        $('modal-confirmar-validacion-nombre').textContent = p.nombre;
+        $('modal-confirmar-validacion-ref').textContent = p.ref;
+        
+        // Configurar botón de confirmación
+        $('modal-confirmar-validacion-confirmar').onclick = () => {
+            $('modal-confirmar-validacion-overlay').classList.remove('activo');
+            ejecutarValidacion(p);
+        };
+        
+        // Configurar botón de cancelar
+        $('modal-confirmar-validacion-cancelar').onclick = () => {
+            $('modal-confirmar-validacion-overlay').classList.remove('activo');
+        };
+    }
+
+    function ejecutarValidacion(p) {
+        const btnValidar = $('modal-producto-validar-imagen');
+        const estadoOriginal = btnValidar.innerHTML;
+        
+        // Bloquear botón y mostrar carga
+        btnValidar.disabled = true;
+        btnValidar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Validando...';
 
         const data = {
             accion: 'validar_imagen',
@@ -1865,6 +1924,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) {
             mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            btnValidar.disabled = false;
+            btnValidar.innerHTML = estadoOriginal;
             return;
         }
 
@@ -1885,6 +1946,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         .catch(err => {
             console.error('Error al validar imagen:', err);
             mostrarToast('Error al validar la imagen. Verifica la conexión y los logs.', 'error');
+        })
+        .finally(() => {
+            // Restaurar botón
+            btnValidar.disabled = false;
+            btnValidar.innerHTML = estadoOriginal;
         });
     }
 
