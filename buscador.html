@@ -989,6 +989,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             transition: opacity .2s, transform .2s, background .15s;
         }
         #btn-subir-arriba.visible { display: flex; opacity: 1; transform: translateY(0); }
+        #btn-subir-arriba.oculto-por-modal { display: none !important; }
         #btn-subir-arriba:hover { background: var(--blue); }
         @media (max-width: 640px) {
             /* En móvil, más pequeño y discreto para no tapar contenido */
@@ -2102,11 +2103,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         $('modal-producto-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
     }
 
     // ── Cerrar modal de producto ──
     function cerrarModalProducto() {
         $('modal-producto-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
     }
 
     // ── Actualizar imagen de producto ──
