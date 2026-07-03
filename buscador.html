@@ -1794,6 +1794,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Aplicar todos los filtros ──
     function aplicarFiltros() {
         const texto    = $('f-texto').value.trim();
+        if (!texto) ultimaRefAutoabierta = null;
         const area     = $('f-area').value;
         const familias = familiasSeleccionadas();
         const subfamilias = subfamiliasSeleccionadas();
@@ -1855,6 +1856,29 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         renderResultados();
+
+        // Si la búsqueda es por código de producto (tecleado a mano o vía
+        // escáner de códigos de barras) y da un único resultado, nos
+        // ahorramos el clic extra: desplazamos el scroll hasta la tarjeta
+        // y abrimos directamente su ficha de detalle.
+        if (texto && esBusquedaNumerica(texto) &&
+            texto.replace(/\s+/g, '').length >= 8 && resultadosActuales.length === 1) {
+            abrirProductoUnicoTrasBusqueda(resultadosActuales[0]);
+        }
+    }
+
+    let ultimaRefAutoabierta = null;
+    function abrirProductoUnicoTrasBusqueda(producto) {
+        // Evita reabrir el mismo producto en bucle si aplicarFiltros() se
+        // vuelve a ejecutar sin que el texto de búsqueda haya cambiado.
+        if (ultimaRefAutoabierta === producto.ref) return;
+        ultimaRefAutoabierta = producto.ref;
+
+        const card = document.querySelector(`.producto-card[data-ref="${CSS.escape(producto.ref)}"]`);
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        setTimeout(() => abrirModalProducto(producto), card ? 350 : 0);
     }
 
     function parseFecha(str) {
@@ -1992,6 +2016,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const card = document.createElement('div');
         card.className = 'producto-card';
         card.style.cursor = 'pointer';
+        card.dataset.ref = p.ref;
         card.addEventListener('click', () => abrirModalProducto(p));
 
         const imgHtml = p.img
