@@ -1341,7 +1341,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ya tiene el buscador abierto de que hay una versión más reciente,
     // sin refrescar nada automáticamente ni perder los filtros aplicados.
     // ══════════════════════════════════════════════
-    const INTERVALO_COMPROBACION_MS = 3 * 60 * 1000; // cada 3 minutos
+    const INTERVALO_COMPROBACION_MS = 60 * 1000; // cada 1 minuto
     let etagConocido = null;   // versión de productos.json actualmente cargada
     let etagPendiente = null;  // versión nueva detectada, aún no cargada
     let avisoDescartado = false;
