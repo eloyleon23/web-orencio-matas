@@ -156,7 +156,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             padding: 10px 12px;
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 0.9rem;
+            /* 16px evita que iOS Safari haga zoom automático al enfocar el input */
+            font-size: 16px;
             font-family: inherit;
         }
         .input-texto:focus { outline: none; border-color: var(--red); }
@@ -288,7 +289,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             padding: 9px 10px;
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 0.85rem;
+            /* 16px evita el zoom automático de iOS al enfocar */
+            font-size: 16px;
         }
 
         .check-oferta {
@@ -1877,6 +1879,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // vuelve a ejecutar sin que el texto de búsqueda haya cambiado.
         if (ultimaRefAutoabierta === producto.ref) return;
         ultimaRefAutoabierta = producto.ref;
+
+        // Cerrar el teclado del móvil: quitar el foco del campo de búsqueda
+        // (y del escáner si estuviera) hace que el teclado virtual se retraiga
+        // y el zoom que iOS aplica al input vuelva a su sitio antes de abrir
+        // la ficha de detalle.
+        const activo = document.activeElement;
+        if (activo && typeof activo.blur === 'function') activo.blur();
+        $('f-texto').blur();
 
         const card = document.querySelector(`.producto-card[data-ref="${CSS.escape(producto.ref)}"]`);
         if (card) {
