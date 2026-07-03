@@ -20,11 +20,15 @@ set "PYEXE="
 
 where py >nul 2>&1
 if errorlevel 1 goto probar_python
+py -3 -c "print(1)" >nul 2>&1
+if errorlevel 1 goto probar_python
 set "PYEXE=py -3"
 goto python_encontrado
 
 :probar_python
 where python >nul 2>&1
+if errorlevel 1 goto python_no_encontrado
+python -c "print(1)" >nul 2>&1
 if errorlevel 1 goto python_no_encontrado
 set "PYEXE=python"
 goto python_encontrado
