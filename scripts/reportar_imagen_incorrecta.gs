@@ -15,7 +15,6 @@
 const SHEET_ID = '1T-MZUPPmhh_t4miezHVCfRCxVpWcxQgdZGNVvFeA_cw';
 const SHEET_NAME_IMAGENES = 'ProductosPendientesEvaluarImagen';
 const SHEET_NAME_CATALOGOS = 'SolicitudesCatalogos';
-const SHEET_NAME_PRODUCTOS = 'Productos';
 
 // Configuración de GitHub
 const GITHUB_REPO = 'eloyleon23/web-orencio-matas';
@@ -42,8 +41,6 @@ function doPost(e) {
       return procesarReportarImagen(data);
     } else if (data.accion === 'solicitar_catalogo') {
       return procesarSolicitarCatalogo(data);
-    } else if (data.accion === 'validar_imagen') {
-      return procesarValidarImagen(data);
     } else {
       return ContentService.createTextOutput(
         JSON.stringify({ success: false, error: 'Acción no reconocida' })
@@ -138,102 +135,6 @@ function procesarReportarImagen(data) {
 
   return ContentService.createTextOutput(
     JSON.stringify({ success: true, message: 'Producto registrado' })
-  ).setMimeType(ContentService.MimeType.JSON);
-}
-
-// ── Procesar validación de imagen ──
-function procesarValidarImagen(data) {
-  const referencia = data.referencia;
-
-  if (!referencia) {
-    console.log('Error: Falta referencia en validar_imagen');
-    return ContentService.createTextOutput(
-      JSON.stringify({ success: false, error: 'Falta la referencia del producto' })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  console.log('Procesando validación de imagen para referencia:', referencia);
-
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName(SHEET_NAME_PRODUCTOS);
-
-  if (!sheet) {
-    console.log('Error: Hoja Productos no encontrada');
-    return ContentService.createTextOutput(
-      JSON.stringify({ success: false, error: 'Hoja Productos no encontrada' })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // Obtener headers para encontrar columnas
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  console.log('Headers de Productos:', headers);
-
-  const colReferencia = headers.indexOf('referencia');
-  const colImagenValidada = headers.indexOf('imagen_validada');
-  const colFechaActualizacion = headers.indexOf('fecha_actualizacion_imagen');
-
-  if (colReferencia === -1) {
-    console.log('Error: Columna referencia no encontrada');
-    return ContentService.createTextOutput(
-      JSON.stringify({ success: false, error: 'Columna referencia no encontrada' })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // Buscar producto por referencia
-  const lastRow = sheet.getLastRow();
-  console.log('Última fila en Productos:', lastRow);
-
-  if (lastRow <= 1) {
-    console.log('Error: No hay productos en la hoja');
-    return ContentService.createTextOutput(
-      JSON.stringify({ success: false, error: 'No hay productos en la hoja' })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  const dataRange = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
-  const dataValues = dataRange.getValues();
-  console.log('Productos a buscar:', dataValues.length);
-
-  let encontrado = false;
-  let filaEncontrada = -1;
-
-  for (let i = 0; i < dataValues.length; i++) {
-    if (String(dataValues[i][colReferencia]) === String(referencia)) {
-      encontrado = true;
-      filaEncontrada = i + 2; // +2 porque empieza en fila 2 (headers en fila 1)
-      console.log('Producto encontrado en fila:', filaEncontrada);
-      break;
-    }
-  }
-
-  if (!encontrado) {
-    console.log('Error: Producto no encontrado con referencia:', referencia);
-    return ContentService.createTextOutput(
-      JSON.stringify({ success: false, error: 'Producto no encontrado' })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // Actualizar imagen_validada y fecha_actualizacion_imagen
-  const fechaActual = Utilities.formatDate(
-    new Date(),
-    'Europe/Madrid',
-    'dd/MM/yyyy HH:mm'
-  );
-
-  if (colImagenValidada !== -1) {
-    sheet.getRange(filaEncontrada, colImagenValidada + 1).setValue('Sí');
-    console.log('Actualizado imagen_validada a Sí');
-  }
-
-  if (colFechaActualizacion !== -1) {
-    sheet.getRange(filaEncontrada, colFechaActualizacion + 1).setValue(fechaActual);
-    console.log('Actualizado fecha_actualizacion_imagen:', fechaActual);
-  }
-
-  console.log('Imagen validada correctamente');
-
-  return ContentService.createTextOutput(
-    JSON.stringify({ success: true, message: 'Imagen validada correctamente' })
   ).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -394,20 +295,6 @@ function testReportarImagen() {
         nombre: 'Producto de prueba',
         familia: 'LEJIAS',
         idImagen: 'imagen_test_001.jpg'
-      })
-    }
-  };
-  const result = doPost(testData);
-  console.log(result.getContent());
-}
-
-// ── Función de prueba para validar imagen ──
-function testValidarImagen() {
-  const testData = {
-    postData: {
-      contents: JSON.stringify({
-        accion: 'validar_imagen',
-        referencia: '3033103001'
       })
     }
   };
