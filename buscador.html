@@ -874,9 +874,60 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 font-size: 1.5rem;
             }
         }
+        /* Banner de actualización de catálogo disponible */
+        #banner-actualizacion {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 5000;
+            background: var(--dark);
+            color: #fff;
+            padding: 12px 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.2);
+        }
+        #banner-actualizacion.activo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        #banner-actualizacion .texto {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+        }
+        #banner-actualizacion .texto i { color: var(--yellow); }
+        #banner-actualizacion .acciones { display: flex; gap: 8px; }
+        #banner-actualizacion button {
+            border: none;
+            border-radius: 6px;
+            padding: 7px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #banner-actualizacion .btn-actualizar { background: var(--blue); color: #fff; }
+        #banner-actualizacion .btn-actualizar:disabled { opacity: 0.6; cursor: wait; }
+        #banner-actualizacion .btn-descartar { background: transparent; color: #cbd5e1; border: 1px solid #475569; }
+        #banner-actualizacion .btn-descartar:hover { color: #fff; border-color: #64748b; }
+
     </style>
 </head>
 <body>
+<div id="banner-actualizacion">
+    <div class="texto">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Hay productos actualizados desde que cargaste esta página. ¿Quieres obtener la última versión? (tus filtros no se perderán)</span>
+    </div>
+    <div class="acciones">
+        <button class="btn-actualizar" id="banner-btn-actualizar">Actualizar ahora</button>
+        <button class="btn-descartar" id="banner-btn-descartar">Ahora no</button>
+    </div>
+</div>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -1269,12 +1320,136 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             aplicarFiltros();
             $('cargando-inicial').style.display = 'none';
             $('contenedor-resultados').style.display = '';
+            iniciarComprobacionActualizaciones();
         })
         .catch(err => {
             console.error(err);
             $('cargando-inicial').innerHTML =
                 '<i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo cargar el catálogo de productos. Inténtalo de nuevo más tarde.</p>';
         });
+
+    // ══════════════════════════════════════════════
+    // ── Detección de productos.json actualizado en el servidor ──
+    // El workflow que regenera productos.json puede correr en cualquier
+    // momento (cada 10-15 min o al validar una imagen). Esto avisa a quien
+    // ya tiene el buscador abierto de que hay una versión más reciente,
+    // sin refrescar nada automáticamente ni perder los filtros aplicados.
+    // ══════════════════════════════════════════════
+    const INTERVALO_COMPROBACION_MS = 3 * 60 * 1000; // cada 3 minutos
+    let etagConocido = null;   // versión de productos.json actualmente cargada
+    let etagPendiente = null;  // versión nueva detectada, aún no cargada
+    let avisoDescartado = false;
+    let comprobandoActualizacion = false;
+
+    function identificadorVersion(headers) {
+        // ETag es lo más fiable; Last-Modified como respaldo si el servidor no lo envía.
+        return headers.get('etag') || headers.get('last-modified') || null;
+    }
+
+    async function iniciarComprobacionActualizaciones() {
+        try {
+            const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
+            etagConocido = identificadorVersion(resp.headers);
+        } catch (e) {
+            // Si el HEAD inicial falla, simplemente no se activa el sondeo periódico
+            return;
+        }
+        setInterval(comprobarActualizacionProductos, INTERVALO_COMPROBACION_MS);
+    }
+
+    async function comprobarActualizacionProductos() {
+        if (comprobandoActualizacion) return;
+        comprobandoActualizacion = true;
+        try {
+            const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
+            const version = identificadorVersion(resp.headers);
+            if (!version) return; // servidor no da ETag ni Last-Modified: no se puede comparar, no molestamos
+
+            if (etagConocido === null) {
+                etagConocido = version;
+                return;
+            }
+            if (version === etagConocido) return; // sin cambios
+
+            if (version !== etagPendiente) {
+                // Es una versión nueva que aún no se ha ofrecido (o distinta de la ya descartada)
+                etagPendiente = version;
+                avisoDescartado = false;
+            }
+            if (!avisoDescartado) {
+                mostrarBannerActualizacion();
+            }
+        } catch (e) {
+            // Fallo de red puntual comprobando: no molestar al usuario por esto
+        } finally {
+            comprobandoActualizacion = false;
+        }
+    }
+
+    function mostrarBannerActualizacion() {
+        $('banner-actualizacion').classList.add('activo');
+    }
+
+    function ocultarBannerActualizacion() {
+        $('banner-actualizacion').classList.remove('activo');
+    }
+
+    $('banner-btn-descartar').addEventListener('click', () => {
+        avisoDescartado = true;
+        ocultarBannerActualizacion();
+    });
+
+    $('banner-btn-actualizar').addEventListener('click', async () => {
+        const boton = $('banner-btn-actualizar');
+        const textoOriginal = boton.textContent;
+        boton.disabled = true;
+        boton.textContent = 'Actualizando...';
+        try {
+            const resp = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            if (!resp.ok) throw new Error('respuesta no OK');
+            const data = await resp.json();
+            recargarProductosPreservandoFiltros(data);
+            etagConocido = etagPendiente || identificadorVersion(resp.headers);
+            etagPendiente = null;
+            avisoDescartado = false;
+            ocultarBannerActualizacion();
+            mostrarToast('✓ Catálogo actualizado con los últimos cambios.');
+        } catch (e) {
+            console.error(e);
+            mostrarToast('No se pudo actualizar el catálogo. Inténtalo de nuevo en unos minutos.', 'error');
+        } finally {
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+        }
+    });
+
+    // Sustituye los datos y vuelve a pintar resultados conservando exactamente
+    // los mismos filtros que el usuario tenía aplicados (texto, área, precio,
+    // oferta, familias y subfamilias marcadas, filtros de imágenes...), ya que
+    // esos valores viven en los propios controles del formulario y no se tocan.
+    function recargarProductosPreservandoFiltros(data) {
+        const familiasPrevias = familiasSeleccionadas();
+        const subfamiliasPrevias = subfamiliasSeleccionadas();
+
+        TODOS = data.productos || [];
+        FAMILIAS_ORDEN = data.familias_orden || {};
+        SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
+
+        // renderFamilias()/renderSubfamilias() reconstruyen los checkboxes desde
+        // cero (sin marcar), así que hay que volver a marcar los que el usuario
+        // ya tenía seleccionados y que sigan existiendo en los datos nuevos.
+        renderFamilias();
+        document.querySelectorAll('#f-familias input').forEach(input => {
+            if (familiasPrevias.includes(input.value)) input.checked = true;
+        });
+        renderSubfamilias();
+        document.querySelectorAll('#f-subfamilias input').forEach(input => {
+            if (subfamiliasPrevias.includes(input.value)) input.checked = true;
+        });
+
+        resetPaginacion();
+        aplicarFiltros();
+    }
 
     // ── Inicializar selects de área y lista de familias ──
     function inicializarFiltros() {
