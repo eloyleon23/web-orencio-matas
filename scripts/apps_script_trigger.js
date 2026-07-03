@@ -2518,6 +2518,10 @@ function procesarValidarImagen(data) {
     sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
     console.log('imagen_validada actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
 
+    // Disparar workflow de generar productos.json
+    console.log('Disparando workflow generar_productos_json');
+    dispararWorkflowProductosJson();
+
     console.log('procesarValidarImagen completado exitosamente');
     return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Imagen validada correctamente' }))
       .setMimeType(ContentService.MimeType.JSON);
