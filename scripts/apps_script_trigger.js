@@ -2582,15 +2582,21 @@ function validarImagenManual() {
 
   // Verificar si existe la columna imagen_validada
   if (PROD['imagen_validada'] === undefined) {
-    ui.alert('La hoja "Productos" no tiene la columna "imagen_validada". Añádela primero.');
+    console.error('Columnas disponibles:', Object.keys(PROD));
+    ui.alert('La hoja "Productos" no tiene la columna "imagen_validada". Añádela primero.\n\nColumnas disponibles: ' + Object.keys(prodHeaders).join(', '));
     return;
   }
 
+  console.log('Columna imagen_validada encontrada en índice:', PROD['imagen_validada']);
+  console.log('Fila a actualizar:', prodRowNum);
+
   // Actualizar imagen_validada
   const ahora = new Date();
-  sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(
-    Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss')
-  );
+  const fechaFormateada = Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+  console.log('Fecha formateada:', fechaFormateada);
+
+  sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(fechaFormateada);
+  console.log('Valor establecido en celda:', sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).getValue());
 
   // Actualizar fecha_actualizacion_imagen si existe
   if (PROD['fecha_actualizacion_imagen'] !== undefined) {
