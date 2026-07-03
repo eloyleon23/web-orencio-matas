@@ -127,12 +127,29 @@ def buscar_imagen(api_key, cx, query, dominio, sesion):
     resp = sesion.get(API_URL, params=params, timeout=20)
     if resp.status_code == 429:
         raise RuntimeError("cuota diaria de la API agotada (429)")
+    if resp.status_code == 403:
+        # Extraer el motivo REAL que da Google (facturacion, API no habilitada,
+        # clave restringida...), no solo "403 Forbidden" — eso es lo que
+        # necesitas ver para arreglarlo, no el codigo HTTP desnudo.
+        try:
+            detalle = resp.json().get("error", {}).get("message", resp.text[:300])
+        except Exception:
+            detalle = resp.text[:300]
+        raise ConfigError(f"403 de la API de Google: {detalle}")
     resp.raise_for_status()
     data = resp.json()
     items = data.get("items", [])
     if not items:
         return None
     return items[0].get("link")
+
+
+class ConfigError(Exception):
+    """Error de configuracion (permisos, facturacion, clave...) — no tiene
+    sentido seguir intentando las siguientes consultas si esto falla, todas
+    fallarian igual, así que se detiene la ejecucion en vez de gastar el
+    resto del limite en errores identicos."""
+    pass
 
 
 def main():
@@ -200,6 +217,11 @@ def main():
             consultas_realizadas += 1
         except RuntimeError as e:
             print(f"\n[STOP] {e}. Progreso guardado hasta aquí.")
+            break
+        except ConfigError as e:
+            print(f"\n[STOP] Error de configuración — todas las consultas fallarían igual, así que paro aquí:")
+            print(f"       {e}")
+            print(f"       Revisa: API habilitada, facturación vinculada, restricciones de la clave.")
             break
         except Exception as e:
             sin_resultado.append({"referencia": p["ref"], "nombre_producto": p["nombre"], "motivo": str(e)})
