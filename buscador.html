@@ -937,6 +937,44 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         #banner-actualizacion .btn-descartar { background: transparent; color: #cbd5e1; border: 1px solid #475569; }
         #banner-actualizacion .btn-descartar:hover { color: #fff; border-color: #64748b; }
 
+        /* Botón flotante "subir arriba" */
+        #btn-subir-arriba {
+            display: none;
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 4000;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: var(--dark);
+            color: #fff;
+            font-size: 1.1rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .2s, transform .2s, background .15s;
+        }
+        #btn-subir-arriba.visible { display: flex; opacity: 1; transform: translateY(0); }
+        #btn-subir-arriba:hover { background: var(--blue); }
+        @media (max-width: 640px) {
+            /* En móvil, más pequeño y discreto para no tapar contenido */
+            #btn-subir-arriba {
+                right: 14px;
+                bottom: 14px;
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+                background: rgba(30, 41, 59, 0.72);
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+                backdrop-filter: blur(2px);
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -1823,13 +1861,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             grupos[fam].push(p);
         });
 
-        // Ordenar familias según FAMILIAS_ORDEN (orden de catálogo, sin cambios)
-        const nombresFamilias = Object.keys(grupos).sort((a, b) => {
-            const oa = FAMILIAS_ORDEN[a.toUpperCase()] ?? 9999;
-            const ob = FAMILIAS_ORDEN[b.toUpperCase()] ?? 9999;
-            if (oa !== ob) return oa - ob;
-            return a.localeCompare(b, 'es', { sensitivity: 'base' });
-        });
+        // Ordenar familias alfabéticamente (igual que el selector)
+        const nombresFamilias = Object.keys(grupos).sort((a, b) =>
+            a.localeCompare(b, 'es', { sensitivity: 'base' })
+        );
 
         return nombresFamilias.map(nombre => {
             const productosFamilia = grupos[nombre];
@@ -2359,9 +2394,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             setTimeout(() => toast.remove(), 300);
         }, 4000);
     }
+    // ── Botón flotante "subir arriba" ──
+    const btnSubirArriba = $('btn-subir-arriba');
+    let scrollTicking = false;
+    function actualizarVisibilidadBotonSubir() {
+        const visible = window.scrollY > 400;
+        btnSubirArriba.classList.toggle('visible', visible);
+        scrollTicking = false;
+    }
+    window.addEventListener('scroll', () => {
+        if (!scrollTicking) {
+            requestAnimationFrame(actualizarVisibilidadBotonSubir);
+            scrollTicking = true;
+        }
+    }, { passive: true });
+    btnSubirArriba.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    actualizarVisibilidadBotonSubir();
 })();
 </script>
     <!-- Contenedor de notificaciones toast -->
     <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;"></div>
+    <button id="btn-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
 </body>
 </html>
