@@ -2496,9 +2496,9 @@ function procesarValidarImagen(data) {
     console.log('Cabeceras de Productos:', PROD);
 
     let prodRowIdx = -1;
-    for (let i = 1; i < prodData.length; i++) {
+    for (let i = 0; i < prodData.length; i++) {
       const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
-      if (ref === referencia) {
+      if (ref === referencia.toString().trim()) {
         prodRowIdx = i;
         break;
       }
@@ -2510,9 +2510,9 @@ function procesarValidarImagen(data) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    console.log('Producto encontrado en fila', prodRowIdx + 2);
+    console.log('Producto encontrado en fila', prodRowIdx + 1);
 
-    const prodRowNum = prodRowIdx + 2;
+    const prodRowNum = prodRowIdx + 1;
 
     const ahora = new Date();
     sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
