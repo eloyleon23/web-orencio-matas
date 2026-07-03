@@ -1123,6 +1123,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <i class="fa-solid fa-image"></i>
                         Actualizar
                     </button>
+                    <button class="modal-producto-reportar" id="modal-producto-buscar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
+                        <i class="fa-solid fa-search"></i>
+                        Buscar
+                    </button>
                     <button class="modal-producto-reportar" id="modal-producto-validar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-check-circle"></i>
                         Validar
@@ -1194,6 +1198,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true;
 // Botón para validar imágenes (fase de desarrollo)
 window.MOSTRAR_BOTON_VALIDAR_IMAGEN = true;
+// Botón para buscar imágenes en Bing (fase de desarrollo)
+window.MOSTRAR_BOTON_BUSCAR_IMAGEN = true;
 // Filtro para mostrar solo imágenes revisadas (fase de desarrollo)
 window.MOSTRAR_FILTRO_IMAGENES_REVISADAS = true;
 
@@ -1948,6 +1954,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('modal-producto-validar-imagen').style.display = 'none';
         }
 
+        // Mostrar botón de buscar imagen si está activado en configuración
+        if (window.MOSTRAR_BOTON_BUSCAR_IMAGEN) {
+            $('modal-producto-buscar-imagen').style.display = 'flex';
+            $('modal-producto-buscar-imagen').onclick = () => buscarImagen(p);
+        } else {
+            $('modal-producto-buscar-imagen').style.display = 'none';
+        }
+
         $('modal-producto-overlay').classList.add('activo');
     }
 
@@ -2081,6 +2095,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-confirmar-validacion-cancelar').onclick = () => {
             $('modal-confirmar-validacion-overlay').classList.remove('activo');
         };
+    }
+
+    function buscarImagen(p) {
+        // Construir query de búsqueda para Bing
+        const query = encodeURIComponent(`${p.nombre} ${p.ref} producto`);
+        const bingUrl = `https://www.bing.com/images/search?q=${query}&qft=+filterui:photo-size-medium`;
+        
+        // Abrir Bing en nueva pestaña
+        window.open(bingUrl, '_blank');
+        
+        mostrarToast('Búsqueda abierta en Bing. Selecciona la imagen correcta y usa "Actualizar imagen" para subirla.');
     }
 
     function ejecutarValidacion(p) {
