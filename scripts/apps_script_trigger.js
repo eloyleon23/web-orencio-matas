@@ -2565,15 +2565,24 @@ function validarImagenManual() {
   });
 
   let prodRowIdx = -1;
+  console.log('Buscando referencia:', referencia);
+  console.log('Total de productos:', prodData.length);
+  
   for (let i = 1; i < prodData.length; i++) {
     const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
     if (ref === referencia) {
       prodRowIdx = i;
+      console.log('Producto encontrado en índice de datos:', i, 'con referencia:', ref);
       break;
     }
   }
 
   if (prodRowIdx === -1) {
+    console.error('Producto no encontrado. Referencias encontradas en primeras 5 filas:');
+    for (let i = 1; i < Math.min(6, prodData.length); i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      console.log(`Fila ${i + 2}: ${ref}`);
+    }
     ui.alert(`Producto no encontrado con referencia: ${referencia}`);
     return;
   }
