@@ -2568,9 +2568,9 @@ function validarImagenManual() {
   console.log('Buscando referencia:', referencia);
   console.log('Total de productos:', prodData.length);
   
-  for (let i = 1; i < prodData.length; i++) {
+  for (let i = 0; i < prodData.length; i++) {
     const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
-    if (ref === referencia) {
+    if (ref === referencia.toString().trim()) {
       prodRowIdx = i;
       console.log('Producto encontrado en índice de datos:', i, 'con referencia:', ref);
       break;
@@ -2579,9 +2579,9 @@ function validarImagenManual() {
 
   if (prodRowIdx === -1) {
     console.error('Producto no encontrado. Referencias encontradas en primeras 5 filas:');
-    for (let i = 1; i < Math.min(6, prodData.length); i++) {
+    for (let i = 0; i < Math.min(5, prodData.length); i++) {
       const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
-      console.log(`Fila ${i + 2}: ${ref}`);
+      console.log(`Índice ${i}: ${ref}`);
     }
     ui.alert(`Producto no encontrado con referencia: ${referencia}`);
     return;
