@@ -408,6 +408,28 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             border-radius: 20px;
         }
 
+        .subfamilias-contenedor { display: flex; flex-direction: column; gap: 22px; }
+        .subfamilia-seccion:not(:first-child) { margin-top: 4px; }
+        .subfamilia-titulo {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin: 0 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .subfamilia-titulo .count {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--light);
+            padding: 1px 8px;
+            border-radius: 20px;
+        }
+
         .grid-productos {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -1617,12 +1639,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
         const familias = [...new Set(base.map(p => p.familia).filter(Boolean))];
 
-        familias.sort((a, b) => {
-            const oa = FAMILIAS_ORDEN[a.toUpperCase()] ?? 9999;
-            const ob = FAMILIAS_ORDEN[b.toUpperCase()] ?? 9999;
-            if (oa !== ob) return oa - ob;
-            return a.localeCompare(b);
-        });
+        familias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
         familias.forEach(fam => {
             const label = document.createElement('label');
@@ -1668,21 +1685,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         const subfamilias = Array.from(subfamiliasSet);
 
-        // Ordenar subfamilias según SUBFAMILIAS_ORDEN
-        subfamilias.sort((a, b) => {
-            let minOrdenA = 9999;
-            let minOrdenB = 9999;
-
-            for (const fam of familiasSelUpper) {
-                const ordenA = SUBFAMILIAS_ORDEN[fam]?.[a] ?? 9999;
-                const ordenB = SUBFAMILIAS_ORDEN[fam]?.[b] ?? 9999;
-                if (ordenA < minOrdenA) minOrdenA = ordenA;
-                if (ordenB < minOrdenB) minOrdenB = ordenB;
-            }
-
-            if (minOrdenA !== minOrdenB) return minOrdenA - minOrdenB;
-            return a.localeCompare(b);
-        });
+        // Ordenar subfamilias alfabéticamente
+        subfamilias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
         subfamilias.forEach(subfam => {
             const label = document.createElement('label');
@@ -1794,7 +1798,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0)).getTime();
     }
 
-    // ── Agrupar resultados por familia respetando orden ──
+    // ── Agrupar resultados por familia (orden de catálogo) y, dentro de
+    //    cada familia, por subfamilia (alfabético). Dentro de cada
+    //    subfamilia: ofertas primero, luego fecha de registro (más
+    //    recientes primero) y como desempate, orden alfabético por nombre ──
+    function ordenarProductos(arr) {
+        arr.sort((a, b) => {
+            const oa = a.oferta ? 1 : 0, ob = b.oferta ? 1 : 0;
+            if (oa !== ob) return ob - oa; // ofertas primero
+
+            const fa = parseFecha(a.fecha), fb = parseFecha(b.fecha);
+            if (fa !== fb) return fb - fa; // más reciente primero
+
+            return (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
+        });
+        return arr;
+    }
+
     function agruparPorFamilia(lista) {
         const grupos = {};
         lista.forEach(p => {
@@ -1803,20 +1823,37 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             grupos[fam].push(p);
         });
 
-        // Dentro de cada familia: ofertas primero
-        Object.values(grupos).forEach(arr => {
-            arr.sort((a, b) => (b.oferta ? 1 : 0) - (a.oferta ? 1 : 0));
-        });
-
-        // Ordenar familias según FAMILIAS_ORDEN
+        // Ordenar familias según FAMILIAS_ORDEN (orden de catálogo, sin cambios)
         const nombresFamilias = Object.keys(grupos).sort((a, b) => {
             const oa = FAMILIAS_ORDEN[a.toUpperCase()] ?? 9999;
             const ob = FAMILIAS_ORDEN[b.toUpperCase()] ?? 9999;
             if (oa !== ob) return oa - ob;
-            return a.localeCompare(b);
+            return a.localeCompare(b, 'es', { sensitivity: 'base' });
         });
 
-        return nombresFamilias.map(nombre => ({ nombre, productos: grupos[nombre] }));
+        return nombresFamilias.map(nombre => {
+            const productosFamilia = grupos[nombre];
+
+            // Subagrupar por subfamilia
+            const subgruposMap = {};
+            productosFamilia.forEach(p => {
+                const sub = p.subfamilia || 'Sin subfamilia';
+                if (!subgruposMap[sub]) subgruposMap[sub] = [];
+                subgruposMap[sub].push(p);
+            });
+
+            // Subfamilias en orden alfabético (igual que el selector)
+            const nombresSubfamilias = Object.keys(subgruposMap).sort((a, b) =>
+                a.localeCompare(b, 'es', { sensitivity: 'base' })
+            );
+
+            const subgrupos = nombresSubfamilias.map(sub => ({
+                nombre: sub,
+                productos: ordenarProductos(subgruposMap[sub]),
+            }));
+
+            return { nombre, productos: productosFamilia, subgrupos };
+        });
     }
 
     // ── Renderizar resultados (con paginación de 12 en 12 aprox) ──
@@ -1849,10 +1886,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             seccion.className = 'familia-seccion';
             seccion.innerHTML = `
                 <h3 class="familia-titulo">${grupo.nombre} <span class="count">${grupo.productos.length}</span></h3>
-                <div class="grid-productos"></div>
+                <div class="subfamilias-contenedor"></div>
             `;
-            const grid = seccion.querySelector('.grid-productos');
-            grupo.productos.forEach(p => grid.appendChild(crearTarjeta(p)));
+            const subCont = seccion.querySelector('.subfamilias-contenedor');
+            grupo.subgrupos.forEach(subgrupo => {
+                const subSeccion = document.createElement('div');
+                subSeccion.className = 'subfamilia-seccion';
+                subSeccion.innerHTML = `
+                    <h4 class="subfamilia-titulo">${subgrupo.nombre} <span class="count">${subgrupo.productos.length}</span></h4>
+                    <div class="grid-productos"></div>
+                `;
+                const grid = subSeccion.querySelector('.grid-productos');
+                subgrupo.productos.forEach(p => grid.appendChild(crearTarjeta(p)));
+                subCont.appendChild(subSeccion);
+            });
             cont.appendChild(seccion);
         });
 
