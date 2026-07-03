@@ -2098,14 +2098,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function buscarImagen(p) {
-        // Construir query de búsqueda para Bing
+        // Construir query de búsqueda para Google Images
         const query = encodeURIComponent(`${p.nombre} ${p.ref} producto`);
-        const bingUrl = `https://www.bing.com/images/search?q=${query}&qft=+filterui:photo-size-medium`;
+        const googleUrl = `https://www.google.com/search?tbm=isch&q=${query}`;
         
-        // Abrir Bing en nueva pestaña
-        window.open(bingUrl, '_blank');
+        // Abrir Google Images en nueva pestaña
+        window.open(googleUrl, '_blank');
         
-        mostrarToast('Búsqueda abierta en Bing. Selecciona la imagen correcta y usa "Actualizar imagen" para subirla.');
+        mostrarToast('Búsqueda abierta en Google Images. Selecciona la imagen correcta y usa "Actualizar imagen" para subirla.');
     }
 
     function ejecutarValidacion(p) {
