@@ -439,7 +439,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             .grid-productos { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 480px) {
-            .grid-productos { grid-template-columns: 1fr; }
+            /* Con la vista de detalle disponible al tocar la tarjeta, no hace
+               falta que cada producto ocupe todo el ancho: mostramos varios
+               en horizontal en vez de una lista vertical de uno en uno. */
+            .grid-productos { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        }
+        @media (min-width: 420px) and (max-width: 480px) {
+            .grid-productos { grid-template-columns: repeat(4, 1fr); gap: 8px; }
         }
 
         .producto-card {
@@ -519,6 +525,29 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-size: 0.78rem;
             color: var(--muted);
             font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+            /* Tarjetas más compactas para que 3-4 quepan bien en una fila */
+            .producto-info { padding: 8px 7px; }
+            .producto-nombre {
+                font-size: 0.68rem;
+                -webkit-line-clamp: 2;
+                min-height: 1.75em;
+                margin-bottom: 3px;
+            }
+            .producto-ref { font-size: 0.6rem; margin-bottom: 4px; }
+            .producto-precio-con { font-size: 0.82rem; }
+            .producto-precio-sin { font-size: 0.6rem; }
+            .producto-sin-precio { font-size: 0.65rem; }
+            .badge-oferta {
+                font-size: 0.55rem;
+                padding: 3px 7px;
+                top: 5px;
+                left: 5px;
+                gap: 2px;
+            }
+            .producto-img-wrap img { padding: 6px; }
         }
 
         .btn-cargar-mas {
