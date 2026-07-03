@@ -2578,7 +2578,7 @@ function validarImagenManual() {
       console.log('Producto encontrado en índice de datos:', i);
       console.log('Referencia encontrada:', ref);
       console.log('Referencia buscada:', referencia);
-      console.log('Fila real en sheet:', i + 2);
+      console.log('Fila real en sheet:', i + 1);
       break;
     }
   }
@@ -2608,7 +2608,7 @@ function validarImagenManual() {
     return;
   }
 
-  const prodRowNum = prodRowIdx + 2;
+  const prodRowNum = prodRowIdx + 1;
 
   // Verificar si existe la columna imagen_validada
   if (PROD['imagen_validada'] === undefined) {
