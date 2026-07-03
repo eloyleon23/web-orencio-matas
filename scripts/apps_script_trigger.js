@@ -18,6 +18,8 @@ function onOpen() {
     .addItem('�🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
+    .addItem('✅ Validar imagen de producto', 'validarImagenManual')
+    .addSeparator()
     .addItem('🗂️ Reevaluar áreas de todos los productos', 'reevaluarAreasProductos')
     .addItem('🤖 Clasificar subfamilias con IA', 'clasificarSubfamiliasConIA')
     .addItem('⛔ Deshabilitar productos con foto incorrecta', 'deshabilitarProductosSinFoto')
@@ -2525,6 +2527,80 @@ function procesarValidarImagen(data) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// ── Validar imagen manualmente desde menú ────────────────────────────────────
+function validarImagenManual() {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.prompt(
+    'Validar imagen de producto',
+    'Introduce la referencia del producto:',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+
+  const referencia = response.getResponseText().trim();
+  if (!referencia) {
+    ui.alert('La referencia no puede estar vacía.');
+    return;
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+
+  if (!sheetProd) {
+    ui.alert('No existe la hoja "Productos".');
+    return;
+  }
+
+  const prodData = sheetProd.getDataRange().getValues();
+  const prodHeaders = prodData[0];
+
+  const PROD = {};
+  prodHeaders.forEach((h, i) => {
+    PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+  });
+
+  let prodRowIdx = -1;
+  for (let i = 1; i < prodData.length; i++) {
+    const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+    if (ref === referencia) {
+      prodRowIdx = i;
+      break;
+    }
+  }
+
+  if (prodRowIdx === -1) {
+    ui.alert(`Producto no encontrado con referencia: ${referencia}`);
+    return;
+  }
+
+  const prodRowNum = prodRowIdx + 2;
+
+  // Verificar si existe la columna imagen_validada
+  if (PROD['imagen_validada'] === undefined) {
+    ui.alert('La hoja "Productos" no tiene la columna "imagen_validada". Añádela primero.');
+    return;
+  }
+
+  // Actualizar imagen_validada
+  const ahora = new Date();
+  sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(
+    Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss')
+  );
+
+  // Actualizar fecha_actualizacion_imagen si existe
+  if (PROD['fecha_actualizacion_imagen'] !== undefined) {
+    sheetProd.getRange(prodRowNum, PROD['fecha_actualizacion_imagen'] + 1).setValue(
+      Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss')
+    );
+  }
+
+  SpreadsheetApp.flush();
+  ui.alert(`✓ Imagen del producto ${referencia} validada correctamente.\n\nLa web se actualizará automáticamente en los próximos 10 minutos.`);
 }
 
 // ── Disparar workflow de generar productos.json ───────────────────────────
