@@ -3,3 +3,12 @@ Thumbs.db
 config.js
 *.zip
 orencio-matas-web-deploy.zip
+
+# imagenes_tool: artefactos de ejecucion local y credenciales, nunca al repo
+imagenes_tool/imagenes_pendientes_revision/
+imagenes_tool/credentials.json
+imagenes_tool/token.json
+imagenes_tool/google_search_credentials.json
+imagenes_tool/config_ruta.txt
+imagenes_tool/catalogo_titan_cache.json
+imagenes_tool/fallos_sincronizacion.csv
