@@ -63,10 +63,10 @@ popd
 echo.
 
 REM -- Comprobar dependencias minimas --
-"%PYEXE%" -c "import requests" >nul 2>&1
+%PYEXE% -c "import requests" >nul 2>&1
 if errorlevel 1 (
     echo [2/3] Instalando dependencias necesarias...
-    "%PYEXE%" -m pip install --user -r requirements.txt
+    %PYEXE% -m pip install --user -r requirements.txt
     echo.
 )
 
@@ -74,12 +74,12 @@ REM -- Lanzar la busqueda gratuita (Babaria + Sora + Vijusa, 301 productos) --
 echo [2/3] Buscando imagenes gratis ^(Babaria, Sora, Vijusa - 301 productos^)...
 echo       Esto puede tardar varios minutos, hace una peticion por producto.
 echo.
-"%PYEXE%" buscar_imagenes_gratis.py --limite 301
+%PYEXE% buscar_imagenes_gratis.py --limite 301
 echo.
 
 REM -- Generar y abrir la galeria de revision --
 echo [3/3] Generando galeria de revision visual...
-"%PYEXE%" generar_revision_html.py --carpeta imagenes_pendientes_revision\drogueria_perfumeria
+%PYEXE% generar_revision_html.py --carpeta imagenes_pendientes_revision\drogueria_perfumeria
 if exist "imagenes_pendientes_revision\drogueria_perfumeria\revision.html" (
     echo.
     echo Abriendo la galeria en el navegador...
