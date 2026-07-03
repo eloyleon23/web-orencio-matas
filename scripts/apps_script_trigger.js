@@ -2566,14 +2566,35 @@ function validarImagenManual() {
 
   let prodRowIdx = -1;
   console.log('Buscando referencia:', referencia);
+  console.log('Referencia tipo:', typeof referencia);
+  console.log('Referencia longitud:', referencia.length);
   console.log('Total de productos:', prodData.length);
   
+  // Buscar coincidencia exacta
   for (let i = 0; i < prodData.length; i++) {
     const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
     if (ref === referencia.toString().trim()) {
       prodRowIdx = i;
-      console.log('Producto encontrado en índice de datos:', i, 'con referencia:', ref);
+      console.log('Producto encontrado en índice de datos:', i);
+      console.log('Referencia encontrada:', ref);
+      console.log('Referencia buscada:', referencia);
+      console.log('Fila real en sheet:', i + 2);
       break;
+    }
+  }
+
+  // Si no encuentra coincidencia exacta, buscar coincidencia parcial
+  if (prodRowIdx === -1) {
+    console.warn('No se encontró coincidencia exacta, buscando coincidencia parcial...');
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref.includes(referencia.toString().trim()) || referencia.toString().trim().includes(ref)) {
+        prodRowIdx = i;
+        console.log('Coincidencia parcial encontrada en índice:', i);
+        console.log('Referencia encontrada:', ref);
+        console.log('Referencia buscada:', referencia);
+        break;
+      }
     }
   }
 
