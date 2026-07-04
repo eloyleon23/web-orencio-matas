@@ -689,6 +689,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             gap: 0;
         }
         .modal-producto-imagen {
+            position: relative;
             background: #f1f5f9;
             display: flex;
             align-items: center;
@@ -779,49 +780,45 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         /* Botón de ficha técnica (área pinturas) */
         .modal-producto-ficha {
             margin-top: 12px;
-            padding: 11px 16px;
+            padding: 8px 14px;
             background: var(--blue);
             color: #fff;
             border: none;
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 0.82rem;
             font-weight: 600;
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 7px;
             text-decoration: none;
             transition: filter 0.15s;
         }
         .modal-producto-ficha:hover { filter: brightness(1.08); }
         .modal-producto-ficha:active { filter: brightness(0.95); }
-        .modal-producto-ficha .ficha-hint {
-            font-size: 0.72rem;
-            font-weight: 400;
-            opacity: 0.85;
-        }
 
-        /* Botón compartir producto */
+        /* Botón compartir producto: chip sutil bajo la imagen, a la derecha */
         .modal-producto-compartir {
-            margin-top: 8px;
-            width: 100%;
-            padding: 11px 16px;
-            background: var(--light);
-            color: var(--dark);
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--muted);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.9rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: background 0.15s, border-color 0.15s;
+            gap: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
         }
-        .modal-producto-compartir:hover { background: #e2e8f0; border-color: #cbd5e1; }
-        .modal-producto-compartir:active { background: #cbd5e1; }
+        .modal-producto-compartir:hover { background: #fff; color: var(--dark); border-color: #cbd5e1; }
+        .modal-producto-compartir:active { background: #f1f5f9; }
         .modal-producto-compartir.copiado {
             background: #dcfce7;
             border-color: #86efac;
@@ -1266,6 +1263,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-producto-content">
             <div class="modal-producto-imagen">
                 <img id="modal-producto-img" src="" alt="" loading="lazy">
+                <button id="modal-producto-compartir" class="modal-producto-compartir" title="Compartir producto">
+                    <i class="fa-solid fa-share-from-square"></i>
+                    Compartir
+                </button>
             </div>
             <div class="modal-producto-info">
                 <h3 id="modal-producto-nombre"></h3>
@@ -1281,13 +1282,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </p>
                 <a id="modal-producto-ficha-tecnica" class="modal-producto-ficha" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
                     <i class="fa-solid fa-file-lines"></i>
-                    Buscar ficha técnica
-                    <span class="ficha-hint">en la web del fabricante</span>
+                    Ver ficha técnica
                 </a>
-                <button id="modal-producto-compartir" class="modal-producto-compartir">
-                    <i class="fa-solid fa-share-nodes"></i>
-                    Compartir producto
-                </button>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-image"></i>
@@ -2344,7 +2340,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function configurarBotonCompartir(p) {
         const boton = $('modal-producto-compartir');
         boton.classList.remove('copiado');
-        boton.innerHTML = '<i class="fa-solid fa-share-nodes"></i> Compartir producto';
+        boton.innerHTML = '<i class="fa-solid fa-share-from-square"></i> Compartir';
         boton.onclick = () => compartirProducto(p);
     }
 
@@ -2372,7 +2368,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             await navigator.clipboard.writeText(url);
             boton.classList.add('copiado');
-            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Enlace copiado!';
+            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Copiado!';
             setTimeout(() => configurarBotonCompartir(p), 2200);
         } catch (e) {
             // Último recurso: mostrar el enlace para copiar a mano
@@ -2423,10 +2419,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const url = `https://www.google.com/search?q=${encodeURIComponent(consulta)}`;
 
         boton.href = url;
-        boton.querySelector('.ficha-hint').textContent = esTitan
-            ? 'ficha técnica del fabricante'
-            : 'buscar ficha técnica';
-        boton.style.display = 'flex';
+        boton.style.display = 'inline-flex';
     }
 
     // Limpia el nombre para usarlo como término de búsqueda de ficha técnica:
