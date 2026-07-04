@@ -802,6 +802,32 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             opacity: 0.85;
         }
 
+        /* Botón compartir producto */
+        .modal-producto-compartir {
+            margin-top: 8px;
+            width: 100%;
+            padding: 11px 16px;
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .modal-producto-compartir:hover { background: #e2e8f0; border-color: #cbd5e1; }
+        .modal-producto-compartir:active { background: #cbd5e1; }
+        .modal-producto-compartir.copiado {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+
         /* Modal para actualizar imagen */
         #modal-actualizar-imagen-overlay {
             z-index: 2000;
@@ -1258,6 +1284,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     Buscar ficha técnica
                     <span class="ficha-hint">en la web del fabricante</span>
                 </a>
+                <button id="modal-producto-compartir" class="modal-producto-compartir">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    Compartir producto
+                </button>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-image"></i>
@@ -1467,6 +1497,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('cargando-inicial').style.display = 'none';
             $('contenedor-resultados').style.display = '';
             iniciarComprobacionActualizaciones();
+            abrirProductoDesdeURL();
         })
         .catch(err => {
             console.error(err);
@@ -2293,8 +2324,79 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // es donde están publicadas las fichas técnicas y de seguridad.
         configurarBotonFichaTecnica(p);
 
+        // Botón compartir: genera un enlace que abre el buscador directamente
+        // en el detalle de este producto.
+        configurarBotonCompartir(p);
+
         $('modal-producto-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+    }
+
+    // Construye la URL para compartir un producto: la página actual + el
+    // parámetro ?ref=<referencia>. Al abrir ese enlace, el buscador detecta el
+    // parámetro y abre automáticamente el detalle del producto (ver
+    // abrirProductoDesdeURL).
+    function urlCompartirProducto(p) {
+        const base = window.location.origin + window.location.pathname;
+        return `${base}?ref=${encodeURIComponent(p.ref)}`;
+    }
+
+    function configurarBotonCompartir(p) {
+        const boton = $('modal-producto-compartir');
+        boton.classList.remove('copiado');
+        boton.innerHTML = '<i class="fa-solid fa-share-nodes"></i> Compartir producto';
+        boton.onclick = () => compartirProducto(p);
+    }
+
+    async function compartirProducto(p) {
+        const url = urlCompartirProducto(p);
+        const boton = $('modal-producto-compartir');
+
+        // En móviles con soporte, usar el diálogo nativo de compartir
+        // (WhatsApp, correo, etc.). Si no, copiar el enlace al portapapeles.
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: p.nombre,
+                    text: `${p.nombre} — Orencio Matas y Hnos`,
+                    url: url,
+                });
+                return;
+            } catch (e) {
+                // Si el usuario cancela el diálogo nativo, no hacemos nada más.
+                if (e && e.name === 'AbortError') return;
+                // Ante cualquier otro error, caemos al método de copiar.
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(url);
+            boton.classList.add('copiado');
+            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Enlace copiado!';
+            setTimeout(() => configurarBotonCompartir(p), 2200);
+        } catch (e) {
+            // Último recurso: mostrar el enlace para copiar a mano
+            window.prompt('Copia este enlace para compartir el producto:', url);
+        }
+    }
+
+    // Si la URL incluye ?ref=<referencia>, abre directamente el detalle de ese
+    // producto al cargar la página (enlaces "compartir producto"). Limpia el
+    // parámetro de la barra de direcciones para que al recargar o navegar no
+    // se vuelva a abrir el modal.
+    function abrirProductoDesdeURL() {
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get('ref');
+        if (!ref) return;
+
+        const producto = TODOS.find(p => String(p.ref) === String(ref));
+        if (producto) {
+            abrirModalProducto(producto);
+        }
+
+        // Quitar ?ref= de la URL sin recargar (deja la URL limpia)
+        const limpia = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', limpia);
     }
 
     // Enlace de búsqueda de la ficha técnica del producto de pinturas.
