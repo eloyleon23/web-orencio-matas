@@ -776,6 +776,32 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: #fcd34d;
         }
 
+        /* Botón de ficha técnica (área pinturas) */
+        .modal-producto-ficha {
+            margin-top: 12px;
+            padding: 11px 16px;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: filter 0.15s;
+        }
+        .modal-producto-ficha:hover { filter: brightness(1.08); }
+        .modal-producto-ficha:active { filter: brightness(0.95); }
+        .modal-producto-ficha .ficha-hint {
+            font-size: 0.72rem;
+            font-weight: 400;
+            opacity: 0.85;
+        }
+
         /* Modal para actualizar imagen */
         #modal-actualizar-imagen-overlay {
             z-index: 2000;
@@ -1227,6 +1253,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-circle-info"></i>
                     Los precios pueden variar y este producto está sujeto a disponibilidad, así como la imagen puede no coincidir exactamente con el producto real.
                 </p>
+                <a id="modal-producto-ficha-tecnica" class="modal-producto-ficha" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Buscar ficha técnica
+                    <span class="ficha-hint">en la web del fabricante</span>
+                </a>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-image"></i>
@@ -2257,8 +2288,61 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('modal-producto-buscar-imagen').style.display = 'none';
         }
 
+        // Botón de ficha técnica: solo para productos de pinturas. Enlaza a la
+        // búsqueda del producto en la web del fabricante correspondiente, que
+        // es donde están publicadas las fichas técnicas y de seguridad.
+        configurarBotonFichaTecnica(p);
+
         $('modal-producto-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+    }
+
+    // Enlace de búsqueda de la ficha técnica del producto. Para productos
+    // Titán/Akzonobel dirige a la web oficial de Titanlux (donde cada ficha
+    // de producto enlaza su ficha técnica y de seguridad en PDF); para el
+    // resto, una búsqueda web orientada a la ficha técnica. Se usa una
+    // búsqueda de Google acotada al dominio oficial en lugar de construir la
+    // URL interna del buscador del fabricante, para no depender de un formato
+    // de URL que podría cambiar y dejar el botón roto.
+    function configurarBotonFichaTecnica(p) {
+        const boton = $('modal-producto-ficha-tecnica');
+        if (p.area !== 'pinturas') {
+            boton.style.display = 'none';
+            return;
+        }
+
+        const familia = quitarAcentosMay(p.familia);
+        const terminos = limpiarNombreParaFicha(p.nombre);
+
+        let url, etiqueta;
+        if (familia.includes('TITAN') || familia.includes('AKZONOBEL')) {
+            // Búsqueda en la web oficial de Titán (lleva a la ficha del
+            // producto, que contiene el enlace a su ficha técnica en PDF)
+            url = `https://www.google.com/search?q=${encodeURIComponent('site:titanlux.es ' + terminos)}`;
+            etiqueta = 'en Titanlux (web oficial)';
+        } else {
+            url = `https://www.google.com/search?q=${encodeURIComponent(terminos + ' ficha técnica pdf')}`;
+            etiqueta = 'en la web';
+        }
+
+        boton.href = url;
+        boton.querySelector('.ficha-hint').textContent = etiqueta;
+        boton.style.display = 'flex';
+    }
+
+    // Limpia el nombre para usarlo como término de búsqueda de ficha técnica:
+    // quita códigos de color entre paréntesis, referencias numéricas sueltas
+    // y el formato/volumen (que no ayuda a encontrar la ficha del producto).
+    function limpiarNombreParaFicha(nombre) {
+        let n = (nombre || '')
+            .replace(/\([^)]*\)/g, ' ')            // (859), (1005)...
+            .replace(/\bREF\.?\s*\S+/gi, ' ')       // REF.076
+            .replace(/\d+(?:[.,]\d+)?\s*(ML|L|KG|GR|G)\b/gi, ' ') // 750 ML, 4 L
+            .replace(/\bRF\.?\s*\S+/gi, ' ')
+            .replace(/[.\-]+\s*$/,'')                // punto o guion final suelto
+            .replace(/\s+/g, ' ')
+            .trim();
+        return n;
     }
 
     // ── Cerrar modal de producto ──
