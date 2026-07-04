@@ -1725,8 +1725,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             await html5QrCode.start(
                 { facingMode: 'environment' },
                 {
-                    fps: 10,
-                    qrbox: { width: 260, height: 130 },
+                    fps: 15,
+                    qrbox: { width: 280, height: 140 },
+                    // Solo usamos la cámara trasera: nos ahorramos el chequeo
+                    // de imagen volteada en cada frame (útil para cámara
+                    // frontal/selfie, no para esto) y ganamos velocidad.
+                    disableFlip: true,
+                    // Resolución más alta: los códigos de barras 1D necesitan
+                    // más detalle que un QR para decodificarse rápido. Va
+                    // dentro de videoConstraints (no en el primer argumento).
+                    videoConstraints: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                    },
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.EAN_13,
                         Html5QrcodeSupportedFormats.EAN_8,
@@ -1735,6 +1747,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                         Html5QrcodeSupportedFormats.CODE_128,
                         Html5QrcodeSupportedFormats.CODE_39,
                     ],
+                    // Usa la API nativa BarcodeDetector del sistema cuando el
+                    // navegador la soporta (Chrome/Android) — es hardware-
+                    // acelerada y notablemente más rápida que el decodificador
+                    // JS de reserva (ZXing). iOS Safari todavía no la soporta
+                    // (2026), así que ahí se sigue usando el decodificador JS,
+                    // aunque también se beneficia de la mayor resolución/fps.
+                    useBarCodeDetectorIfSupported: true,
+                    experimentalFeatures: { useBarCodeDetectorIfSupported: true },
                 },
                 (decodedText) => {
                     if (escanerActivo) codigoDetectado(decodedText);
