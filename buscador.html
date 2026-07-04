@@ -1096,6 +1096,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="familias-lista" id="f-subfamilias"></div>
         </div>
 
+        <div class="filtro-grupo collapsable" id="grupo-acabado" style="display: none;">
+            <label class="titulo">Acabado</label>
+            <div class="familias-lista" id="f-acabado"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-formato" style="display: none;">
+            <label class="titulo">Formato / Envase</label>
+            <div class="familias-lista" id="f-formato"></div>
+        </div>
+
         <div class="filtro-grupo">
             <label class="titulo">Rango de precio (€ con IVA)</label>
             <div class="rango-precio">
@@ -1551,6 +1561,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         document.querySelectorAll('#f-subfamilias input').forEach(input => {
             if (subfamiliasPrevias.includes(input.value)) input.checked = true;
         });
+        renderAtributosPintura();
 
         resetPaginacion();
         aplicarFiltros();
@@ -1580,7 +1591,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         // Listeners
         $('f-texto').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
-        $('f-area').addEventListener('change', () => { renderFamilias(); resetPaginacion(); aplicarFiltros(); });
+        $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
@@ -1777,12 +1788,140 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
+    // Puebla los filtros de acabado y formato (área pinturas). Solo se
+    // muestran si el área seleccionada es "pinturas" y hay productos con esos
+    // atributos detectables en el nombre. Conserva selecciones previas.
+    function renderAtributosPintura() {
+        const esPinturas = $('f-area').value === 'pinturas';
+        const grupoAcabado = $('grupo-acabado');
+        const grupoFormato = $('grupo-formato');
+
+        if (!esPinturas) {
+            grupoAcabado.style.display = 'none';
+            grupoFormato.style.display = 'none';
+            $('f-acabado').innerHTML = '';
+            $('f-formato').innerHTML = '';
+            return;
+        }
+
+        const acabadosPrevios = acabadosSeleccionados();
+        const formatosPrevios = formatosSeleccionados();
+
+        const productosPinturas = TODOS.filter(p => p.area === 'pinturas');
+
+        // ── Acabados presentes ──
+        const acabadosSet = new Set();
+        productosPinturas.forEach(p => acabadoDeProducto(p).forEach(a => acabadosSet.add(a)));
+        // Mantener el orden lógico definido en ACABADOS_PINTURA
+        const acabados = ACABADOS_PINTURA.map(a => a.etiqueta).filter(e => acabadosSet.has(e));
+
+        const contA = $('f-acabado');
+        contA.innerHTML = '';
+        if (acabados.length) {
+            grupoAcabado.style.display = 'block';
+            acabados.forEach(ac => {
+                const label = document.createElement('label');
+                label.className = 'familia-item';
+                const checked = acabadosPrevios.includes(ac) ? 'checked' : '';
+                label.innerHTML = `<input type="checkbox" value="${ac}" ${checked}> ${ac}`;
+                label.querySelector('input').addEventListener('change', () => {
+                    resetPaginacion();
+                    aplicarFiltros();
+                });
+                contA.appendChild(label);
+            });
+        } else {
+            grupoAcabado.style.display = 'none';
+        }
+
+        // ── Formatos presentes (ordenados por volumen ascendente) ──
+        const formatosSet = new Set();
+        productosPinturas.forEach(p => {
+            const f = formatoDeProducto(p);
+            if (f) formatosSet.add(f);
+        });
+        const formatos = Array.from(formatosSet).sort((a, b) => valorFormatoEnMl(a) - valorFormatoEnMl(b));
+
+        const contF = $('f-formato');
+        contF.innerHTML = '';
+        if (formatos.length) {
+            grupoFormato.style.display = 'block';
+            formatos.forEach(fmt => {
+                const label = document.createElement('label');
+                label.className = 'familia-item';
+                const checked = formatosPrevios.includes(fmt) ? 'checked' : '';
+                label.innerHTML = `<input type="checkbox" value="${fmt}" ${checked}> ${fmt}`;
+                label.querySelector('input').addEventListener('change', () => {
+                    resetPaginacion();
+                    aplicarFiltros();
+                });
+                contF.appendChild(label);
+            });
+        } else {
+            grupoFormato.style.display = 'none';
+        }
+    }
+
+    // Convierte "750 ml" / "4 L" / "5 kg" a un número comparable (en ml o gr)
+    // solo para ordenar los formatos de menor a mayor.
+    function valorFormatoEnMl(fmt) {
+        const m = fmt.match(/([\d.]+)\s*(ml|L|kg|gr|g)/i);
+        if (!m) return 0;
+        const v = parseFloat(m[1]);
+        const u = m[2].toLowerCase();
+        if (u === 'l') return v * 1000;
+        if (u === 'kg') return v * 1000;
+        return v; // ml, gr, g
+    }
+
     function familiasSeleccionadas() {
         return [...document.querySelectorAll('#f-familias input:checked')].map(i => i.value);
     }
 
     function subfamiliasSeleccionadas() {
         return [...document.querySelectorAll('#f-subfamilias input:checked')].map(i => i.value);
+    }
+
+    // ── Atributos derivados del nombre del producto (área pinturas) ──
+    // No existen como campos en productos.json, se deducen del texto del
+    // nombre. Por eso solo se ofrecen como filtro cuando de verdad hay
+    // productos cuyo nombre los contiene (ver renderAtributosPintura).
+    function quitarAcentosMay(t) {
+        return (t || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    }
+
+    const ACABADOS_PINTURA = [
+        { etiqueta: 'Mate', re: /\bMATE\b/ },
+        { etiqueta: 'Satinado', re: /\bSATINADO\b/ },
+        { etiqueta: 'Brillante', re: /\bBRILLANTE\b|\bBRILLO\b/ },
+        { etiqueta: 'Metalizado', re: /\bMETALIZADO\b/ },
+        { etiqueta: 'Seda', re: /\bSEDA\b|\bSEDOSO\b/ },
+    ];
+
+    function acabadoDeProducto(p) {
+        const n = quitarAcentosMay(p.nombre);
+        const encontrados = [];
+        for (const a of ACABADOS_PINTURA) {
+            if (a.re.test(n)) encontrados.push(a.etiqueta);
+        }
+        return encontrados; // un producto puede no tener ninguno
+    }
+
+    function formatoDeProducto(p) {
+        // Normaliza el volumen/peso a una etiqueta legible ("750 ml", "4 L")
+        const n = quitarAcentosMay(p.nombre);
+        const m = n.match(/(\d+(?:[.,]\d+)?)\s*(ML|L|KG|GR|G)\b/);
+        if (!m) return null;
+        const valor = m[1].replace(',', '.');
+        const unidad = m[2] === 'L' ? 'L' : m[2].toLowerCase();
+        return `${valor} ${unidad}`;
+    }
+
+    function acabadosSeleccionados() {
+        return [...document.querySelectorAll('#f-acabado input:checked')].map(i => i.value);
+    }
+    function formatosSeleccionados() {
+        return [...document.querySelectorAll('#f-formato input:checked')].map(i => i.value);
     }
 
     function resetPaginacion() { familiasMostradas = 0; }
@@ -1797,6 +1936,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-imagenes-sin-validar').checked = false;
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
+        renderAtributosPintura(); // Limpiar acabado/formato
         resetPaginacion();
         aplicarFiltros();
     }
@@ -1813,17 +1953,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const soloOferta = $('f-oferta').checked;
         const soloImagenesValidadas = $('f-imagenes-validadas').checked;
         const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
-
-        console.log('Filtros de imágenes activos:', { soloImagenesValidadas, soloImagenesSinValidar });
-
-        // Verificar si los productos tienen los campos de validación
-        if (TODOS.length > 0) {
-            const primerProducto = TODOS[0];
-            console.log('Primer producto tiene campos:', {
-                imagen_validada: primerProducto.imagen_validada,
-                fecha_actualizacion_imagen: primerProducto.fecha_actualizacion_imagen
-            });
-        }
+        const acabadosSel = acabadosSeleccionados();
+        const formatosSel = formatosSeleccionados();
 
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
@@ -1832,6 +1963,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (soloOferta && !p.oferta) return false;
             if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
             if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
+
+            // Filtros de pinturas derivados del nombre (acabado / formato)
+            if (acabadosSel.length) {
+                const acabadosProd = acabadoDeProducto(p);
+                if (!acabadosSel.some(a => acabadosProd.includes(a))) return false;
+            }
+            if (formatosSel.length) {
+                const fmt = formatoDeProducto(p);
+                if (!fmt || !formatosSel.includes(fmt)) return false;
+            }
 
             if (texto) {
                 if (esBusquedaNumerica(texto)) {
