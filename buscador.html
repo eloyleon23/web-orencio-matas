@@ -2297,13 +2297,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-subir-arriba').classList.add('oculto-por-modal');
     }
 
-    // Enlace de búsqueda de la ficha técnica del producto. Para productos
-    // Titán/Akzonobel dirige a la web oficial de Titanlux (donde cada ficha
-    // de producto enlaza su ficha técnica y de seguridad en PDF); para el
-    // resto, una búsqueda web orientada a la ficha técnica. Se usa una
-    // búsqueda de Google acotada al dominio oficial en lugar de construir la
-    // URL interna del buscador del fabricante, para no depender de un formato
-    // de URL que podría cambiar y dejar el botón roto.
+    // Enlace de búsqueda de la ficha técnica del producto de pinturas.
+    // Se usa una búsqueda de Google normal con los términos del producto más
+    // "ficha técnica": Google localiza la web oficial correcta (Titán tiene
+    // varias — titanlux.es para decoración, titanpro.es para profesional,
+    // etc.), en lugar de forzar un site: a un dominio que a menudo no es el
+    // que aloja ese producto concreto y devuelve cero resultados.
     function configurarBotonFichaTecnica(p) {
         const boton = $('modal-producto-ficha-tecnica');
         if (p.area !== 'pinturas') {
@@ -2313,20 +2312,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         const familia = quitarAcentosMay(p.familia);
         const terminos = limpiarNombreParaFicha(p.nombre);
+        const esTitan = familia.includes('TITAN') || familia.includes('AKZONOBEL');
 
-        let url, etiqueta;
-        if (familia.includes('TITAN') || familia.includes('AKZONOBEL')) {
-            // Búsqueda en la web oficial de Titán (lleva a la ficha del
-            // producto, que contiene el enlace a su ficha técnica en PDF)
-            url = `https://www.google.com/search?q=${encodeURIComponent('site:titanlux.es ' + terminos)}`;
-            etiqueta = 'en Titanlux (web oficial)';
-        } else {
-            url = `https://www.google.com/search?q=${encodeURIComponent(terminos + ' ficha técnica pdf')}`;
-            etiqueta = 'en la web';
-        }
+        // Para Titán/Akzonobel anteponemos "Titan" a los términos para que
+        // Google priorice las webs oficiales del fabricante; el resto va con
+        // los términos tal cual. En ambos casos añadimos "ficha técnica".
+        const consulta = (esTitan ? 'Titan ' : '') + terminos + ' ficha técnica';
+        const url = `https://www.google.com/search?q=${encodeURIComponent(consulta)}`;
 
         boton.href = url;
-        boton.querySelector('.ficha-hint').textContent = etiqueta;
+        boton.querySelector('.ficha-hint').textContent = esTitan
+            ? 'ficha técnica del fabricante'
+            : 'buscar ficha técnica';
         boton.style.display = 'flex';
     }
 
@@ -2337,9 +2334,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         let n = (nombre || '')
             .replace(/\([^)]*\)/g, ' ')            // (859), (1005)...
             .replace(/\bREF\.?\s*\S+/gi, ' ')       // REF.076
+            .replace(/\bRF\.?\s*\S+/gi, ' ')        // RF.358
             .replace(/\d+(?:[.,]\d+)?\s*(ML|L|KG|GR|G)\b/gi, ' ') // 750 ML, 4 L
-            .replace(/\bRF\.?\s*\S+/gi, ' ')
-            .replace(/[.\-]+\s*$/,'')                // punto o guion final suelto
+            .replace(/\./g, ' ')                    // cualquier punto (p.ej. ".BLANCO", "ML.")
             .replace(/\s+/g, ' ')
             .trim();
         return n;
