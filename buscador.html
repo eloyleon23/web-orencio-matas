@@ -232,6 +232,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .btn-escanear-codigo:active { background: #0f172a; }
 
+        #espaciador-buscador-movil { display: none; }
+
         @media (max-width: 768px) {
             .filtro-grupo.collapsable .familias-lista {
                 max-height: 120px;
@@ -276,26 +278,32 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             }
             #grupo-buscador-principal {
                 margin-bottom: 0;
-                /* Pegado a la cabecera principal del sitio (navbar), para
-                   que nunca "desaparezca" pase lo que pase con el bloque
-                   de título "Buscador de Productos" o con el scroll. El
+                /* Fijo de verdad (no sticky) justo debajo de la cabecera
+                   principal del sitio (navbar) — así queda garantizado que
+                   se ve siempre, sin depender de contenedores con scroll
+                   propio ni de recalculos de "sticky" en el navegador. El
                    valor de "top" se calcula por JS según la altura real
-                   del navbar (ver ajustarPosicionBuscadorSticky). */
-                position: sticky;
+                   del navbar (ver ajustarPosicionBuscadorFijo). Al salir
+                   del flujo normal, el hueco lo cubre #espaciador-buscador-movil. */
+                position: fixed;
+                left: 0;
+                right: 0;
                 top: 0;
                 z-index: 90;
                 background: #fff;
-                padding: 8px 0;
+                padding: 8px 20px;
+                box-shadow: 0 2px 10px rgba(0,0,0,.06);
                 transition: transform 0.25s ease;
             }
             /* Se oculta deslizándose hacia arriba al bajar en el scroll;
                reaparece en cuanto se sube, sin importar en qué punto de la
-               página se esté (ver ajustarVisibilidadBuscadorPorScroll). */
+               página se esté (ver actualizarVisibilidadBotonSubir). */
             #grupo-buscador-principal.oculto-por-scroll {
                 transform: translateY(-120%);
             }
             #grupo-buscador-principal label.titulo { display: none; }
 
+            #espaciador-buscador-movil { display: block; }
             /* Fila compacta: botón filtros (izquierda) + buscador + escáner */
             .fila-buscador-movil { align-items: center; }
             .icono-buscador-movil {
@@ -1365,6 +1373,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </button>
             </div>
         </div>
+        <!-- Con la barra en position:fixed, este espaciador ocupa el hueco
+             que dejaría al salir del flujo normal, para que el contenido
+             de abajo no quede tapado. Altura fijada por JS (ver
+             ajustarPosicionBuscadorFijo). Solo existe/actua en móvil. -->
+        <div id="espaciador-buscador-movil"></div>
 
         <div id="filtros-extra">
         <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
@@ -3229,23 +3242,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         setTimeout(ocultarCabeceraBuscador, 150);
     });
 
-    // El buscador queda "pegado" (sticky) justo debajo de la cabecera
-    // principal del sitio en móvil. Calculamos la altura real del navbar
-    // por JS (en vez de fijar un valor a mano en el CSS) porque cambia
-    // según el ancho de pantalla — así no se desincroniza si el navbar
-    // cambia de tamaño en el futuro.
-    function ajustarPosicionBuscadorSticky() {
+    // El buscador queda FIJO (position:fixed) justo debajo de la cabecera
+    // principal del sitio en móvil — no "sticky", para evitar los
+    // comportamientos inconsistentes que ese modo puede tener en algunos
+    // navegadores móviles combinado con transform. Calculamos la altura
+    // real del navbar por JS (en vez de fijar un valor a mano en el CSS)
+    // porque cambia según el ancho de pantalla. Como al ser "fixed" sale
+    // del flujo normal, también fijamos la altura del espaciador que
+    // ocupa su hueco, para que el contenido de abajo no quede tapado.
+    function ajustarPosicionBuscadorFijo() {
         const grupoBuscador = $('grupo-buscador-principal');
+        const espaciador = $('espaciador-buscador-movil');
         const navbar = document.querySelector('.navbar-wrapper');
         if (!grupoBuscador || !navbar) return;
         if (window.innerWidth > 768) {
             grupoBuscador.style.top = ''; // en escritorio no aplica
+            if (espaciador) espaciador.style.height = '';
             return;
         }
-        grupoBuscador.style.top = navbar.getBoundingClientRect().height + 'px';
+        const alturaNavbar = navbar.getBoundingClientRect().height;
+        grupoBuscador.style.top = alturaNavbar + 'px';
+        if (espaciador) espaciador.style.height = grupoBuscador.getBoundingClientRect().height + 'px';
     }
-    window.addEventListener('resize', debounce(ajustarPosicionBuscadorSticky, 200));
-    ajustarPosicionBuscadorSticky();
+    window.addEventListener('resize', debounce(ajustarPosicionBuscadorFijo, 200));
+    ajustarPosicionBuscadorFijo();
 
     let ultimoScrollY = window.scrollY;
     function actualizarVisibilidadBotonSubir() {
