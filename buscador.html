@@ -2370,11 +2370,108 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
+    // Aplica el resultado de una decodificación exitosa (usado tanto por
+    // ZBar-WASM como por el respaldo de ZXing/html5-qrcode).
+    function aplicarResultadoEscaneoFoto(texto) {
+        $('f-texto').value = texto;
+        actualizarIconosBuscador();
+        ocultarSugerencias();
+        resetPaginacion();
+        aplicarFiltros();
+        mostrarToast('Código encontrado: ' + texto, 'success');
+    }
+
+    // Carga el módulo de ZBar-WASM (motor C/ZBar real compilado a
+    // WebAssembly, cargado por CDN — no requiere ninguna herramienta de
+    // compilación). Se carga una sola vez y se reutiliza.
+    let zbarWasmModulo = null;
+    function cargarZbarWasm() {
+        if (!zbarWasmModulo) {
+            zbarWasmModulo = import('https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.11.0/dist/index.js');
+        }
+        return zbarWasmModulo;
+    }
+
+    // Carga un archivo de imagen en un canvas (con redimensionado y
+    // binarización opcionales) y devuelve el ImageData resultante, listo
+    // para pasar a zbarWasm.scanImageData().
+    function cargarImageData(archivo, maxLado, binarizar, umbral = 120) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            const url = URL.createObjectURL(archivo);
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                const { width, height } = img;
+                const escala = Math.min(1, maxLado / Math.max(width, height));
+                const w = Math.round(width * escala);
+                const h = Math.round(height * escala);
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                const imageData = ctx.getImageData(0, 0, w, h);
+                if (binarizar) {
+                    const datos = imageData.data;
+                    for (let i = 0; i < datos.length; i += 4) {
+                        const gris = 0.299 * datos[i] + 0.587 * datos[i + 1] + 0.114 * datos[i + 2];
+                        const valor = gris < umbral ? 0 : 255;
+                        datos[i] = datos[i + 1] = datos[i + 2] = valor;
+                    }
+                }
+                resolve(imageData);
+            };
+            img.onerror = () => resolve(null);
+            img.src = url;
+        });
+    }
+
+    // Intenta decodificar con ZBar-WASM — el mismo motor que verificamos
+    // (con una librería equivalente en Python) que SÍ decodifica códigos
+    // de barras con poco contraste (tinta de color no negro, como en la
+    // foto de prueba real). Se prueban varias variantes de la imagen.
+    async function intentarConZbarWasm(archivo) {
+        const zbarWasm = await cargarZbarWasm();
+        const variantes = [
+            { maxLado: 1200, binarizar: true },
+            { maxLado: 1800, binarizar: true },
+            { maxLado: 1200, binarizar: false },
+            { maxLado: 1800, binarizar: false },
+        ];
+        for (const v of variantes) {
+            const imageData = await cargarImageData(archivo, v.maxLado, v.binarizar);
+            if (!imageData) continue;
+            console.log(`[buscar-por-imagen] ZBar-WASM probando ${v.maxLado}px, binarizado=${v.binarizar}...`);
+            const simbolos = await zbarWasm.scanImageData(imageData);
+            if (simbolos && simbolos.length > 0) {
+                return simbolos[0].decode();
+            }
+        }
+        return null;
+    }
+
     async function buscarPorImagenSeleccionada(e) {
         const archivo = e.target.files && e.target.files[0];
         e.target.value = ''; // permite volver a elegir la misma imagen después
         if (!archivo) return;
 
+        console.log('[buscar-por-imagen] archivo:', archivo.name, archivo.type, (archivo.size / 1024).toFixed(0) + ' KB');
+
+        // Intento principal: ZBar-WASM. Si falla la carga del módulo (sin
+        // conexión al CDN, navegador muy antiguo...) o no encuentra nada,
+        // caemos al respaldo de ZXing/html5-qrcode sin interrumpir al usuario.
+        try {
+            const texto = await intentarConZbarWasm(archivo);
+            if (texto) {
+                aplicarResultadoEscaneoFoto(texto);
+                return;
+            }
+            console.log('[buscar-por-imagen] ZBar-WASM no encontró nada, probando respaldo (ZXing)...');
+        } catch (err) {
+            console.log('[buscar-por-imagen] ZBar-WASM no disponible:', err && err.message);
+        }
+
+        // ── Respaldo: ZXing vía html5-qrcode ──
         if (!html5QrCodeArchivo) {
             html5QrCodeArchivo = new Html5Qrcode('scanner-archivo-wrap', {
                 formatsToSupport: [
@@ -2388,14 +2485,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ],
             });
         }
-        console.log('[buscar-por-imagen] archivo original:', archivo.name, archivo.type, (archivo.size / 1024).toFixed(0) + ' KB');
 
-        // Varios intentos en cascada, de más a menos probable según lo que
-        // hemos visto con fotos reales: primero versiones en blanco/negro
-        // puro (para códigos impresos en un color oscuro no-negro, como
-        // verde o azul, que pierden contraste con una conversión a gris
-        // normal), y solo si esas fallan, versiones sin binarizar a varios
-        // tamaños.
         const intentos = [
             { fn: () => redimensionarYBinarizar(archivo, 1200), etiqueta: 'binarizado 1200px' },
             { fn: () => redimensionarYBinarizar(archivo, 1800), etiqueta: 'binarizado 1800px' },
@@ -2408,14 +2498,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         for (const intento of intentos) {
             try {
                 const version = await intento.fn();
-                console.log(`[buscar-por-imagen] probando: ${intento.etiqueta}...`);
+                console.log(`[buscar-por-imagen] ZXing probando: ${intento.etiqueta}...`);
                 const decodedText = await html5QrCodeArchivo.scanFile(version, true);
-                $('f-texto').value = decodedText;
-                actualizarIconosBuscador();
-                ocultarSugerencias();
-                resetPaginacion();
-                aplicarFiltros();
-                mostrarToast('Código encontrado: ' + decodedText, 'success');
+                aplicarResultadoEscaneoFoto(decodedText);
                 return; // éxito, no probar más
             } catch (err) {
                 ultimoError = err;
@@ -2423,7 +2508,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
 
-        // Si llegamos aquí, ningún tamaño ha funcionado
+        // Si llegamos aquí, nada ha funcionado (ni ZBar-WASM ni ZXing)
         console.error('[buscar-por-imagen] error completo (todos los intentos):', ultimoError);
         const detalle = (ultimoError && ultimoError.message) ? ultimoError.message : String(ultimoError);
         mostrarToast('No se ha podido leer el código: ' + detalle, 'error');
