@@ -237,6 +237,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 max-height: 120px;
             }
 
+            /* Ocultar directamente el bloque de título "Buscador de
+               Productos" en móvil — así el buscador queda pegado a la
+               cabecera principal del sitio desde el principio, sin
+               animaciones de mostrar/ocultar (eso se queda solo para
+               escritorio, donde sí hay sitio de sobra). */
+            .buscador-header { display: none; }
+
             /* Subir todo el contenido y ahorrar el hueco superior */
             .layout { padding-top: 10px; }
 
