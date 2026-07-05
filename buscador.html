@@ -2684,9 +2684,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     const enNombreFuzzy = coincide(p.nombre, texto);
                     if (!enRefExacta && !enNombreFuzzy) return false;
                 } else {
-                    const enNombre = coincide(p.nombre, texto);
-                    const enRef    = coincide(p.ref, texto);
-                    if (!enNombre && !enRef) return false;
+                    const enNombre     = coincide(p.nombre, texto);
+                    const enRef        = coincide(p.ref, texto);
+                    // También se comprueban familia y subfamilia: son
+                    // categorías reales del catálogo (curadas a mano), y
+                    // las sugerencias de búsqueda las usan como candidatas
+                    // — si no se buscaran aquí también, seleccionar una
+                    // sugerencia de categoría no encontraría nada.
+                    const enFamilia    = coincide(p.familia, texto);
+                    const enSubfamilia = coincide(p.subfamilia, texto);
+                    if (!enNombre && !enRef && !enFamilia && !enSubfamilia) return false;
                 }
             }
 
