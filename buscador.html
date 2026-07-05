@@ -286,6 +286,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 z-index: 90;
                 background: #fff;
                 padding: 8px 0;
+                transition: transform 0.25s ease;
+            }
+            /* Se oculta deslizándose hacia arriba al bajar en el scroll;
+               reaparece en cuanto se sube, sin importar en qué punto de la
+               página se esté (ver ajustarVisibilidadBuscadorPorScroll). */
+            #grupo-buscador-principal.oculto-por-scroll {
+                transform: translateY(-120%);
             }
             #grupo-buscador-principal label.titulo { display: none; }
 
@@ -3240,10 +3247,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     window.addEventListener('resize', debounce(ajustarPosicionBuscadorSticky, 200));
     ajustarPosicionBuscadorSticky();
 
+    let ultimoScrollY = window.scrollY;
     function actualizarVisibilidadBotonSubir() {
-        const visible = window.scrollY > 400;
+        const scrollActual = window.scrollY;
+        const visible = scrollActual > 400;
         btnSubirArriba.classList.toggle('visible', visible);
-        if (window.scrollY <= 0) mostrarCabeceraBuscador();
+        if (scrollActual <= 0) mostrarCabeceraBuscador();
+
+        // Ocultar la barra de búsqueda al bajar, mostrarla al subir —
+        // independientemente de en qué punto de la página se esté. Solo en
+        // móvil (en escritorio la barra vive en el sidebar, no aplica).
+        if (window.innerWidth <= 768) {
+            const grupoBuscador = $('grupo-buscador-principal');
+            const bajando = scrollActual > ultimoScrollY;
+            // Pequeño margen (10px) para no reaccionar a micro-scrolls
+            if (Math.abs(scrollActual - ultimoScrollY) > 10) {
+                grupoBuscador.classList.toggle('oculto-por-scroll', bajando && scrollActual > 40);
+                ultimoScrollY = scrollActual;
+            }
+        }
+
         scrollTicking = false;
     }
     window.addEventListener('scroll', () => {
