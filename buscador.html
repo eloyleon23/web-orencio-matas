@@ -405,6 +405,26 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .btn-limpiar-texto:hover { color: var(--dark); }
         .btn-limpiar-texto.visible { display: block; }
 
+        /* Botón de cámara: "buscar a partir de una foto" (estilo Amazon).
+           Ocupa el mismo sitio que la X — nunca se ven los dos a la vez:
+           cámara cuando el campo está vacío, X cuando hay texto escrito. */
+        .btn-buscar-por-imagen {
+            display: none;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.05rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        .btn-buscar-por-imagen:hover { color: var(--dark); }
+        .btn-buscar-por-imagen.visible { display: block; }
+
 
         .btn-escanear-codigo.disponible { display: flex; }
 
@@ -1389,6 +1409,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <button type="button" id="btn-limpiar-texto" class="btn-limpiar-texto" aria-label="Borrar búsqueda y limpiar filtros">
                         <i class="fa-solid fa-circle-xmark"></i>
                     </button>
+                    <button type="button" id="btn-buscar-por-imagen" class="btn-buscar-por-imagen visible" aria-label="Buscar a partir de una foto del código de barras">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                    <input type="file" id="input-imagen-busqueda" accept="image/*" capture="environment" style="display:none;">
                 </div>
                 <button type="button" id="btn-escanear" class="btn-escanear-codigo" aria-label="Escanear código de barras">
                     <i class="fa-solid fa-barcode"></i>
@@ -1535,6 +1559,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <div class="scanner-estado" id="scanner-estado">Enfoca el código de barras del producto</div>
 </div>
+
+<!-- Contenedor requerido por la librería para el escaneo de imágenes de
+     archivo (no de vídeo en vivo) — instancia separada del escáner en
+     vivo, nunca visible, solo decodifica la imagen que se le pasa. -->
+<div id="scanner-archivo-wrap" style="display:none;"></div>
 
 <!-- Modal detalle de producto -->
 <div class="modal-overlay" id="modal-producto-overlay">
@@ -1958,15 +1987,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             resetPaginacion();
             aplicarFiltros();
         }, 300));
-        // Mostrar/ocultar la "X" al instante (sin debounce, es solo un
-        // reflejo visual de si hay texto, no dispara ningún filtrado)
-        $('f-texto').addEventListener('input', () => {
-            $('btn-limpiar-texto').classList.toggle('visible', $('f-texto').value.length > 0);
-        });
+        // Alternar entre la "X" (hay texto) y el icono de cámara (campo
+        // vacío) — nunca se muestran los dos a la vez.
+        $('f-texto').addEventListener('input', actualizarIconosBuscador);
         $('btn-limpiar-texto').addEventListener('click', () => {
             limpiarFiltros();
             $('f-texto').focus();
         });
+        $('btn-buscar-por-imagen').addEventListener('click', () => {
+            $('input-imagen-busqueda').click();
+        });
+        $('input-imagen-busqueda').addEventListener('change', buscarPorImagenSeleccionada);
         $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
@@ -2097,10 +2128,44 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         escanerActivo = false;
         $('scanner-estado').textContent = '✓ Código detectado: ' + valor;
         $('f-texto').value = valor;
-        $('btn-limpiar-texto').classList.toggle('visible', valor.length > 0);
+        actualizarIconosBuscador();
         resetPaginacion();
         aplicarFiltros();
         setTimeout(cerrarEscaner, 600);
+    }
+
+    // Alterna entre la "X" (borrar) y la cámara (buscar por foto) según si
+    // hay texto escrito — nunca se muestran los dos a la vez.
+    function actualizarIconosBuscador() {
+        const hayTexto = $('f-texto').value.length > 0;
+        $('btn-limpiar-texto').classList.toggle('visible', hayTexto);
+        $('btn-buscar-por-imagen').classList.toggle('visible', !hayTexto);
+    }
+
+    // ── Buscar a partir de una foto (galería o cámara) ──
+    // Instancia de Html5Qrcode dedicada a decodificar imágenes de archivo,
+    // separada de la del escáner en vivo (la librería no permite usar
+    // ambos modos a la vez sobre la misma instancia).
+    let html5QrCodeArchivo = null;
+
+    async function buscarPorImagenSeleccionada(e) {
+        const archivo = e.target.files && e.target.files[0];
+        e.target.value = ''; // permite volver a elegir la misma imagen después
+        if (!archivo) return;
+
+        try {
+            if (!html5QrCodeArchivo) {
+                html5QrCodeArchivo = new Html5Qrcode('scanner-archivo-wrap');
+            }
+            const decodedText = await html5QrCodeArchivo.scanFile(archivo, false);
+            $('f-texto').value = decodedText;
+            actualizarIconosBuscador();
+            resetPaginacion();
+            aplicarFiltros();
+            mostrarToast('Código encontrado: ' + decodedText, 'success');
+        } catch (err) {
+            mostrarToast('No se ha podido leer ningún código de barras en esa imagen', 'error');
+        }
     }
 
     function cerrarEscaner() {
@@ -2346,7 +2411,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function limpiarFiltros() {
         $('f-texto').value = '';
-        $('btn-limpiar-texto').classList.remove('visible');
+        actualizarIconosBuscador();
         limpiarOtrosFiltros();
         resetPaginacion();
         aplicarFiltros();
