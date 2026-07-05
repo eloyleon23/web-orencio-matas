@@ -425,6 +425,41 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .btn-buscar-por-imagen:hover { color: var(--dark); }
         .btn-buscar-por-imagen.visible { display: block; }
 
+        /* Desplegable de sugerencias de búsqueda (estilo Amazon): aparece
+           justo debajo del input, se posiciona en relación al propio
+           contenedor del buscador (.input-buscador-wrap ya es
+           position:relative), por lo que funciona igual tanto si esa barra
+           está en flujo normal (escritorio) como fija (móvil). */
+        .sugerencias-busqueda {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 10px 28px rgba(0,0,0,.14);
+            z-index: 200;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .sugerencias-busqueda.visible { display: block; }
+        .sugerencia-item {
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            color: var(--dark);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .sugerencia-item:last-child { border-bottom: none; }
+        .sugerencia-item:hover { background: var(--light); }
+        .sugerencia-item i { color: var(--muted); font-size: 0.85rem; flex-shrink: 0; }
+        .sugerencia-item strong { font-weight: 700; }
+
 
         .btn-escanear-codigo.disponible { display: flex; }
 
@@ -1413,6 +1448,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <i class="fa-solid fa-camera"></i>
                     </button>
                     <input type="file" id="input-imagen-busqueda" accept="image/*" capture="environment" style="display:none;">
+                    <div id="sugerencias-busqueda" class="sugerencias-busqueda"></div>
                 </div>
                 <button type="button" id="btn-escanear" class="btn-escanear-codigo" aria-label="Escanear código de barras">
                     <i class="fa-solid fa-barcode"></i>
@@ -1720,6 +1756,92 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .trim();
     }
 
+    // ── Sugerencias de búsqueda (autocompletar estilo Amazon) ──
+    // Se construye UNA vez en el navegador, justo tras cargar productos.json
+    // (y de nuevo si el catálogo se actualiza en segundo plano) — sin tocar
+    // el pipeline de generación en Python: con 9.500 productos ya cargados
+    // en memoria para el filtrado normal, extraer términos frecuentes de
+    // sus nombres tarda unos pocos cientos de milisegundos, y así cualquier
+    // ajuste a la lógica se ve en el siguiente despliegue, no en la
+    // siguiente generación del catálogo.
+    let sugerenciasIndice = [];
+
+    const PALABRAS_IGNORADAS_SUGERENCIA = new Set([
+        'ml', 'l', 'kg', 'g', 'gr', 'cm', 'mm', 'uds', 'ud',
+        'de', 'del', 'la', 'el', 'los', 'las', 'y', 'con', 'para', 'sin', 'al', 'en',
+    ]);
+
+    function construirIndiceSugerencias() {
+        const frecuencia = new Map();
+        const sumar = (texto) => {
+            if (!texto) return;
+            frecuencia.set(texto, (frecuencia.get(texto) || 0) + 1);
+        };
+
+        TODOS.forEach(p => {
+            // Familia y subfamilia: ya son categorías curadas a mano, muy
+            // buenas candidatas de sugerencia sin necesidad de más análisis.
+            if (p.familia) sumar(normalizar(p.familia));
+            if (p.subfamilia) sumar(normalizar(p.subfamilia));
+
+            const palabras = normalizar(p.nombre)
+                .split(/[^a-z0-9ñ]+/i)
+                .filter(w => w.length >= 3 && !/^\d+$/.test(w) && !PALABRAS_IGNORADAS_SUGERENCIA.has(w));
+
+            for (let i = 0; i < palabras.length; i++) {
+                sumar(palabras[i]);
+                if (i + 1 < palabras.length) sumar(palabras[i] + ' ' + palabras[i + 1]);
+                if (i + 2 < palabras.length) sumar(palabras[i] + ' ' + palabras[i + 1] + ' ' + palabras[i + 2]);
+            }
+        });
+
+        // Umbral mínimo (aparecer en al menos 3 productos) para descartar
+        // combinaciones puramente casuales que no ayudarían a nadie.
+        sugerenciasIndice = [...frecuencia.entries()]
+            .filter(([, n]) => n >= 3)
+            .sort((a, b) => b[1] - a[1])
+            .map(([texto, n]) => ({ texto, frecuencia: n }));
+    }
+
+    function obtenerSugerencias(textoInput) {
+        const q = normalizar(textoInput.trim());
+        if (!q) return [];
+        return sugerenciasIndice
+            .filter(s => s.texto.startsWith(q) && s.texto !== q)
+            .slice(0, 8);
+    }
+
+    function renderSugerencias(lista, textoInput) {
+        const cont = $('sugerencias-busqueda');
+        if (!lista.length) {
+            cont.classList.remove('visible');
+            cont.innerHTML = '';
+            return;
+        }
+        const q = normalizar(textoInput.trim());
+        cont.innerHTML = lista.map(s => {
+            const resto = s.texto.slice(q.length);
+            return `<div class="sugerencia-item" data-texto="${escapeHtml(s.texto)}">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>${escapeHtml(q)}<strong>${escapeHtml(resto)}</strong></span>
+            </div>`;
+        }).join('');
+        cont.classList.add('visible');
+    }
+
+    function ocultarSugerencias() {
+        $('sugerencias-busqueda').classList.remove('visible');
+    }
+
+    function seleccionarSugerencia(texto) {
+        $('f-texto').value = texto;
+        ocultarSugerencias();
+        actualizarIconosBuscador();
+        if (texto.trim()) limpiarOtrosFiltros();
+        resetPaginacion();
+        aplicarFiltros();
+    }
+
     // ── Distancia de Levenshtein para fuzzy matching ──
     function levenshtein(a, b) {
         const matrix = [];
@@ -1818,6 +1940,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             TODOS = data.productos || [];
             FAMILIAS_ORDEN = data.familias_orden || {};
             SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
+            construirIndiceSugerencias();
             inicializarFiltros();
             aplicarFiltros();
             $('cargando-inicial').style.display = 'none';
@@ -1937,6 +2060,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         TODOS = data.productos || [];
         FAMILIAS_ORDEN = data.familias_orden || {};
         SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
+        construirIndiceSugerencias();
 
         // renderFamilias()/renderSubfamilias() reconstruyen los checkboxes desde
         // cero (sin marcar), así que hay que volver a marcar los que el usuario
@@ -1990,6 +2114,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Alternar entre la "X" (hay texto) y el icono de cámara (campo
         // vacío) — nunca se muestran los dos a la vez.
         $('f-texto').addEventListener('input', actualizarIconosBuscador);
+
+        // Sugerencias de búsqueda: se consultan con un debounce más corto
+        // que el de la búsqueda real (120ms), porque no filtran nada — solo
+        // muestran una lista, así que pueden reaccionar más rápido sin
+        // sobrecargar nada.
+        $('f-texto').addEventListener('input', debounce(() => {
+            const valor = $('f-texto').value;
+            if (valor.trim().length >= 2) {
+                renderSugerencias(obtenerSugerencias(valor), valor);
+            } else {
+                ocultarSugerencias();
+            }
+        }, 120));
+        $('f-texto').addEventListener('focus', () => {
+            const valor = $('f-texto').value;
+            if (valor.trim().length >= 2) renderSugerencias(obtenerSugerencias(valor), valor);
+        });
+        $('f-texto').addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') ocultarSugerencias();
+        });
+        $('sugerencias-busqueda').addEventListener('click', (e) => {
+            const item = e.target.closest('.sugerencia-item');
+            if (item) seleccionarSugerencia(item.dataset.texto);
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#grupo-buscador-principal')) ocultarSugerencias();
+        });
+
         $('btn-limpiar-texto').addEventListener('click', () => {
             limpiarFiltros();
             $('f-texto').focus();
@@ -2129,6 +2281,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('scanner-estado').textContent = '✓ Código detectado: ' + valor;
         $('f-texto').value = valor;
         actualizarIconosBuscador();
+        ocultarSugerencias();
         resetPaginacion();
         aplicarFiltros();
         setTimeout(cerrarEscaner, 600);
@@ -2160,6 +2313,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const decodedText = await html5QrCodeArchivo.scanFile(archivo, false);
             $('f-texto').value = decodedText;
             actualizarIconosBuscador();
+            ocultarSugerencias();
             resetPaginacion();
             aplicarFiltros();
             mostrarToast('Código encontrado: ' + decodedText, 'success');
@@ -2412,6 +2566,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function limpiarFiltros() {
         $('f-texto').value = '';
         actualizarIconosBuscador();
+        ocultarSugerencias();
         limpiarOtrosFiltros();
         resetPaginacion();
         aplicarFiltros();
