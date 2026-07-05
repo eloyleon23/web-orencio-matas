@@ -2610,12 +2610,38 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.style.display = 'inline-flex';
     }
 
+    // Familias del área "pinturas" que NO son pintura en sí (herramientas,
+    // pegamentos, químicos, lijas, disolventes) — nunca tienen carta de
+    // colores, aunque pertenezcan al área.
+    const FAMILIAS_SIN_CARTA_COLORES = [
+        'BROCHAS Y UTILES DE APLICACION',
+        'PEGAMENTOS Y COLA CONTACTO',
+        'PRODUCTOS QUIMICOS',
+        'LIJAS',
+        'AGUARRAS Y DISOLVENTES',
+    ];
+
+    // Dentro de las familias que sí son pintura, unos pocos productos son en
+    // realidad disolventes o decapantes (sin color), coladados en esa
+    // familia — se detectan por palabra en el nombre.
+    const PALABRAS_SIN_CARTA_COLORES = /\b(AGUARRAS|DISOLVENTE|DECAPANTE)\b/;
+
+    function productoEsPintura(p) {
+        if (p.area !== 'pinturas') return false;
+        const familia = quitarAcentosMay(p.familia);
+        if (FAMILIAS_SIN_CARTA_COLORES.includes(familia)) return false;
+        if (PALABRAS_SIN_CARTA_COLORES.test(quitarAcentosMay(p.nombre))) return false;
+        return true;
+    }
+
     // Botón "Ver carta de colores": mismo enfoque que la ficha técnica (
     // búsqueda web general, no restringida a un dominio, porque Titán tiene
-    // varias webs según la gama). Solo para productos de pinturas.
+    // varias webs según la gama). Solo para productos que sean realmente
+    // pintura (no basta con pertenecer al área "pinturas": brochas,
+    // disolventes, lijas, pegamentos y químicos no tienen carta de colores).
     function configurarBotonCartaColores(p) {
         const boton = $('modal-producto-carta-colores');
-        if (p.area !== 'pinturas') {
+        if (!productoEsPintura(p)) {
             boton.style.display = 'none';
             return;
         }
