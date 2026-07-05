@@ -153,6 +153,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             padding: 0;
             border: none;
         }
+
+        /* Botón "Filtros" — solo en móvil, ver media query más abajo.
+           IMPORTANTE: esta regla base debe declararse ANTES de la media
+           query que la activa (display:flex en ≤768px) — con la misma
+           especificidad, en CSS gana la regla que aparece despues en el
+           código, y aquí necesitamos que gane la de la media query. */
+        .btn-abrir-filtros-movil {
+            display: none;
+            flex-shrink: 0;
+            width: 44px;
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1.05rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-abrir-filtros-movil:active { background: #e2e8f0; }
+
         @media (max-width: 768px) {
             .filtro-grupo.collapsable .familias-lista {
                 max-height: 120px;
@@ -285,22 +306,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .btn-escanear-codigo:active { background: #0f172a; }
         /* Visible cuando tiene la clase disponible (tanto en móvil como en PC) */
         .btn-escanear-codigo.disponible { display: flex; }
-
-        /* Botón "Filtros" — solo en móvil, ver media query más abajo */
-        .btn-abrir-filtros-movil {
-            display: none;
-            flex-shrink: 0;
-            width: 44px;
-            background: var(--light);
-            color: var(--dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1.05rem;
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-abrir-filtros-movil:active { background: #e2e8f0; }
 
         .btn-cerrar-filtros-movil {
             display: none;
