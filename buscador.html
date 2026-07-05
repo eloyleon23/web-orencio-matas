@@ -182,6 +182,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             justify-content: center;
         }
         .btn-abrir-filtros-movil:active { background: #e2e8f0; }
+        .btn-abrir-filtros-movil.activo {
+            background: var(--dark);
+            color: white;
+            border-color: var(--dark);
+        }
 
         /* Misma precaución de orden que el botón de abrir: la regla base
            debe ir ANTES de la media query que la activa. */
@@ -262,7 +267,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 border-radius: 0;
                 margin-bottom: 6px;
             }
-            #grupo-buscador-principal { margin-bottom: 0; }
+            #grupo-buscador-principal {
+                margin-bottom: 0;
+                /* Pegado a la cabecera principal del sitio (navbar), para
+                   que nunca "desaparezca" pase lo que pase con el bloque
+                   de título "Buscador de Productos" o con el scroll. El
+                   valor de "top" se calcula por JS según la altura real
+                   del navbar (ver ajustarPosicionBuscadorSticky). */
+                position: sticky;
+                top: 0;
+                z-index: 90;
+                background: #fff;
+                padding: 8px 0;
+            }
             #grupo-buscador-principal label.titulo { display: none; }
 
             /* Fila compacta: botón filtros (izquierda) + buscador + escáner */
@@ -2279,6 +2296,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         backdrop.classList.add('visible');
         document.body.style.overflow = 'hidden';
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+
+        // Igual que al escribir en el buscador: más espacio libre, y el
+        // icono del botón se invierte para indicar que el panel está abierto
+        ocultarCabeceraBuscador();
+        $('btn-abrir-filtros-movil').classList.add('activo');
     }
 
     function cerrarFiltrosMovil() {
@@ -2286,6 +2308,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('filtros-backdrop').classList.remove('visible');
         document.body.style.overflow = '';
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-abrir-filtros-movil').classList.remove('activo');
     }
 
     function actualizarBotonMostrarResultadosMovil() {
@@ -3163,6 +3186,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cabeceraBuscador.classList.remove('oculto-por-busqueda');
     }
     $('f-texto').addEventListener('focus', ocultarCabeceraBuscador);
+
+    // El buscador queda "pegado" (sticky) justo debajo de la cabecera
+    // principal del sitio en móvil. Calculamos la altura real del navbar
+    // por JS (en vez de fijar un valor a mano en el CSS) porque cambia
+    // según el ancho de pantalla — así no se desincroniza si el navbar
+    // cambia de tamaño en el futuro.
+    function ajustarPosicionBuscadorSticky() {
+        const grupoBuscador = $('grupo-buscador-principal');
+        const navbar = document.querySelector('.navbar-wrapper');
+        if (!grupoBuscador || !navbar) return;
+        if (window.innerWidth > 768) {
+            grupoBuscador.style.top = ''; // en escritorio no aplica
+            return;
+        }
+        grupoBuscador.style.top = navbar.getBoundingClientRect().height + 'px';
+    }
+    window.addEventListener('resize', debounce(ajustarPosicionBuscadorSticky, 200));
+    ajustarPosicionBuscadorSticky();
 
     function actualizarVisibilidadBotonSubir() {
         const visible = window.scrollY > 400;
