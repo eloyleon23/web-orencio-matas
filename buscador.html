@@ -1694,38 +1694,51 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return matrix[b.length][a.length];
     }
 
+    // Nº de errores (ediciones) que se toleran en una palabra según su
+    // longitud, para la búsqueda difusa. Deliberadamente estricto: permitir
+    // 2 errores en una palabra de 5 letras (como "fairy") es demasiado
+    // permisivo y hace que coincida por casualidad con palabras que no
+    // tienen nada que ver (p.ej. "aire", que está a distancia 2 de "fairy").
+    function maxErroresPermitidos(longitud) {
+        if (longitud <= 3) return 0;  // palabras muy cortas: solo exacta
+        if (longitud <= 6) return 1;
+        if (longitud <= 9) return 2;
+        return 3;
+    }
+
+    // ¿Coincide esta palabra de búsqueda con alguna palabra del texto,
+    // de forma exacta o tolerando alguna errata razonable?
+    function palabraCoincide(pBusqueda, palabrasTexto) {
+        if (palabrasTexto.some(pTexto => pTexto.includes(pBusqueda))) return true;
+        if (pBusqueda.length <= 3) return false; // sin tolerancia para palabras muy cortas
+        const maxErr = maxErroresPermitidos(pBusqueda.length);
+        return palabrasTexto.some(pTexto => {
+            // Si la diferencia de longitud ya supera el margen de error,
+            // ni siquiera merece la pena calcular la distancia completa.
+            if (Math.abs(pTexto.length - pBusqueda.length) > maxErr) return false;
+            return levenshtein(pTexto, pBusqueda) <= maxErr;
+        });
+    }
+
     // ── Similitud fuzzy: búsqueda por aproximación ──
     function coincide(texto, busqueda) {
         if (!busqueda) return true;
         const t = normalizar(texto);
         const b = normalizar(busqueda);
 
-        // Coincidencia exacta o por inclusión
+        // Coincidencia exacta o por inclusión de la frase completa
         if (t.includes(b)) return true;
 
-        // Coincidencia por palabras parciales
         const palabrasBusqueda = b.split(/\s+/).filter(Boolean);
-        if (palabrasBusqueda.every(p => t.includes(p))) return true;
-
-        // Fuzzy matching: distancia de Levenshtein
-        // Si la búsqueda es corta (<= 4 caracteres), permitir 1 error
-        // Si es media (5-8 caracteres), permitir 2 errores
-        // Si es larga (> 8 caracteres), permitir hasta 3 errores
-        const maxErrores = b.length <= 4 ? 1 : (b.length <= 8 ? 2 : 3);
-        const distancia = levenshtein(t, b);
-        if (distancia <= maxErrores) return true;
-
-        // También buscar coincidencias parciales con fuzzy en palabras individuales
+        if (!palabrasBusqueda.length) return true;
         const palabrasTexto = t.split(/\s+/).filter(Boolean);
-        for (const pBusqueda of palabrasBusqueda) {
-            for (const pTexto of palabrasTexto) {
-                const dist = levenshtein(pTexto, pBusqueda);
-                const maxErr = pBusqueda.length <= 4 ? 1 : (pBusqueda.length <= 8 ? 2 : 3);
-                if (dist <= maxErr) return true;
-            }
-        }
 
-        return false;
+        // TODAS las palabras de la búsqueda deben aparecer en el texto,
+        // exacta o aproximadamente — así una búsqueda de varias palabras no
+        // coincide solo porque UNA de ellas se parezca por casualidad a
+        // cualquier palabra suelta del producto. Esto es lo que evita que
+        // "fairy" devuelva colonias que solo comparten la palabra "aire".
+        return palabrasBusqueda.every(p => palabraCoincide(p, palabrasTexto));
     }
 
     // ── Detecta si el texto de búsqueda es predominantemente numérico (código/referencia) ──
