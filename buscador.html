@@ -2557,15 +2557,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('modal-producto-buscar-imagen').style.display = 'none';
         }
 
-        // Botón de ficha técnica: solo para productos de pinturas. Enlaza a la
-        // búsqueda del producto en la web del fabricante correspondiente, que
-        // es donde están publicadas las fichas técnicas y de seguridad.
+        // Botón de ficha técnica: solo para productos de pinturas que no sean
+        // herramientas (brochas, lijas...). Enlaza a la búsqueda del
+        // producto en la web del fabricante correspondiente, que es donde
+        // están publicadas las fichas técnicas y de seguridad.
         configurarBotonFichaTecnica(p);
         configurarBotonCartaColores(p);
-        // Oculta también la fila que las envuelve cuando ninguna aplica
-        // (evita un hueco vacío en productos que no son de pinturas)
+        // Oculta también la fila que las envuelve cuando ninguno de los dos
+        // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas)
         document.querySelector('.modal-producto-fila-fichas').style.display =
-            p.area === 'pinturas' ? 'flex' : 'none';
+            (productoTieneFichaTecnica(p) || productoEsPintura(p)) ? 'flex' : 'none';
 
         // Botón compartir: genera un enlace que abre el buscador directamente
         // en el detalle de este producto.
@@ -2642,6 +2643,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         window.history.replaceState({}, '', limpia);
     }
 
+    // Familias del área "pinturas" que son HERRAMIENTAS físicas (brochas,
+    // rodillos, cepillos, lijas...), no productos con ficha técnica de
+    // fabricante. A diferencia de la carta de colores, aquí SÍ deben
+    // mostrarse disolventes, imprimaciones, pegamentos y productos
+    // químicos — todos esos tienen ficha técnica/de seguridad real.
+    const FAMILIAS_SIN_FICHA_TECNICA = [
+        'BROCHAS Y UTILES DE APLICACION',
+        'LIJAS',
+    ];
+
+    function productoTieneFichaTecnica(p) {
+        if (p.area !== 'pinturas') return false;
+        const familia = quitarAcentosMay(p.familia);
+        return !FAMILIAS_SIN_FICHA_TECNICA.includes(familia);
+    }
+
     // Enlace de búsqueda de la ficha técnica del producto de pinturas.
     // Se usa una búsqueda de Google normal con los términos del producto más
     // "ficha técnica": Google localiza la web oficial correcta (Titán tiene
@@ -2650,7 +2667,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // que aloja ese producto concreto y devuelve cero resultados.
     function configurarBotonFichaTecnica(p) {
         const boton = $('modal-producto-ficha-tecnica');
-        if (p.area !== 'pinturas') {
+        if (!productoTieneFichaTecnica(p)) {
             boton.style.display = 'none';
             return;
         }
