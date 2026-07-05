@@ -1184,47 +1184,57 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             align-items: center;
             gap: 7px;
         }
+        /* Grid de 2 columnas (no una lista vertical de filas anchas) para
+           que ningún nombre de producto largo pueda desbordar ni romper el
+           resto del contenido del modal. */
         .complementarios-lista {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
         }
         .complementario-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
-            padding: 8px 10px;
+            gap: 6px;
+            padding: 10px 8px;
             background: var(--light);
             border: 1px solid var(--border);
             border-radius: 8px;
             cursor: pointer;
-            text-align: left;
+            text-align: center;
+            min-width: 0; /* evita que el texto empuje el ancho de la celda */
         }
         .complementario-item:hover { background: #eef2f7; }
         .complementario-item img {
-            width: 36px;
-            height: 36px;
+            width: 100%;
+            max-width: 64px;
+            height: 64px;
             object-fit: contain;
-            flex-shrink: 0;
             background: white;
             border-radius: 6px;
         }
         .complementario-item .complementario-info {
-            flex: 1;
+            width: 100%;
             min-width: 0;
         }
         .complementario-item .complementario-nombre {
-            font-size: 0.8rem;
+            font-size: 0.72rem;
             font-weight: 600;
             color: var(--dark);
+            line-height: 1.25;
+            /* Máximo 2 líneas, con puntos suspensivos si no cabe — así un
+               nombre largo nunca desborda la tarjeta ni el modal. */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
         .complementario-item .complementario-precio {
             font-size: 0.78rem;
             color: var(--red);
             font-weight: 700;
+            margin-top: 2px;
         }
 
         /* Botón compartir producto: chip sutil bajo la imagen, a la derecha */
@@ -3481,6 +3491,44 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // para limpieza/dilución; casi cualquier pintura se beneficia de una
     // imprimación adecuada. Se prioriza la misma familia (marca) cuando hay
     // coincidencia, y se cae a una opción genérica si no.
+    // Recomienda una herramienta de aplicación (brocha, pincel o rodillo)
+    // según el tamaño del envase: formatos grandes (≥4L, para superficies
+    // amplias) → rodillo; formatos pequeños/medios → brocha o pincel. Se
+    // evitan mangos sueltos, recambios, cubetas y rodillos especiales
+    // (mini, tapajuntas de papel pintado...), y se prioriza un tamaño de
+    // rodillo amplio (≥18cm) o un número de brocha/pincel medio (8-14).
+    function herramientaAplicacionRecomendada(p) {
+        const volumen = valorFormatoEnMl(formatoDeProducto(p));
+        const herramientas = TODOS.filter(x => x.area === 'pinturas'
+            && quitarAcentosMay(x.familia) === 'BROCHAS Y UTILES DE APLICACION');
+
+        if (volumen >= 4000) {
+            const candidatos = herramientas.filter(x => {
+                const n = quitarAcentosMay(x.nombre);
+                if (!n.includes('RODILLO')) return false;
+                if (n.includes('MANGO') || n.includes('RECAMBIO') || n.includes('CUBETA')
+                    || n.includes('BATIDOR') || n.includes('MINI') || n.includes('TAPAJUNTAS')) return false;
+                const m = n.match(/(\d+)\s*CMS/);
+                return m && parseInt(m[1], 10) >= 18;
+            });
+            return candidatos[0] || null;
+        }
+
+        const candidatosMedios = herramientas.filter(x => {
+            const n = quitarAcentosMay(x.nombre);
+            if (!n.includes('BROCHA') && !n.includes('PINCEL')) return false;
+            const m = n.match(/N[ºO]?\s*(\d+)/);
+            const numero = m ? parseInt(m[1], 10) : 0;
+            return numero >= 8 && numero <= 14;
+        });
+        if (candidatosMedios[0]) return candidatosMedios[0];
+
+        return herramientas.find(x => {
+            const n = quitarAcentosMay(x.nombre);
+            return n.includes('BROCHA') || n.includes('PINCEL');
+        }) || null;
+    }
+
     function productosComplementarios(p) {
         const nombre = quitarAcentosMay(p.nombre);
         const esBaseDisolvente = /\bESMALTE\b|\bOXIRON\b|\bSINTETIC|\bBARNIZ\b|\bLACA\b/.test(nombre);
@@ -3514,7 +3562,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (imprimacion) sugerencias.push(imprimacion);
         }
 
-        return sugerencias.slice(0, 2);
+        // Herramienta de aplicación (brocha/pincel/rodillo) — no aplica si
+        // el propio producto ya es la imprimación/disolvente que se acaba
+        // de sugerir arriba, pero sí para cualquier pintura en sí.
+        const herramienta = herramientaAplicacionRecomendada(p);
+        if (herramienta) sugerencias.push(herramienta);
+
+        return sugerencias.slice(0, 3);
     }
 
     function configurarComplementarios(p) {
@@ -3535,7 +3589,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         lista.innerHTML = sugerencias.map(s => {
             const img = s.img
                 ? `<img src="https://drive.google.com/thumbnail?id=${s.img}&sz=w100" alt="" loading="lazy">`
-                : `<div style="width:36px;height:36px;flex-shrink:0;"></div>`;
+                : `<div style="width:64px;height:64px;"></div>`;
             const precio = s.mostrar_precio && s.precio_con
                 ? `${parseFloat(s.precio_con.replace(',', '.')).toFixed(2).replace('.', ',')} €`
                 : '';
@@ -3545,7 +3599,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     <div class="complementario-nombre">${escapeHtml(s.nombre)}</div>
                     <div class="complementario-precio">${precio}</div>
                 </div>
-                <i class="fa-solid fa-chevron-right" style="color:var(--muted);font-size:0.8rem;"></i>
             </button>`;
         }).join('');
 
