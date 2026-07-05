@@ -2301,45 +2301,84 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ambos modos a la vez sobre la misma instancia).
     let html5QrCodeArchivo = null;
 
+    // Redimensiona la imagen a un tamaño máximo dado (por el lado más
+    // largo), devolviendo un nuevo File. Decodificar códigos de barras 1D
+    // desde una única foto estática (a diferencia del vídeo en vivo, que
+    // prueba varios fotogramas) es sensible a la resolución: una foto de
+    // móvil sin redimensionar (varios miles de píxeles) a veces falla
+    // donde una versión más moderada sí funciona, y viceversa — por eso
+    // probamos varios tamaños en cascada en vez de confiar en uno solo.
+    function redimensionarImagen(archivo, maxLado) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            const url = URL.createObjectURL(archivo);
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                const { width, height } = img;
+                const escala = Math.min(1, maxLado / Math.max(width, height));
+                const nuevoAncho = Math.round(width * escala);
+                const nuevoAlto = Math.round(height * escala);
+                const canvas = document.createElement('canvas');
+                canvas.width = nuevoAncho;
+                canvas.height = nuevoAlto;
+                canvas.getContext('2d').drawImage(img, 0, 0, nuevoAncho, nuevoAlto);
+                canvas.toBlob((blob) => {
+                    resolve(blob ? new File([blob], archivo.name, { type: 'image/jpeg' }) : archivo);
+                }, 'image/jpeg', 0.92);
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); resolve(archivo); };
+            img.src = url;
+        });
+    }
+
     async function buscarPorImagenSeleccionada(e) {
         const archivo = e.target.files && e.target.files[0];
         e.target.value = ''; // permite volver a elegir la misma imagen después
         if (!archivo) return;
 
-        try {
-            if (!html5QrCodeArchivo) {
-                html5QrCodeArchivo = new Html5Qrcode('scanner-archivo-wrap', {
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.UPC_A,
-                        Html5QrcodeSupportedFormats.UPC_E,
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.QR_CODE,
-                    ],
-                });
-            }
-            console.log('[buscar-por-imagen] archivo:', archivo.name, archivo.type, (archivo.size / 1024).toFixed(0) + ' KB');
-            // showImage=true (aunque el contenedor está fuera de pantalla):
-            // así la librería completa todo su proceso normal de renderizado
-            // antes de decodificar, sin arriesgarse a que "false" se salte
-            // algún paso interno necesario.
-            const decodedText = await html5QrCodeArchivo.scanFile(archivo, true);
-            $('f-texto').value = decodedText;
-            actualizarIconosBuscador();
-            ocultarSugerencias();
-            resetPaginacion();
-            aplicarFiltros();
-            mostrarToast('Código encontrado: ' + decodedText, 'success');
-        } catch (err) {
-            // Mostramos el motivo REAL (no un mensaje genérico) — así, si
-            // vuelve a fallar, se puede diagnosticar sin depender de la
-            // consola del navegador (nada fácil de mirar en un móvil).
-            console.error('[buscar-por-imagen] error completo:', err);
-            const detalle = (err && err.message) ? err.message : String(err);
-            mostrarToast('No se ha podido leer el código: ' + detalle, 'error');
+        if (!html5QrCodeArchivo) {
+            html5QrCodeArchivo = new Html5Qrcode('scanner-archivo-wrap', {
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.QR_CODE,
+                ],
+            });
         }
+        console.log('[buscar-por-imagen] archivo original:', archivo.name, archivo.type, (archivo.size / 1024).toFixed(0) + ' KB');
+
+        // Varios tamaños en cascada: 1200px suele ser un buen punto de
+        // partida para códigos de barras 1D; si falla, probamos otros dos
+        // tamaños distintos (más pequeño y más grande) antes de rendirnos.
+        const tamanosAProbar = [1200, 800, 1800];
+        let ultimoError = null;
+
+        for (const tamano of tamanosAProbar) {
+            try {
+                const version = await redimensionarImagen(archivo, tamano);
+                console.log(`[buscar-por-imagen] probando a ${tamano}px...`);
+                const decodedText = await html5QrCodeArchivo.scanFile(version, true);
+                $('f-texto').value = decodedText;
+                actualizarIconosBuscador();
+                ocultarSugerencias();
+                resetPaginacion();
+                aplicarFiltros();
+                mostrarToast('Código encontrado: ' + decodedText, 'success');
+                return; // éxito, no probar más tamaños
+            } catch (err) {
+                ultimoError = err;
+                console.log(`[buscar-por-imagen] fallo a ${tamano}px:`, err && err.message);
+            }
+        }
+
+        // Si llegamos aquí, ningún tamaño ha funcionado
+        console.error('[buscar-por-imagen] error completo (todos los intentos):', ultimoError);
+        const detalle = (ultimoError && ultimoError.message) ? ultimoError.message : String(ultimoError);
+        mostrarToast('No se ha podido leer el código: ' + detalle, 'error');
     }
 
     function cerrarEscaner() {
