@@ -3497,12 +3497,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // evitan mangos sueltos, recambios, cubetas y rodillos especiales
     // (mini, tapajuntas de papel pintado...), y se prioriza un tamaño de
     // rodillo amplio (≥18cm) o un número de brocha/pincel medio (8-14).
+    // Excepción: la línea "Una Capa" (pensada para cubrir mucha superficie
+    // de una sola pasada) siempre recomienda rodillo, aunque el envase sea
+    // pequeño (existe desde 750ml) — el rodillo es la herramienta habitual
+    // para esa línea independientemente del tamaño comprado.
     function herramientaAplicacionRecomendada(p) {
+        const nombre = quitarAcentosMay(p.nombre);
+        const esUnaCapa = /\bUNA CAPA\b/.test(nombre);
         const volumen = valorFormatoEnMl(formatoDeProducto(p));
         const herramientas = TODOS.filter(x => x.area === 'pinturas'
             && quitarAcentosMay(x.familia) === 'BROCHAS Y UTILES DE APLICACION');
 
-        if (volumen >= 4000) {
+        if (volumen >= 4000 || esUnaCapa) {
             const candidatos = herramientas.filter(x => {
                 const n = quitarAcentosMay(x.nombre);
                 if (!n.includes('RODILLO')) return false;
@@ -3511,7 +3517,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 const m = n.match(/(\d+)\s*CMS/);
                 return m && parseInt(m[1], 10) >= 18;
             });
-            return candidatos[0] || null;
+            if (candidatos[0]) return candidatos[0];
+            // "Una Capa" en un envase pequeño no cruzaría el filtro de
+            // volumen por sí solo: si no hay rodillo grande disponible, cae
+            // al bloque de brocha/pincel de abajo en vez de quedarse sin nada.
         }
 
         const candidatosMedios = herramientas.filter(x => {
@@ -3571,16 +3580,88 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return sugerencias.slice(0, 3);
     }
 
+    // ── Compra conjunta para Droguería/Perfumería ──
+    // Reglas por categoría de producto (detectadas por subfamilia, más
+    // fiable que el texto libre del nombre, con el propio nombre como
+    // respaldo). Cada regla busca en TODOS en el momento de abrir el
+    // modal — nunca una referencia fija — así que si un producto sugerido
+    // deja de estar activo (se da de baja), sencillamente no aparecerá en
+    // TODOS y la búsqueda pasará al siguiente candidato que sí lo esté,
+    // sin necesidad de mantenimiento manual.
+    const REGLAS_COMPRA_CONJUNTA_DROGUERIA = [
+        {
+            // Lavavajillas → guantes + estropajo/bayeta
+            coincide: (n, sf) => n.includes('LAVAVAJILLAS'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('GUANTE')),
+                catalogo.find(x => ['ESTROPAJOS', 'FIBRA METALICA', 'BAYETAS Y PAÑOS']
+                    .includes(quitarAcentosMay(x.subfamilia))),
+            ],
+        },
+        {
+            // Friegasuelos / limpiador de suelos → fregona + cepillo de barrer o recogedor
+            coincide: (n, sf) => n.includes('FRIEGASUELOS') || sf.includes('LIMPIADORES SUELOS'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('FREGONA') && !quitarAcentosMay(x.nombre).includes('RECAMBIO')),
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('CEPILLO BARRER'))
+                    || catalogo.find(x => quitarAcentosMay(x.nombre).includes('RECOGEDOR')),
+            ],
+        },
+        {
+            // Limpiacristales → bayeta de microfibra
+            coincide: (n, sf) => sf.includes('LIMPIACRISTALES'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.subfamilia) === 'BAYETAS MICROFIBRA'),
+            ],
+        },
+        {
+            // Detergente ropa → suavizante
+            coincide: (n, sf) => sf.includes('DETERGENTE'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.subfamilia).includes('SUAVIZANTE')),
+            ],
+        },
+        {
+            // Lejía / desinfectante → guantes de protección
+            coincide: (n, sf) => n.includes('LEJIA') || sf.includes('DESINFECTANTE'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('GUANTE')),
+            ],
+        },
+        {
+            // Multiusos / desengrasante → bayeta
+            coincide: (n, sf) => sf.includes('MULTIUSOS HOGAR') || sf.includes('DESENGRASANTE'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.subfamilia) === 'BAYETAS Y PAÑOS'),
+            ],
+        },
+    ];
+
+    function productosComplementariosDrogueria(p) {
+        const nombre = quitarAcentosMay(p.nombre);
+        const subfamilia = quitarAcentosMay(p.subfamilia);
+        const catalogo = TODOS.filter(x => (x.area === 'drogueria' || x.area === 'perfumeria') && x.ref !== p.ref);
+
+        const regla = REGLAS_COMPRA_CONJUNTA_DROGUERIA.find(r => r.coincide(nombre, subfamilia));
+        if (!regla) return [];
+
+        return regla.sugerir(catalogo).filter(Boolean).slice(0, 3);
+    }
+
     function configurarComplementarios(p) {
         const bloque = $('bloque-complementarios');
         const lista = $('complementarios-lista');
 
-        if (!productoEsPintura(p)) {
-            bloque.style.display = 'none';
-            return;
+        const esPintura = productoEsPintura(p);
+        const esDrogueriaConRegla = (p.area === 'drogueria' || p.area === 'perfumeria');
+
+        let sugerencias = [];
+        if (esPintura) {
+            sugerencias = productosComplementarios(p);
+        } else if (esDrogueriaConRegla) {
+            sugerencias = productosComplementariosDrogueria(p);
         }
 
-        const sugerencias = productosComplementarios(p);
         if (!sugerencias.length) {
             bloque.style.display = 'none';
             return;
