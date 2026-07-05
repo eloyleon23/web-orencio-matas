@@ -112,6 +112,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             gap: 8px;
         }
         .filtros h3 span { display: flex; align-items: center; gap: 8px; }
+
+        /* Icono de lupa dentro del buscador: solo se activa en móvil (ver
+           media query más abajo). En escritorio no cambia nada. */
+        .input-buscador-wrap { position: relative; }
+        .icono-buscador-movil { display: none; }
         .filtro-grupo { margin-bottom: 20px; }
         .filtro-grupo label.titulo {
             display: block;
@@ -153,22 +158,68 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 max-height: 120px;
             }
 
+            /* Subir todo el contenido y ahorrar el hueco superior */
+            .layout { padding-top: 10px; }
+
             /* ── Filtros como panel modal lateral en móvil ──
-               Por defecto en móvil solo se ve la barra de búsqueda +
-               escáner + botón "Filtros". Todo lo demás (área, familia,
-               subfamilia, precio, oferta, gestión de imágenes, acabado,
-               formato, limpiar filtros) vive dentro de #filtros-extra,
-               oculto hasta que se abre el panel (clase .abierto).
-               Importante: se oculta/muestra el CONTENEDOR, no cada grupo
-               por separado — varios de esos grupos tienen su propio
+               Por defecto en móvil solo se ve la fila compacta: botón
+               "Filtros" + buscador + escáner — sin la tarjeta blanca, sin
+               el título "Filtros" ni la etiqueta "Nombre o referencia".
+               Todo lo demás (área, familia, subfamilia, precio, oferta,
+               gestión de imágenes, acabado, formato, limpiar filtros) vive
+               dentro de #filtros-extra, oculto hasta que se abre el panel
+               (clase .abierto). Se oculta/muestra el CONTENEDOR, no cada
+               grupo por separado — varios de esos grupos tienen su propio
                style.display puesto por JS (mostrar/ocultar subfamilia,
-               acabado, formato, gestión de imágenes según el contexto),
-               y pelear con esos estilos inline uno a uno da problemas. */
+               acabado, formato, gestión de imágenes según el contexto), y
+               pelear con esos estilos inline uno a uno da problemas. */
             .btn-abrir-filtros-movil { display: flex; }
 
             #filtros-extra { display: none; }
 
+            /* Estado cerrado (por defecto): nada de aspecto de tarjeta,
+               solo la fila del buscador ocupando el espacio justo */
+            .filtros {
+                background: none;
+                border: none;
+                padding: 0;
+                border-radius: 0;
+                margin-bottom: 6px;
+            }
+            #grupo-buscador-principal { margin-bottom: 0; }
+            #grupo-buscador-principal label.titulo { display: none; }
+
+            .filtros h3 span { display: none; } /* nunca mostrar el texto "Filtros" en móvil */
+            .filtros:not(.abierto) h3 { display: none; margin: 0; }
+
+            /* Fila compacta: botón filtros (izquierda) + buscador + escáner */
+            .fila-buscador-movil { align-items: center; }
+            .icono-buscador-movil {
+                display: block;
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--muted);
+                font-size: 0.95rem;
+                pointer-events: none;
+            }
+            #grupo-buscador-principal .input-texto {
+                border-radius: 999px;
+                padding-left: 36px;
+            }
+            .btn-abrir-filtros-movil {
+                border-radius: 12px;
+            }
+            .btn-escanear-codigo {
+                border-radius: 999px;
+            }
+
+            /* Estado abierto: aquí sí, panel tipo tarjeta deslizante */
             .filtros.abierto {
+                background: white;
+                border: 1px solid var(--border);
+                padding: 20px;
                 position: fixed;
                 top: 0;
                 right: 0;
@@ -185,6 +236,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             }
             .filtros.abierto #filtros-extra {
                 display: block;
+            }
+            .filtros.abierto h3 {
+                display: flex;
+                justify-content: flex-end;
+                margin: 0 0 12px;
             }
             .filtros.abierto .btn-cerrar-filtros-movil {
                 display: block;
@@ -1240,15 +1296,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </h3>
 
-        <div class="filtro-grupo">
+        <div class="filtro-grupo" id="grupo-buscador-principal">
             <label class="titulo" for="f-texto">Nombre o referencia</label>
-            <div style="display:flex;gap:8px;align-items:stretch;">
-                <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001..." style="flex:1;">
-                <button type="button" id="btn-escanear" class="btn-escanear-codigo" aria-label="Escanear código de barras">
-                    <i class="fa-solid fa-barcode"></i>
-                </button>
+            <div class="fila-buscador-movil" style="display:flex;gap:8px;align-items:stretch;">
                 <button type="button" id="btn-abrir-filtros-movil" class="btn-abrir-filtros-movil" aria-label="Abrir filtros">
                     <i class="fa-solid fa-sliders"></i>
+                </button>
+                <div class="input-buscador-wrap" style="flex:1;">
+                    <i class="fa-solid fa-magnifying-glass icono-buscador-movil"></i>
+                    <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001...">
+                </div>
+                <button type="button" id="btn-escanear" class="btn-escanear-codigo" aria-label="Escanear código de barras">
+                    <i class="fa-solid fa-barcode"></i>
                 </button>
             </div>
         </div>
