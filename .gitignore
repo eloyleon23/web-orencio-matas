@@ -12,3 +12,6 @@ imagenes_tool/google_search_credentials.json
 imagenes_tool/config_ruta.txt
 imagenes_tool/catalogo_titan_cache.json
 imagenes_tool/fallos_sincronizacion.csv
+
+# sage_sync: credenciales de acceso a Sage 200, nunca al repo
+sage_sync/credenciales_sage.json
