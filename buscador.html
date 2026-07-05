@@ -174,6 +174,50 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .btn-abrir-filtros-movil:active { background: #e2e8f0; }
 
+        /* Misma precaución de orden que el botón de abrir: la regla base
+           debe ir ANTES de la media query que la activa. */
+        .btn-cerrar-filtros-movil {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.15rem;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 4px 6px;
+            line-height: 1;
+        }
+
+        /* Misma precaución de orden: regla base antes de la media query */
+        .btn-mostrar-resultados-movil {
+            display: none;
+            width: 100%;
+            padding: 14px;
+            margin-top: 16px;
+            background: var(--red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-mostrar-resultados-movil:active { filter: brightness(0.92); }
+
+        .btn-escanear-codigo {
+            display: none;
+            flex-shrink: 0;
+            width: 44px;
+            background: var(--dark);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-escanear-codigo:active { background: #0f172a; }
+
         @media (max-width: 768px) {
             .filtro-grupo.collapsable .familias-lista {
                 max-height: 120px;
@@ -196,7 +240,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                pelear con esos estilos inline uno a uno da problemas. */
             .btn-abrir-filtros-movil { display: flex; }
 
-            #filtros-extra { display: none; }
+            /* El título "Filtros" no se usa en móvil: el botón de cerrar
+               vive ahora dentro de #filtros-extra (ver más abajo) */
+            .filtros h3 { display: none; }
 
             /* Estado cerrado (por defecto): nada de aspecto de tarjeta,
                solo la fila del buscador ocupando el espacio justo */
@@ -209,9 +255,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             }
             #grupo-buscador-principal { margin-bottom: 0; }
             #grupo-buscador-principal label.titulo { display: none; }
-
-            .filtros h3 span { display: none; } /* nunca mostrar el texto "Filtros" en móvil */
-            .filtros:not(.abierto) h3 { display: none; margin: 0; }
 
             /* Fila compacta: botón filtros (izquierda) + buscador + escáner */
             .fila-buscador-movil { align-items: center; }
@@ -236,37 +279,42 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 border-radius: 999px;
             }
 
-            /* Estado abierto: aquí sí, panel tipo tarjeta deslizante */
-            .filtros.abierto {
-                background: white;
-                border: 1px solid var(--border);
-                padding: 20px;
+            /* ── #filtros-extra: el cajón de filtros en sí ──
+               Siempre en position:fixed, deslizado fuera de la pantalla por
+               la derecha (translateX 100%). Al abrir se le añade la clase
+               .abierto, que lo desliza a su sitio con una transición suave.
+               El "top" se calcula por JS (abrirFiltrosMovil) para que quede
+               justo debajo de la barra de búsqueda, nunca tapándola — así
+               el buscador queda siempre visible y por encima del panel. */
+            #filtros-extra {
                 position: fixed;
-                top: 0;
+                top: 0; /* se sobreescribe por JS al abrir */
                 right: 0;
                 bottom: 0;
-                left: auto;
                 width: 86%;
                 max-width: 360px;
-                margin: 0;
+                background: white;
+                border-left: 1px solid var(--border);
+                padding: 18px 20px 20px;
                 z-index: 6000;
-                border-radius: 0;
-                max-height: 100vh;
                 overflow-y: auto;
                 box-shadow: -8px 0 28px rgba(0,0,0,.2);
+                transform: translateX(105%);
+                transition: transform 0.32s cubic-bezier(.4, 0, .2, 1);
             }
-            .filtros.abierto #filtros-extra {
+            #filtros-extra.abierto {
+                transform: translateX(0);
+            }
+
+            .btn-cerrar-filtros-movil {
                 display: block;
+                position: sticky;
+                top: 0;
+                margin: -18px -20px 12px auto;
+                padding: 10px 14px;
             }
-            .filtros.abierto h3 {
-                display: flex;
-                justify-content: flex-end;
-                margin: 0 0 12px;
-            }
-            .filtros.abierto .btn-cerrar-filtros-movil {
-                display: block;
-            }
-            .filtros.abierto .btn-mostrar-resultados-movil {
+
+            .btn-mostrar-resultados-movil {
                 display: block;
                 position: sticky;
                 bottom: -20px;
@@ -290,33 +338,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .input-texto:focus { outline: none; border-color: var(--red); }
 
-        .btn-escanear-codigo {
-            display: none;
-            flex-shrink: 0;
-            width: 44px;
-            background: var(--dark);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-escanear-codigo:active { background: #0f172a; }
-        /* Visible cuando tiene la clase disponible (tanto en móvil como en PC) */
-        .btn-escanear-codigo.disponible { display: flex; }
 
-        .btn-cerrar-filtros-movil {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.15rem;
-            color: var(--muted);
-            cursor: pointer;
-            padding: 4px 6px;
-            line-height: 1;
-        }
+        .btn-escanear-codigo.disponible { display: flex; }
 
         .modal-scanner-overlay {
             display: none;
@@ -491,31 +514,20 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .btn-limpiar:hover { background: #eef2f7; }
 
-        /* Botón "Mostrar N resultados" — solo visible dentro del panel modal
-           móvil (ver reglas dentro de la media query de abajo) */
-        .btn-mostrar-resultados-movil {
-            display: none;
-            width: 100%;
-            padding: 14px;
-            margin-top: 16px;
-            background: var(--red);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .btn-mostrar-resultados-movil:active { filter: brightness(0.92); }
-
         .filtros-backdrop {
-            display: none;
             position: fixed;
             inset: 0;
             background: rgba(15, 23, 42, 0.45);
             z-index: 5999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.28s ease, visibility 0s linear 0.28s;
         }
-        .filtros-backdrop.visible { display: block; }
+        .filtros-backdrop.visible {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.28s ease;
+        }
 
         /* ── Resultados ── */
         .resultados-header {
@@ -1296,9 +1308,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <aside class="filtros">
         <h3>
             <span><i class="fa-solid fa-filter"></i> Filtros</span>
-            <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
         </h3>
 
         <div class="filtro-grupo" id="grupo-buscador-principal">
@@ -1318,6 +1327,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
 
         <div id="filtros-extra">
+        <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
         <div class="filtro-grupo">
             <label class="titulo" for="f-area">Área</label>
             <select id="f-area" class="select-area">
@@ -1378,8 +1391,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
 
         <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
-        </div>
         <button type="button" id="btn-mostrar-resultados-movil" class="btn-mostrar-resultados-movil">Mostrar resultados</button>
+        </div>
     </aside>
 
     <div id="filtros-backdrop" class="filtros-backdrop"></div>
@@ -2227,14 +2240,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Panel de filtros como modal deslizante en móvil ──
     function abrirFiltrosMovil() {
-        document.querySelector('.filtros').classList.add('abierto');
-        $('filtros-backdrop').classList.add('visible');
+        const filtrosExtra = $('filtros-extra');
+        const backdrop = $('filtros-backdrop');
+        const grupoBuscador = $('grupo-buscador-principal');
+
+        // Coloca el panel y el fondo justo debajo del buscador (no desde
+        // arriba del todo), para que la barra de búsqueda quede siempre
+        // visible y por encima del panel, nunca tapada por él.
+        const top = Math.ceil(grupoBuscador.getBoundingClientRect().bottom) + 8;
+        filtrosExtra.style.top = top + 'px';
+        backdrop.style.top = top + 'px';
+
+        filtrosExtra.classList.add('abierto');
+        backdrop.classList.add('visible');
         document.body.style.overflow = 'hidden';
         $('btn-subir-arriba').classList.add('oculto-por-modal');
     }
 
     function cerrarFiltrosMovil() {
-        document.querySelector('.filtros').classList.remove('abierto');
+        $('filtros-extra').classList.remove('abierto');
         $('filtros-backdrop').classList.remove('visible');
         document.body.style.overflow = '';
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
