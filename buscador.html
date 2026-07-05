@@ -2283,14 +2283,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function abrirFiltrosMovil() {
         const filtrosExtra = $('filtros-extra');
         const backdrop = $('filtros-backdrop');
-        const grupoBuscador = $('grupo-buscador-principal');
 
-        // Coloca el panel y el fondo justo debajo del buscador (no desde
-        // arriba del todo), para que la barra de búsqueda quede siempre
-        // visible y por encima del panel, nunca tapada por él.
-        const top = Math.ceil(grupoBuscador.getBoundingClientRect().bottom) + 8;
-        filtrosExtra.style.top = top + 'px';
-        backdrop.style.top = top + 'px';
+        function posicionarPanel() {
+            // Coloca el panel y el fondo justo debajo del buscador (no desde
+            // arriba del todo), para que la barra de búsqueda quede siempre
+            // visible y por encima del panel, nunca tapada por él.
+            const grupoBuscador = $('grupo-buscador-principal');
+            const top = Math.ceil(grupoBuscador.getBoundingClientRect().bottom) + 8;
+            filtrosExtra.style.top = top + 'px';
+            backdrop.style.top = top + 'px';
+        }
+
+        // Se posiciona ya (con la cabecera "Buscador de Productos" todavía
+        // visible, para no dejar el panel sin sitio ni un instante) y se
+        // vuelve a posicionar cuando termina la animación de colapso de esa
+        // cabecera (280ms) — si no, el panel se queda con el hueco de la
+        // posición ANTERIOR al colapso, que es justo lo que se veía mal.
+        posicionarPanel();
+        setTimeout(posicionarPanel, 320);
 
         filtrosExtra.classList.add('abierto');
         backdrop.classList.add('visible');
@@ -3185,7 +3195,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function mostrarCabeceraBuscador() {
         cabeceraBuscador.classList.remove('oculto-por-busqueda');
     }
-    $('f-texto').addEventListener('focus', ocultarCabeceraBuscador);
+    $('f-texto').addEventListener('focus', () => {
+        // Pequeño retraso: al tocar el input, el teclado móvil se abre y el
+        // navegador suele desplazar la página para mantenerlo visible — si
+        // el colapso de la cabecera ocurre EXACTAMENTE a la vez, las dos
+        // animaciones compiten y el resultado es un salto raro (llegando a
+        // ocultar el propio buscador). Dejamos que el teclado/scroll nativo
+        // se asiente primero y solo entonces colapsamos la cabecera.
+        setTimeout(ocultarCabeceraBuscador, 150);
+    });
 
     // El buscador queda "pegado" (sticky) justo debajo de la cabecera
     // principal del sitio en móvil. Calculamos la altura real del navbar
