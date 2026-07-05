@@ -154,16 +154,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             }
 
             /* ── Filtros como panel modal lateral en móvil ──
-               Por defecto en móvil solo se ve el primer filtro-grupo (la
-               barra de búsqueda + escáner + botón "Filtros"). El resto de
-               grupos y el botón "Limpiar filtros" quedan ocultos hasta que
-               se abre el panel (clase .abierto). */
+               Por defecto en móvil solo se ve la barra de búsqueda +
+               escáner + botón "Filtros". Todo lo demás (área, familia,
+               subfamilia, precio, oferta, gestión de imágenes, acabado,
+               formato, limpiar filtros) vive dentro de #filtros-extra,
+               oculto hasta que se abre el panel (clase .abierto).
+               Importante: se oculta/muestra el CONTENEDOR, no cada grupo
+               por separado — varios de esos grupos tienen su propio
+               style.display puesto por JS (mostrar/ocultar subfamilia,
+               acabado, formato, gestión de imágenes según el contexto),
+               y pelear con esos estilos inline uno a uno da problemas. */
             .btn-abrir-filtros-movil { display: flex; }
 
-            .filtros > .filtro-grupo:not(:first-child),
-            .filtros > .btn-limpiar {
-                display: none;
-            }
+            #filtros-extra { display: none; }
 
             .filtros.abierto {
                 position: fixed;
@@ -180,8 +183,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 overflow-y: auto;
                 box-shadow: -8px 0 28px rgba(0,0,0,.2);
             }
-            .filtros.abierto > .filtro-grupo,
-            .filtros.abierto > .btn-limpiar {
+            .filtros.abierto #filtros-extra {
                 display: block;
             }
             .filtros.abierto .btn-cerrar-filtros-movil {
@@ -1238,6 +1240,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
+        <div id="filtros-extra">
         <div class="filtro-grupo">
             <label class="titulo" for="f-area">Área</label>
             <select id="f-area" class="select-area">
@@ -1298,6 +1301,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
 
         <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
+        </div>
         <button type="button" id="btn-mostrar-resultados-movil" class="btn-mostrar-resultados-movil">Mostrar resultados</button>
     </aside>
 
