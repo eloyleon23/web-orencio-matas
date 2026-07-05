@@ -1599,7 +1599,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- Contenedor requerido por la librería para el escaneo de imágenes de
      archivo (no de vídeo en vivo) — instancia separada del escáner en
      vivo, nunca visible, solo decodifica la imagen que se le pasa. -->
-<div id="scanner-archivo-wrap" style="position:absolute; left:-9999px; top:-9999px; width:300px; height:300px; overflow:hidden;"></div>
+<div id="scanner-archivo-wrap" style="position:absolute; left:-9999px; top:-9999px; width:2000px; height:2000px;"></div>
 
 <!-- Modal detalle de producto -->
 <div class="modal-overlay" id="modal-producto-overlay">
@@ -2320,6 +2320,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     ],
                 });
             }
+            console.log('[buscar-por-imagen] archivo:', archivo.name, archivo.type, (archivo.size / 1024).toFixed(0) + ' KB');
             // showImage=true (aunque el contenedor está fuera de pantalla):
             // así la librería completa todo su proceso normal de renderizado
             // antes de decodificar, sin arriesgarse a que "false" se salte
@@ -2332,7 +2333,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             aplicarFiltros();
             mostrarToast('Código encontrado: ' + decodedText, 'success');
         } catch (err) {
-            mostrarToast('No se ha podido leer ningún código de barras en esa imagen', 'error');
+            // Mostramos el motivo REAL (no un mensaje genérico) — así, si
+            // vuelve a fallar, se puede diagnosticar sin depender de la
+            // consola del navegador (nada fácil de mirar en un móvil).
+            console.error('[buscar-por-imagen] error completo:', err);
+            const detalle = (err && err.message) ? err.message : String(err);
+            mostrarToast('No se ha podido leer el código: ' + detalle, 'error');
         }
     }
 
