@@ -2305,11 +2305,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // WebAssembly, cargado por CDN — no requiere ninguna herramienta de
     // compilación). Se carga una sola vez y se reutiliza.
     let zbarWasmModulo = null;
-    function cargarZbarWasm() {
+    async function cargarZbarWasm() {
         if (!zbarWasmModulo) {
-            zbarWasmModulo = import('https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.11.0/dist/index.js');
+            // NOTA: dist/index.js (el que indica la documentación oficial)
+            // no exporta correctamente las funciones al importarlo como
+            // módulo ES en la práctica — comprobado tanto localmente como
+            // con el error real del navegador ("scanImageData is not a
+            // function"). dist/index.mjs sí las expone correctamente.
+            zbarWasmModulo = import('https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.11.0/dist/index.mjs');
         }
-        return zbarWasmModulo;
+        const modulo = await zbarWasmModulo;
+        if (typeof modulo.scanImageData !== 'function') {
+            zbarWasmModulo = null; // no guardar un módulo roto para la próxima vez
+            throw new Error('el módulo cargó pero scanImageData no está disponible');
+        }
+        return modulo;
     }
 
     // Carga el archivo UNA SOLA VEZ y lo reduce a un tamaño manejable en un
