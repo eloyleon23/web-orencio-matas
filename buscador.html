@@ -877,6 +877,18 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: #fcd34d;
         }
 
+        /* Fila con ambos botones (ficha técnica / carta de colores) a igual ancho */
+        .modal-producto-fila-fichas {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .modal-producto-fila-fichas .modal-producto-ficha {
+            flex: 1;
+            margin-top: 0;
+            min-width: 0; /* permite que el texto se ajuste sin desbordar */
+        }
+
         /* Botón de ficha técnica (área pinturas) */
         .modal-producto-ficha {
             margin-top: 12px;
@@ -898,8 +910,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .modal-producto-ficha:hover { filter: brightness(1.08); }
         .modal-producto-ficha:active { filter: brightness(0.95); }
         .modal-producto-carta-colores {
-            background: #9333ea;
-            margin-left: 8px;
+            /* Verde de la gama de colores del logo corporativo, en vez de un
+               morado ajeno a la marca */
+            background: #008F5B;
         }
 
         /* Botón compartir producto: chip sutil bajo la imagen, a la derecha */
@@ -1397,14 +1410,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-circle-info"></i>
                     Los precios pueden variar y este producto está sujeto a disponibilidad, así como la imagen puede no coincidir exactamente con el producto real.
                 </p>
-                <a id="modal-producto-ficha-tecnica" class="modal-producto-ficha" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
-                    <i class="fa-solid fa-file-lines"></i>
-                    Ver ficha técnica
-                </a>
-                <a id="modal-producto-carta-colores" class="modal-producto-ficha modal-producto-carta-colores" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
-                    <i class="fa-solid fa-palette"></i>
-                    Ver carta de colores
-                </a>
+                <div class="modal-producto-fila-fichas">
+                    <a id="modal-producto-ficha-tecnica" class="modal-producto-ficha" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
+                        <i class="fa-solid fa-file-lines"></i>
+                        Ver ficha técnica
+                    </a>
+                    <a id="modal-producto-carta-colores" class="modal-producto-ficha modal-producto-carta-colores" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
+                        <i class="fa-solid fa-palette"></i>
+                        Ver carta de colores
+                    </a>
+                </div>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-image"></i>
@@ -2488,6 +2503,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // es donde están publicadas las fichas técnicas y de seguridad.
         configurarBotonFichaTecnica(p);
         configurarBotonCartaColores(p);
+        // Oculta también la fila que las envuelve cuando ninguna aplica
+        // (evita un hueco vacío en productos que no son de pinturas)
+        document.querySelector('.modal-producto-fila-fichas').style.display =
+            p.area === 'pinturas' ? 'flex' : 'none';
 
         // Botón compartir: genera un enlace que abre el buscador directamente
         // en el detalle de este producto.
