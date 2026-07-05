@@ -377,7 +377,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .input-texto {
             width: 100%;
-            padding: 10px 12px;
+            padding: 10px 34px 10px 12px;
             border: 1px solid var(--border);
             border-radius: 8px;
             /* 16px evita que iOS Safari haga zoom automático al enfocar el input */
@@ -385,6 +385,25 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-family: inherit;
         }
         .input-texto:focus { outline: none; border-color: var(--red); }
+
+        /* Botón "X" para borrar rápidamente el texto y limpiar los filtros.
+           Solo se muestra (clase .visible, vía JS) cuando hay texto escrito. */
+        .btn-limpiar-texto {
+            display: none;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.05rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        .btn-limpiar-texto:hover { color: var(--dark); }
+        .btn-limpiar-texto.visible { display: block; }
 
 
         .btn-escanear-codigo.disponible { display: flex; }
@@ -1367,6 +1386,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="input-buscador-wrap" style="flex:1;">
                     <i class="fa-solid fa-magnifying-glass icono-buscador-movil"></i>
                     <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001...">
+                    <button type="button" id="btn-limpiar-texto" class="btn-limpiar-texto" aria-label="Borrar búsqueda y limpiar filtros">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
                 </div>
                 <button type="button" id="btn-escanear" class="btn-escanear-codigo" aria-label="Escanear código de barras">
                     <i class="fa-solid fa-barcode"></i>
@@ -1936,6 +1958,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             resetPaginacion();
             aplicarFiltros();
         }, 300));
+        // Mostrar/ocultar la "X" al instante (sin debounce, es solo un
+        // reflejo visual de si hay texto, no dispara ningún filtrado)
+        $('f-texto').addEventListener('input', () => {
+            $('btn-limpiar-texto').classList.toggle('visible', $('f-texto').value.length > 0);
+        });
+        $('btn-limpiar-texto').addEventListener('click', () => {
+            limpiarFiltros();
+            $('f-texto').focus();
+        });
         $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
@@ -2066,6 +2097,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         escanerActivo = false;
         $('scanner-estado').textContent = '✓ Código detectado: ' + valor;
         $('f-texto').value = valor;
+        $('btn-limpiar-texto').classList.toggle('visible', valor.length > 0);
         resetPaginacion();
         aplicarFiltros();
         setTimeout(cerrarEscaner, 600);
@@ -2314,6 +2346,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function limpiarFiltros() {
         $('f-texto').value = '';
+        $('btn-limpiar-texto').classList.remove('visible');
         limpiarOtrosFiltros();
         resetPaginacion();
         aplicarFiltros();
