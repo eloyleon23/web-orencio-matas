@@ -1110,6 +1110,123 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: #008F5B;
         }
 
+        /* Calculadora de rendimiento (solo pinturas) */
+        .btn-abrir-calculadora {
+            margin-top: 10px;
+            width: 100%;
+            padding: 9px 14px;
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .btn-abrir-calculadora:hover { background: #eef2f7; }
+        .panel-calculadora {
+            margin-top: 10px;
+            padding: 14px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+        .calculadora-intro {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin: 0 0 10px;
+            line-height: 1.4;
+        }
+        .calculadora-campos {
+            display: flex;
+            gap: 10px;
+        }
+        .calculadora-campos label {
+            flex: 1;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted);
+        }
+        .calculadora-campos input {
+            width: 100%;
+            margin-top: 4px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        .calculadora-resultado {
+            margin-top: 12px;
+            font-size: 0.88rem;
+        }
+        .calculadora-resultado strong {
+            font-size: 1.15rem;
+            color: var(--red);
+        }
+
+        /* Productos complementarios (solo pinturas) */
+        .bloque-complementarios {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .complementarios-titulo {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .complementarios-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .complementario-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+        }
+        .complementario-item:hover { background: #eef2f7; }
+        .complementario-item img {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            flex-shrink: 0;
+            background: white;
+            border-radius: 6px;
+        }
+        .complementario-item .complementario-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .complementario-item .complementario-nombre {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--dark);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .complementario-item .complementario-precio {
+            font-size: 0.78rem;
+            color: var(--red);
+            font-weight: 700;
+        }
+
         /* Botón compartir producto: chip sutil bajo la imagen, a la derecha */
         .modal-producto-compartir {
             position: absolute;
@@ -1637,6 +1754,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         Ver carta de colores
                     </a>
                 </div>
+
+                <!-- Calculadora de rendimiento (solo pinturas) -->
+                <button type="button" id="btn-abrir-calculadora" class="btn-abrir-calculadora" style="display:none;">
+                    <i class="fa-solid fa-calculator"></i>
+                    ¿Cuánto necesito?
+                </button>
+                <div id="panel-calculadora" class="panel-calculadora" style="display:none;">
+                    <p class="calculadora-intro">
+                        Estimación orientativa según el tipo de producto — consulta el envase
+                        para el rendimiento exacto, que varía según superficie y aplicación.
+                    </p>
+                    <div class="calculadora-campos">
+                        <label>
+                            Superficie a pintar (m²)
+                            <input type="number" id="calc-superficie" min="0" step="0.5" placeholder="Ej: 25">
+                        </label>
+                        <label>
+                            Nº de manos
+                            <input type="number" id="calc-manos" min="1" step="1" value="2">
+                        </label>
+                    </div>
+                    <div class="calculadora-resultado" id="calculadora-resultado"></div>
+                </div>
+
+                <!-- Productos complementarios (solo pinturas) -->
+                <div id="bloque-complementarios" class="bloque-complementarios" style="display:none;">
+                    <p class="complementarios-titulo"><i class="fa-solid fa-layer-group"></i> Suele usarse junto a</p>
+                    <div id="complementarios-lista" class="complementarios-lista"></div>
+                </div>
+
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-image"></i>
@@ -3129,6 +3276,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         document.querySelector('.modal-producto-fila-fichas').style.display =
             (productoTieneFichaTecnica(p) || productoEsPintura(p)) ? 'flex' : 'none';
 
+        // Calculadora de rendimiento y productos complementarios: solo para
+        // productos que sean realmente pintura (no herramientas, disolventes...)
+        configurarCalculadoraRendimiento(p);
+        configurarComplementarios(p);
+
         // Botón compartir: genera un enlace que abre el buscador directamente
         // en el detalle de este producto.
         configurarBotonCompartir(p);
@@ -3269,6 +3421,143 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (FAMILIAS_SIN_CARTA_COLORES.includes(familia)) return false;
         if (PALABRAS_SIN_CARTA_COLORES.test(quitarAcentosMay(p.nombre))) return false;
         return true;
+    }
+
+    // ── Calculadora de rendimiento ──
+    // Rendimientos orientativos (m²/L) por tipo de producto, según valores
+    // habituales del sector para una mano. Son una ESTIMACIÓN general, no un
+    // dato específico de cada producto — se avisa de ello en el propio panel.
+    const RENDIMIENTOS_PINTURA = [
+        { patron: /\bESMALTE\b|\bOXIRON\b|\bSINTETIC/, valor: 12, etiqueta: 'esmalte sintético' },
+        { patron: /\bBARNIZ\b|\bLACA\b/, valor: 12, etiqueta: 'barniz/laca' },
+        { patron: /\bIMPRIMACION\b/, valor: 8, etiqueta: 'imprimación' },
+        { patron: /\bPLASTIC/, valor: 10, etiqueta: 'pintura plástica' },
+    ];
+
+    function rendimientoDeProducto(p) {
+        const nombre = quitarAcentosMay(p.nombre);
+        for (const r of RENDIMIENTOS_PINTURA) {
+            if (r.patron.test(nombre)) return r;
+        }
+        return { valor: 10, etiqueta: 'pintura' }; // valor genérico de respaldo
+    }
+
+    function configurarCalculadoraRendimiento(p) {
+        const boton = $('btn-abrir-calculadora');
+        const panel = $('panel-calculadora');
+        panel.style.display = 'none'; // siempre arranca cerrada al abrir un producto
+
+        if (!productoEsPintura(p)) {
+            boton.style.display = 'none';
+            return;
+        }
+        boton.style.display = 'flex';
+
+        const rendimiento = rendimientoDeProducto(p);
+        const calcular = () => {
+            const superficie = parseFloat($('calc-superficie').value);
+            const manos = parseFloat($('calc-manos').value) || 2;
+            const resultado = $('calculadora-resultado');
+            if (!superficie || superficie <= 0) {
+                resultado.innerHTML = '';
+                return;
+            }
+            const litros = (superficie * manos) / rendimiento.valor;
+            resultado.innerHTML = `Necesitarás aproximadamente <strong>${litros.toFixed(1)} L</strong> ` +
+                `(${superficie} m² × ${manos} manos ÷ ${rendimiento.valor} m²/L orientativos para ${rendimiento.etiqueta}).`;
+        };
+
+        boton.onclick = () => {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        };
+        $('calc-superficie').oninput = calcular;
+        $('calc-manos').oninput = calcular;
+        $('calculadora-resultado').innerHTML = '';
+    }
+
+    // ── Productos complementarios ──
+    // Reglas sencillas basadas en el tipo de producto: las pinturas de base
+    // disolvente (esmalte, oxirón, barniz) suelen usarse con un disolvente
+    // para limpieza/dilución; casi cualquier pintura se beneficia de una
+    // imprimación adecuada. Se prioriza la misma familia (marca) cuando hay
+    // coincidencia, y se cae a una opción genérica si no.
+    function productosComplementarios(p) {
+        const nombre = quitarAcentosMay(p.nombre);
+        const esBaseDisolvente = /\bESMALTE\b|\bOXIRON\b|\bSINTETIC|\bBARNIZ\b|\bLACA\b/.test(nombre);
+        const esPlastica = /\bPLASTIC/.test(nombre);
+        const esImprimacion = /\bIMPRIMACION\b/.test(nombre);
+
+        const sugerencias = [];
+        const pinturasCatalogo = TODOS.filter(x => x.area === 'pinturas' && x.ref !== p.ref);
+
+        if (esBaseDisolvente) {
+            // Disolvente/aguarrás: no depende de la marca (el catálogo no
+            // tiene disolvente de marca Titán/Duraval específico), se ofrece
+            // el más genérico disponible.
+            const disolvente = pinturasCatalogo.find(x => quitarAcentosMay(x.familia) === 'AGUARRAS Y DISOLVENTES'
+                && quitarAcentosMay(x.nombre).includes('DISOLVENTE UNIVERSAL'));
+            if (disolvente) sugerencias.push(disolvente);
+        }
+
+        if (!esImprimacion) {
+            // El tipo de imprimación importa: para metal (esmalte/oxirón)
+            // conviene una ANTIOXIDANTE; para pared (plástica) NO tiene
+            // sentido una antioxidante (es para metal) — mejor una
+            // multiusos/fijadora. Se prioriza la misma familia (marca).
+            const quiereAntiox = esBaseDisolvente;
+            const imprimacion = pinturasCatalogo.find(x => {
+                if (x.familia !== p.familia) return false;
+                const n = quitarAcentosMay(x.nombre);
+                if (!n.includes('IMPRIMACION')) return false;
+                return quiereAntiox ? n.includes('ANTIOX') : !n.includes('ANTIOX');
+            });
+            if (imprimacion) sugerencias.push(imprimacion);
+        }
+
+        return sugerencias.slice(0, 2);
+    }
+
+    function configurarComplementarios(p) {
+        const bloque = $('bloque-complementarios');
+        const lista = $('complementarios-lista');
+
+        if (!productoEsPintura(p)) {
+            bloque.style.display = 'none';
+            return;
+        }
+
+        const sugerencias = productosComplementarios(p);
+        if (!sugerencias.length) {
+            bloque.style.display = 'none';
+            return;
+        }
+
+        lista.innerHTML = sugerencias.map(s => {
+            const img = s.img
+                ? `<img src="https://drive.google.com/thumbnail?id=${s.img}&sz=w100" alt="" loading="lazy">`
+                : `<div style="width:36px;height:36px;flex-shrink:0;"></div>`;
+            const precio = s.mostrar_precio && s.precio_con
+                ? `${parseFloat(s.precio_con.replace(',', '.')).toFixed(2).replace('.', ',')} €`
+                : '';
+            return `<button type="button" class="complementario-item" data-ref="${escapeHtml(s.ref)}">
+                ${img}
+                <div class="complementario-info">
+                    <div class="complementario-nombre">${escapeHtml(s.nombre)}</div>
+                    <div class="complementario-precio">${precio}</div>
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color:var(--muted);font-size:0.8rem;"></i>
+            </button>`;
+        }).join('');
+
+        lista.querySelectorAll('.complementario-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ref = btn.dataset.ref;
+                const producto = TODOS.find(x => x.ref === ref);
+                if (producto) abrirModalProducto(producto);
+            });
+        });
+
+        bloque.style.display = 'block';
     }
 
     // Botón "Ver carta de colores": mismo enfoque que la ficha técnica (
