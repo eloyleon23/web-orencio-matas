@@ -3259,12 +3259,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // móvil (en escritorio la barra vive en el sidebar, no aplica).
         if (window.innerWidth <= 768) {
             const grupoBuscador = $('grupo-buscador-principal');
-            const bajando = scrollActual > ultimoScrollY;
-            // Pequeño margen (10px) para no reaccionar a micro-scrolls
-            if (Math.abs(scrollActual - ultimoScrollY) > 10) {
-                grupoBuscador.classList.toggle('oculto-por-scroll', bajando && scrollActual > 40);
-                ultimoScrollY = scrollActual;
+            const delta = scrollActual - ultimoScrollY;
+            // El umbral (6px) evita reaccionar a vibraciones mínimas del
+            // dedo, pero la referencia se actualiza SIEMPRE — si solo se
+            // actualizara cuando se supera el umbral, con gestos de scroll
+            // pequeños y sucesivos (muy típico en móvil) la referencia se
+            // queda obsoleta y la detección de dirección deja de reaccionar.
+            if (Math.abs(delta) > 6) {
+                grupoBuscador.classList.toggle('oculto-por-scroll', delta > 0 && scrollActual > 40);
             }
+            ultimoScrollY = scrollActual;
         }
 
         scrollTicking = false;
