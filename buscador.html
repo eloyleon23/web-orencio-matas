@@ -1599,7 +1599,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- Contenedor requerido por la librería para el escaneo de imágenes de
      archivo (no de vídeo en vivo) — instancia separada del escáner en
      vivo, nunca visible, solo decodifica la imagen que se le pasa. -->
-<div id="scanner-archivo-wrap" style="display:none;"></div>
+<div id="scanner-archivo-wrap" style="position:absolute; left:-9999px; top:-9999px; width:300px; height:300px; overflow:hidden;"></div>
 
 <!-- Modal detalle de producto -->
 <div class="modal-overlay" id="modal-producto-overlay">
@@ -2308,9 +2308,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         try {
             if (!html5QrCodeArchivo) {
-                html5QrCodeArchivo = new Html5Qrcode('scanner-archivo-wrap');
+                html5QrCodeArchivo = new Html5Qrcode('scanner-archivo-wrap', {
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.QR_CODE,
+                    ],
+                });
             }
-            const decodedText = await html5QrCodeArchivo.scanFile(archivo, false);
+            // showImage=true (aunque el contenedor está fuera de pantalla):
+            // así la librería completa todo su proceso normal de renderizado
+            // antes de decodificar, sin arriesgarse a que "false" se salte
+            // algún paso interno necesario.
+            const decodedText = await html5QrCodeArchivo.scanFile(archivo, true);
             $('f-texto').value = decodedText;
             actualizarIconosBuscador();
             ocultarSugerencias();
