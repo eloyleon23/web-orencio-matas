@@ -1920,7 +1920,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
 
         // Panel de filtros como modal deslizante en móvil
-        $('btn-abrir-filtros-movil').addEventListener('click', abrirFiltrosMovil);
+        $('btn-abrir-filtros-movil').addEventListener('click', alternarFiltrosMovil);
         $('btn-cerrar-filtros-movil').addEventListener('click', cerrarFiltrosMovil);
         $('btn-mostrar-resultados-movil').addEventListener('click', cerrarFiltrosMovil);
         $('filtros-backdrop').addEventListener('click', cerrarFiltrosMovil);
@@ -2326,6 +2326,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         document.body.style.overflow = '';
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-abrir-filtros-movil').classList.remove('activo');
+    }
+
+    // Botón "Filtros": si el panel ya está abierto, lo cierra; si está
+    // cerrado, lo abre. Así el propio botón sirve también para cerrarlo.
+    function alternarFiltrosMovil() {
+        if ($('filtros-extra').classList.contains('abierto')) {
+            cerrarFiltrosMovil();
+        } else {
+            abrirFiltrosMovil();
+        }
     }
 
     function actualizarBotonMostrarResultadosMovil() {
