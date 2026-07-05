@@ -47,6 +47,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: linear-gradient(135deg,#1e293b,#0f172a);
             padding: 36px 0 28px;
             color: white;
+            overflow: hidden;
+            max-height: 220px;
+            transition: max-height 0.28s ease, padding 0.28s ease, opacity 0.2s ease;
+        }
+        .buscador-header.oculto-por-busqueda {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            opacity: 0;
         }
         .buscador-header .inner {
             max-width: 1180px;
@@ -1861,7 +1870,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
 
         // Listeners
-        $('f-texto').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
+        $('f-texto').addEventListener('input', debounce(() => {
+            // El texto de búsqueda prima sobre el resto de filtros: si el
+            // usuario escribe algo, se limpian los demás automáticamente.
+            if ($('f-texto').value.trim()) {
+                limpiarOtrosFiltros();
+            }
+            resetPaginacion();
+            aplicarFiltros();
+        }, 300));
         $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
@@ -2223,8 +2240,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function resetPaginacion() { familiasMostradas = 0; }
 
-    function limpiarFiltros() {
-        $('f-texto').value = '';
+    // Limpia todos los filtros salvo el propio texto de búsqueda — se usa
+    // tanto desde "Limpiar filtros" como automáticamente cuando el usuario
+    // escribe en el buscador (el texto prima sobre el resto de filtros).
+    function limpiarOtrosFiltros() {
         $('f-area').value = '';
         $('f-precio-min').value = '';
         $('f-precio-max').value = '';
@@ -2234,6 +2253,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
         renderAtributosPintura(); // Limpiar acabado/formato
+    }
+
+    function limpiarFiltros() {
+        $('f-texto').value = '';
+        limpiarOtrosFiltros();
         resetPaginacion();
         aplicarFiltros();
     }
@@ -3127,9 +3151,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Botón flotante "subir arriba" ──
     const btnSubirArriba = $('btn-subir-arriba');
     let scrollTicking = false;
+
+    // ── Ocultar la cabecera "Buscador de Productos" al escribir, para
+    //    dejar más pantalla libre en móvil. Reaparece al llegar arriba del
+    //    todo (scroll) o al pulsar el botón de subir. ──
+    const cabeceraBuscador = document.querySelector('.buscador-header');
+    function ocultarCabeceraBuscador() {
+        cabeceraBuscador.classList.add('oculto-por-busqueda');
+    }
+    function mostrarCabeceraBuscador() {
+        cabeceraBuscador.classList.remove('oculto-por-busqueda');
+    }
+    $('f-texto').addEventListener('focus', ocultarCabeceraBuscador);
+
     function actualizarVisibilidadBotonSubir() {
         const visible = window.scrollY > 400;
         btnSubirArriba.classList.toggle('visible', visible);
+        if (window.scrollY <= 0) mostrarCabeceraBuscador();
         scrollTicking = false;
     }
     window.addEventListener('scroll', () => {
@@ -3140,6 +3178,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }, { passive: true });
     btnSubirArriba.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        mostrarCabeceraBuscador();
     });
     actualizarVisibilidadBotonSubir();
 })();
