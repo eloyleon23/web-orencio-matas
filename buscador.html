@@ -108,8 +108,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-weight: 800;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
         }
+        .filtros h3 span { display: flex; align-items: center; gap: 8px; }
         .filtro-grupo { margin-bottom: 20px; }
         .filtro-grupo label.titulo {
             display: block;
@@ -150,6 +152,49 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             .filtro-grupo.collapsable .familias-lista {
                 max-height: 120px;
             }
+
+            /* ── Filtros como panel modal lateral en móvil ──
+               Por defecto en móvil solo se ve el primer filtro-grupo (la
+               barra de búsqueda + escáner + botón "Filtros"). El resto de
+               grupos y el botón "Limpiar filtros" quedan ocultos hasta que
+               se abre el panel (clase .abierto). */
+            .btn-abrir-filtros-movil { display: flex; }
+
+            .filtros > .filtro-grupo:not(:first-child),
+            .filtros > .btn-limpiar {
+                display: none;
+            }
+
+            .filtros.abierto {
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: auto;
+                width: 86%;
+                max-width: 360px;
+                margin: 0;
+                z-index: 6000;
+                border-radius: 0;
+                max-height: 100vh;
+                overflow-y: auto;
+                box-shadow: -8px 0 28px rgba(0,0,0,.2);
+            }
+            .filtros.abierto > .filtro-grupo,
+            .filtros.abierto > .btn-limpiar {
+                display: block;
+            }
+            .filtros.abierto .btn-cerrar-filtros-movil {
+                display: block;
+            }
+            .filtros.abierto .btn-mostrar-resultados-movil {
+                display: block;
+                position: sticky;
+                bottom: -20px;
+                width: calc(100% + 40px);
+                margin: 16px -20px -20px;
+                border-radius: 0;
+            }
         }
         .filtro-grupo label.titulo {
             letter-spacing: .04em;
@@ -182,6 +227,33 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .btn-escanear-codigo:active { background: #0f172a; }
         /* Visible cuando tiene la clase disponible (tanto en móvil como en PC) */
         .btn-escanear-codigo.disponible { display: flex; }
+
+        /* Botón "Filtros" — solo en móvil, ver media query más abajo */
+        .btn-abrir-filtros-movil {
+            display: none;
+            flex-shrink: 0;
+            width: 44px;
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1.05rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-abrir-filtros-movil:active { background: #e2e8f0; }
+
+        .btn-cerrar-filtros-movil {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.15rem;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 4px 6px;
+            line-height: 1;
+        }
 
         .modal-scanner-overlay {
             display: none;
@@ -355,6 +427,32 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             cursor: pointer;
         }
         .btn-limpiar:hover { background: #eef2f7; }
+
+        /* Botón "Mostrar N resultados" — solo visible dentro del panel modal
+           móvil (ver reglas dentro de la media query de abajo) */
+        .btn-mostrar-resultados-movil {
+            display: none;
+            width: 100%;
+            padding: 14px;
+            margin-top: 16px;
+            background: var(--red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-mostrar-resultados-movil:active { filter: brightness(0.92); }
+
+        .filtros-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 5999;
+        }
+        .filtros-backdrop.visible { display: block; }
 
         /* ── Resultados ── */
         .resultados-header {
@@ -797,6 +895,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .modal-producto-ficha:hover { filter: brightness(1.08); }
         .modal-producto-ficha:active { filter: brightness(0.95); }
+        .modal-producto-carta-colores {
+            background: #9333ea;
+            margin-left: 8px;
+        }
 
         /* Botón compartir producto: chip sutil bajo la imagen, a la derecha */
         .modal-producto-compartir {
@@ -1116,7 +1218,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- ── FILTROS ── -->
     <aside class="filtros">
-        <h3><i class="fa-solid fa-filter"></i> Filtros</h3>
+        <h3>
+            <span><i class="fa-solid fa-filter"></i> Filtros</span>
+            <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </h3>
 
         <div class="filtro-grupo">
             <label class="titulo" for="f-texto">Nombre o referencia</label>
@@ -1124,6 +1231,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001..." style="flex:1;">
                 <button type="button" id="btn-escanear" class="btn-escanear-codigo" aria-label="Escanear código de barras">
                     <i class="fa-solid fa-barcode"></i>
+                </button>
+                <button type="button" id="btn-abrir-filtros-movil" class="btn-abrir-filtros-movil" aria-label="Abrir filtros">
+                    <i class="fa-solid fa-sliders"></i>
                 </button>
             </div>
         </div>
@@ -1188,7 +1298,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
 
         <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
+        <button type="button" id="btn-mostrar-resultados-movil" class="btn-mostrar-resultados-movil">Mostrar resultados</button>
     </aside>
+
+    <div id="filtros-backdrop" class="filtros-backdrop"></div>
 
     <!-- ── RESULTADOS ── -->
     <section>
@@ -1283,6 +1396,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <a id="modal-producto-ficha-tecnica" class="modal-producto-ficha" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
                     <i class="fa-solid fa-file-lines"></i>
                     Ver ficha técnica
+                </a>
+                <a id="modal-producto-carta-colores" class="modal-producto-ficha modal-producto-carta-colores" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
+                    <i class="fa-solid fa-palette"></i>
+                    Ver carta de colores
                 </a>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
@@ -1664,6 +1781,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
+
+        // Panel de filtros como modal deslizante en móvil
+        $('btn-abrir-filtros-movil').addEventListener('click', abrirFiltrosMovil);
+        $('btn-cerrar-filtros-movil').addEventListener('click', cerrarFiltrosMovil);
+        $('btn-mostrar-resultados-movil').addEventListener('click', cerrarFiltrosMovil);
+        $('filtros-backdrop').addEventListener('click', cerrarFiltrosMovil);
         $('modal-cancelar').addEventListener('click', () => $('modal-overlay').classList.remove('activo'));
         $('modal-enviar').addEventListener('click', enviarSolicitud);
         $('modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-overlay') $('modal-overlay').classList.remove('activo'); });
@@ -2019,6 +2142,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         aplicarFiltros();
     }
 
+    // ── Panel de filtros como modal deslizante en móvil ──
+    function abrirFiltrosMovil() {
+        document.querySelector('.filtros').classList.add('abierto');
+        $('filtros-backdrop').classList.add('visible');
+        document.body.style.overflow = 'hidden';
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+    }
+
+    function cerrarFiltrosMovil() {
+        document.querySelector('.filtros').classList.remove('abierto');
+        $('filtros-backdrop').classList.remove('visible');
+        document.body.style.overflow = '';
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    function actualizarBotonMostrarResultadosMovil() {
+        const n = resultadosActuales.length;
+        $('btn-mostrar-resultados-movil').textContent = `Mostrar ${n} resultado${n === 1 ? '' : 's'}`;
+    }
+
     // ── Aplicar todos los filtros ──
     function aplicarFiltros() {
         const texto    = $('f-texto').value.trim();
@@ -2085,6 +2228,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         renderResultados();
+        actualizarBotonMostrarResultadosMovil();
 
         // Si la búsqueda es por código de producto (tecleado a mano o vía
         // escáner de códigos de barras) y da un único resultado, nos
@@ -2339,6 +2483,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // búsqueda del producto en la web del fabricante correspondiente, que
         // es donde están publicadas las fichas técnicas y de seguridad.
         configurarBotonFichaTecnica(p);
+        configurarBotonCartaColores(p);
 
         // Botón compartir: genera un enlace que abre el buscador directamente
         // en el detalle de este producto.
@@ -2442,7 +2587,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.style.display = 'inline-flex';
     }
 
-    // Limpia el nombre para usarlo como término de búsqueda de ficha técnica:
+    // Botón "Ver carta de colores": mismo enfoque que la ficha técnica (
+    // búsqueda web general, no restringida a un dominio, porque Titán tiene
+    // varias webs según la gama). Solo para productos de pinturas.
+    function configurarBotonCartaColores(p) {
+        const boton = $('modal-producto-carta-colores');
+        if (p.area !== 'pinturas') {
+            boton.style.display = 'none';
+            return;
+        }
+
+        const familia = quitarAcentosMay(p.familia);
+        const terminos = limpiarNombreParaFicha(p.nombre);
+        const esTitan = familia.includes('TITAN') || familia.includes('AKZONOBEL');
+
+        const consulta = (esTitan ? 'Titan ' : '') + terminos + ' carta de colores';
+        const url = `https://www.google.com/search?q=${encodeURIComponent(consulta)}`;
+
+        boton.href = url;
+        boton.style.display = 'inline-flex';
+    }
+
     // quita códigos de color entre paréntesis, referencias numéricas sueltas
     // y el formato/volumen (que no ayuda a encontrar la ficha del producto).
     function limpiarNombreParaFicha(nombre) {
