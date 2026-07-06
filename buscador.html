@@ -1615,9 +1615,39 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="familias-lista" id="f-subfamilias"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-variante-taller" style="display: none;">
-            <label class="titulo">Talla / Variante</label>
-            <div class="familias-lista" id="f-variante-taller"></div>
+        <div class="filtro-grupo collapsable" id="grupo-talla-taller" style="display: none;">
+            <label class="titulo">Talla</label>
+            <div class="familias-lista" id="f-talla-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-grano-taller" style="display: none;">
+            <label class="titulo">Grano</label>
+            <div class="familias-lista" id="f-grano-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-color-taller" style="display: none;">
+            <label class="titulo">Color</label>
+            <div class="familias-lista" id="f-color-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-medida-taller" style="display: none;">
+            <label class="titulo">Medida</label>
+            <div class="familias-lista" id="f-medida-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-volumen-taller" style="display: none;">
+            <label class="titulo">Volumen</label>
+            <div class="familias-lista" id="f-volumen-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-micras-taller" style="display: none;">
+            <label class="titulo">Micras</label>
+            <div class="familias-lista" id="f-micras-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-otros-taller" style="display: none;">
+            <label class="titulo">Otras variantes</label>
+            <div class="familias-lista" id="f-otros-taller"></div>
         </div>
 
         <div class="filtro-grupo collapsable" id="grupo-acabado" style="display: none;">
@@ -2297,7 +2327,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (subfamiliasPrevias.includes(input.value)) input.checked = true;
         });
         renderAtributosPintura();
-        renderVarianteTaller();
+        renderAtributosTaller();
 
         resetPaginacion();
         aplicarFiltros();
@@ -2374,7 +2404,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('input-imagen-busqueda').click();
         });
         $('input-imagen-busqueda').addEventListener('change', buscarPorImagenSeleccionada);
-        $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); renderVarianteTaller(); resetPaginacion(); aplicarFiltros(); });
+        $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
@@ -2747,7 +2777,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             label.querySelector('input').addEventListener('change', () => { 
                 resetPaginacion(); 
                 renderSubfamilias(); // Actualizar subfamilias cuando cambia la familia
-                renderVarianteTaller(); // Actualizar tambien la cascada de talla/variante
+                renderAtributosTaller(); // Actualizar tambien la cascada de talla/variante
                 aplicarFiltros(); 
             });
             cont.appendChild(label);
@@ -2794,7 +2824,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             label.innerHTML = `<input type="checkbox" value="${subfam.replace(/"/g,'&quot;')}"> ${subfam}`;
             label.querySelector('input').addEventListener('change', () => {
                 resetPaginacion();
-                renderVarianteTaller(); // Actualizar la cascada de talla/variante
+                renderAtributosTaller(); // Actualizar la cascada de talla/variante
                 aplicarFiltros();
             });
             cont.appendChild(label);
@@ -2806,7 +2836,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // tallas de ropa siguen el orden real S < M < L < XL < 2XL < 3XL, y
     // cualquier otro valor (colores, medidas variadas) cae al orden
     // alfabético normal.
-    const ORDEN_TALLAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'XXXL'];
+    const ORDEN_TALLAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'XXXL', 'G', 'XG'];
     function compararVariantes(a, b) {
         const matchA = a.match(/^P-?(\d+)/i);
         const matchB = b.match(/^P-?(\d+)/i);
@@ -2819,40 +2849,43 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return a.localeCompare(b, 'es', { sensitivity: 'base' });
     }
 
-    // Puebla el filtro de Talla/Variante (área talleres): valores tipo
-    // grano de lija, talla de ropa o color, tal cual vienen en el campo
-    // `variante` de cada producto. Se limita a los productos de las
-    // familias/subfamilias ya seleccionadas, igual que subfamilia se
-    // limita a la familia elegida — así la lista no se vuelve interminable
-    // con las ~800 referencias del catálogo completo de golpe.
-    function renderVarianteTaller() {
-        const esTalleres = $('f-area').value === 'talleres';
-        const grupo = $('grupo-variante-taller');
-        const cont = $('f-variante-taller');
+    function compararNumerico(a, b) {
+        const na = parseFloat(a);
+        const nb = parseFloat(b);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.localeCompare(b, 'es', { sensitivity: 'base' });
+    }
 
-        if (!esTalleres) {
+    // La variante de un producto de Talleres suele combinar varios
+    // conceptos en un solo texto (ej. "P-1200 150mm" = grano + medida,
+    // "650 ml 190 micras" = volumen + micras) — una sola lista con eso
+    // mezclado es larga y difícil de acotar. Por eso se separan en
+    // filtros independientes (Talla, Grano, Color, Medida, Volumen,
+    // Micras), cada uno mostrando solo su parte reconocida, más un
+    // filtro "Otras variantes" de respaldo con el texto en bruto para
+    // los pocos casos que no encajan en ninguno (códigos de modelo, kits...).
+    const CAMPOS_ATRIBUTOS_TALLER = [
+        { campo: 'variante_talla',   grupoId: 'grupo-talla-taller',   contId: 'f-talla-taller',   comparar: compararVariantes },
+        { campo: 'variante_grano',   grupoId: 'grupo-grano-taller',   contId: 'f-grano-taller',   comparar: compararVariantes },
+        { campo: 'variante_color',   grupoId: 'grupo-color-taller',   contId: 'f-color-taller',   comparar: (a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }) },
+        { campo: 'variante_medida',  grupoId: 'grupo-medida-taller',  contId: 'f-medida-taller',  comparar: compararNumerico },
+        { campo: 'variante_volumen', grupoId: 'grupo-volumen-taller', contId: 'f-volumen-taller', comparar: compararNumerico },
+        { campo: 'variante_micras',  grupoId: 'grupo-micras-taller',  contId: 'f-micras-taller',  comparar: compararNumerico },
+    ];
+
+    function valoresSeleccionadosTaller(contId) {
+        return [...document.querySelectorAll(`#${contId} input:checked`)].map(i => i.value);
+    }
+
+    function pintarCheckboxesAtributo(cont, grupo, valores, comparar) {
+        if (!valores.length) {
             grupo.style.display = 'none';
             cont.innerHTML = '';
             return;
         }
-
-        const familiasSel = familiasSeleccionadas();
-        const subfamiliasSel = subfamiliasSeleccionadas();
-        let base = TODOS.filter(p => p.area === 'talleres');
-        if (familiasSel.length) base = base.filter(p => familiasSel.includes(p.familia));
-        if (subfamiliasSel.length) base = base.filter(p => subfamiliasSel.includes(p.subfamilia));
-
-        const variantes = [...new Set(base.map(p => p.variante).filter(Boolean))];
-        if (!variantes.length) {
-            grupo.style.display = 'none';
-            cont.innerHTML = '';
-            return;
-        }
-
-        variantes.sort(compararVariantes);
-
+        valores.sort(comparar);
         cont.innerHTML = '';
-        variantes.forEach(v => {
+        valores.forEach(v => {
             const label = document.createElement('label');
             label.className = 'familia-item';
             label.innerHTML = `<input type="checkbox" value="${v.replace(/"/g, '&quot;')}"> ${v}`;
@@ -2863,6 +2896,45 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             cont.appendChild(label);
         });
         grupo.style.display = 'block';
+    }
+
+    // Puebla los filtros de talla/grano/color/medida/volumen/micras (área
+    // talleres), limitados a los productos de las familias/subfamilias ya
+    // seleccionadas — igual que subfamilia se limita a la familia elegida,
+    // para que cada lista muestre solo lo relevante al producto concreto
+    // en vez de las ~800 referencias del catálogo completo de golpe.
+    function renderAtributosTaller() {
+        const esTalleres = $('f-area').value === 'talleres';
+
+        if (!esTalleres) {
+            CAMPOS_ATRIBUTOS_TALLER.forEach(c => {
+                $(c.grupoId).style.display = 'none';
+                $(c.contId).innerHTML = '';
+            });
+            $('grupo-otros-taller').style.display = 'none';
+            $('f-otros-taller').innerHTML = '';
+            return;
+        }
+
+        const familiasSel = familiasSeleccionadas();
+        const subfamiliasSel = subfamiliasSeleccionadas();
+        let base = TODOS.filter(p => p.area === 'talleres');
+        if (familiasSel.length) base = base.filter(p => familiasSel.includes(p.familia));
+        if (subfamiliasSel.length) base = base.filter(p => subfamiliasSel.includes(p.subfamilia));
+
+        CAMPOS_ATRIBUTOS_TALLER.forEach(c => {
+            const valores = [...new Set(base.map(p => p[c.campo]).filter(Boolean))];
+            pintarCheckboxesAtributo($(c.contId), $(c.grupoId), valores, c.comparar);
+        });
+
+        // "Otras variantes": el texto en bruto, solo para productos sin
+        // NINGÚN atributo estructurado detectado (códigos de modelo, kits...)
+        const sinEstructurar = base.filter(p => p.variante
+            && !p.variante_talla && !p.variante_grano && !p.variante_color
+            && !p.variante_medida && !p.variante_volumen && !p.variante_micras);
+        const valoresOtros = [...new Set(sinEstructurar.map(p => p.variante))];
+        pintarCheckboxesAtributo($('f-otros-taller'), $('grupo-otros-taller'), valoresOtros,
+            (a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
     }
 
     // Puebla los filtros de acabado y formato (área pinturas). Solo se
@@ -2959,10 +3031,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return [...document.querySelectorAll('#f-subfamilias input:checked')].map(i => i.value);
     }
 
-    function variantesTallerSeleccionadas() {
-        return [...document.querySelectorAll('#f-variante-taller input:checked')].map(i => i.value);
-    }
-
     // ── Atributos derivados del nombre del producto (área pinturas) ──
     // No existen como campos en productos.json, se deducen del texto del
     // nombre. Por eso solo se ofrecen como filtro cuando de verdad hay
@@ -3020,7 +3088,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
         renderAtributosPintura(); // Limpiar acabado/formato
-        renderVarianteTaller(); // Limpiar talla/variante
+        renderAtributosTaller(); // Limpiar talla/variante
     }
 
     function limpiarFiltros() {
@@ -3103,13 +3171,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
         const acabadosSel = acabadosSeleccionados();
         const formatosSel = formatosSeleccionados();
-        const variantesTallerSel = variantesTallerSeleccionadas();
+        const tallaSel   = valoresSeleccionadosTaller('f-talla-taller');
+        const granoSel   = valoresSeleccionadosTaller('f-grano-taller');
+        const colorSel   = valoresSeleccionadosTaller('f-color-taller');
+        const medidaSel  = valoresSeleccionadosTaller('f-medida-taller');
+        const volumenSel = valoresSeleccionadosTaller('f-volumen-taller');
+        const microasSel = valoresSeleccionadosTaller('f-micras-taller');
+        const otrosSel   = valoresSeleccionadosTaller('f-otros-taller');
 
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
             if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
-            if (variantesTallerSel.length && !variantesTallerSel.includes(p.variante)) return false;
+            if (tallaSel.length && !tallaSel.includes(p.variante_talla)) return false;
+            if (granoSel.length && !granoSel.includes(p.variante_grano)) return false;
+            if (colorSel.length && !colorSel.includes(p.variante_color)) return false;
+            if (medidaSel.length && !medidaSel.includes(p.variante_medida)) return false;
+            if (volumenSel.length && !volumenSel.includes(p.variante_volumen)) return false;
+            if (microasSel.length && !microasSel.includes(p.variante_micras)) return false;
+            if (otrosSel.length && !otrosSel.includes(p.variante)) return false;
             if (soloOferta && !p.oferta) return false;
             if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
             if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
