@@ -688,6 +688,26 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .btn-solicitar-catalogo:disabled:hover { background: #cbd5e1; }
 
+        .btn-compartir-resultados {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: #fff;
+            color: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-compartir-resultados:hover { background: var(--light); }
+        .btn-compartir-resultados.copiado {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #059669;
+        }
+
         .familia-seccion { margin-bottom: 32px; }
         .familia-titulo {
             font-size: 1.05rem;
@@ -1708,6 +1728,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled style="display: none;">
                 <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
             </button>
+            <button class="btn-compartir-resultados" id="btn-compartir-resultados">
+                <i class="fa-solid fa-share-nodes"></i> Compartir estos resultados
+            </button>
         </div>
 
         <div class="catalog-disclaimer" style="background: #fff7ed; border-left: 4px solid var(--yellow); padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; font-size: 0.85rem; color: #64748b;">
@@ -2164,6 +2187,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('cargando-inicial').style.display = 'none';
             $('contenedor-resultados').style.display = '';
             iniciarComprobacionActualizaciones();
+            aplicarFiltrosDesdeURL();
             abrirProductoDesdeURL();
         })
         .catch(err => {
@@ -2419,6 +2443,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
+        $('btn-compartir-resultados').addEventListener('click', compartirResultados);
 
         // Panel de filtros como modal deslizante en móvil
         $('btn-abrir-filtros-movil').addEventListener('click', alternarFiltrosMovil);
@@ -3580,6 +3605,144 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         // Quitar ?ref= de la URL sin recargar (deja la URL limpia)
+        const limpia = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', limpia);
+    }
+
+    // ── Compartir un listado de resultados filtrados ──
+    // Cada filtro tiene un tipo (campo de texto, desplegable, casilla suelta
+    // o grupo de casillas) y el nombre corto que tendrá como parámetro en
+    // la URL compartida. Los grupos de casillas (familia, subfamilia,
+    // acabado/formato de pinturas, talla/grano/color/medida/volumen/micras
+    // de talleres) se codifican como sus valores separados por "|".
+    const CAMPOS_FILTRO_URL = [
+        { tipo: 'texto',           id: 'f-texto',           param: 'q' },
+        { tipo: 'select',          id: 'f-area',            param: 'area' },
+        { tipo: 'checkbox-grupo',  contId: 'f-familias',       param: 'fam' },
+        { tipo: 'checkbox-grupo',  contId: 'f-subfamilias',    param: 'subfam' },
+        { tipo: 'texto',           id: 'f-precio-min',      param: 'pmin' },
+        { tipo: 'texto',           id: 'f-precio-max',      param: 'pmax' },
+        { tipo: 'checkbox-simple', id: 'f-oferta',          param: 'oferta' },
+        { tipo: 'checkbox-grupo',  contId: 'f-acabado',        param: 'acabado' },
+        { tipo: 'checkbox-grupo',  contId: 'f-formato',        param: 'formato' },
+        { tipo: 'checkbox-grupo',  contId: 'f-talla-taller',   param: 'talla' },
+        { tipo: 'checkbox-grupo',  contId: 'f-grano-taller',   param: 'grano' },
+        { tipo: 'checkbox-grupo',  contId: 'f-color-taller',   param: 'color' },
+        { tipo: 'checkbox-grupo',  contId: 'f-medida-taller',  param: 'medida' },
+        { tipo: 'checkbox-grupo',  contId: 'f-volumen-taller', param: 'volumen' },
+        { tipo: 'checkbox-grupo',  contId: 'f-micras-taller',  param: 'micras' },
+        { tipo: 'checkbox-grupo',  contId: 'f-otros-taller',   param: 'otros' },
+    ];
+
+    // Construye la URL con todos los filtros activos ahora mismo, como
+    // parámetros de consulta legibles (ej. ?area=pinturas&fam=Pinturas+Titan).
+    function construirURLFiltros() {
+        const params = new URLSearchParams();
+        CAMPOS_FILTRO_URL.forEach(c => {
+            if (c.tipo === 'texto') {
+                const v = $(c.id).value.trim();
+                if (v) params.set(c.param, v);
+            } else if (c.tipo === 'select') {
+                const v = $(c.id).value;
+                if (v) params.set(c.param, v);
+            } else if (c.tipo === 'checkbox-simple') {
+                if ($(c.id).checked) params.set(c.param, '1');
+            } else if (c.tipo === 'checkbox-grupo') {
+                const seleccionados = [...document.querySelectorAll(`#${c.contId} input:checked`)].map(i => i.value);
+                if (seleccionados.length) params.set(c.param, seleccionados.join('|'));
+            }
+        });
+        const base = window.location.origin + window.location.pathname;
+        const qs = params.toString();
+        return qs ? `${base}?${qs}` : base;
+    }
+
+    function configurarBotonCompartirResultados() {
+        const boton = $('btn-compartir-resultados');
+        boton.classList.remove('copiado');
+        boton.innerHTML = '<i class="fa-solid fa-share-nodes"></i> Compartir estos resultados';
+    }
+
+    async function compartirResultados() {
+        const url = construirURLFiltros();
+        const boton = $('btn-compartir-resultados');
+        const numResultados = resultadosActuales.length;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Orencio Matas y Hnos — Catálogo',
+                    text: `${numResultados} producto${numResultados === 1 ? '' : 's'} seleccionados`,
+                    url: url,
+                });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(url);
+            boton.classList.add('copiado');
+            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Enlace copiado!';
+            setTimeout(configurarBotonCompartirResultados, 2200);
+        } catch (e) {
+            window.prompt('Copia este enlace para compartir estos resultados:', url);
+        }
+    }
+
+    // Si la URL trae parámetros de filtro (ej. desde un enlace compartido
+    // con "Compartir estos resultados"), los reconstruye tal cual estaban:
+    // primero el texto/área/precio/oferta (directos), luego familia (que
+    // hay que marcar antes de poder generar subfamilia), luego subfamilia
+    // (antes de poder generar acabado/formato/talla/grano/...), y por
+    // último esos atributos derivados — respetando el mismo orden en
+    // cascada que ya usa el resto del buscador.
+    function aplicarFiltrosDesdeURL() {
+        const params = new URLSearchParams(window.location.search);
+        const tieneFiltros = CAMPOS_FILTRO_URL.some(c => params.has(c.param));
+        if (!tieneFiltros) return;
+
+        const pendientes = {};
+        CAMPOS_FILTRO_URL.forEach(c => {
+            if (!params.has(c.param)) return;
+            const valor = params.get(c.param);
+            if (c.tipo === 'texto') $(c.id).value = valor;
+            else if (c.tipo === 'select') $(c.id).value = valor;
+            else if (c.tipo === 'checkbox-simple') $(c.id).checked = (valor === '1');
+            else if (c.tipo === 'checkbox-grupo') pendientes[c.contId] = valor.split('|');
+        });
+
+        const marcar = (contId) => {
+            if (!pendientes[contId]) return;
+            document.querySelectorAll(`#${contId} input`).forEach(input => {
+                if (pendientes[contId].includes(input.value)) input.checked = true;
+            });
+        };
+
+        renderFamilias(); // crea checkboxes de familia (según el área ya puesta) y de subfamilia (aún vacíos)
+        marcar('f-familias');
+
+        renderSubfamilias(); // ahora sí, con las familias ya marcadas
+        marcar('f-subfamilias');
+
+        renderAtributosPintura();
+        marcar('f-acabado');
+        marcar('f-formato');
+
+        renderAtributosTaller();
+        marcar('f-talla-taller');
+        marcar('f-grano-taller');
+        marcar('f-color-taller');
+        marcar('f-medida-taller');
+        marcar('f-volumen-taller');
+        marcar('f-micras-taller');
+        marcar('f-otros-taller');
+
+        resetPaginacion();
+        aplicarFiltros();
+
+        // Quitar los parámetros de la URL sin recargar (deja la URL limpia)
         const limpia = window.location.origin + window.location.pathname + window.location.hash;
         window.history.replaceState({}, '', limpia);
     }
