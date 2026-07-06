@@ -3612,7 +3612,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const herramienta = herramientaAplicacionRecomendada(p);
         if (herramienta) sugerencias.push(herramienta);
 
-        return sugerencias.slice(0, 3);
+        // Protección para pintar: cinta de enmascarar y papel protector.
+        // El catálogo NO tiene "plástico protector" como producto real
+        // (verificado); el papel protector para pintura es el equivalente
+        // más cercano que sí existe, así que se sugiere ese.
+        const cintaEnmascarar = pinturasCatalogo.find(x => quitarAcentosMay(x.familia) === 'BROCHAS Y UTILES DE APLICACION'
+            && quitarAcentosMay(x.nombre).includes('CINTA ENMASCARAR'));
+        if (cintaEnmascarar) sugerencias.push(cintaEnmascarar);
+
+        const papelProtector = pinturasCatalogo.find(x => quitarAcentosMay(x.familia) === 'BROCHAS Y UTILES DE APLICACION'
+            && quitarAcentosMay(x.nombre).includes('PAPEL PROTECTOR'));
+        if (papelProtector) sugerencias.push(papelProtector);
+
+        return sugerencias.slice(0, 4);
     }
 
     // ── Compra conjunta para Droguería/Perfumería ──
