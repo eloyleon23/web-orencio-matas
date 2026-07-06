@@ -2096,13 +2096,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
     const PRODUCTOS_URL = './data/productos.json';
+    const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
+
+    // Talleres y Carrocerías no tiene productos propios en la hoja
+    // Productos (Sheet) — de momento se cargan aquí los productos del
+    // catálogo del proveedor Zaphiro (sin precio, extraídos de su PDF
+    // oficial), como fuente adicional independiente. Si más adelante hay
+    // productos reales de talleres en el Sheet, este archivo puede
+    // simplemente dejar de cargarse o convivir con ellos sin conflicto
+    // (referencias con prefijo "Z" no se solapan con las de droguería/
+    // perfumería/pinturas).
+    function cargarProductosTalleres() {
+        return fetch(PRODUCTOS_TALLERES_URL)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data && data.productos ? data.productos : [])
+            .catch(() => []); // si falla, simplemente no se añaden (no rompe el catálogo principal)
+    }
+
     fetch(PRODUCTOS_URL)
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
             hashConocido = await calcularHash(texto);
             const data = JSON.parse(texto);
-            TODOS = data.productos || [];
+            const productosTalleres = await cargarProductosTalleres();
+            TODOS = [...(data.productos || []), ...productosTalleres];
             FAMILIAS_ORDEN = data.familias_orden || {};
             SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
             construirIndiceSugerencias();
@@ -2253,7 +2271,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const familiasPrevias = familiasSeleccionadas();
         const subfamiliasPrevias = subfamiliasSeleccionadas();
 
-        TODOS = data.productos || [];
+        // Los productos de talleres (Zaphiro) no vienen en este `data`
+        // (es un archivo aparte que apenas cambia) — se conservan los que
+        // ya estaban cargados en vez de perderlos en esta actualización.
+        const talleresActuales = TODOS.filter(p => p.area === 'talleres');
+        TODOS = [...(data.productos || []), ...talleresActuales];
         FAMILIAS_ORDEN = data.familias_orden || {};
         SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
         construirIndiceSugerencias();
