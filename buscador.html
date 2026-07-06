@@ -2092,8 +2092,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
     const PRODUCTOS_URL = './data/productos.json';
     fetch(PRODUCTOS_URL)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
+        .then(r => r.ok ? r.text() : null)
+        .then(async texto => {
+            if (!texto) throw new Error('respuesta vacía');
+            hashConocido = await calcularHash(texto);
+            const data = JSON.parse(texto);
             TODOS = data.productos || [];
             FAMILIAS_ORDEN = data.familias_orden || {};
             SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
@@ -2114,19 +2117,33 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ══════════════════════════════════════════════
     // ── Detección de productos.json actualizado en el servidor ──
     // El workflow que regenera productos.json puede correr en cualquier
-    // momento (cada 10-15 min o al validar una imagen). Esto avisa a quien
-    // ya tiene el buscador abierto de que hay una versión más reciente,
-    // sin refrescar nada automáticamente ni perder los filtros aplicados.
+    // momento (cada 10-15 min o al validar una imagen), pero eso no
+    // significa que el CONTENIDO haya cambiado de verdad — puede
+    // regenerarse con los mismos datos. Por eso el ETag/Last-Modified solo
+    // se usa como primer filtro barato (una petición HEAD, sin descargar
+    // nada); si ese cambia, se confirma descargando el archivo real y
+    // comparando su hash (SHA-256, vía la Web Crypto API nativa del
+    // navegador — sin librerías) contra el hash de lo que ya está
+    // cargado. Solo se avisa si el contenido de verdad es distinto.
     // ══════════════════════════════════════════════
     const INTERVALO_COMPROBACION_MS = 60 * 1000; // cada 1 minuto
-    let etagConocido = null;   // versión de productos.json actualmente cargada
-    let etagPendiente = null;  // versión nueva detectada, aún no cargada
+    let etagConocido = null;    // versión (ETag/Last-Modified) del último HEAD comprobado
+    let hashConocido = null;    // hash SHA-256 del contenido actualmente cargado
+    let hashPendiente = null;   // hash del contenido nuevo detectado, aún no cargado
     let avisoDescartado = false;
     let comprobandoActualizacion = false;
 
     function identificadorVersion(headers) {
         // ETag es lo más fiable; Last-Modified como respaldo si el servidor no lo envía.
         return headers.get('etag') || headers.get('last-modified') || null;
+    }
+
+    // SHA-256 del texto dado, en hexadecimal. Usa SubtleCrypto (nativo del
+    // navegador, disponible en todo contexto https/localhost) — no hace
+    // falta ninguna librería de hashing externa.
+    async function calcularHash(texto) {
+        const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+        return [...new Uint8Array(buffer)].map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     async function iniciarComprobacionActualizaciones() {
@@ -2144,19 +2161,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
-            const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
-            const version = identificadorVersion(resp.headers);
+            // Paso 1 (barato): ¿ha cambiado la cabecera de versión?
+            const respHead = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
+            const version = identificadorVersion(respHead.headers);
             if (!version) return; // servidor no da ETag ni Last-Modified: no se puede comparar, no molestamos
-
             if (etagConocido === null) {
                 etagConocido = version;
                 return;
             }
-            if (version === etagConocido) return; // sin cambios
+            if (version === etagConocido) return; // ni siquiera la cabecera cambió: nada que comprobar
 
-            if (version !== etagPendiente) {
-                // Es una versión nueva que aún no se ha ofrecido (o distinta de la ya descartada)
-                etagPendiente = version;
+            // Paso 2 (solo si el paso 1 sugiere un cambio): descargar el
+            // contenido real y comparar su hash. Si el hash es IGUAL, el
+            // archivo se regeneró pero con los mismos datos — se actualiza
+            // la cabecera conocida para no repetir esta descarga cada
+            // minuto por la misma "versión" que en realidad no cambió nada,
+            // pero NO se avisa al usuario.
+            const respGet = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            const texto = await respGet.text();
+            const hash = await calcularHash(texto);
+
+            etagConocido = version; // ya se ha comprobado esta versión, sea igual o distinta
+
+            if (hash === hashConocido) return; // contenido idéntico: no hay nada que avisar
+
+            if (hash !== hashPendiente) {
+                // Contenido nuevo de verdad, distinto de lo ya cargado y
+                // distinto de lo que ya se hubiera descartado antes.
+                hashPendiente = hash;
                 avisoDescartado = false;
             }
             if (!avisoDescartado) {
@@ -2190,10 +2222,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             const resp = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
             if (!resp.ok) throw new Error('respuesta no OK');
-            const data = await resp.json();
+            const texto = await resp.text();
+            const data = JSON.parse(texto);
             recargarProductosPreservandoFiltros(data);
-            etagConocido = etagPendiente || identificadorVersion(resp.headers);
-            etagPendiente = null;
+            hashConocido = hashPendiente || await calcularHash(texto);
+            hashPendiente = null;
+            etagConocido = identificadorVersion(resp.headers) || etagConocido;
             avisoDescartado = false;
             ocultarBannerActualizacion();
             mostrarToast('✓ Catálogo actualizado con los últimos cambios.');
