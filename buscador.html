@@ -3258,7 +3258,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         card.addEventListener('click', () => abrirModalProducto(p));
 
         const imgHtml = p.img
-            ? `<img src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;producto-sin-img&quot;>Sin imagen</span>'">`
+            ? `<img src="${urlImagenProducto(p, 300)}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;producto-sin-img&quot;>Sin imagen</span>'">`
             : `<span class="producto-sin-img">Sin imagen</span>`;
 
         const ofertaBadge = p.oferta ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
@@ -3286,9 +3286,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Abrir modal con detalle del producto ──
     function abrirModalProducto(p) {
-        const imgSrc = p.img
-            ? `https://drive.google.com/thumbnail?id=${p.img}&sz=w800`
-            : '';
+        const imgSrc = urlImagenProducto(p, 800) || '';
 
         $('modal-producto-img').src = imgSrc;
         $('modal-producto-img').alt = escapeHtml(p.nombre);
@@ -3780,7 +3778,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         lista.innerHTML = sugerencias.map(s => {
             const img = s.img
-                ? `<img src="https://drive.google.com/thumbnail?id=${s.img}&sz=w100" alt="" loading="lazy">`
+                ? `<img src="${urlImagenProducto(s, 100)}" alt="" loading="lazy">`
                 : `<div style="width:64px;height:64px;"></div>`;
             const precio = s.mostrar_precio && s.precio_con
                 ? `${parseFloat(s.precio_con.replace(',', '.')).toFixed(2).replace('.', ',')} €`
@@ -4036,6 +4034,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const d = document.createElement('div');
         d.textContent = str || '';
         return d.innerHTML;
+    }
+
+    // Talleres y Carrocerías no tiene imágenes en Google Drive (viene del
+    // catálogo Zaphiro, extraídas directamente del PDF del proveedor) — se
+    // sirven como archivos estáticos del propio repositorio, sin el
+    // redimensionado dinámico que sí ofrece Drive por parámetro de URL.
+    function urlImagenProducto(p, tamano) {
+        if (!p.img) return null;
+        if (p.area === 'talleres') return `./assets/imagenes_talleres/${p.img}`;
+        return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
     }
 
     // ── Modal de solicitud de catálogo personalizado ──
