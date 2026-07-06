@@ -3635,6 +3635,44 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 catalogo.find(x => quitarAcentosMay(x.subfamilia) === 'BAYETAS Y PAÑOS'),
             ],
         },
+        {
+            // Tierra / sustrato de jardín → fertilizante o abono, para
+            // completar el cuidado de la planta que se va a trasplantar.
+            coincide: (n, sf) => n.includes('TIERRA') || n.includes('TURBA') || n.includes('SUSTRATO'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => /FERTILIZ|ABONO/.test(quitarAcentosMay(x.nombre))
+                    && !/TIERRA|TURBA/.test(quitarAcentosMay(x.nombre))),
+            ],
+        },
+        {
+            // Insecticida para avispas → trampa para avispas
+            coincide: (n, sf) => n.includes('AVISPA'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('TRAMPA') && quitarAcentosMay(x.nombre).includes('AVISPA')),
+            ],
+        },
+        {
+            // Insecticida para moscas → trampa/cebo para moscas
+            coincide: (n, sf) => n.includes('MOSCA'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => (quitarAcentosMay(x.nombre).includes('TRAMPA') || quitarAcentosMay(x.nombre).includes('CEBO'))
+                    && quitarAcentosMay(x.nombre).includes('MOSCA')),
+            ],
+        },
+        {
+            // Insecticida para cucarachas → trampa para cucarachas
+            coincide: (n, sf) => n.includes('CUCARACHA') || n.includes('CUCA'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('TRAMPA') && quitarAcentosMay(x.nombre).includes('CUCARACHA')),
+            ],
+        },
+        {
+            // Insecticida para hormigas → trampa para hormigas
+            coincide: (n, sf) => n.includes('HORMIGA'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('TRAMPA') && quitarAcentosMay(x.nombre).includes('HORMIGA')),
+            ],
+        },
     ];
 
     function productosComplementariosDrogueria(p) {
