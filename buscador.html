@@ -1615,6 +1615,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="familias-lista" id="f-subfamilias"></div>
         </div>
 
+        <div class="filtro-grupo collapsable" id="grupo-variante-taller" style="display: none;">
+            <label class="titulo">Talla / Variante</label>
+            <div class="familias-lista" id="f-variante-taller"></div>
+        </div>
+
         <div class="filtro-grupo collapsable" id="grupo-acabado" style="display: none;">
             <label class="titulo">Acabado</label>
             <div class="familias-lista" id="f-acabado"></div>
@@ -2292,6 +2297,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (subfamiliasPrevias.includes(input.value)) input.checked = true;
         });
         renderAtributosPintura();
+        renderVarianteTaller();
 
         resetPaginacion();
         aplicarFiltros();
@@ -2368,7 +2374,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('input-imagen-busqueda').click();
         });
         $('input-imagen-busqueda').addEventListener('change', buscarPorImagenSeleccionada);
-        $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); resetPaginacion(); aplicarFiltros(); });
+        $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); renderVarianteTaller(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
@@ -2741,6 +2747,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             label.querySelector('input').addEventListener('change', () => { 
                 resetPaginacion(); 
                 renderSubfamilias(); // Actualizar subfamilias cuando cambia la familia
+                renderVarianteTaller(); // Actualizar tambien la cascada de talla/variante
                 aplicarFiltros(); 
             });
             cont.appendChild(label);
@@ -2787,10 +2794,75 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             label.innerHTML = `<input type="checkbox" value="${subfam.replace(/"/g,'&quot;')}"> ${subfam}`;
             label.querySelector('input').addEventListener('change', () => {
                 resetPaginacion();
+                renderVarianteTaller(); // Actualizar la cascada de talla/variante
                 aplicarFiltros();
             });
             cont.appendChild(label);
         });
+    }
+
+    // Orden inteligente para el filtro de Talla/Variante: los granos de
+    // lija ("P-60", "P-80"...) se ordenan numéricamente por su número, las
+    // tallas de ropa siguen el orden real S < M < L < XL < 2XL < 3XL, y
+    // cualquier otro valor (colores, medidas variadas) cae al orden
+    // alfabético normal.
+    const ORDEN_TALLAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'XXXL'];
+    function compararVariantes(a, b) {
+        const matchA = a.match(/^P-?(\d+)/i);
+        const matchB = b.match(/^P-?(\d+)/i);
+        if (matchA && matchB) return parseInt(matchA[1], 10) - parseInt(matchB[1], 10);
+
+        const idxA = ORDEN_TALLAS.indexOf(a.toUpperCase());
+        const idxB = ORDEN_TALLAS.indexOf(b.toUpperCase());
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+
+        return a.localeCompare(b, 'es', { sensitivity: 'base' });
+    }
+
+    // Puebla el filtro de Talla/Variante (área talleres): valores tipo
+    // grano de lija, talla de ropa o color, tal cual vienen en el campo
+    // `variante` de cada producto. Se limita a los productos de las
+    // familias/subfamilias ya seleccionadas, igual que subfamilia se
+    // limita a la familia elegida — así la lista no se vuelve interminable
+    // con las ~800 referencias del catálogo completo de golpe.
+    function renderVarianteTaller() {
+        const esTalleres = $('f-area').value === 'talleres';
+        const grupo = $('grupo-variante-taller');
+        const cont = $('f-variante-taller');
+
+        if (!esTalleres) {
+            grupo.style.display = 'none';
+            cont.innerHTML = '';
+            return;
+        }
+
+        const familiasSel = familiasSeleccionadas();
+        const subfamiliasSel = subfamiliasSeleccionadas();
+        let base = TODOS.filter(p => p.area === 'talleres');
+        if (familiasSel.length) base = base.filter(p => familiasSel.includes(p.familia));
+        if (subfamiliasSel.length) base = base.filter(p => subfamiliasSel.includes(p.subfamilia));
+
+        const variantes = [...new Set(base.map(p => p.variante).filter(Boolean))];
+        if (!variantes.length) {
+            grupo.style.display = 'none';
+            cont.innerHTML = '';
+            return;
+        }
+
+        variantes.sort(compararVariantes);
+
+        cont.innerHTML = '';
+        variantes.forEach(v => {
+            const label = document.createElement('label');
+            label.className = 'familia-item';
+            label.innerHTML = `<input type="checkbox" value="${v.replace(/"/g, '&quot;')}"> ${v}`;
+            label.querySelector('input').addEventListener('change', () => {
+                resetPaginacion();
+                aplicarFiltros();
+            });
+            cont.appendChild(label);
+        });
+        grupo.style.display = 'block';
     }
 
     // Puebla los filtros de acabado y formato (área pinturas). Solo se
@@ -2887,6 +2959,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return [...document.querySelectorAll('#f-subfamilias input:checked')].map(i => i.value);
     }
 
+    function variantesTallerSeleccionadas() {
+        return [...document.querySelectorAll('#f-variante-taller input:checked')].map(i => i.value);
+    }
+
     // ── Atributos derivados del nombre del producto (área pinturas) ──
     // No existen como campos en productos.json, se deducen del texto del
     // nombre. Por eso solo se ofrecen como filtro cuando de verdad hay
@@ -2944,6 +3020,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
         renderAtributosPintura(); // Limpiar acabado/formato
+        renderVarianteTaller(); // Limpiar talla/variante
     }
 
     function limpiarFiltros() {
@@ -3026,11 +3103,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
         const acabadosSel = acabadosSeleccionados();
         const formatosSel = formatosSeleccionados();
+        const variantesTallerSel = variantesTallerSeleccionadas();
 
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
             if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
+            if (variantesTallerSel.length && !variantesTallerSel.includes(p.variante)) return false;
             if (soloOferta && !p.oferta) return false;
             if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
             if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
