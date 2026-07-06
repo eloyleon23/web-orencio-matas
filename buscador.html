@@ -656,9 +656,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
         .resultados-count {
             font-size: 0.9rem;
@@ -706,6 +706,35 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: #ecfdf5;
             border-color: #10b981;
             color: #059669;
+        }
+
+        .catalog-disclaimer {
+            background: #fff7ed;
+            border-left: 4px solid var(--yellow);
+            padding: 8px 14px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* En móvil, la fila de cabecera (contador + botones) suele partirse
+           en varias líneas al no caber todo — se compactan los botones
+           (menos relleno, texto más pequeño) y se recortan los márgenes
+           para que no se acumule tanto espacio antes de ver resultados. */
+        @media (max-width: 480px) {
+            .resultados-header { margin-bottom: 8px; gap: 6px; }
+            .btn-solicitar-catalogo,
+            .btn-compartir-resultados {
+                padding: 7px 12px;
+                font-size: 0.78rem;
+            }
+            .catalog-disclaimer {
+                padding: 7px 12px;
+                margin-bottom: 10px;
+                font-size: 0.76rem;
+            }
         }
 
         .familia-seccion { margin-bottom: 32px; }
@@ -1733,7 +1762,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </div>
 
-        <div class="catalog-disclaimer" style="background: #fff7ed; border-left: 4px solid var(--yellow); padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; font-size: 0.85rem; color: #64748b;">
+        <div class="catalog-disclaimer">
             <i class="fa-solid fa-circle-info" style="color: var(--yellow); margin-right: 8px;"></i>
             <strong>Nota:</strong> Los precios pueden variar y los productos mostrados están sujetos a disponibilidad. Consulta con nuestro equipo para confirmar stock actual.
         </div>
