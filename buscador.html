@@ -848,6 +848,35 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             align-items: center;
             gap: 4px;
         }
+        /* Logo pequeño del fabricante/proveedor (Zaphiro, Glasurit...) en la
+           esquina superior izquierda de la foto — solo aplica a productos
+           de Talleres, que no tienen "oferta" (evita solaparse con ese
+           badge, que ocupa la misma esquina). */
+        .badge-fabricante-logo {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            height: 24px;
+            max-width: 64px;
+            padding: 3px 5px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .badge-fabricante-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .badge-fabricante-logo--modal {
+            height: 34px;
+            max-width: 90px;
+            top: 14px;
+            left: 14px;
+        }
         .producto-info { padding: 12px; }
         .producto-nombre {
             font-size: 0.82rem;
@@ -900,6 +929,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 top: 5px;
                 left: 5px;
                 gap: 2px;
+            }
+            .badge-fabricante-logo {
+                height: 18px;
+                max-width: 48px;
+                top: 5px;
+                left: 5px;
+                padding: 2px 4px;
             }
             .producto-img-wrap img { padding: 6px; }
         }
@@ -1838,6 +1874,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-producto-content">
             <div class="modal-producto-imagen">
                 <img id="modal-producto-img" src="" alt="" loading="lazy">
+                <span id="modal-producto-fabricante-logo" class="badge-fabricante-logo badge-fabricante-logo--modal" style="display:none;">
+                    <img src="" alt="">
+                </span>
                 <button id="modal-producto-compartir" class="modal-producto-compartir" title="Compartir producto">
                     <i class="fa-solid fa-share-from-square"></i>
                     Compartir
@@ -1996,6 +2035,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         pinturas:   'Pinturas',
         talleres:   'Talleres',
     };
+
+    // Logo pequeño del fabricante/proveedor para productos de Talleres
+    // (esquina superior izquierda de la foto). "Besa" ya está preparado
+    // aquí para cuando se integre ese catálogo — solo hace falta que sus
+    // productos traigan fabricante: "Besa" y aparecerá automáticamente,
+    // igual que ya pasó con el filtro de Fabricante.
+    const LOGOS_FABRICANTE = {
+        Zaphiro:  './assets/proveedores/zaphiro_cover.jpg',
+        Glasurit: './assets/proveedores/Glaurit.png',
+        Besa:     './assets/proveedores/BESA%2B-%2Bcolor.webp',
+    };
+
+    function logoFabricanteHtml(p) {
+        if (p.area !== 'talleres' || !p.fabricante) return '';
+        const src = LOGOS_FABRICANTE[p.fabricante];
+        if (!src) return '';
+        return `<span class="badge-fabricante-logo"><img src="${src}" alt="${escapeHtml(p.fabricante)}" loading="lazy"></span>`;
+    }
 
     let TODOS = [];          // todos los productos cargados
     let FAMILIAS_ORDEN = {}; // {familia: orden}
@@ -3560,7 +3617,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         card.innerHTML = `
-            <div class="producto-img-wrap">${ofertaBadge}${imgHtml}</div>
+            <div class="producto-img-wrap">${ofertaBadge}${logoFabricanteHtml(p)}${imgHtml}</div>
             <div class="producto-info">
                 <p class="producto-nombre">${escapeHtml(p.nombre)}</p>
                 <p class="producto-ref">Ref: ${escapeHtml(p.ref)}</p>
@@ -3580,8 +3637,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-ref').textContent = `Ref: ${p.ref}`;
         const familiaTexto = p.familia || '—';
         const subfamiliaTexto = p.subfamilia ? ` (${p.subfamilia})` : '';
-        $('modal-producto-familia').textContent = familiaTexto + subfamiliaTexto;
+        const fabricanteTexto = (p.area === 'talleres' && p.fabricante) ? ` · ${p.fabricante}` : '';
+        $('modal-producto-familia').textContent = familiaTexto + subfamiliaTexto + fabricanteTexto;
         $('modal-producto-area').textContent = AREAS_NOMBRE[p.area] || p.area || '—';
+
+        // Logo pequeño del fabricante/proveedor sobre la foto (solo talleres)
+        const logoFabricante = $('modal-producto-fabricante-logo');
+        const srcLogo = (p.area === 'talleres' && p.fabricante) ? LOGOS_FABRICANTE[p.fabricante] : null;
+        if (srcLogo) {
+            logoFabricante.querySelector('img').src = srcLogo;
+            logoFabricante.querySelector('img').alt = p.fabricante;
+            logoFabricante.style.display = 'flex';
+        } else {
+            logoFabricante.style.display = 'none';
+        }
 
         let precioHtml = '';
         if (p.mostrar_precio) {
