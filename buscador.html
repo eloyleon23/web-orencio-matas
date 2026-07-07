@@ -1658,6 +1658,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </select>
         </div>
 
+        <div class="filtro-grupo collapsable" id="grupo-fabricante-taller" style="display: none;">
+            <label class="titulo">Fabricante</label>
+            <div class="familias-lista" id="f-fabricante-taller"></div>
+        </div>
+
         <div class="filtro-grupo collapsable" id="grupo-familias">
             <label class="titulo">Familia</label>
             <div class="familias-lista" id="f-familias"></div>
@@ -2419,9 +2424,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             selectArea.appendChild(opt);
         });
 
+        renderFabricanteTaller();
         renderFamilias();
-
-        // Toggle de filtros colapsables
         document.querySelectorAll('.filtro-grupo.collapsable .titulo').forEach(titulo => {
             titulo.addEventListener('click', function() {
                 const grupo = this.closest('.filtro-grupo');
@@ -2478,7 +2482,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('input-imagen-busqueda').click();
         });
         $('input-imagen-busqueda').addEventListener('change', buscarPorImagenSeleccionada);
-        $('f-area').addEventListener('change', () => { renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros(); });
+        $('f-area').addEventListener('change', () => { renderFabricanteTaller(); renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
@@ -2840,7 +2844,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cont = $('f-familias');
         cont.innerHTML = '';
 
-        const base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        let base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        const fabricantesSel = fabricantesTallerSeleccionados();
+        if (areaSel === 'talleres' && fabricantesSel.length) {
+            base = base.filter(p => fabricantesSel.includes(p.fabricante));
+        }
         const familias = [...new Set(base.map(p => p.familia).filter(Boolean))];
 
         familias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
@@ -2973,6 +2981,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         grupo.style.display = 'block';
     }
 
+    // Puebla el filtro de Fabricante (área talleres): Zaphiro, Glasurit, y
+    // los que se vayan añadiendo (Besa...). Es el primer nivel de la
+    // cascada — por encima de Familia — porque cada fabricante tiene su
+    // propio conjunto de categorías (las de Zaphiro no coinciden con las
+    // de Glasurit), así que elegir fabricante acota qué familias se
+    // ofrecen después, igual que familia acota subfamilia.
+    function renderFabricanteTaller() {
+        const esTalleres = $('f-area').value === 'talleres';
+        const grupo = $('grupo-fabricante-taller');
+        const cont = $('f-fabricante-taller');
+
+        if (!esTalleres) {
+            grupo.style.display = 'none';
+            cont.innerHTML = '';
+            return;
+        }
+
+        const fabricantes = [...new Set(TODOS.filter(p => p.area === 'talleres').map(p => p.fabricante).filter(Boolean))];
+        fabricantes.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+        cont.innerHTML = '';
+        fabricantes.forEach(fab => {
+            const label = document.createElement('label');
+            label.className = 'familia-item';
+            label.innerHTML = `<input type="checkbox" value="${fab.replace(/"/g, '&quot;')}"> ${fab}`;
+            label.querySelector('input').addEventListener('change', () => {
+                resetPaginacion();
+                renderFamilias(); // Actualizar familia/subfamilia/atributos según el fabricante elegido
+                aplicarFiltros();
+            });
+            cont.appendChild(label);
+        });
+        grupo.style.display = 'block';
+    }
+
     // Puebla los filtros de talla/grano/color/medida/volumen/micras (área
     // talleres), limitados a los productos de las familias/subfamilias ya
     // seleccionadas — igual que subfamilia se limita a la familia elegida,
@@ -2991,9 +3034,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
 
+        const fabricantesSel = fabricantesTallerSeleccionados();
         const familiasSel = familiasSeleccionadas();
         const subfamiliasSel = subfamiliasSeleccionadas();
         let base = TODOS.filter(p => p.area === 'talleres');
+        if (fabricantesSel.length) base = base.filter(p => fabricantesSel.includes(p.fabricante));
         if (familiasSel.length) base = base.filter(p => familiasSel.includes(p.familia));
         if (subfamiliasSel.length) base = base.filter(p => subfamiliasSel.includes(p.subfamilia));
 
@@ -3098,6 +3143,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return v; // ml, gr, g
     }
 
+    function fabricantesTallerSeleccionados() {
+        return [...document.querySelectorAll('#f-fabricante-taller input:checked')].map(i => i.value);
+    }
+
     function familiasSeleccionadas() {
         return [...document.querySelectorAll('#f-familias input:checked')].map(i => i.value);
     }
@@ -3160,6 +3209,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-oferta').checked = false;
         $('f-imagenes-validadas').checked = false;
         $('f-imagenes-sin-validar').checked = false;
+        renderFabricanteTaller(); // Limpiar/ocultar fabricante
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
         renderAtributosPintura(); // Limpiar acabado/formato
@@ -3239,6 +3289,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const area     = $('f-area').value;
         const familias = familiasSeleccionadas();
         const subfamilias = subfamiliasSeleccionadas();
+        const fabricantesSel = fabricantesTallerSeleccionados();
         const pMin     = parseFloat($('f-precio-min').value);
         const pMax     = parseFloat($('f-precio-max').value);
         const soloOferta = $('f-oferta').checked;
@@ -3256,6 +3307,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
+            if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
             if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
             if (tallaSel.length && !tallaSel.includes(p.variante_talla)) return false;
@@ -3668,6 +3720,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const CAMPOS_FILTRO_URL = [
         { tipo: 'texto',           id: 'f-texto',           param: 'q' },
         { tipo: 'select',          id: 'f-area',            param: 'area' },
+        { tipo: 'checkbox-grupo',  contId: 'f-fabricante-taller', param: 'fabricante' },
         { tipo: 'checkbox-grupo',  contId: 'f-familias',       param: 'fam' },
         { tipo: 'checkbox-grupo',  contId: 'f-subfamilias',    param: 'subfam' },
         { tipo: 'texto',           id: 'f-precio-min',      param: 'pmin' },
@@ -3770,7 +3823,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             });
         };
 
-        renderFamilias(); // crea checkboxes de familia (según el área ya puesta) y de subfamilia (aún vacíos)
+        renderFabricanteTaller(); // crea checkboxes de fabricante (según el área ya puesta)
+        marcar('f-fabricante-taller');
+
+        renderFamilias(); // crea checkboxes de familia (según el área/fabricante ya puestos) y de subfamilia (aún vacíos)
         marcar('f-familias');
 
         renderSubfamilias(); // ahora sí, con las familias ya marcadas
