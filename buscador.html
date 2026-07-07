@@ -2093,7 +2093,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const LOGOS_FABRICANTE = {
         Zaphiro:  './assets/proveedores/zaphiro_logo_oscuro.png',
         Glasurit: './assets/proveedores/Glaurit_recortado.png',
-        Besa:     './assets/proveedores/BESA%2B-%2Bcolor.webp',
+        Besa:     './assets/proveedores/besa_logo_recortado.png',
     };
 
     // Cuando un producto de Talleres no tiene foto propia, se usa esta
@@ -2365,6 +2365,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const PRODUCTOS_URL = './data/productos.json';
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
+    const PRODUCTOS_BESA_URL = './data/productos_besa.json';
 
     // Talleres y Carrocerías no tiene productos propios en la hoja
     // Productos (Sheet) — de momento se cargan aquí los productos del
@@ -2394,17 +2395,29 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .catch(() => []);
     }
 
+    // Tercer proveedor de Talleres: BESA (catálogo industrial 2020),
+    // compilado del PDF proporcionado directamente por el usuario. Sin
+    // imagen por ahora (el PDF sí tiene fotos de producto extraíbles,
+    // pendiente como siguiente paso) ni precio.
+    function cargarProductosBesa() {
+        return fetch(PRODUCTOS_BESA_URL)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data && data.productos ? data.productos : [])
+            .catch(() => []);
+    }
+
     fetch(PRODUCTOS_URL)
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
             hashConocido = await calcularHash(texto);
             const data = JSON.parse(texto);
-            const [productosTalleres, productosGlasurit] = await Promise.all([
+            const [productosTalleres, productosGlasurit, productosBesa] = await Promise.all([
                 cargarProductosTalleres(),
                 cargarProductosGlasurit(),
+                cargarProductosBesa(),
             ]);
-            TODOS = [...(data.productos || []), ...productosTalleres, ...productosGlasurit];
+            TODOS = [...(data.productos || []), ...productosTalleres, ...productosGlasurit, ...productosBesa];
             FAMILIAS_ORDEN = data.familias_orden || {};
             SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
             construirIndiceSugerencias();
