@@ -913,6 +913,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .badge-fabricante-logo img {
             width: 100%;
             height: 100%;
+            padding: 0;
             object-fit: contain;
             filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
         }
@@ -2090,8 +2091,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // productos traigan fabricante: "Besa" y aparecerá automáticamente,
     // igual que ya pasó con el filtro de Fabricante.
     const LOGOS_FABRICANTE = {
-        Zaphiro:  './assets/proveedores/zaphiro_logo_transparente.png',
-        Glasurit: './assets/proveedores/Glaurit.png',
+        Zaphiro:  './assets/proveedores/zaphiro_logo_oscuro.png',
+        Glasurit: './assets/proveedores/Glaurit_recortado.png',
         Besa:     './assets/proveedores/BESA%2B-%2Bcolor.webp',
     };
 
@@ -2141,6 +2142,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ? sinImagenFabricanteHtml(p)
             : '<span class="producto-sin-img">Sin imagen</span>';
     }
+    // Expuesta al ámbito global: el atributo "onerror" inline del HTML se
+    // ejecuta en el ámbito global, pero esta función vive dentro del IIFE
+    // que envuelve todo el script — sin esto, quedaba inaccesible y el
+    // manejador de error de imagen rota fallaba con "is not defined".
+    window.manejarErrorImagenProducto = manejarErrorImagenProducto;
 
     // Rellena y muestra el bloque "sin imagen" del modal de detalle: logo
     // grande y difuminado del fabricante con el nombre del producto
