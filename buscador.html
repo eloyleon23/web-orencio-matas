@@ -855,12 +855,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             height: 100%;
             object-fit: contain;
             padding: 16px;
-            opacity: 0.16;
+            opacity: 0.4;
         }
         .sin-imagen-fabricante-nombre {
             position: relative;
             z-index: 2;
-            padding: 0 14px;
+            padding: 4px 10px;
+            margin: 0 10px;
+            background: rgba(255, 255, 255, 0.78);
+            border-radius: 6px;
             text-align: center;
             font-size: 0.78rem;
             font-weight: 700;
@@ -874,7 +877,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .sin-imagen-fabricante--modal .sin-imagen-fabricante-nombre {
             font-size: 1.15rem;
             -webkit-line-clamp: 6;
-            padding: 0 24px;
+            padding: 8px 20px;
+            margin: 0 20px;
         }
         .badge-oferta {
             position: absolute;
@@ -902,10 +906,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             z-index: 5;
             height: 24px;
             max-width: 64px;
-            padding: 3px 5px;
-            background: rgba(255, 255, 255, 0.92);
-            border: 1px solid var(--border);
-            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -914,6 +914,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             width: 100%;
             height: 100%;
             object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
         }
         .badge-fabricante-logo--modal {
             height: 34px;
@@ -979,7 +980,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 max-width: 48px;
                 bottom: 5px;
                 left: 5px;
-                padding: 2px 4px;
             }
             .producto-img-wrap img { padding: 6px; }
         }
@@ -2090,7 +2090,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // productos traigan fabricante: "Besa" y aparecerá automáticamente,
     // igual que ya pasó con el filtro de Fabricante.
     const LOGOS_FABRICANTE = {
-        Zaphiro:  './assets/proveedores/zaphiro_cover.jpg',
+        Zaphiro:  './assets/proveedores/zaphiro_logo_transparente.png',
         Glasurit: './assets/proveedores/Glaurit.png',
         Besa:     './assets/proveedores/BESA%2B-%2Bcolor.webp',
     };
