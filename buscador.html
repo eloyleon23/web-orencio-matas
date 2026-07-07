@@ -2188,6 +2188,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
     const PRODUCTOS_URL = './data/productos.json';
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
+    const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
 
     // Talleres y Carrocerías no tiene productos propios en la hoja
     // Productos (Sheet) — de momento se cargan aquí los productos del
@@ -2204,14 +2205,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .catch(() => []); // si falla, simplemente no se añaden (no rompe el catálogo principal)
     }
 
+    // Igual que Zaphiro: catálogo del proveedor Glasurit (pinturas y
+    // productos de reparación), sin precio, extraído de su web pública
+    // (knowhow.glasurit.com). A diferencia de Zaphiro no tiene imagen
+    // propia disponible (no se pudo descargar), así que cada producto
+    // incluye en su lugar un enlace directo a su ficha técnica real en la
+    // web de Glasurit (`ficha_url`).
+    function cargarProductosGlasurit() {
+        return fetch(PRODUCTOS_GLASURIT_URL)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data && data.productos ? data.productos : [])
+            .catch(() => []);
+    }
+
     fetch(PRODUCTOS_URL)
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
             hashConocido = await calcularHash(texto);
             const data = JSON.parse(texto);
-            const productosTalleres = await cargarProductosTalleres();
-            TODOS = [...(data.productos || []), ...productosTalleres];
+            const [productosTalleres, productosGlasurit] = await Promise.all([
+                cargarProductosTalleres(),
+                cargarProductosGlasurit(),
+            ]);
+            TODOS = [...(data.productos || []), ...productosTalleres, ...productosGlasurit];
             FAMILIAS_ORDEN = data.familias_orden || {};
             SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
             construirIndiceSugerencias();
@@ -3791,6 +3808,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     ];
 
     function productoTieneFichaTecnica(p) {
+        if (p.ficha_url) return true; // enlace directo real (ej. Glasurit) — siempre disponible
         if (p.area !== 'pinturas') return false;
         const familia = quitarAcentosMay(p.familia);
         return !FAMILIAS_SIN_FICHA_TECNICA.includes(familia);
@@ -3802,10 +3820,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // varias — titanlux.es para decoración, titanpro.es para profesional,
     // etc.), en lugar de forzar un site: a un dominio que a menudo no es el
     // que aloja ese producto concreto y devuelve cero resultados.
+    //
+    // Si el producto ya trae su propio enlace directo a ficha técnica (ej.
+    // Glasurit, extraído de su web oficial knowhow.glasurit.com), se usa
+    // ese en vez de construir una búsqueda — es más preciso y no depende de
+    // que Google acierte con la web correcta.
     function configurarBotonFichaTecnica(p) {
         const boton = $('modal-producto-ficha-tecnica');
         if (!productoTieneFichaTecnica(p)) {
             boton.style.display = 'none';
+            return;
+        }
+
+        if (p.ficha_url) {
+            boton.href = p.ficha_url;
+            boton.style.display = 'inline-flex';
             return;
         }
 
