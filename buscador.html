@@ -1148,6 +1148,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-size: 0.9rem;
             margin: 0 0 16px 0;
         }
+        .modal-producto-descripcion {
+            background: var(--light);
+            border-left: 3px solid var(--dark);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--dark);
+            margin: 0 0 16px 0;
+        }
         .modal-producto-precio {
             margin-bottom: 20px;
         }
@@ -1934,6 +1944,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="modal-producto-info">
                 <h3 id="modal-producto-nombre"></h3>
                 <p class="modal-producto-ref" id="modal-producto-ref"></p>
+                <p class="modal-producto-descripcion" id="modal-producto-descripcion" style="display:none;"></p>
                 <div class="modal-producto-precio" id="modal-producto-precio"></div>
                 <div class="modal-producto-detalles">
                     <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
@@ -2366,6 +2377,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
     const PRODUCTOS_BESA_URL = './data/productos_besa.json';
+    const PRODUCTOS_BASLAC_URL = './data/productos_baslac.json';
 
     // Talleres y Carrocerías no tiene productos propios en la hoja
     // Productos (Sheet) — de momento se cargan aquí los productos del
@@ -2406,18 +2418,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .catch(() => []);
     }
 
+    // Cuarto proveedor de Talleres: BASLAC. No hay catálogo disponible (ni
+    // en papel ni accesible desde su web), así que en vez de un listado de
+    // productos se representa con un único registro genérico: una foto de
+    // grupo con varios de sus productos y un texto (`descripcion`) que
+    // indica consultar la gama completa y precios directamente.
+    function cargarProductosBaslac() {
+        return fetch(PRODUCTOS_BASLAC_URL)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data && data.productos ? data.productos : [])
+            .catch(() => []);
+    }
+
     fetch(PRODUCTOS_URL)
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
             hashConocido = await calcularHash(texto);
             const data = JSON.parse(texto);
-            const [productosTalleres, productosGlasurit, productosBesa] = await Promise.all([
+            const [productosTalleres, productosGlasurit, productosBesa, productosBaslac] = await Promise.all([
                 cargarProductosTalleres(),
                 cargarProductosGlasurit(),
                 cargarProductosBesa(),
+                cargarProductosBaslac(),
             ]);
-            TODOS = [...(data.productos || []), ...productosTalleres, ...productosGlasurit, ...productosBesa];
+            TODOS = [...(data.productos || []), ...productosTalleres, ...productosGlasurit, ...productosBesa, ...productosBaslac];
             FAMILIAS_ORDEN = data.familias_orden || {};
             SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
             construirIndiceSugerencias();
@@ -3192,7 +3217,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             label.innerHTML = `<input type="checkbox" value="${fab.replace(/"/g, '&quot;')}"> ${fab}`;
             label.querySelector('input').addEventListener('change', () => {
                 resetPaginacion();
-                renderFamilias(); // Actualizar familia/subfamilia/atributos según el fabricante elegido
+                renderFamilias(); // Actualizar familia/subfamilia según el fabricante elegido
+                renderAtributosTaller(); // Actualizar también talla/grano/color/etc. (cada fabricante tiene los suyos)
                 aplicarFiltros();
             });
             cont.appendChild(label);
@@ -3780,6 +3806,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         $('modal-producto-nombre').textContent = p.nombre;
         $('modal-producto-ref').textContent = `Ref: ${p.ref}`;
+
+        // Descripción propia del producto (ej. el registro único de Baslac,
+        // que indica consultar la gama completa en vez de listar productos).
+        // Solo se muestra cuando el producto trae este texto.
+        const elDescripcion = $('modal-producto-descripcion');
+        if (p.descripcion) {
+            elDescripcion.textContent = p.descripcion;
+            elDescripcion.style.display = 'block';
+        } else {
+            elDescripcion.style.display = 'none';
+        }
         const familiaTexto = p.familia || '—';
         const subfamiliaTexto = p.subfamilia ? ` (${p.subfamilia})` : '';
         const fabricanteTexto = (p.area === 'talleres' && p.fabricante) ? ` · ${p.fabricante}` : '';
