@@ -2095,6 +2095,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         Besa:     './assets/proveedores/BESA%2B-%2Bcolor.webp',
     };
 
+    // Cuando un producto de Talleres no tiene foto propia, se usa esta
+    // imagen genérica de marca en su lugar (tratada exactamente igual que
+    // una foto real: mismo badge pequeño de fabricante en la esquina, etc.)
+    // en vez del tratamiento especial de "logo grande + nombre superpuesto"
+    // que se usaba antes — así todos los productos de Talleres comparten
+    // el mismo estilo visual, tengan foto propia o no. Si un fabricante no
+    // tiene entrada aquí (ni foto propia), se sigue usando ese tratamiento
+    // especial como último recurso (ver sinImagenFabricanteHtml).
+    const IMAGENES_GENERICAS_FABRICANTE = {
+        Glasurit: './assets/proveedores/glasurit_generico.jpg',
+    };
+
     function logoFabricanteHtml(p) {
         if (p.area !== 'talleres' || !p.fabricante) return '';
         const src = LOGOS_FABRICANTE[p.fabricante];
@@ -3696,14 +3708,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         card.dataset.ref = p.ref;
         card.addEventListener('click', () => abrirModalProducto(p));
 
-        const imgHtml = p.img
-            ? `<img src="${urlImagenProducto(p, 300)}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
+        const urlImg = urlImagenProducto(p, 300);
+        const imgHtml = urlImg
+            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
             : sinImagenFabricanteHtml(p);
 
-        // El badge pequeño de fabricante solo tiene sentido cuando SÍ hay
-        // foto de producto — si no la hay, ya se usa el logo grande de
-        // fondo (sinImagenFabricanteHtml), que sería redundante duplicar.
-        const logoBadge = p.img ? logoFabricanteHtml(p) : '';
+        // El badge pequeño de fabricante se muestra siempre que haya
+        // alguna imagen (propia o la genérica de fabricante) — solo se usa
+        // el tratamiento de "logo grande + nombre superpuesto" (que ya
+        // identifica de sobra al fabricante) cuando NO hay ninguna imagen
+        // disponible en absoluto.
+        const logoBadge = urlImg ? logoFabricanteHtml(p) : '';
 
         const ofertaBadge = p.oferta ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
 
@@ -3731,7 +3746,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Abrir modal con detalle del producto ──
     function abrirModalProducto(p) {
         const imgSrc = urlImagenProducto(p, 800) || '';
-        const tieneImagen = !!p.img;
+        const tieneImagen = !!imgSrc;
 
         $('modal-producto-img').style.display = tieneImagen ? 'block' : 'none';
         $('modal-producto-img').src = imgSrc;
@@ -3752,9 +3767,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-familia').textContent = familiaTexto + subfamiliaTexto + fabricanteTexto;
         $('modal-producto-area').textContent = AREAS_NOMBRE[p.area] || p.area || '—';
 
-        // Logo pequeño del fabricante/proveedor sobre la foto — solo
-        // cuando SÍ hay foto real (si no la hay, ya se ve el logo grande
-        // de fondo del tratamiento "sin imagen", sería redundante).
+        // Logo pequeño del fabricante/proveedor sobre la foto — se muestra
+        // siempre que haya alguna imagen (propia o la genérica de
+        // fabricante); solo se omite cuando no hay ninguna imagen en
+        // absoluto (ahí ya se ve el logo grande del tratamiento "sin imagen").
         const logoFabricante = $('modal-producto-fabricante-logo');
         const srcLogo = (tieneImagen && p.area === 'talleres' && p.fabricante) ? LOGOS_FABRICANTE[p.fabricante] : null;
         if (srcLogo) {
@@ -4663,9 +4679,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // sirven como archivos estáticos del propio repositorio, sin el
     // redimensionado dinámico que sí ofrece Drive por parámetro de URL.
     function urlImagenProducto(p, tamano) {
-        if (!p.img) return null;
-        if (p.area === 'talleres') return `./assets/imagenes_talleres/${p.img}`;
-        return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
+        if (p.img) {
+            if (p.area === 'talleres') return `./assets/imagenes_talleres/${p.img}`;
+            return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
+        }
+        // Sin foto propia: usar la imagen genérica del fabricante si existe
+        // (se trata igual que una foto real en todo lo demás).
+        if (p.area === 'talleres' && p.fabricante && IMAGENES_GENERICAS_FABRICANTE[p.fabricante]) {
+            return IMAGENES_GENERICAS_FABRICANTE[p.fabricante];
+        }
+        return null;
     }
 
     // ── Modal de solicitud de catálogo personalizado ──
