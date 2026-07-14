@@ -93,7 +93,7 @@ def cargar_productos_pendientes(ruta_json, areas):
 # ── Los tres métodos gratuitos, probados en orden ──
 def _probar_store_api(dominio, query, sesion):
     url = f"https://{dominio}/wp-json/wc/store/v1/products"
-    r = sesion.get(url, params={"search": query, "per_page": 1}, timeout=TIMEOUT)
+    r = sesion.get(url, params={"search": query, "per_page": 5}, timeout=TIMEOUT)
     if r.status_code != 200:
         return None
     items = r.json()
@@ -107,7 +107,7 @@ def _probar_store_api(dominio, query, sesion):
 
 def _probar_wc_legacy_api(dominio, query, sesion):
     url = f"https://{dominio}/wp-json/wc/v1/products"
-    r = sesion.get(url, params={"search": query, "per_page": 1}, timeout=TIMEOUT)
+    r = sesion.get(url, params={"search": query, "per_page": 5}, timeout=TIMEOUT)
     if r.status_code != 200:
         return None
     items = r.json()
@@ -121,7 +121,7 @@ def _probar_wc_legacy_api(dominio, query, sesion):
 
 def _probar_wp_search(dominio, query, sesion):
     url = f"https://{dominio}/wp-json/wp/v2/search"
-    r = sesion.get(url, params={"search": query, "subtype": "product", "per_page": 1}, timeout=TIMEOUT)
+    r = sesion.get(url, params={"search": query, "subtype": "product", "per_page": 5}, timeout=TIMEOUT)
     if r.status_code != 200:
         return None
     items = r.json()
@@ -146,6 +146,16 @@ def _probar_wp_search(dominio, query, sesion):
     return media.get("source_url")
 
 
+def _extraer_palabras_clave(nombre):
+    """Extrae la palabra clave más importante del nombre"""
+    # Eliminar palabras comunes que no aportan valor
+    stop_words = {'para', 'con', 'de', 'del', 'la', 'el', 'los', 'las', 'un', 'una', 'y', 'en', 'por', 'referencia'}
+    palabras = nombre.split()
+    palabras_clave = [p for p in palabras if p.lower() not in stop_words and len(p) > 2]
+    # Devolver solo la primera palabra clave (la más importante)
+    return palabras_clave[0] if palabras_clave else ''
+
+
 METODOS = [
     ("store_api", _probar_store_api),
     ("wc_legacy", _probar_wc_legacy_api),
@@ -153,14 +163,20 @@ METODOS = [
 ]
 
 
-def buscar_imagen_gratis(dominio, query, sesion):
+def buscar_imagen_gratis(dominio, query, sesion, debug=False):
     """Prueba los 3 métodos en orden, devuelve (url_imagen, metodo) o (None, None)."""
     for nombre_metodo, funcion in METODOS:
         try:
             url = funcion(dominio, query, sesion)
             if url:
+                if debug:
+                    print(f"    DEBUG: {nombre_metodo} encontró: {url}")
                 return url, nombre_metodo
-        except requests.exceptions.RequestException:
+            elif debug:
+                print(f"    DEBUG: {nombre_metodo} no devolvió resultados")
+        except requests.exceptions.RequestException as e:
+            if debug:
+                print(f"    DEBUG: {nombre_metodo} error: {e}")
             continue
     return None, None
 
@@ -194,6 +210,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--diagnostico", action="store_true",
                      help="Solo comprueba que dominios tienen API publica disponible, no busca productos")
+    ap.add_argument("--debug", action="store_true",
+                     help="Muestra información de depuración de cada método de búsqueda")
     args = ap.parse_args()
 
     mapa_marcas = cargar_mapa_marcas(args.dominios)
@@ -223,14 +241,17 @@ def main():
             continue  # igual que en buscar_imagenes_api.py: sin marca detectada, se omite
 
         dominio = mapa_marcas[marca]
-        query = normalizar_nombre(p["nombre"], para_busqueda=False)
+        # Usar palabras clave en lugar del nombre completo para mejorar el matching
+        query_normalizado = normalizar_nombre(p["nombre"], para_busqueda=False)
+        query_clave = _extraer_palabras_clave(query_normalizado)
+        query = query_clave if query_clave else query_normalizado  # fallback al nombre normalizado
         consultas += 1
 
         if args.dry_run:
-            print(f"  {p['ref']}: {query!r}  ->  {dominio} (WooCommerce/WP API)")
+            print(f"  {p['ref']}: {query!r} (clave) / {query_normalizado!r} (completo) -> {dominio}")
             continue
 
-        url_imagen, metodo = buscar_imagen_gratis(dominio, query, sesion)
+        url_imagen, metodo = buscar_imagen_gratis(dominio, query, sesion, debug=args.debug)
 
         if not url_imagen:
             sin_resultado.append({"referencia": p["ref"], "nombre_producto": p["nombre"], "dominio": dominio})
