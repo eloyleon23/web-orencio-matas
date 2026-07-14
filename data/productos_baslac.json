@@ -1,0 +1,21 @@
+{
+  "productos": [
+    {
+      "ref": "BASLAC-GENERICO",
+      "nombre": "Gama de productos Baslac",
+      "area": "talleres",
+      "fabricante": "Baslac",
+      "familia": "Baslac",
+      "subfamilia": null,
+      "variante": null,
+      "img": "baslac_generico.jpg",
+      "descripcion": "Baslac dispone de una amplia gama de productos para carrocería e industria (imprimaciones, aparejos, bases, barnices, endurecedores, disolventes...). Consulta con nuestro equipo la gama completa de productos y precios disponibles de este fabricante.",
+      "oferta": false,
+      "mostrar_precio": false,
+      "precio_sin": null,
+      "precio_con": null,
+      "fecha": "2026-07",
+      "espacios": 1
+    }
+  ]
+}

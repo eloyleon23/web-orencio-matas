@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -43,6 +47,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: linear-gradient(135deg,#1e293b,#0f172a);
             padding: 36px 0 28px;
             color: white;
+            overflow: hidden;
+            max-height: 220px;
+            transition: max-height 0.28s ease, padding 0.28s ease, opacity 0.2s ease;
+        }
+        .buscador-header.oculto-por-busqueda {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            opacity: 0;
         }
         .buscador-header .inner {
             max-width: 1180px;
@@ -81,7 +94,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             align-items: start;
         }
         @media (max-width: 880px) {
-            .layout { grid-template-columns: 1fr; }
+            /* En una sola columna (apilado), el "gap" del grid ya no separa
+               dos columnas — se convierte en puro espacio vertical entre
+               la barra de búsqueda/filtros y los resultados. Se reduce
+               bastante respecto al valor de escritorio (28px). */
+            .layout { grid-template-columns: 1fr; gap: 6px; }
         }
 
         /* ── Filtros ── */
@@ -104,8 +121,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-weight: 800;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
         }
+        .filtros h3 span { display: flex; align-items: center; gap: 8px; }
+
+        /* Icono de lupa dentro del buscador: solo se activa en móvil (ver
+           media query más abajo). En escritorio no cambia nada. */
+        .input-buscador-wrap { position: relative; }
+        .icono-buscador-movil { display: none; }
         .filtro-grupo { margin-bottom: 20px; }
         .filtro-grupo label.titulo {
             display: block;
@@ -142,24 +166,60 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             padding: 0;
             border: none;
         }
-        @media (max-width: 768px) {
-            .filtro-grupo.collapsable .familias-lista {
-                max-height: 120px;
-            }
-        }
-        .filtro-grupo label.titulo {
-            letter-spacing: .04em;
-            margin-bottom: 8px;
-        }
-        .input-texto {
-            width: 100%;
-            padding: 10px 12px;
+
+        /* Botón "Filtros" — solo en móvil, ver media query más abajo.
+           IMPORTANTE: esta regla base debe declararse ANTES de la media
+           query que la activa (display:flex en ≤768px) — con la misma
+           especificidad, en CSS gana la regla que aparece despues en el
+           código, y aquí necesitamos que gane la de la media query. */
+        .btn-abrir-filtros-movil {
+            display: none;
+            flex-shrink: 0;
+            width: 44px;
+            background: var(--light);
+            color: var(--dark);
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 0.9rem;
-            font-family: inherit;
+            font-size: 1.05rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
         }
-        .input-texto:focus { outline: none; border-color: var(--red); }
+        .btn-abrir-filtros-movil:active { background: #e2e8f0; }
+        .btn-abrir-filtros-movil.activo {
+            background: var(--dark);
+            color: white;
+            border-color: var(--dark);
+        }
+
+        /* Misma precaución de orden que el botón de abrir: la regla base
+           debe ir ANTES de la media query que la activa. */
+        .btn-cerrar-filtros-movil {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.15rem;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 4px 6px;
+            line-height: 1;
+        }
+
+        /* Misma precaución de orden: regla base antes de la media query */
+        .btn-mostrar-resultados-movil {
+            display: none;
+            width: 100%;
+            padding: 14px;
+            margin-top: 16px;
+            background: var(--red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-mostrar-resultados-movil:active { filter: brightness(0.92); }
 
         .btn-escanear-codigo {
             display: none;
@@ -175,7 +235,236 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             justify-content: center;
         }
         .btn-escanear-codigo:active { background: #0f172a; }
-        /* Visible cuando tiene la clase disponible (tanto en móvil como en PC) */
+
+        #espaciador-buscador-movil { display: none; }
+
+        @media (max-width: 768px) {
+            .filtro-grupo.collapsable .familias-lista {
+                max-height: 120px;
+            }
+
+            /* Ocultar directamente el bloque de título "Buscador de
+               Productos" en móvil — así el buscador queda pegado a la
+               cabecera principal del sitio desde el principio, sin
+               animaciones de mostrar/ocultar (eso se queda solo para
+               escritorio, donde sí hay sitio de sobra). */
+            .buscador-header { display: none; }
+
+            /* Subir todo el contenido y ahorrar el hueco superior */
+            .layout { padding-top: 10px; }
+
+            /* ── Filtros como panel modal lateral en móvil ──
+               Por defecto en móvil solo se ve la fila compacta: botón
+               "Filtros" + buscador + escáner — sin la tarjeta blanca, sin
+               el título "Filtros" ni la etiqueta "Nombre o referencia".
+               Todo lo demás (área, familia, subfamilia, precio, oferta,
+               gestión de imágenes, acabado, formato, limpiar filtros) vive
+               dentro de #filtros-extra, oculto hasta que se abre el panel
+               (clase .abierto). Se oculta/muestra el CONTENEDOR, no cada
+               grupo por separado — varios de esos grupos tienen su propio
+               style.display puesto por JS (mostrar/ocultar subfamilia,
+               acabado, formato, gestión de imágenes según el contexto), y
+               pelear con esos estilos inline uno a uno da problemas. */
+            .btn-abrir-filtros-movil { display: flex; }
+
+            /* El título "Filtros" no se usa en móvil: el botón de cerrar
+               vive ahora dentro de #filtros-extra (ver más abajo) */
+            .filtros h3 { display: none; }
+
+            /* Estado cerrado (por defecto): nada de aspecto de tarjeta,
+               solo la fila del buscador ocupando el espacio justo */
+            .filtros {
+                background: none;
+                border: none;
+                padding: 0;
+                border-radius: 0;
+                margin-bottom: 6px;
+            }
+            #grupo-buscador-principal {
+                margin-bottom: 0;
+                /* Fijo de verdad (no sticky) justo debajo de la cabecera
+                   principal del sitio (navbar) — así queda garantizado que
+                   se ve siempre, sin depender de contenedores con scroll
+                   propio ni de recalculos de "sticky" en el navegador. El
+                   valor de "top" se calcula por JS según la altura real
+                   del navbar (ver ajustarPosicionBuscadorFijo). Al salir
+                   del flujo normal, el hueco lo cubre #espaciador-buscador-movil. */
+                position: fixed;
+                left: 0;
+                right: 0;
+                top: 0;
+                z-index: 90;
+                background: #fff;
+                padding: 8px 20px;
+                box-shadow: 0 2px 10px rgba(0,0,0,.06);
+                transition: transform 0.25s ease;
+            }
+            /* Se oculta deslizándose hacia arriba al bajar en el scroll;
+               reaparece en cuanto se sube, sin importar en qué punto de la
+               página se esté (ver actualizarVisibilidadBotonSubir). */
+            #grupo-buscador-principal.oculto-por-scroll {
+                transform: translateY(-120%);
+            }
+            #grupo-buscador-principal label.titulo { display: none; }
+
+            #espaciador-buscador-movil { display: block; }
+            /* Fila compacta: botón filtros (izquierda) + buscador + escáner */
+            .fila-buscador-movil { align-items: center; }
+            .icono-buscador-movil {
+                display: block;
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--muted);
+                font-size: 0.95rem;
+                pointer-events: none;
+            }
+            #grupo-buscador-principal .input-texto {
+                border-radius: 999px;
+                padding-left: 36px;
+            }
+            .btn-abrir-filtros-movil {
+                border-radius: 12px;
+            }
+            .btn-escanear-codigo {
+                border-radius: 999px;
+            }
+
+            /* ── #filtros-extra: el cajón de filtros en sí ──
+               Siempre en position:fixed, deslizado fuera de la pantalla por
+               la derecha (translateX 100%). Al abrir se le añade la clase
+               .abierto, que lo desliza a su sitio con una transición suave.
+               El "top" se calcula por JS (abrirFiltrosMovil) para que quede
+               justo debajo de la barra de búsqueda, nunca tapándola — así
+               el buscador queda siempre visible y por encima del panel. */
+            #filtros-extra {
+                position: fixed;
+                top: 0; /* se sobreescribe por JS al abrir */
+                right: 0;
+                bottom: 0;
+                width: 86%;
+                max-width: 360px;
+                background: white;
+                border-left: 1px solid var(--border);
+                padding: 18px 20px 20px;
+                z-index: 6000;
+                overflow-y: auto;
+                box-shadow: -8px 0 28px rgba(0,0,0,.2);
+                transform: translateX(105%);
+                transition: transform 0.32s cubic-bezier(.4, 0, .2, 1);
+            }
+            #filtros-extra.abierto {
+                transform: translateX(0);
+            }
+
+            .btn-cerrar-filtros-movil {
+                display: block;
+                position: sticky;
+                top: 0;
+                margin: -18px -20px 12px auto;
+                padding: 10px 14px;
+            }
+
+            .btn-mostrar-resultados-movil {
+                display: block;
+                position: sticky;
+                bottom: -20px;
+                width: calc(100% + 40px);
+                margin: 16px -20px -20px;
+                border-radius: 0;
+            }
+        }
+        .filtro-grupo label.titulo {
+            letter-spacing: .04em;
+            margin-bottom: 8px;
+        }
+        .input-texto {
+            width: 100%;
+            padding: 10px 34px 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            /* 16px evita que iOS Safari haga zoom automático al enfocar el input */
+            font-size: 16px;
+            font-family: inherit;
+        }
+        .input-texto:focus { outline: none; border-color: var(--red); }
+
+        /* Botón "X" para borrar rápidamente el texto y limpiar los filtros.
+           Solo se muestra (clase .visible, vía JS) cuando hay texto escrito. */
+        .btn-limpiar-texto {
+            display: none;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.05rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        .btn-limpiar-texto:hover { color: var(--dark); }
+        .btn-limpiar-texto.visible { display: block; }
+
+        /* Botón de cámara: "buscar a partir de una foto" (estilo Amazon).
+           Ocupa el mismo sitio que la X — nunca se ven los dos a la vez:
+           cámara cuando el campo está vacío, X cuando hay texto escrito. */
+        .btn-buscar-por-imagen {
+            display: none;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.05rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        .btn-buscar-por-imagen:hover { color: var(--dark); }
+        .btn-buscar-por-imagen.visible { display: block; }
+
+        /* Desplegable de sugerencias de búsqueda (estilo Amazon): aparece
+           justo debajo del input, se posiciona en relación al propio
+           contenedor del buscador (.input-buscador-wrap ya es
+           position:relative), por lo que funciona igual tanto si esa barra
+           está en flujo normal (escritorio) como fija (móvil). */
+        .sugerencias-busqueda {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 10px 28px rgba(0,0,0,.14);
+            z-index: 200;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .sugerencias-busqueda.visible { display: block; }
+        .sugerencia-item {
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            color: var(--dark);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .sugerencia-item:last-child { border-bottom: none; }
+        .sugerencia-item:hover { background: var(--light); }
+        .sugerencia-item i { color: var(--muted); font-size: 0.85rem; flex-shrink: 0; }
+        .sugerencia-item strong { font-weight: 700; }
+
+
         .btn-escanear-codigo.disponible { display: flex; }
 
         .modal-scanner-overlay {
@@ -288,7 +577,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             padding: 9px 10px;
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 0.85rem;
+            /* 16px evita el zoom automático de iOS al enfocar */
+            font-size: 16px;
         }
 
         .check-oferta {
@@ -350,14 +640,29 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .btn-limpiar:hover { background: #eef2f7; }
 
+        .filtros-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 5999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.28s ease, visibility 0s linear 0.28s;
+        }
+        .filtros-backdrop.visible {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.28s ease;
+        }
+
         /* ── Resultados ── */
         .resultados-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
         .resultados-count {
             font-size: 0.9rem;
@@ -387,6 +692,55 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .btn-solicitar-catalogo:disabled:hover { background: #cbd5e1; }
 
+        .btn-compartir-resultados {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: #fff;
+            color: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-compartir-resultados:hover { background: var(--light); }
+        .btn-compartir-resultados.copiado {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #059669;
+        }
+
+        .catalog-disclaimer {
+            background: #fff7ed;
+            border-left: 4px solid var(--yellow);
+            padding: 8px 14px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* En móvil, la fila de cabecera (contador + botones) suele partirse
+           en varias líneas al no caber todo — se compactan los botones
+           (menos relleno, texto más pequeño) y se recortan los márgenes
+           para que no se acumule tanto espacio antes de ver resultados. */
+        @media (max-width: 480px) {
+            .resultados-header { margin-bottom: 8px; gap: 6px; }
+            .btn-solicitar-catalogo,
+            .btn-compartir-resultados {
+                padding: 7px 12px;
+                font-size: 0.78rem;
+            }
+            .catalog-disclaimer {
+                padding: 7px 12px;
+                margin-bottom: 10px;
+                font-size: 0.76rem;
+            }
+        }
+
         .familia-seccion { margin-bottom: 32px; }
         .familia-titulo {
             font-size: 1.05rem;
@@ -408,6 +762,28 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             border-radius: 20px;
         }
 
+        .subfamilias-contenedor { display: flex; flex-direction: column; gap: 22px; }
+        .subfamilia-seccion:not(:first-child) { margin-top: 4px; }
+        .subfamilia-titulo {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin: 0 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .subfamilia-titulo .count {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--light);
+            padding: 1px 8px;
+            border-radius: 20px;
+        }
+
         .grid-productos {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -417,7 +793,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             .grid-productos { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 480px) {
-            .grid-productos { grid-template-columns: 1fr; }
+            /* Con la vista de detalle disponible al tocar la tarjeta, no hace
+               falta que cada producto ocupe todo el ancho: mostramos varios
+               en horizontal en vez de una lista vertical de uno en uno. */
+            .grid-productos { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        }
+        @media (min-width: 420px) and (max-width: 480px) {
+            .grid-productos { grid-template-columns: repeat(4, 1fr); gap: 8px; }
         }
 
         .producto-card {
@@ -452,6 +834,52 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-size: 0.75rem;
             text-align: center;
         }
+        /* Cuando un producto de Talleres no tiene foto propia: logo grande
+           y muy difuminado del fabricante de fondo, con el nombre del
+           producto superpuesto y centrado — se usa en vez del simple
+           "Sin imagen" y en vez del badge pequeño (redundante aquí, ya
+           que el logo grande ya identifica de sobra al fabricante). */
+        .sin-imagen-fabricante {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .sin-imagen-fabricante-logo {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 16px;
+            opacity: 0.4;
+        }
+        .sin-imagen-fabricante-nombre {
+            position: relative;
+            z-index: 2;
+            padding: 4px 10px;
+            margin: 0 10px;
+            background: rgba(255, 255, 255, 0.78);
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--dark);
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .sin-imagen-fabricante--modal .sin-imagen-fabricante-nombre {
+            font-size: 1.15rem;
+            -webkit-line-clamp: 6;
+            padding: 8px 20px;
+            margin: 0 20px;
+        }
         .badge-oferta {
             position: absolute;
             top: 8px;
@@ -465,6 +893,35 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             display: flex;
             align-items: center;
             gap: 4px;
+        }
+        /* Logo pequeño del fabricante/proveedor (Zaphiro, Glasurit...) en la
+           esquina inferior izquierda de la foto — solo aplica a productos
+           de Talleres. z-index explícito para garantizar que quede por
+           encima de la foto del producto siempre, sin depender del orden
+           en el HTML. */
+        .badge-fabricante-logo {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            z-index: 5;
+            height: 24px;
+            max-width: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .badge-fabricante-logo img {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+        }
+        .badge-fabricante-logo--modal {
+            height: 34px;
+            max-width: 90px;
+            bottom: 14px;
+            left: 14px;
         }
         .producto-info { padding: 12px; }
         .producto-nombre {
@@ -497,6 +954,35 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-size: 0.78rem;
             color: var(--muted);
             font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+            /* Tarjetas más compactas para que 3-4 quepan bien en una fila */
+            .producto-info { padding: 8px 7px; }
+            .producto-nombre {
+                font-size: 0.68rem;
+                -webkit-line-clamp: 2;
+                min-height: 1.75em;
+                margin-bottom: 3px;
+            }
+            .producto-ref { font-size: 0.6rem; margin-bottom: 4px; }
+            .producto-precio-con { font-size: 0.82rem; }
+            .producto-precio-sin { font-size: 0.6rem; }
+            .producto-sin-precio { font-size: 0.65rem; }
+            .badge-oferta {
+                font-size: 0.55rem;
+                padding: 3px 7px;
+                top: 5px;
+                left: 5px;
+                gap: 2px;
+            }
+            .badge-fabricante-logo {
+                height: 18px;
+                max-width: 48px;
+                bottom: 5px;
+                left: 5px;
+            }
+            .producto-img-wrap img { padding: 6px; }
         }
 
         .btn-cargar-mas {
@@ -632,6 +1118,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             gap: 0;
         }
         .modal-producto-imagen {
+            position: relative;
             background: #f1f5f9;
             display: flex;
             align-items: center;
@@ -659,6 +1146,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .modal-producto-ref {
             color: var(--muted);
             font-size: 0.9rem;
+            margin: 0 0 16px 0;
+        }
+        .modal-producto-descripcion {
+            background: var(--light);
+            border-left: 3px solid var(--dark);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--dark);
             margin: 0 0 16px 0;
         }
         .modal-producto-precio {
@@ -717,6 +1214,198 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .modal-producto-reportar:active {
             background: #fcd34d;
+        }
+
+        /* Fila con ambos botones (ficha técnica / carta de colores) a igual ancho */
+        .modal-producto-fila-fichas {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .modal-producto-fila-fichas .modal-producto-ficha {
+            flex: 1;
+            margin-top: 0;
+            min-width: 0; /* permite que el texto se ajuste sin desbordar */
+        }
+
+        /* Botón de ficha técnica (área pinturas) */
+        .modal-producto-ficha {
+            margin-top: 12px;
+            padding: 8px 14px;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            text-decoration: none;
+            transition: filter 0.15s;
+        }
+        .modal-producto-ficha:hover { filter: brightness(1.08); }
+        .modal-producto-ficha:active { filter: brightness(0.95); }
+        .modal-producto-carta-colores {
+            /* Verde de la gama de colores del logo corporativo, en vez de un
+               morado ajeno a la marca */
+            background: #008F5B;
+        }
+
+        /* Calculadora de rendimiento (solo pinturas) */
+        .btn-abrir-calculadora {
+            margin-top: 10px;
+            width: 100%;
+            padding: 9px 14px;
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .btn-abrir-calculadora:hover { background: #eef2f7; }
+        .panel-calculadora {
+            margin-top: 10px;
+            padding: 14px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+        .calculadora-intro {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin: 0 0 10px;
+            line-height: 1.4;
+        }
+        .calculadora-campos {
+            display: flex;
+            gap: 10px;
+        }
+        .calculadora-campos label {
+            flex: 1;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted);
+        }
+        .calculadora-campos input {
+            width: 100%;
+            margin-top: 4px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        .calculadora-resultado {
+            margin-top: 12px;
+            font-size: 0.88rem;
+        }
+        .calculadora-resultado strong {
+            font-size: 1.15rem;
+            color: var(--red);
+        }
+
+        /* Productos complementarios (solo pinturas) */
+        .bloque-complementarios {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .complementarios-titulo {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        /* Grid de 2 columnas (no una lista vertical de filas anchas) para
+           que ningún nombre de producto largo pueda desbordar ni romper el
+           resto del contenido del modal. */
+        .complementarios-lista {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .complementario-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 8px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            min-width: 0; /* evita que el texto empuje el ancho de la celda */
+        }
+        .complementario-item:hover { background: #eef2f7; }
+        .complementario-item img {
+            width: 100%;
+            max-width: 64px;
+            height: 64px;
+            object-fit: contain;
+            background: white;
+            border-radius: 6px;
+        }
+        .complementario-item .complementario-info {
+            width: 100%;
+            min-width: 0;
+        }
+        .complementario-item .complementario-nombre {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--dark);
+            line-height: 1.25;
+            /* Máximo 2 líneas, con puntos suspensivos si no cabe — así un
+               nombre largo nunca desborda la tarjeta ni el modal. */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .complementario-item .complementario-precio {
+            font-size: 0.78rem;
+            color: var(--red);
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* Botón compartir producto: chip sutil bajo la imagen, a la derecha */
+        .modal-producto-compartir {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .modal-producto-compartir:hover { background: #fff; color: var(--dark); border-color: #cbd5e1; }
+        .modal-producto-compartir:active { background: #f1f5f9; }
+        .modal-producto-compartir.copiado {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
         }
 
         /* Modal para actualizar imagen */
@@ -915,6 +1604,45 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         #banner-actualizacion .btn-descartar { background: transparent; color: #cbd5e1; border: 1px solid #475569; }
         #banner-actualizacion .btn-descartar:hover { color: #fff; border-color: #64748b; }
 
+        /* Botón flotante "subir arriba" */
+        #btn-subir-arriba {
+            display: none;
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 4000;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: var(--dark);
+            color: #fff;
+            font-size: 1.1rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .2s, transform .2s, background .15s;
+        }
+        #btn-subir-arriba.visible { display: flex; opacity: 1; transform: translateY(0); }
+        #btn-subir-arriba.oculto-por-modal { display: none !important; }
+        #btn-subir-arriba:hover { background: var(--blue); }
+        @media (max-width: 640px) {
+            /* En móvil, más pequeño y discreto para no tapar contenido */
+            #btn-subir-arriba {
+                right: 14px;
+                bottom: 14px;
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+                background: rgba(30, 41, 59, 0.72);
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+                backdrop-filter: blur(2px);
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -928,6 +1656,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <button class="btn-descartar" id="banner-btn-descartar">Ahora no</button>
     </div>
 </div>
+<button id="btn-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
+    <i class="fa-solid fa-arrow-up"></i>
+</button>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -943,7 +1674,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <li><a href="index.html">Inicio</a></li>
         <li><a href="empresa.html">Empresa</a></li>
         <li><a href="historia.html">Historia</a></li>
-        <li><a href="productos.html">Productos</a></li>
+        <li class="navbar__item--dropdown">
+          <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
+          <ul class="navbar__submenu">
+            <li><a href="buscador.html">Buscador</a></li>
+          </ul>
+        </li>
         <li><a href="servicios.html">Servicios</a></li>
         <li><a href="actualidad.html">Actualidad</a></li>
         <li><a href="index.html#contacto">Contacto</a></li>
@@ -968,23 +1704,54 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- ── FILTROS ── -->
     <aside class="filtros">
-        <h3><i class="fa-solid fa-filter"></i> Filtros</h3>
+        <h3>
+            <span><i class="fa-solid fa-filter"></i> Filtros</span>
+        </h3>
 
-        <div class="filtro-grupo">
+        <div class="filtro-grupo" id="grupo-buscador-principal">
             <label class="titulo" for="f-texto">Nombre o referencia</label>
-            <div style="display:flex;gap:8px;align-items:stretch;">
-                <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001..." style="flex:1;">
+            <div class="fila-buscador-movil" style="display:flex;gap:8px;align-items:stretch;">
+                <button type="button" id="btn-abrir-filtros-movil" class="btn-abrir-filtros-movil" aria-label="Abrir filtros">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+                <div class="input-buscador-wrap" style="flex:1;">
+                    <i class="fa-solid fa-magnifying-glass icono-buscador-movil"></i>
+                    <input type="text" id="f-texto" class="input-texto" placeholder="Ej: fairy, lavavajillas, DRO001...">
+                    <button type="button" id="btn-limpiar-texto" class="btn-limpiar-texto" aria-label="Borrar búsqueda y limpiar filtros">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
+                    <button type="button" id="btn-buscar-por-imagen" class="btn-buscar-por-imagen visible" aria-label="Buscar a partir de una foto del código de barras">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                    <input type="file" id="input-imagen-busqueda" accept="image/*" capture="environment" style="display:none;">
+                    <div id="sugerencias-busqueda" class="sugerencias-busqueda"></div>
+                </div>
                 <button type="button" id="btn-escanear" class="btn-escanear-codigo" aria-label="Escanear código de barras">
                     <i class="fa-solid fa-barcode"></i>
                 </button>
             </div>
         </div>
+        <!-- Con la barra en position:fixed, este espaciador ocupa el hueco
+             que dejaría al salir del flujo normal, para que el contenido
+             de abajo no quede tapado. Altura fijada por JS (ver
+             ajustarPosicionBuscadorFijo). Solo existe/actua en móvil. -->
+        <div id="espaciador-buscador-movil"></div>
+
+        <div id="filtros-extra">
+        <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
 
         <div class="filtro-grupo">
             <label class="titulo" for="f-area">Área</label>
             <select id="f-area" class="select-area">
                 <option value="">Todas las áreas</option>
             </select>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-fabricante-taller" style="display: none;">
+            <label class="titulo">Fabricante</label>
+            <div class="familias-lista" id="f-fabricante-taller"></div>
         </div>
 
         <div class="filtro-grupo collapsable" id="grupo-familias">
@@ -995,6 +1762,51 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="filtro-grupo collapsable" id="grupo-subfamilias" style="display: none;">
             <label class="titulo">Subfamilia</label>
             <div class="familias-lista" id="f-subfamilias"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-talla-taller" style="display: none;">
+            <label class="titulo">Talla</label>
+            <div class="familias-lista" id="f-talla-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-grano-taller" style="display: none;">
+            <label class="titulo">Grano</label>
+            <div class="familias-lista" id="f-grano-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-color-taller" style="display: none;">
+            <label class="titulo">Color</label>
+            <div class="familias-lista" id="f-color-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-medida-taller" style="display: none;">
+            <label class="titulo">Medida</label>
+            <div class="familias-lista" id="f-medida-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-volumen-taller" style="display: none;">
+            <label class="titulo">Volumen</label>
+            <div class="familias-lista" id="f-volumen-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-micras-taller" style="display: none;">
+            <label class="titulo">Micras</label>
+            <div class="familias-lista" id="f-micras-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-otros-taller" style="display: none;">
+            <label class="titulo">Otras variantes</label>
+            <div class="familias-lista" id="f-otros-taller"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-acabado" style="display: none;">
+            <label class="titulo">Acabado</label>
+            <div class="familias-lista" id="f-acabado"></div>
+        </div>
+
+        <div class="filtro-grupo collapsable" id="grupo-formato" style="display: none;">
+            <label class="titulo">Formato / Envase</label>
+            <div class="familias-lista" id="f-formato"></div>
         </div>
 
         <div class="filtro-grupo">
@@ -1030,7 +1842,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
 
         <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
+        <button type="button" id="btn-mostrar-resultados-movil" class="btn-mostrar-resultados-movil">Mostrar resultados</button>
+        </div>
     </aside>
+
+    <div id="filtros-backdrop" class="filtros-backdrop"></div>
 
     <!-- ── RESULTADOS ── -->
     <section>
@@ -1041,9 +1857,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled style="display: none;">
                 <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
             </button>
+            <button class="btn-compartir-resultados" id="btn-compartir-resultados">
+                <i class="fa-solid fa-share-nodes"></i> Compartir estos resultados
+            </button>
         </div>
 
-        <div class="catalog-disclaimer" style="background: #fff7ed; border-left: 4px solid var(--yellow); padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; font-size: 0.85rem; color: #64748b;">
+        <div class="catalog-disclaimer">
             <i class="fa-solid fa-circle-info" style="color: var(--yellow); margin-right: 8px;"></i>
             <strong>Nota:</strong> Los precios pueden variar y los productos mostrados están sujetos a disponibilidad. Consulta con nuestro equipo para confirmar stock actual.
         </div>
@@ -1096,6 +1915,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="scanner-estado" id="scanner-estado">Enfoca el código de barras del producto</div>
 </div>
 
+<!-- Contenedor requerido por la librería para el escaneo de imágenes de
+     archivo (no de vídeo en vivo) — instancia separada del escáner en
+     vivo, nunca visible, solo decodifica la imagen que se le pasa. -->
+<div id="scanner-archivo-wrap" style="position:absolute; left:-9999px; top:-9999px; width:2000px; height:2000px;"></div>
+
 <!-- Modal detalle de producto -->
 <div class="modal-overlay" id="modal-producto-overlay">
     <div class="modal-producto-box" id="modal-producto-box">
@@ -1105,10 +1929,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-producto-content">
             <div class="modal-producto-imagen">
                 <img id="modal-producto-img" src="" alt="" loading="lazy">
+                <div id="modal-producto-sin-imagen" class="sin-imagen-fabricante sin-imagen-fabricante--modal" style="display:none;">
+                    <img class="sin-imagen-fabricante-logo" src="" alt="">
+                    <span class="sin-imagen-fabricante-nombre"></span>
+                </div>
+                <span id="modal-producto-fabricante-logo" class="badge-fabricante-logo badge-fabricante-logo--modal" style="display:none;">
+                    <img src="" alt="">
+                </span>
+                <button id="modal-producto-compartir" class="modal-producto-compartir" title="Compartir producto">
+                    <i class="fa-solid fa-share-from-square"></i>
+                    Compartir
+                </button>
             </div>
             <div class="modal-producto-info">
                 <h3 id="modal-producto-nombre"></h3>
                 <p class="modal-producto-ref" id="modal-producto-ref"></p>
+                <p class="modal-producto-descripcion" id="modal-producto-descripcion" style="display:none;"></p>
                 <div class="modal-producto-precio" id="modal-producto-precio"></div>
                 <div class="modal-producto-detalles">
                     <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
@@ -1118,6 +1954,46 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-circle-info"></i>
                     Los precios pueden variar y este producto está sujeto a disponibilidad, así como la imagen puede no coincidir exactamente con el producto real.
                 </p>
+                <div class="modal-producto-fila-fichas">
+                    <a id="modal-producto-ficha-tecnica" class="modal-producto-ficha" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
+                        <i class="fa-solid fa-file-lines"></i>
+                        Ver ficha técnica
+                    </a>
+                    <a id="modal-producto-carta-colores" class="modal-producto-ficha modal-producto-carta-colores" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
+                        <i class="fa-solid fa-palette"></i>
+                        Ver carta de colores
+                    </a>
+                </div>
+
+                <!-- Calculadora de rendimiento (solo pinturas) -->
+                <button type="button" id="btn-abrir-calculadora" class="btn-abrir-calculadora" style="display:none;">
+                    <i class="fa-solid fa-calculator"></i>
+                    ¿Cuánto necesito?
+                </button>
+                <div id="panel-calculadora" class="panel-calculadora" style="display:none;">
+                    <p class="calculadora-intro">
+                        Estimación orientativa según el tipo de producto — consulta el envase
+                        para el rendimiento exacto, que varía según superficie y aplicación.
+                    </p>
+                    <div class="calculadora-campos">
+                        <label>
+                            Superficie (m²)
+                            <input type="number" id="calc-superficie" min="0" step="0.5" placeholder="Ej: 25">
+                        </label>
+                        <label>
+                            Nº de manos
+                            <input type="number" id="calc-manos" min="1" step="1" value="2">
+                        </label>
+                    </div>
+                    <div class="calculadora-resultado" id="calculadora-resultado"></div>
+                </div>
+
+                <!-- Productos complementarios (solo pinturas) -->
+                <div id="bloque-complementarios" class="bloque-complementarios" style="display:none;">
+                    <p class="complementarios-titulo"><i class="fa-solid fa-layer-group"></i> Suele usarse junto a</p>
+                    <div id="complementarios-lista" class="complementarios-lista"></div>
+                </div>
+
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-image"></i>
@@ -1220,6 +2096,89 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         talleres:   'Talleres',
     };
 
+    // Logo pequeño del fabricante/proveedor para productos de Talleres
+    // (esquina inferior izquierda de la foto). "Besa" ya está preparado
+    // aquí para cuando se integre ese catálogo — solo hace falta que sus
+    // productos traigan fabricante: "Besa" y aparecerá automáticamente,
+    // igual que ya pasó con el filtro de Fabricante.
+    const LOGOS_FABRICANTE = {
+        Zaphiro:  './assets/proveedores/zaphiro_logo_oscuro.png',
+        Glasurit: './assets/proveedores/Glaurit_recortado.png',
+        Besa:     './assets/proveedores/besa_logo_recortado.png',
+    };
+
+    // Cuando un producto de Talleres no tiene foto propia, se usa esta
+    // imagen genérica de marca en su lugar (tratada exactamente igual que
+    // una foto real: mismo badge pequeño de fabricante en la esquina, etc.)
+    // en vez del tratamiento especial de "logo grande + nombre superpuesto"
+    // que se usaba antes — así todos los productos de Talleres comparten
+    // el mismo estilo visual, tengan foto propia o no. Si un fabricante no
+    // tiene entrada aquí (ni foto propia), se sigue usando ese tratamiento
+    // especial como último recurso (ver sinImagenFabricanteHtml).
+    const IMAGENES_GENERICAS_FABRICANTE = {
+        Glasurit: './assets/proveedores/glasurit_generico.jpg',
+    };
+
+    function logoFabricanteHtml(p) {
+        if (p.area !== 'talleres' || !p.fabricante) return '';
+        const src = LOGOS_FABRICANTE[p.fabricante];
+        if (!src) return '';
+        return `<span class="badge-fabricante-logo"><img src="${src}" alt="${escapeHtml(p.fabricante)}" loading="lazy"></span>`;
+    }
+
+    // Cuando un producto de Talleres NO tiene foto propia, en vez del
+    // simple texto "Sin imagen" se muestra el logo grande y difuminado del
+    // fabricante de fondo, con el nombre del producto superpuesto y
+    // centrado — mucho más reconocible e informativo que un hueco vacío.
+    // Se usa tanto en la tarjeta del grid como en el modal de detalle.
+    function sinImagenFabricanteHtml(p, variante) {
+        const src = (p.area === 'talleres' && p.fabricante) ? LOGOS_FABRICANTE[p.fabricante] : null;
+        if (!src) {
+            return `<span class="producto-sin-img">Sin imagen</span>`;
+        }
+        const claseTamano = variante === 'modal' ? 'sin-imagen-fabricante--modal' : '';
+        return `
+            <div class="sin-imagen-fabricante ${claseTamano}">
+                <img class="sin-imagen-fabricante-logo" src="${src}" alt="${escapeHtml(p.fabricante)}" loading="lazy">
+                <span class="sin-imagen-fabricante-nombre">${escapeHtml(p.nombre)}</span>
+            </div>`;
+    }
+
+    // Si la foto de un producto falla al cargar (URL rota, imagen borrada
+    // en Drive...), en vez de dejar un hueco roto se aplica el mismo
+    // tratamiento que un producto sin imagen desde el principio.
+    function manejarErrorImagenProducto(imgEl, ref) {
+        const p = TODOS.find(x => String(x.ref) === String(ref));
+        imgEl.parentElement.innerHTML = p
+            ? sinImagenFabricanteHtml(p)
+            : '<span class="producto-sin-img">Sin imagen</span>';
+    }
+    // Expuesta al ámbito global: el atributo "onerror" inline del HTML se
+    // ejecuta en el ámbito global, pero esta función vive dentro del IIFE
+    // que envuelve todo el script — sin esto, quedaba inaccesible y el
+    // manejador de error de imagen rota fallaba con "is not defined".
+    window.manejarErrorImagenProducto = manejarErrorImagenProducto;
+
+    // Rellena y muestra el bloque "sin imagen" del modal de detalle: logo
+    // grande y difuminado del fabricante con el nombre del producto
+    // superpuesto (o simplemente "Sin imagen" si el producto no es de un
+    // fabricante con logo conocido, ej. droguería/perfumería/pinturas).
+    function mostrarSinImagenModal(p) {
+        $('modal-producto-img').style.display = 'none';
+        const cont = $('modal-producto-sin-imagen');
+        const src = (p.area === 'talleres' && p.fabricante) ? LOGOS_FABRICANTE[p.fabricante] : null;
+        if (src) {
+            cont.querySelector('.sin-imagen-fabricante-logo').src = src;
+            cont.querySelector('.sin-imagen-fabricante-logo').alt = p.fabricante;
+            cont.querySelector('.sin-imagen-fabricante-logo').style.display = '';
+            cont.querySelector('.sin-imagen-fabricante-nombre').textContent = p.nombre;
+        } else {
+            cont.querySelector('.sin-imagen-fabricante-logo').style.display = 'none';
+            cont.querySelector('.sin-imagen-fabricante-nombre').textContent = 'Sin imagen';
+        }
+        cont.style.display = 'flex';
+    }
+
     let TODOS = [];          // todos los productos cargados
     let FAMILIAS_ORDEN = {}; // {familia: orden}
     let SUBFAMILIAS_ORDEN = {}; // {familia: {subfamilia: orden}}
@@ -1235,6 +2194,92 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .toLowerCase()
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
             .trim();
+    }
+
+    // ── Sugerencias de búsqueda (autocompletar estilo Amazon) ──
+    // Se construye UNA vez en el navegador, justo tras cargar productos.json
+    // (y de nuevo si el catálogo se actualiza en segundo plano) — sin tocar
+    // el pipeline de generación en Python: con 9.500 productos ya cargados
+    // en memoria para el filtrado normal, extraer términos frecuentes de
+    // sus nombres tarda unos pocos cientos de milisegundos, y así cualquier
+    // ajuste a la lógica se ve en el siguiente despliegue, no en la
+    // siguiente generación del catálogo.
+    let sugerenciasIndice = [];
+
+    const PALABRAS_IGNORADAS_SUGERENCIA = new Set([
+        'ml', 'l', 'kg', 'g', 'gr', 'cm', 'mm', 'uds', 'ud',
+        'de', 'del', 'la', 'el', 'los', 'las', 'y', 'con', 'para', 'sin', 'al', 'en',
+    ]);
+
+    function construirIndiceSugerencias() {
+        const frecuencia = new Map();
+        const sumar = (texto) => {
+            if (!texto) return;
+            frecuencia.set(texto, (frecuencia.get(texto) || 0) + 1);
+        };
+
+        TODOS.forEach(p => {
+            // Familia y subfamilia: ya son categorías curadas a mano, muy
+            // buenas candidatas de sugerencia sin necesidad de más análisis.
+            if (p.familia) sumar(normalizar(p.familia));
+            if (p.subfamilia) sumar(normalizar(p.subfamilia));
+
+            const palabras = normalizar(p.nombre)
+                .split(/[^a-z0-9ñ]+/i)
+                .filter(w => w.length >= 3 && !/^\d+$/.test(w) && !PALABRAS_IGNORADAS_SUGERENCIA.has(w));
+
+            for (let i = 0; i < palabras.length; i++) {
+                sumar(palabras[i]);
+                if (i + 1 < palabras.length) sumar(palabras[i] + ' ' + palabras[i + 1]);
+                if (i + 2 < palabras.length) sumar(palabras[i] + ' ' + palabras[i + 1] + ' ' + palabras[i + 2]);
+            }
+        });
+
+        // Umbral mínimo (aparecer en al menos 3 productos) para descartar
+        // combinaciones puramente casuales que no ayudarían a nadie.
+        sugerenciasIndice = [...frecuencia.entries()]
+            .filter(([, n]) => n >= 3)
+            .sort((a, b) => b[1] - a[1])
+            .map(([texto, n]) => ({ texto, frecuencia: n }));
+    }
+
+    function obtenerSugerencias(textoInput) {
+        const q = normalizar(textoInput.trim());
+        if (!q) return [];
+        return sugerenciasIndice
+            .filter(s => s.texto.startsWith(q) && s.texto !== q)
+            .slice(0, 8);
+    }
+
+    function renderSugerencias(lista, textoInput) {
+        const cont = $('sugerencias-busqueda');
+        if (!lista.length) {
+            cont.classList.remove('visible');
+            cont.innerHTML = '';
+            return;
+        }
+        const q = normalizar(textoInput.trim());
+        cont.innerHTML = lista.map(s => {
+            const resto = s.texto.slice(q.length);
+            return `<div class="sugerencia-item" data-texto="${escapeHtml(s.texto)}">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>${escapeHtml(q)}<strong>${escapeHtml(resto)}</strong></span>
+            </div>`;
+        }).join('');
+        cont.classList.add('visible');
+    }
+
+    function ocultarSugerencias() {
+        $('sugerencias-busqueda').classList.remove('visible');
+    }
+
+    function seleccionarSugerencia(texto) {
+        $('f-texto').value = texto;
+        ocultarSugerencias();
+        actualizarIconosBuscador();
+        if (texto.trim()) limpiarOtrosFiltros();
+        resetPaginacion();
+        aplicarFiltros();
     }
 
     // ── Distancia de Levenshtein para fuzzy matching ──
@@ -1262,38 +2307,51 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return matrix[b.length][a.length];
     }
 
+    // Nº de errores (ediciones) que se toleran en una palabra según su
+    // longitud, para la búsqueda difusa. Deliberadamente estricto: permitir
+    // 2 errores en una palabra de 5 letras (como "fairy") es demasiado
+    // permisivo y hace que coincida por casualidad con palabras que no
+    // tienen nada que ver (p.ej. "aire", que está a distancia 2 de "fairy").
+    function maxErroresPermitidos(longitud) {
+        if (longitud <= 3) return 0;  // palabras muy cortas: solo exacta
+        if (longitud <= 6) return 1;
+        if (longitud <= 9) return 2;
+        return 3;
+    }
+
+    // ¿Coincide esta palabra de búsqueda con alguna palabra del texto,
+    // de forma exacta o tolerando alguna errata razonable?
+    function palabraCoincide(pBusqueda, palabrasTexto) {
+        if (palabrasTexto.some(pTexto => pTexto.includes(pBusqueda))) return true;
+        if (pBusqueda.length <= 3) return false; // sin tolerancia para palabras muy cortas
+        const maxErr = maxErroresPermitidos(pBusqueda.length);
+        return palabrasTexto.some(pTexto => {
+            // Si la diferencia de longitud ya supera el margen de error,
+            // ni siquiera merece la pena calcular la distancia completa.
+            if (Math.abs(pTexto.length - pBusqueda.length) > maxErr) return false;
+            return levenshtein(pTexto, pBusqueda) <= maxErr;
+        });
+    }
+
     // ── Similitud fuzzy: búsqueda por aproximación ──
     function coincide(texto, busqueda) {
         if (!busqueda) return true;
         const t = normalizar(texto);
         const b = normalizar(busqueda);
 
-        // Coincidencia exacta o por inclusión
+        // Coincidencia exacta o por inclusión de la frase completa
         if (t.includes(b)) return true;
 
-        // Coincidencia por palabras parciales
         const palabrasBusqueda = b.split(/\s+/).filter(Boolean);
-        if (palabrasBusqueda.every(p => t.includes(p))) return true;
-
-        // Fuzzy matching: distancia de Levenshtein
-        // Si la búsqueda es corta (<= 4 caracteres), permitir 1 error
-        // Si es media (5-8 caracteres), permitir 2 errores
-        // Si es larga (> 8 caracteres), permitir hasta 3 errores
-        const maxErrores = b.length <= 4 ? 1 : (b.length <= 8 ? 2 : 3);
-        const distancia = levenshtein(t, b);
-        if (distancia <= maxErrores) return true;
-
-        // También buscar coincidencias parciales con fuzzy en palabras individuales
+        if (!palabrasBusqueda.length) return true;
         const palabrasTexto = t.split(/\s+/).filter(Boolean);
-        for (const pBusqueda of palabrasBusqueda) {
-            for (const pTexto of palabrasTexto) {
-                const dist = levenshtein(pTexto, pBusqueda);
-                const maxErr = pBusqueda.length <= 4 ? 1 : (pBusqueda.length <= 8 ? 2 : 3);
-                if (dist <= maxErr) return true;
-            }
-        }
 
-        return false;
+        // TODAS las palabras de la búsqueda deben aparecer en el texto,
+        // exacta o aproximadamente — así una búsqueda de varias palabras no
+        // coincide solo porque UNA de ellas se parezca por casualidad a
+        // cualquier palabra suelta del producto. Esto es lo que evita que
+        // "fairy" devuelva colonias que solo comparten la palabra "aire".
+        return palabrasBusqueda.every(p => palabraCoincide(p, palabrasTexto));
     }
 
     // ── Detecta si el texto de búsqueda es predominantemente numérico (código/referencia) ──
@@ -1316,17 +2374,85 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
     const PRODUCTOS_URL = './data/productos.json';
+    const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
+    const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
+    const PRODUCTOS_BESA_URL = './data/productos_besa.json';
+    const PRODUCTOS_BASLAC_URL = './data/productos_baslac.json';
+
+    // Talleres y Carrocerías no tiene productos propios en la hoja
+    // Productos (Sheet) — de momento se cargan aquí los productos del
+    // catálogo del proveedor Zaphiro (sin precio, extraídos de su PDF
+    // oficial), como fuente adicional independiente. Si más adelante hay
+    // productos reales de talleres en el Sheet, este archivo puede
+    // simplemente dejar de cargarse o convivir con ellos sin conflicto
+    // (referencias con prefijo "Z" no se solapan con las de droguería/
+    // perfumería/pinturas).
+    function cargarProductosTalleres() {
+        return fetch(PRODUCTOS_TALLERES_URL)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data && data.productos ? data.productos : [])
+            .catch(() => []); // si falla, simplemente no se añaden (no rompe el catálogo principal)
+    }
+
+    // Igual que Zaphiro: catálogo del proveedor Glasurit (pinturas y
+    // productos de reparación), sin precio, extraído de su web pública
+    // (knowhow.glasurit.com). A diferencia de Zaphiro no tiene imagen
+    // propia disponible (no se pudo descargar), así que cada producto
+    // incluye en su lugar un enlace directo a su ficha técnica real en la
+    // web de Glasurit (`ficha_url`).
+    function cargarProductosGlasurit() {
+        return fetch(PRODUCTOS_GLASURIT_URL)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data && data.productos ? data.productos : [])
+            .catch(() => []);
+    }
+
+    // Tercer proveedor de Talleres: BESA (catálogo industrial 2020),
+    // compilado del PDF proporcionado directamente por el usuario. Sin
+    // imagen por ahora (el PDF sí tiene fotos de producto extraíbles,
+    // pendiente como siguiente paso) ni precio.
+    function cargarProductosBesa() {
+        return fetch(PRODUCTOS_BESA_URL)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data && data.productos ? data.productos : [])
+            .catch(() => []);
+    }
+
+    // Cuarto proveedor de Talleres: BASLAC. No hay catálogo disponible (ni
+    // en papel ni accesible desde su web), así que en vez de un listado de
+    // productos se representa con un único registro genérico: una foto de
+    // grupo con varios de sus productos y un texto (`descripcion`) que
+    // indica consultar la gama completa y precios directamente.
+    function cargarProductosBaslac() {
+        return fetch(PRODUCTOS_BASLAC_URL)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data && data.productos ? data.productos : [])
+            .catch(() => []);
+    }
+
     fetch(PRODUCTOS_URL)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-            TODOS = data.productos || [];
+        .then(r => r.ok ? r.text() : null)
+        .then(async texto => {
+            if (!texto) throw new Error('respuesta vacía');
+            hashConocido = await calcularHash(texto);
+            const data = JSON.parse(texto);
+            const [productosTalleres, productosGlasurit, productosBesa, productosBaslac] = await Promise.all([
+                cargarProductosTalleres(),
+                cargarProductosGlasurit(),
+                cargarProductosBesa(),
+                cargarProductosBaslac(),
+            ]);
+            TODOS = [...(data.productos || []), ...productosTalleres, ...productosGlasurit, ...productosBesa, ...productosBaslac];
             FAMILIAS_ORDEN = data.familias_orden || {};
             SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
+            construirIndiceSugerencias();
             inicializarFiltros();
             aplicarFiltros();
             $('cargando-inicial').style.display = 'none';
             $('contenedor-resultados').style.display = '';
             iniciarComprobacionActualizaciones();
+            aplicarFiltrosDesdeURL();
+            abrirProductoDesdeURL();
         })
         .catch(err => {
             console.error(err);
@@ -1337,19 +2463,33 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ══════════════════════════════════════════════
     // ── Detección de productos.json actualizado en el servidor ──
     // El workflow que regenera productos.json puede correr en cualquier
-    // momento (cada 10-15 min o al validar una imagen). Esto avisa a quien
-    // ya tiene el buscador abierto de que hay una versión más reciente,
-    // sin refrescar nada automáticamente ni perder los filtros aplicados.
+    // momento (cada 10-15 min o al validar una imagen), pero eso no
+    // significa que el CONTENIDO haya cambiado de verdad — puede
+    // regenerarse con los mismos datos. Por eso el ETag/Last-Modified solo
+    // se usa como primer filtro barato (una petición HEAD, sin descargar
+    // nada); si ese cambia, se confirma descargando el archivo real y
+    // comparando su hash (SHA-256, vía la Web Crypto API nativa del
+    // navegador — sin librerías) contra el hash de lo que ya está
+    // cargado. Solo se avisa si el contenido de verdad es distinto.
     // ══════════════════════════════════════════════
     const INTERVALO_COMPROBACION_MS = 60 * 1000; // cada 1 minuto
-    let etagConocido = null;   // versión de productos.json actualmente cargada
-    let etagPendiente = null;  // versión nueva detectada, aún no cargada
+    let etagConocido = null;    // versión (ETag/Last-Modified) del último HEAD comprobado
+    let hashConocido = null;    // hash SHA-256 del contenido actualmente cargado
+    let hashPendiente = null;   // hash del contenido nuevo detectado, aún no cargado
     let avisoDescartado = false;
     let comprobandoActualizacion = false;
 
     function identificadorVersion(headers) {
         // ETag es lo más fiable; Last-Modified como respaldo si el servidor no lo envía.
         return headers.get('etag') || headers.get('last-modified') || null;
+    }
+
+    // SHA-256 del texto dado, en hexadecimal. Usa SubtleCrypto (nativo del
+    // navegador, disponible en todo contexto https/localhost) — no hace
+    // falta ninguna librería de hashing externa.
+    async function calcularHash(texto) {
+        const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+        return [...new Uint8Array(buffer)].map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     async function iniciarComprobacionActualizaciones() {
@@ -1367,19 +2507,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
-            const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
-            const version = identificadorVersion(resp.headers);
+            // Paso 1 (barato): ¿ha cambiado la cabecera de versión?
+            const respHead = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
+            const version = identificadorVersion(respHead.headers);
             if (!version) return; // servidor no da ETag ni Last-Modified: no se puede comparar, no molestamos
-
             if (etagConocido === null) {
                 etagConocido = version;
                 return;
             }
-            if (version === etagConocido) return; // sin cambios
+            if (version === etagConocido) return; // ni siquiera la cabecera cambió: nada que comprobar
 
-            if (version !== etagPendiente) {
-                // Es una versión nueva que aún no se ha ofrecido (o distinta de la ya descartada)
-                etagPendiente = version;
+            // Paso 2 (solo si el paso 1 sugiere un cambio): descargar el
+            // contenido real y comparar su hash. Si el hash es IGUAL, el
+            // archivo se regeneró pero con los mismos datos — se actualiza
+            // la cabecera conocida para no repetir esta descarga cada
+            // minuto por la misma "versión" que en realidad no cambió nada,
+            // pero NO se avisa al usuario.
+            const respGet = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            const texto = await respGet.text();
+            const hash = await calcularHash(texto);
+
+            etagConocido = version; // ya se ha comprobado esta versión, sea igual o distinta
+
+            if (hash === hashConocido) return; // contenido idéntico: no hay nada que avisar
+
+            if (hash !== hashPendiente) {
+                // Contenido nuevo de verdad, distinto de lo ya cargado y
+                // distinto de lo que ya se hubiera descartado antes.
+                hashPendiente = hash;
                 avisoDescartado = false;
             }
             if (!avisoDescartado) {
@@ -1413,10 +2568,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             const resp = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
             if (!resp.ok) throw new Error('respuesta no OK');
-            const data = await resp.json();
+            const texto = await resp.text();
+            const data = JSON.parse(texto);
             recargarProductosPreservandoFiltros(data);
-            etagConocido = etagPendiente || identificadorVersion(resp.headers);
-            etagPendiente = null;
+            hashConocido = hashPendiente || await calcularHash(texto);
+            hashPendiente = null;
+            etagConocido = identificadorVersion(resp.headers) || etagConocido;
             avisoDescartado = false;
             ocultarBannerActualizacion();
             mostrarToast('✓ Catálogo actualizado con los últimos cambios.');
@@ -1437,9 +2594,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const familiasPrevias = familiasSeleccionadas();
         const subfamiliasPrevias = subfamiliasSeleccionadas();
 
-        TODOS = data.productos || [];
+        // Los productos de talleres (Zaphiro) no vienen en este `data`
+        // (es un archivo aparte que apenas cambia) — se conservan los que
+        // ya estaban cargados en vez de perderlos en esta actualización.
+        const talleresActuales = TODOS.filter(p => p.area === 'talleres');
+        TODOS = [...(data.productos || []), ...talleresActuales];
         FAMILIAS_ORDEN = data.familias_orden || {};
         SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
+        construirIndiceSugerencias();
 
         // renderFamilias()/renderSubfamilias() reconstruyen los checkboxes desde
         // cero (sin marcar), así que hay que volver a marcar los que el usuario
@@ -1452,6 +2614,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         document.querySelectorAll('#f-subfamilias input').forEach(input => {
             if (subfamiliasPrevias.includes(input.value)) input.checked = true;
         });
+        renderAtributosPintura();
+        renderAtributosTaller();
 
         resetPaginacion();
         aplicarFiltros();
@@ -1469,9 +2633,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             selectArea.appendChild(opt);
         });
 
+        renderFabricanteTaller();
         renderFamilias();
-
-        // Toggle de filtros colapsables
         document.querySelectorAll('.filtro-grupo.collapsable .titulo').forEach(titulo => {
             titulo.addEventListener('click', function() {
                 const grupo = this.closest('.filtro-grupo');
@@ -1480,8 +2643,55 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
 
         // Listeners
-        $('f-texto').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
-        $('f-area').addEventListener('change', () => { renderFamilias(); resetPaginacion(); aplicarFiltros(); });
+        $('f-texto').addEventListener('input', debounce(() => {
+            // El texto de búsqueda prima sobre el resto de filtros: si el
+            // usuario escribe algo, se limpian los demás automáticamente.
+            if ($('f-texto').value.trim()) {
+                limpiarOtrosFiltros();
+            }
+            resetPaginacion();
+            aplicarFiltros();
+        }, 300));
+        // Alternar entre la "X" (hay texto) y el icono de cámara (campo
+        // vacío) — nunca se muestran los dos a la vez.
+        $('f-texto').addEventListener('input', actualizarIconosBuscador);
+
+        // Sugerencias de búsqueda: se consultan con un debounce más corto
+        // que el de la búsqueda real (120ms), porque no filtran nada — solo
+        // muestran una lista, así que pueden reaccionar más rápido sin
+        // sobrecargar nada.
+        $('f-texto').addEventListener('input', debounce(() => {
+            const valor = $('f-texto').value;
+            if (valor.trim().length >= 2) {
+                renderSugerencias(obtenerSugerencias(valor), valor);
+            } else {
+                ocultarSugerencias();
+            }
+        }, 120));
+        $('f-texto').addEventListener('focus', () => {
+            const valor = $('f-texto').value;
+            if (valor.trim().length >= 2) renderSugerencias(obtenerSugerencias(valor), valor);
+        });
+        $('f-texto').addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') ocultarSugerencias();
+        });
+        $('sugerencias-busqueda').addEventListener('click', (e) => {
+            const item = e.target.closest('.sugerencia-item');
+            if (item) seleccionarSugerencia(item.dataset.texto);
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#grupo-buscador-principal')) ocultarSugerencias();
+        });
+
+        $('btn-limpiar-texto').addEventListener('click', () => {
+            limpiarFiltros();
+            $('f-texto').focus();
+        });
+        $('btn-buscar-por-imagen').addEventListener('click', () => {
+            $('input-imagen-busqueda').click();
+        });
+        $('input-imagen-busqueda').addEventListener('change', buscarPorImagenSeleccionada);
+        $('f-area').addEventListener('change', () => { renderFabricanteTaller(); renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
@@ -1496,6 +2706,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
+        $('btn-compartir-resultados').addEventListener('click', compartirResultados);
+
+        // Panel de filtros como modal deslizante en móvil
+        $('btn-abrir-filtros-movil').addEventListener('click', alternarFiltrosMovil);
+        $('btn-cerrar-filtros-movil').addEventListener('click', cerrarFiltrosMovil);
+        $('btn-mostrar-resultados-movil').addEventListener('click', cerrarFiltrosMovil);
+        $('filtros-backdrop').addEventListener('click', cerrarFiltrosMovil);
         $('modal-cancelar').addEventListener('click', () => $('modal-overlay').classList.remove('activo'));
         $('modal-enviar').addEventListener('click', enviarSolicitud);
         $('modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-overlay') $('modal-overlay').classList.remove('activo'); });
@@ -1557,8 +2774,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             await html5QrCode.start(
                 { facingMode: 'environment' },
                 {
-                    fps: 10,
-                    qrbox: { width: 260, height: 130 },
+                    fps: 15,
+                    qrbox: { width: 280, height: 140 },
+                    // Solo usamos la cámara trasera: nos ahorramos el chequeo
+                    // de imagen volteada en cada frame (útil para cámara
+                    // frontal/selfie, no para esto) y ganamos velocidad.
+                    disableFlip: true,
+                    // Resolución más alta: los códigos de barras 1D necesitan
+                    // más detalle que un QR para decodificarse rápido. Va
+                    // dentro de videoConstraints (no en el primer argumento).
+                    videoConstraints: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                    },
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.EAN_13,
                         Html5QrcodeSupportedFormats.EAN_8,
@@ -1567,6 +2796,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                         Html5QrcodeSupportedFormats.CODE_128,
                         Html5QrcodeSupportedFormats.CODE_39,
                     ],
+                    // Usa la API nativa BarcodeDetector del sistema cuando el
+                    // navegador la soporta (Chrome/Android) — es hardware-
+                    // acelerada y notablemente más rápida que el decodificador
+                    // JS de reserva (ZXing). iOS Safari todavía no la soporta
+                    // (2026), así que ahí se sigue usando el decodificador JS,
+                    // aunque también se beneficia de la mayor resolución/fps.
+                    useBarCodeDetectorIfSupported: true,
+                    experimentalFeatures: { useBarCodeDetectorIfSupported: true },
                 },
                 (decodedText) => {
                     if (escanerActivo) codigoDetectado(decodedText);
@@ -1585,9 +2822,211 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         escanerActivo = false;
         $('scanner-estado').textContent = '✓ Código detectado: ' + valor;
         $('f-texto').value = valor;
+        actualizarIconosBuscador();
+        ocultarSugerencias();
         resetPaginacion();
         aplicarFiltros();
         setTimeout(cerrarEscaner, 600);
+    }
+
+    // Alterna entre la "X" (borrar) y la cámara (buscar por foto) según si
+    // hay texto escrito — nunca se muestran los dos a la vez.
+    function actualizarIconosBuscador() {
+        const hayTexto = $('f-texto').value.length > 0;
+        $('btn-limpiar-texto').classList.toggle('visible', hayTexto);
+        $('btn-buscar-por-imagen').classList.toggle('visible', !hayTexto);
+    }
+
+    // ── Buscar a partir de una foto (galería o cámara) ──
+    // Instancia de Html5Qrcode dedicada a decodificar imágenes de archivo,
+    // separada de la del escáner en vivo (la librería no permite usar
+    // ambos modos a la vez sobre la misma instancia).
+    let html5QrCodeArchivo = null;
+
+    // Carga el módulo de ZBar-WASM (motor C/ZBar real compilado a
+    // WebAssembly, cargado por CDN — no requiere ninguna herramienta de
+    // compilación). Se carga una sola vez y se reutiliza.
+    let zbarWasmModulo = null;
+    async function cargarZbarWasm() {
+        if (!zbarWasmModulo) {
+            // NOTA: dist/index.js (el que indica la documentación oficial)
+            // no exporta correctamente las funciones al importarlo como
+            // módulo ES en la práctica — comprobado tanto localmente como
+            // con el error real del navegador ("scanImageData is not a
+            // function"). dist/index.mjs sí las expone correctamente.
+            zbarWasmModulo = import('https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.11.0/dist/index.mjs');
+        }
+        const modulo = await zbarWasmModulo;
+        if (typeof modulo.scanImageData !== 'function') {
+            zbarWasmModulo = null; // no guardar un módulo roto para la próxima vez
+            throw new Error('el módulo cargó pero scanImageData no está disponible');
+        }
+        return modulo;
+    }
+
+    // Carga el archivo UNA SOLA VEZ y lo reduce a un tamaño manejable en un
+    // único canvas base. Comprobado con fotos reales: el archivo original
+    // de un móvil (varios miles de píxeles, 12+ megapíxeles) puede hacer
+    // fallar la decodificación por sí solo, incluso antes de cualquier
+    // binarización — reducirlo a un tamaño moderado es lo que marca la
+    // diferencia. Por eso ya NO se vuelve a cargar/decodificar el archivo
+    // original en cada intento (antes se hacía una vez por cada variante,
+    // lo cual además es mucho más pesado para el navegador).
+    function cargarCanvasBase(archivo, maxLado = 1400) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(archivo);
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                const { width, height } = img;
+                const escala = Math.min(1, maxLado / Math.max(width, height));
+                const w = Math.round(width * escala);
+                const h = Math.round(height * escala);
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas);
+            };
+            img.onerror = () => reject(new Error('no se pudo cargar la imagen seleccionada'));
+            img.src = url;
+        });
+    }
+
+    // Deriva un ImageData (para ZBar-WASM) a partir del canvas base ya
+    // reducido — barato, no vuelve a tocar el archivo original.
+    function canvasAImageData(canvasBase, binarizar, umbral = 120) {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasBase.width;
+        canvas.height = canvasBase.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(canvasBase, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        if (binarizar) {
+            const datos = imageData.data;
+            for (let i = 0; i < datos.length; i += 4) {
+                const gris = 0.299 * datos[i] + 0.587 * datos[i + 1] + 0.114 * datos[i + 2];
+                const valor = gris < umbral ? 0 : 255;
+                datos[i] = datos[i + 1] = datos[i + 2] = valor;
+            }
+        }
+        return imageData;
+    }
+
+    // Deriva un File (para ZXing/html5-qrcode, que solo acepta File) a
+    // partir del mismo canvas base ya reducido.
+    function canvasAFile(canvasBase, binarizar, nombreArchivo, umbral = 120) {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasBase.width;
+            canvas.height = canvasBase.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(canvasBase, 0, 0);
+            if (binarizar) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const datos = imageData.data;
+                for (let i = 0; i < datos.length; i += 4) {
+                    const gris = 0.299 * datos[i] + 0.587 * datos[i + 1] + 0.114 * datos[i + 2];
+                    const valor = gris < umbral ? 0 : 255;
+                    datos[i] = datos[i + 1] = datos[i + 2] = valor;
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+            canvas.toBlob((blob) => {
+                resolve(blob ? new File([blob], nombreArchivo, { type: 'image/jpeg' }) : null);
+            }, 'image/jpeg', 0.92);
+        });
+    }
+
+    // Aplica el resultado de una decodificación exitosa (usado tanto por
+    // ZBar-WASM como por el respaldo de ZXing/html5-qrcode).
+    function aplicarResultadoEscaneoFoto(texto) {
+        $('f-texto').value = texto;
+        actualizarIconosBuscador();
+        ocultarSugerencias();
+        resetPaginacion();
+        aplicarFiltros();
+        mostrarToast('Código encontrado: ' + texto, 'success');
+    }
+
+    async function buscarPorImagenSeleccionada(e) {
+        const archivo = e.target.files && e.target.files[0];
+        e.target.value = ''; // permite volver a elegir la misma imagen después
+        if (!archivo) return;
+
+        console.log('[buscar-por-imagen] archivo:', archivo.name, archivo.type, (archivo.size / 1024).toFixed(0) + ' KB');
+
+        // El diagnóstico de AMBOS motores se acumula aquí, para que si al
+        // final no se encuentra nada, el propio aviso explique qué pasó en
+        // cada uno — sin depender de la consola del navegador (nada fácil
+        // de mirar en un móvil sin herramientas de desarrollador).
+        const diagnostico = [];
+
+        let canvasBase;
+        try {
+            canvasBase = await cargarCanvasBase(archivo, 1400);
+            console.log('[buscar-por-imagen] imagen reducida a', canvasBase.width + 'x' + canvasBase.height);
+        } catch (err) {
+            mostrarToast('No se ha podido abrir esa imagen: ' + (err && err.message ? err.message : err), 'error');
+            return;
+        }
+
+        // ── Intento 1: ZBar-WASM (motor verificado como más fiable con
+        //    fotos reales de códigos con poco contraste o mala resolución) ──
+        try {
+            const zbarWasm = await cargarZbarWasm();
+            let encontrado = false;
+            for (const binarizar of [false, true]) {
+                const imageData = canvasAImageData(canvasBase, binarizar);
+                console.log(`[buscar-por-imagen] ZBar-WASM probando (binarizado=${binarizar})...`);
+                const simbolos = await zbarWasm.scanImageData(imageData);
+                if (simbolos && simbolos.length > 0) {
+                    aplicarResultadoEscaneoFoto(simbolos[0].decode());
+                    encontrado = true;
+                    break;
+                }
+            }
+            if (encontrado) return;
+            diagnostico.push('ZBar: sin coincidencias');
+        } catch (err) {
+            console.log('[buscar-por-imagen] ZBar-WASM falló:', err);
+            diagnostico.push('ZBar: ' + (err && err.message ? err.message : String(err)));
+        }
+
+        // ── Intento 2 (respaldo): ZXing vía html5-qrcode, sobre la MISMA
+        //    imagen ya reducida (no se recarga el archivo original) ──
+        if (!html5QrCodeArchivo) {
+            html5QrCodeArchivo = new Html5Qrcode('scanner-archivo-wrap', {
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.QR_CODE,
+                ],
+            });
+        }
+        try {
+            let encontrado = false;
+            for (const binarizar of [false, true]) {
+                const version = await canvasAFile(canvasBase, binarizar, archivo.name);
+                if (!version) continue;
+                console.log(`[buscar-por-imagen] ZXing probando (binarizado=${binarizar})...`);
+                const decodedText = await html5QrCodeArchivo.scanFile(version, true);
+                aplicarResultadoEscaneoFoto(decodedText);
+                encontrado = true;
+                break;
+            }
+            if (encontrado) return;
+        } catch (err) {
+            console.log('[buscar-por-imagen] ZXing falló:', err);
+            diagnostico.push('ZXing: ' + (err && err.message ? err.message : String(err)));
+        }
+
+        console.error('[buscar-por-imagen] fallo total:', diagnostico);
+        mostrarToast('No se ha podido leer el código. ' + diagnostico.join(' | '), 'error');
     }
 
     function cerrarEscaner() {
@@ -1614,15 +3053,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cont = $('f-familias');
         cont.innerHTML = '';
 
-        const base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        let base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        const fabricantesSel = fabricantesTallerSeleccionados();
+        if (areaSel === 'talleres' && fabricantesSel.length) {
+            base = base.filter(p => fabricantesSel.includes(p.fabricante));
+        }
         const familias = [...new Set(base.map(p => p.familia).filter(Boolean))];
 
-        familias.sort((a, b) => {
-            const oa = FAMILIAS_ORDEN[a.toUpperCase()] ?? 9999;
-            const ob = FAMILIAS_ORDEN[b.toUpperCase()] ?? 9999;
-            if (oa !== ob) return oa - ob;
-            return a.localeCompare(b);
-        });
+        familias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
         familias.forEach(fam => {
             const label = document.createElement('label');
@@ -1631,6 +3069,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             label.querySelector('input').addEventListener('change', () => { 
                 resetPaginacion(); 
                 renderSubfamilias(); // Actualizar subfamilias cuando cambia la familia
+                renderAtributosTaller(); // Actualizar tambien la cascada de talla/variante
                 aplicarFiltros(); 
             });
             cont.appendChild(label);
@@ -1668,21 +3107,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         const subfamilias = Array.from(subfamiliasSet);
 
-        // Ordenar subfamilias según SUBFAMILIAS_ORDEN
-        subfamilias.sort((a, b) => {
-            let minOrdenA = 9999;
-            let minOrdenB = 9999;
-
-            for (const fam of familiasSelUpper) {
-                const ordenA = SUBFAMILIAS_ORDEN[fam]?.[a] ?? 9999;
-                const ordenB = SUBFAMILIAS_ORDEN[fam]?.[b] ?? 9999;
-                if (ordenA < minOrdenA) minOrdenA = ordenA;
-                if (ordenB < minOrdenB) minOrdenB = ordenB;
-            }
-
-            if (minOrdenA !== minOrdenB) return minOrdenA - minOrdenB;
-            return a.localeCompare(b);
-        });
+        // Ordenar subfamilias alfabéticamente
+        subfamilias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
         subfamilias.forEach(subfam => {
             const label = document.createElement('label');
@@ -1690,10 +3116,245 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             label.innerHTML = `<input type="checkbox" value="${subfam.replace(/"/g,'&quot;')}"> ${subfam}`;
             label.querySelector('input').addEventListener('change', () => {
                 resetPaginacion();
+                renderAtributosTaller(); // Actualizar la cascada de talla/variante
                 aplicarFiltros();
             });
             cont.appendChild(label);
         });
+    }
+
+    // Orden inteligente para el filtro de Talla/Variante: los granos de
+    // lija ("P-60", "P-80"...) se ordenan numéricamente por su número, las
+    // tallas de ropa siguen el orden real S < M < L < XL < 2XL < 3XL, y
+    // cualquier otro valor (colores, medidas variadas) cae al orden
+    // alfabético normal.
+    const ORDEN_TALLAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'XXXL', 'G', 'XG'];
+    function compararVariantes(a, b) {
+        const matchA = a.match(/^P-?(\d+)/i);
+        const matchB = b.match(/^P-?(\d+)/i);
+        if (matchA && matchB) return parseInt(matchA[1], 10) - parseInt(matchB[1], 10);
+
+        const idxA = ORDEN_TALLAS.indexOf(a.toUpperCase());
+        const idxB = ORDEN_TALLAS.indexOf(b.toUpperCase());
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+
+        return a.localeCompare(b, 'es', { sensitivity: 'base' });
+    }
+
+    function compararNumerico(a, b) {
+        const na = parseFloat(a);
+        const nb = parseFloat(b);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.localeCompare(b, 'es', { sensitivity: 'base' });
+    }
+
+    // La variante de un producto de Talleres suele combinar varios
+    // conceptos en un solo texto (ej. "P-1200 150mm" = grano + medida,
+    // "650 ml 190 micras" = volumen + micras) — una sola lista con eso
+    // mezclado es larga y difícil de acotar. Por eso se separan en
+    // filtros independientes (Talla, Grano, Color, Medida, Volumen,
+    // Micras), cada uno mostrando solo su parte reconocida, más un
+    // filtro "Otras variantes" de respaldo con el texto en bruto para
+    // los pocos casos que no encajan en ninguno (códigos de modelo, kits...).
+    const CAMPOS_ATRIBUTOS_TALLER = [
+        { campo: 'variante_talla',   grupoId: 'grupo-talla-taller',   contId: 'f-talla-taller',   comparar: compararVariantes },
+        { campo: 'variante_grano',   grupoId: 'grupo-grano-taller',   contId: 'f-grano-taller',   comparar: compararVariantes },
+        { campo: 'variante_color',   grupoId: 'grupo-color-taller',   contId: 'f-color-taller',   comparar: (a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }) },
+        { campo: 'variante_medida',  grupoId: 'grupo-medida-taller',  contId: 'f-medida-taller',  comparar: compararNumerico },
+        { campo: 'variante_volumen', grupoId: 'grupo-volumen-taller', contId: 'f-volumen-taller', comparar: compararNumerico },
+        { campo: 'variante_micras',  grupoId: 'grupo-micras-taller',  contId: 'f-micras-taller',  comparar: compararNumerico },
+    ];
+
+    function valoresSeleccionadosTaller(contId) {
+        return [...document.querySelectorAll(`#${contId} input:checked`)].map(i => i.value);
+    }
+
+    function pintarCheckboxesAtributo(cont, grupo, valores, comparar) {
+        if (!valores.length) {
+            grupo.style.display = 'none';
+            cont.innerHTML = '';
+            return;
+        }
+        valores.sort(comparar);
+        cont.innerHTML = '';
+        valores.forEach(v => {
+            const label = document.createElement('label');
+            label.className = 'familia-item';
+            label.innerHTML = `<input type="checkbox" value="${v.replace(/"/g, '&quot;')}"> ${v}`;
+            label.querySelector('input').addEventListener('change', () => {
+                resetPaginacion();
+                aplicarFiltros();
+            });
+            cont.appendChild(label);
+        });
+        grupo.style.display = 'block';
+    }
+
+    // Puebla el filtro de Fabricante (área talleres): Zaphiro, Glasurit, y
+    // los que se vayan añadiendo (Besa...). Es el primer nivel de la
+    // cascada — por encima de Familia — porque cada fabricante tiene su
+    // propio conjunto de categorías (las de Zaphiro no coinciden con las
+    // de Glasurit), así que elegir fabricante acota qué familias se
+    // ofrecen después, igual que familia acota subfamilia.
+    function renderFabricanteTaller() {
+        const esTalleres = $('f-area').value === 'talleres';
+        const grupo = $('grupo-fabricante-taller');
+        const cont = $('f-fabricante-taller');
+
+        if (!esTalleres) {
+            grupo.style.display = 'none';
+            cont.innerHTML = '';
+            return;
+        }
+
+        const fabricantes = [...new Set(TODOS.filter(p => p.area === 'talleres').map(p => p.fabricante).filter(Boolean))];
+        fabricantes.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+        cont.innerHTML = '';
+        fabricantes.forEach(fab => {
+            const label = document.createElement('label');
+            label.className = 'familia-item';
+            label.innerHTML = `<input type="checkbox" value="${fab.replace(/"/g, '&quot;')}"> ${fab}`;
+            label.querySelector('input').addEventListener('change', () => {
+                resetPaginacion();
+                renderFamilias(); // Actualizar familia/subfamilia según el fabricante elegido
+                renderAtributosTaller(); // Actualizar también talla/grano/color/etc. (cada fabricante tiene los suyos)
+                aplicarFiltros();
+            });
+            cont.appendChild(label);
+        });
+        grupo.style.display = 'block';
+    }
+
+    // Puebla los filtros de talla/grano/color/medida/volumen/micras (área
+    // talleres), limitados a los productos de las familias/subfamilias ya
+    // seleccionadas — igual que subfamilia se limita a la familia elegida,
+    // para que cada lista muestre solo lo relevante al producto concreto
+    // en vez de las ~800 referencias del catálogo completo de golpe.
+    function renderAtributosTaller() {
+        const esTalleres = $('f-area').value === 'talleres';
+
+        if (!esTalleres) {
+            CAMPOS_ATRIBUTOS_TALLER.forEach(c => {
+                $(c.grupoId).style.display = 'none';
+                $(c.contId).innerHTML = '';
+            });
+            $('grupo-otros-taller').style.display = 'none';
+            $('f-otros-taller').innerHTML = '';
+            return;
+        }
+
+        const fabricantesSel = fabricantesTallerSeleccionados();
+        const familiasSel = familiasSeleccionadas();
+        const subfamiliasSel = subfamiliasSeleccionadas();
+        let base = TODOS.filter(p => p.area === 'talleres');
+        if (fabricantesSel.length) base = base.filter(p => fabricantesSel.includes(p.fabricante));
+        if (familiasSel.length) base = base.filter(p => familiasSel.includes(p.familia));
+        if (subfamiliasSel.length) base = base.filter(p => subfamiliasSel.includes(p.subfamilia));
+
+        CAMPOS_ATRIBUTOS_TALLER.forEach(c => {
+            const valores = [...new Set(base.map(p => p[c.campo]).filter(Boolean))];
+            pintarCheckboxesAtributo($(c.contId), $(c.grupoId), valores, c.comparar);
+        });
+
+        // "Otras variantes": el texto en bruto, solo para productos sin
+        // NINGÚN atributo estructurado detectado (códigos de modelo, kits...)
+        const sinEstructurar = base.filter(p => p.variante
+            && !p.variante_talla && !p.variante_grano && !p.variante_color
+            && !p.variante_medida && !p.variante_volumen && !p.variante_micras);
+        const valoresOtros = [...new Set(sinEstructurar.map(p => p.variante))];
+        pintarCheckboxesAtributo($('f-otros-taller'), $('grupo-otros-taller'), valoresOtros,
+            (a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+    }
+
+    // Puebla los filtros de acabado y formato (área pinturas). Solo se
+    // muestran si el área seleccionada es "pinturas" y hay productos con esos
+    // atributos detectables en el nombre. Conserva selecciones previas.
+    function renderAtributosPintura() {
+        const esPinturas = $('f-area').value === 'pinturas';
+        const grupoAcabado = $('grupo-acabado');
+        const grupoFormato = $('grupo-formato');
+
+        if (!esPinturas) {
+            grupoAcabado.style.display = 'none';
+            grupoFormato.style.display = 'none';
+            $('f-acabado').innerHTML = '';
+            $('f-formato').innerHTML = '';
+            return;
+        }
+
+        const acabadosPrevios = acabadosSeleccionados();
+        const formatosPrevios = formatosSeleccionados();
+
+        const productosPinturas = TODOS.filter(p => p.area === 'pinturas');
+
+        // ── Acabados presentes ──
+        const acabadosSet = new Set();
+        productosPinturas.forEach(p => acabadoDeProducto(p).forEach(a => acabadosSet.add(a)));
+        // Mantener el orden lógico definido en ACABADOS_PINTURA
+        const acabados = ACABADOS_PINTURA.map(a => a.etiqueta).filter(e => acabadosSet.has(e));
+
+        const contA = $('f-acabado');
+        contA.innerHTML = '';
+        if (acabados.length) {
+            grupoAcabado.style.display = 'block';
+            acabados.forEach(ac => {
+                const label = document.createElement('label');
+                label.className = 'familia-item';
+                const checked = acabadosPrevios.includes(ac) ? 'checked' : '';
+                label.innerHTML = `<input type="checkbox" value="${ac}" ${checked}> ${ac}`;
+                label.querySelector('input').addEventListener('change', () => {
+                    resetPaginacion();
+                    aplicarFiltros();
+                });
+                contA.appendChild(label);
+            });
+        } else {
+            grupoAcabado.style.display = 'none';
+        }
+
+        // ── Formatos presentes (ordenados por volumen ascendente) ──
+        const formatosSet = new Set();
+        productosPinturas.forEach(p => {
+            const f = formatoDeProducto(p);
+            if (f) formatosSet.add(f);
+        });
+        const formatos = Array.from(formatosSet).sort((a, b) => valorFormatoEnMl(a) - valorFormatoEnMl(b));
+
+        const contF = $('f-formato');
+        contF.innerHTML = '';
+        if (formatos.length) {
+            grupoFormato.style.display = 'block';
+            formatos.forEach(fmt => {
+                const label = document.createElement('label');
+                label.className = 'familia-item';
+                const checked = formatosPrevios.includes(fmt) ? 'checked' : '';
+                label.innerHTML = `<input type="checkbox" value="${fmt}" ${checked}> ${fmt}`;
+                label.querySelector('input').addEventListener('change', () => {
+                    resetPaginacion();
+                    aplicarFiltros();
+                });
+                contF.appendChild(label);
+            });
+        } else {
+            grupoFormato.style.display = 'none';
+        }
+    }
+
+    // Convierte "750 ml" / "4 L" / "5 kg" a un número comparable (en ml o gr)
+    // solo para ordenar los formatos de menor a mayor.
+    function valorFormatoEnMl(fmt) {
+        const m = fmt.match(/([\d.]+)\s*(ml|L|kg|gr|g)/i);
+        if (!m) return 0;
+        const v = parseFloat(m[1]);
+        const u = m[2].toLowerCase();
+        if (u === 'l') return v * 1000;
+        if (u === 'kg') return v * 1000;
+        return v; // ml, gr, g
+    }
+
+    function fabricantesTallerSeleccionados() {
+        return [...document.querySelectorAll('#f-fabricante-taller input:checked')].map(i => i.value);
     }
 
     function familiasSeleccionadas() {
@@ -1704,52 +3365,181 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return [...document.querySelectorAll('#f-subfamilias input:checked')].map(i => i.value);
     }
 
+    // ── Atributos derivados del nombre del producto (área pinturas) ──
+    // No existen como campos en productos.json, se deducen del texto del
+    // nombre. Por eso solo se ofrecen como filtro cuando de verdad hay
+    // productos cuyo nombre los contiene (ver renderAtributosPintura).
+    function quitarAcentosMay(t) {
+        return (t || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    }
+
+    const ACABADOS_PINTURA = [
+        { etiqueta: 'Mate', re: /\bMATE\b/ },
+        { etiqueta: 'Satinado', re: /\bSATINADO\b/ },
+        { etiqueta: 'Brillante', re: /\bBRILLANTE\b|\bBRILLO\b/ },
+        { etiqueta: 'Metalizado', re: /\bMETALIZADO\b/ },
+        { etiqueta: 'Seda', re: /\bSEDA\b|\bSEDOSO\b/ },
+    ];
+
+    function acabadoDeProducto(p) {
+        const n = quitarAcentosMay(p.nombre);
+        const encontrados = [];
+        for (const a of ACABADOS_PINTURA) {
+            if (a.re.test(n)) encontrados.push(a.etiqueta);
+        }
+        return encontrados; // un producto puede no tener ninguno
+    }
+
+    function formatoDeProducto(p) {
+        // Normaliza el volumen/peso a una etiqueta legible ("750 ml", "4 L")
+        const n = quitarAcentosMay(p.nombre);
+        const m = n.match(/(\d+(?:[.,]\d+)?)\s*(ML|L|KG|GR|G)\b/);
+        if (!m) return null;
+        const valor = m[1].replace(',', '.');
+        const unidad = m[2] === 'L' ? 'L' : m[2].toLowerCase();
+        return `${valor} ${unidad}`;
+    }
+
+    function acabadosSeleccionados() {
+        return [...document.querySelectorAll('#f-acabado input:checked')].map(i => i.value);
+    }
+    function formatosSeleccionados() {
+        return [...document.querySelectorAll('#f-formato input:checked')].map(i => i.value);
+    }
+
     function resetPaginacion() { familiasMostradas = 0; }
 
-    function limpiarFiltros() {
-        $('f-texto').value = '';
+    // Limpia todos los filtros salvo el propio texto de búsqueda — se usa
+    // tanto desde "Limpiar filtros" como automáticamente cuando el usuario
+    // escribe en el buscador (el texto prima sobre el resto de filtros).
+    function limpiarOtrosFiltros() {
         $('f-area').value = '';
         $('f-precio-min').value = '';
         $('f-precio-max').value = '';
         $('f-oferta').checked = false;
         $('f-imagenes-validadas').checked = false;
         $('f-imagenes-sin-validar').checked = false;
+        renderFabricanteTaller(); // Limpiar/ocultar fabricante
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
+        renderAtributosPintura(); // Limpiar acabado/formato
+        renderAtributosTaller(); // Limpiar talla/variante
+    }
+
+    function limpiarFiltros() {
+        $('f-texto').value = '';
+        actualizarIconosBuscador();
+        ocultarSugerencias();
+        limpiarOtrosFiltros();
         resetPaginacion();
         aplicarFiltros();
+    }
+
+    // ── Panel de filtros como modal deslizante en móvil ──
+    function abrirFiltrosMovil() {
+        const filtrosExtra = $('filtros-extra');
+        const backdrop = $('filtros-backdrop');
+
+        function posicionarPanel() {
+            // Coloca el panel y el fondo justo debajo del buscador (no desde
+            // arriba del todo), para que la barra de búsqueda quede siempre
+            // visible y por encima del panel, nunca tapada por él.
+            const grupoBuscador = $('grupo-buscador-principal');
+            const top = Math.ceil(grupoBuscador.getBoundingClientRect().bottom) + 8;
+            filtrosExtra.style.top = top + 'px';
+            backdrop.style.top = top + 'px';
+        }
+
+        // Se posiciona ya (con la cabecera "Buscador de Productos" todavía
+        // visible, para no dejar el panel sin sitio ni un instante) y se
+        // vuelve a posicionar cuando termina la animación de colapso de esa
+        // cabecera (280ms) — si no, el panel se queda con el hueco de la
+        // posición ANTERIOR al colapso, que es justo lo que se veía mal.
+        posicionarPanel();
+        setTimeout(posicionarPanel, 320);
+
+        filtrosExtra.classList.add('abierto');
+        backdrop.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+
+        // Igual que al escribir en el buscador: más espacio libre, y el
+        // icono del botón se invierte para indicar que el panel está abierto
+        ocultarCabeceraBuscador();
+        $('btn-abrir-filtros-movil').classList.add('activo');
+    }
+
+    function cerrarFiltrosMovil() {
+        $('filtros-extra').classList.remove('abierto');
+        $('filtros-backdrop').classList.remove('visible');
+        document.body.style.overflow = '';
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-abrir-filtros-movil').classList.remove('activo');
+    }
+
+    // Botón "Filtros": si el panel ya está abierto, lo cierra; si está
+    // cerrado, lo abre. Así el propio botón sirve también para cerrarlo.
+    function alternarFiltrosMovil() {
+        if ($('filtros-extra').classList.contains('abierto')) {
+            cerrarFiltrosMovil();
+        } else {
+            abrirFiltrosMovil();
+        }
+    }
+
+    function actualizarBotonMostrarResultadosMovil() {
+        const n = resultadosActuales.length;
+        $('btn-mostrar-resultados-movil').textContent = `Mostrar ${n} resultado${n === 1 ? '' : 's'}`;
     }
 
     // ── Aplicar todos los filtros ──
     function aplicarFiltros() {
         const texto    = $('f-texto').value.trim();
+        if (!texto) ultimaRefAutoabierta = null;
         const area     = $('f-area').value;
         const familias = familiasSeleccionadas();
         const subfamilias = subfamiliasSeleccionadas();
+        const fabricantesSel = fabricantesTallerSeleccionados();
         const pMin     = parseFloat($('f-precio-min').value);
         const pMax     = parseFloat($('f-precio-max').value);
         const soloOferta = $('f-oferta').checked;
         const soloImagenesValidadas = $('f-imagenes-validadas').checked;
         const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
-
-        console.log('Filtros de imágenes activos:', { soloImagenesValidadas, soloImagenesSinValidar });
-
-        // Verificar si los productos tienen los campos de validación
-        if (TODOS.length > 0) {
-            const primerProducto = TODOS[0];
-            console.log('Primer producto tiene campos:', {
-                imagen_validada: primerProducto.imagen_validada,
-                fecha_actualizacion_imagen: primerProducto.fecha_actualizacion_imagen
-            });
-        }
+        const acabadosSel = acabadosSeleccionados();
+        const formatosSel = formatosSeleccionados();
+        const tallaSel   = valoresSeleccionadosTaller('f-talla-taller');
+        const granoSel   = valoresSeleccionadosTaller('f-grano-taller');
+        const colorSel   = valoresSeleccionadosTaller('f-color-taller');
+        const medidaSel  = valoresSeleccionadosTaller('f-medida-taller');
+        const volumenSel = valoresSeleccionadosTaller('f-volumen-taller');
+        const microasSel = valoresSeleccionadosTaller('f-micras-taller');
+        const otrosSel   = valoresSeleccionadosTaller('f-otros-taller');
 
         resultadosActuales = TODOS.filter(p => {
             if (area && p.area !== area) return false;
+            if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
             if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
+            if (tallaSel.length && !tallaSel.includes(p.variante_talla)) return false;
+            if (granoSel.length && !granoSel.includes(p.variante_grano)) return false;
+            if (colorSel.length && !colorSel.includes(p.variante_color)) return false;
+            if (medidaSel.length && !medidaSel.includes(p.variante_medida)) return false;
+            if (volumenSel.length && !volumenSel.includes(p.variante_volumen)) return false;
+            if (microasSel.length && !microasSel.includes(p.variante_micras)) return false;
+            if (otrosSel.length && !otrosSel.includes(p.variante)) return false;
             if (soloOferta && !p.oferta) return false;
             if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
             if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
+
+            // Filtros de pinturas derivados del nombre (acabado / formato)
+            if (acabadosSel.length) {
+                const acabadosProd = acabadoDeProducto(p);
+                if (!acabadosSel.some(a => acabadosProd.includes(a))) return false;
+            }
+            if (formatosSel.length) {
+                const fmt = formatoDeProducto(p);
+                if (!fmt || !formatosSel.includes(fmt)) return false;
+            }
 
             if (texto) {
                 if (esBusquedaNumerica(texto)) {
@@ -1759,9 +3549,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     const enNombreFuzzy = coincide(p.nombre, texto);
                     if (!enRefExacta && !enNombreFuzzy) return false;
                 } else {
-                    const enNombre = coincide(p.nombre, texto);
-                    const enRef    = coincide(p.ref, texto);
-                    if (!enNombre && !enRef) return false;
+                    const enNombre     = coincide(p.nombre, texto);
+                    const enRef        = coincide(p.ref, texto);
+                    // También se comprueban familia y subfamilia: son
+                    // categorías reales del catálogo (curadas a mano), y
+                    // las sugerencias de búsqueda las usan como candidatas
+                    // — si no se buscaran aquí también, seleccionar una
+                    // sugerencia de categoría no encontraría nada.
+                    const enFamilia    = coincide(p.familia, texto);
+                    const enSubfamilia = coincide(p.subfamilia, texto);
+                    if (!enNombre && !enRef && !enFamilia && !enSubfamilia) return false;
                 }
             }
 
@@ -1784,6 +3581,38 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         renderResultados();
+        actualizarBotonMostrarResultadosMovil();
+
+        // Si la búsqueda es por código de producto (tecleado a mano o vía
+        // escáner de códigos de barras) y da un único resultado, nos
+        // ahorramos el clic extra: desplazamos el scroll hasta la tarjeta
+        // y abrimos directamente su ficha de detalle.
+        if (texto && esBusquedaNumerica(texto) &&
+            texto.replace(/\s+/g, '').length >= 8 && resultadosActuales.length === 1) {
+            abrirProductoUnicoTrasBusqueda(resultadosActuales[0]);
+        }
+    }
+
+    let ultimaRefAutoabierta = null;
+    function abrirProductoUnicoTrasBusqueda(producto) {
+        // Evita reabrir el mismo producto en bucle si aplicarFiltros() se
+        // vuelve a ejecutar sin que el texto de búsqueda haya cambiado.
+        if (ultimaRefAutoabierta === producto.ref) return;
+        ultimaRefAutoabierta = producto.ref;
+
+        // Cerrar el teclado del móvil: quitar el foco del campo de búsqueda
+        // (y del escáner si estuviera) hace que el teclado virtual se retraiga
+        // y el zoom que iOS aplica al input vuelva a su sitio antes de abrir
+        // la ficha de detalle.
+        const activo = document.activeElement;
+        if (activo && typeof activo.blur === 'function') activo.blur();
+        $('f-texto').blur();
+
+        const card = document.querySelector(`.producto-card[data-ref="${CSS.escape(producto.ref)}"]`);
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        setTimeout(() => abrirModalProducto(producto), card ? 350 : 0);
     }
 
     function parseFecha(str) {
@@ -1794,7 +3623,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0)).getTime();
     }
 
-    // ── Agrupar resultados por familia respetando orden ──
+    // ── Agrupar resultados por familia (orden de catálogo) y, dentro de
+    //    cada familia, por subfamilia (alfabético). Dentro de cada
+    //    subfamilia: ofertas primero, luego fecha de registro (más
+    //    recientes primero) y como desempate, orden alfabético por nombre ──
+    function ordenarProductos(arr) {
+        arr.sort((a, b) => {
+            const oa = a.oferta ? 1 : 0, ob = b.oferta ? 1 : 0;
+            if (oa !== ob) return ob - oa; // ofertas primero
+
+            const fa = parseFecha(a.fecha), fb = parseFecha(b.fecha);
+            if (fa !== fb) return fb - fa; // más reciente primero
+
+            return (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
+        });
+        return arr;
+    }
+
     function agruparPorFamilia(lista) {
         const grupos = {};
         lista.forEach(p => {
@@ -1803,20 +3648,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             grupos[fam].push(p);
         });
 
-        // Dentro de cada familia: ofertas primero
-        Object.values(grupos).forEach(arr => {
-            arr.sort((a, b) => (b.oferta ? 1 : 0) - (a.oferta ? 1 : 0));
-        });
+        // Ordenar familias alfabéticamente (igual que el selector)
+        const nombresFamilias = Object.keys(grupos).sort((a, b) =>
+            a.localeCompare(b, 'es', { sensitivity: 'base' })
+        );
 
-        // Ordenar familias según FAMILIAS_ORDEN
-        const nombresFamilias = Object.keys(grupos).sort((a, b) => {
-            const oa = FAMILIAS_ORDEN[a.toUpperCase()] ?? 9999;
-            const ob = FAMILIAS_ORDEN[b.toUpperCase()] ?? 9999;
-            if (oa !== ob) return oa - ob;
-            return a.localeCompare(b);
-        });
+        return nombresFamilias.map(nombre => {
+            const productosFamilia = grupos[nombre];
 
-        return nombresFamilias.map(nombre => ({ nombre, productos: grupos[nombre] }));
+            // Subagrupar por subfamilia
+            const subgruposMap = {};
+            productosFamilia.forEach(p => {
+                const sub = p.subfamilia || 'Sin subfamilia';
+                if (!subgruposMap[sub]) subgruposMap[sub] = [];
+                subgruposMap[sub].push(p);
+            });
+
+            // Subfamilias en orden alfabético (igual que el selector)
+            const nombresSubfamilias = Object.keys(subgruposMap).sort((a, b) =>
+                a.localeCompare(b, 'es', { sensitivity: 'base' })
+            );
+
+            const subgrupos = nombresSubfamilias.map(sub => ({
+                nombre: sub,
+                productos: ordenarProductos(subgruposMap[sub]),
+            }));
+
+            return { nombre, productos: productosFamilia, subgrupos };
+        });
     }
 
     // ── Renderizar resultados (con paginación de 12 en 12 aprox) ──
@@ -1849,10 +3708,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             seccion.className = 'familia-seccion';
             seccion.innerHTML = `
                 <h3 class="familia-titulo">${grupo.nombre} <span class="count">${grupo.productos.length}</span></h3>
-                <div class="grid-productos"></div>
+                <div class="subfamilias-contenedor"></div>
             `;
-            const grid = seccion.querySelector('.grid-productos');
-            grupo.productos.forEach(p => grid.appendChild(crearTarjeta(p)));
+            const subCont = seccion.querySelector('.subfamilias-contenedor');
+            grupo.subgrupos.forEach(subgrupo => {
+                const subSeccion = document.createElement('div');
+                subSeccion.className = 'subfamilia-seccion';
+                subSeccion.innerHTML = `
+                    <h4 class="subfamilia-titulo">${subgrupo.nombre} <span class="count">${subgrupo.productos.length}</span></h4>
+                    <div class="grid-productos"></div>
+                `;
+                const grid = subSeccion.querySelector('.grid-productos');
+                subgrupo.productos.forEach(p => grid.appendChild(crearTarjeta(p)));
+                subCont.appendChild(subSeccion);
+            });
             cont.appendChild(seccion);
         });
 
@@ -1881,11 +3750,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const card = document.createElement('div');
         card.className = 'producto-card';
         card.style.cursor = 'pointer';
+        card.dataset.ref = p.ref;
         card.addEventListener('click', () => abrirModalProducto(p));
 
-        const imgHtml = p.img
-            ? `<img src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;producto-sin-img&quot;>Sin imagen</span>'">`
-            : `<span class="producto-sin-img">Sin imagen</span>`;
+        const urlImg = urlImagenProducto(p, 300);
+        const imgHtml = urlImg
+            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
+            : sinImagenFabricanteHtml(p);
+
+        // El badge pequeño de fabricante se muestra siempre que haya
+        // alguna imagen (propia o la genérica de fabricante) — solo se usa
+        // el tratamiento de "logo grande + nombre superpuesto" (que ya
+        // identifica de sobra al fabricante) cuando NO hay ninguna imagen
+        // disponible en absoluto.
+        const logoBadge = urlImg ? logoFabricanteHtml(p) : '';
 
         const ofertaBadge = p.oferta ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
 
@@ -1900,7 +3778,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         card.innerHTML = `
-            <div class="producto-img-wrap">${ofertaBadge}${imgHtml}</div>
+            <div class="producto-img-wrap">${ofertaBadge}${logoBadge}${imgHtml}</div>
             <div class="producto-info">
                 <p class="producto-nombre">${escapeHtml(p.nombre)}</p>
                 <p class="producto-ref">Ref: ${escapeHtml(p.ref)}</p>
@@ -1912,18 +3790,52 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Abrir modal con detalle del producto ──
     function abrirModalProducto(p) {
-        const imgSrc = p.img
-            ? `https://drive.google.com/thumbnail?id=${p.img}&sz=w800`
-            : '';
+        const imgSrc = urlImagenProducto(p, 800) || '';
+        const tieneImagen = !!imgSrc;
 
+        $('modal-producto-img').style.display = tieneImagen ? 'block' : 'none';
         $('modal-producto-img').src = imgSrc;
         $('modal-producto-img').alt = escapeHtml(p.nombre);
+        $('modal-producto-img').onerror = () => mostrarSinImagenModal(p);
+
+        if (tieneImagen) {
+            $('modal-producto-sin-imagen').style.display = 'none';
+        } else {
+            mostrarSinImagenModal(p);
+        }
+
         $('modal-producto-nombre').textContent = p.nombre;
         $('modal-producto-ref').textContent = `Ref: ${p.ref}`;
+
+        // Descripción propia del producto (ej. el registro único de Baslac,
+        // que indica consultar la gama completa en vez de listar productos).
+        // Solo se muestra cuando el producto trae este texto.
+        const elDescripcion = $('modal-producto-descripcion');
+        if (p.descripcion) {
+            elDescripcion.textContent = p.descripcion;
+            elDescripcion.style.display = 'block';
+        } else {
+            elDescripcion.style.display = 'none';
+        }
         const familiaTexto = p.familia || '—';
         const subfamiliaTexto = p.subfamilia ? ` (${p.subfamilia})` : '';
-        $('modal-producto-familia').textContent = familiaTexto + subfamiliaTexto;
+        const fabricanteTexto = (p.area === 'talleres' && p.fabricante) ? ` · ${p.fabricante}` : '';
+        $('modal-producto-familia').textContent = familiaTexto + subfamiliaTexto + fabricanteTexto;
         $('modal-producto-area').textContent = AREAS_NOMBRE[p.area] || p.area || '—';
+
+        // Logo pequeño del fabricante/proveedor sobre la foto — se muestra
+        // siempre que haya alguna imagen (propia o la genérica de
+        // fabricante); solo se omite cuando no hay ninguna imagen en
+        // absoluto (ahí ya se ve el logo grande del tratamiento "sin imagen").
+        const logoFabricante = $('modal-producto-fabricante-logo');
+        const srcLogo = (tieneImagen && p.area === 'talleres' && p.fabricante) ? LOGOS_FABRICANTE[p.fabricante] : null;
+        if (srcLogo) {
+            logoFabricante.querySelector('img').src = srcLogo;
+            logoFabricante.querySelector('img').alt = p.fabricante;
+            logoFabricante.style.display = 'flex';
+        } else {
+            logoFabricante.style.display = 'none';
+        }
 
         let precioHtml = '';
         if (p.mostrar_precio) {
@@ -1962,12 +3874,670 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('modal-producto-buscar-imagen').style.display = 'none';
         }
 
+        // Botón de ficha técnica: solo para productos de pinturas que no sean
+        // herramientas (brochas, lijas...). Enlaza a la búsqueda del
+        // producto en la web del fabricante correspondiente, que es donde
+        // están publicadas las fichas técnicas y de seguridad.
+        configurarBotonFichaTecnica(p);
+        configurarBotonCartaColores(p);
+        // Oculta también la fila que las envuelve cuando ninguno de los dos
+        // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas)
+        document.querySelector('.modal-producto-fila-fichas').style.display =
+            (productoTieneFichaTecnica(p) || productoEsPintura(p)) ? 'flex' : 'none';
+
+        // Calculadora de rendimiento y productos complementarios: solo para
+        // productos que sean realmente pintura (no herramientas, disolventes...)
+        configurarCalculadoraRendimiento(p);
+        configurarComplementarios(p);
+
+        // Botón compartir: genera un enlace que abre el buscador directamente
+        // en el detalle de este producto.
+        configurarBotonCompartir(p);
+
         $('modal-producto-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+    }
+
+    // Construye la URL para compartir un producto: la página actual + el
+    // parámetro ?ref=<referencia>. Al abrir ese enlace, el buscador detecta el
+    // parámetro y abre automáticamente el detalle del producto (ver
+    // abrirProductoDesdeURL).
+    function urlCompartirProducto(p) {
+        const base = window.location.origin + window.location.pathname;
+        return `${base}?ref=${encodeURIComponent(p.ref)}`;
+    }
+
+    function configurarBotonCompartir(p) {
+        const boton = $('modal-producto-compartir');
+        boton.classList.remove('copiado');
+        boton.innerHTML = '<i class="fa-solid fa-share-from-square"></i> Compartir';
+        boton.onclick = () => compartirProducto(p);
+    }
+
+    async function compartirProducto(p) {
+        const url = urlCompartirProducto(p);
+        const boton = $('modal-producto-compartir');
+
+        // En móviles con soporte, usar el diálogo nativo de compartir
+        // (WhatsApp, correo, etc.). Si no, copiar el enlace al portapapeles.
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: p.nombre,
+                    text: `${p.nombre} — Orencio Matas y Hnos`,
+                    url: url,
+                });
+                return;
+            } catch (e) {
+                // Si el usuario cancela el diálogo nativo, no hacemos nada más.
+                if (e && e.name === 'AbortError') return;
+                // Ante cualquier otro error, caemos al método de copiar.
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(url);
+            boton.classList.add('copiado');
+            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Copiado!';
+            setTimeout(() => configurarBotonCompartir(p), 2200);
+        } catch (e) {
+            // Último recurso: mostrar el enlace para copiar a mano
+            window.prompt('Copia este enlace para compartir el producto:', url);
+        }
+    }
+
+    // Si la URL incluye ?ref=<referencia>, abre directamente el detalle de ese
+    // producto al cargar la página (enlaces "compartir producto"). Limpia el
+    // parámetro de la barra de direcciones para que al recargar o navegar no
+    // se vuelva a abrir el modal.
+    function abrirProductoDesdeURL() {
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get('ref');
+        if (!ref) return;
+
+        const producto = TODOS.find(p => String(p.ref) === String(ref));
+        if (producto) {
+            abrirModalProducto(producto);
+        }
+
+        // Quitar ?ref= de la URL sin recargar (deja la URL limpia)
+        const limpia = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', limpia);
+    }
+
+    // ── Compartir un listado de resultados filtrados ──
+    // Cada filtro tiene un tipo (campo de texto, desplegable, casilla suelta
+    // o grupo de casillas) y el nombre corto que tendrá como parámetro en
+    // la URL compartida. Los grupos de casillas (familia, subfamilia,
+    // acabado/formato de pinturas, talla/grano/color/medida/volumen/micras
+    // de talleres) se codifican como sus valores separados por "|".
+    const CAMPOS_FILTRO_URL = [
+        { tipo: 'texto',           id: 'f-texto',           param: 'q' },
+        { tipo: 'select',          id: 'f-area',            param: 'area' },
+        { tipo: 'checkbox-grupo',  contId: 'f-fabricante-taller', param: 'fabricante' },
+        { tipo: 'checkbox-grupo',  contId: 'f-familias',       param: 'fam' },
+        { tipo: 'checkbox-grupo',  contId: 'f-subfamilias',    param: 'subfam' },
+        { tipo: 'texto',           id: 'f-precio-min',      param: 'pmin' },
+        { tipo: 'texto',           id: 'f-precio-max',      param: 'pmax' },
+        { tipo: 'checkbox-simple', id: 'f-oferta',          param: 'oferta' },
+        { tipo: 'checkbox-grupo',  contId: 'f-acabado',        param: 'acabado' },
+        { tipo: 'checkbox-grupo',  contId: 'f-formato',        param: 'formato' },
+        { tipo: 'checkbox-grupo',  contId: 'f-talla-taller',   param: 'talla' },
+        { tipo: 'checkbox-grupo',  contId: 'f-grano-taller',   param: 'grano' },
+        { tipo: 'checkbox-grupo',  contId: 'f-color-taller',   param: 'color' },
+        { tipo: 'checkbox-grupo',  contId: 'f-medida-taller',  param: 'medida' },
+        { tipo: 'checkbox-grupo',  contId: 'f-volumen-taller', param: 'volumen' },
+        { tipo: 'checkbox-grupo',  contId: 'f-micras-taller',  param: 'micras' },
+        { tipo: 'checkbox-grupo',  contId: 'f-otros-taller',   param: 'otros' },
+    ];
+
+    // Construye la URL con todos los filtros activos ahora mismo, como
+    // parámetros de consulta legibles (ej. ?area=pinturas&fam=Pinturas+Titan).
+    function construirURLFiltros() {
+        const params = new URLSearchParams();
+        CAMPOS_FILTRO_URL.forEach(c => {
+            if (c.tipo === 'texto') {
+                const v = $(c.id).value.trim();
+                if (v) params.set(c.param, v);
+            } else if (c.tipo === 'select') {
+                const v = $(c.id).value;
+                if (v) params.set(c.param, v);
+            } else if (c.tipo === 'checkbox-simple') {
+                if ($(c.id).checked) params.set(c.param, '1');
+            } else if (c.tipo === 'checkbox-grupo') {
+                const seleccionados = [...document.querySelectorAll(`#${c.contId} input:checked`)].map(i => i.value);
+                if (seleccionados.length) params.set(c.param, seleccionados.join('|'));
+            }
+        });
+        const base = window.location.origin + window.location.pathname;
+        const qs = params.toString();
+        return qs ? `${base}?${qs}` : base;
+    }
+
+    function configurarBotonCompartirResultados() {
+        const boton = $('btn-compartir-resultados');
+        boton.classList.remove('copiado');
+        boton.innerHTML = '<i class="fa-solid fa-share-nodes"></i> Compartir estos resultados';
+    }
+
+    async function compartirResultados() {
+        const url = construirURLFiltros();
+        const boton = $('btn-compartir-resultados');
+        const numResultados = resultadosActuales.length;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Orencio Matas y Hnos — Catálogo',
+                    text: `${numResultados} producto${numResultados === 1 ? '' : 's'} seleccionados`,
+                    url: url,
+                });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(url);
+            boton.classList.add('copiado');
+            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Enlace copiado!';
+            setTimeout(configurarBotonCompartirResultados, 2200);
+        } catch (e) {
+            window.prompt('Copia este enlace para compartir estos resultados:', url);
+        }
+    }
+
+    // Si la URL trae parámetros de filtro (ej. desde un enlace compartido
+    // con "Compartir estos resultados"), los reconstruye tal cual estaban:
+    // primero el texto/área/precio/oferta (directos), luego familia (que
+    // hay que marcar antes de poder generar subfamilia), luego subfamilia
+    // (antes de poder generar acabado/formato/talla/grano/...), y por
+    // último esos atributos derivados — respetando el mismo orden en
+    // cascada que ya usa el resto del buscador.
+    function aplicarFiltrosDesdeURL() {
+        const params = new URLSearchParams(window.location.search);
+        const tieneFiltros = CAMPOS_FILTRO_URL.some(c => params.has(c.param));
+        if (!tieneFiltros) return;
+
+        const pendientes = {};
+        CAMPOS_FILTRO_URL.forEach(c => {
+            if (!params.has(c.param)) return;
+            const valor = params.get(c.param);
+            if (c.tipo === 'texto') $(c.id).value = valor;
+            else if (c.tipo === 'select') $(c.id).value = valor;
+            else if (c.tipo === 'checkbox-simple') $(c.id).checked = (valor === '1');
+            else if (c.tipo === 'checkbox-grupo') pendientes[c.contId] = valor.split('|');
+        });
+
+        const marcar = (contId) => {
+            if (!pendientes[contId]) return;
+            document.querySelectorAll(`#${contId} input`).forEach(input => {
+                if (pendientes[contId].includes(input.value)) input.checked = true;
+            });
+        };
+
+        renderFabricanteTaller(); // crea checkboxes de fabricante (según el área ya puesta)
+        marcar('f-fabricante-taller');
+
+        renderFamilias(); // crea checkboxes de familia (según el área/fabricante ya puestos) y de subfamilia (aún vacíos)
+        marcar('f-familias');
+
+        renderSubfamilias(); // ahora sí, con las familias ya marcadas
+        marcar('f-subfamilias');
+
+        renderAtributosPintura();
+        marcar('f-acabado');
+        marcar('f-formato');
+
+        renderAtributosTaller();
+        marcar('f-talla-taller');
+        marcar('f-grano-taller');
+        marcar('f-color-taller');
+        marcar('f-medida-taller');
+        marcar('f-volumen-taller');
+        marcar('f-micras-taller');
+        marcar('f-otros-taller');
+
+        resetPaginacion();
+        aplicarFiltros();
+
+        // Quitar los parámetros de la URL sin recargar (deja la URL limpia)
+        const limpia = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', limpia);
+    }
+
+    // Familias del área "pinturas" que son HERRAMIENTAS físicas (brochas,
+    // rodillos, cepillos, lijas...), no productos con ficha técnica de
+    // fabricante. A diferencia de la carta de colores, aquí SÍ deben
+    // mostrarse disolventes, imprimaciones, pegamentos y productos
+    // químicos — todos esos tienen ficha técnica/de seguridad real.
+    const FAMILIAS_SIN_FICHA_TECNICA = [
+        'BROCHAS Y UTILES DE APLICACION',
+        'LIJAS',
+    ];
+
+    function productoTieneFichaTecnica(p) {
+        if (p.ficha_url) return true; // enlace directo real (ej. Glasurit) — siempre disponible
+        if (p.area !== 'pinturas') return false;
+        const familia = quitarAcentosMay(p.familia);
+        return !FAMILIAS_SIN_FICHA_TECNICA.includes(familia);
+    }
+
+    // Enlace de búsqueda de la ficha técnica del producto de pinturas.
+    // Se usa una búsqueda de Google normal con los términos del producto más
+    // "ficha técnica": Google localiza la web oficial correcta (Titán tiene
+    // varias — titanlux.es para decoración, titanpro.es para profesional,
+    // etc.), en lugar de forzar un site: a un dominio que a menudo no es el
+    // que aloja ese producto concreto y devuelve cero resultados.
+    //
+    // Si el producto ya trae su propio enlace directo a ficha técnica (ej.
+    // Glasurit, extraído de su web oficial knowhow.glasurit.com), se usa
+    // ese en vez de construir una búsqueda — es más preciso y no depende de
+    // que Google acierte con la web correcta.
+    function configurarBotonFichaTecnica(p) {
+        const boton = $('modal-producto-ficha-tecnica');
+        if (!productoTieneFichaTecnica(p)) {
+            boton.style.display = 'none';
+            return;
+        }
+
+        if (p.ficha_url) {
+            boton.href = p.ficha_url;
+            boton.style.display = 'inline-flex';
+            return;
+        }
+
+        const familia = quitarAcentosMay(p.familia);
+        const terminos = limpiarNombreParaFicha(p.nombre);
+        const esTitan = familia.includes('TITAN') || familia.includes('AKZONOBEL');
+
+        // Para Titán/Akzonobel anteponemos "Titan" a los términos para que
+        // Google priorice las webs oficiales del fabricante; el resto va con
+        // los términos tal cual. En ambos casos añadimos "ficha técnica".
+        const consulta = (esTitan ? 'Titan ' : '') + terminos + ' ficha técnica';
+        const url = `https://www.google.com/search?q=${encodeURIComponent(consulta)}`;
+
+        boton.href = url;
+        boton.style.display = 'inline-flex';
+    }
+
+    // Familias del área "pinturas" que NO son pintura en sí (herramientas,
+    // pegamentos, químicos, lijas, disolventes) — nunca tienen carta de
+    // colores, aunque pertenezcan al área.
+    const FAMILIAS_SIN_CARTA_COLORES = [
+        'BROCHAS Y UTILES DE APLICACION',
+        'PEGAMENTOS Y COLA CONTACTO',
+        'PRODUCTOS QUIMICOS',
+        'LIJAS',
+        'AGUARRAS Y DISOLVENTES',
+    ];
+
+    // Dentro de las familias que sí son pintura, unos pocos productos son en
+    // realidad disolventes o decapantes (sin color), coladados en esa
+    // familia — se detectan por palabra en el nombre.
+    const PALABRAS_SIN_CARTA_COLORES = /\b(AGUARRAS|DISOLVENTE|DECAPANTE)\b/;
+
+    function productoEsPintura(p) {
+        if (p.area !== 'pinturas') return false;
+        const familia = quitarAcentosMay(p.familia);
+        if (FAMILIAS_SIN_CARTA_COLORES.includes(familia)) return false;
+        if (PALABRAS_SIN_CARTA_COLORES.test(quitarAcentosMay(p.nombre))) return false;
+        return true;
+    }
+
+    // ── Calculadora de rendimiento ──
+    // Rendimientos orientativos (m²/L) por tipo de producto, según valores
+    // habituales del sector para una mano. Son una ESTIMACIÓN general, no un
+    // dato específico de cada producto — se avisa de ello en el propio panel.
+    const RENDIMIENTOS_PINTURA = [
+        { patron: /\bESMALTE\b|\bOXIRON\b|\bSINTETIC/, valor: 12, etiqueta: 'esmalte sintético' },
+        { patron: /\bBARNIZ\b|\bLACA\b/, valor: 12, etiqueta: 'barniz/laca' },
+        { patron: /\bIMPRIMACION\b/, valor: 8, etiqueta: 'imprimación' },
+        { patron: /\bPLASTIC/, valor: 10, etiqueta: 'pintura plástica' },
+    ];
+
+    function rendimientoDeProducto(p) {
+        const nombre = quitarAcentosMay(p.nombre);
+        for (const r of RENDIMIENTOS_PINTURA) {
+            if (r.patron.test(nombre)) return r;
+        }
+        return { valor: 10, etiqueta: 'pintura' }; // valor genérico de respaldo
+    }
+
+    function configurarCalculadoraRendimiento(p) {
+        const boton = $('btn-abrir-calculadora');
+        const panel = $('panel-calculadora');
+        panel.style.display = 'none'; // siempre arranca cerrada al abrir un producto
+
+        if (!productoEsPintura(p)) {
+            boton.style.display = 'none';
+            return;
+        }
+        boton.style.display = 'flex';
+
+        const rendimiento = rendimientoDeProducto(p);
+        const calcular = () => {
+            const superficie = parseFloat($('calc-superficie').value);
+            const manos = parseFloat($('calc-manos').value) || 2;
+            const resultado = $('calculadora-resultado');
+            if (!superficie || superficie <= 0) {
+                resultado.innerHTML = '';
+                return;
+            }
+            const litros = (superficie * manos) / rendimiento.valor;
+            resultado.innerHTML = `Necesitarás aproximadamente <strong>${litros.toFixed(1)} L</strong> ` +
+                `(${superficie} m² × ${manos} manos ÷ ${rendimiento.valor} m²/L orientativos para ${rendimiento.etiqueta}).`;
+        };
+
+        boton.onclick = () => {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        };
+        $('calc-superficie').oninput = calcular;
+        $('calc-manos').oninput = calcular;
+        $('calculadora-resultado').innerHTML = '';
+    }
+
+    // ── Productos complementarios ──
+    // Reglas sencillas basadas en el tipo de producto: las pinturas de base
+    // disolvente (esmalte, oxirón, barniz) suelen usarse con un disolvente
+    // para limpieza/dilución; casi cualquier pintura se beneficia de una
+    // imprimación adecuada. Se prioriza la misma familia (marca) cuando hay
+    // coincidencia, y se cae a una opción genérica si no.
+    // Recomienda una herramienta de aplicación (brocha, pincel o rodillo)
+    // según el tamaño del envase: formatos grandes (≥4L, para superficies
+    // amplias) → rodillo; formatos pequeños/medios → brocha o pincel. Se
+    // evitan mangos sueltos, recambios, cubetas y rodillos especiales
+    // (mini, tapajuntas de papel pintado...), y se prioriza un tamaño de
+    // rodillo amplio (≥18cm) o un número de brocha/pincel medio (8-14).
+    // Excepción: la línea "Una Capa" (pensada para cubrir mucha superficie
+    // de una sola pasada) siempre recomienda rodillo, aunque el envase sea
+    // pequeño (existe desde 750ml) — el rodillo es la herramienta habitual
+    // para esa línea independientemente del tamaño comprado.
+    function herramientaAplicacionRecomendada(p) {
+        const nombre = quitarAcentosMay(p.nombre);
+        const esUnaCapa = /\bUNA CAPA\b/.test(nombre);
+        const volumen = valorFormatoEnMl(formatoDeProducto(p));
+        const herramientas = TODOS.filter(x => x.area === 'pinturas'
+            && quitarAcentosMay(x.familia) === 'BROCHAS Y UTILES DE APLICACION');
+
+        if (volumen >= 4000 || esUnaCapa) {
+            const candidatos = herramientas.filter(x => {
+                const n = quitarAcentosMay(x.nombre);
+                if (!n.includes('RODILLO')) return false;
+                if (n.includes('MANGO') || n.includes('RECAMBIO') || n.includes('CUBETA')
+                    || n.includes('BATIDOR') || n.includes('MINI') || n.includes('TAPAJUNTAS')) return false;
+                const m = n.match(/(\d+)\s*CMS/);
+                return m && parseInt(m[1], 10) >= 18;
+            });
+            if (candidatos[0]) return candidatos[0];
+            // "Una Capa" en un envase pequeño no cruzaría el filtro de
+            // volumen por sí solo: si no hay rodillo grande disponible, cae
+            // al bloque de brocha/pincel de abajo en vez de quedarse sin nada.
+        }
+
+        const candidatosMedios = herramientas.filter(x => {
+            const n = quitarAcentosMay(x.nombre);
+            if (!n.includes('BROCHA') && !n.includes('PINCEL')) return false;
+            const m = n.match(/N[ºO]?\s*(\d+)/);
+            const numero = m ? parseInt(m[1], 10) : 0;
+            return numero >= 8 && numero <= 14;
+        });
+        if (candidatosMedios[0]) return candidatosMedios[0];
+
+        return herramientas.find(x => {
+            const n = quitarAcentosMay(x.nombre);
+            return n.includes('BROCHA') || n.includes('PINCEL');
+        }) || null;
+    }
+
+    function productosComplementarios(p) {
+        const nombre = quitarAcentosMay(p.nombre);
+        const esBaseDisolvente = /\bESMALTE\b|\bOXIRON\b|\bSINTETIC|\bBARNIZ\b|\bLACA\b/.test(nombre);
+        const esPlastica = /\bPLASTIC/.test(nombre);
+        const esImprimacion = /\bIMPRIMACION\b/.test(nombre);
+
+        const sugerencias = [];
+        const pinturasCatalogo = TODOS.filter(x => x.area === 'pinturas' && x.ref !== p.ref);
+
+        if (esBaseDisolvente) {
+            // Disolvente/aguarrás: no depende de la marca (el catálogo no
+            // tiene disolvente de marca Titán/Duraval específico), se ofrece
+            // el más genérico disponible.
+            const disolvente = pinturasCatalogo.find(x => quitarAcentosMay(x.familia) === 'AGUARRAS Y DISOLVENTES'
+                && quitarAcentosMay(x.nombre).includes('DISOLVENTE UNIVERSAL'));
+            if (disolvente) sugerencias.push(disolvente);
+        }
+
+        if (!esImprimacion) {
+            // El tipo de imprimación importa: para metal (esmalte/oxirón)
+            // conviene una ANTIOXIDANTE; para pared (plástica) NO tiene
+            // sentido una antioxidante (es para metal) — mejor una
+            // multiusos/fijadora. Se prioriza la misma familia (marca).
+            const quiereAntiox = esBaseDisolvente;
+            const imprimacion = pinturasCatalogo.find(x => {
+                if (x.familia !== p.familia) return false;
+                const n = quitarAcentosMay(x.nombre);
+                if (!n.includes('IMPRIMACION')) return false;
+                return quiereAntiox ? n.includes('ANTIOX') : !n.includes('ANTIOX');
+            });
+            if (imprimacion) sugerencias.push(imprimacion);
+        }
+
+        // Herramienta de aplicación (brocha/pincel/rodillo) — no aplica si
+        // el propio producto ya es la imprimación/disolvente que se acaba
+        // de sugerir arriba, pero sí para cualquier pintura en sí.
+        const herramienta = herramientaAplicacionRecomendada(p);
+        if (herramienta) sugerencias.push(herramienta);
+
+        // Protección para pintar: cinta de enmascarar y papel protector.
+        // El catálogo NO tiene "plástico protector" como producto real
+        // (verificado); el papel protector para pintura es el equivalente
+        // más cercano que sí existe, así que se sugiere ese.
+        const cintaEnmascarar = pinturasCatalogo.find(x => quitarAcentosMay(x.familia) === 'BROCHAS Y UTILES DE APLICACION'
+            && quitarAcentosMay(x.nombre).includes('CINTA ENMASCARAR'));
+        if (cintaEnmascarar) sugerencias.push(cintaEnmascarar);
+
+        const papelProtector = pinturasCatalogo.find(x => quitarAcentosMay(x.familia) === 'BROCHAS Y UTILES DE APLICACION'
+            && quitarAcentosMay(x.nombre).includes('PAPEL PROTECTOR'));
+        if (papelProtector) sugerencias.push(papelProtector);
+
+        return sugerencias.slice(0, 4);
+    }
+
+    // ── Compra conjunta para Droguería/Perfumería ──
+    // Reglas por categoría de producto (detectadas por subfamilia, más
+    // fiable que el texto libre del nombre, con el propio nombre como
+    // respaldo). Cada regla busca en TODOS en el momento de abrir el
+    // modal — nunca una referencia fija — así que si un producto sugerido
+    // deja de estar activo (se da de baja), sencillamente no aparecerá en
+    // TODOS y la búsqueda pasará al siguiente candidato que sí lo esté,
+    // sin necesidad de mantenimiento manual.
+    const REGLAS_COMPRA_CONJUNTA_DROGUERIA = [
+        {
+            // Lavavajillas → guantes + estropajo/bayeta
+            coincide: (n, sf) => n.includes('LAVAVAJILLAS'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('GUANTE')),
+                catalogo.find(x => ['ESTROPAJOS', 'FIBRA METALICA', 'BAYETAS Y PAÑOS']
+                    .includes(quitarAcentosMay(x.subfamilia))),
+            ],
+        },
+        {
+            // Friegasuelos / limpiador de suelos → fregona + cepillo de barrer o recogedor
+            coincide: (n, sf) => n.includes('FRIEGASUELOS') || sf.includes('LIMPIADORES SUELOS'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('FREGONA') && !quitarAcentosMay(x.nombre).includes('RECAMBIO')),
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('CEPILLO BARRER'))
+                    || catalogo.find(x => quitarAcentosMay(x.nombre).includes('RECOGEDOR')),
+            ],
+        },
+        {
+            // Limpiacristales → bayeta de microfibra
+            coincide: (n, sf) => sf.includes('LIMPIACRISTALES'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.subfamilia) === 'BAYETAS MICROFIBRA'),
+            ],
+        },
+        {
+            // Detergente ropa → suavizante
+            coincide: (n, sf) => sf.includes('DETERGENTE'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.subfamilia).includes('SUAVIZANTE')),
+            ],
+        },
+        {
+            // Lejía / desinfectante → guantes de protección
+            coincide: (n, sf) => n.includes('LEJIA') || sf.includes('DESINFECTANTE'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('GUANTE')),
+            ],
+        },
+        {
+            // Multiusos / desengrasante → bayeta
+            coincide: (n, sf) => sf.includes('MULTIUSOS HOGAR') || sf.includes('DESENGRASANTE'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.subfamilia) === 'BAYETAS Y PAÑOS'),
+            ],
+        },
+        {
+            // Tierra / sustrato de jardín → fertilizante o abono, para
+            // completar el cuidado de la planta que se va a trasplantar.
+            coincide: (n, sf) => n.includes('TIERRA') || n.includes('TURBA') || n.includes('SUSTRATO'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => /FERTILIZ|ABONO/.test(quitarAcentosMay(x.nombre))
+                    && !/TIERRA|TURBA/.test(quitarAcentosMay(x.nombre))),
+            ],
+        },
+        {
+            // Insecticida para avispas → trampa para avispas
+            coincide: (n, sf) => n.includes('AVISPA'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('TRAMPA') && quitarAcentosMay(x.nombre).includes('AVISPA')),
+            ],
+        },
+        {
+            // Insecticida para moscas → trampa/cebo para moscas
+            coincide: (n, sf) => n.includes('MOSCA'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => (quitarAcentosMay(x.nombre).includes('TRAMPA') || quitarAcentosMay(x.nombre).includes('CEBO'))
+                    && quitarAcentosMay(x.nombre).includes('MOSCA')),
+            ],
+        },
+        {
+            // Insecticida para cucarachas → trampa para cucarachas
+            coincide: (n, sf) => n.includes('CUCARACHA') || n.includes('CUCA'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('TRAMPA') && quitarAcentosMay(x.nombre).includes('CUCARACHA')),
+            ],
+        },
+        {
+            // Insecticida para hormigas → trampa para hormigas
+            coincide: (n, sf) => n.includes('HORMIGA'),
+            sugerir: (catalogo) => [
+                catalogo.find(x => quitarAcentosMay(x.nombre).includes('TRAMPA') && quitarAcentosMay(x.nombre).includes('HORMIGA')),
+            ],
+        },
+    ];
+
+    function productosComplementariosDrogueria(p) {
+        const nombre = quitarAcentosMay(p.nombre);
+        const subfamilia = quitarAcentosMay(p.subfamilia);
+        const catalogo = TODOS.filter(x => (x.area === 'drogueria' || x.area === 'perfumeria') && x.ref !== p.ref);
+
+        const regla = REGLAS_COMPRA_CONJUNTA_DROGUERIA.find(r => r.coincide(nombre, subfamilia));
+        if (!regla) return [];
+
+        return regla.sugerir(catalogo).filter(Boolean).slice(0, 3);
+    }
+
+    function configurarComplementarios(p) {
+        const bloque = $('bloque-complementarios');
+        const lista = $('complementarios-lista');
+
+        const esPintura = productoEsPintura(p);
+        const esDrogueriaConRegla = (p.area === 'drogueria' || p.area === 'perfumeria');
+
+        let sugerencias = [];
+        if (esPintura) {
+            sugerencias = productosComplementarios(p);
+        } else if (esDrogueriaConRegla) {
+            sugerencias = productosComplementariosDrogueria(p);
+        }
+
+        if (!sugerencias.length) {
+            bloque.style.display = 'none';
+            return;
+        }
+
+        lista.innerHTML = sugerencias.map(s => {
+            const img = s.img
+                ? `<img src="${urlImagenProducto(s, 100)}" alt="" loading="lazy">`
+                : `<div style="width:64px;height:64px;"></div>`;
+            const precio = s.mostrar_precio && s.precio_con
+                ? `${parseFloat(s.precio_con.replace(',', '.')).toFixed(2).replace('.', ',')} €`
+                : '';
+            return `<button type="button" class="complementario-item" data-ref="${escapeHtml(s.ref)}">
+                ${img}
+                <div class="complementario-info">
+                    <div class="complementario-nombre">${escapeHtml(s.nombre)}</div>
+                    <div class="complementario-precio">${precio}</div>
+                </div>
+            </button>`;
+        }).join('');
+
+        lista.querySelectorAll('.complementario-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ref = btn.dataset.ref;
+                const producto = TODOS.find(x => x.ref === ref);
+                if (producto) abrirModalProducto(producto);
+            });
+        });
+
+        bloque.style.display = 'block';
+    }
+
+    // Botón "Ver carta de colores": mismo enfoque que la ficha técnica (
+    // búsqueda web general, no restringida a un dominio, porque Titán tiene
+    // varias webs según la gama). Solo para productos que sean realmente
+    // pintura (no basta con pertenecer al área "pinturas": brochas,
+    // disolventes, lijas, pegamentos y químicos no tienen carta de colores).
+    function configurarBotonCartaColores(p) {
+        const boton = $('modal-producto-carta-colores');
+        if (!productoEsPintura(p)) {
+            boton.style.display = 'none';
+            return;
+        }
+
+        const familia = quitarAcentosMay(p.familia);
+        const terminos = limpiarNombreParaFicha(p.nombre);
+        const esTitan = familia.includes('TITAN') || familia.includes('AKZONOBEL');
+
+        const consulta = (esTitan ? 'Titan ' : '') + terminos + ' carta de colores';
+        const url = `https://www.google.com/search?q=${encodeURIComponent(consulta)}`;
+
+        boton.href = url;
+        boton.style.display = 'inline-flex';
+    }
+
+    // quita códigos de color entre paréntesis, referencias numéricas sueltas
+    // y el formato/volumen (que no ayuda a encontrar la ficha del producto).
+    function limpiarNombreParaFicha(nombre) {
+        let n = (nombre || '')
+            .replace(/\([^)]*\)/g, ' ')            // (859), (1005)...
+            .replace(/\bREF\.?\s*\S+/gi, ' ')       // REF.076
+            .replace(/\bRF\.?\s*\S+/gi, ' ')        // RF.358
+            .replace(/\d+(?:[.,]\d+)?\s*(ML|L|KG|GR|G)\b/gi, ' ') // 750 ML, 4 L
+            .replace(/\./g, ' ')                    // cualquier punto (p.ej. ".BLANCO", "ML.")
+            .replace(/\s+/g, ' ')
+            .trim();
+        return n;
     }
 
     // ── Cerrar modal de producto ──
     function cerrarModalProducto() {
         $('modal-producto-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
     }
 
     // ── Actualizar imagen de producto ──
@@ -2160,6 +4730,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return d.innerHTML;
     }
 
+    // Talleres y Carrocerías no tiene imágenes en Google Drive (viene del
+    // catálogo Zaphiro, extraídas directamente del PDF del proveedor) — se
+    // sirven como archivos estáticos del propio repositorio, sin el
+    // redimensionado dinámico que sí ofrece Drive por parámetro de URL.
+    function urlImagenProducto(p, tamano) {
+        if (p.img) {
+            if (p.area === 'talleres') return `./assets/imagenes_talleres/${p.img}`;
+            return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
+        }
+        // Sin foto propia: usar la imagen genérica del fabricante si existe
+        // (se trata igual que una foto real en todo lo demás).
+        if (p.area === 'talleres' && p.fabricante && IMAGENES_GENERICAS_FABRICANTE[p.fabricante]) {
+            return IMAGENES_GENERICAS_FABRICANTE[p.fabricante];
+        }
+        return null;
+    }
+
     // ── Modal de solicitud de catálogo personalizado ──
     function abrirModalSolicitud() {
         if (resultadosActuales.length === 0) return;
@@ -2312,6 +4899,92 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             setTimeout(() => toast.remove(), 300);
         }, 4000);
     }
+    // ── Botón flotante "subir arriba" ──
+    const btnSubirArriba = $('btn-subir-arriba');
+    let scrollTicking = false;
+
+    // ── Ocultar la cabecera "Buscador de Productos" al escribir, para
+    //    dejar más pantalla libre en móvil. Reaparece al llegar arriba del
+    //    todo (scroll) o al pulsar el botón de subir. ──
+    const cabeceraBuscador = document.querySelector('.buscador-header');
+    function ocultarCabeceraBuscador() {
+        cabeceraBuscador.classList.add('oculto-por-busqueda');
+    }
+    function mostrarCabeceraBuscador() {
+        cabeceraBuscador.classList.remove('oculto-por-busqueda');
+    }
+    $('f-texto').addEventListener('focus', () => {
+        // Pequeño retraso: al tocar el input, el teclado móvil se abre y el
+        // navegador suele desplazar la página para mantenerlo visible — si
+        // el colapso de la cabecera ocurre EXACTAMENTE a la vez, las dos
+        // animaciones compiten y el resultado es un salto raro (llegando a
+        // ocultar el propio buscador). Dejamos que el teclado/scroll nativo
+        // se asiente primero y solo entonces colapsamos la cabecera.
+        setTimeout(ocultarCabeceraBuscador, 150);
+    });
+
+    // El buscador queda FIJO (position:fixed) justo debajo de la cabecera
+    // principal del sitio en móvil — no "sticky", para evitar los
+    // comportamientos inconsistentes que ese modo puede tener en algunos
+    // navegadores móviles combinado con transform. Calculamos la altura
+    // real del navbar por JS (en vez de fijar un valor a mano en el CSS)
+    // porque cambia según el ancho de pantalla. Como al ser "fixed" sale
+    // del flujo normal, también fijamos la altura del espaciador que
+    // ocupa su hueco, para que el contenido de abajo no quede tapado.
+    function ajustarPosicionBuscadorFijo() {
+        const grupoBuscador = $('grupo-buscador-principal');
+        const espaciador = $('espaciador-buscador-movil');
+        const navbar = document.querySelector('.navbar-wrapper');
+        if (!grupoBuscador || !navbar) return;
+        if (window.innerWidth > 768) {
+            grupoBuscador.style.top = ''; // en escritorio no aplica
+            if (espaciador) espaciador.style.height = '';
+            return;
+        }
+        const alturaNavbar = navbar.getBoundingClientRect().height;
+        grupoBuscador.style.top = alturaNavbar + 'px';
+        if (espaciador) espaciador.style.height = grupoBuscador.getBoundingClientRect().height + 'px';
+    }
+    window.addEventListener('resize', debounce(ajustarPosicionBuscadorFijo, 200));
+    ajustarPosicionBuscadorFijo();
+
+    let ultimoScrollY = window.scrollY;
+    function actualizarVisibilidadBotonSubir() {
+        const scrollActual = window.scrollY;
+        const visible = scrollActual > 400;
+        btnSubirArriba.classList.toggle('visible', visible);
+        if (scrollActual <= 0) mostrarCabeceraBuscador();
+
+        // Ocultar la barra de búsqueda al bajar, mostrarla al subir —
+        // independientemente de en qué punto de la página se esté. Solo en
+        // móvil (en escritorio la barra vive en el sidebar, no aplica).
+        if (window.innerWidth <= 768) {
+            const grupoBuscador = $('grupo-buscador-principal');
+            const delta = scrollActual - ultimoScrollY;
+            // El umbral (6px) evita reaccionar a vibraciones mínimas del
+            // dedo, pero la referencia se actualiza SIEMPRE — si solo se
+            // actualizara cuando se supera el umbral, con gestos de scroll
+            // pequeños y sucesivos (muy típico en móvil) la referencia se
+            // queda obsoleta y la detección de dirección deja de reaccionar.
+            if (Math.abs(delta) > 6) {
+                grupoBuscador.classList.toggle('oculto-por-scroll', delta > 0 && scrollActual > 40);
+            }
+            ultimoScrollY = scrollActual;
+        }
+
+        scrollTicking = false;
+    }
+    window.addEventListener('scroll', () => {
+        if (!scrollTicking) {
+            requestAnimationFrame(actualizarVisibilidadBotonSubir);
+            scrollTicking = true;
+        }
+    }, { passive: true });
+    btnSubirArriba.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        mostrarCabeceraBuscador();
+    });
+    actualizarVisibilidadBotonSubir();
 })();
 </script>
     <!-- Contenedor de notificaciones toast -->

@@ -285,6 +285,55 @@ ol {
   transform: scaleX(1);
 }
 
+/* Submenú "Productos > Buscador" — desplegable al pasar el ratón en
+   escritorio; siempre visible y sangrado bajo "Productos" en móvil (el
+   hover no funciona bien con el dedo, así que ahí no se oculta). */
+.navbar__item--dropdown { position: relative; }
+
+.navbar__caret {
+  font-size: 0.65em;
+  margin-left: 4px;
+  opacity: 0.6;
+  display: inline-block;
+}
+
+.navbar__submenu {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  position: absolute;
+  top: calc(100% - 6px);
+  left: 0;
+  min-width: 170px;
+  background: var(--primary-white);
+  border: 1px solid rgba(15, 17, 21, 0.08);
+  border-radius: var(--radius-small);
+  box-shadow: var(--shadow-hover);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+  z-index: 10;
+}
+
+.navbar__item--dropdown:hover .navbar__submenu,
+.navbar__item--dropdown:focus-within .navbar__submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.navbar__submenu li { padding: 0 18px; }
+
+.navbar__submenu a {
+  padding: 10px 0 !important;
+  font-size: 0.88rem !important;
+  display: block !important;
+  white-space: nowrap;
+}
+
+.navbar__submenu a::after { display: none; }
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -1491,6 +1540,29 @@ textarea.form-input {
 
   .navbar__cta {
     width: 100%;
+  }
+
+  /* En móvil el submenú no depende de hover (no funciona con el dedo):
+     se muestra siempre, sangrado bajo "Productos", en vez de ocultarse. */
+  .navbar__caret { display: none; }
+  .navbar__submenu {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin-top: 4px;
+    background: transparent;
+  }
+  .navbar__submenu li { padding: 0 0 0 18px; }
+  .navbar__submenu a {
+    padding: 10px 0 !important;
+    font-size: 0.92rem !important;
+    color: var(--text-dark) !important;
+    opacity: 0.75;
+    border-bottom: 1px solid rgba(15, 17, 21, 0.08) !important;
   }
 }
 

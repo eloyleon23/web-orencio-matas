@@ -51,7 +51,7 @@ import unicodedata
 import requests
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from normalizar import normalizar_nombre
+from normalizar import normalizar_nombre, tokens_clave
 
 EXTENSIONES_VALIDAS = (".jpg", ".jpeg", ".png", ".webp")
 TIMEOUT = 12
@@ -95,55 +95,62 @@ def _probar_store_api(dominio, query, sesion):
     url = f"https://{dominio}/wp-json/wc/store/v1/products"
     r = sesion.get(url, params={"search": query, "per_page": 5}, timeout=TIMEOUT)
     if r.status_code != 200:
-        return None
-    items = r.json()
+        return None, f"store_api HTTP {r.status_code}"
+    try:
+        items = r.json()
+    except ValueError:
+        return None, "store_api respuesta no es JSON (¿bloqueado por CDN/WAF?)"
     if not isinstance(items, list) or not items:
-        return None
+        return None, "store_api 200 pero 0 resultados"
     imagenes = items[0].get("images") or []
     if not imagenes:
-        return None
-    return imagenes[0].get("src")
+        return None, "store_api encontró producto pero sin imagen"
+    return imagenes[0].get("src"), "store_api OK"
 
 
 def _probar_wc_legacy_api(dominio, query, sesion):
     url = f"https://{dominio}/wp-json/wc/v1/products"
     r = sesion.get(url, params={"search": query, "per_page": 5}, timeout=TIMEOUT)
     if r.status_code != 200:
-        return None
-    items = r.json()
+        return None, f"wc_legacy HTTP {r.status_code}"
+    try:
+        items = r.json()
+    except ValueError:
+        return None, "wc_legacy respuesta no es JSON"
     if not isinstance(items, list) or not items:
-        return None
+        return None, "wc_legacy 200 pero 0 resultados"
     imagenes = items[0].get("images") or []
     if not imagenes:
-        return None
-    return imagenes[0].get("src")
+        return None, "wc_legacy encontró producto pero sin imagen"
+    return imagenes[0].get("src"), "wc_legacy OK"
 
 
 def _probar_wp_search(dominio, query, sesion):
     url = f"https://{dominio}/wp-json/wp/v2/search"
     r = sesion.get(url, params={"search": query, "subtype": "product", "per_page": 5}, timeout=TIMEOUT)
     if r.status_code != 200:
-        return None
-    items = r.json()
+        return None, f"wp_search HTTP {r.status_code}"
+    try:
+        items = r.json()
+    except ValueError:
+        return None, "wp_search respuesta no es JSON"
     if not isinstance(items, list) or not items:
-        return None
-    # wp/v2/search no da la imagen directamente: hay que resolver el post
+        return None, "wp_search 200 pero 0 resultados"
     post_id = items[0].get("id")
     if not post_id:
-        return None
+        return None, "wp_search sin id de post"
     r2 = sesion.get(f"https://{dominio}/wp-json/wp/v2/product/{post_id}", timeout=TIMEOUT)
     if r2.status_code != 200:
-        return None
+        return None, f"wp_search post HTTP {r2.status_code}"
     data = r2.json()
-    # buscar imagen destacada embebida o por campo _links
     featured = data.get("featured_media")
     if not featured:
-        return None
+        return None, "wp_search post sin imagen destacada"
     r3 = sesion.get(f"https://{dominio}/wp-json/wp/v2/media/{featured}", timeout=TIMEOUT)
     if r3.status_code != 200:
-        return None
+        return None, f"wp_search media HTTP {r3.status_code}"
     media = r3.json()
-    return media.get("source_url")
+    return media.get("source_url"), "wp_search OK"
 
 
 def _extraer_palabras_clave(nombre):
@@ -163,38 +170,35 @@ METODOS = [
 ]
 
 
-def buscar_imagen_gratis(dominio, query, sesion, debug=False):
-    """Prueba los 3 métodos en orden, devuelve (url_imagen, metodo) o (None, None)."""
+def buscar_imagen_gratis(dominio, query, sesion):
+    """Prueba los 3 métodos en orden, devuelve (url_imagen, metodo, diagnostico)."""
+    motivos = []
     for nombre_metodo, funcion in METODOS:
         try:
-            url = funcion(dominio, query, sesion)
+            url, motivo = funcion(dominio, query, sesion)
+            motivos.append(motivo)
             if url:
-                if debug:
-                    print(f"    DEBUG: {nombre_metodo} encontró: {url}")
-                return url, nombre_metodo
-            elif debug:
-                print(f"    DEBUG: {nombre_metodo} no devolvió resultados")
+                return url, nombre_metodo, motivo
         except requests.exceptions.RequestException as e:
-            if debug:
-                print(f"    DEBUG: {nombre_metodo} error: {e}")
+            motivos.append(f"{nombre_metodo} error de red: {e}")
             continue
-    return None, None
+    return None, None, " | ".join(motivos)
 
 
 def modo_diagnostico(mapa_marcas, sesion):
     print("→ Probando disponibilidad de API pública en cada dominio configurado...\n")
     resultados = []
     for marca, dominio in mapa_marcas.items():
-        url, metodo = buscar_imagen_gratis(dominio, "crema", sesion)  # query generica de prueba
-        estado = f"OK ({metodo})" if url else "sin metodo gratuito disponible"
+        url, metodo, motivo = buscar_imagen_gratis(dominio, "crema", sesion)  # query generica de prueba
+        estado = f"OK ({metodo})" if url else f"sin metodo gratuito disponible ({motivo})"
         print(f"  {marca:15} {dominio:25} -> {estado}")
-        resultados.append({"marca": marca, "dominio": dominio, "disponible": bool(url), "metodo": metodo or ""})
+        resultados.append({"marca": marca, "dominio": dominio, "disponible": bool(url), "metodo": metodo or "", "motivo": motivo})
         time.sleep(0.2)
 
     disponibles = sum(1 for r in resultados if r["disponible"])
     print(f"\n✓ {disponibles}/{len(resultados)} dominios con API pública gratuita disponible.")
     with open("diagnostico_apis_gratuitas.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["marca", "dominio", "disponible", "metodo"])
+        w = csv.DictWriter(f, fieldnames=["marca", "dominio", "disponible", "metodo", "motivo"])
         w.writeheader()
         w.writerows(resultados)
     print("  Detalle guardado en diagnostico_apis_gratuitas.csv")
@@ -231,6 +235,24 @@ def main():
     encontradas, sin_metodo, sin_resultado = [], [], []
     consultas = 0
 
+    UNIDADES = {"ml", "l", "kg", "gr", "g", "cm", "mm", "uds", "ud"}
+
+    def construir_queries(nombre, marca):
+        """Devuelve [query_corta, query_larga] para probar en ese orden.
+        La query corta quita la marca (redundante, ya restringimos por
+        dominio) y los tokens de formato/volumen (400, ml...), que suelen
+        hacer el buscador interno de la tienda demasiado estricto y no
+        encontrar nada con el nombre completo y literal del producto."""
+        tk = tokens_clave(nombre)
+        marca_norm = _sin_acentos(marca).lower()
+        corta = [t for t in tk if t != marca_norm and t not in UNIDADES and not t.isdigit()]
+        query_corta = " ".join(corta[:5]) if corta else None
+        query_larga = normalizar_nombre(nombre, para_busqueda=False)
+        # Evitar probar dos veces la misma query si coinciden
+        if query_corta and query_corta.lower() == query_larga.lower():
+            return [query_larga]
+        return [q for q in (query_corta, query_larga) if q]
+
     for p in productos:
         if consultas >= args.limite:
             print(f"\nLímite de {args.limite} productos procesados. Vuelve a lanzar para continuar.")
@@ -241,21 +263,27 @@ def main():
             continue  # igual que en buscar_imagenes_api.py: sin marca detectada, se omite
 
         dominio = mapa_marcas[marca]
-        # Usar palabras clave en lugar del nombre completo para mejorar el matching
-        query_normalizado = normalizar_nombre(p["nombre"], para_busqueda=False)
-        query_clave = _extraer_palabras_clave(query_normalizado)
-        query = query_clave if query_clave else query_normalizado  # fallback al nombre normalizado
+        queries = construir_queries(p["nombre"], marca)
         consultas += 1
 
         if args.dry_run:
-            print(f"  {p['ref']}: {query!r} (clave) / {query_normalizado!r} (completo) -> {dominio}")
+            print(f"  {p['ref']}: queries={queries!r}  ->  {dominio} (WooCommerce/WP API)")
             continue
 
-        url_imagen, metodo = buscar_imagen_gratis(dominio, query, sesion, debug=args.debug)
+        url_imagen = metodo = None
+        motivos_probados = []
+        for query in queries:
+            url_imagen, metodo, motivo = buscar_imagen_gratis(dominio, query, sesion)
+            motivos_probados.append(f"[{query!r}] {motivo}")
+            if url_imagen:
+                break
 
         if not url_imagen:
-            sin_resultado.append({"referencia": p["ref"], "nombre_producto": p["nombre"], "dominio": dominio})
-            print(f"  {p['ref']}: sin resultado en {dominio}")
+            sin_resultado.append({
+                "referencia": p["ref"], "nombre_producto": p["nombre"],
+                "dominio": dominio, "motivo": " || ".join(motivos_probados),
+            })
+            print(f"  {p['ref']}: sin resultado en {dominio} ({motivos_probados[-1]})")
             continue
 
         ext = os.path.splitext(url_imagen.split("?")[0])[1].lower()
@@ -275,7 +303,10 @@ def main():
             })
             print(f"  {p['ref']}: OK  ({marca} vía {metodo})")
         except Exception as e:
-            sin_resultado.append({"referencia": p["ref"], "nombre_producto": p["nombre"], "dominio": f"error descarga: {e}"})
+            sin_resultado.append({
+                "referencia": p["ref"], "nombre_producto": p["nombre"],
+                "dominio": dominio, "motivo": f"error descarga: {e}",
+            })
 
         time.sleep(0.2)
 
@@ -288,7 +319,7 @@ def main():
         w.writerows(encontradas)
 
     with open(os.path.join(args.salida, "sin_metodo_gratuito_o_resultado.csv"), "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["referencia", "nombre_producto", "dominio"])
+        w = csv.DictWriter(f, fieldnames=["referencia", "nombre_producto", "dominio", "motivo"])
         w.writeheader()
         w.writerows(sin_resultado)
 
