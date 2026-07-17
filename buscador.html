@@ -2607,7 +2607,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .catch(() => []);
     }
 
-    fetch(PRODUCTOS_URL)
+    // cache: 'no-store' — mientras se está en fase de validación activa
+    // (edición frecuente de imágenes/bajas/precios), un simple refresco de
+    // página no debe servir una copia cacheada por el navegador o por la
+    // CDN de GitHub Pages, o los cambios recién hechos no se verían al
+    // recargar. Coste: cada carga descarga el JSON completo de nuevo (sin
+    // aprovechar caché) — antes de publicar la web para el público general
+    // convendría revisar si se quiere relajar esto (el catálogo público no
+    // necesita la misma inmediatez que la fase de validación).
+    fetch(PRODUCTOS_URL, { cache: 'no-store' })
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
