@@ -4904,6 +4904,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 cerrarModalActualizarImagen();
                 abrirModalProducto(producto); // re-renderiza el detalle con la vista previa
                 aplicarFiltros(); // refresca también la tarjeta en el listado
+                resincronizarVersionConocida(); // evita que el banner salte por este mismo cambio
             })
             .catch(err => {
                 console.error('Error al subir imagen:', err);
