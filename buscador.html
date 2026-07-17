@@ -93,46 +93,60 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             gap: 28px;
             align-items: start;
         }
+        /* ── Barra de búsqueda de escritorio (estilo Amazon) ──
+           En pantallas ≥881px, #grupo-buscador-principal (buscador) y el
+           filtro de Área se reubican por JS (ver moverBuscadorSegunViewport)
+           dentro de #toolbar-buscador-pc, que ocupa la fila superior de la
+           columna de resultados (grid-row 1 / grid-column 2). .filtros pasa
+           a ocupar AMBAS filas (grid-row 1/3) para que su borde superior
+           quede exactamente a la misma altura que el toolbar — así quedan
+           "alineados" de verdad, no solo visualmente aproximados. El
+           toolbar usa position:sticky con el MISMO top que .filtros (90px),
+           así que ambos se quedan fijos juntos al hacer scroll, en vez de
+           desaparecer con el resto de la página. Por debajo de 881px todo
+           esto se desactiva y el buscador/área vuelven a su posición
+           original dentro de .filtros/#filtros-extra (comportamiento móvil
+           intacto, no se toca nada de eso). Se mueven los mismos nodos del
+           DOM (JS), no se duplican, así toda la lógica existente sigue
+           funcionando igual. */
+        #toolbar-buscador-pc { display: none; }
+        @media (min-width: 881px) {
+            .layout {
+                grid-template-rows: auto 1fr;
+            }
+            .filtros {
+                grid-row: 1 / 3;
+            }
+            .layout > section {
+                grid-column: 2;
+                grid-row: 2;
+            }
+            #toolbar-buscador-pc {
+                display: flex;
+                align-items: stretch;
+                gap: 10px;
+                grid-column: 2;
+                grid-row: 1;
+                position: sticky;
+                top: 90px; /* mismo valor que .filtros, para que se queden fijos juntos */
+                align-self: start;
+                z-index: 40;
+            }
+            #toolbar-buscador-pc .filtro-grupo { margin-bottom: 0; }
+            #toolbar-buscador-pc label.titulo { display: none; }
+            #toolbar-buscador-pc #grupo-area-toolbar { flex: 0 0 150px; }
+            #toolbar-buscador-pc #grupo-area-toolbar .select-area { height: 100%; }
+            #toolbar-buscador-pc #grupo-buscador-principal { flex: 1 1 auto; }
+            #toolbar-buscador-pc .fila-buscador-movil { height: 100%; }
+            #toolbar-buscador-pc .input-texto { height: 100%; }
+        }
+
         @media (max-width: 880px) {
             /* En una sola columna (apilado), el "gap" del grid ya no separa
                dos columnas — se convierte en puro espacio vertical entre
                la barra de búsqueda/filtros y los resultados. Se reduce
                bastante respecto al valor de escritorio (28px). */
             .layout { grid-template-columns: 1fr; gap: 6px; }
-        }
-
-        /* ── Barra de búsqueda de escritorio (estilo Amazon) ──
-           En pantallas ≥881px, #grupo-buscador-principal (buscador) y el
-           filtro de Área se reubican por JS (ver moverBuscadorSegunViewport)
-           dentro de #toolbar-buscador-pc, una franja superior que ocupa
-           únicamente el ancho de la columna de resultados (no el de la
-           columna de filtros). Por debajo de 881px vuelven a su posición
-           original dentro de .filtros/#filtros-extra, sin tocar nada del
-           comportamiento móvil ya existente (barra fija, panel deslizante).
-           Se mueven los mismos nodos del DOM, no se duplican — así toda la
-           lógica de filtros/sugerencias/escáner sigue funcionando igual. */
-        #toolbar-buscador-pc { display: none; }
-        @media (min-width: 881px) {
-            .layout {
-                position: relative;
-                padding-top: 76px; /* hueco reservado para la barra, en position:absolute */
-            }
-            #toolbar-buscador-pc {
-                display: flex;
-                align-items: stretch;
-                gap: 10px;
-                position: absolute;
-                top: 0;
-                left: calc(280px + 28px); /* ancho del sidebar + gap del grid */
-                right: 0;
-            }
-            #toolbar-buscador-pc .filtro-grupo { margin-bottom: 0; }
-            #toolbar-buscador-pc label.titulo { display: none; }
-            #toolbar-buscador-pc #grupo-area-toolbar { flex: 0 0 210px; }
-            #toolbar-buscador-pc #grupo-area-toolbar .select-area { height: 100%; }
-            #toolbar-buscador-pc #grupo-buscador-principal { flex: 1 1 auto; }
-            #toolbar-buscador-pc .fila-buscador-movil { height: 100%; }
-            #toolbar-buscador-pc .input-texto { height: 100%; }
         }
 
         /* ── Filtros ── */
@@ -1932,11 +1946,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <input type="checkbox" id="f-imagenes-sin-validar">
                     <span><i class="fa-solid fa-circle-xmark"></i> Solo imágenes sin validar</span>
                 </label>
-                <label class="check-imagen-sin-validar">
-                    <input type="checkbox" id="f-solo-baja">
-                    <span><i class="fa-solid fa-box-archive"></i> Ver solo productos dados de baja</span>
-                </label>
             </div>
+        </div>
+
+        <!-- Filtro independiente (no dentro de "Gestión de imágenes"), pero
+             gestionado por el mismo flag de configuración: fase de
+             desarrollo, se ocultará junto al resto para la vista usuario. -->
+        <div class="filtro-grupo" id="grupo-solo-baja" style="display: none;">
+            <label class="check-imagen-sin-validar">
+                <input type="checkbox" id="f-solo-baja">
+                <span><i class="fa-solid fa-box-archive"></i> Ver solo productos dados de baja</span>
+            </label>
         </div>
 
         <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
@@ -2841,6 +2861,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('grupo-gestion-imagenes').style.display = 'block';
             $('f-imagenes-validadas').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
             $('f-imagenes-sin-validar').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+            // Filtro independiente (fuera del panel de gestión de imágenes,
+            // pero con el mismo flag de fase de desarrollo)
+            $('grupo-solo-baja').style.display = 'block';
             $('f-solo-baja').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         }
         
