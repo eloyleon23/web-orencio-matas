@@ -2415,14 +2415,16 @@ function procesarActualizarImagen(data) {
     sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
     console.log('imagen_validada actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
 
-    // Vista rápida: parchear productos.json al instante (ver
-    // actualizarProductoEnJsonRemoto), sin esperar al workflow completo
-    const fechaFormateada = Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss');
-    actualizarProductoEnJsonRemoto(referencia, {
-      img: driveFile.getId(),
-      fecha_actualizacion_imagen: fechaFormateada,
-      imagen_validada: fechaFormateada
-    });
+    // NOTA: a diferencia de validar_imagen/dar_baja/reactivar, aquí NO se
+    // llama a actualizarProductoEnJsonRemoto() — esta acción ya sube un
+    // archivo pesado a Drive en la misma ejecución, y sumarle además la
+    // descarga+reescritura completa de productos.json (varios MB) parece
+    // estar provocando fallos ("Error al subir la imagen") por exceso de
+    // tiempo/trabajo en una sola llamada. El buscador ya no depende de
+    // esto para sentirse instantáneo: usa una vista previa local del
+    // propio archivo subido (ver urlImagenProducto/_imgLocalOverride en
+    // buscador.html); el resto de sesiones/dispositivos verán la imagen
+    // nueva con el workflow completo de abajo, como antes de este cambio.
 
     // Disparar workflow de generar productos.json (red de seguridad: una
     // regeneración completa y consistente, además del cron de cada 10 min)
