@@ -4864,18 +4864,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .then(() => {
                 console.log('Imagen enviada correctamente');
 
+                // Capturar el producto ANTES de cerrar el modal: éste pone
+                // productoActual = null, así que reutilizarlo después
+                // lanzaría un error (y ese error, al ocurrir dentro de este
+                // .then(), lo recoge el .catch() de más abajo — el bug real
+                // que hacía aparecer el aviso de error justo después del de
+                // éxito, aunque la subida hubiera ido bien).
+                const producto = productoActual;
+
                 // Vista previa instantánea: el propio archivo que se acaba
                 // de subir, sin esperar a que Drive/productos.json estén
                 // listos (ver urlImagenProducto). Se aplica tanto al
                 // producto ya cargado en TODOS como al objeto local, para
                 // que se refresque igual la tarjeta del listado y el modal.
-                productoActual._imgLocalOverride = e.target.result;
-                const idxTodos = TODOS.findIndex(x => x.ref === productoActual.ref);
+                producto._imgLocalOverride = e.target.result;
+                const idxTodos = TODOS.findIndex(x => x.ref === producto.ref);
                 if (idxTodos !== -1) TODOS[idxTodos]._imgLocalOverride = e.target.result;
 
                 mostrarToast('✓ Imagen actualizada. Ya puedes verla en la ficha del producto.');
                 cerrarModalActualizarImagen();
-                abrirModalProducto(productoActual); // re-renderiza el detalle con la vista previa
+                abrirModalProducto(producto); // re-renderiza el detalle con la vista previa
                 aplicarFiltros(); // refresca también la tarjeta en el listado
             })
             .catch(err => {
