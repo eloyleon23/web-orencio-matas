@@ -131,11 +131,28 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 top: 90px; /* mismo valor que .filtros, para que se queden fijos juntos */
                 align-self: start;
                 z-index: 40;
+                background: linear-gradient(135deg, #1e293b, #0f172a); /* mismo tono que .buscador-header */
+                padding: 8px;
+                border-radius: 10px;
+                box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+                transition: transform 0.25s ease;
+            }
+            /* Mismo mecanismo de ocultar/mostrar en scroll que ya existe en
+               móvil (ver #grupo-buscador-principal.oculto-por-scroll) —
+               aplicado aquí al toolbar completo (ver actualizarVisibilidadBotonSubir). */
+            #toolbar-buscador-pc.oculto-por-scroll {
+                transform: translateY(-130%);
             }
             #toolbar-buscador-pc .filtro-grupo { margin-bottom: 0; }
             #toolbar-buscador-pc label.titulo { display: none; }
             #toolbar-buscador-pc #grupo-area-toolbar { flex: 0 0 150px; }
-            #toolbar-buscador-pc #grupo-area-toolbar .select-area { height: 100%; }
+            #toolbar-buscador-pc #grupo-area-toolbar .select-area {
+                height: 100%;
+                background: #e2e8f0;
+                border-color: transparent;
+                color: var(--dark);
+                font-weight: 600;
+            }
             #toolbar-buscador-pc #grupo-buscador-principal { flex: 1 1 auto; }
             #toolbar-buscador-pc .fila-buscador-movil { height: 100%; }
             #toolbar-buscador-pc .input-texto { height: 100%; }
@@ -5316,18 +5333,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (scrollActual <= 0) mostrarCabeceraBuscador();
 
         // Ocultar la barra de búsqueda al bajar, mostrarla al subir —
-        // independientemente de en qué punto de la página se esté. Solo en
-        // móvil (en escritorio la barra vive en el sidebar, no aplica).
-        if (window.innerWidth <= 768) {
-            const grupoBuscador = $('grupo-buscador-principal');
+        // independientemente de en qué punto de la página se esté. En
+        // móvil actúa sobre #grupo-buscador-principal (fixed); en
+        // escritorio sobre #toolbar-buscador-pc (sticky), que incluye
+        // también el filtro de Área al vivir dentro del mismo bloque.
+        const esAnchoMovil = window.innerWidth <= 768;
+        const esAnchoPC = window.innerWidth >= 881;
+        if (esAnchoMovil || esAnchoPC) {
+            const elemento = esAnchoMovil ? $('grupo-buscador-principal') : $('toolbar-buscador-pc');
             const delta = scrollActual - ultimoScrollY;
             // El umbral (6px) evita reaccionar a vibraciones mínimas del
-            // dedo, pero la referencia se actualiza SIEMPRE — si solo se
-            // actualizara cuando se supera el umbral, con gestos de scroll
-            // pequeños y sucesivos (muy típico en móvil) la referencia se
-            // queda obsoleta y la detección de dirección deja de reaccionar.
-            if (Math.abs(delta) > 6) {
-                grupoBuscador.classList.toggle('oculto-por-scroll', delta > 0 && scrollActual > 40);
+            // dedo/rueda, pero la referencia se actualiza SIEMPRE — si solo
+            // se actualizara al superar el umbral, con gestos de scroll
+            // pequeños y sucesivos la referencia se queda obsoleta y la
+            // detección de dirección deja de reaccionar.
+            if (elemento && Math.abs(delta) > 6) {
+                elemento.classList.toggle('oculto-por-scroll', delta > 0 && scrollActual > 40);
             }
             ultimoScrollY = scrollActual;
         }
