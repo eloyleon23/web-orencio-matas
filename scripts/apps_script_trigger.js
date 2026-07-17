@@ -2854,16 +2854,29 @@ function actualizarProductoEnJsonRemoto(referencia, camposActualizados) {
       'X-GitHub-Api-Version': '2022-11-28'
     };
 
-    // 1) Descargar el archivo actual (contenido + sha, necesario para el PUT)
+    // 1) Metadata del archivo (sha + download_url) — vía la API normal.
+    // IMPORTANTE: el campo "content" (el archivo en base64) SOLO viene
+    // relleno para archivos de 1 MB o menos; productos.json pesa varios MB,
+    // así que aquí llega vacío — de ahí que el patch fallara siempre en
+    // silencio (JSON.parse de una cadena vacía) sin ningún commit ni error
+    // visible para el usuario. El resto de campos (sha, download_url...)
+    // sí llegan bien independientemente del tamaño.
     const respGet = UrlFetchApp.fetch(urlContenido, { method: 'get', headers: headers, muteHttpExceptions: true });
     if (respGet.getResponseCode() !== 200) {
-      console.error('actualizarProductoEnJsonRemoto: no se pudo descargar productos.json:', respGet.getContentText());
+      console.error('actualizarProductoEnJsonRemoto: no se pudo obtener metadata de productos.json:', respGet.getContentText());
       return false;
     }
     const infoArchivo = JSON.parse(respGet.getContentText());
     const shaActual = infoArchivo.sha;
-    const contenidoDecodificado = Utilities.newBlob(Utilities.base64Decode(infoArchivo.content)).getDataAsString('UTF-8');
-    const datos = JSON.parse(contenidoDecodificado);
+
+    // 2) Contenido real del archivo, por la vía que sí funciona para
+    // archivos grandes: la URL de descarga directa que da la propia API.
+    const respRaw = UrlFetchApp.fetch(infoArchivo.download_url, { muteHttpExceptions: true });
+    if (respRaw.getResponseCode() !== 200) {
+      console.error('actualizarProductoEnJsonRemoto: no se pudo descargar el contenido real de productos.json:', respRaw.getResponseCode());
+      return false;
+    }
+    const datos = JSON.parse(respRaw.getContentText());
 
     // 2) Buscar y actualizar el producto por referencia
     const productos = datos.productos || [];
