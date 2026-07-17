@@ -4863,8 +4863,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             })
             .then(() => {
                 console.log('Imagen enviada correctamente');
-                mostrarToast('✓ Imagen actualizada. Se regenerará el listado de productos en unos minutos.');
+
+                // Vista previa instantánea: el propio archivo que se acaba
+                // de subir, sin esperar a que Drive/productos.json estén
+                // listos (ver urlImagenProducto). Se aplica tanto al
+                // producto ya cargado en TODOS como al objeto local, para
+                // que se refresque igual la tarjeta del listado y el modal.
+                productoActual._imgLocalOverride = e.target.result;
+                const idxTodos = TODOS.findIndex(x => x.ref === productoActual.ref);
+                if (idxTodos !== -1) TODOS[idxTodos]._imgLocalOverride = e.target.result;
+
+                mostrarToast('✓ Imagen actualizada. Ya puedes verla en la ficha del producto.');
                 cerrarModalActualizarImagen();
+                abrirModalProducto(productoActual); // re-renderiza el detalle con la vista previa
+                aplicarFiltros(); // refresca también la tarjeta en el listado
             })
             .catch(err => {
                 console.error('Error al subir imagen:', err);
@@ -5077,6 +5089,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // sirven como archivos estáticos del propio repositorio, sin el
     // redimensionado dinámico que sí ofrece Drive por parámetro de URL.
     function urlImagenProducto(p, tamano) {
+        // Vista previa local instantánea: justo después de subir una imagen
+        // nueva, todavía no conocemos el ID de Drive definitivo (la
+        // respuesta del Web App es opaca por el modo no-cors), así que se
+        // usa el propio archivo que el usuario acaba de seleccionar como
+        // vista previa exacta, sin esperar ningún viaje de ida y vuelta al
+        // servidor. Se sobreescribe en cuanto se recarga la página con un
+        // productos.json ya actualizado (ver ejecutarActualizarImagen).
+        if (p._imgLocalOverride) return p._imgLocalOverride;
         if (p.img) {
             if (p.area === 'talleres') return `./assets/imagenes_talleres/${p.img}`;
             return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
