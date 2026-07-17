@@ -2415,7 +2415,17 @@ function procesarActualizarImagen(data) {
     sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
     console.log('imagen_validada actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
 
-    // Disparar workflow de generar productos.json
+    // Vista rápida: parchear productos.json al instante (ver
+    // actualizarProductoEnJsonRemoto), sin esperar al workflow completo
+    const fechaFormateada = Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+    actualizarProductoEnJsonRemoto(referencia, {
+      img: driveFile.getId(),
+      fecha_actualizacion_imagen: fechaFormateada,
+      imagen_validada: fechaFormateada
+    });
+
+    // Disparar workflow de generar productos.json (red de seguridad: una
+    // regeneración completa y consistente, además del cron de cada 10 min)
     console.log('Disparando workflow generar_productos_json');
     dispararWorkflowProductosJson();
 
@@ -2528,6 +2538,11 @@ function procesarValidarImagen(data) {
     sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue(Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
     console.log('imagen_validada actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
 
+    // Vista rápida: parchear productos.json al instante
+    actualizarProductoEnJsonRemoto(referencia, {
+      imagen_validada: Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss')
+    });
+
     // Disparar workflow de generar productos.json
     console.log('Disparando workflow generar_productos_json');
     dispararWorkflowProductosJson();
@@ -2587,6 +2602,9 @@ function procesarDarBajaProducto(data) {
     sheetProd.getRange(prodRowNum, PROD['fecha_baja'] + 1).setValue(fechaFormateada);
     console.log('fecha_baja actualizada:', fechaFormateada);
 
+    // Vista rápida: parchear productos.json al instante
+    actualizarProductoEnJsonRemoto(referencia, { fecha_baja: fechaFormateada });
+
     // Disparar workflow de generar productos.json
     console.log('Disparando workflow generar_productos_json');
     dispararWorkflowProductosJson();
@@ -2642,6 +2660,9 @@ function procesarReactivarProducto(data) {
     const prodRowNum = prodRowIdx + 1;
     sheetProd.getRange(prodRowNum, PROD['fecha_baja'] + 1).setValue('');
     console.log('fecha_baja vaciada — producto reactivado');
+
+    // Vista rápida: parchear productos.json al instante
+    actualizarProductoEnJsonRemoto(referencia, { fecha_baja: '' });
 
     // Disparar workflow de generar productos.json
     console.log('Disparando workflow generar_productos_json');
@@ -2791,5 +2812,86 @@ function dispararWorkflowProductosJson() {
     console.log('Workflow generar_productos_json disparado correctamente');
   } else {
     console.error('Error al disparar workflow generar_productos_json:', resp.getContentText());
+  }
+}
+
+// ── Vista rápida: parchear productos.json al instante ──────────────────────
+// El workflow completo de GitHub Actions (dispararWorkflowProductosJson)
+// tarda del orden de un minuto en reflejarse (arranque del runner +
+// regeneración completa desde la Sheet + commit + despliegue). Mientras se
+// está en fase de validación/limpieza del catálogo, esa espera es
+// demasiado lenta para trabajar con agilidad.
+//
+// Esta función evita ese rodeo: descarga el productos.json ya publicado en
+// el repo directamente vía la API de Contenidos de GitHub, modifica SOLO
+// el producto indicado con los campos nuevos, y lo vuelve a subir — sin
+// pasar por Actions ni volver a leer toda la Sheet. Un par de llamadas
+// HTTP desde el propio Apps Script, visible en unos segundos.
+//
+// No sustituye a dispararWorkflowProductosJson(): se sigue llamando después
+// como red de seguridad para una regeneración completa y consistente
+// (además del cron de cada 10 minutos que ya existe). Si esta función
+// fallara por lo que sea (conflicto de sha por una escritura simultánea,
+// error de red...), esa regeneración completa corrige cualquier desajuste
+// en poco tiempo, así que aquí se falla en silencio (solo log) sin cortar
+// el flujo principal de la acción del usuario.
+//
+// camposActualizados: objeto con los campos de productos.json a fusionar
+// en el producto encontrado por referencia, p.ej.
+// { img: 'abc123', fecha_actualizacion_imagen: '17/07/2026 10:32:00' }.
+function actualizarProductoEnJsonRemoto(referencia, camposActualizados) {
+  try {
+    const rutaArchivo = 'data/productos.json';
+    const urlContenido = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${rutaArchivo}`;
+    const headers = {
+      'Authorization': `Bearer ${GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+
+    // 1) Descargar el archivo actual (contenido + sha, necesario para el PUT)
+    const respGet = UrlFetchApp.fetch(urlContenido, { method: 'get', headers: headers, muteHttpExceptions: true });
+    if (respGet.getResponseCode() !== 200) {
+      console.error('actualizarProductoEnJsonRemoto: no se pudo descargar productos.json:', respGet.getContentText());
+      return false;
+    }
+    const infoArchivo = JSON.parse(respGet.getContentText());
+    const shaActual = infoArchivo.sha;
+    const contenidoDecodificado = Utilities.newBlob(Utilities.base64Decode(infoArchivo.content)).getDataAsString('UTF-8');
+    const datos = JSON.parse(contenidoDecodificado);
+
+    // 2) Buscar y actualizar el producto por referencia
+    const productos = datos.productos || [];
+    const idx = productos.findIndex(p => p.ref === referencia);
+    if (idx === -1) {
+      console.error('actualizarProductoEnJsonRemoto: producto no encontrado en productos.json:', referencia);
+      return false;
+    }
+    Object.assign(productos[idx], camposActualizados);
+
+    // 3) Volver a subir el archivo completo con el cambio puntual aplicado
+    const nuevoContenido = JSON.stringify(datos);
+    const contenidoBase64 = Utilities.base64Encode(nuevoContenido, Utilities.Charset.UTF_8);
+    const payloadPut = JSON.stringify({
+      message: `Auto: actualizar ${referencia} en productos.json (vista rápida)`,
+      content: contenidoBase64,
+      sha: shaActual
+    });
+    const respPut = UrlFetchApp.fetch(urlContenido, {
+      method: 'put',
+      contentType: 'application/json',
+      headers: headers,
+      payload: payloadPut,
+      muteHttpExceptions: true
+    });
+    if (respPut.getResponseCode() === 200 || respPut.getResponseCode() === 201) {
+      console.log('productos.json actualizado al instante para', referencia);
+      return true;
+    }
+    console.error('actualizarProductoEnJsonRemoto: error al subir productos.json:', respPut.getContentText());
+    return false;
+  } catch (err) {
+    console.error('Error en actualizarProductoEnJsonRemoto:', err);
+    return false;
   }
 }
