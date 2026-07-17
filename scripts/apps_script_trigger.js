@@ -2295,6 +2295,16 @@ function doPost(e) {
       return procesarValidarImagen(data);
     }
 
+    if (accion === 'dar_baja_producto') {
+      console.log('Acción: dar_baja_producto');
+      return procesarDarBajaProducto(data);
+    }
+
+    if (accion === 'reactivar_producto') {
+      console.log('Acción: reactivar_producto');
+      return procesarReactivarProducto(data);
+    }
+
     console.log('Acción no reconocida:', accion);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Acción no reconocida: ' + accion }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -2528,6 +2538,121 @@ function procesarValidarImagen(data) {
 
   } catch (err) {
     console.error('Error al procesar validación de imagen:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Procesar dar de baja un producto ──────────────────────────────────────
+// Escribe la fecha/hora actual en la columna fecha_baja. generar_productos_json.py
+// sigue exportando el producto (ya no lo excluye), y buscador.html lo oculta
+// por defecto salvo que se active el filtro "Ver solo productos dados de baja".
+function procesarDarBajaProducto(data) {
+  try {
+    console.log('procesarDarBajaProducto iniciado');
+
+    const referencia = data.referencia;
+    if (!referencia) {
+      throw new Error('Falta la referencia del producto');
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia.toString().trim()) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    const ahora = new Date();
+    const fechaFormateada = Utilities.formatDate(ahora, ss.getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+    sheetProd.getRange(prodRowNum, PROD['fecha_baja'] + 1).setValue(fechaFormateada);
+    console.log('fecha_baja actualizada:', fechaFormateada);
+
+    // Disparar workflow de generar productos.json
+    console.log('Disparando workflow generar_productos_json');
+    dispararWorkflowProductosJson();
+
+    console.log('procesarDarBajaProducto completado exitosamente');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Producto dado de baja correctamente', fecha_baja: fechaFormateada }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al dar de baja el producto:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Procesar reactivar un producto ────────────────────────────────────────
+// Vacía la columna fecha_baja, dejando al producto exactamente igual que
+// cualquier otro producto activo del catálogo.
+function procesarReactivarProducto(data) {
+  try {
+    console.log('procesarReactivarProducto iniciado');
+
+    const referencia = data.referencia;
+    if (!referencia) {
+      throw new Error('Falta la referencia del producto');
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia.toString().trim()) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    sheetProd.getRange(prodRowNum, PROD['fecha_baja'] + 1).setValue('');
+    console.log('fecha_baja vaciada — producto reactivado');
+
+    // Disparar workflow de generar productos.json
+    console.log('Disparando workflow generar_productos_json');
+    dispararWorkflowProductosJson();
+
+    console.log('procesarReactivarProducto completado exitosamente');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Producto reactivado correctamente' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al reactivar el producto:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }

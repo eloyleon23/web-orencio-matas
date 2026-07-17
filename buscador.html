@@ -101,6 +101,40 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             .layout { grid-template-columns: 1fr; gap: 6px; }
         }
 
+        /* ── Barra de búsqueda de escritorio (estilo Amazon) ──
+           En pantallas ≥881px, #grupo-buscador-principal (buscador) y el
+           filtro de Área se reubican por JS (ver moverBuscadorSegunViewport)
+           dentro de #toolbar-buscador-pc, una franja superior que ocupa
+           únicamente el ancho de la columna de resultados (no el de la
+           columna de filtros). Por debajo de 881px vuelven a su posición
+           original dentro de .filtros/#filtros-extra, sin tocar nada del
+           comportamiento móvil ya existente (barra fija, panel deslizante).
+           Se mueven los mismos nodos del DOM, no se duplican — así toda la
+           lógica de filtros/sugerencias/escáner sigue funcionando igual. */
+        #toolbar-buscador-pc { display: none; }
+        @media (min-width: 881px) {
+            .layout {
+                position: relative;
+                padding-top: 76px; /* hueco reservado para la barra, en position:absolute */
+            }
+            #toolbar-buscador-pc {
+                display: flex;
+                align-items: stretch;
+                gap: 10px;
+                position: absolute;
+                top: 0;
+                left: calc(280px + 28px); /* ancho del sidebar + gap del grid */
+                right: 0;
+            }
+            #toolbar-buscador-pc .filtro-grupo { margin-bottom: 0; }
+            #toolbar-buscador-pc label.titulo { display: none; }
+            #toolbar-buscador-pc #grupo-area-toolbar { flex: 0 0 210px; }
+            #toolbar-buscador-pc #grupo-area-toolbar .select-area { height: 100%; }
+            #toolbar-buscador-pc #grupo-buscador-principal { flex: 1 1 auto; }
+            #toolbar-buscador-pc .fila-buscador-movil { height: 100%; }
+            #toolbar-buscador-pc .input-texto { height: 100%; }
+        }
+
         /* ── Filtros ── */
         .filtros {
             background: white;
@@ -466,6 +500,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 
         .btn-escanear-codigo.disponible { display: flex; }
+        /* En escritorio (PC) el escáner no procede — solo tiene sentido con
+           cámara de tablet/móvil. Debe ir DESPUÉS de la regla anterior en el
+           código para ganarle por orden de aparición (misma especificidad):
+           ver la lección de "Bug de orden CSS" en el histórico del proyecto. */
+        @media (min-width: 881px) {
+            .btn-escanear-codigo.disponible { display: none; }
+        }
 
         .modal-scanner-overlay {
             display: none;
@@ -1216,6 +1257,55 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: #fcd34d;
         }
 
+        /* Banner de estado cuando el producto está dado de baja */
+        .modal-producto-baja-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin: 0 0 16px 0;
+        }
+        .modal-producto-baja-banner i {
+            font-size: 1rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        /* Botón de dar de baja / reactivar — acción administrativa, con
+           color de advertencia (rojo) para diferenciarlo claramente de las
+           acciones de imagen (amarillo). El estado "reactivar" se aplica
+           dinámicamente por JS con la clase .es-reactivar (verde). */
+        .modal-producto-baja-btn {
+            margin-top: 14px;
+            width: 100%;
+            padding: 12px 16px;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .modal-producto-baja-btn:hover { background: #fee2e2; border-color: #f87171; }
+        .modal-producto-baja-btn.es-reactivar {
+            background: #f0fdf4;
+            color: #15803d;
+            border-color: #86efac;
+        }
+        .modal-producto-baja-btn.es-reactivar:hover { background: #dcfce7; border-color: #4ade80; }
+
         /* Fila con ambos botones (ficha técnica / carta de colores) a igual ancho */
         .modal-producto-fila-fichas {
             display: flex;
@@ -1701,6 +1791,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <main class="layout">
+    <!-- Franja superior de escritorio (≥881px): aquí se reubican por JS el
+         buscador y el filtro de Área — ver moverBuscadorSegunViewport().
+         Vacío/oculto en móvil y tablet. -->
+    <div class="toolbar-buscador-pc" id="toolbar-buscador-pc"></div>
 
     <!-- ── FILTROS ── -->
     <aside class="filtros">
@@ -1742,7 +1836,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <i class="fa-solid fa-xmark"></i>
         </button>
 
-        <div class="filtro-grupo">
+        <div class="filtro-grupo" id="grupo-area-toolbar">
             <label class="titulo" for="f-area">Área</label>
             <select id="f-area" class="select-area">
                 <option value="">Todas las áreas</option>
@@ -1837,6 +1931,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <label class="check-imagen-sin-validar">
                     <input type="checkbox" id="f-imagenes-sin-validar">
                     <span><i class="fa-solid fa-circle-xmark"></i> Solo imágenes sin validar</span>
+                </label>
+                <label class="check-imagen-sin-validar">
+                    <input type="checkbox" id="f-solo-baja">
+                    <span><i class="fa-solid fa-box-archive"></i> Ver solo productos dados de baja</span>
                 </label>
             </div>
         </div>
@@ -1944,6 +2042,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="modal-producto-info">
                 <h3 id="modal-producto-nombre"></h3>
                 <p class="modal-producto-ref" id="modal-producto-ref"></p>
+                <div id="modal-producto-baja-banner" class="modal-producto-baja-banner" style="display:none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Este producto está dado de baja desde el <strong id="modal-producto-baja-fecha"></strong>. No es visible para los usuarios del buscador.</span>
+                </div>
                 <p class="modal-producto-descripcion" id="modal-producto-descripcion" style="display:none;"></p>
                 <div class="modal-producto-precio" id="modal-producto-precio"></div>
                 <div class="modal-producto-detalles">
@@ -2008,6 +2110,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         Validar
                     </button>
                 </div>
+
+                <!-- Dar de baja / reactivar producto — acción administrativa,
+                     al final del todo del detalle. Gestionada por
+                     window.MOSTRAR_BOTON_GESTION_BAJA (fase de desarrollo,
+                     se restringirá al perfil administrador más adelante). -->
+                <button type="button" class="modal-producto-baja-btn" id="modal-producto-baja-reactivar" style="display:none;">
+                    <i class="fa-solid fa-ban"></i>
+                    <span>Dar de baja este producto</span>
+                </button>
             </div>
         </div>
     </div>
@@ -2066,6 +2177,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Modal de doble confirmación para dar de baja / reactivar un producto.
+     Se reutiliza el mismo bloque para ambos pasos (1 de 2 y 2 de 2) y para
+     las dos acciones — el texto lo rellena pedirConfirmacionBaja() por JS. -->
+<div class="modal-overlay" id="modal-confirmar-baja-overlay" style="z-index: 2100;">
+    <div class="modal-producto-box" id="modal-confirmar-baja-box" style="max-width: 400px;">
+        <button class="modal-producto-cerrar" id="modal-confirmar-baja-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div style="text-align:center; padding: 8px 4px 20px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; color: #dc2626; margin-bottom: 12px;"></i>
+            <h3 id="modal-confirmar-baja-titulo" style="margin:0 0 10px;font-size:1.05rem;color:#1f2937;"></h3>
+            <p id="modal-confirmar-baja-mensaje" style="margin: 0; color: #4b5563; font-size: 0.9rem;"></p>
+            <p id="modal-confirmar-baja-nombre" style="margin: 14px 0 2px 0; font-weight: 600; color: #1f2937;"></p>
+            <p id="modal-confirmar-baja-ref" style="margin: 0; font-size: 0.85rem; color: #9ca3af;"></p>
+        </div>
+        <div style="display:flex; gap:10px; padding: 0 4px 4px;">
+            <button id="modal-confirmar-baja-cancelar" style="flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
+                Cancelar
+            </button>
+            <button id="modal-confirmar-baja-confirmar" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                Continuar
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="./src/js/navbar-secondary.js"></script>
 <script>
@@ -2078,6 +2215,9 @@ window.MOSTRAR_BOTON_VALIDAR_IMAGEN = true;
 window.MOSTRAR_BOTON_BUSCAR_IMAGEN = true;
 // Filtro para mostrar solo imágenes revisadas (fase de desarrollo)
 window.MOSTRAR_FILTRO_IMAGENES_REVISADAS = true;
+// Botón para dar de baja / reactivar un producto (fase de desarrollo — se
+// restringirá al perfil administrador cuando exista esa distinción)
+window.MOSTRAR_BOTON_GESTION_BAJA = true;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -2701,6 +2841,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('grupo-gestion-imagenes').style.display = 'block';
             $('f-imagenes-validadas').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
             $('f-imagenes-sin-validar').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+            $('f-solo-baja').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         }
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
@@ -3419,6 +3560,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-oferta').checked = false;
         $('f-imagenes-validadas').checked = false;
         $('f-imagenes-sin-validar').checked = false;
+        $('f-solo-baja').checked = false;
         renderFabricanteTaller(); // Limpiar/ocultar fabricante
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
@@ -3505,6 +3647,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const soloOferta = $('f-oferta').checked;
         const soloImagenesValidadas = $('f-imagenes-validadas').checked;
         const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
+        const soloDadosBaja = $('f-solo-baja') ? $('f-solo-baja').checked : false;
         const acabadosSel = acabadosSeleccionados();
         const formatosSel = formatosSeleccionados();
         const tallaSel   = valoresSeleccionadosTaller('f-talla-taller');
@@ -3516,6 +3659,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const otrosSel   = valoresSeleccionadosTaller('f-otros-taller');
 
         resultadosActuales = TODOS.filter(p => {
+            // Por defecto, un producto dado de baja (fecha_baja informada en
+            // la Sheet) nunca es visible en el buscador normal — solo
+            // aparece cuando se activa expresamente "Ver solo productos
+            // dados de baja" (bloque de gestión, ver f-solo-baja).
+            const estaDeBaja = !!(p.fecha_baja && p.fecha_baja.toString().trim());
+            if (soloDadosBaja) {
+                if (!estaDeBaja) return false;
+            } else if (estaDeBaja) {
+                return false;
+            }
+
             if (area && p.area !== area) return false;
             if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
@@ -3807,6 +3961,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-nombre').textContent = p.nombre;
         $('modal-producto-ref').textContent = `Ref: ${p.ref}`;
 
+        // Banner de estado: si el producto está dado de baja, se indica
+        // claramente con la fecha en la que se dio de baja.
+        const bannerBaja = $('modal-producto-baja-banner');
+        const estaDeBaja = !!(p.fecha_baja && p.fecha_baja.toString().trim());
+        if (estaDeBaja) {
+            $('modal-producto-baja-fecha').textContent = p.fecha_baja;
+            bannerBaja.style.display = 'flex';
+        } else {
+            bannerBaja.style.display = 'none';
+        }
+
         // Descripción propia del producto (ej. el registro único de Baslac,
         // que indica consultar la gama completa en vez de listar productos).
         // Solo se muestra cuando el producto trae este texto.
@@ -3864,6 +4029,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('modal-producto-validar-imagen').onclick = () => validarImagen(p);
         } else {
             $('modal-producto-validar-imagen').style.display = 'none';
+        }
+
+        // Botón de dar de baja / reactivar — cambia de texto, icono y color
+        // según el estado actual del producto (ver estaDeBaja más arriba).
+        const btnBajaReactivar = $('modal-producto-baja-reactivar');
+        if (window.MOSTRAR_BOTON_GESTION_BAJA) {
+            btnBajaReactivar.style.display = 'flex';
+            btnBajaReactivar.disabled = false;
+            btnBajaReactivar.classList.toggle('es-reactivar', estaDeBaja);
+            btnBajaReactivar.innerHTML = estaDeBaja
+                ? '<i class="fa-solid fa-rotate-left"></i><span>Reactivar este producto</span>'
+                : '<i class="fa-solid fa-ban"></i><span>Dar de baja este producto</span>';
+            btnBajaReactivar.onclick = () => estaDeBaja ? reactivarProducto(p) : darDeBajaProducto(p);
+        } else {
+            btnBajaReactivar.style.display = 'none';
         }
 
         // Mostrar botón de buscar imagen si está activado en configuración
@@ -4574,6 +4754,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
     });
 
+    // Modal de doble confirmación de dar de baja / reactivar producto
+    $('modal-confirmar-baja-cerrar').addEventListener('click', () => {
+        $('modal-confirmar-baja-overlay').classList.remove('activo');
+    });
+    $('modal-confirmar-baja-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-confirmar-baja-overlay') {
+            $('modal-confirmar-baja-overlay').classList.remove('activo');
+        }
+    });
+
     $('modal-actualizar-imagen-file').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -4721,6 +4911,118 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // Restaurar botón
             btnValidar.disabled = false;
             btnValidar.innerHTML = estadoOriginal;
+        });
+    }
+
+    // ── Dar de baja / reactivar producto (doble confirmación) ──
+    // Reutiliza un único modal (#modal-confirmar-baja-*) en dos pasos: el
+    // primer clic en "Continuar" solo avanza al segundo texto, más explícito
+    // sobre la consecuencia de la acción; solo el segundo clic ejecuta de
+    // verdad la llamada al Web App. Sirve tanto para dar de baja como para
+    // reactivar, con textos e iconos distintos según el parámetro `tipo`.
+    function pedirConfirmacionBaja(p, tipo, callbackFinal) {
+        const overlay    = $('modal-confirmar-baja-overlay');
+        const titulo     = $('modal-confirmar-baja-titulo');
+        const mensaje    = $('modal-confirmar-baja-mensaje');
+        const nombre     = $('modal-confirmar-baja-nombre');
+        const ref        = $('modal-confirmar-baja-ref');
+        const btnConfirmar = $('modal-confirmar-baja-confirmar');
+        const btnCancelar  = $('modal-confirmar-baja-cancelar');
+
+        let paso = 1;
+
+        function mostrarPaso1() {
+            paso = 1;
+            if (tipo === 'baja') {
+                titulo.textContent = '¿Dar de baja este producto?';
+                mensaje.textContent = 'Dejará de aparecer en el buscador para los usuarios. Podrás reactivarlo más adelante cuando quieras.';
+            } else {
+                titulo.textContent = '¿Reactivar este producto?';
+                mensaje.textContent = 'Volverá a aparecer en el buscador para los usuarios, como cualquier otro producto activo.';
+            }
+            btnConfirmar.textContent = 'Continuar';
+            nombre.textContent = p.nombre;
+            ref.textContent = 'Ref: ' + p.ref;
+            overlay.classList.add('activo');
+        }
+
+        function mostrarPaso2() {
+            paso = 2;
+            titulo.textContent = 'Confirmación final';
+            mensaje.textContent = tipo === 'baja'
+                ? 'El producto quedará oculto de inmediato para los usuarios. ¿Seguro que quieres continuar?'
+                : '¿Confirmas que quieres reactivar este producto en el catálogo?';
+            btnConfirmar.textContent = tipo === 'baja' ? 'Sí, dar de baja' : 'Sí, reactivar';
+        }
+
+        btnConfirmar.onclick = () => {
+            if (paso === 1) {
+                mostrarPaso2();
+            } else {
+                overlay.classList.remove('activo');
+                callbackFinal();
+            }
+        };
+        btnCancelar.onclick = () => {
+            overlay.classList.remove('activo');
+        };
+
+        mostrarPaso1();
+    }
+
+    function darDeBajaProducto(p) {
+        pedirConfirmacionBaja(p, 'baja', () => ejecutarAccionBajaReactivar(p, 'dar_baja_producto'));
+    }
+
+    function reactivarProducto(p) {
+        pedirConfirmacionBaja(p, 'reactivar', () => ejecutarAccionBajaReactivar(p, 'reactivar_producto'));
+    }
+
+    // Igual que ejecutarValidacion(): el Web App se llama con mode:'no-cors',
+    // así que la respuesta es opaca y no se puede leer success/error desde
+    // aquí — se asume éxito si el fetch no falla a nivel de red (mismo
+    // patrón ya usado en todo el proyecto para las llamadas a Apps Script).
+    function ejecutarAccionBajaReactivar(p, accion) {
+        const btn = $('modal-producto-baja-reactivar');
+        const estadoOriginal = btn.innerHTML;
+        const esBaja = accion === 'dar_baja_producto';
+
+        btn.disabled = true;
+        btn.innerHTML = esBaja
+            ? '<i class="fa-solid fa-spinner fa-spin"></i><span>Dando de baja...</span>'
+            : '<i class="fa-solid fa-spinner fa-spin"></i><span>Reactivando...</span>';
+
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = estadoOriginal;
+            return;
+        }
+
+        mostrarToast(esBaja ? 'Dando de baja el producto...' : 'Reactivando el producto...');
+
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accion, referencia: p.ref })
+        })
+        .then(() => {
+            const ahoraTexto = new Date().toLocaleString('es-ES');
+            p.fecha_baja = esBaja ? ahoraTexto : '';
+            const idx = TODOS.findIndex(x => x.ref === p.ref);
+            if (idx !== -1) TODOS[idx].fecha_baja = p.fecha_baja;
+
+            mostrarToast(esBaja ? '✓ Producto dado de baja correctamente.' : '✓ Producto reactivado correctamente.');
+            abrirModalProducto(p); // re-renderiza el modal con el nuevo estado
+            aplicarFiltros();      // refresca el listado (afecta si f-solo-baja está activo)
+        })
+        .catch(err => {
+            console.error('Error al ' + (esBaja ? 'dar de baja' : 'reactivar') + ' el producto:', err);
+            mostrarToast('Error al procesar la acción. Verifica la conexión y los logs.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = estadoOriginal;
         });
     }
 
@@ -4947,6 +5249,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
     window.addEventListener('resize', debounce(ajustarPosicionBuscadorFijo, 200));
     ajustarPosicionBuscadorFijo();
+
+    // ── Barra de búsqueda de escritorio (estilo Amazon) ──
+    // En pantallas ≥881px, #grupo-buscador-principal y el filtro de Área se
+    // reubican (mismos nodos del DOM, no duplicados) dentro de
+    // #toolbar-buscador-pc, una franja que ocupa el ancho de la columna de
+    // resultados (ver CSS). Por debajo de ese ancho vuelven exactamente a su
+    // posición original en .filtros / #filtros-extra, donde sigue viva toda
+    // la lógica móvil ya probada (barra fija, panel deslizante, etc.).
+    const BREAKPOINT_TOOLBAR_PC = 881;
+    function moverBuscadorSegunViewport() {
+        const toolbar        = $('toolbar-buscador-pc');
+        const grupoBuscador   = $('grupo-buscador-principal');
+        const grupoArea       = $('grupo-area-toolbar');
+        const filtrosAside    = document.querySelector('.filtros');
+        const espaciadorMovil = $('espaciador-buscador-movil');
+        const filtrosExtra    = $('filtros-extra');
+        const anclaArea       = $('grupo-fabricante-taller');
+        if (!toolbar || !grupoBuscador || !grupoArea || !filtrosAside || !filtrosExtra || !anclaArea) return;
+
+        const esPC = window.innerWidth >= BREAKPOINT_TOOLBAR_PC;
+        if (esPC) {
+            // Área primero (izquierda del todo), luego el buscador (resto del ancho)
+            if (grupoArea.parentElement !== toolbar) toolbar.appendChild(grupoArea);
+            if (grupoBuscador.parentElement !== toolbar) toolbar.appendChild(grupoBuscador);
+        } else {
+            if (grupoBuscador.parentElement !== filtrosAside) {
+                filtrosAside.insertBefore(grupoBuscador, espaciadorMovil);
+            }
+            if (grupoArea.parentElement !== filtrosExtra) {
+                filtrosExtra.insertBefore(grupoArea, anclaArea);
+            }
+        }
+    }
+    window.addEventListener('resize', debounce(moverBuscadorSegunViewport, 150));
+    moverBuscadorSegunViewport();
 
     let ultimoScrollY = window.scrollY;
     function actualizarVisibilidadBotonSubir() {
