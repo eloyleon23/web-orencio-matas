@@ -2669,6 +2669,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return [...new Uint8Array(buffer)].map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    // Tras una acción instantánea propia (validar, dar de baja, reactivar)
+    // el productos.json del servidor cambia YA, aunque esta misma pestaña
+    // no necesite recargar nada (el cambio ya se refleja localmente al
+    // instante). Sin esto, el sondeo periódico detectaría ese cambio como
+    // si viniera de fuera y mostraría el banner de actualización sobre uno
+    // mismo. Se sincroniza aquí solo la cabecera de versión (barata, un
+    // HEAD) para que el próximo sondeo no lo confunda con un cambio
+    // externo real — sin tocar hashConocido, así que si el cambio real del
+    // servidor no coincidiera con lo esperado, el siguiente sondeo (que sí
+    // compara el contenido) lo seguiría detectando igualmente.
+    async function resincronizarVersionConocida() {
+        try {
+            const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
+            etagConocido = identificadorVersion(resp.headers) || etagConocido;
+        } catch (e) {
+            // Si falla, no pasa nada: el próximo sondeo periódico lo intentará igual
+        }
+    }
+
     async function iniciarComprobacionActualizaciones() {
         try {
             const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
@@ -4962,6 +4981,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         .then(() => {
             console.log('Imagen validada correctamente');
             mostrarToast('✓ Imagen validada correctamente.');
+            resincronizarVersionConocida(); // evita que el banner salte por este mismo cambio
         })
         .catch(err => {
             console.error('Error al validar imagen:', err);
@@ -5077,6 +5097,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             mostrarToast(esBaja ? '✓ Producto dado de baja correctamente.' : '✓ Producto reactivado correctamente.');
             abrirModalProducto(p); // re-renderiza el modal con el nuevo estado
             aplicarFiltros();      // refresca el listado (afecta si f-solo-baja está activo)
+            resincronizarVersionConocida(); // evita que el banner salte por este mismo cambio
         })
         .catch(err => {
             console.error('Error al ' + (esBaja ? 'dar de baja' : 'reactivar') + ' el producto:', err);
