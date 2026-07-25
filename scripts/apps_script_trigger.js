@@ -2947,34 +2947,37 @@ function actualizarProductoEnJsonRemoto(referencia, camposActualizados) {
 // 1. Editor de Apps Script → Servicios (icono +) → añadir "Drive API"
 //    (servicio avanzado; hace falta para convertir el Excel adjunto en
 //    una Google Sheet legible — Apps Script no puede leer .xlsx directamente).
-// 2. Ejecutar UNA VEZ, manualmente, la función
-//    configurarTriggerRevisionCorreoProductos() — crea el disparador
-//    periódico. La primera ejecución pedirá autorizar permisos nuevos
-//    (leer Gmail, enviar correo, Drive) — hay que aceptarlos.
-// 3. Por defecto revisa cada hora; para cambiar la frecuencia, edita la
-//    línea .everyHours(1) más abajo antes del paso 2, o borra el trigger
-//    desde Apps Script → Activadores y vuelve a ejecutar la función con
-//    el intervalo que prefieras.
+// 2. Ejecutar la función configurarTriggerRevisionCorreoProductos() —
+//    crea (o resincroniza) el disparador periódico. La primera ejecución
+//    pedirá autorizar permisos nuevos (leer Gmail, enviar correo, Drive)
+//    — hay que aceptarlos.
+// 3. Por defecto revisa una vez al día (franja de las 7h); para cambiar
+//    la frecuencia u hora, edita .everyDays(1)/.atHour(7) más abajo y
+//    vuelve a ejecutar configurarTriggerRevisionCorreoProductos() — se
+//    encarga de sustituir el trigger anterior, no hace falta borrarlo a mano.
 
 const CORREO_CRM_REMITENTE   = 'correo@orenciomatas.es';
 const CORREO_CRM_ASUNTO      = 'Listado de productos actualizado';
 const CORREO_CRM_ETIQUETA    = 'CRM-Listado-Procesado';
 const CORREO_RESUMEN_DESTINO = 'eloyleon23@gmail.com';
 
-// Ejecutar UNA VEZ manualmente desde el editor para crear el disparador
-// periódico. Si ya existe uno para esta función, no crea otro duplicado.
+// Ejecutar manualmente desde el editor para (re)crear el disparador
+// periódico con la configuración actual de esta función. Si ya existe uno
+// para revisarCorreoListadoProductos, se borra y se vuelve a crear — así,
+// para cambiar la frecuencia más adelante basta con editar esta función
+// (por ejemplo el .atHour(7) de abajo) y volver a ejecutarla, sin tener
+// que borrar el trigger a mano desde Activadores.
 function configurarTriggerRevisionCorreoProductos() {
-  const yaExiste = ScriptApp.getProjectTriggers()
-    .some(t => t.getHandlerFunction() === 'revisarCorreoListadoProductos');
-  if (yaExiste) {
-    console.log('Ya existe un trigger para revisarCorreoListadoProductos — no se crea otro.');
-    return;
-  }
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'revisarCorreoListadoProductos')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
   ScriptApp.newTrigger('revisarCorreoListadoProductos')
     .timeBased()
-    .everyHours(1)
+    .everyDays(1)
+    .atHour(7) // franja horaria de ejecución (Apps Script no garantiza el minuto exacto); ajustar según cuándo suele llegar el correo del CRM
     .create();
-  console.log('Trigger creado: revisarCorreoListadoProductos se ejecutará cada hora.');
+  console.log('Trigger creado: revisarCorreoListadoProductos se ejecutará una vez al día, en la franja de las 7h.');
 }
 
 // Función que ejecuta el disparador periódico. Busca correos del CRM sin
