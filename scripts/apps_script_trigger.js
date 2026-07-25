@@ -3064,12 +3064,17 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
   if (!sheetReg) throw new Error('No existe la hoja "RegistroProductos".');
 
   // 1) Convertir el Excel en una Google Sheet temporal para poder leerlo
-  //    (requiere el servicio avanzado "Drive API" activado en el proyecto)
+  //    (requiere el servicio avanzado "Drive API" activado en el proyecto).
+  //    IMPORTANTE: el servicio avanzado usa Drive API v3, donde el método
+  //    para crear un archivo es Files.create (no Files.insert, que era la
+  //    sintaxis de v2 — de ahí venía el error "Drive.Files.insert is not a
+  //    function"), el campo de nombre se llama "name" (no "title"), y la
+  //    conversión de Excel a Sheet es automática en v3 con solo indicar el
+  //    mimeType de destino — no hace falta el flag {convert: true} de v2.
   const nombreTemporal = 'temp_listado_productos_' + new Date().getTime();
-  const archivoTemporal = Drive.Files.insert(
-    { title: nombreTemporal, mimeType: MimeType.GOOGLE_SHEETS },
-    archivoAdjunto,
-    { convert: true }
+  const archivoTemporal = Drive.Files.create(
+    { name: nombreTemporal, mimeType: MimeType.GOOGLE_SHEETS },
+    archivoAdjunto
   );
 
   let datosExcel;
