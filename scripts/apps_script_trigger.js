@@ -3089,18 +3089,21 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
     throw new Error('El Excel adjunto no trae filas de datos (solo cabecera o vacío).');
   }
 
-  // 2) Validar que la cabecera del Excel coincide con la de
-  //    RegistroProductos antes de tocar nada — mejor abortar que volcar
-  //    datos mal alineados (columnas de gestión Procesado/Error excluidas,
-  //    no vienen del CRM).
+  // 2) Validar que la cabecera del Excel coincide con la esperada, antes
+  //    de tocar nada — mejor abortar que volcar datos mal alineados.
+  //    Lista verificada contra un envío real del CRM (ArticulosWeb...xlsx):
+  //    TieneFoto, ActualizarPrecio, Procesado y Error son columnas de
+  //    gestión propia de RegistroProductos — el CRM nunca las envía, así
+  //    que NO deben formar parte de lo esperado aquí.
+  const COLUMNAS_CRM_EXCEL = ['CodigoEAN', 'DescripcionArticulo', 'PrecioMayorSinIVA',
+    'PrecioPublicoSinIVA', 'IVA', 'CodigoFamilia', 'Familia', 'FechaAlta'];
   const regHeaderRow = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim());
-  const columnasCRM = regHeaderRow.filter(h => h !== 'Procesado' && h !== 'Error');
   const cabeceraExcel = datosExcel[0].map(h => h.toString().trim());
-  const coincide = columnasCRM.every((h, i) => cabeceraExcel[i] === h);
+  const coincide = COLUMNAS_CRM_EXCEL.every((h, i) => cabeceraExcel[i] === h);
   if (!coincide) {
-    throw new Error('La cabecera del Excel no coincide con la de RegistroProductos. ' +
-      'Esperada: [' + columnasCRM.join(', ') + ']. Recibida: [' + cabeceraExcel.slice(0, columnasCRM.length).join(', ') + '].');
+    throw new Error('La cabecera del Excel no coincide con la esperada. ' +
+      'Esperada: [' + COLUMNAS_CRM_EXCEL.join(', ') + ']. Recibida: [' + cabeceraExcel.slice(0, COLUMNAS_CRM_EXCEL.length).join(', ') + '].');
   }
 
   const filasDatos = datosExcel.slice(1);
@@ -3112,11 +3115,11 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
   }
 
   // 4) Escribir los productos del Excel en RegistroProductos, alineados a
-  //    su propia cabecera (Procesado/Error se dejan en blanco: son
-  //    columnas de gestión propias, no vienen del CRM)
+  //    su propia cabecera (TieneFoto/ActualizarPrecio/Procesado/Error se
+  //    dejan en blanco: son columnas de gestión propia, no vienen del CRM)
   const filasParaEscribir = filasDatos.map(fila => {
     const filaCompleta = new Array(regHeaderRow.length).fill('');
-    for (let i = 0; i < columnasCRM.length; i++) filaCompleta[i] = fila[i] !== undefined ? fila[i] : '';
+    for (let i = 0; i < COLUMNAS_CRM_EXCEL.length; i++) filaCompleta[i] = fila[i] !== undefined ? fila[i] : '';
     return filaCompleta;
   });
   sheetReg.getRange(2, 1, filasParaEscribir.length, regHeaderRow.length).setValues(filasParaEscribir);
