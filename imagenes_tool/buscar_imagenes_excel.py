@@ -407,7 +407,19 @@ def main():
         df = pd.read_excel(args.excel)
         # Normalizar nombres de columnas a minúsculas
         df.columns = [c.strip().lower() for c in df.columns]
-        
+
+        # El Excel exportado directamente de la Sheet de Productos usa
+        # "tipologia" (no "familia") y no trae ninguna columna "codigo" —
+        # sin este alias, construir_queries() se quedaba sin usar la
+        # familia/código en absoluto (no fallaba, solo perdía precisión
+        # en las queries de búsqueda en silencio).
+        if "familia" not in df.columns and "tipologia" in df.columns:
+            df["familia"] = df["tipologia"]
+            print("  → Alias aplicado: 'tipologia' se usa como 'familia'")
+        if "codigo" not in df.columns and "referencia" in df.columns:
+            df["codigo"] = df["referencia"]
+            print("  → Alias aplicado: 'referencia' se usa como 'codigo'")
+
         # Verificar columnas requeridas
         columnas_requeridas = ["referencia", "nombre"]
         columnas_faltantes = [c for c in columnas_requeridas if c not in df.columns]
@@ -415,7 +427,14 @@ def main():
             print(f"[ERROR] Faltan columnas requeridas en el Excel: {columnas_faltantes}")
             print(f"        Columnas encontradas: {list(df.columns)}")
             sys.exit(1)
-        
+
+        # Si el Excel trae imagen_drive_id, quedarnos solo con lo que de
+        # verdad no tiene foto (por si viniera algo ya resuelto colado)
+        if "imagen_drive_id" in df.columns:
+            antes = len(df)
+            df = df[df["imagen_drive_id"].astype(str).str.strip().str.upper() == "NO_TIENE_FOTO"]
+            print(f"  → Filtrado NO_TIENE_FOTO: {len(df)}/{antes} productos")
+
         # Convertir todos los valores a strings para evitar errores de tipo
         for col in df.columns:
             df[col] = df[col].astype(str).replace('nan', '')
