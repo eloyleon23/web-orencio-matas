@@ -389,6 +389,13 @@ const MARCAS_TALLERES_ = [
   'sata', 'sagola', 'devilbiss', 'iwata', 'rupes', 'festool',
   // Marcas de productos de enmascarado/preparación para repintado
   'colad', 'bossauto',
+  // Más equipo profesional encontrado en la misma familia "UTILES
+  // PINTURA" (aspiradoras, filtros, discos) sin cubrir por las anteriores.
+  // NOTA: "werku" se descartó a propósito — comprobado que un 76% de sus
+  // apariciones está en "BROCHAS Y UTILES DE APLICACION" (pintura de
+  // decoración/general, no automoción), así que no es una marca exclusiva
+  // de Talleres como las demás.
+  'lavor', 'hamach', 'starchem', 'aerometal',
 ];
 // "R-M" (marca de BASF para repintado de automoción) se comprueba aparte,
 // con límites de palabra, para no confundirlo con "rm" como subcadena de
@@ -417,6 +424,7 @@ const FRAGMENTOS_FAMILIA_TALLERES_ = [
   'scotch brite', 'scotch-brite',
   'acabado de vehiculo', 'acabados de vehiculo',
   'enmascarado',                          // PRODUCTOS DE ENMASCARADO
+  'maquinas y despiece',                  // MAQUINAS Y DESPIECE DE MAQUINAS — familia entera confirmada 100% equipo profesional, sin productos domésticos mezclados
   'endurecedor',                          // ENDURECEDORES Y ADITIVOS
   'diluyente',                            // DILUYENTES Y ADITIVOS AJUSTE
   'pintura de terminacion', 'pinturas de terminacion',
