@@ -74,8 +74,8 @@ function sincronizarRegistroProductos() {
   const sheetReg  = ss.getSheetByName('RegistroProductos');
   const sheetProd = ss.getSheetByName('Productos');
 
-  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos". Créala y pega los datos del Excel primero.'); return; }
-  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos". Créala y pega los datos del Excel primero.'); return { error: 'No existe la hoja RegistroProductos' }; }
+  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return { error: 'No existe la hoja Productos' }; }
 
   const regHeaderRow = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim());
@@ -99,6 +99,12 @@ function sincronizarRegistroProductos() {
     sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('fecha_registro');
     prodHeaderRow.push('fecha_registro');
   }
+  // Nueva columna fecha_alta (a partir de FechaAlta de RegistroProductos),
+  // para poder filtrar por fecha de alta del CRM llegado el caso.
+  if (!prodHeaderRow.includes('fecha_alta')) {
+    sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('fecha_alta');
+    prodHeaderRow.push('fecha_alta');
+  }
 
   const PROD = {};
   prodHeaderRow.forEach((h, i) => { PROD[h] = i; });
@@ -113,10 +119,12 @@ function sincronizarRegistroProductos() {
   const imagenesCache = cargarCacheImagenes_();
 
   const lastRow = sheetReg.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos no tiene datos. Pega primero el contenido del Excel.'); return; }
+  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos no tiene datos. Pega primero el contenido del Excel.'); return { error: 'RegistroProductos sin datos' }; }
 
   const regData = sheetReg.getRange(2, 1, lastRow - 1, regHeaderRow.length).getValues();
   let nuevos = 0, actualizados = 0, saltados = 0, errores = 0;
+  const productosNuevos = [];
+  const productosConError = [];
   const hoy = new Date();
 
   for (let i = 0; i < regData.length; i++) {
@@ -134,8 +142,14 @@ function sincronizarRegistroProductos() {
     const iva          = parseFloat(fila[COL['IVA']])               || 21;
     const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
     const familia      = fila[COL['Familia']] ? fila[COL['Familia']].toString().trim() : '';
+    const fechaAlta     = COL['FechaAlta'] !== undefined ? fila[COL['FechaAlta']] : '';
 
-    if (!ean) { marcarRegistro_(sheetReg, rowNum, COL, 'no', 'EAN vacío'); errores++; continue; }
+    if (!ean) {
+      marcarRegistro_(sheetReg, rowNum, COL, 'no', 'EAN vacío');
+      errores++;
+      productosConError.push({ ean: '', error: 'EAN vacío (fila ' + rowNum + ')' });
+      continue;
+    }
 
     try {
       if (prodIndex.hasOwnProperty(ean)) {
@@ -150,6 +164,7 @@ function sincronizarRegistroProductos() {
           ['precio_con_iva', formatPrecio_(precioConIva)],
           ['nombre',         desc],
           ['tipologia',      familia],
+          ['fecha_alta',     fechaAlta],
         ];
         checks.forEach(([col, val]) => {
           if (PROD[col] !== undefined && val && prodRow[PROD[col]].toString().trim() != val.toString()) {
@@ -183,17 +198,20 @@ function sincronizarRegistroProductos() {
         set('espacios_a_ocupar',   1);
         set('imagen_drive_id',     imagenId || 'NO_TIENE_FOTO');
         set('fecha_registro',      hoy);
+        set('fecha_alta',          fechaAlta);
 
         sheetProd.appendRow(nuevaFila);
         prodData.push(nuevaFila);
         prodIndex[ean] = prodData.length - 1;
 
         nuevos++;
+        productosNuevos.push({ ean: ean, nombre: desc });
         marcarRegistro_(sheetReg, rowNum, COL, 'si', '');
       }
     } catch (err) {
       marcarRegistro_(sheetReg, rowNum, COL, 'no', err.message);
       errores++;
+      productosConError.push({ ean: ean, error: err.message });
     }
   }
 
@@ -202,6 +220,8 @@ function sincronizarRegistroProductos() {
     `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Saltados: ${saltados} | Errores: ${errores}`,
     '📥 Sincronización completada', 8
   );
+
+  return { nuevos, actualizados, saltados, errores, productosNuevos, productosConError };
 }
 
 // ── ACTUALIZAR PRECIOS DE PRODUCTOS ───────────────────────────────────────────
@@ -2912,4 +2932,204 @@ function actualizarProductoEnJsonRemoto(referencia, camposActualizados) {
     console.error('Error en actualizarProductoEnJsonRemoto:', err);
     return false;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SINCRONIZACIÓN AUTOMÁTICA DE PRODUCTOS DESDE EL CORREO DEL CRM
+// ══════════════════════════════════════════════════════════════════════
+// Revisa periódicamente la bandeja de entrada en busca del correo con el
+// listado de productos del CRM (remitente + asunto fijos), descarga el
+// Excel adjunto, limpia RegistroProductos de la sincronización anterior,
+// vuelca los datos nuevos, ejecuta sincronizarRegistroProductos() y manda
+// un correo de resumen — todo sin intervención manual.
+//
+// CONFIGURACIÓN NECESARIA (una sola vez):
+// 1. Editor de Apps Script → Servicios (icono +) → añadir "Drive API"
+//    (servicio avanzado; hace falta para convertir el Excel adjunto en
+//    una Google Sheet legible — Apps Script no puede leer .xlsx directamente).
+// 2. Ejecutar UNA VEZ, manualmente, la función
+//    configurarTriggerRevisionCorreoProductos() — crea el disparador
+//    periódico. La primera ejecución pedirá autorizar permisos nuevos
+//    (leer Gmail, enviar correo, Drive) — hay que aceptarlos.
+// 3. Por defecto revisa cada hora; para cambiar la frecuencia, edita la
+//    línea .everyHours(1) más abajo antes del paso 2, o borra el trigger
+//    desde Apps Script → Activadores y vuelve a ejecutar la función con
+//    el intervalo que prefieras.
+
+const CORREO_CRM_REMITENTE   = 'correo@orenciomatas.es';
+const CORREO_CRM_ASUNTO      = 'Listado de productos actualizado';
+const CORREO_CRM_ETIQUETA    = 'CRM-Listado-Procesado';
+const CORREO_RESUMEN_DESTINO = 'eloyleon23@gmail.com';
+
+// Ejecutar UNA VEZ manualmente desde el editor para crear el disparador
+// periódico. Si ya existe uno para esta función, no crea otro duplicado.
+function configurarTriggerRevisionCorreoProductos() {
+  const yaExiste = ScriptApp.getProjectTriggers()
+    .some(t => t.getHandlerFunction() === 'revisarCorreoListadoProductos');
+  if (yaExiste) {
+    console.log('Ya existe un trigger para revisarCorreoListadoProductos — no se crea otro.');
+    return;
+  }
+  ScriptApp.newTrigger('revisarCorreoListadoProductos')
+    .timeBased()
+    .everyHours(1)
+    .create();
+  console.log('Trigger creado: revisarCorreoListadoProductos se ejecutará cada hora.');
+}
+
+// Función que ejecuta el disparador periódico. Busca correos del CRM sin
+// procesar todavía (etiqueta CORREO_CRM_ETIQUETA), procesa el más reciente
+// (el listado es un volcado completo cada vez, no incremental — los
+// correos más antiguos sin procesar quedan superados) y manda el resumen.
+function revisarCorreoListadoProductos() {
+  const query = `from:${CORREO_CRM_REMITENTE} subject:"${CORREO_CRM_ASUNTO}" -label:${CORREO_CRM_ETIQUETA}`;
+  const hilos = GmailApp.search(query, 0, 10);
+
+  if (hilos.length === 0) {
+    console.log('No hay correos nuevos de listado de productos del CRM.');
+    return;
+  }
+
+  let etiqueta = GmailApp.getUserLabelByName(CORREO_CRM_ETIQUETA);
+  if (!etiqueta) etiqueta = GmailApp.createLabel(CORREO_CRM_ETIQUETA);
+
+  // Gmail devuelve los hilos más recientes primero. Se etiquetan TODOS
+  // los encontrados como procesados (para no repetir trabajo si se han
+  // acumulado varios), pero solo se sincroniza con el más reciente.
+  const hiloMasReciente = hilos[0];
+  hilos.forEach(hilo => hilo.addLabel(etiqueta));
+
+  const mensajes = hiloMasReciente.getMessages();
+  const ultimoMensaje = mensajes[mensajes.length - 1];
+  const adjuntos = ultimoMensaje.getAttachments();
+  const excel = adjuntos.find(a => /\.xlsx?$/i.test(a.getName()));
+
+  if (!excel) {
+    console.error('Correo del CRM sin adjunto Excel reconocible:', ultimoMensaje.getSubject(), ultimoMensaje.getDate());
+    enviarResumenSincronizacionCRM_({
+      error: 'El correo del CRM ("' + ultimoMensaje.getSubject() + '", ' + ultimoMensaje.getDate() +
+        ') no traía ningún adjunto .xlsx/.xls reconocible.'
+    });
+    return;
+  }
+
+  try {
+    const resultado = procesarListadoProductosExcel_(excel);
+    enviarResumenSincronizacionCRM_(resultado);
+  } catch (err) {
+    console.error('Error procesando el listado de productos del CRM:', err);
+    enviarResumenSincronizacionCRM_({ error: err.message });
+  }
+}
+
+// Convierte el Excel adjunto en una Sheet temporal para poder leerlo,
+// vuelca su contenido en RegistroProductos (limpiando antes la
+// sincronización anterior) y ejecuta sincronizarRegistroProductos().
+function procesarListadoProductosExcel_(archivoAdjunto) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetReg = ss.getSheetByName('RegistroProductos');
+  if (!sheetReg) throw new Error('No existe la hoja "RegistroProductos".');
+
+  // 1) Convertir el Excel en una Google Sheet temporal para poder leerlo
+  //    (requiere el servicio avanzado "Drive API" activado en el proyecto)
+  const nombreTemporal = 'temp_listado_productos_' + new Date().getTime();
+  const archivoTemporal = Drive.Files.insert(
+    { title: nombreTemporal, mimeType: MimeType.GOOGLE_SHEETS },
+    archivoAdjunto,
+    { convert: true }
+  );
+
+  let datosExcel;
+  try {
+    const ssTemporal = SpreadsheetApp.openById(archivoTemporal.id);
+    datosExcel = ssTemporal.getSheets()[0].getDataRange().getValues();
+  } finally {
+    Drive.Files.remove(archivoTemporal.id); // limpiar el temporal, haya ido bien o mal
+  }
+
+  if (datosExcel.length < 2) {
+    throw new Error('El Excel adjunto no trae filas de datos (solo cabecera o vacío).');
+  }
+
+  // 2) Validar que la cabecera del Excel coincide con la de
+  //    RegistroProductos antes de tocar nada — mejor abortar que volcar
+  //    datos mal alineados (columnas de gestión Procesado/Error excluidas,
+  //    no vienen del CRM).
+  const regHeaderRow = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim());
+  const columnasCRM = regHeaderRow.filter(h => h !== 'Procesado' && h !== 'Error');
+  const cabeceraExcel = datosExcel[0].map(h => h.toString().trim());
+  const coincide = columnasCRM.every((h, i) => cabeceraExcel[i] === h);
+  if (!coincide) {
+    throw new Error('La cabecera del Excel no coincide con la de RegistroProductos. ' +
+      'Esperada: [' + columnasCRM.join(', ') + ']. Recibida: [' + cabeceraExcel.slice(0, columnasCRM.length).join(', ') + '].');
+  }
+
+  const filasDatos = datosExcel.slice(1);
+
+  // 3) Limpiar RegistroProductos de la sincronización anterior (solo datos, no cabecera)
+  const filasActuales = sheetReg.getLastRow();
+  if (filasActuales > 1) {
+    sheetReg.getRange(2, 1, filasActuales - 1, sheetReg.getLastColumn()).clearContent();
+  }
+
+  // 4) Escribir los productos del Excel en RegistroProductos, alineados a
+  //    su propia cabecera (Procesado/Error se dejan en blanco: son
+  //    columnas de gestión propias, no vienen del CRM)
+  const filasParaEscribir = filasDatos.map(fila => {
+    const filaCompleta = new Array(regHeaderRow.length).fill('');
+    for (let i = 0; i < columnasCRM.length; i++) filaCompleta[i] = fila[i] !== undefined ? fila[i] : '';
+    return filaCompleta;
+  });
+  sheetReg.getRange(2, 1, filasParaEscribir.length, regHeaderRow.length).setValues(filasParaEscribir);
+  SpreadsheetApp.flush();
+
+  // 5) Ejecutar la sincronización ya existente
+  const resultado = sincronizarRegistroProductos();
+  resultado.totalRegistrados = filasDatos.length;
+  return resultado;
+}
+
+// Envía el correo de resumen de la sincronización.
+function enviarResumenSincronizacionCRM_(resultado) {
+  const zona = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  const fecha = Utilities.formatDate(new Date(), zona, 'dd/MM/yyyy HH:mm');
+
+  if (resultado.error) {
+    MailApp.sendEmail({
+      to: CORREO_RESUMEN_DESTINO,
+      subject: '❌ Sincronización de productos FALLIDA — ' + fecha,
+      body: 'La sincronización automática de productos desde el correo del CRM ha fallado.\n\n' +
+        'Error: ' + resultado.error + '\n\n' +
+        'Revisa la hoja RegistroProductos y los registros de ejecución en Apps Script para más detalle.'
+    });
+    return;
+  }
+
+  const { nuevos, actualizados, saltados, errores, productosNuevos, productosConError, totalRegistrados } = resultado;
+
+  let cuerpo = `Resumen de la sincronización automática de productos (${fecha})\n\n`;
+  cuerpo += `Productos leídos del Excel: ${totalRegistrados}\n`;
+  cuerpo += `Nuevos: ${nuevos}\n`;
+  cuerpo += `Actualizados: ${actualizados}\n`;
+  cuerpo += `Saltados (ya procesados o con error previo): ${saltados}\n`;
+  cuerpo += `Errores: ${errores}\n\n`;
+
+  if (productosNuevos && productosNuevos.length > 0) {
+    cuerpo += `Productos nuevos dados de alta:\n`;
+    productosNuevos.forEach(p => { cuerpo += `  - ${p.ean} — ${p.nombre}\n`; });
+    cuerpo += '\n';
+  }
+
+  if (productosConError && productosConError.length > 0) {
+    cuerpo += `Productos con error (revisar en RegistroProductos):\n`;
+    productosConError.forEach(p => { cuerpo += `  - ${p.ean || '(sin EAN)'} — ${p.error}\n`; });
+    cuerpo += '\n';
+  }
+
+  const asunto = errores > 0
+    ? `⚠️ Sincronización de productos completada con errores — ${fecha}`
+    : `✓ Sincronización de productos completada — ${fecha}`;
+
+  MailApp.sendEmail({ to: CORREO_RESUMEN_DESTINO, subject: asunto, body: cuerpo });
 }
