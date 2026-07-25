@@ -438,8 +438,26 @@ function familiaEsTalleres_(familia) {
   return FRAGMENTOS_FAMILIA_TALLERES_.some(f => txt.includes(f));
 }
 
+// El nombre empieza con un punto ("."): confirmado por Eloy que es una
+// marca que usa el administrador del CRM al dar de alta productos de
+// Talleres. Verificado contra datos reales: de 860 productos con punto
+// que NO estaban en Talleres, 24/25 de una muestra manual SÍ eran
+// realmente de Talleres (BODYALU, URKI-FILLER, CATALIZADOR, SPRAYMAX,
+// sistemas de enmascarado, familias "CAR - ...") que las reglas de marca/
+// familia de arriba aún no cazaban. Única excepción real encontrada: la
+// familia "VARIOS" es un cajón de sastre genérico con productos NO
+// relacionados con Talleres mezclados dentro (un altavoz Alexa Echo Dot,
+// apuntes de "COMISIONES HYUNDAI/JAGUAR/MERCEDES") — se excluye a
+// propósito de esta regla para no arrastrarlos también a Talleres.
+function empiezaConPuntoTalleres_(nombre, familia) {
+  if (!nombre || !nombre.toString().trim().startsWith('.')) return false;
+  const familiaNorm = quitarAcentos_(familia).trim().toUpperCase();
+  return familiaNorm !== 'VARIOS';
+}
+
 function inferirArea_(nombre, familia) {
   if (esMarcaTalleres_(nombre) || esMarcaTalleres_(familia) || familiaEsTalleres_(familia)) return 'talleres';
+  if (empiezaConPuntoTalleres_(nombre, familia)) return 'talleres';
 
   const txt = (nombre + ' ' + familia).toLowerCase();
 
@@ -589,7 +607,7 @@ function reevaluarAreasProductos() {
   });
 
   const cambios = {};
-  let totalCambios = 0, sinCoincidencia = 0, porMarca = 0, porMayoria = 0;
+  let totalCambios = 0, sinCoincidencia = 0, porMarca = 0, porPunto = 0, porMayoria = 0;
   // Copia local de la columna área — se muta en memoria y se escribe TODA
   // de una vez al final (una sola llamada a setValues en vez de una por
   // fila cambiada, que con miles de productos agotaría el tiempo máximo
@@ -606,6 +624,9 @@ function reevaluarAreasProductos() {
     if (esMarcaTalleres_(nombre) || esMarcaTalleres_(tipologia) || familiaEsTalleres_(tipologia)) {
       areaNueva = 'talleres';
       if (areaNueva !== areaActual) porMarca++;
+    } else if (empiezaConPuntoTalleres_(nombre, tipologia)) {
+      areaNueva = 'talleres';
+      if (areaNueva !== areaActual) porPunto++;
     } else if (tipologia && mapaFamiliaArea[tipologia]) {
       areaNueva = mapaFamiliaArea[tipologia];
     } else if (tipologia && mapaMayoriaFamilia[tipologia]) {
@@ -633,7 +654,7 @@ function reevaluarAreasProductos() {
     .join(' | ') || 'ninguno';
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    `✓ ${totalCambios} reclasificados (${resumenAreas}) — por marca: ${porMarca}, por mayoría: ${porMayoria}\n` +
+    `✓ ${totalCambios} reclasificados (${resumenAreas}) — por marca: ${porMarca}, por punto: ${porPunto}, por mayoría: ${porMayoria}\n` +
     `⚠ ${sinCoincidencia} sin ninguna coincidencia (ni marca, ni FamiliaProductos, ni mayoría clara)`,
     '✓ Reevaluación completada', 12
   );
