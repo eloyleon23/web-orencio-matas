@@ -110,7 +110,17 @@ function sincronizarRegistroProductos() {
   const PROD = {};
   prodHeaderRow.forEach((h, i) => { PROD[h] = i; });
 
-  const prodData  = sheetProd.getRange(2, 1, Math.max(sheetProd.getLastRow() - 1, 1), sheetProd.getLastColumn()).getValues();
+  const numFilasProdOriginal = Math.max(sheetProd.getLastRow() - 1, 0);
+  // prodData se mantiene en memoria durante todo el proceso y se muta
+  // directamente (filas existentes modificadas in-place, nuevas filas
+  // añadidas al final) — al terminar se escribe TODO de una sola vez.
+  // Esto es lo que de verdad soluciona el timeout con catálogos grandes:
+  // antes, cada celda cambiada suponía una llamada individual a
+  // setValue() (con 12.000+ productos, fácilmente miles de llamadas a la
+  // API de Sheets, una a una); ahora es una única escritura en lote.
+  const prodData = numFilasProdOriginal > 0
+    ? sheetProd.getRange(2, 1, numFilasProdOriginal, prodHeaderRow.length).getValues()
+    : [];
   const prodIndex = {};
   prodData.forEach((row, i) => {
     const ref = row[PROD['referencia']];
@@ -128,11 +138,18 @@ function sincronizarRegistroProductos() {
   const productosConError = [];
   const hoy = new Date();
 
+  // Copias locales de las columnas Procesado/Error de RegistroProductos —
+  // se modifican en memoria fila a fila y se escriben en lote al final,
+  // en vez de con marcarRegistro_() (que hacía 2 setValue() por fila).
+  const colProcesadoIdx = COL['Procesado'];
+  const colErrorIdx     = COL['Error'];
+  const regProcesado = regData.map(fila => colProcesadoIdx !== undefined ? fila[colProcesadoIdx] : '');
+  const regErrorCol   = regData.map(fila => colErrorIdx     !== undefined ? fila[colErrorIdx]     : '');
+
   for (let i = 0; i < regData.length; i++) {
-    const fila   = regData[i];
-    const rowNum = i + 2;
-    const procesado = COL['Procesado'] !== undefined ? fila[COL['Procesado']].toString().trim() : '';
-    const errorPrev = COL['Error']     !== undefined ? fila[COL['Error']].toString().trim()     : '';
+    const fila = regData[i];
+    const procesado = colProcesadoIdx !== undefined ? (regProcesado[i] || '').toString().trim() : '';
+    const errorPrev  = colErrorIdx     !== undefined ? (regErrorCol[i]   || '').toString().trim() : '';
 
     if (procesado === 'si') { saltados++; continue; }
     if (errorPrev && errorPrev !== '') { saltados++; continue; }
@@ -146,17 +163,17 @@ function sincronizarRegistroProductos() {
     const fechaAlta     = COL['FechaAlta'] !== undefined ? fila[COL['FechaAlta']] : '';
 
     if (!ean) {
-      marcarRegistro_(sheetReg, rowNum, COL, 'no', 'EAN vacío');
+      regProcesado[i] = 'no';
+      regErrorCol[i]  = 'EAN vacío';
       errores++;
-      productosConError.push({ ean: '', error: 'EAN vacío (fila ' + rowNum + ')' });
+      productosConError.push({ ean: '', error: 'EAN vacío (fila ' + (i + 2) + ')' });
       continue;
     }
 
     try {
       if (prodIndex.hasOwnProperty(ean)) {
         const prodRowIdx = prodIndex[ean];
-        const prodRow    = prodData[prodRowIdx];
-        const prodRowNum = prodRowIdx + 2;
+        const prodRow    = prodData[prodRowIdx]; // referencia directa: mutar aquí ya actualiza prodData
         let cambios = false;
 
         const checks = [
@@ -169,15 +186,15 @@ function sincronizarRegistroProductos() {
         ];
         checks.forEach(([col, val]) => {
           if (PROD[col] !== undefined && val && prodRow[PROD[col]].toString().trim() != val.toString()) {
-            sheetProd.getRange(prodRowNum, PROD[col] + 1).setValue(val);
+            prodRow[PROD[col]] = val;
             cambios = true;
           }
         });
-        if (cambios && PROD['fecha_registro'] !== undefined)
-          sheetProd.getRange(prodRowNum, PROD['fecha_registro'] + 1).setValue(hoy);
+        if (cambios && PROD['fecha_registro'] !== undefined) prodRow[PROD['fecha_registro']] = hoy;
 
         actualizados++;
-        marcarRegistro_(sheetReg, rowNum, COL, 'si', '');
+        regProcesado[i] = 'si';
+        regErrorCol[i]  = '';
 
       } else {
         const area     = inferirArea_(desc, familia);
@@ -201,19 +218,31 @@ function sincronizarRegistroProductos() {
         set('fecha_registro',      hoy);
         set('fecha_alta',          fechaAlta);
 
-        sheetProd.appendRow(nuevaFila);
-        prodData.push(nuevaFila);
+        prodData.push(nuevaFila); // se escribirá en lote al final, no appendRow() por fila
         prodIndex[ean] = prodData.length - 1;
 
         nuevos++;
         productosNuevos.push({ ean: ean, nombre: desc });
-        marcarRegistro_(sheetReg, rowNum, COL, 'si', '');
+        regProcesado[i] = 'si';
+        regErrorCol[i]  = '';
       }
     } catch (err) {
-      marcarRegistro_(sheetReg, rowNum, COL, 'no', err.message);
+      regProcesado[i] = 'no';
+      regErrorCol[i]  = err.message;
       errores++;
       productosConError.push({ ean: ean, error: err.message });
     }
+  }
+
+  // ── Escritura en lote (el paso que de verdad evita el timeout) ──
+  if (prodData.length > 0) {
+    sheetProd.getRange(2, 1, prodData.length, prodHeaderRow.length).setValues(prodData);
+  }
+  if (colProcesadoIdx !== undefined) {
+    sheetReg.getRange(2, colProcesadoIdx + 1, regProcesado.length, 1).setValues(regProcesado.map(v => [v]));
+  }
+  if (colErrorIdx !== undefined) {
+    sheetReg.getRange(2, colErrorIdx + 1, regErrorCol.length, 1).setValues(regErrorCol.map(v => [v]));
   }
 
   SpreadsheetApp.flush();
