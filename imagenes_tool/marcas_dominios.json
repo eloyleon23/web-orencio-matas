@@ -18,9 +18,21 @@
   "SANYTOL": "sanytol.es",
   "BREF": "brefwc.es",
   "THOMIL": "thomil.com",
+  "ROUNDUP": "roundup.es",
+  "YALTA": "yalta.es",
+  "VIJUSA": "vijusa.com",
+  "PENTRILO": "pentriol.com",
+  "CUBRIX": "cubrix.es",
+  "PAMEX": "pamex.es",
+  "NAVALIS": "navalis.es",
+  "BIMAT": "bimat.es",
+  "MASTERS": "masters-rodillos.com",
+  "SUPREME": "supreme-rodillos.com",
   "_sin_confirmar_revisar_manualmente": {
     "SUMA": "eshop.diversey.com.es (marca de Diversey; el catalogo de imagenes parece requerir registro/login, verificar antes de usar)",
-    "MASSO": "cqmasso.com (Comercial Quimica Masso; no 100% seguro de que sea la misma marca de vuestros productos MASSO, verificar un producto concreto antes de usar)"
+    "MASSO": "cqmasso.com (Comercial Quimica Masso; no 100% seguro de que sea la misma marca de vuestros productos MASSO, verificar un producto concreto antes de usar)",
+    "RODANO": "verificar dominio oficial de cesped artificial Rodano",
+    "COSTA RICA": "posible marca de jardin vertical, verificar dominio oficial"
   },
   "_no_encontrado_tras_varias_busquedas": [
     "CASELLI",
@@ -35,6 +47,5 @@
     "3M",
     "AMBIPUR (el dominio ambipures.com resulto ser un sitio de afiliados de Amazon, no la web oficial - pendiente de encontrar el dominio real)"
   ],
-  "_nota_cobertura": "Con las 19 marcas confirmadas se cubre una parte de los 5.920 productos pendientes de drogueria+perfumeria, pero la mayoria (unos 4.900) son articulos genericos (cepillos, cubos, lamparas, guantes, papel, recambios...) sin fabricante de marca reconocible en el nombre, para los que este enfoque no aplica.",
-  "VIJUSA": "vijusa.com"
+  "_nota_cobertura": "Con las marcas confirmadas se cubre una parte de los productos pendientes, pero muchos son articulos genericos (cepillos, cubos, lamparas, guantes, papel, recambios...) sin fabricante de marca reconocible en el nombre, para los que este enfoque no aplica."
 }

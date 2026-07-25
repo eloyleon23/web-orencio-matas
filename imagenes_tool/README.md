@@ -4,6 +4,198 @@ Preparación para la revisión manual de imágenes: normaliza nombres y busca
 candidatas **antes** de subir nada a Drive. Ningún script de esta carpeta
 modifica el Sheet ni Drive directamente.
 
+## Flujo de trabajo para productos nuevos desde Excel
+
+Si tienes un Excel filtrado con productos nuevos añadidos al catálogo, usa estos scripts:
+
+### 1. `buscar_imagenes_unsplash.py` — Buscar imágenes con Unsplash API (gratuita)
+
+Busca imágenes usando Unsplash API (gratuita, 50 requests/hora) buscando por la descripción completa del producto sin depender de dominios específicos.
+
+**Qué hace:**
+- Lee un Excel filtrado de productos nuevos (columnas: referencia, nombre, familia, area, codigo)
+- Busca imágenes usando Unsplash API con la descripción normalizada del producto
+- Descarga la imagen encontrada y la convierte a JPG
+- Guarda las imágenes en un directorio temporal para evaluación manual
+- Genera un CSV con la información de las imágenes descargadas
+
+**Ventajas:**
+- 100% gratuito (50 requests/hora)
+- No depende de dominios específicos ni marcas configuradas
+- Busca por descripción completa del producto
+- Imágenes de alta calidad profesionales
+- Registro fácil en unsplash.com/developers
+
+**Requisitos:**
+- Access Key de Unsplash (gratuita en https://unsplash.com/developers)
+- Columnas requeridas: `referencia`, `nombre`
+
+**Uso:**
+```bash
+# Obtener Access Key gratuita en unsplash.com/developers
+
+# Buscar imágenes (simulación primero)
+python buscar_imagenes_unsplash.py --excel productos_nuevos.xlsx --unsplash-key TU_ACCESS_KEY --salida imagenes_unsplash --dry-run
+
+# Buscar imágenes real
+python buscar_imagenes_unsplash.py --excel productos_nuevos.xlsx --unsplash-key TU_ACCESS_KEY --salida imagenes_unsplash
+```
+
+**Archivos generados:**
+- `imagenes_unsplash/imagenes_descargadas.csv`: Lista de imágenes descargadas
+- `imagenes_unsplash/sin_resultado.csv`: Productos sin imagen encontrada
+- `imagenes_unsplash/<referencia>.jpg`: Imágenes descargadas (todas en JPG)
+
+---
+
+### 2. `buscar_imagenes_pexels.py` — Buscar imágenes con Pexels API (alternativa)
+
+Busca imágenes usando Pexels API (gratuita, 200 requests/hora) buscando por la descripción completa del producto sin depender de dominios específicos.
+
+**Requisitos:**
+- API Key de Pexels (gratuita en https://pexels.com/api/)
+- Columnas requeridas: `referencia`, `nombre`
+
+**Uso:**
+```bash
+python buscar_imagenes_pexels.py --excel productos_nuevos.xlsx --pexels-key TU_API_KEY --salida imagenes_pexels
+```
+
+---
+
+### 3. `buscar_imagenes_pixabay.py` — Buscar imágenes con Pixabay API (alternativa)
+
+Busca imágenes usando Pixabay API (gratuita, 5,000 requests/hora) buscando por la descripción completa del producto sin depender de dominios específicos.
+
+**Requisitos:**
+- API Key de Pixabay (gratuita en https://pixabay.com/api/docs/)
+- Columnas requeridas: `referencia`, `nombre`
+
+**Uso:**
+```bash
+python buscar_imagenes_pixabay.py --excel productos_nuevos.xlsx --pixabay-key TU_API_KEY --salida imagenes_pixabay
+```
+
+---
+
+### 4. `buscar_imagenes_descripcion.py` — Buscar imágenes SOLO por descripción (sin filtros)
+
+Busca imágenes usando SOLO la descripción del producto sin ningún filtro de dominio o marca. Usa scraping de Bing Images.
+
+**⚠ ADVERTENCIA:** Este método es impreciso y puede devolver imágenes que no coinciden exactamente con el producto. Requiere revisión manual obligatoria.
+
+**Qué hace:**
+- Lee un Excel filtrado de productos nuevos
+- Usa la descripción completa (nombre) como query de búsqueda
+- Busca en Bing Images sin filtros de dominio
+- Descarga la imagen encontrada y la convierte a JPG
+- Guarda las imágenes en un directorio temporal para evaluación manual
+
+**Ventajas:**
+- No requiere configuración de marcas ni dominios
+- No requiere API keys
+- Funciona para cualquier producto
+
+**Desventajas:**
+- Impreciso: puede devolver imágenes incorrectas
+- Requiere revisión manual obligatoria
+- Bing puede bloquear solicitudes excesivas
+
+**Uso:**
+```bash
+# Buscar imágenes (simulación primero)
+python buscar_imagenes_descripcion.py --excel productos_nuevos.xlsx --salida imagenes_descripcion --dry-run
+
+# Buscar imágenes real
+python buscar_imagenes_descripcion.py --excel productos_nuevos.xlsx --salida imagenes_descripcion
+```
+
+**Archivos generados:**
+- `imagenes_descripcion/imagenes_descargadas.csv`: Lista de imágenes descargadas
+- `imagenes_descripcion/sin_resultado.csv`: Productos sin imagen encontrada
+- `imagenes_descripcion/<referencia>.jpg`: Imágenes descargadas (todas en JPG)
+
+---
+
+### 5. `buscar_imagenes_excel.py` — Buscar imágenes desde Excel (métodos tradicionales)
+
+Busca imágenes para productos nuevos a partir de un Excel filtrado.
+
+**Qué hace:**
+- Lee un Excel filtrado de productos nuevos (columnas: referencia, nombre, familia, area, codigo)
+- Busca la imagen adecuada usando:
+  - Primero: nombre/descripción del producto
+  - Luego: familia y código/referencia
+- Descarga la imagen encontrada y la nombra como `<referencia>.ext`
+- Guarda las imágenes en un directorio temporal para evaluación manual
+- Genera un CSV con la información de las imágenes descargadas
+
+**Métodos de búsqueda:**
+- Para droguería/perfumería: APIs gratuitas de WooCommerce/WordPress (gratuito pero limitado)
+- Para pinturas: servidor de Titan (gratuito)
+- Google Custom Search API (más preciso, requiere credenciales - 100 consultas/día gratis)
+
+**Nota importante:** El scraping de motores de búsqueda (Google/Bing) no es preciso para productos específicos y puede devolver imágenes incorrectas. Para obtener resultados precisos, se recomienda usar Google Custom Search API.
+
+**Requisitos del Excel:**
+- Columnas requeridas: `referencia`, `nombre`
+- Columnas opcionales: `familia`, `area`, `codigo`
+- Los nombres de columnas se normalizan a minúsculas automáticamente
+
+**Uso:**
+```bash
+# Instalar dependencias (solo la primera vez)
+pip install --user -r requirements.txt
+
+# Buscar imágenes (simulación primero)
+python buscar_imagenes_excel.py --excel productos_nuevos.xlsx --salida imagenes_temp --dry-run
+
+# Buscar imágenes real (100% gratuito)
+python buscar_imagenes_excel.py --excel productos_nuevos.xlsx --salida imagenes_temp
+```
+
+**Archivos generados:**
+- `imagenes_temp/imagenes_descargadas.csv`: Lista de imágenes descargadas
+- `imagenes_temp/sin_resultado.csv`: Productos sin imagen encontrada
+- `imagenes_temp/<referencia>.ext`: Imágenes descargadas
+
+### 2. `subir_imagenes_validadas.py` — Subir imágenes validadas a Drive
+
+Sube las imágenes evaluadas y validadas manualmente a Google Drive y actualiza
+la hoja de Google Sheet con el ID de Drive correspondiente.
+
+**Qué hace:**
+- Lee el CSV de imágenes descargadas (generado por `buscar_imagenes_excel.py`)
+- Toma las imágenes del directorio temporal que el usuario ha revisado manualmente
+- Sube cada imagen validada al directorio Drive de imágenes de productos
+- Actualiza la hoja "Productos" del Google Sheet con:
+  - `imagen_drive_id`: ID del fichero subido a Drive
+  - `fecha_actualizacion_imagen`: fecha/hora actual
+  - `imagen_validada`: fecha/hora actual
+
+**Requisitos:**
+- Tener `credentials.json` configurado (ver sección sincronizar_drive_sheet.py)
+- El directorio temporal debe contener solo las imágenes validadas (elimina las que no sirvan)
+- El CSV `imagenes_descargadas.csv` debe estar presente
+
+**Uso:**
+```bash
+# 1) Revisa manualmente las imágenes en imagenes_temp/
+#    Elimina las que no sean adecuadas
+
+# 2) Simulación: ver qué subiría sin tocar nada real
+python subir_imagenes_validadas.py --directorio imagenes_temp --csv imagenes_temp/imagenes_descargadas.csv --dry-run
+
+# 3) Subir imágenes validadas (primero con pocos para probar)
+python subir_imagenes_validadas.py --directorio imagenes_temp --csv imagenes_temp/imagenes_descargadas.csv --limite 5
+
+# 4) Si todo va bien, subir todas
+python subir_imagenes_validadas.py --directorio imagenes_temp --csv imagenes_temp/imagenes_descargadas.csv
+```
+
+**Archivos generados:**
+- `imagenes_temp/fallos_sincronizacion.csv`: Lista de productos que fallaron (para reintentar)
+
 ## 1. `normalizar.py`
 
 Módulo de normalización de nombres de producto (quita puntuación, expande
