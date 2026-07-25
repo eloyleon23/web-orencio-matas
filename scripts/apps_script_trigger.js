@@ -391,8 +391,36 @@ function esMarcaTalleres_(texto) {
   return REGEX_RM_TALLERES_.test(txt);
 }
 
+function quitarAcentos_(texto) {
+  return (texto || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// Fragmentos del nombre de Familia (tal como viene del CRM) que indican
+// Talleres aunque el nombre del producto en sí no mencione ninguna marca
+// de proveedor — ej. "ABRASIVOS FLEXIBLES SCOTCH BRITE" o "ACABADO DE
+// VEHICULOS" no dicen "zaphiro" en ningún sitio, pero son inequívocamente
+// de Talleres. Es una lista abierta por naturaleza (el CRM puede traer
+// familias nuevas en cualquier sincronización) — se amplía según se
+// detecten más casos.
+const FRAGMENTOS_FAMILIA_TALLERES_ = [
+  'abrasiv',                              // ABRASIVOS, ABRASIVOS FLEXIBLES SCOTCH BRITE...
+  'scotch brite', 'scotch-brite',
+  'acabado de vehiculo', 'acabados de vehiculo',
+  'endurecedor',                          // ENDURECEDORES Y ADITIVOS
+  'diluyente',                            // DILUYENTES Y ADITIVOS AJUSTE
+  'pintura de terminacion', 'pinturas de terminacion',
+  'catalizador',
+  'masilla poliester', 'masillas poliester',
+  'aparejo',
+];
+
+function familiaEsTalleres_(familia) {
+  const txt = quitarAcentos_(familia).toLowerCase();
+  return FRAGMENTOS_FAMILIA_TALLERES_.some(f => txt.includes(f));
+}
+
 function inferirArea_(nombre, familia) {
-  if (esMarcaTalleres_(nombre) || esMarcaTalleres_(familia)) return 'talleres';
+  if (esMarcaTalleres_(nombre) || esMarcaTalleres_(familia) || familiaEsTalleres_(familia)) return 'talleres';
 
   const txt = (nombre + ' ' + familia).toLowerCase();
 
@@ -556,7 +584,7 @@ function reevaluarAreasProductos() {
     const areaActual = (columnaArea[i] || '').toString().trim().toLowerCase();
 
     let areaNueva;
-    if (esMarcaTalleres_(nombre) || esMarcaTalleres_(tipologia)) {
+    if (esMarcaTalleres_(nombre) || esMarcaTalleres_(tipologia) || familiaEsTalleres_(tipologia)) {
       areaNueva = 'talleres';
       if (areaNueva !== areaActual) porMarca++;
     } else if (tipologia && mapaFamiliaArea[tipologia]) {
