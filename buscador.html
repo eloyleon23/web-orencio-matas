@@ -3552,6 +3552,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Convierte "750 ml" / "4 L" / "5 kg" a un número comparable (en ml o gr)
     // solo para ordenar los formatos de menor a mayor.
     function valorFormatoEnMl(fmt) {
+        if (!fmt) return 0; // producto sin formato reconocible en el nombre (ver formatoDeProducto)
         const m = fmt.match(/([\d.]+)\s*(ml|L|kg|gr|g)/i);
         if (!m) return 0;
         const v = parseFloat(m[1]);
