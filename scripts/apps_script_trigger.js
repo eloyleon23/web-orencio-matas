@@ -14,6 +14,7 @@ function onOpen() {
     .addItem('➕ Añadir / Editar producto', 'mostrarFormularioProducto')
     .addSeparator()
     .addItem('📥 Sincronizar RegistroProductos → Productos', 'sincronizarRegistroProductos')
+    .addItem('📧 Revisar correo de listado CRM ahora', 'revisarCorreoListadoProductosManual')
     .addItem('� Actualizar precios de productos', 'actualizarPreciosProductos')
     .addItem('�🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
@@ -2990,7 +2991,7 @@ function revisarCorreoListadoProductos() {
 
   if (hilos.length === 0) {
     console.log('No hay correos nuevos de listado de productos del CRM.');
-    return;
+    return { huboCorreo: false };
   }
 
   let etiqueta = GmailApp.getUserLabelByName(CORREO_CRM_ETIQUETA);
@@ -3008,21 +3009,50 @@ function revisarCorreoListadoProductos() {
   const excel = adjuntos.find(a => /\.xlsx?$/i.test(a.getName()));
 
   if (!excel) {
-    console.error('Correo del CRM sin adjunto Excel reconocible:', ultimoMensaje.getSubject(), ultimoMensaje.getDate());
-    enviarResumenSincronizacionCRM_({
-      error: 'El correo del CRM ("' + ultimoMensaje.getSubject() + '", ' + ultimoMensaje.getDate() +
-        ') no traía ningún adjunto .xlsx/.xls reconocible.'
-    });
-    return;
+    const mensajeError = 'El correo del CRM ("' + ultimoMensaje.getSubject() + '", ' + ultimoMensaje.getDate() +
+      ') no traía ningún adjunto .xlsx/.xls reconocible.';
+    console.error(mensajeError);
+    enviarResumenSincronizacionCRM_({ error: mensajeError });
+    return { huboCorreo: true, exito: false, mensaje: mensajeError };
   }
 
   try {
     const resultado = procesarListadoProductosExcel_(excel);
     enviarResumenSincronizacionCRM_(resultado);
+    return { huboCorreo: true, exito: true, resultado: resultado };
   } catch (err) {
     console.error('Error procesando el listado de productos del CRM:', err);
     enviarResumenSincronizacionCRM_({ error: err.message });
+    return { huboCorreo: true, exito: false, mensaje: err.message };
   }
+}
+
+// Versión pensada para lanzarse desde el menú de la Sheet — hace
+// exactamente lo mismo que el disparador automático (revisa el correo del
+// CRM al momento, sin esperar), pero además muestra un aviso en pantalla
+// con el resultado, ya que al ejecutarlo a mano no siempre apetece ir a
+// mirar el correo para saber si ha hecho algo. El correo de resumen se
+// sigue enviando igual en cualquier caso.
+function revisarCorreoListadoProductosManual() {
+  const ui = SpreadsheetApp.getUi();
+  const resultado = revisarCorreoListadoProductos();
+
+  if (!resultado.huboCorreo) {
+    ui.alert('Sin novedades', 'No se ha encontrado ningún correo nuevo del CRM sin procesar.', ui.ButtonSet.OK);
+    return;
+  }
+
+  if (!resultado.exito) {
+    ui.alert('Sincronización con problemas', 'Se encontró un correo del CRM, pero no se pudo sincronizar:\n\n' +
+      resultado.mensaje + '\n\nTambién se ha enviado un correo con este detalle a ' + CORREO_RESUMEN_DESTINO + '.', ui.ButtonSet.OK);
+    return;
+  }
+
+  const r = resultado.resultado;
+  ui.alert('Sincronización completada',
+    `Nuevos: ${r.nuevos} | Actualizados: ${r.actualizados} | Saltados: ${r.saltados} | Errores: ${r.errores}\n\n` +
+    'Resumen completo enviado a ' + CORREO_RESUMEN_DESTINO + '.',
+    ui.ButtonSet.OK);
 }
 
 // Convierte el Excel adjunto en una Sheet temporal para poder leerlo,
