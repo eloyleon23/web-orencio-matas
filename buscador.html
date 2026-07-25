@@ -1963,6 +1963,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <input type="checkbox" id="f-imagenes-sin-validar">
                     <span><i class="fa-solid fa-circle-xmark"></i> Solo imágenes sin validar</span>
                 </label>
+                <label class="check-imagen-sin-validar">
+                    <input type="checkbox" id="f-productos-sin-imagen">
+                    <span><i class="fa-solid fa-image-slash"></i> Productos sin imagen</span>
+                </label>
             </div>
         </div>
 
@@ -2184,6 +2188,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button id="modal-actualizar-imagen-submit" disabled>
                 <i class="fa-solid fa-upload"></i> Actualizar imagen
             </button>
+
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center;">
+                <p style="font-size: 0.82rem; color: var(--muted); margin: 0 0 10px 0;">¿La foto actual no es correcta y no tienes una mejor a mano?</p>
+                <button type="button" id="modal-actualizar-imagen-sin-imagen" style="background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; padding: 10px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-image-slash"></i> Marcar como sin imagen disponible
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -2209,6 +2220,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
             <button id="modal-confirmar-validacion-confirmar" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
                 Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para marcar un producto como sin imagen disponible -->
+<div class="modal-overlay" id="modal-confirmar-sin-imagen-overlay" style="z-index: 2100;">
+    <div class="modal-producto-box" id="modal-confirmar-sin-imagen-box" style="max-width: 400px;">
+        <button class="modal-producto-cerrar" id="modal-confirmar-sin-imagen-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 style="text-align: center; margin-bottom: 16px;">¿Marcar sin imagen disponible?</h3>
+        <p style="text-align: center; color: #6b7280; margin-bottom: 24px;">
+            Se quitará la foto actual del producto y, hasta que se le añada una nueva, se mostrará el logo de la empresa de fondo en su lugar.
+        </p>
+        <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+            <p style="margin: 0 0 8px 0; font-size: 0.85rem; color: #6b7280;">Producto:</p>
+            <p id="modal-confirmar-sin-imagen-nombre" style="margin: 0 0 4px 0; font-weight: 600; color: #1f2937;"></p>
+            <p id="modal-confirmar-sin-imagen-ref" style="margin: 0; font-size: 0.85rem; color: #9ca3af;"></p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button id="modal-confirmar-sin-imagen-cancelar" style="flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
+                Cancelar
+            </button>
+            <button id="modal-confirmar-sin-imagen-confirmar" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                Sí, marcar sin imagen
             </button>
         </div>
     </div>
@@ -2284,6 +2321,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         Besa:     './assets/proveedores/besa_logo_recortado.png',
     };
 
+    // Logo de la propia empresa, usado como fondo difuminado de respaldo
+    // cuando un producto no tiene ni foto propia ni (si es de Talleres)
+    // logo de fabricante — así ningún producto se queda con el simple
+    // texto plano "Sin imagen" en grid/detalle, sea del área que sea.
+    const LOGO_EMPRESA = './assets/logos/logo_transparente.png';
+
     // Cuando un producto de Talleres no tiene foto propia, se usa esta
     // imagen genérica de marca en su lugar (tratada exactamente igual que
     // una foto real: mismo badge pequeño de fabricante en la esquina, etc.)
@@ -2303,20 +2346,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return `<span class="badge-fabricante-logo"><img src="${src}" alt="${escapeHtml(p.fabricante)}" loading="lazy"></span>`;
     }
 
-    // Cuando un producto de Talleres NO tiene foto propia, en vez del
-    // simple texto "Sin imagen" se muestra el logo grande y difuminado del
-    // fabricante de fondo, con el nombre del producto superpuesto y
-    // centrado — mucho más reconocible e informativo que un hueco vacío.
-    // Se usa tanto en la tarjeta del grid como en el modal de detalle.
+    // Cuando un producto NO tiene foto propia, en vez del simple texto
+    // "Sin imagen" se muestra un logo grande y difuminado de fondo, con el
+    // nombre del producto superpuesto y centrado — mucho más reconocible
+    // e informativo que un hueco vacío. Para Talleres, el logo del propio
+    // fabricante (si se conoce); para cualquier otro caso (droguería,
+    // perfumería, pinturas, o Talleres sin logo de fabricante conocido),
+    // el logo de la propia empresa. Se usa tanto en la tarjeta del grid
+    // como en el modal de detalle.
     function sinImagenFabricanteHtml(p, variante) {
-        const src = (p.area === 'talleres' && p.fabricante) ? LOGOS_FABRICANTE[p.fabricante] : null;
-        if (!src) {
-            return `<span class="producto-sin-img">Sin imagen</span>`;
-        }
+        const src = (p.area === 'talleres' && p.fabricante && LOGOS_FABRICANTE[p.fabricante])
+            ? LOGOS_FABRICANTE[p.fabricante]
+            : LOGO_EMPRESA;
+        const alt = (p.area === 'talleres' && p.fabricante && LOGOS_FABRICANTE[p.fabricante]) ? p.fabricante : 'Orencio Matas y Hermanos';
         const claseTamano = variante === 'modal' ? 'sin-imagen-fabricante--modal' : '';
         return `
             <div class="sin-imagen-fabricante ${claseTamano}">
-                <img class="sin-imagen-fabricante-logo" src="${src}" alt="${escapeHtml(p.fabricante)}" loading="lazy">
+                <img class="sin-imagen-fabricante-logo" src="${src}" alt="${escapeHtml(alt)}" loading="lazy">
                 <span class="sin-imagen-fabricante-nombre">${escapeHtml(p.nombre)}</span>
             </div>`;
     }
@@ -2337,22 +2383,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     window.manejarErrorImagenProducto = manejarErrorImagenProducto;
 
     // Rellena y muestra el bloque "sin imagen" del modal de detalle: logo
-    // grande y difuminado del fabricante con el nombre del producto
-    // superpuesto (o simplemente "Sin imagen" si el producto no es de un
-    // fabricante con logo conocido, ej. droguería/perfumería/pinturas).
+    // grande y difuminado (del fabricante en Talleres si se conoce, o de
+    // la propia empresa en cualquier otro caso) con el nombre del
+    // producto superpuesto.
     function mostrarSinImagenModal(p) {
         $('modal-producto-img').style.display = 'none';
         const cont = $('modal-producto-sin-imagen');
-        const src = (p.area === 'talleres' && p.fabricante) ? LOGOS_FABRICANTE[p.fabricante] : null;
-        if (src) {
-            cont.querySelector('.sin-imagen-fabricante-logo').src = src;
-            cont.querySelector('.sin-imagen-fabricante-logo').alt = p.fabricante;
-            cont.querySelector('.sin-imagen-fabricante-logo').style.display = '';
-            cont.querySelector('.sin-imagen-fabricante-nombre').textContent = p.nombre;
-        } else {
-            cont.querySelector('.sin-imagen-fabricante-logo').style.display = 'none';
-            cont.querySelector('.sin-imagen-fabricante-nombre').textContent = 'Sin imagen';
-        }
+        const src = (p.area === 'talleres' && p.fabricante && LOGOS_FABRICANTE[p.fabricante])
+            ? LOGOS_FABRICANTE[p.fabricante]
+            : LOGO_EMPRESA;
+        const alt = (p.area === 'talleres' && p.fabricante && LOGOS_FABRICANTE[p.fabricante]) ? p.fabricante : 'Orencio Matas y Hermanos';
+        cont.querySelector('.sin-imagen-fabricante-logo').src = src;
+        cont.querySelector('.sin-imagen-fabricante-logo').alt = alt;
+        cont.querySelector('.sin-imagen-fabricante-logo').style.display = '';
+        cont.querySelector('.sin-imagen-fabricante-nombre').textContent = p.nombre;
         cont.style.display = 'flex';
     }
 
@@ -2905,6 +2949,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('grupo-gestion-imagenes').style.display = 'block';
             $('f-imagenes-validadas').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
             $('f-imagenes-sin-validar').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+            $('f-productos-sin-imagen').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
             // Filtro independiente (fuera del panel de gestión de imágenes,
             // pero con el mismo flag de fase de desarrollo)
             $('grupo-solo-baja').style.display = 'block';
@@ -3628,6 +3673,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-oferta').checked = false;
         $('f-imagenes-validadas').checked = false;
         $('f-imagenes-sin-validar').checked = false;
+        $('f-productos-sin-imagen').checked = false;
         $('f-solo-baja').checked = false;
         renderFabricanteTaller(); // Limpiar/ocultar fabricante
         renderFamilias();
@@ -3715,6 +3761,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const soloOferta = $('f-oferta').checked;
         const soloImagenesValidadas = $('f-imagenes-validadas').checked;
         const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
+        const soloProductosSinImagen = $('f-productos-sin-imagen') ? $('f-productos-sin-imagen').checked : false;
         const soloDadosBaja = $('f-solo-baja') ? $('f-solo-baja').checked : false;
         const acabadosSel = acabadosSeleccionados();
         const formatosSel = formatosSeleccionados();
@@ -3752,6 +3799,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (soloOferta && !p.oferta) return false;
             if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
             if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
+            if (soloProductosSinImagen && p.img) return false;
 
             // Filtros de pinturas derivados del nombre (acabado / formato)
             if (acabadosSel.length) {
@@ -4811,6 +4859,75 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('modal-actualizar-imagen-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'modal-actualizar-imagen-overlay') cerrarModalActualizarImagen();
     });
+
+    // Marcar producto sin imagen disponible — pide confirmación (sencilla,
+    // no doble como en dar de baja: es una acción reversible y de menor
+    // impacto, solo afecta a cómo se muestra la foto del producto).
+    $('modal-actualizar-imagen-sin-imagen').addEventListener('click', () => {
+        if (!productoActual) return;
+        const producto = productoActual; // capturar antes de cerrar el modal de subida
+        $('modal-confirmar-sin-imagen-nombre').textContent = producto.nombre;
+        $('modal-confirmar-sin-imagen-ref').textContent = 'Ref: ' + producto.ref;
+        $('modal-confirmar-sin-imagen-overlay').classList.add('activo');
+
+        $('modal-confirmar-sin-imagen-confirmar').onclick = () => {
+            $('modal-confirmar-sin-imagen-overlay').classList.remove('activo');
+            cerrarModalActualizarImagen();
+            marcarProductoSinImagen(producto);
+        };
+    });
+    $('modal-confirmar-sin-imagen-cerrar').addEventListener('click', () => {
+        $('modal-confirmar-sin-imagen-overlay').classList.remove('activo');
+    });
+    $('modal-confirmar-sin-imagen-cancelar').addEventListener('click', () => {
+        $('modal-confirmar-sin-imagen-overlay').classList.remove('activo');
+    });
+    $('modal-confirmar-sin-imagen-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-confirmar-sin-imagen-overlay') {
+            $('modal-confirmar-sin-imagen-overlay').classList.remove('activo');
+        }
+    });
+
+    // Igual que las demás acciones instantáneas (validar/baja/reactivar):
+    // el Web App responde en modo no-cors (respuesta opaca), así que se
+    // asume éxito si el fetch no falla a nivel de red. Se limpia tanto
+    // p.img como cualquier _imgLocalOverride previo (por si se acaba de
+    // subir una foto en la misma sesión) para que urlImagenProducto()
+    // caiga directamente en el fondo difuminado del logo de la empresa.
+    function marcarProductoSinImagen(p) {
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            return;
+        }
+
+        mostrarToast('Marcando el producto sin imagen...');
+
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accion: 'marcar_sin_imagen', referencia: p.ref })
+        })
+        .then(() => {
+            p.img = '';
+            delete p._imgLocalOverride;
+            const idx = TODOS.findIndex(x => x.ref === p.ref);
+            if (idx !== -1) {
+                TODOS[idx].img = '';
+                delete TODOS[idx]._imgLocalOverride;
+            }
+
+            mostrarToast('✓ Producto marcado sin imagen.');
+            abrirModalProducto(p);
+            aplicarFiltros();
+            resincronizarVersionConocida();
+        })
+        .catch(err => {
+            console.error('Error al marcar el producto sin imagen:', err);
+            mostrarToast('Error al marcar el producto sin imagen. Verifica la conexión y los logs.', 'error');
+        });
+    }
 
     // Modal de confirmación de validación
     $('modal-confirmar-validacion-cerrar').addEventListener('click', () => {

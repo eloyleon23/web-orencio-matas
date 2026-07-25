@@ -2355,6 +2355,11 @@ function doPost(e) {
       return procesarReactivarProducto(data);
     }
 
+    if (accion === 'marcar_sin_imagen') {
+      console.log('Acción: marcar_sin_imagen');
+      return procesarMarcarSinImagen(data);
+    }
+
     console.log('Acción no reconocida:', accion);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Acción no reconocida: ' + accion }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -2729,6 +2734,70 @@ function procesarReactivarProducto(data) {
 
   } catch (err) {
     console.error('Error al reactivar el producto:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Marcar producto sin imagen disponible ──────────────────────────────────
+// Vacía imagen_drive_id (equivalente a "NO_TIENE_FOTO") y también
+// imagen_validada/fecha_actualizacion_imagen, ya que esos campos ya no
+// tienen sentido sin foto propia. El buscador cae automáticamente al
+// fondo difuminado del logo de la empresa (o del fabricante en Talleres)
+// en cuanto imagen_drive_id queda vacío.
+function procesarMarcarSinImagen(data) {
+  try {
+    console.log('procesarMarcarSinImagen iniciado');
+
+    const referencia = data.referencia;
+    if (!referencia) {
+      throw new Error('Falta la referencia del producto');
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia.toString().trim()) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    sheetProd.getRange(prodRowNum, PROD['imagen_drive_id'] + 1).setValue('NO_TIENE_FOTO');
+    if (PROD['imagen_validada'] !== undefined) sheetProd.getRange(prodRowNum, PROD['imagen_validada'] + 1).setValue('');
+    if (PROD['fecha_actualizacion_imagen'] !== undefined) sheetProd.getRange(prodRowNum, PROD['fecha_actualizacion_imagen'] + 1).setValue('');
+    console.log('imagen_drive_id marcada como NO_TIENE_FOTO');
+
+    // Vista rápida: parchear productos.json al instante
+    actualizarProductoEnJsonRemoto(referencia, { img: '', imagen_validada: '', fecha_actualizacion_imagen: '' });
+
+    // Disparar workflow de generar productos.json
+    console.log('Disparando workflow generar_productos_json');
+    dispararWorkflowProductosJson();
+
+    console.log('procesarMarcarSinImagen completado exitosamente');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Producto marcado sin imagen correctamente' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al marcar el producto sin imagen:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
