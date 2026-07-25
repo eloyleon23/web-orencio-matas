@@ -371,7 +371,29 @@ function formatPrecio_(num) {
   return num.toString().replace('.', ',');
 }
 
+// Marcas/proveedores de Talleres: su sola presencia en el nombre o la
+// familia basta para clasificar el producto como 'talleres', con
+// PRIORIDAD MÁXIMA sobre cualquier otra keyword y sobre lo que diga
+// FamiliaProductos — son marcas inequívocas de refinado/carrocería, y así
+// no depende de que la tabla de familias ya conozca la Familia que venga
+// del CRM para ese producto. Caso real que fallaba: "DISCO CON ESPONJA
+// ZAPHIRO SUPERFINO" se colaba en Droguería porque "zaphiro" no estaba en
+// ninguna lista de keywords en absoluto.
+const MARCAS_TALLERES_ = ['zaphiro', 'besa', 'glasurit', 'baslac'];
+// "R-M" (marca de BASF para repintado de automoción) se comprueba aparte,
+// con límites de palabra, para no confundirlo con "rm" como subcadena de
+// otra palabra o código de producto.
+const REGEX_RM_TALLERES_ = /\br[\s-]?m\b/i;
+
+function esMarcaTalleres_(texto) {
+  const txt = (texto || '').toLowerCase();
+  if (MARCAS_TALLERES_.some(m => txt.includes(m))) return true;
+  return REGEX_RM_TALLERES_.test(txt);
+}
+
 function inferirArea_(nombre, familia) {
+  if (esMarcaTalleres_(nombre) || esMarcaTalleres_(familia)) return 'talleres';
+
   const txt = (nombre + ' ' + familia).toLowerCase();
 
   // ── Pinturas: keywords + marcas conocidas ──────────────────────────────
@@ -458,7 +480,7 @@ function reevaluarAreasProductos() {
   if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
   if (!sheetFam)  { SpreadsheetApp.getUi().alert('No existe la hoja "FamiliaProductos".'); return; }
 
-  // ── Construir mapa Familia → Área desde FamiliaProductos ──────────────────
+  // ── Construir mapa Familia → Área desde FamiliaProductos (tabla curada a mano) ──
   const famHeaders = sheetFam.getRange(1, 1, 1, sheetFam.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim().toLowerCase());
   const colFamFamilia = famHeaders.indexOf('familia');
@@ -470,9 +492,7 @@ function reevaluarAreasProductos() {
   }
 
   const famLastRow = sheetFam.getLastRow();
-  if (famLastRow < 2) { SpreadsheetApp.getUi().alert('La hoja "FamiliaProductos" está vacía.'); return; }
-
-  const famData = sheetFam.getRange(2, 1, famLastRow - 1, sheetFam.getLastColumn()).getValues();
+  const famData = famLastRow >= 2 ? sheetFam.getRange(2, 1, famLastRow - 1, sheetFam.getLastColumn()).getValues() : [];
   const mapaFamiliaArea = {};
   famData.forEach(row => {
     const familia = row[colFamFamilia].toString().trim().toUpperCase();
@@ -480,63 +500,84 @@ function reevaluarAreasProductos() {
     if (familia && area) mapaFamiliaArea[familia] = area;
   });
 
-  if (Object.keys(mapaFamiliaArea).length === 0) {
-    SpreadsheetApp.getUi().alert('No se encontraron familias con área asignada en "FamiliaProductos".');
-    return;
-  }
-
-  // ── Recorrer Productos y actualizar área según su tipología/familia ──────
+  // ── Recorrer Productos y actualizar área ──────────────────────────────────
   const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
 
   const colTipologia = headers.indexOf('tipologia');
-  const colArea       = headers.indexOf('area');
+  const colArea      = headers.indexOf('area');
+  const colNombre    = headers.indexOf('nombre');
 
   if (colArea === -1)      { SpreadsheetApp.getUi().alert('No existe la columna "area" en Productos.'); return; }
   if (colTipologia === -1) { SpreadsheetApp.getUi().alert('No existe la columna "tipologia" en Productos.'); return; }
+  if (colNombre === -1)    { SpreadsheetApp.getUi().alert('No existe la columna "nombre" en Productos.'); return; }
 
   const lastRow = sheetProd.getLastRow();
   if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos.'); return; }
 
   const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
 
+  // ── Respaldo: "mayoría de área por familia" a partir de los datos YA
+  //    existentes — para familias que el CRM manda y que aún no están en
+  //    FamiliaProductos, en vez de dejarlas sin tocar sin más. Solo se usa
+  //    si hay una mayoría clara (≥60%) y una base mínima (≥5 productos),
+  //    para no dejarse llevar por un par de casos sueltos. La detección
+  //    de marca (esMarcaTalleres_) tiene prioridad sobre esto siempre —
+  //    así una mayoría "equivocada" en una familia no puede pisar un caso
+  //    inequívoco por marca.
+  const conteoAreaPorFamilia = {};
+  data.forEach(row => {
+    const tipologia = row[colTipologia].toString().trim().toUpperCase();
+    const area      = row[colArea].toString().trim().toLowerCase();
+    if (!tipologia || !area) return;
+    if (!conteoAreaPorFamilia[tipologia]) conteoAreaPorFamilia[tipologia] = {};
+    conteoAreaPorFamilia[tipologia][area] = (conteoAreaPorFamilia[tipologia][area] || 0) + 1;
+  });
+  const mapaMayoriaFamilia = {};
+  Object.entries(conteoAreaPorFamilia).forEach(([familia, conteo]) => {
+    const entradas = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+    const [areaGanadora, votos] = entradas[0];
+    const total = entradas.reduce((s, [, n]) => s + n, 0);
+    if (total >= 5 && votos / total >= 0.6) mapaMayoriaFamilia[familia] = areaGanadora;
+  });
+
   const cambios = {};
-  let totalCambios = 0, sinFamiliaCoincidente = 0;
-  const updates = [];
+  let totalCambios = 0, sinCoincidencia = 0, porMarca = 0, porMayoria = 0;
+  // Copia local de la columna área — se muta en memoria y se escribe TODA
+  // de una vez al final (una sola llamada a setValues en vez de una por
+  // fila cambiada, que con miles de productos agotaría el tiempo máximo
+  // de ejecución — misma lección aprendida con sincronizarRegistroProductos).
+  const columnaArea = data.map(row => row[colArea]);
 
   for (let i = 0; i < data.length; i++) {
     const row        = data[i];
     const tipologia  = row[colTipologia].toString().trim().toUpperCase();
-    const areaActual = row[colArea].toString().trim().toLowerCase();
+    const nombre     = row[colNombre] ? row[colNombre].toString() : '';
+    const areaActual = (columnaArea[i] || '').toString().trim().toLowerCase();
 
-    if (!tipologia) continue;
-
-    const areaNueva = mapaFamiliaArea[tipologia];
-
-    if (!areaNueva) {
-      sinFamiliaCoincidente++;
-      continue; // Familia no encontrada en FamiliaProductos — no tocar el área
+    let areaNueva;
+    if (esMarcaTalleres_(nombre) || esMarcaTalleres_(tipologia)) {
+      areaNueva = 'talleres';
+      if (areaNueva !== areaActual) porMarca++;
+    } else if (tipologia && mapaFamiliaArea[tipologia]) {
+      areaNueva = mapaFamiliaArea[tipologia];
+    } else if (tipologia && mapaMayoriaFamilia[tipologia]) {
+      areaNueva = mapaMayoriaFamilia[tipologia];
+      if (areaNueva !== areaActual) porMayoria++;
+    } else {
+      sinCoincidencia++;
+      continue;
     }
 
     if (areaNueva !== areaActual) {
-      updates.push({ row: i + 2, area: areaNueva });
+      columnaArea[i] = areaNueva;
       cambios[areaNueva] = (cambios[areaNueva] || 0) + 1;
       totalCambios++;
     }
-
-    if ((i + 1) % 1000 === 0) {
-      SpreadsheetApp.getActiveSpreadsheet()
-        .toast(`Analizando... ${i+1}/${data.length}`, '🔄 Reevaluando áreas', 5);
-    }
   }
 
-  // Aplicar cambios en lote
-  if (updates.length > 0) {
-    SpreadsheetApp.getActiveSpreadsheet()
-      .toast(`Aplicando ${updates.length} cambios...`, '🔄 Guardando', 5);
-    for (const u of updates) {
-      sheetProd.getRange(u.row, colArea + 1).setValue(u.area);
-    }
+  if (totalCambios > 0) {
+    sheetProd.getRange(2, colArea + 1, columnaArea.length, 1).setValues(columnaArea.map(v => [v]));
     SpreadsheetApp.flush();
   }
 
@@ -545,8 +586,8 @@ function reevaluarAreasProductos() {
     .join(' | ') || 'ninguno';
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    `✓ ${totalCambios} productos reclasificados (${resumenAreas})\n` +
-    `⚠ ${sinFamiliaCoincidente} sin familia coincidente en FamiliaProductos`,
+    `✓ ${totalCambios} reclasificados (${resumenAreas}) — por marca: ${porMarca}, por mayoría: ${porMayoria}\n` +
+    `⚠ ${sinCoincidencia} sin ninguna coincidencia (ni marca, ni FamiliaProductos, ni mayoría clara)`,
     '✓ Reevaluación completada', 12
   );
 }
