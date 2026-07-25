@@ -379,7 +379,17 @@ function formatPrecio_(num) {
 // del CRM para ese producto. Caso real que fallaba: "DISCO CON ESPONJA
 // ZAPHIRO SUPERFINO" se colaba en Droguería porque "zaphiro" no estaba en
 // ninguna lista de keywords en absoluto.
-const MARCAS_TALLERES_ = ['zaphiro', 'besa', 'glasurit', 'baslac'];
+const MARCAS_TALLERES_ = [
+  'zaphiro', 'besa', 'glasurit', 'baslac',
+  // Fabricantes de equipos profesionales de pintura/refinado (pistolas,
+  // filtros, depósitos, lijadoras/pulidoras) — encontrados en las familias
+  // "UTILES PINTURA" y "MAQUINAS Y DESPIECE DE MAQUINAS", donde se cuelan
+  // repuestos y accesorios de estas marcas sin ninguna otra señal de
+  // Talleres en el nombre.
+  'sata', 'sagola', 'devilbiss', 'iwata', 'rupes', 'festool',
+  // Marcas de productos de enmascarado/preparación para repintado
+  'colad', 'bossauto',
+];
 // "R-M" (marca de BASF para repintado de automoción) se comprueba aparte,
 // con límites de palabra, para no confundirlo con "rm" como subcadena de
 // otra palabra o código de producto.
@@ -406,6 +416,7 @@ const FRAGMENTOS_FAMILIA_TALLERES_ = [
   'abrasiv',                              // ABRASIVOS, ABRASIVOS FLEXIBLES SCOTCH BRITE...
   'scotch brite', 'scotch-brite',
   'acabado de vehiculo', 'acabados de vehiculo',
+  'enmascarado',                          // PRODUCTOS DE ENMASCARADO
   'endurecedor',                          // ENDURECEDORES Y ADITIVOS
   'diluyente',                            // DILUYENTES Y ADITIVOS AJUSTE
   'pintura de terminacion', 'pinturas de terminacion',
