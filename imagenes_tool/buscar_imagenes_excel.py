@@ -56,6 +56,32 @@ def cargar_mapa_marcas(ruta):
     return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
+def _tokens_significativos(texto):
+    return set(w for w in re.findall(r"[A-Z0-9]+", _sin_acentos(texto or "")) if len(w) > 2)
+
+
+def resultado_coincide_con_query(nombre_resultado, query, umbral=0.34):
+    """Compara el nombre del producto que devolvió la búsqueda del sitio
+    contra la query que se envió — para RECHAZAR resultados que la propia
+    web devolvió pero que en realidad no tienen nada que ver. Las
+    búsquedas de WooCommerce suelen ser laxas: si no hay coincidencia
+    exacta, muchas devuelven "lo más parecido que encuentran" en vez de
+    una lista vacía, y sin esta comprobación el script se lo creía sin
+    más — la causa más probable de que las imágenes encontradas no
+    tuvieran relación con el producto real.
+    Umbral 0.34 ≈ al menos 1 de cada 3 palabras de la query (sin contar
+    palabras de relleno) debe aparecer también en el nombre del
+    resultado."""
+    if not nombre_resultado:
+        return False
+    t_query = _tokens_significativos(query)
+    t_resultado = _tokens_significativos(nombre_resultado)
+    if not t_query:
+        return False
+    solapamiento = len(t_query & t_resultado) / len(t_query)
+    return solapamiento >= umbral
+
+
 def detectar_marca(nombre, mapa_marcas):
     """Detecta la marca del producto buscando en el nombre de forma más flexible."""
     if not nombre:
@@ -98,6 +124,9 @@ def _probar_store_api(dominio, query, sesion):
         return None, "store_api respuesta no es JSON"
     if not isinstance(items, list) or not items:
         return None, "store_api 200 pero 0 resultados"
+    nombre_resultado = items[0].get("name", "")
+    if not resultado_coincide_con_query(nombre_resultado, query):
+        return None, f"store_api encontró {nombre_resultado!r} pero no se parece a la query — descartado"
     imagenes = items[0].get("images") or []
     if not imagenes:
         return None, "store_api encontró producto pero sin imagen"
@@ -115,6 +144,9 @@ def _probar_wc_legacy_api(dominio, query, sesion):
         return None, "wc_legacy respuesta no es JSON"
     if not isinstance(items, list) or not items:
         return None, "wc_legacy 200 pero 0 resultados"
+    nombre_resultado = items[0].get("name", "")
+    if not resultado_coincide_con_query(nombre_resultado, query):
+        return None, f"wc_legacy encontró {nombre_resultado!r} pero no se parece a la query — descartado"
     imagenes = items[0].get("images") or []
     if not imagenes:
         return None, "wc_legacy encontró producto pero sin imagen"
@@ -132,6 +164,9 @@ def _probar_wp_search(dominio, query, sesion):
         return None, "wp_search respuesta no es JSON"
     if not isinstance(items, list) or not items:
         return None, "wp_search 200 pero 0 resultados"
+    nombre_resultado = items[0].get("title", "")
+    if not resultado_coincide_con_query(nombre_resultado, query):
+        return None, f"wp_search encontró {nombre_resultado!r} pero no se parece a la query — descartado"
     post_id = items[0].get("id")
     if not post_id:
         return None, "wp_search sin id de post"
@@ -173,66 +208,66 @@ def buscar_imagen_gratis(dominio, query, sesion):
 
 # ── Scraping directo de webs oficiales (fallback agresivo) ──
 def buscar_imagen_scraping(dominio, query, sesion):
-    """Busca imágenes directamente en la web oficial mediante scraping."""
+    """Busca imágenes directamente en la página de resultados de búsqueda
+    del sitio (mediante scraping, no API estructurada). Requiere que el
+    texto alt de la imagen coincida de verdad con la query (misma
+    comprobación que en los métodos de API) — antes se aceptaba con solo
+    que UNA de las 3 primeras palabras de la query apareciera como
+    subcadena en alt+src, lo que enganchaba con facilidad logos, iconos o
+    banners de la propia web (p.ej. el nombre de la marca aparece en el
+    logo de casi cualquier página del sitio). Se ha quitado también el
+    fallback de "si no hay nada en resultados, mirar la portada entera" —
+    rebuscar en TODAS las imágenes de la home es aún menos fiable que la
+    página de resultados, y era la vía más probable de acabar trayendo el
+    logo de la empresa en vez de una foto de producto."""
     try:
-        # Intentar búsqueda en el sitio
         search_url = f"https://{dominio}/"
         params = {"s": query}  # Parámetro típico de búsqueda en WordPress
-        
+
         resp = sesion.get(search_url, params=params, timeout=20, allow_redirects=True)
         if resp.status_code != 200:
             return None, f"scraping HTTP {resp.status_code}"
-        
+
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(resp.text, "html.parser")
-        
-        # Buscar imágenes en resultados de búsqueda
+
+        mejor_candidato = None
+        mejor_solapamiento = 0.0
+
         for img in soup.select("img"):
             src = img.get("src", "")
-            alt = img.get("alt", "").lower()
-            
-            # Verificar que sea una URL de imagen válida
-            if not src:
+            alt = img.get("alt", "")
+
+            if not src or not alt:
+                continue  # sin alt no hay forma fiable de validar relevancia — descartar, no arriesgar
+            if not any(src.lower().split("?")[0].endswith(ext) for ext in EXTENSIONES_VALIDAS):
                 continue
-            if not any(src.lower().endswith(ext) for ext in EXTENSIONES_VALIDAS):
+
+            t_query = _tokens_significativos(query)
+            t_alt = _tokens_significativos(alt)
+            if not t_query:
                 continue
-            
-            # Verificar que la imagen tenga alguna relevancia (alt text o filename)
-            img_text = (alt + src).lower()
-            query_lower = query.lower()
-            
-            # Si la query aparece en el alt o filename, es probable que sea relevante
-            if any(word in img_text for word in query_lower.split()[:3]):
-                # Convertir URL relativa a absoluta
+            solapamiento = len(t_query & t_alt) / len(t_query)
+
+            # Igual que en los métodos de API: al menos ~1/3 de las
+            # palabras significativas de la query deben aparecer en el
+            # alt de la imagen para considerarla relevante.
+            if solapamiento >= 0.34 and solapamiento > mejor_solapamiento:
+                mejor_solapamiento = solapamiento
                 if src.startswith("//"):
-                    src = "https:" + src
+                    src_abs = "https:" + src
                 elif src.startswith("/"):
-                    src = f"https://{dominio}" + src
+                    src_abs = f"https://{dominio}" + src
                 elif not src.startswith("http"):
-                    src = f"https://{dominio}/{src.lstrip('/')}"
-                
-                return src, f"Scraping directo (alt: {alt[:30]})"
-        
-        # Si no encontró en búsqueda, intentar en la página principal
-        for img in soup.select("img"):
-            src = img.get("src", "")
-            if not src:
-                continue
-            if not any(src.lower().endswith(ext) for ext in EXTENSIONES_VALIDAS):
-                continue
-            
-            # Priorizar imágenes con alt text que contenga palabras de la query
-            alt = img.get("alt", "").lower()
-            if any(word in alt for word in query.lower().split()[:2]):
-                if src.startswith("//"):
-                    src = "https:" + src
-                elif src.startswith("/"):
-                    src = f"https://{dominio}" + src
-                elif not src.startswith("http"):
-                    src = f"https://{dominio}/{src.lstrip('/')}"
-                return src, f"Scraping principal (alt: {alt[:30]})"
-        
-        return None, "scraping sin resultados"
+                    src_abs = f"https://{dominio}/{src.lstrip('/')}"
+                else:
+                    src_abs = src
+                mejor_candidato = (src_abs, f"Scraping resultados (alt: {alt[:40]!r}, solapamiento {solapamiento:.2f})")
+
+        if mejor_candidato:
+            return mejor_candidato
+
+        return None, "scraping sin ninguna imagen con alt suficientemente relevante"
     except Exception as e:
         return None, f"scraping error: {str(e)[:100]}"
 
@@ -304,20 +339,26 @@ def buscar_imagen_titan(nombre_producto, sesion):
             nombre_img = href.split("/")[-1]
             url_img = BASE_URL + href
             tokens_img = set(normalizar_titan(os.path.splitext(nombre_img)[0]).split())
-            
-            # Calcular similitud simple
+
+            # Solapamiento como proporción de los tokens del producto, no
+            # un recuento absoluto — con solo "score > 0" bastaba con
+            # coincidir en una sola palabra genérica (ej. un color como
+            # "blanco") para aceptar el archivo, aunque fuera de otro
+            # producto distinto.
             interseccion = tokens_producto & tokens_img
-            score = len(interseccion)
-            
-            if score > 0:
-                imagenes.append((score, url_img, nombre_img))
-    
+            if not tokens_producto:
+                continue
+            ratio = len(interseccion) / len(tokens_producto)
+
+            if ratio >= 0.34:
+                imagenes.append((ratio, len(interseccion), url_img, nombre_img))
+
     if imagenes:
-        # Devolver la con mayor score
-        imagenes.sort(reverse=True, key=lambda x: x[0])
-        return imagenes[0][1], f"Titan (score: {imagenes[0][0]})"
-    
-    return None, "Sin resultados en servidor Titan"
+        # Devolver la de mayor proporción de solapamiento (y, en empate, mayor nº de tokens)
+        imagenes.sort(reverse=True, key=lambda x: (x[0], x[1]))
+        return imagenes[0][2], f"Titan (solapamiento: {imagenes[0][0]:.2f}, tokens: {imagenes[0][1]})"
+
+    return None, "Sin resultados en servidor Titan con solapamiento suficiente"
 
 
 # ── Construcción de queries de búsqueda ──
@@ -353,18 +394,16 @@ def construir_queries(producto, marca=None):
     # 4. Nombre + familia
     if nombre and familia:
         queries.append(f"{nombre_norm} {familia}")
-    
-    # 5. Familia + código
-    if familia and codigo:
-        queries.append(f"{familia} {codigo}")
-    
-    # 6. Solo código
-    if codigo:
-        queries.append(codigo)
-    
-    # 7. Solo referencia (último recurso)
-    if referencia:
-        queries.append(str(referencia))
+
+    # NOTA: se han quitado a propósito las queries "familia + código" y
+    # "solo código"/"solo referencia" que había aquí antes — tras el alias
+    # referencia→codigo (necesario porque el Excel real no trae una
+    # columna de código de fabricante separada), esas queries acababan
+    # siendo el EAN interno de Orencio Matas buscado tal cual. El buscador
+    # interno de una web de fabricante no indexa por EAN, así que esas
+    # queries no aportaban nada — como mucho, arriesgaban traer un
+    # resultado irrelevante que words_solapan_query() habría tenido que
+    # descartar de todas formas.
     
     # Eliminar duplicados y queries vacías
     seen = set()
