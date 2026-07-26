@@ -4037,7 +4037,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         const ofertaBadge = p.oferta ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
 
-        let precioHtml = '<p class="producto-sin-precio">Consultar precio</p>';
+        let precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         if (p.mostrar_precio) {
             const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2).replace('.', ',') : null;
             const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2).replace('.', ',') : null;
@@ -4127,7 +4127,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 if (sin) precioHtml += `<div class="modal-producto-precio-sin">${sin} € sin IVA</div>`;
             }
         } else {
-            precioHtml = '<p class="producto-sin-precio">Consultar precio</p>';
+            precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         }
         $('modal-producto-precio').innerHTML = precioHtml;
 
