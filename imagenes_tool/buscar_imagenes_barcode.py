@@ -69,16 +69,34 @@ def es_ean_valido(referencia):
 
 def buscar_imagen_por_ean(ean, sesion):
     """Prueba las 3 bases de datos en orden. Devuelve (url_imagen,
-    nombre_producto_encontrado, base_datos, motivo)."""
+    nombre_producto_encontrado, base_datos, motivo).
+
+    Ante un 429 (demasiadas peticiones), espera y reintenta una vez —
+    respetando la cabecera Retry-After si el servidor la manda, o 5s por
+    defecto si no. Sin esto, en cuanto empieza el limitado por ritmo,
+    todo lo que viene detrás falla en cadena aunque el producto sí esté
+    en la base de datos."""
     motivos = []
     for nombre_bd, url_plantilla in BASES_DATOS:
         url = url_plantilla.format(ean=ean)
-        try:
-            r = sesion.get(url, timeout=TIMEOUT)
-        except requests.exceptions.RequestException as e:
-            motivos.append(f"{nombre_bd}: error de red ({e})")
-            continue
 
+        for intento in range(2):  # 1 intento + 1 reintento si hay 429
+            try:
+                r = sesion.get(url, timeout=TIMEOUT)
+            except requests.exceptions.RequestException as e:
+                motivos.append(f"{nombre_bd}: error de red ({e})")
+                r = None
+                break
+
+            if r.status_code == 429 and intento == 0:
+                espera = int(r.headers.get("Retry-After", 5))
+                print(f"    [{nombre_bd}] límite de peticiones alcanzado, esperando {espera}s...")
+                time.sleep(espera)
+                continue
+            break
+
+        if r is None:
+            continue
         if r.status_code == 404:
             motivos.append(f"{nombre_bd}: no encontrado (404)")
             continue
@@ -116,8 +134,8 @@ def main():
     ap.add_argument("--excel", required=True, help="Excel de productos sin foto (ej. productos_nuevos.xlsx)")
     ap.add_argument("--salida", default="imagenes_barcode", help="Directorio de salida")
     ap.add_argument("--limite", type=int, default=None, help="Procesar solo los N primeros (para pruebas)")
-    ap.add_argument("--espera", type=float, default=0.3,
-                     help="Segundos de espera entre productos, por cortesía con las APIs gratuitas (por defecto 0.3)")
+    ap.add_argument("--espera", type=float, default=1.0,
+                     help="Segundos de espera entre productos, por cortesía con las APIs gratuitas (por defecto 1.0 — subido desde 0.3 tras detectar HTTP 429 en pruebas reales)")
     ap.add_argument("--dry-run", action="store_true", help="Muestra qué encontraría sin descargar nada")
     args = ap.parse_args()
 
