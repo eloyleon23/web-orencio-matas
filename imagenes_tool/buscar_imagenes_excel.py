@@ -40,7 +40,20 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from normalizar import normalizar_nombre, tokens_clave
 
 EXTENSIONES_VALIDAS = (".jpg", ".jpeg", ".png", ".webp")
-TIMEOUT = 12
+TIMEOUT = 6  # bajado de 12s: si un dominio no responde en 6s a una API sencilla, no merece la pena esperar más
+
+
+def dominio_no_responde(motivo):
+    """True si buscar_imagen_gratis() falló en TODOS los métodos probados
+    por error de red/timeout (dominio caído, DNS que no resuelve, conexión
+    que no responde) — a diferencia de "no encontrado", que sí significa
+    que el dominio respondió pero no tenía el producto. Sirve para
+    abandonar un dominio que no coopera en cuanto se detecta, en vez de
+    seguir insistiendo con las demás queries de texto contra el mismo
+    dominio muerto (causa real de quedarse colgado varios minutos en un
+    solo producto)."""
+    partes = motivo.split(" | ")
+    return len(partes) >= 1 and all("error de red" in p for p in partes)
 
 
 def _sin_acentos(t):
@@ -224,7 +237,7 @@ def buscar_imagen_scraping(dominio, query, sesion):
         search_url = f"https://{dominio}/"
         params = {"s": query}  # Parámetro típico de búsqueda en WordPress
 
-        resp = sesion.get(search_url, params=params, timeout=20, allow_redirects=True)
+        resp = sesion.get(search_url, params=params, timeout=TIMEOUT, allow_redirects=True)
         if resp.status_code != 200:
             return None, f"scraping HTTP {resp.status_code}"
 
@@ -285,7 +298,7 @@ def buscar_imagen_google_api(api_key, cx, query, sesion):
         "safe": "active",
     }
     try:
-        resp = sesion.get(API_URL, params=params, timeout=20)
+        resp = sesion.get(API_URL, params=params, timeout=TIMEOUT)
         if resp.status_code == 429:
             return None, "cuota diaria de la API agotada (429)"
         if resp.status_code == 403:
@@ -322,7 +335,7 @@ def buscar_imagen_titan(nombre_producto, sesion):
     tokens_producto = set(normalizar_titan(nombre_producto).split())
     
     try:
-        resp = sesion.get(BASE_URL, timeout=30)
+        resp = sesion.get(BASE_URL, timeout=10)
         resp.raise_for_status()
     except Exception as e:
         return None, f"Error accediendo a servidor Titan: {e}"
@@ -547,25 +560,37 @@ def main():
         # Estrategia de búsqueda según área
         if area == "pinturas":
             # Para pinturas, intentar servidor de Titan primero
+            titan_ok = True
             for query in queries:
+                if not titan_ok:
+                    break
                 url, motivo = buscar_imagen_titan(query, sesion)
                 if url:
                     url_imagen = url
                     metodo_usado = f"Titan: {motivo}"
                     break
-            
+                if motivo.startswith("Error accediendo a servidor Titan"):
+                    print(f"    [AVISO] Servidor Titan no responde, se abandona para este producto")
+                    titan_ok = False
+
             # Si no encuentra en Titan, intentar APIs gratuitas si hay marca
             if not url_imagen and marca:
                 dominio = mapa_marcas[marca]
+                dominio_ok = True
                 for query in queries:
+                    if not dominio_ok:
+                        break
                     url, metodo, motivo = buscar_imagen_gratis(dominio, query, sesion)
                     if url:
                         url_imagen = url
                         metodo_usado = f"Gratis ({metodo}): {motivo}"
                         break
-            
-            # Fallback: scraping directo si hay marca
-            if not url_imagen and marca:
+                    if dominio_no_responde(motivo):
+                        print(f"    [AVISO] {dominio} no responde, se abandona este dominio para este producto")
+                        dominio_ok = False
+
+            # Fallback: scraping directo si hay marca (y el dominio respondía)
+            if not url_imagen and marca and dominio_ok:
                 dominio = mapa_marcas[marca]
                 for query in queries[:2]:  # Solo primeras 2 queries para scraping
                     url, motivo = buscar_imagen_scraping(dominio, query, sesion)
@@ -575,17 +600,23 @@ def main():
                         break
         else:
             # Para droguería/perfumería, usar APIs gratuitas si hay marca
+            dominio_ok = True
             if marca:
                 dominio = mapa_marcas[marca]
                 for query in queries:
+                    if not dominio_ok:
+                        break
                     url, metodo, motivo = buscar_imagen_gratis(dominio, query, sesion)
                     if url:
                         url_imagen = url
                         metodo_usado = f"Gratis ({metodo}): {motivo}"
                         break
-            
-            # Fallback: scraping directo si hay marca
-            if not url_imagen and marca:
+                    if dominio_no_responde(motivo):
+                        print(f"    [AVISO] {dominio} no responde, se abandona este dominio para este producto")
+                        dominio_ok = False
+
+            # Fallback: scraping directo si hay marca (y el dominio respondía)
+            if not url_imagen and marca and dominio_ok:
                 dominio = mapa_marcas[marca]
                 for query in queries[:2]:  # Solo primeras 2 queries para scraping
                     url, motivo = buscar_imagen_scraping(dominio, query, sesion)
