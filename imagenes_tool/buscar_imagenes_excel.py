@@ -446,6 +446,8 @@ def main():
                      help="Simula el proceso sin descargar imágenes")
     ap.add_argument("--usar-google-api", action="store_true",
                      help="Usar Google Custom Search API para productos sin marca (requiere credenciales)")
+    ap.add_argument("--debug", action="store_true",
+                     help="Muestra el motivo detallado de cada intento fallido (qué método, qué código HTTP, etc.) — para diagnosticar por qué no encuentra nada")
     args = ap.parse_args()
     
     # Verificar que el Excel existe
@@ -556,7 +558,8 @@ def main():
         
         url_imagen = None
         metodo_usado = None
-        
+        motivos_debug = []  # guarda el motivo de cada intento, para --debug
+
         # Estrategia de búsqueda según área
         if area == "pinturas":
             # Para pinturas, intentar servidor de Titan primero
@@ -565,6 +568,7 @@ def main():
                 if not titan_ok:
                     break
                 url, motivo = buscar_imagen_titan(query, sesion)
+                motivos_debug.append(f"Titan [{query}]: {motivo}")
                 if url:
                     url_imagen = url
                     metodo_usado = f"Titan: {motivo}"
@@ -581,6 +585,7 @@ def main():
                     if not dominio_ok:
                         break
                     url, metodo, motivo = buscar_imagen_gratis(dominio, query, sesion)
+                    motivos_debug.append(f"Gratis {dominio} [{query}]: {motivo}")
                     if url:
                         url_imagen = url
                         metodo_usado = f"Gratis ({metodo}): {motivo}"
@@ -594,6 +599,7 @@ def main():
                 dominio = mapa_marcas[marca]
                 for query in queries[:2]:  # Solo primeras 2 queries para scraping
                     url, motivo = buscar_imagen_scraping(dominio, query, sesion)
+                    motivos_debug.append(f"Scraping {dominio} [{query}]: {motivo}")
                     if url:
                         url_imagen = url
                         metodo_usado = f"Scraping: {motivo}"
@@ -607,6 +613,7 @@ def main():
                     if not dominio_ok:
                         break
                     url, metodo, motivo = buscar_imagen_gratis(dominio, query, sesion)
+                    motivos_debug.append(f"Gratis {dominio} [{query}]: {motivo}")
                     if url:
                         url_imagen = url
                         metodo_usado = f"Gratis ({metodo}): {motivo}"
@@ -620,6 +627,7 @@ def main():
                 dominio = mapa_marcas[marca]
                 for query in queries[:2]:  # Solo primeras 2 queries para scraping
                     url, motivo = buscar_imagen_scraping(dominio, query, sesion)
+                    motivos_debug.append(f"Scraping {dominio} [{query}]: {motivo}")
                     if url:
                         url_imagen = url
                         metodo_usado = f"Scraping: {motivo}"
@@ -643,6 +651,11 @@ def main():
                 print(f"  → Encontrada: {metodo_usado}")
             else:
                 print(f"  → No encontrada")
+                if args.debug:
+                    if not marca:
+                        print(f"    [DEBUG] Sin marca detectada en el nombre/familia — no se intenta nada")
+                    for m in motivos_debug:
+                        print(f"    [DEBUG] {m}")
             continue
         
         if url_imagen:
@@ -695,12 +708,18 @@ def main():
                 })
                 print(f"  ✗ Error descargando: {e}")
         else:
+            motivo_final = " | ".join(motivos_debug) if motivos_debug else ("sin marca detectada" if not marca else "sin resultados")
             sin_resultado.append({
                 "referencia": referencia,
                 "nombre": nombre,
-                "motivo": "sin resultados"
+                "motivo": motivo_final
             })
             print(f"  ✗ Sin resultados")
+            if args.debug:
+                if not marca:
+                    print(f"    [DEBUG] Sin marca detectada en el nombre/familia — no se intenta nada")
+                for m in motivos_debug:
+                    print(f"    [DEBUG] {m}")
         
         time.sleep(0.3)  # Cortesía
     
