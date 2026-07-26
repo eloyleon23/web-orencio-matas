@@ -294,7 +294,7 @@ def buscar_imagen_google_api(api_key, cx, query, sesion):
         "cx": cx,
         "q": query,
         "searchType": "image",
-        "num": 1,
+        "num": 5,  # pedir varias para poder validar relevancia, no solo la primera
         "safe": "active",
     }
     try:
@@ -312,7 +312,18 @@ def buscar_imagen_google_api(api_key, cx, query, sesion):
         items = data.get("items", [])
         if not items:
             return None, "sin resultados"
-        return items[0].get("link"), "Google Search API OK"
+
+        # Mismo criterio que en los demás métodos: no aceptar el primer
+        # resultado a ciegas — Google Images puede devolver "lo más
+        # parecido" (otro producto, un banner, un resultado genérico) si
+        # no hay coincidencia exacta. Se exige que el título/snippet se
+        # parezca de verdad a la query antes de aceptarlo.
+        for item in items:
+            titulo = item.get("title", "") + " " + item.get("snippet", "")
+            if resultado_coincide_con_query(titulo, query):
+                return item.get("link"), f"Google Search API OK (título: {item.get('title', '')[:50]!r})"
+
+        return None, f"Google devolvió {len(items)} resultados pero ninguno se parece a la query — descartados"
     except Exception as e:
         return None, f"error: {e}"
 
@@ -637,6 +648,7 @@ def main():
         if not url_imagen and google_api_key and google_cx and args.usar_google_api:
             for query in queries[:1]:  # Solo la mejor query
                 url, motivo = buscar_imagen_google_api(google_api_key, google_cx, query, sesion)
+                motivos_debug.append(f"Google API [{query}]: {motivo}")
                 if url:
                     url_imagen = url
                     metodo_usado = f"Google API: {motivo}"
