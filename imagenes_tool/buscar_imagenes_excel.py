@@ -392,9 +392,14 @@ def buscar_imagen_google_api(api_key, cx, query, sesion):
 
 # ── Búsqueda en servidor de Titan (para pinturas) ──
 def buscar_imagen_titan(nombre_producto, sesion):
-    """Busca imágenes en el servidor de Titan para productos de pinturas."""
-    BASE_URL = "http://ficheros.industriastitan.es/titan/FOTOS%20ENVASES/"
-    
+    """Busca imágenes en el servidor de Titan para productos de pinturas.
+    Titan organiza las fotos en varias carpetas por línea de producto —
+    se listan todas las conocidas y se combinan las candidatas."""
+    CARPETAS = [
+        "http://ficheros.industriastitan.es/titan/FOTOS%20ENVASES/",
+        "http://ficheros.industriastitan.es/titan/FOTOS%20ENVASES/TITANPRO/",
+    ]
+
     # Normalizar nombre del producto para comparación
     def normalizar_titan(texto):
         if texto is None:
@@ -406,38 +411,46 @@ def buscar_imagen_titan(nombre_producto, sesion):
         return _sin_acentos(t).lower()
     
     tokens_producto = set(normalizar_titan(nombre_producto).split())
-    
-    try:
-        resp = sesion.get(BASE_URL, timeout=10)
-        resp.raise_for_status()
-    except Exception as e:
-        return None, f"Error accediendo a servidor Titan: {e}"
-    
-    from bs4 import BeautifulSoup
-    soup = BeautifulSoup(resp.text, "html.parser")
-    
+    if not tokens_producto:
+        return None, "Titan: nombre de producto vacío tras normalizar"
+
     imagenes = []
-    for a in soup.select("a[href]"):
-        href = a["href"]
-        if href.startswith("..") or href in ("/", "./"):
+    errores = []
+
+    for BASE_URL in CARPETAS:
+        try:
+            resp = sesion.get(BASE_URL, timeout=10)
+            resp.raise_for_status()
+        except Exception as e:
+            errores.append(f"{BASE_URL}: {e}")
             continue
-        if href.lower().endswith(EXTENSIONES_VALIDAS):
-            nombre_img = href.split("/")[-1]
-            url_img = BASE_URL + href
-            tokens_img = set(normalizar_titan(os.path.splitext(nombre_img)[0]).split())
 
-            # Solapamiento como proporción de los tokens del producto, no
-            # un recuento absoluto — con solo "score > 0" bastaba con
-            # coincidir en una sola palabra genérica (ej. un color como
-            # "blanco") para aceptar el archivo, aunque fuera de otro
-            # producto distinto.
-            interseccion = tokens_producto & tokens_img
-            if not tokens_producto:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        for a in soup.select("a[href]"):
+            href = a["href"]
+            if href.startswith("..") or href in ("/", "./"):
                 continue
-            ratio = len(interseccion) / len(tokens_producto)
+            if href.lower().endswith(EXTENSIONES_VALIDAS):
+                nombre_img = href.split("/")[-1]
+                url_img = BASE_URL + href
+                tokens_img = set(normalizar_titan(os.path.splitext(nombre_img)[0]).split())
 
-            if ratio >= 0.34:
-                imagenes.append((ratio, len(interseccion), url_img, nombre_img))
+                # Solapamiento como proporción de los tokens del producto, no
+                # un recuento absoluto — con solo "score > 0" bastaba con
+                # coincidir en una sola palabra genérica (ej. un color como
+                # "blanco") para aceptar el archivo, aunque fuera de otro
+                # producto distinto.
+                interseccion = tokens_producto & tokens_img
+                ratio = len(interseccion) / len(tokens_producto)
+
+                if ratio >= 0.34:
+                    imagenes.append((ratio, len(interseccion), url_img, nombre_img))
+
+    if not imagenes and errores and len(errores) == len(CARPETAS):
+        # Ninguna carpeta respondió — error de red real, no "sin resultados"
+        return None, f"Error accediendo a servidor Titan: {' | '.join(errores)}"
 
     if imagenes:
         # Devolver la de mayor proporción de solapamiento (y, en empate, mayor nº de tokens)
