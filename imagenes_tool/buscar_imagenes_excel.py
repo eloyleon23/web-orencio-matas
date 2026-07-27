@@ -587,7 +587,16 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
 
         soup = BeautifulSoup(resp.text, "html.parser")
         nuevos_en_pagina = 0
-        for img in soup.select("img"):
+        # Restringido a imágenes DENTRO de un enlace a una ficha de
+        # producto real (URL con id numérico + slug + .html, patrón
+        # típico de PrestaShop) — "img" a secas también cogía el logo de
+        # la tienda, iconos de pago (Bizum/tarjetas), el píxel de Google
+        # Tag Manager, etc., inflando el índice con basura que además
+        # podía ganarle la comparación de similitud al producto real.
+        for a in soup.select("a[href*='.html']"):
+            img = a.find("img")
+            if not img:
+                continue
             alt = (img.get("alt") or "").strip()
             src = img.get("src") or img.get("data-src") or ""
             if not alt or not src:
