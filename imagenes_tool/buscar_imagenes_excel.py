@@ -77,10 +77,36 @@ def cargar_mapa_marcas(ruta):
 # usuario, no es una marca ni un modelo).
 PALABRAS_DESCRIPTIVAS_GENERICAS = {"BIMAT", "BIMATERIA", "INOX", "INOXIDABLE"}
 
+# Algunos fabricantes usan el nombre del color en inglés como parte del
+# propio nombre comercial de la variante (ej. la línea Brillowax de
+# Thomil: "Brillowax Dark", "Brillowax Clear", "Brillowax Red"), mientras
+# que el CRM describe el producto en español ("...CERA PLASTICA...NEGRA").
+# Sin esto, "NEGRA" y "DARK" no se parecen en nada por texto aunque sea
+# la misma variante — se añade el equivalente en ambos idiomas a los
+# tokens para que el solapamiento los reconozca como lo mismo.
+SINONIMOS_COLOR = {
+    "NEGRA": "DARK", "NEGRO": "DARK",
+    "ROJA": "RED", "ROJO": "RED",
+    "INCOLORA": "CLEAR", "INCOLORO": "CLEAR", "TRANSPARENTE": "CLEAR",
+    "BLANCA": "WHITE", "BLANCO": "WHITE",
+    "AZUL": "BLUE",
+    "VERDE": "GREEN",
+    "AMARILLA": "YELLOW", "AMARILLO": "YELLOW",
+    "GRIS": "GREY",
+}
+SINONIMOS_COLOR_INVERSO = {v: k for k, v in SINONIMOS_COLOR.items()}
+
 
 def _tokens_significativos(texto):
-    return set(w for w in re.findall(r"[A-Z0-9]+", _sin_acentos(texto or ""))
-               if len(w) > 2 and w not in PALABRAS_DESCRIPTIVAS_GENERICAS)
+    tokens = set(w for w in re.findall(r"[A-Z0-9]+", _sin_acentos(texto or ""))
+                 if len(w) > 2 and w not in PALABRAS_DESCRIPTIVAS_GENERICAS)
+    extra = set()
+    for t in tokens:
+        if t in SINONIMOS_COLOR:
+            extra.add(SINONIMOS_COLOR[t])
+        elif t in SINONIMOS_COLOR_INVERSO:
+            extra.add(SINONIMOS_COLOR_INVERSO[t])
+    return tokens | extra
 
 
 def _extraer_tamano(texto):
@@ -501,7 +527,15 @@ def buscar_imagen_thomil(query, sesion):
     mejor_solapamiento = 0.0
     for nombre, tokens, url_img in indice:
         solapamiento = len(t_query & tokens) / len(t_query)
-        if solapamiento >= 0.34 and solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
+        # Umbral algo más laxo que el resto (0.30 en vez de 0.34): el
+        # catálogo de Thomil es de un solo proveedor de confianza (menor
+        # riesgo de casar con un producto de otra marca), y sus nombres
+        # de variante suelen ser cortos ("Brillowax Dark"), así que un
+        # nombre de línea de producto distintivo compartido (ej.
+        # "BRILLOWAX") ya es una señal fuerte aunque el resto de palabras
+        # de la query (tipo de producto, descripción) no aparezcan en el
+        # nombre corto de Thomil.
+        if solapamiento >= 0.30 and solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
             mejor_solapamiento = solapamiento
             mejor_nombre = nombre
             mejor_url = url_img
