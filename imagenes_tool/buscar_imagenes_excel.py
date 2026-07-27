@@ -602,27 +602,54 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
 
         soup = BeautifulSoup(resp.text, "html.parser")
         nuevos_en_pagina = 0
-        # Restringido a imágenes DENTRO de un enlace a una ficha de
-        # producto real — "img" a secas también cogía el logo de la
-        # tienda, iconos de pago (Bizum/tarjetas), el píxel de Google Tag
-        # Manager, etc., inflando el índice con basura que además podía
-        # ganarle la comparación de similitud al producto real.
+        # Restringido a enlaces a una ficha de producto real — "img" a
+        # secas también cogía el logo de la tienda, iconos de pago
+        # (Bizum/tarjetas), el píxel de Google Tag Manager, etc.,
+        # inflando el índice con basura que además podía ganarle la
+        # comparación de similitud al producto real.
         # ".html" es el patrón típico de PrestaShop; "/producto/" o
         # "/product/" el de WooCommerce (sin extensión .html).
+        vistos = set()  # evitar duplicados: la misma ficha suele aparecer 2 veces (imagen + título)
         for a in soup.select("a[href*='.html'], a[href*='/producto/'], a[href*='/product/']"):
-            img = a.find("img")
-            if not img:
+            href = a.get("href", "")
+            if href in vistos:
                 continue
+
+            # La imagen puede estar DENTRO del enlace (PrestaShop) o en un
+            # elemento hermano dentro del mismo contenedor de producto
+            # (algunos temas WooCommerce separan la miniatura del enlace
+            # del título en dos <a> distintos que comparten <li>/<div>
+            # padre) — se busca primero dentro, y si no hay nada, se
+            # amplía la búsqueda al contenedor padre (hasta 2 niveles).
+            img = a.find("img")
+            contenedor = a
+            intentos = 0
+            while img is None and contenedor.parent is not None and intentos < 2:
+                contenedor = contenedor.parent
+                img = contenedor.find("img")
+                intentos += 1
+            if img is None:
+                continue
+
             alt = (img.get("alt") or "").strip()
-            src = img.get("src") or img.get("data-src") or ""
+            # Varios plugins/temas de carga diferida usan nombres de
+            # atributo distintos para la URL real de la imagen.
+            src = (img.get("src") or img.get("data-src") or img.get("data-lazy-src")
+                   or img.get("data-original") or "")
             if not alt or not src:
                 continue
             if not any(src.lower().split("?")[0].endswith(ext) for ext in EXTENSIONES_VALIDAS):
                 continue
+
+            vistos.add(href)
             # Las miniaturas de listado en PrestaShop suelen llevar
             # "-home_default"/"-small_default" en la URL — pedir la
-            # versión grande cambiando el sufijo, si existe ese patrón
+            # versión grande cambiando el sufijo, si existe ese patrón.
+            # WooCommerce/WordPress suele llevar "-300x300" (ancho x
+            # alto) al final del nombre de archivo — quitarlo para pedir
+            # la imagen a tamaño completo.
             src_grande = re.sub(r"-(home|small|medium)_default", "-large_default", src)
+            src_grande = re.sub(r"-\d+x\d+(?=\.\w+$)", "", src_grande)
             indice.append((alt, _tokens_significativos(alt), src_grande))
             nuevos_en_pagina += 1
 
