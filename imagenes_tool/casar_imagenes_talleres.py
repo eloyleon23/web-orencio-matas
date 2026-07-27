@@ -57,6 +57,9 @@ PALABRAS_VACIAS = {
     "CAJA", "CAJAS", "UDS", "UD", "UNIDAD", "UNIDADES", "PACK", "BOTE", "FRASCO",
     "BOTELLA", "GARRAFA", "SACO", "BOLSA", "KIT", "JUEGO", "REF", "DE", "LA", "EL",
     "LOS", "LAS", "Y", "PARA", "CON", "SIN", "A", "X",
+    # Descriptivos genéricos de material/acabado (no discriminan producto):
+    # BIMAT/BIMATERIA = "mango bimaterial" (confirmado, no es marca ni modelo)
+    "BIMAT", "BIMATERIA", "INOX", "INOXIDABLE",
 }
 
 

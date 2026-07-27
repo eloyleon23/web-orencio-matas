@@ -69,8 +69,18 @@ def cargar_mapa_marcas(ruta):
     return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
+# Palabras descriptivas genéricas que aparecen en productos de fabricantes
+# y tipos muy distintos (material del mango, acabado...) sin aportar nada
+# para saber si es el MISMO producto — se excluyen de la comparación de
+# similitud para no inflar el solapamiento entre productos que solo
+# comparten esto. BIMAT/BIMATERIA = "mango bimaterial" (confirmado por el
+# usuario, no es una marca ni un modelo).
+PALABRAS_DESCRIPTIVAS_GENERICAS = {"BIMAT", "BIMATERIA", "INOX", "INOXIDABLE"}
+
+
 def _tokens_significativos(texto):
-    return set(w for w in re.findall(r"[A-Z0-9]+", _sin_acentos(texto or "")) if len(w) > 2)
+    return set(w for w in re.findall(r"[A-Z0-9]+", _sin_acentos(texto or ""))
+               if len(w) > 2 and w not in PALABRAS_DESCRIPTIVAS_GENERICAS)
 
 
 def resultado_coincide_con_query(nombre_resultado, query, umbral=0.34):
