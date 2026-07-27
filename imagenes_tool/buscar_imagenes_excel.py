@@ -733,6 +733,8 @@ def main():
                      help="Usar Google Custom Search API para productos sin marca (requiere credenciales)")
     ap.add_argument("--debug", action="store_true",
                      help="Muestra el motivo detallado de cada intento fallido (qué método, qué código HTTP, etc.) — para diagnosticar por qué no encuentra nada")
+    ap.add_argument("--marca", default=None,
+                     help="Filtrar solo productos de esta(s) marca(s), separadas por coma (ej. --marca THOMIL,FAIRY) — para probar un fix concreto sin lanzar todo el catálogo")
     args = ap.parse_args()
     
     # Verificar que el Excel existe
@@ -780,10 +782,8 @@ def main():
         
         # Convertir a lista de diccionarios
         productos = df.to_dict("records")
-        if args.limite:
-            productos = productos[:args.limite]
         
-        print(f"  {len(productos)} productos a procesar")
+        print(f"  {len(productos)} productos en el Excel")
     except Exception as e:
         print(f"[ERROR] Error leyendo el Excel: {e}")
         sys.exit(1)
@@ -791,6 +791,24 @@ def main():
     # Cargar mapa de marcas
     mapa_marcas = cargar_mapa_marcas(args.dominios)
     print(f"→ {len(mapa_marcas)} marcas con dominio configurado")
+
+    # Filtrar por marca(s) si se especifica --marca (para probar un fix
+    # concreto sin lanzar todo el catálogo) — se aplica ANTES de
+    # --limite, para que --limite corte sobre el subconjunto ya filtrado
+    if args.marca:
+        marcas_filtro = {m.strip().upper() for m in args.marca.split(",")}
+        antes = len(productos)
+        productos = [
+            p for p in productos
+            if (detectar_marca(p.get("nombre", ""), mapa_marcas) in marcas_filtro
+                or detectar_marca(p.get("familia", ""), mapa_marcas) in marcas_filtro)
+        ]
+        print(f"→ Filtrado --marca {sorted(marcas_filtro)}: {len(productos)}/{antes} productos")
+
+    if args.limite:
+        productos = productos[:args.limite]
+
+    print(f"  {len(productos)} productos a procesar")
     
     # Cargar credenciales de Google API si se va a usar
     google_api_key = google_cx = None
