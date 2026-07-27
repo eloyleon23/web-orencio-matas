@@ -560,7 +560,10 @@ def buscar_imagen_thomil(query, sesion):
 # prueban en orden hasta encontrar algo.
 RETAILERS_PRESTASHOP_MARCA = {
     "THOMIL": ["https://tiendasuministroslimpiadores.com/brand/10-thomil"],
-    "FAIRY": ["https://tiendasuministroslimpiadores.com/brand/32-fairy"],
+    "FAIRY": [
+        "https://tiendasuministroslimpiadores.com/brand/32-fairy",
+        "https://compralimpieza.com/4_fairy",
+    ],
 }
 _prestashop_indice_cache = {}
 
