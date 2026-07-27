@@ -778,7 +778,19 @@ def main():
         os.makedirs(args.salida, exist_ok=True)
     
     sesion = requests.Session()
-    sesion.headers["User-Agent"] = "Mozilla/5.0 (compatible; OrencioMatasImgBot/1.0)"
+    # Antes se identificaba como "OrencioMatasImgBot" — algunos sitios
+    # (confirmado con Thomil: HTTP 403 en TODO, incluida una simple carga
+    # de página) bloquean cualquier petición que se autoidentifique como
+    # bot, aunque sea de forma transparente, salvo que esté en su lista
+    # blanca (Googlebot, Bingbot...). Se usa un User-Agent de navegador
+    # estándar en su lugar, con cabeceras que un navegador real también
+    # envía — estas páginas son públicas, cualquier visitante con un
+    # navegador las vería igual.
+    sesion.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "es-ES,es;q=0.9",
+    })
     
     encontradas = []
     sin_resultado = []
