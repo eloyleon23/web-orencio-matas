@@ -83,6 +83,48 @@ def _tokens_significativos(texto):
                if len(w) > 2 and w not in PALABRAS_DESCRIPTIVAS_GENERICAS)
 
 
+def _extraer_tamano(texto):
+    """Extrae el tamaño/volumen/peso del texto, normalizado a mililitros
+    (volumen) o gramos (peso) — para poder exigir que dos productos sean
+    del MISMO tamaño, no solo del mismo tipo. 'FAIRY ULTRA 5 L' y
+    'Fairy 650 Ml' comparten marca y palabras, pero son envases
+    completamente distintos; sin esto, el solapamiento de texto los
+    aceptaba como si fueran el mismo producto. Devuelve (tipo, valor) o
+    None si no se detecta ningún tamaño en el texto."""
+    t = _sin_acentos(texto or "").lower().replace(",", ".")
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(mls?|lts?|litros?|l)\b", t)
+    if m:
+        valor = float(m.group(1))
+        unidad = m.group(2)
+        if unidad.startswith("l") or "litro" in unidad:
+            return ("volumen_ml", valor * 1000)
+        return ("volumen_ml", valor)
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(kgs?|kilos?|gr?s?|gramos?)\b", t)
+    if m:
+        valor = float(m.group(1))
+        unidad = m.group(2)
+        if unidad.startswith("k") or "kilo" in unidad:
+            return ("peso_g", valor * 1000)
+        return ("peso_g", valor)
+    return None
+
+
+def tamanos_compatibles(texto1, texto2, tolerancia=0.05):
+    """False solo si AMBOS textos tienen un tamaño detectado y no
+    coinciden (con un ±5% de margen por redondeos de conversión). Si no
+    se puede extraer tamaño de alguno de los dos, no se bloquea por esto
+    — no hay suficiente información para saber si coincide o no."""
+    t1 = _extraer_tamano(texto1)
+    t2 = _extraer_tamano(texto2)
+    if t1 is None or t2 is None:
+        return True
+    tipo1, valor1 = t1
+    tipo2, valor2 = t2
+    if tipo1 != tipo2 or valor1 == 0:
+        return True
+    return abs(valor1 - valor2) / max(valor1, valor2) <= tolerancia
+
+
 def resultado_coincide_con_query(nombre_resultado, query, umbral=0.34):
     """Compara el nombre del producto que devolvió la búsqueda del sitio
     contra la query que se envió — para RECHAZAR resultados que la propia
@@ -96,6 +138,8 @@ def resultado_coincide_con_query(nombre_resultado, query, umbral=0.34):
     palabras de relleno) debe aparecer también en el nombre del
     resultado."""
     if not nombre_resultado:
+        return False
+    if not tamanos_compatibles(nombre_resultado, query):
         return False
     t_query = _tokens_significativos(query)
     t_resultado = _tokens_significativos(nombre_resultado)
@@ -275,7 +319,7 @@ def buscar_imagen_scraping(dominio, query, sesion):
             # Igual que en los métodos de API: al menos ~1/3 de las
             # palabras significativas de la query deben aparecer en el
             # alt de la imagen para considerarla relevante.
-            if solapamiento >= 0.34 and solapamiento > mejor_solapamiento:
+            if solapamiento >= 0.34 and solapamiento > mejor_solapamiento and tamanos_compatibles(alt, query):
                 mejor_solapamiento = solapamiento
                 if src.startswith("//"):
                     src_abs = "https:" + src
@@ -339,7 +383,7 @@ def buscar_imagen_clarel(marca, query, sesion):
 
             t_alt = _tokens_significativos(alt)
             solapamiento = len(t_query & t_alt) / len(t_query)
-            if solapamiento >= 0.34 and solapamiento > mejor_solapamiento:
+            if solapamiento >= 0.34 and solapamiento > mejor_solapamiento and tamanos_compatibles(alt, query):
                 mejor_solapamiento = solapamiento
                 mejor_nombre = alt
                 if src.startswith("//"):
@@ -457,7 +501,7 @@ def buscar_imagen_thomil(query, sesion):
     mejor_solapamiento = 0.0
     for nombre, tokens, url_img in indice:
         solapamiento = len(t_query & tokens) / len(t_query)
-        if solapamiento >= 0.34 and solapamiento > mejor_solapamiento:
+        if solapamiento >= 0.34 and solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
             mejor_solapamiento = solapamiento
             mejor_nombre = nombre
             mejor_url = url_img
@@ -566,7 +610,7 @@ def buscar_imagen_titan(nombre_producto, sesion):
                 interseccion = tokens_producto & tokens_img
                 ratio = len(interseccion) / len(tokens_producto)
 
-                if ratio >= 0.34:
+                if ratio >= 0.34 and tamanos_compatibles(nombre_img, nombre_producto):
                     imagenes.append((ratio, len(interseccion), url_img, nombre_img))
 
     if not imagenes and errores and len(errores) == len(CARPETAS):
