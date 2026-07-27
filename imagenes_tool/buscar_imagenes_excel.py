@@ -546,6 +546,100 @@ def buscar_imagen_thomil(query, sesion):
     return None, f"Thomil: catálogo indexado ({len(indice)} productos) pero ninguno coincide suficiente"
 
 
+# ── Retailers PrestaShop con página de marca paginada ──
+# Patrón genérico: https://{dominio}/brand/{id}-{marca} (con ?page=N para
+# el resto de páginas). Reutilizable para cualquier retailer PrestaShop
+# que venda las marcas que necesitamos como distribuidor mayorista/
+# profesional — más relevante para nuestro catálogo que un retailer de
+# consumo (ver Suministros Limpiadores: vende Thomil, Fairy, Airwick,
+# Ambipur... con nombres de producto muy parecidos a los del CRM, al ser
+# el mismo tipo de negocio que Orencio Matas).
+#
+# Mapa MARCA -> URL completa de su página de marca en cada retailer
+# conocido. Si una marca tiene varias URLs (varios retailers), se
+# prueban en orden hasta encontrar algo.
+RETAILERS_PRESTASHOP_MARCA = {
+    "THOMIL": ["https://tiendasuministroslimpiadores.com/brand/10-thomil"],
+    "FAIRY": ["https://tiendasuministroslimpiadores.com/brand/32-fairy"],
+}
+_prestashop_indice_cache = {}
+
+
+def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
+    """Recorre las páginas de un listado de marca en un retailer
+    PrestaShop (con paginación ?page=N) y construye un índice
+    nombre_producto -> imagen. Cacheado por url_base para el resto de la
+    ejecución."""
+    if url_base in _prestashop_indice_cache:
+        return _prestashop_indice_cache[url_base]
+
+    from bs4 import BeautifulSoup
+    indice = []
+
+    for pagina in range(1, max_paginas + 1):
+        url = url_base if pagina == 1 else f"{url_base}?page={pagina}"
+        try:
+            resp = sesion.get(url, timeout=10)
+            if resp.status_code != 200:
+                break
+        except Exception:
+            break
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        nuevos_en_pagina = 0
+        for img in soup.select("img"):
+            alt = (img.get("alt") or "").strip()
+            src = img.get("src") or img.get("data-src") or ""
+            if not alt or not src:
+                continue
+            if not any(src.lower().split("?")[0].endswith(ext) for ext in EXTENSIONES_VALIDAS):
+                continue
+            # Las miniaturas de listado en PrestaShop suelen llevar
+            # "-home_default"/"-small_default" en la URL — pedir la
+            # versión grande cambiando el sufijo, si existe ese patrón
+            src_grande = re.sub(r"-(home|small|medium)_default", "-large_default", src)
+            indice.append((alt, _tokens_significativos(alt), src_grande))
+            nuevos_en_pagina += 1
+
+        if nuevos_en_pagina == 0:
+            break
+
+    _prestashop_indice_cache[url_base] = indice
+    return indice
+
+
+def buscar_imagen_prestashop_marca(marca, query, sesion):
+    """Prueba todas las URLs de marca conocidas para esa marca en
+    retailers PrestaShop (RETAILERS_PRESTASHOP_MARCA), en orden."""
+    urls = RETAILERS_PRESTASHOP_MARCA.get(marca, [])
+    if not urls:
+        return None, "sin retailer PrestaShop configurado para esta marca"
+
+    t_query = _tokens_significativos(query)
+    if not t_query:
+        return None, "query vacía tras normalizar"
+
+    for url_base in urls:
+        indice = construir_indice_prestashop_marca(url_base, sesion)
+        if not indice:
+            continue
+
+        mejor_nombre = None
+        mejor_url = None
+        mejor_solapamiento = 0.0
+        for nombre, tokens, url_img in indice:
+            solapamiento = len(t_query & tokens) / len(t_query)
+            if solapamiento >= 0.34 and solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
+                mejor_solapamiento = solapamiento
+                mejor_nombre = nombre
+                mejor_url = url_img
+
+        if mejor_url:
+            return mejor_url, f"{url_base} (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
+
+    return None, f"ningún producto coincide en los retailers PrestaShop probados ({len(urls)} URL(s), catálogos indexados)"
+
+
 # ── Búsqueda con Google Custom Search API (única opción precisa) ──
 def buscar_imagen_google_api(api_key, cx, query, sesion):
     """Busca imágenes usando Google Custom Search API (precisa pero tiene coste)."""
@@ -922,7 +1016,23 @@ def main():
         else:
             # Para droguería/perfumería, usar APIs gratuitas si hay marca
             dominio_ok = True
-            if marca:
+
+            # Retailers PrestaShop de suministros profesionales (ej.
+            # Suministros Limpiadores): se prueban PRIMERO si hay alguno
+            # configurado para esta marca — más relevante para nuestro
+            # catálogo (mismo tipo de negocio, formatos profesionales)
+            # que la web corporativa de la marca o un retailer de
+            # consumo genérico.
+            if not url_imagen and marca in RETAILERS_PRESTASHOP_MARCA:
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_prestashop_marca(marca, query, sesion)
+                    motivos_debug.append(f"PrestaShop [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"PrestaShop: {motivo}"
+                        break
+
+            if marca and not url_imagen:
                 dominio = mapa_marcas[marca]
                 for query in queries:
                     if not dominio_ok:
