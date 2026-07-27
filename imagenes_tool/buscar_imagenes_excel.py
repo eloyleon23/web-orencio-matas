@@ -563,6 +563,7 @@ RETAILERS_PRESTASHOP_MARCA = {
     "FAIRY": [
         "https://tiendasuministroslimpiadores.com/brand/32-fairy",
         "https://compralimpieza.com/4_fairy",
+        "https://drogueline.com/marca/fairy/",
     ],
 }
 _prestashop_indice_cache = {}
@@ -570,17 +571,28 @@ _prestashop_indice_cache = {}
 
 def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
     """Recorre las páginas de un listado de marca en un retailer
-    PrestaShop (con paginación ?page=N) y construye un índice
-    nombre_producto -> imagen. Cacheado por url_base para el resto de la
-    ejecución."""
+    PrestaShop o WooCommerce y construye un índice nombre_producto ->
+    imagen. Cacheado por url_base para el resto de la ejecución.
+
+    Soporta los dos estilos de paginación habituales:
+      - PrestaShop: ?page=N (parámetro de query)
+      - WordPress/WooCommerce: /page/N/ (segmento de ruta — se usa si
+        url_base termina en "/", típico de un archivo de taxonomía)
+    """
     if url_base in _prestashop_indice_cache:
         return _prestashop_indice_cache[url_base]
 
     from bs4 import BeautifulSoup
     indice = []
+    es_wordpress = url_base.rstrip().endswith("/")
 
     for pagina in range(1, max_paginas + 1):
-        url = url_base if pagina == 1 else f"{url_base}?page={pagina}"
+        if pagina == 1:
+            url = url_base
+        elif es_wordpress:
+            url = f"{url_base.rstrip('/')}/page/{pagina}/"
+        else:
+            url = f"{url_base}?page={pagina}"
         try:
             resp = sesion.get(url, timeout=10)
             if resp.status_code != 200:
@@ -591,12 +603,13 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
         soup = BeautifulSoup(resp.text, "html.parser")
         nuevos_en_pagina = 0
         # Restringido a imágenes DENTRO de un enlace a una ficha de
-        # producto real (URL con id numérico + slug + .html, patrón
-        # típico de PrestaShop) — "img" a secas también cogía el logo de
-        # la tienda, iconos de pago (Bizum/tarjetas), el píxel de Google
-        # Tag Manager, etc., inflando el índice con basura que además
-        # podía ganarle la comparación de similitud al producto real.
-        for a in soup.select("a[href*='.html']"):
+        # producto real — "img" a secas también cogía el logo de la
+        # tienda, iconos de pago (Bizum/tarjetas), el píxel de Google Tag
+        # Manager, etc., inflando el índice con basura que además podía
+        # ganarle la comparación de similitud al producto real.
+        # ".html" es el patrón típico de PrestaShop; "/producto/" o
+        # "/product/" el de WooCommerce (sin extensión .html).
+        for a in soup.select("a[href*='.html'], a[href*='/producto/'], a[href*='/product/']"):
             img = a.find("img")
             if not img:
                 continue
