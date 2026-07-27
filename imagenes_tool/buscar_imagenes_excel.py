@@ -285,6 +285,68 @@ def buscar_imagen_scraping(dominio, query, sesion):
         return None, f"scraping error: {str(e)[:100]}"
 
 
+# ── Clarel (retailer de droguería/perfumería, NO es el fabricante) ──
+# Clarel no es WooCommerce ni WordPress — tiene sus propias páginas de
+# marca en clarel.es/es/marcas/{marca}, con el listado completo de
+# productos de esa marca. Se usa para marcas de gran consumo (Fairy,
+# Ariel...) que no venden directo (ver marcas_dominios.json), pero SÍ
+# están a la venta en Clarel con nombres de producto muy parecidos a
+# como los registra el CRM (ej. "Lavavajillas Ultra Poder Fairy 650Ml").
+def buscar_imagen_clarel(marca, query, sesion):
+    """Busca en la página de marca de Clarel (clarel.es/es/marcas/{marca})
+    el producto cuyo nombre mejor coincida con la query, y devuelve su
+    imagen. A diferencia de buscar_imagen_scraping() (pensado para sitios
+    WordPress con ?s=query), aquí no hay búsqueda de texto: se lista toda
+    la marca y se compara cada producto de la lista contra la query."""
+    marca_slug = _sin_acentos(marca).lower().replace(" ", "-")
+    url = f"https://www.clarel.es/es/marcas/{marca_slug}"
+    try:
+        resp = sesion.get(url, timeout=TIMEOUT, allow_redirects=True)
+        if resp.status_code != 200:
+            return None, f"clarel HTTP {resp.status_code}"
+
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        t_query = _tokens_significativos(query)
+        if not t_query:
+            return None, "clarel: query vacía tras normalizar"
+
+        mejor_url = None
+        mejor_solapamiento = 0.0
+        mejor_nombre = None
+
+        # Cada imagen de producto de la parrilla trae su nombre en el
+        # atributo alt — igual que en buscar_imagen_scraping, se compara
+        # contra la query y solo se acepta si hay solapamiento suficiente.
+        for img in soup.select("img"):
+            alt = img.get("alt", "")
+            src = img.get("src") or img.get("data-src") or ""
+            if not alt or not src:
+                continue
+            if not any(src.lower().split("?")[0].endswith(ext) for ext in EXTENSIONES_VALIDAS):
+                continue
+
+            t_alt = _tokens_significativos(alt)
+            solapamiento = len(t_query & t_alt) / len(t_query)
+            if solapamiento >= 0.34 and solapamiento > mejor_solapamiento:
+                mejor_solapamiento = solapamiento
+                mejor_nombre = alt
+                if src.startswith("//"):
+                    mejor_url = "https:" + src
+                elif src.startswith("/"):
+                    mejor_url = "https://www.clarel.es" + src
+                else:
+                    mejor_url = src
+
+        if mejor_url:
+            return mejor_url, f"Clarel (producto: {mejor_nombre[:50]!r}, solapamiento {mejor_solapamiento:.2f})"
+
+        return None, f"clarel: página de marca cargada pero ningún producto coincide (revisar si carga por JavaScript)"
+    except Exception as e:
+        return None, f"clarel error: {str(e)[:100]}"
+
+
 # ── Búsqueda con Google Custom Search API (única opción precisa) ──
 def buscar_imagen_google_api(api_key, cx, query, sesion):
     """Busca imágenes usando Google Custom Search API (precisa pero tiene coste)."""
@@ -633,8 +695,21 @@ def main():
                         print(f"    [AVISO] {dominio} no responde, se abandona este dominio para este producto")
                         dominio_ok = False
 
+            # Clarel es un retailer (no WooCommerce) con su propia
+            # página de marca — se prueba con su función dedicada antes
+            # del scraping genérico (pensado para WordPress), que no le
+            # serviría de nada a este sitio.
+            if not url_imagen and marca and mapa_marcas.get(marca) == "clarel.es":
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_clarel(marca, query, sesion)
+                    motivos_debug.append(f"Clarel [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"Clarel: {motivo}"
+                        break
+
             # Fallback: scraping directo si hay marca (y el dominio respondía)
-            if not url_imagen and marca and dominio_ok:
+            if not url_imagen and marca and dominio_ok and mapa_marcas.get(marca) != "clarel.es":
                 dominio = mapa_marcas[marca]
                 for query in queries[:2]:  # Solo primeras 2 queries para scraping
                     url, motivo = buscar_imagen_scraping(dominio, query, sesion)
