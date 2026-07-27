@@ -619,16 +619,27 @@ def buscar_imagen_prestashop_marca(marca, query, sesion):
     if not t_query:
         return None, "query vacía tras normalizar"
 
+    diagnostico_urls = []
     for url_base in urls:
         indice = construir_indice_prestashop_marca(url_base, sesion)
         if not indice:
+            diagnostico_urls.append(f"{url_base}: índice vacío (revisar conectividad o estructura de la página)")
             continue
 
         mejor_nombre = None
         mejor_url = None
         mejor_solapamiento = 0.0
+        # Para diagnóstico: mejor candidato aunque no llegue al umbral,
+        # para saber si el producto SÍ está en el índice pero se queda
+        # corto de coincidencia, o si genuinamente no hay nada parecido.
+        mejor_nombre_bruto = None
+        mejor_solapamiento_bruto = 0.0
+
         for nombre, tokens, url_img in indice:
             solapamiento = len(t_query & tokens) / len(t_query)
+            if solapamiento > mejor_solapamiento_bruto:
+                mejor_solapamiento_bruto = solapamiento
+                mejor_nombre_bruto = nombre
             if solapamiento >= 0.34 and solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
                 mejor_solapamiento = solapamiento
                 mejor_nombre = nombre
@@ -637,7 +648,13 @@ def buscar_imagen_prestashop_marca(marca, query, sesion):
         if mejor_url:
             return mejor_url, f"{url_base} (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
 
-    return None, f"ningún producto coincide en los retailers PrestaShop probados ({len(urls)} URL(s), catálogos indexados)"
+        diagnostico_urls.append(
+            f"{url_base}: índice de {len(indice)} productos, mejor candidato "
+            f"{mejor_nombre_bruto!r} con solapamiento {mejor_solapamiento_bruto:.2f} "
+            f"(insuficiente o tamaño incompatible)"
+        )
+
+    return None, " | ".join(diagnostico_urls)
 
 
 # ── Búsqueda con Google Custom Search API (única opción precisa) ──
