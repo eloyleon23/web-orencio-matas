@@ -347,6 +347,117 @@ def buscar_imagen_clarel(marca, query, sesion):
         return None, f"clarel error: {str(e)[:100]}"
 
 
+# ── Thomil: catálogo antiguo (no WooCommerce) con páginas de categoría ──
+# thomil.com (la web corporativa) bloquea peticiones automatizadas (HTTP
+# 403 confirmado). Pero tienen un subdominio de catálogo aparte
+# (catalogodeproductos.thomil.com) con páginas de listado por categoría
+# que SÍ son accesibles y traen nombre + foto de cada producto. No tiene
+# una API ni un patrón de búsqueda por texto conocido (?s=query no
+# aplica, es un sistema propio, no WordPress) — en vez de adivinar su
+# buscador, se recorren las categorías conocidas UNA VEZ por ejecución y
+# se construye un índice en memoria, reutilizado para todos los
+# productos Thomil de esa ejecución (recorrer todo el catálogo en cada
+# producto sería carísimo).
+THOMIL_BASE = "https://catalogodeproductos.thomil.com"
+THOMIL_CATEGORIAS = [
+    "limpieza-de-superficies",
+    "lavado-de-vajillas",
+    "tratamiento-de-suelos/preparacion",
+    "tratamiento-de-suelos/tratamiento",
+    "tratamiento-de-suelos/fregasuelos-neutros",
+    "tratamiento-de-suelos/desengrasantes",
+    "tratamiento-de-suelos/moquetas",
+    "tratamiento-de-suelos/abrillantadores",
+    "thomilmatic-lavanderia",
+    "higiene-personal",
+    "higiene-ambiental",
+    "limpieza-concentrada",
+    "sumo-industria-y-automocion",
+    "naturelle-limpiadores-ecolabel",
+    "prosolution-diluibles",
+    "masterbox-ultra-concentrados",
+]
+_thomil_indice_cache = None
+
+
+def construir_indice_thomil(sesion):
+    """Recorre todas las categorías conocidas de Thomil (con paginación) y
+    construye un índice nombre_producto -> imagen. Se cachea en memoria
+    para el resto de la ejecución del script."""
+    global _thomil_indice_cache
+    if _thomil_indice_cache is not None:
+        return _thomil_indice_cache
+
+    from bs4 import BeautifulSoup
+    indice = []
+
+    for cat in THOMIL_CATEGORIAS:
+        pagina = 1
+        while pagina <= 20:  # límite de seguridad
+            url = f"{THOMIL_BASE}/{cat}" if pagina == 1 else f"{THOMIL_BASE}/{cat}/{pagina}"
+            try:
+                resp = sesion.get(url, timeout=10)
+                if resp.status_code != 200:
+                    break
+            except Exception:
+                break
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            nuevos_en_pagina = 0
+            # Cada producto del listado es un enlace a una ficha ".../iNNN"
+            # con una imagen dentro (miniatura con el nombre en alt)
+            for a in soup.select("a[href*='/i']"):
+                img = a.find("img")
+                if not img:
+                    continue
+                nombre = (img.get("alt") or "").strip()
+                src = img.get("src", "")
+                if not nombre or not src or "pic.php" not in src:
+                    continue
+                # Las miniaturas del listado son pequeñas (width=104) —
+                # pedir la versión grande cambiando el comando de tamaño
+                src_grande = re.sub(r"width=\d+&(amp;)?height=\d+", "cmd=sz800x800", src)
+                src_grande = src_grande.replace("&amp;", "&")
+                if src_grande.startswith("/"):
+                    src_grande = THOMIL_BASE + src_grande
+                indice.append((nombre, _tokens_significativos(nombre), src_grande))
+                nuevos_en_pagina += 1
+
+            if nuevos_en_pagina == 0:
+                break
+            pagina += 1
+
+    _thomil_indice_cache = indice
+    return indice
+
+
+def buscar_imagen_thomil(query, sesion):
+    """Busca en el índice de categorías de Thomil (construido una vez y
+    cacheado) el producto cuyo nombre mejor coincida con la query."""
+    indice = construir_indice_thomil(sesion)
+    if not indice:
+        return None, "Thomil: no se pudo construir el índice de categorías (revisar conectividad)"
+
+    t_query = _tokens_significativos(query)
+    if not t_query:
+        return None, "Thomil: query vacía tras normalizar"
+
+    mejor_nombre = None
+    mejor_url = None
+    mejor_solapamiento = 0.0
+    for nombre, tokens, url_img in indice:
+        solapamiento = len(t_query & tokens) / len(t_query)
+        if solapamiento >= 0.34 and solapamiento > mejor_solapamiento:
+            mejor_solapamiento = solapamiento
+            mejor_nombre = nombre
+            mejor_url = url_img
+
+    if mejor_url:
+        return mejor_url, f"Thomil (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)} productos)"
+
+    return None, f"Thomil: catálogo indexado ({len(indice)} productos) pero ninguno coincide suficiente"
+
+
 # ── Búsqueda con Google Custom Search API (única opción precisa) ──
 def buscar_imagen_google_api(api_key, cx, query, sesion):
     """Busca imágenes usando Google Custom Search API (precisa pero tiene coste)."""
@@ -721,8 +832,22 @@ def main():
                         metodo_usado = f"Clarel: {motivo}"
                         break
 
-            # Fallback: scraping directo si hay marca (y el dominio respondía)
-            if not url_imagen and marca and dominio_ok and mapa_marcas.get(marca) != "clarel.es":
+            # Thomil: catálogo antiguo con índice de categorías propio (no
+            # WooCommerce, no ?s=query) — misma lógica que Clarel, función
+            # dedicada en vez de scraping genérico.
+            if not url_imagen and marca == "THOMIL" and mapa_marcas.get(marca) == "catalogodeproductos.thomil.com":
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_thomil(query, sesion)
+                    motivos_debug.append(f"Thomil [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"Thomil: {motivo}"
+                        break
+
+            # Fallback: scraping directo si hay marca (y el dominio respondía) —
+            # no aplica a Clarel/Thomil, que ya tienen su propia función dedicada
+            if (not url_imagen and marca and dominio_ok
+                    and mapa_marcas.get(marca) not in ("clarel.es", "catalogodeproductos.thomil.com")):
                 dominio = mapa_marcas[marca]
                 for query in queries[:2]:  # Solo primeras 2 queries para scraping
                     url, motivo = buscar_imagen_scraping(dominio, query, sesion)
