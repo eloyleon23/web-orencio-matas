@@ -5254,12 +5254,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // productos.json ya actualizado (ver ejecutarActualizarImagen).
         if (p._imgLocalOverride) return p._imgLocalOverride;
         if (p.img) {
-            if (p.area === 'talleres') return `./assets/imagenes_talleres/${p.img}`;
+            // Los 4 catálogos estáticos de proveedor (Zaphiro/Besa/Glasurit/
+            // Baslac) traen 'fabricante' y su 'img' es un nombre de archivo
+            // real en assets/imagenes_talleres/. Los productos normales del
+            // Sheet (incluidos los que ahora son area='talleres' tras la
+            // reclasificación por marca/familia/punto inicial de esta
+            // sesión) NO tienen 'fabricante' — su 'img' es un ID de Drive,
+            // igual que cualquier otro producto del catálogo principal.
+            // Antes se miraba 'area === talleres' para decidirlo, pero eso
+            // dejó de ser válido en cuanto productos normales del Sheet
+            // empezaron a tener area='talleres' sin venir de esos 4
+            // catálogos — sus fotos recién subidas no se veían porque se
+            // construía una ruta estática con un ID de Drive como si fuera
+            // un nombre de archivo.
+            if (p.fabricante) return `./assets/imagenes_talleres/${p.img}`;
             return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
         }
         // Sin foto propia: usar la imagen genérica del fabricante si existe
         // (se trata igual que una foto real en todo lo demás).
-        if (p.area === 'talleres' && p.fabricante && IMAGENES_GENERICAS_FABRICANTE[p.fabricante]) {
+        if (p.fabricante && IMAGENES_GENERICAS_FABRICANTE[p.fabricante]) {
             return IMAGENES_GENERICAS_FABRICANTE[p.fabricante];
         }
         return null;
