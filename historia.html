@@ -546,6 +546,87 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             color: #ccc;
         }
 
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 32px;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            cursor: pointer;
+            transition: background 0.2s;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .lightbox-nav.lightbox-prev { left: 16px; }
+        .lightbox-nav.lightbox-next { right: 16px; }
+
+        .lightbox-nav.hidden {
+            display: none;
+        }
+
+        .lightbox-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 14px;
+            border-radius: 999px;
+            letter-spacing: 0.02em;
+        }
+
+        @media (max-width: 640px) {
+            .lightbox-nav {
+                width: 44px;
+                height: 44px;
+                font-size: 26px;
+            }
+            .lightbox-nav.lightbox-prev { left: 6px; }
+            .lightbox-nav.lightbox-next { right: 6px; }
+        }
+
+        /* Móvil en horizontal: el alto de pantalla es pequeño, así que
+           max-height:80% dejaba la foto diminuta con mucho espacio negro
+           a los lados. */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .lightbox-content {
+                max-height: 94vh;
+                max-width: 80vw;
+            }
+            .lightbox-close {
+                top: 6px;
+                right: 10px;
+                font-size: 28px;
+            }
+            .lightbox-nav {
+                width: 38px;
+                height: 38px;
+                font-size: 22px;
+            }
+            .lightbox-nav.lightbox-prev { left: 4px; }
+            .lightbox-nav.lightbox-next { right: 4px; }
+            .lightbox-counter {
+                bottom: 6px;
+                font-size: 12px;
+                padding: 3px 10px;
+            }
+        }
+
         .memory-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -1029,7 +1110,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="heritage-grid">
                     <article class="heritage-card subtle-paint-bg">
                         <figure class="heritage-card__media heritage-card__media--cover">
-                            <img class="js-lightbox-image" src="assets/fotos/Historia/Abuelo_Eloy.jpg" alt="Retrato histórico del abuelo Eloy Matas, origen familiar de la firma" loading="lazy">
+                            <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/Abuelo_Eloy.jpg" alt="Retrato histórico del abuelo Eloy Matas, origen familiar de la firma" loading="lazy" data-full="assets/fotos/Historia/Abuelo_Eloy.jpg">
                         </figure>
                         <div class="story-card__text">
                             <h3>A Eloy Matas</h3>
@@ -1039,7 +1120,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                     <article class="heritage-card subtle-paint-bg">
                         <figure class="heritage-card__media heritage-card__media--cover">
-                            <img class="js-lightbox-image" src="assets/fotos/Historia/Hermanos_Tienda.jpg" alt="Equipo histórico de la tienda antigua de la familia Matas" loading="lazy">
+                            <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/Hermanos_Tienda.jpg" alt="Equipo histórico de la tienda antigua de la familia Matas" loading="lazy" data-full="assets/fotos/Historia/Hermanos_Tienda.jpg">
                         </figure>
                         <div class="story-card__text">
                             <h3>La tienda antigua y la saga familiar</h3>
@@ -1049,7 +1130,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                     <article class="heritage-card heritage-card--wide subtle-paint-bg">
                         <figure class="heritage-card__media">
-                            <img class="js-lightbox-image" src="assets/fotos/Historia/Carta_a_Eloy.jpg" alt="Carta de reconocimiento profesional dedicada a Eloy Matas" loading="lazy" style="max-height:340px; object-fit:cover; object-position:top;">
+                            <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/Carta_a_Eloy.jpg" alt="Carta de reconocimiento profesional dedicada a Eloy Matas" loading="lazy" style="max-height:340px; object-fit:cover; object-position:top;" data-full="assets/fotos/Historia/Carta_a_Eloy.jpg">
                         </figure>
                         <div class="story-card__text">
                             <h3>Testimonio profesional</h3>
@@ -1073,7 +1154,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                     <article class="heritage-card heritage-card--wide subtle-paint-bg">
                         <figure class="heritage-card__media heritage-card__media--cover">
-                            <img class="js-lightbox-image" src="assets/fotos/Historia/Boda Angel.jpg" alt="Orencio Matas Moraga y equipo celebrando la boda de Ángel Matas Rubio" loading="lazy" />
+                            <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/Boda Angel.jpg" alt="Orencio Matas Moraga y equipo celebrando la boda de Ángel Matas Rubio" loading="lazy" / data-full="assets/fotos/Historia/Boda Angel.jpg">
                         </figure>
                         <p>El equipo del almacén, liderado por <strong>Orencio Matas Moraga</strong>, celebrando la boda de su hijo <strong>Ángel Matas Rubio</strong>. En la fotografía aparecen también sus hermanos <strong>Manuel Matas Moraga</strong> y <strong>Eloy Matas Moraga</strong>, junto a <strong>Ángela Matas Rubio</strong> y el resto de compañeros del almacén de aquella época.</p>
                     </article>
@@ -1092,7 +1173,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <p>La liturgia diaria estaba hecha de balanzas de cruz, pigmentos minerales puros fraccionados con precisión, fórmulas transmitidas por oficio y aquellas papeletas a peseta que acercaban el gran consumo a hogares, talleres, agricultores y pequeños negocios de Ciudad Real.</p>
                     </div>
                     <figure style="margin:0; text-align:center;">
-                        <img class="js-lightbox-image" src="assets/fotos/Historia/DROGUERIA_Cartel_Informativo_antiguo.jpg" alt="Cartel informativo antiguo de Droguería Calatrava" loading="lazy" style="max-height:280px; width:auto; max-width:100%; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); cursor:zoom-in;">
+                        <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/DROGUERIA_Cartel_Informativo_antiguo.jpg" alt="Cartel informativo antiguo de Droguería Calatrava" loading="lazy" style="max-height:280px; width:auto; max-width:100%; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); cursor:zoom-in;" data-full="assets/fotos/Historia/DROGUERIA_Cartel_Informativo_antiguo.jpg">
                     </figure>
                 </article>
 
@@ -1150,16 +1231,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </div>
                     <div class="incendio-grid">
                         <figure class="incendio-grid__item">
-                            <img class="js-lightbox-image" src="assets/fotos/Historia/IMG_9841.png" alt="Incendio Calle Calatrava 1966 - Imagen 1" loading="lazy">
+                            <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/IMG_9841.jpg" alt="Incendio Calle Calatrava 1966 - Imagen 1" loading="lazy" data-full="assets/fotos/Historia/IMG_9841.png">
                         </figure>
                         <figure class="incendio-grid__item">
-                            <img class="js-lightbox-image" src="assets/fotos/Historia/IMG_9842.png" alt="Incendio Calle Calatrava 1966 - Imagen 2" loading="lazy">
+                            <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/IMG_9842.jpg" alt="Incendio Calle Calatrava 1966 - Imagen 2" loading="lazy" data-full="assets/fotos/Historia/IMG_9842.png">
                         </figure>
                         <figure class="incendio-grid__item">
-                            <img class="js-lightbox-image" src="assets/fotos/Historia/IMG_9843.png" alt="Incendio Calle Calatrava 1966 - Imagen 3" loading="lazy">
+                            <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/IMG_9843.jpg" alt="Incendio Calle Calatrava 1966 - Imagen 3" loading="lazy" data-full="assets/fotos/Historia/IMG_9843.png">
                         </figure>
                         <figure class="incendio-grid__item">
-                            <img class="js-lightbox-image" src="assets/fotos/Historia/IMG_9844.png" alt="Incendio Calle Calatrava 1966 - Imagen 4" loading="lazy">
+                            <img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/IMG_9844.jpg" alt="Incendio Calle Calatrava 1966 - Imagen 4" loading="lazy" data-full="assets/fotos/Historia/IMG_9844.png">
                         </figure>
                     </div>
                     <div class="story-card__text">
@@ -1183,11 +1264,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </button>
                         <div class="calvario-panel">
                             <div class="calvario-strip">
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen1.jpg" alt="Almacén Calle Calvario - Inicios 1" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen2.jpg" alt="Almacén Calle Calvario - Inicios 2" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen3.jpg" alt="Almacén Calle Calvario - Inicios 3" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen4.jpg" alt="Almacén Calle Calvario - Inicios 4" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen5.jpg" alt="Almacén Calle Calvario - Inicios 5" loading="lazy"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/Almacen1.jpg" alt="Almacén Calle Calvario - Inicios 1" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen1.jpg"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/Almacen2.jpg" alt="Almacén Calle Calvario - Inicios 2" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen2.jpg"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/Almacen3.jpg" alt="Almacén Calle Calvario - Inicios 3" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen3.jpg"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/Almacen4.jpg" alt="Almacén Calle Calvario - Inicios 4" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen4.jpg"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/Almacen5.jpg" alt="Almacén Calle Calvario - Inicios 5" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/Almacen5.jpg"></figure>
                             </div>
                         </div>
                     </div>
@@ -1204,11 +1285,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </button>
                         <div class="calvario-panel" hidden>
                             <div class="calvario-strip">
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/DSC_8697.JPG" alt="Fachada Calle Calvario 1" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/DSC_8698.JPG" alt="Fachada Calle Calvario 2" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/20220301_133856.jpg" alt="Fachada Calle Calvario 3" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/20220301_133904.jpg" alt="Fachada Calle Calvario 4" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/20220301_133937.jpg" alt="Fachada Calle Calvario 5" loading="lazy"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/fachada_moderna/DSC_8697.jpg" alt="Fachada Calle Calvario 1" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/DSC_8697.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/fachada_moderna/DSC_8698.jpg" alt="Fachada Calle Calvario 2" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/DSC_8698.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/fachada_moderna/20220301_133856.jpg" alt="Fachada Calle Calvario 3" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/20220301_133856.jpg"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/fachada_moderna/20220301_133904.jpg" alt="Fachada Calle Calvario 4" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/20220301_133904.jpg"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/fachada_moderna/20220301_133937.jpg" alt="Fachada Calle Calvario 5" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/fachada_moderna/20220301_133937.jpg"></figure>
                             </div>
                         </div>
                     </div>
@@ -1220,12 +1301,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </button>
                         <div class="calvario-panel" hidden>
                             <div class="calvario-strip">
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/DSC_8703.JPG" alt="Tienda Droguería 1" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/DSC_8704.JPG" alt="Tienda Droguería 2" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/IMGP3249.JPG" alt="Tienda Droguería 3" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/IMGP3253.JPG" alt="Tienda Droguería 4" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/tienda_drogueria/IMG20191217133328.jpg" alt="Tienda Droguería 5" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/tienda_drogueria/IMG20191217133503.jpg" alt="Tienda Droguería 6" loading="lazy"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/DSC_8703.jpg" alt="Tienda Droguería 1" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/DSC_8703.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/DSC_8704.jpg" alt="Tienda Droguería 2" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/DSC_8704.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/IMGP3249.jpg" alt="Tienda Droguería 3" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/IMGP3249.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almaden_inicios/IMGP3253.jpg" alt="Tienda Droguería 4" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almaden_inicios/IMGP3253.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/tienda_drogueria/IMG20191217133328.jpg" alt="Tienda Droguería 5" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/tienda_drogueria/IMG20191217133328.jpg"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/tienda_drogueria/IMG20191217133503.jpg" alt="Tienda Droguería 6" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/tienda_drogueria/IMG20191217133503.jpg"></figure>
                             </div>
                         </div>
                     </div>
@@ -1237,9 +1318,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </button>
                         <div class="calvario-panel" hidden>
                             <div class="calvario-strip">
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/tienda_taller_carroceria/DSC_4870.JPG" alt="Tienda Taller 1" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/tienda_taller_carroceria/DSC_8699.JPG" alt="Tienda Taller 2" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/tienda_taller_carroceria/IMG-20191217-WA0007.jpg" alt="Tienda Taller 3" loading="lazy"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/tienda_taller_carroceria/DSC_4870.jpg" alt="Tienda Taller 1" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/tienda_taller_carroceria/DSC_4870.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/tienda_taller_carroceria/DSC_8699.jpg" alt="Tienda Taller 2" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/tienda_taller_carroceria/DSC_8699.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/tienda_taller_carroceria/IMG-20191217-WA0007.jpg" alt="Tienda Taller 3" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/tienda_taller_carroceria/IMG-20191217-WA0007.jpg"></figure>
                             </div>
                         </div>
                     </div>
@@ -1251,14 +1332,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </button>
                         <div class="calvario-panel" hidden>
                             <div class="calvario-strip">
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8694.JPG" alt="Almacén Droguería 1" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8702.JPG" alt="Almacén Droguería 2" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8705.JPG" alt="Almacén Droguería 3" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8706.JPG" alt="Almacén Droguería 4" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8707.JPG" alt="Almacén Droguería 5" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8708.JPG" alt="Almacén Droguería 6" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/IMG_20191218_114203.jpg" alt="Almacén Droguería 7" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/IMG_20191218_114238.jpg" alt="Almacén Droguería 8" loading="lazy"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8694.jpg" alt="Almacén Droguería 1" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8694.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8702.jpg" alt="Almacén Droguería 2" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8702.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8705.jpg" alt="Almacén Droguería 3" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8705.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8706.jpg" alt="Almacén Droguería 4" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8706.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8707.jpg" alt="Almacén Droguería 5" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8707.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8708.jpg" alt="Almacén Droguería 6" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/DSC_8708.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_drogueria/IMG_20191218_114203.jpg" alt="Almacén Droguería 7" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/IMG_20191218_114203.jpg"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_drogueria/IMG_20191218_114238.jpg" alt="Almacén Droguería 8" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_drogueria/IMG_20191218_114238.jpg"></figure>
                             </div>
                         </div>
                     </div>
@@ -1270,8 +1351,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </button>
                         <div class="calvario-panel" hidden>
                             <div class="calvario-strip">
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_taller_carroceria/DSC_4871.JPG" alt="Almacén Taller 1" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/almacen_taller_carroceria/DSC_8700.JPG" alt="Almacén Taller 2" loading="lazy"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_taller_carroceria/DSC_4871.jpg" alt="Almacén Taller 1" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_taller_carroceria/DSC_4871.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/almacen_taller_carroceria/DSC_8700.jpg" alt="Almacén Taller 2" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/almacen_taller_carroceria/DSC_8700.JPG"></figure>
                             </div>
                         </div>
                     </div>
@@ -1283,10 +1364,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </button>
                         <div class="calvario-panel" hidden>
                             <div class="calvario-strip">
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4425.JPG" alt="Equipo Calle Calvario 1" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4428.JPG" alt="Equipo Calle Calvario 2" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4435.JPG" alt="Equipo Calle Calvario 3" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/equipo_calle_calvario/IMGP3267b.jpg" alt="Equipo Calle Calvario 4" loading="lazy"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4425.jpg" alt="Equipo Calle Calvario 1" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4425.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4428.jpg" alt="Equipo Calle Calvario 2" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4428.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4435.jpg" alt="Equipo Calle Calvario 3" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/equipo_calle_calvario/DSC_4435.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/equipo_calle_calvario/IMGP3267b.jpg" alt="Equipo Calle Calvario 4" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/equipo_calle_calvario/IMGP3267b.jpg"></figure>
                             </div>
                         </div>
                     </div>
@@ -1298,8 +1379,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </button>
                         <div class="calvario-panel" hidden>
                             <div class="calvario-strip">
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/oficinas/DSC_8709.JPG" alt="Oficinas Calle Calvario 1" loading="lazy"></figure>
-                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos/Historia/almacen_calle_calvario/oficinas/DSC_8710.JPG" alt="Oficinas Calle Calvario 2" loading="lazy"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/oficinas/DSC_8709.jpg" alt="Oficinas Calle Calvario 1" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/oficinas/DSC_8709.JPG"></figure>
+                                <figure class="calvario-thumb"><img class="js-lightbox-image" src="assets/fotos-thumbs/Historia/almacen_calle_calvario/oficinas/DSC_8710.jpg" alt="Oficinas Calle Calvario 2" loading="lazy" data-full="assets/fotos/Historia/almacen_calle_calvario/oficinas/DSC_8710.JPG"></figure>
                             </div>
                         </div>
                     </div>
@@ -1386,27 +1467,99 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </footer>
     <div id="custom-lightbox" class="lightbox-overlay" aria-hidden="true">
         <span class="lightbox-close" aria-label="Cerrar">&times;</span>
+        <span class="lightbox-nav lightbox-prev" aria-label="Foto anterior">&#8249;</span>
         <img class="lightbox-content" id="lightbox-img" src="" alt="Vista ampliada">
+        <span class="lightbox-nav lightbox-next" aria-label="Foto siguiente">&#8250;</span>
+        <span class="lightbox-counter" id="lightbox-counter"></span>
     </div>
     <script>
         const lightbox = document.getElementById('custom-lightbox');
         const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxCounter = document.getElementById('lightbox-counter');
+        const btnPrev = lightbox.querySelector('.lightbox-prev');
+        const btnNext = lightbox.querySelector('.lightbox-next');
+
+        // Grupos navegables reales: fotos de un mismo momento/tema mostradas
+        // juntas (tiras de Calvario, cuadrícula del incendio). El resto de
+        // imágenes (retratos, cartas... en heritage-grid) son entradas
+        // sueltas sin relación entre sí, así que se tratan como una foto
+        // única sin flechas, aunque estén una al lado de otra en la rejilla.
+        const SELECTOR_GRUPO_NAVEGABLE = '.calvario-strip, .incendio-grid';
+
+        let fotosSeccionActual = [];
+        let indiceActual = 0;
+
+        function mostrarFoto(indice) {
+            if (fotosSeccionActual.length === 0) return;
+            indiceActual = (indice + fotosSeccionActual.length) % fotosSeccionActual.length;
+            const foto = fotosSeccionActual[indiceActual];
+            lightboxImg.src = foto.src;
+            lightboxImg.alt = foto.alt || 'Vista ampliada';
+            lightboxCounter.textContent = `${indiceActual + 1} / ${fotosSeccionActual.length}`;
+            const soloUna = fotosSeccionActual.length <= 1;
+            btnPrev.classList.toggle('hidden', soloUna);
+            btnNext.classList.toggle('hidden', soloUna);
+            lightboxCounter.style.display = soloUna ? 'none' : '';
+        }
+
+        function abrirLightbox(imgClicada) {
+            const grupo = imgClicada.closest(SELECTOR_GRUPO_NAVEGABLE);
+            const imgsGrupo = grupo
+                ? Array.from(grupo.querySelectorAll('.js-lightbox-image'))
+                : [imgClicada];
+            fotosSeccionActual = imgsGrupo.map(im => ({
+                src: im.dataset.full || im.src,
+                alt: im.alt,
+            }));
+            const indiceInicial = imgsGrupo.indexOf(imgClicada);
+            mostrarFoto(indiceInicial >= 0 ? indiceInicial : 0);
+            lightbox.classList.add('active');
+            lightbox.setAttribute('aria-hidden', 'false');
+        }
+
+        function cerrarLightbox() {
+            lightbox.classList.remove('active');
+            lightbox.setAttribute('aria-hidden', 'true');
+        }
 
         document.querySelectorAll('.js-lightbox-image').forEach(img => {
-            img.addEventListener('click', () => {
-                lightboxImg.src = img.src;
-                lightboxImg.alt = img.alt || 'Vista ampliada';
-                lightbox.classList.add('active');
-                lightbox.setAttribute('aria-hidden', 'false');
-            });
+            img.addEventListener('click', () => abrirLightbox(img));
+        });
+
+        btnPrev.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mostrarFoto(indiceActual - 1);
+        });
+        btnNext.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mostrarFoto(indiceActual + 1);
         });
 
         lightbox.addEventListener('click', (event) => {
-            if (event.target !== lightboxImg) {
-                lightbox.classList.remove('active');
-                lightbox.setAttribute('aria-hidden', 'true');
+            if (event.target !== lightboxImg && event.target !== btnPrev && event.target !== btnNext) {
+                cerrarLightbox();
             }
         });
+
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'ArrowLeft') mostrarFoto(indiceActual - 1);
+            else if (e.key === 'ArrowRight') mostrarFoto(indiceActual + 1);
+            else if (e.key === 'Escape') cerrarLightbox();
+        });
+
+        let touchStartX = null;
+        lightbox.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].clientX;
+        }, { passive: true });
+        lightbox.addEventListener('touchend', (e) => {
+            if (touchStartX === null) return;
+            const deltaX = e.changedTouches[0].clientX - touchStartX;
+            const UMBRAL = 40;
+            if (deltaX > UMBRAL) mostrarFoto(indiceActual - 1);
+            else if (deltaX < -UMBRAL) mostrarFoto(indiceActual + 1);
+            touchStartX = null;
+        }, { passive: true });
     </script>
     <script src="./src/js/analytics-consent.js"></script>
     <script>
