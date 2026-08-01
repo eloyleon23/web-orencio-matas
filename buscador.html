@@ -5487,10 +5487,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Construir query de búsqueda para Google Images
         const query = encodeURIComponent(`${p.nombre} ${p.ref} producto`);
         const googleUrl = `https://www.google.com/search?tbm=isch&q=${query}`;
-        
-        // Abrir Google Images en nueva pestaña
-        window.open(googleUrl, '_blank');
-        
+
+        // Un <a> con target="_blank" (clic simulado) en vez de
+        // window.open(): en Safari/WebKit (iPhone), window.open()
+        // llamado desde JS a veces muestra una pestaña en blanco un
+        // instante antes de navegar de verdad — con un enlace nativo no
+        // pasa, es el mismo mecanismo que ya usan los enlaces rápidos
+        // del Asistente de imágenes.
+        const enlaceTemporal = document.createElement('a');
+        enlaceTemporal.href = googleUrl;
+        enlaceTemporal.target = '_blank';
+        enlaceTemporal.rel = 'noopener';
+        enlaceTemporal.click();
+
         mostrarToast('Búsqueda abierta en Google Images. Selecciona la imagen correcta y usa "Actualizar imagen" para subirla.');
     }
 
