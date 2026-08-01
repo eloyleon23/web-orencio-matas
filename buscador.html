@@ -683,6 +683,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             border-radius: 0 0 8px 8px;
             padding: 8px 12px;
         }
+        .btn-asistente-imagenes {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: #fff;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.15s;
+        }
+        .btn-asistente-imagenes:hover { filter: brightness(1.08); }
         .check-imagen-validada,
         .check-imagen-sin-validar {
             display: flex;
@@ -1658,6 +1674,247 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             box-shadow: none;
         }
 
+        /* ── Asistente de imágenes ── */
+        #modal-asistente-imagenes-box {
+            width: 92%;
+            max-width: 720px;
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .asistente-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+        .asistente-progreso {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .asistente-barra-progreso {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 8px 0 18px;
+        }
+        .asistente-barra-progreso-relleno {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #ec4899);
+            border-radius: 999px;
+            transition: width 0.25s ease;
+        }
+        .asistente-filtros {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.82rem;
+        }
+        .asistente-filtros select {
+            font-size: 0.82rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+        }
+        .asistente-vacio {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+        .asistente-producto-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+        .asistente-producto-info h4 {
+            margin: 0 0 6px;
+            font-size: 1.02rem;
+        }
+        .asistente-producto-meta {
+            font-size: 0.8rem;
+            color: var(--muted);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 14px;
+        }
+        .asistente-imagen-actual {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #cbd5e1;
+        }
+        .asistente-imagen-actual img {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .asistente-imagen-actual span {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+        .asistente-enlaces {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .asistente-enlace {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #334155;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .asistente-enlace:hover {
+            border-color: #7c3aed;
+            color: #7c3aed;
+            background: #faf5ff;
+        }
+        .asistente-enlace i { color: #7c3aed; }
+        .asistente-candidata-auto {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 16px;
+        }
+        .asistente-candidata-auto.visible { display: flex; }
+        .asistente-candidata-auto img {
+            width: 52px;
+            height: 52px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        .asistente-candidata-auto-texto {
+            flex: 1;
+            font-size: 0.8rem;
+            color: #166534;
+        }
+        .asistente-dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: #fafafa;
+        }
+        .asistente-dropzone:hover, .asistente-dropzone.arrastrando {
+            border-color: #7c3aed;
+            background: #faf5ff;
+        }
+        .asistente-dropzone i {
+            font-size: 1.8rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .asistente-dropzone p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .asistente-dropzone .asistente-dropzone-destacado {
+            font-weight: 700;
+            color: #7c3aed;
+        }
+        .asistente-preview {
+            display: none;
+            align-items: center;
+            gap: 14px;
+            margin-top: 14px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .asistente-preview.visible { display: flex; }
+        .asistente-preview img {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .asistente-preview-info {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+        .asistente-acciones {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .asistente-btn {
+            flex: 1 1 auto;
+            min-width: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.15s, transform 0.1s;
+        }
+        .asistente-btn:active { transform: translateY(1px); }
+        .asistente-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .asistente-btn-subir {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: #fff;
+            flex: 2 1 220px;
+        }
+        .asistente-btn-validar {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #6ee7b7;
+        }
+        .asistente-btn-sin-imagen {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+        .asistente-btn-saltar {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+        .asistente-btn:hover:not(:disabled) { filter: brightness(1.05); }
+
+        @media (max-width: 640px) {
+            .asistente-btn { min-width: 100%; flex: 1 1 100%; }
+        }
+
         /* Responsive del modal de producto */
         @media (max-width: 768px) {
             .modal-producto-box {
@@ -1954,6 +2211,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="gestion-imagenes-header">
                 <strong><i class="fa-solid fa-images"></i> Gestión de imágenes</strong>
             </div>
+            <button type="button" id="btn-abrir-asistente-imagenes" class="btn-asistente-imagenes">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Asistente de imágenes
+            </button>
             <div class="gestion-imagenes-filtros">
                 <label class="check-imagen-validada">
                     <input type="checkbox" id="f-imagenes-validadas">
@@ -2195,6 +2455,94 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-image-slash"></i> Marcar como sin imagen disponible
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Asistente de imágenes -->
+<div class="modal-overlay" id="modal-asistente-imagenes-overlay">
+    <div class="modal-producto-box" id="modal-asistente-imagenes-box">
+        <button class="modal-producto-cerrar" id="modal-asistente-imagenes-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="asistente-header">
+            <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Asistente de imágenes</h3>
+            <span class="asistente-progreso" id="asistente-progreso">0 / 0</span>
+        </div>
+        <div class="asistente-barra-progreso">
+            <div class="asistente-barra-progreso-relleno" id="asistente-barra-progreso-relleno" style="width:0%"></div>
+        </div>
+
+        <div class="asistente-filtros">
+            <label><input type="checkbox" id="asistente-f-sin-imagen" checked> Sin imagen</label>
+            <label><input type="checkbox" id="asistente-f-sin-validar"> Sin validar</label>
+            <select id="asistente-f-area">
+                <option value="">Todas las áreas</option>
+                <option value="drogueria">Droguería</option>
+                <option value="perfumeria">Perfumería</option>
+                <option value="pinturas">Pinturas</option>
+                <option value="talleres">Talleres</option>
+            </select>
+            <button type="button" id="asistente-aplicar-filtros" class="asistente-enlace" style="border-color:#7c3aed;color:#7c3aed;">
+                <i class="fa-solid fa-arrows-rotate"></i> Aplicar
+            </button>
+        </div>
+
+        <div id="asistente-contenido">
+            <div class="asistente-producto-info">
+                <h4 id="asistente-producto-nombre">—</h4>
+                <div class="asistente-producto-meta">
+                    <span><i class="fa-solid fa-hashtag"></i> <span id="asistente-producto-ref"></span></span>
+                    <span><i class="fa-solid fa-layer-group"></i> <span id="asistente-producto-area"></span></span>
+                    <span><i class="fa-solid fa-tags"></i> <span id="asistente-producto-familia"></span></span>
+                </div>
+                <div class="asistente-imagen-actual" id="asistente-imagen-actual" style="display:none;">
+                    <img id="asistente-imagen-actual-img" src="" alt="Imagen actual">
+                    <span>Imagen actual (sin validar todavía) — si es correcta, valida sin necesidad de subir otra.</span>
+                </div>
+            </div>
+
+            <div class="asistente-candidata-auto" id="asistente-candidata-auto">
+                <img id="asistente-candidata-auto-img" src="" alt="Candidata encontrada">
+                <div class="asistente-candidata-auto-texto">
+                    <strong>Encontrada por código de barras.</strong> <span id="asistente-candidata-auto-fuente"></span>
+                </div>
+                <button type="button" class="asistente-enlace" id="asistente-usar-candidata-auto" style="border-color:#16a34a;color:#166534;">
+                    <i class="fa-solid fa-check"></i> Usar esta
+                </button>
+            </div>
+
+            <div class="asistente-enlaces" id="asistente-enlaces"></div>
+
+            <div class="asistente-dropzone" id="asistente-dropzone">
+                <input type="file" id="asistente-file" accept="image/*" style="display:none;">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <p><span class="asistente-dropzone-destacado">Arrastra</span> una imagen aquí, <span class="asistente-dropzone-destacado">pégala</span> (Ctrl+V) o haz clic para elegir un archivo</p>
+            </div>
+            <div class="asistente-preview" id="asistente-preview">
+                <img id="asistente-preview-img" src="" alt="Vista previa">
+                <div class="asistente-preview-info" id="asistente-preview-info"></div>
+            </div>
+
+            <div class="asistente-acciones">
+                <button type="button" class="asistente-btn asistente-btn-subir" id="asistente-btn-subir" disabled>
+                    <i class="fa-solid fa-upload"></i> Subir y siguiente
+                </button>
+                <button type="button" class="asistente-btn asistente-btn-validar" id="asistente-btn-validar" style="display:none;">
+                    <i class="fa-solid fa-check-circle"></i> Validar actual y siguiente
+                </button>
+                <button type="button" class="asistente-btn asistente-btn-sin-imagen" id="asistente-btn-sin-imagen">
+                    <i class="fa-solid fa-image-slash"></i> Sin imagen disponible
+                </button>
+                <button type="button" class="asistente-btn asistente-btn-saltar" id="asistente-btn-saltar">
+                    <i class="fa-solid fa-forward"></i> Saltar
+                </button>
+            </div>
+        </div>
+
+        <div class="asistente-vacio" id="asistente-vacio" style="display:none;">
+            <i class="fa-solid fa-circle-check" style="font-size:2rem;color:#16a34a;margin-bottom:10px;display:block;"></i>
+            <p>No quedan productos pendientes con estos filtros. ¡Buen trabajo!</p>
         </div>
     </div>
 </div>
@@ -5174,6 +5522,376 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             btnValidar.innerHTML = estadoOriginal;
         });
     }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Asistente de imágenes: cola de productos sin imagen/sin validar,
+    // con enlaces rápidos de búsqueda, comprobación automática por código
+    // de barras, y subida por arrastrar/pegar/archivo — para no tener que
+    // buscar el producto y abrir su ficha uno a uno.
+    // ══════════════════════════════════════════════════════════════════
+    let colaAsistente = [];
+    let indiceAsistenteActual = 0;
+    let blobAsistenteComprimido = null;
+    let mapaMarcasAsistente = null; // se carga una vez, desde imagenes_tool/marcas_dominios.json
+
+    function sinAcentosAsistente(t) {
+        return (t || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    }
+
+    function esEanValido(ref) {
+        const r = (ref || '').toString().trim();
+        return /^\d+$/.test(r) && [8, 12, 13, 14].includes(r.length);
+    }
+
+    async function cargarMapaMarcasAsistente() {
+        if (mapaMarcasAsistente) return mapaMarcasAsistente;
+        try {
+            const resp = await fetch('imagenes_tool/marcas_dominios.json', { cache: 'no-store' });
+            const data = await resp.json();
+            mapaMarcasAsistente = Object.fromEntries(
+                Object.entries(data).filter(([k]) => !k.startsWith('_'))
+            );
+        } catch (err) {
+            console.warn('No se pudo cargar marcas_dominios.json para el asistente:', err);
+            mapaMarcasAsistente = {};
+        }
+        return mapaMarcasAsistente;
+    }
+
+    function detectarMarcaAsistente(nombre) {
+        if (!mapaMarcasAsistente) return null;
+        const n = sinAcentosAsistente(nombre).replace(/^\./, '').trim();
+        const marcas = Object.keys(mapaMarcasAsistente).sort((a, b) => b.length - a.length);
+        for (const m of marcas) {
+            if (new RegExp(`\\b${m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(n)) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    function construirColaAsistente() {
+        const incluirSinImagen = $('asistente-f-sin-imagen').checked;
+        const incluirSinValidar = $('asistente-f-sin-validar').checked;
+        const areaFiltro = $('asistente-f-area').value;
+
+        colaAsistente = TODOS.filter(p => {
+            if (p.fabricante) return false; // catálogos estáticos de proveedor: no gestionados aquí
+            if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
+            if (areaFiltro && p.area !== areaFiltro) return false;
+
+            const sinImagen = !p.img;
+            const sinValidar = !!p.img && !p.imagen_validada;
+
+            if (incluirSinImagen && incluirSinValidar) return sinImagen || sinValidar;
+            if (incluirSinImagen) return sinImagen;
+            if (incluirSinValidar) return sinValidar;
+            return false;
+        });
+
+        indiceAsistenteActual = 0;
+    }
+
+    async function abrirAsistenteImagenes() {
+        await cargarMapaMarcasAsistente();
+        construirColaAsistente();
+        $('modal-asistente-imagenes-overlay').classList.add('activo');
+        renderizarAsistenteActual();
+    }
+
+    function cerrarAsistenteImagenes() {
+        $('modal-asistente-imagenes-overlay').classList.remove('activo');
+    }
+
+    function generarEnlacesAsistente(p) {
+        const enlaces = [];
+        const queryBase = `${p.nombre} ${p.ref}`;
+        enlaces.push({
+            texto: 'Google Imágenes',
+            icono: 'fa-solid fa-magnifying-glass',
+            url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(queryBase + ' producto')}`,
+        });
+
+        const marca = detectarMarcaAsistente(p.nombre);
+        if (marca && mapaMarcasAsistente[marca]) {
+            const dominio = mapaMarcasAsistente[marca];
+            enlaces.push({
+                texto: `En ${dominio}`,
+                icono: 'fa-solid fa-store',
+                url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent('site:' + dominio + ' ' + p.nombre)}`,
+            });
+        }
+
+        if (esEanValido(p.ref)) {
+            enlaces.push({
+                texto: 'Buscar por EAN',
+                icono: 'fa-solid fa-barcode',
+                url: `https://world.openfoodfacts.org/product/${p.ref}`,
+            });
+        }
+
+        return enlaces;
+    }
+
+    // Intento best-effort de encontrar la foto automáticamente por EAN en
+    // Open Food/Beauty/Products Facts — si el navegador bloquea la
+    // petición por CORS (algunas de estas APIs no lo permiten desde el
+    // navegador, a diferencia de un script Python), simplemente no se
+    // muestra nada y el usuario sigue con los enlaces manuales, sin que
+    // esto rompa el resto del asistente.
+    async function intentarCandidataAutomatica(p) {
+        const contenedor = $('asistente-candidata-auto');
+        contenedor.classList.remove('visible');
+        if (!esEanValido(p.ref)) return;
+
+        const bases = [
+            ['Open Products Facts', `https://world.openproductsfacts.org/api/v2/product/${p.ref}.json`],
+            ['Open Beauty Facts', `https://world.openbeautyfacts.org/api/v2/product/${p.ref}.json`],
+            ['Open Food Facts', `https://world.openfoodfacts.org/api/v2/product/${p.ref}.json`],
+        ];
+
+        for (const [nombreBase, url] of bases) {
+            try {
+                const resp = await fetch(url);
+                if (!resp.ok) continue;
+                const data = await resp.json();
+                if (data.status !== 1) continue;
+                const imgUrl = data.product && (data.product.image_front_url || data.product.image_url);
+                if (!imgUrl) continue;
+
+                $('asistente-candidata-auto-img').src = imgUrl;
+                $('asistente-candidata-auto-fuente').textContent = `${nombreBase}: ${data.product.product_name || ''}`;
+                contenedor.classList.add('visible');
+                contenedor.dataset.urlImagen = imgUrl;
+                return;
+            } catch (err) {
+                // Bloqueado por CORS o sin conexión a ese dominio en concreto — probar la siguiente base
+                continue;
+            }
+        }
+    }
+
+    function renderizarAsistenteActual() {
+        const total = colaAsistente.length;
+        $('asistente-progreso').textContent = `${Math.min(indiceAsistenteActual + 1, total)} / ${total}`;
+        $('asistente-barra-progreso-relleno').style.width = total ? `${(indiceAsistenteActual / total) * 100}%` : '0%';
+
+        if (total === 0 || indiceAsistenteActual >= total) {
+            $('asistente-contenido').style.display = 'none';
+            $('asistente-vacio').style.display = 'block';
+            return;
+        }
+        $('asistente-contenido').style.display = '';
+        $('asistente-vacio').style.display = 'none';
+
+        const p = colaAsistente[indiceAsistenteActual];
+        $('asistente-producto-nombre').textContent = p.nombre;
+        $('asistente-producto-ref').textContent = p.ref;
+        $('asistente-producto-area').textContent = p.area || '—';
+        $('asistente-producto-familia').textContent = p.familia || '—';
+
+        // Imagen actual (caso "sin validar": ya tiene foto, solo falta confirmarla)
+        const tieneImagenSinValidar = !!p.img && !p.imagen_validada;
+        $('asistente-imagen-actual').style.display = tieneImagenSinValidar ? 'flex' : 'none';
+        if (tieneImagenSinValidar) {
+            $('asistente-imagen-actual-img').src = urlImagenProducto(p, 100) || '';
+        }
+        $('asistente-btn-validar').style.display = tieneImagenSinValidar ? '' : 'none';
+
+        // Enlaces rápidos de búsqueda
+        const enlaces = generarEnlacesAsistente(p);
+        $('asistente-enlaces').innerHTML = enlaces.map(e =>
+            `<a class="asistente-enlace" href="${e.url}" target="_blank" rel="noopener"><i class="${e.icono}"></i> ${e.texto}</a>`
+        ).join('');
+
+        // Reset de la zona de subida para el nuevo producto
+        blobAsistenteComprimido = null;
+        $('asistente-preview').classList.remove('visible');
+        $('asistente-file').value = '';
+        $('asistente-btn-subir').disabled = true;
+
+        // Intentar candidata automática por EAN (no bloquea el resto del render)
+        intentarCandidataAutomatica(p);
+    }
+
+    async function procesarArchivoAsistenteImagen(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            mostrarToast('Ese archivo no es una imagen.', 'error');
+            return;
+        }
+        try {
+            blobAsistenteComprimido = await comprimirImagenParaSubida(file);
+            const url = URL.createObjectURL(blobAsistenteComprimido);
+            $('asistente-preview-img').src = url;
+            const kbOriginal = (file.size / 1024).toFixed(0);
+            const kbComprimido = (blobAsistenteComprimido.size / 1024).toFixed(0);
+            $('asistente-preview-info').textContent = `${kbOriginal} KB → ${kbComprimido} KB`;
+            $('asistente-preview').classList.add('visible');
+            $('asistente-btn-subir').disabled = false;
+        } catch (err) {
+            console.error('Error al comprimir imagen del asistente:', err);
+            mostrarToast('No se pudo procesar esta imagen.', 'error');
+        }
+    }
+
+    function avanzarAsistente() {
+        indiceAsistenteActual++;
+        renderizarAsistenteActual();
+    }
+
+    function enviarAccionAsistente(data) {
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            return Promise.reject(new Error('Sin URL configurada'));
+        }
+        return fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+    }
+
+    // Botón para abrir el asistente
+    $('btn-abrir-asistente-imagenes').addEventListener('click', abrirAsistenteImagenes);
+    $('modal-asistente-imagenes-cerrar').addEventListener('click', cerrarAsistenteImagenes);
+    $('modal-asistente-imagenes-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-asistente-imagenes-overlay') cerrarAsistenteImagenes();
+    });
+
+    $('asistente-aplicar-filtros').addEventListener('click', () => {
+        construirColaAsistente();
+        renderizarAsistenteActual();
+    });
+
+    // Zona de arrastrar / pegar / elegir archivo
+    const dropzoneAsistente = $('asistente-dropzone');
+    dropzoneAsistente.addEventListener('click', () => $('asistente-file').click());
+    $('asistente-file').addEventListener('change', (e) => {
+        if (e.target.files[0]) procesarArchivoAsistenteImagen(e.target.files[0]);
+    });
+    dropzoneAsistente.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzoneAsistente.classList.add('arrastrando');
+    });
+    dropzoneAsistente.addEventListener('dragleave', () => {
+        dropzoneAsistente.classList.remove('arrastrando');
+    });
+    dropzoneAsistente.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzoneAsistente.classList.remove('arrastrando');
+        const file = e.dataTransfer.files[0];
+        if (file) procesarArchivoAsistenteImagen(file);
+    });
+    document.addEventListener('paste', (e) => {
+        if (!$('modal-asistente-imagenes-overlay').classList.contains('activo')) return;
+        const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
+        if (item) procesarArchivoAsistenteImagen(item.getAsFile());
+    });
+
+    // Candidata automática encontrada por EAN: descargarla y tratarla como
+    // si el usuario la hubiera arrastrado/pegado
+    $('asistente-usar-candidata-auto').addEventListener('click', async () => {
+        const urlImg = $('asistente-candidata-auto').dataset.urlImagen;
+        if (!urlImg) return;
+        try {
+            const resp = await fetch(urlImg);
+            const blob = await resp.blob();
+            const file = new File([blob], 'candidata.jpg', { type: blob.type || 'image/jpeg' });
+            await procesarArchivoAsistenteImagen(file);
+        } catch (err) {
+            console.error('Error al descargar la candidata automática:', err);
+            mostrarToast('No se pudo cargar esa imagen automáticamente. Prueba a arrastrarla o pegarla a mano.', 'error');
+        }
+    });
+
+    $('asistente-btn-subir').addEventListener('click', function() {
+        const p = colaAsistente[indiceAsistenteActual];
+        if (!p || !blobAsistenteComprimido) return;
+
+        const btn = this;
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64Data = e.target.result.split(',')[1];
+            enviarAccionAsistente({
+                accion: 'actualizar_imagen',
+                referencia: p.ref,
+                nombre: p.nombre,
+                area: p.area || '',
+                familia: p.familia || '',
+                archivo: { nombre: p.ref + '.jpg', tipo: 'image/jpeg', datos: base64Data },
+            }).then(() => {
+                p._imgLocalOverride = e.target.result;
+                const idxTodos = TODOS.findIndex(x => x.ref === p.ref);
+                if (idxTodos !== -1) TODOS[idxTodos]._imgLocalOverride = e.target.result;
+                mostrarToast(`✓ Imagen subida para ${p.ref}`);
+                aplicarFiltros();
+                resincronizarVersionConocida();
+                avanzarAsistente();
+            }).catch(err => {
+                console.error('Error al subir imagen desde el asistente:', err);
+                mostrarToast('Error al subir la imagen.', 'error');
+            }).finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            });
+        };
+        reader.readAsDataURL(blobAsistenteComprimido);
+    });
+
+    $('asistente-btn-validar').addEventListener('click', function() {
+        const p = colaAsistente[indiceAsistenteActual];
+        if (!p) return;
+        const btn = this;
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Validando...';
+
+        enviarAccionAsistente({ accion: 'validar_imagen', referencia: p.ref }).then(() => {
+            mostrarToast(`✓ Imagen validada para ${p.ref}`);
+            resincronizarVersionConocida();
+            avanzarAsistente();
+        }).catch(err => {
+            console.error('Error al validar desde el asistente:', err);
+            mostrarToast('Error al validar la imagen.', 'error');
+        }).finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        });
+    });
+
+    $('asistente-btn-sin-imagen').addEventListener('click', function() {
+        const p = colaAsistente[indiceAsistenteActual];
+        if (!p) return;
+        const btn = this;
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ...';
+
+        enviarAccionAsistente({ accion: 'marcar_sin_imagen', referencia: p.ref }).then(() => {
+            p.img = '';
+            delete p._imgLocalOverride;
+            const idxTodos = TODOS.findIndex(x => x.ref === p.ref);
+            if (idxTodos !== -1) { TODOS[idxTodos].img = ''; delete TODOS[idxTodos]._imgLocalOverride; }
+            mostrarToast(`Marcado sin imagen: ${p.ref}`);
+            aplicarFiltros();
+            resincronizarVersionConocida();
+            avanzarAsistente();
+        }).catch(err => {
+            console.error('Error al marcar sin imagen desde el asistente:', err);
+            mostrarToast('Error al actualizar el producto.', 'error');
+        }).finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        });
+    });
+
+    $('asistente-btn-saltar').addEventListener('click', avanzarAsistente);
 
     // ── Dar de baja / reactivar producto (doble confirmación) ──
     // Reutiliza un único modal (#modal-confirmar-baja-*) en dos pasos: el
