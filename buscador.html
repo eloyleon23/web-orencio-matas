@@ -1675,6 +1675,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
 
         /* ── Asistente de imágenes ── */
+        #modal-asistente-imagenes-overlay {
+            /* Por encima del panel de filtros móvil (z-index 6000) y su
+               fondo oscuro (5999) — si no, con la animación de cierre del
+               panel (320ms) el asistente podía quedar tapado un instante. */
+            z-index: 6100;
+        }
         #modal-asistente-imagenes-box {
             width: 92%;
             max-width: 720px;
@@ -1682,10 +1688,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            padding: 24px 28px 28px;
         }
         .asistente-header {
             display: flex;
             align-items: center;
+            padding-right: 36px; /* deja hueco para que el botón de cerrar (absoluto, arriba a la derecha) no se solape con el contador */
             justify-content: space-between;
             gap: 12px;
             margin-bottom: 4px;
@@ -5754,7 +5762,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // Botón para abrir el asistente
-    $('btn-abrir-asistente-imagenes').addEventListener('click', abrirAsistenteImagenes);
+    $('btn-abrir-asistente-imagenes').addEventListener('click', () => {
+        // En móvil, el botón vive dentro del panel de filtros deslizante
+        // (z-index más alto que los modales normales) — si no se cierra
+        // antes, el asistente se abre pero queda visualmente DETRÁS del
+        // panel de filtros, que sigue tapándolo.
+        if (typeof cerrarFiltrosMovil === 'function') cerrarFiltrosMovil();
+        abrirAsistenteImagenes();
+    });
     $('modal-asistente-imagenes-cerrar').addEventListener('click', cerrarAsistenteImagenes);
     $('modal-asistente-imagenes-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'modal-asistente-imagenes-overlay') cerrarAsistenteImagenes();
