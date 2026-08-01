@@ -4841,6 +4841,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function abrirModalActualizarImagen(p) {
         productoActual = p;
+        blobImagenComprimida = null;
         $('modal-actualizar-imagen-nombre').textContent = p.nombre + ' (Ref: ' + p.ref + ')';
         $('modal-actualizar-imagen-file').value = '';
         $('modal-actualizar-imagen-file-name').textContent = '';
@@ -4852,6 +4853,45 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalActualizarImagen() {
         $('modal-actualizar-imagen-overlay').classList.remove('activo');
         productoActual = null;
+    }
+
+    // Comprime la foto en el propio navegador (Canvas) antes de subirla —
+    // las fotos de móvil sin comprimir pueden pesar 4-7MB, y en base64
+    // (un ~33% más grandes) eso son varios MB por una red muchas veces
+    // móvil, la causa real de que la subida tardara muchísimo. Con esto,
+    // como mucho unos cientos de KB.
+    // createImageBitmap con imageOrientation:'from-image' respeta la
+    // rotación EXIF de la foto (si no, se vería girada al dibujarla en el
+    // canvas, que ignora esos metadatos por defecto).
+    async function comprimirImagenParaSubida(file, maxLado = 1600, calidad = 0.82) {
+        let bitmap;
+        try {
+            bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        } catch (err) {
+            // Navegador sin soporte de imageOrientation: cargar tal cual
+            // (mejor una foto ocasionalmente sin rotar que no comprimir nada)
+            bitmap = await createImageBitmap(file);
+        }
+
+        let { width, height } = bitmap;
+        if (Math.max(width, height) > maxLado) {
+            const ratio = maxLado / Math.max(width, height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+        bitmap.close();
+
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(blob => {
+                if (!blob) { reject(new Error('No se pudo comprimir la imagen')); return; }
+                resolve(blob);
+            }, 'image/jpeg', calidad);
+        });
     }
 
     // Event listeners para la modal de actualizar imagen
@@ -4949,30 +4989,44 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
     });
 
+    let blobImagenComprimida = null;
+
     $('modal-actualizar-imagen-file').addEventListener('change', function(e) {
         const file = e.target.files[0];
-        if (file) {
-            $('modal-actualizar-imagen-file-name').textContent = file.name;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                $('modal-actualizar-imagen-preview-img').src = e.target.result;
-                $('modal-actualizar-imagen-preview').style.display = 'block';
-                $('modal-actualizar-imagen-submit').disabled = false;
-            };
-            reader.readAsDataURL(file);
-        }
+        if (!file) return;
+
+        $('modal-actualizar-imagen-file-name').textContent = file.name + ' (comprimiendo...)';
+        $('modal-actualizar-imagen-submit').disabled = true;
+        blobImagenComprimida = null;
+
+        comprimirImagenParaSubida(file).then(blob => {
+            blobImagenComprimida = blob;
+            const kbOriginal = (file.size / 1024).toFixed(0);
+            const kbComprimido = (blob.size / 1024).toFixed(0);
+            $('modal-actualizar-imagen-file-name').textContent = `${file.name} (${kbOriginal} KB → ${kbComprimido} KB)`;
+
+            const url = URL.createObjectURL(blob);
+            $('modal-actualizar-imagen-preview-img').src = url;
+            $('modal-actualizar-imagen-preview').style.display = 'block';
+            $('modal-actualizar-imagen-submit').disabled = false;
+        }).catch(err => {
+            console.error('Error al comprimir imagen:', err);
+            mostrarToast('No se pudo procesar esta imagen. Prueba con otra foto.', 'error');
+            $('modal-actualizar-imagen-file-name').textContent = '';
+        });
     });
 
     $('modal-actualizar-imagen-submit').addEventListener('click', function() {
         const file = $('modal-actualizar-imagen-file').files[0];
-        if (!file || !productoActual) return;
+        if (!file || !productoActual || !blobImagenComprimida) return;
 
         const btn = $('modal-actualizar-imagen-submit');
         const originalText = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo imagen...';
         btn.disabled = true;
 
-        // Convertir archivo a base64
+        // Convertir el blob YA COMPRIMIDO a base64 (no el archivo original,
+        // que puede pesar varios MB sin comprimir — ver comprimirImagenParaSubida)
         const reader = new FileReader();
         reader.onload = function(e) {
             const base64Data = e.target.result.split(',')[1];
@@ -4984,8 +5038,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 area: productoActual.area || '',
                 familia: productoActual.familia || '',
                 archivo: {
-                    nombre: file.name,
-                    tipo: file.type,
+                    nombre: productoActual.ref + '.jpg', // siempre .jpg: comprimirImagenParaSubida reconvierte a JPEG
+                    tipo: 'image/jpeg',
                     datos: base64Data
                 }
             };
@@ -5041,7 +5095,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 btn.disabled = false;
             });
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(blobImagenComprimida);
     });
 
     // ── Validar imagen de producto ──
