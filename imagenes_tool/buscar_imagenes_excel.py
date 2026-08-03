@@ -932,12 +932,29 @@ def main():
             print(f"        Columnas encontradas: {list(df.columns)}")
             sys.exit(1)
 
-        # Si el Excel trae imagen_drive_id, quedarnos solo con lo que de
-        # verdad no tiene foto (por si viniera algo ya resuelto colado)
-        if "imagen_drive_id" in df.columns:
-            antes = len(df)
+        # Filtrar solo lo que de verdad necesita trabajo: sin foto en
+        # absoluto (NO_TIENE_FOTO) O con foto pero todavía sin validar
+        # (imagen_validada vacía) — ambos casos se benefician de que este
+        # script encuentre una foto confirmada. Si el Excel viene ya
+        # filtrado de antemano (ej. un export "ProductosSinFotoValidada_*"
+        # hecho a mano desde el Sheet), este filtro no quita nada de más:
+        # es un superconjunto de NO_TIENE_FOTO (que siempre tiene
+        # imagen_validada vacía también).
+        antes = len(df)
+        tiene_col_drive = "imagen_drive_id" in df.columns
+        tiene_col_validada = "imagen_validada" in df.columns
+
+        if tiene_col_drive and tiene_col_validada:
+            sin_foto = df["imagen_drive_id"].astype(str).str.strip().str.upper() == "NO_TIENE_FOTO"
+            sin_validar = df["imagen_validada"].isna() | (df["imagen_validada"].astype(str).str.strip() == "")
+            df = df[sin_foto | sin_validar]
+            print(f"  → Filtrado sin foto o sin validar: {len(df)}/{antes} productos")
+        elif tiene_col_drive:
             df = df[df["imagen_drive_id"].astype(str).str.strip().str.upper() == "NO_TIENE_FOTO"]
             print(f"  → Filtrado NO_TIENE_FOTO: {len(df)}/{antes} productos")
+        elif tiene_col_validada:
+            df = df[df["imagen_validada"].isna() | (df["imagen_validada"].astype(str).str.strip() == "")]
+            print(f"  → Filtrado sin validar: {len(df)}/{antes} productos")
 
         # Convertir todos los valores a strings para evitar errores de tipo
         for col in df.columns:

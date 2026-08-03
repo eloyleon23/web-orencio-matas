@@ -149,10 +149,21 @@ def main():
         print(f"[ERROR] Faltan columnas 'referencia'/'nombre'. Columnas encontradas: {list(df.columns)}")
         sys.exit(1)
 
-    if "imagen_drive_id" in df.columns:
-        antes = len(df)
+    antes = len(df)
+    tiene_col_drive = "imagen_drive_id" in df.columns
+    tiene_col_validada = "imagen_validada" in df.columns
+
+    if tiene_col_drive and tiene_col_validada:
+        sin_foto = df["imagen_drive_id"].astype(str).str.strip().str.upper() == "NO_TIENE_FOTO"
+        sin_validar = df["imagen_validada"].isna() | (df["imagen_validada"].astype(str).str.strip() == "")
+        df = df[sin_foto | sin_validar]
+        print(f"→ Filtrado sin foto o sin validar: {len(df)}/{antes} productos")
+    elif tiene_col_drive:
         df = df[df["imagen_drive_id"].astype(str).str.strip().str.upper() == "NO_TIENE_FOTO"]
         print(f"→ Filtrado NO_TIENE_FOTO: {len(df)}/{antes} productos")
+    elif tiene_col_validada:
+        df = df[df["imagen_validada"].isna() | (df["imagen_validada"].astype(str).str.strip() == "")]
+        print(f"→ Filtrado sin validar: {len(df)}/{antes} productos")
 
     # Solo referencias que parecen EAN real — evita perder tiempo con
     # referencias internas de Talleres (Z..., etc.) que nunca van a
