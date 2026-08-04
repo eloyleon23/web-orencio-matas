@@ -1294,8 +1294,14 @@ def main():
     print(f"  {len(sin_resultado)} sin resultados")
     print(f"  CSV descargadas: {csv_path}")
     print(f"  CSV sin resultado: {csv_sin_path}")
-    print(f"\n→ Revisa las imágenes en {args.salida}/ y elimina las que no sean adecuadas.")
-    print(f"→ Luego usa subir_imagenes_validadas.py para subir las validadas a Drive.")
+    print(f"\n→ SIGUIENTE PASO — revisar visualmente ANTES de subir nada:")
+    print(f"  python generar_revision_html.py --carpeta {args.salida}")
+    print(f"  Abre el revision.html generado, aprueba/rechaza cada una, y pulsa")
+    print(f'  "Descargar aprobadas.csv" al terminar (normalmente cae en tu carpeta')
+    print(f"  de Descargas — muévelo a {args.salida}\\ antes del siguiente paso).")
+    print(f"\n→ IMPORTANTE al subir: usa aprobadas.csv, NO {os.path.basename(csv_path)}")
+    print(f"  (ese tiene TODO lo encontrado sin filtrar, incluidas las que rechazaste):")
+    print(f"  python subir_imagenes_validadas.py --directorio {args.salida} --csv {args.salida}\\aprobadas.csv")
 
 
 if __name__ == "__main__":

@@ -310,6 +310,10 @@ def main():
     print(f"  (referencia distinta) — revisa que el envase/formato/color realmente coincida")
     print(f"  antes de aprobar, sobre todo en variantes (tamaño, color, grano...). Presta")
     print(f"  especial atención a las de confianza 'media' o 'baja' en el visor.")
+    print(f"\n→ Al terminar de revisar, pulsa \"Descargar aprobadas.csv\" en el visor")
+    print(f"  (suele caer en tu carpeta de Descargas — muévelo a {args.salida}\\ antes")
+    print(f"  del siguiente paso), y usa ESE archivo al subir, NO imagenes_descargadas.csv:")
+    print(f"  python subir_imagenes_validadas.py --directorio {args.salida} --csv {args.salida}\\aprobadas.csv")
 
 
 if __name__ == "__main__":

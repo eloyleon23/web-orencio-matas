@@ -205,6 +205,8 @@ def main():
                      help="Simula todo el proceso sin tocar Drive ni el Sheet")
     ap.add_argument("--lote-sheet", type=int, default=25,
                      help="Cada cuántos productos se vuelca el lote de cambios pendientes al Sheet")
+    ap.add_argument("--forzar", action="store_true",
+                     help="Salta el aviso de confirmación al usar imagenes_descargadas.csv (el CSV en bruto, sin revisar)")
     args = ap.parse_args()
 
     # Verificar que el directorio existe
@@ -216,7 +218,33 @@ def main():
     if not os.path.exists(args.csv):
         print(f"[ERROR] No encuentro el CSV: {args.csv}")
         sys.exit(1)
-    
+
+    # Aviso de seguridad: "imagenes_descargadas.csv" es el CSV EN BRUTO con
+    # TODO lo que encontró el script de búsqueda, sin ningún filtro de
+    # revisión — lo correcto es revisar con generar_revision_html.py,
+    # pulsar "Descargar aprobadas.csv" ahí, y usar ESE archivo aquí. Sin
+    # este aviso, pasar el CSV en bruto por error sube también las
+    # candidatas rechazadas/de baja confianza (ya ha pasado).
+    nombre_csv = os.path.basename(args.csv).strip().lower()
+    if nombre_csv == "imagenes_descargadas.csv" and not args.forzar:
+        print("=" * 70)
+        print("[AVISO] Este es el CSV EN BRUTO (todo lo que encontró la búsqueda,")
+        print("        sin revisar) — NO es el resultado de la revisión visual.")
+        print()
+        print("        Si ya revisaste las imágenes en generar_revision_html.py y")
+        print('        pulsaste "Descargar aprobadas.csv", usa ESE archivo en su')
+        print("        lugar (normalmente en tu carpeta de Descargas).")
+        print()
+        print("        Si continúas con este CSV, se subirán TODAS las imágenes")
+        print("        encontradas, incluidas las que no hayas revisado o hayas")
+        print("        rechazado visualmente.")
+        print("=" * 70)
+        respuesta = input("¿Seguro que quieres continuar con este CSV sin revisar? (escribe SI para continuar): ")
+        if respuesta.strip().upper() != "SI":
+            print("Cancelado. Vuelve a lanzar esto con --csv apuntando a aprobadas.csv")
+            print("(o añade --forzar si de verdad quieres subir el CSV en bruto).")
+            sys.exit(0)
+
     # Leer CSV de imágenes descargadas
     with open(args.csv, encoding="utf-8") as f:
         filas_csv = list(csv.DictReader(f))
