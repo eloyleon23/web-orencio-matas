@@ -13,8 +13,14 @@ echo   ProductosSinFotoValidada_PERFUMERIA.xlsx
 echo   ProductosSinFotoValidada_PINTURAS.xlsx
 echo   ProductosSinFotoValidada_TALLERES.xlsx
 echo.
-echo Para cada uno que encuentre, lanza buscar_imagenes_excel.py y deja
-echo los resultados en una carpeta "resultados_[AREA]" junto a este .bat.
+echo Droguer.a/Perfumer.a/Pinturas se procesan con buscar_imagenes_excel.py
+echo (busca en webs de fabricante/tienda). Talleres se procesa con
+echo casar_imagenes_talleres.py (casa contra las fotos YA extraidas de
+echo vuestros catalogos de Zaphiro/Besa - es la via que de verdad funciona
+echo para esta area, no la busqueda generica).
+echo.
+echo Los resultados de cada una quedan en "resultados_[AREA]" junto a
+echo este .bat.
 echo.
 echo ============================================================
 echo.
@@ -29,7 +35,11 @@ for %%A in (DROGUERIA PERFUMERIA PINTURAS TALLERES) do (
         echo ------------------------------------------------------------
         echo   Procesando %%A  ^(!ARCHIVO!^)
         echo ------------------------------------------------------------
-        python buscar_imagenes_excel.py --excel "!ARCHIVO!" --salida "resultados_%%A" --debug
+        if "%%A"=="TALLERES" (
+            python casar_imagenes_talleres.py --excel "!ARCHIVO!" --salida "resultados_%%A"
+        ) else (
+            python buscar_imagenes_excel.py --excel "!ARCHIVO!" --salida "resultados_%%A" --debug
+        )
         echo.
         echo   Terminado %%A. Resultados en: resultados_%%A\
         echo.
@@ -54,6 +64,11 @@ if !ENCONTRADO! == 0 (
     echo   2^) Subir a Drive lo ya revisado y aprobado:
     echo      python subir_imagenes_validadas.py --directorio resultados_DROGUERIA --csv resultados_DROGUERIA\imagenes_descargadas.csv
     echo      ^(y lo mismo para cada area^)
+    echo.
+    echo   IMPORTANTE para Talleres: aunque el nombre se parezca mucho, es
+    echo   una foto de OTRO producto real ^(referencia distinta^) - revisa
+    echo   que el envase/formato/color realmente coincida, sobre todo en
+    echo   las de confianza media o baja.
 )
 echo ============================================================
 echo.

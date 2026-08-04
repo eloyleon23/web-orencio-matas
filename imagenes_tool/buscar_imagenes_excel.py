@@ -777,6 +777,8 @@ def buscar_imagen_titan(nombre_producto, sesion):
         return None, "Titan: nombre de producto vacío tras normalizar"
 
     imagenes = []
+    mejor_ratio_bruto = 0.0
+    mejor_nombre_bruto = None
     errores = []
 
     for BASE_URL in CARPETAS:
@@ -805,7 +807,11 @@ def buscar_imagen_titan(nombre_producto, sesion):
                 # "blanco") para aceptar el archivo, aunque fuera de otro
                 # producto distinto.
                 interseccion = tokens_producto & tokens_img
-                ratio = len(interseccion) / len(tokens_producto)
+                ratio = len(interseccion) / len(tokens_producto) if tokens_producto else 0
+
+                if ratio > mejor_ratio_bruto:
+                    mejor_ratio_bruto = ratio
+                    mejor_nombre_bruto = nombre_img
 
                 if ratio >= 0.34 and tamanos_compatibles(nombre_img, nombre_producto):
                     imagenes.append((ratio, len(interseccion), url_img, nombre_img))
@@ -819,7 +825,10 @@ def buscar_imagen_titan(nombre_producto, sesion):
         imagenes.sort(reverse=True, key=lambda x: (x[0], x[1]))
         return imagenes[0][2], f"Titan (solapamiento: {imagenes[0][0]:.2f}, tokens: {imagenes[0][1]})"
 
-    return None, "Sin resultados en servidor Titan con solapamiento suficiente"
+    if mejor_nombre_bruto:
+        return None, (f"Sin resultados en servidor Titan con solapamiento suficiente "
+                       f"(mejor candidato: {mejor_nombre_bruto!r}, solapamiento {mejor_ratio_bruto:.2f})")
+    return None, "Sin resultados en servidor Titan (ninguna imagen de las carpetas conocidas comparte ni una palabra)"
 
 
 # ── Construcción de queries de búsqueda ──
