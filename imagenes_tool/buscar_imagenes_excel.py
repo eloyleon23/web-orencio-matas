@@ -637,6 +637,14 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
             # atributo distintos para la URL real de la imagen.
             src = (img.get("src") or img.get("data-src") or img.get("data-lazy-src")
                    or img.get("data-original") or "")
+
+            # Si la imagen no lleva alt (bastante común e inconsistente en
+            # PrestaShop), no descartar el producto entero — usar el title
+            # o el texto del propio enlace como nombre de reserva. Sin
+            # esto, un producto real se perdía en silencio del índice solo
+            # por no tener alt, aunque su foto sí estuviera ahí.
+            if not alt:
+                alt = (a.get("title") or a.get_text(strip=True) or "").strip()
             if not alt or not src:
                 continue
             if not any(src.lower().split("?")[0].endswith(ext) for ext in EXTENSIONES_VALIDAS):
@@ -658,6 +666,19 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
             break
 
     _prestashop_indice_cache[url_base] = indice
+
+    # Volcar el índice completo a un archivo de depuración — así se puede
+    # comprobar directamente si un producto concreto entró o no en el
+    # índice (grep "DEKA" imagenes_tool/debug_indices_marca.log), en vez
+    # de tener que adivinarlo indirectamente por los resultados.
+    try:
+        with open("debug_indices_marca.log", "a", encoding="utf-8") as f:
+            f.write(f"\n=== {url_base} ({len(indice)} productos) ===\n")
+            for nombre, _, url_img in indice:
+                f.write(f"  {nombre}  ->  {url_img}\n")
+    except Exception:
+        pass
+
     return indice
 
 
