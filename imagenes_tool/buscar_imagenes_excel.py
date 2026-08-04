@@ -592,17 +592,22 @@ RETAILERS_PRESTASHOP_MARCA = {
         "https://compralimpieza.com/4_fairy",
         "https://drogueline.com/marca/fairy/",
     ],
+    "ALVAREZ GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
+    "A.GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
+    "AXE": ["https://www.primor.eu/es_es/axe"],
 }
 _prestashop_indice_cache = {}
 
 
-def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
+def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10, param_pagina="page"):
     """Recorre las páginas de un listado de marca en un retailer
-    PrestaShop o WooCommerce y construye un índice nombre_producto ->
-    imagen. Cacheado por url_base para el resto de la ejecución.
+    PrestaShop, WooCommerce o Magento y construye un índice
+    nombre_producto -> imagen. Cacheado por url_base para el resto de
+    la ejecución.
 
-    Soporta los dos estilos de paginación habituales:
-      - PrestaShop: ?page=N (parámetro de query)
+    Soporta los estilos de paginación habituales:
+      - PrestaShop: ?page=N (parámetro de query, por defecto)
+      - Magento (ej. Primor): ?p=N — pasar param_pagina="p"
       - WordPress/WooCommerce: /page/N/ (segmento de ruta — se usa si
         url_base termina en "/", típico de un archivo de taxonomía)
     """
@@ -619,7 +624,7 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10):
         elif es_wordpress:
             url = f"{url_base.rstrip('/')}/page/{pagina}/"
         else:
-            url = f"{url_base}?page={pagina}"
+            url = f"{url_base}?{param_pagina}={pagina}"
         try:
             resp = sesion.get(url, timeout=10)
             if resp.status_code != 200:
@@ -722,7 +727,8 @@ def buscar_imagen_prestashop_marca(marca, query, sesion):
 
     diagnostico_urls = []
     for url_base in urls:
-        indice = construir_indice_prestashop_marca(url_base, sesion)
+        param_pagina = "p" if "primor.eu" in url_base else "page"
+        indice = construir_indice_prestashop_marca(url_base, sesion, param_pagina=param_pagina)
         if not indice:
             diagnostico_urls.append(f"{url_base}: índice vacío (revisar conectividad o estructura de la página)")
             continue
