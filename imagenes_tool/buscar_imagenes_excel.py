@@ -110,6 +110,28 @@ def _tokens_significativos(texto):
     return tokens | extra
 
 
+def _solapamiento_sin_marca(texto_query, texto_candidato, marca):
+    """Solapamiento de tokens entre query y candidato, EXCLUYENDO las
+    palabras que forman el nombre de la marca ya detectada. Si ya
+    sabemos que este candidato viene de la página de esa marca, que
+    comparta el nombre de marca con la query (ej. 'ALVAREZ'+'GOMEZ')
+    no aporta ninguna información sobre si es el MISMO producto — sin
+    esto, el nombre de marca por sí solo podía cruzar el umbral cuando
+    el resto de la query tenía pocas palabras, haciendo que un único
+    producto genérico "ganara" repetidamente para varios productos
+    distintos de esa marca (confirmado con datos reales: 4 variantes
+    de colonia distintas de Alvarez Gómez todas emparejadas con la
+    misma foto de 'Titanio', solo por compartir el nombre de marca).
+    Devuelve (solapamiento, t_query_sin_marca) — t_query_sin_marca para
+    poder reusar el tamaño ya calculado."""
+    t_marca = _tokens_significativos(marca) if marca else set()
+    t_query = _tokens_significativos(texto_query) - t_marca
+    t_candidato = _tokens_significativos(texto_candidato) - t_marca
+    if not t_query:
+        return 0.0, t_query
+    return len(t_query & t_candidato) / len(t_query), t_query
+
+
 def _extraer_tamano(texto):
     """Extrae el tamaño/volumen/peso del texto, normalizado a mililitros
     (volumen) o gramos (peso) — para poder exigir que dos productos sean
@@ -399,7 +421,9 @@ def buscar_imagen_clarel(marca, query, sesion):
 
         # Cada imagen de producto de la parrilla trae su nombre en el
         # atributo alt — igual que en buscar_imagen_scraping, se compara
-        # contra la query y solo se acepta si hay solapamiento suficiente.
+        # contra la query (excluyendo el nombre de marca, ver
+        # _solapamiento_sin_marca) y solo se acepta si hay solapamiento
+        # suficiente.
         for img in soup.select("img"):
             alt = img.get("alt", "")
             src = img.get("src") or img.get("data-src") or ""
@@ -408,8 +432,9 @@ def buscar_imagen_clarel(marca, query, sesion):
             if not any(src.lower().split("?")[0].endswith(ext) for ext in EXTENSIONES_VALIDAS):
                 continue
 
-            t_alt = _tokens_significativos(alt)
-            solapamiento = len(t_query & t_alt) / len(t_query)
+            solapamiento, t_query_sin_marca = _solapamiento_sin_marca(query, alt, marca)
+            if not t_query_sin_marca:
+                continue  # la query solo tenía el nombre de marca, nada que discrimine
             if solapamiento >= 0.34 and solapamiento > mejor_solapamiento and tamanos_compatibles(alt, query):
                 mejor_solapamiento = solapamiento
                 mejor_nombre = alt
@@ -519,7 +544,7 @@ def buscar_imagen_thomil(query, sesion):
     if not indice:
         return None, "Thomil: no se pudo construir el índice de categorías (revisar conectividad)"
 
-    t_query = _tokens_significativos(query)
+    t_query = _tokens_significativos(query) - {"THOMIL"}
     if not t_query:
         return None, "Thomil: query vacía tras normalizar"
 
@@ -527,7 +552,8 @@ def buscar_imagen_thomil(query, sesion):
     mejor_url = None
     mejor_solapamiento = 0.0
     for nombre, tokens, url_img in indice:
-        solapamiento = len(t_query & tokens) / len(t_query)
+        tokens_sin_marca = tokens - {"THOMIL"}
+        solapamiento = len(t_query & tokens_sin_marca) / len(t_query)
         # Umbral algo más laxo que el resto (0.30 en vez de 0.34): el
         # catálogo de Thomil es de un solo proveedor de confianza (menor
         # riesgo de casar con un producto de otra marca), y sus nombres
@@ -689,9 +715,10 @@ def buscar_imagen_prestashop_marca(marca, query, sesion):
     if not urls:
         return None, "sin retailer PrestaShop configurado para esta marca"
 
-    t_query = _tokens_significativos(query)
+    t_marca = _tokens_significativos(marca) if marca else set()
+    t_query = _tokens_significativos(query) - t_marca
     if not t_query:
-        return None, "query vacía tras normalizar"
+        return None, "query vacía tras normalizar (o solo tenía el nombre de la marca)"
 
     diagnostico_urls = []
     for url_base in urls:
@@ -710,7 +737,14 @@ def buscar_imagen_prestashop_marca(marca, query, sesion):
         mejor_solapamiento_bruto = 0.0
 
         for nombre, tokens, url_img in indice:
-            solapamiento = len(t_query & tokens) / len(t_query)
+            # Igual que en Clarel: se excluye el nombre de la marca del
+            # cálculo — sin esto, el propio nombre de marca (compartido
+            # por definición por TODO lo de este índice) podía cruzar el
+            # umbral él solo cuando el resto de la query tenía pocas
+            # palabras, haciendo que el mismo producto genérico ganara
+            # repetidamente para productos distintos de la misma marca.
+            tokens_sin_marca = tokens - t_marca
+            solapamiento = len(t_query & tokens_sin_marca) / len(t_query)
             if solapamiento > mejor_solapamiento_bruto:
                 mejor_solapamiento_bruto = solapamiento
                 mejor_nombre_bruto = nombre
@@ -1117,6 +1151,7 @@ def main():
     
     encontradas = []
     sin_resultado = []
+    urls_ya_asignadas = {}  # url_imagen -> referencia que la reclamó primero (ver detección de duplicados)
     
     for i, p in enumerate(productos, 1):
         referencia = str(p.get("referencia", "")).strip()
@@ -1295,7 +1330,25 @@ def main():
                     # Si se agota la cuota, dejar de intentar con Google API
                     print(f"    [AVISO] {motivo}")
                     break
-        
+
+        # Red de seguridad: si esta MISMA imagen ya se asignó a OTRO
+        # producto en esta ejecución, es casi seguro que sea el mismo
+        # fallo de "un candidato genérico gana repetidamente" (ej. el
+        # nombre de marca cruzando el umbral él solo) — rara vez dos
+        # productos distintos usan de verdad la misma foto exacta,
+        # incluso siendo de la misma familia/marca. Se descarta en vez
+        # de arriesgarse a subir la misma imagen para varios productos.
+        if url_imagen and url_imagen in urls_ya_asignadas:
+            ref_previa = urls_ya_asignadas[url_imagen]
+            motivos_debug.append(
+                f"Descartado: esta misma imagen ya se asignó a la referencia {ref_previa} "
+                f"en esta ejecución — posible candidato genérico, no específico de este producto"
+            )
+            url_imagen = None
+            metodo_usado = None
+        elif url_imagen:
+            urls_ya_asignadas[url_imagen] = referencia
+
         if args.dry_run:
             if url_imagen:
                 print(f"  → Encontrada: {metodo_usado}")
