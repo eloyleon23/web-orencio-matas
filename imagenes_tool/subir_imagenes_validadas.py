@@ -67,9 +67,18 @@ def autenticar(carpeta_credenciales="."):
     if os.path.exists(ruta_token):
         creds = Credentials.from_authorized_user_file(ruta_token, SCOPES)
     if not creds or not creds.valid:
+        necesita_login_completo = True
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+                necesita_login_completo = False
+            except Exception as e:
+                # El refresh token también puede caducar o ser revocado
+                # (no solo el access token de corta duración) — sin este
+                # try/except, el script se caía aquí en vez de volver a
+                # pedir el login por navegador.
+                print(f"[AVISO] El token guardado ya no es válido ({e}). Pidiendo login de nuevo...")
+        if necesita_login_completo:
             if not os.path.exists(ruta_creds):
                 print(f"[ERROR] No encuentro {ruta_creds}.")
                 print("        Sigue las instrucciones del README para obtenerlo desde Google Cloud Console.")
