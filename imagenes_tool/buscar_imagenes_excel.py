@@ -818,15 +818,15 @@ def buscar_imagen_google_api(api_key, cx, query, sesion):
 TITANLUX_BASE = "https://www.titanlux.es"
 TITANLUX_CATEGORIAS = [
     "decoracion",
-    "bricolaje-creativo",
-    "sprays",
-    "antihumedad",
+    "bricolajecreativo",       # antes "bricolaje-creativo" (404) — sin guión
+    "pinturas-sprays",         # antes "sprays" (404)
+    "pinturas-antihumedad",    # antes "antihumedad" (404)
     "deportiva",
     "pinturas-nauticas",
     "ebanisteria",
-    "colores-a-medida",
+    "color-a-medida",          # antes "colores-a-medida" (404) — singular
     "profesional",
-    "acriton",
+    "acriton-pintura-fachadas",  # antes "acriton" (404)
 ]
 _titanlux_indice_cache = None
 
