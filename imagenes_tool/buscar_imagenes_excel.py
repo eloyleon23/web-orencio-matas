@@ -1048,6 +1048,7 @@ def construir_indice_tollens(sesion):
 
 BAIXENS_BASE = "https://www.baixens.com"
 _baixens_indice_cache = None
+_baixens_ultimo_error = None
 
 
 def construir_indice_baixens(sesion, max_paginas=20):
@@ -1056,20 +1057,23 @@ def construir_indice_baixens(sesion, max_paginas=20):
     cualquier retailer (que solo revendía 6). Fichas de producto en
     /productos/{categoria}/{slug}, foto real en el meta og:image, mismo
     patrón que titanlux.es/titantech.es/tollens.es."""
-    global _baixens_indice_cache
+    global _baixens_indice_cache, _baixens_ultimo_error
     if _baixens_indice_cache is not None:
         return _baixens_indice_cache
 
     from bs4 import BeautifulSoup
     indice = []
+    ultimo_error = None
 
     for pagina in range(1, max_paginas + 1):
         url = f"{BAIXENS_BASE}/productos" + (f"?pagina={pagina}" if pagina > 1 else "")
         try:
             resp = sesion.get(url, timeout=10)
             if resp.status_code != 200:
+                ultimo_error = f"HTTP {resp.status_code} en {url}"
                 break
-        except Exception:
+        except Exception as e:
+            ultimo_error = f"error de red en {url}: {str(e)[:100]}"
             break
 
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -1096,6 +1100,7 @@ def construir_indice_baixens(sesion, max_paginas=20):
             break
 
     _baixens_indice_cache = indice
+    _baixens_ultimo_error = ultimo_error
     return indice
 
 
@@ -1105,7 +1110,8 @@ def buscar_imagen_baixens(query, sesion):
     real del meta og:image de su ficha."""
     indice = construir_indice_baixens(sesion)
     if not indice:
-        return None, "baixens: no se pudo construir el índice de productos (revisar conectividad)"
+        detalle_error = f" ({_baixens_ultimo_error})" if _baixens_ultimo_error else ""
+        return None, f"baixens: no se pudo construir el índice de productos{detalle_error}"
 
     t_marca = {"BAIXENS"}
     t_query = _tokens_significativos(query) - t_marca
