@@ -911,6 +911,105 @@ def construir_indice_titanlux(sesion):
     return indice
 
 
+TITANTECH_BASE = "https://www.titantech.es"
+_titantech_indice_cache = None
+
+
+def construir_indice_titantech(sesion):
+    """Titantech es un sitio APARTE de titanlux.es (misma empresa,
+    INDUSTRIAS TITAN, línea profesional/industrial distinta: esmaltes
+    poliuretano, imprimaciones epoxi, pavimentos...). Confirmado por
+    fetch real: mismo patrón de ficha (titantech.es/productos/{slug},
+    foto en meta og:image), pero un único listado en /productos en vez
+    de varias categorías. Cacheado en memoria para el resto de la
+    ejecución."""
+    global _titantech_indice_cache
+    if _titantech_indice_cache is not None:
+        return _titantech_indice_cache
+
+    from bs4 import BeautifulSoup
+    indice = []
+
+    pagina = 1
+    while pagina <= 15:
+        url = f"{TITANTECH_BASE}/productos"
+        if pagina > 1:
+            url += f"?page={pagina}"
+        try:
+            resp = sesion.get(url, timeout=10)
+            if resp.status_code != 200:
+                break
+        except Exception:
+            break
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        nuevos_en_pagina = 0
+        for a in soup.select("a[href*='/productos/']"):
+            href = a.get("href", "")
+            # Excluir el propio enlace a /productos (listado), solo
+            # fichas individuales tipo /productos/{slug}
+            if href.rstrip("/").endswith("/productos"):
+                continue
+            nombre = (a.get("title") or a.get_text(strip=True) or "").strip()
+            if not nombre or not href:
+                continue
+            if not href.startswith("http"):
+                href = TITANTECH_BASE + href
+            if any(u == href for _, _, u in indice):
+                continue
+            indice.append((nombre, _tokens_significativos(nombre), href))
+            nuevos_en_pagina += 1
+
+        if nuevos_en_pagina == 0:
+            break
+        pagina += 1
+
+    _titantech_indice_cache = indice
+    return indice
+
+
+def buscar_imagen_titantech(query, sesion):
+    """Busca en el índice de titantech.es (construido una vez y
+    cacheado) el producto cuyo nombre mejor coincida con la query, y
+    saca su foto real del meta og:image de su ficha."""
+    indice = construir_indice_titantech(sesion)
+    if not indice:
+        return None, "titantech: no se pudo construir el índice (revisar conectividad)"
+
+    t_query = _tokens_significativos(query)
+    if not t_query:
+        return None, "titantech: query vacía tras normalizar"
+
+    mejor_nombre = None
+    mejor_url_producto = None
+    mejor_solapamiento = 0.0
+    for nombre, tokens, url_producto in indice:
+        solapamiento = len(t_query & tokens) / len(t_query)
+        if solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
+            mejor_solapamiento = solapamiento
+            mejor_nombre = nombre
+            mejor_url_producto = url_producto
+
+    if not mejor_url_producto or mejor_solapamiento < 0.34:
+        detalle = f"mejor candidato {mejor_nombre!r} con solapamiento {mejor_solapamiento:.2f}" if mejor_nombre else "ninguna coincidencia"
+        return None, f"titantech: {detalle} (índice: {len(indice)} productos)"
+
+    from bs4 import BeautifulSoup
+    try:
+        resp2 = sesion.get(mejor_url_producto, timeout=10)
+        if resp2.status_code != 200:
+            return None, f"titantech ficha HTTP {resp2.status_code}"
+    except Exception as e:
+        return None, f"titantech ficha error: {str(e)[:100]}"
+
+    soup2 = BeautifulSoup(resp2.text, "html.parser")
+    meta_img = soup2.find("meta", attrs={"property": "og:image"})
+    if not meta_img or not meta_img.get("content"):
+        return None, f"titantech: ficha de {mejor_nombre!r} encontrada pero sin foto"
+
+    return meta_img["content"], f"Titantech (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
+
+
 def buscar_imagen_titanlux(query, sesion):
     """Busca en el índice de categorías de titanlux.es (construido una
     vez y cacheado) el producto cuyo nombre mejor coincida con la
@@ -1286,9 +1385,28 @@ def main():
                     print(f"    [AVISO] titanlux.es no responde, se abandona para este producto")
                     titanlux_ok = False
 
-            # Si no encuentra en titanlux.es, probar el servidor de
-            # archivos antiguo (por si tiene algo de la línea TitanPro
-            # que no esté en la web de producto)
+            # Titantech: sitio APARTE de titanlux.es, misma empresa
+            # (Industrias Titan) pero línea profesional/industrial
+            # distinta (esmaltes poliuretano, imprimaciones epoxi,
+            # pavimentos...) — confirmado con datos reales: productos
+            # TITANTECH no aparecían en absoluto en el índice de titanlux.es.
+            titantech_ok = True
+            for query in (queries[:3] if not url_imagen else []):
+                if not titantech_ok:
+                    break
+                url, motivo = buscar_imagen_titantech(query, sesion)
+                motivos_debug.append(f"Titantech [{query}]: {motivo}")
+                if url:
+                    url_imagen = url
+                    metodo_usado = f"Titantech: {motivo}"
+                    break
+                if motivo.startswith("titantech: no se pudo") or motivo.startswith("titantech ficha error"):
+                    print(f"    [AVISO] titantech.es no responde, se abandona para este producto")
+                    titantech_ok = False
+
+            # Si no encuentra en titanlux.es ni titantech.es, probar el
+            # servidor de archivos antiguo (por si tiene algo de la línea
+            # TitanPro que no esté en ninguna de las dos webs de producto)
             titan_ok = True
             for query in (queries if not url_imagen else []):
                 if not titan_ok:
