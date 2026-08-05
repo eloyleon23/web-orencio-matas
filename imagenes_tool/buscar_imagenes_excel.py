@@ -815,51 +815,105 @@ def buscar_imagen_google_api(api_key, cx, query, sesion):
 
 
 # ── Búsqueda en servidor de Titan (para pinturas) ──
-def buscar_imagen_titanlux(query, sesion):
-    """Busca en el buscador REAL de titanlux.es (la web de producto, con
-    fichas propias) — distinto del servidor de archivos
-    ficheros.industriastitan.es, que solo cubre la línea profesional
-    TitanPro y usa nombres de archivo poco descriptivos ('TitanPRO_R10_
-    4L.png'), no el catálogo completo. Cada ficha de producto trae la
-    foto real en el meta og:image, con URL predecible
-    (static.titanlux.es/productes/{codigo}_{NOMBRE}.jpg)."""
-    url_busqueda = f"https://www.titanlux.es/es/busca/buscador?b={quote(query)}&o=top&submit="
-    try:
-        resp = sesion.get(url_busqueda, timeout=10)
-        if resp.status_code != 200:
-            return None, f"titanlux HTTP {resp.status_code}"
-    except Exception as e:
-        return None, f"titanlux error: {str(e)[:100]}"
+TITANLUX_BASE = "https://www.titanlux.es"
+TITANLUX_CATEGORIAS = [
+    "decoracion",
+    "bricolaje-creativo",
+    "sprays",
+    "antihumedad",
+    "deportiva",
+    "pinturas-nauticas",
+    "ebanisteria",
+    "colores-a-medida",
+    "profesional",
+    "acriton",
+]
+_titanlux_indice_cache = None
+
+
+def construir_indice_titanlux(sesion):
+    """Recorre las páginas de categoría reales de titanlux.es (con
+    paginación) y construye un índice nombre_producto -> ficha de
+    producto. Se usa en vez de su buscador interno porque este no
+    maneja bien consultas de varias palabras: una búsqueda de una sola
+    palabra ('barniz') funciona, pero el nombre completo de un producto
+    (varias palabras) devuelve sistemáticamente 'sin resultados' aunque
+    el producto exista — confirmado con el sin_resultado.csv real del
+    usuario, 100% de los productos con 'sin resultados en el buscador'.
+    Cacheado en memoria para el resto de la ejecución."""
+    global _titanlux_indice_cache
+    if _titanlux_indice_cache is not None:
+        return _titanlux_indice_cache
 
     from bs4 import BeautifulSoup
-    soup = BeautifulSoup(resp.text, "html.parser")
+    indice = []
+
+    for cat in TITANLUX_CATEGORIAS:
+        pagina = 1
+        while pagina <= 15:
+            url = f"{TITANLUX_BASE}/es/productos/ver/{cat}"
+            if pagina > 1:
+                url += f"?page={pagina}"
+            try:
+                resp = sesion.get(url, timeout=10)
+                if resp.status_code != 200:
+                    break
+            except Exception:
+                break
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            nuevos_en_pagina = 0
+            for a in soup.select("a[href*='/productos/producto/']"):
+                nombre = (a.get("title") or a.get_text(strip=True) or "").strip()
+                href = a.get("href", "")
+                if not nombre or not href:
+                    continue
+                if not href.startswith("http"):
+                    href = TITANLUX_BASE + href
+                # Evitar duplicados (el mismo producto puede aparecer en
+                # varias categorías, o repetido varias veces en la misma
+                # página por bloques de imagen+título)
+                if any(u == href for _, _, u in indice):
+                    continue
+                indice.append((nombre, _tokens_significativos(nombre), href))
+                nuevos_en_pagina += 1
+
+            if nuevos_en_pagina == 0:
+                break
+            pagina += 1
+
+    _titanlux_indice_cache = indice
+    return indice
+
+
+def buscar_imagen_titanlux(query, sesion):
+    """Busca en el índice de categorías de titanlux.es (construido una
+    vez y cacheado) el producto cuyo nombre mejor coincida con la
+    query, y saca su foto real del meta og:image de su ficha."""
+    indice = construir_indice_titanlux(sesion)
+    if not indice:
+        return None, "titanlux: no se pudo construir el índice de categorías (revisar conectividad)"
 
     t_query = _tokens_significativos(query)
     if not t_query:
         return None, "titanlux: query vacía tras normalizar"
 
-    mejor_url_producto = None
     mejor_nombre = None
+    mejor_url_producto = None
     mejor_solapamiento = 0.0
-    for a in soup.select("a[href*='/productos/producto/']"):
-        nombre_candidato = a.get("title") or a.get_text(strip=True)
-        if not nombre_candidato:
-            continue
-        t_candidato = _tokens_significativos(nombre_candidato)
-        solapamiento = len(t_query & t_candidato) / len(t_query)
-        if solapamiento > mejor_solapamiento:
+    for nombre, tokens, url_producto in indice:
+        solapamiento = len(t_query & tokens) / len(t_query)
+        if solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
             mejor_solapamiento = solapamiento
-            mejor_nombre = nombre_candidato
-            mejor_url_producto = a.get("href")
+            mejor_nombre = nombre
+            mejor_url_producto = url_producto
 
     if not mejor_url_producto or mejor_solapamiento < 0.34:
-        detalle = f"mejor candidato {mejor_nombre!r} con solapamiento {mejor_solapamiento:.2f}" if mejor_nombre else "sin resultados en el buscador"
-        return None, f"titanlux: {detalle}"
-
-    if not tamanos_compatibles(mejor_nombre, query):
-        return None, f"titanlux: {mejor_nombre!r} coincide en texto pero el tamaño/formato no encaja"
+        detalle = f"mejor candidato {mejor_nombre!r} con solapamiento {mejor_solapamiento:.2f}" if mejor_nombre else "ninguna coincidencia"
+        return None, f"titanlux: {detalle} (índice: {len(indice)} productos)"
 
     # Ir a la ficha de producto real y sacar la foto del meta og:image
+    from bs4 import BeautifulSoup
     try:
         resp2 = sesion.get(mejor_url_producto, timeout=10)
         if resp2.status_code != 200:
@@ -872,7 +926,7 @@ def buscar_imagen_titanlux(query, sesion):
     if not meta_img or not meta_img.get("content"):
         return None, f"titanlux: ficha de {mejor_nombre!r} encontrada pero sin foto"
 
-    return meta_img["content"], f"Titanlux (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f})"
+    return meta_img["content"], f"Titanlux (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
 
 
 def buscar_imagen_titan(nombre_producto, sesion):
