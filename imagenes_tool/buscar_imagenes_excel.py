@@ -1375,12 +1375,28 @@ def main():
 
         # Estrategia de búsqueda según área
         if area == "pinturas":
-            # Primero titanlux.es (la web de producto real, con fichas y
+            # Retailers PrestaShop/WooCommerce de marca específica (ej.
+            # Werku): se prueban PRIMERO — máxima prioridad, antes incluso
+            # que Titanlux, ya que estas marcas no son de Titan y perder
+            # tiempo ahí antes no aporta nada. Este bloque faltaba en la
+            # rama de pinturas (solo estaba en la de droguería/perfumería),
+            # así que marcas como WERKU nunca lo intentaban pese a estar
+            # configuradas en RETAILERS_PRESTASHOP_MARCA.
+            if not url_imagen and marca in RETAILERS_PRESTASHOP_MARCA:
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_prestashop_marca(marca, query, sesion)
+                    motivos_debug.append(f"PrestaShop [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"PrestaShop: {motivo}"
+                        break
+
+            # Luego titanlux.es (la web de producto real, con fichas y
             # foto fiable en el meta og:image) — mucho más completa que
             # el servidor de archivos antiguo, que solo cubre la línea
             # profesional TitanPro con nombres de archivo poco descriptivos.
             titanlux_ok = True
-            for query in queries[:3]:
+            for query in (queries[:3] if not url_imagen else []):
                 if not titanlux_ok:
                     break
                 url, motivo = buscar_imagen_titanlux(query, sesion)
