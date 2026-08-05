@@ -847,9 +847,12 @@ def construir_indice_titanlux(sesion):
 
     from bs4 import BeautifulSoup
     indice = []
+    resumen_categorias = []
 
     for cat in TITANLUX_CATEGORIAS:
+        antes = len(indice)
         pagina = 1
+        paginas_reales = 0
         while pagina <= 15:
             url = f"{TITANLUX_BASE}/es/productos/ver/{cat}"
             if pagina > 1:
@@ -857,8 +860,12 @@ def construir_indice_titanlux(sesion):
             try:
                 resp = sesion.get(url, timeout=10)
                 if resp.status_code != 200:
+                    if pagina == 1:
+                        resumen_categorias.append(f"{cat}: HTTP {resp.status_code} en la página 1 (slug probablemente incorrecto)")
                     break
-            except Exception:
+            except Exception as e:
+                if pagina == 1:
+                    resumen_categorias.append(f"{cat}: error de red en la página 1 ({str(e)[:80]})")
                 break
 
             soup = BeautifulSoup(resp.text, "html.parser")
@@ -880,7 +887,25 @@ def construir_indice_titanlux(sesion):
 
             if nuevos_en_pagina == 0:
                 break
+            paginas_reales += 1
             pagina += 1
+
+        nuevos_de_esta_categoria = len(indice) - antes
+        if nuevos_de_esta_categoria > 0:
+            resumen_categorias.append(f"{cat}: {nuevos_de_esta_categoria} productos ({paginas_reales} página(s))")
+        elif not any(cat in r for r in resumen_categorias):
+            resumen_categorias.append(f"{cat}: 0 productos (página cargó pero sin enlaces de producto reconocidos)")
+
+    # Volcar el resumen a un archivo de depuración — así se puede ver
+    # directamente qué categoría está fallando (slug incorrecto, sin
+    # paginación real, etc.) sin tener que inferirlo del resultado final.
+    try:
+        with open("debug_indice_titanlux.log", "w", encoding="utf-8") as f:
+            f.write(f"Índice de Titanlux: {len(indice)} productos en total\n\n")
+            for linea in resumen_categorias:
+                f.write(f"  {linea}\n")
+    except Exception:
+        pass
 
     _titanlux_indice_cache = indice
     return indice
