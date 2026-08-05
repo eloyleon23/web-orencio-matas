@@ -603,6 +603,8 @@ RETAILERS_PRESTASHOP_MARCA = {
         "https://www.werku.com/categoria-producto/escaleras-plataformas/",
         "https://www.werku.com/categoria-producto/proteccion-seguridad/",
         "https://quepintamos.com/categoria-producto/herramientas-y-complementos/",
+        "https://materialesmanuelmartin.com/product-category/construccion/herramientas-construccion/herramientas-electricas/",
+        "https://materialesmanuelmartin.com/product-category/construccion/herramientas-construccion/herramientas-manuales/",
     ],
 }
 _prestashop_indice_cache = {}
@@ -651,7 +653,7 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10, param_pa
         # ".html" es el patrón típico de PrestaShop; "/producto/" o
         # "/product/" el de WooCommerce (sin extensión .html).
         vistos = set()  # evitar duplicados: la misma ficha suele aparecer 2 veces (imagen + título)
-        for a in soup.select("a[href*='.html'], a[href*='/producto/'], a[href*='/product/']"):
+        for a in soup.select("a[href*='.html'], a[href*='/producto/'], a[href*='/product/'], a[href*='/tienda/']"):
             href = a.get("href", "")
             if href in vistos:
                 continue
@@ -989,6 +991,101 @@ def construir_indice_titantech(sesion):
 
     _titantech_indice_cache = indice
     return indice
+
+
+TOLLENS_CATEGORIAS = [
+    "https://www.tollens.es/guia-de-seleccion-de-producto/piscinas/piscinas-al-agua",
+    "https://www.tollens.es/productos-y-soluciones/productos/imprimaciones",
+    "https://www.tollens.es/productos-y-soluciones/productos/esmaltes",
+    "https://www.tollens.es/productos-y-soluciones/productos/piscinas",
+    "https://www.tollens.es/productos-y-soluciones/productos/madera",
+    "https://www.tollens.es/productos-y-soluciones/productos/pinturas-plasticas",
+    "https://www.tollens.es/productos-y-soluciones/productos/directo-al-metal",
+]
+_tollens_indice_cache = None
+
+
+def construir_indice_tollens(sesion):
+    """Tollens usa una plataforma de web propia (ni PrestaShop ni
+    WooCommerce) — fichas de producto en /guia-de-seleccion-de-producto/
+    {categoria}/{subcategoria}/{slug}. Mismo patrón que titanlux.es/
+    titantech.es: se indexan las páginas de categoría conocidas y se
+    saca la foto real de la ficha (meta og:image)."""
+    global _tollens_indice_cache
+    if _tollens_indice_cache is not None:
+        return _tollens_indice_cache
+
+    from bs4 import BeautifulSoup
+    indice = []
+
+    for url in TOLLENS_CATEGORIAS:
+        try:
+            resp = sesion.get(url, timeout=10)
+            if resp.status_code != 200:
+                continue
+        except Exception:
+            continue
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for a in soup.select("a[href*='/guia-de-seleccion-de-producto/']"):
+            href = a.get("href", "")
+            nombre = (a.get_text(strip=True) or "").strip()
+            # La propia entrada de menú "Guía de selección de producto"
+            # (sin categoría/subcategoría en la ruta) no es una ficha real
+            if href.rstrip("/").count("/") < 5 or not nombre:
+                continue
+            if not href.startswith("http"):
+                href = "https://www.tollens.es" + href
+            if any(u == href for _, _, u in indice):
+                continue
+            indice.append((nombre, _tokens_significativos(nombre), href))
+
+    _tollens_indice_cache = indice
+    return indice
+
+
+def buscar_imagen_tollens(query, sesion):
+    """Busca en el índice de categorías de Tollens (construido una vez y
+    cacheado) el producto cuyo nombre mejor coincida con la query, y
+    saca su foto real del meta og:image de su ficha."""
+    indice = construir_indice_tollens(sesion)
+    if not indice:
+        return None, "tollens: no se pudo construir el índice de categorías (revisar conectividad)"
+
+    t_marca = {"TOLLENS"}
+    t_query = _tokens_significativos(query) - t_marca
+    if not t_query:
+        return None, "tollens: query vacía tras normalizar"
+
+    mejor_nombre = None
+    mejor_url_producto = None
+    mejor_solapamiento = 0.0
+    for nombre, tokens, url_producto in indice:
+        tokens_sin_marca = tokens - t_marca
+        solapamiento = len(t_query & tokens_sin_marca) / len(t_query)
+        if solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
+            mejor_solapamiento = solapamiento
+            mejor_nombre = nombre
+            mejor_url_producto = url_producto
+
+    if not mejor_url_producto or mejor_solapamiento < 0.34:
+        detalle = f"mejor candidato {mejor_nombre!r} con solapamiento {mejor_solapamiento:.2f}" if mejor_nombre else "ninguna coincidencia"
+        return None, f"tollens: {detalle} (índice: {len(indice)} productos)"
+
+    from bs4 import BeautifulSoup
+    try:
+        resp2 = sesion.get(mejor_url_producto, timeout=10)
+        if resp2.status_code != 200:
+            return None, f"tollens ficha HTTP {resp2.status_code}"
+    except Exception as e:
+        return None, f"tollens ficha error: {str(e)[:100]}"
+
+    soup2 = BeautifulSoup(resp2.text, "html.parser")
+    meta_img = soup2.find("meta", attrs={"property": "og:image"})
+    if not meta_img or not meta_img.get("content"):
+        return None, f"tollens: ficha de {mejor_nombre!r} encontrada pero sin foto"
+
+    return meta_img["content"].strip(), f"Tollens (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
 
 
 def buscar_imagen_titantech(query, sesion):
@@ -1404,6 +1501,21 @@ def main():
                     if url:
                         url_imagen = url
                         metodo_usado = f"PrestaShop: {motivo}"
+                        break
+
+            # Tollens: plataforma propia (ni PrestaShop ni WooCommerce),
+            # misma prioridad máxima que el bloque anterior y por el
+            # mismo motivo — confirmado con datos reales: productos
+            # Tollens sin esta comprobación caían en Titanlux/Titan y a
+            # veces "enganchaban" con un producto de Titan no relacionado
+            # por compartir palabras genéricas (esmalte, imprimación...).
+            if not url_imagen and marca == "TOLLENS":
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_tollens(query, sesion)
+                    motivos_debug.append(f"Tollens [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"Tollens: {motivo}"
                         break
 
             # Luego titanlux.es (la web de producto real, con fichas y
