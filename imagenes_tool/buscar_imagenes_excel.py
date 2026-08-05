@@ -595,6 +595,14 @@ RETAILERS_PRESTASHOP_MARCA = {
     "ALVAREZ GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
     "A.GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
     "AXE": ["https://www.primor.eu/es_es/axe"],
+    "WERKU": [
+        "https://www.werku.com/categoria-producto/herramientas-electricas/",
+        "https://www.werku.com/categoria-producto/herramientas-airless/",
+        "https://www.werku.com/categoria-producto/herramientas-neumaticas/",
+        "https://www.werku.com/categoria-producto/herramientas-manuales/",
+        "https://www.werku.com/categoria-producto/escaleras-plataformas/",
+        "https://www.werku.com/categoria-producto/proteccion-seguridad/",
+    ],
 }
 _prestashop_indice_cache = {}
 
