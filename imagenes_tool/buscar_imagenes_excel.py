@@ -596,6 +596,10 @@ RETAILERS_PRESTASHOP_MARCA = {
     "A.GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
     "AXE": ["https://www.primor.eu/es_es/axe"],
     "XYLAZEL": ["https://www.tiendadepinturas.es/brand/9-xylazel"],
+    "BAIXENS": [
+        "https://www.tiendadepinturas.es/brand/16-baixens",
+        "https://pinturasalejo.com/marca/baixens/",
+    ],
     "RUST-OLEUM": ["https://nautichandler.com/es/brand/215-rust-oleum"],
     "WERKU": [
         "https://www.werku.com/categoria-producto/herramientas-electricas/",
