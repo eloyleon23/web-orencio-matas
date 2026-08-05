@@ -1007,7 +1007,7 @@ def buscar_imagen_titantech(query, sesion):
     if not meta_img or not meta_img.get("content"):
         return None, f"titantech: ficha de {mejor_nombre!r} encontrada pero sin foto"
 
-    return meta_img["content"], f"Titantech (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
+    return meta_img["content"].strip(), f"Titantech (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
 
 
 def buscar_imagen_titanlux(query, sesion):
@@ -1050,7 +1050,7 @@ def buscar_imagen_titanlux(query, sesion):
     if not meta_img or not meta_img.get("content"):
         return None, f"titanlux: ficha de {mejor_nombre!r} encontrada pero sin foto"
 
-    return meta_img["content"], f"Titanlux (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
+    return meta_img["content"].strip(), f"Titanlux (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
 
 
 def buscar_imagen_titan(nombre_producto, sesion):
@@ -1541,6 +1541,13 @@ def main():
         # productos distintos usan de verdad la misma foto exacta,
         # incluso siendo de la misma familia/marca. Se descarta en vez
         # de arriesgarse a subir la misma imagen para varios productos.
+        # Limpieza general por si acaso: espacios sobrantes al principio/
+        # final de la URL (confirmado real en titanlux.es: un
+        # "...SZ3.jpg " con espacio final provocaba un 403 al descargar,
+        # porque el espacio se codifica como %20 y el CDN rechaza esa URL)
+        if url_imagen:
+            url_imagen = url_imagen.strip()
+
         if url_imagen and url_imagen in urls_ya_asignadas:
             ref_previa = urls_ya_asignadas[url_imagen]
             motivos_debug.append(
