@@ -595,6 +595,11 @@ RETAILERS_PRESTASHOP_MARCA = {
     "ALVAREZ GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
     "A.GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
     "AXE": ["https://www.primor.eu/es_es/axe"],
+    "BAIXENS": [
+        "https://www.tiendadepinturas.es/brand/16-baixens",
+        "https://pinturasalejo.com/marca/baixens/",
+    ],
+    "XYLAZEL": ["https://www.tiendadepinturas.es/brand/9-xylazel"],
     "WERKU": [
         "https://www.werku.com/categoria-producto/herramientas-electricas/",
         "https://www.werku.com/categoria-producto/herramientas-airless/",
