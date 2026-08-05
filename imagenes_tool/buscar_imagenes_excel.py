@@ -600,6 +600,7 @@ RETAILERS_PRESTASHOP_MARCA = {
         "https://pinturasalejo.com/marca/baixens/",
     ],
     "XYLAZEL": ["https://www.tiendadepinturas.es/brand/9-xylazel"],
+    "RUST-OLEUM": ["https://nautichandler.com/es/brand/215-rust-oleum"],
     "WERKU": [
         "https://www.werku.com/categoria-producto/herramientas-electricas/",
         "https://www.werku.com/categoria-producto/herramientas-airless/",
