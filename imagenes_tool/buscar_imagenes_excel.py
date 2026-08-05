@@ -595,10 +595,6 @@ RETAILERS_PRESTASHOP_MARCA = {
     "ALVAREZ GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
     "A.GOMEZ": ["https://www.primor.eu/es_es/alvarez-gomez"],
     "AXE": ["https://www.primor.eu/es_es/axe"],
-    "BAIXENS": [
-        "https://www.tiendadepinturas.es/brand/16-baixens",
-        "https://pinturasalejo.com/marca/baixens/",
-    ],
     "XYLAZEL": ["https://www.tiendadepinturas.es/brand/9-xylazel"],
     "RUST-OLEUM": ["https://nautichandler.com/es/brand/215-rust-oleum"],
     "WERKU": [
@@ -1048,6 +1044,103 @@ def construir_indice_tollens(sesion):
 
     _tollens_indice_cache = indice
     return indice
+
+
+BAIXENS_BASE = "https://www.baixens.com"
+_baixens_indice_cache = None
+
+
+def construir_indice_baixens(sesion, max_paginas=20):
+    """Baixens.com tiene su catálogo propio COMPLETO en /productos, con
+    391 productos paginados (?pagina=N) — mucho más comprehensivo que
+    cualquier retailer (que solo revendía 6). Fichas de producto en
+    /productos/{categoria}/{slug}, foto real en el meta og:image, mismo
+    patrón que titanlux.es/titantech.es/tollens.es."""
+    global _baixens_indice_cache
+    if _baixens_indice_cache is not None:
+        return _baixens_indice_cache
+
+    from bs4 import BeautifulSoup
+    indice = []
+
+    for pagina in range(1, max_paginas + 1):
+        url = f"{BAIXENS_BASE}/productos" + (f"?pagina={pagina}" if pagina > 1 else "")
+        try:
+            resp = sesion.get(url, timeout=10)
+            if resp.status_code != 200:
+                break
+        except Exception:
+            break
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        nuevos_en_pagina = 0
+        for a in soup.select("a[href*='/productos/']"):
+            href = a.get("href", "")
+            # Solo fichas reales (/productos/{categoria}/{slug}), no los
+            # enlaces de categoría (/productos/{categoria} a secas) ni el
+            # propio listado (/productos)
+            ruta = href.split("?")[0].rstrip("/")
+            if ruta.count("/") < 3:
+                continue
+            nombre = (a.get_text(strip=True) or "").strip()
+            if not nombre:
+                continue
+            if not href.startswith("http"):
+                href = BAIXENS_BASE + href
+            if any(u == href for _, _, u in indice):
+                continue
+            indice.append((nombre, _tokens_significativos(nombre), href))
+            nuevos_en_pagina += 1
+
+        if nuevos_en_pagina == 0:
+            break
+
+    _baixens_indice_cache = indice
+    return indice
+
+
+def buscar_imagen_baixens(query, sesion):
+    """Busca en el índice de baixens.com (construido una vez y cacheado)
+    el producto cuyo nombre mejor coincida con la query, y saca su foto
+    real del meta og:image de su ficha."""
+    indice = construir_indice_baixens(sesion)
+    if not indice:
+        return None, "baixens: no se pudo construir el índice de productos (revisar conectividad)"
+
+    t_marca = {"BAIXENS"}
+    t_query = _tokens_significativos(query) - t_marca
+    if not t_query:
+        return None, "baixens: query vacía tras normalizar"
+
+    mejor_nombre = None
+    mejor_url_producto = None
+    mejor_solapamiento = 0.0
+    for nombre, tokens, url_producto in indice:
+        tokens_sin_marca = tokens - t_marca
+        solapamiento = len(t_query & tokens_sin_marca) / len(t_query)
+        if solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
+            mejor_solapamiento = solapamiento
+            mejor_nombre = nombre
+            mejor_url_producto = url_producto
+
+    if not mejor_url_producto or mejor_solapamiento < 0.34:
+        detalle = f"mejor candidato {mejor_nombre!r} con solapamiento {mejor_solapamiento:.2f}" if mejor_nombre else "ninguna coincidencia"
+        return None, f"baixens: {detalle} (índice: {len(indice)} productos)"
+
+    from bs4 import BeautifulSoup
+    try:
+        resp2 = sesion.get(mejor_url_producto, timeout=10)
+        if resp2.status_code != 200:
+            return None, f"baixens ficha HTTP {resp2.status_code}"
+    except Exception as e:
+        return None, f"baixens ficha error: {str(e)[:100]}"
+
+    soup2 = BeautifulSoup(resp2.text, "html.parser")
+    meta_img = soup2.find("meta", attrs={"property": "og:image"})
+    if not meta_img or not meta_img.get("content"):
+        return None, f"baixens: ficha de {mejor_nombre!r} encontrada pero sin foto"
+
+    return meta_img["content"].strip(), f"Baixens (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
 
 
 def buscar_imagen_tollens(query, sesion):
@@ -1522,6 +1615,21 @@ def main():
                     if url:
                         url_imagen = url
                         metodo_usado = f"Tollens: {motivo}"
+                        break
+
+            # Baixens: plataforma propia con catálogo completo (391
+            # productos, confirmado por fetch real) — mucho más
+            # comprehensivo que cualquier retailer que revende su gama
+            # (uno solo tenía 6 productos indexados), así que se prueba
+            # con la misma prioridad máxima, antes de caer a fuentes más
+            # limitadas.
+            if not url_imagen and marca == "BAIXENS":
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_baixens(query, sesion)
+                    motivos_debug.append(f"Baixens [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"Baixens: {motivo}"
                         break
 
             # Luego titanlux.es (la web de producto real, con fichas y
