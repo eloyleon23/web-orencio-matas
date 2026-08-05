@@ -673,9 +673,18 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10, param_pa
 
             alt = (img.get("alt") or "").strip()
             # Varios plugins/temas de carga diferida usan nombres de
-            # atributo distintos para la URL real de la imagen.
+            # atributo distintos para la URL real de la imagen — cuantos
+            # más se reconozcan, menos productos se pierden en silencio
+            # solo porque su tema en concreto usa un nombre distinto.
             src = (img.get("src") or img.get("data-src") or img.get("data-lazy-src")
-                   or img.get("data-original") or "")
+                   or img.get("data-original") or img.get("data-lazy") or "")
+            if not src:
+                # Último recurso: tomar la primera URL de un srcset/
+                # data-srcset (patrón nativo de WordPress/WooCommerce
+                # para imágenes responsive, muy habitual).
+                srcset = img.get("srcset") or img.get("data-srcset") or ""
+                if srcset:
+                    src = srcset.split(",")[0].strip().split(" ")[0].strip()
 
             # Si la imagen no lleva alt (bastante común e inconsistente en
             # PrestaShop), no descartar el producto entero — usar el title
