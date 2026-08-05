@@ -602,6 +602,7 @@ RETAILERS_PRESTASHOP_MARCA = {
         "https://www.werku.com/categoria-producto/herramientas-manuales/",
         "https://www.werku.com/categoria-producto/escaleras-plataformas/",
         "https://www.werku.com/categoria-producto/proteccion-seguridad/",
+        "https://quepintamos.com/categoria-producto/herramientas-y-complementos/",
     ],
 }
 _prestashop_indice_cache = {}
@@ -744,7 +745,12 @@ def buscar_imagen_prestashop_marca(marca, query, sesion):
 
     diagnostico_urls = []
     for url_base in urls:
-        param_pagina = "p" if "primor.eu" in url_base else "page"
+        if "primor.eu" in url_base:
+            param_pagina = "p"
+        elif "quepintamos.com" in url_base:
+            param_pagina = "product-page"
+        else:
+            param_pagina = "page"
         indice = construir_indice_prestashop_marca(url_base, sesion, param_pagina=param_pagina)
         if not indice:
             diagnostico_urls.append(f"{url_base}: índice vacío (revisar conectividad o estructura de la página)")
