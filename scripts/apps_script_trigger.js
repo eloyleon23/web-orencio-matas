@@ -3023,7 +3023,32 @@ function validarImagenManual() {
 }
 
 // ── Disparar workflow de generar productos.json ───────────────────────────
+// Cada acción individual (actualizar imagen, validar, marcar sin imagen...)
+// llama a esta función como "red de seguridad" — pero si se usa el
+// Asistente de imágenes para pasar rápido por muchos productos seguidos,
+// eso puede disparar decenas de ejecuciones completas del workflow en
+// pocos minutos (cada una relee las ~12.700 filas de la Sheet entera y
+// regenera productos.json desde cero), saturando GitHub Actions sin
+// necesidad real: el parche rápido (actualizarProductoEnJsonRemoto) ya
+// mantiene productos.json al día al instante en cada acción, y además ya
+// existe un cron cada 10 minutos que hace la regeneración completa por su
+// cuenta. Con esto, el disparo bajo demanda queda limitado a como mucho
+// una vez cada 5 minutos — dentro de esa ventana, el parche rápido y el
+// cron ya cubren de sobra la consistencia.
 function dispararWorkflowProductosJson() {
+  const props = PropertiesService.getScriptProperties();
+  const ULTIMO_DISPARO_KEY = 'ultimoDisparoWorkflowProductosJson';
+  const MINUTOS_MINIMOS_ENTRE_DISPAROS = 5;
+
+  const ultimoDisparoStr = props.getProperty(ULTIMO_DISPARO_KEY);
+  if (ultimoDisparoStr) {
+    const minutosDesdeUltimo = (Date.now() - parseInt(ultimoDisparoStr, 10)) / 60000;
+    if (minutosDesdeUltimo < MINUTOS_MINIMOS_ENTRE_DISPAROS) {
+      console.log(`Workflow generar_productos_json omitido: ya se disparó hace ${minutosDesdeUltimo.toFixed(1)} min (límite: ${MINUTOS_MINIMOS_ENTRE_DISPAROS} min). El parche rápido y el cron de cada 10 min ya cubren este hueco.`);
+      return;
+    }
+  }
+
   const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`;
   const payload = JSON.stringify({
     event_type: 'generar_productos_json',
@@ -3043,6 +3068,7 @@ function dispararWorkflowProductosJson() {
   const resp = UrlFetchApp.fetch(url, options);
   if (resp.getResponseCode() === 204) {
     console.log('Workflow generar_productos_json disparado correctamente');
+    props.setProperty(ULTIMO_DISPARO_KEY, Date.now().toString());
   } else {
     console.error('Error al disparar workflow generar_productos_json:', resp.getContentText());
   }
