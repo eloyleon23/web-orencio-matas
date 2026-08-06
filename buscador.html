@@ -1192,6 +1192,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             position: relative;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
+        .modal-producto-cerrar-sticky {
+            position: sticky;
+            top: 0;
+            height: 0;
+            overflow: visible;
+            z-index: 20;
+        }
         .modal-producto-cerrar {
             position: absolute;
             top: 12px;
@@ -1748,6 +1755,41 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             padding: 4px 8px;
             border-radius: 6px;
             border: 1px solid #cbd5e1;
+        }
+        .asistente-texto-wrapper {
+            position: relative;
+            flex: 1 1 160px;
+            min-width: 140px;
+        }
+        .asistente-texto-wrapper input {
+            width: 100%;
+            font-size: 0.82rem;
+            padding: 4px 26px 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            box-sizing: border-box;
+        }
+        .asistente-texto-wrapper button {
+            position: absolute;
+            top: 50%;
+            right: 4px;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            transition: background 0.15s, color 0.15s;
+        }
+        .asistente-texto-wrapper button:hover {
+            background: #e2e8f0;
+            color: var(--dark);
         }
         .asistente-vacio {
             text-align: center;
@@ -2348,9 +2390,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- Modal detalle de producto -->
 <div class="modal-overlay" id="modal-producto-overlay">
     <div class="modal-producto-box" id="modal-producto-box">
-        <button class="modal-producto-cerrar" id="modal-producto-cerrar">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+        <div class="modal-producto-cerrar-sticky">
+            <button class="modal-producto-cerrar" id="modal-producto-cerrar">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
         <div class="modal-producto-content">
             <div class="modal-producto-imagen">
                 <img id="modal-producto-img" src="" alt="" loading="lazy">
@@ -2504,7 +2548,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="asistente-filtros">
             <label><input type="checkbox" id="asistente-f-sin-imagen" checked> Sin imagen</label>
             <label><input type="checkbox" id="asistente-f-sin-validar"> Sin validar</label>
-            <input type="text" id="asistente-f-texto" placeholder="Buscar por nombre (ej. DELFIN)..." style="font-size: 0.82rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; flex: 1 1 160px; min-width: 140px;">
+            <div class="asistente-texto-wrapper">
+                <input type="text" id="asistente-f-texto" placeholder="Buscar por nombre (ej. DELFIN)...">
+                <button type="button" id="asistente-f-texto-limpiar" title="Borrar búsqueda" style="display:none;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
             <select id="asistente-f-area">
                 <option value="">Todas las áreas</option>
                 <option value="drogueria">Droguería</option>
@@ -5695,6 +5744,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         construirColaAsistente();
         $('modal-asistente-imagenes-overlay').classList.add('activo');
         $('asistente-aplicar-filtros').disabled = true;
+        $('asistente-f-texto-limpiar').style.display = $('asistente-f-texto').value ? 'flex' : 'none';
         renderizarAsistenteActual();
     }
 
@@ -5887,7 +5937,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     ['asistente-f-sin-imagen', 'asistente-f-sin-validar', 'asistente-f-area', 'asistente-f-familia'].forEach(id => {
         $(id).addEventListener('change', () => { $('asistente-aplicar-filtros').disabled = false; });
     });
-    $('asistente-f-texto').addEventListener('input', () => { $('asistente-aplicar-filtros').disabled = false; });
+    $('asistente-f-texto').addEventListener('input', () => {
+        $('asistente-aplicar-filtros').disabled = false;
+        $('asistente-f-texto-limpiar').style.display = $('asistente-f-texto').value ? 'flex' : 'none';
+    });
+    $('asistente-f-texto-limpiar').addEventListener('click', () => {
+        $('asistente-f-texto').value = '';
+        $('asistente-f-texto-limpiar').style.display = 'none';
+        $('asistente-aplicar-filtros').disabled = false;
+        $('asistente-f-texto').focus();
+    });
     $('asistente-f-area').addEventListener('change', () => { renderFamiliasAsistente(); });
 
     // Zona de arrastrar / pegar / elegir archivo
