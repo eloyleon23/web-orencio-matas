@@ -17,12 +17,11 @@ permissions:
   pages: write
   id-token: write
 
-# Como mucho un despliegue en curso a la vez, pero los que lleguen
-# mientras tanto se ENCOLAN (no se cancelan ni fallan) — se procesan en
-# orden en cuanto el actual termina.
+# Como mucho un despliegue en curso a la vez. Si llega uno nuevo mientras
+# hay otro bloqueado, se cancela el anterior para permitir el despliegue.
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
