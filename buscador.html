@@ -2504,6 +2504,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="asistente-filtros">
             <label><input type="checkbox" id="asistente-f-sin-imagen" checked> Sin imagen</label>
             <label><input type="checkbox" id="asistente-f-sin-validar"> Sin validar</label>
+            <input type="text" id="asistente-f-texto" placeholder="Buscar por nombre (ej. DELFIN)..." style="font-size: 0.82rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; flex: 1 1 160px; min-width: 140px;">
             <select id="asistente-f-area">
                 <option value="">Todas las áreas</option>
                 <option value="drogueria">Droguería</option>
@@ -5643,11 +5644,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const incluirSinImagen = $('asistente-f-sin-imagen').checked;
         const incluirSinValidar = $('asistente-f-sin-validar').checked;
         const areaFiltro = $('asistente-f-area').value;
+        const textoFiltro = sinAcentosAsistente($('asistente-f-texto').value.trim());
 
         colaAsistente = TODOS.filter(p => {
             if (p.fabricante) return false; // catálogos estáticos de proveedor: no gestionados aquí
             if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
             if (areaFiltro && p.area !== areaFiltro) return false;
+            if (textoFiltro && !sinAcentosAsistente(p.nombre).includes(textoFiltro)) return false;
 
             const sinImagen = !p.img;
             const sinValidar = !!p.img && !p.imagen_validada;
@@ -5839,6 +5842,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('asistente-aplicar-filtros').addEventListener('click', () => {
         construirColaAsistente();
         renderizarAsistenteActual();
+    });
+    $('asistente-f-texto').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            construirColaAsistente();
+            renderizarAsistenteActual();
+        }
     });
 
     // Zona de arrastrar / pegar / elegir archivo
