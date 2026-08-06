@@ -2512,7 +2512,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <option value="pinturas">Pinturas</option>
                 <option value="talleres">Talleres</option>
             </select>
-            <button type="button" id="asistente-aplicar-filtros" class="asistente-enlace" style="border-color:#7c3aed;color:#7c3aed;">
+            <select id="asistente-f-familia">
+                <option value="">Todas las familias</option>
+            </select>
+            <button type="button" id="asistente-aplicar-filtros" class="asistente-enlace" style="border-color:#7c3aed;color:#7c3aed;" disabled>
                 <i class="fa-solid fa-arrows-rotate"></i> Aplicar
             </button>
         </div>
@@ -2555,10 +2558,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             <div class="asistente-acciones">
                 <button type="button" class="asistente-btn asistente-btn-subir" id="asistente-btn-subir" disabled>
-                    <i class="fa-solid fa-upload"></i> Subir y siguiente
+                    <i class="fa-solid fa-upload"></i> Subir y continuar
                 </button>
                 <button type="button" class="asistente-btn asistente-btn-validar" id="asistente-btn-validar" style="display:none;">
-                    <i class="fa-solid fa-check-circle"></i> Validar actual y siguiente
+                    <i class="fa-solid fa-check-circle"></i> Validar actual y continuar
                 </button>
                 <button type="button" class="asistente-btn asistente-btn-sin-imagen" id="asistente-btn-sin-imagen">
                     <i class="fa-solid fa-image-slash"></i> Sin imagen disponible
@@ -5640,16 +5643,38 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return null;
     }
 
+    // Puebla el desplegable de familias según el área elegida en el
+    // asistente (misma lógica que renderFamilias() del buscador
+    // principal, pero para un <select> simple de una sola familia).
+    function renderFamiliasAsistente() {
+        const areaSel = $('asistente-f-area').value;
+        const select = $('asistente-f-familia');
+        const valorPrevio = select.value;
+
+        const base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        const familias = [...new Set(base.map(p => p.familia).filter(Boolean))];
+        familias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+        select.innerHTML = '<option value="">Todas las familias</option>' +
+            familias.map(f => `<option value="${f.replace(/"/g, '&quot;')}">${f}</option>`).join('');
+
+        // Conservar la familia elegida si sigue existiendo en la nueva lista
+        // (ej. al cambiar de área sin querer perder la selección a mitad)
+        if (familias.includes(valorPrevio)) select.value = valorPrevio;
+    }
+
     function construirColaAsistente() {
         const incluirSinImagen = $('asistente-f-sin-imagen').checked;
         const incluirSinValidar = $('asistente-f-sin-validar').checked;
         const areaFiltro = $('asistente-f-area').value;
+        const familiaFiltro = $('asistente-f-familia').value;
         const textoFiltro = sinAcentosAsistente($('asistente-f-texto').value.trim());
 
         colaAsistente = TODOS.filter(p => {
             if (p.fabricante) return false; // catálogos estáticos de proveedor: no gestionados aquí
             if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
             if (areaFiltro && p.area !== areaFiltro) return false;
+            if (familiaFiltro && p.familia !== familiaFiltro) return false;
             if (textoFiltro && !sinAcentosAsistente(p.nombre).includes(textoFiltro)) return false;
 
             const sinImagen = !p.img;
@@ -5666,8 +5691,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     async function abrirAsistenteImagenes() {
         await cargarMapaMarcasAsistente();
+        renderFamiliasAsistente();
         construirColaAsistente();
         $('modal-asistente-imagenes-overlay').classList.add('activo');
+        $('asistente-aplicar-filtros').disabled = true;
         renderizarAsistenteActual();
     }
 
@@ -5842,14 +5869,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('asistente-aplicar-filtros').addEventListener('click', () => {
         construirColaAsistente();
         renderizarAsistenteActual();
+        $('asistente-aplicar-filtros').disabled = true;
     });
     $('asistente-f-texto').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             construirColaAsistente();
             renderizarAsistenteActual();
+            $('asistente-aplicar-filtros').disabled = true;
         }
     });
+
+    // El botón "Aplicar" empieza deshabilitado y solo se activa cuando el
+    // usuario TOCA algún filtro — así queda claro que hay cambios sin
+    // aplicar todavía, en vez de parecer un botón siempre disponible sin
+    // indicar si hace falta pulsarlo o no.
+    ['asistente-f-sin-imagen', 'asistente-f-sin-validar', 'asistente-f-area', 'asistente-f-familia'].forEach(id => {
+        $(id).addEventListener('change', () => { $('asistente-aplicar-filtros').disabled = false; });
+    });
+    $('asistente-f-texto').addEventListener('input', () => { $('asistente-aplicar-filtros').disabled = false; });
+    $('asistente-f-area').addEventListener('change', () => { renderFamiliasAsistente(); });
 
     // Zona de arrastrar / pegar / elegir archivo
     const dropzoneAsistente = $('asistente-dropzone');
