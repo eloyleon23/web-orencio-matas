@@ -605,7 +605,6 @@ RETAILERS_PRESTASHOP_MARCA = {
         "https://bricorondon.es/fabricante/ceys/",
         "https://tienda.pinturasprincipado.com/brand/33-ceys",
     ],
-    "XYLADECOR": ["https://arcashop.es/139_akzonobel-marca-de-pinturas-y-esmaltes-profesionales"],
     "MONTANA": ["https://pinturasalejo.com/marca/montana-colors/"],
     "REVETON": ["https://tiendapinturasonline.com/brand/4-reveton"],
     "WERKU": [
@@ -708,7 +707,7 @@ def construir_indice_prestashop_marca(url_base, sesion, max_paginas=10, param_pa
             # esto, un producto real se perdía en silencio del índice solo
             # por no tener alt, aunque su foto sí estuviera ahí.
             if not alt:
-                alt = (a.get("title") or a.get_text(strip=True) or "").strip()
+                alt = (a.get("title") or a.get_text(separator=' ', strip=True) or "").strip()
             if not alt or not src:
                 continue
             if not any(src.lower().split("?")[0].endswith(ext) for ext in EXTENSIONES_VALIDAS):
@@ -909,7 +908,7 @@ def construir_indice_titanlux(sesion):
             soup = BeautifulSoup(resp.text, "html.parser")
             nuevos_en_pagina = 0
             for a in soup.select("a[href*='/productos/producto/']"):
-                nombre = (a.get("title") or a.get_text(strip=True) or "").strip()
+                nombre = (a.get("title") or a.get_text(separator=' ', strip=True) or "").strip()
                 href = a.get("href", "")
                 if not nombre or not href:
                     continue
@@ -988,7 +987,7 @@ def construir_indice_titantech(sesion):
             # fichas individuales tipo /productos/{slug}
             if href.rstrip("/").endswith("/productos"):
                 continue
-            nombre = (a.get("title") or a.get_text(strip=True) or "").strip()
+            nombre = (a.get("title") or a.get_text(separator=' ', strip=True) or "").strip()
             if not nombre or not href:
                 continue
             if not href.startswith("http"):
@@ -1042,7 +1041,7 @@ def construir_indice_tollens(sesion):
         soup = BeautifulSoup(resp.text, "html.parser")
         for a in soup.select("a[href*='/guia-de-seleccion-de-producto/']"):
             href = a.get("href", "")
-            nombre = (a.get_text(strip=True) or "").strip()
+            nombre = (a.get_text(separator=' ', strip=True) or "").strip()
             # La propia entrada de menú "Guía de selección de producto"
             # (sin categoría/subcategoría en la ruta) no es una ficha real
             if href.rstrip("/").count("/") < 5 or not nombre:
@@ -1097,7 +1096,7 @@ def construir_indice_baixens(sesion, max_paginas=20):
             ruta = href.split("?")[0].rstrip("/")
             if ruta.count("/") < 3:
                 continue
-            nombre = (a.get_text(strip=True) or "").strip()
+            nombre = (a.get_text(separator=' ', strip=True) or "").strip()
             if not nombre:
                 continue
             if not href.startswith("http"):
@@ -1113,6 +1112,189 @@ def construir_indice_baixens(sesion, max_paginas=20):
     _baixens_indice_cache = indice
     _baixens_ultimo_error = ultimo_error
     return indice
+
+
+SPRAYPLANET_BASE = "https://www.sprayplanet.es"
+SPRAYPLANET_CATEGORIAS = [
+    "https://www.sprayplanet.es/categoria-Sprays?secId=3&marca=104",  # solo marca MTN
+]
+_sprayplanet_indice_cache = None
+
+
+def construir_indice_sprayplanet(sesion):
+    """Sprayplanet.es es la tienda oficial de venta online a particulares
+    de Montana Colors (así lo indica la propia montanacolors.com) —
+    plataforma propia, enlaces de producto tipo
+    'producto-{Slug}?id={numero}'. Igual que Titanlux/Baixens/Tollens:
+    se indexa la categoría, y la foto real se saca del meta og:image de
+    la ficha de cada producto."""
+    global _sprayplanet_indice_cache
+    if _sprayplanet_indice_cache is not None:
+        return _sprayplanet_indice_cache
+
+    from bs4 import BeautifulSoup
+    indice = []
+
+    for url in SPRAYPLANET_CATEGORIAS:
+        try:
+            resp = sesion.get(url, timeout=10)
+            if resp.status_code != 200:
+                continue
+        except Exception:
+            continue
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for a in soup.select("a[href*='/producto-']"):
+            href = a.get("href", "")
+            nombre = (a.get_text(separator=' ', strip=True) or "").strip()
+            if not nombre or not href:
+                continue
+            if not href.startswith("http"):
+                href = SPRAYPLANET_BASE + href
+            if any(u == href for _, _, u in indice):
+                continue
+            indice.append((nombre, _tokens_significativos(nombre), href))
+
+    _sprayplanet_indice_cache = indice
+    return indice
+
+
+def buscar_imagen_sprayplanet(query, sesion):
+    """Busca en el índice de sprayplanet.es (tienda oficial de Montana
+    Colors para particulares) el producto cuyo nombre mejor coincida con
+    la query, y saca su foto real del meta og:image de su ficha. Nota:
+    sprayplanet organiza por LÍNEA de producto (ej. 'MTN Hardcore', con
+    142 colores dentro), no por color/referencia individual — la foto
+    encontrada será representativa de la línea, no necesariamente del
+    color exacto."""
+    indice = construir_indice_sprayplanet(sesion)
+    if not indice:
+        return None, "sprayplanet: no se pudo construir el índice (revisar conectividad)"
+
+    t_marca = {"MONTANA", "MTN"}
+    t_query = _tokens_significativos(query) - t_marca
+    if not t_query:
+        return None, "sprayplanet: query vacía tras normalizar"
+
+    mejor_nombre = None
+    mejor_url_producto = None
+    mejor_solapamiento = 0.0
+    for nombre, tokens, url_producto in indice:
+        tokens_sin_marca = tokens - t_marca
+        solapamiento = len(t_query & tokens_sin_marca) / len(t_query)
+        if solapamiento > mejor_solapamiento:
+            mejor_solapamiento = solapamiento
+            mejor_nombre = nombre
+            mejor_url_producto = url_producto
+
+    if not mejor_url_producto or mejor_solapamiento < 0.34:
+        detalle = f"mejor candidato {mejor_nombre!r} con solapamiento {mejor_solapamiento:.2f}" if mejor_nombre else "ninguna coincidencia"
+        return None, f"sprayplanet: {detalle} (índice: {len(indice)} productos)"
+
+    from bs4 import BeautifulSoup
+    try:
+        resp2 = sesion.get(mejor_url_producto, timeout=10)
+        if resp2.status_code != 200:
+            return None, f"sprayplanet ficha HTTP {resp2.status_code}"
+    except Exception as e:
+        return None, f"sprayplanet ficha error: {str(e)[:100]}"
+
+    soup2 = BeautifulSoup(resp2.text, "html.parser")
+    meta_img = soup2.find("meta", attrs={"property": "og:image"})
+    if not meta_img or not meta_img.get("content"):
+        return None, f"sprayplanet: ficha de {mejor_nombre!r} encontrada pero sin foto"
+
+    return meta_img["content"].strip(), f"Sprayplanet (línea: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
+
+
+XYLADECOR_BRUGUER_BASE = "https://xyladecor.bruguer.es"
+XYLADECOR_BRUGUER_CATEGORIAS = [
+    "https://xyladecor.bruguer.es/es/productos/filters/b_Xyladecor",
+]
+_xyladecor_bruguer_indice_cache = None
+
+
+def construir_indice_xyladecor_bruguer(sesion):
+    """Web oficial de Xyladecor (AkzoNobel/Bruguer) — 14 líneas de
+    producto limpias en /es/productos/{slug}. Mismo patrón que el resto:
+    índice de categoría, foto real del meta og:image de cada ficha."""
+    global _xyladecor_bruguer_indice_cache
+    if _xyladecor_bruguer_indice_cache is not None:
+        return _xyladecor_bruguer_indice_cache
+
+    from bs4 import BeautifulSoup
+    indice = []
+
+    for url in XYLADECOR_BRUGUER_CATEGORIAS:
+        try:
+            resp = sesion.get(url, timeout=10)
+            if resp.status_code != 200:
+                continue
+        except Exception:
+            continue
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for a in soup.select("a[href*='/es/productos/']"):
+            href = a.get("href", "")
+            ruta = href.split("?")[0].rstrip("/")
+            # Excluir la propia página de listado (/es/productos/filters/...)
+            if "filters" in ruta or ruta.count("/") < 3:
+                continue
+            nombre = (a.get_text(separator=' ', strip=True) or "").strip()
+            if not nombre:
+                continue
+            if not href.startswith("http"):
+                href = XYLADECOR_BRUGUER_BASE + href
+            if any(u == href for _, _, u in indice):
+                continue
+            indice.append((nombre, _tokens_significativos(nombre), href))
+
+    _xyladecor_bruguer_indice_cache = indice
+    return indice
+
+
+def buscar_imagen_xyladecor_bruguer(query, sesion):
+    """Busca en el índice de xyladecor.bruguer.es (web oficial) el
+    producto cuyo nombre mejor coincida con la query, y saca su foto
+    real del meta og:image de su ficha."""
+    indice = construir_indice_xyladecor_bruguer(sesion)
+    if not indice:
+        return None, "xyladecor: no se pudo construir el índice (revisar conectividad)"
+
+    t_marca = {"XYLADECOR"}
+    t_query = _tokens_significativos(query) - t_marca
+    if not t_query:
+        return None, "xyladecor: query vacía tras normalizar"
+
+    mejor_nombre = None
+    mejor_url_producto = None
+    mejor_solapamiento = 0.0
+    for nombre, tokens, url_producto in indice:
+        tokens_sin_marca = tokens - t_marca
+        solapamiento = len(t_query & tokens_sin_marca) / len(t_query)
+        if solapamiento > mejor_solapamiento:
+            mejor_solapamiento = solapamiento
+            mejor_nombre = nombre
+            mejor_url_producto = url_producto
+
+    if not mejor_url_producto or mejor_solapamiento < 0.34:
+        detalle = f"mejor candidato {mejor_nombre!r} con solapamiento {mejor_solapamiento:.2f}" if mejor_nombre else "ninguna coincidencia"
+        return None, f"xyladecor: {detalle} (índice: {len(indice)} productos)"
+
+    from bs4 import BeautifulSoup
+    try:
+        resp2 = sesion.get(mejor_url_producto, timeout=10)
+        if resp2.status_code != 200:
+            return None, f"xyladecor ficha HTTP {resp2.status_code}"
+    except Exception as e:
+        return None, f"xyladecor ficha error: {str(e)[:100]}"
+
+    soup2 = BeautifulSoup(resp2.text, "html.parser")
+    meta_img = soup2.find("meta", attrs={"property": "og:image"})
+    if not meta_img or not meta_img.get("content"):
+        return None, f"xyladecor: ficha de {mejor_nombre!r} encontrada pero sin foto"
+
+    return meta_img["content"].strip(), f"Xyladecor (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
 
 
 def buscar_imagen_baixens(query, sesion):
@@ -1647,6 +1829,28 @@ def main():
                     if url:
                         url_imagen = url
                         metodo_usado = f"Baixens: {motivo}"
+                        break
+
+            # Montana: web oficial informativa, la venta a particulares
+            # real es sprayplanet.es (así lo indica montanacolors.com).
+            if not url_imagen and marca == "MONTANA":
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_sprayplanet(query, sesion)
+                    motivos_debug.append(f"Sprayplanet [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"Sprayplanet: {motivo}"
+                        break
+
+            # Xyladecor: web oficial (AkzoNobel/Bruguer) — mucho más
+            # completa que la tienda revendedora usada antes (arcashop.es).
+            if not url_imagen and marca == "XYLADECOR":
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_xyladecor_bruguer(query, sesion)
+                    motivos_debug.append(f"Xyladecor [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"Xyladecor: {motivo}"
                         break
 
             # Titanlux/Titantech/Titan: SOLO si no se detectó ninguna
