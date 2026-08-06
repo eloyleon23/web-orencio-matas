@@ -605,6 +605,9 @@ RETAILERS_PRESTASHOP_MARCA = {
         "https://bricorondon.es/fabricante/ceys/",
         "https://tienda.pinturasprincipado.com/brand/33-ceys",
     ],
+    "XYLADECOR": ["https://arcashop.es/139_akzonobel-marca-de-pinturas-y-esmaltes-profesionales"],
+    "MONTANA": ["https://pinturasalejo.com/marca/montana-colors/"],
+    "REVETON": ["https://tiendapinturasonline.com/brand/4-reveton"],
     "WERKU": [
         "https://www.werku.com/categoria-producto/herramientas-electricas/",
         "https://www.werku.com/categoria-producto/herramientas-airless/",
