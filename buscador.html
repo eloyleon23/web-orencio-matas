@@ -5496,6 +5496,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const file = e.dataTransfer.files[0];
         if (file) procesarArchivoActualizarImagen(file);
     });
+    // Campo de texto oculto editable para habilitar opción de pegar en menú contextual
+    const hiddenInputActualizar = document.createElement('input');
+    hiddenInputActualizar.type = 'text';
+    hiddenInputActualizar.style.cssText = 'position:absolute;opacity:0;pointer-events:none;';
+    dropzoneActualizarImagen.appendChild(hiddenInputActualizar);
+    dropzoneActualizarImagen.addEventListener('click', () => hiddenInputActualizar.focus());
     document.addEventListener('paste', (e) => {
         if (!$('modal-actualizar-imagen-overlay').classList.contains('activo')) return;
         const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
@@ -5992,6 +5998,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const file = e.dataTransfer.files[0];
         if (file) procesarArchivoAsistenteImagen(file);
     });
+    // Campo de texto oculto editable para habilitar opción de pegar en menú contextual
+    const hiddenInputAsistente = document.createElement('input');
+    hiddenInputAsistente.type = 'text';
+    hiddenInputAsistente.style.cssText = 'position:absolute;opacity:0;pointer-events:none;';
+    dropzoneAsistente.appendChild(hiddenInputAsistente);
+    dropzoneAsistente.addEventListener('click', () => hiddenInputAsistente.focus());
     document.addEventListener('paste', (e) => {
         if (!$('modal-asistente-imagenes-overlay').classList.contains('activo')) return;
         const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
