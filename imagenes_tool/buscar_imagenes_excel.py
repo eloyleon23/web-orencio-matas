@@ -1297,6 +1297,105 @@ def buscar_imagen_xyladecor_bruguer(query, sesion):
     return meta_img["content"].strip(), f"Xyladecor (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
 
 
+MARVIMUNDO_BASE = "https://www.marvimundo.com"
+MARVIMUNDO_MARCAS = {
+    "FINISH": "finish",
+    "ORION": "orion",
+    "PRADY": "prady",
+}
+_marvimundo_indice_cache = {}  # slug_marca -> indice, cacheado por separado
+
+
+def construir_indice_marvimundo(slug_marca, sesion):
+    """Marvimundo.com es una gran tienda (Magento) con página propia por
+    marca en /marcas/{slug} — confirmado por fetch real que cubre FINISH,
+    ORION y PRADY (y de paso otras ya conocidas: Ajax, Domestos, Vanish,
+    Glassex...). Patrón de URL de producto sin prefijo fijo
+    (marvimundo.com/{slug-producto}-{id-numerico}), así que se
+    identifican por terminar en un ID numérico en vez de por un prefijo
+    de ruta como en las demás integraciones."""
+    if slug_marca in _marvimundo_indice_cache:
+        return _marvimundo_indice_cache[slug_marca]
+
+    from bs4 import BeautifulSoup
+    import re
+    indice = []
+    url = f"{MARVIMUNDO_BASE}/marcas/{slug_marca}"
+    try:
+        resp = sesion.get(url, timeout=10)
+    except Exception:
+        _marvimundo_indice_cache[slug_marca] = []
+        return []
+
+    if resp.status_code != 200:
+        _marvimundo_indice_cache[slug_marca] = []
+        return []
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    for a in soup.select("a[href*='marvimundo.com/']"):
+        href = a.get("href", "")
+        ruta = href.split("?")[0].rstrip("/")
+        # Fichas de producto reales terminan en un ID numérico
+        # (...-8908, ...-146231...); las páginas de marca/categoría no.
+        if not re.search(r"-\d{3,}$", ruta):
+            continue
+        if "/marcas/" in ruta or "/cosmetica/" in ruta or "/perfumes/" in ruta or "/hogar/" in ruta or "/maquillaje/" in ruta or "/parafarmacia/" in ruta or "/higiene/" in ruta or "/solares/" in ruta or "/hombre/" in ruta or "/bebes-ninos/" in ruta:
+            continue
+        nombre = (a.get("title") or a.get_text(separator=' ', strip=True) or "").strip()
+        if not nombre:
+            continue
+        if any(u == href for _, _, u in indice):
+            continue
+        indice.append((nombre, _tokens_significativos(nombre), href))
+
+    _marvimundo_indice_cache[slug_marca] = indice
+    return indice
+
+
+def buscar_imagen_marvimundo(slug_marca, query, sesion):
+    """Busca en el índice de una marca de marvimundo.com (construido una
+    vez y cacheado por marca) el producto cuyo nombre mejor coincida con
+    la query, y saca su foto real del meta og:image de su ficha."""
+    indice = construir_indice_marvimundo(slug_marca, sesion)
+    if not indice:
+        return None, f"marvimundo ({slug_marca}): no se pudo construir el índice (revisar conectividad)"
+
+    t_marca = {slug_marca.upper()}
+    t_query = _tokens_significativos(query) - t_marca
+    if not t_query:
+        return None, "marvimundo: query vacía tras normalizar"
+
+    mejor_nombre = None
+    mejor_url_producto = None
+    mejor_solapamiento = 0.0
+    for nombre, tokens, url_producto in indice:
+        tokens_sin_marca = tokens - t_marca
+        solapamiento = len(t_query & tokens_sin_marca) / len(t_query)
+        if solapamiento > mejor_solapamiento and tamanos_compatibles(nombre, query):
+            mejor_solapamiento = solapamiento
+            mejor_nombre = nombre
+            mejor_url_producto = url_producto
+
+    if not mejor_url_producto or mejor_solapamiento < 0.34:
+        detalle = f"mejor candidato {mejor_nombre!r} con solapamiento {mejor_solapamiento:.2f}" if mejor_nombre else "ninguna coincidencia"
+        return None, f"marvimundo ({slug_marca}): {detalle} (índice: {len(indice)} productos)"
+
+    from bs4 import BeautifulSoup
+    try:
+        resp2 = sesion.get(mejor_url_producto, timeout=10)
+        if resp2.status_code != 200:
+            return None, f"marvimundo ficha HTTP {resp2.status_code}"
+    except Exception as e:
+        return None, f"marvimundo ficha error: {str(e)[:100]}"
+
+    soup2 = BeautifulSoup(resp2.text, "html.parser")
+    meta_img = soup2.find("meta", attrs={"property": "og:image"})
+    if not meta_img or not meta_img.get("content"):
+        return None, f"marvimundo: ficha de {mejor_nombre!r} encontrada pero sin foto"
+
+    return meta_img["content"].strip(), f"Marvimundo (producto: {mejor_nombre!r}, solapamiento {mejor_solapamiento:.2f}, índice: {len(indice)})"
+
+
 def buscar_imagen_baixens(query, sesion):
     """Busca en el índice de baixens.com (construido una vez y cacheado)
     el producto cuyo nombre mejor coincida con la query, y saca su foto
@@ -1926,6 +2025,18 @@ def main():
                     if url:
                         url_imagen = url
                         metodo_usado = f"PrestaShop: {motivo}"
+                        break
+
+            # Marvimundo: tienda grande (Magento) con página propia por
+            # marca, cubre varias marcas de droguería/perfumería a la vez
+            # (Finish, Orion, Prady...) — confirmado por fetch real.
+            if not url_imagen and marca in MARVIMUNDO_MARCAS:
+                for query in queries[:2]:
+                    url, motivo = buscar_imagen_marvimundo(MARVIMUNDO_MARCAS[marca], query, sesion)
+                    motivos_debug.append(f"Marvimundo [{query}]: {motivo}")
+                    if url:
+                        url_imagen = url
+                        metodo_usado = f"Marvimundo: {motivo}"
                         break
 
             if marca and not url_imagen:
