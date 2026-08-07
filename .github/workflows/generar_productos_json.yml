@@ -5,8 +5,8 @@ on:
   repository_dispatch:
     types: [generar_productos_json]
   schedule:
-    # Ejecutar cada 10 minutos para mantener datos actualizados
-    - cron: '*/10 * * * *'
+    # Ejecutar cada hora (suficiente para mantener datos actualizados)
+    - cron: '0 * * * *'
 
 jobs:
   generar_json:
@@ -36,6 +36,6 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add data/productos.json
+          git add data/productos.json data/productos_version.json
           git diff --staged --quiet || git commit -m "Auto: actualizar productos.json desde Google Sheets"
           git push

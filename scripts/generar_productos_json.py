@@ -166,6 +166,16 @@ def exportar_productos_json(productos, familias, subfamilias):
     size_kb = os.path.getsize(out_path) // 1024
     print(f"  ✓ {len(exportados)} productos exportados → {out_path} ({size_kb} KB)")
 
+    # Generar archivo de versión para cache-busting en el frontend
+    version_path = os.path.join(OUTPUT_DIR, 'productos_version.json')
+    version_payload = {
+        'version': payload['generado'],
+        'timestamp': int(__import__('time').time())
+    }
+    with open(version_path, 'w', encoding='utf-8') as f:
+        json.dump(version_payload, f, ensure_ascii=False, separators=(',', ':'))
+    print(f"  ✓ Versión generada → {version_path}")
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 def main():
     print("▶ Generando productos.json para el buscador web...")

@@ -3023,11 +3023,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
-    const PRODUCTOS_URL = './data/productos.json';
+    const PRODUCTOS_URL_BASE = './data/productos.json';
+    const PRODUCTOS_VERSION_URL = './data/productos_version.json';
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
     const PRODUCTOS_BESA_URL = './data/productos_besa.json';
     const PRODUCTOS_BASLAC_URL = './data/productos_baslac.json';
+    
+    // Variable para la URL de productos con cache-busting
+    let PRODUCTOS_URL = PRODUCTOS_URL_BASE;
 
     // Talleres y Carrocerías no tiene productos propios en la hoja
     // Productos (Sheet) — de momento se cargan aquí los productos del
@@ -3080,15 +3084,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .catch(() => []);
     }
 
-    // cache: 'no-store' — mientras se está en fase de validación activa
-    // (edición frecuente de imágenes/bajas/precios), un simple refresco de
-    // página no debe servir una copia cacheada por el navegador o por la
-    // CDN de GitHub Pages, o los cambios recién hechos no se verían al
-    // recargar. Coste: cada carga descarga el JSON completo de nuevo (sin
-    // aprovechar caché) — antes de publicar la web para el público general
-    // convendría revisar si se quiere relajar esto (el catálogo público no
-    // necesita la misma inmediatez que la fase de validación).
-    fetch(PRODUCTOS_URL, { cache: 'no-store' })
+    // Cargar versión primero para cache-busting, luego productos.json
+    // Esto fuerza a GitHub Pages a servir siempre la versión más reciente
+    fetch(PRODUCTOS_VERSION_URL, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(versionData => {
+            if (versionData && versionData.timestamp) {
+                // Añadir timestamp como parámetro de query para cache-busting
+                PRODUCTOS_URL = `${PRODUCTOS_URL_BASE}?v=${versionData.timestamp}`;
+            }
+            // Ahora cargar productos.json con cache-busting
+            return fetch(PRODUCTOS_URL, { cache: 'no-store' });
+        })
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
@@ -3171,6 +3178,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     async function iniciarComprobacionActualizaciones() {
         try {
+            // Cargar versión para cache-busting
+            const versionResp = await fetch(PRODUCTOS_VERSION_URL, { cache: 'no-store' });
+            const versionData = versionResp.ok ? await versionResp.json() : null;
+            if (versionData && versionData.timestamp) {
+                PRODUCTOS_URL = `${PRODUCTOS_URL_BASE}?v=${versionData.timestamp}`;
+            }
             const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
             etagConocido = identificadorVersion(resp.headers);
         } catch (e) {
@@ -3184,8 +3197,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
+            // Cargar versión para cache-busting
+            const versionResp = await fetch(PRODUCTOS_VERSION_URL, { cache: 'no-store' });
+            const versionData = versionResp.ok ? await versionResp.json() : null;
+            let urlConCache = PRODUCTOS_URL;
+            if (versionData && versionData.timestamp) {
+                urlConCache = `${PRODUCTOS_URL_BASE}?v=${versionData.timestamp}`;
+            }
+
             // Paso 1 (barato): ¿ha cambiado la cabecera de versión?
-            const respHead = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
+            const respHead = await fetch(urlConCache, { method: 'HEAD', cache: 'no-store' });
             const version = identificadorVersion(respHead.headers);
             if (!version) return; // servidor no da ETag ni Last-Modified: no se puede comparar, no molestamos
             if (etagConocido === null) {
@@ -3200,7 +3221,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // la cabecera conocida para no repetir esta descarga cada
             // minuto por la misma "versión" que en realidad no cambió nada,
             // pero NO se avisa al usuario.
-            const respGet = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            const respGet = await fetch(urlConCache, { cache: 'no-store' });
             const texto = await respGet.text();
             const hash = await calcularHash(texto);
 
