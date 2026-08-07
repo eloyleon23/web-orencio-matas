@@ -3098,6 +3098,59 @@ function dispararWorkflowProductosJson() {
 // camposActualizados: objeto con los campos de productos.json a fusionar
 // en el producto encontrado por referencia, p.ej.
 // { img: 'abc123', fecha_actualizacion_imagen: '17/07/2026 10:32:00' }.
+
+function actualizarVersionJson() {
+  try {
+    const rutaVersion = 'data/productos_version.json';
+    const urlVersion = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${rutaVersion}`;
+    const headers = {
+      'Authorization': `Bearer ${GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+
+    const ahora = new Date();
+    const timestamp = Math.floor(ahora.getTime() / 1000);
+    const versionPayload = {
+      version: ahora.toISOString(),
+      timestamp: timestamp
+    };
+
+    // Obtener metadata del archivo
+    const respGet = UrlFetchApp.fetch(urlVersion, { method: 'get', headers: headers, muteHttpExceptions: true });
+    let shaActual = '';
+    if (respGet.getResponseCode() === 200) {
+      const infoArchivo = JSON.parse(respGet.getContentText());
+      shaActual = infoArchivo.sha;
+    }
+
+    // Crear payload para PUT
+    const contenidoBase64 = Utilities.base64Encode(JSON.stringify(versionPayload), Utilities.Charset.UTF_8);
+    const payloadPut = JSON.stringify({
+      message: 'Auto: actualizar productos_version.json (cache-busting)',
+      content: contenidoBase64,
+      sha: shaActual || undefined
+    });
+
+    const respPut = UrlFetchApp.fetch(urlVersion, {
+      method: 'put',
+      contentType: 'application/json',
+      headers: headers,
+      payload: payloadPut,
+      muteHttpExceptions: true
+    });
+
+    if (respPut.getResponseCode() === 200 || respPut.getResponseCode() === 201) {
+      console.log('productos_version.json actualizado con timestamp:', timestamp);
+      return true;
+    }
+    console.error('Error al actualizar productos_version.json:', respPut.getContentText());
+    return false;
+  } catch (err) {
+    console.error('Error en actualizarVersionJson:', err);
+    return false;
+  }
+}
 function actualizarProductoEnJsonRemoto(referencia, camposActualizados) {
   try {
     const rutaArchivo = 'data/productos.json';
@@ -3158,6 +3211,10 @@ function actualizarProductoEnJsonRemoto(referencia, camposActualizados) {
     });
     if (respPut.getResponseCode() === 200 || respPut.getResponseCode() === 201) {
       console.log('productos.json actualizado al instante para', referencia);
+      
+      // Actualizar productos_version.json con nuevo timestamp para cache-busting
+      actualizarVersionJson();
+      
       return true;
     }
     console.error('actualizarProductoEnJsonRemoto: error al subir productos.json:', respPut.getContentText());
