@@ -386,9 +386,18 @@ const MARCAS_TALLERES_ = [
   // "UTILES PINTURA" y "MAQUINAS Y DESPIECE DE MAQUINAS", donde se cuelan
   // repuestos y accesorios de estas marcas sin ninguna otra señal de
   // Talleres en el nombre.
-  'sata', 'sagola', 'devilbiss', 'iwata', 'rupes', 'festool',
+  // NOTA: "sata" se comprueba aparte con límites de palabra (ver más
+  // abajo) — como subcadena simple coincidía dentro de "DESATASCADOR"/
+  // "DESATASCADORES", clasificando por error TODA esa familia (y
+  // cualquier producto de droguería con esa palabra en el nombre) como
+  // Talleres. Confirmado con datos reales del usuario: Aqua Kem, Asevi,
+  // Chubb, Destop, Dirna, M.P.L., Paso, Rak... todos desatascadores de
+  // droguería normal, ninguno relacionado con la marca SATA.
+  'sagola', 'devilbiss', 'iwata', 'rupes', 'festool',
   // Marcas de productos de enmascarado/preparación para repintado
-  'colad', 'bossauto',
+  // NOTA: "colad" también aparte por el mismo motivo — coincidía dentro
+  // de "COLADAS" (coladas de ropa, ej. "MICOLOR GEL... COLADAS MIXTAS").
+  'bossauto',
   // Más equipo profesional encontrado en la misma familia "UTILES
   // PINTURA" (aspiradoras, filtros, discos) sin cubrir por las anteriores.
   // NOTA: "werku" se descartó a propósito — comprobado que un 76% de sus
@@ -397,14 +406,19 @@ const MARCAS_TALLERES_ = [
   // de Talleres como las demás.
   'lavor', 'hamach', 'starchem', 'aerometal',
 ];
-// "R-M" (marca de BASF para repintado de automoción) se comprueba aparte,
-// con límites de palabra, para no confundirlo con "rm" como subcadena de
-// otra palabra o código de producto.
+// "R-M" (marca de BASF para repintado de automoción), "SATA" y "COLAD"
+// se comprueban aparte, con límites de palabra, para no confundirlas con
+// subcadenas de otras palabras (desatascador, coladas...) o códigos de
+// producto.
 const REGEX_RM_TALLERES_ = /\br[\s-]?m\b/i;
+const REGEX_SATA_TALLERES_ = /\bsata\b/i;
+const REGEX_COLAD_TALLERES_ = /\bcolad\b/i;
 
 function esMarcaTalleres_(texto) {
   const txt = (texto || '').toLowerCase();
   if (MARCAS_TALLERES_.some(m => txt.includes(m))) return true;
+  if (REGEX_SATA_TALLERES_.test(txt)) return true;
+  if (REGEX_COLAD_TALLERES_.test(txt)) return true;
   return REGEX_RM_TALLERES_.test(txt);
 }
 
