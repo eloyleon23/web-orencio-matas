@@ -5302,8 +5302,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-actualizar-imagen-nombre').textContent = p.nombre + ' (Ref: ' + p.ref + ')';
         $('modal-actualizar-imagen-file').value = '';
         $('modal-actualizar-imagen-file-name').textContent = '';
-        // Enfocar campo oculto para habilitar opción de pegar en menú contextual
-        if (typeof hiddenInputActualizar !== 'undefined') hiddenInputActualizar.focus();
         $('modal-actualizar-imagen-preview').style.display = 'none';
         $('modal-actualizar-imagen-submit').disabled = true;
         $('modal-actualizar-imagen-overlay').classList.add('activo');
@@ -5498,11 +5496,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const file = e.dataTransfer.files[0];
         if (file) procesarArchivoActualizarImagen(file);
     });
-    // Campo de texto oculto editable para habilitar opción de pegar en menú contextual
-    const hiddenInputActualizar = document.createElement('input');
-    hiddenInputActualizar.type = 'text';
-    hiddenInputActualizar.style.cssText = 'position:absolute;opacity:0;width:1px;height:1px;';
-    dropzoneActualizarImagen.appendChild(hiddenInputActualizar);
     document.addEventListener('paste', (e) => {
         if (!$('modal-actualizar-imagen-overlay').classList.contains('activo')) return;
         const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
@@ -5774,8 +5767,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         renderFamiliasAsistente();
         construirColaAsistente();
         $('modal-asistente-imagenes-overlay').classList.add('activo');
-        // Enfocar campo oculto para habilitar opción de pegar en menú contextual
-        if (typeof hiddenInputAsistente !== 'undefined') hiddenInputAsistente.focus();
         $('asistente-aplicar-filtros').disabled = true;
         $('asistente-f-texto-limpiar').style.display = $('asistente-f-texto').value ? 'flex' : 'none';
         renderizarAsistenteActual();
@@ -6001,11 +5992,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const file = e.dataTransfer.files[0];
         if (file) procesarArchivoAsistenteImagen(file);
     });
-    // Campo de texto oculto editable para habilitar opción de pegar en menú contextual
-    const hiddenInputAsistente = document.createElement('input');
-    hiddenInputAsistente.type = 'text';
-    hiddenInputAsistente.style.cssText = 'position:absolute;opacity:0;width:1px;height:1px;';
-    dropzoneAsistente.appendChild(hiddenInputAsistente);
     document.addEventListener('paste', (e) => {
         if (!$('modal-asistente-imagenes-overlay').classList.contains('activo')) return;
         const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
