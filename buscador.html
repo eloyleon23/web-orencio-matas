@@ -3024,12 +3024,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
     const PRODUCTOS_URL_BASE = './data/productos.json';
-    const PRODUCTOS_VERSION_URL = './data/productos_version.json';
+    const PRODUCTOS_VERSION_URL_BASE = './data/productos_version.json';
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
     const PRODUCTOS_BESA_URL = './data/productos_besa.json';
     const PRODUCTOS_BASLAC_URL = './data/productos_baslac.json';
-    
+
+    // Añadir timestamp actual como parámetro de cache-busting a productos_version.json
+    const PRODUCTOS_VERSION_URL = `${PRODUCTOS_VERSION_URL_BASE}?_t=${Date.now()}`;
+
     // Variable para la URL de productos con cache-busting
     let PRODUCTOS_URL = PRODUCTOS_URL_BASE;
 
