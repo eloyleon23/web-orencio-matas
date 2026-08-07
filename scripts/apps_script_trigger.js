@@ -438,21 +438,10 @@ function familiaEsTalleres_(familia) {
   return FRAGMENTOS_FAMILIA_TALLERES_.some(f => txt.includes(f));
 }
 
-// El nombre empieza con un punto ("."): confirmado por Eloy que es una
-// marca que usa el administrador del CRM al dar de alta productos de
-// Talleres. Verificado contra datos reales: de 860 productos con punto
-// que NO estaban en Talleres, 24/25 de una muestra manual SÍ eran
-// realmente de Talleres (BODYALU, URKI-FILLER, CATALIZADOR, SPRAYMAX,
-// sistemas de enmascarado, familias "CAR - ...") que las reglas de marca/
-// familia de arriba aún no cazaban. Única excepción real encontrada: la
-// familia "VARIOS" es un cajón de sastre genérico con productos NO
-// relacionados con Talleres mezclados dentro (un altavoz Alexa Echo Dot,
-// apuntes de "COMISIONES HYUNDAI/JAGUAR/MERCEDES") — se excluye a
-// propósito de esta regla para no arrastrarlos también a Talleres.
+// El nombre empieza con un punto ("."): productos de Talleres
 function empiezaConPuntoTalleres_(nombre, familia) {
   if (!nombre || !nombre.toString().trim().startsWith('.')) return false;
-  const familiaNorm = quitarAcentos_(familia).trim().toUpperCase();
-  return familiaNorm !== 'VARIOS';
+  return true;
 }
 
 function inferirArea_(nombre, familia) {
