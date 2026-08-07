@@ -619,8 +619,14 @@ function reevaluarAreasProductos() {
     } else if (tipologia && mapaFamiliaArea[tipologia]) {
       areaNueva = mapaFamiliaArea[tipologia];
     } else if (tipologia && mapaMayoriaFamilia[tipologia]) {
-      areaNueva = mapaMayoriaFamilia[tipologia];
-      if (areaNueva !== areaActual) porMayoria++;
+      // La regla del punto debe tener prioridad sobre el mapa de mayoría
+      if (!empiezaConPuntoTalleres_(nombre, tipologia)) {
+        areaNueva = mapaMayoriaFamilia[tipologia];
+        if (areaNueva !== areaActual) porMayoria++;
+      } else {
+        areaNueva = 'talleres';
+        if (areaNueva !== areaActual) porPunto++;
+      }
     } else {
       sinCoincidencia++;
       continue;
