@@ -1853,73 +1853,34 @@ def main():
                         metodo_usado = f"Xyladecor: {motivo}"
                         break
 
-            # Titanlux/Titantech/Titan: SOLO si no se detectó ninguna
-            # marca específica en el nombre. Antes se probaban siempre,
-            # para cualquier producto de pinturas — pero confirmado con
-            # datos reales: productos de OTRA marca (Baixens) encontraban
-            # "coincidencias" en el catálogo de Titan solo por compartir
-            # palabras genéricas de material (masilla, relleno,
-            # tapagrietas...), dando fotos de un producto de marca
-            # totalmente distinta con una confianza aparentemente alta.
-            # Si ya sabemos con certeza que el producto es de otra marca,
-            # más vale "sin resultado" que una foto del fabricante
-            # equivocado.
-            if not marca:
-                # Titanlux.es (la web de producto real, con fichas y
-                # foto fiable en el meta og:image) — mucho más completa
-                # que el servidor de archivos antiguo, que solo cubre la
-                # línea profesional TitanPro con nombres de archivo poco
-                # descriptivos.
-                titanlux_ok = True
-                for query in (queries[:3] if not url_imagen else []):
-                    if not titanlux_ok:
-                        break
-                    url, motivo = buscar_imagen_titanlux(query, sesion)
-                    motivos_debug.append(f"Titanlux [{query}]: {motivo}")
-                    if url:
-                        url_imagen = url
-                        metodo_usado = f"Titanlux: {motivo}"
-                        break
-                    if motivo.startswith("titanlux error") or motivo.startswith("titanlux ficha error"):
-                        print(f"    [AVISO] titanlux.es no responde, se abandona para este producto")
-                        titanlux_ok = False
-
-                # Titantech: sitio APARTE de titanlux.es, misma empresa
-                # (Industrias Titan) pero línea profesional/industrial
-                # distinta (esmaltes poliuretano, imprimaciones epoxi,
-                # pavimentos...) — confirmado con datos reales: productos
-                # TITANTECH no aparecían en absoluto en el índice de titanlux.es.
-                titantech_ok = True
-                for query in (queries[:3] if not url_imagen else []):
-                    if not titantech_ok:
-                        break
-                    url, motivo = buscar_imagen_titantech(query, sesion)
-                    motivos_debug.append(f"Titantech [{query}]: {motivo}")
-                    if url:
-                        url_imagen = url
-                        metodo_usado = f"Titantech: {motivo}"
-                        break
-                    if motivo.startswith("titantech: no se pudo") or motivo.startswith("titantech ficha error"):
-                        print(f"    [AVISO] titantech.es no responde, se abandona para este producto")
-                        titantech_ok = False
-
-                # Si no encuentra en titanlux.es ni titantech.es, probar
-                # el servidor de archivos antiguo (por si tiene algo de
-                # la línea TitanPro que no esté en ninguna de las dos
-                # webs de producto)
-                titan_ok = True
-                for query in (queries if not url_imagen else []):
-                    if not titan_ok:
-                        break
-                    url, motivo = buscar_imagen_titan(query, sesion)
-                    motivos_debug.append(f"Titan [{query}]: {motivo}")
-                    if url:
-                        url_imagen = url
-                        metodo_usado = f"Titan: {motivo}"
-                        break
-                    if motivo.startswith("Error accediendo a servidor Titan"):
-                        print(f"    [AVISO] Servidor Titan no responde, se abandona para este producto")
-                        titan_ok = False
+            # Titanlux/Titantech/Titan (respaldo para productos SIN marca
+            # detectada) — DESACTIVADO.
+            #
+            # Confirmado con datos reales de una revisión visual completa
+            # (707 candidatas descargadas, 70 aprobadas, 637 rechazadas):
+            # el 94% de TODAS las candidatas de esa ejecución venían de
+            # este respaldo (663/707), con solo un 5,7% de acierto —
+            # frente al 89% de las tiendas PrestaShop (Werku, Baixens...).
+            # Ni siquiera restringiéndolo a productos que ya mencionan
+            # "TITAN" en el nombre mejora lo suficiente (8% de acierto).
+            # No es un problema de umbral: incluso con solapamiento alto
+            # (0.60-0.80) el acierto seguía siendo bajo la mayoría de las
+            # veces — el catálogo indexado (241 productos) no tiene
+            # cobertura suficiente para muchas líneas reales (ej. "Titan
+            # Una Capa"), y cuando no encuentra lo correcto, "engancha"
+            # con lo menos malo por encima del umbral, casi siempre mal
+            # (ejemplo real: "TITAN UNA CAPA PINT.PLASTICA...{color}"
+            # emparejado 53 veces distintas con "MASILLA PLÁSTICA TITAN"
+            # — comparten "TITAN"+"PLASTICA", pero son categorías de
+            # producto totalmente distintas, pintura vs masilla de
+            # relleno). Decisión del usuario: mejor "sin resultado" que
+            # inundar la revisión de descartes.
+            #
+            # Las funciones siguen definidas más arriba en el archivo
+            # (buscar_imagen_titanlux, buscar_imagen_titantech,
+            # buscar_imagen_titan) por si se quiere retomar en el futuro
+            # con un enfoque distinto (ej. solo como referencia visual,
+            # nunca como resultado automático).
 
             # Si no encuentra en Titan, intentar APIs gratuitas si hay marca
             if not url_imagen and marca:
