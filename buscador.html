@@ -5496,6 +5496,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const file = e.dataTransfer.files[0];
         if (file) procesarArchivoActualizarImagen(file);
     });
+    // Clic derecho para pegar
+    dropzoneActualizarImagen.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
+        if (item) procesarArchivoActualizarImagen(item.getAsFile());
+    });
     document.addEventListener('paste', (e) => {
         if (!$('modal-actualizar-imagen-overlay').classList.contains('activo')) return;
         const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
@@ -5991,6 +5997,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         dropzoneAsistente.classList.remove('arrastrando');
         const file = e.dataTransfer.files[0];
         if (file) procesarArchivoAsistenteImagen(file);
+    });
+    // Clic derecho para pegar
+    dropzoneAsistente.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
+        if (item) procesarArchivoAsistenteImagen(item.getAsFile());
     });
     document.addEventListener('paste', (e) => {
         if (!$('modal-asistente-imagenes-overlay').classList.contains('activo')) return;
