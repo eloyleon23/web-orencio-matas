@@ -46,7 +46,7 @@ jobs:
         # en un único despliegue real en vez de uno por cada commit.
         id: debounce
         run: |
-          sleep 20
+          sleep 8
           ULTIMO_COMMIT=$(git ls-remote https://github.com/${{ github.repository }} refs/heads/main | cut -f1)
           if [ "$ULTIMO_COMMIT" != "${{ github.sha }}" ]; then
             echo "Ha llegado un commit más reciente ($ULTIMO_COMMIT) mientras esperaba — cedo el turno, no despliego este."
