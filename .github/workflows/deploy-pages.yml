@@ -10,9 +10,19 @@ permissions:
   pages: write
   id-token: write
 
+# "false" (encolar, no cancelar) — si un usuario está validando/subiendo
+# varias imágenes seguidas desde el Asistente, cada acción hace su propio
+# commit a productos.json y dispara este workflow. Con "true" (como
+# estaba antes, para evitar que un despliegue se quedara atascado para
+# siempre durante la caída de GitHub de agosto), cada commit nuevo
+# cancelaba el despliegue anterior antes de terminar — si la actividad
+# era continua, NINGÚN despliegue llegaba a completarse nunca, dando la
+# sensación de que la web no avanzaba. Con "false" + el paso de espera de
+# abajo, los despliegues se agrupan en uno solo por ráfaga en vez de
+# cancelarse unos a otros.
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -20,18 +30,47 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    # Límite de seguridad: si en el futuro un despliegue se queda
+    # atascado (como pasó en la incidencia de GitHub de agosto), esto
+    # evita que bloquee la cola para siempre — a los 10 minutos se da
+    # por fallido y el siguiente en cola puede continuar.
+    timeout-minutes: 10
     steps:
+      - name: Agrupar ráfagas de cambios rápidos seguidos
+        # Espera un momento y comprueba si mientras tanto ha llegado un
+        # commit más reciente a main. Si es así, este despliegue se
+        # queda obsoleto antes de empezar — se cede el turno y termina
+        # aquí sin hacer nada, dejando que sea el despliegue del commit
+        # más reciente el que realmente construya y publique. Con varias
+        # acciones seguidas en el Asistente, esto agrupa toda la ráfaga
+        # en un único despliegue real en vez de uno por cada commit.
+        id: debounce
+        run: |
+          sleep 20
+          ULTIMO_COMMIT=$(git ls-remote https://github.com/${{ github.repository }} refs/heads/main | cut -f1)
+          if [ "$ULTIMO_COMMIT" != "${{ github.sha }}" ]; then
+            echo "Ha llegado un commit más reciente ($ULTIMO_COMMIT) mientras esperaba — cedo el turno, no despliego este."
+            echo "obsoleto=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Sigo siendo el commit más reciente — continúo con el despliegue."
+            echo "obsoleto=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout
+        if: steps.debounce.outputs.obsoleto != 'true'
         uses: actions/checkout@v4
 
       - name: Configurar Pages
+        if: steps.debounce.outputs.obsoleto != 'true'
         uses: actions/configure-pages@v5
 
       - name: Subir todo el sitio como artefacto
+        if: steps.debounce.outputs.obsoleto != 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
 
       - name: Desplegar en GitHub Pages
+        if: steps.debounce.outputs.obsoleto != 'true'
         id: deployment
         uses: actions/deploy-pages@v4
