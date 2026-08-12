@@ -4,6 +4,11 @@ on:
   repository_dispatch:
     types: [generar_catalogos]
   workflow_dispatch:
+    inputs:
+      limite_productos:
+        description: 'Modo prueba: máximo de productos por área (vacío = catálogo completo real)'
+        required: false
+        default: ''
 
 jobs:
   generar:
@@ -28,24 +33,25 @@ jobs:
         env:
           SHEET_ID: ${{ secrets.SHEET_ID }}
           DRIVE_API_KEY: ${{ secrets.DRIVE_API_KEY }}
+          LIMITE_PRODUCTOS_CATALOGO: ${{ github.event.inputs.limite_productos }}
         run: python scripts/generar_catalogos.py
 
-      - name: Crear directorio data/
-        run: mkdir -p data
+      - name: Copiar catálogos a data/ (servidos vía GitHub Pages, sin forzar descarga)
+        run: |
+          mkdir -p data/catalogos
+          cp catalogos_output/manifiesto.json data/
+          cp catalogos_output/*.pdf data/catalogos/
 
-      - name: Copiar manifiesto.json a data/
-        run: cp catalogos_output/manifiesto.json data/
-
-      - name: Commit manifiesto en repositorio
+      - name: Commit catálogos y manifiesto en repositorio
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/manifiesto.json
-          git diff --staged --quiet || git commit -m "Auto: actualizar manifiesto de catálogos $(date +'%Y-%m-%d %H:%M')"
+          git add data/manifiesto.json data/catalogos/*.pdf
+          git diff --staged --quiet || git commit -m "Auto: actualizar catálogos $(date +'%Y-%m-%d %H:%M')"
           git pull --rebase origin main
           git push
 
-      - name: Publicar como Release
+      - name: Publicar como Release (para el botón de descarga directa)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: catalogos-latest

@@ -8,7 +8,8 @@ import os, io, json, requests, datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
-                                 TableStyle, Image as RLImage, PageBreak, HRFlowable)
+                                 TableStyle, Image as RLImage, PageBreak, HRFlowable,
+                                 KeepTogether)
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -141,13 +142,40 @@ def get_session():
         _session.mount('https://', HTTPAdapter(max_retries=retry))
     return _session
 
+def recortar_margen_blanco(pil_img, umbral=245, margen_seguridad=6):
+    """Recorta el margen blanco/casi blanco sobrante alrededor del
+    producto real — muchas fotos de proveedor (ej. catálogo Zaphiro)
+    traen el producto pequeño en el centro de una foto mucho más grande,
+    con bastante espacio en blanco alrededor. Sin recortarlo antes de
+    encajarlo en el lienzo cuadrado, el producto queda diminuto y
+    descentrado dentro de su celda. Se calcula el rectángulo que engloba
+    todo lo que NO es blanco, con un pequeño margen de seguridad."""
+    from PIL import ImageChops
+    gris = pil_img.convert('L')
+    # Máscara de "no blanco": todo lo que esté por debajo del umbral
+    mascara = gris.point(lambda px: 255 if px < umbral else 0)
+    bbox = mascara.getbbox()
+    if not bbox:
+        return pil_img  # imagen totalmente blanca/vacía: no tocar
+    x0, y0, x1, y1 = bbox
+    w, h = pil_img.size
+    x0 = max(0, x0 - margen_seguridad)
+    y0 = max(0, y0 - margen_seguridad)
+    x1 = min(w, x1 + margen_seguridad)
+    y1 = min(h, y1 + margen_seguridad)
+    # Si el recorte resultante es minúsculo (ruido/JPEG artifacts en una
+    # foto realmente en blanco), mejor no arriesgarse a recortar mal.
+    if (x1 - x0) < 20 or (y1 - y0) < 20:
+        return pil_img
+    return pil_img.crop((x0, y0, x1, y1))
+
 def componer_lienzo_cuadrado(pil_img, tamano=260, fondo='white'):
-    """Centra la imagen sobre un lienzo cuadrado de tamaño fijo, para que
-    TODAS las fotos del catálogo ocupen exactamente el mismo espacio
-    visual — sin esto, una foto apaisada y otra en vertical se veían de
-    tamaño distinto en celdas del mismo tamaño, dando un aspecto poco
-    simétrico al grid."""
-    img = pil_img.copy()
+    """Recorta el margen blanco sobrante y centra el producto sobre un
+    lienzo cuadrado de tamaño fijo, para que TODAS las fotos del
+    catálogo ocupen exactamente el mismo espacio visual — sin esto, una
+    foto apaisada y otra en vertical se veían de tamaño distinto en
+    celdas del mismo tamaño, dando un aspecto poco simétrico al grid."""
+    img = recortar_margen_blanco(pil_img.copy())
     img.thumbnail((tamano, tamano), PILImage.LANCZOS)
     lienzo = PILImage.new('RGB', (tamano, tamano), fondo)
     x = (tamano - img.width) // 2
@@ -304,10 +332,43 @@ def estilos():
     }
 
 # ── Header y footer de página ───────────────────────────────────────────────
-def make_header_footer(logo_png_path):
+def preparar_logo_marca_agua(logo_svg_path, opacidad=0.06, ancho_px=1400):
+    """Genera una versión translúcida del logo en PNG, para usar como
+    marca de agua de fondo en las páginas de contenido. Se hace una sola
+    vez al arrancar y se reutiliza para todas las páginas."""
+    if not logo_svg_path or not os.path.exists(logo_svg_path):
+        return None
+    try:
+        import cairosvg
+        buf_png = io.BytesIO()
+        cairosvg.svg2png(url=logo_svg_path, write_to=buf_png, output_width=ancho_px)
+        buf_png.seek(0)
+        img = PILImage.open(buf_png).convert('RGBA')
+        r, g, b, a = img.split()
+        a = a.point(lambda px: int(px * opacidad))
+        img.putalpha(a)
+        ruta = '/tmp/logo_marca_agua.png'
+        img.save(ruta, 'PNG')
+        return ruta
+    except Exception as e:
+        print(f"⚠ No se pudo preparar la marca de agua: {e}")
+        return None
+
+def make_header_footer(logo_png_path, marca_agua_path=None):
     año = datetime.datetime.now().year
     def hf(canvas, doc):
         canvas.saveState()
+        # Marca de agua de fondo — en todas las páginas de contenido
+        # (no en la portada, que ya lleva el logo grande a color propio).
+        if marca_agua_path and doc.page > 1 and os.path.exists(marca_agua_path):
+            with PILImage.open(marca_agua_path) as _im:
+                ratio_wa = _im.height / _im.width
+            aw = W * 0.9
+            ah = aw * ratio_wa
+            canvas.drawImage(marca_agua_path,
+                              (W - aw) / 2, (H - ah) / 2,
+                              width=aw, height=ah,
+                              preserveAspectRatio=True, mask='auto')
         canvas.setFillColor(COLOR_NEGRO)
         canvas.rect(0, H-16*mm, W, 16*mm, fill=1, stroke=0)
         canvas.setFillColor(COLOR_ROJO)
@@ -349,46 +410,6 @@ def banner(titulo, sub, color_hex, st):
     ]))
     return t
 
-# ── Tarjeta de producto (estilo folleto) ────────────────────────────────────
-def envolver_en_tarjeta(contenido, ancho, es_oferta=False):
-    """Envuelve el contenido de un producto (imagen + textos) en una
-    'tarjeta' independiente con fondo y borde — antes cada producto
-    flotaba suelto sobre fondo blanco, sin ninguna separación visual
-    entre uno y el siguiente más que el espaciado; así se ve cada
-    producto como un elemento propio, más parecido a un folleto de
-    supermercado. Las ofertas llevan borde rojo para destacar más."""
-    color_borde = COLOR_ROJO if es_oferta else COLOR_BORDE
-    grosor_borde = 1.1 if es_oferta else 0.6
-    t = Table([[c] for c in contenido], colWidths=[ancho])
-    t.setStyle(TableStyle([
-        ('BACKGROUND',    (0,0),(-1,-1), colors.white),
-        ('BOX',           (0,0),(-1,-1), grosor_borde, color_borde),
-        ('TOPPADDING',    (0,0),(-1,-1), 7),
-        ('BOTTOMPADDING', (0,0),(-1,-1), 8),
-        ('LEFTPADDING',   (0,0),(-1,-1), 7),
-        ('RIGHTPADDING',  (0,0),(-1,-1), 7),
-        ('ALIGN',         (0,0),(-1,-1), 'CENTER'),
-        ('VALIGN',        (0,0),(-1,-1), 'TOP'),
-    ]))
-    return t
-
-def badge_precio(texto_html, ancho):
-    """Insignia de precio con fondo de color, en vez de texto plano —
-    imitando la 'pastilla' de precio típica de folletos de supermercado."""
-    p = Paragraph(texto_html, ParagraphStyle(
-        'badge', fontName='Helvetica-Bold', fontSize=11.5,
-        textColor=colors.white, alignment=TA_CENTER, leading=13))
-    t = Table([[p]], colWidths=[ancho * 0.72])
-    t.setStyle(TableStyle([
-        ('BACKGROUND',    (0,0),(-1,-1), COLOR_ROJO),
-        ('TOPPADDING',    (0,0),(-1,-1), 4),
-        ('BOTTOMPADDING', (0,0),(-1,-1), 4),
-        ('ALIGN',         (0,0),(-1,-1), 'CENTER'),
-        ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
-    ]))
-    t.hAlign = 'CENTER'
-    return t
-
 # ── Grid de productos ───────────────────────────────────────────────────────
 def grid_productos(productos_area, st, cols=4, img_h=55*mm):
     """Genera un grid respetando espacios_a_ocupar (1-6) por producto.
@@ -419,16 +440,11 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
 
         cel_w    = cel_w_unit * col_span + (col_span - 1) * 4 * mm
         cel_img_h = base_h * row_span * (1 + (col_span - 1) * 0.2)
-        # Ancho real disponible para la imagen dentro de la tarjeta,
-        # descontando el padding interno (7mm a cada lado) que añade
-        # envolver_en_tarjeta() — si no se descuenta, la imagen podría
-        # desbordar ligeramente el borde de la tarjeta.
-        cel_w_imagen = cel_w - 14*mm
 
         if pil:
             img_bytes = pil_to_bytes(pil)
             iw, ih = pil.size
-            ratio = min(cel_w_imagen / iw, cel_img_h / ih)
+            ratio = min(cel_w / iw, cel_img_h / ih)
             rl_img = RLImage(io.BytesIO(img_bytes), width=iw*ratio, height=ih*ratio)
             rl_img.hAlign = 'CENTER'
         else:
@@ -442,7 +458,7 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
         precio_con = p.get('precio_con_iva', '').strip().replace(',', '.')
         ver_precio = p.get('mostrar_precio','').lower().strip() in ('sí','si','yes','true','1')
 
-        contenido = [rl_img, Spacer(1, 2*mm), Paragraph(nombre, st['nombre_prod'])]
+        contenido = [rl_img, Paragraph(nombre, st['nombre_prod'])]
         # Mostrar familia y subfamilia (ej: "Familia (Subfamilia)")
         if tipologia:
             familia_texto = tipologia
@@ -454,19 +470,16 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
         if ver_precio:
             if precio_con:
                 try:
-                    texto_badge = f'{float(precio_con):.2f} € <font size="7">IVA inc.</font>'
+                    contenido.append(Paragraph(f'{float(precio_con):.2f} € <font size="5">(IVA inc.)</font>', st['precio_con']))
                 except:
-                    texto_badge = f'{precio_con} €'
-                contenido.append(Spacer(1, 2*mm))
-                contenido.append(badge_precio(texto_badge, cel_w_imagen))
+                    contenido.append(Paragraph(f'{precio_con} €', st['precio_con']))
             if precio_sin:
                 try:
                     contenido.append(Paragraph(f'{float(precio_sin):.2f} € sin IVA', st['precio_sin']))
                 except:
                     contenido.append(Paragraph(f'{precio_sin} € sin IVA', st['precio_sin']))
 
-        tarjeta = envolver_en_tarjeta(contenido, cel_w, es_oferta=es_oferta)
-        items.append((tarjeta, col_span, cel_w))
+        items.append((contenido, col_span, cel_w))
 
     # Distribuir en filas respetando col_spans
     rows, widths_rows = [], []
@@ -503,10 +516,11 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
         t.setStyle(TableStyle([
             ('ALIGN',        (0,0),(-1,-1), 'CENTER'),
             ('VALIGN',       (0,0),(-1,-1), 'TOP'),
-            ('TOPPADDING',   (0,0),(-1,-1), 4),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 4),
+            ('TOPPADDING',   (0,0),(-1,-1), 8),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 8),
             ('LEFTPADDING',  (0,0),(-1,-1), 3),
             ('RIGHTPADDING', (0,0),(-1,-1), 3),
+            ('LINEBELOW',    (0,0),(-1,-1), 0.4, COLOR_BORDE),
         ]))
         tablas.append(t)
     return tablas
@@ -562,7 +576,7 @@ def portada(story, area_cfg, logo_png, st):
     story.append(PageBreak())
 
 # ── Generar un catálogo ─────────────────────────────────────────────────────
-def generar_catalogo(area, productos, logo_png, familias={}):
+def generar_catalogo(area, productos, logo_png, familias={}, marca_agua=None, limite_productos=None):
     cfg = AREAS[area]
     out_path = os.path.join(OUTPUT_DIR, cfg['filename'])
     st = estilos()
@@ -572,7 +586,11 @@ def generar_catalogo(area, productos, logo_png, familias={}):
         p for p in productos
         if p.get('area','').lower().strip() == area
     ]
-    
+
+    if limite_productos:
+        productos_area = productos_area[:limite_productos]
+        print(f"  ⚡ MODO PRUEBA: limitado a {len(productos_area)} productos")
+
     if not productos_area:
         print(f"  ⚠ Sin productos para área '{area}', saltando")
         return False
@@ -585,7 +603,7 @@ def generar_catalogo(area, productos, logo_png, familias={}):
     doc = SimpleDocTemplate(out_path, pagesize=A4,
                             topMargin=20*mm, bottomMargin=14*mm,
                             leftMargin=MARGIN, rightMargin=MARGIN)
-    hf = make_header_footer(logo_png)
+    hf = make_header_footer(logo_png, marca_agua)
     story = []
     
     # Portada
@@ -602,15 +620,21 @@ def generar_catalogo(area, productos, logo_png, familias={}):
         return familias.get(nombre.upper(), 9999)
 
     for i, (tipo, prods) in enumerate(sorted(tipologias.items(), key=lambda x: (orden_tipologia(x[0]), x[0]))):
-        if i > 0:
-            story.append(PageBreak())
-        story.append(banner(cfg['titulo'], tipo, cfg['color'], st))
-        story.append(Spacer(1, 5*mm))
         resultado = grid_productos(prods, st, cols=4)
-        if isinstance(resultado, list):
-            story.extend(resultado)
+        filas = resultado if isinstance(resultado, list) else [resultado]
+
+        # Sin salto de página forzado entre familias — así se aprovecha
+        # el hueco que quede al final de una página con la familia
+        # siguiente, en vez de dejarlo en blanco. Solo se evita que la
+        # cabecera de una familia quede "huérfana" sola al final de una
+        # página (banner + primera fila de producto van pegados; el
+        # resto de filas ya fluye con el reparto automático normal).
+        cabecera = [banner(cfg['titulo'], tipo, cfg['color'], st), Spacer(1, 5*mm)]
+        if filas:
+            story.append(KeepTogether(cabecera + [filas[0]]))
+            story.extend(filas[1:])
         else:
-            story.append(resultado)
+            story.extend(cabecera)
     
     doc.build(story, onFirstPage=hf, onLaterPages=hf)
     print(f"  ✓ Generado: {out_path}")
@@ -630,7 +654,21 @@ def generar_catalogo(area, productos, logo_png, familias={}):
 # ── Main ─────────────────────────────────────────────────────────────────────
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
+
+    # Modo de prueba: LIMITE_PRODUCTOS_CATALOGO=80 genera un catálogo de
+    # solo unas pocas páginas por área, para iterar rápido sobre el
+    # diseño sin esperar a la generación completa (miles de productos,
+    # bastantes minutos). En producción, sin la variable, no aplica
+    # ningún límite.
+    limite_productos = None
+    limite_env = os.environ.get('LIMITE_PRODUCTOS_CATALOGO', '').strip()
+    if limite_env:
+        try:
+            limite_productos = int(limite_env)
+            print(f"⚡ MODO PRUEBA activo: máximo {limite_productos} productos por área")
+        except ValueError:
+            pass
+
     # Logo: convertir SVG a PNG si existe
     logo_png = None
     if os.path.exists(LOGO_PATH):
@@ -640,7 +678,9 @@ def main():
             cairosvg.svg2png(url=LOGO_PATH, write_to=logo_png, output_width=600)
         except ImportError:
             logo_png = None
-    
+
+    marca_agua = preparar_logo_marca_agua(LOGO_PATH)
+
     productos = leer_productos()
     familias  = leer_familias()
     subfamilias = leer_subfamilias()
@@ -649,7 +689,8 @@ def main():
     info_catalogos = {}
     for area in AREAS:
         print(f"\n▶ Área: {area}")
-        resultado = generar_catalogo(area, productos, logo_png, familias)
+        resultado = generar_catalogo(area, productos, logo_png, familias,
+                                      marca_agua=marca_agua, limite_productos=limite_productos)
         if resultado and resultado.get('paginas', 0) > 0:
             generados.append(area)
             info_catalogos[area] = resultado

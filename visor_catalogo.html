@@ -102,31 +102,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     document.getElementById('visor-titulo').textContent = cfg.titulo;
 
-    const REPO = 'eloyleon23/web-orencio-matas';
-    const API = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+    // Los PDFs se sirven directamente desde el repositorio (GitHub
+    // Pages), no desde GitHub Releases — los enlaces de Releases llevan
+    // 'Content-Disposition: attachment' forzado en la propia URL firmada
+    // (no se puede quitar desde el cliente), lo que hacía que el
+    // navegador descargara el archivo en vez de mostrarlo, aunque se
+    // cargara dentro de un iframe. Sirviéndolo como archivo normal del
+    // sitio, el visor nativo del navegador (PDF.js) sí lo muestra inline.
+    const url = './data/catalogos/' + cfg.pdf;
 
-    fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
-        .then(r => r.ok ? r.json() : null)
-        .then(release => {
-            if (!release || !release.assets) { mostrarError(); return; }
-            const asset = release.assets.find(a => a.name === cfg.pdf);
-            if (!asset) { mostrarError(); return; }
-            const url = asset.browser_download_url;
+    const btnDescargar = document.getElementById('btn-descargar-visor');
+    btnDescargar.href = url;
+    btnDescargar.setAttribute('download', cfg.pdf); // fuerza descarga solo en este botón
 
-            document.getElementById('btn-descargar-visor').href = url;
-            // Google Docs Viewer tiene un límite de tamaño (~25 MB) que
-            // nuestros catálogos superan con creces (40-51 MB ahora
-            // mismo) — daba "Este archivo es demasiado grande para
-            // obtener una vista previa". El visor nativo del navegador
-            // (Chrome/Firefox/Safari incorporan un renderizador de PDF,
-            // basado en PDF.js) no tiene ese límite duro, así que se usa
-            // directamente el PDF como origen del iframe, sin pasar por
-            // ningún servicio intermedio.
-            document.getElementById('visor-iframe').src = url;
-            document.getElementById('visor-cargando').style.display = 'none';
-            document.getElementById('visor-frame-wrap').style.display = '';
-        })
-        .catch(mostrarError);
+    document.getElementById('visor-iframe').src = url;
+    document.getElementById('visor-cargando').style.display = 'none';
+    document.getElementById('visor-frame-wrap').style.display = '';
+    document.getElementById('visor-iframe').addEventListener('error', mostrarError);
 
     function mostrarError() {
         document.getElementById('visor-cargando').style.display = 'none';

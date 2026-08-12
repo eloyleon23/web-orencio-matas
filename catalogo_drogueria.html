@@ -282,41 +282,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <script>
     (function() {
-        const REPO = 'eloyleon23/web-orencio-matas';
         const PDF  = 'catalogo_drogueria.pdf';
-        const API  = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+        const AREA_KEY = 'drogueria';
+        const url = './data/catalogos/' + PDF;
 
-        fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
-            .then(r => r.ok ? r.json() : null)
-            .then(release => {
-                if (!release || !release.assets) { showNoCatalogo(); return; }
-                const asset = release.assets.find(a => a.name === PDF);
-                if (!asset) { showNoCatalogo(); return; }
-                const url = asset.browser_download_url;
+        // Manifiesto con páginas/productos/fecha - mismo origen, sin
+        // depender de la API de GitHub (evita límites de peticiones y
+        // el problema de "Content-Disposition: attachment" forzado que
+        // llevan los enlaces de Releases).
+        fetch('./data/manifiesto.json')
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(m => {
+                const info = m.catalogos && m.catalogos[AREA_KEY];
+                if (!info) { showNoCatalogo(); return; }
 
-                document.getElementById('btn-ver-completo').href = './visor_catalogo.html?area=drogueria';
-                document.getElementById('btn-descargar').href = url;
+                document.getElementById('btn-ver-completo').href = './visor_catalogo.html?area=' + AREA_KEY;
+                const btnDescargar = document.getElementById('btn-descargar');
+                btnDescargar.href = url;
+                btnDescargar.setAttribute('download', PDF);
                 document.getElementById('preview-catalogo').style.display = '';
                 if (window.cargarMuestraCatalogo) {
-                    cargarMuestraCatalogo({ area: 'drogueria', contenedorId: 'catalogo-preview-grid' });
+                    cargarMuestraCatalogo({ area: AREA_KEY, contenedorId: 'catalogo-preview-grid' });
                 }
-                // Manifiesto con páginas/productos/fecha - cargar desde data/ (CORS habilitado)
-                fetch('./data/manifiesto.json')
-                    .then(r => r.json())
-                    .then(m => {
-                        const area = PDF.replace('catalogo_', '').replace('.pdf', '');
-                        const info = m.catalogos && m.catalogos[area];
-                        if (info) {
-                            document.getElementById('info-paginas').textContent   = info.paginas || '—';
-                            document.getElementById('info-productos').textContent = info.productos || '—';
-                        }
-                        if (m.generado) {
-                            const fecha = new Date(m.generado);
-                            document.getElementById('info-fecha').textContent =
-                                fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-                        }
-                    })
-                    .catch(() => {});
+
+                document.getElementById('info-paginas').textContent   = info.paginas || '—';
+                document.getElementById('info-productos').textContent = info.productos || '—';
+                if (m.generado) {
+                    const fecha = new Date(m.generado);
+                    document.getElementById('info-fecha').textContent =
+                        fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
             })
             .catch(() => showNoCatalogo());
 

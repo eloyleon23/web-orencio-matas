@@ -327,36 +327,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>
 (function() {
     const REPO = 'eloyleon23/web-orencio-matas';
-    const API  = 'https://api.github.com/repos/' + REPO + '/releases/latest';
-    const ZAPHIRO_CFG_API = 'https://api.github.com/repos/' + REPO + '/contents/zaphiro_config.json';
 
-    // ── Catálogo interno desde GitHub Releases ──
-    fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
-        .then(r => r.ok ? r.json() : null)
-        .then(release => {
-            if (!release || !release.assets) { showNoInterno(); return; }
-            const asset = release.assets.find(a => a.name === 'catalogo_talleres.pdf');
-            if (!asset) { showNoInterno(); return; }
-            const url = asset.browser_download_url;
+    // ── Catálogo interno: servido directamente desde el repositorio
+    // (GitHub Pages), no desde GitHub Releases — los enlaces de
+    // Releases llevan "Content-Disposition: attachment" forzado en la
+    // propia URL firmada, así que el navegador los descarga en vez de
+    // mostrarlos aunque se carguen en un iframe. Sirviéndolo como
+    // archivo normal del sitio, el visor nativo del navegador sí lo
+    // muestra inline. ──
+    const PDF_INTERNO = 'catalogo_talleres.pdf';
+    const url = './data/catalogos/' + PDF_INTERNO;
+
+    fetch('./data/manifiesto.json')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(m => {
+            const info = m.catalogos && m.catalogos['talleres'];
+            if (!info) { showNoInterno(); return; }
+
             document.getElementById('btn-ver-completo-interno').href = './visor_catalogo.html?area=talleres';
-            document.getElementById('btn-descargar-interno').href = url;
+            const btnDescargar = document.getElementById('btn-descargar-interno');
+            btnDescargar.href = url;
+            btnDescargar.setAttribute('download', PDF_INTERNO);
             document.getElementById('preview-interno').style.display = '';
             document.getElementById('actions-interno').style.display = '';
             if (window.cargarMuestraCatalogo) {
                 cargarMuestraCatalogo({ area: 'talleres', contenedorId: 'catalogo-preview-grid-interno' });
             }
 
-            // Cargar manifiesto desde data/ (CORS habilitado en GitHub Pages)
-            fetch('./data/manifiesto.json')
-                .then(r => r.json())
-                .then(m => {
-                    const info = m.catalogos && m.catalogos['talleres'];
-                    if (info) {
-                        document.getElementById('info-paginas-interno').textContent   = info.paginas || '—';
-                        document.getElementById('info-productos-interno').textContent = info.productos || '—';
-                    }
-                })
-                .catch(() => {});
+            document.getElementById('info-paginas-interno').textContent   = info.paginas || '—';
+            document.getElementById('info-productos-interno').textContent = info.productos || '—';
         })
         .catch(showNoInterno);
 
