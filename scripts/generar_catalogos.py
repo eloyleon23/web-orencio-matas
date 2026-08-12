@@ -33,7 +33,9 @@ AREAS = {
                    'color': '#008F5B', 'filename': 'catalogo_pinturas.pdf'},
     'talleres':   {'titulo': 'SUMINISTROS PARA TALLERES',
                    'subtitulo': 'Productos técnicos · Carrocería · Mantenimiento profesional',
-                   'color': '#105285', 'filename': 'catalogo_talleres.pdf'},
+                   # Amarillo/dorado del logo — con texto oscuro en vez de
+                   # blanco, porque blanco sobre amarillo apenas se lee.
+                   'color': '#F9B101', 'color_texto': '#2B2A29', 'filename': 'catalogo_talleres.pdf'},
 }
 
 COLOR_ROJO  = colors.HexColor('#d91b1b')
@@ -398,7 +400,7 @@ def make_header_footer(logo_png_path, marca_agua_path=None):
     return hf
 
 # ── Banner de sección ───────────────────────────────────────────────────────
-def banner(familia, color_hex, st):
+def banner(familia, color_hex, st, color_texto_hex=None):
     """Cabecera de sección — solo el nombre de la familia. Antes incluía
     también el título del área (ej. 'SUMINISTROS PARA TALLERES') encima,
     pero como cada catálogo es siempre de una única área ya fija, repetir
@@ -406,7 +408,13 @@ def banner(familia, color_hex, st):
     aportar nada. Se retomará si en el futuro se genera un catálogo
     general que combine varias áreas."""
     c = colors.HexColor(color_hex)
-    t = Table([[Paragraph(familia, st['titulo_cat'])]], colWidths=[CW])
+    estilo_titulo = st['titulo_cat']
+    if color_texto_hex:
+        # Áreas con fondo claro (ej. amarillo) necesitan texto oscuro —
+        # blanco sobre amarillo apenas se lee.
+        estilo_titulo = ParagraphStyle('tc_alt', parent=estilo_titulo,
+                                        textColor=colors.HexColor(color_texto_hex))
+    t = Table([[Paragraph(familia, estilo_titulo)]], colWidths=[CW])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0),(-1,-1), c),
         ('TOPPADDING', (0,0),(-1,-1), 6), ('BOTTOMPADDING',(0,0),(-1,-1), 6),
@@ -633,7 +641,7 @@ def generar_catalogo(area, productos, logo_png, familias={}, marca_agua=None, li
         # cabecera de una familia quede "huérfana" sola al final de una
         # página (banner + primera fila de producto van pegados; el
         # resto de filas ya fluye con el reparto automático normal).
-        cabecera = [banner(tipo, cfg['color'], st), Spacer(1, 5*mm)]
+        cabecera = [banner(tipo, cfg['color'], st, cfg.get('color_texto')), Spacer(1, 5*mm)]
         if filas:
             story.append(KeepTogether(cabecera + [filas[0]]))
             story.extend(filas[1:])

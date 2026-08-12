@@ -284,7 +284,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     (function() {
         const PDF  = 'catalogo_pinturas.pdf';
         const AREA_KEY = 'pinturas';
-        const url = './data/catalogos/' + PDF;
+        const url = './data/catalogos/' + PDF + '?_t=' + Date.now();
 
         // Manifiesto con páginas/productos/fecha - mismo origen, sin
         // depender de la API de GitHub (evita límites de peticiones y
