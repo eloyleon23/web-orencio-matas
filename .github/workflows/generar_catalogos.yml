@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 360
     permissions:
       contents: write
+      actions: write
 
     steps:
       - name: Checkout
@@ -63,3 +64,16 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Disparar despliegue de Pages
+        # El commit de arriba se hace con el GITHUB_TOKEN por defecto —
+        # por diseño de GitHub (para evitar bucles infinitos), un push
+        # hecho así NO dispara el "on: push" de otros workflows, así que
+        # deploy-pages.yml nunca se enteraba de que había catálogos
+        # nuevos. Se dispara aquí explícitamente por API en su lugar.
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/deploy-pages.yml/dispatches" \
+            -d '{"ref":"main"}'
