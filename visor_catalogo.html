@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TWX6NRXN');</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Ver catálogo | Orencio Matas y Hnos, S.L.</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; }
+        .visor-header {
+            height: 56px;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            gap: 12px;
+        }
+        .visor-header a, .visor-header span {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .visor-header a:hover { color: #cbd5e1; }
+        .visor-titulo { flex: 1; text-align: center; opacity: 0.85; font-weight: 500 !important; }
+        .visor-frame-wrap { height: calc(100% - 56px); }
+        .visor-frame-wrap iframe { width: 100%; height: 100%; border: none; }
+        .visor-estado {
+            height: calc(100% - 56px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            color: #64748b;
+            text-align: center;
+            padding: 20px;
+        }
+        .visor-estado i { font-size: 2.5rem; }
+    </style>
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<header class="visor-header">
+    <a id="btn-volver" href="productos.html"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    <span class="visor-titulo" id="visor-titulo">Cargando catálogo…</span>
+    <a id="btn-descargar-visor" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i> Descargar</a>
+</header>
+
+<div class="visor-frame-wrap" id="visor-frame-wrap" style="display:none">
+    <iframe id="visor-iframe" src=""></iframe>
+</div>
+
+<div class="visor-estado" id="visor-cargando">
+    <i class="fa-solid fa-spinner fa-spin"></i>
+    <p>Cargando catálogo…</p>
+</div>
+
+<div class="visor-estado" id="visor-error" style="display:none">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <p>No se ha podido cargar el catálogo.<br>Puedes volver e intentar descargarlo directamente.</p>
+</div>
+
+<script>
+(function () {
+    const AREAS = {
+        drogueria:  { pdf: 'catalogo_drogueria.pdf',  titulo: 'Catálogo de Droguería Profesional' },
+        perfumeria: { pdf: 'catalogo_perfumeria.pdf', titulo: 'Catálogo de Perfumería y Cosmética' },
+        pinturas:   { pdf: 'catalogo_pinturas.pdf',   titulo: 'Catálogo de Pinturas, Barnices y Material Profesional' },
+        talleres:   { pdf: 'catalogo_talleres.pdf',   titulo: 'Catálogo Talleres Orencio Matas' },
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const area = params.get('area');
+    const cfg = AREAS[area];
+
+    if (!cfg) {
+        mostrarError();
+        return;
+    }
+
+    document.getElementById('visor-titulo').textContent = cfg.titulo;
+
+    const REPO = 'eloyleon23/web-orencio-matas';
+    const API = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+
+    fetch(API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(release => {
+            if (!release || !release.assets) { mostrarError(); return; }
+            const asset = release.assets.find(a => a.name === cfg.pdf);
+            if (!asset) { mostrarError(); return; }
+            const url = asset.browser_download_url;
+
+            document.getElementById('btn-descargar-visor').href = url;
+            document.getElementById('visor-iframe').src = 'https://docs.google.com/viewer?embedded=true&url=' + encodeURIComponent(url);
+            document.getElementById('visor-cargando').style.display = 'none';
+            document.getElementById('visor-frame-wrap').style.display = '';
+        })
+        .catch(mostrarError);
+
+    function mostrarError() {
+        document.getElementById('visor-cargando').style.display = 'none';
+        document.getElementById('visor-error').style.display = '';
+    }
+})();
+</script>
+
+<script src="./src/js/analytics-consent.js"></script>
+</body>
+</html>

@@ -246,12 +246,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </p>
             </div>
 
-            <div class="mobile-pdf-link" id="mobile-link-interno" style="display:none">
-                <a id="btn-abrir-interno" href="#" target="_blank" class="btn-mobile-pdf">
-                    <i class="fa-solid fa-external-link-alt"></i> Abrir catálogo en nueva pestaña
-                </a>
-            </div>
-
             <div id="no-catalogo-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
                 <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
                 <p style="color:#64748b;">El catálogo interno está siendo preparado.<br>
@@ -259,13 +253,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
 
             <div id="preview-interno" style="display:none">
-                <div style="display:flex;gap:16px;font-size:0.85rem;color:#64748b;">
+                <div style="display:flex;gap:16px;font-size:0.85rem;color:#64748b;margin-bottom:20px;">
                     <span><strong id="info-paginas-interno" style="color:#d91b1b;">—</strong> páginas</span>
                     <span><strong id="info-productos-interno" style="color:#d91b1b;">—</strong> productos</span>
                 </div>
+
+                <p style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin:0 0 14px;">Una muestra de lo que encontrarás</p>
+                <div id="catalogo-preview-grid-interno" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-bottom:8px;"></div>
             </div>
 
             <div class="catalog-actions" id="actions-interno" style="display:none">
+                <a id="btn-ver-completo-interno" href="#" class="btn-download" style="background:var(--dark);margin-right:12px;">
+                    <i class="fa-solid fa-book-open"></i> Ver Catálogo Completo
+                </a>
                 <a id="btn-descargar-interno" href="#" target="_blank" rel="noopener" class="btn-download">
                     <i class="fa-solid fa-download"></i> Descargar Catálogo
                 </a>
@@ -338,11 +338,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             const asset = release.assets.find(a => a.name === 'catalogo_talleres.pdf');
             if (!asset) { showNoInterno(); return; }
             const url = asset.browser_download_url;
-            document.getElementById('btn-abrir-interno').href = url;
+            document.getElementById('btn-ver-completo-interno').href = './visor_catalogo.html?area=talleres';
             document.getElementById('btn-descargar-interno').href = url;
-            document.getElementById('mobile-link-interno').style.display = '';
             document.getElementById('preview-interno').style.display = '';
             document.getElementById('actions-interno').style.display = '';
+            if (window.cargarMuestraCatalogo) {
+                cargarMuestraCatalogo({ area: 'talleres', contenedorId: 'catalogo-preview-grid-interno' });
+            }
 
             // Cargar manifiesto desde data/ (CORS habilitado en GitHub Pages)
             fetch('./data/manifiesto.json')
@@ -388,5 +390,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
 })();
 </script>
+<script src="./src/js/catalogo-preview.js"></script>
 </body>
 </html>

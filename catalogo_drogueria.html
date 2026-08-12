@@ -235,13 +235,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <p>Productos técnicos para limpieza, higiene, mantenimiento y consumo diario</p>
     </div>
 
-    
-    <div class="mobile-pdf-link" id="mobile-link" style="display:none">
-        <a id="btn-abrir" href="#" target="_blank" class="btn-mobile-pdf">
-            <i class="fa-solid fa-external-link-alt"></i> Abrir catálogo en nueva pestaña
-        </a>
-    </div>
-
     <div id="no-catalogo" style="text-align:center;padding:60px 20px;display:none">
         <i class="fa-solid fa-clock" style="font-size:2.5rem;color:#64748b;margin-bottom:16px;display:block"></i>
         <p style="color:#64748b;font-size:1.1rem">El catálogo está siendo preparado.<br>Mientras tanto puedes contactar con nosotros.</p>
@@ -267,10 +260,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
             </div>
 
-            <a id="btn-descargar" href="#" target="_blank" rel="noopener" class="btn-download"
-               style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;">
-                <i class="fa-solid fa-download"></i> Descargar Catálogo Completo (PDF)
-            </a>
+            <p style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin:0 0 14px;">Una muestra de lo que encontrarás</p>
+            <div id="catalogo-preview-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;text-align:left;margin-bottom:28px;"></div>
+
+            <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+                <a id="btn-ver-completo" href="#" class="btn-download"
+                   style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;background:var(--dark);">
+                    <i class="fa-solid fa-book-open"></i> Ver Catálogo Completo
+                </a>
+                <a id="btn-descargar" href="#" target="_blank" rel="noopener" class="btn-download"
+                   style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;">
+                    <i class="fa-solid fa-download"></i> Descargar (PDF)
+                </a>
+            </div>
         </div>
     </div>
 
@@ -292,10 +294,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 if (!asset) { showNoCatalogo(); return; }
                 const url = asset.browser_download_url;
 
-                document.getElementById('btn-abrir').href     = url;
+                document.getElementById('btn-ver-completo').href = './visor_catalogo.html?area=drogueria';
                 document.getElementById('btn-descargar').href = url;
-                document.getElementById('mobile-link').style.display     = '';
                 document.getElementById('preview-catalogo').style.display = '';
+                if (window.cargarMuestraCatalogo) {
+                    cargarMuestraCatalogo({ area: 'drogueria', contenedorId: 'catalogo-preview-grid' });
+                }
                 // Manifiesto con páginas/productos/fecha - cargar desde data/ (CORS habilitado)
                 fetch('./data/manifiesto.json')
                     .then(r => r.json())
@@ -324,6 +328,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 </main>
 
+<script src="./src/js/catalogo-preview.js"></script>
 <script src="./src/js/analytics-consent.js"></script>
 </body>
 </html>
