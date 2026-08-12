@@ -309,13 +309,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </a>
             </div>
 
-            <div class="mobile-pdf-link" id="mobile-link-zaphiro" style="display:none">
-                <a id="btn-abrir-zaphiro" href="#" target="_blank" class="btn-mobile-pdf">
-                    <i class="fa-solid fa-external-link-alt"></i> Abrir catálogo Zaphiro
-                </a>
-            </div>
-            <div class="catalog-viewer" id="viewer-zaphiro" style="display:none">
-                <iframe id="iframe-zaphiro" src="" type="application/pdf"></iframe>
+            <div id="preview-zaphiro" style="display:none">
+                <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border:1px solid #e2e8f0;text-align:center;">
+                    <p style="color:#64748b;margin:0 0 24px;">
+                        Este catálogo es propiedad de Grupo Zaphiro y es un archivo externo — no podemos garantizar
+                        una vista previa embebida fiable dentro de esta página. El botón de abajo lo abre directamente
+                        en la web de Zaphiro.
+                    </p>
+                    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+                        <a id="btn-ver-completo-zaphiro" href="#" target="_blank" rel="noopener" class="btn-download"
+                           style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;background:var(--dark);">
+                            <i class="fa-solid fa-book-open"></i> Ver Catálogo Completo
+                        </a>
+                        <a id="btn-descargar-zaphiro" href="#" target="_blank" rel="noopener" class="btn-download"
+                           style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;">
+                            <i class="fa-solid fa-download"></i> Descargar (PDF)
+                        </a>
+                    </div>
+                </div>
             </div>
             <div id="no-catalogo-zaphiro" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
                 <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
@@ -324,11 +335,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <div class="catalog-disclaimer" style="margin-top:12px;">
                 <strong>Nota:</strong> Este catálogo es propiedad de Grupo Zaphiro y se muestra como referencia para nuestros clientes. Actualizado automáticamente con la última versión disponible.
-            </div>
-            <div class="catalog-actions" id="actions-zaphiro" style="display:none">
-                <a id="btn-descargar-zaphiro" href="#" target="_blank" rel="noopener" class="btn-download">
-                    <i class="fa-solid fa-download"></i> Descargar Catálogo Zaphiro
-                </a>
             </div>
         </section>
 
@@ -383,6 +389,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
 
     // ── Catálogo Zaphiro desde API GitHub ──
+    // Ya NO se intenta incrustar vía iframe/Google Docs Viewer: al ser
+    // un PDF externo bastante grande (43 páginas con muchas fotos),
+    // podía superar el límite de tamaño de Google Docs Viewer — y en
+    // ese caso de fallo, el iframe a veces terminaba cargando el PDF en
+    // bruto como último recurso, que si el servidor de Zaphiro fuerza
+    // descarga (común en adjuntos de WordPress), acababa disparando una
+    // descarga inesperada de todo la página. Con enlaces directos
+    // (clic explícito del usuario, sin iframe de por medio) se evita
+    // ese problema por completo.
     const ZAPHIRO_API = `https://api.github.com/repos/${REPO}/contents/zaphiro_config.json`;
     fetch(ZAPHIRO_API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
         .then(r => r.ok ? r.json() : null)
@@ -391,15 +406,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             const cfg = JSON.parse(new TextDecoder('utf-8').decode(Uint8Array.from(atob(data.content.replace(/\\n/g,'')), c => c.charCodeAt(0))));
             if (!cfg || !cfg.url) { showNoZaphiro(); return; }
             const url = cfg.url;
-            // Zaphiro: usar Google Docs viewer ya que es PDF externo
-            const viewer = 'https://docs.google.com/viewer?embedded=true&url=' + encodeURIComponent(url);
-            document.getElementById('iframe-zaphiro').src = viewer;
-            document.getElementById('btn-abrir-zaphiro').href = url;
+            document.getElementById('btn-ver-completo-zaphiro').href = url;
             document.getElementById('btn-descargar-zaphiro').href = url;
             if (cfg.titulo) document.getElementById('titulo-zaphiro').textContent = cfg.titulo;
-            document.getElementById('mobile-link-zaphiro').style.display = '';
-            document.getElementById('viewer-zaphiro').style.display = '';
-            document.getElementById('actions-zaphiro').style.display = '';
+            document.getElementById('preview-zaphiro').style.display = '';
         })
         .catch(showNoZaphiro);
 
