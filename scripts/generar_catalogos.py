@@ -24,16 +24,16 @@ LOGO_PATH  = 'assets/logos/logo_calidad.svg'
 AREAS = {
     'drogueria':  {'titulo': 'DROGUERÍA Y LIMPIEZA DEL HOGAR',
                    'subtitulo': 'Detergentes · Lavavajillas · Quitagrasas · Higiene · Ambientadores',
-                   'color': '#1a1a1a', 'filename': 'catalogo_drogueria.pdf'},
+                   'color': '#0081A9', 'filename': 'catalogo_drogueria.pdf'},
     'perfumeria': {'titulo': 'PERFUMERÍA E HIGIENE PERSONAL',
                    'subtitulo': 'Fragancias · Desodorantes · Champús · Geles · Cremas · Maquinillas',
-                   'color': '#d91b1b', 'filename': 'catalogo_perfumeria.pdf'},
+                   'color': '#BD2221', 'filename': 'catalogo_perfumeria.pdf'},
     'pinturas':   {'titulo': 'PINTURAS, BARNICES Y HERRAMIENTAS',
                    'subtitulo': 'Esmaltes · Barnices · Brochas · Rodillos · Lijas · Disolventes',
-                   'color': '#1a5e20', 'filename': 'catalogo_pinturas.pdf'},
+                   'color': '#008F5B', 'filename': 'catalogo_pinturas.pdf'},
     'talleres':   {'titulo': 'SUMINISTROS PARA TALLERES',
                    'subtitulo': 'Productos técnicos · Carrocería · Mantenimiento profesional',
-                   'color': '#1a3a6e', 'filename': 'catalogo_talleres.pdf'},
+                   'color': '#105285', 'filename': 'catalogo_talleres.pdf'},
 }
 
 COLOR_ROJO  = colors.HexColor('#d91b1b')
@@ -301,8 +301,8 @@ def pil_to_bytes(img):
 # ── Estilos ReportLab ───────────────────────────────────────────────────────
 def estilos():
     return {
-        'titulo_cat':  ParagraphStyle('tc', fontName='Helvetica-Bold', fontSize=17,
-                                      textColor=colors.white, alignment=TA_CENTER, leading=21),
+        'titulo_cat':  ParagraphStyle('tc', fontName='Helvetica-Bold', fontSize=14,
+                                      textColor=colors.white, alignment=TA_CENTER, leading=17),
         'sub_cat':     ParagraphStyle('sc', fontName='Helvetica', fontSize=9,
                                       textColor=colors.white, alignment=TA_CENTER),
         'titulo_port': ParagraphStyle('tp', fontName='Helvetica-Bold', fontSize=26,
@@ -398,14 +398,18 @@ def make_header_footer(logo_png_path, marca_agua_path=None):
     return hf
 
 # ── Banner de sección ───────────────────────────────────────────────────────
-def banner(titulo, sub, color_hex, st):
+def banner(familia, color_hex, st):
+    """Cabecera de sección — solo el nombre de la familia. Antes incluía
+    también el título del área (ej. 'SUMINISTROS PARA TALLERES') encima,
+    pero como cada catálogo es siempre de una única área ya fija, repetir
+    ese título en cada familia era redundante y alargaba la cabecera sin
+    aportar nada. Se retomará si en el futuro se genera un catálogo
+    general que combine varias áreas."""
     c = colors.HexColor(color_hex)
-    t = Table([[Paragraph(titulo, st['titulo_cat'])],
-               [Paragraph(sub,    st['sub_cat'])]],
-              colWidths=[CW])
+    t = Table([[Paragraph(familia, st['titulo_cat'])]], colWidths=[CW])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0),(-1,-1), c),
-        ('TOPPADDING', (0,0),(-1,-1), 10), ('BOTTOMPADDING',(0,0),(-1,-1), 10),
+        ('TOPPADDING', (0,0),(-1,-1), 6), ('BOTTOMPADDING',(0,0),(-1,-1), 6),
         ('LEFTPADDING',(0,0),(-1,-1), 14), ('RIGHTPADDING', (0,0),(-1,-1), 14),
     ]))
     return t
@@ -629,7 +633,7 @@ def generar_catalogo(area, productos, logo_png, familias={}, marca_agua=None, li
         # cabecera de una familia quede "huérfana" sola al final de una
         # página (banner + primera fila de producto van pegados; el
         # resto de filas ya fluye con el reparto automático normal).
-        cabecera = [banner(cfg['titulo'], tipo, cfg['color'], st), Spacer(1, 5*mm)]
+        cabecera = [banner(tipo, cfg['color'], st), Spacer(1, 5*mm)]
         if filas:
             story.append(KeepTogether(cabecera + [filas[0]]))
             story.extend(filas[1:])
