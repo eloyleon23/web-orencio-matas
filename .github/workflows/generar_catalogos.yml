@@ -27,7 +27,7 @@ jobs:
           python-version: '3.11'
 
       - name: Instalar dependencias
-        run: pip install reportlab pillow requests cairosvg
+        run: pip install reportlab pillow requests cairosvg pymupdf
 
       - name: Generar PDFs
         env:

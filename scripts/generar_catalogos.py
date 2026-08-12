@@ -691,7 +691,12 @@ def main():
         print(f"\n▶ Área: {area}")
         resultado = generar_catalogo(area, productos, logo_png, familias,
                                       marca_agua=marca_agua, limite_productos=limite_productos)
-        if resultado and resultado.get('paginas', 0) > 0:
+        # Se comprueba por "productos" (no solo "paginas") — si por lo
+        # que sea fallara el conteo de páginas (ej. dependencia de
+        # PyMuPDF no instalada) pero el PDF sí se generó con contenido
+        # real, no tiene sentido ocultar el catálogo del manifiesto por
+        # eso: mejor mostrarlo con paginas=0 que no mostrarlo en absoluto.
+        if resultado and resultado.get('productos', 0) > 0:
             generados.append(area)
             info_catalogos[area] = resultado
         # Liberar caché de imágenes entre áreas para no agotar RAM
