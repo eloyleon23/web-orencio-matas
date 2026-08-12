@@ -43,7 +43,7 @@ COLOR_FONDO = colors.HexColor('#f8fafc')
 COLOR_BORDE = colors.HexColor('#e2e8f0')
 
 W, H   = A4
-MARGIN = 18 * mm
+MARGIN = 12 * mm
 CW     = W - 2 * MARGIN
 
 # ── Leer familias del Sheet ─────────────────────────────────────────────────
@@ -415,7 +415,7 @@ def banner(familia, color_hex, st):
     return t
 
 # ── Grid de productos ───────────────────────────────────────────────────────
-def grid_productos(productos_area, st, cols=4, img_h=55*mm):
+def grid_productos(productos_area, st, cols=5, img_h=48*mm):
     """Genera un grid respetando espacios_a_ocupar (1-6) por producto.
     1-3: ocupan columnas en la fila actual.
     4-6: ocupan columnas adicionales desbordando a la fila siguiente (imagen más alta).
@@ -624,7 +624,7 @@ def generar_catalogo(area, productos, logo_png, familias={}, marca_agua=None, li
         return familias.get(nombre.upper(), 9999)
 
     for i, (tipo, prods) in enumerate(sorted(tipologias.items(), key=lambda x: (orden_tipologia(x[0]), x[0]))):
-        resultado = grid_productos(prods, st, cols=4)
+        resultado = grid_productos(prods, st, cols=5)
         filas = resultado if isinstance(resultado, list) else [resultado]
 
         # Sin salto de página forzado entre familias — así se aprovecha
