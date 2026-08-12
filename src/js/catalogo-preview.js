@@ -19,6 +19,25 @@
     'use strict';
 
     const ROTACION_MS = 5000;
+    // Deben coincidir con el CSS real de la cuadrícula (minmax + gap) en
+    // cada catalogo_*.html, para poder calcular cuántas columnas caben
+    // de verdad en el ancho disponible.
+    const ANCHO_MIN_TARJETA = 140;
+    const GAP_TARJETA = 14;
+    const FILAS_OBJETIVO = 4;
+    const LIMITE_MINIMO = 8;
+    const LIMITE_MAXIMO = 36;
+
+    // Cuántas tarjetas hacen falta para llenar "FILAS_OBJETIVO" filas
+    // completas con el ancho real del contenedor — así nunca queda una
+    // última fila a medias con hueco vacío. Se recalcula en cada
+    // rotación y al redimensionar la ventana.
+    function calcularLimiteResponsive(contenedor) {
+        const ancho = contenedor.clientWidth || contenedor.parentElement.clientWidth || 800;
+        const columnas = Math.max(1, Math.floor((ancho + GAP_TARJETA) / (ANCHO_MIN_TARJETA + GAP_TARJETA)));
+        const limite = columnas * FILAS_OBJETIVO;
+        return Math.min(LIMITE_MAXIMO, Math.max(LIMITE_MINIMO, limite));
+    }
 
     function urlImagenProductoCatalogo(p, tamano) {
         if (!p.img) return null;
@@ -123,14 +142,17 @@
     }
 
     async function cargarMuestraCatalogo(opts) {
-        const { area, contenedorId, limite = 20, numFamilias = 5 } = opts;
+        const { area, contenedorId, numFamilias = 5 } = opts;
         const contenedor = document.getElementById(contenedorId);
         if (!contenedor) return;
 
         // Por si se llamara dos veces para el mismo contenedor, no dejar
-        // rotaciones duplicadas corriendo en paralelo.
+        // rotaciones ni listeners duplicados corriendo en paralelo.
         if (contenedor._rotacionCatalogoId) {
             clearInterval(contenedor._rotacionCatalogoId);
+        }
+        if (contenedor._resizeHandlerCatalogo) {
+            window.removeEventListener('resize', contenedor._resizeHandlerCatalogo);
         }
 
         try {
@@ -163,6 +185,7 @@
             contenedor.style.transition = 'opacity 0.25s ease';
 
             function pintarRonda() {
+                const limite = calcularLimiteResponsive(contenedor);
                 const muestra = muestraDiversaPorFamilia(candidatos, limite, numFamilias);
                 contenedor.style.opacity = '0';
                 setTimeout(() => {
@@ -172,11 +195,20 @@
             }
 
             pintarRonda();
-            // Solo merece la pena rotar si hay más familias/productos de
-            // los que ya se están mostrando de una vez.
-            if (candidatos.length > limite) {
+            if (candidatos.length > LIMITE_MINIMO) {
                 contenedor._rotacionCatalogoId = setInterval(pintarRonda, ROTACION_MS);
             }
+
+            // Al redimensionar (girar el móvil, cambiar el tamaño de la
+            // ventana...), repintar de inmediato con el nuevo número de
+            // columnas — con un pequeño retraso para no repintar en cada
+            // píxel mientras se arrastra el borde de la ventana.
+            let resizeTimeout;
+            contenedor._resizeHandlerCatalogo = () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(pintarRonda, 300);
+            };
+            window.addEventListener('resize', contenedor._resizeHandlerCatalogo);
         } catch (e) {
             console.error('No se pudo cargar la muestra del catálogo:', e);
             contenedor.style.display = 'none';
