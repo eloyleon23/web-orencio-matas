@@ -141,9 +141,27 @@ def get_session():
         _session.mount('https://', HTTPAdapter(max_retries=retry))
     return _session
 
+def componer_lienzo_cuadrado(pil_img, tamano=260, fondo='white'):
+    """Centra la imagen sobre un lienzo cuadrado de tamaño fijo, para que
+    TODAS las fotos del catálogo ocupen exactamente el mismo espacio
+    visual — sin esto, una foto apaisada y otra en vertical se veían de
+    tamaño distinto en celdas del mismo tamaño, dando un aspecto poco
+    simétrico al grid."""
+    img = pil_img.copy()
+    img.thumbnail((tamano, tamano), PILImage.LANCZOS)
+    lienzo = PILImage.new('RGB', (tamano, tamano), fondo)
+    x = (tamano - img.width) // 2
+    y = (tamano - img.height) // 2
+    lienzo.paste(img, (x, y))
+    return lienzo
+
 # ── Descargar imagen de Google Drive ───────────────────────────────────────
-def descargar_imagen(drive_id, max_px=400):
-    """Descarga una imagen de Drive por su ID y la devuelve como objeto PIL."""
+def descargar_imagen(drive_id, max_px=260):
+    """Descarga una imagen de Drive por su ID, la compone sobre un lienzo
+    cuadrado uniforme y la devuelve como objeto PIL. max_px reducido de
+    400 a 260: con miles de productos por catálogo, cada 10 px menos de
+    lado recorta sensiblemente el peso final del PDF sin que se note en
+    una miniatura de este tamaño."""
     if not drive_id or drive_id == 'NO_TIENE_FOTO':
         return None
     if drive_id in _img_cache:
@@ -163,10 +181,7 @@ def descargar_imagen(drive_id, max_px=400):
                 _img_cache[drive_id] = None
                 return None
         img = PILImage.open(io.BytesIO(resp.content)).convert('RGB')
-        w, h = img.size
-        if max(w, h) > max_px:
-            ratio = max_px / max(w, h)
-            img = img.resize((int(w*ratio), int(h*ratio)), PILImage.LANCZOS)
+        img = componer_lienzo_cuadrado(img, tamano=max_px)
         _img_cache[drive_id] = img
         return img
     except Exception as e:
@@ -249,7 +264,10 @@ def añadir_etiqueta_oferta(img):
 # ── Convertir PIL a bytes JPEG ──────────────────────────────────────────────
 def pil_to_bytes(img):
     buf = io.BytesIO()
-    img.save(buf, 'JPEG', quality=82)
+    # Calidad bajada de 82 a 68: en una miniatura de catálogo de este
+    # tamaño la diferencia visual es mínima, pero con miles de productos
+    # por PDF el ahorro de peso acumulado es considerable.
+    img.save(buf, 'JPEG', quality=68, optimize=True)
     return buf.getvalue()
 
 # ── Estilos ReportLab ───────────────────────────────────────────────────────
@@ -331,6 +349,46 @@ def banner(titulo, sub, color_hex, st):
     ]))
     return t
 
+# ── Tarjeta de producto (estilo folleto) ────────────────────────────────────
+def envolver_en_tarjeta(contenido, ancho, es_oferta=False):
+    """Envuelve el contenido de un producto (imagen + textos) en una
+    'tarjeta' independiente con fondo y borde — antes cada producto
+    flotaba suelto sobre fondo blanco, sin ninguna separación visual
+    entre uno y el siguiente más que el espaciado; así se ve cada
+    producto como un elemento propio, más parecido a un folleto de
+    supermercado. Las ofertas llevan borde rojo para destacar más."""
+    color_borde = COLOR_ROJO if es_oferta else COLOR_BORDE
+    grosor_borde = 1.1 if es_oferta else 0.6
+    t = Table([[c] for c in contenido], colWidths=[ancho])
+    t.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0),(-1,-1), colors.white),
+        ('BOX',           (0,0),(-1,-1), grosor_borde, color_borde),
+        ('TOPPADDING',    (0,0),(-1,-1), 7),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 8),
+        ('LEFTPADDING',   (0,0),(-1,-1), 7),
+        ('RIGHTPADDING',  (0,0),(-1,-1), 7),
+        ('ALIGN',         (0,0),(-1,-1), 'CENTER'),
+        ('VALIGN',        (0,0),(-1,-1), 'TOP'),
+    ]))
+    return t
+
+def badge_precio(texto_html, ancho):
+    """Insignia de precio con fondo de color, en vez de texto plano —
+    imitando la 'pastilla' de precio típica de folletos de supermercado."""
+    p = Paragraph(texto_html, ParagraphStyle(
+        'badge', fontName='Helvetica-Bold', fontSize=11.5,
+        textColor=colors.white, alignment=TA_CENTER, leading=13))
+    t = Table([[p]], colWidths=[ancho * 0.72])
+    t.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0),(-1,-1), COLOR_ROJO),
+        ('TOPPADDING',    (0,0),(-1,-1), 4),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 4),
+        ('ALIGN',         (0,0),(-1,-1), 'CENTER'),
+        ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+    ]))
+    t.hAlign = 'CENTER'
+    return t
+
 # ── Grid de productos ───────────────────────────────────────────────────────
 def grid_productos(productos_area, st, cols=4, img_h=55*mm):
     """Genera un grid respetando espacios_a_ocupar (1-6) por producto.
@@ -361,11 +419,16 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
 
         cel_w    = cel_w_unit * col_span + (col_span - 1) * 4 * mm
         cel_img_h = base_h * row_span * (1 + (col_span - 1) * 0.2)
+        # Ancho real disponible para la imagen dentro de la tarjeta,
+        # descontando el padding interno (7mm a cada lado) que añade
+        # envolver_en_tarjeta() — si no se descuenta, la imagen podría
+        # desbordar ligeramente el borde de la tarjeta.
+        cel_w_imagen = cel_w - 14*mm
 
         if pil:
             img_bytes = pil_to_bytes(pil)
             iw, ih = pil.size
-            ratio = min(cel_w / iw, cel_img_h / ih)
+            ratio = min(cel_w_imagen / iw, cel_img_h / ih)
             rl_img = RLImage(io.BytesIO(img_bytes), width=iw*ratio, height=ih*ratio)
             rl_img.hAlign = 'CENTER'
         else:
@@ -379,7 +442,7 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
         precio_con = p.get('precio_con_iva', '').strip().replace(',', '.')
         ver_precio = p.get('mostrar_precio','').lower().strip() in ('sí','si','yes','true','1')
 
-        contenido = [rl_img, Paragraph(nombre, st['nombre_prod'])]
+        contenido = [rl_img, Spacer(1, 2*mm), Paragraph(nombre, st['nombre_prod'])]
         # Mostrar familia y subfamilia (ej: "Familia (Subfamilia)")
         if tipologia:
             familia_texto = tipologia
@@ -391,16 +454,19 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
         if ver_precio:
             if precio_con:
                 try:
-                    contenido.append(Paragraph(f'{float(precio_con):.2f} € <font size="5">(IVA inc.)</font>', st['precio_con']))
+                    texto_badge = f'{float(precio_con):.2f} € <font size="7">IVA inc.</font>'
                 except:
-                    contenido.append(Paragraph(f'{precio_con} €', st['precio_con']))
+                    texto_badge = f'{precio_con} €'
+                contenido.append(Spacer(1, 2*mm))
+                contenido.append(badge_precio(texto_badge, cel_w_imagen))
             if precio_sin:
                 try:
                     contenido.append(Paragraph(f'{float(precio_sin):.2f} € sin IVA', st['precio_sin']))
                 except:
                     contenido.append(Paragraph(f'{precio_sin} € sin IVA', st['precio_sin']))
 
-        items.append((contenido, col_span, cel_w))
+        tarjeta = envolver_en_tarjeta(contenido, cel_w, es_oferta=es_oferta)
+        items.append((tarjeta, col_span, cel_w))
 
     # Distribuir en filas respetando col_spans
     rows, widths_rows = [], []
@@ -437,11 +503,10 @@ def grid_productos(productos_area, st, cols=4, img_h=55*mm):
         t.setStyle(TableStyle([
             ('ALIGN',        (0,0),(-1,-1), 'CENTER'),
             ('VALIGN',       (0,0),(-1,-1), 'TOP'),
-            ('TOPPADDING',   (0,0),(-1,-1), 8),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 8),
+            ('TOPPADDING',   (0,0),(-1,-1), 4),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 4),
             ('LEFTPADDING',  (0,0),(-1,-1), 3),
             ('RIGHTPADDING', (0,0),(-1,-1), 3),
-            ('LINEBELOW',    (0,0),(-1,-1), 0.4, COLOR_BORDE),
         ]))
         tablas.append(t)
     return tablas
