@@ -7,12 +7,18 @@
  * Reutiliza data/productos.json (ya cargado por el buscador) y la misma
  * lógica de URL de imagen que buscador.html — ver urlImagenProductoCatalogo().
  *
+ * Se cargan los productos UNA sola vez, y cada 5 segundos se elige un
+ * nuevo grupo aleatorio de familias + productos y se vuelve a pintar —
+ * así el usuario ve variedad sin tener que recargar la página.
+ *
  * Uso: en cada catalogo_*.html, tras el contenedor con id
  * "catalogo-preview-grid", llamar a:
  *   cargarMuestraCatalogo({ area: 'drogueria', contenedorId: 'catalogo-preview-grid' })
  */
 (function () {
     'use strict';
+
+    const ROTACION_MS = 5000;
 
     function urlImagenProductoCatalogo(p, tamano) {
         if (!p.img) return null;
@@ -40,8 +46,8 @@
     }
 
     function mezclar(array) {
-        // Fisher-Yates — para que la muestra no sea siempre exactamente
-        // la misma combinación en cada carga de la página.
+        // Fisher-Yates — para que cada rotación sea una combinación
+        // distinta de la anterior.
         const copia = array.slice();
         for (let i = copia.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -59,15 +65,12 @@
         return puntos;
     }
 
-    // Muestra representativa: reparte entre TODAS las familias del área
-    // en vez de coger los primeros N productos del array (que en la
-    // práctica suelen quedar agrupados por referencia/orden alfabético,
-    // mostrando solo variantes de color/tamaño de un mismo producto base
-    // en vez de dar una idea real de la variedad del catálogo). Dentro
-    // de cada familia, se prioriza lo más relevante (ofertas, imagen
-    // validada) y se mezcla el orden para no repetir siempre la misma
-    // combinación exacta.
-    function muestraDiversaPorFamilia(candidatos, limite) {
+    // Elige un grupo aleatorio de "numFamilias" familias (de entre TODAS
+    // las que tiene el área) y reparte "limite" productos entre ellas —
+    // tanto las familias elegidas como los productos dentro de cada una
+    // cambian en cada llamada, para que la rotación automática dé
+    // variedad real y no muestre siempre la misma combinación.
+    function muestraDiversaPorFamilia(candidatos, limite, numFamilias) {
         const porFamilia = new Map();
         for (const p of candidatos) {
             const familia = p.familia || '(sin familia)';
@@ -75,20 +78,22 @@
             porFamilia.get(familia).push(p);
         }
 
-        // Ordenar cada familia por relevancia (mejor primero), con un
-        // poco de mezcla para variar entre cargas de página distintas.
-        for (const lista of porFamilia.values()) {
-            mezclar(lista).sort((a, b) => puntuarRelevancia(b) - puntuarRelevancia(a));
+        const familiasElegidas = mezclar([...porFamilia.keys()]).slice(0, numFamilias);
+
+        // Dentro de cada familia elegida: mezclar y priorizar por
+        // relevancia (ofertas, imagen validada primero).
+        for (const familia of familiasElegidas) {
+            const lista = porFamilia.get(familia);
+            porFamilia.set(familia, mezclar(lista).sort((a, b) => puntuarRelevancia(b) - puntuarRelevancia(a)));
         }
 
-        const familias = mezclar([...porFamilia.keys()]);
         const muestra = [];
         let ronda = 0;
-        // Ronda a ronda: una unidad de cada familia por vuelta, hasta
-        // llenar el límite o agotar todas las familias.
+        // Ronda a ronda: una unidad de cada familia elegida por vuelta,
+        // hasta llenar el límite o agotar esas familias.
         while (muestra.length < limite) {
             let añadidoEnRonda = false;
-            for (const familia of familias) {
+            for (const familia of familiasElegidas) {
                 if (muestra.length >= limite) break;
                 const lista = porFamilia.get(familia);
                 if (lista.length > ronda) {
@@ -96,16 +101,37 @@
                     añadidoEnRonda = true;
                 }
             }
-            if (!añadidoEnRonda) break; // ya no quedan más productos en ninguna familia
+            if (!añadidoEnRonda) break; // esas familias ya no tienen más productos
             ronda++;
         }
         return muestra;
     }
 
+    function tarjetaHtml(p) {
+        const img = urlImagenProductoCatalogo(p, 400);
+        const precio = formatearPrecio(p);
+        return `
+            <div style="height:100%;background:white;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.05);display:flex;flex-direction:column;">
+                <div style="aspect-ratio:1;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                    <img src="${img}" alt="${escaparHtml(p.nombre)}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fa-solid fa-image\\' style=\\'font-size:1.5rem;color:#cbd5e1;\\'></i>'" style="width:100%;height:100%;object-fit:contain;padding:8px;box-sizing:border-box;">
+                </div>
+                <div style="padding:10px 12px 12px;display:flex;flex-direction:column;flex:1;">
+                    <p style="margin:0;font-size:0.8rem;color:#334155;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.15em;">${escaparHtml(p.nombre)}</p>
+                    <p style="margin:6px 0 0;font-size:0.9rem;font-weight:700;color:#1e293b;min-height:1.2em;">${precio}</p>
+                </div>
+            </div>`;
+    }
+
     async function cargarMuestraCatalogo(opts) {
-        const { area, contenedorId, limite = 10 } = opts;
+        const { area, contenedorId, limite = 20, numFamilias = 5 } = opts;
         const contenedor = document.getElementById(contenedorId);
         if (!contenedor) return;
+
+        // Por si se llamara dos veces para el mismo contenedor, no dejar
+        // rotaciones duplicadas corriendo en paralelo.
+        if (contenedor._rotacionCatalogoId) {
+            clearInterval(contenedor._rotacionCatalogoId);
+        }
 
         try {
             // Cache-busting igual que en buscador.html: consultar primero
@@ -134,22 +160,23 @@
                 return;
             }
 
-            const muestra = muestraDiversaPorFamilia(candidatos, limite);
+            contenedor.style.transition = 'opacity 0.25s ease';
 
-            contenedor.innerHTML = muestra.map(p => {
-                const img = urlImagenProductoCatalogo(p, 400);
-                const precio = formatearPrecio(p);
-                return `
-                    <div style="height:100%;background:white;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.05);display:flex;flex-direction:column;">
-                        <div style="aspect-ratio:1;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
-                            <img src="${img}" alt="${escaparHtml(p.nombre)}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\'fa-solid fa-image\' style=\'font-size:1.5rem;color:#cbd5e1;\'></i>'" style="width:100%;height:100%;object-fit:contain;padding:8px;box-sizing:border-box;">
-                        </div>
-                        <div style="padding:10px 12px 12px;display:flex;flex-direction:column;flex:1;">
-                            <p style="margin:0;font-size:0.8rem;color:#334155;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.15em;">${escaparHtml(p.nombre)}</p>
-                            <p style="margin:6px 0 0;font-size:0.9rem;font-weight:700;color:#1e293b;min-height:1.2em;">${precio}</p>
-                        </div>
-                    </div>`;
-            }).join('');
+            function pintarRonda() {
+                const muestra = muestraDiversaPorFamilia(candidatos, limite, numFamilias);
+                contenedor.style.opacity = '0';
+                setTimeout(() => {
+                    contenedor.innerHTML = muestra.map(tarjetaHtml).join('');
+                    contenedor.style.opacity = '1';
+                }, 250);
+            }
+
+            pintarRonda();
+            // Solo merece la pena rotar si hay más familias/productos de
+            // los que ya se están mostrando de una vez.
+            if (candidatos.length > limite) {
+                contenedor._rotacionCatalogoId = setInterval(pintarRonda, ROTACION_MS);
+            }
         } catch (e) {
             console.error('No se pudo cargar la muestra del catálogo:', e);
             contenedor.style.display = 'none';
