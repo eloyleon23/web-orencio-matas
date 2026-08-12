@@ -290,7 +290,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // depender de la API de GitHub (evita límites de peticiones y
         // el problema de "Content-Disposition: attachment" forzado que
         // llevan los enlaces de Releases).
-        fetch('./data/manifiesto.json')
+        fetch('./data/manifiesto.json?_t=' + Date.now(), { cache: 'no-store' })
             .then(r => r.ok ? r.json() : Promise.reject())
             .then(m => {
                 const info = m.catalogos && m.catalogos[AREA_KEY];
