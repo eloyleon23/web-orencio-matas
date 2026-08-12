@@ -114,7 +114,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             const url = asset.browser_download_url;
 
             document.getElementById('btn-descargar-visor').href = url;
-            document.getElementById('visor-iframe').src = 'https://docs.google.com/viewer?embedded=true&url=' + encodeURIComponent(url);
+            // Google Docs Viewer tiene un límite de tamaño (~25 MB) que
+            // nuestros catálogos superan con creces (40-51 MB ahora
+            // mismo) — daba "Este archivo es demasiado grande para
+            // obtener una vista previa". El visor nativo del navegador
+            // (Chrome/Firefox/Safari incorporan un renderizador de PDF,
+            // basado en PDF.js) no tiene ese límite duro, así que se usa
+            // directamente el PDF como origen del iframe, sin pasar por
+            // ningún servicio intermedio.
+            document.getElementById('visor-iframe').src = url;
             document.getElementById('visor-cargando').style.display = 'none';
             document.getElementById('visor-frame-wrap').style.display = '';
         })

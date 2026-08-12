@@ -39,6 +39,69 @@
         return `${p.precio_con} € <span style="font-weight:400;font-size:0.75em;color:#94a3b8;">IVA incl.</span>`;
     }
 
+    function mezclar(array) {
+        // Fisher-Yates — para que la muestra no sea siempre exactamente
+        // la misma combinación en cada carga de la página.
+        const copia = array.slice();
+        for (let i = copia.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copia[i], copia[j]] = [copia[j], copia[i]];
+        }
+        return copia;
+    }
+
+    function puntuarRelevancia(p) {
+        // Más alto = más relevante para aparecer en la muestra.
+        let puntos = 0;
+        if (p.oferta) puntos += 3;
+        if (p.imagen_validada || p.fecha_actualizacion_imagen) puntos += 2;
+        if (p.mostrar_precio && p.precio_con) puntos += 1;
+        return puntos;
+    }
+
+    // Muestra representativa: reparte entre TODAS las familias del área
+    // en vez de coger los primeros N productos del array (que en la
+    // práctica suelen quedar agrupados por referencia/orden alfabético,
+    // mostrando solo variantes de color/tamaño de un mismo producto base
+    // en vez de dar una idea real de la variedad del catálogo). Dentro
+    // de cada familia, se prioriza lo más relevante (ofertas, imagen
+    // validada) y se mezcla el orden para no repetir siempre la misma
+    // combinación exacta.
+    function muestraDiversaPorFamilia(candidatos, limite) {
+        const porFamilia = new Map();
+        for (const p of candidatos) {
+            const familia = p.familia || '(sin familia)';
+            if (!porFamilia.has(familia)) porFamilia.set(familia, []);
+            porFamilia.get(familia).push(p);
+        }
+
+        // Ordenar cada familia por relevancia (mejor primero), con un
+        // poco de mezcla para variar entre cargas de página distintas.
+        for (const lista of porFamilia.values()) {
+            mezclar(lista).sort((a, b) => puntuarRelevancia(b) - puntuarRelevancia(a));
+        }
+
+        const familias = mezclar([...porFamilia.keys()]);
+        const muestra = [];
+        let ronda = 0;
+        // Ronda a ronda: una unidad de cada familia por vuelta, hasta
+        // llenar el límite o agotar todas las familias.
+        while (muestra.length < limite) {
+            let añadidoEnRonda = false;
+            for (const familia of familias) {
+                if (muestra.length >= limite) break;
+                const lista = porFamilia.get(familia);
+                if (lista.length > ronda) {
+                    muestra.push(lista[ronda]);
+                    añadidoEnRonda = true;
+                }
+            }
+            if (!añadidoEnRonda) break; // ya no quedan más productos en ninguna familia
+            ronda++;
+        }
+        return muestra;
+    }
+
     async function cargarMuestraCatalogo(opts) {
         const { area, contenedorId, limite = 10 } = opts;
         const contenedor = document.getElementById(contenedorId);
@@ -71,12 +134,7 @@
                 return;
             }
 
-            // Muestra variada: prioriza validadas/recientes, pero si no hay
-            // suficientes, completa con el resto — nunca dejar la sección
-            // vacía solo por exigir demasiado.
-            const validadas = candidatos.filter(p => p.imagen_validada || p.fecha_actualizacion_imagen);
-            const resto = candidatos.filter(p => !p.imagen_validada && !p.fecha_actualizacion_imagen);
-            const muestra = [...validadas, ...resto].slice(0, limite);
+            const muestra = muestraDiversaPorFamilia(candidatos, limite);
 
             contenedor.innerHTML = muestra.map(p => {
                 const img = urlImagenProductoCatalogo(p, 400);
