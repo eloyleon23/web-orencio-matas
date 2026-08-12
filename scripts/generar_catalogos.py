@@ -632,7 +632,7 @@ def generar_catalogo(area, productos, logo_png, familias={}, marca_agua=None, li
         return familias.get(nombre.upper(), 9999)
 
     for i, (tipo, prods) in enumerate(sorted(tipologias.items(), key=lambda x: (orden_tipologia(x[0]), x[0]))):
-        resultado = grid_productos(prods, st, cols=6)
+        resultado = grid_productos(prods, st, cols=5)
         filas = resultado if isinstance(resultado, list) else [resultado]
 
         # Sin salto de página forzado entre familias — así se aprovecha
