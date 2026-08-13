@@ -18,6 +18,7 @@ function onOpen() {
     .addItem('� Actualizar precios de productos', 'actualizarPreciosProductos')
     .addItem('�🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
+    .addItem('📧 Enviarme Excel de productos sin imagen', 'enviarExcelProductosSinImagenManual')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addItem('✅ Validar imagen de producto', 'validarImagenManual')
     .addSeparator()
@@ -3471,5 +3472,124 @@ function enviarResumenSincronizacionCRM_(resultado) {
     ? `⚠️ Sincronización de productos completada con errores — ${fecha}`
     : `✓ Sincronización de productos completada — ${fecha}`;
 
-  MailApp.sendEmail({ to: CORREO_RESUMEN_DESTINO, subject: asunto, body: cuerpo });
+  // Adjuntar un Excel ya listo con los productos sin foto (nuevos y
+  // cualesquiera otros pendientes) — así el siguiente paso (lanzar
+  // buscar_imagenes_excel.py) no requiere ir a exportar y filtrar el
+  // Sheet a mano primero. Si por lo que sea falla la generación del
+  // Excel, no se corta el envío del resumen — se manda igualmente sin
+  // adjunto, ya que la información del cuerpo del correo sigue siendo
+  // útil por sí sola.
+  let adjuntos = [];
+  try {
+    const excelSinImagen = generarExcelProductosSinImagen_();
+    if (excelSinImagen) {
+      adjuntos.push(excelSinImagen.blob);
+      cuerpo += `Adjunto: ${excelSinImagen.total} productos sin foto listos para ` +
+        `buscar_imagenes_excel.py (incluye los nuevos de hoy y cualquier otro pendiente).\n\n`;
+    }
+  } catch (e) {
+    console.error('No se pudo generar el Excel de productos sin imagen: ' + e.message);
+  }
+
+  MailApp.sendEmail({ to: CORREO_RESUMEN_DESTINO, subject: asunto, body: cuerpo, attachments: adjuntos });
+}
+
+// ── Enviar Excel de productos sin imagen bajo demanda (desde el menú) ─────
+// Misma generación que la automática tras la sincronización del CRM, pero
+// disparable en cualquier momento — útil si se han añadido productos a
+// mano, o simplemente para retomar el trabajo de imágenes pendientes sin
+// esperar a que llegue el próximo correo del CRM.
+function enviarExcelProductosSinImagenManual() {
+  const ui = SpreadsheetApp.getUi();
+  const resultado = generarExcelProductosSinImagen_();
+
+  if (!resultado) {
+    ui.alert('Sin pendientes', 'No hay ningún producto sin imagen o sin validar en este momento — nada que enviar.', ui.ButtonSet.OK);
+    return;
+  }
+
+  MailApp.sendEmail({
+    to: CORREO_RESUMEN_DESTINO,
+    subject: `Productos sin imagen (${resultado.total}) — ${Utilities.formatDate(new Date(), SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm')}`,
+    body: `Adjunto: ${resultado.total} productos sin foto (sin foto en absoluto, o con foto pero sin validar), listos para buscar_imagenes_excel.py.`,
+    attachments: [resultado.blob],
+  });
+
+  ui.alert('Enviado', `Excel con ${resultado.total} productos enviado a ${CORREO_RESUMEN_DESTINO}.`, ui.ButtonSet.OK);
+}
+
+// ── Generar Excel de productos sin imagen, listo para imagenes_tool ───────
+// Filtra Productos con el MISMO criterio que ya aplica internamente
+// buscar_imagenes_excel.py (imagen_drive_id = NO_TIENE_FOTO, o con foto
+// pero todavía sin validar) — así el adjunto sale ya acotado a lo que de
+// verdad hace falta trabajar, sin mandar por correo un Excel con las
+// ~12.700 filas completas de Productos cada vez.
+//
+// Construye una hoja temporal con exactamente las columnas que esa
+// herramienta espera (referencia, nombre, area, tipologia,
+// imagen_drive_id, imagen_validada), la exporta como .xlsx real vía la
+// URL de exportación de Sheets, y borra la hoja temporal al terminar.
+//
+// Devuelve null si no hay ningún producto pendiente (no tiene sentido
+// adjuntar un Excel vacío), o {blob, total} si lo genera correctamente.
+function generarExcelProductosSinImagen_() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  if (!sheetProd) return null;
+
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+
+  const colsNecesarias = ['referencia', 'nombre', 'area', 'tipologia', 'imagen_drive_id', 'imagen_validada'];
+  if (colsNecesarias.some(c => PROD[c] === undefined)) {
+    console.error('generarExcelProductosSinImagen_: faltan columnas en Productos: ' +
+      colsNecesarias.filter(c => PROD[c] === undefined).join(', '));
+    return null;
+  }
+
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow < 2) return null;
+  const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
+
+  const pendientes = data.filter(row => {
+    const imgId    = (row[PROD['imagen_drive_id']] || '').toString().trim().toUpperCase();
+    const validada  = (row[PROD['imagen_validada']] || '').toString().trim();
+    return imgId === 'NO_TIENE_FOTO' || validada === '';
+  });
+
+  if (pendientes.length === 0) return null;
+
+  const filas = [['referencia', 'nombre', 'area', 'tipologia', 'imagen_drive_id', 'imagen_validada']];
+  pendientes.forEach(row => {
+    filas.push([
+      row[PROD['referencia']], row[PROD['nombre']], row[PROD['area']],
+      row[PROD['tipologia']], row[PROD['imagen_drive_id']], row[PROD['imagen_validada']],
+    ]);
+  });
+
+  // Hoja temporal dentro del MISMO Sheet (no un archivo nuevo en Drive) —
+  // más simple y no deja residuos ajenos a este documento.
+  const nombreTemp = 'temp_sin_imagen_' + new Date().getTime();
+  const hojaTemp = ss.insertSheet(nombreTemp);
+  try {
+    hojaTemp.getRange(1, 1, filas.length, filas[0].length).setValues(filas);
+    SpreadsheetApp.flush();
+
+    const url = `https://docs.google.com/spreadsheets/d/${ss.getId()}/export` +
+      `?format=xlsx&gid=${hojaTemp.getSheetId()}`;
+    const resp = UrlFetchApp.fetch(url, {
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true,
+    });
+    if (resp.getResponseCode() !== 200) {
+      console.error('generarExcelProductosSinImagen_: fallo al exportar xlsx, código ' + resp.getResponseCode());
+      return null;
+    }
+    const blob = resp.getBlob().setName('productos_sin_imagen.xlsx');
+    return { blob: blob, total: pendientes.length };
+  } finally {
+    ss.deleteSheet(hojaTemp); // limpiar la hoja temporal siempre, haya ido bien o mal
+  }
 }
