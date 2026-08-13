@@ -1,0 +1,92 @@
+name: Preparar release para IONOS
+
+# Genera la versión "pública parcial" del sitio (sin buscador ni
+# catálogos — ver scripts_ci/preparar_build_ionos.py) a partir del
+# estado actual de "main", y la publica en la rama "release" con un tag
+# de versión. La rama "main" sigue siendo la de desarrollo activo (con
+# TODAS las funcionalidades) y sigue publicándose vía GitHub Pages sin
+# cambios — este workflow no la toca en absoluto, solo LEE su contenido.
+#
+# Este workflow NO despliega nada a IONOS por sí solo — solo prepara y
+# etiqueta la release. Para publicarla de verdad, usar después el
+# workflow "Desplegar release en IONOS (SFTP)".
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a etiquetar (ej. v1.2.0) — vacío para autoincrementar el número de parche'
+        required: false
+        default: ''
+
+jobs:
+  preparar_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main (con historial y tags completos)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preparar contenido público parcial desde main
+        run: python3 scripts_ci/preparar_build_ionos.py --origen . --salida /tmp/ionos_build
+
+      - name: Determinar versión
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            ULTIMA=$(git tag -l 'ionos-v*' | sort -V | tail -1)
+            if [ -z "$ULTIMA" ]; then
+              VERSION="v1.0.0"
+            else
+              NUM=$(echo "$ULTIMA" | sed -E 's/ionos-v[0-9]+\.[0-9]+\.([0-9]+)/\1/')
+              BASE=$(echo "$ULTIMA" | sed -E 's/ionos-(v[0-9]+\.[0-9]+\.)[0-9]+/\1/')
+              VERSION="${BASE}$((NUM+1))"
+            fi
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=ionos-$VERSION" >> "$GITHUB_OUTPUT"
+          echo "→ Versión a publicar: $VERSION (tag: ionos-$VERSION)"
+
+      - name: Publicar contenido en la rama "release"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # La rama "release" refleja SIEMPRE el resultado más reciente
+          # de preparar_build_ionos.py sobre main en el momento de cada
+          # release — no es un histórico de cambios incrementales del
+          # propio contenido, es "esto es lo que se publicó en la
+          # versión X". El historial de versiones vive en los TAGS, no
+          # en intentar diffar el contenido publicado consigo mismo.
+          if git ls-remote --exit-code --heads origin release > /dev/null 2>&1; then
+            git fetch origin release
+            git checkout -B release origin/release
+          else
+            git checkout --orphan release
+          fi
+
+          # Vaciar todo lo trackeado (preservando .git) y volcar el
+          # contenido recién generado
+          git rm -rf . > /dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -r /tmp/ionos_build/. .
+
+          git add -A
+          git commit -m "Release ${{ steps.version.outputs.version }} — publicación parcial para IONOS (sin buscador ni catálogos)" \
+            -m "Generado automáticamente desde main en el commit ${{ github.sha }}." \
+            --allow-empty
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.version }} para IONOS"
+
+          git push origin release
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Resumen
+        run: |
+          echo "✓ Release ${{ steps.version.outputs.version }} preparada en la rama 'release', etiquetada como ${{ steps.version.outputs.tag }}."
+          echo "  Para publicarla en IONOS, lanza ahora el workflow 'Desplegar release en IONOS (SFTP)'."

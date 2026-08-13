@@ -1,0 +1,40 @@
+name: Desplegar release en IONOS (SFTP)
+
+# Sube a IONOS el contenido YA preparado en la rama "release" (ver
+# workflow "Preparar release para IONOS") — este workflow no transforma
+# ni excluye nada por sí mismo, solo publica tal cual lo que haya en esa
+# rama en cada momento. Pensado para poder re-publicar la misma release
+# (por ejemplo si hay que restaurar algo) sin necesidad de volver a
+# generarla desde main.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout rama release
+        uses: actions/checkout@v4
+        with:
+          ref: release
+
+      - name: Subir a IONOS por SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.IONOS_SFTP_HOST }}
+          username: ${{ secrets.IONOS_SFTP_USER }}
+          password: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          port: ${{ secrets.IONOS_SFTP_PORT }}
+          protocol: sftp
+          local-dir: ./
+          server-dir: ${{ secrets.IONOS_SFTP_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+          # No borrar en destino lo que no venga en esta release — más
+          # seguro mientras se prueba el despliegue, evita borrar algo
+          # del hosting antiguo por error si el directorio de destino no
+          # fuera exactamente el esperado. Se puede pasar a "true" más
+          # adelante cuando se confirme que todo va bien.
+          dangerous-clean-slate: false
