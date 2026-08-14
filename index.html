@@ -20,7 +20,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./src/css/estilos.css" />
-  <script src="./config.js"></script>
   </head>
   <body>
 <!-- Google Tag Manager (noscript) -->
@@ -480,26 +479,33 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   '</td></tr></table>' +
                   '</body></html>';
 
-                fetch('https://api.brevo.com/v3/smtp/email', {
+                // Antes esto llamaba directamente a la API de Brevo desde
+                // el navegador, con la clave en claro en config.js — Brevo
+                // la detectó expuesta en el repositorio público de GitHub
+                // y la revocó automáticamente. Ahora se envía al Web App
+                // de Apps Script (el mismo que ya gestiona las imágenes),
+                // que reenvía el correo a Brevo desde el servidor — la
+                // clave nueva vive solo ahí, nunca llega al navegador ni
+                // a ningún archivo del repositorio.
+                var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyicpKr-1x8Od1V5j_1nE98d-qS-JALQnqVrWnZXz9TrGwZx8s-TbDHWiGGPBrgLpRe/exec';
+
+                fetch(APPS_SCRIPT_URL, {
                   method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'api-key': window.BREVO_API_KEY
-                  },
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, que Apps Script Web App no soporta
                   body: JSON.stringify({
-                    sender: { name: nombre, email: 'eloyleon23@gmail.com' },
-                    to: [{ email: 'correo@orenciomatas.es', name: 'Orencio Matas y Hnos' }],
-                    replyTo: { email: email, name: nombre },
-                    subject: 'Consulta recibida a través del formulario web — Orencio Matas y Hermanos',
-                    htmlContent: cuerpo
+                    accion: 'enviar_contacto',
+                    nombre: nombre,
+                    email: email,
+                    cuerpoHtml: cuerpo
                   })
                 })
-                .then(function (res) {
-                  if (res.ok) {
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                  if (data.success) {
                     mostrarEstado('✓ Mensaje enviado correctamente. Nos pondremos en contacto contigo pronto.', '#1a7a4a', '#edfaf3');
                     form.reset();
                   } else {
-                    return res.json().then(function(err) { throw err; });
+                    throw new Error(data.error || 'Error desconocido');
                   }
                 })
                 .catch(function () {

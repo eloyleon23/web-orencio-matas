@@ -5,6 +5,18 @@ const REPO_NAME           = 'web-orencio-matas';
 const COOLDOWN_MINUTOS    = 5;
 const DRIVE_IMAGENES_ID   = '13O7N_q6IisAhsvSoXogKJ2PUDVQfUKRe';
 
+// Clave de API de Brevo (ex Sendinblue) — usada SOLO desde aquí, en el
+// servidor, para el formulario de contacto de index.html. La clave
+// anterior estaba en config.js del repositorio (público), Brevo la
+// detectó expuesta automáticamente y la revocó. Genera una clave nueva
+// en tu cuenta de Brevo (Configuración → Claves API → Generar una nueva
+// clave API) y sustituye el valor de aquí abajo — el código de Apps
+// Script NO es público como el repositorio de GitHub, así que este es
+// un sitio seguro para guardarla. Tras el cambio, quitar config.js del
+// repositorio (y de .gitignore, dado que la referencia al llevaba)
+// ya no hace falta, hace tiempo que no se usa la clave desde el cliente.
+const BREVO_API_KEY = 'PON_AQUI_LA_NUEVA_CLAVE_DE_BREVO';
+
 // ── Menú personalizado ─────────────────────────────────────────────────────
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -2479,6 +2491,11 @@ function doPost(e) {
       return procesarMarcarSinImagen(data);
     }
 
+    if (accion === 'enviar_contacto') {
+      console.log('Acción: enviar_contacto');
+      return procesarEnviarContacto(data);
+    }
+
     console.log('Acción no reconocida:', accion);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Acción no reconocida: ' + accion }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -2917,6 +2934,60 @@ function procesarMarcarSinImagen(data) {
 
   } catch (err) {
     console.error('Error al marcar el producto sin imagen:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Procesar envío del formulario de contacto (index.html) ────────────────
+// Antes el formulario llamaba directamente a la API de Brevo desde el
+// navegador, con la clave en claro en config.js del repositorio — Brevo
+// la detectó expuesta y la revocó automáticamente. Ahora el HTML del
+// correo se sigue construyendo en el cliente (mismo diseño de siempre,
+// sin duplicar esa lógica aquí), pero el ENVÍO real pasa por aquí — la
+// clave de Brevo (ver BREVO_API_KEY arriba) nunca llega al navegador.
+function procesarEnviarContacto(data) {
+  try {
+    const nombre = data.nombre;
+    const email = data.email;
+    const cuerpoHtml = data.cuerpoHtml;
+
+    if (!nombre || !email || !cuerpoHtml) {
+      throw new Error('Faltan datos requeridos: nombre, email o cuerpoHtml');
+    }
+
+    const payload = {
+      sender: { name: nombre, email: 'eloyleon23@gmail.com' },
+      to: [{ email: 'correo@orenciomatas.es', name: 'Orencio Matas y Hnos' }],
+      replyTo: { email: email, name: nombre },
+      subject: 'Consulta recibida a través del formulario web — Orencio Matas y Hermanos',
+      htmlContent: cuerpoHtml,
+    };
+
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'api-key': BREVO_API_KEY },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    };
+
+    const resp = UrlFetchApp.fetch('https://api.brevo.com/v3/smtp/email', options);
+    const codigo = resp.getResponseCode();
+
+    if (codigo === 200 || codigo === 201) {
+      console.log('Correo de contacto enviado correctamente vía Brevo');
+      return ContentService.createTextOutput(JSON.stringify({ success: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else {
+      console.error('Error de Brevo al enviar el correo de contacto:', codigo, resp.getContentText());
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: 'No se pudo enviar el correo (Brevo respondió ' + codigo + ')',
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    console.error('Error en procesarEnviarContacto:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }

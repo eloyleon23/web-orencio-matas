@@ -37,10 +37,6 @@ EXCLUSIONES = {
     'zaphiro_config.json', 'marcas_dominios.json',
     'requirements.txt', 'CLAUDE.md',
     'generar_informe_pdf.py', 'generate_informe_pdf_v3.ps1',  # herramientas internas de informes de horas
-    # NOTA: config.js SÍ se publica (a pesar de llevar la clave de Brevo en
-    # claro) — decisión explícita del usuario, ya expuesta igual en GitHub
-    # Pages hoy; pendiente de arreglar aparte (mover a un proxy/backend en
-    # vez de exponerla en el cliente), no bloquea esta publicación parcial.
 }
 
 # El enlace "Buscador" del menú es idéntico en las 9 páginas públicas —

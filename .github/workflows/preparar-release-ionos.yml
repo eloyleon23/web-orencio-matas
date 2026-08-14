@@ -78,16 +78,6 @@ jobs:
           cp -r /tmp/ionos_build/. .
 
           git add -A
-          # config.js está en .gitignore (por buenas razones: lleva una
-          # clave de API en claro), así que git add -A lo salta en
-          # silencio pese a estar físicamente presente tras el cp -r de
-          # arriba. Decisión explícita del usuario: se fuerza su
-          # inclusión igualmente, para no romper el formulario de
-          # contacto — pendiente de arreglar la exposición de la clave
-          # como es debido más adelante, sin bloquear esto.
-          if [ -f config.js ]; then
-            git add -f config.js
-          fi
           git commit -m "Release ${{ steps.version.outputs.version }} — publicación parcial para IONOS (sin buscador ni catálogos)" \
             -m "Generado automáticamente desde main en el commit ${{ github.sha }}." \
             --allow-empty
