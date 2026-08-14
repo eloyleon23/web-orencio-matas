@@ -20,21 +20,23 @@ jobs:
           ref: release
 
       - name: Subir a IONOS por SFTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        # SamKirkland/FTP-Deploy-Action (usado antes) resultó NO admitir
+        # el protocolo SFTP en absoluto pese al nombre genérico —
+        # confirmado con el error real: "protocol: invalid parameter -
+        # you provided 'sftp'. Try 'ftp', 'ftps', or 'ftps-legacy'
+        # instead." Sustituido por una acción que sí habla SFTP/SSH de
+        # verdad, con autenticación por contraseña (no clave SSH).
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          server: ${{ secrets.IONOS_SFTP_HOST }}
           username: ${{ secrets.IONOS_SFTP_USER }}
-          password: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          server: ${{ secrets.IONOS_SFTP_HOST }}
           port: ${{ secrets.IONOS_SFTP_PORT }}
-          protocol: sftp
-          local-dir: ./
-          server-dir: ${{ secrets.IONOS_SFTP_DIR }}
-          exclude: |
-            **/.git*
-            **/.git*/**
-          # No borrar en destino lo que no venga en esta release — más
-          # seguro mientras se prueba el despliegue, evita borrar algo
-          # del hosting antiguo por error si el directorio de destino no
-          # fuera exactamente el esperado. Se puede pasar a "true" más
-          # adelante cuando se confirme que todo va bien.
-          dangerous-clean-slate: false
+          password: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          ssh_private_key: ''
+          local_path: './*'
+          remote_path: ${{ secrets.IONOS_SFTP_DIR }}
+          # Muchos hostings compartidos (como suele ser el caso en
+          # IONOS) solo dan acceso SFTP puro, sin una sesión de shell
+          # SSH completa detrás — esta opción evita que la acción
+          # intente comandos que necesitarían esa shell.
+          sftp_only: true
