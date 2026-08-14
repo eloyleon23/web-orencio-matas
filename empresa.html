@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TWX6NRXN');</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Empresa Orencio Matas y Hnos, S.L.: más de 100 años de historia, instalaciones, logística y atención profesional.">
+    <title>Empresa - Orencio Matas y Hnos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Open Sans', sans-serif;
+            line-height: 1.7;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        /* --- CABECERA COMÚN PÁGINAS INTERNAS --- */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 90px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            height: 100%;
+            position: relative;
+        }
+
+        .btn-back-home {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #ffffff;
+            color: #1e293b;
+            text-decoration: none;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+        }
+
+        .btn-back-home:hover {
+            background-color: #f8fafc;
+            transform: translateX(-3px);
+        }
+
+        .btn-back-home i {
+            color: #D32F2F;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+        }
+
+        .logo-container img {
+            height: 50px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        main {
+            padding-top: 0;
+            overflow-x: clip;
+        }
+
+        .section {
+            padding: 90px 24px;
+        }
+
+        .section-inner {
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .hero {
+            padding: 88px 24px;
+            background: radial-gradient(circle at top right, rgba(25, 118, 210, 0.12), transparent 34%), #ffffff;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 56px;
+            align-items: center;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            color: #D32F2F;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow::before {
+            content: '';
+            width: 42px;
+            height: 4px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #D32F2F, #1976D2, #388E3C, #FBC02D);
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.12;
+        }
+
+        h1 {
+            max-width: 760px;
+            font-size: clamp(44px, 7vw, 78px);
+            font-weight: 800;
+            letter-spacing: -0.05em;
+        }
+
+        h2 {
+            font-size: clamp(32px, 4vw, 52px);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        h3 {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .lead {
+            margin: 26px 0 0;
+            color: #475569;
+            font-size: clamp(18px, 2vw, 22px);
+            font-weight: 600;
+        }
+
+        .hero-card {
+            padding: 36px;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #f8fafc;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+        }
+
+        .hero-card strong {
+            display: block;
+            color: #D32F2F;
+            font-family: 'Montserrat', sans-serif;
+            font-size: clamp(72px, 10vw, 120px);
+            line-height: 0.9;
+        }
+
+        .hero-card span {
+            display: block;
+            margin-top: 14px;
+            color: #1e293b;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .content-card {
+            padding: 42px;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
+        }
+
+        .badge-centenary {
+            display: inline-flex;
+            width: fit-content;
+            margin: 0 0 18px;
+            padding: 9px 14px;
+            border: 1px solid rgba(241, 179, 0, 0.34);
+            border-radius: 999px;
+            color: #9a6a00;
+            background: rgba(241, 179, 0, 0.12);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .subtle-paint-bg {
+            position: relative;
+            background: linear-gradient(-45deg, #ffffff, #e0f2fe, #f3e8ff, #fef9c3);
+            background-size: 300% 300%;
+            animation: gradientEmpresa 8s ease-in-out infinite;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .subtle-paint-bg:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes gradientEmpresa {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .content-card p {
+            margin: 18px 0 0;
+            color: #475569;
+            font-size: 18px;
+        }
+
+        .split-grid {
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .image-frame {
+            position: relative;
+            overflow: hidden;
+            min-height: 520px;
+            border-radius: 22px;
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.16);
+        }
+
+        .image-frame img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            min-height: 520px;
+            object-fit: cover;
+        }
+
+        .image-badge {
+            position: absolute;
+            left: 24px;
+            bottom: 24px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.94);
+            color: #1e293b;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+        }
+
+        .installations-intro {
+            max-width: 820px;
+            margin-bottom: 40px;
+        }
+
+        .installations-intro p {
+            margin: 18px 0 0;
+            color: #475569;
+            font-size: 18px;
+        }
+
+        .facilities-grid {
+            display: grid;
+            gap: 34px;
+        }
+
+        .facility-card {
+            padding: 26px;
+            border-radius: 24px;
+        }
+
+        .facility-card__header {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 18px;
+            align-items: start;
+            margin-bottom: 24px;
+        }
+
+        .facility-card__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 58px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.82);
+            color: #D32F2F;
+            font-size: 24px;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        .facility-card:nth-child(2) .facility-card__icon,
+        .facility-card:nth-child(4) .facility-card__icon {
+            color: #1976D2;
+        }
+
+        .facility-card:nth-child(3) .facility-card__icon,
+        .facility-card:nth-child(5) .facility-card__icon {
+            color: #388E3C;
+        }
+
+        .facility-card__header h3 {
+            margin-top: 4px;
+        }
+
+        .facility-card__header p {
+            margin: 10px 0 0;
+            color: #475569;
+            font-size: 17px;
+        }
+
+        .facility-carousel {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .carousel-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            gap: 12px;
+            padding: 10px 0;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .carousel-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .carousel-container::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background: #cbd5e1;
+        }
+
+        .carousel-item {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            position: relative;
+        }
+
+        .carousel-item img {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+            cursor: zoom-in;
+        }
+
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .lightbox-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .lightbox-overlay.active .lightbox-content {
+            transform: scale(1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: 200;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .lightbox-close:hover {
+            color: #ccc;
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 32px;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            cursor: pointer;
+            transition: background 0.2s;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .lightbox-nav.lightbox-prev { left: 16px; }
+        .lightbox-nav.lightbox-next { right: 16px; }
+
+        .lightbox-nav.hidden {
+            display: none;
+        }
+
+        .lightbox-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 14px;
+            border-radius: 999px;
+            letter-spacing: 0.02em;
+        }
+
+        @media (max-width: 640px) {
+            .lightbox-nav {
+                width: 44px;
+                height: 44px;
+                font-size: 26px;
+            }
+            .lightbox-nav.lightbox-prev { left: 6px; }
+            .lightbox-nav.lightbox-next { right: 6px; }
+        }
+
+        /* Móvil en horizontal: el alto de pantalla es pequeño, así que
+           max-height:80% dejaba la foto diminuta con mucho espacio negro
+           a los lados. Se aprovecha casi toda la altura disponible y se
+           reduce el tamaño de los controles para que no ocupen espacio
+           que le hace falta a la foto. */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .lightbox-content {
+                max-height: 94vh;
+                max-width: 80vw;
+            }
+            .lightbox-close {
+                top: 6px;
+                right: 10px;
+                font-size: 28px;
+            }
+            .lightbox-nav {
+                width: 38px;
+                height: 38px;
+                font-size: 22px;
+            }
+            .lightbox-nav.lightbox-prev { left: 4px; }
+            .lightbox-nav.lightbox-next { right: 4px; }
+            .lightbox-counter {
+                bottom: 6px;
+                font-size: 12px;
+                padding: 3px 10px;
+            }
+        }
+
+        .facility-card--technical {
+            border-color: rgba(211, 47, 47, 0.28);
+            box-shadow: 0 24px 54px rgba(211, 47, 47, 0.08);
+        }
+
+        .exterior-gallery {
+            margin: 34px 0 42px;
+        }
+
+        @media (min-width: 768px) {
+            .carousel-item {
+                flex: 0 0 calc(33.333% - 8px);
+            }
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            padding: 38px;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
+        }
+
+        .feature-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            margin-bottom: 24px;
+            border-radius: 16px;
+            background: #f8fafc;
+            color: #1976D2;
+            font-size: 30px;
+        }
+
+        .feature-card:nth-child(2) .feature-icon {
+            color: #388E3C;
+        }
+
+        .feature-card p {
+            margin: 16px 0 0;
+            color: #475569;
+            font-size: 18px;
+        }
+
+        .cta-strip {
+            border-top: 1px solid #e2e8f0;
+            background: #1e293b;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        .cta-strip p {
+            margin: 18px auto 0;
+            max-width: 720px;
+            color: #cbd5e1;
+            font-size: 18px;
+        }
+
+        .cta-strip a {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 28px;
+            padding: 14px 22px;
+            border-radius: 8px;
+            background: #D32F2F;
+            color: #ffffff;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 900px) {
+            .hero-grid,
+            .split-grid,
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section,
+            .hero {
+                padding: 64px 20px;
+            }
+
+            .image-frame,
+            .image-frame img {
+                min-height: 340px;
+            }
+
+            .facility-card {
+                padding: 22px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            html,
+            body {
+                max-width: 100%;
+                overflow-x: clip;
+            }
+
+            .main-header {
+                height: 65px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }
+
+            .header-container {
+                width: 100%;
+                max-width: 100%;
+                padding: 0 15px;
+                box-sizing: border-box;
+            }
+
+            main,
+            .section-inner,
+            .subtle-paint-bg,
+            .content-card,
+            .hero-card,
+            .facility-card,
+            .exterior-gallery,
+            .facility-carousel,
+            .carousel-container,
+            section {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            .section,
+            .hero {
+                width: 100%;
+                max-width: 100%;
+                padding: 48px 12px;
+                box-sizing: border-box;
+            }
+
+            .subtle-paint-bg {
+                padding: 16px !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                border-radius: 8px !important;
+            }
+
+            .hero-grid,
+            .split-grid,
+            .features-grid,
+            .facilities-grid {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 16px !important;
+            }
+
+            .facility-card__header {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .carousel-container {
+                gap: 12px;
+                padding: 10px 0;
+                margin: 0;
+            }
+
+            .carousel-item {
+                flex: 0 0 100%;
+                min-width: 0;
+            }
+
+            .carousel-item img {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                aspect-ratio: 16 / 9;
+                object-fit: cover;
+            }
+
+            .content-card,
+            .hero-card,
+            .feature-card {
+                padding: 20px;
+            }
+
+            .nav-menu {
+                display: none !important;
+            }
+
+            .btn-back-home {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+
+            .logo-container {
+                position: absolute;
+                right: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+
+            .logo-container img {
+                height: 38px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .subtle-paint-bg,
+            .container,
+            .instalacion-block,
+            .carousel-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                padding: 12px !important;
+                box-sizing: border-box !important;
+            }
+
+            .section,
+            .hero,
+            .section-inner,
+            .facility-card,
+            .exterior-gallery,
+            .facility-carousel {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            .section,
+            .hero {
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+
+            .carousel-item {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+            }
+
+            .carousel-item img {
+                width: 100% !important;
+                height: auto !important;
+                aspect-ratio: 16 / 9;
+                object-fit: cover;
+            }
+        }
+
+        /* === PIE DE PÁGINA === */
+        .site-footer {
+            padding: 34px 24px;
+            background: #111827;
+            color: #ffffff;
+        }
+        .site-footer__inner {
+            width: min(100%, 1180px);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 28px;
+        }
+        .site-footer img {
+            width: 170px;
+            height: auto;
+            filter: brightness(0) invert(1);
+        }
+        .site-footer nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .site-footer a { color: #ffffff; text-decoration: none; }
+        @media (max-width: 768px) {
+            .site-footer__inner { flex-direction: column; text-align: center; }
+            .site-footer nav { justify-content: center; }
+        }
+    </style>
+    <link rel="stylesheet" href="./src/css/navbar.css" />
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+            <header class="navbar-wrapper">
+      <div class="container navbar__inner">
+        <a class="navbar__logo" href="index.html" aria-label="Ir al inicio">
+          <img class="navbar__logo-image" src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
+        </a>
+        <nav class="navbar__nav" aria-label="Navegación principal">
+          <ul class="navbar__menu">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="empresa.html">Empresa</a></li>
+            <li><a href="historia.html">Historia</a></li>
+            <li class="navbar__item--dropdown">
+              <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
+              <ul class="navbar__submenu">
+              </ul>
+            </li>
+            <li><a href="servicios.html">Servicios</a></li>
+            <li><a href="actualidad.html">Actualidad</a></li>
+            <li><a href="index.html#contacto">Contacto</a></li>
+          </ul>
+          <a class="navbar__cta" href="index.html#contacto">CONTACTAR</a>
+        </nav>
+        <button class="navbar__toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+        <section class="hero" aria-labelledby="empresa-title">
+            <div class="section-inner hero-grid">
+                <div>
+                    <p class="eyebrow">Empresa familiar y profesional</p>
+                    <span class="badge-centenary">Desde 1919 • Más de un siglo de tradición industrial</span>
+                    <h1 id="empresa-title">Más de 100 años de solidez, evolución y servicio</h1>
+                    <p class="lead">Orencio Matas y Hnos, S.L. combina tradición empresarial, capacidad logística y atención especializada para acompañar a profesionales, empresas y particulares.</p>
+                </div>
+                <aside class="hero-card subtle-paint-bg" aria-label="Trayectoria de Orencio Matas">
+                    <strong>+100</strong>
+                    <span>Años de historia</span>
+                    <p class="lead">Una trayectoria construida sobre confianza, adaptación y compromiso con cada cliente.</p>
+                </aside>
+            </div>
+        </section>
+
+        <section class="section" aria-labelledby="trayectoria-title">
+            <div class="section-inner">
+                <article class="content-card subtle-paint-bg">
+                    <p class="eyebrow">Introducción / Trayectoria</p>
+                    <span class="badge-centenary badge-centenary--light">Desde 1919 • Más de un siglo de tradición industrial</span>
+                    <h2 id="trayectoria-title">Una empresa preparada para seguir creciendo</h2>
+                    <p>Durante más de un siglo, Orencio Matas y Hnos, S.L. ha evolucionado junto a sus clientes, ampliando líneas de producto, especializándose en nuevos sectores y manteniendo una forma de trabajar basada en la cercanía, la solvencia y la respuesta profesional.</p>
+                    <p>Esta página queda preparada para incorporar en el futuro hitos históricos, fotografías corporativas, equipo humano y detalles específicos sobre la evolución de la empresa.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section" aria-labelledby="instalaciones-title">
+            <div class="section-inner">
+                <div class="installations-intro">
+                    <p class="eyebrow">Nuestras Instalaciones</p>
+                    <h2 id="instalaciones-title">Cuatro áreas preparadas para atender cada necesidad profesional</h2>
+                    <p>Recorremos los espacios reales de Orencio Matas y Hnos, S.L.: una vista introductoria de la sede y cuatro áreas comerciales e industriales para tienda, almacén y servicio técnico especializado.</p>
+                </div>
+
+                <div class="exterior-gallery subtle-paint-bg" aria-label="Galería introductoria de exteriores">
+                    <div class="facility-card__header">
+                        <span class="facility-card__icon" aria-hidden="true"><i class="fa-solid fa-warehouse"></i></span>
+                        <div>
+                            <h3>Vista exterior de la sede</h3>
+                            <p>Galería introductoria de fachada y accesos de las instalaciones.</p>
+                        </div>
+                    </div>
+                    <div class="facility-carousel">
+                        <div class="carousel-container" aria-label="Galería de exteriores de Orencio Matas">
+                            <div class="carousel-item"><img src="assets/fotos-thumbs/Exteriores/79eb7592-f33f-41f4-96b3-1aaf5e54f28e.JPG" alt="Vista exterior de las instalaciones de Orencio Matas" loading="lazy" data-full="assets/fotos/Exteriores/79eb7592-f33f-41f4-96b3-1aaf5e54f28e.JPG"></div>
+                            <div class="carousel-item"><img src="assets/fotos-thumbs/Exteriores/IMG_9767.JPG" alt="Exterior del almacén de Orencio Matas" loading="lazy" data-full="assets/fotos/Exteriores/IMG_9767.JPG"></div>
+                            <div class="carousel-item"><img src="assets/fotos-thumbs/Exteriores/IMG_9769.JPG" alt="Acceso exterior de las instalaciones" loading="lazy" data-full="assets/fotos/Exteriores/IMG_9769.JPG"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="facilities-grid">
+                    <article class="facility-card subtle-paint-bg">
+                        <div class="facility-card__header">
+                            <span class="facility-card__icon" aria-hidden="true"><i class="fa-solid fa-store"></i></span>
+                            <div>
+                                <h3>Tienda de Droguería y Perfumería</h3>
+                                <p>Punto de venta al público con exposición de droguería, perfumería, higiene, limpieza y consumo diario.</p>
+                            </div>
+                        </div>
+                        <div class="facility-carousel">
+                            <div class="carousel-container" aria-label="Carrusel de tienda de droguería y perfumería">
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9763.JPG" alt="Zona de droguería profesional" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9763.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9733.JPG" alt="Tienda de droguería y perfumería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9733.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9739.JPG" alt="Lineales de droguería y perfumería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9739.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9740.JPG" alt="Exposición de perfumería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9740.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9742.JPG" alt="Productos de higiene y limpieza" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9742.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9743.JPG" alt="Zona comercial de droguería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9743.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9744.JPG" alt="Exposición interior de tienda" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9744.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9745.JPG" alt="Productos organizados en tienda" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9745.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9746.JPG" alt="Lineales comerciales" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9746.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9747.JPG" alt="Zona de tienda de droguería y perfumería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9747.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9748.JPG" alt="Exposición de productos de consumo" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9748.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9749.JPG" alt="Estanterías de tienda" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9749.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9750.JPG" alt="Productos de perfumería y droguería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9750.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9751.JPG" alt="Detalle de tienda" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9751.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9752.JPG" alt="Zona comercial de perfumería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9752.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9753.JPG" alt="Interior de tienda" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9753.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9754.JPG" alt="Lineal de productos" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9754.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9755.JPG" alt="Productos expuestos" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9755.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9756.JPG" alt="Exposición de droguería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9756.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9758.JPG" alt="Zona de venta de perfumería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9758.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9759.JPG" alt="Estantería de productos" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9759.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9760.JPG" alt="Interior comercial" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9760.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9761.JPG" alt="Tienda de consumo diario" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9761.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9762.JPG" alt="Productos de limpieza" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9762.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9764.JPG" alt="Exposición de higiene" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9764.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9765.JPG" alt="Vista interior de tienda" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9765.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9771.JPG" alt="Detalle comercial" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9771.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9773.JPG" alt="Productos en tienda" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9773.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9774.JPG" alt="Exposición de perfumería y droguería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9774.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9775.JPG" alt="Tienda de droguería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9775.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9777.JPG" alt="Zona de productos comerciales" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9777.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Drogueria_Perfumeria/IMG_9778.JPG" alt="Vista de tienda de perfumería" loading="lazy" data-full="assets/fotos/Tienda_Drogueria_Perfumeria/IMG_9778.JPG"></div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="facility-card subtle-paint-bg">
+                        <div class="facility-card__header">
+                            <span class="facility-card__icon" aria-hidden="true"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                            <div>
+                                <h3>Tienda de Talleres y Carrocerías</h3>
+                                <p>Área comercial técnica para talleres, carrocerías y profesionales de automoción con asesoramiento especializado.</p>
+                            </div>
+                        </div>
+                        <div class="facility-carousel">
+                            <div class="carousel-container" aria-label="Carrusel de tienda de talleres y carrocerías">
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Talleres_Carrocerias/IMG_9734.JPG" alt="Tienda técnica de talleres y carrocerías" loading="lazy" data-full="assets/fotos/Tienda_Talleres_Carrocerias/IMG_9734.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Talleres_Carrocerias/IMG_9735.JPG" alt="Exposición para carrocerías" loading="lazy" data-full="assets/fotos/Tienda_Talleres_Carrocerias/IMG_9735.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Talleres_Carrocerias/IMG_9736.JPG" alt="Mostrador técnico" loading="lazy" data-full="assets/fotos/Tienda_Talleres_Carrocerias/IMG_9736.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Talleres_Carrocerias/IMG_9737.JPG" alt="Productos de taller" loading="lazy" data-full="assets/fotos/Tienda_Talleres_Carrocerias/IMG_9737.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Talleres_Carrocerias/IMG_9738.JPG" alt="Zona de atención técnica" loading="lazy" data-full="assets/fotos/Tienda_Talleres_Carrocerias/IMG_9738.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Tienda_Talleres_Carrocerias/IMG_9772.JPG" alt="Tienda de talleres y carrocerías" loading="lazy" data-full="assets/fotos/Tienda_Talleres_Carrocerias/IMG_9772.JPG"></div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="facility-card subtle-paint-bg">
+                        <div class="facility-card__header">
+                            <span class="facility-card__icon" aria-hidden="true"><i class="fa-solid fa-boxes-stacked"></i></span>
+                            <div>
+                                <h3>Almacén de Droguería y Perfumería</h3>
+                                <p>Zona de almacenamiento y preparación de pedidos para droguería, perfumería, limpieza e higiene profesional.</p>
+                            </div>
+                        </div>
+                        <div class="facility-carousel">
+                            <div class="carousel-container" aria-label="Carrusel de almacén de droguería y perfumería">
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9713.JPG" alt="Almacén de droguería y perfumería" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9713.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9714.JPG" alt="Pasillo de almacén de droguería" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9714.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9715.JPG" alt="Stock de droguería y perfumería" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9715.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9716.JPG" alt="Zona de almacenamiento de droguería" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9716.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9717.JPG" alt="Almacén de productos de higiene" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9717.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9718.JPG" alt="Estanterías de almacén" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9718.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9720.JPG" alt="Zona logística de droguería" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9720.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9722.JPG" alt="Almacenamiento de productos" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9722.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9723.JPG" alt="Preparación en almacén" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9723.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Droguer%C3%ADa/IMG_9770.JPG" alt="Vista del almacén de droguería y perfumería" loading="lazy" data-full="assets/fotos/Almacen_Droguer%C3%ADa/IMG_9770.JPG"></div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="facility-card facility-card--technical subtle-paint-bg">
+                        <div class="facility-card__header">
+                            <span class="facility-card__icon" aria-hidden="true"><i class="fa-solid fa-fill-drip"></i></span>
+                            <div>
+                                <h3>Almacén de Talleres y Carrocerías</h3>
+                                <p>Área técnica de automoción con suministro especializado y cabina de fabricación de pintura con colorimetría exacta.</p>
+                            </div>
+                        </div>
+                        <div class="facility-carousel">
+                            <div class="carousel-container" aria-label="Carrusel de almacén de talleres y carrocerías">
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9721.JPG" alt="Cabina de fabricación de pintura para carrocería" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9721.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9724.JPG" alt="Área técnica de colorimetría y pintura" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9724.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9725.JPG" alt="Almacén técnico para talleres" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9725.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9726.JPG" alt="Productos para carrocerías" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9726.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9727.JPG" alt="Materiales para taller" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9727.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9728.JPG" alt="Preparación de pedidos técnicos" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9728.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9729.JPG" alt="Zona especializada para talleres" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9729.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9730.JPG" alt="Almacenamiento de automoción" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9730.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9731.JPG" alt="Almacén de talleres y carrocerías" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9731.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9719.JPG" alt="Productos técnicos para talleres y carrocerías" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9719.JPG"></div>
+                                <div class="carousel-item"><img src="assets/fotos-thumbs/Almacen_Talleres_Carrocerias/IMG_9732.JPG" alt="Detalle de almacén para talleres y carrocerías" loading="lazy" data-full="assets/fotos/Almacen_Talleres_Carrocerias/IMG_9732.JPG"></div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+        <section class="section" aria-labelledby="bloques-empresa-title">
+            <div class="section-inner">
+                <p class="eyebrow">Capacidad operativa</p>
+                <h2 id="bloques-empresa-title">Logística, transporte y atención directa</h2>
+                <div class="features-grid" style="margin-top: 34px;">
+                    <article class="feature-card subtle-paint-bg">
+                        <div class="feature-icon" aria-hidden="true"><i class="fa-solid fa-truck-fast"></i></div>
+                        <h3>Logística y Transporte</h3>
+                        <p>Bloque preparado para detallar la flota propia, rutas de distribución, capacidad de reparto, cobertura comercial y tiempos de respuesta para clientes profesionales.</p>
+                    </article>
+                    <article class="feature-card subtle-paint-bg">
+                        <div class="feature-icon" aria-hidden="true"><i class="fa-solid fa-store"></i></div>
+                        <h3>Tienda y Atención al Público</h3>
+                        <p>Espacio reservado para presentar el punto de venta físico, el asesoramiento directo, la atención a cliente técnico y particular, y la disponibilidad de productos en tienda.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div id="custom-lightbox" class="lightbox-overlay">
+        <span class="lightbox-close">&times;</span>
+        <span class="lightbox-nav lightbox-prev" aria-label="Foto anterior">&#8249;</span>
+        <img class="lightbox-content" id="lightbox-img" src="" alt="Vista ampliada">
+        <span class="lightbox-nav lightbox-next" aria-label="Foto siguiente">&#8250;</span>
+        <span class="lightbox-counter" id="lightbox-counter"></span>
+    </div>
+    <script>
+        const lightbox = document.getElementById('custom-lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxCounter = document.getElementById('lightbox-counter');
+        const btnPrev = lightbox.querySelector('.lightbox-prev');
+        const btnNext = lightbox.querySelector('.lightbox-next');
+
+        // Fotos de la sección (carrusel) actualmente abierta en el visor, y
+        // el índice dentro de ese mismo grupo — nunca mezcla fotos de otra
+        // sección. Se recalcula cada vez que se abre una imagen.
+        let fotosSeccionActual = [];
+        let indiceActual = 0;
+
+        function mostrarFoto(indice) {
+            if (fotosSeccionActual.length === 0) return;
+            indiceActual = (indice + fotosSeccionActual.length) % fotosSeccionActual.length;
+            const foto = fotosSeccionActual[indiceActual];
+            lightboxImg.src = foto.src;
+            lightboxImg.alt = foto.alt || 'Vista ampliada';
+            lightboxCounter.textContent = `${indiceActual + 1} / ${fotosSeccionActual.length}`;
+            const soloUna = fotosSeccionActual.length <= 1;
+            btnPrev.classList.toggle('hidden', soloUna);
+            btnNext.classList.toggle('hidden', soloUna);
+            lightboxCounter.style.display = soloUna ? 'none' : '';
+        }
+
+        function abrirLightbox(imgClicada) {
+            const contenedor = imgClicada.closest('.carousel-container');
+            const imgsSeccion = contenedor
+                ? Array.from(contenedor.querySelectorAll('.carousel-item img'))
+                : [imgClicada];
+            fotosSeccionActual = imgsSeccion.map(im => ({
+                src: im.dataset.full || im.src,
+                alt: im.alt,
+            }));
+            const indiceInicial = imgsSeccion.indexOf(imgClicada);
+            mostrarFoto(indiceInicial >= 0 ? indiceInicial : 0);
+            lightbox.classList.add('active');
+        }
+
+        function cerrarLightbox() {
+            lightbox.classList.remove('active');
+        }
+
+        document.querySelectorAll('.carousel-item img').forEach(img => {
+            img.addEventListener('click', () => abrirLightbox(img));
+        });
+
+        btnPrev.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mostrarFoto(indiceActual - 1);
+        });
+        btnNext.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mostrarFoto(indiceActual + 1);
+        });
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target !== lightboxImg && e.target !== btnPrev && e.target !== btnNext) {
+                cerrarLightbox();
+            }
+        });
+
+        // Navegación por teclado: igual que el scroll horizontal del
+        // carrusel, pero dentro del visor ampliado — solo mientras está abierto.
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'ArrowLeft') mostrarFoto(indiceActual - 1);
+            else if (e.key === 'ArrowRight') mostrarFoto(indiceActual + 1);
+            else if (e.key === 'Escape') cerrarLightbox();
+        });
+
+        // Deslizar con el dedo (móvil), igual que el desplazamiento
+        // horizontal del carrusel, pero navegando dentro del visor.
+        let touchStartX = null;
+        lightbox.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].clientX;
+        }, { passive: true });
+        lightbox.addEventListener('touchend', (e) => {
+            if (touchStartX === null) return;
+            const deltaX = e.changedTouches[0].clientX - touchStartX;
+            const UMBRAL = 40;
+            if (deltaX > UMBRAL) mostrarFoto(indiceActual - 1);
+            else if (deltaX < -UMBRAL) mostrarFoto(indiceActual + 1);
+            touchStartX = null;
+        }, { passive: true });
+    </script>
+    <script src="./src/js/analytics-consent.js"></script>
+    <script src="./src/js/navbar-secondary.js"></script>
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <a href="index.html" aria-label="Volver al inicio">
+                <img src="assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L.">
+            </a>
+            <nav aria-label="Navegación del footer">
+                <a href="index.html">Inicio</a>
+                <a href="empresa.html">Empresa</a>
+                <a href="historia.html">Historia</a>
+                <a href="productos.html">Productos</a>
+                <a href="servicios.html">Servicios</a>
+                <a href="actualidad.html">Actualidad</a>
+                <a href="index.html#contacto">Contacto</a>
+            </nav>
+        </div>
+    </footer>
+</body>
+</html>
