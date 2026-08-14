@@ -39,14 +39,35 @@ EXCLUSIONES = {
     'generar_informe_pdf.py', 'generate_informe_pdf_v3.ps1',  # herramientas internas de informes de horas
 }
 
-# El enlace "Buscador" del menú es idéntico en las 9 páginas públicas —
-# confirmado contra el código real antes de escribir este script.
+# El menú "Productos" es un desplegable cuyo ÚNICO elemento del submenú
+# es "Buscador" (idéntico en las 9 páginas, solo cambia la indentación) —
+# si solo se quita la línea del enlace interior, queda la ESTRUCTURA del
+# desplegable (flecha + <ul> vacío), y al pasar el ratón por encima en
+# escritorio se despliega un submenú vacío. Se sustituye el bloque
+# COMPLETO por un enlace simple, sin desplegable.
+PATRON_DROPDOWN_PRODUCTOS = re.compile(
+    r'<li class="navbar__item--dropdown">\s*'
+    r'<a href="productos\.html">Productos\s*<span class="navbar__caret">[^<]*</span></a>\s*'
+    r'<ul class="navbar__submenu">\s*'
+    r'<li><a href="buscador\.html">Buscador</a></li>\s*'
+    r'</ul>\s*'
+    r'</li>',
+    re.DOTALL
+)
+
 PATRON_ENLACE_BUSCADOR = re.compile(
     r'\s*<li><a href="buscador\.html">Buscador</a></li>\s*\n'
 )
 
 
 def limpiar_enlace_buscador(html: str) -> str:
+    # Primero el desplegable completo de "Productos" (caso principal en
+    # las 9 páginas). Si por lo que sea no coincidiera en alguna página
+    # (estructura distinta), el patrón de línea suelta de abajo actúa
+    # como red de seguridad para no dejar el enlace colgando de todos
+    # modos — aunque en ese caso podría quedar la estructura vacía del
+    # desplegable, de ahí el aviso de referencias sueltas al final.
+    html = PATRON_DROPDOWN_PRODUCTOS.sub('<li><a href="productos.html">Productos</a></li>', html)
     return PATRON_ENLACE_BUSCADOR.sub('\n', html)
 
 
@@ -138,12 +159,17 @@ def main():
             print('✓ sitemap.xml: quitadas las URLs de catálogo que aún no existen.')
 
     # Comprobación de seguridad: que no quede ninguna referencia colgante
-    # a buscador.html o a los catálogos en lo que sí se va a publicar.
+    # a buscador.html o a los catálogos en lo que sí se va a publicar, ni
+    # ningún desplegable de navegación vacío (el caso real que motivó
+    # esta comprobación: "Productos" se quedó con la flecha y un <ul>
+    # vacío tras quitar su único elemento, "Buscador").
     referencias_sueltas = []
     for html_file in salida.rglob('*.html'):
         contenido = html_file.read_text(encoding='utf-8')
         if 'buscador.html' in contenido or re.search(r'catalogo_\w+\.html', contenido):
             referencias_sueltas.append(html_file.name)
+        if re.search(r'<ul class="navbar__submenu">\s*</ul>', contenido):
+            referencias_sueltas.append(f'{html_file.name} (desplegable de navegación vacío)')
 
     if referencias_sueltas:
         print(f'⚠ AVISO: quedan referencias a buscador/catálogos sin limpiar en: {referencias_sueltas}')
