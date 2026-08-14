@@ -33,4 +33,4 @@ jobs:
           IONOS_SFTP_DIR: ${{ secrets.IONOS_SFTP_DIR }}
         run: |
           lftp -u "$IONOS_SFTP_USER","$IONOS_SFTP_PASSWORD" -p "$IONOS_SFTP_PORT" "sftp://$IONOS_SFTP_HOST" \
-            -e "set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 2; set cmd:fail-exit yes; mirror -R -v . \"$IONOS_SFTP_DIR\"; bye"
+            -e "set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 2; set cmd:fail-exit yes; mirror -R -v . \"$IONOS_SFTP_DIR\"; put -O \"$IONOS_SFTP_DIR\" .htaccess; bye"

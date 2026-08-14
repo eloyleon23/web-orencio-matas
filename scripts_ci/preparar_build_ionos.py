@@ -158,18 +158,40 @@ def main():
             sitemap.write_text(nuevo_sitemap, encoding='utf-8')
             print('✓ sitemap.xml: quitadas las URLs de catálogo que aún no existen.')
 
-    # Añadir .htaccess para IONOS: redirigir /defaultsite a raíz y
-    # garantizar que se sirva index.html como documento por defecto.
+    # Añadir .htaccess para IONOS: redirigir /defaultsite a raíz,
+    # forzar index.html como documento por defecto y evitar listado
+    # de directorios.
     htaccess = salida / '.htaccess'
     htaccess.write_text(
-        'RewriteEngine On\n'
-        'RewriteBase /\n\n'
+        'Options -Indexes\n'
+        'DirectoryIndex index.html\n\n'
         '# Redirigir /defaultsite (y subpáginas antiguas indexadas) a la raíz\n'
-        'RewriteRule ^defaultsite(?:/(.*))?$ /$1 [R=301,L]\n\n'
-        'DirectoryIndex index.html\n',
+        'RedirectMatch 301 ^/defaultsite(/?.*)$ /$1\n',
         encoding='utf-8'
     )
     print('✓ .htaccess: redirección de /defaultsite a raíz añadida.')
+
+    # Fallback por si .htaccess no se lee o /defaultsite pide
+    # explícitamente una página de índice: redirigir con meta-refresh
+    # al raíz. Sobrescribe cualquier index.html del directorio
+    # "defaultsite" que IONOS mantenga por defecto.
+    defaultsite_dir = salida / 'defaultsite'
+    defaultsite_dir.mkdir(exist_ok=True)
+    (defaultsite_dir / 'index.html').write_text(
+        '<!DOCTYPE html>\n'
+        '<html lang="es">\n'
+        '<head>\n'
+        '  <meta charset="utf-8">\n'
+        '  <meta http-equiv="refresh" content="0; url=/">\n'
+        '  <title>Redirigiendo...</title>\n'
+        '</head>\n'
+        '<body>\n'
+        '  <p>Redirigiendo a <a href="/">www.orenciomatas.es</a>...</p>\n'
+        '</body>\n'
+        '</html>\n',
+        encoding='utf-8'
+    )
+    print('✓ defaultsite/index.html: redirección por meta-refresh añadida.')
 
     # Comprobación de seguridad: que no quede ninguna referencia colgante
     # a buscador.html o a los catálogos en lo que sí se va a publicar, ni
