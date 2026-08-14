@@ -19,24 +19,18 @@ jobs:
         with:
           ref: release
 
-      - name: Subir a IONOS por SFTP
-        # SamKirkland/FTP-Deploy-Action (usado antes) resultó NO admitir
-        # el protocolo SFTP en absoluto pese al nombre genérico —
-        # confirmado con el error real: "protocol: invalid parameter -
-        # you provided 'sftp'. Try 'ftp', 'ftps', or 'ftps-legacy'
-        # instead." Sustituido por una acción que sí habla SFTP/SSH de
-        # verdad, con autenticación por contraseña (no clave SSH).
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.IONOS_SFTP_USER }}
-          server: ${{ secrets.IONOS_SFTP_HOST }}
-          port: ${{ secrets.IONOS_SFTP_PORT }}
-          password: ${{ secrets.IONOS_SFTP_PASSWORD }}
-          ssh_private_key: ''
-          local_path: './*'
-          remote_path: ${{ secrets.IONOS_SFTP_DIR }}
-          # Muchos hostings compartidos (como suele ser el caso en
-          # IONOS) solo dan acceso SFTP puro, sin una sesión de shell
-          # SSH completa detrás — esta opción evita que la acción
-          # intente comandos que necesitarían esa shell.
-          sftp_only: true
+      - name: Instalar lftp
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+
+      - name: Subir a IONOS por SFTP con lftp
+        env:
+          IONOS_SFTP_USER: ${{ secrets.IONOS_SFTP_USER }}
+          IONOS_SFTP_HOST: ${{ secrets.IONOS_SFTP_HOST }}
+          IONOS_SFTP_PORT: ${{ secrets.IONOS_SFTP_PORT }}
+          IONOS_SFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          IONOS_SFTP_DIR: ${{ secrets.IONOS_SFTP_DIR }}
+        run: |
+          lftp -u "$IONOS_SFTP_USER","$IONOS_SFTP_PASSWORD" -p "$IONOS_SFTP_PORT" "sftp://$IONOS_SFTP_HOST" \
+            -e "set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 2; set cmd:fail-exit yes; mirror -R -v . \"$IONOS_SFTP_DIR\"; bye"
