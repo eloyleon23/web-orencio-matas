@@ -38,16 +38,20 @@ jobs:
     steps:
       - name: Agrupar ráfagas de cambios rápidos seguidos
         # Espera un momento y comprueba si mientras tanto ha llegado un
-        # commit más reciente a main. Si es así, este despliegue se
-        # queda obsoleto antes de empezar — se cede el turno y termina
-        # aquí sin hacer nada, dejando que sea el despliegue del commit
-        # más reciente el que realmente construya y publique. Con varias
-        # acciones seguidas en el Asistente, esto agrupa toda la ráfaga
-        # en un único despliegue real en vez de uno por cada commit.
+        # commit más reciente a la MISMA rama que disparó este despliegue
+        # (github.ref_name — normalmente "main", pero también permite
+        # lanzar esto a mano contra otra rama, ej. "release", para
+        # previsualizarla en Pages sin afectar a este chequeo). Si hay
+        # uno más reciente, este despliegue se queda obsoleto antes de
+        # empezar — se cede el turno y termina aquí sin hacer nada,
+        # dejando que sea el despliegue del commit más reciente el que
+        # realmente construya y publique. Con varias acciones seguidas
+        # en el Asistente, esto agrupa toda la ráfaga en un único
+        # despliegue real en vez de uno por cada commit.
         id: debounce
         run: |
           sleep 8
-          ULTIMO_COMMIT=$(git ls-remote https://github.com/${{ github.repository }} refs/heads/main | cut -f1)
+          ULTIMO_COMMIT=$(git ls-remote https://github.com/${{ github.repository }} refs/heads/${{ github.ref_name }} | cut -f1)
           if [ "$ULTIMO_COMMIT" != "${{ github.sha }}" ]; then
             echo "Ha llegado un commit más reciente ($ULTIMO_COMMIT) mientras esperaba — cedo el turno, no despliego este."
             echo "obsoleto=true" >> "$GITHUB_OUTPUT"
