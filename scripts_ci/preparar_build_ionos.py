@@ -158,6 +158,19 @@ def main():
             sitemap.write_text(nuevo_sitemap, encoding='utf-8')
             print('✓ sitemap.xml: quitadas las URLs de catálogo que aún no existen.')
 
+    # Añadir .htaccess para IONOS: redirigir /defaultsite a raíz y
+    # garantizar que se sirva index.html como documento por defecto.
+    htaccess = salida / '.htaccess'
+    htaccess.write_text(
+        'RewriteEngine On\n'
+        'RewriteBase /\n\n'
+        '# Redirigir /defaultsite (y subpáginas antiguas indexadas) a la raíz\n'
+        'RewriteRule ^defaultsite(?:/(.*))?$ /$1 [R=301,L]\n\n'
+        'DirectoryIndex index.html\n',
+        encoding='utf-8'
+    )
+    print('✓ .htaccess: redirección de /defaultsite a raíz añadida.')
+
     # Comprobación de seguridad: que no quede ninguna referencia colgante
     # a buscador.html o a los catálogos en lo que sí se va a publicar, ni
     # ningún desplegable de navegación vacío (el caso real que motivó
