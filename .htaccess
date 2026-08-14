@@ -1,0 +1,7 @@
+RewriteEngine On
+RewriteBase /
+
+# Redirigir /defaultsite (y subpáginas antiguas indexadas) a la raíz
+RewriteRule ^defaultsite(?:/(.*))?$ /$1 [R=301,L]
+
+DirectoryIndex index.html
