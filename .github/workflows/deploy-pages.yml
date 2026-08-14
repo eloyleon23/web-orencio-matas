@@ -4,6 +4,11 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      rama:
+        description: 'Rama a desplegar (vacío = main). El workflow siempre se dispara desde main, pero puede desplegar el CONTENIDO de otra rama — útil para previsualizar "release" en Pages antes de subirla a IONOS.'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -36,22 +41,30 @@ jobs:
     # por fallido y el siguiente en cola puede continuar.
     timeout-minutes: 10
     steps:
+      - name: Resolver rama a desplegar
+        id: rama
+        run: |
+          RAMA="${{ github.event.inputs.rama }}"
+          if [ -z "$RAMA" ]; then RAMA="${{ github.ref_name }}"; fi
+          echo "rama=$RAMA" >> "$GITHUB_OUTPUT"
+          echo "→ Desplegando el contenido de la rama: $RAMA"
+
       - name: Agrupar ráfagas de cambios rápidos seguidos
-        # Espera un momento y comprueba si mientras tanto ha llegado un
-        # commit más reciente a la MISMA rama que disparó este despliegue
-        # (github.ref_name — normalmente "main", pero también permite
-        # lanzar esto a mano contra otra rama, ej. "release", para
-        # previsualizarla en Pages sin afectar a este chequeo). Si hay
-        # uno más reciente, este despliegue se queda obsoleto antes de
-        # empezar — se cede el turno y termina aquí sin hacer nada,
-        # dejando que sea el despliegue del commit más reciente el que
-        # realmente construya y publique. Con varias acciones seguidas
-        # en el Asistente, esto agrupa toda la ráfaga en un único
-        # despliegue real en vez de uno por cada commit.
+        # Solo tiene sentido para el disparo automático por push a main
+        # — un despliegue manual (ej. previsualizar "release") no debe
+        # esperar ni compararse con nada, se quiere ya. Espera un
+        # momento y comprueba si mientras tanto ha llegado un commit más
+        # reciente a la MISMA rama que se va a desplegar. Si es así,
+        # este despliegue se queda obsoleto antes de empezar — se cede
+        # el turno, dejando que sea el despliegue del commit más
+        # reciente el que realmente construya y publique. Con varias
+        # acciones seguidas en el Asistente, esto agrupa toda la ráfaga
+        # en un único despliegue real en vez de uno por cada commit.
         id: debounce
+        if: github.event_name == 'push'
         run: |
           sleep 8
-          ULTIMO_COMMIT=$(git ls-remote https://github.com/${{ github.repository }} refs/heads/${{ github.ref_name }} | cut -f1)
+          ULTIMO_COMMIT=$(git ls-remote https://github.com/${{ github.repository }} refs/heads/${{ steps.rama.outputs.rama }} | cut -f1)
           if [ "$ULTIMO_COMMIT" != "${{ github.sha }}" ]; then
             echo "Ha llegado un commit más reciente ($ULTIMO_COMMIT) mientras esperaba — cedo el turno, no despliego este."
             echo "obsoleto=true" >> "$GITHUB_OUTPUT"
@@ -63,6 +76,8 @@ jobs:
       - name: Checkout
         if: steps.debounce.outputs.obsoleto != 'true'
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.rama.outputs.rama }}
 
       - name: Configurar Pages
         if: steps.debounce.outputs.obsoleto != 'true'
