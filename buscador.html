@@ -3437,11 +3437,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-cerrar').addEventListener('click', cerrarModalProducto);
         $('modal-producto-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-producto-overlay') cerrarModalProducto(); });
 
-        // Scroll infinito
+        // Scroll infinito — con throttle vía requestAnimationFrame: sin
+        // esto, un solo gesto de scroll puede disparar decenas de
+        // eventos 'scroll' en rápida sucesión, cada uno intentando
+        // comprobar la posición y potencialmente cargar más resultados.
+        let scrollTicking = false;
         window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
-                cargarMasFamilias();
-            }
+            if (scrollTicking) return;
+            scrollTicking = true;
+            requestAnimationFrame(() => {
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
+                    cargarMasFamilias();
+                }
+                scrollTicking = false;
+            });
         });
 
         inicializarEscanerCodigoBarras();
@@ -4436,10 +4445,28 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Calcular cuántos productos mostrar en total (paginación ~12 por carga)
         if (familiasMostradas === 0) familiasMostradas = calcularFamiliasIniciales(grupos);
 
-        const gruposVisibles = grupos.slice(0, familiasMostradas);
+        // Este es un resultado NUEVO (búsqueda/filtro cambiado) — aquí sí
+        // se reconstruye todo desde cero, es correcto y esperado.
         cont.innerHTML = '';
+        añadirGruposAlContenedor(grupos.slice(0, familiasMostradas));
 
-        gruposVisibles.forEach(grupo => {
+        btnMas.style.display = familiasMostradas < grupos.length ? '' : 'none';
+    }
+
+    // Construye y añade AL FINAL del contenedor las secciones de familia
+    // indicadas — nunca toca lo que ya está renderizado. Separado de
+    // renderResultados() precisamente para que cargarMasFamilias() (el
+    // scroll infinito) pueda usarlo sin volver a tocar las tarjetas ya
+    // visibles: antes, cada carga por scroll borraba y reconstruía TODO
+    // el contenedor (incluidas las tarjetas ya mostradas), y si un clic
+    // en una tarjeta coincidía con ese instante (ej. el propio clic
+    // provocando un mínimo scroll), la tarjeta pulsada se destruía a
+    // mitad del evento — el modal no llegaba a abrirse, y visualmente
+    // parecía que "se perdía" el filtro al desaparecer y recomponerse
+    // todo el listado de golpe.
+    function añadirGruposAlContenedor(gruposNuevos) {
+        const cont = $('contenedor-resultados');
+        gruposNuevos.forEach(grupo => {
             const seccion = document.createElement('div');
             seccion.className = 'familia-seccion';
             seccion.innerHTML = `
@@ -4460,8 +4487,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             });
             cont.appendChild(seccion);
         });
-
-        btnMas.style.display = familiasMostradas < grupos.length ? '' : 'none';
     }
 
     // Calcular cuántas familias mostrar para sumar ~12 productos la primera vez
@@ -4474,11 +4499,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return Math.max(i, 1);
     }
 
+    let cargandoMasFamilias = false;
+
     function cargarMasFamilias() {
+        if (cargandoMasFamilias) return; // evita solapes si el scroll dispara varias veces seguidas
         const grupos = agruparPorFamilia(resultadosActuales);
         if (familiasMostradas >= grupos.length) return;
-        familiasMostradas = Math.min(familiasMostradas + FAMILIAS_POR_CARGA, grupos.length);
-        renderResultados();
+        cargandoMasFamilias = true;
+        try {
+            const desde = familiasMostradas;
+            familiasMostradas = Math.min(familiasMostradas + FAMILIAS_POR_CARGA, grupos.length);
+            añadirGruposAlContenedor(grupos.slice(desde, familiasMostradas));
+            $('btn-cargar-mas').style.display = familiasMostradas < grupos.length ? '' : 'none';
+        } finally {
+            cargandoMasFamilias = false;
+        }
     }
 
     // ── Crear tarjeta de producto (mismo criterio visual que el catálogo PDF) ──
