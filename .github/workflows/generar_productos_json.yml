@@ -48,22 +48,40 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add data/productos.json data/productos_version.json
-          git diff --staged --quiet && exit 0
 
-          # Defensa adicional además del control de concurrencia de
-          # arriba: si por lo que sea otro commit (de cualquier origen,
-          # no solo este mismo workflow) llegó a main justo antes,
-          # reintentar con pull --rebase antes de rendirse, en vez de
-          # fallar a la primera con el remoto ya movido.
-          git commit -m "Auto: actualizar productos.json desde Google Sheets"
+          # Reintento robusto ante el remoto movido: en vez de "pull
+          # --rebase" (que puede entrar en CONFLICTO REAL si otra
+          # ejecución paralela también cambió la misma línea de
+          # productos_version.json — el timestamp — con un valor
+          # distinto; git no puede fusionar automáticamente dos valores
+          # distintos en la misma línea, y el rebase se detiene ahí, con
+          # error, pese al reintento), en cada intento se vuelve a
+          # comitear los archivos YA REGENERADOS en este mismo run
+          # sobre la base más reciente de main.
           for intento in 1 2 3; do
+            git add data/productos.json data/productos_version.json
+            if git diff --staged --quiet; then
+              echo "Nada que subir (contenido ya al día)."
+              exit 0
+            fi
+            git commit -m "Auto: actualizar productos.json desde Google Sheets"
             if git push; then
               echo "Push correcto (intento $intento)."
               exit 0
             fi
-            echo "Push rechazado (intento $intento/3) — el remoto se movió mientras tanto, reintentando con pull --rebase..."
-            git pull --rebase origin main
+            echo "Push rechazado (intento $intento/3) — el remoto se movió mientras tanto."
+
+            # git reset --hard también borraría los archivos recién
+            # regenerados de este run (los deja tal cual estén en
+            # origin/main) — se guardan aparte para no perderlos, y se
+            # restauran después de partir de la base fresca.
+            cp data/productos.json /tmp/productos.json.regenerado
+            cp data/productos_version.json /tmp/productos_version.json.regenerado
+            git reset --hard HEAD~1   # deshacer SOLO el commit local que no se pudo subir
+            git fetch origin main
+            git reset --hard origin/main   # partir de la base más reciente real
+            cp /tmp/productos.json.regenerado data/productos.json
+            cp /tmp/productos_version.json.regenerado data/productos_version.json
           done
           echo "No se pudo hacer push tras 3 intentos." >&2
           exit 1
