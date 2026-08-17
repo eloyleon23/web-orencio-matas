@@ -31,6 +31,7 @@ function onOpen() {
     .addItem('�🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('📧 Enviarme Excel de productos sin imagen', 'enviarExcelProductosSinImagenManual')
+    .addItem('🔄 Regenerar caché completa del buscador', 'regenerarCacheCompletaManual')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addItem('✅ Validar imagen de producto', 'validarImagenManual')
     .addSeparator()
@@ -2509,6 +2510,165 @@ function guardarCacheProductos_(datos) {
   archivo.setContent(JSON.stringify(datos));
 }
 
+// ── Regeneración completa de la caché, directamente desde el Sheet ────────
+// Réplica exacta de la lógica de scripts/generar_productos_json.py — pero
+// sin pasar por Python ni GitHub Actions en absoluto. Antes esta
+// regeneración completa vivía SOLO en GitHub (workflow con cron cada
+// hora, disparado además tras cada actualización de imagen); ahora
+// también existe aquí, nativa, para poder desacoplar por completo el
+// pipeline de productos.json de GitHub de cara a cuando el buscador esté
+// publicado en IONOS (no depender de ningún redespliegue de la release).
+//
+// El workflow de GitHub (generar_productos_json.yml) se mantiene
+// funcionando igual que antes, pero su propósito ahora es distinto:
+// sigue alimentando data/productos.json en el repositorio para la
+// muestra de productos de las páginas públicas de catálogo
+// (catalogo-preview.js), que sí siguen viviendo en GitHub Pages. El
+// buscador ya no depende de él para nada.
+function regenerarCacheCompletaDesdeSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  const sheetFam  = ss.getSheetByName('FamiliaProductos');
+  const sheetSub  = ss.getSheetByName('SubfamiliaProductos');
+  const zona = ss.getSpreadsheetTimeZone();
+
+  if (!sheetProd) throw new Error('regenerarCacheCompletaDesdeSheet_: no existe la hoja "Productos"');
+
+  const parseOrden_ = (raw) => {
+    if (raw === '' || raw === null || raw === undefined) return 999;
+    const n = (typeof raw === 'number') ? raw : parseFloat(raw);
+    return isNaN(n) ? 999 : Math.trunc(n);
+  };
+
+  // ── Familias: {FAMILIA: orden} ──
+  const familias = {};
+  if (sheetFam && sheetFam.getLastRow() >= 2) {
+    const famHeaders = sheetFam.getRange(1, 1, 1, sheetFam.getLastColumn()).getValues()[0]
+      .map(h => h.toString().trim().toLowerCase());
+    const colFamilia = famHeaders.indexOf('familia');
+    const colOrden    = famHeaders.indexOf('orden');
+    if (colFamilia !== -1) {
+      const famData = sheetFam.getRange(2, 1, sheetFam.getLastRow() - 1, sheetFam.getLastColumn()).getValues();
+      famData.forEach(row => {
+        const familia = (row[colFamilia] || '').toString().trim().toUpperCase();
+        if (familia) familias[familia] = colOrden !== -1 ? parseOrden_(row[colOrden]) : 999;
+      });
+    }
+  }
+
+  // ── Subfamilias: {FAMILIA: {subfamilia: orden}} ──
+  const subfamiliasPorFamilia = {};
+  if (sheetSub && sheetSub.getLastRow() >= 2) {
+    const subHeaders = sheetSub.getRange(1, 1, 1, sheetSub.getLastColumn()).getValues()[0]
+      .map(h => h.toString().trim().toLowerCase());
+    const colFamilia    = subHeaders.indexOf('familia');
+    const colSubfamilia = subHeaders.indexOf('subfamilia');
+    const colOrden      = subHeaders.indexOf('orden');
+    if (colFamilia !== -1 && colSubfamilia !== -1) {
+      const subData = sheetSub.getRange(2, 1, sheetSub.getLastRow() - 1, sheetSub.getLastColumn()).getValues();
+      subData.forEach(row => {
+        const familia = (row[colFamilia] || '').toString().trim().toUpperCase();
+        const subfamilia = (row[colSubfamilia] || '').toString().trim();
+        if (!familia || !subfamilia) return;
+        if (!subfamiliasPorFamilia[familia]) subfamiliasPorFamilia[familia] = {};
+        subfamiliasPorFamilia[familia][subfamilia] = colOrden !== -1 ? parseOrden_(row[colOrden]) : 999;
+      });
+    }
+  }
+
+  // ── Productos ──
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+
+  const esSi_ = (val) => ['sí','si','yes','true','1','✓'].includes((val || '').toString().trim().toLowerCase());
+
+  // Formatea igual que la exportación CSV que usaba el script de Python
+  // (dd/MM/yyyy HH:mm:ss) para las celdas que Apps Script reconoce como
+  // fecha real, y como texto tal cual para el resto.
+  const valorCelda_ = (row, col) => {
+    if (PROD[col] === undefined) return '';
+    const v = row[PROD[col]];
+    if (v === undefined || v === null || v === '') return '';
+    if (v instanceof Date) return Utilities.formatDate(v, zona, 'dd/MM/yyyy HH:mm:ss');
+    return v.toString().trim();
+  };
+
+  const exportados = [];
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow >= 2) {
+    const data = sheetProd.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    data.forEach(row => {
+      const ref = valorCelda_(row, 'referencia');
+      if (!ref) return;
+
+      let imgId = valorCelda_(row, 'imagen_drive_id');
+      if (imgId === 'NO_TIENE_FOTO') imgId = '';
+
+      exportados.push({
+        ref: ref,
+        nombre: valorCelda_(row, 'nombre'),
+        area: valorCelda_(row, 'area').toLowerCase(),
+        familia: valorCelda_(row, 'tipologia'),
+        subfamilia: valorCelda_(row, 'subfamilia'),
+        img: imgId,
+        oferta: esSi_(valorCelda_(row, 'oferta')),
+        mostrar_precio: esSi_(valorCelda_(row, 'mostrar_precio')),
+        precio_sin: valorCelda_(row, 'precio_sin_iva'),
+        precio_con: valorCelda_(row, 'precio_con_iva'),
+        fecha: valorCelda_(row, 'fecha_registro'),
+        espacios: valorCelda_(row, 'espacios_a_ocupar') || '1',
+        imagen_validada: valorCelda_(row, 'imagen_validada'),
+        fecha_actualizacion_imagen: valorCelda_(row, 'fecha_actualizacion_imagen'),
+        fecha_baja: valorCelda_(row, 'fecha_baja'),
+      });
+    });
+  }
+
+  const payload = {
+    generado: new Date().toISOString(),
+    total: exportados.length,
+    familias_orden: familias,
+    subfamilias_orden: subfamiliasPorFamilia,
+    productos: exportados,
+  };
+
+  guardarCacheProductos_(payload);
+  console.log(`regenerarCacheCompletaDesdeSheet_: ${exportados.length} productos regenerados y guardados en la caché de Drive.`);
+  return payload;
+}
+
+// Versión para lanzar a mano desde el menú, con aviso en pantalla.
+function regenerarCacheCompletaManual() {
+  const ui = SpreadsheetApp.getUi();
+  try {
+    const payload = regenerarCacheCompletaDesdeSheet_();
+    ui.alert('Caché regenerada', `${payload.total} productos regenerados y guardados en la caché de Drive.\n\nYa disponibles para el buscador.`, ui.ButtonSet.OK);
+  } catch (err) {
+    ui.alert('Error', 'No se pudo regenerar la caché: ' + err.message, ui.ButtonSet.OK);
+  }
+}
+
+// Ejecutar UNA VEZ desde el editor para crear el disparador programado
+// (cada hora) — sustituye por completo al cron del workflow de GitHub
+// para el pipeline del buscador. Mismo patrón que
+// configurarTriggerRevisionCorreoProductos(): borra cualquier trigger
+// anterior de esta misma función antes de crear uno nuevo, así que
+// también sirve para "refrescar" la configuración si se cambia la
+// frecuencia más adelante.
+function configurarTriggerRegeneracionCacheCompleta() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'regenerarCacheCompletaDesdeSheet_')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger('regenerarCacheCompletaDesdeSheet_')
+    .timeBased()
+    .everyHours(1)
+    .create();
+  console.log('Trigger creado: regenerarCacheCompletaDesdeSheet_ se ejecutará cada hora.');
+}
+
 // Sustituye a actualizarProductoEnJsonRemoto() (que escribía en GitHub,
 // con el conflicto de SHA en actualizaciones seguidas descrito arriba).
 // Sobrescribir un archivo de Drive es una operación simple, sin el
@@ -2752,10 +2912,6 @@ function procesarActualizarImagen(data) {
       imagen_validada: fechaFormateada
     });
 
-    // Disparar workflow de generar productos.json (red de seguridad: una
-    // regeneración completa y consistente, además del cron de cada 10 min)
-    console.log('Disparando workflow generar_productos_json');
-    dispararWorkflowProductosJson();
 
     console.log('procesarActualizarImagen completado exitosamente');
     return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Imagen actualizada correctamente' }))
@@ -2871,9 +3027,6 @@ function procesarValidarImagen(data) {
       imagen_validada: Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss')
     });
 
-    // Disparar workflow de generar productos.json
-    console.log('Disparando workflow generar_productos_json');
-    dispararWorkflowProductosJson();
 
     console.log('procesarValidarImagen completado exitosamente');
     return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Imagen validada correctamente' }))
@@ -2933,9 +3086,6 @@ function procesarDarBajaProducto(data) {
     // Vista rápida: parchear productos.json al instante
     actualizarProductoEnCache_(referencia, { fecha_baja: fechaFormateada });
 
-    // Disparar workflow de generar productos.json
-    console.log('Disparando workflow generar_productos_json');
-    dispararWorkflowProductosJson();
 
     console.log('procesarDarBajaProducto completado exitosamente');
     return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Producto dado de baja correctamente', fecha_baja: fechaFormateada }))
@@ -2992,9 +3142,6 @@ function procesarReactivarProducto(data) {
     // Vista rápida: parchear productos.json al instante
     actualizarProductoEnCache_(referencia, { fecha_baja: '' });
 
-    // Disparar workflow de generar productos.json
-    console.log('Disparando workflow generar_productos_json');
-    dispararWorkflowProductosJson();
 
     console.log('procesarReactivarProducto completado exitosamente');
     return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Producto reactivado correctamente' }))
@@ -3056,9 +3203,6 @@ function procesarMarcarSinImagen(data) {
     // Vista rápida: parchear productos.json al instante
     actualizarProductoEnCache_(referencia, { img: '', imagen_validada: '', fecha_actualizacion_imagen: '' });
 
-    // Disparar workflow de generar productos.json
-    console.log('Disparando workflow generar_productos_json');
-    dispararWorkflowProductosJson();
 
     console.log('procesarMarcarSinImagen completado exitosamente');
     return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Producto marcado sin imagen correctamente' }))
@@ -3235,19 +3379,19 @@ function validarImagenManual() {
   ui.alert(`✓ Imagen del producto ${referencia} validada correctamente.\n\nLa web se actualizará automáticamente en los próximos 10 minutos.`);
 }
 
-// ── Disparar workflow de generar productos.json ───────────────────────────
-// Cada acción individual (actualizar imagen, validar, marcar sin imagen...)
-// llama a esta función como "red de seguridad" — pero si se usa el
-// Asistente de imágenes para pasar rápido por muchos productos seguidos,
-// eso puede disparar decenas de ejecuciones completas del workflow en
-// pocos minutos (cada una relee las ~12.700 filas de la Sheet entera y
-// regenera productos.json desde cero), saturando GitHub Actions sin
-// necesidad real: el parche rápido (actualizarProductoEnJsonRemoto) ya
-// mantiene productos.json al día al instante en cada acción, y además ya
-// existe un cron cada 10 minutos que hace la regeneración completa por su
-// cuenta. Con esto, el disparo bajo demanda queda limitado a como mucho
-// una vez cada 5 minutos — dentro de esa ventana, el parche rápido y el
-// cron ya cubren de sobra la consistencia.
+// ── Disparar workflow de generar productos.json (SOLO para GitHub Pages) ──
+// Ya NO se llama desde las acciones de imagen (actualizar, validar,
+// marcar sin imagen, dar de baja, reactivar) — esas escriben ahora
+// directamente en la caché de Drive (ver actualizarProductoEnCache_ y
+// regenerarCacheCompletaDesdeSheet_ más abajo), que es lo que sirve al
+// buscador. El pipeline del buscador ya no depende de GitHub en
+// absoluto.
+//
+// Esta función se conserva porque data/productos.json en el
+// repositorio sigue alimentando la muestra de productos de las páginas
+// públicas de catálogo (catalogo-preview.js), que sí siguen viviendo en
+// GitHub Pages — no es más que eso ahora, un mantenimiento aparte para
+// esa vista previa, no una dependencia crítica.
 function dispararWorkflowProductosJson() {
   const props = PropertiesService.getScriptProperties();
   const ULTIMO_DISPARO_KEY = 'ultimoDisparoWorkflowProductosJson';
@@ -3663,6 +3807,19 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
   // 5) Ejecutar la sincronización ya existente
   const resultado = sincronizarRegistroProductos();
   resultado.totalRegistrados = filasDatos.length;
+
+  // 6) Regenerar la caché completa que sirve al buscador — una
+  // sincronización del CRM puede añadir o modificar muchos productos de
+  // golpe, así que tiene sentido regenerar del todo aquí en vez de
+  // esperar al siguiente disparo programado (hasta 1 hora). No bloquea
+  // el resto del flujo si fallara — el disparador programado lo
+  // corregirá de todas formas.
+  try {
+    regenerarCacheCompletaDesdeSheet_();
+  } catch (err) {
+    console.error('No se pudo regenerar la caché tras la sincronización del CRM (se corregirá con el disparador programado):', err);
+  }
+
   return resultado;
 }
 
