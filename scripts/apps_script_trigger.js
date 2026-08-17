@@ -3233,77 +3233,109 @@ function actualizarVersionJson() {
   }
 }
 function actualizarProductoEnJsonRemoto(referencia, camposActualizados) {
-  try {
-    const rutaArchivo = 'data/productos.json';
-    const urlContenido = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${rutaArchivo}`;
-    const headers = {
-      'Authorization': `Bearer ${GITHUB_TOKEN}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'X-GitHub-Api-Version': '2022-11-28'
-    };
+  // Reintentos con SHA fresco: si varias actualizaciones de imagen se
+  // lanzan seguidas (el caso típico del Asistente de imágenes,
+  // procesando muchos productos uno tras otro rápido), la SEGUNDA puede
+  // capturar el SHA de productos.json justo antes de que la PRIMERA
+  // termine de subir el suyo — GitHub rechaza ese PUT por conflicto de
+  // SHA (409/422). Antes esto fallaba en silencio: el error solo
+  // quedaba en el log de Apps Script, nunca llegaba al usuario, que
+  // veía "imagen actualizada correctamente" en pantalla (la subida a
+  // Drive y el Sheet SÍ habían ido bien) pero productos.json se quedaba
+  // sin ese cambio hasta la siguiente regeneración completa (varios
+  // minutos después) — de ahí la sensación de "no se ha actualizado"
+  // pese a que el Excel/Sheet sí reflejaba el cambio correctamente.
+  const MAX_INTENTOS = 4;
+  const ESPERA_ENTRE_INTENTOS_MS = 800;
 
-    // 1) Metadata del archivo (sha + download_url) — vía la API normal.
-    // IMPORTANTE: el campo "content" (el archivo en base64) SOLO viene
-    // relleno para archivos de 1 MB o menos; productos.json pesa varios MB,
-    // así que aquí llega vacío — de ahí que el patch fallara siempre en
-    // silencio (JSON.parse de una cadena vacía) sin ningún commit ni error
-    // visible para el usuario. El resto de campos (sha, download_url...)
-    // sí llegan bien independientemente del tamaño.
-    const respGet = UrlFetchApp.fetch(urlContenido, { method: 'get', headers: headers, muteHttpExceptions: true });
-    if (respGet.getResponseCode() !== 200) {
-      console.error('actualizarProductoEnJsonRemoto: no se pudo obtener metadata de productos.json:', respGet.getContentText());
-      return false;
-    }
-    const infoArchivo = JSON.parse(respGet.getContentText());
-    const shaActual = infoArchivo.sha;
+  for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+    try {
+      const rutaArchivo = 'data/productos.json';
+      const urlContenido = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${rutaArchivo}`;
+      const headers = {
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      };
 
-    // 2) Contenido real del archivo, por la vía que sí funciona para
-    // archivos grandes: la URL de descarga directa que da la propia API.
-    const respRaw = UrlFetchApp.fetch(infoArchivo.download_url, { muteHttpExceptions: true });
-    if (respRaw.getResponseCode() !== 200) {
-      console.error('actualizarProductoEnJsonRemoto: no se pudo descargar el contenido real de productos.json:', respRaw.getResponseCode());
-      return false;
-    }
-    const datos = JSON.parse(respRaw.getContentText());
+      // 1) Metadata del archivo (sha + download_url) — vía la API normal.
+      // IMPORTANTE: el campo "content" (el archivo en base64) SOLO viene
+      // relleno para archivos de 1 MB o menos; productos.json pesa varios MB,
+      // así que aquí llega vacío — de ahí que el patch fallara siempre en
+      // silencio (JSON.parse de una cadena vacía) sin ningún commit ni error
+      // visible para el usuario. El resto de campos (sha, download_url...)
+      // sí llegan bien independientemente del tamaño.
+      const respGet = UrlFetchApp.fetch(urlContenido, { method: 'get', headers: headers, muteHttpExceptions: true });
+      if (respGet.getResponseCode() !== 200) {
+        console.error('actualizarProductoEnJsonRemoto: no se pudo obtener metadata de productos.json:', respGet.getContentText());
+        return false;
+      }
+      const infoArchivo = JSON.parse(respGet.getContentText());
+      const shaActual = infoArchivo.sha;
 
-    // 2) Buscar y actualizar el producto por referencia
-    const productos = datos.productos || [];
-    const idx = productos.findIndex(p => p.ref === referencia);
-    if (idx === -1) {
-      console.error('actualizarProductoEnJsonRemoto: producto no encontrado en productos.json:', referencia);
-      return false;
-    }
-    Object.assign(productos[idx], camposActualizados);
+      // 2) Contenido real del archivo, por la vía que sí funciona para
+      // archivos grandes: la URL de descarga directa que da la propia API.
+      const respRaw = UrlFetchApp.fetch(infoArchivo.download_url, { muteHttpExceptions: true });
+      if (respRaw.getResponseCode() !== 200) {
+        console.error('actualizarProductoEnJsonRemoto: no se pudo descargar el contenido real de productos.json:', respRaw.getResponseCode());
+        return false;
+      }
+      const datos = JSON.parse(respRaw.getContentText());
 
-    // 3) Volver a subir el archivo completo con el cambio puntual aplicado
-    const nuevoContenido = JSON.stringify(datos);
-    const contenidoBase64 = Utilities.base64Encode(nuevoContenido, Utilities.Charset.UTF_8);
-    const payloadPut = JSON.stringify({
-      message: `Auto: actualizar ${referencia} en productos.json (vista rápida)`,
-      content: contenidoBase64,
-      sha: shaActual
-    });
-    const respPut = UrlFetchApp.fetch(urlContenido, {
-      method: 'put',
-      contentType: 'application/json',
-      headers: headers,
-      payload: payloadPut,
-      muteHttpExceptions: true
-    });
-    if (respPut.getResponseCode() === 200 || respPut.getResponseCode() === 201) {
-      console.log('productos.json actualizado al instante para', referencia);
-      
-      // Actualizar productos_version.json con nuevo timestamp para cache-busting
-      actualizarVersionJson();
-      
-      return true;
+      // 3) Buscar y actualizar el producto por referencia
+      const productos = datos.productos || [];
+      const idx = productos.findIndex(p => p.ref === referencia);
+      if (idx === -1) {
+        console.error('actualizarProductoEnJsonRemoto: producto no encontrado en productos.json:', referencia);
+        return false;
+      }
+      Object.assign(productos[idx], camposActualizados);
+
+      // 4) Volver a subir el archivo completo con el cambio puntual aplicado
+      const nuevoContenido = JSON.stringify(datos);
+      const contenidoBase64 = Utilities.base64Encode(nuevoContenido, Utilities.Charset.UTF_8);
+      const payloadPut = JSON.stringify({
+        message: `Auto: actualizar ${referencia} en productos.json (vista rápida)`,
+        content: contenidoBase64,
+        sha: shaActual
+      });
+      const respPut = UrlFetchApp.fetch(urlContenido, {
+        method: 'put',
+        contentType: 'application/json',
+        headers: headers,
+        payload: payloadPut,
+        muteHttpExceptions: true
+      });
+
+      if (respPut.getResponseCode() === 200 || respPut.getResponseCode() === 201) {
+        if (intento > 1) console.log(`productos.json actualizado al instante para ${referencia} (intento ${intento}/${MAX_INTENTOS})`);
+        else console.log('productos.json actualizado al instante para', referencia);
+
+        // Actualizar productos_version.json con nuevo timestamp para cache-busting
+        actualizarVersionJson();
+
+        return true;
+      }
+
+      // Conflicto de SHA (u otro fallo puntual): reintentar con SHA
+      // fresco, salvo que ya sea el último intento.
+      console.warn(`actualizarProductoEnJsonRemoto: intento ${intento}/${MAX_INTENTOS} falló (código ${respPut.getResponseCode()}) para ${referencia} — ${respPut.getContentText().substring(0, 200)}`);
+      if (intento < MAX_INTENTOS) {
+        Utilities.sleep(ESPERA_ENTRE_INTENTOS_MS);
+        continue;
+      }
+    } catch (err) {
+      console.error(`Error en actualizarProductoEnJsonRemoto (intento ${intento}/${MAX_INTENTOS}) para ${referencia}:`, err);
+      if (intento < MAX_INTENTOS) {
+        Utilities.sleep(ESPERA_ENTRE_INTENTOS_MS);
+        continue;
+      }
     }
-    console.error('actualizarProductoEnJsonRemoto: error al subir productos.json:', respPut.getContentText());
-    return false;
-  } catch (err) {
-    console.error('Error en actualizarProductoEnJsonRemoto:', err);
-    return false;
   }
+
+  console.error(`actualizarProductoEnJsonRemoto: agotados los ${MAX_INTENTOS} intentos para ${referencia} sin éxito. ` +
+    'El workflow de seguridad (generar_productos_json, cron cada 10 min o disparo tras esta acción) lo corregirá en unos minutos.');
+  return false;
 }
 
 // ══════════════════════════════════════════════════════════════════════
