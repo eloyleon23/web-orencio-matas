@@ -2452,6 +2452,133 @@ function setupTrigger() {
   ScriptApp.newTrigger('onEdit').forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet()).onEdit().create();
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// CACHÉ DE productos.json EN DRIVE — sirve al buscador sin pasar por
+// GitHub Pages en absoluto
+// ══════════════════════════════════════════════════════════════════════
+// Antes, cada actualización de imagen escribía un parche en
+// data/productos.json vía la API de contenidos de GitHub (commit +
+// push), y el buscador leía ese archivo servido por GitHub Pages. Esto
+// tenía dos problemas reales, confirmados con datos reales de esta
+// sesión:
+//   1. Conflictos de SHA cuando dos actualizaciones se lanzaban seguidas
+//      (el parche fallaba en silencio, sin llegar el error al usuario).
+//   2. El propio entorno "github-pages" de GitHub CANCELA un despliegue
+//      en curso cuando llega uno más nuevo — durante una ráfaga de
+//      actualizaciones de imagen, varios despliegues se cancelaban entre
+//      sí en cadena y nada llegaba a publicarse hasta que había una
+//      pausa lo bastante larga.
+//
+// Ahora el buscador lee directamente de aquí (vía doGet, más abajo) — un
+// archivo en Drive que este mismo Apps Script mantiene actualizado. Sin
+// commits, sin GitHub Actions, sin despliegue de Pages de por medio para
+// esto. Además, al ser el mismo Web App que ya usa el buscador para
+// actualizar/validar imágenes, la MISMA URL sirve sin cambios sea cual
+// sea el hosting de la página (GitHub Pages hoy, IONOS más adelante).
+
+const NOMBRE_ARCHIVO_PRODUCTOS_CACHE = 'productos_cache.json';
+
+// Encuentra (o crea si no existe todavía) el archivo de caché en Drive —
+// por nombre, no por ID fijo, para no depender de un ID que se rompería
+// si el archivo se borrara alguna vez por error.
+function obtenerArchivoCache_() {
+  const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_PRODUCTOS_CACHE);
+  if (archivos.hasNext()) {
+    return archivos.next();
+  }
+  const blobVacio = Utilities.newBlob('{"productos":[]}', 'application/json', NOMBRE_ARCHIVO_PRODUCTOS_CACHE);
+  const archivo = DriveApp.createFile(blobVacio);
+  archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  console.log('Archivo de caché de productos creado en Drive:', archivo.getId());
+  return archivo;
+}
+
+function leerCacheProductos_() {
+  try {
+    const archivo = obtenerArchivoCache_();
+    const contenido = archivo.getBlob().getDataAsString('UTF-8');
+    return JSON.parse(contenido);
+  } catch (e) {
+    console.error('leerCacheProductos_: error leyendo la caché, devolviendo estructura vacía:', e);
+    return { productos: [] };
+  }
+}
+
+function guardarCacheProductos_(datos) {
+  const archivo = obtenerArchivoCache_();
+  archivo.setContent(JSON.stringify(datos));
+}
+
+// Sustituye a actualizarProductoEnJsonRemoto() (que escribía en GitHub,
+// con el conflicto de SHA en actualizaciones seguidas descrito arriba).
+// Sobrescribir un archivo de Drive es una operación simple, sin el
+// bloqueo optimista basado en SHA de la API de contenidos de GitHub —
+// no hace falta reintentar por conflicto, aunque se conserva un
+// reintento corto por si acaso hay algún fallo puntual de red/cuota.
+function actualizarProductoEnCache_(referencia, camposActualizados) {
+  const MAX_INTENTOS = 2;
+  for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+    try {
+      const datos = leerCacheProductos_();
+      const productos = datos.productos || [];
+      const idx = productos.findIndex(p => p.ref === referencia);
+      if (idx === -1) {
+        console.error('actualizarProductoEnCache_: producto no encontrado en la caché:', referencia);
+        return false;
+      }
+      Object.assign(productos[idx], camposActualizados);
+      guardarCacheProductos_(datos);
+      console.log('Caché de productos actualizada al instante para', referencia);
+      return true;
+    } catch (err) {
+      console.error(`Error en actualizarProductoEnCache_ (intento ${intento}/${MAX_INTENTOS}) para ${referencia}:`, err);
+      if (intento < MAX_INTENTOS) Utilities.sleep(500);
+    }
+  }
+  return false;
+}
+
+// Recibe el contenido COMPLETO y ya regenerado de productos.json (desde
+// el workflow de GitHub tras una regeneración completa por cron o tras
+// la sincronización del CRM) y sobrescribe la caché de Drive con él —
+// así esas regeneraciones completas también quedan reflejadas en lo que
+// sirve la web, no solo las actualizaciones puntuales de imagen.
+function procesarSincronizarCacheCompleto(data) {
+  try {
+    if (!data.contenido) throw new Error('Falta el contenido a sincronizar');
+    const datos = JSON.parse(data.contenido);
+    guardarCacheProductos_(datos);
+    const total = (datos.productos || []).length;
+    console.log('Caché de Drive sincronizada con la regeneración completa —', total, 'productos');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, total: total }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarSincronizarCacheCompleto:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Web App: peticiones GET (servir la caché de productos al buscador) ────
+function doGet(e) {
+  try {
+    const accion = e && e.parameter ? e.parameter.accion : null;
+
+    if (accion === 'obtener_productos') {
+      const datos = leerCacheProductos_();
+      return ContentService.createTextOutput(JSON.stringify(datos))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ error: 'Acción no reconocida: ' + accion }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en doGet:', err);
+    return ContentService.createTextOutput(JSON.stringify({ error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 // ── Web App: Manejar peticiones POST (actualizar imagen) ───────────────────
 function doPost(e) {
   try {
@@ -2494,6 +2621,11 @@ function doPost(e) {
     if (accion === 'enviar_contacto') {
       console.log('Acción: enviar_contacto');
       return procesarEnviarContacto(data);
+    }
+
+    if (accion === 'sincronizar_cache_completo') {
+      console.log('Acción: sincronizar_cache_completo');
+      return procesarSincronizarCacheCompleto(data);
     }
 
     console.log('Acción no reconocida:', accion);
@@ -2614,7 +2746,7 @@ function procesarActualizarImagen(data) {
     // ejecución de Apps Script con este mismo patch tardaba ~8s y
     // terminaba bien, así que se restaura.)
     const fechaFormateada = Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss');
-    actualizarProductoEnJsonRemoto(referencia, {
+    actualizarProductoEnCache_(referencia, {
       img: driveFile.getId(),
       fecha_actualizacion_imagen: fechaFormateada,
       imagen_validada: fechaFormateada
@@ -2735,7 +2867,7 @@ function procesarValidarImagen(data) {
     console.log('imagen_validada actualizada:', Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
 
     // Vista rápida: parchear productos.json al instante
-    actualizarProductoEnJsonRemoto(referencia, {
+    actualizarProductoEnCache_(referencia, {
       imagen_validada: Utilities.formatDate(ahora, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss')
     });
 
@@ -2799,7 +2931,7 @@ function procesarDarBajaProducto(data) {
     console.log('fecha_baja actualizada:', fechaFormateada);
 
     // Vista rápida: parchear productos.json al instante
-    actualizarProductoEnJsonRemoto(referencia, { fecha_baja: fechaFormateada });
+    actualizarProductoEnCache_(referencia, { fecha_baja: fechaFormateada });
 
     // Disparar workflow de generar productos.json
     console.log('Disparando workflow generar_productos_json');
@@ -2858,7 +2990,7 @@ function procesarReactivarProducto(data) {
     console.log('fecha_baja vaciada — producto reactivado');
 
     // Vista rápida: parchear productos.json al instante
-    actualizarProductoEnJsonRemoto(referencia, { fecha_baja: '' });
+    actualizarProductoEnCache_(referencia, { fecha_baja: '' });
 
     // Disparar workflow de generar productos.json
     console.log('Disparando workflow generar_productos_json');
@@ -2922,7 +3054,7 @@ function procesarMarcarSinImagen(data) {
     console.log('imagen_drive_id marcada como NO_TIENE_FOTO');
 
     // Vista rápida: parchear productos.json al instante
-    actualizarProductoEnJsonRemoto(referencia, { img: '', imagen_validada: '', fecha_actualizacion_imagen: '' });
+    actualizarProductoEnCache_(referencia, { img: '', imagen_validada: '', fecha_actualizacion_imagen: '' });
 
     // Disparar workflow de generar productos.json
     console.log('Disparando workflow generar_productos_json');

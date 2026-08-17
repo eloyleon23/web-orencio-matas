@@ -3031,19 +3031,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return r.includes(b);
     }
 
-    // ── Cargar productos.json desde el repositorio (con CORS habilitado en GitHub Pages) ──
-    const PRODUCTOS_URL_BASE = './data/productos.json';
-    const PRODUCTOS_VERSION_URL_BASE = './data/productos_version.json';
+    // ── Cargar productos.json — vía el Web App de Apps Script, que sirve
+    // directamente desde una caché en Drive (ver notas en scripts/
+    // apps_script_trigger.js). Ya NO se lee de GitHub Pages: esa vía
+    // dependía de que cada actualización llegara a desplegarse, y el
+    // propio entorno de despliegue de GitHub cancela despliegues en
+    // curso cuando llega uno más nuevo — durante una ráfaga de
+    // actualizaciones de imagen, nada llegaba a publicarse hasta que
+    // había una pausa lo bastante larga. Sin commits, sin GitHub
+    // Actions, sin despliegue de por medio para esto — y la misma URL
+    // sirve sin cambios sea cual sea el hosting de esta página.
+    const PRODUCTOS_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
     const PRODUCTOS_BESA_URL = './data/productos_besa.json';
     const PRODUCTOS_BASLAC_URL = './data/productos_baslac.json';
-
-    // Añadir timestamp actual como parámetro de cache-busting a productos_version.json
-    const PRODUCTOS_VERSION_URL = `${PRODUCTOS_VERSION_URL_BASE}?_t=${Date.now()}`;
-
-    // Variable para la URL de productos con cache-busting
-    let PRODUCTOS_URL = PRODUCTOS_URL_BASE;
 
     // Talleres y Carrocerías no tiene productos propios en la hoja
     // Productos (Sheet) — de momento se cargan aquí los productos del
@@ -3096,18 +3098,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .catch(() => []);
     }
 
-    // Cargar versión primero para cache-busting, luego productos.json
-    // Esto fuerza a GitHub Pages a servir siempre la versión más reciente
-    fetch(PRODUCTOS_VERSION_URL, { cache: 'no-store' })
-        .then(r => r.ok ? r.json() : null)
-        .then(versionData => {
-            if (versionData && versionData.timestamp) {
-                // Añadir timestamp como parámetro de query para cache-busting
-                PRODUCTOS_URL = `${PRODUCTOS_URL_BASE}?v=${versionData.timestamp}`;
-            }
-            // Ahora cargar productos.json con cache-busting
-            return fetch(PRODUCTOS_URL, { cache: 'no-store' });
-        })
+    // Cargar productos.json directamente — no hace falta ningún paso
+    // previo de comprobación de versión (eso era específico de la
+    // caché de GitHub Pages, que ya no se usa aquí).
+    fetch(PRODUCTOS_URL, { cache: 'no-store' })
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
@@ -3139,27 +3133,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ══════════════════════════════════════════════
     // ── Detección de productos.json actualizado en el servidor ──
-    // El workflow que regenera productos.json puede correr en cualquier
-    // momento (cada 10-15 min o al validar una imagen), pero eso no
-    // significa que el CONTENIDO haya cambiado de verdad — puede
-    // regenerarse con los mismos datos. Por eso el ETag/Last-Modified solo
-    // se usa como primer filtro barato (una petición HEAD, sin descargar
-    // nada); si ese cambia, se confirma descargando el archivo real y
-    // comparando su hash (SHA-256, vía la Web Crypto API nativa del
-    // navegador — sin librerías) contra el hash de lo que ya está
-    // cargado. Solo se avisa si el contenido de verdad es distinto.
+    // Con Apps Script sirviendo directamente desde una caché en Drive,
+    // ya no hay una cabecera de versión (ETag/Last-Modified) barata que
+    // comprobar primero como se hacía con GitHub Pages — cada respuesta
+    // de Apps Script se genera en el momento, no es un archivo estático
+    // con esa metadata HTTP. Se compara directamente el hash del
+    // contenido completo (SHA-256, vía la Web Crypto API nativa del
+    // navegador — sin librerías) cada vez. El intervalo se ha alargado
+    // (antes 1 minuto) para no generar tráfico innecesario contra la
+    // cuota de ejecuciones de Apps Script si hay varias personas con el
+    // buscador abierto a la vez — la necesidad más urgente (ver tu
+    // PROPIA actualización reflejada) ya está cubierta al instante por
+    // el propio flujo de actualización; esto es solo para avisar de
+    // cambios hechos por OTRAS personas mientras tienes la página abierta.
     // ══════════════════════════════════════════════
-    const INTERVALO_COMPROBACION_MS = 60 * 1000; // cada 1 minuto
-    let etagConocido = null;    // versión (ETag/Last-Modified) del último HEAD comprobado
+    const INTERVALO_COMPROBACION_MS = 5 * 60 * 1000; // cada 5 minutos
     let hashConocido = null;    // hash SHA-256 del contenido actualmente cargado
     let hashPendiente = null;   // hash del contenido nuevo detectado, aún no cargado
     let avisoDescartado = false;
     let comprobandoActualizacion = false;
-
-    function identificadorVersion(headers) {
-        // ETag es lo más fiable; Last-Modified como respaldo si el servidor no lo envía.
-        return headers.get('etag') || headers.get('last-modified') || null;
-    }
 
     // SHA-256 del texto dado, en hexadecimal. Usa SubtleCrypto (nativo del
     // navegador, disponible en todo contexto https/localhost) — no hace
@@ -3170,38 +3162,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // Tras una acción instantánea propia (validar, dar de baja, reactivar)
-    // el productos.json del servidor cambia YA, aunque esta misma pestaña
-    // no necesite recargar nada (el cambio ya se refleja localmente al
-    // instante). Sin esto, el sondeo periódico detectaría ese cambio como
-    // si viniera de fuera y mostraría el banner de actualización sobre uno
-    // mismo. Se sincroniza aquí solo la cabecera de versión (barata, un
-    // HEAD) para que el próximo sondeo no lo confunda con un cambio
-    // externo real — sin tocar hashConocido, así que si el cambio real del
-    // servidor no coincidiera con lo esperado, el siguiente sondeo (que sí
-    // compara el contenido) lo seguiría detectando igualmente.
+    // el contenido del servidor cambia YA, aunque esta misma pestaña no
+    // necesite recargar nada (el cambio ya se refleja localmente al
+    // instante). Sin esto, el sondeo periódico detectaría ese cambio
+    // como si viniera de fuera y mostraría el banner de actualización
+    // sobre uno mismo. Se vuelve a pedir el contenido real y se
+    // actualiza hashConocido con él, para que el próximo sondeo ya no
+    // lo confunda con un cambio externo.
     async function resincronizarVersionConocida() {
         try {
-            const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
-            etagConocido = identificadorVersion(resp.headers) || etagConocido;
+            const resp = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            if (!resp.ok) return;
+            const texto = await resp.text();
+            hashConocido = await calcularHash(texto);
         } catch (e) {
-            // Si falla, no pasa nada: el próximo sondeo periódico lo intentará igual
+            // Si falla, no pasa nada: el próximo sondeo periódico lo comprobará igual
         }
     }
 
-    async function iniciarComprobacionActualizaciones() {
-        try {
-            // Cargar versión para cache-busting
-            const versionResp = await fetch(PRODUCTOS_VERSION_URL, { cache: 'no-store' });
-            const versionData = versionResp.ok ? await versionResp.json() : null;
-            if (versionData && versionData.timestamp) {
-                PRODUCTOS_URL = `${PRODUCTOS_URL_BASE}?v=${versionData.timestamp}`;
-            }
-            const resp = await fetch(PRODUCTOS_URL, { method: 'HEAD', cache: 'no-store' });
-            etagConocido = identificadorVersion(resp.headers);
-        } catch (e) {
-            // Si el HEAD inicial falla, simplemente no se activa el sondeo periódico
-            return;
-        }
+    function iniciarComprobacionActualizaciones() {
         setInterval(comprobarActualizacionProductos, INTERVALO_COMPROBACION_MS);
     }
 
@@ -3209,35 +3188,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
-            // Cargar versión para cache-busting
-            const versionResp = await fetch(PRODUCTOS_VERSION_URL, { cache: 'no-store' });
-            const versionData = versionResp.ok ? await versionResp.json() : null;
-            let urlConCache = PRODUCTOS_URL;
-            if (versionData && versionData.timestamp) {
-                urlConCache = `${PRODUCTOS_URL_BASE}?v=${versionData.timestamp}`;
-            }
-
-            // Paso 1 (barato): ¿ha cambiado la cabecera de versión?
-            const respHead = await fetch(urlConCache, { method: 'HEAD', cache: 'no-store' });
-            const version = identificadorVersion(respHead.headers);
-            if (!version) return; // servidor no da ETag ni Last-Modified: no se puede comparar, no molestamos
-            if (etagConocido === null) {
-                etagConocido = version;
-                return;
-            }
-            if (version === etagConocido) return; // ni siquiera la cabecera cambió: nada que comprobar
-
-            // Paso 2 (solo si el paso 1 sugiere un cambio): descargar el
-            // contenido real y comparar su hash. Si el hash es IGUAL, el
-            // archivo se regeneró pero con los mismos datos — se actualiza
-            // la cabecera conocida para no repetir esta descarga cada
-            // minuto por la misma "versión" que en realidad no cambió nada,
-            // pero NO se avisa al usuario.
-            const respGet = await fetch(urlConCache, { cache: 'no-store' });
-            const texto = await respGet.text();
+            const resp = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            if (!resp.ok) return;
+            const texto = await resp.text();
             const hash = await calcularHash(texto);
-
-            etagConocido = version; // ya se ha comprobado esta versión, sea igual o distinta
 
             if (hash === hashConocido) return; // contenido idéntico: no hay nada que avisar
 
@@ -3283,7 +3237,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             recargarProductosPreservandoFiltros(data);
             hashConocido = hashPendiente || await calcularHash(texto);
             hashPendiente = null;
-            etagConocido = identificadorVersion(resp.headers) || etagConocido;
             avisoDescartado = false;
             ocultarBannerActualizacion();
             mostrarToast('✓ Catálogo actualizado con los últimos cambios.');

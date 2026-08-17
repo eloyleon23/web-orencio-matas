@@ -44,6 +44,19 @@ jobs:
         run: |
           python scripts/generar_productos_json.py
 
+      - name: Sincronizar caché de Drive vía Apps Script
+        # El buscador ya no depende de que este commit llegue a
+        # desplegarse en GitHub Pages (ver notas en scripts/
+        # apps_script_trigger.js sobre por qué se cambió) — lee
+        # directamente de una caché en Drive que mantiene Apps Script.
+        # Este paso envía el contenido recién regenerado para que esa
+        # caché quede al día también tras cada regeneración completa
+        # (cron horario o sincronización del CRM), no solo con las
+        # actualizaciones puntuales de imagen. No depende del resultado
+        # del commit de abajo — corre siempre que la generación en sí
+        # haya ido bien.
+        run: python3 scripts_ci/sincronizar_cache_drive.py
+
       - name: Commit and push cambios
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
