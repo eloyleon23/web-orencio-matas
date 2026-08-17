@@ -8,6 +8,18 @@ on:
     # Ejecutar cada hora (suficiente para mantener datos actualizados)
     - cron: '0 * * * *'
 
+# Evita que dos ejecuciones solapadas (ej. un disparo manual justo
+# cuando salta el programado) intenten hacer push a la vez — sin esto,
+# la segunda en terminar se encontraba con "! [rejected] main -> main
+# (fetch first)" porque la rama ya se había movido con el commit de la
+# primera. Con esto, la segunda simplemente ESPERA a que la primera
+# termine (no se cancela, ambas son regeneraciones legítimas) antes de
+# arrancar — evitando el conflicto de raíz en vez de solo reintentar
+# tras el fallo.
+concurrency:
+  group: generar-productos-json
+  cancel-in-progress: false
+
 jobs:
   generar_json:
     runs-on: ubuntu-latest
@@ -37,5 +49,21 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add data/productos.json data/productos_version.json
-          git diff --staged --quiet || git commit -m "Auto: actualizar productos.json desde Google Sheets"
-          git push
+          git diff --staged --quiet && exit 0
+
+          # Defensa adicional además del control de concurrencia de
+          # arriba: si por lo que sea otro commit (de cualquier origen,
+          # no solo este mismo workflow) llegó a main justo antes,
+          # reintentar con pull --rebase antes de rendirse, en vez de
+          # fallar a la primera con el remoto ya movido.
+          git commit -m "Auto: actualizar productos.json desde Google Sheets"
+          for intento in 1 2 3; do
+            if git push; then
+              echo "Push correcto (intento $intento)."
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento/3) — el remoto se movió mientras tanto, reintentando con pull --rebase..."
+            git pull --rebase origin main
+          done
+          echo "No se pudo hacer push tras 3 intentos." >&2
+          exit 1
