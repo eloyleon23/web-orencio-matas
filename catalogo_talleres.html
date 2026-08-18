@@ -255,6 +255,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </p>
             </div>
 
+            <div id="cargando-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:#94a3b8;margin-bottom:12px;display:block"></i>
+                <p style="color:#64748b;">Cargando el catálogo…</p>
+            </div>
+
             <div id="no-catalogo-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
                 <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
                 <p style="color:#64748b;">El catálogo interno está siendo preparado.<br>
@@ -337,6 +342,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </div>
                 </div>
             </div>
+            <div id="cargando-zaphiro" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:#94a3b8;margin-bottom:12px;display:block"></i>
+                <p style="color:#64748b;">Cargando el catálogo Zaphiro…</p>
+            </div>
             <div id="no-catalogo-zaphiro" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
                 <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
                 <p style="color:#64748b;">No se ha podido cargar el catálogo Zaphiro.<br>
@@ -374,6 +383,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             document.getElementById('btn-ver-completo-interno').href = './visor_catalogo.html?area=talleres';
             document.getElementById('btn-descargar-interno').href = urlDescarga;
+            document.getElementById('cargando-interno').style.display = 'none';
             document.getElementById('preview-interno').style.display = '';
             if (window.cargarMuestraCatalogo) {
                 cargarMuestraCatalogo({ area: 'talleres', contenedorId: 'catalogo-preview-grid-interno' });
@@ -390,6 +400,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         .catch(showNoInterno);
 
     function showNoInterno() {
+        document.getElementById('cargando-interno').style.display = 'none';
         document.getElementById('no-catalogo-interno').style.display = '';
     }
 
@@ -414,11 +425,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             document.getElementById('btn-ver-completo-zaphiro').href = url;
             document.getElementById('btn-descargar-zaphiro').href = url;
             if (cfg.titulo) document.getElementById('titulo-zaphiro').textContent = cfg.titulo;
+            document.getElementById('cargando-zaphiro').style.display = 'none';
             document.getElementById('preview-zaphiro').style.display = '';
         })
         .catch(showNoZaphiro);
 
     function showNoZaphiro() {
+        document.getElementById('cargando-zaphiro').style.display = 'none';
         document.getElementById('no-catalogo-zaphiro').style.display = '';
     }
 })();

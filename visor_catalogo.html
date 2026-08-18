@@ -111,6 +111,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     document.getElementById('visor-titulo').textContent = cfg.titulo;
 
+    // "Volver" debe regresar a la vista de muestra del área (de donde
+    // vino el usuario), no saltarse ese paso yendo directo a
+    // productos.html — así el usuario decide él mismo si quiere seguir
+    // retrocediendo desde ahí.
+    document.getElementById('btn-volver').href = `catalogo_${area}.html`;
+
     // Los PDFs ya no se sirven desde el repositorio (data/catalogos/) ni
     // desde GitHub Releases (que fuerza descarga con
     // 'Content-Disposition: attachment' en la propia URL firmada, sin

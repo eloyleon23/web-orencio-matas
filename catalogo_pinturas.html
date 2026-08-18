@@ -244,6 +244,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <p>Esmaltes, barnices, revestimientos, impermeabilizantes y material profesional</p>
     </div>
 
+    <div id="cargando-catalogo" style="text-align:center;padding:60px 20px;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#94a3b8;margin-bottom:16px;display:block"></i>
+        <p style="color:#64748b;font-size:1.1rem">Cargando el catálogo…</p>
+    </div>
+
     <div id="no-catalogo" style="text-align:center;padding:60px 20px;display:none">
         <i class="fa-solid fa-clock" style="font-size:2.5rem;color:#64748b;margin-bottom:16px;display:block"></i>
         <p style="color:#64748b;font-size:1.1rem">El catálogo está siendo preparado.<br>Mientras tanto puedes contactar con nosotros.</p>
@@ -308,6 +313,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                 document.getElementById('btn-ver-completo').href = './visor_catalogo.html?area=' + AREA_KEY;
                 document.getElementById('btn-descargar').href = urlDescarga;
+                document.getElementById('cargando-catalogo').style.display = 'none';
                 document.getElementById('preview-catalogo').style.display = '';
                 if (window.cargarMuestraCatalogo) {
                     cargarMuestraCatalogo({ area: AREA_KEY, contenedorId: 'catalogo-preview-grid' });
@@ -324,6 +330,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             .catch(() => showNoCatalogo());
 
         function showNoCatalogo() {
+            document.getElementById('cargando-catalogo').style.display = 'none';
             document.getElementById('no-catalogo').style.display = '';
         }
     })();
