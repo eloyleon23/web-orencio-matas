@@ -65,6 +65,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Sincronizar catálogos en Drive vía Apps Script
+        # La web ya no necesita depender de ningún despliegue (ni en
+        # GitHub Pages ni en IONOS) para tener acceso a los catálogos
+        # nuevos — Apps Script descarga los PDFs recién publicados
+        # arriba y los guarda en Drive, en archivos de nombre fijo. No
+        # bloquea el resto del workflow si falla.
+        run: python3 scripts_ci/sincronizar_catalogos_drive.py
+
       - name: Disparar despliegue de Pages
         # El commit de arriba se hace con el GITHUB_TOKEN por defecto —
         # por diseño de GitHub (para evitar bucles infinitos), un push

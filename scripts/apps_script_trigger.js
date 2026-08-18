@@ -2719,6 +2719,124 @@ function procesarSincronizarCacheCompleto(data) {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// CATÁLOGOS PDF EN DRIVE — misma idea que la caché de productos.json,
+// para los 4 PDFs de catálogo
+// ══════════════════════════════════════════════════════════════════════
+// La generación en sí (ReportLab, composición de imágenes) sigue
+// haciéndose en Python vía GitHub Actions — no es razonable replicar
+// eso en Apps Script. Pero antes, la ENTREGA de esos PDFs a la web
+// dependía de que llegaran a data/catalogos/ en el repositorio, lo que
+// significa que en IONOS (cuando el buscador y los catálogos se
+// publiquen ahí) cada regeneración habría necesitado un ciclo completo
+// de "preparar release + desplegar por SFTP" para que el PDF nuevo
+// estuviera disponible.
+//
+// Ahora, tras cada generación, el workflow de GitHub sube los PDFs a
+// GitHub Releases (como ya hacía) y además avisa a este Apps Script con
+// las URLs de esos assets — Apps Script los descarga y los guarda en
+// Drive, en un archivo con NOMBRE FIJO por área, actualizado EN EL
+// MISMO archivo cada vez (servicio avanzado Drive API, igual que ya se
+// usa para la sincronización de correo del CRM) para que su ID —y por
+// tanto su URL— no cambie nunca entre regeneraciones. La web enlaza
+// directamente a esas URLs de Drive, sin pasar por ningún despliegue.
+
+const NOMBRES_ARCHIVOS_CATALOGO = {
+  drogueria:  'catalogo_drogueria.pdf',
+  perfumeria: 'catalogo_perfumeria.pdf',
+  pinturas:   'catalogo_pinturas.pdf',
+  talleres:   'catalogo_talleres.pdf',
+};
+
+const NOMBRE_ARCHIVO_MANIFIESTO_CATALOGOS = 'manifiesto_catalogos.json';
+
+function obtenerArchivoCatalogo_(area) {
+  const nombre = NOMBRES_ARCHIVOS_CATALOGO[area];
+  if (!nombre) return null;
+  const archivos = DriveApp.getFilesByName(nombre);
+  return archivos.hasNext() ? archivos.next() : null;
+}
+
+function leerManifiestoCatalogos_() {
+  try {
+    const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_MANIFIESTO_CATALOGOS);
+    if (!archivos.hasNext()) return {};
+    return JSON.parse(archivos.next().getBlob().getDataAsString('UTF-8'));
+  } catch (e) {
+    console.error('leerManifiestoCatalogos_: error leyendo, devolviendo vacío:', e);
+    return {};
+  }
+}
+
+function guardarManifiestoCatalogos_(datos) {
+  const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_MANIFIESTO_CATALOGOS);
+  if (archivos.hasNext()) {
+    const archivo = archivos.next();
+    Drive.Files.update({}, archivo.getId(), Utilities.newBlob(JSON.stringify(datos), 'application/json'));
+  } else {
+    const blob = Utilities.newBlob(JSON.stringify(datos), 'application/json', NOMBRE_ARCHIVO_MANIFIESTO_CATALOGOS);
+    const nuevo = DriveApp.createFile(blob);
+    nuevo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  }
+}
+
+// Descarga el PDF desde la URL indicada (un asset de GitHub Releases,
+// normalmente) y lo guarda en Drive. Si ya existe un archivo con ese
+// nombre, se ACTUALIZA su contenido conservando el mismo ID (requiere
+// el servicio avanzado "Drive API" activado en el proyecto — Editor de
+// Apps Script → Servicios → Drive API — el mismo que ya hace falta para
+// la sincronización de correo del CRM). Si no existe todavía, se crea.
+function sincronizarCatalogoPdfDesdeUrl_(area, url) {
+  const nombre = NOMBRES_ARCHIVOS_CATALOGO[area];
+  if (!nombre) throw new Error('Área de catálogo no reconocida: ' + area);
+
+  const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  if (resp.getResponseCode() !== 200) {
+    throw new Error(`No se pudo descargar el PDF de ${area} (código ${resp.getResponseCode()})`);
+  }
+  const blob = resp.getBlob().setName(nombre);
+
+  const existente = obtenerArchivoCatalogo_(area);
+  if (existente) {
+    Drive.Files.update({}, existente.getId(), blob);
+  } else {
+    const nuevo = DriveApp.createFile(blob);
+    nuevo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  }
+}
+
+// doPost: recibe { catalogos: { area: { url, paginas, productos }, ... } }
+// y sincroniza uno o varios catálogos de golpe, más el manifiesto de
+// páginas/productos que acompaña a cada uno.
+function procesarSincronizarCatalogos(data) {
+  try {
+    const catalogos = data.catalogos || {};
+    const resultados = {};
+    const manifiesto = { generado: new Date().toISOString(), catalogos: {} };
+
+    Object.keys(catalogos).forEach(area => {
+      const info = catalogos[area];
+      try {
+        sincronizarCatalogoPdfDesdeUrl_(area, info.url);
+        manifiesto.catalogos[area] = { paginas: info.paginas || null, productos: info.productos || null };
+        resultados[area] = 'ok';
+      } catch (err) {
+        console.error(`Error sincronizando catálogo ${area}:`, err);
+        resultados[area] = 'error: ' + err.message;
+      }
+    });
+
+    guardarManifiestoCatalogos_(manifiesto);
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, resultados: resultados }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarSincronizarCatalogos:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 // ── Web App: peticiones GET (servir la caché de productos al buscador) ────
 function doGet(e) {
   try {
@@ -2727,6 +2845,28 @@ function doGet(e) {
     if (accion === 'obtener_productos') {
       const datos = leerCacheProductos_();
       return ContentService.createTextOutput(JSON.stringify(datos))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Devuelve, por área, el ID de Drive del PDF (si ya existe) y los
+    // datos de páginas/productos — null para un área si el catálogo
+    // todavía no se ha generado nunca, para que la web pueda seguir
+    // mostrando "catálogo en preparación" tal como hace ahora.
+    if (accion === 'obtener_catalogos') {
+      const manifiesto = leerManifiestoCatalogos_();
+      const resultado = {};
+      Object.keys(NOMBRES_ARCHIVOS_CATALOGO).forEach(area => {
+        const archivo = obtenerArchivoCatalogo_(area);
+        if (!archivo) { resultado[area] = null; return; }
+        const info = (manifiesto.catalogos && manifiesto.catalogos[area]) || {};
+        resultado[area] = {
+          id: archivo.getId(),
+          paginas: info.paginas || null,
+          productos: info.productos || null,
+          actualizado: manifiesto.generado || null,
+        };
+      });
+      return ContentService.createTextOutput(JSON.stringify(resultado))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -2786,6 +2926,11 @@ function doPost(e) {
     if (accion === 'sincronizar_cache_completo') {
       console.log('Acción: sincronizar_cache_completo');
       return procesarSincronizarCacheCompleto(data);
+    }
+
+    if (accion === 'sincronizar_catalogos') {
+      console.log('Acción: sincronizar_catalogos');
+      return procesarSincronizarCatalogos(data);
     }
 
     console.log('Acción no reconocida:', accion);

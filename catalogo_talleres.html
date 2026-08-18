@@ -358,26 +358,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 (function() {
     const REPO = 'eloyleon23/web-orencio-matas';
 
-    // ── Catálogo interno: servido directamente desde el repositorio
-    // (GitHub Pages), no desde GitHub Releases — los enlaces de
-    // Releases llevan "Content-Disposition: attachment" forzado en la
-    // propia URL firmada, así que el navegador los descarga en vez de
-    // mostrarlos aunque se carguen en un iframe. Sirviéndolo como
-    // archivo normal del sitio, el visor nativo del navegador sí lo
-    // muestra inline. ──
-    const PDF_INTERNO = 'catalogo_talleres.pdf';
-    const url = './data/catalogos/' + PDF_INTERNO + '?_t=' + Date.now();
+    // ── Catálogo interno: ya no depende de ningún despliegue (ni
+    // GitHub Pages ni IONOS) — se consulta directamente en Drive vía el
+    // mismo Web App de Apps Script que ya usa el buscador. Ver notas en
+    // scripts/apps_script_trigger.js. ──
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
 
-    fetch('./data/manifiesto.json?_t=' + Date.now(), { cache: 'no-store' })
+    fetch(`${APPS_SCRIPT_URL}?accion=obtener_catalogos`, { cache: 'no-store' })
         .then(r => r.ok ? r.json() : Promise.reject())
-        .then(m => {
-            const info = m.catalogos && m.catalogos['talleres'];
-            if (!info) { showNoInterno(); return; }
+        .then(datos => {
+            const info = datos['talleres'];
+            if (!info || !info.id) { showNoInterno(); return; }
+
+            const urlDescarga = `https://drive.google.com/uc?export=download&id=${info.id}`;
 
             document.getElementById('btn-ver-completo-interno').href = './visor_catalogo.html?area=talleres';
-            const btnDescargar = document.getElementById('btn-descargar-interno');
-            btnDescargar.href = url;
-            btnDescargar.setAttribute('download', PDF_INTERNO);
+            document.getElementById('btn-descargar-interno').href = urlDescarga;
             document.getElementById('preview-interno').style.display = '';
             if (window.cargarMuestraCatalogo) {
                 cargarMuestraCatalogo({ area: 'talleres', contenedorId: 'catalogo-preview-grid-interno' });
@@ -385,8 +381,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             document.getElementById('info-paginas-interno').textContent   = info.paginas || '—';
             document.getElementById('info-productos-interno').textContent = info.productos || '—';
-            if (m.generado) {
-                const fecha = new Date(m.generado);
+            if (info.actualizado) {
+                const fecha = new Date(info.actualizado);
                 document.getElementById('info-fecha-interno').textContent =
                     fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
             }

@@ -87,8 +87,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <div class="visor-estado" id="visor-error" style="display:none">
-    <i class="fa-solid fa-triangle-exclamation"></i>
-    <p>No se ha podido cargar el catálogo.<br>Puedes volver e intentar descargarlo directamente.</p>
+    <i class="fa-solid fa-clock"></i>
+    <p>El catálogo está siendo preparado.<br>Mientras tanto puedes contactar con nosotros.</p>
 </div>
 
 <script>
@@ -111,23 +111,38 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     document.getElementById('visor-titulo').textContent = cfg.titulo;
 
-    // Los PDFs se sirven directamente desde el repositorio (GitHub
-    // Pages), no desde GitHub Releases — los enlaces de Releases llevan
-    // 'Content-Disposition: attachment' forzado en la propia URL firmada
-    // (no se puede quitar desde el cliente), lo que hacía que el
-    // navegador descargara el archivo en vez de mostrarlo, aunque se
-    // cargara dentro de un iframe. Sirviéndolo como archivo normal del
-    // sitio, el visor nativo del navegador (PDF.js) sí lo muestra inline.
-    const url = './data/catalogos/' + cfg.pdf;
+    // Los PDFs ya no se sirven desde el repositorio (data/catalogos/) ni
+    // desde GitHub Releases (que fuerza descarga con
+    // 'Content-Disposition: attachment' en la propia URL firmada, sin
+    // poder quitarlo desde el cliente) — se consultan directamente en
+    // Drive, vía el mismo Web App de Apps Script que ya usa el
+    // buscador. Sin depender de ningún despliegue, ni en GitHub Pages
+    // ni en IONOS: en cuanto Apps Script sincroniza un PDF nuevo tras
+    // cada generación, está disponible aquí al instante.
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
 
-    const btnDescargar = document.getElementById('btn-descargar-visor');
-    btnDescargar.href = url;
-    btnDescargar.setAttribute('download', cfg.pdf); // fuerza descarga solo en este botón
+    fetch(`${APPS_SCRIPT_URL}?accion=obtener_catalogos`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(datos => {
+            const info = datos[area];
+            if (!info || !info.id) { mostrarError(); return; }
 
-    document.getElementById('visor-iframe').src = url;
-    document.getElementById('visor-cargando').style.display = 'none';
-    document.getElementById('visor-frame-wrap').style.display = '';
-    document.getElementById('visor-iframe').addEventListener('error', mostrarError);
+            // Drive sirve PDFs con vista previa embebible nativa
+            // (/preview) — se ve inline en el iframe sin forzar descarga,
+            // igual que antes con el archivo servido desde el propio
+            // sitio. La descarga real usa la URL directa de descarga.
+            const urlVista = `https://drive.google.com/file/d/${info.id}/preview`;
+            const urlDescarga = `https://drive.google.com/uc?export=download&id=${info.id}`;
+
+            const btnDescargar = document.getElementById('btn-descargar-visor');
+            btnDescargar.href = urlDescarga;
+
+            document.getElementById('visor-iframe').src = urlVista;
+            document.getElementById('visor-cargando').style.display = 'none';
+            document.getElementById('visor-frame-wrap').style.display = '';
+            document.getElementById('visor-iframe').addEventListener('error', mostrarError);
+        })
+        .catch(mostrarError);
 
     function mostrarError() {
         document.getElementById('visor-cargando').style.display = 'none';

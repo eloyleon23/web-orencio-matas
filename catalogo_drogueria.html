@@ -291,24 +291,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <script>
     (function() {
-        const PDF  = 'catalogo_drogueria.pdf';
         const AREA_KEY = 'drogueria';
-        const url = './data/catalogos/' + PDF + '?_t=' + Date.now();
+        // Los catálogos ya no dependen de ningún despliegue (ni GitHub
+        // Pages ni IONOS) — se consultan directamente en Drive vía el
+        // mismo Web App de Apps Script que ya usa el buscador. Ver
+        // notas en scripts/apps_script_trigger.js.
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
 
-        // Manifiesto con páginas/productos/fecha - mismo origen, sin
-        // depender de la API de GitHub (evita límites de peticiones y
-        // el problema de "Content-Disposition: attachment" forzado que
-        // llevan los enlaces de Releases).
-        fetch('./data/manifiesto.json?_t=' + Date.now(), { cache: 'no-store' })
+        fetch(`${APPS_SCRIPT_URL}?accion=obtener_catalogos`, { cache: 'no-store' })
             .then(r => r.ok ? r.json() : Promise.reject())
-            .then(m => {
-                const info = m.catalogos && m.catalogos[AREA_KEY];
-                if (!info) { showNoCatalogo(); return; }
+            .then(datos => {
+                const info = datos[AREA_KEY];
+                if (!info || !info.id) { showNoCatalogo(); return; }
+
+                const urlDescarga = `https://drive.google.com/uc?export=download&id=${info.id}`;
 
                 document.getElementById('btn-ver-completo').href = './visor_catalogo.html?area=' + AREA_KEY;
-                const btnDescargar = document.getElementById('btn-descargar');
-                btnDescargar.href = url;
-                btnDescargar.setAttribute('download', PDF);
+                document.getElementById('btn-descargar').href = urlDescarga;
                 document.getElementById('preview-catalogo').style.display = '';
                 if (window.cargarMuestraCatalogo) {
                     cargarMuestraCatalogo({ area: AREA_KEY, contenedorId: 'catalogo-preview-grid' });
@@ -316,8 +315,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                 document.getElementById('info-paginas').textContent   = info.paginas || '—';
                 document.getElementById('info-productos').textContent = info.productos || '—';
-                if (m.generado) {
-                    const fecha = new Date(m.generado);
+                if (info.actualizado) {
+                    const fecha = new Date(info.actualizado);
                     document.getElementById('info-fecha').textContent =
                         fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
                 }
