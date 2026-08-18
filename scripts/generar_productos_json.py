@@ -132,6 +132,13 @@ def exportar_productos_json(productos, familias, subfamilias):
         precio_sin = p.get('precio_sin_iva', '').strip()
         precio_con = p.get('precio_con_iva', '').strip()
 
+        # Productos relacionados / compra conjunta: columna "relacionados"
+        # del Sheet, lista de referencias separadas por comas. Editable
+        # directamente ahí — sin tocar código ni redesplegar nada, a
+        # diferencia del sistema anterior de reglas fijas en JavaScript.
+        relacionados_raw = p.get('relacionados', '').strip()
+        relacionados = [r.strip() for r in relacionados_raw.split(',') if r.strip()] if relacionados_raw else []
+
         exportados.append({
             'ref':       ref,
             'nombre':    p.get('nombre', '').strip(),
@@ -148,6 +155,7 @@ def exportar_productos_json(productos, familias, subfamilias):
             'imagen_validada': p.get('imagen_validada', '').strip(),
             'fecha_actualizacion_imagen': p.get('fecha_actualizacion_imagen', '').strip(),
             'fecha_baja': fecha_baja,
+            'relacionados': relacionados,
         })
 
     payload = {

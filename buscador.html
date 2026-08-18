@@ -5205,14 +5205,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const bloque = $('bloque-complementarios');
         const lista = $('complementarios-lista');
 
-        const esPintura = productoEsPintura(p);
-        const esDrogueriaConRegla = (p.area === 'drogueria' || p.area === 'perfumeria');
-
+        // Prioridad: la columna "relacionados" del Excel (editable
+        // directamente ahí, sin tocar código) — si el producto la tiene
+        // informada, se usa tal cual. Solo si NO la tiene, se recurre a
+        // las reglas fijas antiguas (pinturas/droguería) como respaldo,
+        // mientras se va completando la columna nueva en más productos.
         let sugerencias = [];
-        if (esPintura) {
-            sugerencias = productosComplementarios(p);
-        } else if (esDrogueriaConRegla) {
-            sugerencias = productosComplementariosDrogueria(p);
+        if (Array.isArray(p.relacionados) && p.relacionados.length) {
+            sugerencias = p.relacionados
+                .map(ref => TODOS.find(x => x.ref === ref))
+                .filter(Boolean)
+                .slice(0, 4);
+        }
+
+        if (!sugerencias.length) {
+            const esPintura = productoEsPintura(p);
+            const esDrogueriaConRegla = (p.area === 'drogueria' || p.area === 'perfumeria');
+            if (esPintura) {
+                sugerencias = productosComplementarios(p);
+            } else if (esDrogueriaConRegla) {
+                sugerencias = productosComplementariosDrogueria(p);
+            }
         }
 
         if (!sugerencias.length) {

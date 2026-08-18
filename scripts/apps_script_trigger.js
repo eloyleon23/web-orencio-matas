@@ -2606,6 +2606,14 @@ function regenerarCacheCompletaDesdeSheet_() {
       let imgId = valorCelda_(row, 'imagen_drive_id');
       if (imgId === 'NO_TIENE_FOTO') imgId = '';
 
+      // Productos relacionados / compra conjunta: columna "relacionados"
+      // del Sheet, lista de referencias separadas por comas — editable
+      // directamente ahí, sin tocar código ni redesplegar nada.
+      const relacionadosRaw = valorCelda_(row, 'relacionados');
+      const relacionados = relacionadosRaw
+        ? relacionadosRaw.split(',').map(r => r.trim()).filter(Boolean)
+        : [];
+
       exportados.push({
         ref: ref,
         nombre: valorCelda_(row, 'nombre'),
@@ -2622,6 +2630,7 @@ function regenerarCacheCompletaDesdeSheet_() {
         imagen_validada: valorCelda_(row, 'imagen_validada'),
         fecha_actualizacion_imagen: valorCelda_(row, 'fecha_actualizacion_imagen'),
         fecha_baja: valorCelda_(row, 'fecha_baja'),
+        relacionados: relacionados,
       });
     });
   }
