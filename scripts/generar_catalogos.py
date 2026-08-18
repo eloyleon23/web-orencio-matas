@@ -528,8 +528,8 @@ def grid_productos(productos_area, st, cols=5, img_h=48*mm):
         t.setStyle(TableStyle([
             ('ALIGN',        (0,0),(-1,-1), 'CENTER'),
             ('VALIGN',       (0,0),(-1,-1), 'TOP'),
-            ('TOPPADDING',   (0,0),(-1,-1), 8),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 8),
+            ('TOPPADDING',   (0,0),(-1,-1), 9),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 9),
             ('LEFTPADDING',  (0,0),(-1,-1), 3),
             ('RIGHTPADDING', (0,0),(-1,-1), 3),
             ('LINEBELOW',    (0,0),(-1,-1), 0.4, COLOR_BORDE),
