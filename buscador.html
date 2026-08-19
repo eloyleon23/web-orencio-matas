@@ -2852,6 +2852,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
                 <p id="modal-actualizar-imagen-file-name" style="margin-top: 10px; font-size: 0.9rem; color: var(--muted);"></p>
             </div>
+            
+            <!-- Botón para pegar desde portapapeles (especialmente útil en móvil) -->
+            <button type="button" id="modal-actualizar-imagen-pegar" style="width: 100%; padding: 12px 16px; background: #f0f9ff; color: #0369a1; border: 2px dashed #7dd3fc; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; transition: all 0.2s ease;">
+                <i class="fa-solid fa-paste"></i> Pegar imagen desde portapapeles
+            </button>
+            
             <div id="modal-actualizar-imagen-preview" style="margin-top: 20px; display: none;">
                 <img id="modal-actualizar-imagen-preview-img" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
             </div>
@@ -2938,6 +2944,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <i class="fa-solid fa-cloud-arrow-up"></i>
                 <p><span class="asistente-dropzone-destacado">Arrastra</span> una imagen aquí, <span class="asistente-dropzone-destacado">pégala</span> (Ctrl+V) o haz clic para elegir un archivo</p>
             </div>
+            
+            <!-- Botón para pegar desde portapapeles (especialmente útil en móvil) -->
+            <button type="button" id="asistente-pegar" style="width: 100%; padding: 12px 16px; background: #f0f9ff; color: #0369a1; border: 2px dashed #7dd3fc; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; transition: all 0.2s ease;">
+                <i class="fa-solid fa-paste"></i> Pegar imagen desde portapapeles
+            </button>
+            
             <div class="asistente-preview" id="asistente-preview">
                 <img id="asistente-preview-img" src="" alt="Vista previa">
                 <div class="asistente-preview-info" id="asistente-preview-info"></div>
@@ -5838,6 +5850,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (e.target.files[0]) procesarArchivoActualizarImagen(e.target.files[0]);
     });
 
+    // Botón para pegar desde el portapapeles (Clipboard API moderna)
+    $('modal-actualizar-imagen-pegar').addEventListener('click', async () => {
+        try {
+            // Intentar usar la API moderna de Clipboard
+            const clipboardItems = await navigator.clipboard.read();
+            for (const clipboardItem of clipboardItems) {
+                for (const type of clipboardItem.types) {
+                    if (type.startsWith('image/')) {
+                        const blob = await clipboardItem.getType(type);
+                        procesarArchivoActualizarImagen(blob);
+                        return;
+                    }
+                }
+            }
+            mostrarToast('No hay ninguna imagen en el portapapeles', 'error');
+        } catch (err) {
+            console.error('Error al leer del portapapeles:', err);
+            if (err.name === 'NotAllowedError') {
+                mostrarToast('Permiso denegado. Asegúrate de permitir el acceso al portapapeles.', 'error');
+            } else {
+                mostrarToast('No se pudo pegar desde el portapapeles. Intenta copiar la imagen y pulsa de nuevo.', 'error');
+            }
+        }
+    });
+
     // Arrastrar y soltar, y pegar (Ctrl+V) — mismo mecanismo ya usado en
     // el Asistente de imágenes, para no tener que guardar la foto y
     // luego "elegir archivo" a mano.
@@ -6599,6 +6636,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const file = e.dataTransfer.files[0];
         if (file) procesarArchivoAsistenteImagen(file);
     });
+    
+    // Botón para pegar desde el portapapeles (Clipboard API moderna)
+    $('asistente-pegar').addEventListener('click', async () => {
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            for (const clipboardItem of clipboardItems) {
+                for (const type of clipboardItem.types) {
+                    if (type.startsWith('image/')) {
+                        const blob = await clipboardItem.getType(type);
+                        procesarArchivoAsistenteImagen(blob);
+                        return;
+                    }
+                }
+            }
+            mostrarToast('No hay ninguna imagen en el portapapeles', 'error');
+        } catch (err) {
+            console.error('Error al leer del portapapeles:', err);
+            if (err.name === 'NotAllowedError') {
+                mostrarToast('Permiso denegado. Asegúrate de permitir el acceso al portapapeles.', 'error');
+            } else {
+                mostrarToast('No se pudo pegar desde el portapapeles. Intenta copiar la imagen y pulsa de nuevo.', 'error');
+            }
+        }
+    });
+    
     document.addEventListener('paste', (e) => {
         if (!$('modal-asistente-imagenes-overlay').classList.contains('activo')) return;
         const item = Array.from(e.clipboardData.items || []).find(i => i.type.startsWith('image/'));
