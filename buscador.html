@@ -1325,6 +1325,182 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: #fcd34d;
         }
 
+        /* ── Modal de gestionar productos relacionados ── */
+        .relacionados-subtitulo {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin: 16px 0 8px 0;
+        }
+        .relacionados-seleccionados-wrap { margin-top: 4px; }
+        .relacionados-seleccionados {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .relacionados-vacio {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-style: italic;
+            margin: 4px 0 0 0;
+        }
+        .relacionados-chip {
+            position: relative;
+            width: 84px;
+            text-align: center;
+        }
+        .relacionados-chip img,
+        .relacionados-chip .relacionados-chip-sin-img {
+            width: 84px;
+            height: 84px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #fff;
+        }
+        .relacionados-chip .relacionados-chip-sin-img {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            font-size: 1.4rem;
+        }
+        .relacionados-chip-nombre {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .relacionados-chip-quitar {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #dc2626;
+            color: #fff;
+            border: 2px solid #fff;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+        }
+        .relacionados-chip-quitar:hover { background: #b91c1c; }
+
+        .relacionados-buscar-wrap { margin-top: 8px; }
+        .relacionados-resultados {
+            margin-top: 10px;
+            max-height: 260px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .relacionados-resultado-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+        }
+        .relacionados-resultado-item img,
+        .relacionados-resultado-item .relacionados-resultado-sin-img {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+        .relacionados-resultado-item .relacionados-resultado-sin-img {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            background: #f8fafc;
+            border: 1px dashed var(--border);
+        }
+        .relacionados-resultado-info { flex: 1; min-width: 0; }
+        .relacionados-resultado-nombre {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .relacionados-resultado-ref {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+        .relacionados-resultado-anadir {
+            flex-shrink: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: #1a7a4a;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .relacionados-resultado-anadir:hover { background: #15603a; }
+        .relacionados-resultado-anadir:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+        .relacionados-sin-resultados {
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            padding: 12px;
+        }
+
+        .relacionados-acciones {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .relacionados-btn-cancelar, .relacionados-btn-guardar {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .relacionados-btn-cancelar {
+            background: #f1f5f9;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .relacionados-btn-cancelar:hover { background: #e2e8f0; }
+        .relacionados-btn-guardar {
+            background: #1a7a4a;
+            color: #fff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .relacionados-btn-guardar:hover { background: #15603a; }
+        .relacionados-btn-guardar:disabled {
+            background: #94d3ae;
+            cursor: not-allowed;
+        }
+
         /* Banner de estado cuando el producto está dado de baja */
         .modal-producto-baja-banner {
             display: flex;
@@ -2491,6 +2667,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </button>
                 </div>
 
+                <!-- Gestionar productos relacionados — edita la columna
+                     "relacionados" del Sheet directamente desde el detalle,
+                     sin tener que ir al Excel. Visible siempre (no depende
+                     de ningún flag de fase de desarrollo, a diferencia de
+                     los botones de imagen). -->
+                <button type="button" class="modal-producto-reportar" id="modal-producto-gestionar-relacionados" style="width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-link"></i>
+                    Gestionar productos relacionados
+                </button>
+
                 <!-- Dar de baja / reactivar producto — acción administrativa,
                      al final del todo del detalle. Gestionada por
                      window.MOSTRAR_BOTON_GESTION_BAJA (fase de desarrollo,
@@ -2504,7 +2690,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
-<!-- Modal para actualizar imagen de producto -->
+<!-- Modal para gestionar productos relacionados -->
+<div class="modal-overlay" id="modal-relacionados-overlay">
+    <div class="modal-producto-box" id="modal-relacionados-box" style="max-width: 640px;">
+        <button class="modal-producto-cerrar" id="modal-relacionados-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3><i class="fa-solid fa-link"></i> Productos relacionados</h3>
+        <p id="modal-relacionados-nombre" style="color: var(--muted); margin-top: -8px; margin-bottom: 16px;"></p>
+
+        <div class="relacionados-seleccionados-wrap">
+            <p class="relacionados-subtitulo">Relacionados actuales <span id="relacionados-contador">(0)</span></p>
+            <div id="relacionados-seleccionados" class="relacionados-seleccionados"></div>
+            <p id="relacionados-vacio" class="relacionados-vacio">Ningún producto relacionado todavía — búscalo abajo para añadirlo.</p>
+        </div>
+
+        <div class="relacionados-buscar-wrap">
+            <p class="relacionados-subtitulo">Añadir producto</p>
+            <input type="text" id="relacionados-buscar-input" class="input-texto" placeholder="Buscar por nombre o referencia..." autocomplete="off">
+            <div id="relacionados-resultados" class="relacionados-resultados"></div>
+        </div>
+
+        <div class="relacionados-acciones">
+            <button type="button" id="relacionados-cancelar" class="relacionados-btn-cancelar">Cancelar</button>
+            <button type="button" id="relacionados-guardar" class="relacionados-btn-guardar">
+                <i class="fa-solid fa-check"></i> Actualizar relacionados
+            </button>
+        </div>
+    </div>
+</div>
 <div class="modal-overlay" id="modal-actualizar-imagen-overlay">
     <div class="modal-producto-box" id="modal-actualizar-imagen-box">
         <button class="modal-producto-cerrar" id="modal-actualizar-imagen-cerrar">
@@ -4601,6 +4815,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('modal-producto-validar-imagen').style.display = 'none';
         }
 
+        // Botón de gestionar productos relacionados — siempre visible, no
+        // depende de ningún flag de fase de desarrollo.
+        $('modal-producto-gestionar-relacionados').onclick = () => abrirModalGestionarRelacionados(p);
+
         // Botón de dar de baja / reactivar — cambia de texto, icono y color
         // según el estado actual del producto (ver estaDeBaja más arriba).
         const btnBajaReactivar = $('modal-producto-baja-reactivar');
@@ -5678,6 +5896,197 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             btnValidar.innerHTML = estadoOriginal;
         });
     }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Gestionar productos relacionados desde el detalle — edita la
+    // columna "relacionados" del Sheet sin tener que ir al Excel. Mismo
+    // criterio de búsqueda que el buscador principal (texto/referencia,
+    // fuzzy — reutiliza coincide()/coincideReferencia()/
+    // esBusquedaNumerica() tal cual), resultados limitados, y actualiza
+    // la caché de Drive al instante con el mismo mecanismo que una
+    // actualización de imagen (actualizarProductoEnCache_ en Apps Script
+    // — ver acción 'actualizar_relacionados').
+    // ══════════════════════════════════════════════════════════════════
+    let productoRelacionadosActual = null; // producto cuyo detalle está abierto
+    let relacionadosSeleccion = [];        // refs en edición dentro del modal, hasta pulsar "Actualizar"
+    const LIMITE_RESULTADOS_RELACIONADOS = 12;
+
+    function abrirModalGestionarRelacionados(p) {
+        productoRelacionadosActual = p;
+        relacionadosSeleccion = Array.isArray(p.relacionados) ? [...p.relacionados] : [];
+
+        $('modal-relacionados-nombre').textContent = p.nombre;
+        $('relacionados-buscar-input').value = '';
+        $('relacionados-resultados').innerHTML = '';
+
+        renderRelacionadosSeleccionados();
+        $('modal-relacionados-overlay').classList.add('activo');
+        setTimeout(() => $('relacionados-buscar-input').focus(), 50);
+    }
+
+    function cerrarModalGestionarRelacionados() {
+        $('modal-relacionados-overlay').classList.remove('activo');
+        productoRelacionadosActual = null;
+        relacionadosSeleccion = [];
+    }
+
+    function renderRelacionadosSeleccionados() {
+        const cont = $('relacionados-seleccionados');
+        const vacio = $('relacionados-vacio');
+        $('relacionados-contador').textContent = `(${relacionadosSeleccion.length})`;
+
+        if (!relacionadosSeleccion.length) {
+            cont.innerHTML = '';
+            vacio.style.display = '';
+            return;
+        }
+        vacio.style.display = 'none';
+        cont.innerHTML = '';
+
+        relacionadosSeleccion.forEach(ref => {
+            const prod = TODOS.find(x => x.ref === ref);
+            const nombre = prod ? prod.nombre : ref; // por si la referencia ya no existe en el catálogo actual
+            const urlImg = prod ? urlImagenProducto(prod, 100) : null;
+
+            const chip = document.createElement('div');
+            chip.className = 'relacionados-chip';
+            chip.innerHTML = `
+                ${urlImg
+                    ? `<img src="${urlImg}" alt="${nombre}" loading="lazy">`
+                    : `<div class="relacionados-chip-sin-img"><i class="fa-solid fa-image"></i></div>`}
+                <div class="relacionados-chip-nombre">${nombre}</div>
+                <button type="button" class="relacionados-chip-quitar" title="Quitar de relacionados">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+            chip.querySelector('.relacionados-chip-quitar').onclick = () => {
+                relacionadosSeleccion = relacionadosSeleccion.filter(r => r !== ref);
+                renderRelacionadosSeleccionados();
+                // Refrescar resultados de búsqueda por si el que se acaba de
+                // quitar debería volver a aparecer como candidato para añadir.
+                buscarProductosRelacionados($('relacionados-buscar-input').value);
+            };
+            cont.appendChild(chip);
+        });
+    }
+
+    let timeoutBusquedaRelacionados = null;
+    function buscarProductosRelacionados(texto) {
+        const cont = $('relacionados-resultados');
+        texto = (texto || '').trim();
+        if (!texto) { cont.innerHTML = ''; return; }
+        if (!productoRelacionadosActual) return;
+
+        // Nunca sugerir el propio producto, ni los ya añadidos, ni productos dados de baja.
+        const excluir = new Set([productoRelacionadosActual.ref, ...relacionadosSeleccion]);
+        const activo = p => !(p.fecha_baja && p.fecha_baja.toString().trim());
+
+        let candidatos;
+        if (esBusquedaNumerica(texto)) {
+            // Mismo criterio que el buscador principal: texto predominantemente
+            // numérico -> referencia exacta, sin fuzzy, para que cada dígito
+            // introducido afine la búsqueda al instante.
+            candidatos = TODOS.filter(p => !excluir.has(p.ref) && activo(p) &&
+                (coincideReferencia(p.ref, texto) || coincide(p.nombre, texto)));
+        } else {
+            candidatos = TODOS.filter(p => !excluir.has(p.ref) && activo(p) && coincide(p.nombre, texto));
+        }
+
+        const resultados = candidatos.slice(0, LIMITE_RESULTADOS_RELACIONADOS);
+
+        if (!resultados.length) {
+            cont.innerHTML = '<p class="relacionados-sin-resultados">Sin resultados</p>';
+            return;
+        }
+
+        cont.innerHTML = '';
+        resultados.forEach(p => {
+            const urlImg = urlImagenProducto(p, 80);
+            const item = document.createElement('div');
+            item.className = 'relacionados-resultado-item';
+            item.innerHTML = `
+                ${urlImg
+                    ? `<img src="${urlImg}" alt="${p.nombre}" loading="lazy">`
+                    : `<div class="relacionados-resultado-sin-img"><i class="fa-solid fa-image"></i></div>`}
+                <div class="relacionados-resultado-info">
+                    <div class="relacionados-resultado-nombre">${p.nombre}</div>
+                    <div class="relacionados-resultado-ref">Ref: ${p.ref}</div>
+                </div>
+                <button type="button" class="relacionados-resultado-anadir" title="Añadir a relacionados">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            `;
+            item.querySelector('.relacionados-resultado-anadir').onclick = () => {
+                relacionadosSeleccion.push(p.ref);
+                renderRelacionadosSeleccionados();
+                buscarProductosRelacionados($('relacionados-buscar-input').value); // refrescar, ya excluido el recién añadido
+            };
+            cont.appendChild(item);
+        });
+    }
+
+    function ejecutarActualizarRelacionados() {
+        const p = productoRelacionadosActual;
+        if (!p) return;
+
+        const btn = $('relacionados-guardar');
+        const estadoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Actualizando...';
+
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = estadoOriginal;
+            return;
+        }
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que en el resto de acciones nuevas
+            body: JSON.stringify({
+                accion: 'actualizar_relacionados',
+                referencia: p.ref,
+                relacionados: relacionadosSeleccion,
+            }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+
+            // Reflejar el cambio al instante en la propia sesión, sin
+            // esperar a la siguiente carga de productos.json — mismo
+            // criterio que el resto de acciones instantáneas del detalle.
+            p.relacionados = [...relacionadosSeleccion];
+            configurarComplementarios(p);
+            resincronizarVersionConocida(); // evita que el banner salte por este mismo cambio
+
+            mostrarToast('✓ Productos relacionados actualizados correctamente.');
+            cerrarModalGestionarRelacionados();
+        })
+        .catch(err => {
+            console.error('Error al actualizar relacionados:', err);
+            mostrarToast('Error al actualizar los relacionados. Verifica la conexión y los logs.', 'error');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = estadoOriginal;
+        });
+    }
+
+    // Event listeners de la modal de relacionados
+    $('modal-relacionados-cerrar').addEventListener('click', cerrarModalGestionarRelacionados);
+    $('modal-relacionados-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-relacionados-overlay') cerrarModalGestionarRelacionados();
+    });
+    $('relacionados-cancelar').addEventListener('click', cerrarModalGestionarRelacionados);
+    $('relacionados-guardar').addEventListener('click', ejecutarActualizarRelacionados);
+    $('relacionados-buscar-input').addEventListener('input', (e) => {
+        clearTimeout(timeoutBusquedaRelacionados);
+        const valor = e.target.value;
+        timeoutBusquedaRelacionados = setTimeout(() => buscarProductosRelacionados(valor), 200);
+    });
 
     // ══════════════════════════════════════════════════════════════════
     // Asistente de imágenes: cola de productos sin imagen/sin validar,

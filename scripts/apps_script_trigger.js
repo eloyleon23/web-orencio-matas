@@ -3224,6 +3224,11 @@ function doPost(e) {
       return procesarValidarImagen(data);
     }
 
+    if (accion === 'actualizar_relacionados') {
+      console.log('Acción: actualizar_relacionados');
+      return procesarActualizarRelacionados(data);
+    }
+
     if (accion === 'dar_baja_producto') {
       console.log('Acción: dar_baja_producto');
       return procesarDarBajaProducto(data);
@@ -3500,6 +3505,78 @@ function procesarValidarImagen(data) {
 
   } catch (err) {
     console.error('Error al procesar validación de imagen:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Procesar actualización de productos relacionados ───────────────────────
+// Escribe la lista de referencias relacionadas (separadas por comas) en la
+// columna "relacionados" del Sheet, y actualiza la caché de Drive al
+// instante — exactamente el mismo mecanismo que una actualización o
+// validación de imagen (actualizarProductoEnCache_), a petición expresa
+// del usuario: "debe tener el mismo comportamiento que si se actualizase
+// la imagen de un producto".
+function procesarActualizarRelacionados(data) {
+  try {
+    console.log('procesarActualizarRelacionados iniciado');
+    console.log('data:', data);
+
+    const referencia = (data.referencia || '').toString().trim();
+    const relacionados = Array.isArray(data.relacionados) ? data.relacionados : [];
+
+    if (!referencia) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta la referencia del producto' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    if (PROD['relacionados'] === undefined) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: 'No existe la columna "relacionados" en Productos — añádela primero.',
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    const valorRelacionados = relacionados.join(',');
+    sheetProd.getRange(prodRowNum, PROD['relacionados'] + 1).setValue(valorRelacionados);
+    console.log('relacionados actualizado:', valorRelacionados);
+
+    // Vista rápida: parchear productos.json al instante — mismo mecanismo
+    // que actualizar/validar imagen.
+    actualizarProductoEnCache_(referencia, { relacionados: relacionados });
+
+    console.log('procesarActualizarRelacionados completado exitosamente');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Relacionados actualizados correctamente' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al procesar actualización de relacionados:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
