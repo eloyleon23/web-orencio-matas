@@ -32,6 +32,7 @@ function onOpen() {
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('📧 Enviarme Excel de productos sin imagen', 'enviarExcelProductosSinImagenManual')
     .addItem('🔄 Regenerar caché completa del buscador', 'regenerarCacheCompletaManual')
+    .addItem('🔗 Importar sugerencias de relacionados', 'importarSugerenciasRelacionados')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addItem('✅ Validar imagen de producto', 'validarImagenManual')
     .addSeparator()
@@ -2657,6 +2658,97 @@ function regenerarCacheCompletaManual() {
   } catch (err) {
     ui.alert('Error', 'No se pudo regenerar la caché: ' + err.message, ui.ButtonSet.OK);
   }
+}
+
+// ── Importar sugerencias de relacionados_tool en una columna nueva ────────
+// Vuelca las sugerencias generadas por
+// relacionados_tool/generar_sugerencias_relacionados.py en una columna
+// "relacionados_sugeridos" de Productos, emparejando por referencia —
+// sin necesidad de mantener fórmulas VLOOKUP a mano.
+//
+// IMPORTANTE: "relacionados_sugeridos" es SOLO para revisar — nunca se
+// lee al generar productos.json (ni por regenerarCacheCompletaDesdeSheet_
+// ni por el script de Python). Lo que de verdad se exporta y se muestra
+// en el buscador sigue siendo la columna "relacionados" — cópiale ahí
+// (como valor, no fórmula) solo lo que apruebes.
+//
+// Pasos previos, una vez por cada tanda de sugerencias:
+//  1. Ejecutar relacionados_tool/generar_sugerencias_relacionados.py
+//  2. Pegar el Excel resultante en una pestaña NUEVA llamada exactamente
+//     "Sugerencias_Temp" (con sus cabeceras: referencia,
+//     relacionados_sugeridos, relacionados_nombres, regla)
+//  3. Menú → "🔗 Importar sugerencias de relacionados"
+function importarSugerenciasRelacionados() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const hojaTemp = ss.getSheetByName('Sugerencias_Temp');
+  if (!hojaTemp) {
+    ui.alert('No encontrada', 'No existe la pestaña "Sugerencias_Temp". Pega ahí el contenido del Excel generado por relacionados_tool/generar_sugerencias_relacionados.py (Insertar → Hoja, nómbrala exactamente "Sugerencias_Temp", y pega los datos incluyendo la fila de cabeceras).', ui.ButtonSet.OK);
+    return;
+  }
+
+  const sheetProd = ss.getSheetByName('Productos');
+  if (!sheetProd) {
+    ui.alert('Error', 'No existe la hoja "Productos".', ui.ButtonSet.OK);
+    return;
+  }
+
+  const datosTemp = hojaTemp.getDataRange().getValues();
+  if (datosTemp.length < 2) {
+    ui.alert('Sin datos', 'La pestaña "Sugerencias_Temp" está vacía.', ui.ButtonSet.OK);
+    return;
+  }
+  const headersTemp = datosTemp[0].map(h => h.toString().trim().toLowerCase());
+  const colRefTemp = headersTemp.indexOf('referencia');
+  const colSugTemp = headersTemp.indexOf('relacionados_sugeridos');
+  if (colRefTemp === -1 || colSugTemp === -1) {
+    ui.alert('Error', 'La pestaña "Sugerencias_Temp" debe tener columnas "referencia" y "relacionados_sugeridos" en la primera fila.', ui.ButtonSet.OK);
+    return;
+  }
+
+  const mapaSugerencias = {};
+  for (let i = 1; i < datosTemp.length; i++) {
+    const ref = (datosTemp[i][colRefTemp] || '').toString().trim();
+    const sug = (datosTemp[i][colSugTemp] || '').toString().trim();
+    if (ref && sug) mapaSugerencias[ref] = sug;
+  }
+
+  const headersProd = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase());
+  const colRef = headersProd.indexOf('referencia');
+  if (colRef === -1) {
+    ui.alert('Error', 'No se encuentra la columna "referencia" en Productos.', ui.ButtonSet.OK);
+    return;
+  }
+
+  // Localizar la columna "relacionados_sugeridos" en Productos, o
+  // crearla al final si es la primera vez que se usa esto.
+  let colDestino0 = headersProd.indexOf('relacionados_sugeridos');
+  if (colDestino0 === -1) {
+    colDestino0 = sheetProd.getLastColumn(); // nueva columna, 0-based tras la última existente
+    sheetProd.getRange(1, colDestino0 + 1).setValue('relacionados_sugeridos');
+  }
+  const colDestino = colDestino0 + 1; // a 1-based para getRange
+
+  const lastRow = sheetProd.getLastRow();
+  const referencias = sheetProd.getRange(2, colRef + 1, lastRow - 1, 1).getValues();
+  const salida = referencias.map(row => {
+    const ref = (row[0] || '').toString().trim();
+    return [mapaSugerencias[ref] || ''];
+  });
+
+  sheetProd.getRange(2, colDestino, salida.length, 1).setValues(salida);
+
+  const totalAplicadas = salida.filter(r => r[0]).length;
+  ui.alert(
+    'Importado',
+    `${totalAplicadas} sugerencias volcadas en la columna "relacionados_sugeridos" de Productos.\n\n` +
+    `Revísalas comparándolas con la columna "relacionados" de cada fila. Para lo que apruebes, copia el valor ` +
+    `(como valor, no fórmula) a la columna "relacionados" — es la única que se usa al generar productos.json.\n\n` +
+    `Cuando termines, puedes borrar la pestaña "Sugerencias_Temp" y la columna "relacionados_sugeridos" — ya no hacen falta.`,
+    ui.ButtonSet.OK
+  );
 }
 
 // Ejecutar UNA VEZ desde el editor para crear el disparador programado

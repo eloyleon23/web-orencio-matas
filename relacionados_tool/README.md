@@ -38,19 +38,32 @@ Claude en una sesión de chat (tiene acceso al repositorio).
 
 ## Revisar y aplicar
 
-1. Abre el Excel generado. Cada fila es una sugerencia: `referencia`
-   del producto, `relacionados_sugeridos` (las referencias propuestas,
-   ya en el formato listo para pegar) y `relacionados_nombres` (los
-   nombres, para poder juzgar si tiene sentido sin tener que buscar
-   cada referencia a mano).
-2. Marca `SI` en la columna `aprobado` para las filas que te parezcan
-   bien tal cual (puedes editar `relacionados_sugeridos` primero si
-   quieres cambiar algo antes de aprobar).
-3. Para las filas aprobadas, copia `referencia` + `relacionados_sugeridos`
-   y pégalas en la columna `relacionados` de la hoja Productos del
-   Sheet (buscando cada referencia, o con una fórmula BUSCARV si
-   prefieres automatizarlo).
-4. Regenera la caché del buscador (menú "🔄 Regenerar caché completa
+Las sugerencias viven directamente en la hoja Productos, como una
+columna más — nada de mantener un archivo aparte ni cruzar referencias
+a mano.
+
+1. Abre el Excel generado. Cada fila trae `referencia`,
+   `relacionados_sugeridos` (ya en el formato listo para copiar) y
+   `relacionados_nombres` (los nombres, para poder juzgar sin tener que
+   buscar cada referencia a mano).
+2. Pega el contenido completo (con cabeceras) en una pestaña **nueva**
+   del Sheet, llamada exactamente **`Sugerencias_Temp`**.
+3. Menú **"📦 Catálogos Orencio Matas" → "🔗 Importar sugerencias de
+   relacionados"** — crea (la primera vez) o reutiliza una columna
+   `relacionados_sugeridos` en Productos, y la rellena emparejando por
+   referencia automáticamente.
+4. Revisa fila a fila en la propia hoja Productos: la columna nueva
+   queda justo al lado de todo el resto de contexto del producto,
+   comparable directamente con la columna `relacionados` ya existente
+   en la misma fila.
+5. Para lo que apruebes, copia el valor de `relacionados_sugeridos`
+   (como **valor**, no fórmula) a la columna `relacionados` — es la
+   única que se lee al generar productos.json; `relacionados_sugeridos`
+   se ignora siempre, se puede dejar o borrar sin ningún efecto.
+6. Cuando termines, borra la columna `relacionados_sugeridos` y la
+   pestaña `Sugerencias_Temp` si quieres dejarlo limpio — no hacen
+   falta para nada más.
+7. Regenera la caché del buscador (menú "🔄 Regenerar caché completa
    del buscador", o espera al disparador programado) para que se vea
    reflejado.
 

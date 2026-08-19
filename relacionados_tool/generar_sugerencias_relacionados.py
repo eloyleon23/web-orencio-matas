@@ -489,12 +489,20 @@ def generar_sugerencias(productos):
 
 
 def exportar_excel(filas, ruta_salida):
+    """Formato pensado para pegar directamente como pestaña temporal en el
+    propio Google Sheet y traer los valores a una columna nueva
+    "relacionados_sugeridos" en Productos vía VLOOKUP — sin mantener un
+    archivo aparte ni tener que cruzar referencias a mano. Columnas
+    mínimas: referencia (para el VLOOKUP), relacionados_sugeridos (listo
+    para copiar tal cual a la columna "relacionados" una vez aprobado), y
+    relacionados_nombres (para poder juzgar la sugerencia sin salir del
+    Sheet — el resto de contexto del producto, como área o familia, ya
+    está ahí mismo en su propia fila)."""
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Sugerencias'
 
-    cabeceras = ['referencia', 'nombre', 'area', 'familia', 'subfamilia',
-                 'regla', 'relacionados_sugeridos', 'relacionados_nombres', 'aprobado (SI/NO)']
+    cabeceras = ['referencia', 'relacionados_sugeridos', 'relacionados_nombres', 'regla']
     ws.append(cabeceras)
     for cell in ws[1]:
         cell.font = Font(bold=True, color='FFFFFF')
@@ -503,11 +511,10 @@ def exportar_excel(filas, ruta_salida):
 
     for fila in filas:
         ws.append([
-            fila['referencia'], fila['nombre'], fila['area'], fila['familia'], fila['subfamilia'],
-            fila['regla'], fila['relacionados_sugeridos'], fila['relacionados_nombres'], '',
+            fila['referencia'], fila['relacionados_sugeridos'], fila['relacionados_nombres'], fila['regla'],
         ])
 
-    anchos = [16, 42, 12, 22, 26, 26, 26, 46, 14]
+    anchos = [16, 26, 46, 26]
     for i, ancho in enumerate(anchos, start=1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = ancho
 
@@ -535,10 +542,28 @@ def main():
         print(f'  {nombre_regla}: {n}')
 
     exportar_excel(filas, args.salida)
-    print(f'\n✓ Excel de revisión generado: {args.salida}')
-    print('  Revisa la columna "relacionados_nombres", marca "aprobado" donde corresponda,')
-    print('  y pega "referencia" + "relacionados_sugeridos" (para las filas aprobadas) en la')
-    print('  columna "relacionados" de la hoja Productos del Sheet.')
+    print(f'\n✓ Excel generado: {args.salida}')
+    print('''
+  Cómo traer esto a una columna nueva en el propio Sheet (sin mantener
+  ningún archivo aparte):
+
+  1. Pega el contenido de este Excel en una pestaña NUEVA y TEMPORAL del
+     Sheet, llamada exactamente "Sugerencias_Temp" (Insertar → Hoja),
+     incluyendo la fila de cabeceras.
+  2. Menú "📦 Catálogos Orencio Matas" → "🔗 Importar sugerencias de
+     relacionados" — esto crea (o reutiliza) una columna
+     "relacionados_sugeridos" en Productos y la rellena emparejando por
+     referencia, automáticamente.
+  3. Revisa fila a fila: la columna nueva queda justo en Productos,
+     comparable directamente con la columna "relacionados" ya existente
+     en la misma fila.
+  4. Para lo que apruebes, copia el valor de "relacionados_sugeridos"
+     (como VALOR, no fórmula) a la columna "relacionados" — es la única
+     que se lee al generar productos.json, "relacionados_sugeridos" se
+     ignora siempre.
+  5. Cuando termines, puedes borrar la columna "relacionados_sugeridos"
+     y la pestaña "Sugerencias_Temp" — ya no hacen falta.
+''')
 
 
 if __name__ == '__main__':
