@@ -371,11 +371,80 @@ def reglas_pinturas(por_area, por_area_subfamilia):
     ]
 
 
+# ══════════════════════════════════════════════════════════════════════
+# REGLAS — TALLERES (solo los ~3.073 productos de esta área que SÍ vienen
+# del Sheet — editables como cualquier otro, con familia bien informada
+# aunque sin subfamilia). Los ~825+ productos de los catálogos estáticos
+# de proveedor (Zaphiro/Besa/Glasurit/Baslac) quedan fuera: no tienen
+# columna del Excel que los respalde, son de un pipeline completamente
+# distinto (extracción de PDF).
+#
+# Deliberadamente conservadoras: emparejamientos de seguridad/herramienta
+# genéricos (mascarilla/guantes para lijar o pintar, espátula para
+# masilla) — se evita a propósito cualquier cruce entre familias
+# específicas de sistema de pintura de marca (R-M, URKI-MIX, CAR,
+# BASLAC...), donde sugerir mal podría significar mezclar productos de
+# sistemas químicos incompatibles entre sí — algo que no se puede juzgar
+# solo por el nombre del producto sin conocimiento experto real.
+# ══════════════════════════════════════════════════════════════════════
+
+def reglas_talleres(por_area, por_area_subfamilia):
+    cat = por_area['talleres']
+    FAMILIAS_PROTECCION = ('PROTECCION PERSONAS', 'PROTECCION PERSONAL')
+
+    def r_lijado(p):
+        return p.get('familia', '') in ('ABRASIVOS', 'ABRASIVOS DE LIJADO')
+
+    def buscar_lijado(p):
+        return [
+            next((x for x in cat if x.get('familia') in FAMILIAS_PROTECCION and 'MASCARILLA' in sin_acentos_mayus(x.get('nombre',''))), None),
+            next((x for x in cat if x.get('familia') in FAMILIAS_PROTECCION and 'GUANTE' in sin_acentos_mayus(x.get('nombre',''))), None),
+        ]
+
+    def r_masilla(p):
+        return p.get('familia', '') == 'MASILLAS'
+
+    def buscar_masilla(p):
+        return [
+            next((x for x in cat if x.get('familia') in ('UTILES PINTURA', 'UTILES DE PINTURA') and 'ESPATULA' in sin_acentos_mayus(x.get('nombre',''))), None),
+            # "empieza por DISCO" en vez de solo "contiene DISCO" — así se
+            # coge el disco de lijar en sí, no accesorios relacionados
+            # como almohadillas o adaptadores ("...PARA DISCOS...").
+            next((x for x in cat if x.get('familia') in ('ABRASIVOS', 'ABRASIVOS DE LIJADO')
+                  and sin_acentos_mayus(x.get('nombre','')).lstrip('.').startswith('DISCO')), None),
+        ]
+
+    def r_enmascarado(p):
+        return p.get('familia', '') in ('PRODUCTOS DE ENMASCARADO', 'SISTEMAS DE ENMASCARAR')
+
+    def buscar_enmascarado(p):
+        return [
+            next((x for x in cat if x.get('familia') in FAMILIAS_PROTECCION and 'MASCARILLA' in sin_acentos_mayus(x.get('nombre',''))), None),
+        ]
+
+    def r_spray(p):
+        return p.get('familia', '') in ('SPRAYS', 'AEROSOLES')
+
+    def buscar_spray(p):
+        return [
+            next((x for x in cat if x.get('familia') in FAMILIAS_PROTECCION and 'MASCARILLA' in sin_acentos_mayus(x.get('nombre',''))), None),
+            next((x for x in cat if x.get('familia') in FAMILIAS_PROTECCION and 'GUANTE' in sin_acentos_mayus(x.get('nombre',''))), None),
+        ]
+
+    return [
+        Regla('talleres_lijado', 'talleres', r_lijado, buscar_lijado),
+        Regla('talleres_masilla', 'talleres', r_masilla, buscar_masilla),
+        Regla('talleres_enmascarado', 'talleres', r_enmascarado, buscar_enmascarado),
+        Regla('talleres_spray', 'talleres', r_spray, buscar_spray),
+    ]
+
+
 def generar_sugerencias(productos):
     por_area, por_area_subfamilia = construir_indices(productos)
     todas_las_reglas = reglas_drogueria(por_area, por_area_subfamilia) \
         + reglas_perfumeria(por_area, por_area_subfamilia) \
-        + reglas_pinturas(por_area, por_area_subfamilia)
+        + reglas_pinturas(por_area, por_area_subfamilia) \
+        + reglas_talleres(por_area, por_area_subfamilia)
 
     reglas_por_area = defaultdict(list)
     for r in todas_las_reglas:

@@ -54,7 +54,7 @@ Claude en una sesión de chat (tiene acceso al repositorio).
    del buscador", o espera al disparador programado) para que se vea
    reflejado.
 
-## Qué áreas cubre esta primera versión
+## Qué áreas cubre esta versión
 
 - **Droguería**: 12 reglas (lavavajillas, fregasuelos, limpiacristales,
   detergente de ropa, lejía/desinfectante, multiusos/desengrasante,
@@ -64,10 +64,19 @@ Claude en una sesión de chat (tiene acceso al repositorio).
 - **Pinturas**: 1 regla (base de pintura → disolvente + cinta de
   enmascarar + papel protector, simplificación de la lógica que ya
   había en el buscador).
-- **Talleres**: sin cubrir todavía — apenas tiene subfamilias
-  informadas en el Sheet (casi todo cae en "General"), necesitaría un
-  enfoque distinto basado más en el nombre/familia. Pendiente de
-  abordar aparte.
+- **Talleres**: 4 reglas, solo sobre los ~3.073 productos de esta área
+  que SÍ vienen del Sheet (editables como cualquier otro, con familia
+  bien informada aunque sin subfamilia) — lijado→mascarilla+guantes,
+  masilla→espátula+disco de lijar, enmascarado→mascarilla,
+  spray/aerosol→mascarilla+guantes. Deliberadamente conservadoras:
+  se evita a propósito cualquier cruce entre familias específicas de
+  sistema de pintura de marca (R-M, URKI-MIX, CAR, BASLAC...), donde
+  sugerir mal podría significar mezclar productos de sistemas químicos
+  incompatibles — algo que no se puede juzgar solo por el nombre del
+  producto sin conocimiento experto real. Los ~825+ productos de los
+  catálogos estáticos de proveedor (Zaphiro/Besa/Glasurit/Baslac)
+  quedan fuera: no tienen columna del Excel que los respalde, vienen de
+  un pipeline completamente distinto (extracción de PDF).
 
 ## Añadir más reglas
 
