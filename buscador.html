@@ -1332,8 +1332,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             color: var(--muted);
             text-transform: uppercase;
             letter-spacing: 0.03em;
-            margin: 20px 0 10px 0;
-            padding-bottom: 6px;
+            margin: 24px 0 12px 0;
+            padding-bottom: 8px;
             border-bottom: 2px solid #e5e7eb;
         }
         .relacionados-seleccionados-wrap { margin-top: 8px; }
@@ -1381,8 +1381,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
         .relacionados-chip:hover img,
         .relacionados-chip:hover .relacionados-chip-sin-img {
-            border-color: #d91b1b;
-            box-shadow: 0 4px 12px rgba(217, 27, 27, 0.15);
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
         }
         .relacionados-chip .relacionados-chip-sin-img {
             display: flex;
@@ -1441,8 +1441,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             transition: all 0.2s ease;
         }
         .relacionados-buscar-input-wrap .input-texto:focus {
-            border-color: #d91b1b;
-            box-shadow: 0 0 0 3px rgba(217, 27, 27, 0.1);
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
         .relacionados-buscar-input-wrap .input-texto.error {
             border-color: #dc2626;
@@ -1489,8 +1489,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             cursor: pointer;
         }
         .relacionados-resultado-item:hover {
-            border-color: #d91b1b;
-            background: #fef2f2;
+            border-color: #2563eb;
+            background: #eff6ff;
             transform: translateX(4px);
         }
         .relacionados-resultado-item img,
@@ -1531,7 +1531,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             height: 36px;
             border-radius: 50%;
             border: none;
-            background: #d91b1b;
+            background: #2563eb;
             color: #fff;
             cursor: pointer;
             display: flex;
@@ -1539,10 +1539,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             justify-content: center;
             font-size: 1rem;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(217, 27, 27, 0.25);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
         }
         .relacionados-resultado-anadir:hover {
-            background: #b91c1c;
+            background: #1d4ed8;
             transform: scale(1.1);
         }
         .relacionados-resultado-anadir:disabled {
@@ -1584,22 +1584,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             border-color: #cbd5e1;
         }
         .relacionados-btn-guardar {
-            background: #d91b1b;
+            background: #2563eb;
             color: #fff;
             border: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            box-shadow: 0 4px 12px rgba(217, 27, 27, 0.25);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
         }
         .relacionados-btn-guardar:hover {
-            background: #b91c1c;
+            background: #1d4ed8;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(217, 27, 27, 0.35);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
         }
         .relacionados-btn-guardar:disabled {
-            background: #fca5a5;
+            background: #93c5fd;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -2796,7 +2796,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <!-- Modal para gestionar productos relacionados -->
 <div class="modal-overlay" id="modal-relacionados-overlay">
-    <div class="modal-producto-box" id="modal-relacionados-box" style="max-width: 640px;">
+    <div class="modal-producto-box" id="modal-relacionados-box" style="max-width: 640px; padding: 32px;">
         <button class="modal-producto-cerrar" id="modal-relacionados-cerrar">
             <i class="fa-solid fa-xmark"></i>
         </button>
@@ -6150,8 +6150,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 });
                 
                 // Marcar como seleccionado
-                item.style.borderColor = '#d91b1b';
-                item.style.background = '#fef2f2';
+                item.style.borderColor = '#2563eb';
+                item.style.background = '#eff6ff';
                 resultadoSeleccionadoBusqueda = p;
                 btnValidar.disabled = false;
             };

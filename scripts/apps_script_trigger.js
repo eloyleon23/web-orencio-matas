@@ -3563,7 +3563,7 @@ function procesarActualizarRelacionados(data) {
     }
 
     const prodRowNum = prodRowIdx + 1;
-    const valorRelacionados = relacionados.join(',');
+    const valorRelacionados = relacionados.join(', ');
     sheetProd.getRange(prodRowNum, PROD['relacionados'] + 1).setValue(valorRelacionados);
     console.log('relacionados actualizado:', valorRelacionados);
 
