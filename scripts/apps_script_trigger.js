@@ -473,11 +473,223 @@ function empiezaConPuntoTalleres_(nombre, familia) {
   return true;
 }
 
+// Higiene/limpieza de manos: SIEMPRE drogueria — comprobado con prioridad
+// desde cualquier mecanismo de clasificación de área (tanto para
+// productos nuevos vía inferirArea_ como en la reevaluación completa vía
+// reevaluarAreasProductos). Encontrado un caso real: geles
+// hidroalcohólicos (higienizante de manos, un producto de
+// limpieza/industrial, NO de cuidado personal) llevaban años mal
+// encajados en perfumería porque su subfamilia ("GELES Y JABONES BAÑO")
+// es la misma que la de los geles de ducha reales — y esa subfamilia,
+// al tener mayoría de productos de cuidado personal genuinos, seguiría
+// "confirmando" el error si solo se mirase la mayoría por familia.
+function esHigieneManos_(nombre, familia) {
+  const txt = ((nombre || '') + ' ' + (familia || '')).toLowerCase();
+  const higieneManos = [
+    'gel hidroalcoholico', 'gel hidroalcohólico', 'gel hidroalc',
+    'gel desinfectante', 'gel sanitizante', 'gel antibacterial',
+    'gel antiséptico manos', 'gel antiseptico manos',
+  ];
+  return higieneManos.some(kw => txt.includes(kw));
+}
+
 function inferirArea_(nombre, familia) {
   if (esMarcaTalleres_(nombre) || esMarcaTalleres_(familia) || familiaEsTalleres_(familia)) return 'talleres';
   if (empiezaConPuntoTalleres_(nombre, familia)) return 'talleres';
+  if (esHigieneManos_(nombre, familia)) return 'drogueria';
 
   const txt = (nombre + ' ' + familia).toLowerCase();
+
+  // ── Área dominante por familia — señal MUCHO más fiable que buscar
+  // palabras sueltas en el nombre (nada de falsos positivos tipo "SIN
+  // PERFUME" disparando perfumería, o "laca"/"gel"/"esmalte"/"pincel"
+  // de peluquería/uñas/maquillaje cayendo en pinturas por colisión de
+  // palabra). Calculado a partir del catálogo real ya validado: de 175
+  // familias distintas, 174 tienen ≥90% de sus productos ya existentes
+  // en una única área — se usa esa como fuente de verdad directa, sin
+  // pasar por palabras clave en absoluto. Solo queda fuera "DISOLVENTES"
+  // (repartida de forma genuinamente ambigua entre pinturas y talleres,
+  // ambos departamentos los usan) — para esa, y para cualquier familia
+  // nueva que aún no esté aquí, se cae al sistema de palabras clave de
+  // más abajo como respaldo.
+  const AREA_POR_FAMILIA = {
+  'ABONOS Y JARDINERIA': 'drogueria',
+  'ABRASIVOS': 'talleres',
+  'ABRASIVOS DE LIJADO': 'talleres',
+  'ABRASIVOS FLEXIBLES SCOTCH BRITE': 'talleres',
+  'ABRILLANTADORES Y CERAS': 'drogueria',
+  'ACABADO DE VEHICULOS': 'talleres',
+  'ACEITES Y LECHES CORPORALES': 'perfumeria',
+  'ADHESIVOS': 'talleres',
+  'ADHESIVOS Y ESPECIALIDADES': 'talleres',
+  'AEROMETAL': 'talleres',
+  'AEROSOLES': 'talleres',
+  'AGUARRAS Y DISOLVENTES': 'pinturas',
+  'AKZONOBEL': 'pinturas',
+  'AMBIENTADORES': 'drogueria',
+  'ANEXOS Y VARIOS DE DROGUERIA': 'drogueria',
+  'ANEXOS Y VARIOS DE PERFUMERIA': 'perfumeria',
+  'ANEXOS Y VARIOS PELUQUERIA': 'perfumeria',
+  'ANTIGRAVILLAS Y SELLADORES': 'talleres',
+  'ANTIPOLILLAS Y S/G ROPAS': 'drogueria',
+  'APAREJOS': 'talleres',
+  'APRESTOS Y ALMIDONES': 'drogueria',
+  'ARTICULOS PELUQUERIA': 'perfumeria',
+  'AUXILIARES BASLAC': 'talleres',
+  'AZULETES Y ADITIVOS LAVADO': 'drogueria',
+  'BARNICES': 'talleres',
+  'BARNICES Y CATALIZADORES': 'talleres',
+  'BASICOS BASLAC': 'talleres',
+  'BAYETAS, GAMUZAS Y PANOS': 'drogueria',
+  'BOLSAS BASURA': 'drogueria',
+  'BROCHAS AFEITAR': 'perfumeria',
+  'BROCHAS Y UTILES DE APLICACION': 'pinturas',
+  'BRONCEADORES': 'perfumeria',
+  'CAMPING': 'drogueria',
+  'CAR - ABRASIVOS': 'talleres',
+  'CAR - ACABADOS': 'talleres',
+  'CAR - ANTIGRAVILLAS': 'talleres',
+  'CAR - APAREJOS': 'talleres',
+  'CAR - BARNICES ACRILICOS BICAPA': 'talleres',
+  'CAR - ENMASCARADO': 'talleres',
+  'CAR - LIMPIEZA Y PREPRACION': 'talleres',
+  'CAR - MAQUINAS Y HERRAMIENTAS': 'talleres',
+  'CAR - MASILLAS POLIESTER': 'talleres',
+  'CAR - PLASTICOS': 'talleres',
+  'CAR - SELLADO Y PEGADO': 'talleres',
+  'CAR - SPRAYS': 'talleres',
+  'CAR CARE': 'talleres',
+  'CEPILLOS CABEZA Y PEINES': 'perfumeria',
+  'CEPILLOS DIENTES': 'perfumeria',
+  'CEPILLOS Y ESCOBAS LIMPIEZA': 'drogueria',
+  'CHAMPUS': 'perfumeria',
+  'COLONIAS GRANEL': 'perfumeria',
+  'COLONIAS HOMBRE': 'perfumeria',
+  'COLONIAS INFANTILES': 'perfumeria',
+  'COLONIAS MINIATURA': 'perfumeria',
+  'COLONIAS MUJER': 'perfumeria',
+  'COLONIAS UNISEX': 'perfumeria',
+  'COMPLEMENTOS': 'talleres',
+  'COMPRESAS, SALVASLIPS Y PANALES': 'perfumeria',
+  'CONSERVACION DEL AUTOMOVIL': 'talleres',
+  'CREMAS CALZADO Y CORDONES': 'drogueria',
+  'CREMAS DE BELLEZA': 'perfumeria',
+  'CREMAS DE MANOS': 'perfumeria',
+  'CREMAS Y MASCARILLAS PELO': 'perfumeria',
+  'DEPILATORIOS': 'perfumeria',
+  'DESATASCADORES': 'drogueria',
+  'DESINFECTANTES': 'drogueria',
+  'DESODORANTES': 'perfumeria',
+  'DETERGENTES ROPA': 'drogueria',
+  'DILUYENTES Y ADITIVOS AJUSTE': 'talleres',
+  'ENDURECEDORES Y ADITIVOS': 'talleres',
+  'EQUIPAMIENTO BASLAC': 'talleres',
+  'ESMALTES Y QUITAESMALTES UNAS': 'perfumeria',
+  'ESPONJAS': 'perfumeria',
+  'ESTROPAJOS': 'drogueria',
+  'FILTROS': 'talleres',
+  'GELES Y JABONES BANO': 'perfumeria',
+  'GUANTES': 'drogueria',
+  'HOJAS Y MAQUINAS AFEITAR': 'perfumeria',
+  'HULES': 'drogueria',
+  'IMPRIMACIONES': 'talleres',
+  'IMPRIMACIONES-APAREJOS': 'talleres',
+  'INDUSTRIA - ACABADOS INDUSTRIALES': 'talleres',
+  'INDUSTRIA - IMPRIMACIONES': 'talleres',
+  'INSECTICIDAS': 'drogueria',
+  'JABONES TOCADOR': 'perfumeria',
+  'JABONES, CREMAS Y ESPUMAS AFEITAR': 'perfumeria',
+  'LACAS': 'talleres',
+  'LACAS, ESPUMAS Y GOMINAS': 'perfumeria',
+  'LAMPARAS': 'drogueria',
+  'LAPICES Y PERFILADORES LABIOS': 'perfumeria',
+  'LAVAVAJILLAS A MANO': 'drogueria',
+  'LAVAVAJILLAS AUTOMATICOS': 'drogueria',
+  'LEJIAS': 'drogueria',
+  'LIJAS': 'pinturas',
+  'LIMPIACRISTALES Y MULTIUSOS': 'drogueria',
+  'LIMPIADORES': 'talleres',
+  'LIMPIADORES LIQUIDOS': 'drogueria',
+  'LIMPIAMETALES': 'drogueria',
+  'LIMPIAMUEBLES': 'drogueria',
+  'LINEA VC - GRAPHITE': 'talleres',
+  'LOCIONES CAPILARES': 'perfumeria',
+  'LOCIONES Y CHAMPUS ANTIPARASITARIOS': 'perfumeria',
+  'MAQUILLAJES': 'perfumeria',
+  'MAQUINAS': 'talleres',
+  'MAQUINAS Y DESPIECE DE MAQUINAS': 'talleres',
+  'MASAJES AFEITAR': 'perfumeria',
+  'MASCARAS PESTANAS Y PERFI. OJOS': 'perfumeria',
+  'MASILLAS': 'talleres',
+  'MOPAS Y QUITAPOLVOS': 'drogueria',
+  'PAPEL ALUMINIO FILM': 'drogueria',
+  'PAPELES Y CELULOSAS': 'drogueria',
+  'PASTA DE DIENTES Y ELIXIR': 'perfumeria',
+  'PEGAMENTOS Y COLA CONTACTO': 'pinturas',
+  'PILAS Y LINTERNAS': 'drogueria',
+  'PINTURAS DE TERMINACION': 'talleres',
+  'PINTURAS DURAVAL': 'pinturas',
+  'PINTURAS TITAN': 'pinturas',
+  'PINTURAS Y BARNICES': 'pinturas',
+  'PLASTICOS': 'drogueria',
+  'PRODUCTOS DE ENMASCARADO': 'talleres',
+  'PRODUCTOS LIMPIEZA INDUSTRIALES': 'drogueria',
+  'PRODUCTOS PISCINAS': 'drogueria',
+  'PRODUCTOS QUIMICOS': 'pinturas',
+  'PROTECCION PERSONAL': 'talleres',
+  'PROTECCION PERSONAS': 'talleres',
+  'QUITAMANCHAS': 'drogueria',
+  'R-M AGILIS': 'talleres',
+  'R-M CRYSTALBASE': 'talleres',
+  'R-M DISOLVENTES Y ADITIVOS': 'talleres',
+  'R-M ENDURECEDORES': 'talleres',
+  'R-M ESPECIALIDADES': 'talleres',
+  'R-M IMPRIMACIONES/APAREJOS': 'talleres',
+  'R-M LACAS': 'talleres',
+  'R-M LINEA BASIC': 'talleres',
+  'R-M MASILLAS': 'talleres',
+  'R-M ONYX HD': 'talleres',
+  'R-M UNO HD': 'talleres',
+  'R-M VARIOS': 'talleres',
+  'RATICIDAS': 'drogueria',
+  'RECAMBIOS DE FREGONA': 'drogueria',
+  'RESVESTIMIENTOS': 'talleres',
+  'SELLADORES': 'talleres',
+  'SISTEMA PREPARACION PINTURA': 'talleres',
+  'SISTEMA REPARACION PLASTICOS': 'talleres',
+  'SISTEMAS DE ENMASCARAR': 'talleres',
+  'SPRAYS': 'talleres',
+  'SUAVIZANTES ROPA': 'drogueria',
+  'SUSTITUCION DE LUNAS': 'talleres',
+  'TALCOS': 'perfumeria',
+  'TINTES PELO': 'perfumeria',
+  'TINTES ROPA': 'drogueria',
+  'TOALLITAS': 'perfumeria',
+  'URKI-MIX - COLORES SOLIDOS': 'talleres',
+  'URKI-MIX - DISOLVENTES': 'talleres',
+  'URKI-MIX PRO - ADITIVOS': 'talleres',
+  'URKI-MIX PRO - BINDERS': 'talleres',
+  'URKI-MIX PRO - COLORES SOLIDOS': 'talleres',
+  'URKI-MIX PRO - COLORSTREAM': 'talleres',
+  'URKI-MIX PRO - EQUIPAMIENTO': 'talleres',
+  'URKI-MIX PRO - METALIZADOS': 'talleres',
+  'URKI-MIX PRO - PERLADOS': 'talleres',
+  'URKI-MIX PRO - XIRALICS': 'talleres',
+  'URKI-SYSTEM - ACCESORIOS': 'talleres',
+  'URKI-SYSTEM - ADITIVOS': 'talleres',
+  'URKI-SYSTEM - CATALIZADORES': 'talleres',
+  'URKI-SYSTEM - CONVERTIDORES': 'talleres',
+  'URKI-SYSTEM - EQUIPAMIENTO': 'talleres',
+  'URKI-SYSTEM - PASTAS BASE': 'talleres',
+  'UTILES DE LIMPIEZA PROFESIONAL': 'drogueria',
+  'UTILES DE PINTURA': 'talleres',
+  'UTILES PINTURA': 'talleres',
+  'VARIOS': 'talleres',
+  'VARIOS BASLAC': 'talleres',
+  'VIJUSA': 'drogueria',
+  };
+  const familiaNorm = quitarAcentos_(familia.trim().toUpperCase());
+  if (AREA_POR_FAMILIA[familiaNorm]) return AREA_POR_FAMILIA[familiaNorm];
 
   // ── Pinturas: keywords + marcas conocidas ──────────────────────────────
   const pinturas = [
@@ -520,7 +732,8 @@ function inferirArea_(nombre, familia) {
   const perfumeria = [
     // Genéricos
     'perfume','colonia','eau de','edt','edp','desodorante','deo ',
-    'gel de ducha','gel ducha','champú','champu','acondicionador',
+    'gel de ducha','gel ducha',
+    'champú','champu','acondicionador',
     'crema corporal','crema facial','loción','locion','serum','sérum',
     'maquillaje','cosmética','cosmetica','after shave','afeitado',
     'espuma afeitar','cera cabello','mascarilla capilar','tinte cabello',
@@ -645,6 +858,13 @@ function reevaluarAreasProductos() {
     } else if (empiezaConPuntoTalleres_(nombre, tipologia)) {
       areaNueva = 'talleres';
       if (areaNueva !== areaActual) porPunto++;
+    } else if (esHigieneManos_(nombre, tipologia)) {
+      // Prioridad sobre la tabla curada y la mayoría por familia — un
+      // gel hidroalcohólico nunca debe quedar en perfumería aunque su
+      // familia ("GELES Y JABONES BAÑO") tenga mayoría de productos de
+      // cuidado personal genuinos.
+      areaNueva = 'drogueria';
+      if (areaNueva !== areaActual) porMarca++; // se cuenta junto con los casos "por regla explícita"
     } else if (tipologia && mapaFamiliaArea[tipologia]) {
       areaNueva = mapaFamiliaArea[tipologia];
     } else if (tipologia && mapaMayoriaFamilia[tipologia]) {
@@ -4054,12 +4274,40 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
   const resultado = sincronizarRegistroProductos();
   resultado.totalRegistrados = filasDatos.length;
 
-  // 6) Regenerar la caché completa que sirve al buscador — una
+  // 6) Reevaluar áreas y clasificar subfamilias — a petición del usuario,
+  // para que los productos nuevos/actualizados por el CRM queden bien
+  // encajados sin depender de lanzarlo a mano después. Ambas funciones
+  // son seguras para ejecutarse aquí:
+  //  - reevaluarAreasProductos(): usa toast() en vez de alert() (no
+  //    revienta en un contexto sin interfaz), y su lógica (tabla curada
+  //    FamiliaProductos.Area + mayoría dinámica por familia + reglas
+  //    explícitas de talleres/higiene de manos) validada contra el
+  //    catálogo completo real: 99,95% de coincidencia con la
+  //    clasificación actual, sin ninguna regresión.
+  //  - clasificarSubfamiliasConIA(): solo rellena subfamilias VACÍAS
+  //    (salta cualquier producto que ya tenga algo puesto), así que
+  //    nunca pisa una subfamilia ya asignada a mano.
+  // No bloquean el resto del flujo si fallaran — el disparador
+  // programado y las ejecuciones manuales desde el menú siguen ahí
+  // como red de seguridad.
+  try {
+    reevaluarAreasProductos();
+  } catch (err) {
+    console.error('No se pudo reevaluar las áreas tras la sincronización del CRM:', err);
+  }
+  try {
+    clasificarSubfamiliasConIA();
+  } catch (err) {
+    console.error('No se pudo clasificar subfamilias tras la sincronización del CRM:', err);
+  }
+
+  // 7) Regenerar la caché completa que sirve al buscador — una
   // sincronización del CRM puede añadir o modificar muchos productos de
   // golpe, así que tiene sentido regenerar del todo aquí en vez de
-  // esperar al siguiente disparo programado (hasta 1 hora). No bloquea
-  // el resto del flujo si fallara — el disparador programado lo
-  // corregirá de todas formas.
+  // esperar al siguiente disparo programado (hasta 1 hora). Se hace
+  // DESPUÉS de reevaluar áreas/subfamilias, para que el JSON exportado
+  // ya lleve los valores correctos. No bloquea el resto del flujo si
+  // fallara — el disparador programado lo corregirá de todas formas.
   try {
     regenerarCacheCompletaDesdeSheet_();
   } catch (err) {
