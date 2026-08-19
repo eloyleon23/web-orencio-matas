@@ -1812,6 +1812,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        .complementario-item .complementario-ref {
+            font-size: 0.68rem;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
         .complementario-item .complementario-precio {
             font-size: 0.78rem;
             color: var(--red);
@@ -3424,19 +3430,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Cargar productos.json directamente — no hace falta ningún paso
     // previo de comprobación de versión (eso era específico de la
     // caché de GitHub Pages, que ya no se usa aquí).
+    // Optimización: cargar productos principales primero y mostrarlos,
+    // luego cargar productos adicionales en segundo plano para mejorar percepción de velocidad.
     fetch(PRODUCTOS_URL, { cache: 'no-store' })
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
             hashConocido = await calcularHash(texto);
             const data = JSON.parse(texto);
-            const [productosTalleres, productosGlasurit, productosBesa, productosBaslac] = await Promise.all([
-                cargarProductosTalleres(),
-                cargarProductosGlasurit(),
-                cargarProductosBesa(),
-                cargarProductosBaslac(),
-            ]);
-            TODOS = [...(data.productos || []), ...productosTalleres, ...productosGlasurit, ...productosBesa, ...productosBaslac];
+            
+            // Cargar productos principales primero (del Sheet)
+            TODOS = data.productos || [];
             FAMILIAS_ORDEN = data.familias_orden || {};
             SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
             construirIndiceSugerencias();
@@ -3444,9 +3448,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             aplicarFiltros();
             $('cargando-inicial').style.display = 'none';
             $('contenedor-resultados').style.display = '';
+            productosCargados = true; // Activar ocultar cabecera solo cuando hay productos cargados
             iniciarComprobacionActualizaciones();
             aplicarFiltrosDesdeURL();
             abrirProductoDesdeURL();
+            
+            // Cargar productos adicionales en segundo plano (talleres, Glasurit, Besa, Baslac)
+            Promise.all([
+                cargarProductosTalleres(),
+                cargarProductosGlasurit(),
+                cargarProductosBesa(),
+                cargarProductosBaslac(),
+            ]).then(([productosTalleres, productosGlasurit, productosBesa, productosBaslac]) => {
+                // Añadir productos adicionales y actualizar filtros
+                TODOS = [...TODOS, ...productosTalleres, ...productosGlasurit, ...productosBesa, ...productosBaslac];
+                construirIndiceSugerencias();
+                aplicarFiltros(); // Actualizar resultados con los nuevos productos
+            }).catch(err => {
+                console.warn('Error al cargar productos adicionales:', err);
+                // No mostramos error al usuario ya que los productos principales ya funcionan
+            });
         })
         .catch(err => {
             console.error(err);
@@ -5571,6 +5592,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ${img}
                 <div class="complementario-info">
                     <div class="complementario-nombre">${escapeHtml(s.nombre)}</div>
+                    <div class="complementario-ref">Ref: ${escapeHtml(s.ref)}</div>
                     <div class="complementario-precio">${precio}</div>
                 </div>
             </button>`;
@@ -7090,6 +7112,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     moverBuscadorSegunViewport();
 
     let ultimoScrollY = window.scrollY;
+    let productosCargados = false; // Controlar si hay productos cargados para evitar ocultar cabecera durante carga
+    
     function actualizarVisibilidadBotonSubir() {
         const scrollActual = window.scrollY;
         const visible = scrollActual > 400;
@@ -7103,7 +7127,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // también el filtro de Área al vivir dentro del mismo bloque.
         const esAnchoMovil = window.innerWidth <= 768;
         const esAnchoPC = window.innerWidth >= 881;
-        if (esAnchoMovil || esAnchoPC) {
+        // Solo ocultar cabecera si hay productos cargados (evitar efecto raro con spinner)
+        if ((esAnchoMovil || esAnchoPC) && productosCargados) {
             const elemento = esAnchoMovil ? $('grupo-buscador-principal') : $('toolbar-buscador-pc');
             const delta = scrollActual - ultimoScrollY;
             // El umbral (6px) evita reaccionar a vibraciones mínimas del
