@@ -28,13 +28,17 @@
     const LIMITE_MINIMO = 8;
     const LIMITE_MAXIMO = 36;
 
+    function calcularColumnas(contenedor) {
+        const ancho = contenedor.clientWidth || contenedor.parentElement.clientWidth || 800;
+        return Math.max(1, Math.floor((ancho + GAP_TARJETA) / (ANCHO_MIN_TARJETA + GAP_TARJETA)));
+    }
+
     // Cuántas tarjetas hacen falta para llenar "FILAS_OBJETIVO" filas
     // completas con el ancho real del contenedor — así nunca queda una
     // última fila a medias con hueco vacío. Se recalcula en cada
     // rotación y al redimensionar la ventana.
     function calcularLimiteResponsive(contenedor) {
-        const ancho = contenedor.clientWidth || contenedor.parentElement.clientWidth || 800;
-        const columnas = Math.max(1, Math.floor((ancho + GAP_TARJETA) / (ANCHO_MIN_TARJETA + GAP_TARJETA)));
+        const columnas = calcularColumnas(contenedor);
         const limite = columnas * FILAS_OBJETIVO;
         return Math.min(LIMITE_MAXIMO, Math.max(LIMITE_MINIMO, limite));
     }
@@ -186,6 +190,7 @@
 
             function pintarRonda() {
                 const limite = calcularLimiteResponsive(contenedor);
+                contenedor._ultimasColumnas = calcularColumnas(contenedor);
                 const muestra = muestraDiversaPorFamilia(candidatos, limite, numFamilias);
                 contenedor.style.opacity = '0';
                 setTimeout(() => {
@@ -200,13 +205,21 @@
             }
 
             // Al redimensionar (girar el móvil, cambiar el tamaño de la
-            // ventana...), repintar de inmediato con el nuevo número de
-            // columnas — con un pequeño retraso para no repintar en cada
-            // píxel mientras se arrastra el borde de la ventana.
+            // ventana...), repintar con el nuevo número de columnas. En
+            // móvil, hacer scroll oculta/muestra la barra de direcciones
+            // del navegador y eso dispara eventos "resize" continuamente
+            // aunque el ancho (y por tanto las columnas) no cambien — sin
+            // esta comprobación, cada scroll repintaba la muestra con
+            // productos nuevos y la rotación de 10s se sentía carreras.
+            // Solo se repinta si el número de columnas cambió de verdad.
             let resizeTimeout;
             contenedor._resizeHandlerCatalogo = () => {
                 clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(pintarRonda, 300);
+                resizeTimeout = setTimeout(() => {
+                    if (calcularColumnas(contenedor) !== contenedor._ultimasColumnas) {
+                        pintarRonda();
+                    }
+                }, 300);
             };
             window.addEventListener('resize', contenedor._resizeHandlerCatalogo);
         } catch (e) {
