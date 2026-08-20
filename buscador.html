@@ -1441,18 +1441,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             cursor: pointer;
         }
         .relacionados-buscar-input-wrap {
-            display: flex;
-            gap: 8px;
-            align-items: stretch;
-            position: relative; /* ancla el desplegable de sugerencias justo debajo del input */
+            position: relative; /* ancla la X de borrado y el desplegable de sugerencias */
         }
         .relacionados-buscar-input-wrap .input-texto {
-            flex: 1;
-            padding: 12px 14px;
+            width: 100%;
+            padding: 12px 40px 12px 14px; /* hueco a la derecha para la X */
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             font-size: 0.95rem;
             transition: all 0.2s ease;
+            box-sizing: border-box;
         }
         .relacionados-buscar-input-wrap .input-texto:focus {
             border-color: #2563eb;
@@ -1462,26 +1460,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             border-color: #dc2626;
             background: #fef2f2;
         }
-        .relacionados-btn-validar-busqueda {
-            padding: 0 20px;
-            background: #f1f5f9;
-            color: #64748b;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+        /* Botón "X" para borrar rápidamente el texto de este buscador,
+           mismo patrón que #btn-limpiar-texto del buscador principal. */
+        .relacionados-buscar-limpiar {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.1rem;
             cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
+            padding: 4px;
+            line-height: 1;
         }
-        .relacionados-btn-validar-busqueda:hover {
-            background: #e2e8f0;
-            border-color: #cbd5e1;
-        }
-        .relacionados-btn-validar-busqueda:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .relacionados-buscar-limpiar:hover { color: var(--dark); }
         .relacionados-resultados {
             margin-top: 12px;
             max-height: 280px;
@@ -2960,8 +2954,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             <div class="relacionados-buscar-input-wrap">
                 <input type="text" id="relacionados-buscar-input" class="input-texto" placeholder="Buscar por nombre o referencia..." autocomplete="off">
-                <button type="button" id="relacionados-btn-validar-busqueda" class="relacionados-btn-validar-busqueda" disabled>
-                    <i class="fa-solid fa-check"></i> Validar
+                <button type="button" id="relacionados-buscar-limpiar" class="relacionados-buscar-limpiar" title="Borrar búsqueda" style="display:none;">
+                    <i class="fa-solid fa-circle-xmark"></i>
                 </button>
                 <div id="relacionados-sugerencias" class="sugerencias-busqueda"></div>
             </div>
@@ -6273,6 +6267,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         $('modal-relacionados-nombre').textContent = p.nombre;
         $('relacionados-buscar-input').value = '';
+        $('relacionados-buscar-limpiar').style.display = 'none';
         $('relacionados-resultados').innerHTML = '';
         ocultarSugerenciasRelacionados();
 
@@ -6336,11 +6331,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     let timeoutBusquedaRelacionados = null;
-    let resultadoSeleccionadoBusqueda = null; // producto seleccionado en la búsqueda para validar
-    
     function buscarProductosRelacionados(texto) {
         const cont = $('relacionados-resultados');
-        const btnValidar = $('relacionados-btn-validar-busqueda');
         texto = (texto || '').trim();
 
         const areaSel = $('relacionados-filtro-area').value;
@@ -6351,8 +6343,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // elegidas, sí se puede navegar aunque no se haya escrito nada.
         if (!texto && !areaSel && !familiaSel) {
             cont.innerHTML = '';
-            btnValidar.disabled = true;
-            resultadoSeleccionadoBusqueda = null;
             return;
         }
         if (!productoRelacionadosActual) return;
@@ -6383,19 +6373,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         if (!resultados.length) {
             cont.innerHTML = '<p class="relacionados-sin-resultados">Sin resultados</p>';
-            btnValidar.disabled = true;
-            resultadoSeleccionadoBusqueda = null;
             return;
         }
 
         cont.innerHTML = '';
-        resultadoSeleccionadoBusqueda = null;
-        btnValidar.disabled = true;
-        
+
+        // Añadir a relacionados directamente: un único clic en cualquier
+        // parte de la tarjeta (o en el icono "+") basta, sin paso
+        // intermedio de "seleccionar y validar".
         resultados.forEach(p => {
             const urlImg = urlImagenProducto(p, 80);
             const item = document.createElement('div');
             item.className = 'relacionados-resultado-item';
+            item.title = 'Añadir a relacionados';
             item.innerHTML = `
                 ${urlImg
                     ? `<img src="${urlImg}" alt="${p.nombre}" loading="lazy">`
@@ -6408,25 +6398,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     <i class="fa-solid fa-plus"></i>
                 </button>
             `;
-            // Click en todo el item para seleccionar
-            item.onclick = (e) => {
-                if (e.target.closest('.relacionados-resultado-anadir')) return; // dejar que el botón de añadir funcione
-                
-                // Quitar selección previa
-                cont.querySelectorAll('.relacionados-resultado-item').forEach(i => {
-                    i.style.borderColor = '#e5e7eb';
-                    i.style.background = '#fff';
-                });
-                
-                // Marcar como seleccionado
-                item.style.borderColor = '#2563eb';
-                item.style.background = '#eff6ff';
-                resultadoSeleccionadoBusqueda = p;
-                btnValidar.disabled = false;
-            };
-            
-            item.querySelector('.relacionados-resultado-anadir').onclick = (e) => {
-                e.stopPropagation();
+            item.onclick = () => {
                 relacionadosSeleccion.push(p.ref);
                 renderRelacionadosSeleccionados();
                 buscarProductosRelacionados($('relacionados-buscar-input').value); // refrescar, ya excluido el recién añadido
@@ -6440,22 +6412,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             info.textContent = `Mostrando ${resultados.length} de ${total} resultados — escribe texto o filtra por familia para acotar más.`;
             cont.appendChild(info);
         }
-    }
-    
-    // Función para validar y añadir el producto seleccionado
-    function validarYAnadirSeleccionado() {
-        if (!resultadoSeleccionadoBusqueda) return;
-        
-        relacionadosSeleccion.push(resultadoSeleccionadoBusqueda.ref);
-        renderRelacionadosSeleccionados();
-        
-        // Limpiar búsqueda y selección
-        $('relacionados-buscar-input').value = '';
-        $('relacionados-resultados').innerHTML = '';
-        $('relacionados-btn-validar-busqueda').disabled = true;
-        resultadoSeleccionadoBusqueda = null;
-        
-        $('relacionados-buscar-input').focus();
     }
 
     function ejecutarActualizarRelacionados() {
@@ -6540,6 +6496,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function seleccionarSugerenciaRelacionados(texto) {
         $('relacionados-buscar-input').value = texto;
+        $('relacionados-buscar-limpiar').style.display = 'block';
         ocultarSugerenciasRelacionados();
         buscarProductosRelacionados(texto);
     }
@@ -6551,18 +6508,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     });
     $('relacionados-cancelar').addEventListener('click', cerrarModalGestionarRelacionados);
     $('relacionados-guardar').addEventListener('click', ejecutarActualizarRelacionados);
-    $('relacionados-buscar-input').addEventListener('input', (e) => {
-        clearTimeout(timeoutBusquedaRelacionados);
-        const valor = e.target.value;
-        timeoutBusquedaRelacionados = setTimeout(() => buscarProductosRelacionados(valor), 200);
-    });
-    $('relacionados-btn-validar-busqueda').addEventListener('click', validarYAnadirSeleccionado);
 
-    // Sugerencias de búsqueda con debounce corto, igual que en el buscador
-    // principal — no filtran nada, solo proponen texto.
+    // Búsqueda (debounce 200ms) + sugerencias tipo Amazon (debounce 120ms,
+    // igual que el buscador principal) + mostrar/ocultar la X de borrado
+    // según haya texto o no, todo sobre el mismo input.
     $('relacionados-buscar-input').addEventListener('input', (e) => {
-        clearTimeout(timeoutSugerenciasRelacionados);
         const valor = e.target.value;
+        $('relacionados-buscar-limpiar').style.display = valor ? 'block' : 'none';
+
+        clearTimeout(timeoutBusquedaRelacionados);
+        timeoutBusquedaRelacionados = setTimeout(() => buscarProductosRelacionados(valor), 200);
+
+        clearTimeout(timeoutSugerenciasRelacionados);
         timeoutSugerenciasRelacionados = setTimeout(() => {
             if (valor.trim().length >= 2) {
                 renderSugerenciasRelacionados(obtenerSugerencias(valor), valor);
@@ -6570,6 +6527,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ocultarSugerenciasRelacionados();
             }
         }, 120);
+    });
+    $('relacionados-buscar-limpiar').addEventListener('click', () => {
+        const input = $('relacionados-buscar-input');
+        input.value = '';
+        $('relacionados-buscar-limpiar').style.display = 'none';
+        ocultarSugerenciasRelacionados();
+        buscarProductosRelacionados('');
+        input.focus();
     });
     $('relacionados-buscar-input').addEventListener('focus', () => {
         const valor = $('relacionados-buscar-input').value;
@@ -6594,15 +6559,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         buscarProductosRelacionados($('relacionados-buscar-input').value);
     });
 
-    // Permitir añadir con Enter en el input de búsqueda (si el desplegable
-    // de sugerencias está abierto, Enter completa el texto en vez de
-    // validar directamente, igual que el buscador principal).
     $('relacionados-buscar-input').addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { ocultarSugerenciasRelacionados(); return; }
-        if (e.key === 'Enter' && !$('relacionados-btn-validar-busqueda').disabled) {
-            e.preventDefault();
-            validarYAnadirSeleccionado();
-        }
+        if (e.key === 'Escape') ocultarSugerenciasRelacionados();
     });
 
     // ══════════════════════════════════════════════════════════════════
