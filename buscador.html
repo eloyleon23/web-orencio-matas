@@ -1427,10 +1427,24 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
 
         .relacionados-buscar-wrap { margin-top: 16px; }
+        .relacionados-filtro-rapido {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .relacionados-filtro-rapido select.input-texto {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            background: #f8fafc;
+            cursor: pointer;
+        }
         .relacionados-buscar-input-wrap {
             display: flex;
             gap: 8px;
             align-items: stretch;
+            position: relative; /* ancla el desplegable de sugerencias justo debajo del input */
         }
         .relacionados-buscar-input-wrap .input-texto {
             flex: 1;
@@ -1556,6 +1570,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             text-align: center;
             padding: 20px;
             font-style: italic;
+        }
+        .relacionados-resultados-info {
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-align: center;
+            padding: 10px 4px 2px;
+            margin: 0;
         }
 
         .relacionados-acciones {
@@ -2927,11 +2948,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="relacionados-buscar-wrap">
             <p class="relacionados-subtitulo">Añadir producto</p>
+
+            <div class="relacionados-filtro-rapido">
+                <select id="relacionados-filtro-area" class="input-texto">
+                    <option value="">Todas las áreas</option>
+                </select>
+                <select id="relacionados-filtro-familia" class="input-texto">
+                    <option value="">Todas las familias</option>
+                </select>
+            </div>
+
             <div class="relacionados-buscar-input-wrap">
                 <input type="text" id="relacionados-buscar-input" class="input-texto" placeholder="Buscar por nombre o referencia..." autocomplete="off">
                 <button type="button" id="relacionados-btn-validar-busqueda" class="relacionados-btn-validar-busqueda" disabled>
                     <i class="fa-solid fa-check"></i> Validar
                 </button>
+                <div id="relacionados-sugerencias" class="sugerencias-busqueda"></div>
             </div>
             <div id="relacionados-resultados" class="relacionados-resultados"></div>
         </div>
@@ -6180,14 +6212,60 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // columna "relacionados" del Sheet sin tener que ir al Excel. Mismo
     // criterio de búsqueda que el buscador principal (texto/referencia,
     // fuzzy — reutiliza coincide()/coincideReferencia()/
-    // esBusquedaNumerica() tal cual), resultados limitados, y actualiza
-    // la caché de Drive al instante con el mismo mecanismo que una
-    // actualización de imagen (actualizarProductoEnCache_ en Apps Script
-    // — ver acción 'actualizar_relacionados').
+    // esBusquedaNumerica() tal cual) y las mismas sugerencias tipo Amazon
+    // (reutiliza sugerenciasIndice/obtenerSugerencias, ya construido para
+    // el buscador principal). Incluye selectores rápidos de área/familia
+    // para acotar candidatos sin necesidad de escribir texto, y ya no
+    // limita los resultados a un puñado fijo (ver LIMITE_RESULTADOS_
+    // RELACIONADOS, ahora solo un tope de seguridad para no pintar miles
+    // de tarjetas de golpe). Actualiza la caché de Drive al instante con
+    // el mismo mecanismo que una actualización de imagen
+    // (actualizarProductoEnCache_ en Apps Script — ver acción
+    // 'actualizar_relacionados').
     // ══════════════════════════════════════════════════════════════════
     let productoRelacionadosActual = null; // producto cuyo detalle está abierto
     let relacionadosSeleccion = [];        // refs en edición dentro del modal, hasta pulsar "Actualizar"
-    const LIMITE_RESULTADOS_RELACIONADOS = 12;
+    const LIMITE_RESULTADOS_RELACIONADOS = 200; // tope de seguridad, no una limitación funcional
+    let filtrosRelacionadosInicializados = false;
+
+    // Rellena el select de área una única vez (los datos no cambian
+    // durante la sesión salvo recarga del catálogo, ya cubierta por
+    // reinicializarFiltrosRelacionadosSiHaceFalta()).
+    function inicializarFiltrosRelacionados() {
+        const selArea = $('relacionados-filtro-area');
+        selArea.innerHTML = '<option value="">Todas las áreas</option>';
+        const areasPresentes = [...new Set(TODOS.map(p => p.area).filter(Boolean))].sort();
+        areasPresentes.forEach(area => {
+            const opt = document.createElement('option');
+            opt.value = area;
+            opt.textContent = AREAS_NOMBRE[area] || area;
+            selArea.appendChild(opt);
+        });
+        filtrosRelacionadosInicializados = true;
+    }
+
+    // Recalcula el select de familia según el área elegida (o todas si no
+    // hay ninguna), preservando la familia ya elegida si sigue siendo
+    // válida tras el cambio de área.
+    function renderFamiliasRelacionados() {
+        const areaSel = $('relacionados-filtro-area').value;
+        const selFamilia = $('relacionados-filtro-familia');
+        const familiaActual = selFamilia.value;
+        selFamilia.innerHTML = '<option value="">Todas las familias</option>';
+
+        const base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        const familias = [...new Set(base.map(p => p.familia).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+        familias.forEach(fam => {
+            const opt = document.createElement('option');
+            opt.value = fam;
+            opt.textContent = fam;
+            selFamilia.appendChild(opt);
+        });
+
+        if (familias.includes(familiaActual)) selFamilia.value = familiaActual;
+    }
 
     function abrirModalGestionarRelacionados(p) {
         productoRelacionadosActual = p;
@@ -6196,6 +6274,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-relacionados-nombre').textContent = p.nombre;
         $('relacionados-buscar-input').value = '';
         $('relacionados-resultados').innerHTML = '';
+        ocultarSugerenciasRelacionados();
+
+        if (!filtrosRelacionadosInicializados) inicializarFiltrosRelacionados();
+        // Por defecto se acota a la propia área del producto (el caso más
+        // habitual de "compra conjunta"), pero queda a un clic de cambiarlo.
+        $('relacionados-filtro-area').value = p.area || '';
+        renderFamiliasRelacionados();
+        $('relacionados-filtro-familia').value = '';
 
         renderRelacionadosSeleccionados();
         $('modal-relacionados-overlay').classList.add('activo');
@@ -6204,6 +6290,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function cerrarModalGestionarRelacionados() {
         $('modal-relacionados-overlay').classList.remove('activo');
+        ocultarSugerenciasRelacionados();
         productoRelacionadosActual = null;
         relacionadosSeleccion = [];
     }
@@ -6255,12 +6342,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cont = $('relacionados-resultados');
         const btnValidar = $('relacionados-btn-validar-busqueda');
         texto = (texto || '').trim();
-        
-        if (!texto) { 
-            cont.innerHTML = ''; 
+
+        const areaSel = $('relacionados-filtro-area').value;
+        const familiaSel = $('relacionados-filtro-familia').value;
+
+        // Sin texto Y sin filtros de área/familia no hay nada que mostrar
+        // (evita listar el catálogo entero de golpe). Con área y/o familia
+        // elegidas, sí se puede navegar aunque no se haya escrito nada.
+        if (!texto && !areaSel && !familiaSel) {
+            cont.innerHTML = '';
             btnValidar.disabled = true;
             resultadoSeleccionadoBusqueda = null;
-            return; 
+            return;
         }
         if (!productoRelacionadosActual) return;
 
@@ -6268,17 +6361,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const excluir = new Set([productoRelacionadosActual.ref, ...relacionadosSeleccion]);
         const activo = p => !(p.fecha_baja && p.fecha_baja.toString().trim());
 
-        let candidatos;
-        if (esBusquedaNumerica(texto)) {
+        let candidatos = TODOS.filter(p => !excluir.has(p.ref) && activo(p));
+        if (areaSel) candidatos = candidatos.filter(p => p.area === areaSel);
+        if (familiaSel) candidatos = candidatos.filter(p => p.familia === familiaSel);
+
+        if (texto) {
             // Mismo criterio que el buscador principal: texto predominantemente
             // numérico -> referencia exacta, sin fuzzy, para que cada dígito
             // introducido afine la búsqueda al instante.
-            candidatos = TODOS.filter(p => !excluir.has(p.ref) && activo(p) &&
-                (coincideReferencia(p.ref, texto) || coincide(p.nombre, texto)));
+            candidatos = esBusquedaNumerica(texto)
+                ? candidatos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : candidatos.filter(p => coincide(p.nombre, texto));
         } else {
-            candidatos = TODOS.filter(p => !excluir.has(p.ref) && activo(p) && coincide(p.nombre, texto));
+            // Navegando solo por área/familia, sin texto: orden alfabético
+            // para que sea fácil de recorrer.
+            candidatos = candidatos.slice().sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
         }
 
+        const total = candidatos.length;
         const resultados = candidatos.slice(0, LIMITE_RESULTADOS_RELACIONADOS);
 
         if (!resultados.length) {
@@ -6333,6 +6433,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             };
             cont.appendChild(item);
         });
+
+        if (total > resultados.length) {
+            const info = document.createElement('p');
+            info.className = 'relacionados-resultados-info';
+            info.textContent = `Mostrando ${resultados.length} de ${total} resultados — escribe texto o filtra por familia para acotar más.`;
+            cont.appendChild(info);
+        }
     }
     
     // Función para validar y añadir el producto seleccionado
@@ -6401,6 +6508,42 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
+    // ── Sugerencias tipo Amazon reutilizadas en el buscador de la modal
+    // de relacionados: mismo índice global (sugerenciasIndice/
+    // obtenerSugerencias) que ya usa el buscador principal — se
+    // renderizan en su propio desplegable para no interferir con el
+    // input principal, y al elegir una se lanza buscarProductosRelacionados
+    // en vez de aplicarFiltros(). ──
+    let timeoutSugerenciasRelacionados = null;
+
+    function ocultarSugerenciasRelacionados() {
+        $('relacionados-sugerencias').classList.remove('visible');
+    }
+
+    function renderSugerenciasRelacionados(lista, textoInput) {
+        const cont = $('relacionados-sugerencias');
+        if (!lista.length) {
+            cont.classList.remove('visible');
+            cont.innerHTML = '';
+            return;
+        }
+        const q = normalizar(textoInput.trim());
+        cont.innerHTML = lista.map(s => {
+            const resto = s.texto.slice(q.length);
+            return `<div class="sugerencia-item" data-texto="${escapeHtml(s.texto)}">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>${escapeHtml(q)}<strong>${escapeHtml(resto)}</strong></span>
+            </div>`;
+        }).join('');
+        cont.classList.add('visible');
+    }
+
+    function seleccionarSugerenciaRelacionados(texto) {
+        $('relacionados-buscar-input').value = texto;
+        ocultarSugerenciasRelacionados();
+        buscarProductosRelacionados(texto);
+    }
+
     // Event listeners de la modal de relacionados
     $('modal-relacionados-cerrar').addEventListener('click', cerrarModalGestionarRelacionados);
     $('modal-relacionados-overlay').addEventListener('click', (e) => {
@@ -6414,9 +6557,48 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         timeoutBusquedaRelacionados = setTimeout(() => buscarProductosRelacionados(valor), 200);
     });
     $('relacionados-btn-validar-busqueda').addEventListener('click', validarYAnadirSeleccionado);
-    
-    // Permitir añadir con Enter en el input de búsqueda
+
+    // Sugerencias de búsqueda con debounce corto, igual que en el buscador
+    // principal — no filtran nada, solo proponen texto.
+    $('relacionados-buscar-input').addEventListener('input', (e) => {
+        clearTimeout(timeoutSugerenciasRelacionados);
+        const valor = e.target.value;
+        timeoutSugerenciasRelacionados = setTimeout(() => {
+            if (valor.trim().length >= 2) {
+                renderSugerenciasRelacionados(obtenerSugerencias(valor), valor);
+            } else {
+                ocultarSugerenciasRelacionados();
+            }
+        }, 120);
+    });
+    $('relacionados-buscar-input').addEventListener('focus', () => {
+        const valor = $('relacionados-buscar-input').value;
+        if (valor.trim().length >= 2) renderSugerenciasRelacionados(obtenerSugerencias(valor), valor);
+    });
+    $('relacionados-sugerencias').addEventListener('click', (e) => {
+        const item = e.target.closest('.sugerencia-item');
+        if (item) seleccionarSugerenciaRelacionados(item.dataset.texto);
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.relacionados-buscar-input-wrap')) ocultarSugerenciasRelacionados();
+    });
+
+    // Selectores rápidos de área/familia: al cambiar de área se
+    // recalculan las familias disponibles y se relanza la búsqueda; al
+    // cambiar de familia, solo se relanza la búsqueda.
+    $('relacionados-filtro-area').addEventListener('change', () => {
+        renderFamiliasRelacionados();
+        buscarProductosRelacionados($('relacionados-buscar-input').value);
+    });
+    $('relacionados-filtro-familia').addEventListener('change', () => {
+        buscarProductosRelacionados($('relacionados-buscar-input').value);
+    });
+
+    // Permitir añadir con Enter en el input de búsqueda (si el desplegable
+    // de sugerencias está abierto, Enter completa el texto en vez de
+    // validar directamente, igual que el buscador principal).
     $('relacionados-buscar-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { ocultarSugerenciasRelacionados(); return; }
         if (e.key === 'Enter' && !$('relacionados-btn-validar-busqueda').disabled) {
             e.preventDefault();
             validarYAnadirSeleccionado();

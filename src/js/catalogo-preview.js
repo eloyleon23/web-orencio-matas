@@ -7,7 +7,7 @@
  * Reutiliza data/productos.json (ya cargado por el buscador) y la misma
  * lógica de URL de imagen que buscador.html — ver urlImagenProductoCatalogo().
  *
- * Se cargan los productos UNA sola vez, y cada 5 segundos se elige un
+ * Se cargan los productos UNA sola vez, y cada 10 segundos se elige un
  * nuevo grupo aleatorio de familias + productos y se vuelve a pintar —
  * así el usuario ve variedad sin tener que recargar la página.
  *
@@ -18,7 +18,7 @@
 (function () {
     'use strict';
 
-    const ROTACION_MS = 5000;
+    const ROTACION_MS = 10000;
     // Deben coincidir con el CSS real de la cuadrícula (minmax + gap) en
     // cada catalogo_*.html, para poder calcular cuántas columnas caben
     // de verdad en el ancho disponible.

@@ -193,6 +193,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
         }
 
+        #btn-ver-buscador:hover {
+            color: #fff !important;
+        }
+
         @media (max-width: 768px) {
             .catalog-container {
                 padding: 70px 16px 30px;
@@ -286,7 +290,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
 
             <p style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin:0 0 14px;">Una muestra de lo que encontrarás</p>
-            <div id="catalogo-preview-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;text-align:left;margin-bottom:0;"></div>
+            <div id="catalogo-preview-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;text-align:left;margin-bottom:20px;"></div>
+
+            <a id="btn-ver-buscador" href="./buscador.html?area=pinturas" class="btn-download"
+               style="display:inline-flex;align-items:center;gap:10px;font-size:0.95rem;padding:12px 24px;background:transparent;color:var(--blue);border:2px solid var(--blue);">
+                <i class="fa-solid fa-magnifying-glass"></i> Ver en el buscador de productos
+            </a>
         </div>
     </div>
 
