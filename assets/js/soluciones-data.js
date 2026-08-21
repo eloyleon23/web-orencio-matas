@@ -93,6 +93,8 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'polillas_ropa',     label: 'Tengo polillas en el armario',         solutionSlug: 'proteger-ropa-polillas' },
     { id: 'bajos_coche',       label: 'Quiero proteger los bajos del coche',  solutionSlug: 'proteger-bajos-antigravilla' },
     { id: 'luna_rota',         label: 'Se me ha descolado el parabrisas',     solutionSlug: 'sellar-luna-parabrisas' },
+    { id: 'goteras',           label: 'Tengo goteras o humedades',            solutionSlug: 'impermeabilizar-terraza-goteras' },
+    { id: 'fachada_deteriorada', label: 'La fachada está deteriorada',        solutionSlug: 'pintar-fachada-exterior' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -133,6 +135,9 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Conseguir acabado mate',              solutionSlug: 'pintar-pared-interior' },
         { title: 'Conseguir acabado satinado',           solutionSlug: 'pintar-pared-interior' },
         { title: 'Conseguir acabado brillante' },
+        { title: 'Pintar una fachada exterior',         solutionSlug: 'pintar-fachada-exterior' },
+        { title: 'Reparar goteras o humedades',          solutionSlug: 'impermeabilizar-terraza-goteras' },
+        { title: 'Impermeabilizar una terraza',           solutionSlug: 'impermeabilizar-terraza-goteras' },
       ],
     },
     {
@@ -247,6 +252,8 @@ window.SOLUCIONES_DATA = (function () {
     { slug: 'desatascar-tuberia',        title: 'Cómo desatascar una tubería',                    difficulty: 'Fácil', estimatedTime: '15-30 min', emoji: '🚽' },
     { slug: 'cuidado-plantas-jardin',    title: 'Cómo abonar y cuidar las plantas del jardín',    difficulty: 'Fácil', estimatedTime: '20 min (rutina periódica)', emoji: '🌱' },
     { slug: 'proteger-bajos-antigravilla', title: 'Cómo proteger los bajos del coche',            difficulty: 'Media', estimatedTime: '1-2 h + secado', emoji: '🚗' },
+    { slug: 'pintar-fachada-exterior',   title: 'Cómo pintar una fachada exterior',               difficulty: 'Media', estimatedTime: '2-3 días (según superficie)', emoji: '🏠' },
+    { slug: 'impermeabilizar-terraza-goteras', title: 'Cómo impermeabilizar una terraza con goteras', difficulty: 'Media', estimatedTime: '1 día + secado', emoji: '☔' },
   ];
 
   // ── Soluciones completas ────────────────────────────────────────────────
@@ -1258,6 +1265,120 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para pegar o sustituir correctamente un parabrisas o luna lateral, con el sistema adhesivo y sellador adecuado.',
       },
     },
+
+    'pintar-fachada-exterior': {
+      slug: 'pintar-fachada-exterior',
+      title: 'Cómo pintar una fachada exterior',
+      description: 'Prepara y pinta una fachada exterior con un sistema resistente a la intemperie, incluyendo nuestra propia pintura hidrófuga de fachadas.',
+      category: 'pintura', subcategory: 'Fachadas',
+      problem: 'fachada_deteriorada',
+      objective: 'pintar',
+      surface: 'pared',
+      difficulty: 'Media',
+      estimatedTime: '2-3 días según superficie y climatología',
+      result: 'Fachada repintada, protegida frente a lluvia y humedad',
+      colorChart: { label: 'Carta de colores TitanTech para fachadas (TF2)', url: 'https://www.titantech.es/colores' },
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza exterior',      items: ['Limpieza a presión o cepillado de la fachada'] },
+        { fase: 'Reparación',  familiaSugerida: 'Masillas de exterior',   items: ['Aguaplast exterior (grietas y desconchones)'] },
+        { fase: 'Color',       familiaSugerida: 'Pinturas para fachada',  items: ['Pintura hidrófuga para fachadas'] },
+        { fase: 'Herramientas',familiaSugerida: 'Útiles de aplicación',  items: ['Rodillo especial fachadas'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',  emoji: '🧴' },
+        { fase: 'Reparar',  emoji: '🔧' },
+        { fase: 'Proteger', emoji: '🛡️' },
+        { fase: 'Pintar',   emoji: '🏠' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpieza de la fachada', text: 'Elimina suciedad, musgo o pintura suelta con cepillado o limpieza a presión — pintar sobre suciedad es la causa más habitual de que la pintura nueva se desprenda pronto.', productos: ['Limpieza a presión o cepillado de la fachada'] },
+        { n: 2, title: 'Reparar grietas y desconchones', text: 'Repara con una masilla de exterior antes de pintar — una grieta sin tratar sigue permitiendo la entrada de agua por debajo de la pintura nueva.', productos: ['Aguaplast exterior (grietas y desconchones)'] },
+        { n: 3, title: 'Dejar secar completamente', text: 'Espera a que la fachada esté completamente seca tras la limpieza y las reparaciones — pintar sobre humedad residual es otra causa habitual de fallos tempranos.', productos: [] },
+        { n: 4, title: 'Aplicar la pintura hidrófuga', text: 'Aplica con rodillo especial de fachadas en manos finas, evitando pintar con lluvia inminente o sol directo muy fuerte.', productos: ['Pintura hidrófuga para fachadas', 'Rodillo especial fachadas'] },
+        { n: 5, title: 'Segunda mano', text: 'Aplica una segunda mano tras el tiempo de secado indicado, para una cobertura uniforme y máxima protección frente a la lluvia.', productos: [] },
+      ],
+      professionalTips: [
+        'Evita pintar la fachada con temperaturas muy bajas, sol directo muy fuerte, o si se espera lluvia en las horas siguientes — las tres condiciones son la causa más habitual de que una pintura de fachada de buena calidad dé mal resultado.',
+      ],
+      commonMistakes: [
+        'Pintar sobre suciedad, musgo o pintura vieja suelta.',
+        'No reparar grietas antes de pintar.',
+        'Pintar con lluvia inminente o humedad residual en la pared.',
+        'Aplicar una sola mano esperando la misma protección que con dos.',
+      ],
+      recommendedProducts: [
+        { nombre: 'O.Matas Pintura Hidrófuga Fachadas Invisible', categoria: 'Pinturas', formato: '20 L', precio: '89,41 €' },
+        { nombre: 'Aguaplast Exterior',                            categoria: 'Pinturas', formato: '1,5 kg', precio: '5,43 €' },
+        { nombre: 'Recambio Rodillo Fachadas Tripol',               categoria: 'Pinturas', formato: '22 cm', precio: '4,69 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Color a elegir (Titán)', nombre: 'Orion A4 Plástico Fachadas Mate 15 L', precio: '73,93 €' },
+        { etiqueta: 'Formato pequeño/retoque', nombre: 'Morakron Fachadas Ladrillo 1 L', precio: '5,52 €' },
+        { etiqueta: 'Revestimiento con textura', nombre: 'Revotex Revestimiento Fachadas 4 L', precio: '21,73 €' },
+      ],
+      relatedSolutions: ['impermeabilizar-terraza-goteras', 'pintar-pared-interior'],
+      seo: {
+        title: 'Cómo pintar una fachada exterior | Orencio Matas',
+        description: 'Guía para preparar y pintar una fachada exterior con un sistema hidrófugo resistente a la intemperie.',
+      },
+    },
+
+    'impermeabilizar-terraza-goteras': {
+      slug: 'impermeabilizar-terraza-goteras',
+      title: 'Cómo impermeabilizar una terraza con goteras',
+      description: 'Sella y protege una terraza o cubierta con goteras usando un revestimiento antigoteras elástico, deteniendo la filtración de agua.',
+      category: 'pintura', subcategory: 'Impermeabilización',
+      problem: 'goteras',
+      objective: 'proteger',
+      surface: 'pared',
+      difficulty: 'Media',
+      estimatedTime: '1 día de aplicación + secado entre manos',
+      result: 'Terraza o cubierta sellada, sin filtraciones de agua',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Impermeabilización'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza exterior',        items: ['Limpieza y eliminación de musgo/suciedad'] },
+        { fase: 'Reparación',  familiaSugerida: 'Masillas de estanqueidad', items: ['Aguaplast Masilla Estanqueidad (grietas)'] },
+        { fase: 'Impermeabilización', familiaSugerida: 'Antigoteras',       items: ['Revestimiento antigoteras caucho-fibra'] },
+      ],
+      receta: [
+        { fase: 'Limpiar', emoji: '🧴' },
+        { fase: 'Sellar grietas', emoji: '🔧' },
+        { fase: 'Aplicar', emoji: '☔' },
+        { fase: 'Curar',   emoji: '⏳' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpieza a fondo', text: 'Elimina musgo, suciedad y restos de pintura suelta — el antigoteras necesita una superficie limpia y bien adherida para sellar de verdad.', productos: ['Limpieza y eliminación de musgo/suciedad'] },
+        { n: 2, title: 'Sellar grietas puntuales', text: 'Repara grietas o juntas abiertas con una masilla de estanqueidad antes de aplicar el revestimiento general — son los puntos por donde suele empezar la filtración.', productos: ['Aguaplast Masilla Estanqueidad (grietas)'] },
+        { n: 3, title: 'Aplicar el revestimiento antigoteras', text: 'Aplica el producto con rodillo o brocha en manos cruzadas, prestando especial atención a juntas, encuentros con paredes y desagües.', productos: ['Revestimiento antigoteras caucho-fibra'] },
+        { n: 4, title: 'Reforzar puntos críticos', text: 'En esquinas, juntas de dilatación y encuentros con bajantes, aplica una capa extra — son los puntos que más fallan con el tiempo.', productos: [] },
+        { n: 5, title: 'Dejar curar antes de exponer a agua', text: 'Respeta el tiempo de curado indicado antes de que la superficie quede expuesta a lluvia o agua acumulada.', productos: [] },
+      ],
+      professionalTips: [
+        'La mayoría de goteras no vienen de la superficie plana, sino de juntas, esquinas y encuentros con bajantes — reforzar esos puntos concretos suele ser más determinante que la cantidad de producto aplicado en la zona plana.',
+      ],
+      commonMistakes: [
+        'Aplicar el antigoteras sobre suciedad, musgo o pintura suelta.',
+        'No sellar antes las grietas puntuales.',
+        'Aplicar una sola mano en zonas de mucho encharcamiento.',
+        'No reforzar juntas, esquinas y encuentros con bajantes.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Aguastop Antigoteras Caucho Fibra',       categoria: 'Pinturas', formato: '20 kg', precio: '93,12 €' },
+        { nombre: 'Aguaplast Masilla Estanqueidad',           categoria: 'Pinturas', formato: '1 kg', precio: '21,22 €' },
+        { nombre: 'Ceys Agua Stop Impermeabilizante c/Fibra', categoria: 'Droguería', formato: '1 kg', precio: '6,73 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Opción económica (goteras puntuales)', nombre: 'Antigoteras LP-70 Caucho 750 ml', precio: '6,35 €' },
+        { etiqueta: 'Terrazas transitables',                 nombre: 'Impermeabilización Terrazas Gilmaelas Caucho Acrílico 15 L', precio: '35,26 €' },
+        { etiqueta: 'Cubiertas grandes/profesional',         nombre: 'Impermeabilización Membrana c/Poliuretano I-12 20 kg', precio: '90,63 €' },
+      ],
+      relatedSolutions: ['pintar-fachada-exterior'],
+      seo: {
+        title: 'Cómo impermeabilizar una terraza con goteras | Orencio Matas',
+        description: 'Guía para sellar grietas y aplicar un revestimiento antigoteras en una terraza o cubierta, deteniendo las filtraciones de agua.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -1276,6 +1397,7 @@ window.SOLUCIONES_DATA = (function () {
       return 'suelo-epoxi-garaje';
     }
     if (superficieId === 'pared') {
+      if (accionId === 'proteger') return 'impermeabilizar-terraza-goteras';
       return 'pintar-pared-interior';
     }
     if (superficieId === 'jardin') {
@@ -1329,6 +1451,8 @@ window.SOLUCIONES_DATA = (function () {
       'polillas_ropa':     ['polilla', 'armario', 'guardarropa'],
       'bajos_coche':       ['bajos del coche', 'antigravilla', 'gravilla'],
       'luna_rota':         ['parabrisas', 'luna del coche', 'luna lateral', 'cristal del coche'],
+      'goteras':           ['gotera', 'goteras', 'humedad', 'filtracion', 'filtración', 'terraza'],
+      'fachada_deteriorada': ['fachada', 'exterior de la casa', 'exterior de casa'],
     };
     let problemaId = null;
     for (const [id, palabras] of Object.entries(coincidencias)) {
