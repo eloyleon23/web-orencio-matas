@@ -83,6 +83,11 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'agua_turbia',   label: 'El agua de la piscina está turbia',    solutionSlug: 'mantenimiento-piscina' },
     { id: 'cucarachas',    label: 'Tengo cucarachas u hormigas',          solutionSlug: 'control-plagas-cocina' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
+    { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
+    { id: 'tuberia_atascada',  label: 'Tengo una tubería atascada',           solutionSlug: 'desatascar-tuberia' },
+    { id: 'suelo_opaco',       label: 'El suelo de mármol está opaco',        solutionSlug: 'abrillantar-suelo-marmol' },
+    { id: 'mancha_ropa',       label: 'Tengo una mancha en la ropa',          solutionSlug: 'eliminar-manchas-ropa' },
+    { id: 'ratones',           label: 'Tengo ratones o roedores',             solutionSlug: 'control-roedores' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -109,17 +114,17 @@ window.SOLUCIONES_DATA = (function () {
     {
       id: 'pintura', label: 'Pintura y decoración', emoji: '🎨',
       ejemplos: [
-        { title: 'Pintar una pared' },
-        { title: 'Cambiar el color de una habitación' },
-        { title: 'Pintar sobre una pared ya pintada' },
-        { title: 'Pintar sobre un color oscuro' },
-        { title: 'Reparar grietas' },
-        { title: 'Tapar agujeros' },
-        { title: 'Preparar una pared' },
+        { title: 'Pintar una pared',                    solutionSlug: 'pintar-pared-interior' },
+        { title: 'Cambiar el color de una habitación',  solutionSlug: 'pintar-pared-interior' },
+        { title: 'Pintar sobre una pared ya pintada',   solutionSlug: 'pintar-pared-interior' },
+        { title: 'Pintar sobre un color oscuro',        solutionSlug: 'pintar-pared-interior' },
+        { title: 'Reparar grietas',                     solutionSlug: 'pintar-pared-interior' },
+        { title: 'Tapar agujeros',                      solutionSlug: 'pintar-pared-interior' },
+        { title: 'Preparar una pared',                  solutionSlug: 'pintar-pared-interior' },
         { title: 'Pintar azulejos' },
         { title: 'Pintar superficies difíciles' },
-        { title: 'Conseguir acabado mate' },
-        { title: 'Conseguir acabado satinado' },
+        { title: 'Conseguir acabado mate',              solutionSlug: 'pintar-pared-interior' },
+        { title: 'Conseguir acabado satinado',           solutionSlug: 'pintar-pared-interior' },
         { title: 'Conseguir acabado brillante' },
       ],
     },
@@ -163,6 +168,9 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Desengrasar piezas' },
         { title: 'Limpiar maquinaria' },
         { title: 'Preparar una superficie' },
+        { title: 'Desatascar una tubería',               solutionSlug: 'desatascar-tuberia' },
+        { title: 'Abrillantar un suelo de mármol',        solutionSlug: 'abrillantar-suelo-marmol' },
+        { title: 'Quitar una mancha de la ropa',          solutionSlug: 'eliminar-manchas-ropa' },
       ],
     },
     {
@@ -202,6 +210,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Acabar con las hormigas',               solutionSlug: 'control-plagas-cocina' },
         { title: 'Evitar que vuelvan los insectos',       solutionSlug: 'control-plagas-cocina' },
         { title: 'Eliminar mosquitos' },
+        { title: 'Eliminar ratones o roedores',           solutionSlug: 'control-roedores' },
       ],
     },
   ];
@@ -216,6 +225,8 @@ window.SOLUCIONES_DATA = (function () {
     { slug: 'suelo-epoxi-garaje',        title: 'Cómo pintar el suelo del garaje con epoxi',      difficulty: 'Media', estimatedTime: '1 día + curado',  emoji: '🅿️' },
     { slug: 'mantenimiento-piscina',     title: 'Cómo equilibrar el agua de la piscina',          difficulty: 'Fácil', estimatedTime: '30 min semanales', emoji: '🏊' },
     { slug: 'control-plagas-cocina',     title: 'Cómo eliminar cucarachas y hormigas',            difficulty: 'Fácil', estimatedTime: 'Resultado en 1-2 semanas', emoji: '🐜' },
+    { slug: 'pintar-pared-interior',     title: 'Cómo pintar una pared por dentro',               difficulty: 'Fácil', estimatedTime: '1 día (2 manos)', emoji: '🎨' },
+    { slug: 'desatascar-tuberia',        title: 'Cómo desatascar una tubería',                    difficulty: 'Fácil', estimatedTime: '15-30 min', emoji: '🚽' },
   ];
 
   // ── Soluciones completas ────────────────────────────────────────────────
@@ -716,10 +727,290 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción rápida (choque puntual)', nombre: 'Arrixaca Insecticida Cucarachas Spray 400 ml', precio: '2,49 €' },
         { etiqueta: 'Varias zonas de la casa',        nombre: 'Cucal Trampa Cucarachas Est. 6 uds + Trampa Hormigas Est. 2 uds', precio: '3,68 € + 2,23 €' },
       ],
-      relatedSolutions: ['sellar-juntas-bano'],
+      relatedSolutions: ['sellar-juntas-bano', 'control-roedores'],
       seo: {
         title: 'Cómo eliminar cucarachas y hormigas de la cocina | Orencio Matas',
         description: 'Guía para eliminar cucarachas y hormigas de forma duradera combinando cebo en gel, barrera de insecticida y sellado de entradas.',
+      },
+    },
+
+    'pintar-pared-interior': {
+      slug: 'pintar-pared-interior',
+      title: 'Cómo pintar una pared por dentro',
+      description: 'Prepara, imprima si hace falta y pinta una pared de interior para conseguir un color uniforme y un acabado duradero.',
+      category: 'pintura', subcategory: 'Pintura de interior',
+      problem: 'pared_deteriorada',
+      objective: 'pintar',
+      surface: 'pared',
+      difficulty: 'Fácil',
+      estimatedTime: '1 día (2 manos) + secado entre manos',
+      result: 'Pared repintada, con color uniforme y buen acabado',
+      colorChart: { label: 'Encuentra tu color en Titanlux (interior)', url: 'https://www.titanlux.es/es/encuentratucolor' },
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Pintura de interior'],
+      materials: [
+        { fase: 'Preparación',  familiaSugerida: 'Masillas',                  items: ['Masilla plástica', 'Lija fina'] },
+        { fase: 'Imprimación',  familiaSugerida: 'Imprimaciones y aparejos',  items: ['Imprimación multiadherente (si hace falta)'] },
+        { fase: 'Color',        familiaSugerida: 'Pinturas al agua',         items: ['Pintura plástica mate o satinada'] },
+        { fase: 'Herramientas', familiaSugerida: 'Útiles de aplicación',     items: ['Rodillo', 'Brocha', 'Cinta de carrocero'] },
+      ],
+      receta: [
+        { fase: 'Preparar', emoji: '🧱' },
+        { fase: 'Proteger', emoji: '🧷' },
+        { fase: 'Imprimar', emoji: '🎨' },
+        { fase: 'Pintar',   emoji: '🖌️' },
+      ],
+      steps: [
+        { n: 1, title: 'Preparar la superficie', text: 'Tapa agujeros y grietas con masilla plástica y, una vez seca, lija en seco para dejar la superficie lisa.', productos: ['Masilla plástica', 'Lija fina'] },
+        { n: 2, title: 'Proteger la zona', text: 'Pega cinta de carrocero en marcos, rodapiés y enchufes antes de empezar, para un corte limpio sin manchar.', productos: ['Cinta de carrocero'] },
+        { n: 3, title: 'Imprimar si hace falta', text: 'Sobre colores muy oscuros, superficies muy porosas o pintadas antes con esmalte brillante, una imprimación multiadherente evita que el color viejo transparente y mejora el agarre de la pintura nueva.', productos: ['Imprimación multiadherente (si hace falta)'] },
+        { n: 4, title: 'Primera mano', text: 'Aplica con rodillo, rematando esquinas y bordes con brocha.', productos: ['Pintura plástica mate o satinada', 'Rodillo', 'Brocha'] },
+        { n: 5, title: 'Segunda mano', text: 'Deja secar el tiempo indicado (normalmente 2-4 horas) y aplica la segunda mano en dirección cruzada respecto a la primera.', productos: [] },
+        { n: 6, title: 'Retirar la cinta', text: 'Quita la cinta de carrocero antes de que la pintura termine de secar del todo, para conseguir un corte limpio sin arrancar pintura ya seca.', productos: [] },
+      ],
+      professionalTips: [
+        'Sobre paredes con un color muy oscuro o pintadas antes con esmalte brillante, saltarse la imprimación es la causa más habitual de que "se transparente" el color viejo por muchas manos de pintura nueva que se apliquen.',
+      ],
+      commonMistakes: [
+        'Pintar sin tapar antes agujeros o grietas.',
+        'Aplicar la segunda mano sin esperar el secado completo de la primera.',
+        'Saltarse la imprimación sobre colores oscuros o superficies brillantes.',
+        'Retirar la cinta de carrocero demasiado tarde, arrancando pintura ya seca.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Masilla Plástica Kolman',                          categoria: 'Pinturas', formato: '250 ml', precio: '2,48 €' },
+        { nombre: 'Imprimación Multiadherente al Agua Koman',         categoria: 'Pinturas', formato: '4 L',   precio: '46,63 €' },
+        { nombre: 'Gilmaplas Pintura Plástica Satinada Extra Int/Ext', categoria: 'Pinturas', formato: '4 L',  precio: '19,64 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Opción económica (retoques)', nombre: 'Jamicolor Pintura Plástica Mate Int/Ext 750 ml Blanco', precio: '2,54 €' },
+        { etiqueta: 'Mayor cobertura',              nombre: 'Gilmaplas Pintura Plástica Satinada Extra 15 L', precio: '65,88 €' },
+      ],
+      relatedSolutions: ['restaurar-mueble-madera'],
+      seo: {
+        title: 'Cómo pintar una pared por dentro | Orencio Matas',
+        description: 'Guía para preparar, imprimar si hace falta, y pintar correctamente una pared de interior, con dos manos de pintura plástica.',
+      },
+    },
+
+    'desatascar-tuberia': {
+      slug: 'desatascar-tuberia',
+      title: 'Cómo desatascar una tubería',
+      description: 'Elige el desatascador adecuado según el tipo de atasco y recupera el flujo normal del agua sin dañar la tubería.',
+      category: 'limpieza', subcategory: 'Desatascos',
+      problem: 'tuberia_atascada',
+      objective: 'reparar',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: '15-30 min (según producto, algunos requieren reposo)',
+      result: 'Tubería desatascada y flujo de agua recuperado',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Desatascos'],
+      materials: [
+        { fase: 'Desatasco químico', familiaSugerida: 'Desatascadores', items: ['Gel o líquido desatascador'] },
+        { fase: 'Mantenimiento',     familiaSugerida: 'Desatascadores', items: ['Activador biológico para fosas sépticas (si aplica)'] },
+      ],
+      receta: [
+        { fase: 'Identificar', emoji: '🔍' },
+        { fase: 'Verter',      emoji: '🧴' },
+        { fase: 'Esperar',     emoji: '⏳' },
+        { fase: 'Aclarar',     emoji: '💧' },
+      ],
+      steps: [
+        { n: 1, title: 'Identificar el tipo de atasco', text: 'Un atasco de grasa o jabón (cocina, baño) no se trata igual que uno de sólidos (WC) — el producto adecuado cambia según el caso.', productos: [] },
+        { n: 2, title: 'Verter el desatascador', text: 'Aplica el producto directamente en el desagüe, evitando salpicaduras sobre superficies o piel.', productos: ['Gel o líquido desatascador'] },
+        { n: 3, title: 'Respetar el tiempo de actuación', text: 'Deja actuar el tiempo indicado en el envase — actuar antes de tiempo es la causa más habitual de que "no funcione".', productos: [] },
+        { n: 4, title: 'Aclarar con agua abundante', text: 'Aclara con agua abundante, preferiblemente caliente, para arrastrar los restos ya disueltos.', productos: [] },
+        { n: 5, title: 'Método mecánico si persiste', text: 'Si el atasco continúa, recurre a un método mecánico (sonda) antes de repetir el químico, para no acumular producto sin efecto.', productos: [] },
+      ],
+      professionalTips: [
+        'Nunca mezcles dos desatascadores químicos diferentes en el mismo intento — la mezcla de este tipo de productos puede generar reacciones peligrosas, además de que casi nunca mejora el resultado.',
+      ],
+      commonMistakes: [
+        'Mezclar distintos productos desatascadores entre sí.',
+        'No respetar el tiempo de actuación indicado en el envase.',
+        'Usar agua fría para aclarar en atascos de grasa (el agua caliente ayuda mucho más).',
+        'Verter agua hirviendo directamente sobre tuberías de PVC (puede deformarlas).',
+      ],
+      recommendedProducts: [
+        { nombre: 'Destop Turbo Desatascador Gel',   categoria: 'Droguería', formato: '1 L',    precio: '4,94 €' },
+        { nombre: 'Dirna Desatascador Turbo',         categoria: 'Droguería', formato: '500 ml', precio: '2,09 €' },
+        { nombre: 'Paso Desatascador Gel Profesional', categoria: 'Droguería', formato: '1 L',   precio: '5,84 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Concentrado',              nombre: 'Dirna Desatascador Concentrado Microperlas 375 g', precio: '1,88 €' },
+        { etiqueta: 'Monodosis',                 nombre: 'Desatascador Arrixaca Monodosis 60 g', precio: '0,61 €' },
+        { etiqueta: 'Mantenimiento fosas sépticas', nombre: 'M.P.L. Activador Fosas Sépticas 400 g', precio: '4,96 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo desatascar una tubería | Orencio Matas',
+        description: 'Guía para elegir el desatascador adecuado y desatascar correctamente una tubería de cocina, baño o WC.',
+      },
+    },
+
+    'abrillantar-suelo-marmol': {
+      slug: 'abrillantar-suelo-marmol',
+      title: 'Cómo abrillantar un suelo de mármol o terrazo',
+      description: 'Recupera el brillo de un suelo de mármol o terrazo opaco con una limpieza adecuada y un abrillantador específico.',
+      category: 'limpieza', subcategory: 'Cuidado de suelos',
+      problem: 'suelo_opaco',
+      objective: 'pulir',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: '30-45 min + secado',
+      result: 'Suelo de mármol o terrazo limpio y con el brillo recuperado',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Cuidado de suelos'],
+      materials: [
+        { fase: 'Limpieza previa', familiaSugerida: 'Limpieza de suelos', items: ['Limpiador neutro para suelos'] },
+        { fase: 'Abrillantado',    familiaSugerida: 'Abrillantadores y ceras', items: ['Abrillantador líquido terrazo/mármol'] },
+        { fase: 'Protección',      familiaSugerida: 'Abrillantadores y ceras', items: ['Cera incolora (opcional)'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',    emoji: '🧴' },
+        { fase: 'Secar',      emoji: '☀️' },
+        { fase: 'Abrillantar',emoji: '✨' },
+        { fase: 'Repetir',    emoji: '🔁' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpieza previa', text: 'Barre y friega con un limpiador neutro — un limpiador ácido o muy agresivo puede dañar el mármol o el terrazo con el tiempo.', productos: ['Limpiador neutro para suelos'] },
+        { n: 2, title: 'Secado completo', text: 'Deja secar completamente el suelo antes de aplicar el abrillantador — la humedad residual empeora el resultado.', productos: [] },
+        { n: 3, title: 'Prueba en una zona pequeña', text: 'Aplica primero en una zona pequeña y poco visible para comprobar el resultado antes de hacer todo el suelo.', productos: [] },
+        { n: 4, title: 'Aplicar el abrillantador', text: 'Extiende con mopa o paño, dejando actuar y secar sin pisar el tiempo indicado en el envase.', productos: ['Abrillantador líquido terrazo/mármol'] },
+        { n: 5, title: 'Repetir periódicamente', text: 'El brillo es una capa que se va desgastando con el uso — repetir la aplicación de vez en cuando da mejor resultado que aplicar una capa muy gruesa de una sola vez.', productos: [] },
+      ],
+      professionalTips: [
+        'El brillo de un abrillantador de suelos se desgasta con el uso diario — aplicar una capa fina cada cierto tiempo mantiene mejor el resultado que una capa muy gruesa una sola vez.',
+      ],
+      commonMistakes: [
+        'Usar limpiadores ácidos o muy agresivos sobre mármol (lo puede opacar o dañar de forma permanente).',
+        'Aplicar el abrillantador sobre suelo húmedo o mal aclarado.',
+        'Pisar el suelo antes de que el abrillantador haya secado del todo.',
+        'Aplicar una capa demasiado gruesa esperando que dure más (queda pegajosa).',
+      ],
+      recommendedProducts: [
+        { nombre: 'Alex Abrillantador Terrazo/Mármol',   categoria: 'Droguería', formato: '1.500 ml', precio: '3,68 €' },
+        { nombre: 'Alex Express Abrillantador Terrazo',   categoria: 'Droguería', formato: '750 ml',   precio: '2,69 €' },
+        { nombre: 'Asevi Abrillantador de Suelos',        categoria: 'Droguería', formato: '1.100 ml', precio: '2,66 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Opción profesional', nombre: 'C-100 Thomil Renovador Limpiador Neutro Suelos Abrillantador 4 L', precio: '18,42 €' },
+        { etiqueta: 'Protección extra',   nombre: 'Alex Cera Incolora 750 ml', precio: '3,68 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo abrillantar un suelo de mármol o terrazo | Orencio Matas',
+        description: 'Guía para limpiar y abrillantar correctamente un suelo de mármol o terrazo opaco, paso a paso.',
+      },
+    },
+
+    'eliminar-manchas-ropa': {
+      slug: 'eliminar-manchas-ropa',
+      title: 'Cómo eliminar una mancha de la ropa',
+      description: 'Identifica el tipo de mancha y trátala con el quitamanchas adecuado antes de lavar, para eliminarla sin dañar el tejido.',
+      category: 'limpieza', subcategory: 'Cuidado de la ropa',
+      problem: 'mancha_ropa',
+      objective: 'limpiar',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: '10-15 min + lavado normal',
+      result: 'Mancha eliminada sin dañar el tejido',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Cuidado de la ropa'],
+      materials: [
+        { fase: 'Diagnóstico', familiaSugerida: '—',              items: ['Identificar el tipo de mancha'] },
+        { fase: 'Tratamiento', familiaSugerida: 'Quitamanchas',   items: ['Quitamanchas específico según el tipo'] },
+        { fase: 'Lavado',      familiaSugerida: 'Detergentes ropa', items: ['Detergente habitual'] },
+      ],
+      receta: [
+        { fase: 'Identificar', emoji: '🔍' },
+        { fase: 'Aplicar',     emoji: '🧴' },
+        { fase: 'Esperar',     emoji: '⏳' },
+        { fase: 'Lavar',       emoji: '🧺' },
+      ],
+      steps: [
+        { n: 1, title: 'Actuar cuanto antes', text: 'Cuanto más reciente esté la mancha, más fácil sale — no dejes que se seque del todo si puedes evitarlo.', productos: [] },
+        { n: 2, title: 'Identificar el tipo de mancha', text: 'Hay quitamanchas específicos para grasa, sangre/leche, tinta u óxido — usar el genérico en una mancha muy concreta (como óxido) suele dar peor resultado que el específico.', productos: [] },
+        { n: 3, title: 'Aplicar el quitamanchas', text: 'Aplica directamente sobre la zona, sin frotar en exceso — frotar puede extender la mancha o dañar la fibra.', productos: ['Quitamanchas específico según el tipo'] },
+        { n: 4, title: 'Dejar actuar', text: 'Respeta el tiempo indicado en el envase antes de lavar la prenda.', productos: [] },
+        { n: 5, title: 'Lavar y comprobar', text: 'Lava la prenda con normalidad y comprueba el resultado antes de secarla — el calor de la secadora puede fijar la mancha si no ha salido del todo.', productos: ['Detergente habitual'] },
+      ],
+      professionalTips: [
+        'Nunca metas en la secadora una prenda con una mancha que no ha desaparecido del todo — el calor la fija de forma casi permanente, mientras que a temperatura ambiente casi siempre se le puede dar un segundo intento.',
+      ],
+      commonMistakes: [
+        'Frotar con fuerza en vez de dejar actuar el producto.',
+        'Usar un quitamanchas genérico para óxido o tinta, que necesitan productos específicos.',
+        'Secar la prenda en secadora antes de comprobar que la mancha ha desaparecido.',
+        'Mezclar quitamanchas con lejía en tejidos de color.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Beckman Quitamanchas Sangre&Leche',        categoria: 'Droguería', formato: '50 ml', precio: '2,09 €' },
+        { nombre: 'Beckman Quitamanchas Tinta',                categoria: 'Droguería', formato: '50 ml', precio: '2,09 €' },
+        { nombre: 'Blancotex S.O.S Quitamanchas Óxido',        categoria: 'Droguería', formato: '75 ml', precio: '2,60 €' },
+        { nombre: 'Cebralin Quitamanchas Aceites y Grasas',    categoria: 'Droguería', formato: '200 ml', precio: '3,68 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Manchas resistentes', nombre: 'Cebralin Quitamanchas Resistentes Roll-on 150 ml', precio: '3,50 €' },
+        { etiqueta: 'Tapicerías/sofás',    nombre: 'Espuma Limpiatapicerías Prof. Vinfer Spray 600 ml', precio: '3,30 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo eliminar una mancha de la ropa | Orencio Matas',
+        description: 'Guía para identificar el tipo de mancha y tratarla con el quitamanchas adecuado antes de lavar la prenda.',
+      },
+    },
+
+    'control-roedores': {
+      slug: 'control-roedores',
+      title: 'Cómo eliminar ratones y roedores',
+      description: 'Combina cebo raticida, trampas y sellado de entradas para eliminar ratones o roedores de forma duradera.',
+      category: 'plagas', subcategory: 'Control de roedores',
+      problem: 'ratones',
+      objective: 'proteger',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: 'Resultado en 1-2 semanas',
+      result: 'Hogar o nave libre de roedores, con las entradas selladas',
+      breadcrumb: ['Centro de Soluciones', 'Plagas y control de insectos', 'Control de roedores'],
+      materials: [
+        { fase: 'Cebo',       familiaSugerida: 'Raticidas', items: ['Raticida en cebo o pasta'] },
+        { fase: 'Trampas',    familiaSugerida: 'Raticidas', items: ['Trampa mecánica', 'Portacebos'] },
+        { fase: 'Prevención', familiaSugerida: 'Siliconas y selladores', items: ['Sellado de rendijas y agujeros'] },
+      ],
+      receta: [
+        { fase: 'Localizar', emoji: '🔍' },
+        { fase: 'Cebar',     emoji: '🎯' },
+        { fase: 'Revisar',   emoji: '🔁' },
+        { fase: 'Sellar',    emoji: '🧷' },
+      ],
+      steps: [
+        { n: 1, title: 'Localizar el recorrido', text: 'Busca excrementos, roeduras o el camino habitual junto a paredes — los roedores rara vez cruzan espacios abiertos, así que su recorrido suele ser muy predecible.', productos: [] },
+        { n: 2, title: 'Colocar el cebo', text: 'Coloca el cebo raticida siempre dentro de un portacebos cerrado, fuera del alcance de niños y mascotas, en el recorrido detectado.', productos: ['Raticida en cebo o pasta', 'Portacebos'] },
+        { n: 3, title: 'Reforzar con trampas', text: 'Añade trampas mecánicas en los puntos de paso más estrechos, como complemento al cebo.', productos: ['Trampa mecánica'] },
+        { n: 4, title: 'Revisar y reponer', text: 'Revisa el cebo periódicamente — si no se toca en varios días, probablemente no está en el sitio correcto y conviene reubicarlo.', productos: [] },
+        { n: 5, title: 'Sellar las entradas', text: 'Una vez controlada la plaga, sella los puntos de entrada para evitar que vuelvan a aparecer.', productos: [] },
+      ],
+      professionalTips: [
+        'Los roedores son extremadamente desconfiados con objetos nuevos — no es raro que tarden varios días en acercarse al cebo o a la trampa la primera vez, no significa que no esté funcionando.',
+      ],
+      commonMistakes: [
+        'Colocar el cebo sin portacebos, accesible a niños o mascotas.',
+        'Colocarlo lejos del recorrido real del roedor, en medio de una habitación en vez de junto a las paredes.',
+        'Retirar el cebo demasiado pronto por parecer que "no funciona".',
+        'No sellar las entradas una vez resuelto el problema.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Nogat Raticida Estuche 6 sobres',   categoria: 'Droguería', formato: '10 g c/u', precio: '5,02 €' },
+        { nombre: 'Portacebos P.K 078',                  categoria: 'Droguería',                     precio: '6,22 €' },
+        { nombre: 'Racumin Raticida en Pasta',           categoria: 'Droguería', formato: '20x10 g', precio: '3,41 €' },
+        { nombre: 'Ratibrom ¡Zas! Trampa Ratas',         categoria: 'Droguería',                     precio: '5,53 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Formato grande/nave', nombre: 'Nogat Raticida Grano Ratas Resist. 5x50 g', precio: '4,57 €' },
+        { etiqueta: 'Cebo fresco',          nombre: 'Brody Cebo Fresco B/100 g', precio: '1,33 €' },
+      ],
+      relatedSolutions: ['sellar-juntas-bano', 'control-plagas-cocina'],
+      seo: {
+        title: 'Cómo eliminar ratones y roedores | Orencio Matas',
+        description: 'Guía para eliminar ratones o roedores combinando cebo raticida, trampas mecánicas y sellado de puntos de entrada.',
       },
     },
   };
@@ -738,6 +1029,13 @@ window.SOLUCIONES_DATA = (function () {
     }
     if (superficieId === 'suelo') {
       return 'suelo-epoxi-garaje';
+    }
+    if (superficieId === 'pared') {
+      return 'pintar-pared-interior';
+    }
+    if (superficieId === 'hogar') {
+      if (resultadoId === 'recuperar_brillo') return 'abrillantar-suelo-marmol';
+      return 'sellar-juntas-bano';
     }
     if (superficieId === 'coche' && (resultadoId === 'recuperar_brillo' || accionId === 'pulir')) {
       return 'recuperar-brillo-carroceria';
@@ -771,6 +1069,11 @@ window.SOLUCIONES_DATA = (function () {
       'agua_turbia':['piscina', 'turbia', 'algas', 'cloro', 'ph del agua'],
       'cucarachas': ['cucaracha', 'hormiga', 'insecto', 'plaga', 'bicho'],
       'suelo_deteriorado': ['suelo', 'garaje', 'epoxi', 'nave', 'taller'],
+      'pared_deteriorada': ['pared', 'habitacion', 'habitación', 'salon', 'salón', 'pintar la pared'],
+      'tuberia_atascada':  ['atascad', 'tuberia', 'tubería', 'desague', 'desagüe', 'atasco'],
+      'suelo_opaco':       ['marmol', 'mármol', 'terrazo', 'opaco'],
+      'mancha_ropa':       ['mancha', 'ropa', 'camisa', 'tejido'],
+      'ratones':           ['raton', 'ratón', 'ratones', 'roedor'],
     };
     let problemaId = null;
     for (const [id, palabras] of Object.entries(coincidencias)) {
