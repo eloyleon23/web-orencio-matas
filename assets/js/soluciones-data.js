@@ -44,6 +44,7 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'hogar',    label: 'Hogar',                emoji: '🏠' },
     { id: 'plastico', label: 'Plástico',              emoji: '🧩' },
     { id: 'suelo',    label: 'Suelo / garaje',         emoji: '🅿️' },
+    { id: 'jardin',   label: 'Jardín',                 emoji: '🌱' },
     { id: 'piscina',  label: 'Piscina',                emoji: '🏊' },
     { id: 'otro',     label: 'Otro',                  emoji: '❔' },
   ];
@@ -88,6 +89,10 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'suelo_opaco',       label: 'El suelo de mármol está opaco',        solutionSlug: 'abrillantar-suelo-marmol' },
     { id: 'mancha_ropa',       label: 'Tengo una mancha en la ropa',          solutionSlug: 'eliminar-manchas-ropa' },
     { id: 'ratones',           label: 'Tengo ratones o roedores',             solutionSlug: 'control-roedores' },
+    { id: 'plantas_debiles',   label: 'Mis plantas necesitan abono',          solutionSlug: 'cuidado-plantas-jardin' },
+    { id: 'polillas_ropa',     label: 'Tengo polillas en el armario',         solutionSlug: 'proteger-ropa-polillas' },
+    { id: 'bajos_coche',       label: 'Quiero proteger los bajos del coche',  solutionSlug: 'proteger-bajos-antigravilla' },
+    { id: 'luna_rota',         label: 'Se me ha descolado el parabrisas',     solutionSlug: 'sellar-luna-parabrisas' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -109,6 +114,8 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Quitar restos de cola' },
         { title: 'Eliminar óxido',                      solutionSlug: 'eliminar-oxido-metal' },
         { title: 'Desengrasar una pieza' },
+        { title: 'Proteger los bajos del coche',        solutionSlug: 'proteger-bajos-antigravilla' },
+        { title: 'Sellar o pegar una luna',              solutionSlug: 'sellar-luna-parabrisas' },
       ],
     },
     {
@@ -211,6 +218,17 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Evitar que vuelvan los insectos',       solutionSlug: 'control-plagas-cocina' },
         { title: 'Eliminar mosquitos' },
         { title: 'Eliminar ratones o roedores',           solutionSlug: 'control-roedores' },
+        { title: 'Proteger la ropa de las polillas',      solutionSlug: 'proteger-ropa-polillas' },
+      ],
+    },
+    {
+      id: 'jardin', label: 'Jardín y plantas', emoji: '🌱',
+      ejemplos: [
+        { title: 'Abonar las plantas del jardín',        solutionSlug: 'cuidado-plantas-jardin' },
+        { title: 'Cuidar plantas de interior',            solutionSlug: 'cuidado-plantas-jardin' },
+        { title: 'Proteger las plantas de insectos',      solutionSlug: 'cuidado-plantas-jardin' },
+        { title: 'Curar heridas de poda',                 solutionSlug: 'cuidado-plantas-jardin' },
+        { title: 'Tratar un hongo en las plantas',        solutionSlug: 'cuidado-plantas-jardin' },
       ],
     },
   ];
@@ -227,6 +245,8 @@ window.SOLUCIONES_DATA = (function () {
     { slug: 'control-plagas-cocina',     title: 'Cómo eliminar cucarachas y hormigas',            difficulty: 'Fácil', estimatedTime: 'Resultado en 1-2 semanas', emoji: '🐜' },
     { slug: 'pintar-pared-interior',     title: 'Cómo pintar una pared por dentro',               difficulty: 'Fácil', estimatedTime: '1 día (2 manos)', emoji: '🎨' },
     { slug: 'desatascar-tuberia',        title: 'Cómo desatascar una tubería',                    difficulty: 'Fácil', estimatedTime: '15-30 min', emoji: '🚽' },
+    { slug: 'cuidado-plantas-jardin',    title: 'Cómo abonar y cuidar las plantas del jardín',    difficulty: 'Fácil', estimatedTime: '20 min (rutina periódica)', emoji: '🌱' },
+    { slug: 'proteger-bajos-antigravilla', title: 'Cómo proteger los bajos del coche',            difficulty: 'Media', estimatedTime: '1-2 h + secado', emoji: '🚗' },
   ];
 
   // ── Soluciones completas ────────────────────────────────────────────────
@@ -1007,10 +1027,235 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Formato grande/nave', nombre: 'Nogat Raticida Grano Ratas Resist. 5x50 g', precio: '4,57 €' },
         { etiqueta: 'Cebo fresco',          nombre: 'Brody Cebo Fresco B/100 g', precio: '1,33 €' },
       ],
-      relatedSolutions: ['sellar-juntas-bano', 'control-plagas-cocina'],
+      relatedSolutions: ['sellar-juntas-bano', 'control-plagas-cocina', 'proteger-ropa-polillas'],
       seo: {
         title: 'Cómo eliminar ratones y roedores | Orencio Matas',
         description: 'Guía para eliminar ratones o roedores combinando cebo raticida, trampas mecánicas y sellado de puntos de entrada.',
+      },
+    },
+
+    'cuidado-plantas-jardin': {
+      slug: 'cuidado-plantas-jardin',
+      title: 'Cómo abonar y cuidar las plantas del jardín',
+      description: 'Aprende a abonar, tratar plagas y hongos, y curar heridas de poda para mantener las plantas del jardín o de interior sanas.',
+      category: 'jardin', subcategory: 'Cuidado de plantas',
+      problem: 'plantas_debiles',
+      objective: 'proteger',
+      surface: 'jardin',
+      difficulty: 'Fácil',
+      estimatedTime: '20 min, rutina periódica cada 15-30 días',
+      result: 'Plantas más fuertes, protegidas de plagas y hongos',
+      breadcrumb: ['Centro de Soluciones', 'Jardín y plantas', 'Cuidado de plantas'],
+      materials: [
+        { fase: 'Nutrición',  familiaSugerida: 'Abonos y fertilizantes', items: ['Fertilizante líquido universal'] },
+        { fase: 'Plagas',     familiaSugerida: 'Insecticidas de jardín', items: ['Insecticida polivalente de jardín'] },
+        { fase: 'Hongos',     familiaSugerida: 'Fungicidas',             items: ['Fungicida'] },
+        { fase: 'Poda',       familiaSugerida: 'Cuidado de plantas',     items: ['Pasta cicatrizante para cortes de poda'] },
+      ],
+      receta: [
+        { fase: 'Abonar',   emoji: '🌿' },
+        { fase: 'Vigilar',  emoji: '🔍' },
+        { fase: 'Tratar',   emoji: '💧' },
+        { fase: 'Podar',    emoji: '✂️' },
+      ],
+      steps: [
+        { n: 1, title: 'Abonar de forma regular', text: 'Aplica un fertilizante líquido universal cada 15-30 días en época de crecimiento — una planta bien nutrida resiste mucho mejor plagas y enfermedades.', productos: ['Fertilizante líquido universal'] },
+        { n: 2, title: 'Vigilar signos de plaga', text: 'Revisa el envés de las hojas periódicamente — pulgón, araña roja o cochinilla se detectan antes si se revisa con regularidad, no solo cuando ya se ve mucho daño.', productos: [] },
+        { n: 3, title: 'Tratar insectos si aparecen', text: 'Aplica un insecticida polivalente de jardín en cuanto detectes plaga, tratando también el envés de las hojas, no solo la parte visible.', productos: ['Insecticida polivalente de jardín'] },
+        { n: 4, title: 'Tratar hongos', text: 'Ante manchas, moho o podredumbre, aplica un fungicida — actúa mejor de forma preventiva o al primer síntoma que cuando el hongo ya está muy extendido.', productos: ['Fungicida'] },
+        { n: 5, title: 'Curar heridas de poda', text: 'Tras podar ramas gruesas, sella el corte con pasta cicatrizante para evitar que entren hongos o insectos por la herida abierta.', productos: ['Pasta cicatrizante para cortes de poda'] },
+      ],
+      professionalTips: [
+        'La mayoría de plagas de jardín se controlan mucho mejor detectadas a tiempo — revisar el envés de las hojas cada pocos días es más eficaz que tratar cuando la plaga ya está muy extendida.',
+      ],
+      commonMistakes: [
+        'Abonar en exceso pensando que "más es mejor" (puede quemar la raíz).',
+        'No revisar el envés de las hojas, donde suelen empezar las plagas.',
+        'Aplicar fungicida cuando el hongo ya está muy avanzado, en vez de al primer síntoma.',
+        'Podar ramas gruesas sin sellar después el corte.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Compo Fertilizante Líquido Universal', categoria: 'Droguería', formato: '1,3 L', precio: '7,04 €' },
+        { nombre: 'Gesal Insecticida Polivalente',          categoria: 'Droguería', formato: '500 ml (pistola)', precio: '4,32 €' },
+        { nombre: 'Humus HLH Equisetem Fungicida',          categoria: 'Droguería', formato: '1 L', precio: '7,62 €' },
+        { nombre: 'Compo Pasta Cicatrizante',               categoria: 'Droguería', formato: '250 g', precio: '8,74 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Plantas verdes/interior', nombre: 'Compo Fertilizante Líquido Plantas Verdes 1,3 L', precio: '7,15 €' },
+        { etiqueta: 'Formato pequeño',          nombre: 'Impex Abono Universal 1 L', precio: '4,73 €' },
+        { etiqueta: 'Contra hormigas específico', nombre: 'Compo Insecticida Antihormigas 300 g', precio: '4,96 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo abonar y cuidar las plantas del jardín | Orencio Matas',
+        description: 'Guía para abonar, tratar plagas y hongos, y curar heridas de poda, y mantener las plantas del jardín sanas todo el año.',
+      },
+    },
+
+    'proteger-ropa-polillas': {
+      slug: 'proteger-ropa-polillas',
+      title: 'Cómo proteger la ropa de las polillas',
+      description: 'Protege armarios y guardarropas de las polillas de la ropa, deteniendo el problema antes de que aparezcan agujeros en los tejidos.',
+      category: 'plagas', subcategory: 'Protección de la ropa',
+      problem: 'polillas_ropa',
+      objective: 'proteger',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: '15 min por armario',
+      result: 'Ropa protegida frente a las polillas, sin agujeros nuevos',
+      breadcrumb: ['Centro de Soluciones', 'Plagas y control de insectos', 'Protección de la ropa'],
+      materials: [
+        { fase: 'Limpieza previa', familiaSugerida: '—',                          items: ['Lavar/limpiar la ropa antes de guardarla'] },
+        { fase: 'Protección',      familiaSugerida: 'Antipolillas',               items: ['Antipolilla colgador o bloques'] },
+        { fase: 'Guardado',        familiaSugerida: 'Fundas guardarropa',         items: ['Funda o bolsa guardarropa'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',   emoji: '🧺' },
+        { fase: 'Colgar',    emoji: '👔' },
+        { fase: 'Guardar',   emoji: '📦' },
+        { fase: 'Revisar',   emoji: '🔁' },
+      ],
+      steps: [
+        { n: 1, title: 'Lavar antes de guardar', text: 'Las polillas se sienten atraídas por restos de sudor o suciedad en la ropa — guardar prendas ya limpias reduce mucho el riesgo, sobre todo en el cambio de temporada.', productos: [] },
+        { n: 2, title: 'Colocar protección antipolilla', text: 'Cuelga o coloca los antipolillas (lavanda u otros aromas repelentes) entre la ropa, repartidos por todo el armario, no solo en un punto.', productos: ['Antipolilla colgador o bloques'] },
+        { n: 3, title: 'Guardar en fundas cerradas', text: 'Para prendas delicadas o de temporada (lana, abrigos), usar una funda o bolsa guardarropa cerrada añade una barrera física extra.', productos: ['Funda o bolsa guardarropa'] },
+        { n: 4, title: 'Revisar periódicamente', text: 'Comprueba cada cierto tiempo que las prendas guardadas no tengan agujeros nuevos ni presencia de larvas, sobre todo en prendas de lana poco usadas.', productos: [] },
+        { n: 5, title: 'Reponer el antipolilla', text: 'Los repelentes pierden eficacia con el tiempo — repón o renueva cada temporada, no dejes el mismo colgador años seguidos.', productos: [] },
+      ],
+      professionalTips: [
+        'Las polillas de la ropa se alimentan de fibras naturales con restos orgánicos (sudor, comida) — la mejor prevención no es solo el repelente, es guardar siempre la ropa limpia.',
+      ],
+      commonMistakes: [
+        'Guardar ropa sin lavar de una temporada a otra.',
+        'Colocar un único antipolilla en todo el armario en vez de repartirlos.',
+        'No renovar el repelente cuando pierde el olor.',
+        'No revisar las prendas guardadas hasta la siguiente temporada.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Bloom Antipolilla Colgador Lavanda',      categoria: 'Droguería', formato: 'Dúo', precio: '1,48 €' },
+        { nombre: 'Antipolilla Paraflor Estuches',            categoria: 'Droguería', formato: '3 bloques', precio: '3,46 €' },
+        { nombre: 'Guardarropa Bonodor Nº2',                   categoria: 'Droguería', formato: '65x125 cm, 5 uds', precio: '2,66 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Sin olor',           nombre: 'Esens-Sensitive Antipolilla S/Olor Colgador Dúo', precio: '2,24 €' },
+        { etiqueta: 'Formato económico',  nombre: 'Bloom Antipolilla Bolitas B/24 uds Lavanda', precio: '0,63 €' },
+        { etiqueta: 'Prenda individual',  nombre: 'Guardarropa Zidar Trajes 5 Bolsas 65x125 cm', precio: '0,82 €' },
+      ],
+      relatedSolutions: ['control-plagas-cocina', 'control-roedores'],
+      seo: {
+        title: 'Cómo proteger la ropa de las polillas | Orencio Matas',
+        description: 'Guía para proteger armarios y guardarropas de las polillas de la ropa, antes de que aparezcan agujeros en los tejidos.',
+      },
+    },
+
+    'proteger-bajos-antigravilla': {
+      slug: 'proteger-bajos-antigravilla',
+      title: 'Cómo proteger los bajos del coche con antigravilla',
+      description: 'Aplica un tratamiento antigravilla en los bajos y pasos de rueda para proteger la chapa de golpes de piedras, sal y corrosión.',
+      category: 'coche', subcategory: 'Protección de bajos',
+      problem: 'bajos_coche',
+      objective: 'proteger',
+      surface: 'coche',
+      difficulty: 'Media',
+      estimatedTime: '1-2 h + secado',
+      result: 'Bajos y pasos de rueda protegidos frente a golpes de gravilla y corrosión',
+      breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Protección de bajos'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes', items: ['Desengrasante'] },
+        { fase: 'Enmascarado', familiaSugerida: 'Productos de enmascarado', items: ['Cinta y papel de enmascarar'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones',            items: ['Imprimación chapa/cristal (si hay zonas con corrosión)'] },
+        { fase: 'Aplicación',  familiaSugerida: 'Antigravillas y selladores', items: ['Antigravilla'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',    emoji: '🧴' },
+        { fase: 'Enmascarar', emoji: '🧷' },
+        { fase: 'Imprimar',   emoji: '🎨' },
+        { fase: 'Aplicar',    emoji: '🛡️' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpiar y desengrasar', text: 'Los bajos acumulan grasa, barro y restos de sal — hay que partir de una superficie limpia para que la antigravilla se agarre bien.', productos: ['Desengrasante'] },
+        { n: 2, title: 'Enmascarar zonas sensibles', text: 'Protege con cinta y papel las zonas que no se deben tratar (juntas de goma, tubos de escape, sensores).', productos: ['Cinta y papel de enmascarar'] },
+        { n: 3, title: 'Imprimar si hay corrosión', text: 'En zonas con principio de óxido, aplica antes una imprimación para chapa — la antigravilla protege hacia adelante, pero no sustituye tratar un óxido ya existente.', productos: ['Imprimación chapa/cristal (si hay zonas con corrosión)'] },
+        { n: 4, title: 'Aplicar la antigravilla', text: 'Aplica en capa uniforme sobre bajos y pasos de rueda, respetando la distancia de pulverización indicada en el envase.', productos: ['Antigravilla'] },
+        { n: 5, title: 'Dejar secar antes de rodar', text: 'Respeta el tiempo de secado antes de mover el vehículo con normalidad, para que la capa no se manche ni se agriete nada más aplicada.', productos: [] },
+      ],
+      professionalTips: [
+        'La antigravilla protege frente a nuevos impactos y humedad, pero no "repara" el óxido que ya existe — si hay corrosión avanzada, hay que tratarla antes con una imprimación adecuada.',
+      ],
+      commonMistakes: [
+        'Aplicar antigravilla directamente sobre suciedad o grasa.',
+        'No enmascarar juntas de goma, tubos de escape o sensores.',
+        'Aplicar sobre óxido ya existente sin tratarlo antes.',
+        'Mover el vehículo antes de que la antigravilla haya secado del todo.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Antigravilla Zaphiro Negro',           categoria: 'Talleres', formato: '1 L', precio: '8,08 €' },
+        { nombre: 'Imprimación Chapa/Cristal Zaphiro',    categoria: 'Talleres', formato: '30 ml', precio: '6,67 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Color gris/bajos claros', nombre: 'Antigravilla Zaphiro Gris 1 L', precio: '7,48 €' },
+        { etiqueta: 'Opción profesional',       nombre: 'Body Autoflex Special Antigravilla 1 L Negro', precio: '11,99 €' },
+      ],
+      relatedSolutions: ['eliminar-oxido-metal', 'sellar-luna-parabrisas'],
+      seo: {
+        title: 'Cómo proteger los bajos del coche con antigravilla | Orencio Matas',
+        description: 'Guía para aplicar un tratamiento antigravilla en los bajos y pasos de rueda del coche, protegiendo la chapa de golpes y corrosión.',
+      },
+    },
+
+    'sellar-luna-parabrisas': {
+      slug: 'sellar-luna-parabrisas',
+      title: 'Cómo sellar o pegar una luna de coche',
+      description: 'Aplica correctamente el sistema adhesivo y sellador para pegar o sustituir un parabrisas o una luna lateral fija.',
+      category: 'coche', subcategory: 'Sustitución de lunas',
+      problem: 'luna_rota',
+      objective: 'reparar',
+      surface: 'coche',
+      difficulty: 'Difícil',
+      estimatedTime: '2-3 h + tiempo de curado del adhesivo antes de rodar',
+      result: 'Luna correctamente pegada y sellada, sin fugas de aire ni agua',
+      breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Sustitución de lunas'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes', items: ['Desengrasante para cristal y marco'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones',            items: ['Imprimación chapa/cristal'] },
+        { fase: 'Adhesivo',    familiaSugerida: 'Adhesivos de lunas',        items: ['Adhesivo/sellador de lunas (PUR o MS polímero)'] },
+        { fase: 'Aplicación',  familiaSugerida: 'Herramientas',              items: ['Pistola aplicadora', 'Aplicador de imprimación'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',   emoji: '🧴' },
+        { fase: 'Imprimar',  emoji: '🎨' },
+        { fase: 'Aplicar',   emoji: '🧷' },
+        { fase: 'Curar',     emoji: '⏳' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpieza del marco y el cristal', text: 'Desengrasa a fondo tanto el marco de chapa como el borde del cristal — cualquier resto de grasa o silicona antigua compromete el pegado.', productos: ['Desengrasante para cristal y marco'] },
+        { n: 2, title: 'Imprimación', text: 'Aplica la imprimación específica para chapa/cristal con su aplicador — mejora la adherencia del adhesivo y protege el borde de chapa expuesto.', productos: ['Imprimación chapa/cristal', 'Aplicador de imprimación'] },
+        { n: 3, title: 'Aplicar el cordón de adhesivo', text: 'Aplica el adhesivo/sellador de lunas con la pistola en un cordón continuo y uniforme, sin huecos ni interrupciones — un hueco en el cordón es la causa más habitual de fugas posteriores.', productos: ['Adhesivo/sellador de lunas (PUR o MS polímero)', 'Pistola aplicadora'] },
+        { n: 4, title: 'Colocar la luna', text: 'Posiciona la luna con precisión antes de que el adhesivo empiece a formar piel — una vez colocada, no se debe reajustar la posición.', productos: [] },
+        { n: 5, title: 'Respetar el tiempo de curado', text: 'No muevas el vehículo hasta que el adhesivo haya alcanzado su resistencia mínima de seguridad — este tiempo varía según el producto y la temperatura ambiente, consulta siempre la ficha técnica.', productos: [] },
+      ],
+      professionalTips: [
+        'El tiempo de curado hasta poder circular con seguridad no es negociable — depende del adhesivo y de la temperatura, y es lo que garantiza que la luna aguante en caso de un frenazo brusco o un accidente.',
+      ],
+      commonMistakes: [
+        'Aplicar el adhesivo sobre restos de grasa o silicona antigua.',
+        'Saltarse la imprimación de chapa/cristal.',
+        'Dejar huecos en el cordón de adhesivo.',
+        'Mover el vehículo antes del tiempo de curado mínimo indicado en la ficha técnica.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Kit Adhesivo Lunas Zaphiro',         categoria: 'Talleres', precio: '14,99 €' },
+        { nombre: 'Adhesivo Lunas MS Polímero Zaphiro', categoria: 'Talleres', formato: '290 ml', precio: '13,02 €' },
+        { nombre: 'Aplicador de Imprimación',            categoria: 'Talleres', precio: '2,31 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Opción económica',    nombre: 'Adhesivo PUR de Lunas ZXS150 310 ml', precio: '7,91 €' },
+        { etiqueta: 'Reparación puntual',  nombre: 'Cartucho Masilla Parabrisas 310 cc', precio: '17,53 €' },
+      ],
+      relatedSolutions: ['proteger-bajos-antigravilla'],
+      seo: {
+        title: 'Cómo sellar o pegar una luna de coche | Orencio Matas',
+        description: 'Guía para pegar o sustituir correctamente un parabrisas o luna lateral, con el sistema adhesivo y sellador adecuado.',
       },
     },
   };
@@ -1033,9 +1278,15 @@ window.SOLUCIONES_DATA = (function () {
     if (superficieId === 'pared') {
       return 'pintar-pared-interior';
     }
+    if (superficieId === 'jardin') {
+      return 'cuidado-plantas-jardin';
+    }
     if (superficieId === 'hogar') {
       if (resultadoId === 'recuperar_brillo') return 'abrillantar-suelo-marmol';
       return 'sellar-juntas-bano';
+    }
+    if (superficieId === 'coche' && accionId === 'proteger') {
+      return 'proteger-bajos-antigravilla';
     }
     if (superficieId === 'coche' && (resultadoId === 'recuperar_brillo' || accionId === 'pulir')) {
       return 'recuperar-brillo-carroceria';
@@ -1074,6 +1325,10 @@ window.SOLUCIONES_DATA = (function () {
       'suelo_opaco':       ['marmol', 'mármol', 'terrazo', 'opaco'],
       'mancha_ropa':       ['mancha', 'ropa', 'camisa', 'tejido'],
       'ratones':           ['raton', 'ratón', 'ratones', 'roedor'],
+      'plantas_debiles':   ['planta', 'jardin', 'jardín', 'abono', 'maceta'],
+      'polillas_ropa':     ['polilla', 'armario', 'guardarropa'],
+      'bajos_coche':       ['bajos del coche', 'antigravilla', 'gravilla'],
+      'luna_rota':         ['parabrisas', 'luna del coche', 'luna lateral', 'cristal del coche'],
     };
     let problemaId = null;
     for (const [id, palabras] of Object.entries(coincidencias)) {
