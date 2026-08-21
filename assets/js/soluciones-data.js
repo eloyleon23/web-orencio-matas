@@ -384,6 +384,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Media',
       estimatedTime: '1-2 días (por los secados)',
       result: 'Mueble restaurado, con superficie lisa y barniz o pintura nuevos',
+      colorChart: { label: 'Encuentra tu color en Titanlux (línea madera)', url: 'https://www.titanlux.es/es/encuentratucolor' },
       breadcrumb: ['Centro de Soluciones', 'Madera y restauración', 'Restaurar mueble'],
       materials: [
         { fase: 'Decapado',     familiaSugerida: 'Decapantes',  items: ['Decapante de barniz'] },
@@ -557,6 +558,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Media',
       estimatedTime: '1 día de aplicación + 3-7 días de curado antes del tráfico',
       result: 'Suelo protegido, con acabado uniforme resistente a aceites y desgaste',
+      colorChart: { label: 'Ver carta de colores TitanTech (sistema TitanColor: TT1 / RAL / NCS)', url: 'https://www.titantech.es/colores' },
       breadcrumb: ['Centro de Soluciones', 'Suelos y garajes', 'Suelos técnicos'],
       materials: [
         { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes',      items: ['Desengrasante industrial'] },

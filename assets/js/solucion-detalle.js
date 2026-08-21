@@ -71,6 +71,10 @@
             <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Superficie</div><div class="cs-info-resumen__valor">${sol.subcategory}</div></div>
             <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Resultado</div><div class="cs-info-resumen__valor">${sol.result}</div></div>
           </div>
+          ${sol.colorChart ? `
+          <a class="btn-secondary" href="${sol.colorChart.url}" target="_blank" rel="noopener" style="margin-top:22px;display:inline-flex;gap:8px;">
+            🎨 ${sol.colorChart.label}
+          </a>` : ''}
         </div>
       </section>
 
