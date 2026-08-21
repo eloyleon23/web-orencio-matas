@@ -31,6 +31,7 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'restaurar', label: 'Restaurar',              emoji: '🪵', color: 'blue' },
     { id: 'proteger',  label: 'Proteger',                emoji: '🛡️', color: 'green' },
     { id: 'preparar',  label: 'Preparar una superficie', emoji: '🔩', color: 'yellow' },
+    { id: 'pegar',     label: 'Pegar y sellar',          emoji: '🧷', color: 'blue' },
     { id: 'acabado',   label: 'Conseguir un acabado',    emoji: '🎯', color: 'red' },
   ];
 
@@ -42,6 +43,8 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'pared',    label: 'Paredes',              emoji: '🧱' },
     { id: 'hogar',    label: 'Hogar',                emoji: '🏠' },
     { id: 'plastico', label: 'Plástico',              emoji: '🧩' },
+    { id: 'suelo',    label: 'Suelo / garaje',         emoji: '🅿️' },
+    { id: 'piscina',  label: 'Piscina',                emoji: '🏊' },
     { id: 'otro',     label: 'Otro',                  emoji: '❔' },
   ];
 
@@ -76,6 +79,10 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'blanquecino',   label: 'El barniz ha quedado blanquecino',     solutionSlug: 'restaurar-mueble-madera' },
     { id: 'quitar_pintura',label: 'Necesito quitar pintura',              solutionSlug: 'restaurar-mueble-madera' },
     { id: 'preparar_dudas',label: 'No sé cómo preparar la superficie',    solutionSlug: 'pintar-plastico-coche' },
+    { id: 'moho_junta',    label: 'Tengo moho en las juntas del baño',    solutionSlug: 'sellar-juntas-bano' },
+    { id: 'agua_turbia',   label: 'El agua de la piscina está turbia',    solutionSlug: 'mantenimiento-piscina' },
+    { id: 'cucarachas',    label: 'Tengo cucarachas u hormigas',          solutionSlug: 'control-plagas-cocina' },
+    { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -158,6 +165,45 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Preparar una superficie' },
       ],
     },
+    {
+      id: 'pegado', label: 'Pegado y sellado', emoji: '🧷',
+      ejemplos: [
+        { title: 'Sellar una junta de baño o cocina',   solutionSlug: 'sellar-juntas-bano' },
+        { title: 'Quitar moho de una junta de silicona', solutionSlug: 'sellar-juntas-bano' },
+        { title: 'Pegar una tubería de PVC' },
+        { title: 'Elegir el pegamento según el material' },
+        { title: 'Pegar césped artificial' },
+        { title: 'Sellar una ventana o marco' },
+      ],
+    },
+    {
+      id: 'suelos', label: 'Suelos y garajes', emoji: '🅿️',
+      ejemplos: [
+        { title: 'Pintar el suelo del garaje',           solutionSlug: 'suelo-epoxi-garaje' },
+        { title: 'Proteger un suelo industrial',         solutionSlug: 'suelo-epoxi-garaje' },
+        { title: 'Barnizar un suelo de madera' },
+        { title: 'Reparar grietas en el suelo' },
+      ],
+    },
+    {
+      id: 'piscinas', label: 'Piscinas', emoji: '🏊',
+      ejemplos: [
+        { title: 'Ajustar el pH del agua',               solutionSlug: 'mantenimiento-piscina' },
+        { title: 'Eliminar algas',                       solutionSlug: 'mantenimiento-piscina' },
+        { title: 'Clorar correctamente la piscina',      solutionSlug: 'mantenimiento-piscina' },
+        { title: 'Preparar la piscina para el verano',   solutionSlug: 'mantenimiento-piscina' },
+        { title: 'Invernar la piscina' },
+      ],
+    },
+    {
+      id: 'plagas', label: 'Plagas y control de insectos', emoji: '🐜',
+      ejemplos: [
+        { title: 'Eliminar cucarachas de la cocina',     solutionSlug: 'control-plagas-cocina' },
+        { title: 'Acabar con las hormigas',               solutionSlug: 'control-plagas-cocina' },
+        { title: 'Evitar que vuelvan los insectos',       solutionSlug: 'control-plagas-cocina' },
+        { title: 'Eliminar mosquitos' },
+      ],
+    },
   ];
 
   // ── Soluciones destacadas (para la home) ────────────────────────────────
@@ -166,6 +212,10 @@ window.SOLUCIONES_DATA = (function () {
     { slug: 'recuperar-brillo-carroceria', title: 'Cómo reparar un arañazo de la carrocería',     difficulty: 'Media', estimatedTime: '1-2 h',          emoji: '🚗' },
     { slug: 'eliminar-oxido-metal',      title: 'Cómo eliminar óxido del metal',                 difficulty: 'Fácil', estimatedTime: '1 h',             emoji: '🔩' },
     { slug: 'restaurar-mueble-madera',   title: 'Cómo restaurar un mueble de madera',             difficulty: 'Media', estimatedTime: '1-2 días (secados)', emoji: '🪵' },
+    { slug: 'sellar-juntas-bano',        title: 'Cómo sellar una junta de baño o cocina',         difficulty: 'Fácil', estimatedTime: '30-45 min + secado', emoji: '🧷' },
+    { slug: 'suelo-epoxi-garaje',        title: 'Cómo pintar el suelo del garaje con epoxi',      difficulty: 'Media', estimatedTime: '1 día + curado',  emoji: '🅿️' },
+    { slug: 'mantenimiento-piscina',     title: 'Cómo equilibrar el agua de la piscina',          difficulty: 'Fácil', estimatedTime: '30 min semanales', emoji: '🏊' },
+    { slug: 'control-plagas-cocina',     title: 'Cómo eliminar cucarachas y hormigas',            difficulty: 'Fácil', estimatedTime: 'Resultado en 1-2 semanas', emoji: '🐜' },
   ];
 
   // ── Soluciones completas ────────────────────────────────────────────────
@@ -437,6 +487,239 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para eliminar arañazos superficiales de la carrocería y recuperar el brillo original con pulimento, sin repintar la pieza.',
       },
     },
+
+    'sellar-juntas-bano': {
+      slug: 'sellar-juntas-bano',
+      title: 'Cómo sellar una junta de baño o cocina',
+      description: 'Elimina la silicona vieja o con moho y aplica un sellado nuevo, limpio y duradero, en juntas de bañera, plato de ducha o encimera.',
+      category: 'pegado', subcategory: 'Sellado de juntas',
+      problem: 'moho_junta',
+      objective: 'pegar',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: '30-45 min + 24 h de curado',
+      result: 'Junta sellada, sin moho y estanca al agua',
+      breadcrumb: ['Centro de Soluciones', 'Pegado y sellado', 'Sellado de juntas'],
+      materials: [
+        { fase: 'Retirada',    familiaSugerida: 'Herramientas',              items: ['Rascador o cutter'] },
+        { fase: 'Limpieza',    familiaSugerida: 'Limpieza / Desengrasantes', items: ['Alcohol o desengrasante'] },
+        { fase: 'Sellado',     familiaSugerida: 'Siliconas y selladores',    items: ['Silicona sanitaria antimoho'] },
+        { fase: 'Acabado',     familiaSugerida: 'Herramientas',              items: ['Espátula alisadora o cinta de carrocero'] },
+      ],
+      receta: [
+        { fase: 'Retirar',  emoji: '🔪' },
+        { fase: 'Limpiar',  emoji: '🧴' },
+        { fase: 'Aplicar',  emoji: '🧷' },
+        { fase: 'Alisar',   emoji: '✋' },
+      ],
+      steps: [
+        { n: 1, title: 'Retirar la silicona vieja', text: 'Con un cutter o rascador, retira todo resto de silicona antigua y el moho acumulado. Cuanto más limpio quede el hueco, mejor se agarrará la silicona nueva.', productos: [] },
+        { n: 2, title: 'Limpiar y secar la junta', text: 'Desengrasa con alcohol y deja secar completamente — la silicona no se adhiere bien sobre superficies húmedas, y por eso el sellado nuevo "falla" antes de tiempo si se salta este paso.', productos: ['Alcohol o desengrasante'] },
+        { n: 3, title: 'Proteger los bordes (opcional)', text: 'Pega cinta de carrocero a ambos lados de la junta para conseguir un cordón recto y limpio, sin manchar los azulejos.', productos: [] },
+        { n: 4, title: 'Aplicar la silicona', text: 'Aplica el cordón con la pistola en un movimiento continuo y a presión constante, sin parar a mitad de junta.', productos: ['Silicona sanitaria antimoho'] },
+        { n: 5, title: 'Alisar el cordón', text: 'Alisa con una espátula o el dedo humedecido en agua con un poco de jabón, antes de que empiece a formar piel.', productos: [] },
+        { n: 6, title: 'Retirar la cinta y dejar curar', text: 'Quita la cinta de carrocero inmediatamente después de alisar, y evita mojar la zona durante las primeras 24 horas.', productos: [] },
+      ],
+      professionalTips: [
+        'La silicona "antimoho" lleva un fungicida que retrasa la reaparición del moho negro — pero solo funciona bien si la superficie estaba realmente limpia y seca antes de aplicarla, no encima de moho ya existente.',
+      ],
+      commonMistakes: [
+        'Aplicar silicona nueva directamente sobre restos de silicona vieja o moho.',
+        'No dejar secar la superficie después de limpiarla.',
+        'No retirar la cinta de carrocero antes de que la silicona empiece a curar.',
+        'Usar una silicona no apta para uso sanitario/húmedo en zonas de ducha o bañera.',
+      ],
+      recommendedProducts: [
+        { nombre: 'CEYS Silicona Stop Moho Cartucho 280 ml Blanco', categoria: 'Droguería', formato: '280 ml', precio: '5,98 €' },
+        { nombre: 'CEYS Silicona Stop Moho Tubo 125 ml Blanco',     categoria: 'Droguería', formato: '125 ml', precio: '5,02 €' },
+        { nombre: 'Sellador Acrílico Blanco Baixens SA-37',         categoria: 'Droguería', formato: '310 ml', precio: '1,80 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Opción económica',   nombre: 'Sellaceys Silicona Cartucho 280 ml Translúcida', precio: '4,34 €' },
+        { etiqueta: 'Opción rápida',      nombre: 'CEYS Sellaceys Cinta Selladora Hogar Blanco (sin pistola)', precio: '9,91 €' },
+        { etiqueta: 'Trabajos pequeños',  nombre: 'Sellaceys Silicona Tubo 50 ml Blíster', precio: '2,48 €' },
+      ],
+      relatedSolutions: ['control-plagas-cocina'],
+      seo: {
+        title: 'Cómo sellar una junta de baño o cocina | Orencio Matas',
+        description: 'Guía para retirar la silicona vieja o con moho y sellar correctamente una junta de baño o cocina, paso a paso.',
+      },
+    },
+
+    'suelo-epoxi-garaje': {
+      slug: 'suelo-epoxi-garaje',
+      title: 'Cómo pintar el suelo del garaje con sistema epoxi',
+      description: 'Protege un suelo de garaje, nave o taller con un sistema epoxi bicomponente resistente a aceites, químicos y al paso continuo de vehículos.',
+      category: 'suelos', subcategory: 'Suelos técnicos',
+      problem: 'suelo_deteriorado',
+      objective: 'proteger',
+      surface: 'suelo',
+      difficulty: 'Media',
+      estimatedTime: '1 día de aplicación + 3-7 días de curado antes del tráfico',
+      result: 'Suelo protegido, con acabado uniforme resistente a aceites y desgaste',
+      breadcrumb: ['Centro de Soluciones', 'Suelos y garajes', 'Suelos técnicos'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes',      items: ['Desengrasante industrial'] },
+        { fase: 'Preparación', familiaSugerida: 'Abrasivos',                      items: ['Lijado mecánico del suelo (si hay pintura previa)'] },
+        { fase: 'Aplicación',  familiaSugerida: 'Sistemas epoxi bicomponente',    items: ['Base epoxi + endurecedor (2 componentes)'] },
+        { fase: 'Herramientas',familiaSugerida: 'Útiles de aplicación',           items: ['Rodillo de pelo corto'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',  emoji: '🧴' },
+        { fase: 'Reparar',  emoji: '🔧' },
+        { fase: 'Mezclar',  emoji: '🧪' },
+        { fase: 'Aplicar',  emoji: '🎨' },
+        { fase: 'Curar',    emoji: '⏳' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpieza y desengrasado a fondo', text: 'Los restos de aceite o grasa son la causa número uno de que un suelo epoxi se levante — hay que partir de una superficie realmente limpia.', productos: ['Desengrasante industrial'] },
+        { n: 2, title: 'Reparación de grietas y desconchones', text: 'Repara cualquier grieta o zona suelta antes de aplicar el sistema — el epoxi no rellena ni corrige defectos importantes del soporte.', productos: [] },
+        { n: 3, title: 'Mezcla del sistema bicomponente', text: 'Mezcla la base con su endurecedor en la proporción exacta indicada en la ficha técnica — no es un producto de un solo bote, la proporción es lo que activa el fraguado químico.', productos: ['Base epoxi + endurecedor (2 componentes)'] },
+        { n: 4, title: 'Aplicación de la primera mano', text: 'Aplica con rodillo de pelo corto, trabajando por zonas dentro del "pot life" (tiempo útil de la mezcla ya activada) antes de que empiece a espesar.', productos: ['Rodillo de pelo corto'] },
+        { n: 5, title: 'Segunda mano cruzada', text: 'Aplica la segunda mano en dirección cruzada respecto a la primera, respetando el tiempo de repintado indicado.', productos: [] },
+        { n: 6, title: 'Curado antes de poner en servicio', text: 'Evita tráfico ligero durante 24h y tráfico pesado (coches) varios días — poner el suelo en servicio demasiado pronto es la causa más habitual de marcas y despegues tempranos.', productos: [] },
+      ],
+      professionalTips: [
+        'Los sistemas epoxi bicomponente tienen un "pot life" limitado una vez mezclados — prepara solo la cantidad que puedas aplicar en ese tiempo, no toda la mezcla de golpe si la superficie es grande.',
+      ],
+      commonMistakes: [
+        'No respetar la proporción exacta de base y endurecedor.',
+        'Aplicar sobre un suelo con humedad o grasa residual.',
+        'Mezclar más producto del que se puede aplicar dentro del pot life.',
+        'Poner el suelo en servicio antes del tiempo de curado total indicado.',
+      ],
+      recommendedProducts: [
+        { nombre: 'TITANTECH PXB-700 Base Epoxi Suelos 4 L Base Neutra', categoria: 'Talleres', formato: '4 L', precio: '72,93 €' },
+        { nombre: 'TITANTECH PXB-700 Endurecedor Epoxi Suelos',          categoria: 'Talleres', formato: '1 L', precio: '15,55 €' },
+        { nombre: 'TITANTECH PXB-700 Epoxi Suelos 15 L Base Neutra',     categoria: 'Talleres', formato: '15 L (superficies grandes)', precio: '253,56 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Uso sanitario/alimentario', nombre: 'Epoxi Suelos Sanitaria AQ.PXB-720 Blanco Base 4 L', precio: '97,27 €' },
+        { etiqueta: 'Opción económica (superficie pequeña)', nombre: 'TITANTECH PXB-700 Epoxi Suelos 4 L Blanco', precio: '74,96 €' },
+        { etiqueta: 'Sin epoxi (más sencillo)', nombre: 'Barniz Titán Suelos con Poliuretano Satinado 4 L Incoloro', precio: '75,98 €' },
+      ],
+      relatedSolutions: ['eliminar-oxido-metal'],
+      seo: {
+        title: 'Cómo pintar el suelo del garaje con epoxi | Orencio Matas',
+        description: 'Guía para proteger un suelo de garaje o nave con sistema epoxi bicomponente: preparación, mezcla, aplicación y curado.',
+      },
+    },
+
+    'mantenimiento-piscina': {
+      slug: 'mantenimiento-piscina',
+      title: 'Cómo equilibrar y mantener el agua de la piscina',
+      description: 'Aprende a medir y ajustar el pH, clorar correctamente y prevenir las algas para mantener el agua de la piscina siempre clara.',
+      category: 'piscinas', subcategory: 'Mantenimiento de agua',
+      problem: 'agua_turbia',
+      objective: 'limpiar',
+      surface: 'piscina',
+      difficulty: 'Fácil',
+      estimatedTime: '30 min de mantenimiento semanal',
+      result: 'Agua clara, equilibrada y protegida frente a algas',
+      breadcrumb: ['Centro de Soluciones', 'Piscinas', 'Mantenimiento de agua'],
+      materials: [
+        { fase: 'Medición',    familiaSugerida: 'Análisis de agua',        items: ['Tiras analíticas o analizador de pH y cloro'] },
+        { fase: 'Ajuste pH',   familiaSugerida: 'Reguladores de pH',       items: ['Reductor de pH', 'Incrementador de pH'] },
+        { fase: 'Desinfección',familiaSugerida: 'Cloro para piscinas',     items: ['Cloro rápido (choque)', 'Cloro lento (mantenimiento)'] },
+        { fase: 'Prevención',  familiaSugerida: 'Antialgas',               items: ['Antialgas líquido'] },
+      ],
+      receta: [
+        { fase: 'Medir',      emoji: '🧪' },
+        { fase: 'Ajustar pH', emoji: '⚖️' },
+        { fase: 'Clorar',     emoji: '💧' },
+        { fase: 'Prevenir',   emoji: '🛡️' },
+      ],
+      steps: [
+        { n: 1, title: 'Medir pH y cloro', text: 'Antes de añadir cualquier producto, mide el agua con tiras analíticas o un analizador — todo lo que hagas después depende de este dato.', productos: ['Tiras analíticas o analizador de pH y cloro'] },
+        { n: 2, title: 'Ajustar el pH', text: 'Lleva el pH al rango correcto (en torno a 7,2-7,6) con reductor o incrementador según el resultado de la medición — se ajusta SIEMPRE antes de clorar.', productos: ['Reductor de pH', 'Incrementador de pH'] },
+        { n: 3, title: 'Clorar', text: 'Usa cloro rápido para choques puntuales (agua turbia, después de mucha afluencia de bañistas) y cloro lento para el mantenimiento continuo del día a día.', productos: ['Cloro rápido (choque)', 'Cloro lento (mantenimiento)'] },
+        { n: 4, title: 'Prevenir algas', text: 'Aplica un antialgas de forma periódica, especialmente en la época de más calor, cuando las algas aparecen con más facilidad.', productos: ['Antialgas líquido'] },
+        { n: 5, title: 'Confirmar al día siguiente', text: 'Repite la medición 24 horas después para confirmar que los valores se han estabilizado en el rango correcto.', productos: [] },
+      ],
+      professionalTips: [
+        'Un pH incorrecto no solo irrita los ojos y la piel — también hace que el cloro deje de actuar correctamente, por eso el pH se ajusta siempre ANTES de clorar, nunca al revés.',
+      ],
+      commonMistakes: [
+        'Clorar sin comprobar antes el pH.',
+        'Mezclar productos químicos de piscina directamente entre sí.',
+        'Bañarse inmediatamente después de un choque de cloro.',
+        'No repetir la medición al día siguiente para confirmar el resultado.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Astralpool Tiras Analíticas 3 en 1, 50 uds',   categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
+        { nombre: 'Astralpool Minus Reductor de pH Líquido',       categoria: 'Piscinas', formato: '10 L',  precio: '23,12 €' },
+        { nombre: 'Astralpool Incrementador de pH',                categoria: 'Piscinas', formato: '5 kg',  precio: '12,64 €' },
+        { nombre: 'Astralpool Cloro Rápido Granulado',              categoria: 'Piscinas', formato: '5 kg',  precio: '28,85 €' },
+        { nombre: 'Astralpool Cloro Lento en Tableta',              categoria: 'Piscinas', formato: '5 kg',  precio: '33,93 €' },
+        { nombre: 'Antialgas Líquido Astralpool',                   categoria: 'Piscinas', formato: '5 L',   precio: '10,04 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Todo en uno',       nombre: 'Astralpool Inverlong Dosificador Flotante Todo en 1', precio: '15,44 €' },
+        { etiqueta: 'Opción profesional/comunidad', nombre: 'CTX 15 Reductor de pH Profesional 20 L', precio: '35,07 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo mantener el agua de la piscina en buen estado | Orencio Matas',
+        description: 'Guía de mantenimiento de piscinas: cómo medir y ajustar el pH, clorar correctamente y prevenir la aparición de algas.',
+      },
+    },
+
+    'control-plagas-cocina': {
+      slug: 'control-plagas-cocina',
+      title: 'Cómo eliminar cucarachas y hormigas de la cocina',
+      description: 'Combina cebo, barrera y sellado de entradas para eliminar cucarachas y hormigas de forma duradera, no solo puntual.',
+      category: 'plagas', subcategory: 'Control de insectos',
+      problem: 'cucarachas',
+      objective: 'proteger',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: 'Resultado visible en 1-2 semanas',
+      result: 'Cocina u hogar libre de cucarachas y hormigas, con las entradas selladas',
+      breadcrumb: ['Centro de Soluciones', 'Plagas y control de insectos', 'Control de insectos'],
+      materials: [
+        { fase: 'Diagnóstico', familiaSugerida: '—',                    items: ['Identificar la zona de entrada o nido'] },
+        { fase: 'Cebo',        familiaSugerida: 'Insecticidas en gel',  items: ['Cebo en gel para cucarachas', 'Cebo en gel para hormigas'] },
+        { fase: 'Barrera',     familiaSugerida: 'Insecticidas',         items: ['Insecticida en polvo o spray de barrera'] },
+        { fase: 'Prevención',  familiaSugerida: 'Siliconas y selladores', items: ['Sellado de rendijas (ver solución de sellado de juntas)'] },
+      ],
+      receta: [
+        { fase: 'Localizar', emoji: '🔍' },
+        { fase: 'Cebo',      emoji: '🎯' },
+        { fase: 'Barrera',   emoji: '🛡️' },
+        { fase: 'Sellar',    emoji: '🧷' },
+      ],
+      steps: [
+        { n: 1, title: 'Localizar el punto de entrada', text: 'Busca grietas, tuberías o zonas húmedas cerca de agua y comida — ahí suele estar el origen real del problema, no solo donde ves los insectos.', productos: [] },
+        { n: 2, title: 'Aplicar cebo en gel', text: 'Coloca el cebo en el recorrido habitual del insecto, nunca donde puedan tocarlo niños o mascotas, ni directamente sobre alimentos.', productos: ['Cebo en gel para cucarachas', 'Cebo en gel para hormigas'] },
+        { n: 3, title: 'Reforzar con barrera', text: 'Aplica insecticida en polvo o spray en las zonas de paso — pero nunca directamente sobre el cebo, porque puede hacer que el insecto deje de tocarlo.', productos: ['Insecticida en polvo o spray de barrera'] },
+        { n: 4, title: 'Esperar el resultado', text: 'El cebo en gel es de acción lenta a propósito: el insecto se lo lleva al nido y afecta a toda la colonia, no solo al que lo toca — por eso el resultado tarda 1-2 semanas en notarse del todo.', productos: [] },
+        { n: 5, title: 'Sellar las entradas', text: 'Una vez controlada la plaga, sella las rendijas o grietas por donde entraban, para que no vuelvan a aparecer.', productos: [] },
+      ],
+      professionalTips: [
+        'El cebo en gel funciona precisamente PORQUE es lento: un insecticida de contacto solo mata al que lo toca, mientras que el cebo se lleva al nido y afecta a toda la colonia — no lo combines con spray justo encima o dejará de resultar atractivo.',
+      ],
+      commonMistakes: [
+        'Rociar spray directamente sobre el cebo en gel.',
+        'Colocar cebo donde toca la comida o donde llegan niños o mascotas.',
+        'Esperar resultados inmediatos con el cebo (tarda 1-2 semanas).',
+        'No sellar las entradas una vez resuelto el problema, dejando la puerta abierta a que vuelvan.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Orion Cebo Matacucarachas Gel, B/3 uds',   categoria: 'Droguería', formato: '3 uds', precio: '2,29 €' },
+        { nombre: 'Zum Gel Trampa contra las Hormigas',        categoria: 'Droguería',                  precio: '1,14 €' },
+        { nombre: 'Cucal Insecticida en Polvo Cuca/Hormigas',  categoria: 'Droguería', formato: '200 g', precio: '3,56 €' },
+        { nombre: 'Baygon Cucas y Hormigas',                    categoria: 'Droguería', formato: '600 ml', precio: '7,56 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Opción rápida (choque puntual)', nombre: 'Arrixaca Insecticida Cucarachas Spray 400 ml', precio: '2,49 €' },
+        { etiqueta: 'Varias zonas de la casa',        nombre: 'Cucal Trampa Cucarachas Est. 6 uds + Trampa Hormigas Est. 2 uds', precio: '3,68 € + 2,23 €' },
+      ],
+      relatedSolutions: ['sellar-juntas-bano'],
+      seo: {
+        title: 'Cómo eliminar cucarachas y hormigas de la cocina | Orencio Matas',
+        description: 'Guía para eliminar cucarachas y hormigas de forma duradera combinando cebo en gel, barrera de insecticida y sellado de entradas.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -445,6 +728,15 @@ window.SOLUCIONES_DATA = (function () {
   // real (reglas más finas, o incluso un modelo), pero la FORMA de la
   // respuesta (un slug de Solution) no cambiaría.
   function encontrarSolucionPorDiagnostico(accionId, superficieId, estadoId, resultadoId) {
+    if (accionId === 'pegar') {
+      return 'sellar-juntas-bano';
+    }
+    if (superficieId === 'piscina') {
+      return 'mantenimiento-piscina';
+    }
+    if (superficieId === 'suelo') {
+      return 'suelo-epoxi-garaje';
+    }
     if (superficieId === 'coche' && (resultadoId === 'recuperar_brillo' || accionId === 'pulir')) {
       return 'recuperar-brillo-carroceria';
     }
@@ -473,6 +765,10 @@ window.SOLUCIONES_DATA = (function () {
       'no_adhiere': ['no se adhiere', 'no adhiere', 'se despega', 'plastico', 'plástico'],
       'pegamento':  ['pegamento', 'cola', 'adhesivo'],
       'mal_acabado':['barniz', 'blanquecino', 'burbuja', 'mueble', 'madera'],
+      'moho_junta': ['moho', 'junta', 'silicona', 'bañera', 'banera', 'ducha'],
+      'agua_turbia':['piscina', 'turbia', 'algas', 'cloro', 'ph del agua'],
+      'cucarachas': ['cucaracha', 'hormiga', 'insecto', 'plaga', 'bicho'],
+      'suelo_deteriorado': ['suelo', 'garaje', 'epoxi', 'nave', 'taller'],
     };
     let problemaId = null;
     for (const [id, palabras] of Object.entries(coincidencias)) {
