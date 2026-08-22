@@ -53,8 +53,28 @@
   flex-wrap: wrap;
   gap: 14px;
 }
+.cs-hero__ctas .btn-primary,
 .cs-hero__ctas .btn-secondary {
-  background: rgba(255, 255, 255, 0.94);
+  min-height: 54px;
+  padding: 0 28px;
+  font-size: 0.92rem;
+}
+.cs-hero__ctas .btn-primary {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+.cs-hero__ctas .btn-secondary {
+  background: #ffffff;
+  border: none;
+  border-bottom: 4px solid var(--primary-green);
+  color: var(--text-dark);
+  font-weight: 900;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+}
+.cs-hero__ctas .btn-secondary:hover,
+.cs-hero__ctas .btn-secondary:focus-visible {
+  background: #ffffff;
+  color: var(--primary-red);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
 }
 
 /* ── Breadcrumb ──────────────────────────────────────────────────────── */
