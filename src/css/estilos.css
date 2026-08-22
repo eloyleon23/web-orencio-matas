@@ -334,6 +334,20 @@ ol {
 
 .navbar__submenu a::after { display: none; }
 
+/* Sub-submenú (Ver catálogos > áreas) */
+.navbar__item--dropdown .navbar__item--dropdown { position: relative; }
+.navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+  top: -8px;
+  left: calc(100% + 4px);
+  min-width: 160px;
+}
+.navbar__item--dropdown .navbar__item--dropdown:hover .navbar__submenu,
+.navbar__item--dropdown .navbar__item--dropdown:focus-within .navbar__submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -1563,6 +1577,18 @@ textarea.form-input {
     color: var(--text-dark) !important;
     opacity: 0.75;
     border-bottom: 1px solid rgba(15, 17, 21, 0.08) !important;
+  }
+  .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin-top: 4px;
+    background: transparent;
+    margin-left: 18px;
   }
 }
 
