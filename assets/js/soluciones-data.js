@@ -170,11 +170,11 @@ window.SOLUCIONES_DATA = (function () {
       id: 'metal', label: 'Metal', emoji: '🔩',
       ejemplos: [
         { title: 'Eliminar óxido',                      solutionSlug: 'eliminar-oxido-metal' },
-        { title: 'Evitar que vuelva el óxido',          solutionSlug: 'eliminar-oxido-metal' },
-        { title: 'Pintar hierro',                       solutionSlug: 'eliminar-oxido-metal' },
+        { title: 'Evitar que vuelva el óxido' },
+        { title: 'Pintar hierro' },
         { title: 'Pintar aluminio' },
         { title: 'Pintar estructuras metálicas' },
-        { title: 'Renovar una verja',                   solutionSlug: 'eliminar-oxido-metal' },
+        { title: 'Renovar una verja' },
         { title: 'Pintar radiadores' },
         { title: 'Pintar estufas' },
         { title: 'Pintar tubos de salida de humos' },
@@ -202,7 +202,7 @@ window.SOLUCIONES_DATA = (function () {
       id: 'pegado', label: 'Pegado y sellado', emoji: '🧷',
       ejemplos: [
         { title: 'Sellar una junta de baño o cocina',   solutionSlug: 'sellar-juntas-bano' },
-        { title: 'Quitar moho de una junta de silicona', solutionSlug: 'sellar-juntas-bano' },
+        { title: 'Quitar moho de una junta de silicona' },
         { title: 'Pegar una tubería de PVC' },
         { title: 'Elegir el pegamento según el material' },
         { title: 'Pegar césped artificial' },
@@ -213,7 +213,7 @@ window.SOLUCIONES_DATA = (function () {
       id: 'suelos', label: 'Suelos y garajes', emoji: '🅿️',
       ejemplos: [
         { title: 'Pintar el suelo del garaje',           solutionSlug: 'suelo-epoxi-garaje' },
-        { title: 'Proteger un suelo industrial',         solutionSlug: 'suelo-epoxi-garaje' },
+        { title: 'Proteger un suelo industrial' },
         { title: 'Barnizar un suelo de madera' },
         { title: 'Reparar grietas en el suelo' },
       ],
@@ -224,7 +224,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Ajustar el pH del agua' },
         { title: 'Eliminar algas' },
         { title: 'Clorar correctamente la piscina' },
-        { title: 'Preparar la piscina para el verano' },
+        { title: 'Preparar la piscina para el verano',  solutionSlug: 'mantenimiento-piscina' },
         { title: 'Invernar la piscina' },
       ],
     },
@@ -232,8 +232,8 @@ window.SOLUCIONES_DATA = (function () {
       id: 'plagas', label: 'Plagas y control de insectos', emoji: '🐜',
       ejemplos: [
         { title: 'Eliminar cucarachas de la cocina',     solutionSlug: 'control-plagas-cocina' },
-        { title: 'Acabar con las hormigas',               solutionSlug: 'control-plagas-cocina' },
-        { title: 'Evitar que vuelvan los insectos',       solutionSlug: 'control-plagas-cocina' },
+        { title: 'Acabar con las hormigas' },
+        { title: 'Evitar que vuelvan los insectos' },
         { title: 'Eliminar mosquitos' },
         { title: 'Eliminar ratones o roedores',           solutionSlug: 'control-roedores' },
         { title: 'Proteger la ropa de las polillas',      solutionSlug: 'proteger-ropa-polillas' },
@@ -242,7 +242,7 @@ window.SOLUCIONES_DATA = (function () {
     {
       id: 'jardin', label: 'Jardín y plantas', emoji: '🌱',
       ejemplos: [
-        { title: 'Abonar las plantas del jardín' },
+        { title: 'Abonar las plantas del jardín',        solutionSlug: 'cuidado-plantas-jardin' },
         { title: 'Cuidar plantas de interior' },
         { title: 'Proteger las plantas de insectos' },
         { title: 'Curar heridas de poda' },
@@ -1073,6 +1073,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Fácil',
       estimatedTime: '20 min, rutina periódica cada 15-30 días',
       result: 'Plantas más fuertes, protegidas de plagas y hongos',
+      colorChart: { label: 'Catálogo de cuidado de plantas Compo', url: 'https://www.compo.es/' },
       breadcrumb: ['Centro de Soluciones', 'Jardín y plantas', 'Cuidado de plantas'],
       materials: [
         { fase: 'Nutrición',  familiaSugerida: 'Abonos y fertilizantes', items: ['Fertilizante líquido universal'] },
