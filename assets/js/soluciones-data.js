@@ -792,7 +792,7 @@ window.SOLUCIONES_DATA = (function () {
       estimatedTime: '1 día (2 manos) + secado entre manos',
       result: 'Pared repintada, con color uniforme y buen acabado',
       calculadoraCantidad: { rendimiento: 10, etiqueta: 'pintura plástica' },
-      colorChart: { label: 'Encuentra tu color en Titanpro (interior)', url: 'https://www.titanpro.es/es/colores', logo: 'https://www.titanpro.es/profiles/titanpro/themes/titanpro/images/logo-titanpro.png' },
+      colorChart: { label: 'Encuentra tu color en Titanpro (interior)', url: 'https://www.titanpro.es/es/colores', logo: '../assets/proveedores/LOGO-TITANPRO.png' },
       breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Pintura de interior'],
       materials: [
         { fase: 'Preparación',  familiaSugerida: 'Masillas',                  items: ['Masilla plástica', 'Lija fina'] },
@@ -1298,7 +1298,7 @@ window.SOLUCIONES_DATA = (function () {
       estimatedTime: '2-3 días según superficie y climatología',
       result: 'Fachada repintada, protegida frente a lluvia y humedad',
       calculadoraCantidad: { rendimiento: 6, etiqueta: 'pintura hidrófuga de fachadas' },
-      colorChart: { label: 'Carta de colores Titanpro para fachadas (TF2)', url: 'https://www.titanpro.es/es/colores', logo: 'https://www.titanpro.es/profiles/titanpro/themes/titanpro/images/logo-titanpro.png' },
+      colorChart: { label: 'Carta de colores Titanpro para fachadas (TF2)', url: 'https://www.titanpro.es/es/colores', logo: '../assets/proveedores/LOGO-TITANPRO.png' },
       breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
       materials: [
         { fase: 'Preparación', familiaSugerida: 'Limpieza exterior',      items: ['Limpieza a presión o cepillado de la fachada'] },

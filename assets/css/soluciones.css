@@ -612,6 +612,15 @@
 .cs-area-list a:hover { color: var(--primary-red); }
 .cs-area-list span.sin-enlace { color: var(--text-muted); cursor: default; }
 
+@media (max-width: 640px) {
+  .cs-area-list { grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+  .cs-area-list a, .cs-area-list span.sin-enlace {
+    padding: 6px 4px;
+    font-size: 0.82rem;
+    border-bottom: none;
+  }
+}
+
 /* ── Modal del asistente ──────────────────────────────────────────────── */
 .cs-modal-overlay {
   display: none;
