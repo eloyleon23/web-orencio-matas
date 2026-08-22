@@ -356,11 +356,8 @@
     };
     const area = areaMap[areaId] || '';
     let q = BUSQUEDAS_SUGERIDAS[titulo] || fallbackArea[areaId] || titulo;
-    // Si hay un término concreto mapeado, buscamos en todo el catálogo para no perder
-    // productos que pueden estar en otra área (p. ej. "pegamento" en pinturas).
-    if (BUSQUEDAS_SUGERIDAS[titulo]) {
-      return `buscador.html?q=${encodeURIComponent(q)}`;
-    }
+    // Siempre aplicamos el filtro de área cuando está disponible; así las búsquedas
+    // concretas (p. ej. "llantas") devuelven productos del área coherente.
     return area ? `buscador.html?q=${encodeURIComponent(q)}&area=${area}` : `buscador.html?q=${encodeURIComponent(q)}`;
   }
 
