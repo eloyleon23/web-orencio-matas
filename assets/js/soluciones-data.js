@@ -58,6 +58,18 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'deteriorada',label: 'Deteriorada' },
   ];
 
+  // Pasos 3-4 alternativos para acciones de mantenimiento simples
+  const usos = [
+    { id: 'interior', label: 'Interior' },
+    { id: 'exterior', label: 'Exterior' },
+  ];
+
+  const tamanos = [
+    { id: 'pequeno', label: 'Pequeño (hasta 2 m²)' },
+    { id: 'mediano', label: 'Mediano (2-20 m²)' },
+    { id: 'grande',  label: 'Grande (más de 20 m²)' },
+  ];
+
   // Paso 4 del asistente: ¿qué resultado quieres?
   const resultados = [
     { id: 'cambiar_color',      label: 'Cambiar el color' },
@@ -1622,7 +1634,7 @@ window.SOLUCIONES_DATA = (function () {
   }
 
   return {
-    acciones, superficies, estados, resultados,
+    acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
     normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, resolverProductoReal,

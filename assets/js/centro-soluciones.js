@@ -182,6 +182,46 @@
     return texto.slice(0, idx) + '<mark>' + texto.slice(idx, idx + consulta.length) + '</mark>' + texto.slice(idx + consulta.length);
   }
 
+  const BUSQUEDAS_SUGERIDAS = {
+    'Eliminar grasa': 'quita grasas',
+    'Eliminar pintura': 'quitapinturas',
+    'Quitar adhesivos': 'quitadhesivos',
+    'Quitar silicona': 'quita silicona',
+    'Eliminar adhesivos': 'quitadhesivos',
+    'Quitar restos de cola': 'quitadhesivos',
+    'Limpiar brochas': 'limpia brochas',
+    'Limpiar rodillos': 'limpia rodillos',
+    'Limpiar herramientas': 'limpiador herramientas',
+    'Limpiar maquinaria': 'desengrasante',
+    'Desengrasar una pieza': 'desengrasante',
+    'Desengrasar piezas': 'desengrasante',
+    'Preparar una superficie': 'imprimación',
+    'Pegar una tubería de PVC': 'pegamento PVC',
+    'Pegar césped artificial': 'pegamento césped',
+    'Sellar una ventana o marco': 'silicona',
+    'Elegir el pegamento según el material': 'pegamento',
+    'Barnizar un suelo de madera': 'barniz suelo',
+    'Reparar grietas en el suelo': 'masilla suelo',
+    'Invernar la piscina': 'invernaje piscina',
+    'Eliminar mosquitos': 'antimosquitos',
+    'Pintar una llanta': 'pintura llantas',
+    'Restaurar faros': 'pulir faros',
+    'Eliminar hologramas': 'pasta pulir',
+    'Eliminar marcas de lijado': 'pasta pulir',
+    'Conseguir acabado brillante': 'cera coche',
+    'Cambiar el color': 'pintura plástica',
+    'Eliminar barniz': 'decapante',
+    'Pintar azulejos': 'pintura azulejos',
+    'Pintar madera barnizada': 'pintura madera',
+    'Proteger madera exterior': 'barniz madera',
+    'Pintar aluminio': 'pintura aluminio',
+    'Pintar estructuras metálicas': 'pintura metal',
+    'Pintar radiadores': 'pintura radiador',
+    'Preparar metal antes de pintar': 'imprimación metal',
+    'Proteger metal': 'pintura metal',
+    'Pintar superficies difíciles': 'pintura plástica',
+  };
+
   function urlBuscarEjemplo(areaId, titulo) {
     const areaMap = {
       coche: 'talleres', pintura: 'pinturas', madera: 'pinturas', metal: 'pinturas',
@@ -189,7 +229,7 @@
       plagas: 'drogueria', jardin: 'drogueria',
     };
     const area = areaMap[areaId] || '';
-    const q = encodeURIComponent(titulo);
+    const q = encodeURIComponent(BUSQUEDAS_SUGERIDAS[titulo] || titulo);
     return area ? `buscador.html?q=${q}&area=${area}` : `buscador.html?q=${q}`;
   }
 
@@ -274,14 +314,27 @@
     });
   }
 
-  // ── Asistente de diagnóstico (wizard de 4 pasos) ────────────────────────
-  const wizardState = { accion: null, superficie: null, estado: null, resultado: null, pasoActual: 0 };
-  const wizardPasos = [
-    { key: 'accion',    label: 'Paso 1', pregunta: '¿Qué quieres hacer?',          opciones: () => D.acciones.map((a) => ({ id: a.id, label: a.label, emoji: a.emoji })) },
-    { key: 'superficie',label: 'Paso 2', pregunta: '¿Sobre qué superficie?',       opciones: () => D.superficies.map((s) => ({ id: s.id, label: s.label, emoji: s.emoji })) },
-    { key: 'estado',    label: 'Paso 3', pregunta: '¿Cómo está actualmente?',      opciones: () => D.estados.map((e) => ({ id: e.id, label: e.label })) },
-    { key: 'resultado', label: 'Paso 4', pregunta: '¿Qué resultado quieres?',      opciones: () => D.resultados.map((r) => ({ id: r.id, label: r.label })) },
-  ];
+  // ── Asistente de diagnóstico (wizard de pasos dinámicos) ────────────────
+  const wizardState = { accion: null, superficie: null, estado: null, resultado: null, uso: null, tamano: null, pasoActual: 0 };
+
+  function esAccionSimple(id) { return ['limpiar', 'proteger', 'pegar'].includes(id); }
+
+  function wizardPasos() {
+    const base = [
+      { key: 'accion',     label: 'Paso 1', pregunta: '¿Qué quieres hacer?',    opciones: () => D.acciones.map((a) => ({ id: a.id, label: a.label, emoji: a.emoji })) },
+      { key: 'superficie', label: 'Paso 2', pregunta: '¿Sobre qué superficie?', opciones: () => D.superficies.map((s) => ({ id: s.id, label: s.label, emoji: s.emoji })) },
+    ];
+    if (esAccionSimple(wizardState.accion)) {
+      return [...base,
+        { key: 'uso',   label: 'Paso 3', pregunta: '¿Dónde lo vas a usar?', opciones: () => D.usos.map((u) => ({ id: u.id, label: u.label })) },
+        { key: 'tamano',label: 'Paso 4', pregunta: '¿Qué extensión tiene?', opciones: () => D.tamanos.map((t) => ({ id: t.id, label: t.label })) },
+      ];
+    }
+    return [...base,
+      { key: 'estado',    label: 'Paso 3', pregunta: '¿Cómo está actualmente?', opciones: () => D.estados.map((e) => ({ id: e.id, label: e.label })) },
+      { key: 'resultado', label: 'Paso 4', pregunta: '¿Qué resultado quieres?', opciones: () => D.resultados.map((r) => ({ id: r.id, label: r.label })) },
+    ];
+  }
 
   function abrirWizard(opts) {
     const modal = $('#cs-wizard-modal');
@@ -290,6 +343,8 @@
     wizardState.superficie = (opts && opts.superficieInicial) || null;
     wizardState.estado = null;
     wizardState.resultado = null;
+    wizardState.uso = null;
+    wizardState.tamano = null;
     wizardState.pasoActual = wizardState.accion ? 1 : 0;
     modal.classList.add('is-open');
     document.body.style.overflow = 'hidden';
@@ -304,7 +359,8 @@
   }
 
   function renderPasoWizard() {
-    const paso = wizardPasos[wizardState.pasoActual];
+    const pasos = wizardPasos();
+    const paso = pasos[wizardState.pasoActual];
     const cont = $('#cs-wizard-contenido');
     if (!paso) {
       renderResultadoWizard();
@@ -313,12 +369,12 @@
 
     const progreso = $('#cs-wizard-progress');
     if (progreso) {
-      progreso.innerHTML = wizardPasos.map((_, i) => `<span class="${i <= wizardState.pasoActual ? 'is-done' : ''}"></span>`).join('');
+      progreso.innerHTML = pasos.map((_, i) => `<span class="${i <= wizardState.pasoActual ? 'is-done' : ''}"></span>`).join('');
     }
 
     const valorActual = wizardState[paso.key];
     cont.innerHTML = `
-      <p class="cs-wizard__step-label">${paso.label} de ${wizardPasos.length}</p>
+      <p class="cs-wizard__step-label">${paso.label} de ${pasos.length}</p>
       <h3 class="cs-wizard__question">${paso.pregunta}</h3>
       <div class="cs-wizard__options">
         ${paso.opciones().map((op) => `
@@ -334,21 +390,10 @@
       </div>
     `;
 
-    function esAccionSimple(id) {
-      return ['limpiar', 'proteger', 'pegar'].includes(id);
-    }
-
     $all('[data-opcion]', cont).forEach((btn) => {
       btn.addEventListener('click', () => {
         wizardState[paso.key] = btn.dataset.opcion;
-        // Acciones de mantenimiento/protección/adhesión no necesitan pasos
-        // de estado/resultado: saltamos al resultado con lo que ya sabemos.
-        const accionParaSalto = paso.key === 'accion' ? btn.dataset.opcion : wizardState.accion;
-        if (esAccionSimple(accionParaSalto)) {
-          wizardState.pasoActual = wizardPasos.length;
-        } else {
-          wizardState.pasoActual += 1;
-        }
+        wizardState.pasoActual += 1;
         renderPasoWizard();
       });
     });
@@ -365,24 +410,26 @@
   }
 
   function renderResultadoWizard() {
-    const slug = D.encontrarSolucionPorDiagnostico(
-      wizardState.accion, wizardState.superficie, wizardState.estado, wizardState.resultado
-    );
+    const pasos = wizardPasos();
+    const slug = esAccionSimple(wizardState.accion)
+      ? D.encontrarSolucionPorDiagnostico(wizardState.accion, wizardState.superficie)
+      : D.encontrarSolucionPorDiagnostico(wizardState.accion, wizardState.superficie, wizardState.estado, wizardState.resultado);
     const cont = $('#cs-wizard-contenido');
 
     const progreso = $('#cs-wizard-progress');
-    if (progreso) progreso.innerHTML = wizardPasos.map(() => '<span class="is-done"></span>').join('');
+    if (progreso) progreso.innerHTML = pasos.map(() => '<span class="is-done"></span>').join('');
 
     if (!slug || !D.soluciones[slug]) {
-      // Combinación sin una guía específica todavía (p. ej. superficie
-      // "Otro") — mejor decirlo con honestidad que forzar una
-      // recomendación que podría no tener nada que ver con lo que
-      // busca la persona. Igual que en "tengo un problema", se intenta
-      // además una búsqueda real en el catálogo con lo que sí sabemos
-      // (la acción y la superficie elegidas).
+      // Combinación sin una guía específica todavía — se busca en el catálogo
+      // con lo que sabemos: acción + superficie (+ uso/tamaño para acciones simples).
       const accionLabel = (D.acciones.find((a) => a.id === wizardState.accion) || {}).label || '';
       const superficieLabel = (D.superficies.find((s) => s.id === wizardState.superficie) || {}).label || '';
-      const textoAproximado = [accionLabel, superficieLabel].filter(Boolean).join(' ');
+      const partes = [accionLabel, superficieLabel];
+      if (esAccionSimple(wizardState.accion)) {
+        const usoLabel = (D.usos.find((u) => u.id === wizardState.uso) || {}).label;
+        if (usoLabel) partes.push(usoLabel);
+      }
+      const textoAproximado = partes.filter(Boolean).join(' ');
 
       cont.innerHTML = `
         <p class="cs-wizard__step-label">Sin guía específica todavía</p>
@@ -442,7 +489,7 @@
     const btnAtras = $('#cs-wizard-atras', cont);
     if (btnAtras) {
       btnAtras.addEventListener('click', () => {
-        wizardState.pasoActual = wizardPasos.length - 1;
+        wizardState.pasoActual = wizardPasos().length - 1;
         renderPasoWizard();
       });
     }
