@@ -197,7 +197,6 @@
               <button type="button" class="btn-secondary" id="cs-exportar-copiar">📋 Copiar lista de la compra</button>
               <button type="button" class="btn-secondary" id="cs-exportar-descargar">⬇️ Descargar (.txt)</button>
               <button type="button" class="btn-secondary" id="cs-exportar-whatsapp">💬 Enviar por WhatsApp</button>
-              <button type="button" class="btn-secondary" id="cs-exportar-email">📧 Enviar por email</button>
             </div>
           </div>
         </div>
@@ -604,14 +603,6 @@
       });
     }
 
-    const btnEmail = $('#cs-exportar-email');
-    if (btnEmail) {
-      btnEmail.addEventListener('click', () => {
-        const asunto = encodeURIComponent(`Lista de compra — ${sol.title}`);
-        const cuerpo = encodeURIComponent(texto);
-        window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
-      });
-    }
   }
 
   // ── Botón "volver arriba" ────────────────────────────────────────────────
