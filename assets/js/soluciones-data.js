@@ -118,6 +118,8 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'plata_oscurecida', label: 'Tengo la plata oscurecida',             solutionSlug: 'limpiar-plata-metales' },
     { id: 'usar_lejia',       label: 'No sé usar la lejía correctamente',     solutionSlug: 'usar-lejia-segura' },
     { id: 'desinfectar_hogar',label: 'Quiero desinfectar la casa',            solutionSlug: 'desinfectar-casa' },
+    { id: 'elegir_pistola',   label: 'No sé qué pistola de pintar comprar',   solutionSlug: 'elegir-pistola-pintar' },
+    { id: 'elegir_lijadora',  label: 'No sé qué lijadora necesito',           solutionSlug: 'elegir-lijadora-superficie' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -163,6 +165,8 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Pintar una fachada exterior',         solutionSlug: 'pintar-fachada-exterior' },
         { title: 'Reparar goteras o humedades',          solutionSlug: 'impermeabilizar-terraza-goteras' },
         { title: 'Impermeabilizar una terraza',           solutionSlug: 'impermeabilizar-terraza-goteras' },
+        { title: 'Elegir la pistola de pintar',           solutionSlug: 'elegir-pistola-pintar' },
+        { title: 'Elegir la lijadora adecuada',           solutionSlug: 'elegir-lijadora-superficie' },
       ],
     },
     {
@@ -1520,7 +1524,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Acabado extra fino', nombre: 'Lija al Agua Zaphiro P-1500', precio: '0,57 €' },
         { etiqueta: 'Piezas pequeñas',     nombre: 'Spray Aparejo Gris Medio Zaphiro 400 ml', precio: '16,02 €' },
       ],
-      relatedSolutions: ['pintar-plastico-coche', 'corregir-descuelgues-pintura'],
+      relatedSolutions: ['pintar-plastico-coche', 'corregir-descuelgues-pintura', 'elegir-lijadora-superficie'],
       seo: {
         title: 'Cómo eliminar marcas de lijado antes de pintar | Orencio Matas',
         description: 'Guía para repasar el lijado con grano progresivo y aparejo, de forma que las marcas no se noten bajo la pintura.',
@@ -2219,6 +2223,116 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para desinfectar correctamente las zonas de más contacto en casa, con el producto adecuado y el tiempo de actuación necesario.',
       },
     },
+
+    'elegir-pistola-pintar': {
+      slug: 'elegir-pistola-pintar',
+      title: 'Cómo elegir la pistola de pintar adecuada',
+      description: 'Gravedad, airless o HVLP: cada tipo de pistola encaja mejor con un trabajo distinto — elige la adecuada según la superficie y el producto que vayas a aplicar.',
+      category: 'pintura', subcategory: 'Herramientas de pintor',
+      problem: 'elegir_pistola',
+      objective: 'preparar',
+      surface: 'otro',
+      difficulty: 'Media',
+      estimatedTime: '10 min de decisión',
+      result: 'La pistola de pintar adecuada para tu trabajo, con mejor acabado y menos producto desperdiciado',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Herramientas de pintor'],
+      materials: [
+        { fase: 'Trabajos pequeños/detalle', familiaSugerida: 'Pistolas de gravedad', items: ['Pistola de gravedad'] },
+        { fase: 'Grandes superficies',        familiaSugerida: 'Pistolas airless',     items: ['Pistola airless'] },
+        { fase: 'Acabados finos/carrocería',   familiaSugerida: 'Pistolas HVLP',        items: ['Pistola HVLP'] },
+      ],
+      receta: [
+        { fase: 'Identificar', emoji: '🔍' },
+        { fase: 'Elegir tipo', emoji: '🔫' },
+        { fase: 'Ajustar',     emoji: '⚙️' },
+        { fase: 'Probar',      emoji: '🎨' },
+      ],
+      steps: [
+        { n: 1, title: 'Identificar el trabajo', text: 'La pregunta clave no es "cuál es la mejor pistola", sino "cuál es la mejor para ESTE trabajo" — una fachada entera y una pieza de coche necesitan equipos completamente distintos.', productos: [] },
+        { n: 2, title: 'Gravedad: precisión en trabajos pequeños', text: 'El depósito va encima del cuerpo de la pistola, lo que da mejor control y menos desperdicio de producto — ideal para piezas de coche, muebles o retoques de detalle.', productos: ['Pistola de gravedad'] },
+        { n: 3, title: 'Airless: grandes superficies rápido', text: 'Bombea la pintura a alta presión sin necesidad de aire comprimido, cubriendo mucha superficie en poco tiempo — la opción lógica para fachadas, naves o pintar muchos metros cuadrados de pared.', productos: ['Pistola airless'] },
+        { n: 4, title: 'HVLP: acabado fino con poco desperdicio', text: 'Pulveriza a baja presión, lo que reduce mucho la niebla de pintura en el aire (overspray) y da un acabado muy fino — habitual en repintado de automoción donde el acabado importa mucho.', productos: ['Pistola HVLP'] },
+        { n: 5, title: 'Ajustar antes de empezar', text: 'Sea cual sea el tipo elegido, prueba siempre el patrón de pulverización sobre un cartón antes de aplicar sobre la pieza real, ajustando presión y caudal.', productos: [] },
+      ],
+      professionalTips: [
+        'El error más habitual no es elegir mal el tipo de pistola, sino no ajustarla — una pistola gravedad o HVLP mal regulada da peor acabado que una airless bien ajustada, así que dedica siempre unos minutos a probar el patrón antes de pintar la pieza definitiva.',
+      ],
+      commonMistakes: [
+        'Usar una pistola airless para un acabado de detalle fino (da un chorro demasiado grueso para eso).',
+        'Usar una pistola de gravedad pequeña para cubrir una fachada entera (demasiado lento e ineficiente).',
+        'No probar el patrón de pulverización antes de aplicar sobre la pieza real.',
+        'No limpiar la pistola justo después de usarla, dejando que el producto se seque dentro.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Pistola Gravedad Werku 1.5HP-600 ml (maletín)', categoria: 'Talleres', precio: '120,70 €' },
+        { nombre: 'Pistola Airless Werku 1/4"-250 bar',             categoria: 'Talleres', precio: '66,70 €' },
+        { nombre: 'Pistola Pintar Werku HVLP-I 500 W',              categoria: 'Talleres', precio: '68,55 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Airless con aire asistido (mejor acabado)', nombre: 'Pistola Airless Aire Asistido Werku', precio: '117,52 €' },
+        { etiqueta: 'Gravedad económica',                          nombre: 'Pistola Gravedad Werku 1.7HP-600 ml', precio: '71,09 €' },
+        { etiqueta: 'Gotelé/textura',                                nombre: 'Pistola Gravedad Werku Gotelé 6 L', precio: '44,41 €' },
+      ],
+      relatedSolutions: ['pintar-plastico-coche', 'pintar-fachada-exterior'],
+      seo: {
+        title: 'Cómo elegir la pistola de pintar adecuada | Orencio Matas',
+        description: 'Guía para elegir entre pistola de gravedad, airless o HVLP según el trabajo: superficie, tamaño y tipo de acabado.',
+      },
+    },
+
+    'elegir-lijadora-superficie': {
+      slug: 'elegir-lijadora-superficie',
+      title: 'Cómo elegir la lijadora adecuada para preparar una superficie',
+      description: 'Rotorbital, de disco o manual: elige la lijadora adecuada según el tamaño de la superficie y el acabado que necesitas antes de pintar.',
+      category: 'pintura', subcategory: 'Herramientas de pintor',
+      problem: 'elegir_lijadora',
+      objective: 'preparar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '10 min de decisión',
+      result: 'La lijadora adecuada para tu superficie, con menos esfuerzo y mejor resultado antes de pintar',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Herramientas de pintor'],
+      materials: [
+        { fase: 'Superficies grandes/planas', familiaSugerida: 'Lijadoras rotorbitales', items: ['Lijadora rotorbital'] },
+        { fase: 'Desbaste y óxido',            familiaSugerida: 'Amoladoras',            items: ['Amoladora'] },
+        { fase: 'Discos de lija',              familiaSugerida: 'Discos de lija',        items: ['Discos de lija de varios granos'] },
+      ],
+      receta: [
+        { fase: 'Identificar', emoji: '🔍' },
+        { fase: 'Elegir',      emoji: '🛠️' },
+        { fase: 'Elegir grano',emoji: '📄' },
+        { fase: 'Lijar',       emoji: '✋' },
+      ],
+      steps: [
+        { n: 1, title: 'Identificar el tipo de trabajo', text: 'No es lo mismo preparar una pared grande antes de pintar que desbastar óxido de una pieza metálica pequeña — cada tarea pide una herramienta distinta.', productos: [] },
+        { n: 2, title: 'Lijadora rotorbital para superficies grandes', text: 'Su movimiento circular y orbital a la vez da un acabado muy uniforme sin marcas de giro, ideal para preparar paredes, muebles o carrocería antes de pintar.', productos: ['Lijadora rotorbital'] },
+        { n: 3, title: 'Amoladora para desbaste y óxido', text: 'Para quitar óxido, soldaduras o desbastar metal rápido, una amoladora con disco adecuado rinde mucho más que lijar a mano — aunque es más agresiva y requiere más cuidado.', productos: ['Amoladora'] },
+        { n: 4, title: 'Elegir el grano correcto', text: 'Empieza siempre con un grano más grueso para desbastar y ve subiendo a uno más fino para el acabado — saltarse pasos intermedios deja marcas que luego se notan bajo la pintura.', productos: ['Discos de lija de varios granos'] },
+      ],
+      professionalTips: [
+        'Una lijadora eléctrica no sustituye el criterio de elegir bien el grano — usar solo un grano muy grueso "porque es más rápido" es la causa más habitual de que luego haya que repasar toda la superficie a mano antes de pintar.',
+      ],
+      commonMistakes: [
+        'Usar una amoladora en una superficie grande y plana (deja marcas irregulares, mejor una rotorbital).',
+        'Usar una lijadora rotorbital para desbastar óxido grueso (es lenta para eso, mejor una amoladora).',
+        'Saltarse los granos intermedios entre el desbaste y el acabado final.',
+        'No limpiar el polvo de lijado antes de pintar.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Lijadora Circular Rotorbital Werku 150 mm', categoria: 'Talleres', precio: '64,74 €' },
+        { nombre: 'Amoladora Werku 115-125 mm 900 W',           categoria: 'Talleres', precio: '46,88 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Inalámbrica (sin cable)', nombre: 'Amoladora Inalámbrica Werku 125 mm/20V', precio: '86,39 €' },
+        { etiqueta: 'Rotorbital de grano fino/detalle', nombre: 'Lijadora Werku Rotorbital 5 mm/5 mm-12000', precio: '76,17 €' },
+        { etiqueta: 'Discos de repuesto',        nombre: 'Disco Lija Circular Werku Grano 120, 225 mm (10 uds)', precio: '13,21 €' },
+      ],
+      relatedSolutions: ['eliminar-oxido-metal', 'corregir-marcas-lijado', 'elegir-pistola-pintar'],
+      seo: {
+        title: 'Cómo elegir la lijadora adecuada para preparar una superficie | Orencio Matas',
+        description: 'Guía para elegir entre lijadora rotorbital y amoladora según el tamaño de la superficie y el trabajo a realizar.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -2381,6 +2495,8 @@ window.SOLUCIONES_DATA = (function () {
       'plata_oscurecida': ['plata', 'oscurecid', 'cobre'],
       'usar_lejia':       ['lejia', 'lejía'],
       'desinfectar_hogar':['desinfectar', 'desinfeccion', 'desinfección'],
+      'elegir_pistola':   ['pistola de pintar', 'pistola gravedad', 'pistola airless', 'pistola hvlp'],
+      'elegir_lijadora':  ['que lijadora', 'qué lijadora', 'lijadora rotorbital'],
     };
     let problemaId = null;
     for (const [id, palabras] of Object.entries(coincidencias)) {
