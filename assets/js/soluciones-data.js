@@ -1490,7 +1490,14 @@ window.SOLUCIONES_DATA = (function () {
     for (const [id, palabras] of Object.entries(coincidencias)) {
       if (palabras.some((p) => t.includes(p))) { problemaId = id; break; }
     }
-    if (!problemaId) problemaId = 'no_adhiere'; // fallback genérico razonable
+
+    if (!problemaId) {
+      // Honestidad ante todo: si el texto no coincide con ningún problema
+      // conocido, no forzamos una recomendación al azar (mismo criterio ya
+      // aplicado en encontrarSolucionPorDiagnostico del wizard). El llamador
+      // debe entonces intentar una búsqueda real en el catálogo en su lugar.
+      return { problemaDetectado: null, solutionSlug: null };
+    }
 
     const problema = problemasFrecuentes.find((p) => p.id === problemaId) || problemasFrecuentes[0];
     return {
