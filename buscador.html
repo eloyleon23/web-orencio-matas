@@ -156,6 +156,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             #toolbar-buscador-pc #grupo-buscador-principal { flex: 1 1 auto; }
             #toolbar-buscador-pc .fila-buscador-movil { height: 100%; }
             #toolbar-buscador-pc .input-texto { height: 100%; }
+            #toolbar-buscador-pc .input-buscador-wrap { height: 100%; display: flex; align-items: center; }
+            #toolbar-buscador-pc .btn-limpiar-texto,
+            #toolbar-buscador-pc .btn-buscar-por-imagen { color: #e2e8f0; }
+            #toolbar-buscador-pc .btn-limpiar-texto:hover,
+            #toolbar-buscador-pc .btn-buscar-por-imagen:hover { color: #fff; }
         }
 
         @media (max-width: 880px) {
@@ -3528,7 +3533,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // había una pausa lo bastante larga. Sin commits, sin GitHub
     // Actions, sin despliegue de por medio para esto — y la misma URL
     // sirve sin cambios sea cual sea el hosting de esta página.
-    const PRODUCTOS_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+    const PRODUCTOS_URL = './data/productos.json';
+    const PRODUCTOS_REMOTO_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
     const PRODUCTOS_BESA_URL = './data/productos_besa.json';
@@ -3673,7 +3679,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // lo confunda con un cambio externo.
     async function resincronizarVersionConocida() {
         try {
-            const resp = await fetch(PRODUCTOS_URL, { cache: 'default' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
             if (!resp.ok) return;
             const texto = await resp.text();
             hashConocido = await calcularHash(texto);
@@ -3690,7 +3696,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
-            const resp = await fetch(PRODUCTOS_URL, { cache: 'default' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
             if (!resp.ok) return;
             const texto = await resp.text();
             const hash = await calcularHash(texto);
@@ -3732,7 +3738,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.disabled = true;
         boton.textContent = 'Actualizando...';
         try {
-            const resp = await fetch(PRODUCTOS_URL, { cache: 'default' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
             if (!resp.ok) throw new Error('respuesta no OK');
             const texto = await resp.text();
             const data = JSON.parse(texto);
