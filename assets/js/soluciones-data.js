@@ -1317,9 +1317,9 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar una sola mano esperando la misma protección que con dos.',
       ],
       recommendedProducts: [
-        { nombre: 'O.Matas Pintura Hidrófuga Fachadas Invisible', categoria: 'Pinturas', formato: '20 L', precio: '89,41 €' },
-        { nombre: 'Aguaplast Exterior',                            categoria: 'Pinturas', formato: '1,5 kg', precio: '5,43 €' },
-        { nombre: 'Recambio Rodillo Fachadas Tripol',               categoria: 'Pinturas', formato: '22 cm', precio: '4,69 €' },
+        { nombre: 'TITAN-PRO R40 NF 100% ACRILICO MATE WHITE=WB 15 L.', categoria: 'Pinturas', formato: '15 L', precio: '95,41 €' },
+        { nombre: 'Aguaplast Exterior',                                  categoria: 'Pinturas', formato: '1,5 kg', precio: '5,43 €' },
+        { nombre: 'Recambio Rodillo Fachadas Tripol',                     categoria: 'Pinturas', formato: '22 cm', precio: '4,69 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Color a elegir (Titán)', nombre: 'Orion A4 Plástico Fachadas Mate 15 L', precio: '73,93 €' },
