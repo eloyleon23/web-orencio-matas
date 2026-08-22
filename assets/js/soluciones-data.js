@@ -115,6 +115,9 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'suelo_madera_desgastado', label: 'El parquet está desgastado',      solutionSlug: 'barnizar-suelo-madera' },
     { id: 'elegir_pegamento', label: 'No sé qué pegamento usar',              solutionSlug: 'elegir-pegamento-material' },
     { id: 'pintar_llantas',   label: 'Quiero pintar las llantas del coche',    solutionSlug: 'pintar-llantas-coche' },
+    { id: 'plata_oscurecida', label: 'Tengo la plata oscurecida',             solutionSlug: 'limpiar-plata-metales' },
+    { id: 'usar_lejia',       label: 'No sé usar la lejía correctamente',     solutionSlug: 'usar-lejia-segura' },
+    { id: 'desinfectar_hogar',label: 'Quiero desinfectar la casa',            solutionSlug: 'desinfectar-casa' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -205,6 +208,10 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Desatascar una tubería',               solutionSlug: 'desatascar-tuberia' },
         { title: 'Abrillantar un suelo de mármol',        solutionSlug: 'abrillantar-suelo-marmol' },
         { title: 'Quitar una mancha de la ropa',          solutionSlug: 'eliminar-manchas-ropa' },
+        { title: 'Limpiar y abrillantar la plata',        solutionSlug: 'limpiar-plata-metales' },
+        { title: 'Limpiar acero inoxidable',              solutionSlug: 'limpiar-plata-metales' },
+        { title: 'Usar la lejía correctamente',           solutionSlug: 'usar-lejia-segura' },
+        { title: 'Desinfectar la casa',                   solutionSlug: 'desinfectar-casa' },
       ],
     },
     {
@@ -2049,6 +2056,169 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para pintar las llantas del coche con pintura específica resistente al calor de los frenos y al lavado.',
       },
     },
+
+    'limpiar-plata-metales': {
+      slug: 'limpiar-plata-metales',
+      title: 'Cómo limpiar y abrillantar plata, cobre o acero inoxidable',
+      description: 'Recupera el brillo de objetos de plata, cobre o acero inoxidable que se han oscurecido u oxidado con el tiempo, sin rayarlos.',
+      category: 'limpieza', subcategory: 'Limpieza de metales decorativos',
+      problem: 'plata_oscurecida',
+      objective: 'limpiar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '15-20 min',
+      result: 'Objetos de plata, cobre o acero inoxidable limpios y brillantes de nuevo',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Limpieza de metales decorativos'],
+      materials: [
+        { fase: 'Plata',  familiaSugerida: 'Limpiametales', items: ['Limpiaplata específico'] },
+        { fase: 'Cobre',  familiaSugerida: 'Limpiametales', items: ['Limpiador específico para cobre'] },
+        { fase: 'Acero',  familiaSugerida: 'Limpiametales', items: ['Limpiador de acero inoxidable'] },
+        { fase: 'Acabado',familiaSugerida: '—',             items: ['Paño suave'] },
+      ],
+      receta: [
+        { fase: 'Identificar', emoji: '🔍' },
+        { fase: 'Aplicar',     emoji: '🧴' },
+        { fase: 'Frotar',      emoji: '✋' },
+        { fase: 'Abrillantar', emoji: '✨' },
+      ],
+      steps: [
+        { n: 1, title: 'Identificar el metal', text: 'Plata, cobre y acero inoxidable se oscurecen y manchan de forma distinta — cada uno tiene su propio limpiador específico, y usar el que no toca puede no limpiar bien o incluso dañar el acabado.', productos: [] },
+        { n: 2, title: 'Aplicar el limpiador específico', text: 'Aplica el producto adecuado según el metal, siguiendo las instrucciones del envase — algunos se aplican con paño, otros en spray directo.', productos: ['Limpiaplata específico', 'Limpiador específico para cobre', 'Limpiador de acero inoxidable'] },
+        { n: 3, title: 'Frotar suavemente', text: 'Frota con un paño suave, sin objetos abrasivos que puedan rayar el metal — la plata y el acero inoxidable se rayan con facilidad.', productos: [] },
+        { n: 4, title: 'Abrillantar y pulir', text: 'Termina con un paño limpio y seco para retirar cualquier resto de producto y dejar el brillo final.', productos: ['Paño suave'] },
+      ],
+      professionalTips: [
+        'Un paño específico de limpieza de plata de larga duración evita tener que repetir el proceso completo cada pocas semanas — se puede usar para el mantenimiento habitual entre limpiezas a fondo.',
+      ],
+      commonMistakes: [
+        'Usar un limpiador de acero inoxidable sobre plata o cobre (no es el producto adecuado).',
+        'Frotar con estropajos u objetos abrasivos que rayan el metal.',
+        'No retirar bien el resto de producto, que puede volver a oscurecer el metal con el tiempo.',
+        'Guardar la plata limpia sin ninguna protección, dejando que se oscurezca de nuevo enseguida.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Tarni-Shield Limpia Plata',   categoria: 'Droguería', formato: '250 ml', precio: '2,35 €' },
+        { nombre: 'Tarni-Shield Cobre',           categoria: 'Droguería', formato: '250 ml', precio: '2,72 €' },
+        { nombre: 'Paso Limpiador Acero Inox',    categoria: 'Droguería', formato: '500 ml', precio: '7,68 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Mantenimiento habitual', nombre: 'Tarni-Shield Paño Limpia Plata Larga Duración', precio: '3,36 €' },
+        { etiqueta: 'Formato grande plata',    nombre: 'Tarni-Shield Limpia Plata 1 L', precio: '11,43 €' },
+        { etiqueta: 'Uso profesional acero',   nombre: 'Inoxbrill Limpiador Abrillantador Acero Inox 5 L', precio: '32,72 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo limpiar y abrillantar plata, cobre o acero inoxidable | Orencio Matas',
+        description: 'Guía para limpiar objetos de plata, cobre o acero inoxidable oscurecidos, recuperando su brillo sin rayarlos.',
+      },
+    },
+
+    'usar-lejia-segura': {
+      slug: 'usar-lejia-segura',
+      title: 'Cómo usar la lejía de forma segura',
+      description: 'Aprende a diluir y usar la lejía correctamente para desinfectar sin dañar superficies ni poner en riesgo tu salud.',
+      category: 'limpieza', subcategory: 'Uso seguro de productos químicos',
+      problem: 'usar_lejia',
+      objective: 'limpiar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '10 min',
+      result: 'Superficie desinfectada correctamente, sin riesgos para la salud ni daños al material',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Uso seguro de productos químicos'],
+      materials: [
+        { fase: 'Producto',    familiaSugerida: 'Lejías',    items: ['Lejía'] },
+        { fase: 'Protección',  familiaSugerida: 'Guantes',   items: ['Guantes de protección'] },
+        { fase: 'Aplicación',  familiaSugerida: '—',         items: ['Agua para diluir', 'Paño o bayeta'] },
+      ],
+      receta: [
+        { fase: 'Ventilar', emoji: '🌬️' },
+        { fase: 'Diluir',   emoji: '💧' },
+        { fase: 'Aplicar',  emoji: '🧴' },
+        { fase: 'Aclarar',  emoji: '🚿' },
+      ],
+      steps: [
+        { n: 1, title: 'Ventilar la zona', text: 'Abre ventanas antes de empezar — los vapores de la lejía en un espacio cerrado pueden irritar las vías respiratorias.', productos: [] },
+        { n: 2, title: 'Diluir siempre en agua', text: 'La lejía casi nunca se usa pura — dilúyela en agua según las proporciones del envase (habitualmente muy poca cantidad por litro de agua). Usarla pura no desinfecta mejor y sí daña más superficies y tejidos.', productos: ['Lejía', 'Agua para diluir'] },
+        { n: 3, title: 'Aplicar con guantes', text: 'Protege siempre las manos — la lejía irrita la piel con el contacto directo y prolongado.', productos: ['Guantes de protección'] },
+        { n: 4, title: 'Dejar actuar y aclarar', text: 'Deja actuar unos minutos sobre la superficie y aclara con agua limpia después — no la dejes secar sola sobre superficies que vayan a tener contacto con alimentos o piel.', productos: ['Paño o bayeta'] },
+      ],
+      professionalTips: [
+        'La lejía y el amoníaco (presente en muchos limpiacristales y algunos limpiadores) reaccionan generando un gas tóxico al mezclarse — nunca combines productos de limpieza distintos sin comprobar antes que son compatibles.',
+      ],
+      commonMistakes: [
+        'Mezclar lejía con amoníaco o con otros productos de limpieza.',
+        'Usar lejía pura sin diluir.',
+        'No ventilar la zona mientras se usa.',
+        'Usarla sobre metales o tejidos de color, que puede decolorar o corroer.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Lejía Ace Regular',           categoria: 'Droguería', formato: '2 L', precio: '1,75 €' },
+        { nombre: 'Lejía Dos Castillas Neutra',   categoria: 'Droguería', formato: '2 L', precio: '1,17 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Mayor densidad/rendimiento', nombre: 'Lejía Ace Protección Más Densa 2 L', precio: '1,97 €' },
+        { etiqueta: 'Formato grande',               nombre: 'Lejía Dos Castillas 5 L', precio: '2,42 €' },
+        { etiqueta: 'En pastillas (dosificación fácil)', nombre: 'Lejía en Pastillas HC-Chlor Tablet 1 kg', precio: '22,03 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo usar la lejía de forma segura | Orencio Matas',
+        description: 'Guía para diluir y usar la lejía correctamente en casa, desinfectando sin riesgos para la salud ni daños en las superficies.',
+      },
+    },
+
+    'desinfectar-casa': {
+      slug: 'desinfectar-casa',
+      title: 'Cómo desinfectar superficies en casa',
+      description: 'Desinfecta correctamente las superficies de más contacto en casa (cocina, baño, pomos, interruptores) con el producto adecuado para cada una.',
+      category: 'limpieza', subcategory: 'Desinfección del hogar',
+      problem: 'desinfectar_hogar',
+      objective: 'limpiar',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: '20-30 min (rutina periódica)',
+      result: 'Superficies de la casa desinfectadas, sin gérmenes ni malos olores',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Desinfección del hogar'],
+      materials: [
+        { fase: 'Limpieza previa', familiaSugerida: '—',              items: ['Retirar la suciedad visible antes de desinfectar'] },
+        { fase: 'Desinfección',    familiaSugerida: 'Desinfectantes', items: ['Desinfectante multiusos'] },
+        { fase: 'Textiles',        familiaSugerida: 'Desinfectantes', items: ['Desinfectante para hogar y textil'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',      emoji: '🧹' },
+        { fase: 'Desinfectar',  emoji: '🧴' },
+        { fase: 'Dejar actuar', emoji: '⏳' },
+        { fase: 'Secar',        emoji: '🧻' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpiar la suciedad visible primero', text: 'Un desinfectante no actúa bien sobre suciedad, grasa o restos de comida — limpia primero con el producto habitual y desinfecta después, nunca a la vez.', productos: [] },
+        { n: 2, title: 'Aplicar el desinfectante', text: 'Aplica el desinfectante multiusos en las zonas de más contacto: pomos, interruptores, encimeras, grifos e inodoro.', productos: ['Desinfectante multiusos'] },
+        { n: 3, title: 'Respetar el tiempo de contacto', text: 'Un desinfectante necesita permanecer húmedo sobre la superficie un tiempo mínimo para actuar de verdad — pasar el paño y secar inmediatamente reduce mucho su eficacia.', productos: [] },
+        { n: 4, title: 'Textiles y tapicerías', text: 'Para sofás, cortinas o textiles que no se pueden lavar a menudo, usa un desinfectante específico para hogar y textil, que no mancha ni deja olor fuerte.', productos: ['Desinfectante para hogar y textil'] },
+      ],
+      professionalTips: [
+        'La eficacia real de un desinfectante depende del tiempo que permanece húmedo sobre la superficie, no solo de aplicarlo — comprobar el tiempo de contacto indicado en el envase marca la diferencia entre desinfectar de verdad o solo dar una pasada superficial.',
+      ],
+      commonMistakes: [
+        'Desinfectar sobre suciedad visible sin limpiar antes.',
+        'Secar la superficie inmediatamente después de aplicar, sin respetar el tiempo de contacto.',
+        'Usar el mismo paño para desinfectar varias zonas sin aclararlo entre una y otra.',
+        'No ventilar la estancia mientras se usa un desinfectante con olor fuerte.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Asevi Gerpostar Desinfectante Multiusos', categoria: 'Droguería', formato: '750 ml', precio: '1,83 €' },
+        { nombre: 'Asevi Gerpostar Hogar y Textil Antialérgico', categoria: 'Droguería', formato: '400 ml', precio: '1,97 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Sin lejía',           nombre: 'Asevi Oxy Active Multiusos Sin Lejía', precio: '1,57 €' },
+        { etiqueta: 'Uso profesional/grandes superficies', nombre: 'Asevi Gerpostar Desinfectante Multiusos 5 kg', precio: '11,30 €' },
+      ],
+      relatedSolutions: ['usar-lejia-segura'],
+      seo: {
+        title: 'Cómo desinfectar superficies en casa | Orencio Matas',
+        description: 'Guía para desinfectar correctamente las zonas de más contacto en casa, con el producto adecuado y el tiempo de actuación necesario.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -2208,6 +2378,9 @@ window.SOLUCIONES_DATA = (function () {
       'mosquitos':        ['mosquito', 'mosquitos'],
       'suelo_madera_desgastado': ['parquet', 'tarima'],
       'pintar_llantas':   ['llanta', 'llantas'],
+      'plata_oscurecida': ['plata', 'oscurecid', 'cobre'],
+      'usar_lejia':       ['lejia', 'lejía'],
+      'desinfectar_hogar':['desinfectar', 'desinfeccion', 'desinfección'],
     };
     let problemaId = null;
     for (const [id, palabras] of Object.entries(coincidencias)) {
