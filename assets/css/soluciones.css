@@ -761,6 +761,75 @@
 }
 .cs-info-resumen__valor { color: var(--text-dark); font-weight: 800; font-size: 0.95rem; }
 
+/* ── Enlace a carta de colores (marca colaboradora) ───────────────────── */
+.cs-colorchart-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 10px 20px 10px 14px;
+  border: 2px solid rgba(18, 20, 23, 0.1);
+  border-radius: var(--radius-medium);
+  background: var(--primary-white);
+  color: var(--text-dark);
+  font-weight: 800;
+  text-decoration: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.cs-colorchart-link:hover {
+  border-color: var(--primary-red);
+  box-shadow: var(--shadow-subtle);
+  transform: translateY(-2px);
+}
+.cs-colorchart-link__logo {
+  height: 28px;
+  max-width: 90px;
+  object-fit: contain;
+}
+
+/* ── Calculadora de cantidad ───────────────────────────────────────────── */
+.cs-calculadora {
+  max-width: 560px;
+  padding: 26px 28px;
+  border-radius: var(--radius-medium);
+  background: var(--primary-white);
+  box-shadow: var(--shadow-subtle);
+}
+.cs-calculadora__campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.cs-calculadora__campo label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+}
+.cs-calculadora__campo input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-small);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.cs-calculadora__campo input:focus { outline: none; border-color: var(--primary-red); }
+.cs-calculadora__resultado {
+  min-height: 24px;
+  margin-bottom: 10px;
+  font-size: 1.02rem;
+  color: var(--text-dark);
+}
+.cs-calculadora__resultado strong { color: var(--primary-red); }
+.cs-calculadora__nota { font-size: 0.8rem; color: var(--text-muted); }
+@media (max-width: 640px) {
+  .cs-calculadora__campos { grid-template-columns: 1fr; }
+}
+
 /* ── Responsive: flujo simplificado en móvil ─────────────────────────── */
 @media (max-width: 640px) {
   .cs-wizard { padding: 24px 18px; }

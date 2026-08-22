@@ -72,8 +72,9 @@
             <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Resultado</div><div class="cs-info-resumen__valor">${sol.result}</div></div>
           </div>
           ${sol.colorChart ? `
-          <a class="btn-secondary" href="${sol.colorChart.url}" target="_blank" rel="noopener" style="margin-top:22px;display:inline-flex;gap:8px;">
-            🎨 ${sol.colorChart.label}
+          <a class="cs-colorchart-link" href="${sol.colorChart.url}" target="_blank" rel="noopener">
+            ${sol.colorChart.logo ? `<img class="cs-colorchart-link__logo" src="${sol.colorChart.logo}" alt="Logo" loading="lazy" onerror="this.style.display='none'">` : '🎨'}
+            <span>${sol.colorChart.label}</span>
           </a>` : ''}
         </div>
       </section>
@@ -95,6 +96,31 @@
           </div>
         </div>
       </section>
+
+      ${sol.calculadoraCantidad ? `
+      <!-- Calculadora de cantidad -->
+      <section class="cs-section no-imprimir">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-heading__eyebrow">Antes de comprar</p>
+            <h2>¿Cuánta cantidad necesitas?</h2>
+          </div>
+          <div class="cs-calculadora">
+            <div class="cs-calculadora__campos">
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-superficie">Superficie a tratar (m²)</label>
+                <input type="number" id="cs-calc-superficie" min="0" step="0.5" placeholder="Ej: 8">
+              </div>
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-manos">Nº de manos</label>
+                <input type="number" id="cs-calc-manos" min="1" step="1" value="2">
+              </div>
+            </div>
+            <p id="cs-calc-resultado" class="cs-calculadora__resultado"></p>
+            <p class="cs-calculadora__nota">Rendimiento orientativo (${sol.calculadoraCantidad.rendimiento} m²/L para ${sol.calculadoraCantidad.etiqueta}) — puede variar según la superficie y la forma de aplicación. Consulta la ficha técnica del producto para el dato exacto.</p>
+          </div>
+        </div>
+      </section>` : ''}
 
       <!-- Receta de trabajo -->
       <section class="cs-section">
@@ -224,6 +250,27 @@
     `;
 
     renderProductosRecomendados(sol);
+    wireCalculadoraCantidad(sol);
+  }
+
+  function wireCalculadoraCantidad(sol) {
+    if (!sol.calculadoraCantidad) return;
+    const inputSuperficie = $('#cs-calc-superficie');
+    const inputManos = $('#cs-calc-manos');
+    const resultado = $('#cs-calc-resultado');
+    if (!inputSuperficie || !inputManos || !resultado) return;
+
+    const { rendimiento, etiqueta } = sol.calculadoraCantidad;
+    const calcular = () => {
+      const superficie = parseFloat(inputSuperficie.value);
+      const manos = parseFloat(inputManos.value) || 2;
+      if (!superficie || superficie <= 0) { resultado.innerHTML = ''; return; }
+      const litros = (superficie * manos) / rendimiento;
+      resultado.innerHTML = `Necesitarás aproximadamente <strong>${litros.toFixed(1)} L</strong> ` +
+        `(${superficie} m² × ${manos} manos ÷ ${rendimiento} m²/L orientativos para ${etiqueta}).`;
+    };
+    inputSuperficie.addEventListener('input', calcular);
+    inputManos.addEventListener('input', calcular);
   }
 
   function agruparPorFase(materials) {
@@ -304,8 +351,8 @@
     cont.innerHTML = lista.map((p) => {
       const urlImg = urlImagenProductoReal(p.img);
       const urlDestino = p.ref
-        ? `buscador.html?ref=${encodeURIComponent(p.ref)}`
-        : `buscador.html?q=${encodeURIComponent(p.nombre)}`;
+        ? `../buscador.html?ref=${encodeURIComponent(p.ref)}`
+        : `../buscador.html?q=${encodeURIComponent(p.nombre)}`;
       return `
         <a class="cs-producto-card" href="${urlDestino}">
           <div class="cs-producto-card__imagen-wrap">
@@ -433,7 +480,9 @@
     const btnWhatsapp = $('#cs-exportar-whatsapp');
     if (btnWhatsapp) {
       btnWhatsapp.addEventListener('click', () => {
-        window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener');
+        // Navegar en la misma pestaña, no abrir una nueva — con window.open
+        // se quedaba una pestaña en blanco tras el salto a la app de WhatsApp.
+        window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texto);
       });
     }
   }

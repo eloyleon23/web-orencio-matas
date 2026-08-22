@@ -365,6 +365,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Fácil',
       estimatedTime: '1 h + secado',
       result: 'Superficie metálica limpia de óxido, tratada y protegida',
+      calculadoraCantidad: { rendimiento: 12, etiqueta: 'esmalte de metal' },
       breadcrumb: ['Centro de Soluciones', 'Metal', 'Eliminar óxido'],
       materials: [
         { fase: 'Preparación', familiaSugerida: 'Abrasivos',            items: ['Cepillo de púas metálicas', 'Abrasivo grano grueso'] },
@@ -426,7 +427,8 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Media',
       estimatedTime: '1-2 días (por los secados)',
       result: 'Mueble restaurado, con superficie lisa y barniz o pintura nuevos',
-      colorChart: { label: 'Encuentra tu color en Titanlux (línea madera)', url: 'https://www.titanlux.es/es/encuentratucolor' },
+      calculadoraCantidad: { rendimiento: 12, etiqueta: 'barniz' },
+      colorChart: { label: 'Encuentra tu color en Titanlux (línea madera)', url: 'https://www.titanlux.es/es/encuentratucolor', logo: 'https://static.titanlux.es/web/logo.png' },
       breadcrumb: ['Centro de Soluciones', 'Madera y restauración', 'Restaurar mueble'],
       materials: [
         { fase: 'Decapado',     familiaSugerida: 'Decapantes',  items: ['Decapante de barniz'] },
@@ -600,7 +602,8 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Media',
       estimatedTime: '1 día de aplicación + 3-7 días de curado antes del tráfico',
       result: 'Suelo protegido, con acabado uniforme resistente a aceites y desgaste',
-      colorChart: { label: 'Ver carta de colores TitanTech (sistema TitanColor: TT1 / RAL / NCS)', url: 'https://www.titantech.es/colores' },
+      calculadoraCantidad: { rendimiento: 5, etiqueta: 'sistema epoxi de suelos' },
+      colorChart: { label: 'Ver carta de colores TitanTech (sistema TitanColor: TT1 / RAL / NCS)', url: 'https://www.titantech.es/colores', logo: '../assets/proveedores/logo-titantech.jpg' },
       breadcrumb: ['Centro de Soluciones', 'Suelos y garajes', 'Suelos técnicos'],
       materials: [
         { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes',      items: ['Desengrasante industrial'] },
@@ -776,7 +779,8 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Fácil',
       estimatedTime: '1 día (2 manos) + secado entre manos',
       result: 'Pared repintada, con color uniforme y buen acabado',
-      colorChart: { label: 'Encuentra tu color en Titanlux (interior)', url: 'https://www.titanlux.es/es/encuentratucolor' },
+      calculadoraCantidad: { rendimiento: 10, etiqueta: 'pintura plástica' },
+      colorChart: { label: 'Encuentra tu color en Titanlux (interior)', url: 'https://www.titanlux.es/es/encuentratucolor', logo: 'https://static.titanlux.es/web/logo.png' },
       breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Pintura de interior'],
       materials: [
         { fase: 'Preparación',  familiaSugerida: 'Masillas',                  items: ['Masilla plástica', 'Lija fina'] },
@@ -1281,7 +1285,8 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Media',
       estimatedTime: '2-3 días según superficie y climatología',
       result: 'Fachada repintada, protegida frente a lluvia y humedad',
-      colorChart: { label: 'Carta de colores TitanTech para fachadas (TF2)', url: 'https://www.titantech.es/colores' },
+      calculadoraCantidad: { rendimiento: 6, etiqueta: 'pintura hidrófuga de fachadas' },
+      colorChart: { label: 'Carta de colores TitanTech para fachadas (TF2)', url: 'https://www.titantech.es/colores', logo: '../assets/proveedores/logo-titantech.jpg' },
       breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
       materials: [
         { fase: 'Preparación', familiaSugerida: 'Limpieza exterior',      items: ['Limpieza a presión o cepillado de la fachada'] },
