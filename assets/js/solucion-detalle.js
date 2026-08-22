@@ -73,7 +73,7 @@
           </div>
           ${sol.colorChart ? `
           <a class="cs-colorchart-link" href="${sol.colorChart.url}" target="_blank" rel="noopener">
-            ${sol.colorChart.logo ? `<img class="cs-colorchart-link__logo" src="${sol.colorChart.logo}" alt="Logo" loading="lazy" onerror="this.style.display='none'">` : '🎨'}
+            ${sol.colorChart.logo ? `<img class="cs-colorchart-link__logo" src="${sol.colorChart.logo}" alt="${sol.colorChart.label}" loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.parentElement.querySelector('.cs-colorchart-fallback')?.remove(); this.parentElement.insertAdjacentHTML('afterbegin', '<span class=\'cs-colorchart-fallback\'>🎨</span>');">` : '🎨'}
             <span>${sol.colorChart.label}</span>
           </a>` : ''}
         </div>

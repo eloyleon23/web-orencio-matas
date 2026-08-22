@@ -1002,10 +1002,12 @@
   box-shadow: var(--shadow-subtle);
   transform: translateY(-2px);
 }
-.cs-colorchart-link__logo {
+.cs-colorchart-link__logo,
+.cs-colorchart-fallback {
   height: 28px;
-  max-width: 90px;
+  max-width: 120px;
   object-fit: contain;
+  font-size: 1.5rem;
 }
 
 /* ── Calculadora de cantidad ───────────────────────────────────────────── */
