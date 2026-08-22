@@ -319,6 +319,8 @@
   // de la guía) con su resolución real en el catálogo (si se ha
   // encontrado una coincidencia razonable) — el resultado siempre tiene
   // los campos nombre/precio/categoria, y ref/img SOLO si son reales.
+  const NOMBRES_AREA = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
+
   function construirEntradaProducto(mock, real) {
     if (!real) {
       return {
@@ -329,6 +331,12 @@
         ref: null,
         img: null,
         esReal: false,
+        familia: mock.categoria,
+        area: null,
+        descripcion: null,
+        precioCon: null,
+        precioSin: null,
+        mostrarPrecio: true,
       };
     }
     const precioReal = real.mostrar_precio && real.precio_con ? `${real.precio_con} €` : mock.precio;
@@ -340,6 +348,12 @@
       ref: real.ref || null,
       img: real.img || null,
       esReal: true,
+      familia: real.familia || mock.categoria,
+      area: NOMBRES_AREA[real.area] || real.area || null,
+      descripcion: real.descripcion || null,
+      precioCon: real.mostrar_precio ? real.precio_con : null,
+      precioSin: real.mostrar_precio ? real.precio_sin : null,
+      mostrarPrecio: !!real.mostrar_precio,
     };
   }
 
@@ -373,48 +387,90 @@
 
   // ── Modal de detalle de producto (vista rápida, sin salir de la página) ──
   function abrirModalProducto(p) {
-    const modal = $('#cs-modal-producto');
-    if (!modal) return;
+    const overlay = $('#modal-producto-overlay');
+    if (!overlay) return;
 
     const urlImg = urlImagenProductoReal(p.img);
-    const contImagen = $('#cs-modal-producto-imagen-cont');
-    contImagen.innerHTML = urlImg
-      ? `<img src="${urlImg}" alt="${p.nombre}" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
-      : `<span class="cs-producto-card__imagen-fallback">📦</span>`;
-
-    $('#cs-modal-producto-categoria').textContent = p.categoria + (p.formato ? ` · ${p.formato}` : '');
-    $('#cs-modal-producto-nombre').textContent = p.nombre;
-    $('#cs-modal-producto-ref').textContent = p.ref ? `Ref: ${p.ref}` : '';
-    $('#cs-modal-producto-ref').style.display = p.ref ? 'block' : 'none';
-    $('#cs-modal-producto-precio').textContent = p.precio;
-
-    const nota = $('#cs-modal-producto-nota');
-    const btnBuscador = $('#cs-modal-producto-verbuscador');
-    if (p.esReal) {
-      nota.textContent = 'Disponibilidad sujeta a stock. Consulta con la tienda para confirmar.';
-      btnBuscador.href = `../buscador.html?ref=${encodeURIComponent(p.ref)}`;
-      btnBuscador.style.display = 'inline-flex';
+    const img = $('#modal-producto-img');
+    const sinImagen = $('#modal-producto-sin-imagen');
+    if (urlImg) {
+      img.src = urlImg;
+      img.alt = p.nombre;
+      img.style.display = 'block';
+      img.onerror = () => { img.style.display = 'none'; sinImagen.style.display = 'flex'; };
+      sinImagen.style.display = 'none';
     } else {
-      nota.textContent = 'Producto orientativo — consulta con la tienda la opción exacta disponible.';
-      btnBuscador.href = `../buscador.html?q=${encodeURIComponent(p.nombre)}`;
-      btnBuscador.style.display = 'inline-flex';
+      img.style.display = 'none';
+      sinImagen.style.display = 'flex';
     }
 
-    modal.style.display = 'flex';
+    $('#modal-producto-nombre').textContent = p.nombre;
+    $('#modal-producto-ref').textContent = p.ref ? `Ref: ${p.ref}` : (p.formato ? `Formato: ${p.formato}` : '');
+
+    const elDescripcion = $('#modal-producto-descripcion');
+    if (p.descripcion) {
+      elDescripcion.textContent = p.descripcion;
+      elDescripcion.style.display = 'block';
+    } else {
+      elDescripcion.style.display = 'none';
+    }
+
+    // Precio con/sin IVA — igual que el modal real cuando hay datos reales
+    // del catálogo; con productos orientativos (sin resolver) se muestra
+    // solo el precio único que ya trae la guía.
+    let precioHtml = '';
+    if (p.esReal) {
+      if (p.mostrarPrecio && p.precioCon) {
+        precioHtml = `<div class="modal-producto-precio-con">${p.precioCon} €</div>`;
+        if (p.precioSin) precioHtml += `<div class="modal-producto-precio-sin">${p.precioSin} € sin IVA</div>`;
+      } else {
+        precioHtml = '<p style="color:var(--text-muted);">Consultar precio y disponibilidad</p>';
+      }
+    } else {
+      precioHtml = `<div class="modal-producto-precio-con">${p.precio}</div>`;
+    }
+    $('#modal-producto-precio').innerHTML = precioHtml;
+
+    $('#modal-producto-familia').textContent = p.familia || '—';
+    $('#modal-producto-area').textContent = p.area || '—';
+
+    const btnBuscador = $('#modal-producto-verbuscador');
+    btnBuscador.href = p.esReal
+      ? `../buscador.html?ref=${encodeURIComponent(p.ref)}`
+      : `../buscador.html?q=${encodeURIComponent(p.nombre)}`;
+
+    const btnCompartir = $('#modal-producto-compartir');
+    btnCompartir.onclick = () => {
+      const texto = `${p.nombre} — ${p.precio}\n${window.location.origin}${btnBuscador.getAttribute('href').replace('..', '')}`;
+      const marcarCopiado = () => {
+        btnCompartir.classList.add('copiado');
+        btnCompartir.textContent = '✓ Copiado';
+        setTimeout(() => { btnCompartir.classList.remove('copiado'); btnCompartir.innerHTML = '↗ Compartir'; }, 1800);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(marcarCopiado).catch(() => mostrarToast('No se pudo copiar'));
+      }
+    };
+
+    overlay.classList.add('activo');
     document.body.style.overflow = 'hidden';
   }
 
   function cerrarModalProducto() {
-    const modal = $('#cs-modal-producto');
-    if (!modal) return;
-    modal.style.display = 'none';
+    const overlay = $('#modal-producto-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('activo');
     document.body.style.overflow = '';
   }
 
   function wireModalProducto() {
-    const fondo = $('#cs-modal-producto-fondo');
-    const btnCerrar = $('#cs-modal-producto-cerrar');
-    if (fondo) fondo.addEventListener('click', cerrarModalProducto);
+    const overlay = $('#modal-producto-overlay');
+    const btnCerrar = $('#modal-producto-cerrar');
+    if (overlay) {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cerrarModalProducto();
+      });
+    }
     if (btnCerrar) btnCerrar.addEventListener('click', cerrarModalProducto);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') cerrarModalProducto();

@@ -297,85 +297,168 @@
   .cs-producto-card__imagen-wrap { height: 90px; }
 }
 
-/* ── Modal de detalle de producto (vista rápida) ──────────────────────── */
-.cs-modal-producto {
+/* ── Modal de detalle de producto — PORT FIEL del modal real de
+   buscador.html (mismas clases, mismo aspecto). Se omiten a propósito
+   las clases/funciones de administración (actualizar/validar imagen,
+   dar de baja, gestionar relacionados, calculadora de rendimiento por
+   producto, complementarios) porque requieren el backend de Apps
+   Script, que no está disponible en esta vista de solo lectura. ──── */
+.modal-overlay {
+  display: none;
   position: fixed;
   inset: 0;
-  z-index: 600;
-  display: flex;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 1000;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
-.cs-modal-producto__fondo {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 17, 21, 0.6);
-}
-.cs-modal-producto__caja {
-  position: relative;
-  background: var(--primary-white);
-  border-radius: var(--radius-large);
-  max-width: 780px;
-  width: 100%;
+.modal-overlay.activo { display: flex; }
+.modal-producto-box {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 90%;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
-.cs-modal-producto__cerrar {
+.modal-producto-cerrar-sticky {
   position: sticky;
-  float: right;
+  top: 0;
+  height: 0;
+  overflow: visible;
+  z-index: 20;
+}
+.modal-producto-cerrar {
+  position: absolute;
   top: 12px;
   right: 12px;
-  margin: 12px 12px -36px 0;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   background: var(--light-gray);
   border: none;
   cursor: pointer;
-  font-size: 1.1rem;
-  color: var(--text-muted);
-  z-index: 10;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-.cs-modal-producto__cerrar:hover { background: var(--primary-red); color: #ffffff; }
-.cs-modal-producto__contenido {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-.cs-modal-producto__imagen-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 280px;
-  padding: 24px;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  z-index: 10;
+  transition: background 0.2s, color 0.2s;
+}
+.modal-producto-cerrar:hover { background: var(--primary-red); color: #ffffff; }
+.modal-producto-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.modal-producto-imagen {
+  position: relative;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 20px;
+}
+.modal-producto-imagen img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.modal-producto-sin-imagen {
+  font-size: 4rem;
+  opacity: 0.35;
+}
+.modal-producto-compartir {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.modal-producto-compartir:hover { background: #fff; color: var(--text-dark); border-color: #cbd5e1; }
+.modal-producto-compartir:active { background: #f1f5f9; }
+.modal-producto-compartir.copiado { background: #dcfce7; border-color: #86efac; color: #166534; }
+.modal-producto-info {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+}
+.modal-producto-info h3 {
+  font-size: 1.5rem;
+  color: var(--text-dark);
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+.modal-producto-ref {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 16px 0;
+}
+.modal-producto-descripcion {
   background: var(--light-gray);
-  border-radius: var(--radius-large) 0 0 var(--radius-large);
+  border-left: 3px solid var(--text-dark);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-dark);
+  margin: 0 0 16px 0;
 }
-.cs-modal-producto__imagen-wrap img { max-width: 100%; max-height: 340px; object-fit: contain; }
-.cs-modal-producto__imagen-wrap .cs-producto-card__imagen-fallback { font-size: 3.5rem; opacity: 0.35; }
-.cs-modal-producto__info { padding: 32px; display: flex; flex-direction: column; }
-.cs-modal-producto__info h3 { margin: 0 0 8px; font-size: 1.35rem; color: var(--text-dark); line-height: 1.3; }
-.cs-modal-producto__categoria {
-  display: inline-block;
-  align-self: flex-start;
-  margin-bottom: 10px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(0, 109, 174, 0.08);
-  color: var(--primary-blue);
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
+.modal-producto-precio { margin-bottom: 20px; }
+.modal-producto-precio-con { font-size: 1.8rem; font-weight: 700; color: var(--primary-red); }
+.modal-producto-precio-sin { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; }
+.modal-producto-detalles p { margin: 8px 0; color: var(--text-gray); font-size: 0.95rem; }
+.modal-producto-detalles strong { color: var(--text-dark); }
+.modal-producto-disclaimer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.cs-modal-producto__ref { margin: 0 0 16px; color: var(--text-muted); font-size: 0.82rem; font-family: monospace; }
-.cs-modal-producto__precio { margin-bottom: 18px; font-size: 1.7rem; font-weight: 900; color: var(--primary-red); }
-.cs-modal-producto__nota { margin: 0 0 22px; color: var(--text-gray); font-size: 0.85rem; line-height: 1.5; }
-.cs-modal-producto__info .btn-secondary { margin-top: auto; }
+.modal-producto-ficha {
+  margin-top: 12px;
+  padding: 8px 14px;
+  background: var(--primary-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  text-decoration: none;
+  transition: filter 0.15s;
+  width: fit-content;
+}
+.modal-producto-ficha:hover { filter: brightness(1.08); }
+.modal-producto-ficha:active { filter: brightness(0.95); }
 @media (max-width: 640px) {
-  .cs-modal-producto__contenido { grid-template-columns: 1fr; }
-  .cs-modal-producto__imagen-wrap { border-radius: var(--radius-large) var(--radius-large) 0 0; min-height: 200px; }
+  .modal-producto-content { grid-template-columns: 1fr; }
+  .modal-producto-imagen { min-height: 220px; }
 }
 
 /* ── Botón "volver arriba" ────────────────────────────────────────────── */

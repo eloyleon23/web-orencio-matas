@@ -98,22 +98,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
     </footer>
 
-    <!-- Modal de detalle de producto (vista rápida, sin salir de la página) -->
-    <div class="cs-modal-producto" id="cs-modal-producto" style="display:none;">
-      <div class="cs-modal-producto__fondo" id="cs-modal-producto-fondo"></div>
-      <div class="cs-modal-producto__caja">
-        <button type="button" class="cs-modal-producto__cerrar" id="cs-modal-producto-cerrar" aria-label="Cerrar">✕</button>
-        <div class="cs-modal-producto__contenido">
-          <div class="cs-modal-producto__imagen-wrap">
-            <div id="cs-modal-producto-imagen-cont"></div>
+    <!-- Modal de detalle de producto — mismo modal que buscador.html (misma
+         estructura y clases), sin los botones de administración que
+         requieren backend (actualizar/validar imagen, dar de baja,
+         gestionar relacionados), que no aplican en esta vista de solo
+         lectura. -->
+    <div class="modal-overlay" id="modal-producto-overlay">
+      <div class="modal-producto-box" id="modal-producto-box">
+        <div class="modal-producto-cerrar-sticky">
+          <button class="modal-producto-cerrar" id="modal-producto-cerrar">✕</button>
+        </div>
+        <div class="modal-producto-content">
+          <div class="modal-producto-imagen">
+            <img id="modal-producto-img" src="" alt="" loading="lazy">
+            <div id="modal-producto-sin-imagen" class="modal-producto-sin-imagen" style="display:none;">📦</div>
+            <button id="modal-producto-compartir" class="modal-producto-compartir" title="Compartir producto">↗ Compartir</button>
           </div>
-          <div class="cs-modal-producto__info">
-            <span class="cs-modal-producto__categoria" id="cs-modal-producto-categoria"></span>
-            <h3 id="cs-modal-producto-nombre"></h3>
-            <p class="cs-modal-producto__ref" id="cs-modal-producto-ref"></p>
-            <div class="cs-modal-producto__precio" id="cs-modal-producto-precio"></div>
-            <p class="cs-modal-producto__nota" id="cs-modal-producto-nota"></p>
-            <a class="btn-secondary" id="cs-modal-producto-verbuscador" href="#" target="_blank" rel="noopener">Ver ficha completa en el buscador</a>
+          <div class="modal-producto-info">
+            <h3 id="modal-producto-nombre"></h3>
+            <p class="modal-producto-ref" id="modal-producto-ref"></p>
+            <p class="modal-producto-descripcion" id="modal-producto-descripcion" style="display:none;"></p>
+            <div class="modal-producto-precio" id="modal-producto-precio"></div>
+            <div class="modal-producto-detalles">
+              <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
+              <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
+            </div>
+            <p class="modal-producto-disclaimer">
+              ⓘ Los precios pueden variar y este producto está sujeto a disponibilidad, así como la imagen puede no coincidir exactamente con el producto real.
+            </p>
+            <a id="modal-producto-verbuscador" class="modal-producto-ficha" href="#" target="_blank" rel="noopener">📄 Ver ficha completa en el buscador</a>
           </div>
         </div>
       </div>
