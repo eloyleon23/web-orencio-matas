@@ -1420,11 +1420,11 @@ window.SOLUCIONES_DATA = (function () {
         reparar: 'recuperar-brillo-carroceria',
         limpiar: 'recuperar-brillo-carroceria',
         pulir: 'recuperar-brillo-carroceria',
-        restaurar: 'pintar-plastico-coche',
         proteger: 'proteger-bajos-antigravilla',
         preparar: 'pintar-plastico-coche',
         pegar: 'sellar-luna-parabrisas',
-        acabado: 'pintar-plastico-coche',
+        // Sin guía específica todavía: restaurar/acabado de carrocería
+        // se resuelve con búsqueda de productos.
       },
       plastico: {
         pintar: 'pintar-plastico-coche',
@@ -1487,11 +1487,11 @@ window.SOLUCIONES_DATA = (function () {
     if (solucion) return solucion;
 
     // Fallback coherente por superficie si la acción no está mapeada
-    if (superficieId === 'coche' || superficieId === 'plastico') return 'pintar-plastico-coche';
     if (superficieId === 'madera') return 'restaurar-mueble-madera';
     if (superficieId === 'metal') return 'eliminar-oxido-metal';
     if (superficieId === 'pared' || superficieId === 'hogar') return 'pintar-pared-interior';
     if (superficieId === 'suelo') return 'suelo-epoxi-garaje';
+    if (superficieId === 'plastico') return 'pintar-plastico-coche';
 
     // Sin una combinación que encaje con confianza (p. ej. superficie
     // "Otro") — mejor admitirlo con honestidad que forzar una
