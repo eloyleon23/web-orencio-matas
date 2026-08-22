@@ -135,6 +135,22 @@
   flex: 0 0 240px;
   width: 240px;
 }
+@media (max-width: 640px) {
+  /* En móvil, 2 tarjetas por fila en lugar de 1 — a ancho fijo (160px o
+     240px) dos tarjetas más el hueco no cabían en el ancho disponible,
+     así que cada una caía a su propia línea. Con un ancho relativo
+     (mitad del hueco menos la mitad del gap) siempre caben 2 por fila. */
+  .cs-grid .cs-tile {
+    flex: 1 1 calc(50% - 9px);
+    width: auto;
+    max-width: calc(50% - 9px);
+  }
+  .cs-grid--soluciones .cs-solucion-card {
+    flex: 1 1 calc(50% - 9px);
+    width: auto;
+    max-width: calc(50% - 9px);
+  }
+}
 .cs-tile {
   display: flex;
   flex-direction: column;
