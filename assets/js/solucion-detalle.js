@@ -348,13 +348,10 @@
   }
 
   function renderTarjetasProducto(cont, lista) {
-    cont.innerHTML = lista.map((p) => {
+    cont.innerHTML = lista.map((p, i) => {
       const urlImg = urlImagenProductoReal(p.img);
-      const urlDestino = p.ref
-        ? `../buscador.html?ref=${encodeURIComponent(p.ref)}`
-        : `../buscador.html?q=${encodeURIComponent(p.nombre)}`;
       return `
-        <a class="cs-producto-card" href="${urlDestino}">
+        <button type="button" class="cs-producto-card" data-idx="${i}">
           <div class="cs-producto-card__imagen-wrap">
             ${urlImg
               ? `<img class="cs-producto-card__imagen" src="${urlImg}" alt="${p.nombre}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
@@ -365,9 +362,63 @@
           ${p.formato ? `<div class="cs-producto-card__formato">Formato: ${p.formato}</div>` : ''}
           ${p.ref ? `<div class="cs-producto-card__ref">Ref: ${p.ref}</div>` : ''}
           <div class="cs-producto-card__precio">${p.precio}</div>
-        </a>
+        </button>
       `;
     }).join('');
+
+    cont.querySelectorAll('.cs-producto-card').forEach((btn, i) => {
+      btn.addEventListener('click', () => abrirModalProducto(lista[i]));
+    });
+  }
+
+  // ── Modal de detalle de producto (vista rápida, sin salir de la página) ──
+  function abrirModalProducto(p) {
+    const modal = $('#cs-modal-producto');
+    if (!modal) return;
+
+    const urlImg = urlImagenProductoReal(p.img);
+    const contImagen = $('#cs-modal-producto-imagen-cont');
+    contImagen.innerHTML = urlImg
+      ? `<img src="${urlImg}" alt="${p.nombre}" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
+      : `<span class="cs-producto-card__imagen-fallback">📦</span>`;
+
+    $('#cs-modal-producto-categoria').textContent = p.categoria + (p.formato ? ` · ${p.formato}` : '');
+    $('#cs-modal-producto-nombre').textContent = p.nombre;
+    $('#cs-modal-producto-ref').textContent = p.ref ? `Ref: ${p.ref}` : '';
+    $('#cs-modal-producto-ref').style.display = p.ref ? 'block' : 'none';
+    $('#cs-modal-producto-precio').textContent = p.precio;
+
+    const nota = $('#cs-modal-producto-nota');
+    const btnBuscador = $('#cs-modal-producto-verbuscador');
+    if (p.esReal) {
+      nota.textContent = 'Disponibilidad sujeta a stock. Consulta con la tienda para confirmar.';
+      btnBuscador.href = `../buscador.html?ref=${encodeURIComponent(p.ref)}`;
+      btnBuscador.style.display = 'inline-flex';
+    } else {
+      nota.textContent = 'Producto orientativo — consulta con la tienda la opción exacta disponible.';
+      btnBuscador.href = `../buscador.html?q=${encodeURIComponent(p.nombre)}`;
+      btnBuscador.style.display = 'inline-flex';
+    }
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function cerrarModalProducto() {
+    const modal = $('#cs-modal-producto');
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function wireModalProducto() {
+    const fondo = $('#cs-modal-producto-fondo');
+    const btnCerrar = $('#cs-modal-producto-cerrar');
+    if (fondo) fondo.addEventListener('click', cerrarModalProducto);
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrarModalProducto);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') cerrarModalProducto();
+    });
   }
 
   function actualizarBarraExportar(sol, listaProductos) {
@@ -508,5 +559,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     render();
     wireBotonSubir();
+    wireModalProducto();
   });
 })();

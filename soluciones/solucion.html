@@ -98,6 +98,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
     </footer>
 
+    <!-- Modal de detalle de producto (vista rápida, sin salir de la página) -->
+    <div class="cs-modal-producto" id="cs-modal-producto" style="display:none;">
+      <div class="cs-modal-producto__fondo" id="cs-modal-producto-fondo"></div>
+      <div class="cs-modal-producto__caja">
+        <button type="button" class="cs-modal-producto__cerrar" id="cs-modal-producto-cerrar" aria-label="Cerrar">✕</button>
+        <div class="cs-modal-producto__contenido">
+          <div class="cs-modal-producto__imagen-wrap">
+            <div id="cs-modal-producto-imagen-cont"></div>
+          </div>
+          <div class="cs-modal-producto__info">
+            <span class="cs-modal-producto__categoria" id="cs-modal-producto-categoria"></span>
+            <h3 id="cs-modal-producto-nombre"></h3>
+            <p class="cs-modal-producto__ref" id="cs-modal-producto-ref"></p>
+            <div class="cs-modal-producto__precio" id="cs-modal-producto-precio"></div>
+            <p class="cs-modal-producto__nota" id="cs-modal-producto-nota"></p>
+            <a class="btn-secondary" id="cs-modal-producto-verbuscador" href="#" target="_blank" rel="noopener">Ver ficha completa en el buscador</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="../assets/js/soluciones-data.js"></script>
     <script src="../assets/js/solucion-detalle.js"></script>
     <script src="../src/js/app.js"></script>
