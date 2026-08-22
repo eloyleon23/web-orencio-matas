@@ -855,6 +855,14 @@
 }
 .cs-exportar-bar p { font-weight: 700; }
 .cs-exportar-bar .precio-total { color: var(--primary-yellow); font-weight: 900; }
+.cs-total-disclaimer {
+  width: 100%;
+  margin-top: -8px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.75);
+}
 .cs-exportar-bar__acciones {
   display: flex;
   flex-wrap: wrap;

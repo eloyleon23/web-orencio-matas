@@ -190,7 +190,8 @@
           </div>
           <div class="cs-productos-grid" id="cs-productos-recomendados"></div>
           <div class="cs-exportar-bar">
-            <p id="cs-total-productos">Total ${sol.recommendedProducts.length} productos · <span class="precio-total">${sumaPrecios(sol.recommendedProducts)} €</span></p>
+            <p id="cs-total-productos">Total ${sol.recommendedProducts.length} productos* · <span class="precio-total">${sumaPrecios(sol.recommendedProducts)} €*</span></p>
+            <p class="cs-total-disclaimer">* Precios y productos indicativos y orientativos. La cantidad, el formato y el precio final pueden variar; consulte con nuestro profesional en tienda.</p>
             <div class="cs-exportar-bar__acciones no-imprimir">
               <button type="button" class="btn-primary" id="cs-exportar-pdf">📄 Descargar como PDF</button>
               <button type="button" class="btn-secondary" id="cs-exportar-copiar">📋 Copiar lista de la compra</button>
@@ -489,7 +490,7 @@
   function actualizarBarraExportar(sol, listaProductos) {
     const totalEl = $('#cs-total-productos');
     if (totalEl) {
-      totalEl.innerHTML = `Total ${listaProductos.length} productos · <span class="precio-total">${sumaPrecios(listaProductos)} €</span>`;
+      totalEl.innerHTML = `Total ${listaProductos.length} productos* · <span class="precio-total">${sumaPrecios(listaProductos)} €*</span>`;
     }
     wireExportarLista(sol, listaProductos);
   }
