@@ -137,7 +137,7 @@
   const NOMBRES_AREA = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
 
   function renderTarjetaProductoCatalogo(p) {
-    const precio = p.mostrar_precio && p.precio_con ? `${p.precio_con} €` : 'Consultar precio';
+    const precio = p.mostrar_precio && p.precio_con ? `${p.precio_con} €` : 'Consultar precio y disponibilidad';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     return `
       <a class="cs-producto-card" href="buscador.html?ref=${encodeURIComponent(p.ref)}">

@@ -327,7 +327,7 @@
         nombre: mock.nombre,
         categoria: mock.categoria,
         formato: mock.formato || null,
-        precio: mock.precio,
+        precio: 'Consultar precio y disponibilidad',
         ref: null,
         img: null,
         esReal: false,
@@ -336,10 +336,10 @@
         descripcion: null,
         precioCon: null,
         precioSin: null,
-        mostrarPrecio: true,
+        mostrarPrecio: false,
       };
     }
-    const precioReal = real.mostrar_precio && real.precio_con ? `${real.precio_con} €` : mock.precio;
+    const precioReal = real.mostrar_precio && real.precio_con ? `${real.precio_con} €` : 'Consultar precio y disponibilidad';
     return {
       nombre: real.nombre || mock.nombre,
       categoria: mock.categoria,
@@ -375,7 +375,7 @@
           <div class="cs-producto-card__nombre">${p.nombre}</div>
           ${p.formato ? `<div class="cs-producto-card__formato">Formato: ${p.formato}</div>` : ''}
           ${p.ref ? `<div class="cs-producto-card__ref">Ref: ${p.ref}</div>` : ''}
-          <div class="cs-producto-card__precio">${p.precio}</div>
+          <div class="cs-producto-card__precio">${p.mostrarPrecio ? p.precio : 'Consultar precio y disponibilidad'}</div>
         </button>
       `;
     }).join('');
@@ -435,23 +435,31 @@
     $('#modal-producto-area').textContent = p.area || '—';
 
     const btnBuscador = $('#modal-producto-verbuscador');
-    const hrefBuscar = p.ref
-      ? `../buscador.html?ref=${encodeURIComponent(p.ref)}`
-      : `../buscador.html?q=${encodeURIComponent(p.nombre)}`;
-    btnBuscador.href = hrefBuscar;
+    if (p.ref) {
+      btnBuscador.href = `../buscador.html?ref=${encodeURIComponent(p.ref)}`;
+      btnBuscador.style.display = '';
+    } else {
+      btnBuscador.style.display = 'none';
+    }
 
     const btnCompartir = $('#modal-producto-compartir');
-    btnCompartir.onclick = () => {
-      const texto = `${p.nombre} — ${p.precio}\n${window.location.origin}${btnBuscador.getAttribute('href').replace('..', '')}`;
-      const marcarCopiado = () => {
-        btnCompartir.classList.add('copiado');
-        btnCompartir.textContent = '✓ Copiado';
-        setTimeout(() => { btnCompartir.classList.remove('copiado'); btnCompartir.innerHTML = '↗ Compartir'; }, 1800);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(texto).then(marcarCopiado).catch(() => mostrarToast('No se pudo copiar'));
+    if (btnCompartir) {
+      btnCompartir.style.display = p.ref ? '' : 'none';
+      if (p.ref) {
+        btnCompartir.onclick = () => {
+          const href = btnBuscador.getAttribute('href') || '';
+          const texto = `${p.nombre} — ${p.precio}\n${window.location.origin}${href.replace('..', '')}`;
+          const marcarCopiado = () => {
+            btnCompartir.classList.add('copiado');
+            btnCompartir.textContent = '✓ Copiado';
+            setTimeout(() => { btnCompartir.classList.remove('copiado'); btnCompartir.innerHTML = '↗ Compartir'; }, 1800);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto).then(marcarCopiado).catch(() => mostrarToast('No se pudo copiar'));
+          }
+        };
       }
-    };
+    }
 
     overlay.classList.add('activo');
     document.body.style.overflow = 'hidden';
