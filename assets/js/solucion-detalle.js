@@ -140,7 +140,7 @@
 
       <!-- Consejo profesional + errores frecuentes -->
       <section class="cs-section">
-        <div class="container" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="container cs-tip-mistakes-grid">
           <div class="cs-tip">
             <span class="cs-tip__emoji">💡</span>
             <div>

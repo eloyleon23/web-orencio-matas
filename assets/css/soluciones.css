@@ -510,6 +510,17 @@
 }
 
 /* ── Consejo profesional ──────────────────────────────────────────────── */
+.cs-tip-mistakes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.cs-tip-mistakes-grid > * {
+  min-width: 0; /* evita que el contenido (listas largas) desborde la columna */
+}
+@media (max-width: 768px) {
+  .cs-tip-mistakes-grid { grid-template-columns: 1fr; }
+}
 .cs-tip {
   display: flex;
   gap: 16px;
