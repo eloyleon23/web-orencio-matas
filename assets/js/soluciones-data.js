@@ -428,7 +428,7 @@ window.SOLUCIONES_DATA = (function () {
       estimatedTime: '1-2 días (por los secados)',
       result: 'Mueble restaurado, con superficie lisa y barniz o pintura nuevos',
       calculadoraCantidad: { rendimiento: 12, etiqueta: 'barniz' },
-      colorChart: { label: 'Encuentra tu color en Titanlux (línea madera)', url: 'https://www.titanlux.es/es/encuentratucolor', logo: 'https://static.titanlux.es/web/logo.png' },
+      colorChart: { label: 'Encuentra tu color en Titanlux (línea madera)', url: 'https://www.titanlux.es/', logo: 'https://static.titanlux.es/web/logo.png' },
       breadcrumb: ['Centro de Soluciones', 'Madera y restauración', 'Restaurar mueble'],
       materials: [
         { fase: 'Decapado',     familiaSugerida: 'Decapantes',  items: ['Decapante de barniz'] },
@@ -780,7 +780,7 @@ window.SOLUCIONES_DATA = (function () {
       estimatedTime: '1 día (2 manos) + secado entre manos',
       result: 'Pared repintada, con color uniforme y buen acabado',
       calculadoraCantidad: { rendimiento: 10, etiqueta: 'pintura plástica' },
-      colorChart: { label: 'Encuentra tu color en Titanlux (interior)', url: 'https://www.titanlux.es/es/encuentratucolor', logo: 'https://static.titanlux.es/web/logo.png' },
+      colorChart: { label: 'Encuentra tu color en Titanpro (interior)', url: 'https://www.titanpro.es/es/colores', logo: 'https://www.titanpro.es/profiles/titanpro/themes/titanpro/images/logo-titanpro.png' },
       breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Pintura de interior'],
       materials: [
         { fase: 'Preparación',  familiaSugerida: 'Masillas',                  items: ['Masilla plástica', 'Lija fina'] },
@@ -814,7 +814,7 @@ window.SOLUCIONES_DATA = (function () {
       recommendedProducts: [
         { nombre: 'Masilla Plástica Kolman',                          categoria: 'Pinturas', formato: '250 ml', precio: '2,48 €' },
         { nombre: 'Imprimación Multiadherente al Agua Koman',         categoria: 'Pinturas', formato: '4 L',   precio: '46,63 €' },
-        { nombre: 'Gilmaplas Pintura Plástica Satinada Extra Int/Ext', categoria: 'Pinturas', formato: '4 L',  precio: '19,64 €' },
+        { nombre: 'TITANPRO P-40 P.Acrílica Premium Mate 15 L. Blanco', categoria: 'Pinturas', formato: '15 L',  precio: '66,03 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción económica (retoques)', nombre: 'Jamicolor Pintura Plástica Mate Int/Ext 750 ml Blanco', precio: '2,54 €' },
@@ -1286,7 +1286,7 @@ window.SOLUCIONES_DATA = (function () {
       estimatedTime: '2-3 días según superficie y climatología',
       result: 'Fachada repintada, protegida frente a lluvia y humedad',
       calculadoraCantidad: { rendimiento: 6, etiqueta: 'pintura hidrófuga de fachadas' },
-      colorChart: { label: 'Carta de colores TitanTech para fachadas (TF2)', url: 'https://www.titantech.es/colores', logo: '../assets/proveedores/logo-titantech.jpg' },
+      colorChart: { label: 'Carta de colores Titanpro para fachadas (TF2)', url: 'https://www.titanpro.es/es/colores', logo: 'https://www.titanpro.es/profiles/titanpro/themes/titanpro/images/logo-titanpro.png' },
       breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
       materials: [
         { fase: 'Preparación', familiaSugerida: 'Limpieza exterior',      items: ['Limpieza a presión o cepillado de la fachada'] },
@@ -1375,7 +1375,7 @@ window.SOLUCIONES_DATA = (function () {
       recommendedProducts: [
         { nombre: 'Aguastop Antigoteras Caucho Fibra',       categoria: 'Pinturas', formato: '20 kg', precio: '93,12 €' },
         { nombre: 'Aguaplast Masilla Estanqueidad',           categoria: 'Pinturas', formato: '1 kg', precio: '21,22 €' },
-        { nombre: 'Ceys Agua Stop Impermeabilizante c/Fibra', categoria: 'Droguería', formato: '1 kg', precio: '6,73 €' },
+        { nombre: 'REVEST.ANTIGOTERAS I-5 4 L.BLANCO',        categoria: 'Pinturas', formato: '4 L', precio: '21,05 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción económica (goteras puntuales)', nombre: 'Antigoteras LP-70 Caucho 750 ml', precio: '6,35 €' },

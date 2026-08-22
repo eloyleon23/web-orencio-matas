@@ -435,9 +435,10 @@
     $('#modal-producto-area').textContent = p.area || '—';
 
     const btnBuscador = $('#modal-producto-verbuscador');
-    btnBuscador.href = p.esReal
+    const hrefBuscar = p.ref
       ? `../buscador.html?ref=${encodeURIComponent(p.ref)}`
       : `../buscador.html?q=${encodeURIComponent(p.nombre)}`;
+    btnBuscador.href = hrefBuscar;
 
     const btnCompartir = $('#modal-producto-compartir');
     btnCompartir.onclick = () => {

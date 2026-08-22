@@ -182,6 +182,17 @@
     return texto.slice(0, idx) + '<mark>' + texto.slice(idx, idx + consulta.length) + '</mark>' + texto.slice(idx + consulta.length);
   }
 
+  function urlBuscarEjemplo(areaId, titulo) {
+    const areaMap = {
+      coche: 'talleres', pintura: 'pinturas', madera: 'pinturas', metal: 'pinturas',
+      limpieza: 'drogueria', pegado: 'drogueria', suelos: 'pinturas', piscinas: 'drogueria',
+      plagas: 'drogueria', jardin: 'drogueria',
+    };
+    const area = areaMap[areaId] || '';
+    const q = encodeURIComponent(titulo);
+    return area ? `buscador.html?q=${q}&area=${area}` : `buscador.html?q=${q}`;
+  }
+
   function renderAreas(filtro) {
     const cont = $('#cs-areas');
     const sinResultados = $('#cs-areas-sin-resultados');
@@ -219,11 +230,14 @@
         </button>
         <div class="cs-area-block__content">
           <div class="cs-area-list">
-            ${ejemplos.map((ej) => (
-              ej.solutionSlug
-                ? `<a href="${urlSolucion(ej.solutionSlug)}">${resaltarCoincidencia(ej.title, consulta)}</a>`
-                : `<span class="sin-enlace" title="Próximamente">${resaltarCoincidencia(ej.title, consulta)}</span>`
-            )).join('')}
+            ${ejemplos.map((ej) => {
+              if (ej.solutionSlug) {
+                return `<a href="${urlSolucion(ej.solutionSlug)}">${resaltarCoincidencia(ej.title, consulta)}</a>`;
+              }
+              // Ejemplos sin guía preparada: redirigir al buscador con el título
+              // como criterio de búsqueda y el área correspondiente filtrada.
+              return `<a href="${urlBuscarEjemplo(area.id, ej.title)}">${resaltarCoincidencia(ej.title, consulta)}</a>`;
+            }).join('')}
           </div>
         </div>
       </div>

@@ -2540,6 +2540,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
           <ul class="navbar__submenu">
             <li><a href="buscador.html">Buscador</a></li>
+                  <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
           </ul>
         </li>
         <li><a href="servicios.html">Servicios</a></li>
@@ -3580,7 +3581,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // caché de GitHub Pages, que ya no se usa aquí).
     // Optimización: cargar productos principales primero y mostrarlos,
     // luego cargar productos adicionales en segundo plano para mejorar percepción de velocidad.
-    fetch(PRODUCTOS_URL, { cache: 'no-store' })
+    fetch(PRODUCTOS_URL, { cache: 'default' })
         .then(r => r.ok ? r.text() : null)
         .then(async texto => {
             if (!texto) throw new Error('respuesta vacía');
@@ -3663,7 +3664,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // lo confunda con un cambio externo.
     async function resincronizarVersionConocida() {
         try {
-            const resp = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_URL, { cache: 'default' });
             if (!resp.ok) return;
             const texto = await resp.text();
             hashConocido = await calcularHash(texto);
@@ -3680,7 +3681,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
-            const resp = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_URL, { cache: 'default' });
             if (!resp.ok) return;
             const texto = await resp.text();
             const hash = await calcularHash(texto);
@@ -3722,7 +3723,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.disabled = true;
         boton.textContent = 'Actualizando...';
         try {
-            const resp = await fetch(PRODUCTOS_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_URL, { cache: 'default' });
             if (!resp.ok) throw new Error('respuesta no OK');
             const texto = await resp.text();
             const data = JSON.parse(texto);
