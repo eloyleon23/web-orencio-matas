@@ -1408,50 +1408,91 @@ window.SOLUCIONES_DATA = (function () {
   // adecuado. En el futuro esta función se sustituiría por una consulta
   // real (reglas más finas, o incluso un modelo), pero la FORMA de la
   // respuesta (un slug de Solution) no cambiaría.
-  function encontrarSolucionPorDiagnostico(accionId, superficieId, estadoId, resultadoId) {
-    if (accionId === 'pegar') {
-      return 'sellar-juntas-bano';
-    }
-    if (superficieId === 'piscina') {
-      return 'mantenimiento-piscina';
-    }
-    if (superficieId === 'suelo') {
-      return 'suelo-epoxi-garaje';
-    }
-    if (superficieId === 'pared') {
-      if (accionId === 'proteger') return 'impermeabilizar-terraza-goteras';
-      return 'pintar-pared-interior';
-    }
-    if (superficieId === 'jardin') {
-      return 'cuidado-plantas-jardin';
-    }
-    if (superficieId === 'hogar') {
-      if (resultadoId === 'recuperar_brillo') return 'abrillantar-suelo-marmol';
-      return 'sellar-juntas-bano';
-    }
-    if (superficieId === 'coche' && accionId === 'proteger') {
-      return 'proteger-bajos-antigravilla';
-    }
-    if (superficieId === 'coche' && (resultadoId === 'recuperar_brillo' || accionId === 'pulir')) {
-      return 'recuperar-brillo-carroceria';
-    }
-    if (superficieId === 'coche' && (accionId === 'limpiar' || accionId === 'reparar')) {
-      return 'recuperar-brillo-carroceria';
-    }
-    if (superficieId === 'coche') {
-      // 'pintar', 'restaurar', 'preparar', 'acabado' con coche: todas encajan
-      // con la preparación/repintado de plástico, el caso más habitual.
-      return 'pintar-plastico-coche';
-    }
-    if (superficieId === 'plastico') {
-      return 'pintar-plastico-coche';
-    }
-    if (superficieId === 'metal') {
-      return 'eliminar-oxido-metal';
-    }
-    if (superficieId === 'madera') {
-      return 'restaurar-mueble-madera';
-    }
+  function encontrarSolucionPorDiagnostico(accionId, superficieId, estadoId, resultadoId, usoId, tamanoId) {
+    // Acciones de mantenimiento simple (sin superficie concreta)
+    if (accionId === 'pegar') return 'sellar-juntas-bano';
+    if (superficieId === 'piscina') return 'mantenimiento-piscina';
+    if (superficieId === 'jardin') return 'cuidado-plantas-jardin';
+
+    const porSuperficie = {
+      coche: {
+        pintar: 'pintar-plastico-coche',
+        reparar: 'recuperar-brillo-carroceria',
+        limpiar: 'recuperar-brillo-carroceria',
+        pulir: 'recuperar-brillo-carroceria',
+        restaurar: 'pintar-plastico-coche',
+        proteger: 'proteger-bajos-antigravilla',
+        preparar: 'pintar-plastico-coche',
+        pegar: 'sellar-luna-parabrisas',
+        acabado: 'pintar-plastico-coche',
+      },
+      plastico: {
+        pintar: 'pintar-plastico-coche',
+        reparar: 'pintar-plastico-coche',
+        limpiar: 'pintar-plastico-coche',
+        restaurar: 'pintar-plastico-coche',
+        preparar: 'pintar-plastico-coche',
+        acabado: 'pintar-plastico-coche',
+      },
+      madera: {
+        pintar: 'restaurar-mueble-madera',
+        reparar: 'restaurar-mueble-madera',
+        limpiar: 'restaurar-mueble-madera',
+        pulir: 'restaurar-mueble-madera',
+        restaurar: 'restaurar-mueble-madera',
+        proteger: 'restaurar-mueble-madera',
+        preparar: 'restaurar-mueble-madera',
+        acabado: 'restaurar-mueble-madera',
+      },
+      metal: {
+        pintar: 'eliminar-oxido-metal',
+        reparar: 'eliminar-oxido-metal',
+        limpiar: 'eliminar-oxido-metal',
+        proteger: 'eliminar-oxido-metal',
+        preparar: 'eliminar-oxido-metal',
+        restaurar: 'eliminar-oxido-metal',
+        acabado: 'eliminar-oxido-metal',
+      },
+      pared: {
+        pintar: 'pintar-pared-interior',
+        reparar: 'pintar-pared-interior',
+        limpiar: 'pintar-pared-interior',
+        proteger: 'impermeabilizar-terraza-goteras',
+        restaurar: 'pintar-pared-interior',
+        preparar: 'pintar-pared-interior',
+        acabado: 'pintar-pared-interior',
+      },
+      suelo: {
+        pintar: 'suelo-epoxi-garaje',
+        reparar: 'suelo-epoxi-garaje',
+        limpiar: 'abrillantar-suelo-marmol',
+        proteger: 'suelo-epoxi-garaje',
+        restaurar: 'suelo-epoxi-garaje',
+        preparar: 'suelo-epoxi-garaje',
+        acabado: 'suelo-epoxi-garaje',
+      },
+      hogar: {
+        pintar: 'pintar-pared-interior',
+        limpiar: 'eliminar-manchas-ropa',
+        proteger: 'proteger-ropa-polillas',
+        reparar: 'sellar-juntas-bano',
+        pegar: 'sellar-juntas-bano',
+        restaurar: 'restaurar-mueble-madera',
+        preparar: 'pintar-pared-interior',
+        acabado: 'pintar-pared-interior',
+      },
+    };
+
+    const solucion = (porSuperficie[superficieId] || {})[accionId];
+    if (solucion) return solucion;
+
+    // Fallback coherente por superficie si la acción no está mapeada
+    if (superficieId === 'coche' || superficieId === 'plastico') return 'pintar-plastico-coche';
+    if (superficieId === 'madera') return 'restaurar-mueble-madera';
+    if (superficieId === 'metal') return 'eliminar-oxido-metal';
+    if (superficieId === 'pared' || superficieId === 'hogar') return 'pintar-pared-interior';
+    if (superficieId === 'suelo') return 'suelo-epoxi-garaje';
+
     // Sin una combinación que encaje con confianza (p. ej. superficie
     // "Otro") — mejor admitirlo con honestidad que forzar una
     // recomendación que podría no tener nada que ver. El panel de
