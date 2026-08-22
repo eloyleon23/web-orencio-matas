@@ -113,32 +113,95 @@
   }
 
   // ── Explora por áreas (acordeón) ────────────────────────────────────────
-  function renderAreas() {
+  // Quita acentos y pasa a minúsculas para comparar sin importar tildes
+  // (mismo criterio que ya usa buscador.html para su propio buscador).
+  function normalizarTexto(t) {
+    return (t || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  function resaltarCoincidencia(texto, consulta) {
+    if (!consulta) return texto;
+    const textoNorm = normalizarTexto(texto);
+    const idx = textoNorm.indexOf(consulta);
+    if (idx === -1) return texto;
+    return texto.slice(0, idx) + '<mark>' + texto.slice(idx, idx + consulta.length) + '</mark>' + texto.slice(idx + consulta.length);
+  }
+
+  function renderAreas(filtro) {
     const cont = $('#cs-areas');
+    const sinResultados = $('#cs-areas-sin-resultados');
     if (!cont) return;
-    cont.innerHTML = D.areas.map((area, i) => `
-      <div class="cs-area-block${i === 0 ? ' is-open' : ''}" data-area="${area.id}">
+
+    const consulta = normalizarTexto(filtro || '').trim();
+    const hayFiltro = consulta.length > 0;
+
+    // Con filtro activo: cada área solo muestra los ejemplos que
+    // coinciden (por título o por el nombre del área), y las áreas sin
+    // ninguna coincidencia se ocultan del todo. Sin filtro, se muestran
+    // todas tal cual, con la primera abierta como siempre.
+    const areasFiltradas = D.areas.map((area) => {
+      if (!hayFiltro) return { area, ejemplos: area.ejemplos, coincideArea: false };
+      const coincideArea = normalizarTexto(area.label).includes(consulta);
+      const ejemplos = coincideArea
+        ? area.ejemplos
+        : area.ejemplos.filter((ej) => normalizarTexto(ej.title).includes(consulta));
+      return { area, ejemplos, coincideArea };
+    }).filter(({ ejemplos }) => !hayFiltro || ejemplos.length > 0);
+
+    if (hayFiltro && areasFiltradas.length === 0) {
+      cont.innerHTML = '';
+      if (sinResultados) sinResultados.style.display = 'block';
+      return;
+    }
+    if (sinResultados) sinResultados.style.display = 'none';
+
+    cont.innerHTML = areasFiltradas.map(({ area, ejemplos }, i) => `
+      <div class="cs-area-block${(hayFiltro || i === 0) ? ' is-open' : ''}" data-area="${area.id}">
         <button type="button" class="cs-area-block__header">
           <span class="emoji">${area.emoji}</span>
-          <span>${area.label}</span>
+          <span>${resaltarCoincidencia(area.label, consulta)}</span>
           <span class="caret">▾</span>
         </button>
         <div class="cs-area-block__content">
           <div class="cs-area-list">
-            ${area.ejemplos.map((ej) => (
+            ${ejemplos.map((ej) => (
               ej.solutionSlug
-                ? `<a href="${urlSolucion(ej.solutionSlug)}">${ej.title}</a>`
-                : `<span class="sin-enlace" title="Próximamente">${ej.title}</span>`
+                ? `<a href="${urlSolucion(ej.solutionSlug)}">${resaltarCoincidencia(ej.title, consulta)}</a>`
+                : `<span class="sin-enlace" title="Próximamente">${resaltarCoincidencia(ej.title, consulta)}</span>`
             )).join('')}
           </div>
         </div>
       </div>
     `).join('');
+  }
 
+  // Delegación de clic para el acordeón — registrada UNA sola vez (no en
+  // cada renderAreas(), que se llama en cada tecleo del buscador), ya que
+  // consulta el DOM en el momento del clic con closest().
+  function wireAreasAcordeon() {
+    const cont = $('#cs-areas');
+    if (!cont) return;
     cont.addEventListener('click', (e) => {
       const header = e.target.closest('.cs-area-block__header');
       if (!header) return;
       header.closest('.cs-area-block').classList.toggle('is-open');
+    });
+  }
+
+  function wireAreasBuscador() {
+    const input = $('#cs-areas-buscar');
+    const btnLimpiar = $('#cs-areas-buscar-limpiar');
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+      btnLimpiar.style.display = input.value ? 'block' : 'none';
+      renderAreas(input.value);
+    });
+    btnLimpiar.addEventListener('click', () => {
+      input.value = '';
+      btnLimpiar.style.display = 'none';
+      renderAreas('');
+      input.focus();
     });
   }
 
@@ -225,26 +288,52 @@
     const slug = D.encontrarSolucionPorDiagnostico(
       wizardState.accion, wizardState.superficie, wizardState.estado, wizardState.resultado
     );
-    const sol = D.soluciones[slug];
     const cont = $('#cs-wizard-contenido');
 
     const progreso = $('#cs-wizard-progress');
     if (progreso) progreso.innerHTML = wizardPasos.map(() => '<span class="is-done"></span>').join('');
 
-    cont.innerHTML = `
-      <p class="cs-wizard__step-label">Tu solución</p>
-      <h3 class="cs-wizard__question">${sol.title}</h3>
-      <p style="margin-bottom:22px;color:var(--text-gray);line-height:1.6;">${sol.description}</p>
-      <div class="cs-info-resumen" style="margin-bottom:26px;border-top:none;padding-top:0;">
-        <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Dificultad</div><div class="cs-info-resumen__valor">${sol.difficulty}</div></div>
-        <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Tiempo</div><div class="cs-info-resumen__valor">${sol.estimatedTime}</div></div>
-        <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Resultado</div><div class="cs-info-resumen__valor">${sol.result}</div></div>
-      </div>
-      <div class="cs-wizard__nav">
-        <button type="button" class="cs-wizard__back" id="cs-wizard-atras">← Volver a cambiar respuestas</button>
-        <a class="btn-primary" href="${urlSolucion(slug)}">Ver la solución completa</a>
-      </div>
-    `;
+    if (!slug || !D.soluciones[slug]) {
+      // Combinación sin una guía específica todavía (p. ej. superficie
+      // "Otro") — mejor decirlo con honestidad que forzar una
+      // recomendación que podría no tener nada que ver con lo que
+      // busca la persona.
+      cont.innerHTML = `
+        <p class="cs-wizard__step-label">Sin guía específica todavía</p>
+        <h3 class="cs-wizard__question">Aún no tenemos una guía exacta para este caso</h3>
+        <p style="margin-bottom:22px;color:var(--text-gray);line-height:1.6;">
+          No pasa nada — puedes explorar todas las soluciones por área, o contarnos
+          directamente qué problema tienes con tus propias palabras y te ayudamos igual.
+        </p>
+        <div class="cs-wizard__nav">
+          <button type="button" class="cs-wizard__back" id="cs-wizard-atras">← Volver a cambiar respuestas</button>
+          <a class="btn-primary" href="#cs-problema" id="cs-wizard-ir-problema">Contarnos el problema</a>
+        </div>
+      `;
+      const btnProblema = $('#cs-wizard-ir-problema', cont);
+      if (btnProblema) {
+        btnProblema.addEventListener('click', () => {
+          cerrarWizard();
+        });
+      }
+    } else {
+      const sol = D.soluciones[slug];
+      cont.innerHTML = `
+        <p class="cs-wizard__step-label">Tu solución</p>
+        <h3 class="cs-wizard__question">${sol.title}</h3>
+        <p style="margin-bottom:22px;color:var(--text-gray);line-height:1.6;">${sol.description}</p>
+        <div class="cs-info-resumen" style="margin-bottom:26px;border-top:none;padding-top:0;">
+          <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Dificultad</div><div class="cs-info-resumen__valor">${sol.difficulty}</div></div>
+          <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Tiempo</div><div class="cs-info-resumen__valor">${sol.estimatedTime}</div></div>
+          <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Resultado</div><div class="cs-info-resumen__valor">${sol.result}</div></div>
+        </div>
+        <div class="cs-wizard__nav">
+          <button type="button" class="cs-wizard__back" id="cs-wizard-atras">← Volver a cambiar respuestas</button>
+          <a class="btn-primary" href="${urlSolucion(slug)}">Ver la solución completa</a>
+        </div>
+      `;
+    }
+
     const btnAtras = $('#cs-wizard-atras', cont);
     if (btnAtras) {
       btnAtras.addEventListener('click', () => {
@@ -275,6 +364,8 @@
     renderProblemas();
     renderSolucionesDestacadas();
     renderAreas();
+    wireAreasAcordeon();
+    wireAreasBuscador();
     wireWizardOpenClose();
   });
 })();

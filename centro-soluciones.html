@@ -156,7 +156,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <p class="section-heading__eyebrow">Todo el catálogo de trabajos</p>
             <h2>Explora soluciones</h2>
           </div>
+          <div class="cs-areas-buscador">
+            <input type="text" id="cs-areas-buscar" class="cs-areas-buscador__input" placeholder="Busca un trabajo concreto (ej. &quot;pintar plástico&quot;, &quot;óxido&quot;, &quot;piscina&quot;...)" autocomplete="off">
+            <button type="button" id="cs-areas-buscar-limpiar" class="cs-areas-buscador__limpiar" style="display:none;" aria-label="Borrar búsqueda">✕</button>
+          </div>
           <div id="cs-areas"></div>
+          <p id="cs-areas-sin-resultados" class="cs-areas-sin-resultados" style="display:none;">
+            No hemos encontrado ningún trabajo con ese término. Prueba con otra palabra, o
+            <a href="#cs-problema">cuéntanos qué necesitas</a> con tus propias palabras.
+          </p>
         </div>
       </section>
 

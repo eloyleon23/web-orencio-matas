@@ -238,6 +238,55 @@
 .cs-badge-dificultad--media  { background: rgba(241, 179, 0, 0.16); color: color-mix(in srgb, var(--primary-yellow) 78%, #7a5200); }
 .cs-badge-dificultad--dificil{ background: rgba(217, 27, 27, 0.12); color: var(--primary-red); }
 
+/* ── Buscador rápido dentro de "Explora soluciones" ───────────────────── */
+.cs-areas-buscador {
+  position: relative;
+  max-width: 480px;
+  margin-bottom: 24px;
+}
+.cs-areas-buscador__input {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-small);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cs-areas-buscador__input:focus {
+  outline: none;
+  border-color: var(--primary-red);
+  box-shadow: 0 0 0 3px rgba(217, 27, 27, 0.1);
+}
+.cs-areas-buscador__limpiar {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+.cs-areas-buscador__limpiar:hover { color: var(--text-dark); }
+.cs-areas-sin-resultados {
+  padding: 20px 0;
+  color: var(--text-gray);
+  font-size: 0.95rem;
+}
+.cs-areas-sin-resultados a { color: var(--primary-red); font-weight: 700; text-decoration: none; }
+.cs-areas-sin-resultados a:hover { text-decoration: underline; }
+.cs-area-list mark {
+  background: rgba(241, 179, 0, 0.35);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
 /* ── Explora por áreas (acordeón simple) ─────────────────────────────── */
 .cs-area-block {
   margin-bottom: 14px;

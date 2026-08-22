@@ -1413,7 +1413,15 @@ window.SOLUCIONES_DATA = (function () {
     if (superficieId === 'coche' && (resultadoId === 'recuperar_brillo' || accionId === 'pulir')) {
       return 'recuperar-brillo-carroceria';
     }
-    if (superficieId === 'plastico' || (superficieId === 'coche' && accionId === 'pintar')) {
+    if (superficieId === 'coche' && (accionId === 'limpiar' || accionId === 'reparar')) {
+      return 'recuperar-brillo-carroceria';
+    }
+    if (superficieId === 'coche') {
+      // 'pintar', 'restaurar', 'preparar', 'acabado' con coche: todas encajan
+      // con la preparación/repintado de plástico, el caso más habitual.
+      return 'pintar-plastico-coche';
+    }
+    if (superficieId === 'plastico') {
       return 'pintar-plastico-coche';
     }
     if (superficieId === 'metal') {
@@ -1422,8 +1430,12 @@ window.SOLUCIONES_DATA = (function () {
     if (superficieId === 'madera') {
       return 'restaurar-mueble-madera';
     }
-    // Fallback razonable para cualquier combinación no cubierta explícitamente
-    return 'pintar-plastico-coche';
+    // Sin una combinación que encaje con confianza (p. ej. superficie
+    // "Otro") — mejor admitirlo con honestidad que forzar una
+    // recomendación que podría no tener nada que ver. El panel de
+    // resultado del asistente maneja este `null` mostrando alternativas
+    // (explorar por área, o el buscador de "tengo un problema").
+    return null;
   }
 
   // ── Motor de diagnóstico por texto libre (simulado) ─────────────────────
@@ -1433,24 +1445,44 @@ window.SOLUCIONES_DATA = (function () {
   function diagnosticarPorTexto(texto) {
     const t = (texto || '').toLowerCase();
     const coincidencias = {
+      // Términos de coche muy específicos primero, para que no los eclipse
+      // ningún término genérico de más abajo en la lista (mismo tipo de
+      // problema ya conocido en el proyecto: "sata" dentro de
+      // "desatascador" en Apps Script — aquí "cola" dentro de "descolado").
+      'luna_rota':         ['parabrisas', 'luna del coche', 'luna lateral', 'cristal del coche', 'descolad'],
+      'bajos_coche':       ['bajos del coche', 'antigravilla', 'gravilla'],
       'oxido':      ['oxido', 'óxido', 'oxidad'],
-      'aranazos':   ['arañazo', 'aranazo', 'rayad', 'brillo'],
+      // "brillo" (a secas) quitado a propósito: coincidía también con
+      // "el suelo de mármol está sin brillo" — se queda con términos
+      // específicos de arañazo/rayado.
+      'aranazos':   ['arañazo', 'aranazo', 'rayad'],
       'no_adhiere': ['no se adhiere', 'no adhiere', 'se despega', 'plastico', 'plástico'],
-      'pegamento':  ['pegamento', 'cola', 'adhesivo'],
-      'mal_acabado':['barniz', 'blanquecino', 'burbuja', 'mueble', 'madera'],
+      // "cola" quitada a propósito: coincidía como subcadena dentro de
+      // "descolado" (luna del coche), disparando este problema por error.
+      'pegamento':  ['pegamento', 'adhesivo'],
+      'mal_acabado':['barniz', 'blanquecino', 'burbuja', 'mueble', 'madera', 'no ha quedado bien', 'quitar pintura'],
       'moho_junta': ['moho', 'junta', 'silicona', 'bañera', 'banera', 'ducha'],
       'agua_turbia':['piscina', 'turbia', 'algas', 'cloro', 'ph del agua'],
       'cucarachas': ['cucaracha', 'hormiga', 'insecto', 'plaga', 'bicho'],
-      'suelo_deteriorado': ['suelo', 'garaje', 'epoxi', 'nave', 'taller'],
-      'pared_deteriorada': ['pared', 'habitacion', 'habitación', 'salon', 'salón', 'pintar la pared'],
+      // "suelo" (a secas) quitado a propósito: coincidía también en
+      // "el suelo de mármol está opaco", disparando este problema en vez
+      // de "suelo_opaco" — se queda solo con términos específicos de
+      // garaje/nave/taller.
+      'suelo_deteriorado': ['garaje', 'epoxi', 'nave', 'taller'],
+      // "habitacion"/"salon" (a secas) quitados a propósito: son solo
+      // nombres de estancia, no indican intención de pintar — colisionaban
+      // con frases que mencionan un salón por cualquier otro motivo (p. ej.
+      // "el suelo de mármol del salón").
+      'pared_deteriorada': ['pared', 'pintar la pared', 'pintar el salon', 'pintar el salón', 'pintar la habitacion', 'pintar la habitación'],
       'tuberia_atascada':  ['atascad', 'tuberia', 'tubería', 'desague', 'desagüe', 'atasco'],
-      'suelo_opaco':       ['marmol', 'mármol', 'terrazo', 'opaco'],
-      'mancha_ropa':       ['mancha', 'ropa', 'camisa', 'tejido'],
+      'suelo_opaco':       ['marmol', 'mármol', 'terrazo', 'opaco', 'suelo'],
+      // "ropa" (a secas) quitada a propósito: coincidía también con
+      // "proteger la ropa de las polillas" — se queda con términos
+      // específicos de mancha.
+      'mancha_ropa':       ['mancha', 'camisa', 'tejido'],
       'ratones':           ['raton', 'ratón', 'ratones', 'roedor'],
       'plantas_debiles':   ['planta', 'jardin', 'jardín', 'abono', 'maceta'],
       'polillas_ropa':     ['polilla', 'armario', 'guardarropa'],
-      'bajos_coche':       ['bajos del coche', 'antigravilla', 'gravilla'],
-      'luna_rota':         ['parabrisas', 'luna del coche', 'luna lateral', 'cristal del coche'],
       'goteras':           ['gotera', 'goteras', 'humedad', 'filtracion', 'filtración', 'terraza'],
       'fachada_deteriorada': ['fachada', 'exterior de la casa', 'exterior de casa'],
     };
