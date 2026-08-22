@@ -204,7 +204,9 @@
     'Aplicar la silicona': 'silicona',
     'Barnizado': 'barniz',
     'Barnizar un suelo de madera': 'barniz suelo',
+    'Barnizar una mesa': 'barniz madera',
     'Cambiar el color': 'tinte madera',
+    'Recuperar una superficie deteriorada': 'barniz madera',
     'Clorar': 'cloro',
     'Clorar correctamente la piscina': 'cloro piscina',
     'Colocar el cebo': 'raticida',
@@ -287,6 +289,7 @@
     'Pegar una tubería de PVC': 'pegamento PVC',
     'Pintar aluminio': 'oxiron',
     'Pintar azulejos': 'esmalte azulejos',
+    'Pintar hierro': 'antioxidante',
     'Pintar estructuras metálicas': 'oxiron',
     'Pintar estufas': 'pintura anticalorica',
     'Pintar madera barnizada': 'barniz madera',
@@ -350,7 +353,7 @@
       plagas: 'drogueria', jardin: 'drogueria',
     };
     const fallbackArea = {
-      coche: 'productos coche', pintura: 'pintura', madera: 'barniz madera', metal: 'pintura metal',
+      coche: 'productos coche', pintura: 'pintura', madera: 'barniz madera', metal: 'antioxidante',
       limpieza: 'limpieza', pegado: 'pegamento', suelos: 'pintura suelos', piscinas: 'piscina',
       plagas: 'plagas', jardin: 'abono',
     };
