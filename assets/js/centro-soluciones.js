@@ -334,10 +334,21 @@
       </div>
     `;
 
+    function esAccionSimple(id) {
+      return ['limpiar', 'proteger', 'pegar'].includes(id);
+    }
+
     $all('[data-opcion]', cont).forEach((btn) => {
       btn.addEventListener('click', () => {
         wizardState[paso.key] = btn.dataset.opcion;
-        wizardState.pasoActual += 1;
+        // Acciones de mantenimiento/protección/adhesión no necesitan pasos
+        // de estado/resultado: saltamos al resultado con lo que ya sabemos.
+        const accionParaSalto = paso.key === 'accion' ? btn.dataset.opcion : wizardState.accion;
+        if (esAccionSimple(accionParaSalto)) {
+          wizardState.pasoActual = wizardPasos.length;
+        } else {
+          wizardState.pasoActual += 1;
+        }
         renderPasoWizard();
       });
     });

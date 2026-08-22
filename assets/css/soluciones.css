@@ -105,11 +105,20 @@
 .cs-breadcrumb a:hover { color: var(--primary-red); text-decoration: underline; }
 .cs-breadcrumb span.current { color: var(--text-dark); font-weight: 700; }
 
-/* ── Grid de tarjetas de acción / superficie ("¿Qué quieres hacer?") ──── */
+/* ── Grid de tarjetas de acción / superficie / populares ──────────────── */
 .cs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 18px;
+}
+.cs-grid .cs-tile {
+  flex: 0 0 160px;
+  width: 160px;
+}
+.cs-grid--soluciones .cs-solucion-card {
+  flex: 0 0 240px;
+  width: 240px;
 }
 .cs-tile {
   display: flex;
@@ -996,6 +1005,13 @@
 .cs-calculadora__nota { font-size: 0.8rem; color: var(--text-muted); }
 @media (max-width: 640px) {
   .cs-calculadora__campos { grid-template-columns: 1fr; }
+}
+
+/* ── Ajustes del asistente en móvil ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .cs-wizard { padding: 28px 20px; }
+  .cs-wizard__question { font-size: 1.25rem; }
+  .cs-wizard__options { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
 }
 
 /* ── Responsive: flujo simplificado en móvil ─────────────────────────── */
