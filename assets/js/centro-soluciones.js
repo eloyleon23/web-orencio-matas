@@ -438,6 +438,46 @@
     });
   }
 
+  // ── Scroll a anclas internas (#cs-problema, etc.) compensando el header
+  //    fijo (.site-header es position:sticky) ─────────────────────────────
+  // Sin esto, el destino del enlace queda tapado justo debajo del menú al
+  // saltar directamente con el comportamiento por defecto del navegador —
+  // puede dar la sensación de que "no ha pasado nada" o de haber ido a
+  // otro sitio.
+  function wireScrollAnclas() {
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('a[href^="#"]');
+      if (!link) return;
+      const id = link.getAttribute('href').slice(1);
+      if (!id) return;
+      const destino = document.getElementById(id);
+      if (!destino) return;
+      e.preventDefault();
+      const header = document.querySelector('.site-header');
+      const alturaHeader = header ? header.offsetHeight : 0;
+      const top = destino.getBoundingClientRect().top + window.scrollY - alturaHeader - 16;
+      window.scrollTo({ top, behavior: 'smooth' });
+    });
+  }
+
+  // ── Botón "volver arriba" ────────────────────────────────────────────────
+  function wireBotonSubir() {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'cs-btn-subir';
+    btn.className = 'cs-btn-subir';
+    btn.setAttribute('aria-label', 'Volver arriba');
+    btn.innerHTML = '↑';
+    document.body.appendChild(btn);
+
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('is-visible', window.scrollY > 500);
+    });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     renderGridAcciones();
     renderGridSuperficies();
@@ -447,5 +487,7 @@
     wireAreasAcordeon();
     wireAreasBuscador();
     wireWizardOpenClose();
+    wireScrollAnclas();
+    wireBotonSubir();
   });
 })();

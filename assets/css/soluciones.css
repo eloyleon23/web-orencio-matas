@@ -276,6 +276,58 @@
 .cs-badge-dificultad--media  { background: rgba(241, 179, 0, 0.16); color: color-mix(in srgb, var(--primary-yellow) 78%, #7a5200); }
 .cs-badge-dificultad--dificil{ background: rgba(217, 27, 27, 0.12); color: var(--primary-red); }
 
+/* ── Exportar como PDF (vía "Imprimir" del navegador) ─────────────────── */
+@media print {
+  /* Fuerza que se impriman los fondos de color (consejo/errores/etc.) —
+     por defecto muchos navegadores los omiten al imprimir. */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  header.site-header, footer.site-footer, .cookie-consent-banner,
+  .cs-btn-subir, .no-imprimir {
+    display: none !important;
+  }
+
+  body { background: #fff; }
+  .cs-section, .cs-section--alt { padding: 14px 0; }
+  .cs-productos-grid, .cs-materiales, .cs-alternativas { grid-template-columns: repeat(2, 1fr) !important; }
+  .cs-producto-card, .cs-timeline__paso, .cs-tip, .cs-mistakes {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+  .cs-producto-card__imagen-wrap { height: 90px; }
+}
+
+/* ── Botón "volver arriba" ────────────────────────────────────────────── */
+.cs-btn-subir {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: var(--primary-red);
+  color: #ffffff;
+  font-size: 1.3rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(217, 27, 27, 0.35);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, background 0.2s ease;
+  z-index: 400;
+}
+.cs-btn-subir.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.cs-btn-subir:hover { background: color-mix(in srgb, var(--primary-red) 86%, #000000); }
+@media (max-width: 640px) {
+  .cs-btn-subir { right: 14px; bottom: 14px; width: 44px; height: 44px; font-size: 1.15rem; }
+}
+
 /* ── Buscador rápido dentro de "Explora soluciones" ───────────────────── */
 .cs-areas-buscador {
   position: relative;

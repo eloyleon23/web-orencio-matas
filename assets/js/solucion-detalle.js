@@ -53,7 +53,7 @@
 
     cont.innerHTML = `
       <!-- Breadcrumb -->
-      <div class="container cs-breadcrumb">
+      <div class="container cs-breadcrumb no-imprimir">
         <a href="../centro-soluciones.html">Centro de Soluciones</a>
         ${sol.breadcrumb.slice(1).map((b, i, arr) => i === arr.length - 1
           ? ` › <span class="current">${b}</span>`
@@ -165,8 +165,9 @@
           <div class="cs-productos-grid" id="cs-productos-recomendados"></div>
           <div class="cs-exportar-bar">
             <p id="cs-total-productos">Total ${sol.recommendedProducts.length} productos · <span class="precio-total">${sumaPrecios(sol.recommendedProducts)} €</span></p>
-            <div class="cs-exportar-bar__acciones">
-              <button type="button" class="btn-primary" id="cs-exportar-copiar">📋 Copiar lista de la compra</button>
+            <div class="cs-exportar-bar__acciones no-imprimir">
+              <button type="button" class="btn-primary" id="cs-exportar-pdf">📄 Descargar como PDF</button>
+              <button type="button" class="btn-secondary" id="cs-exportar-copiar">📋 Copiar lista de la compra</button>
               <button type="button" class="btn-secondary" id="cs-exportar-descargar">⬇️ Descargar (.txt)</button>
               <button type="button" class="btn-secondary" id="cs-exportar-whatsapp">💬 Enviar por WhatsApp</button>
             </div>
@@ -175,7 +176,7 @@
       </section>
 
       <!-- Alternativas -->
-      <section class="cs-section">
+      <section class="cs-section no-imprimir">
         <div class="container">
           <div class="section-heading">
             <p class="section-heading__eyebrow">Según tu caso</p>
@@ -195,7 +196,7 @@
 
       ${relacionadas.length ? `
       <!-- Soluciones relacionadas -->
-      <section class="cs-section cs-section--alt">
+      <section class="cs-section cs-section--alt no-imprimir">
         <div class="container">
           <div class="section-heading">
             <p class="section-heading__eyebrow">Sigue explorando</p>
@@ -215,7 +216,7 @@
         </div>
       </section>` : ''}
 
-      <section class="cs-section" style="text-align:center;">
+      <section class="cs-section no-imprimir" style="text-align:center;">
         <div class="container">
           <a class="btn-secondary" href="../centro-soluciones.html">← Volver al Centro de Soluciones</a>
         </div>
@@ -390,6 +391,20 @@
   function wireExportarLista(sol, listaProductos) {
     const texto = generarTextoListaCompra(sol, listaProductos);
 
+    const btnPdf = $('#cs-exportar-pdf');
+    if (btnPdf) {
+      btnPdf.addEventListener('click', () => {
+        // Se apoya en la función "Imprimir" nativa del navegador (el
+        // usuario elige "Guardar como PDF" en el diálogo) en vez de
+        // generar el PDF por JavaScript: así las imágenes de los
+        // productos (alojadas en Google Drive) se muestran sin
+        // problemas de CORS — al imprimir, el navegador simplemente
+        // renderiza la página tal cual, no hace falta descargar y
+        // convertir cada imagen a datos embebidos.
+        window.print();
+      });
+    }
+
     const btnCopiar = $('#cs-exportar-copiar');
     if (btnCopiar) {
       btnCopiar.addEventListener('click', () => {
@@ -423,5 +438,26 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', render);
+  // ── Botón "volver arriba" ────────────────────────────────────────────────
+  function wireBotonSubir() {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'cs-btn-subir';
+    btn.className = 'cs-btn-subir';
+    btn.setAttribute('aria-label', 'Volver arriba');
+    btn.innerHTML = '↑';
+    document.body.appendChild(btn);
+
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('is-visible', window.scrollY > 500);
+    });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    render();
+    wireBotonSubir();
+  });
 })();
