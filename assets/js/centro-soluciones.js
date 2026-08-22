@@ -463,7 +463,14 @@
     }
     return [...base,
       { key: 'estado',    label: 'Paso 3', pregunta: '¿Cómo está actualmente?', opciones: () => D.estados.map((e) => ({ id: e.id, label: e.label })) },
-      { key: 'resultado', label: 'Paso 4', pregunta: '¿Qué resultado quieres?', opciones: () => D.resultados.map((r) => ({ id: r.id, label: r.label })) },
+      {
+        key: 'resultado', label: 'Paso 4', pregunta: '¿Qué resultado quieres?',
+        opciones: () => D.resultados.filter((r) => {
+          // Si la superficie está sin pintar, no se puede "cambiar el color" (no hay color previo).
+          if (wizardState.estado === 'sin_pintar' && r.id === 'cambiar_color') return false;
+          return true;
+        }).map((r) => ({ id: r.id, label: r.label })),
+      },
     ];
   }
 
