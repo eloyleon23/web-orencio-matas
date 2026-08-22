@@ -370,7 +370,7 @@ window.SOLUCIONES_DATA = (function () {
         { fase: 'Preparación', familiaSugerida: 'Abrasivos',            items: ['Cepillo de púas metálicas', 'Abrasivo grano grueso'] },
         { fase: 'Tratamiento', familiaSugerida: 'Convertidores de óxido', items: ['Convertidor de óxido'] },
         { fase: 'Imprimación', familiaSugerida: 'Imprimaciones antioxidantes', items: ['Imprimación antioxidante'] },
-        { fase: 'Color',       familiaSugerida: 'Esmaltes para metal',   items: ['Esmalte metal directo'] },
+        { fase: 'Color',       familiaSugerida: 'Esmaltes para metal',   items: ['Esmalte para metal — acrílico (al agua) o sintético'] },
       ],
       receta: [
         { fase: 'Cepillar',   emoji: '🧽' },
@@ -382,15 +382,17 @@ window.SOLUCIONES_DATA = (function () {
         { n: 1, title: 'Eliminación mecánica del óxido', text: 'Con cepillo de púas o abrasivo de grano grueso, retira todo el óxido suelto y descamado hasta llegar a metal sano o al menos muy adherido.', productos: ['Cepillo de púas metálicas', 'Abrasivo grano grueso'] },
         { n: 2, title: 'Convertidor de óxido', text: 'En zonas donde no se puede llegar a metal 100% limpio, un convertidor transforma químicamente el óxido restante en una capa estable sobre la que sí se puede pintar.', productos: ['Convertidor de óxido'] },
         { n: 3, title: 'Imprimación antioxidante', text: 'Sella la superficie y evita que la humedad vuelva a iniciar el proceso de oxidación por debajo de la pintura.', productos: ['Imprimación antioxidante'] },
-        { n: 4, title: 'Esmalte de acabado', text: 'Aporta color y una segunda barrera de protección frente a la intemperie.', productos: ['Esmalte metal directo'] },
+        { n: 4, title: 'Elegir el tipo de esmalte', text: 'Antes de aplicar el color, decide entre esmalte acrílico (al agua) o sintético: el acrílico seca más rápido, huele mucho menos y se limpia con agua — buena opción para interiores o si vas a repetir manos el mismo día. El sintético (al disolvente) suele ofrecer un acabado algo más duro y resistente a la intemperie, a cambio de más olor y un secado más lento — mejor para exteriores muy expuestos o superficies de mucho uso.', productos: ['Esmalte acrílico al agua para metal (Oxiron Agua)', 'Esmalte sintético para metal (Oxiron / Hammerite)'] },
+        { n: 5, title: 'Aplicar el esmalte', text: 'Aplica el esmalte elegido en manos finas y uniformes, respetando el tiempo de repintado indicado en el envase — aporta color y la segunda barrera de protección frente a la intemperie.', productos: [] },
       ],
       professionalTips: [
         'El óxido nunca "desaparece" solo con pintar encima — si no se trata primero, seguirá extendiéndose por debajo de la pintura nueva.',
+        'Acrílico (al agua) o sintético no es solo cuestión de gusto: en exteriores muy expuestos (vallas, barandillas a la intemperie) el sintético suele aguantar mejor con el tiempo; en interiores o si el olor es un problema, el acrílico es la opción más práctica.',
       ],
       commonMistakes: [
         'Pintar directamente sobre óxido sin tratarlo.',
         'No dejar secar el convertidor de óxido el tiempo indicado.',
-        'Usar un esmalte no apto para metal exterior.',
+        'Mezclar manos de esmalte acrílico y sintético en la misma pieza sin dejar secar del todo entre una y otra.',
         'Olvidar los bordes y zonas ocultas, donde el óxido suele reaparecer antes.',
       ],
       recommendedProducts: [
@@ -398,16 +400,18 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Abrasivo grano grueso',      categoria: 'Abrasivos',   precio: '1,10 €' },
         { nombre: 'Convertidor de óxido',       categoria: 'Talleres',    precio: '16,95 €' },
         { nombre: 'Imprimación antioxidante',   categoria: 'Talleres',    precio: '21,95 €' },
-        { nombre: 'Esmalte metal directo',      categoria: 'Pinturas',   precio: '18,50 €' },
+        { nombre: 'Oxiron Agua Liso Brillo Negro (esmalte acrílico, al agua)', categoria: 'Pinturas', formato: '750 ml', precio: '20,63 €' },
       ],
       alternativeProducts: [
+        { etiqueta: 'Esmalte sintético (más resistente en exterior)', nombre: 'Oxiron Forja Negro (esmalte sintético al disolvente)', precio: '15,85 €' },
+        { etiqueta: 'Opción profesional sintética', nombre: 'Hammerite Esmalte Liso Hierro y Óxido Negro 750 ml', precio: '17,67 €' },
         { etiqueta: 'Opción rápida',      nombre: 'Esmalte antioxidante 3 en 1 (imprimación + color en un paso)', precio: '19,95 €' },
         { etiqueta: 'Trabajos pequeños',  nombre: 'Aerosol antioxidante', precio: '8,95 €' },
       ],
       relatedSolutions: ['pintar-plastico-coche', 'restaurar-mueble-madera'],
       seo: {
         title: 'Cómo eliminar el óxido del metal | Guía — Orencio Matas',
-        description: 'Cómo tratar y eliminar el óxido de una superficie metálica paso a paso, con convertidor, imprimación antioxidante y esmalte de acabado.',
+        description: 'Cómo tratar y eliminar el óxido de una superficie metálica paso a paso, con convertidor, imprimación antioxidante y esmalte acrílico o sintético de acabado.',
       },
     },
 
@@ -1506,9 +1510,116 @@ window.SOLUCIONES_DATA = (function () {
     };
   }
 
+  // ── Búsqueda y resolución real contra el catálogo (compartido) ─────────
+  // Antes vivía duplicado dentro de centro-soluciones.js; se centraliza
+  // aquí para que TANTO la home (búsqueda de respaldo en "tengo un
+  // problema") COMO las páginas de detalle de solución (para resolver
+  // imagen/referencia real de los productos recomendados) usen el mismo
+  // código, sin mantener dos copias.
+  //
+  // Ruta relativa: centro-soluciones.html vive en la raíz, pero
+  // soluciones/solucion.html vive un nivel más abajo — se resuelve según
+  // la URL actual para que funcione desde cualquiera de las dos.
+  function rutaCatalogoReal() {
+    return window.location.pathname.includes('/soluciones/') ? '../data/productos.json' : './data/productos.json';
+  }
+
+  let catalogoRealCache = null;
+  function cargarCatalogoReal() {
+    if (catalogoRealCache) return Promise.resolve(catalogoRealCache);
+    return fetch(rutaCatalogoReal())
+      .then((r) => r.json())
+      .then((d) => {
+        catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja);
+        return catalogoRealCache;
+      })
+      .catch(() => {
+        catalogoRealCache = [];
+        return catalogoRealCache;
+      });
+  }
+
+  function normalizarTexto(t) {
+    return (t || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  const STOPWORDS_BUSQUEDA = new Set([
+    'que', 'para', 'como', 'pero', 'desde', 'esta', 'este', 'estos', 'estas',
+    'tengo', 'necesito', 'quiero', 'puedo', 'hacer', 'tiene', 'sobre', 'entre',
+    'donde', 'cuando', 'unos', 'unas', 'poco', 'muy', 'con', 'del', 'las', 'los',
+    'una', 'uno', 'esto', 'eso', 'aquello', 'mucho', 'mucha', 'algo', 'nada',
+  ]);
+
+  function palabrasSignificativas(texto) {
+    return normalizarTexto(texto)
+      .split(/[^a-z0-9áéíóúñ]+/i)
+      .filter((w) => w.length >= 4 && !STOPWORDS_BUSQUEDA.has(w));
+  }
+
+  function contienePalabra(textoNorm, palabra) {
+    // Coincidencia por palabra completa, no subcadena (mismo tipo de bug ya
+    // corregido antes: "olor" coincidía dentro de "incolora").
+    return new RegExp('(^|[^a-z0-9áéíóúñ])' + palabra + '($|[^a-z0-9áéíóúñ])').test(textoNorm);
+  }
+
+  function buscarProductosEnCatalogo(texto) {
+    const palabras = palabrasSignificativas(texto);
+    if (!palabras.length) return Promise.resolve([]);
+    return cargarCatalogoReal().then((productos) => {
+      const resultados = [];
+      productos.forEach((p) => {
+        const nombreNorm = normalizarTexto(p.nombre || '');
+        const coincidencias = palabras.filter((w) => contienePalabra(nombreNorm, w)).length;
+        if (coincidencias > 0) resultados.push({ producto: p, coincidencias });
+      });
+      resultados.sort((a, b) => b.coincidencias - a.coincidencias);
+      return resultados.slice(0, 8).map((r) => r.producto);
+    });
+  }
+
+  // Resuelve UN producto mock (de recommendedProducts) contra su
+  // equivalente real más probable en el catálogo — para poder mostrar
+  // imagen y referencia reales en vez del antiguo botón "Ver producto".
+  // Devuelve null si no encuentra una coincidencia razonablemente segura
+  // (mejor no mostrar nada real que mostrar un producto equivocado).
+  function resolverProductoReal(nombreMock) {
+    const nombreNorm = normalizarTexto(nombreMock);
+    return cargarCatalogoReal().then((productos) => {
+      // 1) Coincidencia exacta (varias soluciones ya usan el nombre real
+      //    tal cual, copiado directamente del catálogo al redactarlas).
+      const exacto = productos.find((p) => normalizarTexto(p.nombre) === nombreNorm);
+      if (exacto) return exacto;
+
+      // 2) El nombre real contiene el nombre mock completo, o viceversa
+      //    (p. ej. mock "Alex Abrillantador Terrazo/Mármol" vs real
+      //    "ALEX ABRILLANTADOR 1.500 ML.TERRAZO/MARMOL").
+      const porInclusion = productos.find((p) => {
+        const pn = normalizarTexto(p.nombre);
+        return pn.includes(nombreNorm) || nombreNorm.includes(pn);
+      });
+      if (porInclusion) return porInclusion;
+
+      // 3) Ranking por palabras significativas compartidas — solo se
+      //    acepta con un mínimo de 2 palabras coincidentes, para no
+      //    mostrar como "real" un producto que en verdad no tiene
+      //    relación clara con lo que pedía la guía.
+      const palabras = palabrasSignificativas(nombreMock);
+      if (palabras.length < 2) return null;
+      let mejor = null;
+      let mejorPuntuacion = 0;
+      productos.forEach((p) => {
+        const pn = normalizarTexto(p.nombre || '');
+        const puntuacion = palabras.filter((w) => contienePalabra(pn, w)).length;
+        if (puntuacion > mejorPuntuacion) { mejorPuntuacion = puntuacion; mejor = p; }
+      });
+      return mejorPuntuacion >= 2 ? mejor : null;
+    });
+  }
+
   return {
     acciones, superficies, estados, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, resolverProductoReal,
   };
 })();

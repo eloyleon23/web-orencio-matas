@@ -164,7 +164,7 @@
           </div>
           <div class="cs-productos-grid" id="cs-productos-recomendados"></div>
           <div class="cs-exportar-bar">
-            <p>Total ${sol.recommendedProducts.length} productos · <span class="precio-total">${sumaPrecios(sol.recommendedProducts)} €</span></p>
+            <p id="cs-total-productos">Total ${sol.recommendedProducts.length} productos · <span class="precio-total">${sumaPrecios(sol.recommendedProducts)} €</span></p>
             <div class="cs-exportar-bar__acciones">
               <button type="button" class="btn-primary" id="cs-exportar-copiar">📋 Copiar lista de la compra</button>
               <button type="button" class="btn-secondary" id="cs-exportar-descargar">⬇️ Descargar (.txt)</button>
@@ -240,23 +240,94 @@
 
   function renderProductosRecomendados(sol) {
     const cont = $('#cs-productos-recomendados');
-    cont.innerHTML = sol.recommendedProducts.map((p, i) => `
-      <div class="cs-producto-card" data-idx="${i}">
+
+    // Estado inicial mientras se resuelve contra el catálogo real —
+    // evita que la sección quede vacía durante la petición.
+    cont.innerHTML = sol.recommendedProducts.map((p) => `
+      <div class="cs-producto-card cs-producto-card--cargando">
+        <div class="cs-producto-card__imagen-wrap"></div>
         <span class="cs-producto-card__categoria">${p.categoria}</span>
         <div class="cs-producto-card__nombre">${p.nombre}</div>
-        ${p.formato ? `<div class="cs-producto-card__formato">Formato: ${p.formato}</div>` : ''}
         <div class="cs-producto-card__precio">${p.precio}</div>
-        <button type="button" class="btn-secondary cs-btn-anadir">Ver producto</button>
       </div>
     `).join('');
 
-    cont.querySelectorAll('.cs-btn-anadir').forEach((btn, i) => {
-      btn.addEventListener('click', () => {
-        mostrarToast(`✓ ${sol.recommendedProducts[i].nombre} — visto en el buscador (demo)`);
+    Promise.all(sol.recommendedProducts.map((p) => D.resolverProductoReal(p.nombre)))
+      .then((resueltos) => {
+        const listaFinal = sol.recommendedProducts.map((mock, i) => construirEntradaProducto(mock, resueltos[i]));
+        renderTarjetasProducto(cont, listaFinal);
+        actualizarBarraExportar(sol, listaFinal);
+      })
+      .catch(() => {
+        // Si falla la resolución (sin conexión, etc.), al menos se
+        // mantienen los datos de referencia con los que ya se contaba.
+        const listaFinal = sol.recommendedProducts.map((mock) => construirEntradaProducto(mock, null));
+        renderTarjetasProducto(cont, listaFinal);
+        actualizarBarraExportar(sol, listaFinal);
       });
-    });
+  }
 
-    wireExportarLista(sol);
+  // Combina el producto "mock" (siempre presente, es lo que ya sabíamos
+  // de la guía) con su resolución real en el catálogo (si se ha
+  // encontrado una coincidencia razonable) — el resultado siempre tiene
+  // los campos nombre/precio/categoria, y ref/img SOLO si son reales.
+  function construirEntradaProducto(mock, real) {
+    if (!real) {
+      return {
+        nombre: mock.nombre,
+        categoria: mock.categoria,
+        formato: mock.formato || null,
+        precio: mock.precio,
+        ref: null,
+        img: null,
+        esReal: false,
+      };
+    }
+    const precioReal = real.mostrar_precio && real.precio_con ? `${real.precio_con} €` : mock.precio;
+    return {
+      nombre: real.nombre || mock.nombre,
+      categoria: mock.categoria,
+      formato: mock.formato || null,
+      precio: precioReal,
+      ref: real.ref || null,
+      img: real.img || null,
+      esReal: true,
+    };
+  }
+
+  function urlImagenProductoReal(imgId) {
+    return imgId ? `https://drive.google.com/thumbnail?id=${imgId}&sz=w300` : null;
+  }
+
+  function renderTarjetasProducto(cont, lista) {
+    cont.innerHTML = lista.map((p) => {
+      const urlImg = urlImagenProductoReal(p.img);
+      const urlDestino = p.ref
+        ? `buscador.html?ref=${encodeURIComponent(p.ref)}`
+        : `buscador.html?q=${encodeURIComponent(p.nombre)}`;
+      return `
+        <a class="cs-producto-card" href="${urlDestino}">
+          <div class="cs-producto-card__imagen-wrap">
+            ${urlImg
+              ? `<img class="cs-producto-card__imagen" src="${urlImg}" alt="${p.nombre}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
+              : `<span class="cs-producto-card__imagen-fallback">📦</span>`}
+          </div>
+          <span class="cs-producto-card__categoria">${p.categoria}</span>
+          <div class="cs-producto-card__nombre">${p.nombre}</div>
+          ${p.formato ? `<div class="cs-producto-card__formato">Formato: ${p.formato}</div>` : ''}
+          ${p.ref ? `<div class="cs-producto-card__ref">Ref: ${p.ref}</div>` : ''}
+          <div class="cs-producto-card__precio">${p.precio}</div>
+        </a>
+      `;
+    }).join('');
+  }
+
+  function actualizarBarraExportar(sol, listaProductos) {
+    const totalEl = $('#cs-total-productos');
+    if (totalEl) {
+      totalEl.innerHTML = `Total ${listaProductos.length} productos · <span class="precio-total">${sumaPrecios(listaProductos)} €</span>`;
+    }
+    wireExportarLista(sol, listaProductos);
   }
 
   // ── Exportar como lista de la compra ────────────────────────────────────
@@ -271,7 +342,8 @@
     return p ? p.label : null;
   }
 
-  function generarTextoListaCompra(sol) {
+  function generarTextoListaCompra(sol, listaProductos) {
+    const productos = listaProductos || sol.recommendedProducts;
     const etiquetaProblema = obtenerEtiquetaProblema(sol);
     const lineas = [];
     lineas.push('🛒 LISTA DE LA COMPRA — Orencio Matas y Hnos.');
@@ -281,12 +353,13 @@
     lineas.push(sol.description);
     lineas.push('');
     lineas.push('Productos que necesitas:');
-    sol.recommendedProducts.forEach((p, i) => {
+    productos.forEach((p, i) => {
       const formato = p.formato ? ` (${p.formato})` : '';
-      lineas.push(`${i + 1}. ${p.nombre}${formato} — ${p.precio}`);
+      const ref = p.ref ? ` [Ref: ${p.ref}]` : '';
+      lineas.push(`${i + 1}. ${p.nombre}${formato}${ref} — ${p.precio}`);
     });
     lineas.push('');
-    lineas.push(`Total estimado: ${sumaPrecios(sol.recommendedProducts)} €`);
+    lineas.push(`Total estimado: ${sumaPrecios(productos)} €`);
     lineas.push('');
     lineas.push(`Generado el ${new Date().toLocaleDateString('es-ES')} desde el Centro de Soluciones — orenciomatas.es`);
     return lineas.join('\n');
@@ -314,8 +387,8 @@
     });
   }
 
-  function wireExportarLista(sol) {
-    const texto = generarTextoListaCompra(sol);
+  function wireExportarLista(sol, listaProductos) {
+    const texto = generarTextoListaCompra(sol, listaProductos);
 
     const btnCopiar = $('#cs-exportar-copiar');
     if (btnCopiar) {

@@ -107,7 +107,7 @@
       resultado.style.display = 'block';
       resultado.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      buscarProductosEnCatalogo(textoOriginal).then((productos) => {
+      D.buscarProductosEnCatalogo(textoOriginal).then((productos) => {
         const urlBuscador = `buscador.html?q=${encodeURIComponent(textoOriginal)}`;
         if (!productos.length) {
           resultado.innerHTML = `
@@ -130,70 +130,25 @@
   }
 
   // ── Búsqueda real de respaldo en el catálogo (cuando no hay guía) ──────
-  // Mismo dataset (data/productos.json, ~12.858 productos) que ya usa
-  // catalogo-preview.js para la muestra de las páginas de catálogo — se
-  // reutiliza aquí para que "tengo un problema" nunca deje a la persona
-  // sin ninguna propuesta, aunque no exista todavía una guía completa.
-  let catalogoRealCache = null;
-  function cargarCatalogoReal() {
-    if (catalogoRealCache) return Promise.resolve(catalogoRealCache);
-    return fetch('./data/productos.json')
-      .then((r) => r.json())
-      .then((d) => {
-        catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja);
-        return catalogoRealCache;
-      })
-      .catch(() => {
-        catalogoRealCache = [];
-        return catalogoRealCache;
-      });
-  }
-
-  const STOPWORDS_BUSQUEDA = new Set([
-    'que', 'para', 'como', 'pero', 'desde', 'esta', 'este', 'estos', 'estas',
-    'tengo', 'necesito', 'quiero', 'puedo', 'hacer', 'tiene', 'sobre', 'entre',
-    'donde', 'cuando', 'unos', 'unas', 'poco', 'muy', 'con', 'del', 'las', 'los',
-    'una', 'uno', 'esto', 'eso', 'aquello', 'mucho', 'mucha', 'algo', 'nada',
-  ]);
-
-  function palabrasSignificativas(texto) {
-    return normalizarTexto(texto)
-      .split(/[^a-z0-9áéíóúñ]+/i)
-      .filter((w) => w.length >= 4 && !STOPWORDS_BUSQUEDA.has(w));
-  }
-
-  function contienePalabra(textoNorm, palabra) {
-    // Coincidencia por palabra completa, no subcadena — mismo tipo de bug ya
-    // corregido antes en este proyecto (ej. "sata" dentro de
-    // "desatascador" en Apps Script, "cola" dentro de "descolado" en el
-    // motor de diagnóstico): aquí "olor" coincidía dentro de "incolora".
-    return new RegExp('(^|[^a-z0-9áéíóúñ])' + palabra + '($|[^a-z0-9áéíóúñ])').test(textoNorm);
-  }
-
-  function buscarProductosEnCatalogo(texto) {
-    const palabras = palabrasSignificativas(texto);
-    if (!palabras.length) return Promise.resolve([]);
-    return cargarCatalogoReal().then((productos) => {
-      const resultados = [];
-      productos.forEach((p) => {
-        const nombreNorm = normalizarTexto(p.nombre || '');
-        const coincidencias = palabras.filter((w) => contienePalabra(nombreNorm, w)).length;
-        if (coincidencias > 0) resultados.push({ producto: p, coincidencias });
-      });
-      resultados.sort((a, b) => b.coincidencias - a.coincidencias);
-      return resultados.slice(0, 8).map((r) => r.producto);
-    });
-  }
-
+  // La lógica de fetch/ranking vive centralizada en soluciones-data.js
+  // (D.cargarCatalogoReal / D.buscarProductosEnCatalogo), compartida con
+  // la resolución de productos reales en las páginas de detalle — aquí
+  // solo queda el renderizado, específico de esta página.
   const NOMBRES_AREA = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
 
   function renderTarjetaProductoCatalogo(p) {
     const precio = p.mostrar_precio && p.precio_con ? `${p.precio_con} €` : 'Consultar precio';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     return `
-      <a class="cs-producto-card" href="buscador.html?ref=${encodeURIComponent(p.ref)}" style="text-decoration:none;color:inherit;display:block;">
+      <a class="cs-producto-card" href="buscador.html?ref=${encodeURIComponent(p.ref)}">
+        <div class="cs-producto-card__imagen-wrap">
+          ${p.img
+            ? `<img class="cs-producto-card__imagen" src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${p.nombre}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
+            : `<span class="cs-producto-card__imagen-fallback">📦</span>`}
+        </div>
         <span class="cs-producto-card__categoria">${areaLabel}${p.familia ? ' · ' + p.familia : ''}</span>
         <div class="cs-producto-card__nombre">${p.nombre}</div>
+        <div class="cs-producto-card__ref">Ref: ${p.ref}</div>
         <div class="cs-producto-card__precio">${precio}</div>
       </a>
     `;
@@ -219,15 +174,9 @@
   }
 
   // ── Explora por áreas (acordeón) ────────────────────────────────────────
-  // Quita acentos y pasa a minúsculas para comparar sin importar tildes
-  // (mismo criterio que ya usa buscador.html para su propio buscador).
-  function normalizarTexto(t) {
-    return (t || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  }
-
   function resaltarCoincidencia(texto, consulta) {
     if (!consulta) return texto;
-    const textoNorm = normalizarTexto(texto);
+    const textoNorm = D.normalizarTexto(texto);
     const idx = textoNorm.indexOf(consulta);
     if (idx === -1) return texto;
     return texto.slice(0, idx) + '<mark>' + texto.slice(idx, idx + consulta.length) + '</mark>' + texto.slice(idx + consulta.length);
@@ -238,7 +187,7 @@
     const sinResultados = $('#cs-areas-sin-resultados');
     if (!cont) return;
 
-    const consulta = normalizarTexto(filtro || '').trim();
+    const consulta = D.normalizarTexto(filtro || '').trim();
     const hayFiltro = consulta.length > 0;
 
     // Con filtro activo: cada área solo muestra los ejemplos que
@@ -247,10 +196,10 @@
     // todas tal cual, con la primera abierta como siempre.
     const areasFiltradas = D.areas.map((area) => {
       if (!hayFiltro) return { area, ejemplos: area.ejemplos, coincideArea: false };
-      const coincideArea = normalizarTexto(area.label).includes(consulta);
+      const coincideArea = D.normalizarTexto(area.label).includes(consulta);
       const ejemplos = coincideArea
         ? area.ejemplos
-        : area.ejemplos.filter((ej) => normalizarTexto(ej.title).includes(consulta));
+        : area.ejemplos.filter((ej) => D.normalizarTexto(ej.title).includes(consulta));
       return { area, ejemplos, coincideArea };
     }).filter(({ ejemplos }) => !hayFiltro || ejemplos.length > 0);
 
@@ -424,7 +373,7 @@
       `;
 
       if (textoAproximado) {
-        buscarProductosEnCatalogo(textoAproximado).then((productos) => {
+        D.buscarProductosEnCatalogo(textoAproximado).then((productos) => {
           const textoEl = $('#cs-wizard-sinmatch-texto', cont);
           const contProductos = $('#cs-wizard-sinmatch-productos', cont);
           if (!textoEl || !contProductos) return; // el usuario ya navegó a otro paso
