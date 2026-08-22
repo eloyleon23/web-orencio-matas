@@ -548,7 +548,7 @@
 .cs-producto-card__precio { margin-bottom: 14px; color: var(--primary-red); font-weight: 900; font-size: 1.15rem; }
 .cs-producto-card .btn-secondary { width: 100%; min-height: 40px; font-size: 0.78rem; }
 
-.cs-add-all-bar {
+.cs-exportar-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -559,8 +559,16 @@
   background: var(--bg-dark-premium);
   color: var(--primary-white);
 }
-.cs-add-all-bar p { font-weight: 700; }
-.cs-add-all-bar .precio-total { color: var(--primary-yellow); font-weight: 900; }
+.cs-exportar-bar p { font-weight: 700; }
+.cs-exportar-bar .precio-total { color: var(--primary-yellow); font-weight: 900; }
+.cs-exportar-bar__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cs-exportar-bar__acciones .btn-secondary {
+  background: rgba(255, 255, 255, 0.94);
+}
 
 /* ── Alternativas ─────────────────────────────────────────────────────── */
 .cs-alternativas {
@@ -641,7 +649,8 @@
   .cs-wizard { padding: 24px 18px; }
   .cs-wizard__question { font-size: 1.2rem; }
   .cs-productos-grid, .cs-materiales, .cs-alternativas { grid-template-columns: 1fr 1fr; }
-  .cs-add-all-bar { flex-direction: column; align-items: stretch; text-align: center; }
+  .cs-exportar-bar { flex-direction: column; align-items: stretch; text-align: center; }
+  .cs-exportar-bar__acciones { flex-direction: column; }
 }
 @media (max-width: 420px) {
   .cs-productos-grid, .cs-materiales, .cs-alternativas { grid-template-columns: 1fr; }

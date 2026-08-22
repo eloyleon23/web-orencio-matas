@@ -163,9 +163,13 @@
             <h2>Productos que necesitas</h2>
           </div>
           <div class="cs-productos-grid" id="cs-productos-recomendados"></div>
-          <div class="cs-add-all-bar">
+          <div class="cs-exportar-bar">
             <p>Total ${sol.recommendedProducts.length} productos · <span class="precio-total">${sumaPrecios(sol.recommendedProducts)} €</span></p>
-            <button type="button" class="btn-primary" id="cs-anadir-todos">Añadir todos los productos</button>
+            <div class="cs-exportar-bar__acciones">
+              <button type="button" class="btn-primary" id="cs-exportar-copiar">📋 Copiar lista de la compra</button>
+              <button type="button" class="btn-secondary" id="cs-exportar-descargar">⬇️ Descargar (.txt)</button>
+              <button type="button" class="btn-secondary" id="cs-exportar-whatsapp">💬 Enviar por WhatsApp</button>
+            </div>
           </div>
         </div>
       </section>
@@ -252,10 +256,96 @@
       });
     });
 
-    const btnTodos = $('#cs-anadir-todos');
-    if (btnTodos) {
-      btnTodos.addEventListener('click', () => {
-        mostrarToast(`✓ ${sol.recommendedProducts.length} productos añadidos al carrito (demo)`);
+    wireExportarLista(sol);
+  }
+
+  // ── Exportar como lista de la compra ────────────────────────────────────
+  // Sustituye al antiguo "Añadir todos los productos" (carrito simulado):
+  // hoy no existe un carrito real, así que en su lugar se ofrece exportar
+  // el problema, la solución y los productos recomendados como una lista
+  // de la compra normal — para llevarla a tienda, pasarla por WhatsApp, o
+  // guardarla como archivo de texto.
+
+  function obtenerEtiquetaProblema(sol) {
+    const p = D.problemasFrecuentes.find((pf) => pf.id === sol.problem);
+    return p ? p.label : null;
+  }
+
+  function generarTextoListaCompra(sol) {
+    const etiquetaProblema = obtenerEtiquetaProblema(sol);
+    const lineas = [];
+    lineas.push('🛒 LISTA DE LA COMPRA — Orencio Matas y Hnos.');
+    lineas.push('');
+    if (etiquetaProblema) lineas.push('Problema: ' + etiquetaProblema);
+    lineas.push('Solución: ' + sol.title);
+    lineas.push(sol.description);
+    lineas.push('');
+    lineas.push('Productos que necesitas:');
+    sol.recommendedProducts.forEach((p, i) => {
+      const formato = p.formato ? ` (${p.formato})` : '';
+      lineas.push(`${i + 1}. ${p.nombre}${formato} — ${p.precio}`);
+    });
+    lineas.push('');
+    lineas.push(`Total estimado: ${sumaPrecios(sol.recommendedProducts)} €`);
+    lineas.push('');
+    lineas.push(`Generado el ${new Date().toLocaleDateString('es-ES')} desde el Centro de Soluciones — orenciomatas.es`);
+    return lineas.join('\n');
+  }
+
+  function copiarAlPortapapeles(texto) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(texto);
+    }
+    // Alternativa para navegadores/contextos sin Clipboard API disponible
+    return new Promise((resolve, reject) => {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = texto;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        ok ? resolve() : reject(new Error('execCommand copy falló'));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  function wireExportarLista(sol) {
+    const texto = generarTextoListaCompra(sol);
+
+    const btnCopiar = $('#cs-exportar-copiar');
+    if (btnCopiar) {
+      btnCopiar.addEventListener('click', () => {
+        copiarAlPortapapeles(texto)
+          .then(() => mostrarToast('✓ Lista copiada al portapapeles'))
+          .catch(() => mostrarToast('No se pudo copiar — prueba a descargarla en su lugar'));
+      });
+    }
+
+    const btnDescargar = $('#cs-exportar-descargar');
+    if (btnDescargar) {
+      btnDescargar.addEventListener('click', () => {
+        const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `lista-compra-${sol.slug}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        mostrarToast('✓ Lista descargada');
+      });
+    }
+
+    const btnWhatsapp = $('#cs-exportar-whatsapp');
+    if (btnWhatsapp) {
+      btnWhatsapp.addEventListener('click', () => {
+        window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener');
       });
     }
   }
