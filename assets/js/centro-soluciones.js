@@ -187,9 +187,9 @@
   const BUSQUEDAS_SUGERIDAS = {
     'Eliminar grasa': 'quita grasas',
     'Eliminar pintura': 'quitapinturas',
-    'Quitar adhesivos': 'quitadhesivos',
+    'Quitar adhesivos': 'quita adhesivos',
     'Quitar silicona': 'quita silicona',
-    'Eliminar adhesivos': 'quitadhesivos',
+    'Eliminar adhesivos': 'quita adhesivos',
     'Quitar restos de cola': 'quitadhesivos',
     'Limpiar brochas': 'limpia brochas',
     'Limpiar rodillos': 'limpia rodillos',
@@ -338,7 +338,7 @@
   function urlBuscarEjemplo(areaId, titulo) {
     const areaMap = {
       coche: 'talleres', pintura: 'pinturas', madera: 'pinturas', metal: 'pinturas',
-      limpieza: 'drogueria', pegado: 'drogueria', suelos: 'pinturas', piscinas: 'drogueria',
+      limpieza: 'drogueria', pegado: 'pinturas', suelos: 'pinturas', piscinas: 'drogueria',
       plagas: 'drogueria', jardin: 'drogueria',
     };
     const fallbackArea = {
@@ -347,7 +347,12 @@
       plagas: 'plagas', jardin: 'abono',
     };
     const area = areaMap[areaId] || '';
-    const q = BUSQUEDAS_SUGERIDAS[titulo] || fallbackArea[areaId] || titulo;
+    let q = BUSQUEDAS_SUGERIDAS[titulo] || fallbackArea[areaId] || titulo;
+    // Si hay un término concreto mapeado, buscamos en todo el catálogo para no perder
+    // productos que pueden estar en otra área (p. ej. "pegamento" en pinturas).
+    if (BUSQUEDAS_SUGERIDAS[titulo]) {
+      return `buscador.html?q=${encodeURIComponent(q)}`;
+    }
     return area ? `buscador.html?q=${encodeURIComponent(q)}&area=${area}` : `buscador.html?q=${encodeURIComponent(q)}`;
   }
 
