@@ -794,11 +794,13 @@
 .cs-productos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  align-items: stretch;
   gap: 18px;
   margin-bottom: 22px;
 }
 .cs-producto-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   padding: 20px;
   border: 1px solid rgba(18, 20, 23, 0.08);
@@ -812,6 +814,7 @@
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+.cs-producto-card__nombre { flex-grow: 1; }
 .cs-producto-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
 .cs-producto-card--cargando { opacity: 0.6; }
 .cs-producto-card__imagen-wrap {
@@ -841,6 +844,13 @@
 .cs-producto-card__formato { margin-bottom: 6px; color: var(--text-muted); font-size: 0.82rem; }
 .cs-producto-card__ref { margin-bottom: 10px; color: var(--text-muted); font-size: 0.76rem; font-family: monospace; }
 .cs-producto-card__precio { color: var(--primary-red); font-weight: 900; font-size: 1.15rem; }
+.cs-producto-card__precio--consultar,
+.producto-sin-precio {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: 500;
+}
 
 .cs-exportar-bar {
   display: flex;
@@ -1032,4 +1042,12 @@
 }
 @media (max-width: 420px) {
   .cs-productos-grid, .cs-materiales, .cs-alternativas { grid-template-columns: 1fr; }
+}
+
+/* Email en escritorio, WhatsApp en móvil */
+#cs-exportar-whatsapp { display: none; }
+#cs-exportar-email { display: inline-flex; }
+@media (max-width: 640px) {
+  #cs-exportar-whatsapp { display: inline-flex; }
+  #cs-exportar-email { display: none; }
 }

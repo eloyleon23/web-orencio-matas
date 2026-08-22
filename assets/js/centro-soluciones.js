@@ -137,7 +137,9 @@
   const NOMBRES_AREA = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
 
   function renderTarjetaProductoCatalogo(p) {
-    const precio = p.mostrar_precio && p.precio_con ? `${p.precio_con} €` : 'Consultar precio y disponibilidad';
+    const precioReal = p.mostrar_precio && p.precio_con;
+    const precio = precioReal ? `${p.precio_con} €` : 'Consultar precio y disponibilidad';
+    const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     return `
       <a class="cs-producto-card" href="buscador.html?ref=${encodeURIComponent(p.ref)}">
@@ -149,7 +151,7 @@
         <span class="cs-producto-card__categoria">${areaLabel}${p.familia ? ' · ' + p.familia : ''}</span>
         <div class="cs-producto-card__nombre">${p.nombre}</div>
         <div class="cs-producto-card__ref">Ref: ${p.ref}</div>
-        <div class="cs-producto-card__precio">${precio}</div>
+        <div class="${precioClass}">${precio}</div>
       </a>
     `;
   }
@@ -220,6 +222,117 @@
     'Preparar metal antes de pintar': 'imprimación metal',
     'Proteger metal': 'pintura metal',
     'Pintar superficies difíciles': 'pintura plástica',
+    'Cómo pintar una llanta': 'pintura llantas',
+    'Cómo pintar una pieza de plástico de un coche': 'pintura plástico',
+    'Cómo pintar una pared por dentro': 'pintura pared',
+    'Cómo pintar una fachada exterior': 'pintura fachada',
+    'Cómo eliminar óxido del metal': 'antióxido',
+    'Cómo restaurar un mueble de madera': 'barniz madera',
+    'Cómo sellar una junta de baño o cocina': 'silicona',
+    'Cómo pintar el suelo del garaje con epoxi': 'pintura suelo',
+    'Cómo equilibrar y mantener el agua de la piscina': 'cloro piscina',
+    'Cómo eliminar cucarachas y hormigas de la cocina': 'insecticida',
+    'Cómo abonar y cuidar las plantas del jardín': 'abono jardín',
+    'Cómo proteger los bajos del coche con antigravilla': 'antigravilla',
+    'Cómo abrillantar un suelo de mármol o terrazo': 'abrillantador',
+    'Cómo eliminar una mancha de la ropa': 'quitamanchas',
+    'Cómo eliminar ratones y roedores': 'raticida',
+    'Cómo proteger la ropa de las polillas': 'antipolillas',
+    'Cómo sellar o pegar una luna de coche': 'pegamento parabrisas',
+    'Cómo pintar plástico de coche | Guía paso a paso – Orencio Matas': 'pintura plástico',
+    'Cómo quitar ara\u00f1azos y recuperar el brillo del coche | Orencio Matas': 'pasta pulir',
+    'Cómo impermeabilizar una terraza con goteras': 'impermeabilizante',
+    'Limpieza y desengrasado': 'desengrasante',
+    'Preparación de la superficie': 'imprimación',
+    'Promotor de adherencia': 'imprimación',
+    'Imprimación / aparejo': 'imprimación',
+    'Pintura': 'pintura',
+    'Acabado y protección': 'barniz',
+    'Eliminación mecánica del óxido': 'lija',
+    'Convertidor de óxido': 'convertidor óxido',
+    'Imprimación antioxidante': 'imprimación metal',
+    'Elegir el tipo de esmalte': 'esmalte',
+    'Aplicar el esmalte': 'esmalte',
+    'Limpieza': 'limpiador coche',
+    'Descontaminación': 'arcilla descontaminante',
+    'Evaluación de la profundidad': 'medidor espesor',
+    'Pulido': 'pasta pulir',
+    'Protección': 'cera coche',
+    'Retirar la silicona vieja': 'quita silicona',
+    'Limpiar y secar la junta': 'limpiador',
+    'Proteger los bordes (opcional)': 'cinta carrocero',
+    'Aplicar la silicona': 'silicona',
+    'Alisar el cordón': 'alisador silicona',
+    'Retirar la cinta y dejar curar': 'cinta carrocero',
+    'Reparación de grietas y desconchones': 'masilla suelo',
+    'Mezcla del sistema bicomponente': 'pintura epoxi',
+    'Aplicación de la primera mano': 'rodillo epoxi',
+    'Segunda mano cruzada': 'rodillo epoxi',
+    'Curado antes de poner en servicio': 'pintura epoxi',
+    'Medir pH y cloro': 'medidor pH',
+    'Ajustar el pH': 'pH menos',
+    'Clorar': 'cloro',
+    'Prevenir algas': 'algicida',
+    'Confirmar al día siguiente': 'cloro',
+    'Localizar el punto de entrada': 'insecticida',
+    'Aplicar cebo en gel': 'cebo cucarachas',
+    'Reforzar con barrera': 'insecticida',
+    'Esperar el resultado': 'insecticida',
+    'Sellar las entradas': 'silicona',
+    'Abonar de forma regular': 'abono',
+    'Vigilar signos de plaga': 'insecticida',
+    'Tratar insectos si aparecen': 'insecticida',
+    'Tratar hongos': 'fungicida',
+    'Curar heridas de poda': 'masilla poda',
+    'Lavar antes de guardar': 'detergente',
+    'Colocar protección antipolilla': 'antipolillas',
+    'Guardar en fundas cerradas': 'fundas ropa',
+    'Revisar periódicamente': 'antipolillas',
+    'Reponer el antipolilla': 'antipolillas',
+    'Enmascarar zonas sensibles': 'cinta carrocero',
+    'Imprimirar si hay corrosión': 'imprimación',
+    'Aplicar la antigravilla': 'antigravilla',
+    'Dejar secar antes de rodar': 'antigravilla',
+    'Limpieza del marco y el cristal': 'limpiador cristal',
+    'Imprimirar': 'imprimación',
+    'Aplicar el cordón de adhesivo': 'pegamento cristal',
+    'Colocar la luna': 'pegamento parabrisas',
+    'Respetar el tiempo de curado': 'pegamento parabrisas',
+    'Limpieza a fondo': 'limpiador',
+    'Sellar grietas puntuales': 'silicona',
+    'Aplicar el revestimiento antigoteras': 'antigoteras',
+    'Reforzar puntos críticos': 'antigoteras',
+    'Dejar curar antes de exponer a agua': 'antigoteras',
+    'Preparar la superficie': 'imprimación',
+    'Proteger la zona': 'cinta carrocero',
+    'Imprimirar si hace falta': 'imprimación',
+    'Primera mano': 'pintura plástica',
+    'Segunda mano': 'pintura plástica',
+    'Retirar la cinta': 'cinta carrocero',
+    'Identificar el tipo de atasco': 'desatascador',
+    'Verter el desatascador': 'desatascador',
+    'Respetar el tiempo de actuación': 'desatascador',
+    'Aclarar con agua abundante': 'desatascador',
+    'Método mecánico si persiste': 'desatascador',
+    'Limpieza previa': 'limpiador',
+    'Secado completo': 'secador',
+    'Prueba en una zona pequeña': 'abrillantador',
+    'Aplicar el abrillantador': 'abrillantador',
+    'Repetir periódicamente': 'abrillantador',
+    'Actuar cuanto antes': 'quitamanchas',
+    'Identificar el tipo de mancha': 'quitamanchas',
+    'Aplicar el quitamanchas': 'quitamanchas',
+    'Dejar actuar': 'quitamanchas',
+    'Lavar y comprobar': 'quitamanchas',
+    'Localizar el recorrido': 'raticida',
+    'Colocar el cebo': 'raticida',
+    'Reforzar con trampas': 'raticida',
+    'Revisar y reponer': 'raticida',
+    'Sellar las entradas': 'silicona',
+    'Decapado del barniz antiguo': 'decapante',
+    'Lijado': 'lija',
+    'Reparación de desperfectos': 'masilla madera',
+    'Barnizado': 'barniz',
   };
 
   function urlBuscarEjemplo(areaId, titulo) {
@@ -228,9 +341,14 @@
       limpieza: 'drogueria', pegado: 'drogueria', suelos: 'pinturas', piscinas: 'drogueria',
       plagas: 'drogueria', jardin: 'drogueria',
     };
+    const fallbackArea = {
+      coche: 'productos coche', pintura: 'pintura', madera: 'barniz madera', metal: 'pintura metal',
+      limpieza: 'limpieza', pegado: 'pegamento', suelos: 'pintura suelos', piscinas: 'piscina',
+      plagas: 'plagas', jardin: 'abono',
+    };
     const area = areaMap[areaId] || '';
-    const q = encodeURIComponent(BUSQUEDAS_SUGERIDAS[titulo] || titulo);
-    return area ? `buscador.html?q=${q}&area=${area}` : `buscador.html?q=${q}`;
+    const q = BUSQUEDAS_SUGERIDAS[titulo] || fallbackArea[areaId] || titulo;
+    return area ? `buscador.html?q=${encodeURIComponent(q)}&area=${area}` : `buscador.html?q=${encodeURIComponent(q)}`;
   }
 
   function renderAreas(filtro) {

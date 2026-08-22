@@ -197,6 +197,7 @@
               <button type="button" class="btn-secondary" id="cs-exportar-copiar">📋 Copiar lista de la compra</button>
               <button type="button" class="btn-secondary" id="cs-exportar-descargar">⬇️ Descargar (.txt)</button>
               <button type="button" class="btn-secondary" id="cs-exportar-whatsapp">💬 Enviar por WhatsApp</button>
+              <button type="button" class="btn-secondary" id="cs-exportar-email">📧 Enviar por email</button>
             </div>
           </div>
         </div>
@@ -376,7 +377,7 @@
           <div class="cs-producto-card__nombre">${p.nombre}</div>
           ${p.formato ? `<div class="cs-producto-card__formato">Formato: ${p.formato}</div>` : ''}
           ${p.ref ? `<div class="cs-producto-card__ref">Ref: ${p.ref}</div>` : ''}
-          <div class="cs-producto-card__precio">${p.mostrarPrecio ? p.precio : 'Consultar precio y disponibilidad'}</div>
+          <div class="cs-producto-card__precio${p.mostrarPrecio ? '' : ' cs-producto-card__precio--consultar'}">${p.mostrarPrecio ? p.precio : 'Consultar precio y disponibilidad'}</div>
         </button>
       `;
     }).join('');
@@ -425,10 +426,10 @@
         precioHtml = `<div class="modal-producto-precio-con">${p.precioCon} €</div>`;
         if (p.precioSin) precioHtml += `<div class="modal-producto-precio-sin">${p.precioSin} € sin IVA</div>`;
       } else {
-        precioHtml = '<p style="color:var(--text-muted);">Consultar precio y disponibilidad</p>';
+        precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
       }
     } else {
-      precioHtml = `<div class="modal-producto-precio-con">${p.precio}</div>`;
+      precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
     }
     $('#modal-producto-precio').innerHTML = precioHtml;
 
@@ -600,6 +601,15 @@
         // Navegar en la misma pestaña, no abrir una nueva — con window.open
         // se quedaba una pestaña en blanco tras el salto a la app de WhatsApp.
         window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texto);
+      });
+    }
+
+    const btnEmail = $('#cs-exportar-email');
+    if (btnEmail) {
+      btnEmail.addEventListener('click', () => {
+        const asunto = encodeURIComponent(`Lista de compra — ${sol.title}`);
+        const cuerpo = encodeURIComponent(texto);
+        window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
       });
     }
   }
