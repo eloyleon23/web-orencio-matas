@@ -316,6 +316,7 @@
     'Pulido': 'pasta pulir',
     'Quitar adhesivos': 'quita adhesivos',
     'Quitar restos de cola': 'quita adhesivos',
+    'Quitar moho de una junta de silicona': 'limpiador moho',
     'Quitar silicona': 'silicona',
     'Reforzar con barrera': 'insecticida',
     'Reforzar con trampas': 'raticida',
