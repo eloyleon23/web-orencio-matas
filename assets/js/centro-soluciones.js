@@ -342,6 +342,8 @@
     'Sellar una ventana o marco': 'silicona',
     'Tratar hongos': 'fungicida',
     'Tratar insectos si aparecen': 'insecticida',
+    'Acabar con las hormigas': 'hormigas',
+    'Evitar que vuelvan los insectos': 'insecticida',
     'Tratar un hongo en las plantas': 'fungicida',
     'Verter el desatascador': 'desatascador',
     'Vigilar signos de plaga': 'insecticida',
