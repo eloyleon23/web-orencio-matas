@@ -302,7 +302,7 @@
     'Preparar la piscina para el verano': 'cloro piscina',
     'Preparar la superficie': 'imprimación',
     'Preparar metal antes de pintar': 'imprimacion antioxidante',
-    'Preparar una superficie': 'limpiatodo',
+    'Preparar una superficie': 'multiusos',
     'Prevenir algas': 'algicida',
     'Primera mano': 'pintura plástica',
     'Promotor de adherencia': 'imprimación',
@@ -317,7 +317,7 @@
     'Quitar adhesivos': 'quita adhesivos',
     'Quitar restos de cola': 'quita adhesivos',
     'Quitar moho de una junta de silicona': 'limpiador moho',
-    'Quitar silicona': 'silicona',
+    'Quitar silicona': 'acetona',
     'Reforzar con barrera': 'insecticida',
     'Reforzar con trampas': 'raticida',
     'Reforzar puntos críticos': 'antigoteras',
@@ -360,10 +360,10 @@
       limpieza: 'limpieza', pegado: 'pegamento', suelos: 'pintura suelos', piscinas: 'piscina',
       plagas: 'plagas', jardin: 'abono',
     };
-    const area = areaMap[areaId] || '';
+    let area = areaMap[areaId] || '';
     let q = BUSQUEDAS_SUGERIDAS[titulo] || fallbackArea[areaId] || titulo;
-    // Siempre aplicamos el filtro de área cuando está disponible; así las búsquedas
-    // concretas (p. ej. "llantas") devuelven productos del área coherente.
+    // Algunos productos (p. ej. acetona) están en otra área distinta a la lógica del desplegable.
+    if (titulo === 'Quitar silicona') area = 'pinturas';
     return area ? `buscador.html?q=${encodeURIComponent(q)}&area=${area}` : `buscador.html?q=${encodeURIComponent(q)}`;
   }
 
