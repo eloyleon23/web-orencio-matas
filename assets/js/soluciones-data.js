@@ -128,6 +128,8 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'salitre_fachada',       label: 'Tengo manchas blancas de salitre en la fachada', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
     { id: 'pintar_verja_hierro',   label: 'Quiero pintar una verja o barandilla de hierro', solutionSlug: 'pintar-reja-verja-hierro' },
     { id: 'pintar_pladur',         label: 'Quiero pintar placas de pladur nuevas',          solutionSlug: 'pintar-placas-pladur-yeso-laminado' },
+    { id: 'pintar_directo_oxido',  label: 'Quiero pintar el óxido sin quitarlo ni imprimar', solutionSlug: 'pintar-metal-oxidado-directo-oxiron' },
+    { id: 'acabado_forjado_metal', label: 'Quiero dar un acabado de forja o martelé a una verja', solutionSlug: 'dar-acabado-forjado-metal-jardin' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -212,6 +214,8 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Proteger una nave industrial frente a la corrosión', solutionSlug: 'proteger-estructura-metalica-corrosion' },
         { title: 'Proteger una estructura contra el fuego', solutionSlug: 'proteger-estructura-acero-fuego' },
         { title: 'Pintar una verja o barandilla',           solutionSlug: 'pintar-reja-verja-hierro' },
+        { title: 'Pintar metal oxidado sin quitar el óxido', solutionSlug: 'pintar-metal-oxidado-directo-oxiron' },
+        { title: 'Dar un acabado de forja o martelé',        solutionSlug: 'dar-acabado-forjado-metal-jardin' },
       ],
     },
     {
@@ -2778,6 +2782,112 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para preparar y pintar placas de pladur o yeso proyectado nuevas, evitando las marcas de absorción en las juntas.',
       },
     },
+
+    'pintar-metal-oxidado-directo-oxiron': {
+      slug: 'pintar-metal-oxidado-directo-oxiron',
+      title: 'Cómo pintar metal oxidado directamente, sin quitar el óxido ni imprimar',
+      description: 'Pinta hierro oxidado directamente con un esmalte antioxidante formulado para aplicarse sobre el óxido, sin necesidad de imprimación previa ni de eliminar el óxido por completo.',
+      category: 'metal', subcategory: 'Pintura y protección de cerramientos metálicos',
+      problem: 'pintar_directo_oxido',
+      objective: 'pintar',
+      surface: 'metal',
+      difficulty: 'Fácil',
+      estimatedTime: '1 día (2 manos, la segunda a partir de 1 hora)',
+      result: 'Pieza de hierro pintada y protegida directamente sobre el óxido, en un solo día y sin necesidad de imprimación',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Metal', 'Pintura y protección de cerramientos metálicos'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes', items: ['Cepillado de óxido suelto'] },
+        { fase: 'Acabado',     familiaSugerida: 'Esmaltes antioxidantes directos al óxido', items: ['Esmalte antioxidante directo al óxido'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',  emoji: '🧽' },
+        { fase: 'Pintar',   emoji: '🖌️' },
+        { fase: 'Repetir',  emoji: '🔁' },
+        { fase: 'Curar',    emoji: '✅' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpiar la superficie con un cepillo', text: 'Cepilla la pieza para quitar las partículas de óxido sueltas y la suciedad superficial. No hace falta llegar a metal blanco ni eliminar todo el óxido: este tipo de esmalte está formulado precisamente para aplicarse sobre el óxido adherido.', productos: ['Cepillado de óxido suelto'] },
+        { n: 2, title: 'Aplicar la primera mano directamente', text: 'Aplica el esmalte directamente sobre el hierro y el óxido, sin imprimación previa — el producto tiene una doble función de protección y decoración en una sola capa.', productos: ['Esmalte antioxidante directo al óxido'] },
+        { n: 3, title: 'Aplicar la segunda mano', text: 'En el acabado liso, la segunda mano se puede aplicar transcurrida aproximadamente 1 hora, ya que este tipo de esmalte seca muy rápido. Esto permite terminar el trabajo en un solo día.', productos: [] },
+        { n: 4, title: 'Dejar curar antes de exponerlo a uso intenso', text: 'Aunque seca rápido al tacto, deja pasar unas horas más antes de un uso o manipulación intensa de la pieza, para que alcance toda su resistencia a rayadas e impactos.', productos: [] },
+      ],
+      professionalTips: [
+        'Se puede aplicar a brocha, rodillo o pistola sin que descuelgue, lo que lo hace muy práctico en piezas verticales como verjas o barandillas — a diferencia de otros esmaltes, no hace falta trabajar con capas muy finas para evitar chorreos.',
+      ],
+      commonMistakes: [
+        'Aplicar una imprimación antes, pensando que hace falta como en un sistema tradicional — con este tipo de esmalte no es necesaria y no aporta ninguna mejora.',
+        'Esperar 4 horas entre manos como con un esmalte convencional, perdiendo tiempo de trabajo sin necesidad.',
+        'Pintar sobre óxido muy suelto o escamado sin cepillar antes: el esmalte protege el óxido adherido, no sustituye a un cepillado mínimo de lo que ya se está desprendiendo.',
+        'Usar esta técnica sobre superficies con grasa o aceite, que sí hay que desengrasar antes en cualquier sistema.',
+      ],
+      recommendedProducts: [
+        { nombre: 'OXIRON LISO BRILLANTE 750 ML.NEGRO', categoria: 'Pinturas', formato: '750 ml', precio: '17,19 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Acabado satinado', nombre: 'OXIRON LISO SATINADO 750 ML.NEGRO', precio: '17,57 €' },
+        { etiqueta: 'Zonas de difícil acceso', nombre: 'SPRAY OXIRON P. 400 ML NEGRO (204)', precio: '11,65 €' },
+        { etiqueta: 'Si hay mucho óxido suelto antes de empezar', nombre: 'DESOXIDANTE TITAN MULTIUSOS 1 L.', precio: '11,43 €' },
+      ],
+      relatedSolutions: ['eliminar-oxido-metal', 'pintar-reja-verja-hierro', 'dar-acabado-forjado-metal-jardin'],
+      seo: {
+        title: 'Cómo pintar metal oxidado sin quitar el óxido | Orencio Matas',
+        description: 'Guía para pintar hierro oxidado directamente, sin imprimación, con un esmalte antioxidante formulado para aplicarse sobre el óxido.',
+      },
+    },
+
+    'dar-acabado-forjado-metal-jardin': {
+      slug: 'dar-acabado-forjado-metal-jardin',
+      title: 'Cómo dar un acabado de forja, pavonado o martelé a una verja o mueble metálico',
+      description: 'Elige entre los acabados decorativos de forja, pavonado o martelé para dar a una verja, farola o mueble de jardín un aspecto metálico trabajado, con la misma protección antioxidante directa al óxido.',
+      category: 'metal', subcategory: 'Pintura y protección de cerramientos metálicos',
+      problem: 'acabado_forjado_metal',
+      objective: 'acabado',
+      surface: 'metal',
+      difficulty: 'Fácil',
+      estimatedTime: '1 día (2 manos, con secado entre ellas)',
+      result: 'Pieza metálica con un acabado decorativo de forja, pavonado o martelé, protegida frente a la oxidación durante años',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Metal', 'Pintura y protección de cerramientos metálicos'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes', items: ['Cepillado de óxido suelto y desengrasado'] },
+        { fase: 'Acabado',     familiaSugerida: 'Esmaltes antioxidantes directos al óxido', items: ['Esmalte antioxidante con acabado decorativo (forja, pavonado o martelé)'] },
+      ],
+      receta: [
+        { fase: 'Elegir textura', emoji: '🎯' },
+        { fase: 'Limpiar',        emoji: '🧽' },
+        { fase: 'Pintar',         emoji: '🖌️' },
+        { fase: 'Proteger',       emoji: '🛡️' },
+      ],
+      steps: [
+        { n: 1, title: 'Elegir el acabado según el resultado que buscas', text: 'Forja da un aspecto metálico natural tipo forjado clásico; pavonado es una forja más fina, ideal cuando se busca un acabado más discreto; martelé tiene una textura martillada más marcada, muy usada en mobiliario urbano, ascensores o cerrajería. Los tres son igual de resistentes: la diferencia es solo estética.', productos: [] },
+        { n: 2, title: 'Preparar la superficie', text: 'Cepilla el óxido suelto y desengrasa la pieza. Igual que con el resto de la gama, no hace falta eliminar todo el óxido adherido ni aplicar imprimación.', productos: ['Cepillado de óxido suelto y desengrasado'] },
+        { n: 3, title: 'Aplicar el esmalte decorativo', text: 'Aplica el esmalte elegido directamente sobre el metal. En piezas donde se busque un acabado más perfecto (mobiliario urbano, cerrajería fina), es aconsejable aplicar a pistola en vez de a brocha.', productos: ['Esmalte antioxidante con acabado decorativo (forja, pavonado o martelé)'] },
+        { n: 4, title: 'Dar la segunda mano', text: 'Aplica una segunda mano una vez seca al tacto la primera, para una cobertura uniforme y la máxima protección de hasta 10 años frente a la intemperie.', productos: [] },
+      ],
+      professionalTips: [
+        'En piezas grandes y muy visibles (verjas de entrada, mobiliario urbano), conviene probar antes el acabado elegido en una zona poco visible: la textura final de forja, pavonado o martelé varía ligeramente según el grosor de la capa aplicada.',
+      ],
+      commonMistakes: [
+        'Mezclar sin querer productos de acabado liso y de acabado texturado (forja/pavonado/martelé) en la misma pieza, dando un resultado irregular.',
+        'Aplicar a brocha en piezas donde se buscaba un acabado muy perfecto, en vez de a pistola.',
+        'Pensar que el acabado martelé o forja requiere imprimación adicional por ser más decorativo: no la necesita, igual que el resto de la gama.',
+        'No dejar secar bien entre manos, empastando la textura decorativa en vez de marcarla con nitidez.',
+      ],
+      recommendedProducts: [
+        { nombre: 'OXIRON FORJA 750 ML.NEGRO', categoria: 'Pinturas', formato: '750 ml', precio: '15,06 €' },
+        { nombre: 'OXIRON PAVONADO 750 ML.NEGRO', categoria: 'Pinturas', formato: '750 ml', precio: '15,91 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Acabado martillado', nombre: 'OXIRON MARTELE 750 ML.GRIS PLATA', precio: '17,19 €' },
+        { etiqueta: 'Zonas de difícil acceso', nombre: 'SPRAY OXIRON P. 400 ML NEGRO (204)', precio: '11,65 €' },
+      ],
+      relatedSolutions: ['pintar-metal-oxidado-directo-oxiron', 'pintar-reja-verja-hierro', 'eliminar-oxido-metal'],
+      seo: {
+        title: 'Cómo dar un acabado de forja, pavonado o martelé a una verja | Orencio Matas',
+        description: 'Guía para elegir entre los acabados decorativos de forja, pavonado o martelé en una verja, farola o mueble metálico.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -2891,6 +3001,10 @@ window.SOLUCIONES_DATA = (function () {
       // "desatascador" en Apps Script — aquí "cola" dentro de "descolado").
       'luna_rota':         ['parabrisas', 'luna del coche', 'luna lateral', 'cristal del coche', 'descolad'],
       'bajos_coche':       ['bajos del coche', 'antigravilla', 'gravilla'],
+      // 'pintar_directo_oxido' ANTES de 'oxido': una consulta específica sobre
+      // pintar sin quitar el óxido debe ir a la guía de la tecnología OXIRON
+      // "directo al óxido", no a la guía general de eliminación de óxido.
+      'pintar_directo_oxido': ['sin quitar el oxido', 'sin quitar el óxido', 'directo sobre el oxido', 'directo sobre el óxido', 'directo al oxido', 'directo al óxido', 'sin lijar el oxido', 'sin lijar el óxido', 'pintar sin imprimacion', 'pintar sin imprimación'],
       'oxido':      ['oxido', 'óxido', 'oxidad'],
       // "brillo" (a secas) quitado a propósito: coincidía también con
       // "el suelo de mármol está sin brillo" — se queda con términos
@@ -2936,6 +3050,10 @@ window.SOLUCIONES_DATA = (function () {
       'fachada_piedra_absorbe_agua': ['hidrofugar', 'piedra vista', 'ladrillo visto', 'impermeabilizar la piedra', 'fachada de piedra', 'absorbe agua', 'absorbe mucha agua'],
       'grietas_fachada': ['grieta en la fachada', 'grietas en la fachada', 'fisura en la fachada', 'fisuras en la fachada', 'fachada agrietada'],
       'salitre_fachada': ['salitre', 'eflorescencia', 'eflorescencias', 'manchas blancas en la fachada', 'capilaridad'],
+      // 'acabado_forjado_metal' ANTES de 'pintar_verja_hierro': si el usuario
+      // pide específicamente un acabado de forja/pavonado/martelé, no debe
+      // caer en la guía genérica de pintar una verja con esmalte liso.
+      'acabado_forjado_metal': ['acabado forjado', 'efecto forjado', 'imitar la forja', 'aspecto forjado', 'pavonado', 'martele', 'martelé', 'acabado martillado', 'efecto martillado'],
       'pintar_verja_hierro': ['verja', 'barandilla', 'reja de hierro'],
       'pintar_pladur': ['pladur', 'placa de yeso laminado', 'placas de yeso laminado'],
       'fachada_deteriorada': ['fachada', 'exterior de la casa', 'exterior de casa'],
