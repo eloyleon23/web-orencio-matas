@@ -120,6 +120,9 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'desinfectar_hogar',label: 'Quiero desinfectar la casa',            solutionSlug: 'desinfectar-casa' },
     { id: 'elegir_pistola',   label: 'No sé qué pistola de pintar comprar',   solutionSlug: 'elegir-pistola-pintar' },
     { id: 'elegir_lijadora',  label: 'No sé qué lijadora necesito',           solutionSlug: 'elegir-lijadora-superficie' },
+    { id: 'proteger_estructura_metalica', label: 'Necesito proteger una estructura metálica de la corrosión', solutionSlug: 'proteger-estructura-metalica-corrosion' },
+    { id: 'proteger_fuego_estructura', label: 'Necesito proteger una estructura de acero contra el fuego', solutionSlug: 'proteger-estructura-acero-fuego' },
+    { id: 'lacar_mueble_profesional', label: 'Quiero lacar un mueble a nivel profesional', solutionSlug: 'lacado-profesional-muebles' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -180,6 +183,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Pintar madera barnizada',             solutionSlug: 'restaurar-mueble-madera' },
         { title: 'Proteger madera exterior',            solutionSlug: 'proteger-madera-exterior' },
         { title: 'Recuperar una superficie deteriorada',solutionSlug: 'restaurar-mueble-madera' },
+        { title: 'Lacar un mueble con pistola (profesional)', solutionSlug: 'lacado-profesional-muebles' },
       ],
     },
     {
@@ -196,6 +200,8 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Pintar tubos de salida de humos',      solutionSlug: 'pintar-metal-calor' },
         { title: 'Preparar metal antes de pintar',       solutionSlug: 'eliminar-oxido-metal' },
         { title: 'Proteger metal',                       solutionSlug: 'eliminar-oxido-metal' },
+        { title: 'Proteger una nave industrial frente a la corrosión', solutionSlug: 'proteger-estructura-metalica-corrosion' },
+        { title: 'Proteger una estructura contra el fuego', solutionSlug: 'proteger-estructura-acero-fuego' },
       ],
     },
     {
@@ -442,7 +448,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción rápida',      nombre: 'Esmalte antioxidante 3 en 1 (imprimación + color en un paso)', precio: '19,95 €' },
         { etiqueta: 'Trabajos pequeños',  nombre: 'Aerosol antioxidante', precio: '8,95 €' },
       ],
-      relatedSolutions: ['pintar-plastico-coche', 'restaurar-mueble-madera', 'quitar-restos-pegamento'],
+      relatedSolutions: ['pintar-plastico-coche', 'restaurar-mueble-madera', 'quitar-restos-pegamento', 'proteger-estructura-metalica-corrosion'],
       seo: {
         title: 'Cómo eliminar el óxido del metal | Guía — Orencio Matas',
         description: 'Cómo tratar y eliminar el óxido de una superficie metálica paso a paso, con convertidor, imprimación antioxidante y esmalte acrílico o sintético de acabado.',
@@ -502,7 +508,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción rápida',      nombre: 'Barniz al agua secado rápido', precio: '19,95 €' },
         { etiqueta: 'Opción profesional', nombre: 'Sistema de tinte + barniz de poliuretano', precio: '38,95 €' },
       ],
-      relatedSolutions: ['eliminar-oxido-metal', 'decapar-pintura-mueble'],
+      relatedSolutions: ['eliminar-oxido-metal', 'decapar-pintura-mueble', 'lacado-profesional-muebles'],
       seo: {
         title: 'Cómo restaurar un mueble de madera | Guía — Orencio Matas',
         description: 'Aprende a restaurar un mueble de madera antiguo o deteriorado: decapado, lijado, reparación de desperfectos y barnizado.',
@@ -2333,6 +2339,167 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para elegir entre lijadora rotorbital y amoladora según el tamaño de la superficie y el trabajo a realizar.',
       },
     },
+
+    'proteger-estructura-metalica-corrosion': {
+      slug: 'proteger-estructura-metalica-corrosion',
+      title: 'Cómo proteger una estructura metálica frente a la corrosión',
+      description: 'Elige el sistema anticorrosivo adecuado (imprimación + acabado) según el ambiente al que está expuesta tu estructura de acero, siguiendo el mismo criterio que la norma UNE-EN ISO 12944.',
+      category: 'metal', subcategory: 'Protección anticorrosiva profesional',
+      problem: 'proteger_estructura_metalica',
+      objective: 'proteger',
+      surface: 'metal',
+      difficulty: 'Media',
+      estimatedTime: 'Según tamaño — normalmente 1-2 días con secados incluidos',
+      result: 'Estructura de acero protegida con un sistema anticorrosivo adecuado a su ambiente de exposición, con la durabilidad esperada',
+      breadcrumb: ['Centro de Soluciones', 'Metal', 'Protección anticorrosiva profesional'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes', items: ['Desengrasante', 'Chorreado abrasivo o lijado (según el caso)'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones anticorrosivas', items: ['Imprimación anticorrosiva (alquídica o epoxi, según el ambiente)'] },
+        { fase: 'Acabado',      familiaSugerida: 'Esmaltes',                  items: ['Esmalte de acabado (alquídico o poliuretano, según exigencia)'] },
+      ],
+      receta: [
+        { fase: 'Valorar ambiente', emoji: '🌍' },
+        { fase: 'Preparar',         emoji: '🧽' },
+        { fase: 'Imprimar',         emoji: '🎨' },
+        { fase: 'Acabar',           emoji: '✨' },
+      ],
+      steps: [
+        { n: 1, title: 'Valorar el ambiente de corrosión', text: 'No es lo mismo una estructura en interior con calefacción (ambiente C1, muy baja corrosión) que una zona costera con salinidad alta o una planta química (C5, muy alta) — el ambiente determina qué sistema necesitas de verdad, no solo el material.', productos: [] },
+        { n: 2, title: 'Preparar la superficie', text: 'La preparación es la base de cualquier sistema anticorrosivo — sin ella, ni la mejor pintura del mundo protege bien. Elimina óxido, grasa y suciedad; en acero nuevo sin pintar, lo ideal es chorreado abrasivo, en superficies ya pintadas con lijado a fondo es suficiente en muchos casos.', productos: ['Desengrasante', 'Chorreado abrasivo o lijado (según el caso)'] },
+        { n: 3, title: 'Aplicar la imprimación anticorrosiva', text: 'Elige entre imprimación alquídica (ambientes de corrosión baja-media, más económica) o epoxi (ambientes de corrosión alta-muy alta, mayor protección y adherencia) según el ambiente valorado en el paso 1.', productos: ['Imprimación anticorrosiva (alquídica o epoxi, según el ambiente)'] },
+        { n: 4, title: 'Aplicar el esmalte de acabado', text: 'El acabado aporta el color final y una segunda barrera de protección — en ambientes más exigentes, un esmalte de poliuretano da mejor retención de brillo y color con el tiempo que uno alquídico convencional.', productos: ['Esmalte de acabado (alquídico o poliuretano, según exigencia)'] },
+      ],
+      professionalTips: [
+        'La durabilidad de un sistema anticorrosivo no es un periodo de garantía, sino una estimación técnica — en la práctica, conviene inspeccionar la estructura al menos una vez al año y no esperar a que el óxido sea visible para actuar, sobre todo en ambientes de corrosión alta o muy alta.',
+      ],
+      commonMistakes: [
+        'Elegir el sistema por precio en vez de por el ambiente real de corrosión al que está expuesta la estructura.',
+        'Saltarse o hacer una preparación de superficie insuficiente, la causa más habitual de fallo prematuro.',
+        'Aplicar el esmalte de acabado antes de que la imprimación haya secado el tiempo indicado.',
+        'No revisar la estructura periódicamente, esperando a que el óxido ya sea visible para actuar.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Imprimación Sintética Secado Rápido SX-100', categoria: 'Talleres', formato: '15 L', precio: '88,75 €' },
+        { nombre: 'Imprimación Epoxi Anticorrosiva SXB-200',      categoria: 'Talleres', formato: '750 ml', precio: '14,40 €' },
+        { nombre: 'Titantech Esmalte Sintético Brillo EX-330',    categoria: 'Talleres', formato: '4 L', precio: '45,82 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Ambiente de corrosión alta',     nombre: 'Titantech SXB-210 Imprimación Epoxi AE HB SB 15 L', precio: '307,34 €' },
+        { etiqueta: 'Acabado de altas prestaciones',   nombre: 'Titantech DTM EX-410 Esmalte Sintético Anticorrosivo 4 L', precio: '53,43 €' },
+        { etiqueta: 'Imprimación anticorrosiva fosfatante', nombre: 'Imprimación Fosfatante SX-140 Anticorrosiva 20 L', precio: '206,26 €' },
+      ],
+      relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-acero-fuego'],
+      seo: {
+        title: 'Cómo proteger una estructura metálica frente a la corrosión | Orencio Matas',
+        description: 'Guía para elegir el sistema anticorrosivo adecuado (imprimación + acabado) según el ambiente de exposición de tu estructura de acero.',
+      },
+    },
+
+    'proteger-estructura-acero-fuego': {
+      slug: 'proteger-estructura-acero-fuego',
+      title: 'Cómo proteger una estructura de acero contra el fuego',
+      description: 'Aplica un sistema de pintura intumescente sobre una estructura de acero para darle resistencia al fuego, protegiéndola frente al colapso en caso de incendio.',
+      category: 'metal', subcategory: 'Protección contra el fuego',
+      problem: 'proteger_fuego_estructura',
+      objective: 'proteger',
+      surface: 'metal',
+      difficulty: 'Difícil',
+      estimatedTime: 'Varios días (aplicación + curado de 24h a 7 días según capa)',
+      result: 'Estructura de acero con resistencia al fuego certificada, protegida frente al colapso por temperatura',
+      breadcrumb: ['Centro de Soluciones', 'Metal', 'Protección contra el fuego'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Imprimaciones anticorrosivas', items: ['Imprimación anticorrosiva compatible'] },
+        { fase: 'Intumescente', familiaSugerida: 'Pinturas intumescentes',      items: ['Pintura intumescente al agua'] },
+        { fase: 'Acabado',      familiaSugerida: 'Esmaltes',                    items: ['Esmalte de acabado compatible (si hay exposición exterior o alta humedad)'] },
+      ],
+      receta: [
+        { fase: 'Imprimar',    emoji: '🎨' },
+        { fase: 'Medir',       emoji: '📏' },
+        { fase: 'Intumescente',emoji: '🔥' },
+        { fase: 'Acabar',      emoji: '✅' },
+      ],
+      steps: [
+        { n: 1, title: 'Aplicar la imprimación anticorrosiva', text: 'Antes de la pintura intumescente, la estructura debe llevar una imprimación anticorrosiva compatible — el espesor de esta capa debe medirse y registrarse, porque afecta al cálculo del espesor real de intumescente aplicado.', productos: ['Imprimación anticorrosiva compatible'] },
+        { n: 2, title: 'Determinar el espesor necesario', text: 'El espesor de intumescente necesario depende de la resistencia al fuego exigida (R30, R60, R90...), el perfil del acero y su masividad (factor de forma) — cuanto mayor la masividad, más espesor hace falta para la misma protección.', productos: [] },
+        { n: 3, title: 'Aplicar la pintura intumescente', text: 'Aplica la pintura intumescente al agua en el espesor calculado, respetando las condiciones ambientales (temperatura entre 10-35°C, humedad por debajo del 80%) — de lo contrario pueden formarse ampollas o defectos en la película.', productos: ['Pintura intumescente al agua'] },
+        { n: 4, title: 'Aplicar acabado si hace falta', text: 'En interiores secos no siempre hace falta acabado adicional; en exteriores semi-expuestos o de alta humedad, protege la intumescente con un esmalte de acabado compatible.', productos: ['Esmalte de acabado compatible (si hay exposición exterior o alta humedad)'] },
+      ],
+      professionalTips: [
+        'Antes de aplicar el esmalte de acabado, hay que confirmar el espesor real de intumescente aplicado midiendo la película ya totalmente seca (24-48 horas) — no basta con haber aplicado la cantidad prevista, hay que verificar que se ha quedado en el espesor final correcto.',
+      ],
+      commonMistakes: [
+        'No medir y registrar el espesor de la imprimación antes de aplicar la intumescente.',
+        'Aplicar la pintura intumescente en condiciones de humedad o temperatura fuera de rango.',
+        'No tener en cuenta la masividad real del perfil al calcular el espesor necesario.',
+        'Aplicar un espesor de esmalte de acabado excesivo, que puede afectar a la expansión de la intumescente en caso de incendio.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Pintura Intumescente Agua A-80 IX-080',   categoria: 'Talleres', formato: '25 kg', precio: '384,72 €' },
+        { nombre: 'Titantech Imprimación Sintética SX-100',   categoria: 'Talleres', formato: '15 L', precio: '88,75 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Mayor resistencia al fuego (R120-R180)', nombre: 'Titantech IX-085 Intumescente A85 25 kg', precio: '392,16 €' },
+        { etiqueta: 'Acabado poliuretano de altas prestaciones', nombre: 'Titantech EXB-560 Esmalte Poliuretano Brillante 4 L', precio: '100,91 €' },
+      ],
+      relatedSolutions: ['proteger-estructura-metalica-corrosion'],
+      seo: {
+        title: 'Cómo proteger una estructura de acero contra el fuego | Orencio Matas',
+        description: 'Guía para aplicar un sistema de pintura intumescente sobre una estructura de acero, dándole resistencia al fuego.',
+      },
+    },
+
+    'lacado-profesional-muebles': {
+      slug: 'lacado-profesional-muebles',
+      title: 'Cómo lacar muebles a nivel profesional con pistola',
+      description: 'Aplica un sistema profesional de fondo y laca de poliuretano sobre mueble o madera, pensado para taller y aplicación con pistola.',
+      category: 'madera', subcategory: 'Lacado profesional',
+      problem: 'lacar_mueble_profesional',
+      objective: 'preparar',
+      surface: 'madera',
+      difficulty: 'Media',
+      estimatedTime: '1-2 días (fondo + lijado + laca + secado)',
+      result: 'Mueble o superficie de madera con un acabado lacado uniforme y profesional',
+      breadcrumb: ['Centro de Soluciones', 'Madera y restauración', 'Lacado profesional'],
+      materials: [
+        { fase: 'Sellado',   familiaSugerida: 'Fondos de poliuretano', items: ['Fondo poliuretano'] },
+        { fase: 'Lijado',    familiaSugerida: 'Lijas',                 items: ['Lija fina'] },
+        { fase: 'Acabado',   familiaSugerida: 'Lacas de poliuretano',  items: ['Laca de poliuretano (mate, satinada o incolora)'] },
+      ],
+      receta: [
+        { fase: 'Fondo',   emoji: '🎨' },
+        { fase: 'Lijar',   emoji: '📄' },
+        { fase: 'Lacar',   emoji: '✨' },
+        { fase: 'Curar',   emoji: '⏳' },
+      ],
+      steps: [
+        { n: 1, title: 'Aplicar el fondo de poliuretano', text: 'El fondo sella la madera y rellena el poro, dando una buena cobertura de cantos y aristas — se aplica siempre antes de la laca, nunca la laca directamente sobre madera sin fondo.', productos: ['Fondo poliuretano'] },
+        { n: 2, title: 'Lijar el fondo', text: 'Una vez seco el fondo (suele ser de secado muy rápido), lija suavemente para dejar la superficie totalmente lisa antes de aplicar la laca.', productos: ['Lija fina'] },
+        { n: 3, title: 'Aplicar la laca de poliuretano', text: 'Aplica la laca con pistola en manos finas — el sistema de dos componentes necesita respetar la proporción de mezcla exacta (normalmente 2:1) y su pot life (tiempo útil de la mezcla ya activada).', productos: ['Laca de poliuretano (mate, satinada o incolora)'] },
+        { n: 4, title: 'Dejar curar antes de manipular', text: 'Respeta el tiempo de secado antes de manipular la pieza y el de repintado si hace falta una segunda mano — manipular antes de tiempo deja marcas que ya no se corrigen sin repetir el proceso.', productos: [] },
+      ],
+      professionalTips: [
+        'La proporción de mezcla en los sistemas de dos componentes (fondo y laca) es crítica — no ajustarla bien no solo afecta al acabado estético, también a la dureza y resistencia final del lacado.',
+      ],
+      commonMistakes: [
+        'Aplicar la laca directamente sobre madera sin fondo previo.',
+        'No lijar el fondo antes de aplicar la laca.',
+        'No respetar la proporción de mezcla exacta en los sistemas de dos componentes.',
+        'Manipular la pieza antes de que la laca haya curado del todo.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Titantech MXB-970 Fondo Poliuretano',       categoria: 'Talleres', formato: '750 ml', precio: '12,52 €' },
+        { nombre: 'Titantech MXB-960 Laca Poliuretano Satinada', categoria: 'Talleres', formato: '6 L', precio: '72,36 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Acabado incoloro', nombre: 'Laca Poliuretano Incolora MXB-950' },
+        { etiqueta: 'Para parqué/suelos de madera', nombre: 'Barniz Parquet al Agua MX-910' },
+      ],
+      relatedSolutions: ['restaurar-mueble-madera', 'elegir-pistola-pintar'],
+      seo: {
+        title: 'Cómo lacar muebles a nivel profesional con pistola | Orencio Matas',
+        description: 'Guía para aplicar un sistema profesional de fondo y laca de poliuretano sobre mueble o madera, con pistola.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -2497,6 +2664,9 @@ window.SOLUCIONES_DATA = (function () {
       'desinfectar_hogar':['desinfectar', 'desinfeccion', 'desinfección'],
       'elegir_pistola':   ['pistola de pintar', 'pistola gravedad', 'pistola airless', 'pistola hvlp'],
       'elegir_lijadora':  ['que lijadora', 'qué lijadora', 'lijadora rotorbital'],
+      'proteger_estructura_metalica': ['estructura metalica', 'estructura metálica', 'nave industrial', 'corrosion de la estructura'],
+      'proteger_fuego_estructura': ['contra el fuego', 'resistencia al fuego', 'intumescente'],
+      'lacar_mueble_profesional': ['lacar', 'lacado', 'laca poliuretano'],
     };
     let problemaId = null;
     for (const [id, palabras] of Object.entries(coincidencias)) {
