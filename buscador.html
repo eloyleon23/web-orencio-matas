@@ -2206,6 +2206,32 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             cursor: pointer;
             flex-shrink: 0;
             border-radius: 6px;
+            /* Evita el retraso/ambigüedad de doble-tap-para-zoom de Safari
+               en iOS al tocar sobre un elemento que envuelve una imagen. */
+            touch-action: manipulation;
+        }
+        /* En iOS (Safari y Chrome, que usa el mismo motor WebKit), una
+           <img> dentro de un elemento pulsable puede interceptar el toque
+           de forma distinta a un botón normal: activa su propio menú de
+           "mantener pulsado" (guardar imagen) y a veces necesita un
+           primer toque solo para simular :hover antes de que el segundo
+           dispare el clic real — por eso las imágenes NO reaccionaban a
+           un toque en la vista responsive de iPhone (bug real reportado).
+           Solución: la <img> y el icono de lupa se vuelven "transparentes"
+           al puntero (pointer-events:none) para que sea SIEMPRE el
+           <button> que las envuelve quien reciba el toque, igual que ya
+           ocurre con el resto de botones del asistente (Validar, Saltar,
+           Subir…) que no tienen este problema porque no contienen ninguna
+           <img>. */
+        .asistente-imagen-ampliable img,
+        .asistente-imagen-ampliable .asistente-imagen-ampliable-icono {
+            pointer-events: none;
+        }
+        .asistente-imagen-ampliable img {
+            -webkit-touch-callout: none;
+            -webkit-user-drag: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         .asistente-imagen-ampliable-icono {
             position: absolute;
@@ -2220,7 +2246,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             opacity: 0;
             transition: opacity 0.15s ease;
         }
-        .asistente-imagen-ampliable:hover .asistente-imagen-ampliable-icono,
+        /* :hover solo en dispositivos con puntero real (ratón) — en
+           touch (móvil) no aporta nada y, sin este filtro, algunos
+           navegadores WebKit en iOS tratan el primer toque como una
+           simulación de :hover en vez de disparar el clic directamente. */
+        @media (hover: hover) and (pointer: fine) {
+            .asistente-imagen-ampliable:hover .asistente-imagen-ampliable-icono {
+                opacity: 1;
+            }
+        }
         .asistente-imagen-ampliable:focus-visible .asistente-imagen-ampliable-icono,
         .asistente-imagen-ampliable:active .asistente-imagen-ampliable-icono {
             opacity: 1;
@@ -2307,8 +2341,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            touch-action: manipulation;
         }
-        #asistente-lightbox-cerrar:hover { background: #f1f5f9; }
+        @media (hover: hover) and (pointer: fine) {
+            #asistente-lightbox-cerrar:hover { background: #f1f5f9; }
+        }
         .asistente-dropzone {
             border: 2px dashed #cbd5e1;
             border-radius: 16px;
