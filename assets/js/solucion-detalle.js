@@ -200,7 +200,7 @@
             <p class="cs-total-disclaimer">* Precios y productos indicativos y orientativos. La cantidad, el formato y el precio final pueden variar; consulte con nuestro profesional en tienda.</p>
             <div class="cs-exportar-bar__acciones no-imprimir">
               <button type="button" class="btn-primary" id="cs-exportar-pdf">📄 Descargar como PDF</button>
-              <button type="button" class="btn-secondary" id="cs-compartir-solucion">� Compartir solución</button>
+              <button type="button" class="btn-secondary" id="cs-compartir-solucion"><i class="fa-solid fa-share-nodes"></i> Compartir solución</button>
               <button type="button" class="btn-secondary" id="cs-exportar-whatsapp">💬 Enviar por WhatsApp</button>
             </div>
           </div>
