@@ -41,6 +41,7 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'madera',   label: 'Madera',              emoji: '🪵' },
     { id: 'metal',    label: 'Metal',                emoji: '🔩' },
     { id: 'pared',    label: 'Paredes',              emoji: '🧱' },
+    { id: 'ceramica', label: 'Baño y cerámica',      emoji: '🚿' },
     { id: 'hogar',    label: 'Hogar',                emoji: '🏠' },
     { id: 'plastico', label: 'Plástico',              emoji: '🧩' },
     { id: 'suelo',    label: 'Suelo / garaje',         emoji: '🅿️' },
@@ -169,6 +170,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Tapar agujeros',                      solutionSlug: 'pintar-pared-interior' },
         { title: 'Preparar una pared',                  solutionSlug: 'pintar-pared-interior' },
         { title: 'Pintar azulejos',                      solutionSlug: 'pintar-azulejos' },
+        { title: 'Renovar una bañera, lavabo o sanitario', solutionSlug: 'renovar-banera-lavabo-sanitario' },
         { title: 'Pintar superficies difíciles',         solutionSlug: 'pintar-plastico-coche' },
         { title: 'Limpiar brochas',                      solutionSlug: 'pintar-pared-interior' },
         { title: 'Conseguir acabado mate',              solutionSlug: 'pintar-pared-interior' },
@@ -208,7 +210,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Pintar aluminio',                      solutionSlug: 'eliminar-oxido-metal' },
         { title: 'Pintar estructuras metálicas',         solutionSlug: 'eliminar-oxido-metal' },
         { title: 'Renovar una verja',                    solutionSlug: 'eliminar-oxido-metal' },
-        { title: 'Pintar radiadores',                    solutionSlug: 'pintar-metal-calor' },
+        { title: 'Pintar radiadores',                    solutionSlug: 'pintar-radiador-calefaccion' },
         { title: 'Pintar estufas',                       solutionSlug: 'pintar-metal-calor' },
         { title: 'Pintar tubos de salida de humos',      solutionSlug: 'pintar-metal-calor' },
         { title: 'Preparar metal antes de pintar',       solutionSlug: 'eliminar-oxido-metal' },
@@ -309,6 +311,16 @@ window.SOLUCIONES_DATA = (function () {
     { slug: 'proteger-bajos-antigravilla', title: 'Cómo proteger los bajos del coche',            difficulty: 'Media', estimatedTime: '1-2 h + secado', emoji: '🚗' },
     { slug: 'pintar-fachada-exterior',   title: 'Cómo pintar una fachada exterior',               difficulty: 'Media', estimatedTime: '2-3 días (según superficie)', emoji: '🏠' },
     { slug: 'impermeabilizar-terraza-goteras', title: 'Cómo impermeabilizar una terraza con goteras', difficulty: 'Media', estimatedTime: '1 día + secado', emoji: '☔' },
+    { slug: 'pintar-azulejos',           title: 'Cómo pintar azulejos de baño o cocina',           difficulty: 'Media', estimatedTime: '1 día (2 manos) + secado', emoji: '🚿' },
+    { slug: 'renovar-banera-lavabo-sanitario', title: 'Cómo renovar una bañera, lavabo o sanitario sin cambiarlo', difficulty: 'Media', estimatedTime: '2 días + 72 h antes de usar', emoji: '🛁' },
+    { slug: 'pintar-radiador-calefaccion', title: 'Cómo pintar un radiador de calefacción',          difficulty: 'Fácil', estimatedTime: '1-2 días (con secado entre capas)', emoji: '🌡️' },
+    { slug: 'pintar-reja-verja-hierro',   title: 'Cómo pintar y proteger una verja o barandilla de hierro', difficulty: 'Media', estimatedTime: '1-2 días (con secado entre capas)', emoji: '⚙️' },
+    { slug: 'restaurar-faros-coche',     title: 'Cómo restaurar los faros del coche',              difficulty: 'Media', estimatedTime: '45-60 min', emoji: '💡' },
+    { slug: 'decapar-pintura-mueble',    title: 'Cómo decapar la pintura o el barniz de un mueble', difficulty: 'Media', estimatedTime: '1-2 h + tiempo de actuación', emoji: '🪑' },
+    { slug: 'control-roedores',          title: 'Cómo eliminar ratones o roedores',                difficulty: 'Fácil', estimatedTime: 'Resultado en 1-2 semanas', emoji: '🐭' },
+    { slug: 'usar-lejia-segura',         title: 'Cómo usar la lejía de forma segura y eficaz',      difficulty: 'Fácil', estimatedTime: '10 min', emoji: '🧴' },
+    { slug: 'limpiar-plata-metales',     title: 'Cómo limpiar y abrillantar plata y otros metales', difficulty: 'Fácil', estimatedTime: '15-20 min', emoji: '🍽️' },
+    { slug: 'quitar-restos-pegamento',   title: 'Cómo quitar restos de pegamento o cinta adhesiva', difficulty: 'Fácil', estimatedTime: '15-20 min', emoji: '🩹' },
   ];
 
   // ── Soluciones completas ────────────────────────────────────────────────
@@ -3079,6 +3091,23 @@ window.SOLUCIONES_DATA = (function () {
         preparar: 'pintar-pared-interior',
         acabado: 'pintar-pared-interior',
       },
+      // 'ceramica' cubre azulejos, bañeras, lavabos y sanitarios — dos
+      // guías dedicadas se reparten según la intención: pintar/preparar
+      // apunta a azulejos (lo más habitual bajo "pintar"), mientras que
+      // restaurar/acabado apunta a renovar bañera-lavabo-sanitario (el
+      // caso de "quiero que quede como nuevo sin picarlo"). El resto de
+      // acciones (limpiar/reparar/proteger/pegar) son casos de junta con
+      // moho o silicona, la incidencia más común en esta superficie.
+      ceramica: {
+        pintar: 'pintar-azulejos',
+        preparar: 'pintar-azulejos',
+        restaurar: 'renovar-banera-lavabo-sanitario',
+        acabado: 'renovar-banera-lavabo-sanitario',
+        limpiar: 'sellar-juntas-bano',
+        reparar: 'sellar-juntas-bano',
+        proteger: 'sellar-juntas-bano',
+        pegar: 'sellar-juntas-bano',
+      },
     };
 
     const solucion = (porSuperficie[superficieId] || {})[accionId];
@@ -3090,6 +3119,7 @@ window.SOLUCIONES_DATA = (function () {
     if (superficieId === 'pared' || superficieId === 'hogar') return 'pintar-pared-interior';
     if (superficieId === 'suelo') return 'suelo-epoxi-garaje';
     if (superficieId === 'plastico') return 'pintar-plastico-coche';
+    if (superficieId === 'ceramica') return 'pintar-azulejos';
 
     // Sin una combinación que encaje con confianza (p. ej. superficie
     // "Otro") — mejor admitirlo con honestidad que forzar una
