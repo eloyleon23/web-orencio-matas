@@ -258,18 +258,32 @@
   .navbar__cta { width: 100%; }
 
   /* En móvil el submenú no depende de hover (no funciona con el dedo):
-     se muestra siempre, sangrado bajo "Productos", en vez de ocultarse. */
+     cuando el menú móvil está realmente abierto (.navbar__nav.is-open),
+     se muestra siempre en línea, sangrado bajo "Productos", en vez de
+     ocultarse/mostrarse con :hover. Importante: esta visibilidad forzada
+     se aplica SOLO dentro de .is-open — forzarla de forma incondicional
+     (como estaba antes en este archivo) deja los enlaces del submenú
+     invisibles pero clicables ("fantasma") flotando justo debajo del
+     header incluso con el menú cerrado, interceptando toques dirigidos
+     a cualquier cosa que quede ahí debajo (bug real reportado: en
+     buscador.html, tocar la imagen de un producto del grid en móvil
+     abría "Ver catálogos" en vez del modal del producto — el mismo tipo
+     de bug de menú "fantasma" ya corregido en src/css/estilos.css, pero
+     nunca replicado en este archivo, que es el que usan buscador.html y
+     el resto de páginas sin ese fix). */
   .navbar__caret { display: none; }
   .navbar__submenu {
     position: static;
-    opacity: 1;
-    visibility: visible;
     transform: none;
     box-shadow: none;
     border: none;
     padding: 0;
     margin-top: 4px;
     background: transparent;
+  }
+  .navbar__nav.is-open .navbar__submenu {
+    opacity: 1;
+    visibility: visible;
   }
   .navbar__submenu li { padding: 0 0 0 18px; }
   .navbar__submenu a {
@@ -305,8 +319,6 @@
 @media (max-width: 900px) {
   .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
     position: static;
-    opacity: 1;
-    visibility: visible;
     transform: none;
     box-shadow: none;
     border: none;
@@ -314,5 +326,9 @@
     margin-top: 4px;
     background: transparent;
     margin-left: 18px;
+  }
+  .navbar__nav.is-open .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+    opacity: 1;
+    visibility: visible;
   }
 }
