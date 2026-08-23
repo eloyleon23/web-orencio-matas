@@ -966,6 +966,10 @@
 .cs-exportar-bar__acciones .btn-secondary {
   background: rgba(255, 255, 255, 0.94);
 }
+.cs-exportar-bar__acciones .btn-secondary i,
+.cs-exportar-bar__acciones .btn-primary i {
+  margin-right: 8px;
+}
 
 /* ── Alternativas ─────────────────────────────────────────────────────── */
 .cs-alternativas {
