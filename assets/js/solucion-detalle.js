@@ -200,8 +200,7 @@
             <p class="cs-total-disclaimer">* Precios y productos indicativos y orientativos. La cantidad, el formato y el precio final pueden variar; consulte con nuestro profesional en tienda.</p>
             <div class="cs-exportar-bar__acciones no-imprimir">
               <button type="button" class="btn-primary" id="cs-exportar-pdf">📄 Descargar como PDF</button>
-              <button type="button" class="btn-secondary" id="cs-exportar-copiar">📋 Copiar lista de la compra</button>
-              <button type="button" class="btn-secondary" id="cs-exportar-descargar">⬇️ Descargar (.txt)</button>
+              <button type="button" class="btn-secondary" id="cs-compartir-solucion">� Compartir solución</button>
               <button type="button" class="btn-secondary" id="cs-exportar-whatsapp">💬 Enviar por WhatsApp</button>
             </div>
           </div>
@@ -572,6 +571,8 @@
   }
 
   function wireExportarLista(sol, listaProductos) {
+    const urlSolucion = (window.location.origin || '') + window.location.pathname + '?slug=' + encodeURIComponent(sol.slug);
+    const mensajeWhatsapp = `He encontrado esta solución en Orencio Matas: ${sol.title}\n\nDescarga el informe en PDF aquí:\n${urlSolucion}`;
     const texto = generarTextoListaCompra(sol, listaProductos);
 
     const btnPdf = $('#cs-exportar-pdf');
@@ -588,28 +589,20 @@
       });
     }
 
-    const btnCopiar = $('#cs-exportar-copiar');
-    if (btnCopiar) {
-      btnCopiar.addEventListener('click', () => {
-        copiarAlPortapapeles(texto)
-          .then(() => mostrarToast('✓ Lista copiada al portapapeles'))
-          .catch(() => mostrarToast('No se pudo copiar — prueba a descargarla en su lugar'));
-      });
-    }
-
-    const btnDescargar = $('#cs-exportar-descargar');
-    if (btnDescargar) {
-      btnDescargar.addEventListener('click', () => {
-        const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `lista-compra-${sol.slug}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        mostrarToast('✓ Lista descargada');
+    const btnCompartir = $('#cs-compartir-solucion');
+    if (btnCompartir) {
+      btnCompartir.addEventListener('click', () => {
+        if (navigator.share) {
+          navigator.share({
+            title: sol.title,
+            text: sol.description,
+            url: urlSolucion,
+          }).catch(() => {});
+        } else {
+          copiarAlPortapapeles(urlSolucion)
+            .then(() => mostrarToast('✓ Enlace copiado al portapapeles'))
+            .catch(() => mostrarToast('No se pudo copiar el enlace'));
+        }
       });
     }
 
@@ -618,7 +611,7 @@
       btnWhatsapp.addEventListener('click', () => {
         // Navegar en la misma pestaña, no abrir una nueva — con window.open
         // se quedaba una pestaña en blanco tras el salto a la app de WhatsApp.
-        window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texto);
+        window.location.href = 'https://wa.me/?text=' + encodeURIComponent(mensajeWhatsapp);
       });
     }
 
