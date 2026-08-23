@@ -3228,19 +3228,52 @@ window.SOLUCIONES_DATA = (function () {
     return window.location.pathname.includes('/soluciones/') ? '../data/productos.json' : './data/productos.json';
   }
 
+  // Misma caché en vivo de Apps Script que usa buscador.html (ver
+  // PRODUCTOS_REMOTO_URL ahí) — se actualiza de forma síncrona en el
+  // propio Apps Script justo tras subir una imagen, validarla, etc., así
+  // que es la única fuente que refleja esos cambios al instante para
+  // CUALQUIER visitante del Centro de Soluciones, no solo para quien hizo
+  // el cambio. Antes esta página solo leía data/productos.json (el JSON
+  // estático del repo), que depende de que el workflow correspondiente
+  // haya regenerado el archivo y GitHub Pages haya terminado de
+  // desplegarlo — de ahí que una imagen recién actualizada en el
+  // buscador tardase en verse aquí, o incluso no llegase a verse durante
+  // horas. No se cachea en localStorage (el catálogo completo pesa varios
+  // MB y excede la cuota típica por origen); simplemente se vuelve a
+  // pedir en cada visita de página, igual que ya hacía antes con el JSON
+  // estático.
+  const PRODUCTOS_REMOTO_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+
   let catalogoRealCache = null;
+  let catalogoRealCachePromise = null;
   function cargarCatalogoReal() {
     if (catalogoRealCache) return Promise.resolve(catalogoRealCache);
-    return fetch(rutaCatalogoReal())
-      .then((r) => r.json())
+    if (catalogoRealCachePromise) return catalogoRealCachePromise;
+
+    // 1) Fuente de verdad: la caché en vivo de Apps Script — así una
+    //    imagen recién actualizada desde el buscador (por cualquier
+    //    persona) se ve aquí sin depender de ningún despliegue.
+    catalogoRealCachePromise = fetch(PRODUCTOS_REMOTO_URL)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('respuesta no OK'))))
       .then((d) => {
         catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja);
         return catalogoRealCache;
       })
       .catch(() => {
-        catalogoRealCache = [];
-        return catalogoRealCache;
+        // 2) Si Apps Script no responde (caído, cuota, CORS…), último
+        //    recurso: el JSON estático del propio despliegue.
+        return fetch(rutaCatalogoReal())
+          .then((r) => r.json())
+          .then((d) => {
+            catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja);
+            return catalogoRealCache;
+          })
+          .catch(() => {
+            catalogoRealCache = [];
+            return catalogoRealCache;
+          });
       });
+    return catalogoRealCachePromise;
   }
 
   function normalizarTexto(t) {

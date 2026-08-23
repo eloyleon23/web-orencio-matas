@@ -3591,75 +3591,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .catch(() => []);
     }
 
-    // Cargar productos.json directamente — no hace falta ningún paso
-    // previo de comprobación de versión (eso era específico de la
-    // caché de GitHub Pages, que ya no se usa aquí).
-    // Optimización: cargar productos principales primero y mostrarlos,
-    // luego cargar productos adicionales en segundo plano para mejorar percepción de velocidad.
-    fetch(PRODUCTOS_URL, { cache: 'default' })
-        .then(r => r.ok ? r.text() : null)
-        .then(async texto => {
-            if (!texto) throw new Error('respuesta vacía');
-            hashConocido = await calcularHash(texto);
-            const data = JSON.parse(texto);
-            
-            // Cargar productos principales primero (del Sheet)
-            TODOS = data.productos || [];
-            FAMILIAS_ORDEN = data.familias_orden || {};
-            SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
-            construirIndiceSugerencias();
-            inicializarFiltros();
-            aplicarFiltros();
-            $('cargando-inicial').style.display = 'none';
-            $('contenedor-resultados').style.display = '';
-            productosCargados = true; // Activar ocultar cabecera solo cuando hay productos cargados
-            iniciarComprobacionActualizaciones();
-            aplicarFiltrosDesdeURL();
-            abrirProductoDesdeURL();
-            
-            // Cargar productos adicionales en segundo plano (talleres, Glasurit, Besa, Baslac)
-            Promise.all([
-                cargarProductosTalleres(),
-                cargarProductosGlasurit(),
-                cargarProductosBesa(),
-                cargarProductosBaslac(),
-            ]).then(([productosTalleres, productosGlasurit, productosBesa, productosBaslac]) => {
-                // Añadir productos adicionales y actualizar filtros
-                TODOS = [...TODOS, ...productosTalleres, ...productosGlasurit, ...productosBesa, ...productosBaslac];
-                construirIndiceSugerencias();
-                aplicarFiltros(); // Actualizar resultados con los nuevos productos
-            }).catch(err => {
-                console.warn('Error al cargar productos adicionales:', err);
-                // No mostramos error al usuario ya que los productos principales ya funcionan
-            });
-        })
-        .catch(err => {
-            console.error(err);
-            $('cargando-inicial').innerHTML =
-                '<i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo cargar el catálogo de productos. Inténtalo de nuevo más tarde.</p>';
-        });
-
-    // ══════════════════════════════════════════════
-    // ── Detección de productos.json actualizado en el servidor ──
-    // Con Apps Script sirviendo directamente desde una caché en Drive,
-    // ya no hay una cabecera de versión (ETag/Last-Modified) barata que
-    // comprobar primero como se hacía con GitHub Pages — cada respuesta
-    // de Apps Script se genera en el momento, no es un archivo estático
-    // con esa metadata HTTP. Se compara directamente el hash del
-    // contenido completo (SHA-256, vía la Web Crypto API nativa del
-    // navegador — sin librerías) cada vez. El intervalo se ha alargado
-    // (antes 1 minuto) para no generar tráfico innecesario contra la
-    // cuota de ejecuciones de Apps Script si hay varias personas con el
-    // buscador abierto a la vez — la necesidad más urgente (ver tu
-    // PROPIA actualización reflejada) ya está cubierta al instante por
-    // el propio flujo de actualización; esto es solo para avisar de
-    // cambios hechos por OTRAS personas mientras tienes la página abierta.
-    // ══════════════════════════════════════════════
-    const INTERVALO_COMPROBACION_MS = 5 * 60 * 1000; // cada 5 minutos
-    let hashConocido = null;    // hash SHA-256 del contenido actualmente cargado
-    let hashPendiente = null;   // hash del contenido nuevo detectado, aún no cargado
-    let avisoDescartado = false;
-    let comprobandoActualizacion = false;
+    // ── Caché local instantánea (localStorage) ──────────────────────────
+    // ── Caché local instantánea (localStorage) ──────────────────────────
+    // hashConocido: hash SHA-256 del contenido actualmente cargado en
+    // TODOS. Declarado aquí (antes usado más abajo, dentro de un .then()
+    // que solo se ejecutaba en un tick posterior) porque ahora
+    // cargarProductosPrincipales() lo usa de forma síncrona nada más
+    // llamarla, antes de cualquier await.
+    let hashConocido = null;
 
     // SHA-256 del texto dado, en hexadecimal. Usa SubtleCrypto (nativo del
     // navegador, disponible en todo contexto https/localhost) — no hace
@@ -3669,6 +3608,163 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return [...new Uint8Array(buffer)].map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    // La caché EN VIVO de Apps Script (PRODUCTOS_REMOTO_URL) es la única
+    // fuente que refleja al instante cualquier cambio de imagen/validación/
+    // baja — tanto los propios como los de cualquier otra persona usando
+    // el buscador — porque se actualiza de forma síncrona en el propio
+    // procesarActualizarImagen()/etc. del lado de Apps Script.
+    //
+    // El primer pintado sigue saliendo del JSON estático del despliegue
+    // (PRODUCTOS_URL), que es lo que ya hacía sentir la carga
+    // "instantánea" gracias a la caché HTTP normal del navegador — un
+    // archivo de ~5-6 MB no cabe de forma fiable en localStorage (la
+    // cuota típica de un navegador es ~5 MB por origen y ya se agota solo
+    // con esto), así que NO se intenta cachear el catálogo completo ahí.
+    // En su lugar, justo después de ese primer pintado se relee la
+    // caché en vivo de Apps Script y se RECONCILIA producto a producto
+    // (no se sustituye el array entero, para no perder scroll/filtros/
+    // paginación) — así cualquier imagen ya actualizada por alguien se ve
+    // corregida en segundo o dos, sin depender de que este JSON estático
+    // se haya regenerado y desplegado en GitHub Pages.
+    function poblarDesdeTexto(texto) {
+        const data = JSON.parse(texto);
+        TODOS = data.productos || [];
+        FAMILIAS_ORDEN = data.familias_orden || {};
+        SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
+        construirIndiceSugerencias();
+    }
+
+    // Reconcilia el texto JSON dado (de la fuente en vivo) con lo que ya
+    // está en memoria, parcheando cada producto YA CARGADO por
+    // referencia (Object.assign sobre el mismo objeto, no se sustituye
+    // el array) para que cualquier tarjeta ya pintada, el modal abierto,
+    // etc. recojan el cambio sin perder el resto del estado de la página.
+    function reconciliarConTextoEnVivo(texto) {
+        const data = JSON.parse(texto);
+        const porRef = new Map((data.productos || []).map(p => [p.ref, p]));
+        TODOS.forEach(p => {
+            const actualizado = porRef.get(p.ref);
+            if (actualizado) {
+                Object.assign(p, actualizado);
+                // El dato real ya está al día: la vista previa local
+                // (base64 del propio archivo recién subido) ya no hace falta.
+                delete p._imgLocalOverride;
+            }
+        });
+        if (data.familias_orden) FAMILIAS_ORDEN = data.familias_orden;
+        if (data.subfamilias_orden) SUBFAMILIAS_ORDEN = data.subfamilias_orden;
+        if (productoActual) {
+            const actual = porRef.get(productoActual.ref);
+            if (actual) Object.assign(productoActual, actual);
+        }
+    }
+
+    function mostrarResultadosPorPrimeraVez() {
+        inicializarFiltros();
+        aplicarFiltros();
+        $('cargando-inicial').style.display = 'none';
+        $('contenedor-resultados').style.display = '';
+        productosCargados = true; // Activar ocultar cabecera solo cuando hay productos cargados
+        iniciarComprobacionActualizaciones();
+        aplicarFiltrosDesdeURL();
+        abrirProductoDesdeURL();
+    }
+
+    function cargarProductosAdicionalesEnSegundoPlano() {
+        // Cargar productos adicionales en segundo plano (talleres, Glasurit, Besa, Baslac)
+        Promise.all([
+            cargarProductosTalleres(),
+            cargarProductosGlasurit(),
+            cargarProductosBesa(),
+            cargarProductosBaslac(),
+        ]).then(([productosTalleres, productosGlasurit, productosBesa, productosBaslac]) => {
+            // Añadir productos adicionales y actualizar filtros
+            TODOS = [...TODOS, ...productosTalleres, ...productosGlasurit, ...productosBesa, ...productosBaslac];
+            construirIndiceSugerencias();
+            aplicarFiltros(); // Actualizar resultados con los nuevos productos
+        }).catch(err => {
+            console.warn('Error al cargar productos adicionales:', err);
+            // No mostramos error al usuario ya que los productos principales ya funcionan
+        });
+    }
+
+    async function cargarProductosPrincipales() {
+        let primerPintadoHecho = false;
+
+        // 1) Pintado instantáneo desde el JSON estático del despliegue
+        //    (rápido gracias a la caché HTTP normal del navegador).
+        try {
+            const r = await fetch(PRODUCTOS_URL, { cache: 'default' });
+            if (r.ok) {
+                const texto = await r.text();
+                hashConocido = await calcularHash(texto);
+                poblarDesdeTexto(texto);
+                mostrarResultadosPorPrimeraVez();
+                primerPintadoHecho = true;
+            }
+        } catch (e) {
+            console.warn('No se pudo cargar el JSON estático de productos:', e);
+        }
+
+        // 2) Reconciliar de inmediato con la fuente EN VIVO de Apps
+        //    Script — así una imagen actualizada por cualquier persona
+        //    (incluida la propia, tras recargar la página) se corrige a
+        //    los pocos segundos de cargar, sin esperar a ningún
+        //    despliegue. Si el primer pintado ha fallado, esta pasa a
+        //    ser directamente la fuente principal.
+        try {
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
+            if (resp.ok) {
+                const texto = await resp.text();
+                const hash = await calcularHash(texto);
+                if (hash !== hashConocido || !primerPintadoHecho) {
+                    hashConocido = hash;
+                    if (primerPintadoHecho) {
+                        reconciliarConTextoEnVivo(texto);
+                        aplicarFiltros();
+                    } else {
+                        poblarDesdeTexto(texto);
+                        mostrarResultadosPorPrimeraVez();
+                        primerPintadoHecho = true;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('No se pudo cargar la fuente en vivo de Apps Script:', e);
+        }
+
+        if (!primerPintadoHecho) {
+            $('cargando-inicial').innerHTML =
+                '<i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo cargar el catálogo de productos. Inténtalo de nuevo más tarde.</p>';
+            return;
+        }
+        cargarProductosAdicionalesEnSegundoPlano();
+    }
+
+    cargarProductosPrincipales();
+
+    // ══════════════════════════════════════════════
+    // ── Detección de productos.json actualizado en el servidor ──
+    // Con Apps Script sirviendo directamente desde una caché en Drive,
+    // ya no hay una cabecera de versión (ETag/Last-Modified) barata que
+    // comprobar primero como se hacía con GitHub Pages — cada respuesta
+    // de Apps Script se genera en el momento, no es un archivo estático
+    // con esa metadata HTTP. Se compara directamente el hash del
+    // contenido completo (SHA-256, vía la Web Crypto API nativa del
+
+    // navegador — sin librerías) cada vez. El intervalo se ha alargado
+    // (antes 1 minuto) para no generar tráfico innecesario contra la
+    // cuota de ejecuciones de Apps Script si hay varias personas con el
+    // buscador abierto a la vez — la necesidad más urgente (ver tu
+    // PROPIA actualización reflejada) ya está cubierta al instante por
+    // el propio flujo de actualización; esto es solo para avisar de
+    // cambios hechos por OTRAS personas mientras tienes la página abierta.
+    // ══════════════════════════════════════════════
+    const INTERVALO_COMPROBACION_MS = 5 * 60 * 1000; // cada 5 minutos
+    let hashPendiente = null;   // hash del contenido nuevo detectado, aún no cargado
+    let avisoDescartado = false;
+    let comprobandoActualizacion = false;
+
     // Tras una acción instantánea propia (validar, dar de baja, reactivar)
     // el contenido del servidor cambia YA, aunque esta misma pestaña no
     // necesite recargar nada (el cambio ya se refleja localmente al
@@ -3677,12 +3773,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // sobre uno mismo. Se vuelve a pedir el contenido real y se
     // actualiza hashConocido con él, para que el próximo sondeo ya no
     // lo confunda con un cambio externo.
+    // Tras una acción instantánea propia (actualizar imagen, validar, dar
+    // de baja, reactivar, relacionados…) el contenido de la caché de Apps
+    // Script ya está actualizado en el momento en que esta función se
+    // llama (procesarActualizarImagen etc. escriben en esa caché de forma
+    // síncrona antes de responder). Se relee esa fuente en vivo y se
+    // RECONCILIA con TODOS (mismo mecanismo que la reconciliación
+    // periódica, ver reconciliarConTextoEnVivo) — así, si el usuario
+    // recarga la página justo después de subir una foto, la siguiente
+    // carga ya arranca sabiendo que hay una versión más reciente que la
+    // del JSON estático (hashConocido ya no coincide) y la reconcilia de
+    // inmediato en el paso 2 de cargarProductosPrincipales().
     async function resincronizarVersionConocida() {
         try {
             const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
             if (!resp.ok) return;
             const texto = await resp.text();
             hashConocido = await calcularHash(texto);
+            reconciliarConTextoEnVivo(texto);
         } catch (e) {
             // Si falla, no pasa nada: el próximo sondeo periódico lo comprobará igual
         }
