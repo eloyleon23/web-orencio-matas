@@ -52,6 +52,12 @@
     const relacionadas = (sol.relatedSolutions || []).map((s) => D.soluciones[s]).filter(Boolean);
 
     cont.innerHTML = `
+      <!-- Cabecera del informe (solo visible al imprimir) -->
+      <div class="cs-pdf-header">
+        <img src="../assets/logos/logo-orencio.png" alt="Orencio Matas" class="cs-pdf-header__logo" onerror="this.style.display='none'">
+        <div class="cs-pdf-header__title">Centro de Soluciones</div>
+      </div>
+
       <!-- Breadcrumb -->
       <div class="container cs-breadcrumb no-imprimir">
         <a href="../centro-soluciones.html">Centro de Soluciones</a>
@@ -248,6 +254,19 @@
           <a class="btn-secondary" href="../centro-soluciones.html">← Volver al Centro de Soluciones</a>
         </div>
       </section>
+
+      <!-- Pie del informe (solo visible al imprimir) -->
+      <div class="cs-pdf-footer">
+        <div class="cs-pdf-footer__line">
+          <strong>Orencio Matas y Hermanos, S.L.</strong>
+        </div>
+        <div class="cs-pdf-footer__line">
+          Calle Alfred Nobel, 2 - 13005 Ciudad Real
+        </div>
+        <div class="cs-pdf-footer__line cs-pdf-footer__horario">
+          Lunes a Viernes: 9:00 - 14:00 y 16:30 - 19:30 · Sábados: 9:00 - 14:00 · Domingos: Cerrado
+        </div>
+      </div>
     `;
 
     renderProductosRecomendados(sol);

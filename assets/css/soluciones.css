@@ -316,6 +316,9 @@
 .cs-badge-dificultad--media  { background: rgba(241, 179, 0, 0.16); color: color-mix(in srgb, var(--primary-yellow) 78%, #7a5200); }
 .cs-badge-dificultad--dificil{ background: rgba(217, 27, 27, 0.12); color: var(--primary-red); }
 
+/* ── Cabecera y pie del informe PDF ─────────────────────────────────────── */
+.cs-pdf-header, .cs-pdf-footer { display: none; }
+
 /* ── Exportar como PDF (vía "Imprimir" del navegador) ─────────────────── */
 @media print {
   /* Fuerza que se impriman los fondos de color (consejo/errores/etc.) —
@@ -328,6 +331,38 @@
   }
 
   body { background: #fff; }
+
+  .cs-pdf-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--primary-red, #d91b1b);
+    padding-bottom: 16px;
+    margin: 0 20px 20px;
+  }
+  .cs-pdf-header__logo { height: 42px; width: auto; object-fit: contain; }
+  .cs-pdf-header__title {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cs-pdf-footer {
+    display: block !important;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 16px;
+    margin: 24px 20px 0;
+    text-align: center;
+    color: var(--text-gray);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .cs-pdf-footer__line { margin-bottom: 4px; }
+  .cs-pdf-footer__horario { color: var(--text-dark); font-weight: 500; }
+
   .cs-section, .cs-section--alt { padding: 14px 0; }
   .cs-productos-grid, .cs-materiales, .cs-alternativas { grid-template-columns: repeat(2, 1fr) !important; }
   .cs-producto-card, .cs-timeline__paso, .cs-tip, .cs-mistakes {
