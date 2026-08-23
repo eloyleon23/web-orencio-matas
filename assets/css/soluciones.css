@@ -305,16 +305,23 @@
   font-weight: 700;
 }
 .cs-badge-dificultad {
-  padding: 3px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 4px 12px;
   border-radius: 999px;
   font-weight: 800;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid transparent;
 }
-.cs-badge-dificultad--facil  { background: rgba(0, 135, 67, 0.12); color: var(--primary-green); }
-.cs-badge-dificultad--media  { background: rgba(241, 179, 0, 0.16); color: color-mix(in srgb, var(--primary-yellow) 78%, #7a5200); }
-.cs-badge-dificultad--dificil{ background: rgba(217, 27, 27, 0.12); color: var(--primary-red); }
+.cs-badge-dificultad--facil  { background: rgba(0, 135, 67, 0.12); color: #00753a; border-color: rgba(0, 135, 67, 0.25); }
+.cs-badge-dificultad--media  { background: rgba(241, 179, 0, 0.14); color: #946800; border-color: rgba(241, 179, 0, 0.35); }
+.cs-badge-dificultad--dificil{ background: rgba(217, 27, 27, 0.10); color: #b91c1c; border-color: rgba(217, 27, 27, 0.25); }
 
 /* ── Cabecera y pie del informe PDF ─────────────────────────────────────── */
 .cs-pdf-header, .cs-pdf-footer { display: none; }
