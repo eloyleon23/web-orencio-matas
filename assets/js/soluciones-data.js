@@ -123,6 +123,11 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'proteger_estructura_metalica', label: 'Necesito proteger una estructura metálica de la corrosión', solutionSlug: 'proteger-estructura-metalica-corrosion' },
     { id: 'proteger_fuego_estructura', label: 'Necesito proteger una estructura de acero contra el fuego', solutionSlug: 'proteger-estructura-acero-fuego' },
     { id: 'lacar_mueble_profesional', label: 'Quiero lacar un mueble a nivel profesional', solutionSlug: 'lacado-profesional-muebles' },
+    { id: 'fachada_piedra_absorbe_agua', label: 'La fachada de piedra o ladrillo absorbe mucha agua', solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
+    { id: 'grietas_fachada',       label: 'Tengo grietas o fisuras en la fachada',        solutionSlug: 'reparar-fisuras-fachada-hormigon' },
+    { id: 'salitre_fachada',       label: 'Tengo manchas blancas de salitre en la fachada', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
+    { id: 'pintar_verja_hierro',   label: 'Quiero pintar una verja o barandilla de hierro', solutionSlug: 'pintar-reja-verja-hierro' },
+    { id: 'pintar_pladur',         label: 'Quiero pintar placas de pladur nuevas',          solutionSlug: 'pintar-placas-pladur-yeso-laminado' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -170,6 +175,10 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Impermeabilizar una terraza',           solutionSlug: 'impermeabilizar-terraza-goteras' },
         { title: 'Elegir la pistola de pintar',           solutionSlug: 'elegir-pistola-pintar' },
         { title: 'Elegir la lijadora adecuada',           solutionSlug: 'elegir-lijadora-superficie' },
+        { title: 'Hidrofugar una fachada de piedra',       solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
+        { title: 'Reparar grietas en una fachada',         solutionSlug: 'reparar-fisuras-fachada-hormigon' },
+        { title: 'Tratar salitre o humedad por capilaridad', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
+        { title: 'Pintar placas de pladur nuevas',          solutionSlug: 'pintar-placas-pladur-yeso-laminado' },
       ],
     },
     {
@@ -202,6 +211,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Proteger metal',                       solutionSlug: 'eliminar-oxido-metal' },
         { title: 'Proteger una nave industrial frente a la corrosión', solutionSlug: 'proteger-estructura-metalica-corrosion' },
         { title: 'Proteger una estructura contra el fuego', solutionSlug: 'proteger-estructura-acero-fuego' },
+        { title: 'Pintar una verja o barandilla',           solutionSlug: 'pintar-reja-verja-hierro' },
       ],
     },
     {
@@ -2500,6 +2510,274 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para aplicar un sistema profesional de fondo y laca de poliuretano sobre mueble o madera, con pistola.',
       },
     },
+
+    'hidrofugar-fachada-piedra-ladrillo': {
+      slug: 'hidrofugar-fachada-piedra-ladrillo',
+      title: 'Cómo hidrofugar una fachada de piedra o ladrillo visto',
+      description: 'Aplica un hidrofugante invisible sobre piedra, ladrillo visto o mortero para evitar que absorban agua de lluvia, sin alterar su aspecto ni impedir que transpiren.',
+      category: 'pintura', subcategory: 'Fachadas',
+      problem: 'fachada_piedra_absorbe_agua',
+      objective: 'proteger',
+      surface: 'pared',
+      difficulty: 'Fácil',
+      estimatedTime: '1 día de aplicación (repintar, si procede, a partir de 7 días)',
+      result: 'Fachada de piedra, ladrillo o mortero protegida frente a la lluvia, sin película visible ni pérdida de transpirabilidad',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza exterior', items: ['Limpieza a presión eliminando polvo y suciedad'] },
+        { fase: 'Protección',  familiaSugerida: 'Hidrofugantes',      items: ['Hidrofugante invisible al agua'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',    emoji: '🧴' },
+        { fase: 'Aplicar',    emoji: '💧' },
+        { fase: 'Saturar',    emoji: '🔁' },
+        { fase: 'Esperar',    emoji: '⏳' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpiar la fachada', text: 'Elimina polvo, suciedad y restos sueltos de la superficie de piedra, ladrillo visto o mortero. El hidrofugante penetra por los poros del material, así que cualquier suciedad superficial reduce su eficacia.', productos: ['Limpieza a presión eliminando polvo y suciedad'] },
+        { n: 2, title: 'Aplicar a saturación', text: 'Aplica el hidrofugante a brocha, rodillo o pulverizador sin diluir, trabajando de abajo hacia arriba para evitar que chorree sobre zonas ya tratadas. El producto no forma película ni altera el aspecto natural del soporte.', productos: ['Hidrofugante invisible al agua'] },
+        { n: 3, title: 'Dar una segunda mano si el soporte es muy absorbente', text: 'En piedra o ladrillo muy poroso, una segunda mano aplicada "húmedo sobre húmedo" mejora la penetración y la protección final.', productos: [] },
+        { n: 4, title: 'Respetar el tiempo de espera antes de pintar', text: 'Si además quieres pintar sobre la fachada, espera al menos 7 días desde la aplicación del hidrofugante antes de aplicar cualquier pintura, y haz siempre una prueba previa en una zona poco visible.', productos: [] },
+      ],
+      professionalTips: [
+        'El hidrofugante no sustituye a una reparación de grietas o fisuras — si la fachada tiene fisuras, trátalas antes con un revestimiento antifisuras, porque el agua seguiría entrando por ahí aunque el resto de la superficie esté bien protegida.',
+      ],
+      commonMistakes: [
+        'Aplicarlo sobre suciedad o musgo sin limpiar antes.',
+        'Diluir el producto pensando que rinde igual: el hidrofugante se aplica puro.',
+        'Pintar encima antes de que hayan pasado los días de espera indicados.',
+        'Usarlo esperando que además selle grietas: solo protege frente a la absorción de agua, no repara fisuras.',
+      ],
+      recommendedProducts: [
+        { nombre: 'HIDROFUGANTE INVISIBLE AGUA S-40 4 L.INCOLORO', categoria: 'Pinturas', formato: '4 L', precio: '42,54 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Fachadas grandes', nombre: 'HIDROFUGANTE INVISIBLE AGUA S-40 15 L.INCOLORO', precio: '110,12 €' },
+        { etiqueta: 'Si además hay que fijar el soporte antes', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.', precio: '28,85 €' },
+      ],
+      relatedSolutions: ['tratar-fachada-humedad-capilaridad', 'reparar-fisuras-fachada-hormigon', 'pintar-fachada-exterior'],
+      seo: {
+        title: 'Cómo hidrofugar una fachada de piedra o ladrillo | Orencio Matas',
+        description: 'Guía para aplicar un hidrofugante invisible sobre piedra, ladrillo visto o mortero, protegiendo la fachada de la lluvia sin alterar su aspecto.',
+      },
+    },
+
+    'reparar-fisuras-fachada-hormigon': {
+      slug: 'reparar-fisuras-fachada-hormigon',
+      title: 'Cómo reparar y sellar fisuras en una fachada de hormigón o mortero',
+      description: 'Sella fisuras y grietas de hasta 2 mm en fachadas de hormigón, mortero monocapa o revoco tradicional con un revestimiento elástico antifisuras, evitando que vuelvan a abrirse ni entre agua por ellas.',
+      category: 'pintura', subcategory: 'Fachadas',
+      problem: 'grietas_fachada',
+      objective: 'reparar',
+      surface: 'pared',
+      difficulty: 'Media',
+      estimatedTime: '1-2 días (imprimación + 2 manos de acabado con secado entre capas)',
+      result: 'Fachada con las fisuras selladas mediante un revestimiento elástico que acompaña el movimiento del muro sin volver a agrietarse',
+      colorChart: { label: 'Carta de colores Titanpro para fachadas (TF2)', url: 'https://www.titanpro.es/es/colores', logo: '../assets/proveedores/LOGO-TITANPRO.png' },
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza exterior',   items: ['Limpieza de la fachada eliminando polvo y suciedad'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones fachada', items: ['Imprimación fijadora super-penetrante'] },
+        { fase: 'Acabado',     familiaSugerida: 'Revestimientos fachada', items: ['Revestimiento elástico antifisuras'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',  emoji: '🧴' },
+        { fase: 'Imprimar', emoji: '🔧' },
+        { fase: 'Sellar',   emoji: '🩹' },
+        { fase: 'Acabar',   emoji: '🏠' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpiar la superficie', text: 'Elimina polvo, suciedad y restos de pintura suelta o mal adherida de la zona fisurada y de su entorno.', productos: ['Limpieza de la fachada eliminando polvo y suciedad'] },
+        { n: 2, title: 'Aplicar la imprimación fijadora', text: 'Aplica una imprimación super-penetrante para sellar el soporte poroso y mejorar la adherencia del revestimiento — es especialmente importante en morteros pulverulentos o poco cohesionados.', productos: ['Imprimación fijadora super-penetrante'] },
+        { n: 3, title: 'Aplicar el revestimiento antifisuras', text: 'Aplica el revestimiento elástico antifisuras en dos manos, dejando secar entre ellas. Este producto acompaña el movimiento de fisuras de hasta 2 mm sin perder su capacidad de sellado, algo que una pintura convencional no puede hacer.', productos: ['Revestimiento elástico antifisuras'] },
+        { n: 4, title: 'Revisar puntos críticos', text: 'Presta atención extra a encuentros entre materiales distintos (por ejemplo, mortero con hormigón), ya que suelen ser las zonas donde antes reaparecen las fisuras si no quedan bien cubiertas.', productos: [] },
+      ],
+      professionalTips: [
+        'Una fisura no tratada seguirá siendo un punto de entrada de agua aunque el resto de la fachada quede perfecta — no merece la pena pintar por encima sin haberla sellado antes con un producto realmente elástico.',
+      ],
+      commonMistakes: [
+        'Tapar una fisura con una pintura normal, sin capacidad de elongación, que se vuelve a abrir con el primer movimiento del muro.',
+        'Saltarse la imprimación fijadora en soportes muy porosos o pulverulentos.',
+        'Aplicar una sola mano de revestimiento antifisuras en vez de las dos recomendadas.',
+        'No revisar los encuentros entre materiales de distinta naturaleza, donde suelen reaparecer las fisuras.',
+      ],
+      recommendedProducts: [
+        { nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.', categoria: 'Pinturas', formato: '4 L', precio: '30,77 €' },
+        { nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BLANCO MATE', categoria: 'Pinturas', formato: '15 L', precio: '96,85 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Para teñir con Titancolor', nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BASE NEUTRA', precio: '74,49 €' },
+        { etiqueta: 'Imprimación en formato grande', nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 10 L.', precio: '69,89 €' },
+      ],
+      relatedSolutions: ['hidrofugar-fachada-piedra-ladrillo', 'tratar-fachada-humedad-capilaridad', 'pintar-fachada-exterior'],
+      seo: {
+        title: 'Cómo reparar y sellar fisuras en una fachada de hormigón | Orencio Matas',
+        description: 'Guía para sellar fisuras de hasta 2 mm en fachadas de hormigón o mortero con un revestimiento elástico antifisuras.',
+      },
+    },
+
+    'tratar-fachada-humedad-capilaridad': {
+      slug: 'tratar-fachada-humedad-capilaridad',
+      title: 'Cómo tratar una fachada con humedad por capilaridad o salitre',
+      description: 'Protege una fachada afectada por manchas blancas de salitre o humedad por capilaridad con un sistema transpirable al siloxano, que deja evacuar la humedad interior a la vez que repele el agua de lluvia.',
+      category: 'pintura', subcategory: 'Fachadas',
+      problem: 'salitre_fachada',
+      objective: 'proteger',
+      surface: 'pared',
+      difficulty: 'Media',
+      estimatedTime: '1-2 días (imprimación + acabado, con secado entre capas)',
+      result: 'Fachada protegida con un sistema al siloxano que repele la lluvia sin bloquear la evacuación de humedad interior, evitando que reaparezcan las manchas de salitre',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza exterior',     items: ['Limpieza y cepillado de cristales de sal y suciedad'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones fachada', items: ['Imprimación fijadora al siloxano'] },
+        { fase: 'Acabado',     familiaSugerida: 'Revestimientos fachada', items: ['Revestimiento transpirable de siloxano'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',   emoji: '🧴' },
+        { fase: 'Cepillar',  emoji: '🧹' },
+        { fase: 'Imprimar',  emoji: '🔧' },
+        { fase: 'Proteger',  emoji: '🛡️' },
+      ],
+      steps: [
+        { n: 1, title: 'Cepillar los cristales de sal', text: 'Elimina con cepillado en seco los cristales de sal (eflorescencias) visibles en la superficie. El efecto puede reaparecer tras la limpieza si la humedad de origen sigue activa, así que no te preocupes si vuelven a aparecer antes de tratar la fachada.', productos: ['Limpieza y cepillado de cristales de sal y suciedad'] },
+        { n: 2, title: 'Aplicar la imprimación al siloxano', text: 'Aplica la imprimación fijadora al siloxano, pensada específicamente para preceder a un acabado transpirable de siloxano y mejorar su adherencia y penetración.', productos: ['Imprimación fijadora al siloxano'] },
+        { n: 3, title: 'Aplicar el revestimiento transpirable', text: 'Aplica el revestimiento de siloxano en las manos indicadas. Este sistema deja "respirar" al muro, facilitando la evacuación del vapor de agua desde el interior, a la vez que repele el agua de lluvia desde el exterior — la combinación clave para frenar la humedad por capilaridad sin generar embolsamientos.', productos: ['Revestimiento transpirable de siloxano'] },
+        { n: 4, title: 'Vigilar el origen de la humedad', text: 'Si la humedad viene del terreno por capilaridad ascendente, este sistema protege el acabado, pero no sustituye a una solución estructural (por ejemplo, una barrera química) si el problema es severo o reaparece con fuerza.', productos: [] },
+      ],
+      professionalTips: [
+        'Un sistema al siloxano es la elección más adecuada precisamente cuando el problema es de humedad interior que necesita salir (capilaridad, salitre) — un revestimiento poco transpirable en este caso puede provocar embolsamientos y desprendimientos en vez de solucionar el problema.',
+      ],
+      commonMistakes: [
+        'Usar un revestimiento poco transpirable sobre una fachada con humedad por capilaridad, provocando embolsamientos.',
+        'No cepillar los cristales de sal antes de aplicar el sistema.',
+        'Esperar que el tratamiento de fachada resuelva un problema de humedad ascendente del terreno sin abordar su origen.',
+        'Saltarse la imprimación específica de siloxano, reduciendo la adherencia del acabado.',
+      ],
+      recommendedProducts: [
+        { nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.', categoria: 'Pinturas', formato: '4 L', precio: '28,85 €' },
+        { nombre: 'REVEST.TRANSP.SILOXANO R-60 15 L.BLANCO MATE', categoria: 'Pinturas', formato: '15 L', precio: '118,13 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Imprimación en formato grande', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 10 L.INCOLORO', precio: '65,51 €' },
+        { etiqueta: 'Imprimación blanca', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.BLANCO', precio: '30,06 €' },
+      ],
+      relatedSolutions: ['hidrofugar-fachada-piedra-ladrillo', 'reparar-fisuras-fachada-hormigon', 'impermeabilizar-terraza-goteras'],
+      seo: {
+        title: 'Cómo tratar una fachada con humedad por capilaridad o salitre | Orencio Matas',
+        description: 'Guía para proteger una fachada con salitre o humedad por capilaridad con un sistema transpirable al siloxano.',
+      },
+    },
+
+    'pintar-reja-verja-hierro': {
+      slug: 'pintar-reja-verja-hierro',
+      title: 'Cómo pintar y proteger una verja, reja o barandilla de hierro',
+      description: 'Aplica un sistema profesional de imprimación antioxidante multiadherente y esmalte de poliuretano sobre una verja, reja o barandilla de hierro, con un acabado duradero frente a la oxidación.',
+      category: 'metal', subcategory: 'Pintura y protección de cerramientos metálicos',
+      problem: 'pintar_verja_hierro',
+      objective: 'pintar',
+      surface: 'metal',
+      difficulty: 'Media',
+      estimatedTime: '1-2 días (imprimación + 2 manos de esmalte, con secado entre capas)',
+      result: 'Verja, reja o barandilla protegida frente a la oxidación, con un acabado de poliuretano resistente a rayadas, impactos y manchas domésticas',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Metal', 'Pintura y protección de cerramientos metálicos'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes', items: ['Cepillado de óxido y desengrasado'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones anticorrosivas', items: ['Imprimación antioxidante multiadherente'] },
+        { fase: 'Acabado',     familiaSugerida: 'Esmaltes',                    items: ['Esmalte de poliuretano (brillante, satinado o mate)'] },
+      ],
+      receta: [
+        { fase: 'Preparar', emoji: '🧽' },
+        { fase: 'Imprimar', emoji: '🎨' },
+        { fase: 'Pintar',   emoji: '🖌️' },
+        { fase: 'Curar',    emoji: '✅' },
+      ],
+      steps: [
+        { n: 1, title: 'Preparar la superficie', text: 'Elimina el óxido suelto con cepillo de púas metálicas o lijado, y desengrasa bien toda la pieza — la imprimación multiadherente necesita una superficie limpia para agarrar correctamente.', productos: ['Cepillado de óxido y desengrasado'] },
+        { n: 2, title: 'Aplicar la imprimación antioxidante', text: 'Aplica dos capas de imprimación multiadherente sobre el hierro desnudo para una protección óptima frente a la oxidación. Esta imprimación está pensada para adherir bien tanto sobre metal como sobre otros soportes cercanos.', productos: ['Imprimación antioxidante multiadherente'] },
+        { n: 3, title: 'Aplicar el esmalte de acabado', text: 'Aplica el esmalte de poliuretano en el acabado elegido (brillante, satinado o mate) hasta un espesor mínimo recomendado de 80 micras en 2 capas, respetando el tiempo de secado entre manos.', productos: ['Esmalte de poliuretano (brillante, satinado o mate)'] },
+        { n: 4, title: 'Dejar curar antes de manipular', text: 'Evita apoyar objetos o manipular la pieza en las primeras horas tras la última mano — el esmalte necesita su tiempo de curado completo para alcanzar su máxima resistencia a rayadas e impactos.', productos: [] },
+      ],
+      professionalTips: [
+        'En una verja o barandilla ya oxidada, no basta con pintar por encima del óxido suelto — repasa bien con cepillo de púas antes de imprimar, porque cualquier resto de óxido mal adherido hará que la pintura nueva se desprenda antes de tiempo.',
+      ],
+      commonMistakes: [
+        'Pintar directamente sobre óxido suelto sin cepillar ni desengrasar antes.',
+        'Aplicar una sola capa de imprimación en vez de las dos recomendadas sobre hierro desnudo.',
+        'No respetar el espesor mínimo de esmalte en 2 capas, reduciendo la durabilidad del acabado.',
+        'Manipular la pieza antes de que el esmalte haya curado del todo.',
+      ],
+      recommendedProducts: [
+        { nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.BLANCA', categoria: 'Pinturas', formato: '4 L', precio: '50,83 €' },
+        { nombre: 'COLORLUX SATINADO C/POLIURET.4 L.NEGRO', categoria: 'Pinturas', formato: '4 L', precio: '48,34 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Acabado brillante', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.NEGRO', precio: '48,34 €' },
+        { etiqueta: 'Acabado mate', nombre: 'COLORLUX MATE C/POLIURETANO 4 L.NEGRO', precio: '48,34 €' },
+        { etiqueta: 'Imprimación en gris', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.GRIS', precio: '50,83 €' },
+        { etiqueta: 'Trabajos pequeños', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 750 GRIS', precio: '10,64 €' },
+      ],
+      relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-metalica-corrosion'],
+      seo: {
+        title: 'Cómo pintar y proteger una verja o barandilla de hierro | Orencio Matas',
+        description: 'Guía para aplicar un sistema profesional de imprimación antioxidante y esmalte de poliuretano sobre una verja, reja o barandilla de hierro.',
+      },
+    },
+
+    'pintar-placas-pladur-yeso-laminado': {
+      slug: 'pintar-placas-pladur-yeso-laminado',
+      title: 'Cómo pintar placas de pladur o yeso laminado nuevas',
+      description: 'Prepara y pinta placas de yeso laminado (pladur) recién instaladas o yeso proyectado, evitando las marcas de absorción irregular en las juntas emplastecidas.',
+      category: 'pintura', subcategory: 'Paredes y techos',
+      problem: 'pintar_pladur',
+      objective: 'pintar',
+      surface: 'pared',
+      difficulty: 'Fácil',
+      estimatedTime: '1 día (imprimación + 2 manos de acabado)',
+      result: 'Pared o techo de pladur o yeso proyectado pintado sin marcas de absorción irregular en las juntas, con acabado uniforme',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Paredes y techos'],
+      materials: [
+        { fase: 'Imprimación', familiaSugerida: 'Selladoras e imprimaciones', items: ['Pintura para placas multiyeso'] },
+        { fase: 'Acabado',     familiaSugerida: 'Pinturas para paredes',      items: ['Pintura vinílica o acrílica de acabado'] },
+      ],
+      receta: [
+        { fase: 'Revisar', emoji: '🔍' },
+        { fase: 'Imprimar',emoji: '🎨' },
+        { fase: 'Pintar',  emoji: '🖌️' },
+        { fase: 'Repasar', emoji: '✅' },
+      ],
+      steps: [
+        { n: 1, title: 'Revisar las juntas emplastecidas', text: 'El montaje de placas de yeso laminado con juntas emplastecidas provoca distintas absorciones entre la placa y la masilla de junta — si se pinta directamente, esas juntas suelen marcarse en el acabado final.', productos: [] },
+        { n: 2, title: 'Aplicar la pintura para placas multiyeso', text: 'Aplica esta pintura de imprimación y terminación pensada específicamente para placas de yeso laminado, paneles de fibra-yeso o cartón-yeso, y superficies de yeso proyectado. Iguala la absorción entre placa y juntas antes del acabado.', productos: ['Pintura para placas multiyeso'] },
+        { n: 3, title: 'Aplicar la pintura de acabado', text: 'Una vez seca la base, aplica dos manos de la pintura de acabado elegida (vinílica o acrílica), dejando secar entre manos según lo indicado en el envase.', productos: ['Pintura vinílica o acrílica de acabado'] },
+        { n: 4, title: 'Repasar bajo luz rasante', text: 'Antes de dar por terminado el trabajo, revisa la pared con una luz rasante (de lado) — así se detectan mejor posibles marcas de junta que con luz frontal.', productos: [] },
+      ],
+      professionalTips: [
+        'Saltarse la pintura específica para multiyeso es la causa más habitual de que, meses después de pintar un pladur nuevo, se empiecen a marcar las líneas de las juntas bajo ciertas luces — a esas alturas, ya no queda otra que volver a imprimar y repintar toda la superficie.',
+      ],
+      commonMistakes: [
+        'Pintar directamente el acabado final sobre pladur nuevo sin una base que iguale la absorción de las juntas.',
+        'No dejar secar completamente la base multiyeso antes de aplicar el acabado.',
+        'No revisar el resultado con luz rasante antes de dar el trabajo por terminado.',
+      ],
+      recommendedProducts: [
+        { nombre: 'TITAN-PRO S-60 PLACAS MULTIYESO 4 L.BL.MATE', categoria: 'Pinturas', formato: '4 L', precio: '24,79 €' },
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Formato grande', nombre: 'TITAN-PRO S-60 P.PLACAS MULTIYESO 15 L.BL.MATE', precio: '71,03 €' },
+        { etiqueta: 'Acabado de alta decoración', nombre: 'PINT.ACRILICA P-500 EXTRA PREMIUM 15 L.BLANCO MATE', precio: '69,67 €' },
+      ],
+      relatedSolutions: ['pintar-pared-interior'],
+      seo: {
+        title: 'Cómo pintar placas de pladur o yeso laminado nuevas | Orencio Matas',
+        description: 'Guía para preparar y pintar placas de pladur o yeso proyectado nuevas, evitando las marcas de absorción en las juntas.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -2651,6 +2929,15 @@ window.SOLUCIONES_DATA = (function () {
       'plantas_debiles':   ['planta', 'abono', 'maceta'],
       'polillas_ropa':     ['polilla', 'armario', 'guardarropa'],
       'goteras':           ['gotera', 'goteras', 'humedad', 'filtracion', 'filtración', 'terraza'],
+      // Términos específicos de fachada colocados ANTES de 'fachada_deteriorada'
+      // (que reacciona a la palabra genérica "fachada"), para que una consulta
+      // concreta apunte a la solución correcta en vez de caer siempre en la
+      // guía general de pintar fachada exterior.
+      'fachada_piedra_absorbe_agua': ['hidrofugar', 'piedra vista', 'ladrillo visto', 'impermeabilizar la piedra', 'fachada de piedra', 'absorbe agua', 'absorbe mucha agua'],
+      'grietas_fachada': ['grieta en la fachada', 'grietas en la fachada', 'fisura en la fachada', 'fisuras en la fachada', 'fachada agrietada'],
+      'salitre_fachada': ['salitre', 'eflorescencia', 'eflorescencias', 'manchas blancas en la fachada', 'capilaridad'],
+      'pintar_verja_hierro': ['verja', 'barandilla', 'reja de hierro'],
+      'pintar_pladur': ['pladur', 'placa de yeso laminado', 'placas de yeso laminado'],
       'fachada_deteriorada': ['fachada', 'exterior de la casa', 'exterior de casa'],
       'pintar_calor':     ['radiador', 'estufa', 'tubo de escape', 'anticalorico', 'anticalórico', 'que da calor', 'pintura resistente al calor'],
       'faros_opacos':     ['faro', 'faros', 'optica amarillenta', 'óptica amarillenta'],
