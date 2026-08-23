@@ -130,6 +130,8 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'pintar_pladur',         label: 'Quiero pintar placas de pladur nuevas',          solutionSlug: 'pintar-placas-pladur-yeso-laminado' },
     { id: 'pintar_directo_oxido',  label: 'Quiero pintar el óxido sin quitarlo ni imprimar', solutionSlug: 'pintar-metal-oxidado-directo-oxiron' },
     { id: 'acabado_forjado_metal', label: 'Quiero dar un acabado de forja o martelé a una verja', solutionSlug: 'dar-acabado-forjado-metal-jardin' },
+    { id: 'renovar_banera_sanitario', label: 'Quiero renovar la bañera o el lavabo sin cambiarlo', solutionSlug: 'renovar-banera-lavabo-sanitario' },
+    { id: 'pintar_radiador',       label: 'Quiero pintar un radiador de calefacción',       solutionSlug: 'pintar-radiador-calefaccion' },
   ];
 
   // ── Explora por áreas (secciones con ejemplos de trabajos) ─────────────
@@ -637,7 +639,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción rápida',      nombre: 'CEYS Sellaceys Cinta Selladora Hogar Blanco (sin pistola)', precio: '9,91 €' },
         { etiqueta: 'Trabajos pequeños',  nombre: 'Sellaceys Silicona Tubo 50 ml Blíster', precio: '2,48 €' },
       ],
-      relatedSolutions: ['control-plagas-cocina'],
+      relatedSolutions: ['control-plagas-cocina', 'renovar-banera-lavabo-sanitario', 'pintar-azulejos'],
       seo: {
         title: 'Cómo sellar una junta de baño o cocina | Orencio Matas',
         description: 'Guía para retirar la silicona vieja o con moho y sellar correctamente una junta de baño o cocina, paso a paso.',
@@ -1658,7 +1660,7 @@ window.SOLUCIONES_DATA = (function () {
     'pintar-metal-calor': {
       slug: 'pintar-metal-calor',
       title: 'Cómo pintar con pintura resistente al calor',
-      description: 'Pinta radiadores, estufas o tubos de escape con pintura anticalórica, la única que aguanta sin quemarse ni desprenderse con el calor.',
+      description: 'Pinta estufas, chimeneas o tubos de escape con pintura anticalórica, la única que aguanta sin quemarse ni desprenderse con el calor extremo. Para un radiador de calefacción normal, consulta la guía específica de radiadores.',
       category: 'metal', subcategory: 'Pintura resistente al calor',
       problem: 'pintar_calor',
       objective: 'pintar',
@@ -1678,13 +1680,13 @@ window.SOLUCIONES_DATA = (function () {
         { fase: 'Curar',            emoji: '🔥' },
       ],
       steps: [
-        { n: 1, title: 'Apagar y dejar enfriar por completo', text: 'Nunca pintes con el radiador, la estufa o el tubo todavía calientes — además del riesgo, la pintura no se aplica ni seca bien sobre una superficie caliente.', productos: [] },
+        { n: 1, title: 'Apagar y dejar enfriar por completo', text: 'Nunca pintes con la estufa, la chimenea o el tubo todavía calientes — además del riesgo, la pintura no se aplica ni seca bien sobre una superficie caliente.', productos: [] },
         { n: 2, title: 'Limpiar y lijar ligeramente', text: 'Desengrasa a fondo (hollín, grasa) y lija suavemente para que la pintura nueva agarre bien sobre el metal o la pintura vieja bien adherida.', productos: ['Desengrasante', 'Lija fina'] },
         { n: 3, title: 'Aplicar la pintura anticalórica', text: 'Usa siempre una pintura específica anticalórica — un esmalte normal se quema, amarillea o se desprende en cuanto la pieza vuelve a calentarse. Aplica en manos finas.', productos: ['Pintura o esmalte anticalórico'] },
         { n: 4, title: 'Curado con calor', text: 'Muchas pinturas anticalóricas necesitan un primer ciclo de calor suave (encender el radiador/estufa a baja potencia) para terminar de curar y fijar el acabado — consulta el envase para el proceso exacto.', productos: [] },
       ],
       professionalTips: [
-        'Cada pintura anticalórica tiene una temperatura máxima soportada (habitual: 300°C para radiadores/estufas domésticas, hasta 800°C para tubos de escape) — comprueba que el producto aguanta la temperatura real de la pieza antes de comprarlo.',
+        'Cada pintura anticalórica tiene una temperatura máxima soportada (habitual: 300°C para estufas domésticas, hasta 800°C para tubos de escape) — comprueba que el producto aguanta la temperatura real de la pieza antes de comprarlo. Para un radiador de agua normal no hace falta una pintura anticalórica: basta con un esmalte específico para radiadores.',
       ],
       commonMistakes: [
         'Usar un esmalte normal en vez de uno anticalórico específico.',
@@ -1693,15 +1695,14 @@ window.SOLUCIONES_DATA = (function () {
         'Elegir una pintura anticalórica con menos temperatura soportada de la que la pieza alcanza en uso real.',
       ],
       recommendedProducts: [
-        { nombre: 'Oxiron Anticalórico Negro',        categoria: 'Pinturas', formato: '750 ml', precio: '18,71 €' },
-        { nombre: 'Bruguer Esmalte Radiadores Blanco', categoria: 'Pinturas', formato: '750 ml', precio: '16,25 €' },
+        { nombre: 'OXIRON ANTICALORICO 750 ML.NEGRO', categoria: 'Pinturas', formato: '750 ml', precio: '18,71 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Tubos de escape (muy alta temperatura)', nombre: 'AK Spray Anticalórico 800º Negro', precio: '15,19 €' },
-        { etiqueta: 'Formato spray',                            nombre: 'Spray Titán Anticalórico 400 ml', precio: '10,62 €' },
-        { etiqueta: 'Acabado aluminio',                         nombre: 'Titán Aluminio Anticalórico 750 ml', precio: '17,40 €' },
+        { etiqueta: 'Tubos de escape (muy alta temperatura)', nombre: '.AK SPRAY ANTICALORICO 800º NEGRO 400 ML. 233099', precio: '15,19 €' },
+        { etiqueta: 'Formato spray',                            nombre: 'SPRAY TITAN ANTICALORICO 400 ML NEGRO (302)', precio: '10,62 €' },
+        { etiqueta: 'Acabado aluminio',                         nombre: 'TITAN ALUMINIO ANTICALORICO  750 ML', precio: '17,40 €' },
       ],
-      relatedSolutions: ['eliminar-oxido-metal'],
+      relatedSolutions: ['eliminar-oxido-metal', 'pintar-radiador-calefaccion'],
       seo: {
         title: 'Cómo pintar con pintura resistente al calor | Orencio Matas',
         description: 'Guía para pintar radiadores, estufas o tubos de escape con pintura anticalórica, paso a paso.',
@@ -1860,7 +1861,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Acabado satinado', nombre: 'Titán Esmalte Sat. Azulejos Baños y Cocinas', precio: '18,09 €' },
         { etiqueta: 'Reparar juntas',    nombre: 'Baixens B-24 Juntas de Azulejo Tubo 200 g Blanco', precio: '2,11 €' },
       ],
-      relatedSolutions: ['pintar-pared-interior'],
+      relatedSolutions: ['pintar-pared-interior', 'renovar-banera-lavabo-sanitario', 'sellar-juntas-bano'],
       seo: {
         title: 'Cómo pintar azulejos de baño o cocina | Orencio Matas',
         description: 'Guía para renovar el aspecto de unos azulejos antiguos con esmalte específico, sin necesidad de picarlos.',
@@ -2724,7 +2725,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Imprimación en gris', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.GRIS', precio: '50,83 €' },
         { etiqueta: 'Trabajos pequeños', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 750 GRIS', precio: '10,64 €' },
       ],
-      relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-metalica-corrosion'],
+      relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-metalica-corrosion', 'pintar-radiador-calefaccion'],
       seo: {
         title: 'Cómo pintar y proteger una verja o barandilla de hierro | Orencio Matas',
         description: 'Guía para aplicar un sistema profesional de imprimación antioxidante y esmalte de poliuretano sobre una verja, reja o barandilla de hierro.',
@@ -2888,6 +2889,116 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para elegir entre los acabados decorativos de forja, pavonado o martelé en una verja, farola o mueble metálico.',
       },
     },
+
+    'renovar-banera-lavabo-sanitario': {
+      slug: 'renovar-banera-lavabo-sanitario',
+      title: 'Cómo renovar una bañera, lavabo o sanitario sin cambiarlo',
+      description: 'Devuelve el aspecto de fábrica a una bañera, lavabo o sanitario desgastado con un esmalte de aspecto cerámico, sin obra ni necesidad de sustituir la pieza.',
+      category: 'pintura', subcategory: 'Bañeras y sanitarios',
+      problem: 'renovar_banera_sanitario',
+      objective: 'pintar',
+      surface: 'ceramica',
+      difficulty: 'Media',
+      estimatedTime: '2 días (imprimación + 2 manos, con secado entre capas) + 72 h antes de usar',
+      result: 'Bañera, lavabo o sanitario con un aspecto renovado tipo cerámica, sin necesidad de picar ni sustituir la pieza',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Bañeras y sanitarios'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes', items: ['Desengrasante y lija de grano fino'] },
+        { fase: 'Acabado',     familiaSugerida: 'Esmaltes',                  items: ['Esmalte de aspecto cerámico para bañeras y sanitarios'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',  emoji: '🧴' },
+        { fase: 'Lijar',    emoji: '🪚' },
+        { fase: 'Pintar',   emoji: '🎨' },
+        { fase: 'Esperar',  emoji: '⏳' },
+      ],
+      steps: [
+        { n: 1, title: 'Desengrasar a fondo', text: 'Limpia y desengrasa por completo la superficie a pintar, eliminando cualquier resto de cal, jabón o grasa — es el paso que más condiciona que el esmalte agarre bien.', productos: ['Desengrasante y lija de grano fino'] },
+        { n: 2, title: 'Matizar la superficie', text: 'Si la pieza es muy brillante (esmalte cerámico original, bañera de fundición o acrílico muy pulido), pasa lija de grano fino para que el esmalte nuevo tenga a qué agarrarse.', productos: ['Desengrasante y lija de grano fino'] },
+        { n: 3, title: 'Aplicar el esmalte de aspecto cerámico', text: 'Aplica el esmalte específico de aspecto cerámico con brocha o rodillo pequeño, en dos capas a intervalos de 24 horas.', productos: ['Esmalte de aspecto cerámico para bañeras y sanitarios'] },
+        { n: 4, title: 'Respetar el tiempo antes de usar', text: 'Deja curar el esmalte por completo antes de volver a usar la pieza — en el caso de una bañera, espera al menos 72 horas antes de llenarla de agua.', productos: [] },
+      ],
+      professionalTips: [
+        'No sirve cualquier esmalte de pared o de azulejo para una bañera o sanitario: necesitas uno formulado específicamente con aspecto cerámico, pensado para aguantar agua estancada y el roce diario sin perder brillo.',
+      ],
+      commonMistakes: [
+        'Pintar sin desengrasar y lijar antes la superficie brillante original.',
+        'Usar la bañera antes de que el esmalte haya curado del todo (mínimo 72 horas).',
+        'Aplicar una sola mano en vez de las dos recomendadas.',
+        'Confundir un esmalte de azulejo de pared con uno específico para bañeras y sanitarios.',
+      ],
+      recommendedProducts: [
+        { nombre: 'TITANLUX ASPECTO CERAMICO 750 ML.BLANCO', categoria: 'Pinturas', formato: '750 ml', precio: '33,89 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Tono marfil', nombre: 'TITANLUX ASPECTO CERAMICO 750 ML.MARFIL', precio: '28,04 €' },
+        { etiqueta: 'Tono visón', nombre: 'TITANLUX ASPECTO CERAMICO 750 ML.VISON', precio: '28,04 €' },
+        { etiqueta: 'Tono gris cinzento', nombre: 'TITANLUX ASPECTO CERAMICO 750 MLGRIS CINZENTO', precio: '28,04 €' },
+        { etiqueta: 'Formulación Sanitarios', nombre: 'TITANLUX ASPECTO CERAMICO SANT.750 ML.BLANCO', precio: '34,04 €' },
+      ],
+      relatedSolutions: ['pintar-azulejos', 'sellar-juntas-bano'],
+      seo: {
+        title: 'Cómo renovar una bañera, lavabo o sanitario sin cambiarlo | Orencio Matas',
+        description: 'Guía para dar un aspecto cerámico renovado a una bañera, lavabo o sanitario desgastado, sin obra ni sustitución de la pieza.',
+      },
+    },
+
+    'pintar-radiador-calefaccion': {
+      slug: 'pintar-radiador-calefaccion',
+      title: 'Cómo pintar un radiador de calefacción',
+      description: 'Renueva el color de un radiador de hierro con una imprimación antioxidante y un esmalte específico para radiadores, resistente al calor y sin desprender mal olor.',
+      category: 'metal', subcategory: 'Pintura de radiadores',
+      problem: 'pintar_radiador',
+      objective: 'pintar',
+      surface: 'metal',
+      difficulty: 'Fácil',
+      estimatedTime: '1-2 días (imprimación + 2 manos de esmalte, con secado entre capas)',
+      result: 'Radiador con un acabado renovado, resistente al calor de uso normal y sin desprender olor una vez seco',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Metal', 'Pintura de radiadores'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza / Desengrasantes', items: ['Cepillado de óxido y desengrasado con aguarrás'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones anticorrosivas', items: ['Minio sintético o imprimación antioxidante (solo si hay hierro visto u óxido)'] },
+        { fase: 'Acabado',     familiaSugerida: 'Esmaltes',                    items: ['Esmalte específico para radiadores'] },
+        { fase: 'Aplicación',  familiaSugerida: 'Brochas y útiles',            items: ['Paletina de codo especial para radiadores'] },
+      ],
+      receta: [
+        { fase: 'Preparar', emoji: '🧽' },
+        { fase: 'Imprimar', emoji: '🛡️' },
+        { fase: 'Pintar',   emoji: '🖌️' },
+        { fase: 'Ventilar', emoji: '💨' },
+      ],
+      steps: [
+        { n: 1, title: 'Eliminar suciedad y óxido', text: 'Frota toda la superficie con un cepillo de púas o tela de esmeril para eliminar suciedad y óxido, y quita el polvillo resultante con un trapo humedecido en aguarrás. Deja secar.', productos: ['Cepillado de óxido y desengrasado con aguarrás'] },
+        { n: 2, title: 'Imprimar si hay hierro visto', text: 'Si el radiador tiene zonas de hierro desnudo o puntos de óxido, aplica antes una capa de minio sintético o imprimación antioxidante y deja secar 24 horas. Sobre un radiador ya pintado y en buen estado, este paso no es necesario.', productos: ['Minio sintético o imprimación antioxidante (solo si hay hierro visto u óxido)'] },
+        { n: 3, title: 'Aplicar el esmalte con paletina de codo', text: 'Usa una brocha de codo especial para radiadores para llegar bien entre las láminas, y aplica dos capas del esmalte elegido a intervalos de 24 horas.', productos: ['Esmalte específico para radiadores', 'Paletina de codo especial para radiadores'] },
+        { n: 4, title: 'Pintar y encender en la época adecuada', text: 'Para evitar molestias de olor mientras se seca del todo, pinta los radiadores quitados de uso (primavera o verano) y no los enciendas hasta que el esmalte esté completamente curado.', productos: [] },
+      ],
+      professionalTips: [
+        'Si el radiador estaba pintado y la pintura vieja está bien adherida, sin desconchados, basta con desengrasar y lijar suavemente antes de pintar — no hace falta repetir la imprimación.',
+      ],
+      commonMistakes: [
+        'Pintar sobre óxido o suciedad sin cepillar y desengrasar antes.',
+        'Encender la calefacción antes de que el esmalte esté completamente seco, generando mal olor en toda la casa.',
+        'Usar un esmalte normal de pared en vez de uno específico para radiadores, formulado para resistir el calor de uso habitual.',
+        'Pintar en pleno invierno con el radiador en uso, en vez de aprovechar primavera o verano.',
+      ],
+      recommendedProducts: [
+        { nombre: 'BRUGUER ESM.RADIADORES 750 ML.BLANCO', categoria: 'Pinturas', formato: '750 ml', precio: '16,25 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Imprimación (gris)', nombre: 'MINIO SINTETICO TITANLUX MATE 750 ML.GRIS', precio: '20,18 €' },
+        { etiqueta: 'Imprimación (naranja)', nombre: 'MINIO SINTETICO TITANLUX MATE 750 ML.NARANJA', precio: '20,18 €' },
+        { etiqueta: 'Brocha de codo', nombre: 'PALETINA RADIADOR Nº 18 CIRET', precio: '1,97 €' },
+        { etiqueta: 'Limpieza y dilución', nombre: 'AGUARRAS PINO KELSIA 750 ML.', precio: '2,52 €' },
+      ],
+      relatedSolutions: ['pintar-reja-verja-hierro', 'eliminar-oxido-metal'],
+      seo: {
+        title: 'Cómo pintar un radiador de calefacción | Orencio Matas',
+        description: 'Guía para pintar un radiador de hierro con imprimación antioxidante y esmalte específico, resistente al calor y sin mal olor.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -3004,7 +3115,7 @@ window.SOLUCIONES_DATA = (function () {
       // 'pintar_directo_oxido' ANTES de 'oxido': una consulta específica sobre
       // pintar sin quitar el óxido debe ir a la guía de la tecnología OXIRON
       // "directo al óxido", no a la guía general de eliminación de óxido.
-      'pintar_directo_oxido': ['sin quitar el oxido', 'sin quitar el óxido', 'directo sobre el oxido', 'directo sobre el óxido', 'directo al oxido', 'directo al óxido', 'sin lijar el oxido', 'sin lijar el óxido', 'pintar sin imprimacion', 'pintar sin imprimación'],
+      'pintar_directo_oxido': ['sin quitar el oxido', 'sin quitar el óxido', 'sin quitarlo', 'directo sobre el oxido', 'directo sobre el óxido', 'directo al oxido', 'directo al óxido', 'sin lijar el oxido', 'sin lijar el óxido', 'pintar sin imprimacion', 'pintar sin imprimación', 'sin imprimar', 'ni imprimar'],
       'oxido':      ['oxido', 'óxido', 'oxidad'],
       // "brillo" (a secas) quitado a propósito: coincidía también con
       // "el suelo de mármol está sin brillo" — se queda con términos
@@ -3020,6 +3131,11 @@ window.SOLUCIONES_DATA = (function () {
       'descuelgue': ['descuelga', 'chorrea', 'chorreado', 'se corre la pintura'],
       'quitar_pintura': ['decapar', 'decapante', 'quitar pintura vieja', 'quitar pintura'],
       'mal_acabado':['barniz', 'blanquecino', 'burbuja', 'madera', 'no ha quedado bien'],
+      // 'renovar_banera_sanitario' ANTES de 'moho_junta': una consulta sobre
+      // renovar/cambiar el aspecto de la bañera o el lavabo no es lo mismo
+      // que un problema de moho o silicona en la junta — se queda con
+      // frases específicas de renovación para no eclipsar la guía nueva.
+      'renovar_banera_sanitario': ['renovar la bañera', 'renovar la banera', 'renovar el lavabo', 'renovar el sanitario', 'pintar la bañera', 'pintar la banera', 'pintar el lavabo', 'pintar el sanitario', 'esmaltar la bañera', 'esmaltar la banera', 'cambiar el color de la bañera', 'sin cambiarlo'],
       'moho_junta': ['moho', 'junta', 'silicona', 'bañera', 'banera', 'ducha'],
       'agua_turbia':['piscina', 'turbia', 'algas', 'cloro', 'ph del agua'],
       'cucarachas': ['cucaracha', 'hormiga', 'insecto', 'plaga', 'bicho'],
@@ -3038,7 +3154,7 @@ window.SOLUCIONES_DATA = (function () {
       // "ropa" (a secas) quitada a propósito: coincidía también con
       // "proteger la ropa de las polillas" — se queda con términos
       // específicos de mancha.
-      'mancha_ropa':       ['mancha', 'camisa', 'tejido'],
+      'mancha_ropa':       ['mancha en la ropa', 'mancha en la camisa', 'mancha de la ropa', 'camisa', 'tejido'],
       'ratones':           ['raton', 'ratón', 'ratones', 'roedor'],
       'plantas_debiles':   ['planta', 'abono', 'maceta'],
       'polillas_ropa':     ['polilla', 'armario', 'guardarropa'],
@@ -3057,7 +3173,12 @@ window.SOLUCIONES_DATA = (function () {
       'pintar_verja_hierro': ['verja', 'barandilla', 'reja de hierro'],
       'pintar_pladur': ['pladur', 'placa de yeso laminado', 'placas de yeso laminado'],
       'fachada_deteriorada': ['fachada', 'exterior de la casa', 'exterior de casa'],
-      'pintar_calor':     ['radiador', 'estufa', 'tubo de escape', 'anticalorico', 'anticalórico', 'que da calor', 'pintura resistente al calor'],
+      // 'pintar_radiador' ANTES de 'pintar_calor': la consulta más habitual
+      // sobre "radiador" es la calefacción normal de agua de casa, no una
+      // pieza de altísima temperatura — esa guía general de anticalórico
+      // se queda solo para estufas, tubos de escape, etc.
+      'pintar_radiador':  ['radiador', 'radiadores', 'pintar el radiador', 'calefaccion', 'calefacción'],
+      'pintar_calor':     ['estufa', 'tubo de escape', 'anticalorico', 'anticalórico', 'que da calor', 'pintura resistente al calor'],
       'faros_opacos':     ['faro', 'faros', 'optica amarillenta', 'óptica amarillenta'],
       'madera_exterior':  ['mueble de jardin', 'mueble de jardín', 'valla', 'lasur'],
       'pintar_azulejos':  ['azulejo', 'azulejos'],
