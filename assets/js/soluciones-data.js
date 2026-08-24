@@ -94,6 +94,8 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'quitar_pintura',label: 'Necesito quitar pintura',              solutionSlug: 'decapar-pintura-mueble' },
     { id: 'preparar_dudas',label: 'No sé cómo preparar la superficie',    solutionSlug: 'pintar-plastico-coche' },
     { id: 'moho_junta',    label: 'Tengo moho en las juntas del baño',    solutionSlug: 'sellar-juntas-bano' },
+    { id: 'moho_antes_pintar', label: 'Tengo moho y quiero pintar encima', solutionSlug: 'eliminar-moho-pared-antes-pintar' },
+    { id: 'moho_general',  label: 'Tengo moho en la pared o azulejos y solo quiero limpiarlo', solutionSlug: 'limpiar-moho-pared-azulejo' },
     { id: 'agua_turbia',   label: 'El agua de la piscina está turbia',    solutionSlug: 'mantenimiento-piscina' },
     { id: 'cucarachas',    label: 'Tengo cucarachas u hormigas',          solutionSlug: 'control-plagas-cocina' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
@@ -171,6 +173,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Preparar una pared',                  solutionSlug: 'pintar-pared-interior' },
         { title: 'Pintar azulejos',                      solutionSlug: 'pintar-azulejos' },
         { title: 'Renovar una bañera, lavabo o sanitario', solutionSlug: 'renovar-banera-lavabo-sanitario' },
+        { title: 'Eliminar moho antes de pintar',          solutionSlug: 'eliminar-moho-pared-antes-pintar' },
         { title: 'Pintar superficies difíciles',         solutionSlug: 'pintar-plastico-coche' },
         { title: 'Limpiar brochas',                      solutionSlug: 'pintar-pared-interior' },
         { title: 'Conseguir acabado mate',              solutionSlug: 'pintar-pared-interior' },
@@ -240,6 +243,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Limpiar acero inoxidable',              solutionSlug: 'limpiar-plata-metales' },
         { title: 'Usar la lejía correctamente',           solutionSlug: 'usar-lejia-segura' },
         { title: 'Desinfectar la casa',                   solutionSlug: 'desinfectar-casa' },
+        { title: 'Limpiar el moho de una pared o azulejo', solutionSlug: 'limpiar-moho-pared-azulejo' },
       ],
     },
     {
@@ -651,7 +655,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción rápida',      nombre: 'CEYS Sellaceys Cinta Selladora Hogar Blanco (sin pistola)', precio: '9,91 €' },
         { etiqueta: 'Trabajos pequeños',  nombre: 'Sellaceys Silicona Tubo 50 ml Blíster', precio: '2,48 €' },
       ],
-      relatedSolutions: ['control-plagas-cocina', 'renovar-banera-lavabo-sanitario', 'pintar-azulejos'],
+      relatedSolutions: ['control-plagas-cocina', 'renovar-banera-lavabo-sanitario', 'pintar-azulejos', 'limpiar-moho-pared-azulejo'],
       seo: {
         title: 'Cómo sellar una junta de baño o cocina | Orencio Matas',
         description: 'Guía para retirar la silicona vieja o con moho y sellar correctamente una junta de baño o cocina, paso a paso.',
@@ -887,7 +891,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción económica (retoques)', nombre: 'Jamicolor Pintura Plástica Mate Int/Ext 750 ml Blanco', precio: '2,54 €' },
         { etiqueta: 'Mayor cobertura',              nombre: 'Gilmaplas Pintura Plástica Satinada Extra 15 L', precio: '65,88 €' },
       ],
-      relatedSolutions: ['restaurar-mueble-madera'],
+      relatedSolutions: ['restaurar-mueble-madera', 'eliminar-moho-pared-antes-pintar'],
       seo: {
         title: 'Cómo pintar una pared por dentro | Orencio Matas',
         description: 'Guía para preparar, imprimar si hace falta, y pintar correctamente una pared de interior, con dos manos de pintura plástica.',
@@ -2197,7 +2201,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Formato grande',               nombre: 'Lejía Dos Castillas 5 L', precio: '2,42 €' },
         { etiqueta: 'En pastillas (dosificación fácil)', nombre: 'Lejía en Pastillas HC-Chlor Tablet 1 kg', precio: '22,03 €' },
       ],
-      relatedSolutions: [],
+      relatedSolutions: ['limpiar-moho-pared-azulejo', 'desinfectar-casa'],
       seo: {
         title: 'Cómo usar la lejía de forma segura | Orencio Matas',
         description: 'Guía para diluir y usar la lejía correctamente en casa, desinfectando sin riesgos para la salud ni daños en las superficies.',
@@ -3011,6 +3015,117 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para pintar un radiador de hierro con imprimación antioxidante y esmalte específico, resistente al calor y sin mal olor.',
       },
     },
+
+    'limpiar-moho-pared-azulejo': {
+      slug: 'limpiar-moho-pared-azulejo',
+      title: 'Cómo limpiar el moho de una pared o azulejo',
+      description: 'Elimina las manchas de moho de una pared, azulejo u otra superficie dura con un limpiador fungicida específico (o lejía diluida), dejándola limpia y desinfectada, sin necesidad de pintar después.',
+      category: 'limpieza', subcategory: 'Moho y humedad',
+      problem: 'moho_general',
+      objective: 'limpiar',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: '1-2 h (incluye el tiempo de actuación del producto) + varias horas de secado',
+      result: 'Superficie limpia, desinfectada y sin manchas de moho, lista para seguir usándose con normalidad',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Moho y humedad'],
+      materials: [
+        { fase: 'Protección', familiaSugerida: 'Guantes y mascarillas', items: ['Guantes de protección', 'Mascarilla'] },
+        { fase: 'Limpieza',   familiaSugerida: 'Limpiadores antimoho', items: ['Limpiador antimoho fungicida (o lejía diluida en agua)'] },
+        { fase: 'Aplicación', familiaSugerida: 'Brochas y útiles',     items: ['Cepillo, estropajo, brocha o rodillo'] },
+      ],
+      receta: [
+        { fase: 'Proteger',  emoji: '🧤' },
+        { fase: 'Aplicar',   emoji: '🧴' },
+        { fase: 'Actuar',    emoji: '⏳' },
+        { fase: 'Aclarar',   emoji: '🚿' },
+      ],
+      steps: [
+        { n: 1, title: 'Ventilar y protegerte', text: 'Abre ventanas antes de empezar y ponte guantes — si vas a tratar una zona amplia, usa también mascarilla. Los vapores del producto y las esporas del propio moho pueden irritar las vías respiratorias.', productos: ['Guantes de protección', 'Mascarilla'] },
+        { n: 2, title: 'Cepillar la suciedad suelta', text: 'Antes de aplicar el producto, elimina con un cepillo la mayor cantidad posible de suciedad y polvo de la zona afectada — el limpiador actúa mejor sobre una superficie ya desempolvada.', productos: [] },
+        { n: 3, title: 'Aplicar el limpiador antimoho', text: 'Aplica el producto sobre las zonas con moho con brocha, rodillo o estropajo, y déjalo actuar al menos 1 hora sin aclarar — es el tiempo que necesita el fungicida para matar el hongo, no solo tapar la mancha. Como alternativa, una solución de lejía diluida en agua también limpia y desinfecta.', productos: ['Limpiador antimoho fungicida (o lejía diluida en agua)'] },
+        { n: 4, title: 'Aclarar y dejar secar bien', text: 'Aclara la superficie tratada con agua limpia y déjala secar completamente, con buena ventilación, para no dejar humedad residual que favorezca que el moho vuelva a aparecer.', productos: [] },
+      ],
+      professionalTips: [
+        'La dosis orientativa del limpiador antimoho es de unos 200 ml por m² (rinde unos 5 m² por litro), en una o dos capas según lo afectada que esté la superficie.',
+        'Si el moho reaparece con frecuencia en la misma zona pese a limpiarlo bien, el problema de fondo suele ser de humedad o falta de ventilación — conviene identificar y corregir esa causa, o la mancha volverá antes o después por muy bien que se limpie.',
+      ],
+      commonMistakes: [
+        'Frotar solo por encima sin dejar actuar el producto el tiempo indicado — el hongo puede seguir vivo bajo la mancha aunque visualmente haya desaparecido.',
+        'Mezclar el limpiador antimoho con lejía u otros productos de limpieza distintos — algunas combinaciones (como lejía y amoníaco) generan gases tóxicos.',
+        'No proteger manos ni vías respiratorias durante la aplicación.',
+        'No ventilar la zona durante y después del tratamiento.',
+      ],
+      recommendedProducts: [
+        { nombre: 'TITAN LIMPIADOR ANTIMOHO 500 ML.', categoria: 'Droguería', formato: '500 ml', precio: '4,84 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Otra marca', nombre: 'PASO ELIMINA MOHO 500 ML.PISTOLA', precio: '4,96 €' },
+        { etiqueta: 'Método alternativo (diluida en agua)', nombre: 'LEJIA ACE 2 L.REGULAR', precio: '1,75 €' },
+      ],
+      relatedSolutions: ['eliminar-moho-pared-antes-pintar', 'usar-lejia-segura', 'sellar-juntas-bano'],
+      seo: {
+        title: 'Cómo limpiar el moho de una pared o azulejo | Orencio Matas',
+        description: 'Guía para eliminar el moho de una pared, azulejo u otra superficie con un limpiador fungicida específico o con lejía diluida.',
+      },
+    },
+
+    'eliminar-moho-pared-antes-pintar': {
+      slug: 'eliminar-moho-pared-antes-pintar',
+      title: 'Cómo eliminar el moho de una pared antes de pintar',
+      description: 'Limpia y elimina el moho de una pared con un fungicida antes de pintar, y protege el resultado con una pintura con conservante antimoho — pintar directamente sobre el moho no lo elimina, solo lo tapa temporalmente y suele reaparecer.',
+      category: 'pintura', subcategory: 'Tratamiento de moho',
+      problem: 'moho_antes_pintar',
+      objective: 'preparar',
+      surface: 'pared',
+      difficulty: 'Media',
+      estimatedTime: '1 día para limpiar y secar + 1 día para pintar (2 manos)',
+      result: 'Pared limpia, sin moho activo, y pintada con un acabado que retarda que vuelva a aparecer',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Tratamiento de moho'],
+      materials: [
+        { fase: 'Protección',           familiaSugerida: 'Guantes y mascarillas', items: ['Guantes de protección', 'Mascarilla'] },
+        { fase: 'Limpieza y fungicida', familiaSugerida: 'Limpiadores antimoho',  items: ['Limpiador antimoho fungicida (o lejía diluida en agua)'] },
+        { fase: 'Acabado',              familiaSugerida: 'Pinturas',             items: ['Pintura vinílica mate con conservante antimoho'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',  emoji: '🧴' },
+        { fase: 'Matar el hongo', emoji: '🦠' },
+        { fase: 'Secar',    emoji: '⏳' },
+        { fase: 'Pintar',   emoji: '🎨' },
+      ],
+      steps: [
+        { n: 1, title: 'Cepillar la suciedad suelta', text: 'Antes de aplicar ningún producto, elimina con un cepillo la mayor cantidad posible de suciedad y polvo de la zona afectada.', productos: [] },
+        { n: 2, title: 'Aplicar el fungicida y dejar actuar', text: 'Aplica el limpiador antimoho (o una solución de lejía diluida en agua) sobre toda la zona con moho y déjalo actuar al menos 1 hora. Este paso es el que de verdad MATA el hongo — pintar sin hacerlo antes no lo elimina, solo lo tapa temporalmente.', productos: ['Limpiador antimoho fungicida (o lejía diluida en agua)'] },
+        { n: 3, title: 'Aclarar y dejar secar bien', text: 'Aclara la superficie con agua limpia y déjala secar por completo — al menos 6 horas, y no apliques el limpiador con la superficie a menos de 5°C. No empieces a pintar hasta que esté totalmente seca.', productos: [] },
+        { n: 4, title: 'Pintar con una pintura antimoho', text: 'Aplica dos manos de una pintura vinílica mate con conservante antimoho, respetando las condiciones de aplicación: nunca por debajo de 7°C, con humedad relativa igual o superior al 80%, ni con lluvia prevista en las próximas horas.', productos: ['Pintura vinílica mate con conservante antimoho'] },
+      ],
+      professionalTips: [
+        'Si la pintura vieja está en mal estado (desconchada, con moho muy extendido), sanea primero toda la zona eliminando lo que no esté bien adherido antes de limpiar y pintar, igual que en cualquier otra pared en mal estado.',
+        'La pintura con conservante antimoho retrasa que la mancha vuelva a salir, pero no sustituye a una buena ventilación — si el problema de fondo es una humedad estructural (condensación, filtración, etc.), conviene corregirla o el moho reaparecerá antes o después.',
+      ],
+      commonMistakes: [
+        'Pintar directamente sobre el moho sin limpiarlo y desinfectarlo antes — es el error más común, y hace que el hongo siga vivo bajo la pintura nueva y vuelva a salir.',
+        'No respetar el tiempo de secado de la limpieza antes de empezar a pintar.',
+        'Aplicar la pintura con temperaturas bajas, humedad relativa muy alta o lluvia prevista.',
+        'Usar una pintura cualquiera en vez de una formulada con conservante antimoho en zonas donde el moho es propenso a reaparecer.',
+      ],
+      recommendedProducts: [
+        { nombre: 'TITAN LIMPIADOR ANTIMOHO 500 ML.', categoria: 'Droguería', formato: '500 ml', precio: '4,84 €' },
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Método alternativo de limpieza', nombre: 'LEJIA ACE 2 L.REGULAR', precio: '1,75 €' },
+        { etiqueta: 'Formato pequeño de pintura',      nombre: 'TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE', precio: '8,54 €' },
+        { etiqueta: 'Formato grande / base teñible',   nombre: 'PINT.VINILICA P-60 PREMIUM 15 L.BASE NEUTRA', precio: '49,91 €' },
+      ],
+      calculadoraCantidad: { rendimiento: 9, etiqueta: 'pintura vinílica antimoho' },
+      relatedSolutions: ['limpiar-moho-pared-azulejo', 'pintar-pared-interior', 'usar-lejia-segura'],
+      seo: {
+        title: 'Cómo eliminar el moho de una pared antes de pintar | Orencio Matas',
+        description: 'Guía para limpiar y matar el moho de una pared con un fungicida antes de pintar, y protegerla con una pintura con conservante antimoho.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -3066,7 +3181,7 @@ window.SOLUCIONES_DATA = (function () {
       pared: {
         pintar: 'pintar-pared-interior',
         reparar: 'pintar-pared-interior',
-        limpiar: 'pintar-pared-interior',
+        limpiar: 'limpiar-moho-pared-azulejo',
         proteger: 'impermeabilizar-terraza-goteras',
         restaurar: 'pintar-pared-interior',
         preparar: 'pintar-pared-interior',
@@ -3103,7 +3218,7 @@ window.SOLUCIONES_DATA = (function () {
         preparar: 'pintar-azulejos',
         restaurar: 'renovar-banera-lavabo-sanitario',
         acabado: 'renovar-banera-lavabo-sanitario',
-        limpiar: 'sellar-juntas-bano',
+        limpiar: 'limpiar-moho-pared-azulejo',
         reparar: 'sellar-juntas-bano',
         proteger: 'sellar-juntas-bano',
         pegar: 'sellar-juntas-bano',
@@ -3166,7 +3281,18 @@ window.SOLUCIONES_DATA = (function () {
       // que un problema de moho o silicona en la junta — se queda con
       // frases específicas de renovación para no eclipsar la guía nueva.
       'renovar_banera_sanitario': ['renovar la bañera', 'renovar la banera', 'renovar el lavabo', 'renovar el sanitario', 'pintar la bañera', 'pintar la banera', 'pintar el lavabo', 'pintar el sanitario', 'esmaltar la bañera', 'esmaltar la banera', 'cambiar el color de la bañera', 'sin cambiarlo'],
-      'moho_junta': ['moho', 'junta', 'silicona', 'bañera', 'banera', 'ducha'],
+      // 'moho_antes_pintar' ANTES de 'moho_junta': una consulta sobre moho
+      // en una pared con intención de pintar después no es lo mismo que
+      // un problema de moho en la junta de silicona del baño.
+      'moho_antes_pintar': ['moho antes de pintar', 'moho para pintar', 'moho y quiero pintar', 'moho y pintar', 'pintar sobre el moho', 'pintar sobre moho', 'quitar el moho para pintar', 'eliminar el moho para pintar', 'moho en la fachada'],
+      'moho_junta': ['junta', 'silicona', 'bañera', 'banera', 'ducha'],
+      // 'moho_general' (moho a secas, sin más contexto) DESPUÉS de las dos
+      // anteriores: solo actúa como red de seguridad para "tengo moho en
+      // la pared/el techo/el azulejo" u otras frases que no hayan
+      // coincidido ya con un caso más específico — se queda con la guía
+      // de limpieza general, la más honesta por defecto (no todo el mundo
+      // que tiene moho quiere pintar encima).
+      'moho_general': ['moho'],
       'agua_turbia':['piscina', 'turbia', 'algas', 'cloro', 'ph del agua'],
       'cucarachas': ['cucaracha', 'hormiga', 'insecto', 'plaga', 'bicho'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
