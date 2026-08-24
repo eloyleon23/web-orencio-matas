@@ -325,6 +325,8 @@ window.SOLUCIONES_DATA = (function () {
     { slug: 'usar-lejia-segura',         title: 'Cómo usar la lejía de forma segura y eficaz',      difficulty: 'Fácil', estimatedTime: '10 min', emoji: '🧴' },
     { slug: 'limpiar-plata-metales',     title: 'Cómo limpiar y abrillantar plata y otros metales', difficulty: 'Fácil', estimatedTime: '15-20 min', emoji: '🍽️' },
     { slug: 'quitar-restos-pegamento',   title: 'Cómo quitar restos de pegamento o cinta adhesiva', difficulty: 'Fácil', estimatedTime: '15-20 min', emoji: '🩹' },
+    { slug: 'limpiar-moho-pared-azulejo', title: 'Cómo limpiar el moho de una pared o azulejo',    difficulty: 'Fácil', estimatedTime: '1-2 h (incluye el tiempo de actuación del producto) + varias horas de secado', emoji: '🦠' },
+    { slug: 'eliminar-moho-pared-antes-pintar', title: 'Cómo eliminar el moho de una pared antes de pintar', difficulty: 'Media', estimatedTime: '1 día para limpiar y secar + 1 día para pintar (2 manos)', emoji: '🧫' },
   ];
 
   // ── Soluciones completas ────────────────────────────────────────────────
