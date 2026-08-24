@@ -1,154 +1,140 @@
-# Informe de Desarrollo Web — Fase 3
+ORENCIO MATAS Y HERMANOS, S.L.
+Informe de Desarrollo Web · Confidencial
+Av. Alfred Nobel, 2 · 13005 Ciudad Real · 926 221 217 · correo@orenciomatas.es
 
-**Proyecto:** Orencio Matas y Hermanos, S.L.  
-**Dominio:** https://www.orenciomatas.es  
-**Repositorio:** https://github.com/eloyleon23/web-orencio-matas  
-**Fase:** 3  
-**Fecha:** agosto 2026
+INFORME DE DESARROLLO WEB
+FASE 3 — Centro de Soluciones y refinamiento del buscador
+ORENCIO MATAS Y HERMANOS, S.L.
 
----
+Continuación del informe de desarrollo Fase 2, cerrado el 04/07/2026. Este informe cubre el trabajo realizado desde entonces en el repositorio web-orencio-matas, centrado en el buscador de productos, la gestión de imágenes y el prototipo del Centro de Soluciones.
 
-## 1. Resumen ejecutivo
+Fecha de generación: 23/08/2026
 
-Durante la Fase 3 se ha consolidado el buscador de productos, se ha iniciado el **Centro de Soluciones** como experiencia de asesoramiento y se ha preparado la infraestructura para el **despliegue en producción en IONOS** bajo el dominio `orenciomatas.es`.
+1. LISTADO GENERAL DE TRABAJOS REALIZADOS — FASE 3
 
-Los principales logros de la fase son:
+· Mejora de la carga inicial del buscador: consumo local de data/productos.json con actualización remota en segundo plano.
+· Corrección del icono de borrado (X) en la barra de búsqueda de escritorio.
+· Validación de todos los ejemplos de "Explora soluciones" contra el catálogo real; 0 ejemplos sin resultados.
+· Ajuste de términos de búsqueda en coche, madera, metal, limpieza, pegado, suelos, piscinas, plagas y jardín.
+· Desarrollo del prototipo inicial del Centro de Soluciones con asistente paso a paso y exploración por áreas.
+· Nuevas guías de solución: pintar plástico de coche, reparar arañazos, eliminar óxido, restaurar muebles, sellar juntas, pintar suelos con epoxi, mantenimiento de piscinas, control de plagas, cuidado de plantas, proteger bajos del coche, pintar paredes, pintar fachadas, impermeabilizar terrazas y sellar lunas.
+· Exportación de soluciones a PDF con cabecera de empresa y pie de página con dirección y horario comercial.
+· Integración de compartir solución vía Web Share API y WhatsApp con enlace a la guía.
+· Navegación principal: "Centro de Soluciones" como elemento principal junto a los catálogos de Droguería, Perfumería, Pinturas y Talleres.
+· Nuevas vistas de catálogo para Droguería, Perfumería, Pinturas y Talleres conectadas con el buscador.
+· Continuación del registro y mantenimiento de imágenes de productos actuales y nuevos (en curso).
+· Preparación del despliegue en producción en el servidor IONOS para el dominio orenciomatas.es.
+· Ajustes técnicos de responsive, menús, submenu, footer y estilos de chips de dificultad.
 
-- Buscador casi instantáneo en la carga inicial gracias al consumo local de `data/productos.json`.
-- Wizard de soluciones, exploración por áreas y validación de búsquedas contra el catálogo real.
-- Gestión de imágenes de productos con herramientas de apoyo, revisión y reporte.
-- Flujo automatizado de actualización de productos mediante correo electrónico y Apps Script.
-- Nuevas páginas de catálogo por áreas de negocio.
-- Preparación del despliegue en el servidor de IONOS.
+2. BUSCADOR DE PRODUCTOS
 
----
+2.1 Rendimiento de carga inicial
 
-## 2. Buscador de productos
+El buscador dejó de depender del endpoint remoto de Google Apps Script para la primera carga. Ahora lee el archivo local data/productos.json, lo que reduce drásticamente el tiempo de inicio. El catálogo remoto se sigue consultando periódicamente para detectar cambios y actualizar los datos en segundo plano sin interrumpir la sesión del usuario.
 
-### 2.1 Carga inicial prácticamente instantánea
+2.2 UX de búsqueda
 
-El buscador (`buscador.html`) ha dejado de depender del endpoint remoto de Google Apps Script para la carga inicial. Ahora consume el archivo local `data/productos.json`, de modo que la primera pintura de resultados es inmediata. Las actualizaciones del catálogo remoto siguen consultándose en segundo plano para mantener los datos sincronizados sin penalizar la experiencia inicial.
+· Icono de borrado visible en la barra de escritorio.
+· Sugerencias de búsqueda con debounce.
+· Escáner de códigos de barras.
+· Filtros por área, familia, subfamilia, precio, ofertas y stock.
+· Modal de detalle de producto con ficha técnica y productos relacionados.
+· Paginación y scroll infinito según vista.
 
-Archivos involucrados: `buscador.html`.
+2.3 Estructura de catálogo
 
-### 2.2 Icono de borrado visible en escritorio
+El catálogo principal se carga desde data/productos.json. En segundo plano se cargan catálogos adicionales de talleres propios, Glasurit, Besa y Baslac, que se integran sin bloquear la interfaz.
 
-Se ha corregido el botón de limpiar texto (X) del buscador para que sea visible en el toolbar de escritorio, con color claro sobre el fondo oscuro y posicionamiento correcto.
+3. GESTIÓN DE IMÁGENES
 
-Archivos involucrados: `buscador.html`, `assets/css/soluciones.css`.
+3.1 Vista detalle de producto
 
-### 2.3 Filtros, sugerencias y catálogo
+El buscador y la ficha de soluciones muestran la imagen registrada de cada producto. Si el producto no está resuelto contra el catálogo, se omite el precio y el enlace a la ficha técnica, mostrando un mensaje de disponibilidad no vinculante.
 
-- Búsqueda normalizada por nombre, referencia, familia, área y precio.
-- Filtros laterales de área, fabricante, precio, stock y formato.
-- Sugerencias de búsqueda con debounce.
-- Escáner de códigos de barras.
-- Carga en segundo plano de catálogos adicionales: talleres, Glasurit, Besa y Baslac.
+3.2 Asistente de imágenes
 
----
+Se dispone de la carpeta de herramientas imagenes_tool/ con utilidades para:
 
-## 3. Gestión de imágenes
+· Búsqueda de imágenes por API gratuitas (Pexels, Pixabay, Unsplash).
+· Búsqueda de imágenes por código de barras.
+· Búsqueda de imágenes por descripción.
+· Generación de vistas HTML de revisión.
+· Subida de imágenes validadas.
+· Sincronización entre Drive y hoja de cálculo.
+· Registro de productos sin imagen y productos nuevos en archivos Excel.
 
-### 3.1 Vista detalle de producto
+3.3 Registro y mantenimiento de imágenes (en curso)
 
-El modal y la ficha de producto muestran la imagen registrada, referencia, precio y, cuando procede, el enlace a la ficha técnica real. Si un producto no tiene imagen validada, se indica explícitamente para evitar suposiciones.
+El proceso de registro, validación y corrección de imágenes de productos actuales y nuevos continúa activo. Los archivos de seguimiento actuales son productos_sin_imagen.xlsx y productos_nuevos.xlsx. Se espera completar la cobertura en la siguiente fase.
 
-### 3.2 Asistente de imágenes y catálogo
+4. ACTUALIZACIÓN AUTOMATIZADA DE PRODUCTOS DESDE CORREO ELECTRÓNICO
 
-Se dispone de un conjunto de herramientas en `imagenes_tool/` que permiten:
+El flujo de actualización mantiene Google Apps Script como puente:
 
-- Buscar imágenes por API (Pexels, Pixabay, Unsplash) y por descripción de producto.
-- Buscar imágenes por código de barras.
-- Generar vistas HTML de revisión de imágenes pendientes.
-- Subir imágenes validadas al entorno correspondiente.
-- Sincronizar Google Drive con la hoja de cálculo de productos.
-- Registrar productos nuevos y productos sin imagen en archivos Excel.
+· El almacén envía actualizaciones por correo electrónico.
+· Apps Script procesa el contenido y expone un endpoint de productos.
+· El buscador consulta el endpoint en segundo plano.
+· Si el contenido cambia, se recarga el catálogo conservando los filtros activos del usuario.
+· Se mantiene el archivo data/productos_version.json para el control de versiones local.
 
-Herramientas principales: `buscar_imagenes_*.py`, `generar_revision_html.py`, `subir_imagenes_validadas.py`, `sincronizar_drive_sheet.py`.
+5. CENTRO DE SOLUCIONES (PROTOTIPO INICIAL)
 
-### 3.3 Registro y mantenimiento de imágenes (en curso)
+5.1 Asistente paso a paso
 
-El proceso de registro, validación y mantenimiento de imágenes de productos actuales y nuevos sigue activo. Actualmente se dispone de:
+· Paso 1: ¿Qué quieres hacer? (pintar, reparar, limpiar, pulir, restaurar, proteger, preparar, pegar, acabado).
+· Paso 2: ¿Sobre qué superficie? (coche, madera, metal, pared, hogar, plástico, suelo, jardín, piscina, otro).
+· Paso 3: ¿Cómo está actualmente? (sin pintar, pintada, barnizada, oxidada, deteriorada).
+· Paso 4: ¿Qué resultado quieres?.
+· Si no hay una guía concreta, el asistente muestra productos del catálogo relacionados con la combinación elegida.
 
-- Hojas de seguimiento: `productos_sin_imagen.xlsx`, `productos_nuevos.xlsx`.
-- Guía de búsqueda de imágenes: `imagenes_tool/GUIA_BUSQUEDA_IMAGENES.md`.
-- Instrucciones para reportar una imagen: `docs/INSTRUCCIONES_REPORTAR_IMAGEN.md`.
+5.2 Explora soluciones
 
-Esta línea de trabajo continuará en la siguiente fase hasta alcanzar una cobertura completa del catálogo.
+Cada área de trabajo incluye ejemplos validados contra el catálogo. Si un ejemplo tiene guía, enlaza a ella; si no, realiza una búsqueda concreta y coherente. Todos los ejemplos devuelven al menos un producto.
 
----
+5.3 Fichas de solución
 
-## 4. Actualización automatizada de productos desde correo electrónico
+· Descripción, dificultad, tiempo estimado, superficie y resultado.
+· Lista de materiales por fases.
+· Receta de trabajo con emojis.
+· Pasos detallados con productos recomendados.
+· Productos resueltos contra el catálogo real.
+· Calculadora de cantidad para pinturas, barnices y epoxi.
+· Consejos y errores comunes.
+· Productos alternativos.
+· Enlaces a cartas de colores de proveedores (Titanpro, Titanlux, TitanTech, Compo).
 
-El flujo de actualización de catálogo utiliza Google Apps Script como puente:
+5.4 Exportación e impresión
 
-1. El almacén envía actualizaciones por correo electrónico.
-2. Apps Script procesa el contenido y expone un endpoint (`PRODUCTOS_REMOTO_URL`).
-3. El buscador consulta ese endpoint en segundo plano para detectar cambios.
-4. Si hay novedades, se recarga el catálogo preservando los filtros del usuario.
+· Botón "Descargar como PDF" que usa la función Imprimir del navegador.
+· Cabecera del informe con el logo de Orencio Matas.
+· Pie de página con dirección y horario comercial.
+· Botón "Compartir solución" vía Web Share API o copia de enlace.
+· Botón "Enviar por WhatsApp" con enlace a la guía, no con texto plano.
 
-Se mantiene también un control de versiones local (`data/productos_version.json`) para evitar recargas innecesarias.
+6. CATÁLOGOS POR ÁREAS DE NEGOCIO
 
----
+Se han consolidado las vistas de catálogo para las cuatro áreas principales:
 
-## 5. Despliegue en producción (IONOS)
+· Droguería
+· Perfumería
+· Pinturas
+· Talleres
 
-La nueva web está preparada para su despliegue en el servidor de IONOS bajo el dominio `orenciomatas.es`. El repositorio está listo para ser publicado como sitio estático o servido desde el hosting configurado.
+Cada vista conecta con el buscador y con las soluciones del Centro de Soluciones cuando aplica.
 
-Pendiente: ejecución final del despliegue y verificación de DNS/certificado SSL si aún no están activos.
+7. DESPLIEGUE EN PRODUCCIÓN
 
----
+La nueva web está preparada para su despliegue en el servidor de IONOS bajo el dominio orenciomatas.es. El repositorio está sincronizado con origin/main y contiene los catálogos, soluciones y buscador listos para publicación.
 
-## 6. Nuevas vistas de catálogo
+Pendiente: ejecución final del despliegue en el servidor y verificación de DNS, SSL y redirecciones.
 
-Se han desarrollado o consolidado las vistas de catálogo para las cuatro áreas principales del negocio:
+8. OBSERVACIONES Y ESTADO ACTUAL
 
-- **Droguería**
-- **Perfumería**
-- **Pinturas**
-- **Talleres**
+· El buscador carga de forma inmediata con el catálogo local.
+· El Centro de Soluciones está operativo como prototipo inicial y continuará ampliándose con nuevas guías.
+· La validación de búsquedas del asistente es diaria contra el catálogo real.
+· El registro de imágenes sigue en curso.
+· El despliegue en IONOS está pendiente de ejecución final.
 
-Cada una muestra los productos del catálogo filtrados por su área correspondiente, con enlaces al buscador y a la ficha de producto.
-
----
-
-## 7. Centro de Soluciones (prototipo inicial)
-
-Se ha implementado la primera versión del **Centro de Soluciones**, orientada a que el usuario describa qué quiere hacer y reciba una guía o una búsqueda de productos coherentes.
-
-### Funcionalidades incluidas
-
-- **Asistente paso a paso:** acción → superficie → estado → resultado → solución.
-- **Explora soluciones:** áreas con ejemplos, validados contra el catálogo.
-- **Tengo un problema:** búsqueda por palabras clave y chips rápidos.
-- **Soluciones destacadas:** tarjetas populares con dificultad y tiempo estimado.
-- **Fichas de solución:** pasos, materiales, productos recomendados, calculadora de cantidad y exportación a PDF.
-- **Mejoras de PDF:** cabecera con logo de Orencio Matas y pie con dirección y horario comercial.
-- **Compartir solución:** botón de compartir enlace y envío por WhatsApp con enlace a la guía.
-
-### Validación de búsquedas
-
-Todos los ejemplos de "Explora soluciones" han sido validados contra el catálogo real para que ninguno quede sin resultados. Los términos se han ajustado en coche, madera, metal, limpieza, pegado, suelos, piscinas, plagas y jardín.
-
-Archivos involucrados: `centro-soluciones.html`, `assets/js/centro-soluciones.js`, `assets/js/soluciones-data.js`, `assets/js/solucion-detalle.js`, `assets/css/soluciones.css`.
-
----
-
-## 8. Otros detalles reseñables
-
-- **Titanpro:** logotipo local en soluciones de pintura interior y fachada, con fallback visual si la imagen no carga.
-- **Menús y navegación:** integración de "Centro de Soluciones" en la navegación principal; estructura de catálogos desplegable.
-- **Diseño responsive:** grids de dos columnas en móvil para opciones y soluciones.
-- **Historial de cambios:** el trabajo ha sido versionado y subido continuamente a `main` en GitHub, con pull previo para evitar conflictos con el trabajo paralelo.
-
----
-
-## 9. Estado y próximos pasos
-
-- **Completado:** buscador, Centro de Soluciones, flujo de catálogo, preparación de despliegue.
-- **En curso:** registro y validación de imágenes de productos; actualización masiva de fotografías.
-- **Pendiente:** despliegue final en IONOS y verificación post-publicación; ampliación de guías de soluciones.
-
----
-
-*Informe generado automáticamente a partir del estado del repositorio y el histórico de cambios de la Fase 3.*
+ORENCIO MATAS Y HERMANOS, S.L.
+Av. Alfred Nobel, 2 · 13005 Ciudad Real · 926 221 217 · correo@orenciomatas.es
