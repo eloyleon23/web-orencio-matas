@@ -3488,6 +3488,32 @@ window.SOLUCIONES_DATA = (function () {
     return new RegExp('(^|[^a-z0-9áéíóúñ])' + palabra + '($|[^a-z0-9áéíóúñ])').test(textoNorm);
   }
 
+  // Búsqueda global entre TODAS las soluciones (título, descripción,
+  // categoría/subcategoría y migas de pan) — a diferencia de
+  // diagnosticarPorTexto(), que solo reconoce los ~53 "problemas
+  // frecuentes" curados a mano, esta función encuentra cualquier guía
+  // cuyo contenido mencione la palabra buscada, para quien ya sabe qué
+  // palabra quiere buscar y no quiere navegar por toda la página.
+  function buscarSolucionesPorTexto(texto) {
+    const palabras = palabrasSignificativas(texto);
+    if (!palabras.length) return [];
+    const resultados = [];
+    Object.values(soluciones).forEach((s) => {
+      const tituloNorm = normalizarTexto(s.title || '');
+      const restoNorm = normalizarTexto(
+        [s.description, s.category, s.subcategory, (s.breadcrumb || []).join(' ')].filter(Boolean).join(' ')
+      );
+      let puntuacion = 0;
+      palabras.forEach((w) => {
+        if (contienePalabra(tituloNorm, w)) puntuacion += 3; // el título pesa más
+        else if (contienePalabra(restoNorm, w)) puntuacion += 1;
+      });
+      if (puntuacion > 0) resultados.push({ solucion: s, puntuacion });
+    });
+    resultados.sort((a, b) => b.puntuacion - a.puntuacion);
+    return resultados.map((r) => r.solucion);
+  }
+
   function buscarProductosEnCatalogo(texto) {
     const palabras = palabrasSignificativas(texto);
     if (!palabras.length) return Promise.resolve([]);
@@ -3546,6 +3572,6 @@ window.SOLUCIONES_DATA = (function () {
     acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, resolverProductoReal,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, resolverProductoReal,
   };
 })();

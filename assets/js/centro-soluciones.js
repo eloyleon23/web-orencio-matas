@@ -45,6 +45,74 @@
     });
   }
 
+  // ── Buscador rápido de soluciones, dentro del hero ("¿Qué quieres
+  //    conseguir?") — busca en TODAS las soluciones (no solo en los
+  //    chips curados de "¿Tienes un problema?"), para quien ya sabe la
+  //    palabra que quiere buscar y no quiere navegar por la página. ────
+  function wireBuscadorHero() {
+    const input = $('#cs-hero-buscador-input');
+    const btnLimpiar = $('#cs-hero-buscador-limpiar');
+    const btnLupa = $('#cs-hero-buscador-lupa');
+    const resultados = $('#cs-hero-buscador-resultados');
+    if (!input || !resultados) return;
+
+    function limpiar() {
+      input.value = '';
+      btnLimpiar.style.display = 'none';
+      resultados.style.display = 'none';
+      resultados.innerHTML = '';
+    }
+
+    function ejecutarBusqueda() {
+      const texto = input.value.trim();
+      if (!texto) {
+        resultados.style.display = 'none';
+        resultados.innerHTML = '';
+        return;
+      }
+      const encontradas = D.buscarSolucionesPorTexto(texto).slice(0, 9);
+      if (!encontradas.length) {
+        resultados.innerHTML = `
+          <p class="cs-hero__buscador-vacio">No hemos encontrado ninguna guía para "<strong>${texto}</strong>" — prueba con otra palabra, o cuéntanoslo con tus propias palabras en <a href="#cs-problema">¿Tienes un problema?</a>.</p>
+        `;
+        resultados.style.display = 'block';
+        return;
+      }
+      resultados.innerHTML = `
+        <p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>
+        <div class="cs-grid cs-grid--soluciones">
+          ${encontradas.map((s) => `
+            <a class="cs-solucion-card" href="${urlSolucion(s.slug)}">
+              <div class="cs-solucion-card__media">🛠️</div>
+              <div class="cs-solucion-card__body">
+                <div class="cs-solucion-card__title">${s.title}</div>
+                <div class="cs-solucion-card__meta">${badgeDificultad(s.difficulty)}<span>⏱ ${s.estimatedTime}</span></div>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      `;
+      resultados.style.display = 'block';
+    }
+
+    // Nada de búsqueda en cada tecla: solo al pulsar Intro (también desde
+    // el teclado del móvil, gracias a enterkeyhint="search" del propio
+    // input) o al tocar la lupa. Un <input type="text"> normal ya impide
+    // por sí mismo los saltos de línea (a diferencia de un <textarea>),
+    // así que no hace falta ningún bloqueo adicional para eso.
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        ejecutarBusqueda();
+      }
+    });
+    input.addEventListener('input', () => {
+      btnLimpiar.style.display = input.value ? 'flex' : 'none';
+    });
+    if (btnLupa) btnLupa.addEventListener('click', ejecutarBusqueda);
+    if (btnLimpiar) btnLimpiar.addEventListener('click', limpiar);
+  }
+
   // ── "Tengo un problema" ─────────────────────────────────────────────────
   function renderProblemas() {
     const chips = $('#cs-problem-chips');
@@ -740,6 +808,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    wireBuscadorHero();
     renderGridAcciones();
     renderGridSuperficies();
     renderProblemas();

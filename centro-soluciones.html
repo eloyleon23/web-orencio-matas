@@ -87,6 +87,28 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <span class="cs-hero__eyebrow">Centro de Soluciones</span>
             <h1 class="cs-hero__title">¿Qué quieres conseguir?</h1>
             <p class="cs-hero__subtitle">No necesitas saber qué producto buscas. Cuéntanos qué quieres hacer y te ayudamos paso a paso — con la solución y los productos que necesitas.</p>
+
+            <div class="cs-hero__buscador">
+              <div class="cs-hero__buscador-caja">
+                <button type="button" class="cs-hero__buscador-lupa" id="cs-hero-buscador-lupa" aria-label="Buscar">
+                  <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                </button>
+                <input
+                  type="text"
+                  id="cs-hero-buscador-input"
+                  class="cs-hero__buscador-input"
+                  placeholder="Busca una solución: goteras, óxido, moho…"
+                  autocomplete="off"
+                  enterkeyhint="search"
+                  aria-label="Buscar una solución"
+                >
+                <button type="button" class="cs-hero__buscador-limpiar" id="cs-hero-buscador-limpiar" aria-label="Borrar búsqueda" style="display:none;">
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div id="cs-hero-buscador-resultados" class="cs-hero__buscador-resultados" style="display:none;"></div>
+            </div>
+
             <div class="cs-hero__ctas">
               <button type="button" class="btn-primary" data-open-wizard>Encontrar una solución</button>
               <a class="btn-secondary" href="#cs-problema">Tengo un problema</a>
