@@ -29,6 +29,8 @@ function onOpen() {
     .addItem('📧 Revisar correo de listado CRM ahora', 'revisarCorreoListadoProductosManual')
     .addItem('� Actualizar precios de productos', 'actualizarPreciosProductos')
     .addItem('�🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
+    .addItem('🚫 Dar de baja por fecha de alta (masivo)', 'darDeBajaPorFechaAltaMenu')
+    .addItem('♻️ Reactivar por fecha de alta (masivo)', 'reactivarPorFechaAltaMenu')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('📧 Enviarme Excel de productos sin imagen', 'enviarExcelProductosSinImagenManual')
     .addItem('🔄 Regenerar caché completa del buscador', 'regenerarCacheCompletaManual')
@@ -3169,6 +3171,16 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Baja/reactivación masiva por fecha de alta, pensada para dispararse
+    // desde un Atajo de iPhone — ver manejarBajaReactivacionWeb_ para el
+    // detalle de la clave de seguridad requerida y ejemplos de URL.
+    if (accion === 'dar_baja_por_fecha_alta') {
+      return manejarBajaReactivacionWeb_(e, 'dar_baja');
+    }
+    if (accion === 'reactivar_por_fecha_alta') {
+      return manejarBajaReactivacionWeb_(e, 'reactivar');
+    }
+
     // Devuelve, por área, el ID de Drive del PDF (si ya existe) y los
     // datos de páginas/productos — null para un área si el catálogo
     // todavía no se ha generado nunca, para que la web pueda seguir
@@ -3692,6 +3704,255 @@ function procesarReactivarProducto(data) {
 
   } catch (err) {
     console.error('Error al reactivar el producto:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BAJA / REACTIVACIÓN MASIVA POR FECHA DE ALTA
+// ══════════════════════════════════════════════════════════════════════
+// Da de baja (rellena fecha_baja) o reactiva (vacía fecha_baja) TODOS los
+// productos cuya fecha_alta caiga dentro del rango indicado:
+//   - Se informan fechaInicio y fechaFin -> fecha_alta entre ambas fechas,
+//     ambas incluidas.
+//   - Solo se informa fechaInicio        -> fecha_alta desde esa fecha
+//     en adelante (sin límite superior).
+//   - Solo se informa fechaFin           -> fecha_alta desde esa fecha
+//     hacia atrás (sin límite inferior).
+//   - No se informa ninguna              -> se aborta con un error a
+//     propósito. Es una acción masiva e irreversible en la práctica
+//     (afecta potencialmente a miles de productos); ejecutarla sin
+//     ningún filtro de fecha sería casi con toda seguridad un error del
+//     usuario, no una intención real.
+//
+// Igual que el resto de acciones de baja/reactivación del proyecto, solo
+// se toca la columna fecha_baja — NO se toca incluir_en_catalogo (esa
+// columna quedó como legado de una versión anterior del buscador; la
+// versión actual decide qué productos mostrar exclusivamente por si
+// fecha_baja está vacía o no, tal como ya hacen
+// procesarDarBajaProducto/procesarReactivarProducto de un solo producto
+// y regenerarCacheCompletaDesdeSheet_).
+//
+// Por rendimiento: NUNCA se escribe celda a celda (con miles de filas
+// agotaría con facilidad el límite de 6 minutos de ejecución de Apps
+// Script) — se lee toda la columna fecha_baja en memoria, se modifica
+// solo lo necesario, y se escribe de una sola vez con un único
+// setValues(). La caché del buscador se regenera también una sola vez
+// al final (regenerarCacheCompletaDesdeSheet_), no producto a producto.
+
+// Convierte a Date tanto una celda que Sheets ya reconoció como fecha
+// real (fecha_alta llega tal cual desde RegistroProductos, así que
+// puede ser un objeto Date o texto según cómo se pegara originalmente)
+// como texto en formato dd/MM/yyyy, dd-MM-yyyy o yyyy-MM-dd. Devuelve
+// null si no reconoce el valor.
+function parsearFechaFlexible_(valor) {
+  if (!valor) return null;
+  if (valor instanceof Date) return isNaN(valor.getTime()) ? null : valor;
+
+  const texto = valor.toString().trim();
+  if (!texto) return null;
+
+  let m = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (m) {
+    const f = new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+    return isNaN(f.getTime()) ? null : f;
+  }
+  m = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) {
+    const f = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+    return isNaN(f.getTime()) ? null : f;
+  }
+  const intento = new Date(texto);
+  return isNaN(intento.getTime()) ? null : intento;
+}
+
+// Quita la hora, para comparar solo por día — así una fecha_alta con
+// hora (p. ej. "31/12/2024 14:32") cuenta igualmente como incluida en
+// un rango que termine ese mismo día.
+function truncarFecha_(fecha) {
+  return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+}
+
+// accion: 'dar_baja' | 'reactivar'.
+// fechaInicio/fechaFin: string "dd/MM/yyyy" (u otro formato reconocido
+// por parsearFechaFlexible_), o null/undefined/'' si no se informa.
+// Devuelve { total, procesados, ejemplos } — nunca lanza si la operación
+// en sí llega a completarse, incluso con 0 coincidencias.
+function procesarBajaReactivacionPorFechaAlta_(fechaInicio, fechaFin, accion) {
+  if (accion !== 'dar_baja' && accion !== 'reactivar') {
+    throw new Error('accion debe ser "dar_baja" o "reactivar"');
+  }
+
+  const inicio = fechaInicio ? parsearFechaFlexible_(fechaInicio) : null;
+  const fin    = fechaFin    ? parsearFechaFlexible_(fechaFin)    : null;
+
+  if (fechaInicio && !inicio) throw new Error('Fecha de inicio no válida: "' + fechaInicio + '". Usa el formato dd/MM/yyyy.');
+  if (fechaFin && !fin)       throw new Error('Fecha de fin no válida: "' + fechaFin + '". Usa el formato dd/MM/yyyy.');
+  if (!inicio && !fin) {
+    throw new Error('Hay que informar al menos una fecha (inicio y/o fin). Por seguridad, esta acción masiva no se ejecuta sin ningún filtro de fecha.');
+  }
+
+  const inicioDia = inicio ? truncarFecha_(inicio) : null;
+  const finDia    = fin ? truncarFecha_(fin) : null;
+  if (inicioDia && finDia && inicioDia > finDia) {
+    throw new Error('La fecha de inicio (' + fechaInicio + ') no puede ser posterior a la fecha de fin (' + fechaFin + ').');
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  if (!sheetProd) throw new Error('No existe la hoja "Productos".');
+
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/\s+/g, '_'));
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+
+  const colFechaAlta = PROD['fecha_alta'];
+  const colFechaBaja = PROD['fecha_baja'];
+  const colRef       = PROD['referencia'];
+  if (colFechaAlta === undefined) throw new Error('La hoja "Productos" no tiene la columna "fecha_alta".');
+  if (colFechaBaja === undefined) throw new Error('La hoja "Productos" no tiene la columna "fecha_baja".');
+
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow < 2) return { total: 0, procesados: 0, ejemplos: [] };
+
+  const datos = sheetProd.getRange(2, 1, lastRow - 1, headers.length).getValues();
+
+  const zona = ss.getSpreadsheetTimeZone();
+  const ahoraFormateada = Utilities.formatDate(new Date(), zona, 'dd/MM/yyyy HH:mm:ss');
+  const nuevoValorBaja = accion === 'dar_baja' ? ahoraFormateada : '';
+
+  // Copia de la columna fecha_baja en memoria — se muta solo donde toca
+  // y se escribe entera al final en una única llamada.
+  const columnaBaja = datos.map(fila => [fila[colFechaBaja]]);
+
+  let procesados = 0;
+  const ejemplos = [];
+
+  for (let i = 0; i < datos.length; i++) {
+    const fechaAltaCelda = parsearFechaFlexible_(datos[i][colFechaAlta]);
+    if (!fechaAltaCelda) continue; // sin fecha_alta informada: se deja tal cual, no se toca
+
+    const fechaAltaDia = truncarFecha_(fechaAltaCelda);
+    const dentroDelRango =
+      (!inicioDia || fechaAltaDia >= inicioDia) &&
+      (!finDia    || fechaAltaDia <= finDia);
+    if (!dentroDelRango) continue;
+
+    columnaBaja[i][0] = nuevoValorBaja;
+    procesados++;
+    if (ejemplos.length < 10) {
+      ejemplos.push({
+        referencia: colRef !== undefined ? datos[i][colRef].toString() : '',
+        fecha_alta: Utilities.formatDate(fechaAltaCelda, zona, 'dd/MM/yyyy'),
+      });
+    }
+  }
+
+  if (procesados > 0) {
+    sheetProd.getRange(2, colFechaBaja + 1, columnaBaja.length, 1).setValues(columnaBaja);
+    SpreadsheetApp.flush();
+    // Una sola regeneración completa de la caché al final — sustituye a
+    // llamar actualizarProductoEnCache_() producto a producto, que con
+    // un rango amplio (potencialmente miles de productos) sería
+    // enormemente más lento y arriesgaría el límite de ejecución.
+    regenerarCacheCompletaDesdeSheet_();
+  }
+
+  return { total: datos.length, procesados: procesados, ejemplos: ejemplos };
+}
+
+// ── Menú del Sheet: pide fecha de inicio y fecha de fin en dos pasos
+//    (Apps Script no tiene un cuadro de diálogo nativo con más de un
+//    campo de texto), cualquiera de las dos se puede dejar en blanco. ──
+function pedirFechaOpcional_(ui, titulo) {
+  const resp = ui.prompt(
+    titulo,
+    'Formato dd/MM/yyyy (por ejemplo 31/12/2024). Déjalo en blanco y pulsa Aceptar si no quieres informar esta fecha.',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (resp.getSelectedButton() !== ui.Button.OK) return { cancelado: true };
+  return { cancelado: false, valor: resp.getResponseText().trim() };
+}
+
+function mostrarResultadoBajaReactivacion_(ui, titulo, resultado) {
+  const detalleEjemplos = resultado.ejemplos.length
+    ? '\n\nAlgunos de los productos afectados:\n' + resultado.ejemplos.map(e => `• ${e.referencia} (alta: ${e.fecha_alta})`).join('\n')
+    : '';
+  ui.alert(
+    titulo,
+    `Productos revisados: ${resultado.total}\nProductos afectados: ${resultado.procesados}${detalleEjemplos}`,
+    ui.ButtonSet.OK
+  );
+}
+
+function darDeBajaPorFechaAltaMenu() {
+  const ui = SpreadsheetApp.getUi();
+  const rInicio = pedirFechaOpcional_(ui, '🚫 Dar de baja por fecha de alta — Fecha de INICIO');
+  if (rInicio.cancelado) return;
+  const rFin = pedirFechaOpcional_(ui, '🚫 Dar de baja por fecha de alta — Fecha de FIN');
+  if (rFin.cancelado) return;
+
+  try {
+    const resultado = procesarBajaReactivacionPorFechaAlta_(rInicio.valor || null, rFin.valor || null, 'dar_baja');
+    mostrarResultadoBajaReactivacion_(ui, '✓ Baja masiva completada', resultado);
+  } catch (err) {
+    ui.alert('Error', err.message, ui.ButtonSet.OK);
+  }
+}
+
+function reactivarPorFechaAltaMenu() {
+  const ui = SpreadsheetApp.getUi();
+  const rInicio = pedirFechaOpcional_(ui, '♻️ Reactivar por fecha de alta — Fecha de INICIO');
+  if (rInicio.cancelado) return;
+  const rFin = pedirFechaOpcional_(ui, '♻️ Reactivar por fecha de alta — Fecha de FIN');
+  if (rFin.cancelado) return;
+
+  try {
+    const resultado = procesarBajaReactivacionPorFechaAlta_(rInicio.valor || null, rFin.valor || null, 'reactivar');
+    mostrarResultadoBajaReactivacion_(ui, '✓ Reactivación masiva completada', resultado);
+  } catch (err) {
+    ui.alert('Error', err.message, ui.ButtonSet.OK);
+  }
+}
+
+// ── Acceso desde el iPhone (Shortcuts) vía el Web App ───────────────────
+// El Web App está desplegado como "Cualquiera, incluso anónimos" — es
+// decir, CUALQUIERA con la URL puede llamarlo, sin iniciar sesión. Para
+// el resto de acciones (actualizar una imagen, validar una imagen…) el
+// riesgo de eso es bajo. Pero esto es una acción MASIVA que puede
+// afectar a miles de productos de golpe, así que se exige además una
+// clave compartida simple como capa mínima de protección frente a que
+// alguien dispare esto por accidente o con la URL adivinada/filtrada:
+//
+//   1. En el editor de Apps Script → Configuración del proyecto →
+//      Propiedades del script → añade una propiedad
+//      CLAVE_BAJA_MASIVA con un valor que solo tú conozcas.
+//   2. En el Atajo de iPhone, añade "&clave=ESA_MISMA_CLAVE" a la URL.
+//
+// Uso desde un Atajo de iPhone (petición GET, sin cuerpo):
+//   .../exec?accion=dar_baja_por_fecha_alta&fecha_fin=31/12/2024&clave=TU_CLAVE
+//   .../exec?accion=reactivar_por_fecha_alta&fecha_inicio=01/01/2024&clave=TU_CLAVE
+//   .../exec?accion=dar_baja_por_fecha_alta&fecha_inicio=01/01/2023&fecha_fin=31/12/2023&clave=TU_CLAVE
+function manejarBajaReactivacionWeb_(e, accion) {
+  try {
+    const claveEsperada = PropertiesService.getScriptProperties().getProperty('CLAVE_BAJA_MASIVA');
+    if (!claveEsperada) {
+      throw new Error('No hay ninguna CLAVE_BAJA_MASIVA configurada en las Propiedades del script — configúrala antes de poder usar esta acción desde fuera del Sheet (ver comentario en manejarBajaReactivacionWeb_).');
+    }
+    const clave = e && e.parameter ? e.parameter.clave : null;
+    if (clave !== claveEsperada) {
+      throw new Error('Clave incorrecta o no informada.');
+    }
+
+    const fechaInicio = e.parameter.fecha_inicio || null;
+    const fechaFin    = e.parameter.fecha_fin    || null;
+    const resultado = procesarBajaReactivacionPorFechaAlta_(fechaInicio, fechaFin, accion);
+    return ContentService.createTextOutput(JSON.stringify(Object.assign({ success: true }, resultado)))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en manejarBajaReactivacionWeb_:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
