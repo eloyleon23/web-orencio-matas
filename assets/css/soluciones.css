@@ -392,12 +392,18 @@
   .cs-pdf-footer__horario { color: var(--text-dark); font-weight: 500; }
 
   .cs-section, .cs-section--alt { padding: 14px 0; }
-  .cs-productos-grid, .cs-materiales, .cs-alternativas { grid-template-columns: repeat(2, 1fr) !important; }
-  .cs-producto-card, .cs-timeline__paso, .cs-tip, .cs-mistakes {
+  .cs-productos-grid, .cs-materiales, .cs-alternativas, .cs-relacionadas-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .cs-producto-card, .cs-timeline__paso, .cs-tip, .cs-mistakes,
+  .cs-alternativa-card, .cs-solucion-card {
     break-inside: avoid;
     box-shadow: none !important;
   }
   .cs-producto-card__imagen-wrap { height: 90px; }
+  /* "Soluciones relacionadas" usa un enlace real (para navegar en
+     pantalla) — al imprimir no tiene sentido mostrarlo subrayado/azul
+     como un vínculo ni conservar el cursor de puntero, se ve como una
+     tarjeta informativa más. */
+  .cs-solucion-card { text-decoration: none !important; color: inherit !important; }
 }
 
 /* ── Modal de detalle de producto — PORT FIEL del modal real de

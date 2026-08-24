@@ -208,7 +208,7 @@
       </section>
 
       <!-- Alternativas -->
-      <section class="cs-section no-imprimir">
+      <section class="cs-section">
         <div class="container">
           <div class="section-heading">
             <p class="section-heading__eyebrow">Según tu caso</p>
@@ -228,7 +228,7 @@
 
       ${relacionadas.length ? `
       <!-- Soluciones relacionadas -->
-      <section class="cs-section cs-section--alt no-imprimir">
+      <section class="cs-section cs-section--alt">
         <div class="container">
           <div class="section-heading">
             <p class="section-heading__eyebrow">Sigue explorando</p>
