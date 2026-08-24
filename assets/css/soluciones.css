@@ -88,83 +88,118 @@
    quien ya sabe la palabra que quiere buscar y no quiere navegar por
    toda la página. Solo dispara la búsqueda al pulsar Intro (también
    desde el teclado del móvil, gracias a enterkeyhint="search") o al
-   tocar la lupa — nunca en cada tecla. */
+   tocar la lupa — nunca en cada tecla.
+   Mismo lenguaje visual que la barra de búsqueda del buscador de
+   productos (buscador.html: recuadro blanco con borde suave, esquinas
+   ligeramente redondeadas — no la píldora completamente redonda que
+   tenía antes), reproducido aquí con colores equivalentes porque esta
+   página no comparte la hoja de estilos concreta de esa otra. */
 .cs-hero__buscador {
-  max-width: 560px;
+  max-width: 480px;
   margin: 0 0 30px;
 }
 .cs-hero__buscador-caja {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: #ffffff;
-  border-radius: 999px;
-  padding: 6px 8px 6px 8px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
 }
+.cs-hero__buscador-input {
+  width: 100%;
+  padding: 13px 40px 13px 42px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  color: #1e293b;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.25);
+}
+.cs-hero__buscador-input:focus {
+  outline: none;
+  border-color: var(--primary-red);
+}
+.cs-hero__buscador-input::placeholder { color: #94a3b8; }
 .cs-hero__buscador-lupa {
-  flex-shrink: 0;
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   border: none;
   background: none;
-  color: var(--text-gray);
+  color: #64748b;
   font-size: 1rem;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  padding: 4px;
+  line-height: 1;
 }
-.cs-hero__buscador-lupa:hover, .cs-hero__buscador-lupa:focus-visible { color: var(--primary-red); background: rgba(217, 27, 27, 0.08); }
-.cs-hero__buscador-input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: none;
-  padding: 10px 4px;
-  font-size: 0.98rem;
-  font-family: var(--font-body);
-  color: var(--text-dark);
-}
-.cs-hero__buscador-input::placeholder { color: var(--text-gray); }
+.cs-hero__buscador-lupa:hover, .cs-hero__buscador-lupa:focus-visible { color: var(--primary-red); }
 .cs-hero__buscador-limpiar {
-  flex-shrink: 0;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   border: none;
-  background: var(--light-gray);
-  color: var(--text-gray);
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: none;
+  color: #64748b;
+  font-size: 1.15rem;
   cursor: pointer;
-  margin-right: 2px;
+  padding: 4px;
+  line-height: 1;
 }
-.cs-hero__buscador-limpiar:hover, .cs-hero__buscador-limpiar:focus-visible { background: rgba(217, 27, 27, 0.12); color: var(--primary-red); }
+.cs-hero__buscador-limpiar:hover, .cs-hero__buscador-limpiar:focus-visible { color: var(--primary-red); }
+
+/* Resultados: listado sutil de chips (mismo componente visual que los
+   chips de "¿Tienes un problema?"), no tarjetas grandes — se lee y
+   escanea mejor tanto en escritorio como en móvil, y cada chip lleva el
+   icono de la categoría de su solución para identificarla de un
+   vistazo. */
 .cs-hero__buscador-resultados {
-  margin-top: 16px;
-  padding: 22px;
-  border-radius: var(--radius-medium);
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius-small);
   background: #ffffff;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
-  max-width: 900px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+  max-width: 720px;
   animation: csFadeIn 0.3s ease;
 }
 .cs-hero__buscador-contador {
-  font-weight: 800;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-gray);
+  margin-bottom: 12px;
+}
+.cs-hero__buscador-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.cs-hero__buscador-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border: 1px solid rgba(18, 20, 23, 0.12);
+  border-radius: 999px;
+  background: var(--light-gray);
   color: var(--text-dark);
-  margin-bottom: 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.cs-hero__buscador-chip:hover, .cs-hero__buscador-chip:focus-visible {
+  border-color: var(--primary-red);
+  background: rgba(217, 27, 27, 0.06);
+  color: var(--primary-red);
 }
 .cs-hero__buscador-vacio {
   color: var(--text-dark);
   margin: 0;
   line-height: 1.6;
+  font-size: 0.92rem;
 }
 @media (max-width: 640px) {
-  .cs-hero__buscador-resultados { padding: 16px; }
+  .cs-hero__buscador-resultados { padding: 14px; }
 }
 .cs-hero__ctas {
   display: flex;

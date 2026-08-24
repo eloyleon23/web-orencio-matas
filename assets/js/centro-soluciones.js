@@ -70,7 +70,7 @@
         resultados.innerHTML = '';
         return;
       }
-      const encontradas = D.buscarSolucionesPorTexto(texto).slice(0, 9);
+      const encontradas = D.buscarSolucionesPorTexto(texto).slice(0, 12);
       if (!encontradas.length) {
         resultados.innerHTML = `
           <p class="cs-hero__buscador-vacio">No hemos encontrado ninguna guía para "<strong>${texto}</strong>" — prueba con otra palabra, o cuéntanoslo con tus propias palabras en <a href="#cs-problema">¿Tienes un problema?</a>.</p>
@@ -80,16 +80,12 @@
       }
       resultados.innerHTML = `
         <p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>
-        <div class="cs-grid cs-grid--soluciones">
-          ${encontradas.map((s) => `
-            <a class="cs-solucion-card" href="${urlSolucion(s.slug)}">
-              <div class="cs-solucion-card__media">🛠️</div>
-              <div class="cs-solucion-card__body">
-                <div class="cs-solucion-card__title">${s.title}</div>
-                <div class="cs-solucion-card__meta">${badgeDificultad(s.difficulty)}<span>⏱ ${s.estimatedTime}</span></div>
-              </div>
-            </a>
-          `).join('')}
+        <div class="cs-hero__buscador-lista">
+          ${encontradas.map((s) => {
+            const area = D.areas.find((a) => a.id === s.category);
+            const emoji = area ? area.emoji : '🛠️';
+            return `<a class="cs-hero__buscador-chip" href="${urlSolucion(s.slug)}"><span aria-hidden="true">${emoji}</span> ${s.title}</a>`;
+          }).join('')}
         </div>
       `;
       resultados.style.display = 'block';
