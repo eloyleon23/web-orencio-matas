@@ -1246,6 +1246,48 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             object-fit: contain;
             border-radius: 8px;
         }
+        /* Botón que envuelve la imagen principal del modal de detalle
+           para ampliarla — mismo mecanismo que el asistente de
+           imágenes (icono siempre visible, no solo al :hover, para que
+           sea igual de descubrible en móvil; <img> con
+           pointer-events:none para que sea siempre el <button> quien
+           reciba el toque, evitando el menú nativo de "mantener
+           pulsado" de iOS sobre la imagen). */
+        .modal-producto-imagen-ampliar {
+            position: relative;
+            display: inline-flex;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .modal-producto-imagen-ampliar img {
+            pointer-events: none;
+            -webkit-touch-callout: none;
+            -webkit-user-drag: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .modal-producto-imagen-ampliar-icono {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--text-dark, #0f172a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+            pointer-events: none;
+        }
+        .modal-producto-imagen-ampliar:active .modal-producto-imagen-ampliar-icono {
+            background: #fff;
+        }
         .modal-producto-info {
             padding: 30px;
             display: flex;
@@ -2310,22 +2352,44 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-size: 0.8rem;
             color: #166534;
         }
-        /* Lightbox de ampliación de imagen dentro del asistente */
-        #asistente-lightbox-box {
+        /* Lightbox de ampliación de imagen — compartido entre el
+           Asistente de imágenes y el modal de detalle de producto */
+        #lightbox-imagen-box {
             position: relative;
             max-width: min(92vw, 640px);
-            max-height: 88vh;
+            max-height: 92vh;
             display: flex;
+            flex-direction: column;
         }
-        #asistente-lightbox-img {
+        #lightbox-imagen-img {
             max-width: 100%;
-            max-height: 88vh;
+            max-height: 74vh;
             object-fit: contain;
-            border-radius: 10px;
+            border-radius: 10px 10px 0 0;
             background: #fff;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
         }
-        #asistente-lightbox-cerrar {
+        #lightbox-imagen-info {
+            background: #fff;
+            border-radius: 0 0 10px 10px;
+            padding: 12px 16px 14px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            text-align: center;
+        }
+        #lightbox-imagen-nombre {
+            margin: 0 0 2px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-dark, #0f172a);
+            line-height: 1.3;
+        }
+        #lightbox-imagen-ref {
+            margin: 0;
+            font-size: 0.82rem;
+            color: var(--muted);
+            letter-spacing: 0.02em;
+        }
+        #lightbox-imagen-cerrar {
             position: absolute;
             top: -14px;
             right: -14px;
@@ -2342,9 +2406,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
             touch-action: manipulation;
+            z-index: 1;
         }
         @media (hover: hover) and (pointer: fine) {
-            #asistente-lightbox-cerrar:hover { background: #f1f5f9; }
+            #lightbox-imagen-cerrar:hover { background: #f1f5f9; }
         }
         .asistente-dropzone {
             border: 2px dashed #cbd5e1;
@@ -2935,7 +3000,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <div class="modal-producto-content">
             <div class="modal-producto-imagen">
-                <img id="modal-producto-img" src="" alt="" loading="lazy">
+                <button type="button" class="modal-producto-imagen-ampliar" id="modal-producto-imagen-ampliar" aria-label="Ampliar imagen">
+                    <img id="modal-producto-img" src="" alt="" loading="lazy">
+                    <span class="modal-producto-imagen-ampliar-icono"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+                </button>
                 <div id="modal-producto-sin-imagen" class="sin-imagen-fabricante sin-imagen-fabricante--modal" style="display:none;">
                     <img class="sin-imagen-fabricante-logo" src="" alt="">
                     <span class="sin-imagen-fabricante-nombre"></span>
@@ -3248,12 +3316,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      (#modal-asistente-imagenes-overlay usa 6100, para quedar por encima
      del panel de filtros móvil — ver esa regla en el CSS), ya que este
      lightbox se abre POR ENCIMA del asistente, no lo sustituye. -->
-<div class="modal-overlay" id="asistente-lightbox-overlay" style="z-index:6200;">
-    <div id="asistente-lightbox-box">
-        <button type="button" id="asistente-lightbox-cerrar" aria-label="Cerrar imagen ampliada">
+<!-- Lightbox de ampliación de imagen, COMPARTIDO por el Asistente de
+     imágenes (imagen actual y candidata automática) y por el modal de
+     detalle de producto del buscador — un único overlay reutilizado en
+     los dos sitios, con el nombre y la referencia del producto siempre
+     visibles debajo de la imagen, para poder comprobar que coincide con
+     el producto real antes de decidir. z-index 6200: por encima del
+     modal del propio Asistente de imágenes (6100, para quedar por
+     encima del panel de filtros móvil) y muy por encima del modal de
+     detalle de producto (1000, el z-index base de .modal-overlay). -->
+<div class="modal-overlay" id="lightbox-imagen-overlay" style="z-index:6200;">
+    <div id="lightbox-imagen-box">
+        <button type="button" id="lightbox-imagen-cerrar" aria-label="Cerrar imagen ampliada">
             <i class="fa-solid fa-xmark"></i>
         </button>
-        <img id="asistente-lightbox-img" src="" alt="Imagen ampliada">
+        <img id="lightbox-imagen-img" src="" alt="Imagen ampliada">
+        <div id="lightbox-imagen-info">
+            <p id="lightbox-imagen-nombre"></p>
+            <p id="lightbox-imagen-ref"></p>
+        </div>
     </div>
 </div>
 
@@ -5266,6 +5347,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-img').alt = escapeHtml(p.nombre);
         $('modal-producto-img').onerror = () => mostrarSinImagenModal(p);
 
+        // El botón que envuelve la imagen solo tiene sentido si hay una
+        // foto real que ampliar (con el logo/nombre genérico de "sin
+        // imagen" no aporta nada tocarlo).
+        $('modal-producto-imagen-ampliar').style.display = tieneImagen ? '' : 'none';
+        $('modal-producto-imagen-ampliar').onclick = () => {
+            abrirLightboxImagen(urlImagenProducto(p, 1200), p.nombre, p.ref);
+        };
+
         if (tieneImagen) {
             $('modal-producto-sin-imagen').style.display = 'none';
         } else {
@@ -7086,26 +7175,33 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (e.target.id === 'modal-asistente-imagenes-overlay') cerrarAsistenteImagenes();
     });
 
-    // ── Lightbox para ampliar la imagen actual o la candidata automática,
-    //    dentro del Asistente de imágenes (ver arriba en el HTML) ──
-    function abrirLightboxAsistente(url) {
+    // ── Lightbox de ampliación de imagen — compartido por el Asistente
+    //    de imágenes (imagen actual y candidata automática) y por el
+    //    modal de detalle de producto (ver más abajo, junto al resto de
+    //    listeners de ese modal) ──
+    function abrirLightboxImagen(url, nombre, ref) {
         if (!url) return;
-        $('asistente-lightbox-img').src = url;
-        $('asistente-lightbox-overlay').classList.add('activo');
+        $('lightbox-imagen-img').src = url;
+        $('lightbox-imagen-nombre').textContent = nombre || '';
+        $('lightbox-imagen-ref').textContent = ref ? `Ref: ${ref}` : '';
+        $('lightbox-imagen-overlay').classList.add('activo');
     }
-    function cerrarLightboxAsistente() {
-        $('asistente-lightbox-overlay').classList.remove('activo');
-        $('asistente-lightbox-img').src = '';
+    function cerrarLightboxImagen() {
+        $('lightbox-imagen-overlay').classList.remove('activo');
+        $('lightbox-imagen-img').src = '';
     }
     $('asistente-imagen-actual-ampliar').addEventListener('click', () => {
-        abrirLightboxAsistente(urlImagenProducto(colaAsistente[indiceAsistenteActual], 800));
+        const p = colaAsistente[indiceAsistenteActual];
+        if (!p) return;
+        abrirLightboxImagen(urlImagenProducto(p, 800), p.nombre, p.ref);
     });
     $('asistente-candidata-auto-ampliar').addEventListener('click', () => {
-        abrirLightboxAsistente($('asistente-candidata-auto-img').src);
+        const p = colaAsistente[indiceAsistenteActual];
+        abrirLightboxImagen($('asistente-candidata-auto-img').src, p ? p.nombre : '', p ? p.ref : '');
     });
-    $('asistente-lightbox-cerrar').addEventListener('click', cerrarLightboxAsistente);
-    $('asistente-lightbox-overlay').addEventListener('click', (e) => {
-        if (e.target.id === 'asistente-lightbox-overlay') cerrarLightboxAsistente();
+    $('lightbox-imagen-cerrar').addEventListener('click', cerrarLightboxImagen);
+    $('lightbox-imagen-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'lightbox-imagen-overlay') cerrarLightboxImagen();
     });
 
     $('asistente-aplicar-filtros').addEventListener('click', () => {
