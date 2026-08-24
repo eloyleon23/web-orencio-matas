@@ -49,9 +49,38 @@
   function renderProblemas() {
     const chips = $('#cs-problem-chips');
     if (chips) {
-      chips.innerHTML = D.problemasFrecuentes.map((p) => `
-        <button type="button" class="cs-chip" data-problema="${p.id}">${p.label}</button>
-      `).join('');
+      // Antes era un único bloque plano con más de 50 botones seguidos —
+      // demasiado grande y difícil de escanear. Se agrupan por la misma
+      // categoría que usa "Explora por áreas" (la de la solución a la
+      // que apunta cada chip), en bloques plegables cerrados por
+      // defecto, con el emoji de la categoría antepuesto a cada chip
+      // para asociarlo de un vistazo con el tipo de problema.
+      const grupos = new Map(); // categoryId -> array de chips
+      D.problemasFrecuentes.forEach((p) => {
+        const sol = D.soluciones[p.solutionSlug];
+        const catId = (sol && sol.category) || 'otro';
+        if (!grupos.has(catId)) grupos.set(catId, []);
+        grupos.get(catId).push(p);
+      });
+
+      chips.innerHTML = D.areas
+        .filter((a) => grupos.has(a.id))
+        .map((a) => {
+          const chipsGrupo = grupos.get(a.id);
+          return `
+            <details class="cs-problem-grupo">
+              <summary class="cs-problem-grupo__titulo">
+                <span>${a.emoji} ${a.label}</span>
+                <span class="cs-problem-grupo__contador">${chipsGrupo.length}</span>
+              </summary>
+              <div class="cs-problem-grupo__chips">
+                ${chipsGrupo.map((p) => `
+                  <button type="button" class="cs-chip" data-problema="${p.id}"><span aria-hidden="true">${a.emoji}</span> ${p.label}</button>
+                `).join('')}
+              </div>
+            </details>
+          `;
+        }).join('');
     }
 
     const textarea = $('#cs-problem-textarea');

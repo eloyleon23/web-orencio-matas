@@ -203,9 +203,54 @@
 }
 .cs-problem-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
   margin: 20px 0 26px;
+}
+/* Cada categoría es un <details> nativo del navegador: plegable,
+   accesible por teclado y sin necesidad de JS extra para abrir/cerrar. */
+.cs-problem-grupo {
+  border: 1px solid rgba(18, 20, 23, 0.1);
+  border-radius: var(--radius-small);
+  overflow: hidden;
+}
+.cs-problem-grupo__titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--text-dark);
+  background: var(--light-gray);
+  user-select: none;
+}
+.cs-problem-grupo__titulo::-webkit-details-marker { display: none; }
+.cs-problem-grupo__titulo::after {
+  content: '▾';
+  font-size: 0.8rem;
+  color: var(--text-gray);
+  transition: transform 0.18s ease;
+  margin-left: auto;
+}
+.cs-problem-grupo[open] > .cs-problem-grupo__titulo::after { transform: rotate(180deg); }
+.cs-problem-grupo__contador {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-gray);
+  background: #fff;
+  border-radius: 999px;
+  padding: 2px 9px;
+  margin-right: 6px;
+}
+.cs-problem-grupo__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px;
 }
 .cs-chip {
   padding: 9px 16px;
