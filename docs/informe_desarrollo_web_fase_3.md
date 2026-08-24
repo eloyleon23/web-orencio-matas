@@ -128,7 +128,22 @@ La nueva web está preparada para su despliegue en el servidor de IONOS bajo el 
 
 Pendiente: ejecución final del despliegue en el servidor y verificación de DNS, SSL y redirecciones.
 
-8. OBSERVACIONES Y ESTADO ACTUAL
+8. DESGLOSE DE HORAS — FASE 3
+
+Epica / Tarea                                        | Horas
+-----------------------------------------------------|------
+Buscador: rendimiento, UX, filtros y sugerencias     | 3 h
+Gestión de imágenes: vista detalle y asistente       | 5 h
+Actualización automatizada de productos              | 2 h
+Centro de Soluciones: wizard, guías y validación     | 12 h
+Catálogos por áreas de negocio                       | 2 h
+Preparación del despliegue en IONOS                  | 2 h
+Ajustes técnicos, responsive y documentación         | 4 h
+Redacción del informe de la Fase 3                   | 2 h
+-----------------------------------------------------|------
+TOTAL                                                | 32 h
+
+9. OBSERVACIONES Y ESTADO ACTUAL
 
 · El buscador carga de forma inmediata con el catálogo local.
 · El Centro de Soluciones está operativo como prototipo inicial y continuará ampliándose con nuevas guías.
