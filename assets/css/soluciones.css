@@ -260,6 +260,25 @@
 }
 .cs-diagnostico-resultado p { margin-bottom: 14px; line-height: 1.6; }
 
+/* Cuando el diagnóstico por texto libre encuentra varias guías que
+   encajan (p. ej. buscar "moho" a secas), cada una se muestra como una
+   tarjeta independiente dentro de esta lista, en vez de una única
+   respuesta — así no se pierde ninguna opción relevante. */
+.cs-diagnostico-resultado__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cs-diagnostico-resultado__item {
+  padding: 16px 18px;
+  border-radius: var(--radius-small, 10px);
+  background: #fff;
+  border: 1px solid rgba(0, 135, 67, 0.18);
+}
+.cs-diagnostico-resultado__item p { margin-bottom: 12px; }
+.cs-diagnostico-resultado__item:last-child p:last-of-type,
+.cs-diagnostico-resultado__item p:only-of-type { margin-bottom: 12px; }
+
 @keyframes csFadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }

@@ -75,22 +75,41 @@
           textarea && textarea.focus();
           return;
         }
-        const { problemaDetectado, solutionSlug } = D.diagnosticarPorTexto(texto);
-        mostrarDiagnosticoSimulado(problemaDetectado, solutionSlug, texto);
+        const { problemaDetectado, solutionSlug, todasLasSoluciones } = D.diagnosticarPorTexto(texto);
+        mostrarDiagnosticoSimulado(problemaDetectado, solutionSlug, texto, todasLasSoluciones);
       });
     }
 
-    function mostrarDiagnosticoSimulado(problemaLabel, slug, textoOriginal) {
+    function mostrarDiagnosticoSimulado(problemaLabel, slug, textoOriginal, todasLasSoluciones) {
       if (!resultado) return;
 
-      if (slug && D.soluciones[slug]) {
-        // Tenemos una guía completa preparada para esto — el caso ideal.
-        const sol = D.soluciones[slug];
+      // Lista de soluciones a mostrar: si el diagnóstico por texto libre
+      // encontró varias guías que encajan (p. ej. buscar "moho" a secas
+      // coincide con la guía de junta, la de limpieza general y la de
+      // antes de pintar), se muestran TODAS — antes solo se ofrecía la
+      // primera y el resto quedaba oculto. El clic directo en un chip
+      // sigue mostrando solo esa guía concreta (es una selección
+      // explícita de un caso ya identificado, no una búsqueda a ciegas).
+      const soluciones = (todasLasSoluciones && todasLasSoluciones.length)
+        ? todasLasSoluciones.filter((s) => D.soluciones[s.solutionSlug])
+        : (slug && D.soluciones[slug] ? [{ problemaDetectado: problemaLabel, solutionSlug: slug }] : []);
+
+      if (soluciones.length) {
+        const varias = soluciones.length > 1;
         resultado.innerHTML = `
-          <p class="cs-diagnostico-resultado__titulo">✅ Hemos identificado tu problema</p>
-          <p><strong>Problema:</strong> ${problemaLabel}</p>
-          <p>Te recomendamos seguir la solución <strong>"${sol.title}"</strong> — incluye el diagnóstico completo, los pasos a seguir y los productos que necesitas.</p>
-          <a class="btn-primary" href="${urlSolucion(slug)}">Ver la solución completa</a>
+          <p class="cs-diagnostico-resultado__titulo">${varias ? `✅ Hemos encontrado ${soluciones.length} soluciones relacionadas` : '✅ Hemos identificado tu problema'}</p>
+          ${varias ? '' : `<p><strong>Problema:</strong> ${soluciones[0].problemaDetectado}</p>`}
+          <div class="cs-diagnostico-resultado__lista">
+            ${soluciones.map((s) => {
+              const sol = D.soluciones[s.solutionSlug];
+              return `
+                <div class="cs-diagnostico-resultado__item">
+                  <p>${varias ? `<strong>${s.problemaDetectado}</strong><br>` : ''}Te recomendamos seguir la solución <strong>"${sol.title}"</strong> — incluye el diagnóstico completo, los pasos a seguir y los productos que necesitas.</p>
+                  <a class="btn-primary" href="${urlSolucion(s.solutionSlug)}">Ver la solución completa</a>
+                </div>
+              `;
+            }).join('')}
+          </div>
         `;
         resultado.style.display = 'block';
         resultado.scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -3285,9 +3285,17 @@ window.SOLUCIONES_DATA = (function () {
       'renovar_banera_sanitario': ['renovar la bañera', 'renovar la banera', 'renovar el lavabo', 'renovar el sanitario', 'pintar la bañera', 'pintar la banera', 'pintar el lavabo', 'pintar el sanitario', 'esmaltar la bañera', 'esmaltar la banera', 'cambiar el color de la bañera', 'sin cambiarlo'],
       // 'moho_antes_pintar' ANTES de 'moho_junta': una consulta sobre moho
       // en una pared con intención de pintar después no es lo mismo que
-      // un problema de moho en la junta de silicona del baño.
-      'moho_antes_pintar': ['moho antes de pintar', 'moho para pintar', 'moho y quiero pintar', 'moho y pintar', 'pintar sobre el moho', 'pintar sobre moho', 'quitar el moho para pintar', 'eliminar el moho para pintar', 'moho en la fachada'],
-      'moho_junta': ['junta', 'silicona', 'bañera', 'banera', 'ducha'],
+      // un problema de moho en la junta de silicona del baño. Ya no hace
+      // falta la máxima cautela de antes con la palabra genérica "moho":
+      // desde que diagnosticarPorTexto() devuelve TODAS las coincidencias
+      // (no solo la primera — ver más abajo), las 3 entradas de moho
+      // pueden compartir la palabra "moho" a secas sin que eso "robe" la
+      // respuesta a las demás — una búsqueda de "moho" sin más contexto
+      // simplemente muestra las 3 guías juntas, que es justo lo que se
+      // pidió. El orden aquí solo decide cuál aparece primero cuando hay
+      // varias.
+      'moho_antes_pintar': ['moho antes de pintar', 'moho para pintar', 'moho y quiero pintar', 'moho y pintar', 'pintar sobre el moho', 'pintar sobre moho', 'quitar el moho para pintar', 'eliminar el moho para pintar', 'moho en la fachada', 'moho'],
+      'moho_junta': ['junta', 'silicona', 'bañera', 'banera', 'ducha', 'moho'],
       // 'moho_general' (moho a secas, sin más contexto) DESPUÉS de las dos
       // anteriores: solo actúa como red de seguridad para "tengo moho en
       // la pared/el techo/el azulejo" u otras frases que no hayan
@@ -3352,23 +3360,46 @@ window.SOLUCIONES_DATA = (function () {
       'proteger_fuego_estructura': ['contra el fuego', 'resistencia al fuego', 'intumescente'],
       'lacar_mueble_profesional': ['lacar', 'lacado', 'laca poliuretano'],
     };
-    let problemaId = null;
+    // Se recogen TODAS las coincidencias, no solo la primera — antes se
+    // paraba en cuanto encontraba un problema y solo se ofrecía esa única
+    // solución, aunque el texto pudiera encajar razonablemente con varias
+    // guías distintas (p. ej. buscar "moho" a secas: hay guía de junta con
+    // moho, de limpieza general y de moho antes de pintar). Se sigue
+    // manteniendo el orden de aparición en el objeto (los términos más
+    // específicos siguen listados antes que los genéricos) para que el
+    // PRIMER resultado sea el más relevante, pero ya no se descarta el
+    // resto.
+    const idsCoincidentes = [];
     for (const [id, palabras] of Object.entries(coincidencias)) {
-      if (palabras.some((p) => t.includes(p))) { problemaId = id; break; }
+      if (palabras.some((p) => t.includes(p))) idsCoincidentes.push(id);
     }
 
-    if (!problemaId) {
+    if (!idsCoincidentes.length) {
       // Honestidad ante todo: si el texto no coincide con ningún problema
       // conocido, no forzamos una recomendación al azar (mismo criterio ya
       // aplicado en encontrarSolucionPorDiagnostico del wizard). El llamador
       // debe entonces intentar una búsqueda real en el catálogo en su lugar.
-      return { problemaDetectado: null, solutionSlug: null };
+      return { problemaDetectado: null, solutionSlug: null, todasLasSoluciones: [] };
     }
 
-    const problema = problemasFrecuentes.find((p) => p.id === problemaId) || problemasFrecuentes[0];
+    // Varios ids de "problema" distintos pueden apuntar a la MISMA
+    // solución (por ejemplo, dos formas de describir el mismo caso) — se
+    // deduplica por solutionSlug para no repetir la misma guía dos veces
+    // en los resultados.
+    const vistos = new Set();
+    const todasLasSoluciones = [];
+    idsCoincidentes.forEach((id) => {
+      const p = problemasFrecuentes.find((pf) => pf.id === id);
+      if (!p || vistos.has(p.solutionSlug)) return;
+      vistos.add(p.solutionSlug);
+      todasLasSoluciones.push({ problemaDetectado: p.label, solutionSlug: p.solutionSlug });
+    });
+
+    const problema = problemasFrecuentes.find((p) => p.id === idsCoincidentes[0]) || problemasFrecuentes[0];
     return {
       problemaDetectado: problema.label,
       solutionSlug: problema.solutionSlug,
+      todasLasSoluciones,
     };
   }
 
