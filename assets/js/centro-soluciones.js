@@ -91,22 +91,35 @@
       resultados.style.display = 'block';
     }
 
-    // Nada de búsqueda en cada tecla: solo al pulsar Intro (también desde
-    // el teclado del móvil, gracias a enterkeyhint="search" del propio
-    // input) o al tocar la lupa. Un <input type="text"> normal ya impide
-    // por sí mismo los saltos de línea (a diferencia de un <textarea>),
-    // así que no hace falta ningún bloqueo adicional para eso.
+    // Búsqueda en vivo mientras se escribe (a partir de las primeras
+    // letras), además de al pulsar Intro o tocar la lupa. Se espera un
+    // pequeño instante tras cada tecla (debounce) para no relanzar la
+    // búsqueda en cada pulsación — solo cuando la persona hace una
+    // pausa al escribir — y no se busca con un único carácter (demasiado
+    // ruidoso, casi cualquier solución tendría alguna coincidencia).
+    const MIN_CARACTERES_BUSQUEDA_VIVA = 2;
+    const RETRASO_BUSQUEDA_VIVA_MS = 250;
+    let temporizadorBusqueda = null;
+
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        clearTimeout(temporizadorBusqueda);
         ejecutarBusqueda();
       }
     });
     input.addEventListener('input', () => {
       btnLimpiar.style.display = input.value ? 'flex' : 'none';
+      clearTimeout(temporizadorBusqueda);
+      if (input.value.trim().length < MIN_CARACTERES_BUSQUEDA_VIVA) {
+        resultados.style.display = 'none';
+        resultados.innerHTML = '';
+        return;
+      }
+      temporizadorBusqueda = setTimeout(ejecutarBusqueda, RETRASO_BUSQUEDA_VIVA_MS);
     });
-    if (btnLupa) btnLupa.addEventListener('click', ejecutarBusqueda);
-    if (btnLimpiar) btnLimpiar.addEventListener('click', limpiar);
+    if (btnLupa) btnLupa.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); ejecutarBusqueda(); });
+    if (btnLimpiar) btnLimpiar.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); limpiar(); });
   }
 
   // ── "Tengo un problema" ─────────────────────────────────────────────────

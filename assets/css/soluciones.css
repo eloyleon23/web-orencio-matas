@@ -129,6 +129,11 @@
   cursor: pointer;
   padding: 4px;
   line-height: 1;
+  min-width: 20px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .cs-hero__buscador-lupa:hover, .cs-hero__buscador-lupa:focus-visible { color: var(--primary-red); }
 .cs-hero__buscador-limpiar {
@@ -143,6 +148,11 @@
   cursor: pointer;
   padding: 4px;
   line-height: 1;
+  min-width: 22px;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .cs-hero__buscador-limpiar:hover, .cs-hero__buscador-limpiar:focus-visible { color: var(--primary-red); }
 
