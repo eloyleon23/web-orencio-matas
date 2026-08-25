@@ -92,8 +92,8 @@ function sincronizarRegistroProductos() {
   const sheetReg  = ss.getSheetByName('RegistroProductos');
   const sheetProd = ss.getSheetByName('Productos');
 
-  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos". Créala y pega los datos del Excel primero.'); return { error: 'No existe la hoja RegistroProductos' }; }
-  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return { error: 'No existe la hoja Productos' }; }
+  if (!sheetReg)  { avisar_('Aviso', 'No existe la hoja "RegistroProductos". Créala y pega los datos del Excel primero.'); return { error: 'No existe la hoja RegistroProductos' }; }
+  if (!sheetProd) { avisar_('Aviso', 'No existe la hoja "Productos".'); return { error: 'No existe la hoja Productos' }; }
 
   const regHeaderRow = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim());
@@ -147,7 +147,7 @@ function sincronizarRegistroProductos() {
   const imagenesCache = cargarCacheImagenes_();
 
   const lastRow = sheetReg.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos no tiene datos. Pega primero el contenido del Excel.'); return { error: 'RegistroProductos sin datos' }; }
+  if (lastRow < 2) { avisar_('Aviso', 'RegistroProductos no tiene datos. Pega primero el contenido del Excel.'); return { error: 'RegistroProductos sin datos' }; }
 
   const regData = sheetReg.getRange(2, 1, lastRow - 1, regHeaderRow.length).getValues();
   let nuevos = 0, actualizados = 0, saltados = 0, errores = 0;
@@ -277,14 +277,14 @@ function actualizarPreciosProductos() {
   const sheetReg  = ss.getSheetByName('RegistroProductos');
   const sheetProd = ss.getSheetByName('Productos');
 
-  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos".'); return; }
-  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+  if (!sheetReg)  { avisar_('Aviso', 'No existe la hoja "RegistroProductos".'); return; }
+  if (!sheetProd) { avisar_('Aviso', 'No existe la hoja "Productos".'); return; }
 
   const regHeaderRow = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim());
 
   if (!regHeaderRow.includes('ActualizarPrecio')) {
-    SpreadsheetApp.getUi().alert('No existe la columna "ActualizarPrecio" en RegistroProductos.');
+    avisar_('Aviso', 'No existe la columna "ActualizarPrecio" en RegistroProductos.');
     return;
   }
 
@@ -305,7 +305,7 @@ function actualizarPreciosProductos() {
   });
 
   const lastRow = sheetReg.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos no tiene datos.'); return; }
+  if (lastRow < 2) { avisar_('Aviso', 'RegistroProductos no tiene datos.'); return; }
 
   const regData = sheetReg.getRange(2, 1, lastRow - 1, regHeaderRow.length).getValues();
   let actualizados = 0, saltados = 0, errores = 0;
@@ -775,8 +775,8 @@ function reevaluarAreasProductos() {
   const sheetProd = ss.getSheetByName('Productos');
   const sheetFam  = ss.getSheetByName('FamiliaProductos');
 
-  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
-  if (!sheetFam)  { SpreadsheetApp.getUi().alert('No existe la hoja "FamiliaProductos".'); return; }
+  if (!sheetProd) { avisar_('Aviso', 'No existe la hoja "Productos".'); return; }
+  if (!sheetFam)  { avisar_('Aviso', 'No existe la hoja "FamiliaProductos".'); return; }
 
   // ── Construir mapa Familia → Área desde FamiliaProductos (tabla curada a mano) ──
   const famHeaders = sheetFam.getRange(1, 1, 1, sheetFam.getLastColumn()).getValues()[0]
@@ -785,7 +785,7 @@ function reevaluarAreasProductos() {
   const colFamArea    = famHeaders.indexOf('area');
 
   if (colFamFamilia === -1 || colFamArea === -1) {
-    SpreadsheetApp.getUi().alert('La hoja "FamiliaProductos" debe tener columnas "Familia" y "Area".');
+    avisar_('Aviso', 'La hoja "FamiliaProductos" debe tener columnas "Familia" y "Area".');
     return;
   }
 
@@ -806,12 +806,12 @@ function reevaluarAreasProductos() {
   const colArea      = headers.indexOf('area');
   const colNombre    = headers.indexOf('nombre');
 
-  if (colArea === -1)      { SpreadsheetApp.getUi().alert('No existe la columna "area" en Productos.'); return; }
-  if (colTipologia === -1) { SpreadsheetApp.getUi().alert('No existe la columna "tipologia" en Productos.'); return; }
-  if (colNombre === -1)    { SpreadsheetApp.getUi().alert('No existe la columna "nombre" en Productos.'); return; }
+  if (colArea === -1)      { avisar_('Aviso', 'No existe la columna "area" en Productos.'); return; }
+  if (colTipologia === -1) { avisar_('Aviso', 'No existe la columna "tipologia" en Productos.'); return; }
+  if (colNombre === -1)    { avisar_('Aviso', 'No existe la columna "nombre" en Productos.'); return; }
 
   const lastRow = sheetProd.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos.'); return; }
+  if (lastRow < 2) { avisar_('Aviso', 'No hay productos.'); return; }
 
   const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
 
@@ -1364,7 +1364,7 @@ function abrirAyuda() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const ayuda = ss.getSheetByName('Ayuda');
   if (ayuda) ss.setActiveSheet(ayuda);
-  else SpreadsheetApp.getUi().alert('La hoja "Ayuda" no existe. Ejecuta crearHojaAyuda() desde el editor de scripts.');
+  else avisar_('Aviso', 'La hoja "Ayuda" no existe. Ejecuta crearHojaAyuda() desde el editor de scripts.');
 }
 
 // ── Crear hoja de ayuda ────────────────────────────────────────────────────
@@ -1611,7 +1611,7 @@ function actualizarImagenesDrive() {
   const sheetProd = ss.getSheetByName('Productos');
 
   if (!sheetProd) {
-    SpreadsheetApp.getUi().alert('No existe la hoja "Productos".');
+    avisar_('Aviso', 'No existe la hoja "Productos".');
     return;
   }
 
@@ -1623,7 +1623,7 @@ function actualizarImagenesDrive() {
   const colImg = headers.indexOf('imagen_drive_id');
 
   if (colRef === -1 || colImg === -1) {
-    SpreadsheetApp.getUi().alert('La hoja Productos debe tener las columnas "referencia" e "imagen_drive_id".');
+    avisar_('Aviso', 'La hoja Productos debe tener las columnas "referencia" e "imagen_drive_id".');
     return;
   }
 
@@ -1636,13 +1636,13 @@ function actualizarImagenesDrive() {
   console.log(`Imágenes en Drive: ${totalEnDrive}`);
 
   if (totalEnDrive === 0) {
-    SpreadsheetApp.getUi().alert('No se encontraron imágenes en la carpeta de Drive. Verifica el ID de carpeta.');
+    avisar_('Aviso', 'No se encontraron imágenes en la carpeta de Drive. Verifica el ID de carpeta.');
     return;
   }
 
   // ── Leer productos ────────────────────────────────────────────────────────
   const lastRow  = sheetProd.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos en la hoja.'); return; }
+  if (lastRow < 2) { avisar_('Aviso', 'No hay productos en la hoja.'); return; }
 
   const data = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
 
@@ -1705,8 +1705,8 @@ function deshabilitarProductosSinFoto() {
   const sheetReg  = ss.getSheetByName('RegistroProductos');
   const sheetProd = ss.getSheetByName('Productos');
 
-  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos".'); return; }
-  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+  if (!sheetReg)  { avisar_('Aviso', 'No existe la hoja "RegistroProductos".'); return; }
+  if (!sheetProd) { avisar_('Aviso', 'No existe la hoja "Productos".'); return; }
 
   // Cabeceras RegistroProductos
   const regHeaders = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
@@ -1723,7 +1723,7 @@ function deshabilitarProductosSinFoto() {
   const colRef      = PROD['referencia'];
   const colIncluir  = PROD['incluir_en_catalogo'];
   if (colRef === undefined || colIncluir === undefined) {
-    SpreadsheetApp.getUi().alert('Faltan columnas "referencia" o "incluir_en_catalogo" en Productos.');
+    avisar_('Aviso', 'Faltan columnas "referencia" o "incluir_en_catalogo" en Productos.');
     return;
   }
 
@@ -1737,7 +1737,7 @@ function deshabilitarProductosSinFoto() {
 
   // Leer RegistroProductos
   const lastRow = sheetReg.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos está vacío.'); return; }
+  if (lastRow < 2) { avisar_('Aviso', 'RegistroProductos está vacío.'); return; }
   const regData = sheetReg.getRange(2, 1, lastRow-1, regHeaders.length).getValues();
 
   let deshabilitados = 0, noEncontrados = 0, saltados = 0;
@@ -1804,8 +1804,8 @@ function actualizarImagenesCorregidas() {
   const sheetReg  = ss.getSheetByName('RegistroProductos');
   const sheetProd = ss.getSheetByName('Productos');
 
-  if (!sheetReg)  { SpreadsheetApp.getUi().alert('No existe la hoja "RegistroProductos".'); return; }
-  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+  if (!sheetReg)  { avisar_('Aviso', 'No existe la hoja "RegistroProductos".'); return; }
+  if (!sheetProd) { avisar_('Aviso', 'No existe la hoja "Productos".'); return; }
 
   // Cabeceras
   const regHeaders = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
@@ -1824,7 +1824,7 @@ function actualizarImagenesCorregidas() {
   const colFecha   = PROD['fecha_registro'];
 
   if (colRef === undefined || colIncluir === undefined || colImg === undefined) {
-    SpreadsheetApp.getUi().alert('Faltan columnas necesarias en Productos.');
+    avisar_('Aviso', 'Faltan columnas necesarias en Productos.');
     return;
   }
 
@@ -1842,13 +1842,13 @@ function actualizarImagenesCorregidas() {
       cacheNuevas[ean] = file;  // guardar el objeto File para compartirlo
     }
   } catch(e) {
-    SpreadsheetApp.getUi().alert('Error accediendo a la carpeta de imágenes nuevas: ' + e.message);
+    avisar_('Aviso', 'Error accediendo a la carpeta de imágenes nuevas: ' + e.message);
     return;
   }
 
   const totalNuevas = Object.keys(cacheNuevas).length;
   if (totalNuevas === 0) {
-    SpreadsheetApp.getUi().alert('No hay imágenes en la carpeta "imagenes_nuevas_pendientes_procesar".');
+    avisar_('Aviso', 'No hay imágenes en la carpeta "imagenes_nuevas_pendientes_procesar".');
     return;
   }
 
@@ -1865,7 +1865,7 @@ function actualizarImagenesCorregidas() {
 
   // Leer RegistroProductos
   const lastRow = sheetReg.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.getUi().alert('RegistroProductos está vacío.'); return; }
+  if (lastRow < 2) { avisar_('Aviso', 'RegistroProductos está vacío.'); return; }
   const regData = sheetReg.getRange(2, 1, lastRow-1, regHeaders.length).getValues();
 
   let actualizados = 0, sinImagenNueva = 0, noEncontrados = 0, saltados = 0;
@@ -1960,7 +1960,7 @@ function moverImagenesNuevasACarpetaPrincipal() {
   const sheetProd = ss.getSheetByName('Productos');
   const sheetReg  = ss.getSheetByName('RegistroProductos');
 
-  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+  if (!sheetProd) { avisar_('Aviso', 'No existe la hoja "Productos".'); return; }
 
   // Cabeceras Productos
   const prodHeaders = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
@@ -1974,7 +1974,7 @@ function moverImagenesNuevasACarpetaPrincipal() {
   const colFecha   = PROD['fecha_registro'];
 
   if (colRef === undefined || colImg === undefined) {
-    SpreadsheetApp.getUi().alert('Faltan columnas "referencia" o "imagen_drive_id" en Productos.');
+    avisar_('Aviso', 'Faltan columnas "referencia" o "imagen_drive_id" en Productos.');
     return;
   }
 
@@ -2020,7 +2020,7 @@ function moverImagenesNuevasACarpetaPrincipal() {
   while (iter.hasNext()) archivosPendientes.push(iter.next());
 
   if (archivosPendientes.length === 0) {
-    SpreadsheetApp.getUi().alert('No hay imágenes en "imagenes_nuevas_pendientes_procesar".');
+    avisar_('Aviso', 'No hay imágenes en "imagenes_nuevas_pendientes_procesar".');
     return;
   }
 
@@ -2112,11 +2112,11 @@ function darDeBajaProductos() {
   const sheetProd  = ss.getSheetByName('Productos');
 
   if (!sheetBaja) {
-    SpreadsheetApp.getUi().alert('No existe la hoja "BajaProductos". Créala con las referencias a dar de baja.');
+    avisar_('Aviso', 'No existe la hoja "BajaProductos". Créala con las referencias a dar de baja.');
     return;
   }
   if (!sheetProd) {
-    SpreadsheetApp.getUi().alert('No existe la hoja "Productos".');
+    avisar_('Aviso', 'No existe la hoja "Productos".');
     return;
   }
 
@@ -2160,7 +2160,7 @@ function darDeBajaProductos() {
   const colRef       = PROD['referencia'];
 
   if (colRef === undefined || colIncluir === undefined) {
-    SpreadsheetApp.getUi().alert('La hoja Productos no tiene las columnas "referencia" o "incluir_en_catalogo".');
+    avisar_('Aviso', 'La hoja Productos no tiene las columnas "referencia" o "incluir_en_catalogo".');
     return;
   }
 
@@ -2175,7 +2175,7 @@ function darDeBajaProductos() {
   // ── Procesar bajas ────────────────────────────────────────────────────────
   const lastRow = sheetBaja.getLastRow();
   if (lastRow < 2) {
-    SpreadsheetApp.getUi().alert('La hoja BajaProductos no tiene referencias. Añade EANs en la columna Referencia.');
+    avisar_('Aviso', 'La hoja BajaProductos no tiene referencias. Añade EANs en la columna Referencia.');
     return;
   }
 
@@ -2256,7 +2256,7 @@ function darDeBajaProductos() {
 function clasificarSubfamiliasConIA() {
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const sheetProd = ss.getSheetByName('Productos');
-  if (!sheetProd) { SpreadsheetApp.getUi().alert('No existe la hoja "Productos".'); return; }
+  if (!sheetProd) { avisar_('Aviso', 'No existe la hoja "Productos".'); return; }
 
   const REGLAS = obtenerReglasSubfamilias_();
 
@@ -2274,12 +2274,12 @@ function clasificarSubfamiliasConIA() {
   const colSubfam  = PROD['subfamilia'];
 
   if (colNombre === undefined || colFamilia === undefined) {
-    SpreadsheetApp.getUi().alert('Faltan columnas necesarias (nombre, tipologia) en Productos.');
+    avisar_('Aviso', 'Faltan columnas necesarias (nombre, tipologia) en Productos.');
     return;
   }
 
   const lastRow = sheetProd.getLastRow();
-  if (lastRow < 2) { SpreadsheetApp.getUi().alert('No hay productos.'); return; }
+  if (lastRow < 2) { avisar_('Aviso', 'No hay productos.'); return; }
 
   SpreadsheetApp.getActiveSpreadsheet()
     .toast('Clasificando subfamilias por keywords...', '🗂️ Procesando', 10);
@@ -4621,7 +4621,7 @@ function generarExcelProductosSinImagen_() {
 // las acciones NUEVAS de este panel (panel_ejecutar, panel_buscar_
 // producto, panel_guardar_producto, panel_validar_pin).
 
-// Alerta segura: funciona igual que SpreadsheetApp.getUi().alert() al
+// Alerta segura: funciona igual que avisar_('Aviso', ) al
 // llamarla desde el menú de la Hoja, pero NO revienta cuando no hay
 // interfaz disponible (como al llamarla desde este panel) — en ese caso
 // simplemente lo deja en los logs de ejecución y sigue.
