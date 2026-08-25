@@ -29,8 +29,8 @@ function onOpen() {
     .addItem('📧 Revisar correo de listado CRM ahora', 'revisarCorreoListadoProductosManual')
     .addItem('� Actualizar precios de productos', 'actualizarPreciosProductos')
     .addItem('�🚫 Procesar bajas de BajaProductos', 'darDeBajaProductos')
-    .addItem('🚫 Dar de baja por fecha de alta (masivo)', 'darDeBajaPorFechaAltaMenu')
-    .addItem('♻️ Reactivar por fecha de alta (masivo)', 'reactivarPorFechaAltaMenu')
+    .addItem('🚫 Dar de baja por rango de fecha alta', 'darBajaProductosPorFechaAlta')
+    .addItem('✅ Reactivar por rango de fecha alta', 'reactivarProductosPorFechaAlta')
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('📧 Enviarme Excel de productos sin imagen', 'enviarExcelProductosSinImagenManual')
     .addItem('🔄 Regenerar caché completa del buscador', 'regenerarCacheCompletaManual')
@@ -3175,20 +3175,24 @@ function doGet(e) {
   try {
     const accion = e && e.parameter ? e.parameter.accion : null;
 
+    // NUEVO — Panel de administración: lista de botones disponibles,
+    // generada automáticamente a partir de FUNCIONES_PANEL. Añadir una
+    // función nueva a ese mapa basta para que aparezca aquí sola.
+    if (accion === 'panel_config') {
+      const lista = Object.keys(FUNCIONES_PANEL).map(clave => ({
+        clave: clave,
+        etiqueta: FUNCIONES_PANEL[clave].etiqueta,
+        grupo: FUNCIONES_PANEL[clave].grupo,
+        confirmar: !!FUNCIONES_PANEL[clave].confirmar,
+      }));
+      return ContentService.createTextOutput(JSON.stringify({ funciones: lista }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     if (accion === 'obtener_productos') {
       const datos = leerCacheProductos_();
       return ContentService.createTextOutput(JSON.stringify(datos))
         .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // Baja/reactivación masiva por fecha de alta, pensada para dispararse
-    // desde un Atajo de iPhone — ver manejarBajaReactivacionWeb_ para el
-    // detalle de la clave de seguridad requerida y ejemplos de URL.
-    if (accion === 'dar_baja_por_fecha_alta') {
-      return manejarBajaReactivacionWeb_(e, 'dar_baja');
-    }
-    if (accion === 'reactivar_por_fecha_alta') {
-      return manejarBajaReactivacionWeb_(e, 'reactivar');
     }
 
     // Devuelve, por área, el ID de Drive del PDF (si ya existe) y los
@@ -3279,6 +3283,27 @@ function doPost(e) {
     if (accion === 'sincronizar_catalogos') {
       console.log('Acción: sincronizar_catalogos');
       return procesarSincronizarCatalogos(data);
+    }
+
+    // NUEVO — Panel de administración (protegidas por PIN)
+    if (accion === 'panel_ejecutar') {
+      console.log('Acción: panel_ejecutar', data.clave);
+      return procesarPanelEjecutar(data);
+    }
+
+    if (accion === 'panel_buscar_producto') {
+      console.log('Acción: panel_buscar_producto');
+      return procesarPanelBuscarProducto(data);
+    }
+
+    if (accion === 'panel_guardar_producto') {
+      console.log('Acción: panel_guardar_producto');
+      return procesarPanelGuardarProducto(data);
+    }
+
+    if (accion === 'panel_validar_pin') {
+      console.log('Acción: panel_validar_pin');
+      return procesarPanelValidarPin(data);
     }
 
     console.log('Acción no reconocida:', accion);
@@ -3714,255 +3739,6 @@ function procesarReactivarProducto(data) {
 
   } catch (err) {
     console.error('Error al reactivar el producto:', err);
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// BAJA / REACTIVACIÓN MASIVA POR FECHA DE ALTA
-// ══════════════════════════════════════════════════════════════════════
-// Da de baja (rellena fecha_baja) o reactiva (vacía fecha_baja) TODOS los
-// productos cuya fecha_alta caiga dentro del rango indicado:
-//   - Se informan fechaInicio y fechaFin -> fecha_alta entre ambas fechas,
-//     ambas incluidas.
-//   - Solo se informa fechaInicio        -> fecha_alta desde esa fecha
-//     en adelante (sin límite superior).
-//   - Solo se informa fechaFin           -> fecha_alta desde esa fecha
-//     hacia atrás (sin límite inferior).
-//   - No se informa ninguna              -> se aborta con un error a
-//     propósito. Es una acción masiva e irreversible en la práctica
-//     (afecta potencialmente a miles de productos); ejecutarla sin
-//     ningún filtro de fecha sería casi con toda seguridad un error del
-//     usuario, no una intención real.
-//
-// Igual que el resto de acciones de baja/reactivación del proyecto, solo
-// se toca la columna fecha_baja — NO se toca incluir_en_catalogo (esa
-// columna quedó como legado de una versión anterior del buscador; la
-// versión actual decide qué productos mostrar exclusivamente por si
-// fecha_baja está vacía o no, tal como ya hacen
-// procesarDarBajaProducto/procesarReactivarProducto de un solo producto
-// y regenerarCacheCompletaDesdeSheet_).
-//
-// Por rendimiento: NUNCA se escribe celda a celda (con miles de filas
-// agotaría con facilidad el límite de 6 minutos de ejecución de Apps
-// Script) — se lee toda la columna fecha_baja en memoria, se modifica
-// solo lo necesario, y se escribe de una sola vez con un único
-// setValues(). La caché del buscador se regenera también una sola vez
-// al final (regenerarCacheCompletaDesdeSheet_), no producto a producto.
-
-// Convierte a Date tanto una celda que Sheets ya reconoció como fecha
-// real (fecha_alta llega tal cual desde RegistroProductos, así que
-// puede ser un objeto Date o texto según cómo se pegara originalmente)
-// como texto en formato dd/MM/yyyy, dd-MM-yyyy o yyyy-MM-dd. Devuelve
-// null si no reconoce el valor.
-function parsearFechaFlexible_(valor) {
-  if (!valor) return null;
-  if (valor instanceof Date) return isNaN(valor.getTime()) ? null : valor;
-
-  const texto = valor.toString().trim();
-  if (!texto) return null;
-
-  let m = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-  if (m) {
-    const f = new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
-    return isNaN(f.getTime()) ? null : f;
-  }
-  m = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (m) {
-    const f = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
-    return isNaN(f.getTime()) ? null : f;
-  }
-  const intento = new Date(texto);
-  return isNaN(intento.getTime()) ? null : intento;
-}
-
-// Quita la hora, para comparar solo por día — así una fecha_alta con
-// hora (p. ej. "31/12/2024 14:32") cuenta igualmente como incluida en
-// un rango que termine ese mismo día.
-function truncarFecha_(fecha) {
-  return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
-}
-
-// accion: 'dar_baja' | 'reactivar'.
-// fechaInicio/fechaFin: string "dd/MM/yyyy" (u otro formato reconocido
-// por parsearFechaFlexible_), o null/undefined/'' si no se informa.
-// Devuelve { total, procesados, ejemplos } — nunca lanza si la operación
-// en sí llega a completarse, incluso con 0 coincidencias.
-function procesarBajaReactivacionPorFechaAlta_(fechaInicio, fechaFin, accion) {
-  if (accion !== 'dar_baja' && accion !== 'reactivar') {
-    throw new Error('accion debe ser "dar_baja" o "reactivar"');
-  }
-
-  const inicio = fechaInicio ? parsearFechaFlexible_(fechaInicio) : null;
-  const fin    = fechaFin    ? parsearFechaFlexible_(fechaFin)    : null;
-
-  if (fechaInicio && !inicio) throw new Error('Fecha de inicio no válida: "' + fechaInicio + '". Usa el formato dd/MM/yyyy.');
-  if (fechaFin && !fin)       throw new Error('Fecha de fin no válida: "' + fechaFin + '". Usa el formato dd/MM/yyyy.');
-  if (!inicio && !fin) {
-    throw new Error('Hay que informar al menos una fecha (inicio y/o fin). Por seguridad, esta acción masiva no se ejecuta sin ningún filtro de fecha.');
-  }
-
-  const inicioDia = inicio ? truncarFecha_(inicio) : null;
-  const finDia    = fin ? truncarFecha_(fin) : null;
-  if (inicioDia && finDia && inicioDia > finDia) {
-    throw new Error('La fecha de inicio (' + fechaInicio + ') no puede ser posterior a la fecha de fin (' + fechaFin + ').');
-  }
-
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetProd = ss.getSheetByName('Productos');
-  if (!sheetProd) throw new Error('No existe la hoja "Productos".');
-
-  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
-    .map(h => h.toString().trim().toLowerCase().replace(/\s+/g, '_'));
-  const PROD = {};
-  headers.forEach((h, i) => { PROD[h] = i; });
-
-  const colFechaAlta = PROD['fecha_alta'];
-  const colFechaBaja = PROD['fecha_baja'];
-  const colRef       = PROD['referencia'];
-  if (colFechaAlta === undefined) throw new Error('La hoja "Productos" no tiene la columna "fecha_alta".');
-  if (colFechaBaja === undefined) throw new Error('La hoja "Productos" no tiene la columna "fecha_baja".');
-
-  const lastRow = sheetProd.getLastRow();
-  if (lastRow < 2) return { total: 0, procesados: 0, ejemplos: [] };
-
-  const datos = sheetProd.getRange(2, 1, lastRow - 1, headers.length).getValues();
-
-  const zona = ss.getSpreadsheetTimeZone();
-  const ahoraFormateada = Utilities.formatDate(new Date(), zona, 'dd/MM/yyyy HH:mm:ss');
-  const nuevoValorBaja = accion === 'dar_baja' ? ahoraFormateada : '';
-
-  // Copia de la columna fecha_baja en memoria — se muta solo donde toca
-  // y se escribe entera al final en una única llamada.
-  const columnaBaja = datos.map(fila => [fila[colFechaBaja]]);
-
-  let procesados = 0;
-  const ejemplos = [];
-
-  for (let i = 0; i < datos.length; i++) {
-    const fechaAltaCelda = parsearFechaFlexible_(datos[i][colFechaAlta]);
-    if (!fechaAltaCelda) continue; // sin fecha_alta informada: se deja tal cual, no se toca
-
-    const fechaAltaDia = truncarFecha_(fechaAltaCelda);
-    const dentroDelRango =
-      (!inicioDia || fechaAltaDia >= inicioDia) &&
-      (!finDia    || fechaAltaDia <= finDia);
-    if (!dentroDelRango) continue;
-
-    columnaBaja[i][0] = nuevoValorBaja;
-    procesados++;
-    if (ejemplos.length < 10) {
-      ejemplos.push({
-        referencia: colRef !== undefined ? datos[i][colRef].toString() : '',
-        fecha_alta: Utilities.formatDate(fechaAltaCelda, zona, 'dd/MM/yyyy'),
-      });
-    }
-  }
-
-  if (procesados > 0) {
-    sheetProd.getRange(2, colFechaBaja + 1, columnaBaja.length, 1).setValues(columnaBaja);
-    SpreadsheetApp.flush();
-    // Una sola regeneración completa de la caché al final — sustituye a
-    // llamar actualizarProductoEnCache_() producto a producto, que con
-    // un rango amplio (potencialmente miles de productos) sería
-    // enormemente más lento y arriesgaría el límite de ejecución.
-    regenerarCacheCompletaDesdeSheet_();
-  }
-
-  return { total: datos.length, procesados: procesados, ejemplos: ejemplos };
-}
-
-// ── Menú del Sheet: pide fecha de inicio y fecha de fin en dos pasos
-//    (Apps Script no tiene un cuadro de diálogo nativo con más de un
-//    campo de texto), cualquiera de las dos se puede dejar en blanco. ──
-function pedirFechaOpcional_(ui, titulo) {
-  const resp = ui.prompt(
-    titulo,
-    'Formato dd/MM/yyyy (por ejemplo 31/12/2024). Déjalo en blanco y pulsa Aceptar si no quieres informar esta fecha.',
-    ui.ButtonSet.OK_CANCEL
-  );
-  if (resp.getSelectedButton() !== ui.Button.OK) return { cancelado: true };
-  return { cancelado: false, valor: resp.getResponseText().trim() };
-}
-
-function mostrarResultadoBajaReactivacion_(ui, titulo, resultado) {
-  const detalleEjemplos = resultado.ejemplos.length
-    ? '\n\nAlgunos de los productos afectados:\n' + resultado.ejemplos.map(e => `• ${e.referencia} (alta: ${e.fecha_alta})`).join('\n')
-    : '';
-  ui.alert(
-    titulo,
-    `Productos revisados: ${resultado.total}\nProductos afectados: ${resultado.procesados}${detalleEjemplos}`,
-    ui.ButtonSet.OK
-  );
-}
-
-function darDeBajaPorFechaAltaMenu() {
-  const ui = SpreadsheetApp.getUi();
-  const rInicio = pedirFechaOpcional_(ui, '🚫 Dar de baja por fecha de alta — Fecha de INICIO');
-  if (rInicio.cancelado) return;
-  const rFin = pedirFechaOpcional_(ui, '🚫 Dar de baja por fecha de alta — Fecha de FIN');
-  if (rFin.cancelado) return;
-
-  try {
-    const resultado = procesarBajaReactivacionPorFechaAlta_(rInicio.valor || null, rFin.valor || null, 'dar_baja');
-    mostrarResultadoBajaReactivacion_(ui, '✓ Baja masiva completada', resultado);
-  } catch (err) {
-    ui.alert('Error', err.message, ui.ButtonSet.OK);
-  }
-}
-
-function reactivarPorFechaAltaMenu() {
-  const ui = SpreadsheetApp.getUi();
-  const rInicio = pedirFechaOpcional_(ui, '♻️ Reactivar por fecha de alta — Fecha de INICIO');
-  if (rInicio.cancelado) return;
-  const rFin = pedirFechaOpcional_(ui, '♻️ Reactivar por fecha de alta — Fecha de FIN');
-  if (rFin.cancelado) return;
-
-  try {
-    const resultado = procesarBajaReactivacionPorFechaAlta_(rInicio.valor || null, rFin.valor || null, 'reactivar');
-    mostrarResultadoBajaReactivacion_(ui, '✓ Reactivación masiva completada', resultado);
-  } catch (err) {
-    ui.alert('Error', err.message, ui.ButtonSet.OK);
-  }
-}
-
-// ── Acceso desde el iPhone (Shortcuts) vía el Web App ───────────────────
-// El Web App está desplegado como "Cualquiera, incluso anónimos" — es
-// decir, CUALQUIERA con la URL puede llamarlo, sin iniciar sesión. Para
-// el resto de acciones (actualizar una imagen, validar una imagen…) el
-// riesgo de eso es bajo. Pero esto es una acción MASIVA que puede
-// afectar a miles de productos de golpe, así que se exige además una
-// clave compartida simple como capa mínima de protección frente a que
-// alguien dispare esto por accidente o con la URL adivinada/filtrada:
-//
-//   1. En el editor de Apps Script → Configuración del proyecto →
-//      Propiedades del script → añade una propiedad
-//      CLAVE_BAJA_MASIVA con un valor que solo tú conozcas.
-//   2. En el Atajo de iPhone, añade "&clave=ESA_MISMA_CLAVE" a la URL.
-//
-// Uso desde un Atajo de iPhone (petición GET, sin cuerpo):
-//   .../exec?accion=dar_baja_por_fecha_alta&fecha_fin=31/12/2024&clave=TU_CLAVE
-//   .../exec?accion=reactivar_por_fecha_alta&fecha_inicio=01/01/2024&clave=TU_CLAVE
-//   .../exec?accion=dar_baja_por_fecha_alta&fecha_inicio=01/01/2023&fecha_fin=31/12/2023&clave=TU_CLAVE
-function manejarBajaReactivacionWeb_(e, accion) {
-  try {
-    const claveEsperada = PropertiesService.getScriptProperties().getProperty('CLAVE_BAJA_MASIVA');
-    if (!claveEsperada) {
-      throw new Error('No hay ninguna CLAVE_BAJA_MASIVA configurada en las Propiedades del script — configúrala antes de poder usar esta acción desde fuera del Sheet (ver comentario en manejarBajaReactivacionWeb_).');
-    }
-    const clave = e && e.parameter ? e.parameter.clave : null;
-    if (clave !== claveEsperada) {
-      throw new Error('Clave incorrecta o no informada.');
-    }
-
-    const fechaInicio = e.parameter.fecha_inicio || null;
-    const fechaFin    = e.parameter.fecha_fin    || null;
-    const resultado = procesarBajaReactivacionPorFechaAlta_(fechaInicio, fechaFin, accion);
-    return ContentService.createTextOutput(JSON.stringify(Object.assign({ success: true }, resultado)))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    console.error('Error en manejarBajaReactivacionWeb_:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
@@ -4826,4 +4602,627 @@ function generarExcelProductosSinImagen_() {
   } finally {
     ss.deleteSheet(hojaTemp); // limpiar la hoja temporal siempre, haya ido bien o mal
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PANEL DE ADMINISTRACIÓN MÓVIL — control remoto de las funciones del
+// menú "📦 Catálogos Orencio Matas" desde el iPhone, sin abrir la Hoja.
+// ══════════════════════════════════════════════════════════════════════
+//
+// ARQUITECTURA: el panel es un archivo HTML normal (panel_admin.html) que
+// vive en el REPOSITORIO junto a buscador.html, servido por GitHub Pages
+// — NO por Apps Script/HtmlService. Este archivo .gs SOLO aporta la API
+// (las mismas acciones de doGet/doPost) — panel_admin.html habla con
+// esta API por fetch(), igual que ya hace buscador.html.
+//
+// SEGURIDAD
+// El PIN se compara ÚNICAMENTE aquí, en el servidor (verificarPin_) —
+// nunca viaja embebido en el HTML que se sirve al navegador del móvil.
+// Las acciones YA EXISTENTES que usa el buscador público (actualizar_
+// imagen, validar_imagen, dar_baja_producto, reactivar_producto,
+// marcar_sin_imagen) siguen SIN pin, a propósito. El PIN solo protege
+// las acciones NUEVAS de este panel (panel_ejecutar, panel_buscar_
+// producto, panel_guardar_producto, panel_validar_pin).
+
+// Alerta segura: funciona igual que SpreadsheetApp.getUi().alert() al
+// llamarla desde el menú de la Hoja, pero NO revienta cuando no hay
+// interfaz disponible (como al llamarla desde este panel) — en ese caso
+// simplemente lo deja en los logs de ejecución y sigue.
+function avisar_(titulo, mensaje) {
+  try {
+    const ui = SpreadsheetApp.getUi();
+    ui.alert(titulo, mensaje, ui.ButtonSet.OK);
+  } catch (err) {
+    console.log(titulo + ': ' + mensaje);
+  }
+}
+
+function verificarPin_(pin) {
+  const pinCorrecto = PropertiesService.getScriptProperties().getProperty('PANEL_PIN');
+  if (!pinCorrecto) return false; // sin PIN configurado, panel bloqueado por seguridad
+  return (pin || '').toString().trim() === pinCorrecto.toString().trim();
+}
+
+// ── Mapa único de funciones expuestas en el panel ─────────────────────
+// Para añadir una función nueva del menú al panel en el futuro, basta
+// con añadir una línea aquí (clave, etiqueta con emoji, grupo para
+// agrupar visualmente, la función en sí, y si conviene pedir
+// confirmación por ser una acción pesada o irreversible). El botón
+// aparece solo en el móvil — no hace falta tocar el HTML para nada.
+const FUNCIONES_PANEL = {
+  generar_catalogos:             { etiqueta: '🔄 Generar catálogos ahora',                    grupo: 'Catálogos',      fn: generarAhora,                         confirmar: false },
+  actualizar_zaphiro:            { etiqueta: '🔄 Actualizar catálogo Zaphiro',                 grupo: 'Catálogos',      fn: actualizarZaphiro,                    confirmar: false },
+  sincronizar_registro:          { etiqueta: '📥 Sincronizar RegistroProductos → Productos',   grupo: 'Sincronización', fn: sincronizarRegistroProductos,         confirmar: true  },
+  revisar_correo_crm:            { etiqueta: '📧 Revisar correo de listado CRM ahora',         grupo: 'Sincronización', fn: revisarCorreoListadoProductosManual,  confirmar: false },
+  actualizar_precios:            { etiqueta: '💰 Actualizar precios de productos',              grupo: 'Sincronización', fn: actualizarPreciosProductos,           confirmar: true  },
+  procesar_bajas:                { etiqueta: '🚫 Procesar bajas de BajaProductos',              grupo: 'Sincronización', fn: darDeBajaProductos,                   confirmar: true  },
+  actualizar_ids_imagen:         { etiqueta: '🖼️ Actualizar IDs de imagen desde Drive',        grupo: 'Imágenes',       fn: actualizarImagenesDrive,              confirmar: false },
+  enviar_excel_sin_imagen:       { etiqueta: '📧 Enviarme Excel de productos sin imagen',       grupo: 'Imágenes',       fn: enviarExcelProductosSinImagenManual,  confirmar: false },
+  regenerar_cache:               { etiqueta: '🔄 Regenerar caché completa del buscador',        grupo: 'Imágenes',       fn: regenerarCacheCompletaManual,         confirmar: false },
+  importar_sugerencias:          { etiqueta: '🔗 Importar sugerencias de relacionados',         grupo: 'Relacionados',   fn: importarSugerenciasRelacionados,      confirmar: false },
+  compartir_imagenes:            { etiqueta: '🔓 Compartir imágenes Drive públicamente',        grupo: 'Imágenes',       fn: compartirImagenesDrive,               confirmar: true  },
+  reevaluar_areas:               { etiqueta: '🗂️ Reevaluar áreas de todos los productos',      grupo: 'Clasificación',  fn: reevaluarAreasProductos,              confirmar: true  },
+  clasificar_subfamilias:        { etiqueta: '🤖 Clasificar subfamilias con IA',                grupo: 'Clasificación',  fn: clasificarSubfamiliasConIA,           confirmar: false },
+  deshabilitar_sin_foto:         { etiqueta: '⛔ Deshabilitar productos con foto incorrecta',    grupo: 'Imágenes',       fn: deshabilitarProductosSinFoto,         confirmar: true  },
+  actualizar_imagenes_corregidas:{ etiqueta: '🔄 Actualizar imágenes corregidas desde Drive',   grupo: 'Imágenes',       fn: actualizarImagenesCorregidas,         confirmar: false },
+  mover_imagenes_nuevas:         { etiqueta: '📦 Mover imágenes nuevas a carpeta principal',    grupo: 'Imágenes',       fn: moverImagenesNuevasACarpetaPrincipal, confirmar: true  },
+  dar_baja_fecha_alta:           { etiqueta: '🚫 Dar de baja por fecha de alta',                grupo: 'Sincronización', fn: panelDarBajaPorFechaAlta,             confirmar: true  },
+  reactivar_fecha_alta:          { etiqueta: '✅ Reactivar por fecha de alta',                   grupo: 'Sincronización', fn: panelReactivarPorFechaAlta,           confirmar: true  },
+};
+
+// ── Ejecutar una función del panel por su clave ───────────────────────
+function procesarPanelEjecutar(data) {
+  if (!verificarPin_(data.pin)) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  const entrada = FUNCIONES_PANEL[data.clave];
+  if (!entrada) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Función no reconocida: ' + data.clave }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    const resultado = entrada.fn(data);
+    return ContentService.createTextOutput(JSON.stringify({ success: true, resultado: resultado !== undefined ? resultado : null }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error ejecutando función de panel "' + data.clave + '":', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Buscar producto (reutiliza buscarProductoCompleto, ya existente) ──
+function procesarPanelBuscarProducto(data) {
+  if (!verificarPin_(data.pin)) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    const resultado = buscarProductoCompleto((data.referencia || '').toString().trim());
+    return ContentService.createTextOutput(JSON.stringify({ success: true, resultado: resultado }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Guardar producto (reutiliza guardarProducto, ya existente) ───────
+function procesarPanelGuardarProducto(data) {
+  if (!verificarPin_(data.pin)) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    guardarProducto(data.datosProducto || {}, data.filaExistente || null);
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Comprobar el PIN sin ejecutar nada (feedback inmediato en la
+//    pantalla de acceso, antes de intentar cualquier acción real) ─────
+function procesarPanelValidarPin(data) {
+  const ok = verificarPin_(data.pin);
+  return ContentService.createTextOutput(JSON.stringify({ success: ok }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BAJA / REACTIVACIÓN MASIVA POR RANGO DE FECHA_ALTA
+// ══════════════════════════════════════════════════════════════════════
+
+function normalizarFecha_(valor) {
+  if (!valor) return null;
+  if (valor instanceof Date) {
+    const d = new Date(Date.UTC(valor.getFullYear(), valor.getMonth(), valor.getDate()));
+    return d;
+  }
+  const txt = String(valor).trim();
+  if (!txt) return null;
+  const partes = txt.split(/[\/.:\-\s]/);
+  if (partes.length < 3) return null;
+  const dia  = parseInt(partes[0], 10);
+  const mes  = parseInt(partes[1], 10);
+  let anio = parseInt(partes[2], 10);
+  if (isNaN(dia) || isNaN(mes) || isNaN(anio)) return null;
+  if (anio < 100) anio += 2000;
+  const d = new Date(Date.UTC(anio, mes - 1, dia));
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function compararSoloFecha_(a, b) {
+  const ax = new Date(Date.UTC(a.getFullYear(), a.getMonth(), a.getDate()));
+  const bx = new Date(Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()));
+  return ax.getTime() - bx.getTime();
+}
+
+function leerRangoFechasDesdePrompt_(titulo) {
+  const ui = SpreadsheetApp.getUi();
+  const r1 = ui.prompt(
+    titulo,
+    'Fecha de inicio (dd/mm/aaaa). Deja en blanco para "hasta la fecha de fin":',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (r1.getSelectedButton() !== ui.Button.OK) return null;
+  const r2 = ui.prompt(
+    titulo,
+    'Fecha de fin (dd/mm/aaaa). Deja en blanco para "desde la fecha de inicio":',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (r2.getSelectedButton() !== ui.Button.OK) return null;
+  return {
+    inicio: r1.getResponseText().trim() || null,
+    fin:    r2.getResponseText().trim() || null
+  };
+}
+
+function leerRangoFechas_(data, titulo) {
+  if (data && (data.fechaInicio !== undefined || data.fechaFin !== undefined)) {
+    return { inicio: data.fechaInicio || null, fin: data.fechaFin || null };
+  }
+  return leerRangoFechasDesdePrompt_(titulo);
+}
+
+function filtrarPorFechaAlta_(data, titulo) {
+  const fechas = leerRangoFechas_(data, titulo);
+  if (!fechas) return null;
+ 
+  const inicio = fechas.inicio ? normalizarFecha_(fechas.inicio) : null;
+  const fin    = fechas.fin    ? normalizarFecha_(fechas.fin)    : null;
+ 
+  if (!inicio && !fin) {
+    avisar_('Rango vacío', 'Debes informar al menos una de las dos fechas.');
+    return null;
+  }
+  if (inicio && fin && inicio > fin) {
+    avisar_('Rango incorrecto', 'La fecha de inicio no puede ser posterior a la fecha de fin.');
+    return null;
+  }
+ 
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  if (!sheetProd) { avisar_('Error', 'No existe la hoja "Productos".'); return null; }
+ 
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+ 
+  if (PROD['fecha_alta'] === undefined) {
+    avisar_('Error', 'La hoja "Productos" no tiene la columna "fecha_alta".');
+    return null;
+  }
+ 
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow < 2) { avisar_('Sin datos', 'No hay productos.'); return null; }
+ 
+  const colFechaAlta = PROD['fecha_alta'] + 1;
+  const fechasVal = sheetProd.getRange(2, colFechaAlta, lastRow - 1, 1).getValues();
+ 
+  const filas = [];
+  fechasVal.forEach((row, i) => {
+    const fechaAlta = normalizarFecha_(row[0]);
+    if (!fechaAlta) return;
+ 
+    let ok = true;
+    if (inicio && fechaAlta < inicio) ok = false;
+    if (fin && fechaAlta > fin) ok = false;
+    if (!ok) return;
+ 
+    filas.push({
+      idx: i,
+      rowNum: i + 2
+    });
+  });
+ 
+  return { sheetProd: sheetProd, filas: filas, inicio: inicio, fin: fin, zona: ss.getSpreadsheetTimeZone(), PROD: PROD };
+}
+
+// ── Parcheo MASIVO de la caché de Drive, UNA SOLA VEZ para todos los
+//    productos afectados ──────────────────────────────────────────────
+// BUG DE RENDIMIENTO ENCONTRADO Y CORREGIDO: la versión anterior de
+// aplicarBajaOReactivar_ llamaba a actualizarProductoEnCache_() (pensada
+// para UN solo producto) DENTRO del bucle, una vez POR CADA producto
+// afectado. Esa función hace, en cada llamada: 1) leer el archivo
+// COMPLETO de caché desde Drive (varios MB, ~12.800 productos), 2)
+// JSON.parse de todo el archivo, 3) una búsqueda LINEAL (findIndex) por
+// todo el array para encontrar la referencia, 4) volver a serializar
+// TODO el archivo, 5) escribirlo entero de vuelta en Drive. Con un
+// rango de fechas amplio (cientos o miles de productos afectados), eso
+// multiplicaba ese coste completo por cada uno — exactamente lo que
+// hacía que la baja/reactivación masiva "tardara muchísimo" y agotara
+// el límite de 6 minutos de ejecución de Apps Script en los casos más
+// grandes (el motivo real de los fallos intermitentes reportados).
+//
+// Esta versión hace el mismo trabajo en UNA sola pasada: lee la caché
+// una vez, construye un mapa referencia→índice (búsqueda O(1) en vez de
+// lineal) y aplica todos los parches en memoria antes de guardar el
+// archivo una única vez al final.
+function actualizarProductosEnCacheBulk_(cambiosPorReferencia) {
+  if (!cambiosPorReferencia || !cambiosPorReferencia.length) return 0;
+  try {
+    const datos = leerCacheProductos_();
+    const productos = datos.productos || [];
+    const indicePorRef = new Map();
+    productos.forEach((p, i) => indicePorRef.set(p.ref, i));
+
+    let aplicados = 0;
+    cambiosPorReferencia.forEach(({ ref, cambios }) => {
+      const idx = indicePorRef.get(ref);
+      if (idx === undefined) return; // producto no encontrado en la caché: se ignora, no corta el resto
+      Object.assign(productos[idx], cambios);
+      aplicados++;
+    });
+
+    guardarCacheProductos_(datos);
+    console.log(`actualizarProductosEnCacheBulk_: ${aplicados}/${cambiosPorReferencia.length} productos actualizados en la caché de una sola vez.`);
+    return aplicados;
+  } catch (err) {
+    console.error('Error en actualizarProductosEnCacheBulk_:', err);
+    return 0;
+  }
+}
+
+function aplicarBajaOReactivar_(esBaja, info) {
+  const { sheetProd, filas, zona, PROD } = info;
+  const colIncluir   = PROD['incluir_en_catalogo'];
+  const colFechaBaja = PROD['fecha_baja'];
+  const ahora        = new Date();
+  const fechaBaja    = Utilities.formatDate(ahora, zona, 'dd/MM/yyyy HH:mm:ss');
+
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+  const refIdx = headers.indexOf('referencia');
+  const refs   = refIdx >= 0 ? sheetProd.getRange(2, refIdx + 1, sheetProd.getLastRow() - 1, 1).getValues() : [];
+
+  // Preparar arrays de valores
+  const valsIncluir   = colIncluir !== undefined   ? sheetProd.getRange(2, colIncluir + 1, sheetProd.getLastRow() - 1, 1).getValues() : null;
+  const valsFechaBaja = colFechaBaja !== undefined ? sheetProd.getRange(2, colFechaBaja + 1, sheetProd.getLastRow() - 1, 1).getValues() : null;
+
+  let cambiados = 0;
+  // Se acumulan aquí TODOS los cambios de caché y se aplican de una sola
+  // vez al terminar el bucle (ver actualizarProductosEnCacheBulk_) — antes
+  // se llamaba a actualizarProductoEnCache_ dentro de este mismo bucle,
+  // una vez por producto, lo que causaba el problema de rendimiento.
+  const cambiosParaCache = [];
+  filas.forEach(f => {
+    const i = f.idx;
+    const ref = refIdx >= 0 ? (refs[i][0] || '').toString().trim() : '';
+    const cambios = {};
+
+    if (esBaja) {
+      if (valsIncluir)   valsIncluir[i][0]   = 'no';
+      if (valsFechaBaja) valsFechaBaja[i][0] = fechaBaja;
+      cambios.incluir_en_catalogo = 'no';
+      cambios.fecha_baja = fechaBaja;
+    } else {
+      if (valsIncluir)   valsIncluir[i][0]   = 'si';
+      if (valsFechaBaja) valsFechaBaja[i][0] = '';
+      cambios.incluir_en_catalogo = 'si';
+      cambios.fecha_baja = '';
+    }
+
+    if (ref) cambiosParaCache.push({ ref: ref, cambios: cambios });
+    cambiados++;
+  });
+
+  // Escribir la Sheet en lote (ya lo era: una sola llamada por columna)
+  if (valsIncluir)   sheetProd.getRange(2, colIncluir + 1, valsIncluir.length, 1).setValues(valsIncluir);
+  if (valsFechaBaja) sheetProd.getRange(2, colFechaBaja + 1, valsFechaBaja.length, 1).setValues(valsFechaBaja);
+
+  // Parchear la caché de Drive UNA SOLA VEZ para todos los productos —
+  // ver actualizarProductosEnCacheBulk_ para el detalle del bug de
+  // rendimiento que esto corrige.
+  actualizarProductosEnCacheBulk_(cambiosParaCache);
+
+  return cambiados;
+}
+
+function darBajaProductosPorFechaAlta() {
+  const ui = SpreadsheetApp.getUi();
+  const r1 = ui.prompt('Dar de baja por fecha de alta', 'Fecha de inicio (dd/mm/aaaa):', ui.ButtonSet.OK_CANCEL);
+  if (r1.getSelectedButton() !== ui.Button.OK) return;
+  const r2 = ui.prompt('Dar de baja por fecha de alta', 'Fecha de fin (dd/mm/aaaa):', ui.ButtonSet.OK_CANCEL);
+  if (r2.getSelectedButton() !== ui.Button.OK) return;
+
+  const fechaInicio = r1.getResponseText().trim() || null;
+  const fechaFin    = r2.getResponseText().trim() || null;
+
+  if (!fechaInicio && !fechaFin) {
+    avisar_('Rango vacío', 'Debes informar al menos una fecha.');
+    return;
+  }
+
+  const info = filtrarPorFechaAlta_({ fechaInicio: fechaInicio, fechaFin: fechaFin }, 'Dar de baja productos por fecha de alta');
+  if (!info) return;
+
+  const cambiados = aplicarBajaOReactivar_(true, info);
+  SpreadsheetApp.flush();
+  avisar_('Baja completada', `🚫 Se han dado de baja ${cambiados} productos.`);
+}
+
+function reactivarProductosPorFechaAlta() {
+  const ui = SpreadsheetApp.getUi();
+  const r1 = ui.prompt('Reactivar por fecha de alta', 'Fecha de inicio (dd/mm/aaaa):', ui.ButtonSet.OK_CANCEL);
+  if (r1.getSelectedButton() !== ui.Button.OK) return;
+  const r2 = ui.prompt('Reactivar por fecha de alta', 'Fecha de fin (dd/mm/aaaa):', ui.ButtonSet.OK_CANCEL);
+  if (r2.getSelectedButton() !== ui.Button.OK) return;
+
+  const fechaInicio = r1.getResponseText().trim() || null;
+  const fechaFin    = r2.getResponseText().trim() || null;
+
+  if (!fechaInicio && !fechaFin) {
+    avisar_('Rango vacío', 'Debes informar al menos una fecha.');
+    return;
+  }
+
+  const info = filtrarPorFechaAlta_({ fechaInicio: fechaInicio, fechaFin: fechaFin }, 'Reactivar productos por fecha de alta');
+  if (!info) return;
+
+  const cambiados = aplicarBajaOReactivar_(false, info);
+  SpreadsheetApp.flush();
+  avisar_('Reactivación completada', `✅ Se han reactivado ${cambiados} productos.`);
+}
+
+function panelDarBajaPorFechaAlta(data) {
+  if (!data || (!data.fechaInicio && !data.fechaFin)) {
+    return { success: false, error: 'Faltan fechaInicio y/o fechaFin' };
+  }
+  const info = filtrarPorFechaAlta_(data, 'Dar de baja productos por fecha de alta');
+  if (!info) return { success: false, error: 'Rango no válido o sin productos' };
+
+  const cambiados = aplicarBajaOReactivar_(true, info);
+  SpreadsheetApp.flush();
+  return { success: true, bajas: cambiados };
+}
+
+function panelReactivarPorFechaAlta(data) {
+  if (!data || (!data.fechaInicio && !data.fechaFin)) {
+    return { success: false, error: 'Faltan fechaInicio y/o fechaFin' };
+  }
+  const info = filtrarPorFechaAlta_(data, 'Reactivar productos por fecha de alta');
+  if (!info) return { success: false, error: 'Rango no válido o sin productos' };
+
+  const cambiados = aplicarBajaOReactivar_(false, info);
+  SpreadsheetApp.flush();
+  return { success: true, reactivados: cambiados };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// FORMULARIO HTML CON CONFIRMACIÓN PARA BAJA/REACTIVACIÓN
+// ══════════════════════════════════════════════════════════════════════
+// NOTA: estas funciones (mostrarFormularioRangoFechas_ y las dos
+// ejecutarXxxPorFechaAlta que llama) están definidas pero, a fecha de
+// esta copia de referencia, ningún ítem del menú ni del panel las
+// invoca todavía — darBajaProductosPorFechaAlta/reactivarProductosPorFechaAlta
+// (los que sí están enlazados al menú) usan el flujo más simple de 2
+// prompts secuenciales sin previsualización de "productos afectados".
+// Se deja documentado por si se quiere terminar de enlazar esta versión
+// más completa (con paso previo de recuento) más adelante.
+
+function leerColumnaFechaAlta_() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  if (!sheetProd) throw new Error('No existe la hoja "Productos".');
+ 
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+ 
+  if (PROD['fecha_alta'] === undefined) throw new Error('La hoja Productos no tiene la columna "fecha_alta".');
+ 
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow < 2) return { sheetProd: sheetProd, fechas: [], colFechaAlta: PROD['fecha_alta'] };
+ 
+  const colIdx = PROD['fecha_alta'] + 1;
+  const fechas = sheetProd.getRange(2, colIdx, lastRow - 1, 1).getValues();
+ 
+  return { sheetProd: sheetProd, fechas: fechas, colFechaAlta: PROD['fecha_alta'] };
+}
+ 
+function numeroDeColumnaALetra_(column) {
+  let temp, letter = '';
+  while (column > 0) {
+    temp = (column - 1) % 26;
+    letter = String.fromCharCode(temp + 65) + letter;
+    column = (column - temp - 1) / 26;
+  }
+  return letter;
+}
+
+function contarProductosPorFechaAlta_(fechaInicio, fechaFin, esBaja) {
+  const inicio = fechaInicio ? normalizarFecha_(fechaInicio) : null;
+  const fin    = fechaFin    ? normalizarFecha_(fechaFin)    : null;
+ 
+  if (!inicio && !fin) throw new Error('Debes informar al menos una fecha.');
+  if (inicio && fin && compararSoloFecha_(inicio, fin) > 0) throw new Error('La fecha de inicio no puede ser posterior a la fecha de fin.');
+ 
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  if (!sheetProd) throw new Error('No existe la hoja "Productos".');
+ 
+  const headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+ 
+  if (PROD['fecha_alta'] === undefined) throw new Error('No existe la columna "fecha_alta".');
+ 
+  const colIdx  = PROD['fecha_alta'];
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow < 2) return 0;
+ 
+  const fechas = sheetProd.getRange(2, colIdx + 1, lastRow - 1, 1).getValues();
+ 
+  const inicioT = inicio ? inicio.getTime() : null;
+  const finT    = fin    ? fin.getTime()    : null;
+ 
+  let contador = 0;
+  for (let i = 0; i < fechas.length; i++) {
+    const val = fechas[i][0];
+    if (!val) continue;
+    const fechaAlta = normalizarFecha_(val);
+    if (!fechaAlta) continue;
+    const t = fechaAlta.getTime();
+    if (inicioT !== null && t < inicioT) continue;
+    if (finT    !== null && t > finT)    continue;
+    contador++;
+  }
+ 
+  return contador;
+}
+
+function mostrarFormularioRangoFechas_(titulo, modo) {
+  const html = HtmlService.createHtmlOutput(`
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * { box-sizing:border-box; font-family:Arial,sans-serif; }
+    body { padding:16px; color:#1a1a1a; font-size:13px; }
+    h2 { font-size:15px; margin-top:0; color:#d91b1b; }
+    .field { margin-bottom:10px; }
+    label { display:block; font-size:11px; font-weight:600; margin-bottom:3px; }
+    input { width:100%; padding:7px 9px; border:1px solid #d1d5db; border-radius:6px; font-size:12px; }
+    .hint { font-size:10px; color:#6b7280; margin-top:2px; }
+    .btn { width:100%; padding:9px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; margin-top:8px; }
+    .btn-primary { background:#d91b1b; color:white; }
+    .btn-secondary { background:#e5e7eb; color:#374151; }
+    #status { margin-top:10px; font-size:11px; color:#d91b1b; }
+    #resumen { display:none; margin-top:12px; padding:12px; background:#f3f4f6; border-radius:6px; }
+    #resumen strong { color:#1f2937; }
+  </style>
+</head>
+<body>
+  <h2>${titulo}</h2>
+
+  <div id="paso1">
+    <div class="field">
+      <label>Fecha de inicio (dd/mm/aaaa)</label>
+      <input id="inicio" type="text" placeholder="Ej: 01/01/2023">
+      <p class="hint">Dejar en blanco para "hasta la fecha de fin".</p>
+    </div>
+    <div class="field">
+      <label>Fecha de fin (dd/mm/aaaa)</label>
+      <input id="fin" type="text" placeholder="Ej: 31/12/2023">
+      <p class="hint">Dejar en blanco para "desde la fecha de inicio".</p>
+    </div>
+    <button class="btn btn-secondary" onclick="verAfectados()">Ver afectados</button>
+    <button class="btn btn-secondary" onclick="google.script.host.close()">Cancelar</button>
+  </div>
+
+  <div id="resumen">
+    <strong id="texto-resumen"></strong>
+    <button class="btn btn-primary" id="btn-confirmar" onclick="confirmar()">${modo === 'baja' ? 'Dar de baja' : 'Reactivar'}</button>
+    <button class="btn btn-secondary" onclick="volver()">Volver</button>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    let fechaInicio = '';
+    let fechaFin = '';
+
+    function verAfectados() {
+      fechaInicio = document.getElementById('inicio').value.trim();
+      fechaFin = document.getElementById('fin').value.trim();
+      const status = document.getElementById('status');
+      if (!fechaInicio && !fechaFin) {
+        status.textContent = 'Introduce al menos una de las dos fechas.';
+        return;
+      }
+      status.textContent = 'Contando productos...';
+      google.script.run
+        .withSuccessHandler(total => {
+          document.getElementById('paso1').style.display = 'none';
+          document.getElementById('resumen').style.display = 'block';
+          document.getElementById('texto-resumen').textContent =
+            'Se afectarán ' + total + ' producto' + (total === 1 ? '' : 's') + '.' + (total === 0 ? ' No hay productos en ese rango.' : '');
+          document.getElementById('btn-confirmar').disabled = (total === 0);
+        })
+        .withFailureHandler(err => {
+          status.textContent = err.message;
+        })
+        .contarProductosPorFechaAlta_(fechaInicio, fechaFin, ${modo === 'baja' ? 'true' : 'false'});
+    }
+
+    function confirmar() {
+      document.getElementById('btn-confirmar').disabled = true;
+      document.getElementById('btn-confirmar').textContent = 'Procesando...';
+      const fn = ${modo === 'baja' ? "'ejecutarDarBajaProductosPorFechaAlta'" : "'ejecutarReactivarProductosPorFechaAlta'"};
+      google.script.run
+        .withSuccessHandler(r => {
+          const msg = ${modo === 'baja' ? "'Dados de baja: ' + r.bajas + ' productos.'" : "'Reactivados: ' + r.reactivados + ' productos.'"};
+          document.getElementById('resumen').innerHTML = '<strong style="color:#065f46;">' + msg + '</strong>';
+          setTimeout(() => google.script.host.close(), 1500);
+        })
+        .withFailureHandler(err => {
+          document.getElementById('btn-confirmar').disabled = false;
+          document.getElementById('btn-confirmar').textContent = ${modo === 'baja' ? "'Dar de baja'" : "'Reactivar'"};
+          document.getElementById('status').textContent = err.message;
+        })
+        [fn](fechaInicio, fechaFin);
+    }
+
+    function volver() {
+      document.getElementById('paso1').style.display = 'block';
+      document.getElementById('resumen').style.display = 'none';
+      document.getElementById('status').textContent = '';
+    }
+  </script>
+</body>
+</html>
+  `)
+  .setWidth(320)
+  .setHeight(360);
+  SpreadsheetApp.getUi().showModalDialog(html, titulo);
+}
+
+function ejecutarDarBajaProductosPorFechaAlta(fechaInicio, fechaFin) {
+  const data = { fechaInicio: fechaInicio, fechaFin: fechaFin };
+  const info = filtrarPorFechaAlta_(data, 'Dar de baja productos por fecha de alta');
+  if (!info) return { bajas: 0 };
+
+  const cambiados = aplicarBajaOReactivar_(true, info);
+  SpreadsheetApp.flush();
+  avisar_('Completado', `🚫 ${cambiados} productos dados de baja.`);
+  return { bajas: cambiados };
+}
+
+function ejecutarReactivarProductosPorFechaAlta(fechaInicio, fechaFin) {
+  const data = { fechaInicio: fechaInicio, fechaFin: fechaFin };
+  const info = filtrarPorFechaAlta_(data, 'Reactivar productos por fecha de alta');
+  if (!info) return { reactivados: 0 };
+
+  const cambiados = aplicarBajaOReactivar_(false, info);
+  SpreadsheetApp.flush();
+  avisar_('Completado', `✅ ${cambiados} productos reactivados.`);
+  return { reactivados: cambiados };
 }
