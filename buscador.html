@@ -3850,6 +3850,33 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 delete p._imgLocalOverride;
             }
         });
+
+        // Retirar productos del catálogo principal que ya no aparecen en
+        // absoluto en la fuente en vivo — desde que tanto el JSON estático
+        // como esta caché en vivo EXCLUYEN en origen los productos dados de
+        // baja (para acelerar la carga, ver sesión que quitó el filtro "ver
+        // solo dados de baja"), su ausencia aquí ya ES la señal de que se
+        // han dado de baja desde la última vez. Antes, cuando la fuente en
+        // vivo SÍ incluía también los productos de baja (con fecha_baja
+        // informada), bastaba con parchear ese campo sobre la entrada ya
+        // cargada arriba y el filtro de fecha_baja del cliente hacía el
+        // resto. Sin esta poda, un producto dado de baja DESPUÉS de la
+        // última carga se quedaba visible para siempre en cualquier
+        // pestaña que ya lo tuviera en memoria — nunca volvía a recibir
+        // ningún dato que lo marcara como tal (bug real reportado).
+        // Los productos de los catálogos de proveedores de Talleres
+        // (Zaphiro/Glasurit/Besa/Baslac, identificables por tener
+        // 'fabricante') NUNCA forman parte de esta fuente en vivo — se
+        // cargan aparte en cargarProductosAdicionalesEnSegundoPlano — así
+        // que se excluyen a propósito de esta poda para no borrarlos por
+        // error.
+        const antesDePodar = TODOS.length;
+        TODOS = TODOS.filter(p => p.fabricante || porRef.has(p.ref));
+        const podados = antesDePodar - TODOS.length;
+        if (podados > 0) {
+            console.log(`reconciliarConTextoEnVivo: ${podados} producto(s) retirado(s) por haberse dado de baja.`);
+        }
+
         if (data.familias_orden) FAMILIAS_ORDEN = data.familias_orden;
         if (data.subfamilias_orden) SUBFAMILIAS_ORDEN = data.subfamilias_orden;
         if (productoActual) {
@@ -3990,6 +4017,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const texto = await resp.text();
             hashConocido = await calcularHash(texto);
             reconciliarConTextoEnVivo(texto);
+            // Por si la reconciliación ha retirado algún producto (dado de
+            // baja por otra persona mientras tanto) — sin esto, la poda
+            // no se veía reflejada en la lista hasta el siguiente cambio
+            // de filtro o el sondeo periódico (hasta 5 minutos después).
+            aplicarFiltros();
         } catch (e) {
             // Si falla, no pasa nada: el próximo sondeo periódico lo comprobará igual
         }
