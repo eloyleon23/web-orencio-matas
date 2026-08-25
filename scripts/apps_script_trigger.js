@@ -2883,12 +2883,13 @@ function regenerarCacheCompletaDesdeSheet_() {
 
 // Versión para lanzar a mano desde el menú, con aviso en pantalla.
 function regenerarCacheCompletaManual() {
-  const ui = SpreadsheetApp.getUi();
   try {
     const payload = regenerarCacheCompletaDesdeSheet_();
-    ui.alert('Caché regenerada', `${payload.total} productos regenerados y guardados en la caché de Drive.\n\nYa disponibles para el buscador.`, ui.ButtonSet.OK);
+    avisar_('Caché regenerada', `${payload.total} productos regenerados y guardados en la caché de Drive.\n\nYa disponibles para el buscador.`);
+    return { total: payload.total };
   } catch (err) {
-    ui.alert('Error', 'No se pudo regenerar la caché: ' + err.message, ui.ButtonSet.OK);
+    avisar_('Error', 'No se pudo regenerar la caché: ' + err.message);
+    throw err;
   }
 }
 
@@ -2911,32 +2912,31 @@ function regenerarCacheCompletaManual() {
 //     relacionados_sugeridos, relacionados_nombres, regla)
 //  3. Menú → "🔗 Importar sugerencias de relacionados"
 function importarSugerenciasRelacionados() {
-  const ui = SpreadsheetApp.getUi();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   const hojaTemp = ss.getSheetByName('Sugerencias_Temp');
   if (!hojaTemp) {
-    ui.alert('No encontrada', 'No existe la pestaña "Sugerencias_Temp". Pega ahí el contenido del Excel generado por relacionados_tool/generar_sugerencias_relacionados.py (Insertar → Hoja, nómbrala exactamente "Sugerencias_Temp", y pega los datos incluyendo la fila de cabeceras).', ui.ButtonSet.OK);
-    return;
+    avisar_('No encontrada', 'No existe la pestaña "Sugerencias_Temp". Pega ahí el contenido del Excel generado por relacionados_tool/generar_sugerencias_relacionados.py (Insertar → Hoja, nómbrala exactamente "Sugerencias_Temp", y pega los datos incluyendo la fila de cabeceras).');
+    return { error: 'No existe Sugerencias_Temp' };
   }
 
   const sheetProd = ss.getSheetByName('Productos');
   if (!sheetProd) {
-    ui.alert('Error', 'No existe la hoja "Productos".', ui.ButtonSet.OK);
-    return;
+    avisar_('Error', 'No existe la hoja "Productos".');
+    return { error: 'No existe Productos' };
   }
 
   const datosTemp = hojaTemp.getDataRange().getValues();
   if (datosTemp.length < 2) {
-    ui.alert('Sin datos', 'La pestaña "Sugerencias_Temp" está vacía.', ui.ButtonSet.OK);
-    return;
+    avisar_('Sin datos', 'La pestaña "Sugerencias_Temp" está vacía.');
+    return { error: 'Sugerencias_Temp vacía' };
   }
   const headersTemp = datosTemp[0].map(h => h.toString().trim().toLowerCase());
   const colRefTemp = headersTemp.indexOf('referencia');
   const colSugTemp = headersTemp.indexOf('relacionados_sugeridos');
   if (colRefTemp === -1 || colSugTemp === -1) {
-    ui.alert('Error', 'La pestaña "Sugerencias_Temp" debe tener columnas "referencia" y "relacionados_sugeridos" en la primera fila.', ui.ButtonSet.OK);
-    return;
+    avisar_('Error', 'La pestaña "Sugerencias_Temp" debe tener columnas "referencia" y "relacionados_sugeridos" en la primera fila.');
+    return { error: 'Cabeceras incorrectas en Sugerencias_Temp' };
   }
 
   const mapaSugerencias = {};
@@ -2950,18 +2950,16 @@ function importarSugerenciasRelacionados() {
     .map(h => h.toString().trim().toLowerCase());
   const colRef = headersProd.indexOf('referencia');
   if (colRef === -1) {
-    ui.alert('Error', 'No se encuentra la columna "referencia" en Productos.', ui.ButtonSet.OK);
-    return;
+    avisar_('Error', 'No se encuentra la columna "referencia" en Productos.');
+    return { error: 'Falta columna referencia en Productos' };
   }
 
-  // Localizar la columna "relacionados_sugeridos" en Productos, o
-  // crearla al final si es la primera vez que se usa esto.
   let colDestino0 = headersProd.indexOf('relacionados_sugeridos');
   if (colDestino0 === -1) {
-    colDestino0 = sheetProd.getLastColumn(); // nueva columna, 0-based tras la última existente
+    colDestino0 = sheetProd.getLastColumn();
     sheetProd.getRange(1, colDestino0 + 1).setValue('relacionados_sugeridos');
   }
-  const colDestino = colDestino0 + 1; // a 1-based para getRange
+  const colDestino = colDestino0 + 1;
 
   const lastRow = sheetProd.getLastRow();
   const referencias = sheetProd.getRange(2, colRef + 1, lastRow - 1, 1).getValues();
@@ -2973,14 +2971,14 @@ function importarSugerenciasRelacionados() {
   sheetProd.getRange(2, colDestino, salida.length, 1).setValues(salida);
 
   const totalAplicadas = salida.filter(r => r[0]).length;
-  ui.alert(
+  avisar_(
     'Importado',
     `${totalAplicadas} sugerencias volcadas en la columna "relacionados_sugeridos" de Productos.\n\n` +
     `Revísalas comparándolas con la columna "relacionados" de cada fila. Para lo que apruebes, copia el valor ` +
     `(como valor, no fórmula) a la columna "relacionados" — es la única que se usa al generar productos.json.\n\n` +
-    `Cuando termines, puedes borrar la pestaña "Sugerencias_Temp" y la columna "relacionados_sugeridos" — ya no hacen falta.`,
-    ui.ButtonSet.OK
+    `Cuando termines, puedes borrar la pestaña "Sugerencias_Temp" y la columna "relacionados_sugeridos" — ya no hacen falta.`
   );
+  return { totalAplicadas };
 }
 
 // Ejecutar UNA VEZ desde el editor para crear el disparador programado
@@ -4303,25 +4301,24 @@ function revisarCorreoListadoProductos() {
 // mirar el correo para saber si ha hecho algo. El correo de resumen se
 // sigue enviando igual en cualquier caso.
 function revisarCorreoListadoProductosManual() {
-  const ui = SpreadsheetApp.getUi();
   const resultado = revisarCorreoListadoProductos();
 
   if (!resultado.huboCorreo) {
-    ui.alert('Sin novedades', 'No se ha encontrado ningún correo nuevo del CRM sin procesar.', ui.ButtonSet.OK);
-    return;
+    avisar_('Sin novedades', 'No se ha encontrado ningún correo nuevo del CRM sin procesar.');
+    return { huboCorreo: false };
   }
 
   if (!resultado.exito) {
-    ui.alert('Sincronización con problemas', 'Se encontró un correo del CRM, pero no se pudo sincronizar:\n\n' +
-      resultado.mensaje + '\n\nTambién se ha enviado un correo con este detalle a ' + CORREO_RESUMEN_DESTINO + '.', ui.ButtonSet.OK);
-    return;
+    avisar_('Sincronización con problemas', 'Se encontró un correo del CRM, pero no se pudo sincronizar:\n\n' +
+      resultado.mensaje + '\n\nTambién se ha enviado un correo con este detalle a ' + CORREO_RESUMEN_DESTINO + '.');
+    return { huboCorreo: true, exito: false, mensaje: resultado.mensaje };
   }
 
   const r = resultado.resultado;
-  ui.alert('Sincronización completada',
+  avisar_('Sincronización completada',
     `Nuevos: ${r.nuevos} | Actualizados: ${r.actualizados} | Saltados: ${r.saltados} | Errores: ${r.errores}\n\n` +
-    'Resumen completo enviado a ' + CORREO_RESUMEN_DESTINO + '.',
-    ui.ButtonSet.OK);
+    'Resumen completo enviado a ' + CORREO_RESUMEN_DESTINO + '.');
+  return { huboCorreo: true, exito: true, ...r };
 }
 
 // Convierte el Excel adjunto en una Sheet temporal para poder leerlo,
@@ -4510,12 +4507,11 @@ function enviarResumenSincronizacionCRM_(resultado) {
 // mano, o simplemente para retomar el trabajo de imágenes pendientes sin
 // esperar a que llegue el próximo correo del CRM.
 function enviarExcelProductosSinImagenManual() {
-  const ui = SpreadsheetApp.getUi();
   const resultado = generarExcelProductosSinImagen_();
 
   if (!resultado) {
-    ui.alert('Sin pendientes', 'No hay ningún producto sin imagen o sin validar en este momento — nada que enviar.', ui.ButtonSet.OK);
-    return;
+    avisar_('Sin pendientes', 'No hay ningún producto sin imagen o sin validar en este momento — nada que enviar.');
+    return { enviado: false, motivo: 'sin pendientes' };
   }
 
   MailApp.sendEmail({
@@ -4525,7 +4521,8 @@ function enviarExcelProductosSinImagenManual() {
     attachments: [resultado.blob],
   });
 
-  ui.alert('Enviado', `Excel con ${resultado.total} productos enviado a ${CORREO_RESUMEN_DESTINO}.`, ui.ButtonSet.OK);
+  avisar_('Enviado', `Excel con ${resultado.total} productos enviado a ${CORREO_RESUMEN_DESTINO}.`);
+  return { enviado: true, total: resultado.total };
 }
 
 // ── Generar Excel de productos sin imagen, listo para imagenes_tool ───────
