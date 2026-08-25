@@ -2826,6 +2826,17 @@ function regenerarCacheCompletaDesdeSheet_() {
       const ref = valorCelda_(row, 'referencia');
       if (!ref) return;
 
+      // Los productos dados de baja (fecha_baja informada) se excluyen
+      // de la caché en vivo del buscador — mismo criterio revertido en
+      // scripts/generar_productos_json.py: con cerca de la mitad del
+      // catálogo dado de baja, incluirlos duplicaba innecesariamente el
+      // peso de cada carga sin ningún beneficio para el usuario público
+      // (el filtro "Ver solo productos dados de baja" del buscador se ha
+      // retirado; la gestión masiva de bajas/reactivaciones vive ahora en
+      // el panel de administración).
+      const fechaBaja = valorCelda_(row, 'fecha_baja');
+      if (fechaBaja) return;
+
       let imgId = valorCelda_(row, 'imagen_drive_id');
       if (imgId === 'NO_TIENE_FOTO') imgId = '';
 
@@ -2852,7 +2863,6 @@ function regenerarCacheCompletaDesdeSheet_() {
         espacios: valorCelda_(row, 'espacios_a_ocupar') || '1',
         imagen_validada: valorCelda_(row, 'imagen_validada'),
         fecha_actualizacion_imagen: valorCelda_(row, 'fecha_actualizacion_imagen'),
-        fecha_baja: valorCelda_(row, 'fecha_baja'),
         relacionados: relacionados,
       });
     });

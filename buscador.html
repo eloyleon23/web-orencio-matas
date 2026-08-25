@@ -2901,16 +2901,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
-        <!-- Filtro independiente (no dentro de "Gestión de imágenes"), pero
-             gestionado por el mismo flag de configuración: fase de
-             desarrollo, se ocultará junto al resto para la vista usuario. -->
-        <div class="filtro-grupo" id="grupo-solo-baja" style="display: none;">
-            <label class="check-imagen-sin-validar">
-                <input type="checkbox" id="f-solo-baja">
-                <span><i class="fa-solid fa-box-archive"></i> Ver solo productos dados de baja</span>
-            </label>
-        </div>
-
         <button class="btn-limpiar" id="btn-limpiar"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
         <button type="button" id="btn-mostrar-resultados-movil" class="btn-mostrar-resultados-movil">Mostrar resultados</button>
         </div>
@@ -4191,10 +4181,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('f-tiene-imagen').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
             $('f-imagenes-sin-validar').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
             $('f-productos-sin-imagen').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
-            // Filtro independiente (fuera del panel de gestión de imágenes,
-            // pero con el mismo flag de fase de desarrollo)
-            $('grupo-solo-baja').style.display = 'block';
-            $('f-solo-baja').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         }
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
@@ -4925,7 +4911,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-tiene-imagen').checked = false;
         $('f-imagenes-sin-validar').checked = false;
         $('f-productos-sin-imagen').checked = false;
-        $('f-solo-baja').checked = false;
         renderFabricanteTaller(); // Limpiar/ocultar fabricante
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
@@ -5014,7 +4999,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const soloTieneImagen = $('f-tiene-imagen') ? $('f-tiene-imagen').checked : false;
         const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
         const soloProductosSinImagen = $('f-productos-sin-imagen') ? $('f-productos-sin-imagen').checked : false;
-        const soloDadosBaja = $('f-solo-baja') ? $('f-solo-baja').checked : false;
         const acabadosSel = acabadosSeleccionados();
         const formatosSel = formatosSeleccionados();
         const tallaSel   = valoresSeleccionadosTaller('f-talla-taller');
@@ -5026,16 +5010,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const otrosSel   = valoresSeleccionadosTaller('f-otros-taller');
 
         resultadosActuales = TODOS.filter(p => {
-            // Por defecto, un producto dado de baja (fecha_baja informada en
-            // la Sheet) nunca es visible en el buscador normal — solo
-            // aparece cuando se activa expresamente "Ver solo productos
-            // dados de baja" (bloque de gestión, ver f-solo-baja).
-            const estaDeBaja = !!(p.fecha_baja && p.fecha_baja.toString().trim());
-            if (soloDadosBaja) {
-                if (!estaDeBaja) return false;
-            } else if (estaDeBaja) {
-                return false;
-            }
+            // Los productos dados de baja ya no forman parte del catálogo
+            // que se descarga (excluidos en origen, tanto en el JSON
+            // estático como en la caché en vivo de Apps Script, para
+            // acelerar la carga) — esta comprobación se deja como red de
+            // seguridad ante cualquier residuo puntual (p. ej. el breve
+            // margen entre dar de baja un producto y la siguiente
+            // regeneración completa de la caché), nunca debería excluir
+            // nada en el caso normal.
+            if (p.fecha_baja && p.fecha_baja.toString().trim()) return false;
 
             if (area && p.area !== area) return false;
             if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
@@ -7492,7 +7475,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
             mostrarToast(esBaja ? '✓ Producto dado de baja correctamente.' : '✓ Producto reactivado correctamente.');
             abrirModalProducto(p); // re-renderiza el modal con el nuevo estado
-            aplicarFiltros();      // refresca el listado (afecta si f-solo-baja está activo)
+            aplicarFiltros();      // refresca el listado (el producto recién dado de baja desaparece)
             resincronizarVersionConocida(); // evita que el banner salte por este mismo cambio
         })
         .catch(err => {

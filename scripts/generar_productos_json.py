@@ -112,14 +112,20 @@ def exportar_productos_json(productos, familias, subfamilias):
 
     exportados = []
     for p in productos:
-        # IMPORTANTE: ya NO se excluyen aquí los productos dados de baja.
-        # Antes se hacía "continue" y desaparecían del todo del JSON, lo que
-        # hacía imposible ofrecer un filtro para verlos en el buscador — el
-        # dato nunca llegaba al navegador. Ahora se exportan igual que el
-        # resto, con su fecha_baja informada, y es buscador.html quien
-        # decide ocultarlos por defecto (salvo que se active el filtro "Ver
-        # solo productos dados de baja").
+        # Los productos dados de baja (fecha_baja informada) se excluyen
+        # del JSON — decisión revertida a propósito: se había cambiado
+        # previamente a exportarlos igualmente (fecha_baja incluida en
+        # cada producto) para poder ofrecer un filtro "Ver solo productos
+        # dados de baja" en el buscador. Con cerca de la mitad del
+        # catálogo dado de baja, eso duplicaba innecesariamente el peso
+        # del JSON que se descarga en cada visita, sin ningún beneficio
+        # para el usuario público. La gestión masiva de bajas/
+        # reactivaciones ya no depende de poder verlas en el buscador —
+        # vive en el panel de administración (baja/reactivación por
+        # rango de fecha_alta) — así que se vuelve a excluirlas aquí.
         fecha_baja = p.get('fecha_baja', '').strip()
+        if fecha_baja:
+            continue
 
         ref = p.get('referencia', '').strip()
         if not ref:
@@ -154,7 +160,6 @@ def exportar_productos_json(productos, familias, subfamilias):
             'espacios':  p.get('espacios_a_ocupar', '1').strip() or '1',
             'imagen_validada': p.get('imagen_validada', '').strip(),
             'fecha_actualizacion_imagen': p.get('fecha_actualizacion_imagen', '').strip(),
-            'fecha_baja': fecha_baja,
             'relacionados': relacionados,
         })
 
