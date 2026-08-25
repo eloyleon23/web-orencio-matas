@@ -347,10 +347,10 @@ window.SOLUCIONES_DATA = (function () {
       result: 'Pieza pintada y protegida, con buen anclaje y sin descuelgues',
       breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Pintar plástico'],
       materials: [
-        { fase: 'Preparación',  familiaSugerida: 'Limpieza / Desengrasantes', items: ['Desengrasante profesional'] },
-        { fase: 'Preparación',  familiaSugerida: 'Abrasivos',                 items: ['Abrasivo P800'] },
+        { fase: 'Preparación',  familiaSugerida: 'Limpieza / Desengrasantes', items: ['ASEVI DESENGRASANTE 750 ML.PISTOLA'] },
+        { fase: 'Preparación',  familiaSugerida: 'Abrasivos',                 items: ['LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972'] },
         { fase: 'Adherencia',   familiaSugerida: 'Promotores de adherencia',  items: ['Promotor de adherencia para plástico'] },
-        { fase: 'Imprimación',  familiaSugerida: 'Aparejos / Imprimaciones',  items: ['Aparejo acrílico'] },
+        { fase: 'Imprimación',  familiaSugerida: 'Aparejos / Imprimaciones',  items: ['R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.'] },
         { fase: 'Color',        familiaSugerida: 'Pinturas de carrocería',    items: ['Pintura para carrocería'] },
         { fase: 'Acabado',      familiaSugerida: 'Barnices',                  items: ['Barniz 2K'] },
       ],
@@ -366,12 +366,12 @@ window.SOLUCIONES_DATA = (function () {
         {
           n: 1, title: 'Limpieza y desengrasado',
           text: 'Los plásticos automotrices suelen tener restos de silicona, cera o grasa de fábrica. Si no se eliminan antes de nada, ningún producto posterior se agarrará bien, por muy bueno que sea.',
-          productos: ['Desengrasante profesional'],
+          productos: ['ASEVI DESENGRASANTE 750 ML.PISTOLA'],
         },
         {
           n: 2, title: 'Preparación de la superficie',
           text: 'Una lijada suave con un abrasivo de grano medio-fino crea el "anclaje" mecánico que necesita la pintura para adherirse. No hace falta llegar al plástico vivo, solo matear el brillo.',
-          productos: ['Abrasivo P800'],
+          productos: ['LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972'],
         },
         {
           n: 3, title: 'Promotor de adherencia',
@@ -381,7 +381,7 @@ window.SOLUCIONES_DATA = (function () {
         {
           n: 4, title: 'Imprimación / aparejo',
           text: 'Iguala el color de base, sella la superficie y da una base uniforme sobre la que trabajar el color — evita que se transparenten diferencias del plástico de debajo.',
-          productos: ['Aparejo acrílico'],
+          productos: ['R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.'],
         },
         {
           n: 5, title: 'Pintura',
@@ -407,10 +407,10 @@ window.SOLUCIONES_DATA = (function () {
         'Pintar sobre una superficie contaminada (grasa, silicona, polvo).',
       ],
       recommendedProducts: [
-        { nombre: 'Desengrasante profesional',            categoria: 'Limpieza',   formato: '1 L',  precio: '12,95 €' },
-        { nombre: 'Abrasivo P800',                         categoria: 'Abrasivos',                  precio: '0,80 €' },
+        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA',            categoria: 'Limpieza',   formato: '1 L',  precio: '12,95 €' },
+        { nombre: 'LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972',                         categoria: 'Abrasivos',                  precio: '0,80 €' },
         { nombre: 'Promotor de adherencia para plástico',  categoria: 'Talleres',                    precio: '18,95 €' },
-        { nombre: 'Aparejo acrílico',                      categoria: 'Talleres',                    precio: '24,95 €' },
+        { nombre: 'R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.',                      categoria: 'Talleres',                    precio: '24,95 €' },
         { nombre: 'Pintura para carrocería',                categoria: 'Talleres',                    precio: '29,95 €' },
         { nombre: 'Barniz 2K',                              categoria: 'Talleres',                    precio: '32,95 €' },
       ],
@@ -441,9 +441,9 @@ window.SOLUCIONES_DATA = (function () {
       calculadoraCantidad: { rendimiento: 12, etiqueta: 'esmalte de metal' },
       breadcrumb: ['Centro de Soluciones', 'Metal', 'Eliminar óxido'],
       materials: [
-        { fase: 'Preparación', familiaSugerida: 'Abrasivos',            items: ['Cepillo de púas metálicas', 'Abrasivo grano grueso'] },
+        { fase: 'Preparación', familiaSugerida: 'Abrasivos',            items: ['CEPILLO METALICO BRICOLAJE TENAJERO RF.11910', 'Abrasivo grano grueso'] },
         { fase: 'Tratamiento', familiaSugerida: 'Convertidores de óxido', items: ['Convertidor de óxido'] },
-        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones antioxidantes', items: ['Imprimación antioxidante'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones antioxidantes', items: ['AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057'] },
         { fase: 'Color',       familiaSugerida: 'Esmaltes para metal',   items: ['Esmalte para metal — acrílico (al agua) o sintético'] },
       ],
       receta: [
@@ -453,9 +453,9 @@ window.SOLUCIONES_DATA = (function () {
         { fase: 'Pintar',     emoji: '🎨' },
       ],
       steps: [
-        { n: 1, title: 'Eliminación mecánica del óxido', text: 'Con cepillo de púas o abrasivo de grano grueso, retira todo el óxido suelto y descamado hasta llegar a metal sano o al menos muy adherido.', productos: ['Cepillo de púas metálicas', 'Abrasivo grano grueso'] },
+        { n: 1, title: 'Eliminación mecánica del óxido', text: 'Con cepillo de púas o abrasivo de grano grueso, retira todo el óxido suelto y descamado hasta llegar a metal sano o al menos muy adherido.', productos: ['CEPILLO METALICO BRICOLAJE TENAJERO RF.11910', 'Abrasivo grano grueso'] },
         { n: 2, title: 'Convertidor de óxido', text: 'En zonas donde no se puede llegar a metal 100% limpio, un convertidor transforma químicamente el óxido restante en una capa estable sobre la que sí se puede pintar.', productos: ['Convertidor de óxido'] },
-        { n: 3, title: 'Imprimación antioxidante', text: 'Sella la superficie y evita que la humedad vuelva a iniciar el proceso de oxidación por debajo de la pintura.', productos: ['Imprimación antioxidante'] },
+        { n: 3, title: 'AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', text: 'Sella la superficie y evita que la humedad vuelva a iniciar el proceso de oxidación por debajo de la pintura.', productos: ['AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057'] },
         { n: 4, title: 'Elegir el tipo de esmalte', text: 'Antes de aplicar el color, decide entre esmalte acrílico (al agua) o sintético: el acrílico seca más rápido, huele mucho menos y se limpia con agua — buena opción para interiores o si vas a repetir manos el mismo día. El sintético (al disolvente) suele ofrecer un acabado algo más duro y resistente a la intemperie, a cambio de más olor y un secado más lento — mejor para exteriores muy expuestos o superficies de mucho uso.', productos: ['Esmalte acrílico al agua para metal (Oxiron Agua)', 'Esmalte sintético para metal (Oxiron / Hammerite)'] },
         { n: 5, title: 'Aplicar el esmalte', text: 'Aplica el esmalte elegido en manos finas y uniformes, respetando el tiempo de repintado indicado en el envase — aporta color y la segunda barrera de protección frente a la intemperie.', productos: [] },
       ],
@@ -470,16 +470,16 @@ window.SOLUCIONES_DATA = (function () {
         'Olvidar los bordes y zonas ocultas, donde el óxido suele reaparecer antes.',
       ],
       recommendedProducts: [
-        { nombre: 'Cepillo de púas metálicas', categoria: 'Herramientas', precio: '6,50 €' },
+        { nombre: 'CEPILLO METALICO BRICOLAJE TENAJERO RF.11910', categoria: 'Herramientas', precio: '6,50 €' },
         { nombre: 'Abrasivo grano grueso',      categoria: 'Abrasivos',   precio: '1,10 €' },
         { nombre: 'Convertidor de óxido',       categoria: 'Talleres',    precio: '16,95 €' },
-        { nombre: 'Imprimación antioxidante',   categoria: 'Talleres',    precio: '21,95 €' },
+        { nombre: 'AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057',   categoria: 'Talleres',    precio: '21,95 €' },
         { nombre: 'Oxiron Agua Liso Brillo Negro (esmalte acrílico, al agua)', categoria: 'Pinturas', formato: '750 ml', precio: '20,63 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Esmalte sintético (más resistente en exterior)', nombre: 'Oxiron Forja Negro (esmalte sintético al disolvente)', precio: '15,85 €' },
         { etiqueta: 'Opción profesional sintética', nombre: 'Hammerite Esmalte Liso Hierro y Óxido Negro 750 ml', precio: '17,67 €' },
-        { etiqueta: 'Opción rápida',      nombre: 'Esmalte antioxidante 3 en 1 (imprimación + color en un paso)', precio: '19,95 €' },
+        { etiqueta: 'Opción rápida',      nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.NEGRO', precio: '19,95 €' },
         { etiqueta: 'Trabajos pequeños',  nombre: 'Aerosol antioxidante', precio: '8,95 €' },
       ],
       relatedSolutions: ['pintar-plastico-coche', 'restaurar-mueble-madera', 'quitar-restos-pegamento', 'proteger-estructura-metalica-corrosion'],
@@ -504,10 +504,10 @@ window.SOLUCIONES_DATA = (function () {
       colorChart: { label: 'Encuentra tu color en Titanlux (línea madera)', url: 'https://www.titanlux.es/', logo: 'https://static.titanlux.es/web/logo.png' },
       breadcrumb: ['Centro de Soluciones', 'Madera y restauración', 'Restaurar mueble'],
       materials: [
-        { fase: 'Decapado',     familiaSugerida: 'Decapantes',  items: ['Decapante de barniz'] },
+        { fase: 'Decapado',     familiaSugerida: 'Decapantes',  items: ['TITAN DECAPANTE GEL PROFESIONAL 1 LL.'] },
         { fase: 'Preparación',  familiaSugerida: 'Abrasivos',   items: ['Lija de grano medio', 'Lija de grano fino'] },
         { fase: 'Reparación',   familiaSugerida: 'Masillas para madera', items: ['Masilla para madera'] },
-        { fase: 'Acabado',      familiaSugerida: 'Barnices',    items: ['Barniz para madera'] },
+        { fase: 'Acabado',      familiaSugerida: 'Barnices',    items: ['BARNIZ TITAN ECO SATIN.750 ML.TECA'] },
       ],
       receta: [
         { fase: 'Decapar',    emoji: '🧴' },
@@ -516,10 +516,10 @@ window.SOLUCIONES_DATA = (function () {
         { fase: 'Barnizar',   emoji: '✨' },
       ],
       steps: [
-        { n: 1, title: 'Decapado del barniz antiguo', text: 'Elimina el barniz o pintura anterior con un decapante adecuado, dejando la madera desnuda y lista para trabajar.', productos: ['Decapante de barniz'] },
+        { n: 1, title: 'Decapado del barniz antiguo', text: 'Elimina el barniz o pintura anterior con un decapante adecuado, dejando la madera desnuda y lista para trabajar.', productos: ['TITAN DECAPANTE GEL PROFESIONAL 1 LL.'] },
         { n: 2, title: 'Lijado', text: 'Empieza con grano medio para nivelar la superficie y termina con grano fino para dejarla lista para el acabado.', productos: ['Lija de grano medio', 'Lija de grano fino'] },
         { n: 3, title: 'Reparación de desperfectos', text: 'Rellena grietas, agujeros de clavo o golpes con masilla para madera antes del acabado final.', productos: ['Masilla para madera'] },
-        { n: 4, title: 'Barnizado', text: 'Aplica el barniz en manos finas, lijando muy suavemente entre manos para un acabado profesional.', productos: ['Barniz para madera'] },
+        { n: 4, title: 'Barnizado', text: 'Aplica el barniz en manos finas, lijando muy suavemente entre manos para un acabado profesional.', productos: ['BARNIZ TITAN ECO SATIN.750 ML.TECA'] },
       ],
       professionalTips: [
         'El barniz blanquecino suele deberse a humedad atrapada durante el secado — trabaja siempre en un ambiente seco y con buena ventilación.',
@@ -532,11 +532,11 @@ window.SOLUCIONES_DATA = (function () {
         'Barnizar en un ambiente húmedo (causa del aspecto blanquecino).',
       ],
       recommendedProducts: [
-        { nombre: 'Decapante de barniz',   categoria: 'Droguería',  precio: '15,95 €' },
+        { nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.',   categoria: 'Droguería',  precio: '15,95 €' },
         { nombre: 'Lija de grano medio',    categoria: 'Abrasivos',  precio: '0,90 €' },
         { nombre: 'Lija de grano fino',     categoria: 'Abrasivos',  precio: '0,90 €' },
         { nombre: 'Masilla para madera',    categoria: 'Pinturas',  precio: '9,95 €' },
-        { nombre: 'Barniz para madera',     categoria: 'Pinturas',  precio: '22,95 €' },
+        { nombre: 'BARNIZ TITAN ECO SATIN.750 ML.TECA',     categoria: 'Pinturas',  precio: '22,95 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción rápida',      nombre: 'Barniz al agua secado rápido', precio: '19,95 €' },
@@ -561,10 +561,10 @@ window.SOLUCIONES_DATA = (function () {
       result: 'Carrocería sin arañazos superficiales, con el brillo recuperado',
       breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Pulido y brillo'],
       materials: [
-        { fase: 'Limpieza',       familiaSugerida: 'Limpieza / Desengrasantes', items: ['Champú de lavado', 'Arcilla descontaminante'] },
+        { fase: 'Limpieza',       familiaSugerida: 'Limpieza / Desengrasantes', items: ['Champú de lavado', 'PLASTILINA LIMPIEZA ZAPHIRO 200 ML.'] },
         { fase: 'Evaluación',     familiaSugerida: 'Herramientas de medición',  items: ['Medidor de espesor de pintura (opcional)'] },
-        { fase: 'Pulido',         familiaSugerida: 'Pulimentos',                items: ['Pasta de pulir de corte medio', 'Pulimento de acabado'] },
-        { fase: 'Protección',     familiaSugerida: 'Ceras y selladores',        items: ['Cera o sellador de protección'] },
+        { fase: 'Pulido',         familiaSugerida: 'Pulimentos',                items: ['Pasta de pulir de corte medio', 'PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.'] },
+        { fase: 'Protección',     familiaSugerida: 'Ceras y selladores',        items: ['PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.'] },
       ],
       receta: [
         { fase: 'Limpiar',        emoji: '🧴' },
@@ -574,10 +574,10 @@ window.SOLUCIONES_DATA = (function () {
       ],
       steps: [
         { n: 1, title: 'Limpieza', text: 'Lava la zona a fondo para que no quede ninguna partícula abrasiva (arena, polvo) que pueda generar más marcas durante el pulido.', productos: ['Champú de lavado'] },
-        { n: 2, title: 'Descontaminación', text: 'Pasa una arcilla descontaminante para retirar partículas incrustadas en la pintura (alquitrán, restos industriales) que el lavado normal no quita.', productos: ['Arcilla descontaminante'] },
+        { n: 2, title: 'Descontaminación', text: 'Pasa una arcilla descontaminante para retirar partículas incrustadas en la pintura (alquitrán, restos industriales) que el lavado normal no quita.', productos: ['PLASTILINA LIMPIEZA ZAPHIRO 200 ML.'] },
         { n: 3, title: 'Evaluación de la profundidad', text: 'Si el arañazo se nota al pasar la uña, probablemente ha llegado a la base de color y el pulido no bastará por sí solo — en ese caso hará falta un pequeño retoque de pintura antes de pulir.', productos: [] },
-        { n: 4, title: 'Pulido', text: 'Trabaja primero con una pasta de corte medio para nivelar el arañazo, y termina con un pulimento de acabado para devolver el brillo final.', productos: ['Pasta de pulir de corte medio', 'Pulimento de acabado'] },
-        { n: 5, title: 'Protección', text: 'Sella el trabajo con cera o un sellador sintético — además de proteger, hace que el brillo dure mucho más tiempo.', productos: ['Cera o sellador de protección'] },
+        { n: 4, title: 'Pulido', text: 'Trabaja primero con una pasta de corte medio para nivelar el arañazo, y termina con un pulimento de acabado para devolver el brillo final.', productos: ['Pasta de pulir de corte medio', 'PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.'] },
+        { n: 5, title: 'Protección', text: 'Sella el trabajo con cera o un sellador sintético — además de proteger, hace que el brillo dure mucho más tiempo.', productos: ['PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.'] },
       ],
       professionalTips: [
         'Si al pasar la uña notas el arañazo (no solo lo ves), es señal de que ha traspasado el barniz — en ese caso, pulir sin más no lo eliminará del todo.',
@@ -590,10 +590,10 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Champú de lavado',               categoria: 'Talleres',   precio: '9,95 €' },
-        { nombre: 'Arcilla descontaminante',         categoria: 'Talleres',   precio: '14,95 €' },
+        { nombre: 'PLASTILINA LIMPIEZA ZAPHIRO 200 ML.',         categoria: 'Talleres',   precio: '14,95 €' },
         { nombre: 'Pasta de pulir de corte medio',   categoria: 'Talleres',   precio: '16,50 €' },
-        { nombre: 'Pulimento de acabado',            categoria: 'Talleres',   precio: '15,95 €' },
-        { nombre: 'Cera o sellador de protección',   categoria: 'Talleres',   precio: '19,95 €' },
+        { nombre: 'PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.',            categoria: 'Talleres',   precio: '15,95 €' },
+        { nombre: 'PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.',   categoria: 'Talleres',   precio: '19,95 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción rápida',      nombre: 'Pulimento todo en uno (corte + brillo + protección)', precio: '21,95 €' },
@@ -768,14 +768,14 @@ window.SOLUCIONES_DATA = (function () {
       recommendedProducts: [
         { nombre: 'Astralpool Tiras Analíticas 3 en 1, 50 uds',   categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
         { nombre: 'Astralpool Minus Reductor de pH Líquido',       categoria: 'Piscinas', formato: '10 L',  precio: '23,12 €' },
-        { nombre: 'Astralpool Incrementador de pH',                categoria: 'Piscinas', formato: '5 kg',  precio: '12,64 €' },
+        { nombre: 'ASTRALPOOL INCREMENT.DE PH 5 KG.',                categoria: 'Piscinas', formato: '5 kg',  precio: '12,64 €' },
         { nombre: 'Astralpool Cloro Rápido Granulado',              categoria: 'Piscinas', formato: '5 kg',  precio: '28,85 €' },
         { nombre: 'Astralpool Cloro Lento en Tableta',              categoria: 'Piscinas', formato: '5 kg',  precio: '33,93 €' },
         { nombre: 'Antialgas Líquido Astralpool',                   categoria: 'Piscinas', formato: '5 L',   precio: '10,04 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Todo en uno',       nombre: 'Astralpool Inverlong Dosificador Flotante Todo en 1', precio: '15,44 €' },
-        { etiqueta: 'Opción profesional/comunidad', nombre: 'CTX 15 Reductor de pH Profesional 20 L', precio: '35,07 €' },
+        { etiqueta: 'Opción profesional/comunidad', nombre: 'CTX 15 REDUCTOR PH PROF.20 L.73670', precio: '35,07 €' },
       ],
       relatedSolutions: [],
       seo: {
@@ -828,7 +828,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Orion Cebo Matacucarachas Gel, B/3 uds',   categoria: 'Droguería', formato: '3 uds', precio: '2,29 €' },
         { nombre: 'Zum Gel Trampa contra las Hormigas',        categoria: 'Droguería',                  precio: '1,14 €' },
         { nombre: 'Cucal Insecticida en Polvo Cuca/Hormigas',  categoria: 'Droguería', formato: '200 g', precio: '3,56 €' },
-        { nombre: 'Baygon Cucas y Hormigas',                    categoria: 'Droguería', formato: '600 ml', precio: '7,56 €' },
+        { nombre: 'ARRIXACA INSECT.CUCARACHICIDA 750 ML.',                    categoria: 'Droguería', formato: '600 ml', precio: '7,56 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción rápida (choque puntual)', nombre: 'Arrixaca Insecticida Cucarachas Spray 400 ml', precio: '2,49 €' },
@@ -945,7 +945,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Concentrado',              nombre: 'Dirna Desatascador Concentrado Microperlas 375 g', precio: '1,88 €' },
-        { etiqueta: 'Monodosis',                 nombre: 'Desatascador Arrixaca Monodosis 60 g', precio: '0,61 €' },
+        { etiqueta: 'Monodosis',                 nombre: 'PASO DESATASCADOR GEL PROFESIONAL 1 L.', precio: '0,61 €' },
         { etiqueta: 'Mantenimiento fosas sépticas', nombre: 'M.P.L. Activador Fosas Sépticas 400 g', precio: '4,96 €' },
       ],
       relatedSolutions: [],
@@ -1108,7 +1108,7 @@ window.SOLUCIONES_DATA = (function () {
       recommendedProducts: [
         { nombre: 'Nogat Raticida Estuche 6 sobres',   categoria: 'Droguería', formato: '10 g c/u', precio: '5,02 €' },
         { nombre: 'Portacebos P.K 078',                  categoria: 'Droguería',                     precio: '6,22 €' },
-        { nombre: 'Racumin Raticida en Pasta',           categoria: 'Droguería', formato: '20x10 g', precio: '3,41 €' },
+        { nombre: 'ROE-BLOCK PLUS MASSÓ RATICIDA 1 KG.',           categoria: 'Droguería', formato: '20x10 g', precio: '3,41 €' },
         { nombre: 'Ratibrom ¡Zas! Trampa Ratas',         categoria: 'Droguería',                     precio: '5,53 €' },
       ],
       alternativeProducts: [
@@ -1164,7 +1164,7 @@ window.SOLUCIONES_DATA = (function () {
         'Podar ramas gruesas sin sellar después el corte.',
       ],
       recommendedProducts: [
-        { nombre: 'Compo Fertilizante Líquido Universal', categoria: 'Droguería', formato: '1,3 L', precio: '7,04 €' },
+        { nombre: 'HUMUS DE LOMBRIZ ABONO LIQUIDO 1 L.', categoria: 'Droguería', formato: '1,3 L', precio: '7,04 €' },
         { nombre: 'Gesal Insecticida Polivalente',          categoria: 'Droguería', formato: '500 ml (pistola)', precio: '4,32 €' },
         { nombre: 'Humus HLH Equisetem Fungicida',          categoria: 'Droguería', formato: '1 L', precio: '7,62 €' },
         { nombre: 'Compo Pasta Cicatrizante',               categoria: 'Droguería', formato: '250 g', precio: '8,74 €' },
@@ -1172,7 +1172,7 @@ window.SOLUCIONES_DATA = (function () {
       alternativeProducts: [
         { etiqueta: 'Plantas verdes/interior', nombre: 'Compo Fertilizante Líquido Plantas Verdes 1,3 L', precio: '7,15 €' },
         { etiqueta: 'Formato pequeño',          nombre: 'Impex Abono Universal 1 L', precio: '4,73 €' },
-        { etiqueta: 'Contra hormigas específico', nombre: 'Compo Insecticida Antihormigas 300 g', precio: '4,96 €' },
+        { etiqueta: 'Contra hormigas específico', nombre: 'GESAL INSECT.ANTIHORMIGAS 500 GRS.', precio: '4,96 €' },
       ],
       relatedSolutions: [],
       seo: {
@@ -1222,7 +1222,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Bloom Antipolilla Colgador Lavanda',      categoria: 'Droguería', formato: 'Dúo', precio: '1,48 €' },
-        { nombre: 'Antipolilla Paraflor Estuches',            categoria: 'Droguería', formato: '3 bloques', precio: '3,46 €' },
+        { nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.LAVANDA',            categoria: 'Droguería', formato: '3 bloques', precio: '3,46 €' },
         { nombre: 'Guardarropa Bonodor Nº2',                   categoria: 'Droguería', formato: '65x125 cm, 5 uds', precio: '2,66 €' },
       ],
       alternativeProducts: [
@@ -1335,11 +1335,11 @@ window.SOLUCIONES_DATA = (function () {
       recommendedProducts: [
         { nombre: 'Kit Adhesivo Lunas Zaphiro',         categoria: 'Talleres', precio: '14,99 €' },
         { nombre: 'Adhesivo Lunas MS Polímero Zaphiro', categoria: 'Talleres', formato: '290 ml', precio: '13,02 €' },
-        { nombre: 'Aplicador de Imprimación',            categoria: 'Talleres', precio: '2,31 €' },
+        { nombre: 'IMPRIMACION CHAPA/CRISTAL ZAPHIRO ZXS100 N 30ML.',            categoria: 'Talleres', precio: '2,31 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción económica',    nombre: 'Adhesivo PUR de Lunas ZXS150 310 ml', precio: '7,91 €' },
-        { etiqueta: 'Reparación puntual',  nombre: 'Cartucho Masilla Parabrisas 310 cc', precio: '17,53 €' },
+        { etiqueta: 'Reparación puntual',  nombre: 'ADHESIVO LUNAS MS POLIMERO ZXS410 290 ML. ZAPHIRO', precio: '17,53 €' },
       ],
       relatedSolutions: ['proteger-bajos-antigravilla'],
       seo: {
@@ -1766,11 +1766,11 @@ window.SOLUCIONES_DATA = (function () {
         'Usar un barniz normal en vez de uno específico con protección UV para faros.',
       ],
       recommendedProducts: [
-        { nombre: 'Kit Reparación de Faros 3M',              categoria: 'Talleres', precio: '42,87 €' },
+        { nombre: 'KIT RESTAURACION FAROS C/POLIMERO ZAPHIRO CR03061',              categoria: 'Talleres', precio: '42,87 €' },
         { nombre: 'Spraymax Barniz 2K Óptica Faros 2en1',    categoria: 'Talleres', formato: '250 ml', precio: '25,35 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Opción completa/profesional', nombre: 'Set Renovador de Faros Bossauto', precio: '99,83 €' },
+        { etiqueta: 'Opción completa/profesional', nombre: 'BODY LENS CLEAR SPRAY LACA FAROS 400 ML.', precio: '99,83 €' },
         { etiqueta: 'Kit con polímero',              nombre: 'Kit Restauración Faros c/Polímero Zaphiro', precio: '96,50 €' },
       ],
       relatedSolutions: ['recuperar-brillo-carroceria'],
@@ -1926,7 +1926,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Bloom Electrónico Antimosquitos Pro + Recambio', categoria: 'Droguería', precio: '5,78 €' },
-        { nombre: 'Bayer Garden Antimosquitos Exteriores Spray',     categoria: 'Droguería', formato: '500 ml', precio: '7,68 €' },
+        { nombre: 'AUTAN MOSQUITOS 100 ML.SPRAY ULTRA REPELENTE',     categoria: 'Droguería', formato: '500 ml', precio: '7,68 €' },
         { nombre: 'Autan Mosquitos Spray Ultra Repelente',            categoria: 'Droguería', formato: '100 ml', precio: '5,65 €' },
       ],
       alternativeProducts: [
@@ -2008,7 +2008,7 @@ window.SOLUCIONES_DATA = (function () {
         { fase: 'Uso general',   familiaSugerida: 'Colas de contacto',      items: ['Cola de contacto universal'] },
         { fase: 'Tuberías PVC',  familiaSugerida: 'Adhesivos específicos',  items: ['Pegamento específico para tuberías de PVC'] },
         { fase: 'Césped artificial', familiaSugerida: 'Adhesivos específicos', items: ['Adhesivo para césped artificial'] },
-        { fase: 'Reparación rápida', familiaSugerida: 'Pegamentos instantáneos', items: ['Pegamento instantáneo'] },
+        { fase: 'Reparación rápida', familiaSugerida: 'Pegamentos instantáneos', items: ['SUPER GLUE-3 3 GRS.'] },
       ],
       receta: [
         { fase: 'Identificar', emoji: '🔍' },
@@ -2021,7 +2021,7 @@ window.SOLUCIONES_DATA = (function () {
         { n: 2, title: 'Uso general (madera, cerámica, metal, corcho)', text: 'Para la mayoría de materiales porosos o semi-porosos, una cola de contacto universal de calidad da un resultado fiable y duradero.', productos: ['Cola de contacto universal'] },
         { n: 3, title: 'Tuberías de PVC', text: 'El PVC necesita un pegamento específico que fusiona químicamente el propio plástico — una cola de contacto normal no sella ni aguanta la presión del agua.', productos: ['Pegamento específico para tuberías de PVC'] },
         { n: 4, title: 'Césped artificial', text: 'Las juntas de césped artificial necesitan un adhesivo específico, flexible y resistente a la intemperie — un pegamento normal se seca y agrieta con el sol.', productos: ['Adhesivo para césped artificial'] },
-        { n: 5, title: 'Reparación rápida o pequeña', text: 'Para roturas pequeñas o reparaciones puntuales que necesitan fraguado en segundos, un pegamento instantáneo es la opción más práctica — aunque suele ser más rígido y menos adecuado para superficies grandes.', productos: ['Pegamento instantáneo'] },
+        { n: 5, title: 'Reparación rápida o pequeña', text: 'Para roturas pequeñas o reparaciones puntuales que necesitan fraguado en segundos, un pegamento instantáneo es la opción más práctica — aunque suele ser más rígido y menos adecuado para superficies grandes.', productos: ['SUPER GLUE-3 3 GRS.'] },
         { n: 6, title: 'Limpiar antes de pegar', text: 'Sea cual sea el pegamento elegido, limpia y desengrasa ambas superficies antes de aplicarlo — es la causa más habitual de que un pegado "bueno" no aguante.', productos: [] },
       ],
       professionalTips: [
@@ -2039,7 +2039,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Uso general',        nombre: 'Cola de contacto universal', precio: '5,50 €' },
-        { etiqueta: 'Reparación rápida',  nombre: 'Pegamento instantáneo', precio: '2,20 €' },
+        { etiqueta: 'Reparación rápida',  nombre: 'SUPER GLUE-3 3 GRS.', precio: '2,20 €' },
       ],
       relatedSolutions: ['sellar-juntas-bano', 'desatascar-tuberia'],
       seo: {
@@ -2418,7 +2418,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Ambiente de corrosión alta',     nombre: 'Titantech SXB-210 Imprimación Epoxi AE HB SB 15 L', precio: '307,34 €' },
-        { etiqueta: 'Acabado de altas prestaciones',   nombre: 'Titantech DTM EX-410 Esmalte Sintético Anticorrosivo 4 L', precio: '53,43 €' },
+        { etiqueta: 'Acabado de altas prestaciones',   nombre: 'TITANTECH EX-390 ESM.FORJA DTM 4 L.BASE INCOL.', precio: '53,43 €' },
         { etiqueta: 'Imprimación anticorrosiva fosfatante', nombre: 'Imprimación Fosfatante SX-140 Anticorrosiva 20 L', precio: '206,26 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-acero-fuego'],
