@@ -771,6 +771,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             flex-wrap: wrap;
             gap: 8px;
         }
+        /* Agrupa los botones de acción (solicitar catálogo, info del
+           aviso, compartir) en un único bloque flex — así
+           justify-content:space-between de .resultados-header solo
+           reparte DOS elementos (contador a la izquierda, este grupo a
+           la derecha) en vez de repartir cada botón por separado, que
+           dejaba el icono de información "suelto" a medio camino entre
+           el contador y el de compartir en vez de pegado a él. */
+        .resultados-header__acciones {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
         .resultados-count {
             font-size: 0.9rem;
             color: var(--muted);
@@ -2966,15 +2979,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="resultados-count">
                 <strong id="num-resultados">—</strong> resultados
             </div>
-            <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled style="display: none;">
-                <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
-            </button>
-            <button class="btn-info-disclaimer" id="btn-info-disclaimer" aria-label="Mostrar aviso de precios y disponibilidad" title="Mostrar aviso de precios y disponibilidad">
-                <i class="fa-solid fa-circle-info"></i>
-            </button>
-            <button class="btn-compartir-resultados" id="btn-compartir-resultados" aria-label="Compartir estos resultados" title="Compartir estos resultados">
-                <i class="fa-solid fa-share-nodes"></i>
-            </button>
+            <div class="resultados-header__acciones">
+                <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled style="display: none;">
+                    <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
+                </button>
+                <button class="btn-info-disclaimer" id="btn-info-disclaimer" aria-label="Mostrar aviso de precios y disponibilidad" title="Mostrar aviso de precios y disponibilidad">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
+                <button class="btn-compartir-resultados" id="btn-compartir-resultados" aria-label="Compartir estos resultados" title="Compartir estos resultados">
+                    <i class="fa-solid fa-share-nodes"></i>
+                </button>
+            </div>
         </div>
 
         <div class="catalog-disclaimer" id="catalog-disclaimer">
