@@ -821,13 +821,36 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             color: #059669;
         }
 
+        /* Mismo icono-botón que btn-compartir-resultados, pero en amarillo
+           (a juego con el aviso de precios que reactiva) — vuelve a
+           mostrar el aviso "Nota: Los precios..." si el usuario lo cerró
+           con la X. Aparece y se oculta exactamente igual que el botón de
+           compartir (ver regla de abajo). */
+        .btn-info-disclaimer {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            background: #fff;
+            color: var(--yellow);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .btn-info-disclaimer:hover { background: var(--light); }
+
         /* El contador de resultados y el icono de compartir empiezan
            ocultos: solo se revelan en cuanto el usuario interactúa con
            algún filtro (texto o selector) — ver revelarCabeceraResultados()
            y el delegado de eventos sobre <aside class="filtros">. Igual en
            escritorio, tablet y móvil, no depende de ningún media query. */
         .resultados-header.resultados-header--sin-interaccion .resultados-count,
-        .resultados-header.resultados-header--sin-interaccion .btn-compartir-resultados {
+        .resultados-header.resultados-header--sin-interaccion .btn-compartir-resultados,
+        .resultados-header.resultados-header--sin-interaccion .btn-info-disclaimer {
             display: none;
         }
 
@@ -840,7 +863,24 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-size: 0.8rem;
             color: #64748b;
             line-height: 1.4;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
         }
+        .catalog-disclaimer.oculto { display: none; }
+        .catalog-disclaimer__contenido { flex: 1; min-width: 0; }
+        .btn-cerrar-disclaimer {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            color: #b45309;
+            opacity: 0.6;
+            cursor: pointer;
+            padding: 2px 4px;
+            font-size: 0.85rem;
+            line-height: 1;
+        }
+        .btn-cerrar-disclaimer:hover { opacity: 1; }
 
         /* En móvil, la fila de cabecera (contador + botones) suele partirse
            en varias líneas al no caber todo — se compactan los márgenes
@@ -2929,14 +2969,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled style="display: none;">
                 <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
             </button>
+            <button class="btn-info-disclaimer" id="btn-info-disclaimer" aria-label="Mostrar aviso de precios y disponibilidad" title="Mostrar aviso de precios y disponibilidad">
+                <i class="fa-solid fa-circle-info"></i>
+            </button>
             <button class="btn-compartir-resultados" id="btn-compartir-resultados" aria-label="Compartir estos resultados" title="Compartir estos resultados">
                 <i class="fa-solid fa-share-nodes"></i>
             </button>
         </div>
 
-        <div class="catalog-disclaimer">
-            <i class="fa-solid fa-circle-info" style="color: var(--yellow); margin-right: 8px;"></i>
-            <strong>Nota:</strong> Los precios pueden variar y los productos mostrados están sujetos a disponibilidad. Consulta con nuestro equipo para confirmar stock actual.
+        <div class="catalog-disclaimer" id="catalog-disclaimer">
+            <div class="catalog-disclaimer__contenido">
+                <i class="fa-solid fa-circle-info" style="color: var(--yellow); margin-right: 8px;"></i>
+                <strong>Nota:</strong> Los precios pueden variar y los productos mostrados están sujetos a disponibilidad. Consulta con nuestro equipo para confirmar stock actual.
+            </div>
+            <button type="button" class="btn-cerrar-disclaimer" id="btn-cerrar-disclaimer" aria-label="Ocultar este aviso" title="Ocultar este aviso">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
 
         <div id="cargando-inicial" class="cargando-inicial">
@@ -4252,6 +4300,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-compartir-resultados').addEventListener('click', compartirResultados);
+        $('btn-cerrar-disclaimer').addEventListener('click', ocultarDisclaimerPrecios);
+        $('btn-info-disclaimer').addEventListener('click', mostrarDisclaimerPrecios);
 
         // Panel de filtros como modal deslizante en móvil
         $('btn-abrir-filtros-movil').addEventListener('click', alternarFiltrosMovil);
@@ -4982,6 +5032,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function ocultarCabeceraResultados() {
         const cabecera = $('resultados-header');
         if (cabecera) cabecera.classList.add('resultados-header--sin-interaccion');
+    }
+
+    // Aviso "Nota: Los precios..." — se puede cerrar con la X integrada
+    // (gana el espacio vertical que ocupaba) y volver a abrir con el
+    // icono de información (amarillo) de la cabecera de resultados, que
+    // aparece/desaparece exactamente igual que el de compartir.
+    function ocultarDisclaimerPrecios() {
+        const el = $('catalog-disclaimer');
+        if (el) el.classList.add('oculto');
+    }
+    function mostrarDisclaimerPrecios() {
+        const el = $('catalog-disclaimer');
+        if (el) el.classList.remove('oculto');
     }
 
     // Limpia todos los filtros salvo el propio texto de búsqueda — se usa
