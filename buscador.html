@@ -802,21 +802,33 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         .btn-compartir-resultados {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
             background: #fff;
             color: var(--dark);
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            font-size: 0.95rem;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .btn-compartir-resultados:hover { background: var(--light); }
         .btn-compartir-resultados.copiado {
             background: #ecfdf5;
             border-color: #10b981;
             color: #059669;
+        }
+
+        /* El contador de resultados y el icono de compartir empiezan
+           ocultos: solo se revelan en cuanto el usuario interactúa con
+           algún filtro (texto o selector) — ver revelarCabeceraResultados()
+           y el delegado de eventos sobre <aside class="filtros">. Igual en
+           escritorio, tablet y móvil, no depende de ningún media query. */
+        .resultados-header.resultados-header--sin-interaccion .resultados-count,
+        .resultados-header.resultados-header--sin-interaccion .btn-compartir-resultados {
+            display: none;
         }
 
         .catalog-disclaimer {
@@ -831,13 +843,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
 
         /* En móvil, la fila de cabecera (contador + botones) suele partirse
-           en varias líneas al no caber todo — se compactan los botones
-           (menos relleno, texto más pequeño) y se recortan los márgenes
-           para que no se acumule tanto espacio antes de ver resultados. */
+           en varias líneas al no caber todo — se compactan los márgenes
+           para que no se acumule tanto espacio antes de ver resultados.
+           btn-compartir-resultados ya es un icono de tamaño fijo (ver
+           regla base), no necesita su propio ajuste de padding/texto aquí. */
         @media (max-width: 480px) {
             .resultados-header { margin-bottom: 8px; gap: 6px; }
-            .btn-solicitar-catalogo,
-            .btn-compartir-resultados {
+            .btn-solicitar-catalogo {
                 padding: 7px 12px;
                 font-size: 0.78rem;
             }
@@ -2910,15 +2922,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- ── RESULTADOS ── -->
     <section>
-        <div class="resultados-header">
+        <div class="resultados-header resultados-header--sin-interaccion" id="resultados-header">
             <div class="resultados-count">
-                <strong id="num-resultados">—</strong> productos encontrados
+                <strong id="num-resultados">—</strong> resultados
             </div>
             <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled style="display: none;">
                 <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
             </button>
-            <button class="btn-compartir-resultados" id="btn-compartir-resultados">
-                <i class="fa-solid fa-share-nodes"></i> Compartir estos resultados
+            <button class="btn-compartir-resultados" id="btn-compartir-resultados" aria-label="Compartir estos resultados" title="Compartir estos resultados">
+                <i class="fa-solid fa-share-nodes"></i>
             </button>
         </div>
 
@@ -3625,6 +3637,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function seleccionarSugerencia(texto) {
         $('f-texto').value = texto;
+        revelarCabeceraResultados();
         ocultarSugerencias();
         actualizarIconosBuscador();
         if (texto.trim()) limpiarOtrosFiltros();
@@ -4201,6 +4214,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('input-imagen-busqueda').click();
         });
         $('input-imagen-busqueda').addEventListener('change', buscarPorImagenSeleccionada);
+
+        // Delegado sobre todos los contenedores que pueden tener controles
+        // de filtro: no basta con <aside class="filtros"> — en pantallas
+        // ≥881px, moverBuscadorSegunViewport() reubica el buscador de
+        // texto y el selector de área DENTRO de #toolbar-buscador-pc (ver
+        // esa función más abajo), sacándolos del <aside> por completo. Sin
+        // cubrir también esos contenedores, escribir en el buscador o
+        // cambiar el área en escritorio no revelaría la cabecera. Cubre
+        // tanto los controles fijos (texto, área, precio, oferta...) como
+        // los que se generan dinámicamente más tarde (familia, subfamilia,
+        // fabricante, atributos de pintura/talleres). 'input' cubre el
+        // texto libre y los campos de precio mientras se escriben;
+        // 'change' cubre selects y checkboxes.
+        ['aside.filtros', '#toolbar-buscador-pc', '#filtros-extra'].forEach((selector) => {
+            const contenedor = document.querySelector(selector);
+            if (!contenedor) return;
+            contenedor.addEventListener('input', revelarCabeceraResultados);
+            contenedor.addEventListener('change', revelarCabeceraResultados);
+        });
+
         $('f-area').addEventListener('change', () => { renderFabricanteTaller(); renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros(); });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
@@ -4343,6 +4376,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         escanerActivo = false;
         $('scanner-estado').textContent = '✓ Código detectado: ' + valor;
         $('f-texto').value = valor;
+        revelarCabeceraResultados();
         actualizarIconosBuscador();
         ocultarSugerencias();
         resetPaginacion();
@@ -4463,6 +4497,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ZBar-WASM como por el respaldo de ZXing/html5-qrcode).
     function aplicarResultadoEscaneoFoto(texto) {
         $('f-texto').value = texto;
+        revelarCabeceraResultados();
         actualizarIconosBuscador();
         ocultarSugerencias();
         resetPaginacion();
@@ -4930,6 +4965,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function resetPaginacion() { familiasMostradas = 0; }
+
+    // El contador de resultados y el botón de compartir empiezan ocultos
+    // (ver clase "resultados-header--sin-interaccion") y solo se revelan
+    // en cuanto el usuario interactúa de verdad con algún filtro — texto
+    // libre o cualquier selector/checkbox, incluidos los que se generan
+    // dinámicamente (familia, subfamilia, fabricante, atributos de
+    // pintura/talleres...). Una vez revelada, la cabecera ya no vuelve a
+    // ocultarse en esta carga de página.
+    function revelarCabeceraResultados() {
+        const cabecera = $('resultados-header');
+        if (cabecera) cabecera.classList.remove('resultados-header--sin-interaccion');
+    }
 
     // Limpia todos los filtros salvo el propio texto de búsqueda — se usa
     // tanto desde "Limpiar filtros" como automáticamente cuando el usuario
@@ -5619,7 +5666,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function configurarBotonCompartirResultados() {
         const boton = $('btn-compartir-resultados');
         boton.classList.remove('copiado');
-        boton.innerHTML = '<i class="fa-solid fa-share-nodes"></i> Compartir estos resultados';
+        boton.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+        boton.setAttribute('aria-label', 'Compartir estos resultados');
+        boton.setAttribute('title', 'Compartir estos resultados');
     }
 
     async function compartirResultados() {
@@ -5643,7 +5692,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             await navigator.clipboard.writeText(url);
             boton.classList.add('copiado');
-            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Enlace copiado!';
+            boton.innerHTML = '<i class="fa-solid fa-check"></i>';
+            boton.setAttribute('aria-label', '¡Enlace copiado!');
+            boton.setAttribute('title', '¡Enlace copiado!');
             setTimeout(configurarBotonCompartirResultados, 2200);
         } catch (e) {
             window.prompt('Copia este enlace para compartir estos resultados:', url);
@@ -5661,6 +5712,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const params = new URLSearchParams(window.location.search);
         const tieneFiltros = CAMPOS_FILTRO_URL.some(c => params.has(c.param));
         if (!tieneFiltros) return;
+        revelarCabeceraResultados(); // filtros ya activos desde el enlace: no hace falta esperar a que el usuario toque nada
 
         const pendientes = {};
         CAMPOS_FILTRO_URL.forEach(c => {
