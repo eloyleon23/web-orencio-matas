@@ -2847,6 +2847,12 @@ function regenerarCacheCompletaDesdeSheet_() {
       const relacionados = relacionadosRaw
         ? relacionadosRaw.split(',').map(r => r.trim()).filter(Boolean)
         : [];
+      // Distingue "nunca tocado desde el gestor" (cae al respaldo de
+      // reglas fijas de JavaScript en el buscador) de "un humano ya
+      // decidió explícitamente los relacionados de este producto,
+      // aunque sean cero" — ver procesarActualizarRelacionados más
+      // arriba para el porqué.
+      const relacionadosGestionado = esSi_(valorCelda_(row, 'relacionados_gestionado'));
 
       exportados.push({
         ref: ref,
@@ -2864,6 +2870,7 @@ function regenerarCacheCompletaDesdeSheet_() {
         imagen_validada: valorCelda_(row, 'imagen_validada'),
         fecha_actualizacion_imagen: valorCelda_(row, 'fecha_actualizacion_imagen'),
         relacionados: relacionados,
+        relacionados_gestionado: relacionadosGestionado,
       });
     });
   }
@@ -3592,6 +3599,25 @@ function procesarActualizarRelacionados(data) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // "relacionados_gestionado" distingue "nunca se ha tocado desde el
+    // gestor" (cae al respaldo de reglas fijas de JavaScript, como
+    // hasta ahora) de "un humano ha decidido explícitamente qué
+    // relacionados debe tener este producto" (aunque haya decidido que
+    // sean CERO — un array vacío guardado desde aquí ya no debe caer al
+    // respaldo). Sin esta columna, guardar una lista vacía desde el
+    // gestor era indistinguible de "nunca gestionado", y el respaldo de
+    // reglas fijas (a veces equivocado, ver caso real: "TIERRA DE
+    // DIATOMEAS" disparando por error la regla de tierra/sustrato de
+    // jardín) volvía a aparecer sin que hubiera forma de quitarlo desde
+    // el propio gestor. Se crea la columna sobre la marcha si aún no
+    // existe, igual que se hace con "relacionados" más arriba en el
+    // histórico del proyecto.
+    let colGestionado = PROD['relacionados_gestionado'];
+    if (colGestionado === undefined) {
+      colGestionado = prodHeaders.length;
+      sheetProd.getRange(1, colGestionado + 1).setValue('relacionados_gestionado');
+    }
+
     let prodRowIdx = -1;
     for (let i = 0; i < prodData.length; i++) {
       const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
@@ -3610,11 +3636,12 @@ function procesarActualizarRelacionados(data) {
     const prodRowNum = prodRowIdx + 1;
     const valorRelacionados = relacionados.join(', ');
     sheetProd.getRange(prodRowNum, PROD['relacionados'] + 1).setValue(valorRelacionados);
-    console.log('relacionados actualizado:', valorRelacionados);
+    sheetProd.getRange(prodRowNum, colGestionado + 1).setValue('si');
+    console.log('relacionados actualizado:', valorRelacionados, '| relacionados_gestionado: si');
 
     // Vista rápida: parchear productos.json al instante — mismo mecanismo
     // que actualizar/validar imagen.
-    actualizarProductoEnCache_(referencia, { relacionados: relacionados });
+    actualizarProductoEnCache_(referencia, { relacionados: relacionados, relacionados_gestionado: true });
 
     console.log('procesarActualizarRelacionados completado exitosamente');
     return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Relacionados actualizados correctamente' }))

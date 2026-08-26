@@ -6156,7 +6156,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         {
             // Tierra / sustrato de jardín → fertilizante o abono, para
             // completar el cuidado de la planta que se va a trasplantar.
-            coincide: (n, sf) => n.includes('TIERRA') || n.includes('TURBA') || n.includes('SUSTRATO'),
+            // Excluye explícitamente "DIATOMEAS" — la tierra de diatomeas
+            // es un INSECTICIDA (sílice fósil), no un sustrato de plantar;
+            // sin esta exclusión, ".includes('TIERRA')" la confundía con
+            // sustrato y sugería un abono/fertilizante sin sentido (caso
+            // real: HUMUS HLH-DIATGON TIERRA DE DIATOMEAS, ref 1011087).
+            coincide: (n, sf) => (n.includes('TIERRA') || n.includes('TURBA') || n.includes('SUSTRATO')) && !n.includes('DIATOMEAS'),
             sugerir: (catalogo) => [
                 catalogo.find(x => /FERTILIZ|ABONO/.test(quitarAcentosMay(x.nombre))
                     && !/TIERRA|TURBA/.test(quitarAcentosMay(x.nombre))),
@@ -6210,9 +6215,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         // Prioridad: la columna "relacionados" del Excel (editable
         // directamente ahí, sin tocar código) — si el producto la tiene
-        // informada, se usa tal cual. Solo si NO la tiene, se recurre a
-        // las reglas fijas antiguas (pinturas/droguería) como respaldo,
-        // mientras se va completando la columna nueva en más productos.
+        // informada, se usa tal cual.
         let sugerencias = [];
         if (Array.isArray(p.relacionados) && p.relacionados.length) {
             sugerencias = p.relacionados
@@ -6221,7 +6224,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 .slice(0, 4);
         }
 
-        if (!sugerencias.length) {
+        // El respaldo de reglas fijas de JavaScript (pinturas/droguería)
+        // SOLO se usa si nadie ha gestionado nunca este producto desde el
+        // gestor de relacionados (p.relacionados_gestionado). Si ya se ha
+        // gestionado —aunque se haya guardado una lista vacía a
+        // propósito, decidiendo que este producto no debe mostrar
+        // ninguno—, se respeta esa decisión y NO se cae al respaldo. Sin
+        // esta distinción, una lista vacía era indistinguible de "nunca
+        // gestionado" y una sugerencia del respaldo que resultara
+        // equivocada (ver caso real: HUMUS HLH-DIATGON TIERRA DE
+        // DIATOMEAS, ref 1011087, sugiriendo un abono por la palabra
+        // "TIERRA") no se podía quitar de ninguna forma desde la propia
+        // herramienta de gestión.
+        if (!sugerencias.length && !p.relacionados_gestionado) {
             const esPintura = productoEsPintura(p);
             const esDrogueriaConRegla = (p.area === 'drogueria' || p.area === 'perfumeria');
             if (esPintura) {
@@ -6805,6 +6820,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!relacionadosSeleccion.length) {
             cont.innerHTML = '';
             vacio.style.display = '';
+            // Aviso adicional: si este producto todavía no se ha gestionado
+            // nunca desde aquí, el detalle le está mostrando una sugerencia
+            // AUTOMÁTICA (reglas fijas de pinturas/droguería) en su lugar —
+            // guardar aquí, aunque sea con la lista vacía, sustituye esa
+            // sugerencia automática por "sin relacionados", de forma
+            // permanente y editable.
+            const yaGestionado = !!(productoRelacionadosActual && productoRelacionadosActual.relacionados_gestionado);
+            vacio.innerHTML = yaGestionado
+                ? 'Ningún producto relacionado — búscalo abajo para añadirlo.'
+                : 'Ningún producto relacionado todavía — búscalo abajo para añadirlo.<br>' +
+                  '<strong>Nota:</strong> ahora mismo el detalle puede estar mostrando una sugerencia automática ' +
+                  'en su lugar. Al pulsar "Actualizar relacionados" (aunque sea sin añadir ninguno), esa sugerencia ' +
+                  'automática se sustituye por tu elección.';
             return;
         }
         vacio.style.display = 'none';
@@ -6955,6 +6983,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // esperar a la siguiente carga de productos.json — mismo
             // criterio que el resto de acciones instantáneas del detalle.
             p.relacionados = [...relacionadosSeleccion];
+            p.relacionados_gestionado = true; // ya no debe caer al respaldo de reglas fijas, aunque la lista quede vacía
             configurarComplementarios(p);
             resincronizarVersionConocida(); // evita que el banner salte por este mismo cambio
 

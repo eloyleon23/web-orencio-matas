@@ -145,6 +145,15 @@ def exportar_productos_json(productos, familias, subfamilias):
         relacionados_raw = p.get('relacionados', '').strip()
         relacionados = [r.strip() for r in relacionados_raw.split(',') if r.strip()] if relacionados_raw else []
 
+        # Distingue "nunca tocado desde el gestor de relacionados" (el
+        # buscador cae al respaldo de reglas fijas de JavaScript) de "un
+        # humano ya decidió explícitamente los relacionados de este
+        # producto, aunque sean cero" — sin esto, guardar una lista
+        # vacía desde el gestor era indistinguible de "nunca gestionado"
+        # y el respaldo (a veces equivocado) volvía a aparecer sin
+        # forma de quitarlo desde la propia herramienta.
+        relacionados_gestionado = es_si(p.get('relacionados_gestionado', ''))
+
         exportados.append({
             'ref':       ref,
             'nombre':    p.get('nombre', '').strip(),
@@ -161,6 +170,7 @@ def exportar_productos_json(productos, familias, subfamilias):
             'imagen_validada': p.get('imagen_validada', '').strip(),
             'fecha_actualizacion_imagen': p.get('fecha_actualizacion_imagen', '').strip(),
             'relacionados': relacionados,
+            'relacionados_gestionado': relacionados_gestionado,
         })
 
     payload = {
