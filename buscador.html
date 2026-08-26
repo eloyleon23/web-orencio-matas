@@ -4971,11 +4971,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // en cuanto el usuario interactúa de verdad con algún filtro — texto
     // libre o cualquier selector/checkbox, incluidos los que se generan
     // dinámicamente (familia, subfamilia, fabricante, atributos de
-    // pintura/talleres...). Una vez revelada, la cabecera ya no vuelve a
-    // ocultarse en esta carga de página.
+    // pintura/talleres...). Se vuelven a ocultar si el usuario borra el
+    // texto de búsqueda (icono "X") o pulsa "Limpiar filtros" — ambos
+    // pasan por limpiarFiltros(), ver más abajo.
     function revelarCabeceraResultados() {
         const cabecera = $('resultados-header');
         if (cabecera) cabecera.classList.remove('resultados-header--sin-interaccion');
+    }
+
+    function ocultarCabeceraResultados() {
+        const cabecera = $('resultados-header');
+        if (cabecera) cabecera.classList.add('resultados-header--sin-interaccion');
     }
 
     // Limpia todos los filtros salvo el propio texto de búsqueda — se usa
@@ -5003,6 +5009,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         ocultarSugerencias();
         limpiarOtrosFiltros();
         resetPaginacion();
+        ocultarCabeceraResultados();
         aplicarFiltros();
     }
 
