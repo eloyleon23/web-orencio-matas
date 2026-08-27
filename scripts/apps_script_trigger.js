@@ -2810,11 +2810,28 @@ function regenerarCacheCompletaDesdeSheet_() {
   // Formatea igual que la exportación CSV que usaba el script de Python
   // (dd/MM/yyyy HH:mm:ss) para las celdas que Apps Script reconoce como
   // fecha real, y como texto tal cual para el resto.
+  //
+  // BUG REAL ENCONTRADO Y CORREGIDO: si una celda de precio (u otra
+  // numérica) está tipada como NÚMERO en el Sheet (en vez de texto),
+  // sheetProd.getRange(...).getValues() la devuelve como un Number
+  // nativo de JavaScript, no como el texto que se ve en la hoja —
+  // Number.prototype.toString() SIEMPRE usa el punto como separador
+  // decimal, sin importar la configuración regional española de la
+  // hoja (eso solo afecta a cómo Sheets FORMATEA la celda para
+  // mostrarla, no a cómo JavaScript convierte el número a texto). Antes
+  // esto colaba "6.93" en vez de "6,93" — invisible en el propio
+  // buscador (que ya tenía una comprobación aparte para esto en otro
+  // punto del código), pero SÍ visible en el Centro de Soluciones, que
+  // usa esta caché en vivo como fuente principal de precios reales y
+  // los muestra tal cual sin volver a comprobarlo. El script Python
+  // (generar_productos_json.py) no tiene este problema porque lee la
+  // hoja vía exportación CSV, que sí respeta el formato regional.
   const valorCelda_ = (row, col) => {
     if (PROD[col] === undefined) return '';
     const v = row[PROD[col]];
     if (v === undefined || v === null || v === '') return '';
     if (v instanceof Date) return Utilities.formatDate(v, zona, 'dd/MM/yyyy HH:mm:ss');
+    if (typeof v === 'number') return v.toString().replace('.', ',');
     return v.toString().trim();
   };
 

@@ -358,7 +358,23 @@
         mostrarPrecio: false,
       };
     }
-    const precioReal = real.mostrar_precio && real.precio_con ? `${real.precio_con} €` : 'Consultar precio y disponibilidad';
+    // Normaliza a coma decimal por si la fuente en vivo de Apps Script
+    // devuelve el precio con punto (bug real ya corregido en origen,
+    // ver valorCelda_ en regenerarCacheCompletaDesdeSheet_ — un número
+    // de celda tipado como NÚMERO en el Sheet se convierte con
+    // Number.toString(), que siempre usa punto, sin importar el
+    // idioma). Se deja esta normalización aquí también como red de
+    // seguridad, igual que ya hace buscador.html en todos los sitios
+    // donde muestra un precio.
+    const formatearPrecio_ = (valor) => {
+      if (!valor) return valor;
+      const num = parseFloat(valor.toString().replace(',', '.'));
+      return isNaN(num) ? valor : num.toFixed(2).replace('.', ',');
+    };
+    const precioConFormateado = real.precio_con ? formatearPrecio_(real.precio_con) : real.precio_con;
+    const precioSinFormateado = real.precio_sin ? formatearPrecio_(real.precio_sin) : real.precio_sin;
+
+    const precioReal = real.mostrar_precio && precioConFormateado ? `${precioConFormateado} €` : 'Consultar precio y disponibilidad';
     return {
       nombre: real.nombre || mock.nombre,
       categoria: mock.categoria,
@@ -370,8 +386,8 @@
       familia: real.familia || mock.categoria,
       area: NOMBRES_AREA[real.area] || real.area || null,
       descripcion: real.descripcion || null,
-      precioCon: real.mostrar_precio ? real.precio_con : null,
-      precioSin: real.mostrar_precio ? real.precio_sin : null,
+      precioCon: real.mostrar_precio ? precioConFormateado : null,
+      precioSin: real.mostrar_precio ? precioSinFormateado : null,
       mostrarPrecio: !!real.mostrar_precio,
     };
   }
