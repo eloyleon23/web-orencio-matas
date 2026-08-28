@@ -463,6 +463,7 @@
 .cs-solucion-card {
   display: flex;
   flex-direction: column;
+  min-width: 0; /* ver nota en .cs-producto-card (assets/css/soluciones.css) */
   border-radius: var(--radius-medium);
   overflow: hidden;
   background: var(--primary-white);
@@ -683,12 +684,16 @@
   padding: 30px;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* ver nota en .cs-producto-card — flex/grid items no se
+    encogen por debajo del ancho de su contenido por defecto */
 }
 .modal-producto-info h3 {
   font-size: 1.5rem;
   color: var(--text-dark);
   margin: 0 0 8px 0;
   line-height: 1.3;
+  overflow-wrap: break-word; /* nombres largos sin espacios (p. ej. con "/")
+    se cortaban por el borde del modal en vez de hacer salto de línea */
 }
 .modal-producto-ref {
   color: var(--text-muted);
@@ -1060,6 +1065,9 @@
   gap: 16px;
 }
 .cs-materiales__fase {
+  min-width: 0; /* mismo motivo que .cs-producto-card más abajo: evita que un
+    texto largo sin espacios en familiaSugerida/items fuerce el ancho de la
+    columna del grid por encima del contenedor en móvil. */
   padding: 20px;
   border-radius: var(--radius-medium);
   background: var(--light-gray);
@@ -1087,6 +1095,14 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-width: 0; /* los hijos de un grid tienen min-width:auto por defecto,
+    es decir, nunca se encogen por debajo del ancho de su contenido más
+    largo sin cortar — con nombres de producto largos y sin espacios
+    (p. ej. "QUITACEMENTOS/LIMPIAJUNTAS") o referencias largas en fuente
+    monoespaciada, eso hacía que la tarjeta —y con ella toda la columna
+    del grid— se desbordara de su contenedor en vez de encogerse y dejar
+    que el texto hiciera salto de línea. Bug real, visible sobre todo
+    con una sola tarjeta en el grid en móvil estrecho. */
   padding: 20px;
   border: 1px solid rgba(18, 20, 23, 0.08);
   border-radius: var(--radius-medium);
@@ -1125,9 +1141,9 @@
   font-weight: 800;
   text-transform: uppercase;
 }
-.cs-producto-card__nombre { margin-bottom: 6px; font-weight: 800; color: var(--text-dark); line-height: 1.3; }
+.cs-producto-card__nombre { margin-bottom: 6px; font-weight: 800; color: var(--text-dark); line-height: 1.3; overflow-wrap: break-word; }
 .cs-producto-card__formato { margin-bottom: 6px; color: var(--text-muted); font-size: 0.82rem; }
-.cs-producto-card__ref { margin-bottom: 10px; color: var(--text-muted); font-size: 0.76rem; font-family: monospace; }
+.cs-producto-card__ref { margin-bottom: 10px; color: var(--text-muted); font-size: 0.76rem; font-family: monospace; overflow-wrap: break-word; }
 .cs-producto-card__precio { color: var(--primary-red); font-weight: 900; font-size: 1.15rem; }
 .cs-producto-card__precio--consultar,
 .producto-sin-precio {
@@ -1178,6 +1194,7 @@
   gap: 16px;
 }
 .cs-alternativa-card {
+  min-width: 0; /* ver nota en .cs-producto-card */
   padding: 18px;
   border: 1px dashed rgba(18, 20, 23, 0.16);
   border-radius: var(--radius-medium);
@@ -1192,7 +1209,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.cs-alternativa-card__nombre { margin-bottom: 6px; font-weight: 700; color: var(--text-dark); font-size: 0.92rem; }
+.cs-alternativa-card__nombre { margin-bottom: 6px; font-weight: 700; color: var(--text-dark); font-size: 0.92rem; overflow-wrap: break-word; }
 .cs-alternativa-card__precio { color: var(--text-gray); font-size: 0.88rem; font-weight: 700; }
 
 /* ── Toast de feedback (añadir productos) ────────────────────────────── */
