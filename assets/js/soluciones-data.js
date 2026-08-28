@@ -117,11 +117,13 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'proteger_acabado', label: 'Cómo proteger el acabado tras pintar', solutionSlug: 'proteger-acabado-pintura-nueva' },
     { id: 'elegir_acabado_pintura', label: 'No sé si elegir pintura mate, satinada o brillante', solutionSlug: 'elegir-acabado-pintura-mate-satinado-brillante' },
     { id: 'limpieza_profesional', label: 'Busco consumibles de limpieza para mi negocio', solutionSlug: 'limpieza-profesional-hosteleria-empresas' },
-    { id: 'manchas_grietas_antes_pintar', label: 'Tengo manchas o grietas antes de pintar', solutionSlug: 'manchas-grietas-antes-pintar' },
+    { id: 'manchas_grietas_antes_pintar', label: 'Tengo manchas, grietas o agujeros antes de pintar', solutionSlug: 'manchas-grietas-antes-pintar' },
     { id: 'humedad_interior', label: 'Tengo humedad en una pared interior', solutionSlug: 'tratar-humedad-interior-pared' },
     { id: 'limpiar_herramientas', label: 'Cómo limpio las brochas y rodillos', solutionSlug: 'limpiar-herramientas-maquinaria-pintura' },
     { id: 'elegir_pintura_superficie', label: 'No sé qué pintura elegir según la superficie', solutionSlug: 'elegir-pintura-segun-superficie-metal-madera-exterior' },
     { id: 'material_desechable_taller', label: 'Necesito protección desechable para el taller', solutionSlug: 'material-desechable-proteccion-taller' },
+    { id: 'pintar_renovar_piscina', label: 'Quiero pintar o renovar mi piscina', solutionSlug: 'piscinas-pintar-renovar' },
+    { id: 'elegir_imprimacion', label: 'No sé si necesito imprimación ni cuál', solutionSlug: 'elegir-imprimacion-superficie' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
     { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
     { id: 'tuberia_atascada',  label: 'Tengo una tubería atascada',           solutionSlug: 'desatascar-tuberia' },
@@ -223,6 +225,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Elegir disolvente o diluir la pintura',   solutionSlug: 'elegir-disolvente-diluir-pintura' },
         { title: 'Elegir entre mate, satinado o brillante', solutionSlug: 'elegir-acabado-pintura-mate-satinado-brillante' },
         { title: 'Qué pintura elegir según la superficie', solutionSlug: 'elegir-pintura-segun-superficie-metal-madera-exterior' },
+        { title: '¿Necesito imprimación?',                solutionSlug: 'elegir-imprimacion-superficie' },
         { title: 'Hidrofugar una fachada de piedra',       solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
         { title: 'Reparar grietas en una fachada',         solutionSlug: 'reparar-fisuras-fachada-hormigon' },
         { title: 'Tratar salitre o humedad por capilaridad', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
@@ -316,6 +319,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Eliminar algas',                       solutionSlug: 'mantenimiento-piscina' },
         { title: 'Clorar correctamente la piscina',      solutionSlug: 'mantenimiento-piscina' },
         { title: 'Preparar la piscina para el verano',  solutionSlug: 'mantenimiento-piscina' },
+        { title: 'Pintar o renovar la piscina',           solutionSlug: 'piscinas-pintar-renovar' },
         { title: 'Invernar la piscina',                  solutionSlug: 'mantenimiento-piscina' },
         { title: 'Hacer un tratamiento de choque con hipoclorito', solutionSlug: 'tratamiento-choque-piscina' },
       ],
@@ -4185,53 +4189,59 @@ window.SOLUCIONES_DATA = (function () {
 
     'manchas-grietas-antes-pintar': {
       slug: 'manchas-grietas-antes-pintar',
-      title: 'Cómo tratar manchas y grietas antes de pintar una pared',
-      description: 'Sella las manchas (humedad, nicotina, óxido) y las grietas antes de pintar, para que no vuelvan a aparecer a través de la pintura nueva.',
+      title: 'Cómo tratar manchas, grietas y agujeros antes de pintar una pared',
+      description: 'Rellena agujeros, sella las grietas y trata las manchas (humedad, nicotina, óxido) antes de pintar, para que la pared quede regular y nada de esto vuelva a aparecer a través de la pintura nueva.',
       category: 'pintura', subcategory: 'Problemas al pintar',
       problem: 'manchas_grietas_antes_pintar',
       objective: 'reparar',
       surface: 'pared',
       difficulty: 'Media',
-      estimatedTime: '30-60 min + tiempo de secado',
-      result: 'Una superficie sin manchas ni grietas visibles, lista para pintar sin que vuelvan a salir',
+      estimatedTime: '30-90 min + tiempo de secado',
+      result: 'Una pared regular, sin manchas, grietas ni agujeros visibles, lista para pintar sin que vuelvan a salir',
       breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Problemas al pintar'],
       materials: [
+        { fase: 'Agujeros', familiaSugerida: 'Masillas',        items: ['Masilla acrílica pintable'] },
         { fase: 'Grietas',  familiaSugerida: 'Masillas',        items: ['Masilla tapagrietas'] },
         { fase: 'Manchas',  familiaSugerida: 'Selladores de manchas', items: ['Sellador o pintura antimanchas'] },
       ],
       receta: [
         { fase: 'Identificar', emoji: '🔍' },
+        { fase: 'Tapar agujeros', emoji: '🕳️' },
         { fase: 'Reparar grietas', emoji: '🧱' },
         { fase: 'Sellar manchas', emoji: '🎨' },
-        { fase: 'Pintar',      emoji: '🖌️' },
       ],
       steps: [
-        { n: 1, title: 'Rellenar las grietas con masilla', text: 'Aplica masilla tapagrietas con espátula, rellenando bien toda la grieta — en grietas más profundas, puede hacer falta una segunda aplicación tras el primer secado, ya que la masilla se retrae un poco.', productos: ['Masilla tapagrietas'] },
-        { n: 2, title: 'Lijar la masilla una vez seca', text: 'Cuando la masilla esté completamente seca, lija la zona para dejarla a ras con el resto de la pared — si pintas sobre masilla sin lijar, se nota el relieve.', productos: [] },
-        { n: 3, title: 'Sellar las manchas antes de pintar', text: 'Las manchas de humedad, nicotina, óxido o rotulador NO desaparecen solo con pintar encima — sin un sellador o pintura antimanchas específica, acaban traspasando la pintura nueva al cabo de un tiempo.', productos: ['Sellador o pintura antimanchas'] },
-        { n: 4, title: 'Dejar secar antes de pintar el color', text: 'Respeta el tiempo de secado del sellador antimanchas indicado en el envase antes de aplicar la pintura definitiva.', productos: [] },
+        { n: 1, title: 'Tapar agujeros con masilla acrílica pintable', text: 'Para agujeros de tacos, clavos o pequeños desconchones, rellena con una masilla acrílica pintable usando una espátula — en agujeros más profundos, aplica en dos capas dejando secar entre ellas, ya que la masilla se retrae un poco al secar.', productos: ['Masilla acrílica pintable'] },
+        { n: 2, title: 'Rellenar las grietas con masilla tapagrietas', text: 'Aplica masilla tapagrietas rellenando bien toda la grieta — igual que con los agujeros, en grietas profundas puede hacer falta una segunda pasada.', productos: ['Masilla tapagrietas'] },
+        { n: 3, title: 'Lijar una vez seco todo', text: 'Cuando la masilla esté completamente seca (tanto en agujeros como en grietas), lija la zona para dejarla a ras con el resto de la pared — si pintas sobre masilla sin lijar, se nota el relieve.', productos: [] },
+        { n: 4, title: 'Sellar las manchas antes de pintar', text: 'Las manchas de humedad, nicotina, óxido o rotulador NO desaparecen solo con pintar encima — sin un sellador o pintura antimanchas específica, acaban traspasando la pintura nueva al cabo de un tiempo.', productos: ['Sellador o pintura antimanchas'] },
+        { n: 5, title: 'Dejar secar antes de pintar el color', text: 'Respeta el tiempo de secado del sellador antimanchas indicado en el envase antes de aplicar la pintura definitiva.', productos: [] },
       ],
       professionalTips: [
         'Si la mancha es de humedad, sella primero la CAUSA de la humedad (una gotera, condensación...) — si no, la mancha puede volver a aparecer aunque hayas sellado bien la superficie.',
         'Un sellador antimanchas en spray es más rápido para manchas puntuales pequeñas; en superficies grandes, aplicarlo con brocha o rodillo cunde más.',
+        'Para agujeros muy grandes o profundos, rellena por capas en vez de una sola aplicación gruesa — seca de forma más uniforme y con menos riesgo de que se agriete al secar.',
       ],
       commonMistakes: [
         'Pintar directamente sobre una mancha sin sellarla antes, esperando que la pintura la tape para siempre.',
         'Pintar sobre masilla sin lijarla antes, dejando relieve visible.',
         'No resolver la causa real de una mancha de humedad antes de sellarla.',
+        'Rellenar un agujero profundo de una sola vez en vez de por capas.',
       ],
       recommendedProducts: [
+        { nombre: 'RUALAIX RX-422 MASILLA ACRYL.PINTABLE 300 GMS.', categoria: 'Pintura', formato: '300 g', precio: '2,29 €' },
         { nombre: 'BAIXENS B-18C MASILLA TAPAGRIETAS CART.310 ML.', categoria: 'Pintura', formato: '310 ml', precio: '1,98 €' },
         { nombre: 'TITAN PINTURA ANTIMANCHAS H24 750 ML.BLANCO MATE', categoria: 'Pintura', formato: '750 ml', precio: '18,25 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Sellador de manchas en spray', nombre: 'XYLAZEL SPRAY ANTIMANCHAS PAREDES/TECHOS 500', precio: '11,35 €' },
         { etiqueta: 'Masilla para exterior', nombre: 'BAIXENS B-33C MASILLA TAPAGRIETAS EXTERIOR CAT.310', precio: '2,99 €' },
+        { etiqueta: 'Juego de espátulas para aplicar la masilla', nombre: 'JUEGO ESPATULAS ENMASILLAR WK601560 4 UDS.50-120', precio: '5,08 €' },
       ],
       relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'pintar-pared-interior'],
       seo: {
-        title: 'Cómo tratar manchas y grietas antes de pintar una pared | Orencio Matas',
-        description: 'Guía para sellar manchas de humedad, nicotina u óxido y rellenar grietas antes de pintar, evitando que reaparezcan.',
+        title: 'Cómo tratar manchas, grietas y agujeros antes de pintar | Orencio Matas',
+        description: 'Guía para rellenar agujeros, sellar grietas y tratar manchas antes de pintar una pared, evitando que vuelvan a aparecer.',
       },
     },
 
@@ -4438,11 +4448,141 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Talla M del mono desechable', nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-M', precio: '8,71 €' },
+        { etiqueta: 'Protección respiratoria para pintura', nombre: '.MASCARA PARA PINTURA FFA1P2 REF. 06941', precio: '38,05 €' },
       ],
+      // Selector interactivo: elige qué parte necesita proteger y se le
+      // recomienda el EPI real correspondiente.
+      selectorSuperficie: {
+        pregunta: '¿Qué necesitas proteger?',
+        opciones: [
+          { id: 'cuerpo', label: 'El cuerpo (salpicaduras de pintura o químicos)', nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-L', motivo: 'Mono desechable de alta protección — cubre todo el cuerpo frente a salpicaduras al pintar con pistola o manipular químicos.' },
+          { id: 'manos', label: 'Las manos', nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', motivo: 'Guantes resistentes de un solo uso, en formato caja para poder cambiarlos con frecuencia.' },
+          { id: 'respiratoria', label: 'Las vías respiratorias (al pintar con pistola)', nombre: '.MASCARA PARA PINTURA FFA1P2 REF. 06941', motivo: 'Máscara específica para pintura, con filtro FFA1P2 — protege frente a los vapores del disolvente y la pintura al pulverizar.' },
+        ],
+      },
       relatedSolutions: ['problemas-pulverizacion-pistola', 'elegir-pistola-pintar'],
       seo: {
         title: 'Material desechable y de protección para trabajar en el taller | Orencio Matas',
         description: 'Guía de monos desechables, guantes y protección respiratoria para trabajar con pintura y productos químicos en el taller.',
+      },
+    },
+
+    'piscinas-pintar-renovar': {
+      slug: 'piscinas-pintar-renovar',
+      title: 'Cómo pintar o renovar una piscina',
+      description: 'Prepara y pinta el vaso de una piscina con pintura de clorocaucho, o renuévala si la pintura anterior está desprendiéndose, con los productos reales de nuestro catálogo.',
+      category: 'piscinas', subcategory: 'Pintar y renovar',
+      problem: 'pintar_renovar_piscina',
+      objective: 'pintar',
+      surface: 'piscina',
+      difficulty: 'Media',
+      estimatedTime: '1-2 días (incluyendo secados) + vaciado',
+      result: 'El vaso de la piscina pintado o renovado, con un acabado uniforme y duradero',
+      breadcrumb: ['Centro de Soluciones', 'Piscinas', 'Pintar y renovar'],
+      materials: [
+        { fase: 'Reparación', familiaSugerida: 'Reparadores de piscina', items: ['Reparador de piscinas'] },
+        { fase: 'Pintura',    familiaSugerida: 'Pinturas de piscina',    items: ['Pintura de piscina al clorocaucho'] },
+        { fase: 'Dilución',   familiaSugerida: 'Disolventes',            items: ['Disolvente para pintura de piscinas'] },
+      ],
+      receta: [
+        { fase: 'Vaciar y limpiar', emoji: '💧' },
+        { fase: 'Reparar',    emoji: '🧱' },
+        { fase: 'Pintar',     emoji: '🎨' },
+        { fase: 'Curar y llenar', emoji: '⏱️' },
+      ],
+      steps: [
+        { n: 1, title: 'Vaciar y limpiar bien el vaso', text: 'Con la piscina vacía, limpia a fondo el vaso retirando algas, cal e incrustaciones — la pintura nueva no se agarra bien sobre una superficie sucia o con restos de cal.', productos: [] },
+        { n: 2, title: 'Reparar grietas o desperfectos', text: 'Si la pintura anterior se está desprendiendo o hay grietas en el vaso, repáralas antes de pintar con un reparador específico de piscinas — pintar directamente sobre una zona dañada no la soluciona, solo la disimula un tiempo.', productos: ['Reparador de piscinas'] },
+        { n: 3, title: 'Dejar secar completamente antes de pintar', text: 'El vaso debe estar totalmente seco antes de aplicar la pintura — la humedad residual es una de las causas más habituales de que la pintura de piscina se desprenda después.', productos: [] },
+        { n: 4, title: 'Aplicar la pintura de piscina', text: 'Aplica la pintura al clorocaucho en 2 manos, diluyendo según indique el envase con el disolvente específico para pintura de piscinas — no sirve cualquier disolvente genérico.', productos: ['Pintura de piscina al clorocaucho', 'Disolvente para pintura de piscinas'] },
+        { n: 5, title: 'Respetar el tiempo de curado antes de llenar', text: 'Deja curar la pintura el tiempo indicado en el envase (normalmente varios días) antes de volver a llenar la piscina — llenarla antes de tiempo puede levantar la pintura recién aplicada.', productos: [] },
+      ],
+      professionalTips: [
+        'Si la pintura anterior se desprende en placas grandes, suele deberse a que se pintó sobre una superficie mal preparada o húmeda la vez anterior — no repitas el mismo error al renovarla.',
+        'Elegir el mismo tipo de pintura que ya tenía la piscina (o uno compatible) evita problemas de adherencia entre la pintura vieja y la nueva.',
+      ],
+      commonMistakes: [
+        'Pintar sobre el vaso todavía húmedo.',
+        'No reparar grietas o zonas dañadas antes de pintar.',
+        'Llenar la piscina antes de que la pintura haya curado del todo.',
+        'Usar un disolvente genérico en vez del específico para pintura de piscinas.',
+      ],
+      recommendedProducts: [
+        { nombre: 'GLOBALPOOL P.PISCINAS CLOROCAUCHO 15 L.AZUL', categoria: 'Piscinas', formato: '15 L', precio: '74,81 €' },
+        { nombre: 'BAIXENS B-14 REPARADOR PISCINAS PTE.1 KG.', categoria: 'Piscinas', formato: '1 kg', precio: '3,81 €' },
+        { nombre: 'DISOLVENTE PISCINAS TOLLENS 1 L.', categoria: 'Piscinas', formato: '1 L', precio: '10,22 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Renovador para piscinas ya pintadas', nombre: 'GLOBALPOOL RENOVA 4 L.BLANCO', precio: '47,18 €' },
+        { etiqueta: 'Pintura al agua (más fácil de aplicar)', nombre: 'TOLLENS PINT.PISCINAS BASE AGUA 4 L.AZUL MARINO', precio: '29,67 €' },
+        { etiqueta: 'Reparador en formato grande', nombre: 'BAIXENS B-14 REPARADOR PISCINAS SACO 5 KG.', precio: '17,53 €' },
+      ],
+      relatedSolutions: ['mantenimiento-piscina', 'tratamiento-choque-piscina'],
+      seo: {
+        title: 'Cómo pintar o renovar una piscina | Orencio Matas',
+        description: 'Guía para preparar y pintar el vaso de una piscina con pintura de clorocaucho, o renovarla si la pintura anterior se desprende.',
+      },
+    },
+
+    'elegir-imprimacion-superficie': {
+      slug: 'elegir-imprimacion-superficie',
+      title: 'Qué imprimación necesito según la superficie',
+      description: 'Selector rápido para saber si necesitas imprimación antes de pintar y cuál, según si vas a pintar metal, madera o plástico.',
+      category: 'pintura', subcategory: 'Elegir pintura y disolventes',
+      problem: 'elegir_imprimacion',
+      objective: 'preparar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '5 min para decidir',
+      result: 'La imprimación correcta para tu superficie, o la confirmación de que no la necesitas',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Elegir pintura y disolventes'],
+      materials: [
+        { fase: 'Selección', familiaSugerida: 'Imprimaciones', items: ['Imprimación según la superficie'] },
+      ],
+      receta: [
+        { fase: '¿La necesito?', emoji: '❓' },
+        { fase: 'Metal',   emoji: '🔩' },
+        { fase: 'Madera',  emoji: '🪵' },
+        { fase: 'Plástico', emoji: '🧴' },
+      ],
+      steps: [
+        { n: 1, title: '¿Siempre hace falta imprimación?', text: 'No siempre — si la superficie ya está pintada, en buen estado y vas a aplicar un color similar, muchas veces puedes pintar directamente. La imprimación se vuelve importante cuando cambias de tipo de superficie, hay material poroso, metal desnudo, o quieres asegurar la máxima adherencia.', productos: [] },
+        { n: 2, title: 'Metal o hierro: imprimación antioxidante', text: 'Sobre metal desnudo, una imprimación antioxidante (a menudo en spray) protege frente al óxido además de mejorar el agarre de la pintura — muchos esmaltes para metal ya la llevan incorporada en un solo producto "3 en 1".', productos: ['Imprimación según la superficie'] },
+        { n: 3, title: 'Madera o superficies porosas: tapaporos', text: 'En madera nueva o superficies porosas, un tapaporos sella la superficie para que la pintura no se absorba de forma irregular, lo que ayuda a conseguir un color más uniforme.', productos: [] },
+        { n: 4, title: 'Plástico: imprimación específica para plástico', text: 'El plástico es una superficie muy lisa donde la pintura normal apenas se agarra — una imprimación específica para plástico es casi imprescindible para que no se despegue con el tiempo.', productos: [] },
+      ],
+      professionalTips: [
+        'En superficies difíciles (muy lisas, brillantes, o donde ya ha fallado la adherencia antes), no compensa arriesgarse sin imprimación — sale mucho más caro repetir el trabajo que el coste de la imprimación.',
+        'Respeta siempre el tiempo de secado de la imprimación antes de pintar el color — pintar sobre imprimación fresca puede levantarla.',
+      ],
+      commonMistakes: [
+        'Pintar plástico sin imprimación específica, esperando que se agarre igual que en otras superficies.',
+        'No sellar madera muy porosa antes de pintar, dejando un acabado irregular.',
+        'Aplicar la pintura antes de que la imprimación esté seca.',
+      ],
+      recommendedProducts: [
+        { nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', categoria: 'Talleres', formato: '400 ml', precio: '11,39 €' },
+        { nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', categoria: 'Pintura', formato: '750 ml', precio: '13,38 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Imprimación específica para plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', precio: '65,62 €' },
+        { etiqueta: 'Imprimación fijadora universal', nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', precio: '25,16 €' },
+      ],
+      // Selector interactivo: elige la superficie y se le recomienda la
+      // imprimación real correspondiente.
+      selectorSuperficie: {
+        pregunta: '¿Sobre qué superficie vas a aplicar la imprimación?',
+        opciones: [
+          { id: 'metal', label: 'Metal o hierro', nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', motivo: 'Imprimación de zinc-aluminio en spray: mejora la adherencia y protege frente al óxido en metal desnudo.' },
+          { id: 'madera_porosa', label: 'Madera o superficie porosa', nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', motivo: 'Sella los poros de la madera para que la pintura no se absorba de forma irregular.' },
+          { id: 'plastico', label: 'Plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', motivo: 'Imprimación específica para plástico — sin ella, la pintura apenas se agarra a esta superficie tan lisa.' },
+          { id: 'superficie_dificil', label: 'Superficie muy lisa, brillante o donde ya ha fallado antes', nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', motivo: 'Fijador universal para mejorar la adherencia en superficies difíciles donde la pintura normal no se agarra bien.' },
+        ],
+      },
+      relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'preparar-pieza-taller-antes-pintar', 'eliminar-oxido-metal'],
+      seo: {
+        title: 'Qué imprimación necesito según la superficie | Orencio Matas',
+        description: 'Selector para saber si necesitas imprimación antes de pintar y cuál, según si es metal, madera o plástico.',
       },
     },
   };
@@ -4646,11 +4786,13 @@ window.SOLUCIONES_DATA = (function () {
       'proteger_acabado': ['proteger el acabado', 'proteger la pintura nueva'],
       'elegir_acabado_pintura': ['pintura mate', 'pintura satinada', 'pintura brillante', 'acabado mate', 'acabado satinado', 'acabado brillante'],
       'limpieza_profesional': ['limpieza profesional', 'hosteleria', 'hostelería', 'consumibles de limpieza', 'limpieza para empresas'],
-      'manchas_grietas_antes_pintar': ['grieta', 'grietas', 'mancha antes de pintar', 'manchas antes de pintar', 'mancha de nicotina'],
+      'manchas_grietas_antes_pintar': ['grieta', 'grietas', 'mancha antes de pintar', 'manchas antes de pintar', 'mancha de nicotina', 'agujero', 'agujeros', 'tapar agujeros'],
       'humedad_interior': ['humedad', 'pared con humedad', 'mancha de humedad', 'humedad en una pared'],
       'limpiar_herramientas': ['brochas y rodillos', 'limpiar la brocha', 'limpiar el rodillo', 'limpieza de pinceles'],
       'elegir_pintura_superficie': ['que pintura elegir', 'qué pintura elegir', 'pintura antioxidante', 'pintura para metal', 'pintura para madera'],
       'material_desechable_taller': ['mono desechable', 'material desechable', 'proteccion desechable', 'protección desechable'],
+      'pintar_renovar_piscina': ['pintar piscina', 'pintar la piscina', 'renovar piscina', 'renovar la piscina', 'renovar mi piscina', 'pintura de piscina', 'pintura para piscinas'],
+      'elegir_imprimacion': ['imprimacion', 'imprimación', 'necesito imprimacion', 'que imprimacion'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
       // "el suelo de mármol está opaco", disparando este problema en vez
       // de "suelo_opaco" — se queda solo con términos específicos de
