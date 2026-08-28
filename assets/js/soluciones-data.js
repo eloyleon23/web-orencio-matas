@@ -112,6 +112,11 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'hologramas_pulido', label: 'Me han quedado hologramas al pulir', solutionSlug: 'eliminar-hologramas-pulido' },
     { id: 'elegir_disolvente', label: 'No sé qué disolvente usar o cómo diluir la pintura', solutionSlug: 'elegir-disolvente-diluir-pintura' },
     { id: 'higiene_personal', label: 'Busco productos de higiene personal', solutionSlug: 'higiene-personal-cuidado-corporal' },
+    { id: 'preparar_pieza_taller', label: 'Cómo preparar una pieza antes de pintarla', solutionSlug: 'preparar-pieza-taller-antes-pintar' },
+    { id: 'problemas_pulverizacion', label: 'La pistola no pulveriza bien o no cubre', solutionSlug: 'problemas-pulverizacion-pistola' },
+    { id: 'proteger_acabado', label: 'Cómo proteger el acabado tras pintar', solutionSlug: 'proteger-acabado-pintura-nueva' },
+    { id: 'elegir_acabado_pintura', label: 'No sé si elegir pintura mate, satinada o brillante', solutionSlug: 'elegir-acabado-pintura-mate-satinado-brillante' },
+    { id: 'limpieza_profesional', label: 'Busco consumibles de limpieza para mi negocio', solutionSlug: 'limpieza-profesional-hosteleria-empresas' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
     { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
     { id: 'tuberia_atascada',  label: 'Tengo una tubería atascada',           solutionSlug: 'desatascar-tuberia' },
@@ -160,7 +165,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Pintar un paragolpes',                solutionSlug: 'pintar-plastico-coche' },
         { title: 'Pintar una pieza de plástico',        solutionSlug: 'pintar-plastico-coche' },
         { title: 'Pintar una llanta',                     solutionSlug: 'pintar-llantas-coche' },
-        { title: 'Preparar una pieza antes de pintar',  solutionSlug: 'pintar-plastico-coche' },
+        { title: 'Preparar una pieza antes de pintar',  solutionSlug: 'preparar-pieza-taller-antes-pintar' },
         { title: 'Pulir la carrocería',                 solutionSlug: 'recuperar-brillo-carroceria' },
         { title: 'Recuperar el brillo',                 solutionSlug: 'recuperar-brillo-carroceria' },
         { title: 'Eliminar hologramas',                   solutionSlug: 'eliminar-hologramas-pulido' },
@@ -170,10 +175,13 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Eliminar adhesivos',                    solutionSlug: 'quitar-restos-pegamento' },
         { title: 'Quitar restos de cola',                 solutionSlug: 'quitar-restos-pegamento' },
         { title: 'Eliminar óxido',                      solutionSlug: 'eliminar-oxido-metal' },
-        { title: 'Desengrasar una pieza',                solutionSlug: 'pintar-plastico-coche' },
+        { title: 'Desengrasar una pieza',                solutionSlug: 'preparar-pieza-taller-antes-pintar' },
         { title: 'Proteger los bajos del coche',        solutionSlug: 'proteger-bajos-antigravilla' },
         { title: 'Sellar o pegar una luna',              solutionSlug: 'sellar-luna-parabrisas' },
         { title: 'Enmascarar un vehículo antes de pintar', solutionSlug: 'elegir-cinta-papel-enmascarar' },
+        { title: 'La pistola no pulveriza bien',          solutionSlug: 'problemas-pulverizacion-pistola' },
+        { title: 'Problemas de cobertura al pintar con pistola', solutionSlug: 'problemas-pulverizacion-pistola' },
+        { title: 'Proteger el acabado tras pintar',       solutionSlug: 'proteger-acabado-pintura-nueva' },
       ],
     },
     {
@@ -205,6 +213,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Marcas de rodillo o brocha',             solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
         { title: 'Elegir brocha o rodillo',                solutionSlug: 'elegir-brocha-rodillo-pintar' },
         { title: 'Elegir disolvente o diluir la pintura',   solutionSlug: 'elegir-disolvente-diluir-pintura' },
+        { title: 'Elegir entre mate, satinado o brillante', solutionSlug: 'elegir-acabado-pintura-mate-satinado-brillante' },
         { title: 'Hidrofugar una fachada de piedra',       solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
         { title: 'Reparar grietas en una fachada',         solutionSlug: 'reparar-fisuras-fachada-hormigon' },
         { title: 'Tratar salitre o humedad por capilaridad', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
@@ -268,6 +277,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Eliminar la cal del baño',              solutionSlug: 'eliminar-cal-sarro-bano' },
         { title: 'Eliminar restos de cemento tras una obra', solutionSlug: 'eliminar-restos-cemento-mortero' },
         { title: 'Limpiar cristales sin marcas',          solutionSlug: 'limpiar-cristales-sin-marcas' },
+        { title: 'Consumibles de limpieza para hostelería o empresas', solutionSlug: 'limpieza-profesional-hosteleria-empresas' },
       ],
     },
     {
@@ -3894,6 +3904,275 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Selección de gel de ducha, crema corporal y cuidado facial para la higiene y el cuidado diario.',
       },
     },
+
+    'preparar-pieza-taller-antes-pintar': {
+      slug: 'preparar-pieza-taller-antes-pintar',
+      title: 'Cómo preparar una pieza en el taller antes de pintarla',
+      description: 'Los pasos de preparación de una pieza de carrocería antes de pintarla: desengrasado, lijado e imprimación, para que la pintura se agarre bien y el acabado quede uniforme.',
+      category: 'coche', subcategory: 'Preparación y enmascarado',
+      problem: 'preparar_pieza_taller',
+      objective: 'preparar',
+      surface: 'coche',
+      difficulty: 'Media',
+      estimatedTime: '45-90 min según el estado de la pieza',
+      result: 'Una pieza lista para pintar, con buena adherencia y sin defectos que luego se vean en la pintura',
+      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Preparación y enmascarado'],
+      materials: [
+        { fase: 'Desengrasado', familiaSugerida: 'Desengrasantes',       items: ['Desengrasante'] },
+        { fase: 'Lijado',       familiaSugerida: 'Abrasivos',            items: ['Lija de grano medio'] },
+        { fase: 'Imprimación',  familiaSugerida: 'Aparejos/imprimaciones', items: ['Imprimación'] },
+      ],
+      receta: [
+        { fase: 'Desengrasar', emoji: '🧴' },
+        { fase: 'Lijar',       emoji: '🖐️' },
+        { fase: 'Limpiar el polvo', emoji: '🧹' },
+        { fase: 'Imprimar',    emoji: '🎨' },
+      ],
+      steps: [
+        { n: 1, title: 'Desengrasar la pieza', text: 'Antes de lijar, desengrasa toda la superficie — si lijas sobre grasa, la extiendes en vez de eliminarla, y queda metida en los poros de la superficie.', productos: ['Desengrasante'] },
+        { n: 2, title: 'Lijar con el grano adecuado', text: 'Lija toda la zona a pintar con un grano medio (100-180) para crear un anclaje uniforme — si hay pintura vieja en mal estado, óxido o masilla, empieza con un grano más bajo antes de pasar al medio.', productos: ['Lija de grano medio'] },
+        { n: 3, title: 'Limpiar el polvo antes de imprimar', text: 'Retira todo el polvo del lijado con aire comprimido y un paño antiestático — cualquier resto de polvo queda atrapado bajo la imprimación y se nota en el acabado final.', productos: [] },
+        { n: 4, title: 'Aplicar la imprimación', text: 'Aplica una imprimación adecuada al material de la pieza (metal o plástico) — mejora la adherencia de la pintura y, en el caso de piezas metálicas, protege frente al óxido.', productos: ['Imprimación'] },
+        { n: 5, title: 'Enmascarar antes de pintar', text: 'Con la pieza ya imprimada, protege lo que no se va a pintar con cinta y papel o film antes de aplicar el color.', productos: [] },
+      ],
+      professionalTips: [
+        'Nunca desengrases con un trapo cualquiera reutilizado — puede volver a depositar grasa en vez de retirarla. Usa un paño limpio cada vez.',
+        'Deja secar bien la imprimación el tiempo indicado por el fabricante antes de pintar — pintar sobre imprimación aún fresca puede levantar o craquelar la pintura.',
+      ],
+      commonMistakes: [
+        'Lijar sobre grasa sin desengrasar antes.',
+        'No limpiar el polvo del lijado antes de imprimar.',
+        'Pintar sobre la imprimación antes de que esté completamente seca.',
+        'Usar una imprimación no adecuada al material de la pieza (metal/plástico).',
+      ],
+      recommendedProducts: [
+        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', categoria: 'Limpieza', formato: '750 ml', precio: '2,14 €' },
+        { nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', categoria: 'Talleres', formato: '400 ml', precio: '11,39 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Imprimación específica para plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', precio: '65,62 €' },
+        { etiqueta: 'Desengrasante de mayor concentración', nombre: 'VOLGRASSS DESENGRASANTE 1 L.PISTOLA', precio: '2,86 €' },
+      ],
+      relatedSolutions: ['elegir-lija-grano-abrasivo', 'elegir-cinta-papel-enmascarar', 'eliminar-oxido-metal'],
+      seo: {
+        title: 'Cómo preparar una pieza en el taller antes de pintarla | Orencio Matas',
+        description: 'Pasos de preparación de una pieza de carrocería antes de pintar: desengrasado, lijado e imprimación para una buena adherencia.',
+      },
+    },
+
+    'problemas-pulverizacion-pistola': {
+      slug: 'problemas-pulverizacion-pistola',
+      title: 'Por qué la pistola de pintar no pulveriza bien o no cubre',
+      description: 'Diagnóstico de los problemas más habituales al pintar con pistola — mala pulverización, chorreo, cobertura irregular — y cómo solucionarlos.',
+      category: 'coche', subcategory: 'Herramientas de pintor',
+      problem: 'problemas_pulverizacion',
+      objective: 'reparar',
+      surface: 'coche',
+      difficulty: 'Media',
+      estimatedTime: '15-30 min de diagnóstico',
+      result: 'Una pulverización uniforme y una cobertura correcta con la pistola',
+      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Herramientas de pintor'],
+      materials: [
+        { fase: 'Limpieza',  familiaSugerida: 'Diluyentes',      items: ['Diluyente para limpiar la pistola'] },
+        { fase: 'Filtrado',  familiaSugerida: 'Filtros y consumibles', items: ['Filtro de pintura'] },
+      ],
+      receta: [
+        { fase: 'Diagnosticar', emoji: '🔍' },
+        { fase: 'Limpiar la pistola', emoji: '🧴' },
+        { fase: 'Ajustar',    emoji: '🔧' },
+        { fase: 'Probar',     emoji: '🎯' },
+      ],
+      steps: [
+        { n: 1, title: 'Si la pulverización sale irregular o "escupe"', text: 'Casi siempre es una boquilla sucia o parcialmente obstruida, o pintura sin colar con alguna partícula atascada — limpia bien la pistola y cuela siempre la pintura antes de cargarla.', productos: ['Filtro de pintura'] },
+        { n: 2, title: 'Si la pintura sale muy espesa o a chorro', text: 'Revisa la dilución (puede que esté demasiado espesa) y el ajuste del gatillo/aguja de la pistola — una apertura excesiva satura la superficie y provoca chorreo.', productos: [] },
+        { n: 3, title: 'Si la cobertura queda irregular o "en bandas"', text: 'Comprueba la distancia y el ángulo respecto a la pieza (lo habitual es mantener la pistola perpendicular, a una distancia constante) y solapa cada pasada sobre la mitad de la anterior.', productos: [] },
+        { n: 4, title: 'Limpiar la pistola a fondo tras cada uso', text: 'Desmonta y limpia bien la pistola con diluyente al terminar — la pintura seca acumulada en la boquilla o el conducto es la causa más habitual de que, la próxima vez, no pulverice bien desde el principio.', productos: ['Diluyente para limpiar la pistola'] },
+        { n: 5, title: 'Hacer una prueba antes de pintar la pieza definitiva', text: 'Prueba siempre sobre un cartón o una zona de descarte antes de pintar la pieza real — así detectas cualquier problema de pulverización sin arriesgar el trabajo final.', productos: [] },
+      ],
+      professionalTips: [
+        'La presión de aire incorrecta es una causa muy habitual de mala pulverización — demasiado baja da un acabado grumoso, demasiado alta genera niebla y desperdicia producto.',
+        'Guarda la pistola limpia y con las juntas humedecidas con un poco de aceite específico — evita que se resequen y pierdan estanqueidad.',
+      ],
+      commonMistakes: [
+        'No colar la pintura antes de cargar la pistola.',
+        'No limpiar la pistola a fondo justo después de usarla.',
+        'Trabajar demasiado cerca o demasiado lejos de la pieza.',
+        'No hacer una prueba previa antes de pintar la pieza definitiva.',
+      ],
+      recommendedProducts: [
+        { nombre: '.FILTRO BRONCE POROSO SAGOLA', categoria: 'Talleres', formato: 'Unidad', precio: '24,18 €' },
+        { nombre: 'DILUYENTE TITAN YATE 1 LITRO', categoria: 'Pintura', formato: '1 L', precio: '18,16 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Vaso de recambio para pistola', nombre: '.VASO PLASTICO COLAD 700 ML S/TAPA 9370300', precio: '0,50 €' },
+      ],
+      relatedSolutions: ['elegir-pistola-pintar', 'preparar-pieza-taller-antes-pintar'],
+      seo: {
+        title: 'Por qué la pistola de pintar no pulveriza bien o no cubre | Orencio Matas',
+        description: 'Diagnóstico de problemas al pintar con pistola: mala pulverización, chorreo y cobertura irregular, y cómo solucionarlos.',
+      },
+    },
+
+    'proteger-acabado-pintura-nueva': {
+      slug: 'proteger-acabado-pintura-nueva',
+      title: 'Cómo proteger el acabado después de pintar una pieza',
+      description: 'Protege el trabajo recién pintado con laca de acabado y cera, y respeta los tiempos de curado para que el resultado dure y mantenga el brillo.',
+      category: 'coche', subcategory: 'Pulido y acabado',
+      problem: 'proteger_acabado',
+      objective: 'proteger',
+      surface: 'coche',
+      difficulty: 'Fácil',
+      estimatedTime: '20-30 min + tiempo de curado',
+      result: 'Un acabado protegido, con brillo uniforme y mayor duración frente al desgaste diario',
+      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Pulido y acabado'],
+      materials: [
+        { fase: 'Acabado',   familiaSugerida: 'Lacas',   items: ['Laca de acabado'] },
+        { fase: 'Protección', familiaSugerida: 'Ceras y selladores', items: ['Cera o sellador de protección'] },
+      ],
+      receta: [
+        { fase: 'Dejar secar el color', emoji: '⏱️' },
+        { fase: 'Aplicar la laca', emoji: '✨' },
+        { fase: 'Dejar curar', emoji: '🌡️' },
+        { fase: 'Proteger con cera', emoji: '🛡️' },
+      ],
+      steps: [
+        { n: 1, title: 'Dejar secar el color antes de la laca', text: 'Respeta el tiempo de secado entre la mano de color y la laca de acabado que indique la ficha técnica del producto — aplicar la laca demasiado pronto puede levantar el color de debajo.', productos: [] },
+        { n: 2, title: 'Aplicar la laca de acabado', text: 'La laca protege el color frente a rayaduras leves, rayos UV e intemperie, además de dar el brillo final — aplícala en 2 manos finas, igual que el resto de la pintura.', productos: ['Laca de acabado'] },
+        { n: 3, title: 'Respetar el tiempo de curado', text: 'La laca puede estar seca al tacto en pocas horas pero seguir curando varios días — evita lavar la pieza o exponerla a productos químicos hasta que haya curado del todo.', productos: [] },
+        { n: 4, title: 'Proteger con cera una vez curado', text: 'Cuando el curado esté completo, una cera o sellador de protección añade una capa extra de brillo y protege la laca frente al desgaste diario.', productos: ['Cera o sellador de protección'] },
+      ],
+      professionalTips: [
+        'La temperatura ambiente afecta mucho al tiempo de curado real — en días fríos, cuenta con bastante más tiempo del indicado en condiciones estándar de laboratorio.',
+        'No apliques cera antes de que la laca haya curado del todo — puede quedar atrapada humedad o disolvente bajo la capa de cera.',
+      ],
+      commonMistakes: [
+        'Aplicar la laca sin dejar secar bien la mano de color.',
+        'Lavar o encerar la pieza antes de que la laca haya curado por completo.',
+        'Aplicar la cera en una sola capa gruesa en vez de una fina y uniforme.',
+      ],
+      recommendedProducts: [
+        { nombre: '.P-C-92 LACA MATE 0,75 L. 2:1', categoria: 'Talleres', formato: '0,75 L', precio: '128,64 €' },
+        { nombre: '.PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.', categoria: 'Talleres', formato: '0,5 L', precio: '15,81 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Laca de secado rápido', nombre: '.A-C-10 LACA ECO BALANCE SECADO RAPIDO 1 L. 3:1:1', precio: '168,63 €' },
+      ],
+      relatedSolutions: ['eliminar-hologramas-pulido', 'recuperar-brillo-carroceria'],
+      seo: {
+        title: 'Cómo proteger el acabado después de pintar una pieza | Orencio Matas',
+        description: 'Guía para proteger una pieza recién pintada con laca de acabado y cera, respetando los tiempos de curado.',
+      },
+    },
+
+    'elegir-acabado-pintura-mate-satinado-brillante': {
+      slug: 'elegir-acabado-pintura-mate-satinado-brillante',
+      title: 'Cómo elegir entre pintura mate, satinada o brillante',
+      description: 'Diferencias entre acabado mate, satinado y brillante, y qué pintura real elegir según el efecto y la resistencia a la limpieza que buscas.',
+      category: 'pintura', subcategory: 'Elegir pintura y disolventes',
+      problem: 'elegir_acabado_pintura',
+      objective: 'preparar',
+      surface: 'pared',
+      difficulty: 'Fácil',
+      estimatedTime: '5 min para decidir',
+      result: 'El acabado correcto para tu espacio, según el efecto visual y el uso que le vayas a dar',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Elegir pintura y disolventes'],
+      materials: [
+        { fase: 'Selección', familiaSugerida: 'Pintura', items: ['Pintura del acabado elegido'] },
+      ],
+      receta: [
+        { fase: 'Mate', emoji: '⬜' },
+        { fase: 'Satinado', emoji: '◻️' },
+        { fase: 'Brillante', emoji: '✨' },
+      ],
+      steps: [
+        { n: 1, title: 'Mate: disimula imperfecciones', text: 'El acabado mate absorbe la luz y disimula mejor las pequeñas imperfecciones de la pared — buena opción por defecto para techos y paredes en mal estado. Se ensucia con más facilidad y es algo más difícil de limpiar sin marca.', productos: [] },
+        { n: 2, title: 'Satinado: equilibrio entre estética y limpieza', text: 'Un punto intermedio: algo más resistente a la limpieza que el mate, sin llegar al brillo del esmalte — habitual en cocinas, baños y zonas de más tránsito.', productos: [] },
+        { n: 3, title: 'Brillante: máxima resistencia y reflejo', text: 'El acabado brillante es el más resistente a la limpieza y a los golpes, pero también el que más resalta cualquier imperfección de la superficie — típico en carpintería, puertas o mobiliario más que en paredes grandes.', productos: [] },
+      ],
+      professionalTips: [
+        'Cuanto más brillo tiene un acabado, más se nota cualquier defecto de la superficie — si la pared no está perfecta, un acabado mate disimula mucho mejor que uno brillante.',
+        'En zonas húmedas o de mucho uso (cocina, baño, pasillos), un satinado o brillante aguanta mejor la limpieza frecuente que un mate.',
+      ],
+      commonMistakes: [
+        'Elegir brillante en una pared con muchas imperfecciones, que quedan más a la vista.',
+        'Elegir mate en una zona de mucho tránsito o salpicaduras, que luego cuesta más limpiar.',
+      ],
+      recommendedProducts: [
+        { nombre: 'PINT.VINILICA P-50 EXTRA MATE 1 L.BLANCA', categoria: 'Pintura', formato: '1 L', precio: '6,30 €' },
+        { nombre: 'PINT.VINILICA P-40 PREMIUM 1 L.SATIN.BLANCO', categoria: 'Pintura', formato: '1 L', precio: '7,66 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Acabado brillante con poliuretano', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.BLANCO', precio: '48,38 €' },
+      ],
+      // Selector interactivo: elige el efecto/uso que buscas y se le
+      // recomienda la pintura real del acabado correspondiente.
+      selectorSuperficie: {
+        pregunta: '¿Qué buscas para tu pared?',
+        opciones: [
+          { id: 'disimular', label: 'Disimular imperfecciones (techos, paredes en mal estado)', nombre: 'PINT.VINILICA P-50 EXTRA MATE 1 L.BLANCA', motivo: 'El acabado mate absorbe la luz y disimula mejor las pequeñas imperfecciones de la superficie.' },
+          { id: 'equilibrio', label: 'Equilibrio entre estética y facilidad de limpieza', nombre: 'PINT.VINILICA P-40 PREMIUM 1 L.SATIN.BLANCO', motivo: 'El satinado es más fácil de limpiar que el mate, sin llegar al reflejo del brillante — habitual en cocinas y baños.' },
+          { id: 'resistencia', label: 'Máxima resistencia a la limpieza y a los golpes', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.BLANCO', motivo: 'El brillante con poliuretano es el acabado más resistente a la limpieza frecuente y a los golpes.' },
+        ],
+      },
+      relatedSolutions: ['pintar-pared-interior', 'elegir-disolvente-diluir-pintura'],
+      seo: {
+        title: 'Cómo elegir entre pintura mate, satinada o brillante | Orencio Matas',
+        description: 'Diferencias entre acabado mate, satinado y brillante, y qué pintura elegir según el efecto y la resistencia a la limpieza.',
+      },
+    },
+
+    'limpieza-profesional-hosteleria-empresas': {
+      slug: 'limpieza-profesional-hosteleria-empresas',
+      title: 'Consumibles de limpieza para hostelería y empresas',
+      description: 'Selección de consumibles de limpieza para uso profesional — hostelería, oficinas y comercios — pensados para un uso más intensivo que el doméstico.',
+      category: 'limpieza', subcategory: 'Limpieza profesional',
+      problem: 'limpieza_profesional',
+      objective: 'limpiar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '10 min para decidir',
+      result: 'Los consumibles de limpieza adecuados para un uso profesional continuado',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Limpieza profesional'],
+      materials: [
+        { fase: 'Suelos',    familiaSugerida: 'Mopas',    items: ['Mopa'] },
+        { fase: 'Superficies', familiaSugerida: 'Bayetas', items: ['Bayetas o gamuzas'] },
+        { fase: 'Higiene',   familiaSugerida: 'Guantes',  items: ['Guantes desechables'] },
+      ],
+      receta: [
+        { fase: 'Suelos',      emoji: '🧹' },
+        { fase: 'Superficies', emoji: '🧽' },
+        { fase: 'Higiene y desinfección', emoji: '🧴' },
+      ],
+      steps: [
+        { n: 1, title: 'Mopa para suelos de uso continuado', text: 'Una mopa con bastidor y recambio independiente resulta más económica a medio plazo que ir reponiendo la mopa entera cada vez — habitual en locales con mucho tránsito diario.', productos: ['Mopa'] },
+        { n: 2, title: 'Bayetas por zonas o por código de color', text: 'En hostelería es habitual usar bayetas de distintos colores para distintas zonas (cocina, baño, sala) y evitar mezclar la limpieza entre ellas — un rollo precortado facilita tener siempre bayetas limpias a mano.', productos: ['Bayetas o gamuzas'] },
+        { n: 3, title: 'Guantes desechables para manipulación', text: 'Para tareas de limpieza y manipulación en cocina u hostelería, unos guantes desechables en formato caja facilitan cambiarlos con frecuencia.', productos: ['Guantes desechables'] },
+        { n: 4, title: 'Lejía y desinfección de superficies', text: 'Para la desinfección de superficies en contacto con alimentos, una lejía de uso general en formato grande resulta más práctica que ir reponiendo botes pequeños.', productos: [] },
+      ],
+      professionalTips: [
+        'Tener un color de bayeta reservado en exclusiva para cocina/zona de alimentos (y no usarlo en baños) reduce mucho el riesgo de contaminación cruzada.',
+        'Comprar guantes y bayetas en formato caja/pack grande suele salir más económico por unidad que reponer en formatos pequeños con frecuencia.',
+      ],
+      commonMistakes: [
+        'Usar la misma bayeta para baño y zona de alimentos.',
+        'No renovar los guantes desechables con la frecuencia necesaria.',
+        'Comprar en formatos pequeños para un uso de alto consumo diario, encareciendo el coste por unidad.',
+      ],
+      recommendedProducts: [
+        { nombre: 'MOPA CISNE SOFT 75 CMS.C/BASTIDOR REF.203075 AZUL', categoria: 'Limpieza', formato: '75 cm', precio: '11,57 €' },
+        { nombre: 'ROLLO BAYETA CISNE MICROPUNT PRECORT.0,40X8 MTS', categoria: 'Limpieza', formato: '0,40x8 m', precio: '5,34 €' },
+        { nombre: 'GUANTES EX.VINILO ECO S/POLVO T/XL C/100 UDS.', categoria: 'Limpieza', formato: '100 uds', precio: '3,56 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Guantes de nitrilo', nombre: 'GUANTES JUPITER CENTURION NITRILO NYLON T/8', precio: '1,46 €' },
+        { etiqueta: 'Lejía en formato grande', nombre: 'LEJIA ACE 4 L.REGULAR', precio: '3,05 €' },
+      ],
+      relatedSolutions: ['usar-lejia-segura', 'desinfectar-casa'],
+      seo: {
+        title: 'Consumibles de limpieza para hostelería y empresas | Orencio Matas',
+        description: 'Selección de mopas, bayetas, guantes y desinfección para limpieza profesional en hostelería, oficinas y comercios.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -4090,6 +4369,11 @@ window.SOLUCIONES_DATA = (function () {
       'hologramas_pulido': ['holograma', 'hologramas', 'remolinos'],
       'elegir_disolvente': ['disolvente', 'diluir', 'aguarras', 'aguarrás'],
       'higiene_personal': ['higiene personal', 'gel de ducha', 'gel de baño', 'crema corporal'],
+      'preparar_pieza_taller': ['preparar la pieza', 'preparar una pieza', 'preparar antes de pintar'],
+      'problemas_pulverizacion': ['pulveriza', 'pulverizacion', 'pulverización', 'chorrea', 'chorreo', 'pistola no cubre'],
+      'proteger_acabado': ['proteger el acabado', 'proteger la pintura nueva'],
+      'elegir_acabado_pintura': ['pintura mate', 'pintura satinada', 'pintura brillante', 'acabado mate', 'acabado satinado', 'acabado brillante'],
+      'limpieza_profesional': ['limpieza profesional', 'hosteleria', 'hostelería', 'consumibles de limpieza', 'limpieza para empresas'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
       // "el suelo de mármol está opaco", disparando este problema en vez
       // de "suelo_opaco" — se queda solo con términos específicos de
