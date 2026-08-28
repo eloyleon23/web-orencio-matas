@@ -199,6 +199,30 @@
         </div>
       </section>` : ''}
 
+      ${sol.selectorSuperficie ? `
+      <!-- Selector: recomienda el producto real más adecuado según la superficie elegida -->
+      <section class="cs-section no-imprimir">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-heading__eyebrow">Elige tu caso</p>
+            <h2>${sol.selectorSuperficie.pregunta}</h2>
+          </div>
+          <div class="cs-calculadora cs-selector-superficie">
+            <div class="cs-calculadora__campos">
+              <div class="cs-calculadora__campo">
+                <label for="cs-selector-superficie">Superficie</label>
+                <select id="cs-selector-superficie">
+                  <option value="">Selecciona una opción...</option>
+                  ${sol.selectorSuperficie.opciones.map((o) => `<option value="${o.id}">${o.label}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <p id="cs-selector-motivo" class="cs-calculadora__nota" style="display:none;"></p>
+            <div id="cs-selector-resultado" class="cs-productos-grid cs-selector-resultado"></div>
+          </div>
+        </div>
+      </section>` : ''}
+
       <!-- Receta de trabajo -->
       <section class="cs-section">
         <div class="container">
@@ -342,6 +366,7 @@
     renderProductosRecomendados(sol);
     wireCalculadoraCantidad(sol);
     wireCalculadoraCloro(sol);
+    wireSelectorSuperficie(sol);
   }
 
   function wireCalculadoraCantidad(sol) {
@@ -443,6 +468,48 @@
       if (el) el.addEventListener('input', calcular);
     });
     selectConcentracion.addEventListener('change', calcular);
+  }
+
+  // Selector "elige tu superficie/caso → te recomiendo el producto real
+  // más adecuado". Reutiliza exactamente el mismo mecanismo de
+  // resolución contra el catálogo real y la misma tarjeta de producto
+  // (renderTarjetasProducto) que la sección de productos recomendados —
+  // así el resultado es una tarjeta real, con imagen/referencia/precio
+  // reales y clicable para abrir el mismo modal de detalle, no un texto
+  // estático.
+  function wireSelectorSuperficie(sol) {
+    if (!sol.selectorSuperficie) return;
+    const select = $('#cs-selector-superficie');
+    const motivoEl = $('#cs-selector-motivo');
+    const resultadoEl = $('#cs-selector-resultado');
+    if (!select || !motivoEl || !resultadoEl) return;
+
+    select.addEventListener('change', () => {
+      const opcion = sol.selectorSuperficie.opciones.find((o) => o.id === select.value);
+      if (!opcion) {
+        motivoEl.style.display = 'none';
+        resultadoEl.innerHTML = '';
+        return;
+      }
+
+      motivoEl.textContent = opcion.motivo;
+      motivoEl.style.display = '';
+      resultadoEl.innerHTML = `
+        <div class="cs-producto-card cs-producto-card--cargando">
+          <div class="cs-producto-card__imagen-wrap"></div>
+          <div class="cs-producto-card__nombre">${opcion.nombre}</div>
+        </div>
+      `;
+
+      D.resolverProductoReal(opcion.nombre).then((real) => {
+        // Si el usuario ya ha cambiado de opción mientras se resolvía,
+        // no pisar el resultado más reciente con uno que ha llegado tarde.
+        const opcionActual = sol.selectorSuperficie.opciones.find((o) => o.id === select.value);
+        if (!opcionActual || opcionActual.id !== opcion.id) return;
+        const entrada = construirEntradaProducto({ nombre: opcion.nombre, categoria: 'Herramientas' }, real);
+        renderTarjetasProducto(resultadoEl, [entrada]);
+      });
+    });
   }
 
   function agruparPorFase(materials) {

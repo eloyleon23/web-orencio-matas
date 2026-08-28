@@ -3645,6 +3645,22 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Brocha más ancha', nombre: 'BROCHA PRENSADA REDONDA C/COLG.Nº12 TINAJERO', precio: '5,66 €' },
         { etiqueta: 'Rodillo para superficie lisa', nombre: 'RODILLO ESP.FACHADAS NESPOLI 22 CMS.FIBROR VERDE', precio: '6,40 €' },
       ],
+      // Selector interactivo: el usuario elige la superficie y se le
+      // muestra el rodillo real del catálogo más adecuado para ella, en
+      // vez de tener que deducirlo leyendo la explicación general de los
+      // pasos de arriba. Cada "nombre" está verificado contra el
+      // catálogo real (data/productos.json) antes de escribirlo aquí.
+      selectorSuperficie: {
+        pregunta: '¿Sobre qué superficie vas a pintar?',
+        opciones: [
+          { id: 'pared_lisa', label: 'Pared lisa (interior)', nombre: 'RECAMBIO RODILLO VELOUR 11 CMS.', motivo: 'Pelo corto tipo velour: ofrece un acabado fino y uniforme, sin apenas textura — ideal para paredes lisas.' },
+          { id: 'gotele', label: 'Gotelé o pared con textura', nombre: 'RODILLO TRILOX LANA NATURAL 22 CMS.', motivo: 'Pelo largo de lana natural: llega bien dentro de los huecos del gotelé sin dejar zonas sin cubrir.' },
+          { id: 'fachada', label: 'Fachada o exterior', nombre: 'RODILLO FIBROR BICOLOR ESPECIAL FACHADAS 22 CMS.', motivo: 'Pensado específicamente para la porosidad y el tacto rugoso de una fachada.' },
+          { id: 'suelo', label: 'Suelo', nombre: 'RECAMBIO RODILLO ESPECIAL SUELOS 45 CMS.PENTRILO', motivo: 'Formato ancho (45 cm) para cubrir más superficie de suelo en cada pasada.' },
+          { id: 'techos_altura', label: 'Techos o zonas altas', nombre: 'RODILLO ANTIGOTA SUPER 60 22 CMS.M/BIM.RF.71580', motivo: 'Diseño antigota: reduce las salpicaduras al trabajar por encima de la cabeza.' },
+          { id: 'verjas', label: 'Verjas o superficies estrechas', nombre: 'RODILLO MINI ESPECIAL VERJAS PENTRILO RF.07665', motivo: 'Formato mini, pensado para barrotes y perfiles estrechos donde un rodillo normal no entra bien.' },
+        ],
+      },
       relatedSolutions: ['pintar-pared-interior', 'solucionar-problemas-pintura-aplicacion'],
       seo: {
         title: 'Cómo elegir la brocha y el rodillo adecuados para pintar | Orencio Matas',
