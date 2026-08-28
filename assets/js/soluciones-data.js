@@ -124,6 +124,7 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'material_desechable_taller', label: 'Necesito protección desechable para el taller', solutionSlug: 'material-desechable-proteccion-taller' },
     { id: 'pintar_renovar_piscina', label: 'Quiero pintar o renovar mi piscina', solutionSlug: 'piscinas-pintar-renovar' },
     { id: 'elegir_imprimacion', label: 'No sé si necesito imprimación ni cuál', solutionSlug: 'elegir-imprimacion-superficie' },
+    { id: 'cuanto_producto_necesito', label: '¿Cuánta pintura necesito?', solutionSlug: 'cuanto-producto-necesito' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
     { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
     { id: 'tuberia_atascada',  label: 'Tengo una tubería atascada',           solutionSlug: 'desatascar-tuberia' },
@@ -226,6 +227,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Elegir entre mate, satinado o brillante', solutionSlug: 'elegir-acabado-pintura-mate-satinado-brillante' },
         { title: 'Qué pintura elegir según la superficie', solutionSlug: 'elegir-pintura-segun-superficie-metal-madera-exterior' },
         { title: '¿Necesito imprimación?',                solutionSlug: 'elegir-imprimacion-superficie' },
+        { title: '¿Cuánta pintura necesito?',              solutionSlug: 'cuanto-producto-necesito' },
         { title: 'Hidrofugar una fachada de piedra',       solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
         { title: 'Reparar grietas en una fachada',         solutionSlug: 'reparar-fisuras-fachada-hormigon' },
         { title: 'Tratar salitre o humedad por capilaridad', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
@@ -3822,8 +3824,8 @@ window.SOLUCIONES_DATA = (function () {
 
     'elegir-disolvente-diluir-pintura': {
       slug: 'elegir-disolvente-diluir-pintura',
-      title: 'Cómo elegir el disolvente adecuado y diluir la pintura correctamente',
-      description: 'Guía para elegir el disolvente correcto según el tipo de pintura y saber cuánto diluir, sin perjudicar el color ni la cubrición.',
+      title: 'Qué disolvente necesito según el uso',
+      description: 'Selector para saber qué disolvente necesitas según lo que vayas a hacer: diluir pintura, limpiar una pistola o herramientas, eliminar pintura seca, o desengrasar.',
       category: 'pintura', subcategory: 'Elegir pintura y disolventes',
       problem: 'elegir_disolvente',
       objective: 'preparar',
@@ -3863,6 +3865,20 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Formato profesional grande', nombre: 'DISOLVENTE UNIVERSAL PROF.C&Q 25 L.', precio: '76,17 €' },
         { etiqueta: 'Disolvente específico epoxi', nombre: 'TITANTECH DX-820 DISOLVENTE EPOXI 5 L.', precio: '43,00 €' },
       ],
+      // Selector interactivo: elige para qué lo necesita y se le
+      // recomienda el producto real más adecuado a ese uso concreto —
+      // no todos los "disolventes" sirven igual de bien para diluir que
+      // para limpiar una pistola o desengrasar.
+      selectorSuperficie: {
+        pregunta: '¿Para qué lo necesitas?',
+        opciones: [
+          { id: 'diluir_pintura', label: 'Diluir pintura o esmalte sintético', nombre: 'AGUARRAS PINO KELSIA 500 ML.', motivo: 'El aguarrás es la opción habitual para diluir esmaltes sintéticos domésticos sin perjudicar el color ni la cubrición.' },
+          { id: 'limpiar_pistola', label: 'Limpiar una pistola de pintar', nombre: 'DILUYENTE TITAN YATE 1 LITRO', motivo: 'Disuelve bien la pintura fresca de dentro de la pistola — imprescindible para que no se seque y obstruya la boquilla.' },
+          { id: 'limpiar_herramientas', label: 'Limpiar brochas o rodillos', nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', motivo: 'Disolvente universal, válido tanto para diluir como para limpiar herramientas manchadas de pintura al disolvente.' },
+          { id: 'eliminar_restos', label: 'Eliminar restos de pintura ya seca', nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.', motivo: 'Un disolvente normal no ablanda pintura ya seca — hace falta un decapante en gel, pensado específicamente para eso.' },
+          { id: 'desengrasar', label: 'Desengrasar una superficie', nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', motivo: 'Para grasa, lo adecuado es un desengrasante, no un disolvente de pintura — son productos distintos aunque a veces se confundan.' },
+        ],
+      },
       relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'pintar-pared-interior'],
       seo: {
         title: 'Cómo elegir el disolvente y diluir la pintura | Orencio Matas',
@@ -4585,6 +4601,71 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Selector para saber si necesitas imprimación antes de pintar y cuál, según si es metal, madera o plástico.',
       },
     },
+
+    'cuanto-producto-necesito': {
+      slug: 'cuanto-producto-necesito',
+      title: '¿Cuánta pintura o producto necesito?',
+      description: 'Calculadora para saber cuánta pintura, esmalte, barniz o sistema epoxi necesitas según los metros cuadrados a cubrir y el número de manos, con el rendimiento real de cada tipo de producto.',
+      category: 'pintura', subcategory: 'Elegir pintura y disolventes',
+      problem: 'cuanto_producto_necesito',
+      objective: 'preparar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '2 min',
+      result: 'La cantidad exacta de producto a comprar, sin que sobre ni falte',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Elegir pintura y disolventes'],
+      materials: [
+        { fase: 'Cálculo', familiaSugerida: 'Pintura', items: ['Según el producto elegido en la calculadora'] },
+      ],
+      receta: [
+        { fase: 'Elegir producto', emoji: '🎨' },
+        { fase: 'Indicar m²',   emoji: '📐' },
+        { fase: 'Manos',        emoji: '🖌️' },
+        { fase: 'Resultado',    emoji: '🧮' },
+      ],
+      steps: [
+        { n: 1, title: 'Elegir qué vas a aplicar', text: 'Cada tipo de producto cubre una superficie distinta por litro (su "rendimiento") — elige en la calculadora el que corresponda a tu trabajo para que el cálculo sea el correcto.', productos: [] },
+        { n: 2, title: 'Medir la superficie a cubrir', text: 'Mide el ancho y el alto de cada zona a pintar y multiplícalos para obtener los m² — si son varias paredes o zonas, suma el total antes de usar la calculadora.', productos: [] },
+        { n: 3, title: 'Indicar el número de manos', text: 'Lo habitual son 2 manos para un resultado uniforme, aunque en colores muy oscuros sobre uno claro (o al revés) a veces hace falta una tercera.', productos: [] },
+        { n: 4, title: 'Comprar con un pequeño margen', text: 'El resultado es orientativo — comprar un poco más de lo justo evita quedarte a medias si hay que aplicar una mano extra en alguna zona.', productos: [] },
+      ],
+      professionalTips: [
+        'El rendimiento real varía según la superficie: una pared muy porosa o rugosa consume más producto por m² que una lisa ya pintada — el dato de la calculadora es el orientativo del fabricante en condiciones normales.',
+        'Guarda el resto de producto bien cerrado para retoques futuros — así no hace falta volver a comprar un bote entero por un desperfecto pequeño más adelante.',
+      ],
+      commonMistakes: [
+        'No sumar todas las zonas a pintar, calculando solo una pared y comprando de menos.',
+        'No tener en cuenta que un color muy distinto al de base puede necesitar una mano extra.',
+        'Comprar exactamente la cantidad justa sin ningún margen para retoques.',
+      ],
+      // Calculadora combinada: primero se elige QUÉ producto se va a
+      // aplicar (cada uno con su rendimiento real, tomado de la
+      // calculadoraCantidad ya verificada de su propia guía completa —
+      // no se inventa ningún dato nuevo) y después se calculan los
+      // litros según la superficie y el número de manos, igual que las
+      // calculadoras individuales ya existentes.
+      calculadoraCantidadMultiple: {
+        pregunta: '¿Qué vas a aplicar?',
+        opciones: [
+          { id: 'pintura_pared', label: 'Pintura plástica para pared interior', rendimiento: 10, etiqueta: 'pintura plástica de pared', solucionRelacionada: 'pintar-pared-interior' },
+          { id: 'pintura_fachada', label: 'Pintura hidrófuga para fachada', rendimiento: 6, etiqueta: 'pintura hidrófuga de fachada', solucionRelacionada: 'pintar-fachada-exterior' },
+          { id: 'pintura_antimoho', label: 'Pintura vinílica antimoho', rendimiento: 9, etiqueta: 'pintura vinílica antimoho', solucionRelacionada: 'eliminar-moho-pared-antes-pintar' },
+          { id: 'esmalte_metal', label: 'Esmalte para metal', rendimiento: 12, etiqueta: 'esmalte de metal', solucionRelacionada: 'eliminar-oxido-metal' },
+          { id: 'barniz_madera', label: 'Barniz para madera', rendimiento: 12, etiqueta: 'barniz', solucionRelacionada: 'restaurar-mueble-madera' },
+          { id: 'epoxi_suelo', label: 'Sistema epoxi para suelo de garaje', rendimiento: 5, etiqueta: 'sistema epoxi de suelos', solucionRelacionada: 'suelo-epoxi-garaje' },
+        ],
+      },
+      recommendedProducts: [
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE', categoria: 'Pintura', formato: '1 L', precio: '8,54 €' },
+        { nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', categoria: 'Pintura', formato: '750 ml', precio: '17,67 €' },
+      ],
+      alternativeProducts: [],
+      relatedSolutions: ['pintar-pared-interior', 'pintar-fachada-exterior', 'suelo-epoxi-garaje', 'eliminar-oxido-metal', 'restaurar-mueble-madera'],
+      seo: {
+        title: '¿Cuánta pintura o producto necesito? | Orencio Matas',
+        description: 'Calculadora para saber cuánta pintura, esmalte, barniz o sistema epoxi necesitas según los m² a cubrir y el número de manos.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -4793,6 +4874,7 @@ window.SOLUCIONES_DATA = (function () {
       'material_desechable_taller': ['mono desechable', 'material desechable', 'proteccion desechable', 'protección desechable'],
       'pintar_renovar_piscina': ['pintar piscina', 'pintar la piscina', 'renovar piscina', 'renovar la piscina', 'renovar mi piscina', 'pintura de piscina', 'pintura para piscinas'],
       'elegir_imprimacion': ['imprimacion', 'imprimación', 'necesito imprimacion', 'que imprimacion'],
+      'cuanto_producto_necesito': ['cuanta pintura', 'cuánta pintura', 'cuanto producto', 'cuánto producto', 'cuanta necesito', 'cuántos litros'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
       // "el suelo de mármol está opaco", disparando este problema en vez
       // de "suelo_opaco" — se queda solo con términos específicos de

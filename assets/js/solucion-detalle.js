@@ -223,7 +223,39 @@
         </div>
       </section>` : ''}
 
-      <!-- Receta de trabajo -->
+      ${sol.calculadoraCantidadMultiple ? `
+      <!-- Calculadora combinada: elegir producto + calcular litros según m² y manos -->
+      <section class="cs-section no-imprimir">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-heading__eyebrow">Calculadora</p>
+            <h2>${sol.calculadoraCantidadMultiple.pregunta}</h2>
+          </div>
+          <div class="cs-calculadora cs-calculadora-multiple">
+            <div class="cs-calculadora__campos">
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-multi-tipo">Qué vas a aplicar</label>
+                <select id="cs-calc-multi-tipo">
+                  ${sol.calculadoraCantidadMultiple.opciones.map((o) => `<option value="${o.id}">${o.label}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div class="cs-calculadora__campos">
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-multi-superficie">Superficie a cubrir (m²)</label>
+                <input type="number" id="cs-calc-multi-superficie" min="0" step="0.5" placeholder="Ej: 30">
+              </div>
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-multi-manos">Número de manos</label>
+                <input type="number" id="cs-calc-multi-manos" min="1" step="1" value="2">
+              </div>
+            </div>
+            <p id="cs-calc-multi-resultado" class="cs-calculadora__resultado"></p>
+            <p id="cs-calc-multi-enlace" class="cs-calculadora__nota"></p>
+            <p class="cs-calculadora__nota">Rendimiento orientativo del fabricante en condiciones normales — puede variar según la superficie y la forma de aplicación.</p>
+          </div>
+        </div>
+      </section>` : ''}
       <section class="cs-section">
         <div class="container">
           <div class="section-heading section-heading--center">
@@ -367,6 +399,7 @@
     wireCalculadoraCantidad(sol);
     wireCalculadoraCloro(sol);
     wireSelectorSuperficie(sol);
+    wireCalculadoraCantidadMultiple(sol);
   }
 
   function wireCalculadoraCantidad(sol) {
@@ -382,7 +415,7 @@
       const manos = parseFloat(inputManos.value) || 2;
       if (!superficie || superficie <= 0) { resultado.innerHTML = ''; return; }
       const litros = (superficie * manos) / rendimiento;
-      resultado.innerHTML = `Necesitarás aproximadamente <strong>${litros.toFixed(1)} L</strong> ` +
+      resultado.innerHTML = `Necesitarás aproximadamente <strong>${litros.toFixed(1).replace('.', ',')} L</strong> ` +
         `(${superficie} m² × ${manos} manos ÷ ${rendimiento} m²/L orientativos para ${etiqueta}).`;
     };
     inputSuperficie.addEventListener('input', calcular);
@@ -510,6 +543,48 @@
         renderTarjetasProducto(resultadoEl, [entrada]);
       });
     });
+  }
+
+  // Calculadora combinada "¿Cuánto necesito?": primero se elige QUÉ
+  // producto se va a aplicar (cada opción trae su propio rendimiento,
+  // tomado de la calculadoraCantidad ya verificada de la guía completa
+  // correspondiente) y después se calculan los litros según la
+  // superficie y el número de manos — misma fórmula que
+  // wireCalculadoraCantidad, pero con el rendimiento variando según lo
+  // que se elija en vez de estar fijo para toda la solución.
+  function wireCalculadoraCantidadMultiple(sol) {
+    if (!sol.calculadoraCantidadMultiple) return;
+    const selectTipo = $('#cs-calc-multi-tipo');
+    const inputSuperficie = $('#cs-calc-multi-superficie');
+    const inputManos = $('#cs-calc-multi-manos');
+    const resultado = $('#cs-calc-multi-resultado');
+    const enlace = $('#cs-calc-multi-enlace');
+    if (!selectTipo || !inputSuperficie || !inputManos || !resultado) return;
+
+    const calcular = () => {
+      const opcion = sol.calculadoraCantidadMultiple.opciones.find((o) => o.id === selectTipo.value);
+      const superficie = parseFloat(inputSuperficie.value);
+      const manos = parseFloat(inputManos.value) || 2;
+
+      if (!opcion || !superficie || superficie <= 0) {
+        resultado.innerHTML = '';
+        if (enlace) enlace.innerHTML = '';
+        return;
+      }
+
+      const litros = (superficie * manos) / opcion.rendimiento;
+      resultado.innerHTML = `Necesitarás aproximadamente <strong>${litros.toFixed(1).replace('.', ',')} L</strong> de ${opcion.etiqueta} ` +
+        `(${superficie} m² × ${manos} manos ÷ ${opcion.rendimiento} m²/L orientativos).`;
+
+      if (enlace && opcion.solucionRelacionada) {
+        enlace.innerHTML = `Ver la guía completa: <a href="${urlSolucion(opcion.solucionRelacionada)}">${opcion.label}</a>`;
+      }
+    };
+
+    selectTipo.addEventListener('change', calcular);
+    inputSuperficie.addEventListener('input', calcular);
+    inputManos.addEventListener('input', calcular);
+    calcular();
   }
 
   function agruparPorFase(materials) {
