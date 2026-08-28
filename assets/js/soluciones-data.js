@@ -107,6 +107,11 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'limpiar_cristales', label: 'Quiero limpiar los cristales sin que queden marcas', solutionSlug: 'limpiar-cristales-sin-marcas' },
     { id: 'elegir_lija',    label: 'No sé qué lija o grano elegir',       solutionSlug: 'elegir-lija-grano-abrasivo' },
     { id: 'elegir_perfume', label: 'Quiero un perfume para regalar',      solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
+    { id: 'elegir_brocha_rodillo', label: 'No sé qué brocha o rodillo elegir', solutionSlug: 'elegir-brocha-rodillo-pintar' },
+    { id: 'elegir_cinta_enmascarar', label: 'Necesito enmascarar antes de pintar', solutionSlug: 'elegir-cinta-papel-enmascarar' },
+    { id: 'hologramas_pulido', label: 'Me han quedado hologramas al pulir', solutionSlug: 'eliminar-hologramas-pulido' },
+    { id: 'elegir_disolvente', label: 'No sé qué disolvente usar o cómo diluir la pintura', solutionSlug: 'elegir-disolvente-diluir-pintura' },
+    { id: 'higiene_personal', label: 'Busco productos de higiene personal', solutionSlug: 'higiene-personal-cuidado-corporal' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
     { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
     { id: 'tuberia_atascada',  label: 'Tengo una tubería atascada',           solutionSlug: 'desatascar-tuberia' },
@@ -158,7 +163,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Preparar una pieza antes de pintar',  solutionSlug: 'pintar-plastico-coche' },
         { title: 'Pulir la carrocería',                 solutionSlug: 'recuperar-brillo-carroceria' },
         { title: 'Recuperar el brillo',                 solutionSlug: 'recuperar-brillo-carroceria' },
-        { title: 'Eliminar hologramas',                   solutionSlug: 'recuperar-brillo-carroceria' },
+        { title: 'Eliminar hologramas',                   solutionSlug: 'eliminar-hologramas-pulido' },
         { title: 'Eliminar marcas de lijado',            solutionSlug: 'corregir-marcas-lijado' },
         { title: 'Corregir un chorreado de pintura',      solutionSlug: 'corregir-descuelgues-pintura' },
         { title: 'Restaurar faros',                       solutionSlug: 'restaurar-faros-coche' },
@@ -168,6 +173,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Desengrasar una pieza',                solutionSlug: 'pintar-plastico-coche' },
         { title: 'Proteger los bajos del coche',        solutionSlug: 'proteger-bajos-antigravilla' },
         { title: 'Sellar o pegar una luna',              solutionSlug: 'sellar-luna-parabrisas' },
+        { title: 'Enmascarar un vehículo antes de pintar', solutionSlug: 'elegir-cinta-papel-enmascarar' },
       ],
     },
     {
@@ -197,6 +203,8 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'La pintura no cubre o no se adhiere',   solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
         { title: 'Han salido burbujas al pintar',          solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
         { title: 'Marcas de rodillo o brocha',             solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
+        { title: 'Elegir brocha o rodillo',                solutionSlug: 'elegir-brocha-rodillo-pintar' },
+        { title: 'Elegir disolvente o diluir la pintura',   solutionSlug: 'elegir-disolvente-diluir-pintura' },
         { title: 'Hidrofugar una fachada de piedra',       solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
         { title: 'Reparar grietas en una fachada',         solutionSlug: 'reparar-fisuras-fachada-hormigon' },
         { title: 'Tratar salitre o humedad por capilaridad', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
@@ -321,6 +329,8 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Buscar una fragancia para hombre',     solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
         { title: 'Buscar una fragancia para mujer',      solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
         { title: 'Diferencia entre EDP y EDT',           solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
+        { title: 'Productos de higiene personal',         solutionSlug: 'higiene-personal-cuidado-corporal' },
+        { title: 'Cuidado facial y corporal',              solutionSlug: 'higiene-personal-cuidado-corporal' },
       ],
     },
   ];
@@ -3591,6 +3601,260 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para acertar con un perfume de regalo: diferencia entre eau de parfum y eau de toilette, estilos seguros y estuches listos para regalar.',
       },
     },
+
+    'elegir-brocha-rodillo-pintar': {
+      slug: 'elegir-brocha-rodillo-pintar',
+      title: 'Cómo elegir la brocha y el rodillo adecuados para pintar',
+      description: 'Guía para elegir el tipo de brocha y de rodillo según la superficie y el acabado que buscas, para conseguir un resultado uniforme sin marcas.',
+      category: 'pintura', subcategory: 'Elegir herramientas y consumibles',
+      problem: 'elegir_brocha_rodillo',
+      objective: 'preparar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '5 min para decidir',
+      result: 'La brocha y el rodillo correctos para tu superficie y acabado',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Elegir herramientas y consumibles'],
+      materials: [
+        { fase: 'Selección', familiaSugerida: 'Brochas y rodillos', items: ['Brocha', 'Rodillo'] },
+      ],
+      receta: [
+        { fase: 'Elegir la brocha', emoji: '🖌️' },
+        { fase: 'Elegir el rodillo', emoji: '🎨' },
+        { fase: 'Combinar ambos', emoji: '🤝' },
+      ],
+      steps: [
+        { n: 1, title: 'Brocha para remates, rincones y superficies pequeñas', text: 'Usa brocha en marcos, esquinas, radiadores o superficies irregulares donde el rodillo no llega bien — el número de la brocha indica su anchura, más número, más ancha.', productos: ['Brocha'] },
+        { n: 2, title: 'Rodillo de pelo corto para superficies lisas', text: 'En paredes lisas, muebles o metal, un rodillo de pelo corto (espuma o microfibra corta) da un acabado fino, sin apenas textura.', productos: ['Rodillo'] },
+        { n: 3, title: 'Rodillo de pelo medio o largo para superficies rugosas', text: 'En gotelé, fachadas o superficies con textura, un rodillo de pelo medio o largo (fibra o lana) llega bien a los huecos y cubre mejor ese tipo de acabado.', productos: [] },
+        { n: 4, title: 'Combinar brocha y rodillo en el mismo trabajo', text: 'Lo habitual es empezar por los bordes y rincones con brocha ("cortar" el perímetro) y después rellenar el resto de la superficie con rodillo — así el acabado queda uniforme en toda la pared.', productos: ['Brocha', 'Rodillo'] },
+      ],
+      professionalTips: [
+        'Una brocha o rodillo de mala calidad suelta pelo/pelusa sobre la pintura fresca — no siempre compensa ahorrar en la herramienta si vas a estropear el acabado.',
+        'Humedece ligeramente una brocha o rodillo nuevo antes de usarlo con pintura al agua — ayuda a que suelte menos pelusa en las primeras pasadas.',
+      ],
+      commonMistakes: [
+        'Usar un rodillo de pelo largo en una superficie lisa, dejando textura de "piel de naranja" no deseada.',
+        'Cargar demasiada pintura en la brocha o el rodillo, provocando goteos y marcas.',
+        'No limpiar bien la herramienta entre usos, endureciendo las cerdas o el pelo.',
+      ],
+      recommendedProducts: [
+        { nombre: 'BROCHA PRENSADA ESSENTIAL COMPETIDOR S-10 Nº 10', categoria: 'Herramientas', formato: 'Nº 10', precio: '3,74 €' },
+        { nombre: 'RODILLO ESP/FACHADAS SUPER FELPON 22 CMS.', categoria: 'Herramientas', formato: '22 cm', precio: '7,88 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Brocha más ancha', nombre: 'BROCHA PRENSADA REDONDA C/COLG.Nº12 TINAJERO', precio: '5,66 €' },
+        { etiqueta: 'Rodillo para superficie lisa', nombre: 'RODILLO ESP.FACHADAS NESPOLI 22 CMS.FIBROR VERDE', precio: '6,40 €' },
+      ],
+      relatedSolutions: ['pintar-pared-interior', 'solucionar-problemas-pintura-aplicacion'],
+      seo: {
+        title: 'Cómo elegir la brocha y el rodillo adecuados para pintar | Orencio Matas',
+        description: 'Guía para elegir brocha y rodillo según la superficie y el acabado, y cómo combinarlos para un resultado uniforme.',
+      },
+    },
+
+    'elegir-cinta-papel-enmascarar': {
+      slug: 'elegir-cinta-papel-enmascarar',
+      title: 'Cómo elegir la cinta y el papel de enmascarar antes de pintar',
+      description: 'Guía para elegir la cinta de carrocero, el papel y el film de enmascarado adecuados para proteger lo que no quieres pintar, tanto en casa como en el taller.',
+      category: 'coche', subcategory: 'Preparación y enmascarado',
+      problem: 'elegir_cinta_enmascarar',
+      objective: 'preparar',
+      surface: 'coche',
+      difficulty: 'Fácil',
+      estimatedTime: '10-20 min de enmascarado',
+      result: 'Zonas protegidas correctamente, con un corte de pintura limpio y sin que se cuele producto por debajo',
+      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Preparación y enmascarado'],
+      materials: [
+        { fase: 'Enmascarado', familiaSugerida: 'Productos de enmascarado', items: ['Cinta de carrocero', 'Papel o film de enmascarar'] },
+      ],
+      receta: [
+        { fase: 'Elegir la cinta', emoji: '🎗️' },
+        { fase: 'Elegir el papel/film', emoji: '📄' },
+        { fase: 'Enmascarar',   emoji: '🚗' },
+      ],
+      steps: [
+        { n: 1, title: 'Elegir la cinta según la precisión que necesitas', text: 'Para un corte de pintura muy fino y preciso (perfiles, molduras), usa una cinta fina de calidad. Para zonas más amplias, una cinta estándar de carrocero es suficiente.', productos: ['Cinta de carrocero'] },
+        { n: 2, title: 'Papel para superficies planas grandes', text: 'El papel (a veces ya combinado con cinta en el mismo rollo) es la opción habitual para cubrir paneles de carrocería, cristales o muebles antes de pintar con pistola.', productos: ['Papel o film de enmascarar'] },
+        { n: 3, title: 'Film plástico para zonas amplias o irregulares', text: 'El film se adapta mejor a formas irregulares y grandes superficies (ruedas, asientos, el resto del vehículo) que no vas a pintar pero necesitas proteger del polvo y las salpicaduras.', productos: [] },
+        { n: 4, title: 'Aplicar bien pegado, sin arrugas ni huecos', text: 'Presiona bien el borde de la cinta para que quede totalmente adherido — cualquier hueco o arruga deja pasar pintura por debajo, estropeando el corte limpio que buscas.', productos: [] },
+      ],
+      professionalTips: [
+        'Retira la cinta de enmascarar cuando la pintura esté seca al tacto pero no del todo curada — retirarla demasiado tarde puede levantar pintura por el borde.',
+        'En trabajos con pistola, una cinta de mala calidad puede dejar pasar disolvente por debajo — para trabajos serios compensa una cinta específica de carrocero.',
+      ],
+      commonMistakes: [
+        'Usar cinta de pintor doméstica para trabajos con pistola de pintar (deja pasar producto).',
+        'No presionar bien el borde de la cinta antes de pintar.',
+        'Dejar la cinta puesta demasiados días, dificultando su retirada limpia.',
+      ],
+      recommendedProducts: [
+        { nombre: '.CINTA FINA NARANJA ZAPHIRO 18MM X 50M', categoria: 'Talleres', formato: '18mm x 50m', precio: '3,44 €' },
+        { nombre: '.PAPEL ENMASCARAR ZAPHIRO PREMIUM 110 CM X 300 M.', categoria: 'Talleres', formato: '110cm x 300m', precio: '51,81 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Film con cinta incorporada', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', precio: '3,07 €' },
+        { etiqueta: 'Cinta de perfilar de precisión', nombre: '.CINTA PERFILAR BESA 12 MM. X 55 M.', precio: '11,53 €' },
+      ],
+      relatedSolutions: ['pintar-plastico-coche', 'elegir-pistola-pintar'],
+      seo: {
+        title: 'Cómo elegir la cinta y el papel de enmascarar antes de pintar | Orencio Matas',
+        description: 'Guía para elegir cinta de carrocero, papel y film de enmascarado para proteger correctamente antes de pintar.',
+      },
+    },
+
+    'eliminar-hologramas-pulido': {
+      slug: 'eliminar-hologramas-pulido',
+      title: 'Cómo eliminar hologramas y marcas de pulido en la carrocería',
+      description: 'Corrige los hologramas o remolinos que quedan tras pulir la carrocería, con un pulimento fino y la técnica adecuada para recuperar un brillo uniforme.',
+      category: 'coche', subcategory: 'Pulido y acabado',
+      problem: 'hologramas_pulido',
+      objective: 'pulir',
+      surface: 'coche',
+      difficulty: 'Media',
+      estimatedTime: '30-60 min por panel',
+      result: 'Brillo uniforme, sin remolinos ni marcas visibles bajo el sol',
+      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Pulido y acabado'],
+      materials: [
+        { fase: 'Pulido fino',  familiaSugerida: 'Pulimentos',       items: ['Pulimento fino (paso 2)'] },
+        { fase: 'Aplicación',   familiaSugerida: 'Boinas de pulido', items: ['Boina de pulido fina'] },
+        { fase: 'Protección',   familiaSugerida: 'Ceras y selladores', items: ['Cera o sellador de protección'] },
+      ],
+      receta: [
+        { fase: 'Diagnosticar', emoji: '🔍' },
+        { fase: 'Pulido fino', emoji: '✨' },
+        { fase: 'Repasar',    emoji: '🔄' },
+        { fase: 'Proteger',   emoji: '🛡️' },
+      ],
+      steps: [
+        { n: 1, title: 'Confirmar que son hologramas y no arañazos profundos', text: 'Los hologramas se ven como remolinos o círculos concéntricos bajo luz directa, y afectan solo a la capa de barniz más superficial — a diferencia de un arañazo, no se nota al pasar la uña.', productos: [] },
+        { n: 2, title: 'Aplicar un pulimento fino con boina fina', text: 'Usa una boina de pulido fina (no la de corte agresivo que probablemente causó los hologramas) con un pulimento de acabado — trabaja por paneles pequeños, sin presionar en exceso.', productos: ['Pulimento fino (paso 2)', 'Boina de pulido fina'] },
+        { n: 3, title: 'Trabajar con pasadas cruzadas y velocidad baja-media', text: 'Alterna la dirección de las pasadas (horizontal y vertical) y evita la velocidad máxima de la pulidora — es precisamente el exceso de velocidad y presión lo que suele generar hologramas nuevos.', productos: [] },
+        { n: 4, title: 'Revisar bajo luz directa antes de dar por terminado', text: 'Comprueba el resultado con luz de sol o una lámpora potente en ángulo — es la única forma fiable de ver si los hologramas han desaparecido del todo.', productos: [] },
+        { n: 5, title: 'Proteger el resultado con cera o sellador', text: 'Aplica una cera o sellador de protección al terminar — además de dar brillo, protege la capa de barniz recién pulida.', productos: ['Cera o sellador de protección'] },
+      ],
+      professionalTips: [
+        'Los hologramas suelen ser el resultado de pulir con un paso de corte demasiado agresivo y no terminar con un paso fino de acabado — pulir siempre en pasos, de más agresivo a más fino, nunca al revés.',
+        'Una boina sucia o saturada de producto reseco puede generar hologramas nuevos — límpiala o cámbiala entre paneles si es necesario.',
+      ],
+      commonMistakes: [
+        'Usar solo un pulimento de corte agresivo sin terminar con un paso fino.',
+        'Trabajar siempre en la misma dirección con la pulidora.',
+        'Pulir a máxima velocidad y con demasiada presión.',
+        'No revisar el resultado con luz directa antes de dar el trabajo por terminado.',
+      ],
+      recommendedProducts: [
+        { nombre: '.PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.', categoria: 'Talleres', formato: '1 L', precio: '35,80 €' },
+        { nombre: '.BOINA PULIDO BODY AMARILLA 806 150 MM.', categoria: 'Talleres', formato: '150 mm', precio: '9,44 €' },
+        { nombre: '.PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.', categoria: 'Talleres', formato: '0,5 L', precio: '15,81 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Boina de alto corte (paso previo)', nombre: '.BOINA BOSSAUTO ALTO CORTE T120 VERDE 150X35MM', precio: '13,92 €' },
+        { etiqueta: 'Pulimento fino en formato pequeño', nombre: '.PULIMENTO FINO 807 SEAL POLISH BODY BEIGE 200 ML.', precio: '14,11 €' },
+      ],
+      relatedSolutions: ['recuperar-brillo-carroceria', 'corregir-marcas-lijado'],
+      seo: {
+        title: 'Cómo eliminar hologramas y marcas de pulido en la carrocería | Orencio Matas',
+        description: 'Guía para corregir hologramas y remolinos tras pulir la carrocería, con pulimento fino y la técnica correcta.',
+      },
+    },
+
+    'elegir-disolvente-diluir-pintura': {
+      slug: 'elegir-disolvente-diluir-pintura',
+      title: 'Cómo elegir el disolvente adecuado y diluir la pintura correctamente',
+      description: 'Guía para elegir el disolvente correcto según el tipo de pintura y saber cuánto diluir, sin perjudicar el color ni la cubrición.',
+      category: 'pintura', subcategory: 'Elegir pintura y disolventes',
+      problem: 'elegir_disolvente',
+      objective: 'preparar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '5-10 min',
+      result: 'Pintura con la fluidez correcta para aplicar, sin perder cubrición ni color',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Elegir pintura y disolventes'],
+      materials: [
+        { fase: 'Dilución', familiaSugerida: 'Disolventes', items: ['Disolvente universal o aguarrás'] },
+      ],
+      receta: [
+        { fase: 'Identificar el tipo de pintura', emoji: '🎨' },
+        { fase: 'Elegir el disolvente', emoji: '🧪' },
+        { fase: 'Diluir con medida', emoji: '📏' },
+      ],
+      steps: [
+        { n: 1, title: 'Identificar si la pintura es al agua o al disolvente', text: 'Las pinturas plásticas o al agua se diluyen con agua; las pinturas y esmaltes sintéticos, con aguarrás o disolvente universal — mezclar el tipo equivocado puede cortar la pintura y estropearla.', productos: [] },
+        { n: 2, title: 'Elegir el disolvente para pintura sintética', text: 'Un aguarrás sirve para la mayoría de esmaltes sintéticos domésticos; un disolvente universal es una opción más versátil que también sirve para limpiar herramientas.', productos: ['Disolvente universal o aguarrás'] },
+        { n: 3, title: 'Diluir poco a poco, sin pasarte', text: 'Añade el disolvente en pequeñas cantidades removiendo bien, comprobando la fluidez cada vez — normalmente no hace falta pasar del 5-10% del volumen de pintura salvo que el envase indique otra cosa.', productos: [] },
+        { n: 4, title: 'Comprobar en una zona de prueba', text: 'Aplica una pasada de prueba en una zona poco visible — una pintura demasiado diluida pierde cubrición y puede gotear al aplicarla.', productos: [] },
+      ],
+      professionalTips: [
+        'Diluir de más para "rendir más" es uno de los motivos más habituales de que la pintura no cubra bien — casi siempre sale más caro por tener que dar una mano extra.',
+        'Guarda el disolvente sobrante en un envase bien cerrado y etiquetado — pierde propiedades con el tiempo si queda expuesto al aire.',
+      ],
+      commonMistakes: [
+        'Diluir una pintura al agua con disolvente, o una pintura al disolvente con agua.',
+        'Diluir más del porcentaje recomendado por el fabricante.',
+        'No remover bien tras añadir el disolvente, quedando zonas más diluidas que otras.',
+      ],
+      recommendedProducts: [
+        { nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', categoria: 'Pintura', formato: '1 L', precio: '3,75 €' },
+        { nombre: 'AGUARRAS PINO KELSIA 500 ML.', categoria: 'Pintura', formato: '500 ml', precio: '1,75 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Formato profesional grande', nombre: 'DISOLVENTE UNIVERSAL PROF.C&Q 25 L.', precio: '76,17 €' },
+        { etiqueta: 'Disolvente específico epoxi', nombre: 'TITANTECH DX-820 DISOLVENTE EPOXI 5 L.', precio: '43,00 €' },
+      ],
+      relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'pintar-pared-interior'],
+      seo: {
+        title: 'Cómo elegir el disolvente adecuado y diluir la pintura correctamente | Orencio Matas',
+        description: 'Guía para elegir disolvente según el tipo de pintura y diluir sin perjudicar la cubrición ni el color.',
+      },
+    },
+
+    'higiene-personal-cuidado-corporal': {
+      slug: 'higiene-personal-cuidado-corporal',
+      title: 'Productos de higiene personal y cuidado corporal para el día a día',
+      description: 'Selección de productos habituales de higiene y cuidado corporal y facial, para el uso diario en casa.',
+      category: 'perfumeria', subcategory: 'Higiene y cuidado personal',
+      problem: 'higiene_personal',
+      objective: 'limpiar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '5 min para decidir',
+      result: 'Los productos de higiene y cuidado adecuados para el uso diario',
+      breadcrumb: ['Centro de Soluciones', 'Perfumería', 'Higiene y cuidado personal'],
+      materials: [
+        { fase: 'Selección', familiaSugerida: 'Higiene personal', items: ['Gel de ducha o baño', 'Crema corporal o facial'] },
+      ],
+      receta: [
+        { fase: 'Higiene diaria', emoji: '🚿' },
+        { fase: 'Hidratación',   emoji: '💧' },
+        { fase: 'Cuidado facial', emoji: '🧴' },
+      ],
+      steps: [
+        { n: 1, title: 'Gel de ducha o baño para la higiene diaria', text: 'Elige según el tipo de piel: fórmulas suaves o con avena para pieles sensibles, o gel/champú 2 en 1 para mayor rapidez en el día a día.', productos: ['Gel de ducha o baño'] },
+        { n: 2, title: 'Crema corporal para hidratar después de la ducha', text: 'Aplicar crema corporal justo después de la ducha, con la piel aún ligeramente húmeda, ayuda a que se absorba mejor y a retener la hidratación.', productos: ['Crema corporal o facial'] },
+        { n: 3, title: 'Cuidado facial específico', text: 'La piel del rostro suele necesitar una crema distinta a la corporal, más ligera o con protección solar según la época del año.', productos: [] },
+      ],
+      professionalTips: [
+        'Las fórmulas con aloe vera o avena son buenas opciones por defecto para pieles sensibles o con tendencia a la sequedad.',
+        'Guarda el envase bien cerrado y en un lugar fresco — el calor y el sol directo pueden alterar la fórmula de cremas y geles con el tiempo.',
+      ],
+      commonMistakes: [
+        'Usar crema corporal en el rostro esperando el mismo resultado que una crema facial específica.',
+        'No hidratar la piel después de la ducha, cuando mejor se absorbe la crema.',
+      ],
+      recommendedProducts: [
+        { nombre: 'AVENA KINESIA GEL 750 ML.', categoria: 'Perfumería', formato: '750 ml', precio: '2,66 €' },
+        { nombre: 'INST.ESPAÑOL CREMA CORPORAL 400 ML.CREMOSO M/KARIT', categoria: 'Perfumería', formato: '400 ml', precio: '3,23 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Gel 2 en 1 con champú', nombre: 'DENENES GEL/CHAMPU 600 ML.SUEÑOS FELICES', precio: '3,40 €' },
+        { etiqueta: 'Crema corporal con aloe vera', nombre: 'INST.ESPAÑOL CREMA CORPORAL 400 ML.ALOE VERA', precio: '3,05 €' },
+      ],
+      relatedSolutions: ['perfumeria-elegir-fragancia-regalo'],
+      seo: {
+        title: 'Productos de higiene personal y cuidado corporal para el día a día | Orencio Matas',
+        description: 'Selección de gel de ducha, crema corporal y cuidado facial para la higiene y el cuidado diario.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -3782,6 +4046,11 @@ window.SOLUCIONES_DATA = (function () {
       'limpiar_cristales': ['cristal', 'cristales', 'ventana', 'ventanas'],
       'elegir_lija': ['lija', 'grano de lija', 'que lija', 'disco abrasivo'],
       'elegir_perfume': ['perfume', 'colonia', 'fragancia'],
+      'elegir_brocha_rodillo': ['brocha', 'rodillo'],
+      'elegir_cinta_enmascarar': ['cinta de carrocero', 'cinta carrocero', 'enmascarar', 'enmascarado'],
+      'hologramas_pulido': ['holograma', 'hologramas', 'remolinos'],
+      'elegir_disolvente': ['disolvente', 'diluir', 'aguarras', 'aguarrás'],
+      'higiene_personal': ['higiene personal', 'gel de ducha', 'gel de baño', 'crema corporal'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
       // "el suelo de mármol está opaco", disparando este problema en vez
       // de "suelo_opaco" — se queda solo con términos específicos de
