@@ -47,6 +47,7 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'suelo',    label: 'Suelo / garaje',         emoji: '🅿️' },
     { id: 'jardin',   label: 'Jardín',                 emoji: '🌱' },
     { id: 'piscina',  label: 'Piscina',                emoji: '🏊' },
+    { id: 'cristal',  label: 'Cristal',                 emoji: '🪟' },
     { id: 'otro',     label: 'Otro',                  emoji: '❔' },
   ];
 
@@ -99,6 +100,13 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'agua_turbia',   label: 'El agua de la piscina está turbia',    solutionSlug: 'mantenimiento-piscina' },
     { id: 'choque_piscina', label: 'Tengo que hacer un tratamiento de choque en la piscina', solutionSlug: 'tratamiento-choque-piscina' },
     { id: 'cucarachas',    label: 'Tengo cucarachas u hormigas',          solutionSlug: 'control-plagas-cocina' },
+    { id: 'pintura_problemas_aplicacion', label: 'La pintura no cubre, no se adhiere o hace burbujas', solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
+    { id: 'eliminar_grasa', label: 'Tengo que eliminar grasa de una superficie', solutionSlug: 'eliminar-grasa-desengrasar' },
+    { id: 'cal_bano',       label: 'Tengo cal o sarro en el baño',        solutionSlug: 'eliminar-cal-sarro-bano' },
+    { id: 'restos_cemento', label: 'Tengo restos de cemento tras una obra', solutionSlug: 'eliminar-restos-cemento-mortero' },
+    { id: 'limpiar_cristales', label: 'Quiero limpiar los cristales sin que queden marcas', solutionSlug: 'limpiar-cristales-sin-marcas' },
+    { id: 'elegir_lija',    label: 'No sé qué lija o grano elegir',       solutionSlug: 'elegir-lija-grano-abrasivo' },
+    { id: 'elegir_perfume', label: 'Quiero un perfume para regalar',      solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
     { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
     { id: 'tuberia_atascada',  label: 'Tengo una tubería atascada',           solutionSlug: 'desatascar-tuberia' },
@@ -185,6 +193,10 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Impermeabilizar una terraza',           solutionSlug: 'impermeabilizar-terraza-goteras' },
         { title: 'Elegir la pistola de pintar',           solutionSlug: 'elegir-pistola-pintar' },
         { title: 'Elegir la lijadora adecuada',           solutionSlug: 'elegir-lijadora-superficie' },
+        { title: 'Elegir la lija y el grano',             solutionSlug: 'elegir-lija-grano-abrasivo' },
+        { title: 'La pintura no cubre o no se adhiere',   solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
+        { title: 'Han salido burbujas al pintar',          solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
+        { title: 'Marcas de rodillo o brocha',             solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
         { title: 'Hidrofugar una fachada de piedra',       solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
         { title: 'Reparar grietas en una fachada',         solutionSlug: 'reparar-fisuras-fachada-hormigon' },
         { title: 'Tratar salitre o humedad por capilaridad', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
@@ -229,13 +241,13 @@ window.SOLUCIONES_DATA = (function () {
     {
       id: 'limpieza', label: 'Limpieza y droguería', emoji: '🧹',
       ejemplos: [
-        { title: 'Eliminar grasa',                       solutionSlug: 'pintar-plastico-coche' },
+        { title: 'Eliminar grasa',                       solutionSlug: 'eliminar-grasa-desengrasar' },
         { title: 'Eliminar pintura',                     solutionSlug: 'decapar-pintura-mueble' },
         { title: 'Quitar adhesivos',                     solutionSlug: 'quitar-restos-pegamento' },
         { title: 'Quitar silicona',                      solutionSlug: 'sellar-juntas-bano' },
-        { title: 'Limpiar herramientas',                 solutionSlug: 'pintar-pared-interior' },
-        { title: 'Desengrasar piezas',                   solutionSlug: 'pintar-plastico-coche' },
-        { title: 'Limpiar maquinaria',                   solutionSlug: 'pintar-plastico-coche' },
+        { title: 'Limpiar herramientas',                 solutionSlug: 'eliminar-grasa-desengrasar' },
+        { title: 'Desengrasar piezas',                   solutionSlug: 'eliminar-grasa-desengrasar' },
+        { title: 'Limpiar maquinaria',                   solutionSlug: 'eliminar-grasa-desengrasar' },
         { title: 'Preparar una superficie',              solutionSlug: 'pintar-plastico-coche' },
         { title: 'Desatascar una tubería',               solutionSlug: 'desatascar-tuberia' },
         { title: 'Abrillantar un suelo de mármol',        solutionSlug: 'abrillantar-suelo-marmol' },
@@ -245,6 +257,9 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Usar la lejía correctamente',           solutionSlug: 'usar-lejia-segura' },
         { title: 'Desinfectar la casa',                   solutionSlug: 'desinfectar-casa' },
         { title: 'Limpiar el moho de una pared o azulejo', solutionSlug: 'limpiar-moho-pared-azulejo' },
+        { title: 'Eliminar la cal del baño',              solutionSlug: 'eliminar-cal-sarro-bano' },
+        { title: 'Eliminar restos de cemento tras una obra', solutionSlug: 'eliminar-restos-cemento-mortero' },
+        { title: 'Limpiar cristales sin marcas',          solutionSlug: 'limpiar-cristales-sin-marcas' },
       ],
     },
     {
@@ -297,6 +312,15 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Proteger las plantas de insectos',     solutionSlug: 'cuidado-plantas-jardin' },
         { title: 'Curar heridas de poda',                solutionSlug: 'cuidado-plantas-jardin' },
         { title: 'Tratar un hongo en las plantas',       solutionSlug: 'cuidado-plantas-jardin' },
+      ],
+    },
+    {
+      id: 'perfumeria', label: 'Perfumería y cuidado personal', emoji: '🌸',
+      ejemplos: [
+        { title: 'Elegir un perfume de regalo',          solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
+        { title: 'Buscar una fragancia para hombre',     solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
+        { title: 'Buscar una fragancia para mujer',      solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
+        { title: 'Diferencia entre EDP y EDT',           solutionSlug: 'perfumeria-elegir-fragancia-regalo' },
       ],
     },
   ];
@@ -3199,6 +3223,374 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para limpiar y matar el moho de una pared con un fungicida antes de pintar, y protegerla con una pintura con conservante antimoho.',
       },
     },
+
+    'solucionar-problemas-pintura-aplicacion': {
+      slug: 'solucionar-problemas-pintura-aplicacion',
+      title: 'Por qué la pintura no cubre, no se adhiere, se descascarilla o hace burbujas',
+      description: 'Diagnóstico rápido de los problemas más frecuentes al pintar una pared — falta de cubrición, mala adherencia, descascarillado, burbujas o marcas de rodillo/brocha — y cómo solucionar cada uno.',
+      category: 'pintura', subcategory: 'Problemas al pintar',
+      problem: 'pintura_problemas_aplicacion',
+      objective: 'reparar',
+      surface: 'pared',
+      difficulty: 'Fácil',
+      estimatedTime: '30 min de diagnóstico + tiempo de la reparación',
+      result: 'Acabado uniforme, bien adherido y sin defectos visibles',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Problemas al pintar'],
+      materials: [
+        { fase: 'Preparación',  familiaSugerida: 'Fijadores / imprimaciones', items: ['Fijador sellador al agua'] },
+        { fase: 'Aplicación',   familiaSugerida: 'Brochas y rodillos',        items: ['Rodillo de pelo corto o medio', 'Brocha de calidad'] },
+        { fase: 'Acabado',      familiaSugerida: 'Pintura',                  items: ['Pintura plástica de calidad'] },
+      ],
+      receta: [
+        { fase: 'Diagnosticar', emoji: '🔍' },
+        { fase: 'Corregir causa', emoji: '🛠️' },
+        { fase: 'Sellar si hace falta', emoji: '🧴' },
+        { fase: 'Repintar',      emoji: '🎨' },
+      ],
+      steps: [
+        { n: 1, title: 'Identificar el problema exacto', text: 'No todos los defectos se solucionan igual: "no cubre" (se transparenta el color de abajo), "no se adhiere" (se despega al tacto o con cinta), "se descascarilla" (salta en placas) y "hace burbujas" (ampollas bajo la película seca) tienen causas distintas — sigue el apartado que corresponda al tuyo.', productos: [] },
+        { n: 2, title: 'Si la pintura NO CUBRE bien', text: 'Casi siempre es por aplicar poca cantidad, diluir de más, o pintar un color oscuro/muy diferente con una sola mano. Aplica 2 manos completas dejando secar entre ellas, sin diluir la pintura más de lo que indique el envase.', productos: [] },
+        { n: 3, title: 'Si la pintura NO SE ADHIERE o se descascarilla', text: 'La causa casi siempre es una superficie mal preparada: polvo, grasa, humedad, o pintar directamente sobre una superficie muy lisa, brillante o con pintura antigua en mal estado. Lija ligeramente, limpia el polvo y aplica un fijador sellador antes de pintar — mucho más barato que tener que repetir el trabajo.', productos: ['Fijador sellador al agua'] },
+        { n: 4, title: 'Si aparecen BURBUJAS', text: 'Suelen deberse a pintar con demasiado sol/calor directo (se seca la superficie antes de tiempo), a una superficie porosa sin sellar que suelta aire al secarse la pintura, o a agitar el bote generando espuma. Deja secar del todo, lija suavemente la zona con burbujas y vuelve a aplicar una mano fina.', productos: [] },
+        { n: 5, title: 'Si quedan MARCAS DE RODILLO O BROCHA', text: 'Casi siempre es por aplicar con el rodillo casi seco, presionar demasiado, o no rematar cada pasada extendiendo bien hacia el borde ya pintado ("carga en cruz"). Usa un rodillo de pelo adecuado al acabado (corto para liso, medio para gotelé fino) y trabaja siempre de zona húmeda a zona húmeda.', productos: ['Rodillo de pelo corto o medio', 'Brocha de calidad'] },
+        { n: 6, title: 'Repintar con la superficie ya corregida', text: 'Con la causa ya solucionada (superficie sellada, seca, lijada donde tocaba), aplica la pintura en 2 manos finas y uniformes, dejando secar completamente entre cada una según el tiempo indicado en el envase.', productos: ['Pintura plástica de calidad'] },
+      ],
+      professionalTips: [
+        'El 90% de los problemas de adherencia y descascarillado empiezan por saltarse la preparación de la superficie — la pintura nunca arregla una base mal preparada, solo la disimula unos meses.',
+        'Nunca apliques una mano gruesa para "cubrir de una vez" — dos manos finas cubren mejor, se adhieren mejor y tardan menos en secar sin problemas que una sola mano cargada.',
+      ],
+      commonMistakes: [
+        'Pintar sobre polvo, grasa o humedad sin limpiar antes.',
+        'Diluir la pintura más de lo que indica el fabricante para "rendir más".',
+        'Pintar a pleno sol o con la superficie muy caliente.',
+        'Aplicar una única mano gruesa en vez de dos manos finas.',
+        'No lijar ni sellar una superficie muy lisa o brillante antes de pintar encima.',
+      ],
+      recommendedProducts: [
+        { nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', categoria: 'Pintura', formato: '5 L', precio: '25,16 €' },
+        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '10 uds', precio: '13,21 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Fijador incoloro para exterior', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 10 L.INCOLORO', precio: '65,51 €' },
+        { etiqueta: 'Fondo fijador universal', nombre: 'FONDO FIJADOR D13 10 L.INCOLORO', precio: '75,52 €' },
+      ],
+      relatedSolutions: ['pintar-pared-interior', 'eliminar-moho-pared-antes-pintar'],
+      seo: {
+        title: 'Por qué la pintura no cubre, no se adhiere o hace burbujas — solución | Orencio Matas',
+        description: 'Diagnóstico y solución para los problemas más frecuentes al pintar: falta de cubrición, mala adherencia, descascarillado, burbujas y marcas de rodillo o brocha.',
+      },
+    },
+
+    'eliminar-grasa-desengrasar': {
+      slug: 'eliminar-grasa-desengrasar',
+      title: 'Cómo eliminar grasa de cualquier superficie',
+      description: 'Elige el desengrasante adecuado según la superficie (cocina, suelo, taller o piezas metálicas) y aplica la técnica correcta para eliminar la grasa sin dejar restos ni marcas.',
+      category: 'limpieza', subcategory: 'Desengrasado',
+      problem: 'eliminar_grasa',
+      objective: 'limpiar',
+      surface: 'hogar',
+      difficulty: 'Fácil',
+      estimatedTime: '10-20 min',
+      result: 'Superficie limpia de grasa, sin residuos ni marcas',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Desengrasado'],
+      materials: [
+        { fase: 'Desengrasado', familiaSugerida: 'Desengrasantes',        items: ['Desengrasante en pistola'] },
+        { fase: 'Aclarado',     familiaSugerida: 'Bayetas y gamuzas',      items: ['Bayeta de microfibra'] },
+      ],
+      receta: [
+        { fase: 'Pulverizar', emoji: '💦' },
+        { fase: 'Dejar actuar', emoji: '⏱️' },
+        { fase: 'Frotar',     emoji: '🧽' },
+        { fase: 'Aclarar',    emoji: '🚿' },
+      ],
+      steps: [
+        { n: 1, title: 'Elegir el desengrasante según la superficie', text: 'Para cocina y superficies domésticas, un desengrasante estándar en pistola es suficiente. Para talleres, piezas metálicas o grasa muy incrustada, conviene uno de mayor concentración o con disolvente.', productos: ['Desengrasante en pistola'] },
+        { n: 2, title: 'Pulverizar y dejar actuar', text: 'Aplica directamente sobre la grasa y deja actuar 2-5 minutos sin dejar que se seque — el desengrasante necesita tiempo para romper la grasa antes de frotar.', productos: [] },
+        { n: 3, title: 'Frotar con una bayeta o estropajo suave', text: 'Frota con una bayeta de microfibra para superficies delicadas, o un estropajo no abrasivo si la grasa está muy incrustada — evita estropajos metálicos sobre superficies pintadas o pulidas.', productos: ['Bayeta de microfibra'] },
+        { n: 4, title: 'Aclarar con agua limpia', text: 'Aclara bien con agua para retirar cualquier resto de producto — dejarlo sin aclarar puede volver la superficie pegajosa o resbaladiza.', productos: [] },
+      ],
+      professionalTips: [
+        'En grasa muy antigua o cocinada (hornos, campanas extractoras), deja actuar el desengrasante más tiempo del habitual en vez de frotar con más fuerza — ahorra esfuerzo y evita rayar la superficie.',
+        'Prueba siempre el desengrasante en una zona poco visible si la superficie es delicada (plástico, superficies pintadas) — algunos desengrasantes concentrados pueden opacar ciertos acabados.',
+      ],
+      commonMistakes: [
+        'Dejar secar el desengrasante antes de frotar — pierde eficacia.',
+        'Usar estropajos metálicos sobre superficies pintadas, pulidas o de acero inoxidable satinado.',
+        'No aclarar bien, dejando la superficie pegajosa.',
+        'Mezclar el desengrasante con lejía u otros productos químicos.',
+      ],
+      recommendedProducts: [
+        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', categoria: 'Limpieza', formato: '750 ml', precio: '2,14 €' },
+        { nombre: 'VOLGRASSS DESENGRASANTE 1 L.PISTOLA', categoria: 'Limpieza', formato: '1 L', precio: '2,86 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Uso profesional / gran cantidad', nombre: 'VINFER DESENGRASANTE BAJA ESPUMA M4 5 L.', precio: '14,13 €' },
+        { etiqueta: 'Taller / grasa muy incrustada',    nombre: 'HERCOL DESENGRASANTE C/DISOLV.20 L.', precio: '180,10 €' },
+      ],
+      relatedSolutions: ['desinfectar-casa'],
+      seo: {
+        title: 'Cómo eliminar grasa de cualquier superficie | Orencio Matas',
+        description: 'Guía para elegir el desengrasante adecuado y eliminar grasa de cocina, taller o piezas metálicas sin dejar restos ni marcas.',
+      },
+    },
+
+    'eliminar-cal-sarro-bano': {
+      slug: 'eliminar-cal-sarro-bano',
+      title: 'Cómo eliminar la cal y el sarro del baño',
+      description: 'Elimina la cal acumulada en grifería, mampara, azulejos y sanitarios con un desincrustante adecuado, sin dañar el esmalte ni el cromado.',
+      category: 'limpieza', subcategory: 'Cal y sarro',
+      problem: 'cal_bano',
+      objective: 'limpiar',
+      surface: 'ceramica',
+      difficulty: 'Fácil',
+      estimatedTime: '15-30 min',
+      result: 'Grifería, mampara y azulejos sin cal ni sarro, con su brillo original',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Cal y sarro'],
+      materials: [
+        { fase: 'Desincrustado', familiaSugerida: 'Desincrustantes',    items: ['Desincrustante de cal'] },
+        { fase: 'Frotado',       familiaSugerida: 'Estropajos',         items: ['Estropajo suave o esponja'] },
+      ],
+      receta: [
+        { fase: 'Aplicar',  emoji: '🧴' },
+        { fase: 'Dejar actuar', emoji: '⏱️' },
+        { fase: 'Frotar',   emoji: '🧽' },
+        { fase: 'Aclarar',  emoji: '🚿' },
+      ],
+      steps: [
+        { n: 1, title: 'Aplicar el desincrustante', text: 'Pulveriza o extiende el producto sobre la zona con cal — grifería, mampara, juntas o sanitarios — cubriendo bien toda la superficie afectada.', productos: ['Desincrustante de cal'] },
+        { n: 2, title: 'Dejar actuar unos minutos', text: 'Deja actuar entre 5 y 10 minutos (consulta el envase) — la cal necesita tiempo para disolverse antes de frotar, sobre todo si está muy acumulada.', productos: [] },
+        { n: 3, title: 'Frotar con un estropajo suave', text: 'Frota con un estropajo no abrasivo o una esponja — en cromados y aceros satinados, evita estropajos metálicos que puedan rayar el acabado.', productos: ['Estropajo suave o esponja'] },
+        { n: 4, title: 'Aclarar y secar', text: 'Aclara con agua abundante y seca con un paño — secar después de cada uso reduce mucho la velocidad a la que vuelve a acumularse la cal.', productos: [] },
+      ],
+      professionalTips: [
+        'Secar la grifería y la mampara después de cada ducha es lo que más retrasa la reaparición de la cal — mucho más que cualquier producto aplicado después.',
+        'En cal muy incrustada, repite la aplicación en vez de frotar con fuerza — es más eficaz y evita rayar cromados o esmaltes.',
+      ],
+      commonMistakes: [
+        'Usar estropajos metálicos sobre grifería cromada o sanitarios esmaltados.',
+        'No dejar actuar el producto el tiempo suficiente antes de frotar.',
+        'Mezclar el desincrustante con lejía — puede generar gases tóxicos.',
+        'No secar la grifería tras la ducha, acelerando que la cal vuelva a aparecer.',
+      ],
+      recommendedProducts: [
+        { nombre: 'L1 LIMPIADOR DESINCRUSTANTE BAÑOS 750 ML.PIST.', categoria: 'Limpieza', formato: '750 ml', precio: '2,23 €' },
+        { nombre: 'M.P.L.LIMP.DESINCRUST.WC GEL FRESH 1,500 ML.', categoria: 'Limpieza', formato: '1,5 L', precio: '1,98 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Uso profesional / cal muy incrustada', nombre: 'DW-20 LIMPIADOR DESINCRUST.ACIDO 4 L.', precio: '36,47 €' },
+        { etiqueta: 'Formato pequeño de garrafa', nombre: 'TENAZ DESINCRUSTANTE SUPERF.5 L.REF.091', precio: '14,99 €' },
+      ],
+      relatedSolutions: ['sellar-juntas-bano', 'limpiar-moho-pared-azulejo'],
+      seo: {
+        title: 'Cómo eliminar la cal y el sarro del baño | Orencio Matas',
+        description: 'Guía para eliminar la cal de grifería, mampara, azulejos y sanitarios sin dañar el esmalte ni el cromado.',
+      },
+    },
+
+    'eliminar-restos-cemento-mortero': {
+      slug: 'eliminar-restos-cemento-mortero',
+      title: 'Cómo eliminar restos de cemento o mortero tras una obra',
+      description: 'Elimina las salpicaduras y velos de cemento o mortero secos en azulejos, suelos y otras superficies después de una reforma, sin rayar ni dañar el acabado.',
+      category: 'limpieza', subcategory: 'Limpieza tras obra',
+      problem: 'restos_cemento',
+      objective: 'limpiar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '20-40 min según la superficie',
+      result: 'Superficie limpia, sin restos ni velos de cemento',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Limpieza tras obra'],
+      materials: [
+        { fase: 'Limpieza', familiaSugerida: 'Quitacementos', items: ['Quitacementos / limpiajuntas'] },
+        { fase: 'Frotado',  familiaSugerida: 'Estropajos',    items: ['Estropajo o cepillo de cerdas'] },
+      ],
+      receta: [
+        { fase: 'Barrer restos sueltos', emoji: '🧹' },
+        { fase: 'Aplicar',   emoji: '🧴' },
+        { fase: 'Frotar',    emoji: '🧽' },
+        { fase: 'Aclarar',   emoji: '🚿' },
+      ],
+      steps: [
+        { n: 1, title: 'Retirar los restos sueltos', text: 'Barre o aspira los restos de cemento o mortero seco que no estén pegados a la superficie, antes de aplicar cualquier producto.', productos: [] },
+        { n: 2, title: 'Aplicar el quitacementos', text: 'Extiende el producto sobre las manchas o el velo de cemento, cubriendo bien toda la zona afectada.', productos: ['Quitacementos / limpiajuntas'] },
+        { n: 3, title: 'Dejar actuar y frotar', text: 'Deja actuar el tiempo indicado en el envase y frota con un estropajo o cepillo de cerdas — el cemento seco necesita algo más de frotado que la suciedad normal.', productos: ['Estropajo o cepillo de cerdas'] },
+        { n: 4, title: 'Aclarar con agua abundante', text: 'Aclara bien con agua limpia para retirar cualquier resto de producto y de cemento disuelto.', productos: [] },
+      ],
+      professionalTips: [
+        'Cuanto más reciente esté el cemento, más fácil es eliminarlo — si acabas de terminar la obra, límpialo antes de que pase mucho tiempo y se endurezca del todo.',
+        'Prueba primero en una zona poco visible en superficies delicadas (mármol pulido, gres esmaltado) — algunos quitacementos son ácidos y pueden opacar ciertos acabados.',
+      ],
+      commonMistakes: [
+        'Frotar con un cepillo o estropajo metálico sobre superficies pulidas, rayándolas.',
+        'Dejar secar el cemento durante semanas antes de intentar limpiarlo.',
+        'No aclarar bien, dejando residuo del producto sobre la superficie.',
+      ],
+      recommendedProducts: [
+        { nombre: 'M.P.L.QUITACEMENTOS/LIMPIAJUNTAS 1 L.', categoria: 'Limpieza', formato: '1 L', precio: '2,75 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Decapante para restos más resistentes', nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.', precio: '17,13 €' },
+      ],
+      relatedSolutions: ['limpiar-moho-pared-azulejo', 'abrillantar-suelo-marmol'],
+      seo: {
+        title: 'Cómo eliminar restos de cemento o mortero tras una obra | Orencio Matas',
+        description: 'Guía para eliminar salpicaduras y velos de cemento seco en azulejos y suelos tras una reforma, sin dañar el acabado.',
+      },
+    },
+
+    'limpiar-cristales-sin-marcas': {
+      slug: 'limpiar-cristales-sin-marcas',
+      title: 'Cómo limpiar cristales y ventanas sin que queden marcas',
+      description: 'La técnica y el producto correctos para dejar cristales, espejos y ventanas limpios y sin marcas ni rayas, tanto en casa como en el trabajo.',
+      category: 'limpieza', subcategory: 'Cristales',
+      problem: 'limpiar_cristales',
+      objective: 'limpiar',
+      surface: 'cristal',
+      difficulty: 'Fácil',
+      estimatedTime: '15-20 min',
+      result: 'Cristales limpios, transparentes y sin marcas ni rayas',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Cristales'],
+      materials: [
+        { fase: 'Limpieza', familiaSugerida: 'Limpiacristales', items: ['Limpiacristales'] },
+        { fase: 'Secado',   familiaSugerida: 'Bayetas',          items: ['Bayeta o gamuza de microfibra'] },
+      ],
+      receta: [
+        { fase: 'Quitar polvo', emoji: '🧹' },
+        { fase: 'Pulverizar', emoji: '💦' },
+        { fase: 'Repasar',    emoji: '🧽' },
+        { fase: 'Secar',      emoji: '✨' },
+      ],
+      steps: [
+        { n: 1, title: 'Quitar el polvo antes de mojar', text: 'Pasa un paño seco o una gamuza para quitar el polvo suelto — si aplicas el limpiacristales sobre polvo, este se convierte en barrillo y deja más marcas.', productos: [] },
+        { n: 2, title: 'Pulverizar el limpiacristales', text: 'Aplica el producto de forma uniforme por toda la superficie, sin empapar en exceso — con una capa fina es suficiente.', productos: ['Limpiacristales'] },
+        { n: 3, title: 'Repasar con movimientos en una sola dirección', text: 'Repasa con la bayeta de microfibra en movimientos en zigzag o siempre en la misma dirección (nunca en círculos) — así evitas que el producto se reparta de forma irregular y deje marcas.', productos: ['Bayeta o gamuza de microfibra'] },
+        { n: 4, title: 'Secar con una gamuza limpia y seca', text: 'Repasa enseguida con una gamuza seca y limpia antes de que el producto se seque solo — es lo que más evita que queden marcas o cercos.', productos: ['Bayeta o gamuza de microfibra'] },
+      ],
+      professionalTips: [
+        'Evita limpiar cristales con sol directo — el producto se seca demasiado rápido y deja marcas antes de poder repasarlo bien.',
+        'Usa una gamuza distinta para aplicar el producto y para el secado final — mezclar ambas funciones en el mismo paño reparte la suciedad en vez de retirarla.',
+      ],
+      commonMistakes: [
+        'Limpiar con papel de cocina normal en vez de gamuza de microfibra — suelta pelusa.',
+        'Frotar en movimientos circulares en vez de en una sola dirección.',
+        'Aplicar demasiado producto de una vez.',
+        'Limpiar con sol directo sobre el cristal.',
+      ],
+      recommendedProducts: [
+        { nombre: 'GLASSPON CRISTALES Y SUPERFICIES 5 L.', categoria: 'Limpieza', formato: '5 L', precio: '9,03 €' },
+        { nombre: 'BAYETA CISNE CRISTALES MICROFIBRA 38X40CMS.', categoria: 'Limpieza', formato: '38x40 cm', precio: '0,76 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Uso profesional con mango y goma', nombre: 'LIMPIACRISTALES DUO RESSOL REF. 01771', precio: '10,93 €' },
+        { etiqueta: 'Formato profesional grande', nombre: 'LIMPIACRISTALES EXCELERATOR C/GOMA 45 CMS.RF.2338', precio: '38,12 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo limpiar cristales y ventanas sin que queden marcas | Orencio Matas',
+        description: 'Técnica y producto adecuados para limpiar cristales, espejos y ventanas dejándolos transparentes y sin marcas ni rayas.',
+      },
+    },
+
+    'elegir-lija-grano-abrasivo': {
+      slug: 'elegir-lija-grano-abrasivo',
+      title: 'Cómo elegir la lija y el grano adecuado para cada trabajo',
+      description: 'Guía para elegir el tipo de lija y el grano correcto según el trabajo — desde desbastar madera o metal hasta dar el último repaso antes de pintar o barnizar.',
+      category: 'pintura', subcategory: 'Elegir herramientas y consumibles',
+      problem: 'elegir_lija',
+      objective: 'preparar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '5 min para decidir',
+      result: 'La lija y el grano correctos para tu trabajo, sin comprar por prueba y error',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Elegir herramientas y consumibles'],
+      materials: [
+        { fase: 'Selección', familiaSugerida: 'Lijas y abrasivos', items: ['Lija o disco abrasivo del grano adecuado'] },
+      ],
+      receta: [
+        { fase: 'Identificar el trabajo', emoji: '🔍' },
+        { fase: 'Elegir el grano', emoji: '🔢' },
+        { fase: 'Elegir el soporte', emoji: '📄' },
+        { fase: 'Lijar',   emoji: '🖐️' },
+      ],
+      steps: [
+        { n: 1, title: 'Grano bajo (40-80) para desbastar', text: 'Para quitar pintura vieja, óxido superficial grueso o nivelar madera muy irregular, empieza con un grano bajo (40 a 80) — arranca material rápido pero deja la superficie marcada, así que nunca es el último paso.', productos: [] },
+        { n: 2, title: 'Grano medio (100-180) para preparar', text: 'Es el grano más habitual para preparar una superficie antes de pintar o barnizar — suaviza las marcas del grano bajo sin llevarse demasiado material.', productos: [] },
+        { n: 3, title: 'Grano fino (220-400) para el acabado', text: 'Para el último repaso antes de pintar, o entre manos de barniz/pintura, usa un grano fino — deja la superficie lisa al tacto sin marcar la pintura de abajo.', productos: [] },
+        { n: 4, title: 'Grano muy fino (600 en adelante) para pulir', text: 'Se usa sobre todo al agua, para pulir barnices, lacas o pequeñas imperfecciones justo antes del acabado final — es el que menos material arranca.', productos: [] },
+        { n: 5, title: 'Elegir el soporte según la herramienta', text: 'Hoja de lija para lijar a mano, rollo para grandes superficies, y disco (velcro o autoadhesivo) para lijadora orbital o radial — comprueba el diámetro de tu lijadora antes de comprar los discos.', productos: ['Lija o disco abrasivo del grano adecuado'] },
+      ],
+      professionalTips: [
+        'Ve subiendo de grano en pasos, sin saltar demasiado (por ejemplo de 80 a 180, no directamente de 80 a 400) — cada grano necesita quitar las marcas del anterior, y si el salto es muy grande, el más fino no consigue eliminarlas.',
+        'La lija al agua dura más y genera menos polvo que la lija seca en trabajos de pulido fino, aunque hay que mojarla mientras se usa.',
+      ],
+      commonMistakes: [
+        'Usar un único grano para todo el proceso, desde desbastar hasta el acabado.',
+        'Saltar directamente de un grano muy bajo a uno muy alto.',
+        'Comprar discos sin comprobar el diámetro que admite la lijadora.',
+        'No limpiar el polvo entre pasadas de distinto grano.',
+      ],
+      recommendedProducts: [
+        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 080 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
+        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
+        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 060 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Lija al agua para pulido fino', nombre: '.LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972', precio: '1,91 €' },
+      ],
+      relatedSolutions: ['elegir-lijadora-superficie', 'corregir-marcas-lijado'],
+      seo: {
+        title: 'Cómo elegir la lija y el grano adecuado para cada trabajo | Orencio Matas',
+        description: 'Guía para elegir el tipo de lija y el grano correcto, desde desbastar hasta el acabado final, antes de pintar o barnizar.',
+      },
+    },
+
+    'perfumeria-elegir-fragancia-regalo': {
+      slug: 'perfumeria-elegir-fragancia-regalo',
+      title: 'Cómo elegir un perfume o colonia como regalo',
+      description: 'Ideas para acertar con un perfume de regalo según la persona y el momento, con opciones de eau de parfum, eau de toilette y estuches ya preparados para regalar.',
+      category: 'perfumeria', subcategory: 'Elegir fragancia',
+      problem: 'elegir_perfume',
+      objective: 'limpiar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '10 min para decidir',
+      result: 'Un perfume o colonia acertado, con o sin necesidad de envolver para regalo',
+      breadcrumb: ['Centro de Soluciones', 'Perfumería', 'Elegir fragancia'],
+      materials: [
+        { fase: 'Elección', familiaSugerida: 'Colonias', items: ['Eau de parfum o eau de toilette'] },
+      ],
+      receta: [
+        { fase: 'Elegir la intensidad', emoji: '💧' },
+        { fase: 'Elegir el estilo', emoji: '🌸' },
+        { fase: 'Formato regalo', emoji: '🎁' },
+      ],
+      steps: [
+        { n: 1, title: 'Eau de parfum (EDP) para mayor duración', text: 'Tiene mayor concentración de esencia, dura más horas sobre la piel y suele notarse algo más intensa — buena opción por defecto para un regalo, ya que "cunde" más.', productos: ['Eau de parfum o eau de toilette'] },
+        { n: 2, title: 'Eau de toilette (EDT) para un uso más ligero', text: 'Menor concentración, más fresca y ligera — habitual para el día a día o climas cálidos, y suele costar algo menos que un EDP del mismo tamaño.', productos: [] },
+        { n: 3, title: 'Elegir según el estilo de la persona', text: 'Si no conoces bien sus gustos, las fragancias amaderadas o cítricas suelen ser opciones seguras y versátiles; los aromas florales o dulces son más arriesgados si no sabes con certeza que le gustan.', productos: [] },
+        { n: 4, title: 'Formato estuche, listo para regalar', text: 'Si buscas algo ya preparado para regalar sin envolver, hay estuches que combinan el perfume con un formato de viaje o una crema a juego — resuelven el regalo sin más vueltas.', productos: [] },
+      ],
+      professionalTips: [
+        'Si tienes dudas entre dos fragancias, elige la más ligera — es más fácil que guste a más gente, mientras que una fragancia muy intensa puede no ser del gusto de todos.',
+        'Los formatos pequeños o de viaje son una buena opción para un primer regalo, antes de invertir en un frasco grande de una fragancia que la persona no haya probado antes.',
+      ],
+      commonMistakes: [
+        'Elegir una fragancia muy dulce o intensa para alguien de quien no conoces bien los gustos.',
+        'No fijarse en si es EDP o EDT esperando la misma duración en ambos.',
+      ],
+      recommendedProducts: [
+        { nombre: 'TOUS EDP 90 ML.VAP.', categoria: 'Perfumería', formato: '90 ml', precio: '34,17 €' },
+        { nombre: 'SAPHIR ESTUCHE MINI DUPLO 200+30 ML.PERFECT WOMAN', categoria: 'Perfumería', formato: 'Estuche', precio: '13,02 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Para hombre, formato estuche', nombre: 'SAPHIR ESTUCHE MINI DUPLO 200+30 ML.PERFECT MAN', precio: '13,02 €' },
+        { etiqueta: 'Colonia unisex clásica', nombre: 'ALVAREZ GOMEZ LATA EDT.300 ML+EMUL.HID.280 ML.', precio: '18,36 €' },
+      ],
+      relatedSolutions: [],
+      seo: {
+        title: 'Cómo elegir un perfume o colonia como regalo | Orencio Matas',
+        description: 'Guía para acertar con un perfume de regalo: diferencia entre eau de parfum y eau de toilette, estilos seguros y estuches listos para regalar.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -3377,6 +3769,19 @@ window.SOLUCIONES_DATA = (function () {
       'agua_turbia':['piscina', 'turbia', 'algas', 'cloro', 'ph del agua'],
       'choque_piscina': ['choque', 'hipoclorito', 'sobrecloracion', 'sobrecloración', 'cloracion de choque', 'cloración de choque'],
       'cucarachas': ['cucaracha', 'hormiga', 'insecto', 'plaga', 'bicho'],
+      // Frases específicas en vez de palabras sueltas como "cubre" o
+      // "adhiere" (demasiado genéricas, podrían colisionar con cualquier
+      // otra guía de pintura) y "burbujas en la pintura"/"burbujas al
+      // pintar" en vez de "burbuja" a secas — esa palabra suelta ya la
+      // usa 'mal_acabado' para burbujas en BARNIZ de muebles, un
+      // contexto distinto.
+      'pintura_problemas_aplicacion': ['pintura no cubre', 'no cubre bien', 'pintura no se adhiere', 'no se adhiere la pintura', 'se descascarilla', 'descascarillado', 'burbujas en la pintura', 'burbujas al pintar', 'marcas de rodillo', 'marcas de brocha'],
+      'eliminar_grasa': ['grasa'],
+      'cal_bano': ['cal', 'sarro', 'incrustaciones'],
+      'restos_cemento': ['cemento', 'mortero'],
+      'limpiar_cristales': ['cristal', 'cristales', 'ventana', 'ventanas'],
+      'elegir_lija': ['lija', 'grano de lija', 'que lija', 'disco abrasivo'],
+      'elegir_perfume': ['perfume', 'colonia', 'fragancia'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
       // "el suelo de mármol está opaco", disparando este problema en vez
       // de "suelo_opaco" — se queda solo con términos específicos de
