@@ -117,6 +117,9 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'proteger_acabado', label: 'Cómo proteger el acabado tras pintar', solutionSlug: 'proteger-acabado-pintura-nueva' },
     { id: 'elegir_acabado_pintura', label: 'No sé si elegir pintura mate, satinada o brillante', solutionSlug: 'elegir-acabado-pintura-mate-satinado-brillante' },
     { id: 'limpieza_profesional', label: 'Busco consumibles de limpieza para mi negocio', solutionSlug: 'limpieza-profesional-hosteleria-empresas' },
+    { id: 'manchas_grietas_antes_pintar', label: 'Tengo manchas o grietas antes de pintar', solutionSlug: 'manchas-grietas-antes-pintar' },
+    { id: 'humedad_interior', label: 'Tengo humedad en una pared interior', solutionSlug: 'tratar-humedad-interior-pared' },
+    { id: 'limpiar_herramientas', label: 'Cómo limpio las brochas y rodillos', solutionSlug: 'limpiar-herramientas-maquinaria-pintura' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
     { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
     { id: 'tuberia_atascada',  label: 'Tengo una tubería atascada',           solutionSlug: 'desatascar-tuberia' },
@@ -209,6 +212,8 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Elegir la lijadora adecuada',           solutionSlug: 'elegir-lijadora-superficie' },
         { title: 'Elegir la lija y el grano',             solutionSlug: 'elegir-lija-grano-abrasivo' },
         { title: 'La pintura no cubre o no se adhiere',   solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
+        { title: 'Tengo manchas o grietas antes de pintar', solutionSlug: 'manchas-grietas-antes-pintar' },
+        { title: 'Tengo humedad en una pared interior',    solutionSlug: 'tratar-humedad-interior-pared' },
         { title: 'Han salido burbujas al pintar',          solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
         { title: 'Marcas de rodillo o brocha',             solutionSlug: 'solucionar-problemas-pintura-aplicacion' },
         { title: 'Elegir brocha o rodillo',                solutionSlug: 'elegir-brocha-rodillo-pintar' },
@@ -262,10 +267,10 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Eliminar pintura',                     solutionSlug: 'decapar-pintura-mueble' },
         { title: 'Quitar adhesivos',                     solutionSlug: 'quitar-restos-pegamento' },
         { title: 'Quitar silicona',                      solutionSlug: 'sellar-juntas-bano' },
-        { title: 'Limpiar herramientas',                 solutionSlug: 'eliminar-grasa-desengrasar' },
+        { title: 'Limpiar herramientas',                 solutionSlug: 'limpiar-herramientas-maquinaria-pintura' },
         { title: 'Desengrasar piezas',                   solutionSlug: 'eliminar-grasa-desengrasar' },
-        { title: 'Limpiar maquinaria',                   solutionSlug: 'eliminar-grasa-desengrasar' },
-        { title: 'Preparar una superficie',              solutionSlug: 'pintar-plastico-coche' },
+        { title: 'Limpiar maquinaria',                   solutionSlug: 'limpiar-herramientas-maquinaria-pintura' },
+        { title: 'Preparar una superficie',              solutionSlug: 'preparar-pieza-taller-antes-pintar' },
         { title: 'Desatascar una tubería',               solutionSlug: 'desatascar-tuberia' },
         { title: 'Abrillantar un suelo de mármol',        solutionSlug: 'abrillantar-suelo-marmol' },
         { title: 'Quitar una mancha de la ropa',          solutionSlug: 'eliminar-manchas-ropa' },
@@ -4173,6 +4178,161 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Selección de mopas, bayetas, guantes y desinfección para limpieza profesional en hostelería, oficinas y comercios.',
       },
     },
+
+    'manchas-grietas-antes-pintar': {
+      slug: 'manchas-grietas-antes-pintar',
+      title: 'Cómo tratar manchas y grietas antes de pintar una pared',
+      description: 'Sella las manchas (humedad, nicotina, óxido) y las grietas antes de pintar, para que no vuelvan a aparecer a través de la pintura nueva.',
+      category: 'pintura', subcategory: 'Problemas al pintar',
+      problem: 'manchas_grietas_antes_pintar',
+      objective: 'reparar',
+      surface: 'pared',
+      difficulty: 'Media',
+      estimatedTime: '30-60 min + tiempo de secado',
+      result: 'Una superficie sin manchas ni grietas visibles, lista para pintar sin que vuelvan a salir',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Problemas al pintar'],
+      materials: [
+        { fase: 'Grietas',  familiaSugerida: 'Masillas',        items: ['Masilla tapagrietas'] },
+        { fase: 'Manchas',  familiaSugerida: 'Selladores de manchas', items: ['Sellador o pintura antimanchas'] },
+      ],
+      receta: [
+        { fase: 'Identificar', emoji: '🔍' },
+        { fase: 'Reparar grietas', emoji: '🧱' },
+        { fase: 'Sellar manchas', emoji: '🎨' },
+        { fase: 'Pintar',      emoji: '🖌️' },
+      ],
+      steps: [
+        { n: 1, title: 'Rellenar las grietas con masilla', text: 'Aplica masilla tapagrietas con espátula, rellenando bien toda la grieta — en grietas más profundas, puede hacer falta una segunda aplicación tras el primer secado, ya que la masilla se retrae un poco.', productos: ['Masilla tapagrietas'] },
+        { n: 2, title: 'Lijar la masilla una vez seca', text: 'Cuando la masilla esté completamente seca, lija la zona para dejarla a ras con el resto de la pared — si pintas sobre masilla sin lijar, se nota el relieve.', productos: [] },
+        { n: 3, title: 'Sellar las manchas antes de pintar', text: 'Las manchas de humedad, nicotina, óxido o rotulador NO desaparecen solo con pintar encima — sin un sellador o pintura antimanchas específica, acaban traspasando la pintura nueva al cabo de un tiempo.', productos: ['Sellador o pintura antimanchas'] },
+        { n: 4, title: 'Dejar secar antes de pintar el color', text: 'Respeta el tiempo de secado del sellador antimanchas indicado en el envase antes de aplicar la pintura definitiva.', productos: [] },
+      ],
+      professionalTips: [
+        'Si la mancha es de humedad, sella primero la CAUSA de la humedad (una gotera, condensación...) — si no, la mancha puede volver a aparecer aunque hayas sellado bien la superficie.',
+        'Un sellador antimanchas en spray es más rápido para manchas puntuales pequeñas; en superficies grandes, aplicarlo con brocha o rodillo cunde más.',
+      ],
+      commonMistakes: [
+        'Pintar directamente sobre una mancha sin sellarla antes, esperando que la pintura la tape para siempre.',
+        'Pintar sobre masilla sin lijarla antes, dejando relieve visible.',
+        'No resolver la causa real de una mancha de humedad antes de sellarla.',
+      ],
+      recommendedProducts: [
+        { nombre: 'BAIXENS B-18C MASILLA TAPAGRIETAS CART.310 ML.', categoria: 'Pintura', formato: '310 ml', precio: '1,98 €' },
+        { nombre: 'TITAN PINTURA ANTIMANCHAS H24 750 ML.BLANCO MATE', categoria: 'Pintura', formato: '750 ml', precio: '18,25 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Sellador de manchas en spray', nombre: 'XYLAZEL SPRAY ANTIMANCHAS PAREDES/TECHOS 500', precio: '11,35 €' },
+        { etiqueta: 'Masilla para exterior', nombre: 'BAIXENS B-33C MASILLA TAPAGRIETAS EXTERIOR CAT.310', precio: '2,99 €' },
+      ],
+      relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'pintar-pared-interior'],
+      seo: {
+        title: 'Cómo tratar manchas y grietas antes de pintar una pared | Orencio Matas',
+        description: 'Guía para sellar manchas de humedad, nicotina u óxido y rellenar grietas antes de pintar, evitando que reaparezcan.',
+      },
+    },
+
+    'tratar-humedad-interior-pared': {
+      slug: 'tratar-humedad-interior-pared',
+      title: 'Cómo tratar la humedad de una pared interior',
+      description: 'Identifica el tipo de humedad de una pared interior y trátala con el producto adecuado antes de pintar, para que no vuelva a salir la mancha.',
+      category: 'pintura', subcategory: 'Humedad y moho',
+      problem: 'humedad_interior',
+      objective: 'reparar',
+      surface: 'pared',
+      difficulty: 'Media',
+      estimatedTime: '1-2 h + tiempo de secado',
+      result: 'Pared seca y tratada, con menos probabilidad de que la mancha vuelva a salir',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Humedad y moho'],
+      materials: [
+        { fase: 'Secado',    familiaSugerida: 'Deshumidificadores', items: ['Absorbente de humedad'] },
+        { fase: 'Tratamiento', familiaSugerida: 'Pinturas antihumedad', items: ['Pintura antihumedad'] },
+      ],
+      receta: [
+        { fase: 'Identificar el origen', emoji: '🔍' },
+        { fase: 'Secar la zona', emoji: '💨' },
+        { fase: 'Aplicar antihumedad', emoji: '🎨' },
+        { fase: 'Pintar',      emoji: '🖌️' },
+      ],
+      steps: [
+        { n: 1, title: 'Diferenciar el tipo de humedad', text: 'La condensación (típica en baños y cocinas mal ventilados) aparece y desaparece con la ventilación; una humedad por filtración o capilaridad deja mancha permanente y no depende de la ventilación diaria — el tratamiento no es el mismo en ambos casos.', productos: [] },
+        { n: 2, title: 'Mejorar la ventilación si es condensación', text: 'Si es condensación, ventilar más la estancia y, si es posible, usar un absorbente de humedad ambiental reduce mucho el problema antes de tocar la pared.', productos: ['Absorbente de humedad'] },
+        { n: 3, title: 'Dejar secar bien la pared antes de tratarla', text: 'Antes de aplicar cualquier producto, la pared debe estar seca al tacto — tratar sobre una pared aún húmeda reduce mucho la eficacia del producto.', productos: [] },
+        { n: 4, title: 'Aplicar una pintura o sellador antihumedad', text: 'Una pintura antihumedad sella la superficie y dificulta que la mancha vuelva a traspasar — aplícala siguiendo las manos indicadas en el envase antes de pintar el color final.', productos: ['Pintura antihumedad'] },
+      ],
+      professionalTips: [
+        'Si la mancha de humedad reaparece al poco tiempo pese a haber tratado la pared, es una señal de que el origen (filtración, capilaridad, una tubería) sigue sin resolverse — ningún producto de pintura soluciona una fuga de agua real.',
+        'Ventilar 10-15 minutos al día, aunque haga frío, reduce mucho la condensación en baños y cocinas sin gastar en ningún producto.',
+      ],
+      commonMistakes: [
+        'Aplicar pintura antihumedad sobre una pared todavía húmeda.',
+        'Tratar solo la mancha visible sin mejorar la ventilación cuando la causa es condensación.',
+        'Confundir una humedad por filtración con condensación y aplicar el tratamiento equivocado.',
+      ],
+      recommendedProducts: [
+        { nombre: 'PINTURA ANTIHUMEDAD KOLMAN 750 ML.', categoria: 'Pintura', formato: '750 ml', precio: '10,93 €' },
+        { nombre: 'SECADRY ANTIHUMEDAD 450 GRS.APARATO', categoria: 'Droguería', formato: '450 g', precio: '4,83 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Formato grande de pintura antihumedad', nombre: 'TITAN ANTIHUMEDAD D14 4 L.BLANCO MATE', precio: '47,84 €' },
+        { etiqueta: 'Recambio del absorbente de humedad', nombre: 'SECADRY ANTIHUMEDAD 450 GRS.RECAMBIO', precio: '2,86 €' },
+      ],
+      relatedSolutions: ['eliminar-moho-pared-antes-pintar', 'manchas-grietas-antes-pintar'],
+      seo: {
+        title: 'Cómo tratar la humedad de una pared interior | Orencio Matas',
+        description: 'Guía para identificar el tipo de humedad de una pared interior y tratarla antes de pintar con el producto adecuado.',
+      },
+    },
+
+    'limpiar-herramientas-maquinaria-pintura': {
+      slug: 'limpiar-herramientas-maquinaria-pintura',
+      title: 'Cómo limpiar brochas, rodillos y herramientas después de pintar',
+      description: 'Limpia correctamente brochas, rodillos y otras herramientas de pintura al terminar el trabajo, para que se puedan reutilizar en vez de tirarlas.',
+      category: 'limpieza', subcategory: 'Desengrasado',
+      problem: 'limpiar_herramientas',
+      objective: 'limpiar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '10-15 min',
+      result: 'Herramientas limpias y listas para volver a usarse',
+      breadcrumb: ['Centro de Soluciones', 'Limpieza y droguería', 'Desengrasado'],
+      materials: [
+        { fase: 'Limpieza', familiaSugerida: 'Disolventes', items: ['Disolvente o agua, según el tipo de pintura'] },
+        { fase: 'Escurrido', familiaSugerida: 'Útiles de limpieza', items: ['Batidor limpia-rodillos'] },
+      ],
+      receta: [
+        { fase: 'Retirar el exceso', emoji: '🎨' },
+        { fase: 'Limpiar',   emoji: '🧴' },
+        { fase: 'Escurrir',  emoji: '💧' },
+        { fase: 'Secar',     emoji: '☀️' },
+      ],
+      steps: [
+        { n: 1, title: 'Retirar el exceso de pintura antes de limpiar', text: 'Pasa la brocha o el rodillo sobre papel o cartón para retirar la mayor cantidad de pintura posible antes de empezar a limpiar — así gastas mucho menos producto de limpieza.', productos: [] },
+        { n: 2, title: 'Limpiar con agua o disolvente según el tipo de pintura', text: 'Si la pintura era al agua (plástica), basta con agua templada y algo de jabón. Si era al disolvente (esmalte sintético), necesitas disolvente o aguarrás — el agua sola no la disuelve.', productos: ['Disolvente o agua, según el tipo de pintura'] },
+        { n: 3, title: 'Escurrir bien el rodillo', text: 'Un batidor o clip limpia-rodillos ayuda a escurrir el agua o disolvente sobrante girando la herramienta — deja el rodillo mucho más seco que escurriendo solo con la mano.', productos: ['Batidor limpia-rodillos'] },
+        { n: 4, title: 'Dejar secar bien antes de guardar', text: 'Deja secar la brocha o el rodillo al aire antes de guardarlos — guardarlos húmedos favorece que se deformen o les salga moho.', productos: [] },
+      ],
+      professionalTips: [
+        'Peina las cerdas de la brocha con los dedos bajo el grifo hasta que salga el agua limpia — es la forma más fiable de comprobar que ya no queda pintura dentro.',
+        'Guarda las brochas colgadas o planas, nunca apoyadas sobre las cerdas — deformarlas acorta mucho su vida útil.',
+      ],
+      commonMistakes: [
+        'Intentar limpiar pintura al disolvente solo con agua.',
+        'Guardar las herramientas todavía húmedas.',
+        'No retirar el exceso de pintura antes de empezar a limpiar, gastando mucho más producto del necesario.',
+      ],
+      recommendedProducts: [
+        { nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', categoria: 'Pintura', formato: '1 L', precio: '3,75 €' },
+        { nombre: 'BATIDOR Y LIMPIA RODILLOS PENTRILO CLIP 8', categoria: 'Herramientas', formato: 'Unidad', precio: '4,57 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Aguarrás para pintura sintética', nombre: 'AGUARRAS PINO KELSIA 500 ML.', precio: '1,75 €' },
+      ],
+      relatedSolutions: ['elegir-brocha-rodillo-pintar', 'elegir-disolvente-diluir-pintura'],
+      seo: {
+        title: 'Cómo limpiar brochas, rodillos y herramientas después de pintar | Orencio Matas',
+        description: 'Guía para limpiar correctamente brochas, rodillos y herramientas de pintura tras el trabajo, según el tipo de pintura usada.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -4374,6 +4534,9 @@ window.SOLUCIONES_DATA = (function () {
       'proteger_acabado': ['proteger el acabado', 'proteger la pintura nueva'],
       'elegir_acabado_pintura': ['pintura mate', 'pintura satinada', 'pintura brillante', 'acabado mate', 'acabado satinado', 'acabado brillante'],
       'limpieza_profesional': ['limpieza profesional', 'hosteleria', 'hostelería', 'consumibles de limpieza', 'limpieza para empresas'],
+      'manchas_grietas_antes_pintar': ['grieta', 'grietas', 'mancha antes de pintar', 'manchas antes de pintar', 'mancha de nicotina'],
+      'humedad_interior': ['humedad', 'pared con humedad', 'mancha de humedad', 'humedad en una pared'],
+      'limpiar_herramientas': ['brochas y rodillos', 'limpiar la brocha', 'limpiar el rodillo', 'limpieza de pinceles'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
       // "el suelo de mármol está opaco", disparando este problema en vez
       // de "suelo_opaco" — se queda solo con términos específicos de
