@@ -120,6 +120,8 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'manchas_grietas_antes_pintar', label: 'Tengo manchas o grietas antes de pintar', solutionSlug: 'manchas-grietas-antes-pintar' },
     { id: 'humedad_interior', label: 'Tengo humedad en una pared interior', solutionSlug: 'tratar-humedad-interior-pared' },
     { id: 'limpiar_herramientas', label: 'Cómo limpio las brochas y rodillos', solutionSlug: 'limpiar-herramientas-maquinaria-pintura' },
+    { id: 'elegir_pintura_superficie', label: 'No sé qué pintura elegir según la superficie', solutionSlug: 'elegir-pintura-segun-superficie-metal-madera-exterior' },
+    { id: 'material_desechable_taller', label: 'Necesito protección desechable para el taller', solutionSlug: 'material-desechable-proteccion-taller' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
     { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
     { id: 'tuberia_atascada',  label: 'Tengo una tubería atascada',           solutionSlug: 'desatascar-tuberia' },
@@ -185,6 +187,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'La pistola no pulveriza bien',          solutionSlug: 'problemas-pulverizacion-pistola' },
         { title: 'Problemas de cobertura al pintar con pistola', solutionSlug: 'problemas-pulverizacion-pistola' },
         { title: 'Proteger el acabado tras pintar',       solutionSlug: 'proteger-acabado-pintura-nueva' },
+        { title: 'Material desechable de protección para el taller', solutionSlug: 'material-desechable-proteccion-taller' },
       ],
     },
     {
@@ -219,6 +222,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Elegir brocha o rodillo',                solutionSlug: 'elegir-brocha-rodillo-pintar' },
         { title: 'Elegir disolvente o diluir la pintura',   solutionSlug: 'elegir-disolvente-diluir-pintura' },
         { title: 'Elegir entre mate, satinado o brillante', solutionSlug: 'elegir-acabado-pintura-mate-satinado-brillante' },
+        { title: 'Qué pintura elegir según la superficie', solutionSlug: 'elegir-pintura-segun-superficie-metal-madera-exterior' },
         { title: 'Hidrofugar una fachada de piedra',       solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
         { title: 'Reparar grietas en una fachada',         solutionSlug: 'reparar-fisuras-fachada-hormigon' },
         { title: 'Tratar salitre o humedad por capilaridad', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
@@ -4333,6 +4337,114 @@ window.SOLUCIONES_DATA = (function () {
         description: 'Guía para limpiar correctamente brochas, rodillos y herramientas de pintura tras el trabajo, según el tipo de pintura usada.',
       },
     },
+
+    'elegir-pintura-segun-superficie-metal-madera-exterior': {
+      slug: 'elegir-pintura-segun-superficie-metal-madera-exterior',
+      title: 'Qué pintura elegir según la superficie: metal, madera o fachada',
+      description: 'Selector rápido para saber qué tipo de pintura necesitas según sobre qué vas a pintar — metal con antioxidante, madera con barniz, o fachada exterior con pintura hidrófuga.',
+      category: 'pintura', subcategory: 'Elegir pintura y disolventes',
+      problem: 'elegir_pintura_superficie',
+      objective: 'preparar',
+      surface: 'otro',
+      difficulty: 'Fácil',
+      estimatedTime: '5 min para decidir',
+      result: 'La pintura correcta para tu superficie, sin comprar por prueba y error',
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Elegir pintura y disolventes'],
+      materials: [
+        { fase: 'Selección', familiaSugerida: 'Pintura', items: ['Pintura según la superficie'] },
+      ],
+      receta: [
+        { fase: 'Metal',   emoji: '🔩' },
+        { fase: 'Madera',  emoji: '🪵' },
+        { fase: 'Fachada', emoji: '🧱' },
+      ],
+      steps: [
+        { n: 1, title: 'Metal o hierro: esmalte antioxidante', text: 'Sobre metal o hierro (verjas, barandillas, mobiliario metálico), usa un esmalte con protección antioxidante — muchos son "3 en 1" (imprimación + color + protección en un solo producto), pensados para aplicar directamente incluso sobre algo de óxido superficial.', productos: ['Pintura según la superficie'] },
+        { n: 2, title: 'Madera exterior: barniz con protección UV', text: 'En madera de exterior (puertas, ventanas, mobiliario de jardín), un barniz con filtro UV protege también frente al sol, que es lo que más degrada la madera exterior con el tiempo, además de la humedad.', productos: [] },
+        { n: 3, title: 'Fachada: pintura hidrófuga transpirable', text: 'En fachadas, una pintura hidrófuga repele el agua de lluvia mientras deja "respirar" el muro (transpirable) — evita que se quede humedad atrapada dentro de la pared.', productos: [] },
+      ],
+      professionalTips: [
+        'En metal con óxido ya visible, retira primero el óxido suelto con un cepillo o lija antes de pintar — el antioxidante frena que avance, pero no sustituye una limpieza previa de lo que ya está muy oxidado.',
+        'Un barniz o pintura de exterior con más manos de las mínimas indicadas dura más años sin necesidad de repintar — no compensa ahorrar una mano en superficies muy expuestas al sol o la lluvia.',
+      ],
+      commonMistakes: [
+        'Usar una pintura de interior en una superficie de exterior, que se degrada mucho antes con el sol y la lluvia.',
+        'Pintar metal oxidado sin retirar antes el óxido suelto.',
+        'Usar un barniz sin filtro UV en madera muy expuesta al sol.',
+      ],
+      recommendedProducts: [
+        { nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', categoria: 'Pintura', formato: '750 ml', precio: '17,67 €' },
+        { nombre: 'BARNIZ TITAN INTEMP. BRILLO 750 ML.INCOL.', categoria: 'Pintura', formato: '750 ml', precio: '14,13 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Esmalte antioxidante efecto martelé', nombre: 'OXIRON MARTELE 750 ML BLANCO (2966)', precio: '18,39 €' },
+        { etiqueta: 'Pintura hidrófuga de fachadas', nombre: 'O.MATAS PINT.HIDRAFUGA FACHADAS 20 L.INVISIBLE', precio: '89,41 €' },
+      ],
+      // Selector interactivo: elige sobre qué va a pintar y se le
+      // recomienda la pintura real correspondiente.
+      selectorSuperficie: {
+        pregunta: '¿Sobre qué vas a pintar?',
+        opciones: [
+          { id: 'metal', label: 'Metal o hierro (verjas, barandillas, mobiliario)', nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', motivo: 'Esmalte "3 en 1": imprimación, color y protección antioxidante en un solo producto, aplicable incluso sobre algo de óxido superficial.' },
+          { id: 'madera_exterior', label: 'Madera de exterior (puertas, ventanas, mobiliario de jardín)', nombre: 'BARNIZ TITAN INTEMP. BRILLO 750 ML.INCOL.', motivo: 'Barniz de intemperie: protege frente al sol y la humedad, las dos causas principales de deterioro de la madera exterior.' },
+          { id: 'fachada', label: 'Fachada exterior', nombre: 'O.MATAS PINT.HIDRAFUGA FACHADAS 20 L.INVISIBLE', motivo: 'Pintura hidrófuga: repele el agua de lluvia dejando que el muro siga transpirando, evitando que se quede humedad atrapada dentro.' },
+        ],
+      },
+      relatedSolutions: ['eliminar-oxido-metal', 'proteger-madera-exterior', 'pintar-fachada-exterior'],
+      seo: {
+        title: 'Qué pintura elegir según la superficie: metal, madera o fachada | Orencio Matas',
+        description: 'Selector para elegir la pintura correcta según la superficie: antioxidante para metal, barniz UV para madera exterior, hidrófuga para fachada.',
+      },
+    },
+
+    'material-desechable-proteccion-taller': {
+      slug: 'material-desechable-proteccion-taller',
+      title: 'Material desechable y de protección para trabajar en el taller',
+      description: 'Monos desechables, guantes y demás material de protección de un solo uso para trabajar con pintura y productos químicos en el taller.',
+      category: 'coche', subcategory: 'Herramientas de pintor',
+      problem: 'material_desechable_taller',
+      objective: 'preparar',
+      surface: 'coche',
+      difficulty: 'Fácil',
+      estimatedTime: '5 min para decidir',
+      result: 'Protección adecuada de un solo uso para trabajar con pintura y productos químicos',
+      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Herramientas de pintor'],
+      materials: [
+        { fase: 'Protección corporal', familiaSugerida: 'Ropa desechable', items: ['Mono desechable'] },
+        { fase: 'Manos',   familiaSugerida: 'Guantes',                items: ['Guantes desechables'] },
+      ],
+      receta: [
+        { fase: 'Cuerpo',  emoji: '🦺' },
+        { fase: 'Manos',   emoji: '🧤' },
+        { fase: 'Vías respiratorias', emoji: '😷' },
+      ],
+      steps: [
+        { n: 1, title: 'Mono desechable para trabajos con pintura o químicos', text: 'Un mono desechable protege la ropa y la piel de salpicaduras al pintar con pistola o manipular productos químicos — elige la talla adecuada para que no queden zonas sin cubrir en los movimientos.', productos: ['Mono desechable'] },
+        { n: 2, title: 'Guantes desechables para manipulación', text: 'Cambia los guantes con frecuencia durante el trabajo — unos guantes rotos o muy sucios ya no protegen igual, y en formato caja siempre tienes recambio a mano.', productos: ['Guantes desechables'] },
+        { n: 3, title: 'Protección de vías respiratorias al pulverizar', text: 'Al trabajar con pistola de pintar o disolventes, una mascarilla o careta con el filtro adecuado protege frente a los vapores — no todos los filtros sirven para todos los productos, comprueba que sea el indicado para pintura/disolventes.', productos: [] },
+      ],
+      professionalTips: [
+        'Ten siempre un mono y un par de guantes de repuesto a mano — cambiar de EPI a mitad de un trabajo por tener uno roto es mucho más incómodo que prevenirlo.',
+        'Los monos desechables de mayor categoría de protección son algo más caros pero se notan mucho en comodidad y durabilidad durante jornadas largas de trabajo.',
+      ],
+      commonMistakes: [
+        'Reutilizar un mono o guantes desechables varias veces cuando ya están rotos o muy sucios.',
+        'No usar protección respiratoria adecuada al pulverizar con pistola.',
+        'Comprar una talla de mono demasiado ajustada, que se rompe con los movimientos.',
+      ],
+      recommendedProducts: [
+        { nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-L', categoria: 'Talleres', formato: 'Talla L', precio: '8,71 €' },
+        { nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', categoria: 'Protección personal', formato: '50 uds', precio: '20,27 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Talla M del mono desechable', nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-M', precio: '8,71 €' },
+      ],
+      relatedSolutions: ['problemas-pulverizacion-pistola', 'elegir-pistola-pintar'],
+      seo: {
+        title: 'Material desechable y de protección para trabajar en el taller | Orencio Matas',
+        description: 'Guía de monos desechables, guantes y protección respiratoria para trabajar con pintura y productos químicos en el taller.',
+      },
+    },
   };
 
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
@@ -4537,6 +4649,8 @@ window.SOLUCIONES_DATA = (function () {
       'manchas_grietas_antes_pintar': ['grieta', 'grietas', 'mancha antes de pintar', 'manchas antes de pintar', 'mancha de nicotina'],
       'humedad_interior': ['humedad', 'pared con humedad', 'mancha de humedad', 'humedad en una pared'],
       'limpiar_herramientas': ['brochas y rodillos', 'limpiar la brocha', 'limpiar el rodillo', 'limpieza de pinceles'],
+      'elegir_pintura_superficie': ['que pintura elegir', 'qué pintura elegir', 'pintura antioxidante', 'pintura para metal', 'pintura para madera'],
+      'material_desechable_taller': ['mono desechable', 'material desechable', 'proteccion desechable', 'protección desechable'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
       // "el suelo de mármol está opaco", disparando este problema en vez
       // de "suelo_opaco" — se queda solo con términos específicos de
