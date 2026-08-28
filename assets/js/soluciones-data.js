@@ -3546,6 +3546,19 @@ window.SOLUCIONES_DATA = (function () {
       alternativeProducts: [
         { etiqueta: 'Lija al agua para pulido fino', nombre: '.LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972', precio: '1,91 €' },
       ],
+      // Selector interactivo: el usuario elige qué va a hacer y se le
+      // muestra la lija/disco real del grano correspondiente, en vez de
+      // tener que traducir él mismo la explicación de grano bajo/medio/
+      // fino/muy fino de los pasos de arriba a un producto concreto.
+      selectorSuperficie: {
+        pregunta: '¿Qué necesitas hacer?',
+        opciones: [
+          { id: 'desbastar', label: 'Desbastar (quitar pintura vieja, óxido grueso, nivelar)', nombre: 'LIJA TELA PLIEGO GRANO 2 (60) PENTRILO', motivo: 'Grano bajo (60): arranca material rápido para desbastar — nunca es el último paso, deja marca.' },
+          { id: 'preparar', label: 'Preparar antes de pintar o barnizar', nombre: 'LIJA PAPEL IMPERMEABLE PLIEGO GRANO 150 PENTRILO', motivo: 'Grano medio (150): suaviza las marcas del desbastado sin llevarse demasiado material — el más habitual antes de pintar.' },
+          { id: 'acabado', label: 'Último repaso antes de pintar, o entre manos', nombre: 'LIJA PAPEL IMPERMEABLE GRANO 320 PENTRILO', motivo: 'Grano fino (320): deja la superficie lisa al tacto sin marcar la pintura o el barniz de abajo.' },
+          { id: 'pulir', label: 'Pulir barniz, laca o pequeñas imperfecciones', nombre: 'LIJA PAPEL IMPERMEABLE GRANO 800 PENTRILO', motivo: 'Grano muy fino (800), para usar al agua: el que menos material arranca, pensado para pulir el acabado final.' },
+        ],
+      },
       relatedSolutions: ['elegir-lijadora-superficie', 'corregir-marcas-lijado'],
       seo: {
         title: 'Cómo elegir la lija y el grano adecuado para cada trabajo | Orencio Matas',
@@ -3711,6 +3724,16 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Film con cinta incorporada', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', precio: '3,07 €' },
         { etiqueta: 'Cinta de perfilar de precisión', nombre: '.CINTA PERFILAR BESA 12 MM. X 55 M.', precio: '11,53 €' },
       ],
+      // Selector interactivo: elige qué va a proteger y se le muestra el
+      // producto real más adecuado para esa zona concreta.
+      selectorSuperficie: {
+        pregunta: '¿Qué vas a proteger?',
+        opciones: [
+          { id: 'perfiles', label: 'Perfiles, molduras o un corte muy preciso', nombre: '.CINTA PERFILAR BESA 12 MM. X 55 M.', motivo: 'Cinta estrecha de precisión: pensada para conseguir un corte de pintura muy limpio en perfiles y molduras.' },
+          { id: 'paneles', label: 'Paneles de carrocería o superficies planas grandes', nombre: '.PAPEL ENMASCARAR ZAPHIRO PREMIUM 110 CM X 300 M.', motivo: 'Papel ancho, la opción habitual para cubrir superficies planas grandes al pintar con pistola.' },
+          { id: 'irregular', label: 'El resto del vehículo o una zona irregular', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', motivo: 'El film se adapta mejor que el papel a formas irregulares, y ya lleva la cinta incorporada.' },
+        ],
+      },
       relatedSolutions: ['pintar-plastico-coche', 'elegir-pistola-pintar'],
       seo: {
         title: 'Cómo elegir la cinta y el papel de enmascarar antes de pintar | Orencio Matas',
