@@ -903,7 +903,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       relatedSolutions: ['mantenimiento-piscina'],
       seo: {
-        title: 'Cómo calcular la dosis de hipoclorito para un choque de cloro en la piscina | Orencio Matas',
+        title: 'Dosis de hipoclorito para el choque de cloro | Orencio Matas',
         description: 'Calculadora de dosis de hipoclorito de sodio para piscinas: introduce los m³ o las medidas de tu piscina y la concentración de tu garrafa para el mantenimiento o la cloración de choque.',
       },
     },
@@ -3305,7 +3305,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       relatedSolutions: ['pintar-pared-interior', 'eliminar-moho-pared-antes-pintar'],
       seo: {
-        title: 'Por qué la pintura no cubre, no se adhiere o hace burbujas — solución | Orencio Matas',
+        title: 'Por qué la pintura no cubre o no se adhiere | Orencio Matas',
         description: 'Diagnóstico y solución para los problemas más frecuentes al pintar: falta de cubrición, mala adherencia, descascarillado, burbujas y marcas de rodillo o brocha.',
       },
     },
@@ -3596,7 +3596,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Fácil',
       estimatedTime: '10 min para decidir',
       result: 'Un perfume o colonia acertado, con o sin necesidad de envolver para regalo',
-      breadcrumb: ['Centro de Soluciones', 'Perfumería', 'Elegir fragancia'],
+      breadcrumb: ['Centro de Soluciones', 'Perfumería y cuidado personal', 'Elegir fragancia'],
       materials: [
         { fase: 'Elección', familiaSugerida: 'Colonias', items: ['Eau de parfum o eau de toilette'] },
       ],
@@ -3711,7 +3711,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Fácil',
       estimatedTime: '10-20 min de enmascarado',
       result: 'Zonas protegidas correctamente, con un corte de pintura limpio y sin que se cuele producto por debajo',
-      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Preparación y enmascarado'],
+      breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Preparación y enmascarado'],
       materials: [
         { fase: 'Enmascarado', familiaSugerida: 'Productos de enmascarado', items: ['Cinta de carrocero', 'Papel o film de enmascarar'] },
       ],
@@ -3771,7 +3771,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Media',
       estimatedTime: '30-60 min por panel',
       result: 'Brillo uniforme, sin remolinos ni marcas visibles bajo el sol',
-      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Pulido y acabado'],
+      breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Pulido y acabado'],
       materials: [
         { fase: 'Pulido fino',  familiaSugerida: 'Pulimentos',       items: ['Pulimento fino (paso 2)'] },
         { fase: 'Aplicación',   familiaSugerida: 'Boinas de pulido', items: ['Boina de pulido fina'] },
@@ -3861,7 +3861,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'pintar-pared-interior'],
       seo: {
-        title: 'Cómo elegir el disolvente adecuado y diluir la pintura correctamente | Orencio Matas',
+        title: 'Cómo elegir el disolvente y diluir la pintura | Orencio Matas',
         description: 'Guía para elegir disolvente según el tipo de pintura y diluir sin perjudicar la cubrición ni el color.',
       },
     },
@@ -3877,7 +3877,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Fácil',
       estimatedTime: '5 min para decidir',
       result: 'Los productos de higiene y cuidado adecuados para el uso diario',
-      breadcrumb: ['Centro de Soluciones', 'Perfumería', 'Higiene y cuidado personal'],
+      breadcrumb: ['Centro de Soluciones', 'Perfumería y cuidado personal', 'Higiene y cuidado personal'],
       materials: [
         { fase: 'Selección', familiaSugerida: 'Higiene personal', items: ['Gel de ducha o baño', 'Crema corporal o facial'] },
       ],
@@ -3909,7 +3909,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       relatedSolutions: ['perfumeria-elegir-fragancia-regalo'],
       seo: {
-        title: 'Productos de higiene personal y cuidado corporal para el día a día | Orencio Matas',
+        title: 'Higiene personal y cuidado corporal | Orencio Matas',
         description: 'Selección de gel de ducha, crema corporal y cuidado facial para la higiene y el cuidado diario.',
       },
     },
@@ -3925,7 +3925,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Media',
       estimatedTime: '45-90 min según el estado de la pieza',
       result: 'Una pieza lista para pintar, con buena adherencia y sin defectos que luego se vean en la pintura',
-      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Preparación y enmascarado'],
+      breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Preparación y enmascarado'],
       materials: [
         { fase: 'Desengrasado', familiaSugerida: 'Desengrasantes',       items: ['Desengrasante'] },
         { fase: 'Lijado',       familiaSugerida: 'Abrasivos',            items: ['Lija de grano medio'] },
@@ -3980,7 +3980,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Media',
       estimatedTime: '15-30 min de diagnóstico',
       result: 'Una pulverización uniforme y una cobertura correcta con la pistola',
-      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Herramientas de pintor'],
+      breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Herramientas de pintor'],
       materials: [
         { fase: 'Limpieza',  familiaSugerida: 'Diluyentes',      items: ['Diluyente para limpiar la pistola'] },
         { fase: 'Filtrado',  familiaSugerida: 'Filtros y consumibles', items: ['Filtro de pintura'] },
@@ -4033,7 +4033,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Fácil',
       estimatedTime: '20-30 min + tiempo de curado',
       result: 'Un acabado protegido, con brillo uniforme y mayor duración frente al desgaste diario',
-      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Pulido y acabado'],
+      breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Pulido y acabado'],
       materials: [
         { fase: 'Acabado',   familiaSugerida: 'Lacas',   items: ['Laca de acabado'] },
         { fase: 'Protección', familiaSugerida: 'Ceras y selladores', items: ['Cera o sellador de protección'] },
@@ -4408,7 +4408,7 @@ window.SOLUCIONES_DATA = (function () {
       difficulty: 'Fácil',
       estimatedTime: '5 min para decidir',
       result: 'Protección adecuada de un solo uso para trabajar con pintura y productos químicos',
-      breadcrumb: ['Centro de Soluciones', 'Carrocería y taller', 'Herramientas de pintor'],
+      breadcrumb: ['Centro de Soluciones', 'Coche y carrocería', 'Herramientas de pintor'],
       materials: [
         { fase: 'Protección corporal', familiaSugerida: 'Ropa desechable', items: ['Mono desechable'] },
         { fase: 'Manos',   familiaSugerida: 'Guantes',                items: ['Guantes desechables'] },
