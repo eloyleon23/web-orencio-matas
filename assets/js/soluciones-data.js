@@ -97,6 +97,7 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'moho_antes_pintar', label: 'Tengo moho y quiero pintar encima', solutionSlug: 'eliminar-moho-pared-antes-pintar' },
     { id: 'moho_general',  label: 'Tengo moho en la pared o azulejos y solo quiero limpiarlo', solutionSlug: 'limpiar-moho-pared-azulejo' },
     { id: 'agua_turbia',   label: 'El agua de la piscina está turbia',    solutionSlug: 'mantenimiento-piscina' },
+    { id: 'choque_piscina', label: 'Tengo que hacer un tratamiento de choque en la piscina', solutionSlug: 'tratamiento-choque-piscina' },
     { id: 'cucarachas',    label: 'Tengo cucarachas u hormigas',          solutionSlug: 'control-plagas-cocina' },
     { id: 'suelo_deteriorado', label: 'El suelo del garaje está deteriorado', solutionSlug: 'suelo-epoxi-garaje' },
     { id: 'pared_deteriorada', label: 'Quiero cambiar el color de una pared',  solutionSlug: 'pintar-pared-interior' },
@@ -274,6 +275,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Clorar correctamente la piscina',      solutionSlug: 'mantenimiento-piscina' },
         { title: 'Preparar la piscina para el verano',  solutionSlug: 'mantenimiento-piscina' },
         { title: 'Invernar la piscina',                  solutionSlug: 'mantenimiento-piscina' },
+        { title: 'Hacer un tratamiento de choque con hipoclorito', solutionSlug: 'tratamiento-choque-piscina' },
       ],
     },
     {
@@ -308,6 +310,7 @@ window.SOLUCIONES_DATA = (function () {
     { slug: 'sellar-juntas-bano',        title: 'Cómo sellar una junta de baño o cocina',         difficulty: 'Fácil', estimatedTime: '30-45 min + secado', emoji: '🧷' },
     { slug: 'suelo-epoxi-garaje',        title: 'Cómo pintar el suelo del garaje con epoxi',      difficulty: 'Media', estimatedTime: '1 día + curado',  emoji: '🅿️' },
     { slug: 'mantenimiento-piscina',     title: 'Cómo equilibrar el agua de la piscina',          difficulty: 'Fácil', estimatedTime: '30 min semanales', emoji: '🏊' },
+    { slug: 'tratamiento-choque-piscina', title: 'Cómo hacer un tratamiento de choque con hipoclorito', difficulty: 'Fácil', estimatedTime: '15-20 min + reposo', emoji: '🏊' },
     { slug: 'control-plagas-cocina',     title: 'Cómo eliminar cucarachas y hormigas',            difficulty: 'Fácil', estimatedTime: 'Resultado en 1-2 semanas', emoji: '🐜' },
     { slug: 'pintar-pared-interior',     title: 'Cómo pintar una pared por dentro',               difficulty: 'Fácil', estimatedTime: '1 día (2 manos)', emoji: '🎨' },
     { slug: 'desatascar-tuberia',        title: 'Cómo desatascar una tubería',                    difficulty: 'Fácil', estimatedTime: '15-30 min', emoji: '🚽' },
@@ -777,10 +780,78 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Todo en uno',       nombre: 'Astralpool Inverlong Dosificador Flotante Todo en 1', precio: '15,44 €' },
         { etiqueta: 'Opción profesional/comunidad', nombre: 'CTX 15 REDUCTOR PH PROF.20 L.73670', precio: '35,07 €' },
       ],
-      relatedSolutions: [],
+      relatedSolutions: ['tratamiento-choque-piscina'],
       seo: {
         title: 'Cómo mantener el agua de la piscina en buen estado | Orencio Matas',
         description: 'Guía de mantenimiento de piscinas: cómo medir y ajustar el pH, clorar correctamente y prevenir la aparición de algas.',
+      },
+    },
+
+    'tratamiento-choque-piscina': {
+      slug: 'tratamiento-choque-piscina',
+      title: 'Cómo hacer un tratamiento de choque en la piscina con hipoclorito de sodio',
+      description: 'Calcula la dosis exacta de hipoclorito de sodio líquido según los metros cúbicos de tu piscina y la concentración de tu garrafa (10 o 20 L), tanto para el mantenimiento diario como para una cloración de choque.',
+      category: 'piscinas', subcategory: 'Cloración de choque',
+      problem: 'choque_piscina',
+      objective: 'limpiar',
+      surface: 'piscina',
+      difficulty: 'Fácil',
+      estimatedTime: '15-20 min de aplicación + varias horas de reposo',
+      result: 'Cloro libre en el nivel correcto, con la dosis exacta calculada para tu piscina',
+      breadcrumb: ['Centro de Soluciones', 'Piscinas', 'Cloración de choque'],
+      materials: [
+        { fase: 'Medición',    familiaSugerida: 'Análisis de agua',    items: ['Tiras analíticas o analizador de pH y cloro'] },
+        { fase: 'Ajuste pH',   familiaSugerida: 'Reguladores de pH',   items: ['Incrementador de pH', 'Reductor de pH'] },
+        { fase: 'Choque',      familiaSugerida: 'Hipoclorito de sodio', items: ['Hipoclorito de sodio líquido (10 L o 20 L)'] },
+        { fase: 'Protección',  familiaSugerida: 'Protección personal', items: ['Guantes resistentes a productos químicos'] },
+      ],
+      receta: [
+        { fase: 'Medir',         emoji: '🧪' },
+        { fase: 'Ajustar pH',    emoji: '⚖️' },
+        { fase: 'Calcular dosis', emoji: '🧮' },
+        { fase: 'Aplicar',       emoji: '💧' },
+      ],
+      steps: [
+        { n: 1, title: 'Medir el pH y el cloro actual', text: 'Antes de nada, mide el agua con tiras analíticas o un analizador — la dosis de hipoclorito se calcula sobre la SUBIDA de cloro que necesitas, así que hay que saber de dónde partes.', productos: ['Tiras analíticas o analizador de pH y cloro'] },
+        { n: 2, title: 'Ajustar el pH antes de clorar', text: 'Lleva el pH al rango correcto (en torno a 7,2-7,6) con incrementador o reductor según el resultado — el hipoclorito pierde eficacia si el pH no está en su rango, así que se ajusta SIEMPRE antes, nunca después.', productos: ['Incrementador de pH', 'Reductor de pH'] },
+        { n: 3, title: 'Calcular la dosis exacta', text: 'Usa la calculadora de esta guía: indica los m³ de tu piscina (o sus medidas), la concentración de tu garrafa de hipoclorito y si quieres hacer un mantenimiento normal o una cloración de choque — te da la cantidad exacta en litros o ml.', productos: [] },
+        { n: 4, title: 'Diluir y aplicar con la bomba en marcha', text: 'Nunca viertas el hipoclorito directamente y de golpe en un mismo punto — puede decolorar el revestimiento. Dilúyelo en un cubo con agua y repártelo caminando por todo el perímetro, con el sistema de filtración en funcionamiento para que se mezcle bien.', productos: ['Hipoclorito de sodio líquido (10 L o 20 L)'] },
+        { n: 5, title: 'Dejar actuar y no bañarse todavía', text: 'Deja la bomba en marcha varias horas (idealmente toda la noche) y no te bañes hasta que el cloro libre vuelva a bajar de 3 ppm al medirlo de nuevo — normalmente entre 8 y 12 horas después, según la dosis aplicada.', productos: [] },
+        { n: 6, title: 'Volver a medir antes de bañarte', text: 'Repite la medición de pH y cloro antes de que nadie se bañe — confirma que el cloro libre está ya en un nivel seguro (por debajo de 3 ppm) y el pH sigue en rango.', productos: ['Tiras analíticas o analizador de pH y cloro'] },
+      ],
+      professionalTips: [
+        'Aplica el choque al atardecer o de noche — el sol degrada el cloro con rapidez, así que de día una parte importante de la dosis se pierde antes de hacer efecto.',
+        'Ponte guantes resistentes a productos químicos al manipular el hipoclorito — es corrosivo y puede irritar la piel y decolorar la ropa en caso de salpicadura.',
+        'Guarda el hipoclorito en un sitio fresco, oscuro y ventilado — pierde concentración con el calor y la luz, incluso sin abrir.',
+      ],
+      commonMistakes: [
+        'Verter el hipoclorito directamente y sin diluir en un único punto de la piscina.',
+        'Bañarse antes de que el cloro libre haya vuelto a bajar de 3 ppm.',
+        'Aplicar el choque sin haber ajustado antes el pH — el cloro pierde gran parte de su eficacia con el pH fuera de rango.',
+        'Mezclar el hipoclorito con otros productos químicos de piscina directamente entre sí.',
+        'Aplicar la dosis de choque a pleno sol, en vez de al atardecer o de noche.',
+      ],
+      calculadoraCloro: {
+        // ml de hipoclorito de sodio por cada 1 m³ (1.000 L) de agua, para
+        // subir el cloro libre aproximadamente 1 ppm — tabla de referencia
+        // proporcionada, una entrada por concentración disponible en la
+        // calculadora.
+        dosisPorM3PorPpm: { 5: 20, 10: 10, 12: 8.3, 12.5: 8, 13: 7.7, 15: 6.7 },
+      },
+      recommendedProducts: [
+        { nombre: 'HIPOCLORITO SODICO 10 L.12 KG.ENVASE VERDE INCL.', categoria: 'Piscinas', formato: '10 L', precio: '12,58 €' },
+        { nombre: 'HIPOCLORITO SODICO 20 L.25 KG.ENV.AZUL RETORNABLE', categoria: 'Piscinas', formato: '20 L', precio: '16,52 €' },
+        { nombre: 'ASTRALPOOL TIRAS ANALITICAS 3 EN 1 50 UDS.41925', categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
+        { nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', categoria: 'Protección personal', formato: '50 uds', precio: '20,27 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Formato granulado (alternativa)', nombre: 'Astralpool Cloro Rápido Granulado', precio: '28,85 €' },
+        { etiqueta: 'Ajuste de pH antes del choque', nombre: 'ASTRALPOOL INCREMENT.DE PH 5 KG.', precio: '12,64 €' },
+      ],
+      relatedSolutions: ['mantenimiento-piscina'],
+      seo: {
+        title: 'Cómo calcular la dosis de hipoclorito para un choque de cloro en la piscina | Orencio Matas',
+        description: 'Calculadora de dosis de hipoclorito de sodio para piscinas: introduce los m³ o las medidas de tu piscina y la concentración de tu garrafa para el mantenimiento o la cloración de choque.',
       },
     },
 
@@ -3304,6 +3375,7 @@ window.SOLUCIONES_DATA = (function () {
       // que tiene moho quiere pintar encima).
       'moho_general': ['moho'],
       'agua_turbia':['piscina', 'turbia', 'algas', 'cloro', 'ph del agua'],
+      'choque_piscina': ['choque', 'hipoclorito', 'sobrecloracion', 'sobrecloración', 'cloracion de choque', 'cloración de choque'],
       'cucarachas': ['cucaracha', 'hormiga', 'insecto', 'plaga', 'bicho'],
       // "suelo" (a secas) quitado a propósito: coincidía también en
       // "el suelo de mármol está opaco", disparando este problema en vez

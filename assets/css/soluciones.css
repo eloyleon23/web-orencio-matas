@@ -1304,7 +1304,18 @@
   font-size: 1rem;
   box-sizing: border-box;
 }
-.cs-calculadora__campo input:focus { outline: none; border-color: var(--primary-red); }
+.cs-calculadora__campo select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-small);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  box-sizing: border-box;
+  background: var(--primary-white);
+}
+.cs-calculadora__campo input:focus,
+.cs-calculadora__campo select:focus { outline: none; border-color: var(--primary-red); }
 .cs-calculadora__resultado {
   min-height: 24px;
   margin-bottom: 10px;
@@ -1315,6 +1326,40 @@
 .cs-calculadora__nota { font-size: 0.8rem; color: var(--text-muted); }
 @media (max-width: 640px) {
   .cs-calculadora__campos { grid-template-columns: 1fr; }
+}
+
+/* ── Calculadora de dosis de hipoclorito (piscinas) ─────────────────────
+   Variante de .cs-calculadora algo más ancha (tres campos a la vez en el
+   modo "calcular por medidas") + los botones para alternar entre "conozco
+   los m³" y "calcular por medidas". */
+.cs-calculadora-cloro { max-width: 640px; }
+.cs-calc-cloro-modo {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.cs-calc-cloro-modo-btn {
+  padding: 10px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-small);
+  background: var(--primary-white);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.cs-calc-cloro-modo-btn:hover { border-color: var(--primary-red); }
+.cs-calc-cloro-modo-btn.is-active {
+  background: var(--primary-red);
+  border-color: var(--primary-red);
+  color: var(--primary-white);
+}
+.cs-calc-cloro-campos-medidas { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 640px) {
+  .cs-calc-cloro-campos-medidas { grid-template-columns: 1fr; }
 }
 
 /* ── Ajustes del asistente en móvil ───────────────────────────────────── */

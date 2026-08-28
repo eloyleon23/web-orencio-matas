@@ -128,6 +128,77 @@
         </div>
       </section>` : ''}
 
+      ${sol.calculadoraCloro ? `
+      <!-- Calculadora de dosis de hipoclorito de sodio (choque/mantenimiento de piscina) -->
+      <section class="cs-section no-imprimir">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-heading__eyebrow">Antes de aplicar</p>
+            <h2>Calcula la dosis de hipoclorito</h2>
+          </div>
+          <div class="cs-calculadora cs-calculadora-cloro">
+            <div class="cs-calc-cloro-modo">
+              <button type="button" class="cs-calc-cloro-modo-btn is-active" data-modo="m3">Conozco los m³ de mi piscina</button>
+              <button type="button" class="cs-calc-cloro-modo-btn" data-modo="medidas">Calcular a partir de las medidas</button>
+            </div>
+
+            <div class="cs-calculadora__campos" id="cs-calc-cloro-campos-m3">
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-cloro-m3">Volumen de la piscina (m³)</label>
+                <input type="number" id="cs-calc-cloro-m3" min="0" step="0.5" placeholder="Ej: 50">
+              </div>
+            </div>
+
+            <div class="cs-calculadora__campos cs-calc-cloro-campos-medidas" id="cs-calc-cloro-campos-medidas" style="display:none;">
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-cloro-ancho">Ancho (m)</label>
+                <input type="number" id="cs-calc-cloro-ancho" min="0" step="0.1" placeholder="Ej: 5">
+              </div>
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-cloro-largo">Largo (m)</label>
+                <input type="number" id="cs-calc-cloro-largo" min="0" step="0.1" placeholder="Ej: 10">
+              </div>
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-cloro-hondo">Profundidad media (m)</label>
+                <input type="number" id="cs-calc-cloro-hondo" min="0" step="0.1" placeholder="Ej: 1,5">
+              </div>
+            </div>
+
+            <div class="cs-calculadora__campos">
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-cloro-concentracion">Concentración del hipoclorito</label>
+                <select id="cs-calc-cloro-concentracion">
+                  <option value="5">5%</option>
+                  <option value="10" selected>10%</option>
+                  <option value="12">12%</option>
+                  <option value="12.5">12,5%</option>
+                  <option value="13">13%</option>
+                  <option value="15">15%</option>
+                </select>
+              </div>
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-cloro-objetivo">Qué quieres hacer</label>
+                <select id="cs-calc-cloro-objetivo">
+                  <option value="2">Mantenimiento — subir ~2 ppm</option>
+                  <option value="10" selected>Cloración de choque — subir ~10 ppm</option>
+                  <option value="personalizado">Otra subida de cloro (indícala)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="cs-calculadora__campos" id="cs-calc-cloro-ppm-personalizado-wrap" style="display:none;">
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-cloro-ppm-personalizado">Subida de cloro libre deseada (ppm)</label>
+                <input type="number" id="cs-calc-cloro-ppm-personalizado" min="0" step="0.5" placeholder="Ej: 5">
+              </div>
+            </div>
+
+            <p id="cs-calc-cloro-resultado" class="cs-calculadora__resultado"></p>
+            <p class="cs-calculadora__nota">Dosis orientativa según tablas de referencia para hipoclorito de sodio líquido — el cloro libre real también depende del estabilizante, la temperatura del agua y la exposición al sol. Mide siempre con tiras analíticas antes y después, y no te bañes hasta que el cloro libre vuelva a un nivel seguro (por debajo de 3 ppm).</p>
+          </div>
+        </div>
+      </section>` : ''}
+
       <!-- Receta de trabajo -->
       <section class="cs-section">
         <div class="container">
@@ -270,6 +341,7 @@
 
     renderProductosRecomendados(sol);
     wireCalculadoraCantidad(sol);
+    wireCalculadoraCloro(sol);
   }
 
   function wireCalculadoraCantidad(sol) {
@@ -290,6 +362,87 @@
     };
     inputSuperficie.addEventListener('input', calcular);
     inputManos.addEventListener('input', calcular);
+  }
+
+  // Calculadora de dosis de hipoclorito de sodio para piscinas — dos
+  // formas de indicar el volumen (m³ directos, o ancho×largo×profundidad
+  // media) y dos objetivos rápidos (mantenimiento / choque) más una
+  // subida de ppm personalizada. Fórmula: dosis (ml) = m³ × ml por m³
+  // por cada 1 ppm de subida (según la concentración) × ppm objetivo —
+  // exactamente la tabla de referencia proporcionada para hipoclorito de
+  // sodio líquido.
+  function wireCalculadoraCloro(sol) {
+    if (!sol.calculadoraCloro) return;
+    const { dosisPorM3PorPpm } = sol.calculadoraCloro;
+
+    const btnModos = document.querySelectorAll('.cs-calc-cloro-modo-btn');
+    const camposM3 = $('#cs-calc-cloro-campos-m3');
+    const camposMedidas = $('#cs-calc-cloro-campos-medidas');
+    const inputM3 = $('#cs-calc-cloro-m3');
+    const inputAncho = $('#cs-calc-cloro-ancho');
+    const inputLargo = $('#cs-calc-cloro-largo');
+    const inputHondo = $('#cs-calc-cloro-hondo');
+    const selectConcentracion = $('#cs-calc-cloro-concentracion');
+    const selectObjetivo = $('#cs-calc-cloro-objetivo');
+    const wrapPersonalizado = $('#cs-calc-cloro-ppm-personalizado-wrap');
+    const inputPersonalizado = $('#cs-calc-cloro-ppm-personalizado');
+    const resultado = $('#cs-calc-cloro-resultado');
+    if (!inputM3 || !selectConcentracion || !selectObjetivo || !resultado) return;
+
+    let modo = 'm3';
+
+    btnModos.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        modo = btn.dataset.modo;
+        btnModos.forEach((b) => b.classList.toggle('is-active', b === btn));
+        camposM3.style.display = modo === 'm3' ? '' : 'none';
+        camposMedidas.style.display = modo === 'medidas' ? '' : 'none';
+        calcular();
+      });
+    });
+
+    selectObjetivo.addEventListener('change', () => {
+      wrapPersonalizado.style.display = selectObjetivo.value === 'personalizado' ? '' : 'none';
+      calcular();
+    });
+
+    const obtenerM3 = () => {
+      if (modo === 'm3') return parseFloat(inputM3.value) || 0;
+      const ancho = parseFloat(inputAncho.value) || 0;
+      const largo = parseFloat(inputLargo.value) || 0;
+      const hondo = parseFloat(inputHondo.value) || 0;
+      return ancho * largo * hondo;
+    };
+
+    const calcular = () => {
+      const m3 = obtenerM3();
+      const concentracion = parseFloat(selectConcentracion.value);
+      const mlPorM3PorPpm = dosisPorM3PorPpm[concentracion];
+      const ppmObjetivo = selectObjetivo.value === 'personalizado'
+        ? (parseFloat(inputPersonalizado.value) || 0)
+        : parseFloat(selectObjetivo.value);
+
+      if (!m3 || m3 <= 0 || !ppmObjetivo || ppmObjetivo <= 0 || !mlPorM3PorPpm) {
+        resultado.innerHTML = '';
+        return;
+      }
+
+      const dosisMl = m3 * mlPorM3PorPpm * ppmObjetivo;
+      const dosisTexto = dosisMl >= 1000
+        ? `${(dosisMl / 1000).toFixed(2).replace('.', ',')} L`
+        : `${Math.round(dosisMl)} ml`;
+      const concentracionTexto = concentracion.toString().replace('.', ',');
+      const mlTexto = mlPorM3PorPpm.toString().replace('.', ',');
+      const m3Texto = m3.toFixed(1).replace('.', ',');
+
+      resultado.innerHTML = `Necesitarás aproximadamente <strong>${dosisTexto}</strong> de hipoclorito al ${concentracionTexto}% ` +
+        `(${m3Texto} m³ × ${mlTexto} ml/m³ por cada ppm × ${ppmObjetivo} ppm de subida).`;
+    };
+
+    [inputM3, inputAncho, inputLargo, inputHondo, inputPersonalizado].forEach((el) => {
+      if (el) el.addEventListener('input', calcular);
+    });
+    selectConcentracion.addEventListener('change', calcular);
   }
 
   function agruparPorFase(materials) {
