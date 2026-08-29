@@ -1527,6 +1527,16 @@ textarea.form-input {
     visibility: hidden;
     transform: translateY(-8px);
     transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    /* Con "Profesionales" sumado al resto de enlaces (y el submenú de
+       Productos, que en móvil se muestra siempre en línea, no plegado),
+       el contenido del menú puede superar la altura de pantallas bajas
+       o en horizontal — sin límite de altura ni scroll propio, las
+       últimas opciones (p. ej. Actualidad/Contacto) quedaban recortadas
+       fuera de la pantalla y no había forma de llegar a ellas. */
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navbar__nav.is-open {
