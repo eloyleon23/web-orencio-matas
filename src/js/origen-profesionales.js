@@ -53,60 +53,43 @@
     // normal dentro del flujo, con borde de color a la izquierda, NO
     // position:fixed) pero en azul en vez de ámbar, para no
     // confundirlo visualmente con ese otro aviso.
-    //
-    // A propósito ya NO es position:fixed (como en la versión
-    // anterior): un aviso fijo, aunque se calculara para no tapar la
-    // cabecera, sí podía tapar la barra de filtros del buscador en
-    // móvil (que también se reposiciona de forma fija bajo la
-    // cabecera). Al insertarlo como una tarjeta normal justo debajo de
-    // la cabecera, empuja el contenido hacia abajo en vez de
-    // superponerse — el usuario ve los filtros aunque no cierre el
-    // aviso.
     if (document.getElementById('aviso-precios-publico')) return;
 
     const aviso = document.createElement('div');
     aviso.id = 'aviso-precios-publico';
     aviso.setAttribute('role', 'status');
     aviso.style.cssText = 'background:#eff6ff;border-left:4px solid #006dae;color:#1e3a5f;'
-      + 'padding:10px 16px;margin:0;font-size:0.85rem;line-height:1.4;'
-      + 'display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;justify-content:center;';
+      + 'padding:8px 14px;margin-bottom:12px;border-radius:8px;font-size:0.8rem;line-height:1.4;'
+      + 'display:flex;align-items:flex-start;gap:8px;';
     aviso.innerHTML =
-      '<span style="flex:1;min-width:200px;"><i class="fa-solid fa-circle-info" style="color:#006dae;margin-right:8px;"></i>'
+      '<span style="flex:1;min-width:0;"><i class="fa-solid fa-circle-info" style="color:#006dae;margin-right:6px;"></i>'
       + 'Los precios indicados son de venta al público. Consulta los precios al por mayor con nuestro equipo.</span>'
       + '<button type="button" id="cerrar-aviso-precios" aria-label="Cerrar aviso" '
-      + 'style="flex-shrink:0;background:none;border:none;color:#006dae;opacity:0.7;'
-      + 'cursor:pointer;padding:2px 6px;font-size:0.95rem;line-height:1;">✕</button>';
+      + 'style="flex-shrink:0;background:none;border:none;color:#006dae;opacity:0.6;'
+      + 'cursor:pointer;padding:2px 4px;font-size:0.85rem;line-height:1;">✕</button>';
 
-    // Insertarlo justo después de la cabecera fija de la página (si la
-    // hay), como elemento normal del flujo — nunca como overlay. En
-    // buscador.html, en móvil, la barra de búsqueda superior
-    // (#grupo-buscador-principal) también es position:fixed a esa
-    // misma altura — el aviso puede quedar visualmente justo debajo de
-    // ella un instante mientras la página está en la posición de
-    // scroll inicial, pero al no ser tampoco position:fixed, basta con
-    // desplazarse un poco para que quede plenamente visible y, sobre
-    // todo, el panel de filtros de más abajo (que sí es contenido
-    // normal, no fijo) nunca queda bloqueado.
-    // Insertarlo como elemento normal del flujo (nunca como overlay) al
-    // principio del body, y calcular un margen superior igual a la
-    // altura combinada de TODOS los elementos position:fixed anclados
-    // arriba (cabecera + barra de búsqueda superior de buscador.html en
-    // móvil, si la hay) — un elemento position:fixed no empuja a sus
-    // hermanos en el flujo normal aunque se inserte justo "después" de
-    // él en el DOM, así que insertarlo sin más dejaba el aviso debajo
-    // de la cabecera (y en buscador.html, además debajo de la barra de
-    // búsqueda) en vez de a continuación visualmente.
-    document.body.insertAdjacentElement('afterbegin', aviso);
-
-    let margenSuperior = 0;
-    document.querySelectorAll('.main-header, .site-header, .navbar-wrapper, #grupo-buscador-principal').forEach((el) => {
-      if (el === aviso) return;
-      const cs = getComputedStyle(el);
-      if (cs.position === 'fixed' || cs.position === 'sticky') {
-        margenSuperior += el.getBoundingClientRect().height;
-      }
-    });
-    if (margenSuperior > 0) aviso.style.marginTop = margenSuperior + 'px';
+    // Dónde insertarlo, en orden de preferencia:
+    // a) Junto al aviso ámbar ya existente (#catalog-disclaimer, solo
+    //    en buscador.html) — mismo sitio, mismo tipo de mensaje, sin
+    //    tener que inventar una ubicación nueva.
+    // b) Dentro de <main>, como primer elemento — ya tiene el
+    //    padding-top que compensa la cabecera fija, así que aparece
+    //    como contenido normal de la página en vez de pegado a la
+    //    cabecera y desplazándola visualmente hacia abajo (el problema
+    //    real de la versión anterior: se insertaba a nivel de <body>,
+    //    fuera de <main>, quedando "colgado" entre la cabecera y el
+    //    contenido en vez de formar parte de él).
+    // c) Si no hay ninguna de las dos (visor_catalogo.html), al
+    //    principio del <body> como último recurso.
+    const disclaimerExistente = document.getElementById('catalog-disclaimer');
+    const main = document.querySelector('main');
+    if (disclaimerExistente && disclaimerExistente.parentElement) {
+      disclaimerExistente.insertAdjacentElement('beforebegin', aviso);
+    } else if (main) {
+      main.insertAdjacentElement('afterbegin', aviso);
+    } else {
+      document.body.insertAdjacentElement('afterbegin', aviso);
+    }
 
     document.getElementById('cerrar-aviso-precios').addEventListener('click', () => aviso.remove());
   }
