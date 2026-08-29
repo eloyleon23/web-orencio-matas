@@ -233,6 +233,14 @@
     visibility: hidden;
     transform: translateY(-8px);
     transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    /* Mismo arreglo aplicado a estilos.css: sin límite de altura ni
+       scroll propio, las últimas opciones del menú (Actualidad,
+       Contacto...) quedaban recortadas fuera de la pantalla en
+       móviles/pantallas bajas, sin forma de alcanzarlas. */
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navbar__nav.is-open {
