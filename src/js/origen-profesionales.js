@@ -53,6 +53,13 @@
     // normal dentro del flujo, con borde de color a la izquierda, NO
     // position:fixed) pero en azul en vez de ámbar, para no
     // confundirlo visualmente con ese otro aviso.
+    //
+    // No debe aparecer en el visor de catálogo (la vista a pantalla
+    // completa del PDF): ahí no hay ni filtros ni resultados a los que
+    // referirse, así que el aviso no aporta nada y solo restaría
+    // espacio a la vista del documento.
+    if (document.querySelector('.visor-header, #visor-iframe')) return;
+
     if (document.getElementById('aviso-precios-publico')) return;
 
     const aviso = document.createElement('div');
@@ -64,29 +71,35 @@
     aviso.innerHTML =
       '<span style="flex:1;min-width:0;"><i class="fa-solid fa-circle-info" style="color:#006dae;margin-right:6px;"></i>'
       + 'Los precios indicados son de venta al público. Consulta los precios al por mayor con nuestro equipo.</span>'
-      + '<button type="button" id="cerrar-aviso-precios" aria-label="Cerrar aviso" '
+      + '<button type="button" id="cerrar-aviso-precios" aria-label="Ocultar este aviso" title="Ocultar este aviso" '
       + 'style="flex-shrink:0;background:none;border:none;color:#006dae;opacity:0.6;'
-      + 'cursor:pointer;padding:2px 4px;font-size:0.85rem;line-height:1;">✕</button>';
+      + 'cursor:pointer;padding:2px 4px;font-size:0.85rem;line-height:1;">'
+      + '<i class="fa-solid fa-xmark"></i></button>';
 
     // Dónde insertarlo, en orden de preferencia:
     // a) Junto al aviso ámbar ya existente (#catalog-disclaimer, solo
     //    en buscador.html) — mismo sitio, mismo tipo de mensaje, sin
     //    tener que inventar una ubicación nueva.
-    // b) Dentro de <main>, como primer elemento — ya tiene el
-    //    padding-top que compensa la cabecera fija, así que aparece
-    //    como contenido normal de la página en vez de pegado a la
-    //    cabecera y desplazándola visualmente hacia abajo (el problema
-    //    real de la versión anterior: se insertaba a nivel de <body>,
-    //    fuera de <main>, quedando "colgado" entre la cabecera y el
-    //    contenido en vez de formar parte de él).
-    // c) Si no hay ninguna de las dos (visor_catalogo.html), al
-    //    principio del <body> como último recurso.
+    // b) Dentro del contenedor real con el padding horizontal del
+    //    contenido (los 4 catalogo_*.html): en 3 de los 4, ese
+    //    contenedor ES <main> (clase .catalog-container, con su propio
+    //    padding); en catalogo_talleres.html, en cambio, <main> solo
+    //    tiene padding-top y el padding horizontal real vive en un
+    //    <div> interior — insertar directamente en <main> ahí dejaba
+    //    el aviso sin margen izquierdo/derecho, a ancho completo. Se
+    //    comprueba el padding-left YA COMPUTADO de <main> para elegir
+    //    el destino correcto sin necesitar conocer de antemano la
+    //    estructura exacta de cada página.
+    // c) Si no hay ninguna de las anteriores, al principio del <body>
+    //    como último recurso.
     const disclaimerExistente = document.getElementById('catalog-disclaimer');
     const main = document.querySelector('main');
     if (disclaimerExistente && disclaimerExistente.parentElement) {
       disclaimerExistente.insertAdjacentElement('beforebegin', aviso);
     } else if (main) {
-      main.insertAdjacentElement('afterbegin', aviso);
+      const padIzq = parseFloat(getComputedStyle(main).paddingLeft) || 0;
+      const destino = padIzq >= 10 ? main : (main.querySelector(':scope > div') || main);
+      destino.insertAdjacentElement('afterbegin', aviso);
     } else {
       document.body.insertAdjacentElement('afterbegin', aviso);
     }
