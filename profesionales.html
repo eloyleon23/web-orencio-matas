@@ -168,6 +168,27 @@
         .pro-flujo { flex-direction: column; }
         .pro-flujo__flecha { transform: rotate(90deg); }
       }
+
+      /* Bloque "Servicios para profesionales": 4 columnas en escritorio,
+         pero SIN usar un style="grid-template-columns" inline — un estilo
+         inline tiene más especificidad que la regla @media ya existente
+         para .professionals__advantages (que la reduce a 1fr en móvil),
+         así que la anulaba por completo y las 4 tarjetas se quedaban
+         apretadas en un móvil de 390px. Con una clase propia, sí se
+         respeta esa regla mobile-first ya existente. */
+      .pro-advantages-4col { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      @media (max-width: 900px) {
+        .pro-advantages-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 480px) {
+        /* La regla de 1fr en móvil ya existe en estilos.css para
+           .professionals__advantages, pero al tener la misma
+           especificidad que la regla de arriba (ambas una sola clase) y
+           venir en un <style> anterior en el documento, quedaba anulada
+           por la de 900px. Se repite aquí, en el mismo bloque, para que
+           gane por orden de aparición igual que las demás. */
+        .pro-advantages-4col { grid-template-columns: 1fr; }
+      }
     </style>
   </head>
   <body>
@@ -245,26 +266,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
           <div class="cs-productos-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));">
 
-            <a class="pro-sector-card" href="soluciones/solucion.html?slug=preparar-pieza-taller-antes-pintar">
+            <a class="pro-sector-card" href="catalogo_talleres.html">
               <div class="pro-sector-card__media">🚗</div>
               <div class="pro-sector-card__body">
                 <h3 class="pro-sector-card__title">Talleres y carrocerías</h3>
                 <p class="pro-sector-card__desc">Preparación de superficies, pintura, pulido y protección para el repintado profesional de vehículos, con las marcas de referencia del sector.</p>
-                <span class="pro-sector-card__cta">Ver soluciones para talleres →</span>
+                <span class="pro-sector-card__cta">Ver catálogo de talleres →</span>
               </div>
             </a>
 
-            <a class="pro-sector-card pro-sector-card--green" href="soluciones/solucion.html?slug=pintar-pared-interior">
-              <div class="pro-sector-card__media">🎨</div>
+            <a class="pro-sector-card pro-sector-card--green" href="catalogo_pinturas.html">
+              <div class="pro-sector-card__media">🖌️</div>
               <div class="pro-sector-card__body">
                 <h3 class="pro-sector-card__title">Pintores y decoradores</h3>
                 <p class="pro-sector-card__desc">Pinturas, esmaltes, barnices, herramientas y abrasivos para trabajos de decoración, protección y mantenimiento profesional.</p>
-                <span class="pro-sector-card__cta">Ver soluciones para pintores →</span>
+                <span class="pro-sector-card__cta">Ver catálogo de pinturas →</span>
               </div>
             </a>
 
-            <a class="pro-sector-card pro-sector-card--yellow" href="soluciones/solucion.html?slug=eliminar-grasa-desengrasar">
-              <div class="pro-sector-card__media">🧹</div>
+            <a class="pro-sector-card pro-sector-card--yellow" href="centro-soluciones.html#cs-explorar">
+              <div class="pro-sector-card__media">🧴</div>
               <div class="pro-sector-card__body">
                 <h3 class="pro-sector-card__title">Limpieza profesional</h3>
                 <p class="pro-sector-card__desc">Productos químicos, desengrasantes y consumibles para empresas de limpieza, mantenimiento de instalaciones y comunidades.</p>
@@ -281,12 +302,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               </div>
             </a>
 
-            <a class="pro-sector-card pro-sector-card--black" href="soluciones/solucion.html?slug=perfumeria-elegir-fragancia-regalo">
+            <a class="pro-sector-card pro-sector-card--black" href="catalogo_drogueria.html">
+              <div class="pro-sector-card__media">🧼</div>
+              <div class="pro-sector-card__body">
+                <h3 class="pro-sector-card__title">Droguería</h3>
+                <p class="pro-sector-card__desc">Catálogo extenso de droguería e higiene, con respuesta logística inmediata para reposición y comercios.</p>
+                <span class="pro-sector-card__cta">Ver catálogo de droguería →</span>
+              </div>
+            </a>
+
+            <a class="pro-sector-card" href="catalogo_perfumeria.html">
               <div class="pro-sector-card__media">🌸</div>
               <div class="pro-sector-card__body">
-                <h3 class="pro-sector-card__title">Droguería y perfumería</h3>
-                <p class="pro-sector-card__desc">Catálogo extenso de droguería, higiene y perfumería con respuesta logística inmediata para reposición y comercios.</p>
-                <span class="pro-sector-card__cta">Ver catálogo de droguería →</span>
+                <h3 class="pro-sector-card__title">Perfumería</h3>
+                <p class="pro-sector-card__desc">Catálogo de perfumería y cuidado personal, con marcas de referencia para reposición en comercios y negocios.</p>
+                <span class="pro-sector-card__cta">Ver catálogo de perfumería →</span>
               </div>
             </a>
 
@@ -321,7 +351,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <p class="section-heading__eyebrow">Por qué trabajar con nosotros</p>
             <h2 id="pro-servicios-title">Servicios para profesionales</h2>
           </div>
-          <div class="professionals__advantages" style="grid-template-columns:repeat(4,minmax(0,1fr));max-width:1100px;margin:36px auto 0;">
+          <div class="professionals__advantages pro-advantages-4col" style="max-width:1100px;margin:36px auto 0;">
             <article class="advantage-card">
               <span class="advantage-card__icon" aria-hidden="true"><i class="fa-solid fa-boxes-stacked"></i></span>
               <h3>Stock permanente</h3>
