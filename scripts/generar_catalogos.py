@@ -593,10 +593,16 @@ def generar_catalogo(area, productos, logo_png, familias={}, marca_agua=None, li
     out_path = os.path.join(OUTPUT_DIR, cfg['filename'])
     st = estilos()
     
-    # Filtrar productos: solo por área correcta (sin filtro incluir_en_catalogo)
+    # Filtrar productos: por área correcta y excluyendo los dados de
+    # baja (fecha_baja informada) — antes solo se filtraba por área,
+    # así que el PDF podía incluir productos ya descatalogados. Mismo
+    # criterio que ya usa generar_productos_json.py (el que alimenta el
+    # buscador web) para mantener ambos catálogos, en PDF y en la web,
+    # consistentes entre sí.
     productos_area = [
         p for p in productos
         if p.get('area','').lower().strip() == area
+        and not p.get('fecha_baja','').strip()
     ]
 
     if limite_productos:
