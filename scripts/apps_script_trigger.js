@@ -2900,7 +2900,17 @@ function regenerarCacheCompletaDesdeSheet_() {
     productos: exportados,
   };
 
-  guardarCacheProductos_(payload);
+  // Mismo motivo que en actualizarProductoEnCache_: sin bloqueo, una
+  // regeneración completa (que sobrescribe el archivo entero) puede
+  // solaparse con un parcheo puntual de un solo producto en curso al
+  // mismo tiempo, y perder ese cambio si termina de escribir después.
+  const lock = LockService.getScriptLock();
+  try {
+    lock.tryLock(15000);
+    guardarCacheProductos_(payload);
+  } finally {
+    lock.releaseLock();
+  }
   console.log(`regenerarCacheCompletaDesdeSheet_: ${exportados.length} productos regenerados y guardados en la caché de Drive.`);
   return payload;
 }
@@ -3031,26 +3041,47 @@ function configurarTriggerRegeneracionCacheCompleta() {
 // no hace falta reintentar por conflicto, aunque se conserva un
 // reintento corto por si acaso hay algún fallo puntual de red/cuota.
 function actualizarProductoEnCache_(referencia, camposActualizados) {
+  // LockService es imprescindible aquí: sin él, dos peticiones que
+  // llegan casi a la vez (el caso típico y esperado al usar el
+  // Asistente de imágenes, que valida/actualiza productos en sucesión
+  // rápida) pueden leer la MISMA versión antigua de la caché antes de
+  // que ninguna de las dos haya escrito todavía — la que escribe en
+  // último lugar sobrescribe por completo el archivo, "perdiendo" en
+  // silencio el cambio de la primera aunque el Sheet sí se haya
+  // actualizado correctamente para ambas (el Sheet no sufre este
+  // problema porque cada escritura toca una celda concreta, no
+  // reescribe el archivo entero). Bug real reportado: imágenes
+  // validadas/actualizadas desde el Asistente que el Sheet mostraba
+  // correctas pero que la web seguía sirviendo como pendientes.
+  const lock = LockService.getScriptLock();
   const MAX_INTENTOS = 2;
-  for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
-    try {
-      const datos = leerCacheProductos_();
-      const productos = datos.productos || [];
-      const idx = productos.findIndex(p => p.ref === referencia);
-      if (idx === -1) {
-        console.error('actualizarProductoEnCache_: producto no encontrado en la caché:', referencia);
-        return false;
-      }
-      Object.assign(productos[idx], camposActualizados);
-      guardarCacheProductos_(datos);
-      console.log('Caché de productos actualizada al instante para', referencia);
-      return true;
-    } catch (err) {
-      console.error(`Error en actualizarProductoEnCache_ (intento ${intento}/${MAX_INTENTOS}) para ${referencia}:`, err);
-      if (intento < MAX_INTENTOS) Utilities.sleep(500);
+  try {
+    if (!lock.tryLock(10000)) {
+      console.error('actualizarProductoEnCache_: no se pudo obtener el bloqueo en 10s para', referencia);
+      return false;
     }
+    for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+      try {
+        const datos = leerCacheProductos_();
+        const productos = datos.productos || [];
+        const idx = productos.findIndex(p => p.ref === referencia);
+        if (idx === -1) {
+          console.error('actualizarProductoEnCache_: producto no encontrado en la caché:', referencia);
+          return false;
+        }
+        Object.assign(productos[idx], camposActualizados);
+        guardarCacheProductos_(datos);
+        console.log('Caché de productos actualizada al instante para', referencia);
+        return true;
+      } catch (err) {
+        console.error(`Error en actualizarProductoEnCache_ (intento ${intento}/${MAX_INTENTOS}) para ${referencia}:`, err);
+        if (intento < MAX_INTENTOS) Utilities.sleep(500);
+      }
+    }
+    return false;
+  } finally {
+    lock.releaseLock();
   }
-  return false;
 }
 
 // Recibe el contenido COMPLETO y ya regenerado de productos.json (desde
@@ -3062,7 +3093,16 @@ function procesarSincronizarCacheCompleto(data) {
   try {
     if (!data.contenido) throw new Error('Falta el contenido a sincronizar');
     const datos = JSON.parse(data.contenido);
-    guardarCacheProductos_(datos);
+    // Mismo motivo que en actualizarProductoEnCache_ y
+    // regenerarCacheCompletaDesdeSheet_: sin bloqueo, esta sobrescritura
+    // completa podría solaparse con un parcheo puntual en curso.
+    const lock = LockService.getScriptLock();
+    try {
+      lock.tryLock(15000);
+      guardarCacheProductos_(datos);
+    } finally {
+      lock.releaseLock();
+    }
     const total = (datos.productos || []).length;
     console.log('Caché de Drive sincronizada con la regeneración completa —', total, 'productos');
     return ContentService.createTextOutput(JSON.stringify({ success: true, total: total }))
@@ -4906,7 +4946,15 @@ function filtrarPorFechaAlta_(data, titulo) {
 // archivo una única vez al final.
 function actualizarProductosEnCacheBulk_(cambiosPorReferencia) {
   if (!cambiosPorReferencia || !cambiosPorReferencia.length) return 0;
+  // Mismo motivo que en actualizarProductoEnCache_: lectura-modificación-
+  // escritura sin bloqueo del mismo archivo compartido, vulnerable a
+  // perder cambios si se solapa con otra escritura en curso.
+  const lock = LockService.getScriptLock();
   try {
+    if (!lock.tryLock(10000)) {
+      console.error('actualizarProductosEnCacheBulk_: no se pudo obtener el bloqueo en 10s');
+      return 0;
+    }
     const datos = leerCacheProductos_();
     const productos = datos.productos || [];
     const indicePorRef = new Map();
@@ -4926,6 +4974,8 @@ function actualizarProductosEnCacheBulk_(cambiosPorReferencia) {
   } catch (err) {
     console.error('Error en actualizarProductosEnCacheBulk_:', err);
     return 0;
+  } finally {
+    lock.releaseLock();
   }
 }
 
