@@ -100,11 +100,13 @@
   transition: color 0.2s ease;
   /* Permite que "Centro de Soluciones" (el ítem más largo) se parta en
      dos líneas igual que en el resto del sitio, en vez de quedarse en
-     una sola línea mucho más ancha y desbordar el menú — SOLO en el
-     primer nivel: el submenú (Buscador/Ver catálogos) usa su propia
-     regla de texto a la izquierda un poco más abajo. */
+     una sola línea mucho más ancha y desbordar el menú. Alineado a la
+     izquierda (valor por defecto, "start") a propósito: es como se ve
+     en el resto de páginas — un "text-align:center" añadido aquí en un
+     arreglo anterior creaba justo la inconsistencia contraria a la que
+     pretendía corregir (esta página con el texto centrado, el resto
+     con el texto a la izquierda). */
   white-space: normal;
-  text-align: center;
 }
 
 .navbar__menu a::after {
