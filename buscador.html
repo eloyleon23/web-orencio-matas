@@ -29,7 +29,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="./src/css/navbar.css?v=20260829" />
+    <link rel="stylesheet" href="./src/css/navbar.css?v=20260829b" />
     <style>
         :root {
             --red: #D32F2F;
@@ -2759,25 +2759,6 @@
     gtag('config', 'G-HMM85HSJ4Y');
   }
 </script>
-    <style>
-      /* Corrección puntual del navbar compartido en esta página:
-         - font-family: esta página carga su propia fuente (distinta de
-           Inter, la que usa el resto del sitio) que, al heredarse, se
-           colaba en el menú compartido — se fuerza Inter para
-           consistencia visual con el resto del sitio.
-         - white-space: la causa REAL del desbordamiento no era la
-           fuente, sino que "Centro de Soluciones" (el ítem más largo)
-           no partía en dos líneas aquí como sí hace en el resto de
-           páginas (index.html, centro-soluciones.html...) — allí mide
-           80px partido en 2 líneas, aquí medía 154px en una sola línea
-           de antemano, y sumado al botón CONTACTAR ya con su estilo
-           correcto, desbordaba el menú en escritorio a 1280px. Forzar
-           white-space:normal reproduce el mismo ajuste de línea que ya
-           usa el resto del sitio. */
-      .navbar__menu a, .navbar__cta { font-family: 'Inter', sans-serif !important; }
-      .navbar__menu > li > a { white-space: normal !important; text-align: center; }
-      .navbar__submenu a { text-align: left !important; }
-    </style>
 </head>
 
 <body>

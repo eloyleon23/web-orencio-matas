@@ -844,7 +844,7 @@
             .site-footer nav { justify-content: center; }
         }
     </style>
-    <link rel="stylesheet" href="./src/css/navbar.css?v=20260829" />
+    <link rel="stylesheet" href="./src/css/navbar.css?v=20260829b" />
 <!-- Google tag (gtag.js) -->
 <script>
   // Ver nota en el bloque de Google Tag Manager: solo en el dominio
@@ -860,25 +860,6 @@
     gtag('config', 'G-HMM85HSJ4Y');
   }
 </script>
-    <style>
-      /* Corrección puntual del navbar compartido en esta página:
-         - font-family: esta página carga su propia fuente (distinta de
-           Inter, la que usa el resto del sitio) que, al heredarse, se
-           colaba en el menú compartido — se fuerza Inter para
-           consistencia visual con el resto del sitio.
-         - white-space: la causa REAL del desbordamiento no era la
-           fuente, sino que "Centro de Soluciones" (el ítem más largo)
-           no partía en dos líneas aquí como sí hace en el resto de
-           páginas (index.html, centro-soluciones.html...) — allí mide
-           80px partido en 2 líneas, aquí medía 154px en una sola línea
-           de antemano, y sumado al botón CONTACTAR ya con su estilo
-           correcto, desbordaba el menú en escritorio a 1280px. Forzar
-           white-space:normal reproduce el mismo ajuste de línea que ya
-           usa el resto del sitio. */
-      .navbar__menu a, .navbar__cta { font-family: 'Inter', sans-serif !important; }
-      .navbar__menu > li > a { white-space: normal !important; text-align: center; }
-      .navbar__submenu a { text-align: left !important; }
-    </style>
 </head>
 
 <body>

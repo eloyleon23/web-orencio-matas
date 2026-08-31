@@ -1,4 +1,12 @@
-/* Navbar unificado - solo clases del header */
+/* Navbar unificado - solo clases del header.
+   Debe mantenerse SIEMPRE equivalente, selector a selector, al bloque
+   de navbar de src/css/estilos.css — este archivo existe porque
+   empresa/historia/productos/buscador/servicios/actualidad.html no
+   cargan estilos.css (tienen su propio sistema de estilos embebido
+   para el resto del contenido de cada página, con su propia fuente
+   Montserrat), pero el HEADER debe verse y comportarse IDÉNTICO en
+   todas las páginas del sitio. Cualquier cambio en el navbar de
+   estilos.css debe replicarse aquí también. */
 :root {
   --primary-black: #1a1a1a;
   --primary-red: #d91b1b;
@@ -52,7 +60,8 @@
 
 .navbar__logo-image {
   width: auto;
-  max-height: 52px;
+  max-height: 60px; /* igual que estilos.css — medía 52px aquí, dando
+    una cabecera algo más baja/apretada que en el resto de páginas. */
   object-fit: contain;
 }
 
@@ -73,29 +82,29 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.94rem !important;
+  /* Estas páginas cargan su propia fuente (Montserrat) para el resto
+     del contenido — se fuerza Inter aquí para que el navbar se vea
+     igual que en el resto del sitio, en vez de heredar esa fuente. */
+  font-family: 'Inter', sans-serif;
+  font-size: 0.94rem;
   font-weight: 700;
   color: var(--text-dark);
 }
 
-.navbar__menu li {
-  font-size: 0.94rem !important;
-  line-height: normal !important;
-}
-
-.navbar__menu a {
-  font-size: 0.94rem !important;
-}
-
-.navbar__menu a {
+.navbar__menu > li > a {
   position: relative;
   display: inline-flex;
   padding: 30px 0;
   text-decoration: none;
   color: inherit;
   transition: color 0.2s ease;
-  white-space: nowrap;
+  /* Permite que "Centro de Soluciones" (el ítem más largo) se parta en
+     dos líneas igual que en el resto del sitio, en vez de quedarse en
+     una sola línea mucho más ancha y desbordar el menú — SOLO en el
+     primer nivel: el submenú (Buscador/Ver catálogos) usa su propia
+     regla de texto a la izquierda un poco más abajo. */
+  white-space: normal;
+  text-align: center;
 }
 
 .navbar__menu a::after {
@@ -161,6 +170,11 @@
   font-size: 0.88rem !important;
   display: block !important;
   white-space: nowrap;
+  /* Hereda text-align:center del primer nivel si no se corrige aquí —
+     con "Ver catálogos" llevando el icono ▾ (que desplaza su texto) y
+     "Buscador" sin icono (quedando centrado de verdad), el centrado
+     heredado los dejaba visualmente descolocados entre sí. */
+  text-align: left !important;
 }
 
 .navbar__submenu a::after { display: none; }
@@ -176,15 +190,19 @@
   color: var(--primary-white);
   background: var(--primary-red);
   border-bottom: 4px solid var(--primary-yellow);
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.84rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-decoration: none;
-  transition: transform 0.2s ease, background 0.2s ease;
+  box-shadow: 0 14px 30px rgba(217, 27, 27, 0.28);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.navbar__cta:hover { transform: translateY(-2px); }
+.navbar__cta:hover {
+  background: color-mix(in srgb, var(--primary-red) 86%, #000000);
+  transform: translateY(-2px);
+}
 
 .navbar__toggle {
   display: none;
@@ -233,10 +251,6 @@
     visibility: hidden;
     transform: translateY(-8px);
     transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-    /* Mismo arreglo aplicado a estilos.css: sin límite de altura ni
-       scroll propio, las últimas opciones del menú (Actualidad,
-       Contacto...) quedaban recortadas fuera de la pantalla en
-       móviles/pantallas bajas, sin forma de alcanzarlas. */
     max-height: calc(100vh - 100px);
     max-height: calc(100dvh - 100px);
     overflow-y: auto;
@@ -260,6 +274,7 @@
     display: flex;
     padding: 13px 0;
     border-bottom: 1px solid rgba(15, 17, 21, 0.08);
+    text-align: left;
   }
 
   .navbar__menu a::after { display: none; }
@@ -270,15 +285,8 @@
      se muestra siempre en línea, sangrado bajo "Productos", en vez de
      ocultarse/mostrarse con :hover. Importante: esta visibilidad forzada
      se aplica SOLO dentro de .is-open — forzarla de forma incondicional
-     (como estaba antes en este archivo) deja los enlaces del submenú
-     invisibles pero clicables ("fantasma") flotando justo debajo del
-     header incluso con el menú cerrado, interceptando toques dirigidos
-     a cualquier cosa que quede ahí debajo (bug real reportado: en
-     buscador.html, tocar la imagen de un producto del grid en móvil
-     abría "Ver catálogos" en vez del modal del producto — el mismo tipo
-     de bug de menú "fantasma" ya corregido en src/css/estilos.css, pero
-     nunca replicado en este archivo, que es el que usan buscador.html y
-     el resto de páginas sin ese fix). */
+     deja los enlaces del submenú invisibles pero clicables ("fantasma")
+     flotando justo debajo del header incluso con el menú cerrado. */
   .navbar__caret { display: none; }
   .navbar__submenu {
     position: static;
