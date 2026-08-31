@@ -4032,7 +4032,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         //    despliegue. Si el primer pintado ha fallado, esta pasa a
         //    ser directamente la fuente principal.
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
             if (resp.ok) {
                 const texto = await resp.text();
                 const hash = await calcularHash(texto);
@@ -4105,7 +4105,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // inmediato en el paso 2 de cargarProductosPrincipales().
     async function resincronizarVersionConocida() {
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
             if (!resp.ok) return;
             const texto = await resp.text();
             hashConocido = await calcularHash(texto);
@@ -4128,7 +4128,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
             if (!resp.ok) return;
             const texto = await resp.text();
             const hash = await calcularHash(texto);
@@ -4170,7 +4170,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.disabled = true;
         boton.textContent = 'Actualizando...';
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'default' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
             if (!resp.ok) throw new Error('respuesta no OK');
             const texto = await resp.text();
             const data = JSON.parse(texto);
