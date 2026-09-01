@@ -67,7 +67,11 @@
             opacity: 0;
         }
         .buscador-header .inner {
-            max-width: 1180px;
+            /* Mismo ancho que .layout (ver más abajo) para que el título
+               quede alineado con los filtros y resultados de debajo, en
+               vez de quedarse más estrecho y verse descentrado respecto al
+               contenido real en pantallas grandes. */
+            max-width: min(96vw, 1760px);
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -94,7 +98,15 @@
         .btn-volver:hover { color: white; }
 
         .layout {
-            max-width: 1180px;
+            /* Antes max-width fijo de 1180px: en pantallas grandes (portátiles
+               anchos, monitores 1440p/4K) dejaba mucho margen sin usar a los
+               lados, con los filtros y el grid de productos siempre
+               apretados al mismo ancho de 1180px por mucha pantalla que
+               sobrara. Con min(), se ajusta al viewport disponible (96vw,
+               dejando un margen mínimo a cada lado) pero sin crecer sin
+               límite en monitores ultra anchos, donde un layout demasiado
+               ancho sería incómodo de leer. */
+            max-width: min(96vw, 1760px);
             margin: 0 auto;
             padding: 28px 20px 60px;
             display: grid;
@@ -981,6 +993,17 @@
         }
         @media (min-width: 420px) and (max-width: 480px) {
             .grid-productos { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        }
+        /* Con .layout ya aprovechando el ancho disponible en pantallas
+           grandes (ver arriba), añadir más columnas aquí evita que ese
+           espacio extra se quede solo en huecos más anchos entre las
+           mismas 4 tarjetas de siempre — se ve más contenido de un
+           vistazo, que es el objetivo real de aprovechar la pantalla. */
+        @media (min-width: 1400px) {
+            .grid-productos { grid-template-columns: repeat(5, 1fr); }
+        }
+        @media (min-width: 1800px) {
+            .grid-productos { grid-template-columns: repeat(6, 1fr); }
         }
 
         .producto-card {
