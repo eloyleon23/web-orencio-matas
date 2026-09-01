@@ -680,6 +680,7 @@
         precioCon: null,
         precioSin: null,
         mostrarPrecio: false,
+        fichaTecnica: mock.fichaTecnica || null,
       };
     }
     // Normaliza a coma decimal por si la fuente en vivo de Apps Script
@@ -713,6 +714,7 @@
       precioCon: real.mostrar_precio ? precioConFormateado : null,
       precioSin: real.mostrar_precio ? precioSinFormateado : null,
       mostrarPrecio: !!real.mostrar_precio,
+      fichaTecnica: mock.fichaTecnica || null,
     };
   }
 
@@ -799,6 +801,20 @@
       btnBuscador.style.display = '';
     } else {
       btnBuscador.style.display = 'none';
+    }
+
+    // Ficha técnica del FABRICANTE (PDF real de titantech.es/titanpro.es,
+    // no relacionado con la ficha del propio catálogo de Orencio Matas
+    // de arriba) — solo aparece si el producto concreto la trae definida
+    // en la guía (de momento, los productos TitanTech/TitanPro).
+    const btnFichaTecnica = $('#modal-producto-fichatecnica');
+    if (btnFichaTecnica) {
+      if (p.fichaTecnica) {
+        btnFichaTecnica.href = p.fichaTecnica;
+        btnFichaTecnica.style.display = '';
+      } else {
+        btnFichaTecnica.style.display = 'none';
+      }
     }
 
     const btnCompartir = $('#modal-producto-compartir');

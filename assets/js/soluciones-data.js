@@ -842,9 +842,9 @@ window.SOLUCIONES_DATA = (function () {
         'Poner el suelo en servicio antes del tiempo de curado total indicado.',
       ],
       recommendedProducts: [
-        { nombre: 'TITANTECH PXB-700 Base Epoxi Suelos 4 L Base Neutra', categoria: 'Talleres', formato: '4 L', precio: '72,93 €' },
-        { nombre: 'TITANTECH PXB-700 Endurecedor Epoxi Suelos',          categoria: 'Talleres', formato: '1 L', precio: '15,55 €' },
-        { nombre: 'TITANTECH PXB-700 Epoxi Suelos 15 L Base Neutra',     categoria: 'Talleres', formato: '15 L (superficies grandes)', precio: '253,56 €' },
+        { nombre: 'TITANTECH PXB-700 Base Epoxi Suelos 4 L Base Neutra', categoria: 'Talleres', formato: '4 L', precio: '72,93 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'TITANTECH PXB-700 Endurecedor Epoxi Suelos',          categoria: 'Talleres', formato: '1 L', precio: '15,55 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'TITANTECH PXB-700 Epoxi Suelos 15 L Base Neutra',     categoria: 'Talleres', formato: '15 L (superficies grandes)', precio: '253,56 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
       ],
       alternativeProducts: [
         { etiqueta: 'Uso sanitario/alimentario', nombre: 'Epoxi Suelos Sanitaria AQ.PXB-720 Blanco Base 4 L', precio: '97,27 €' },
@@ -1088,7 +1088,7 @@ window.SOLUCIONES_DATA = (function () {
       recommendedProducts: [
         { nombre: 'Masilla Plástica Kolman',                          categoria: 'Pinturas', formato: '250 ml', precio: '2,48 €' },
         { nombre: 'Imprimación Multiadherente al Agua Koman',         categoria: 'Pinturas', formato: '4 L',   precio: '46,63 €' },
-        { nombre: 'TITANPRO P-40 P.Acrílica Premium Mate 15 L. Blanco', categoria: 'Pinturas', formato: '15 L',  precio: '66,03 €' },
+        { nombre: 'TITANPRO P-40 P.Acrílica Premium Mate 15 L. Blanco', categoria: 'Pinturas', formato: '15 L',  precio: '66,03 €', fichaTecnica: 'https://www.titanpro.es/es/productos/p-40-pintura-acrilica-premium-mate' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción económica (retoques)', nombre: 'Jamicolor Pintura Plástica Mate Int/Ext 750 ml Blanco', precio: '2,54 €' },
@@ -1592,7 +1592,7 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar una sola mano esperando la misma protección que con dos.',
       ],
       recommendedProducts: [
-        { nombre: 'TITAN-PRO R40 NF 100% ACRILICO MATE WHITE=WB 15 L.', categoria: 'Pinturas', formato: '15 L', precio: '95,41 €' },
+        { nombre: 'TITAN-PRO R40 NF 100% ACRILICO MATE WHITE=WB 15 L.', categoria: 'Pinturas', formato: '15 L', precio: '95,41 €', fichaTecnica: 'https://www.titanpro.es/productos/r-40-revestimiento-liso-100-acrilico-puro' },
         { nombre: 'Aguaplast Exterior',                                  categoria: 'Pinturas', formato: '1,5 kg', precio: '5,43 €' },
         { nombre: 'Recambio Rodillo Fachadas Tripol',                     categoria: 'Pinturas', formato: '22 cm', precio: '4,69 €' },
       ],
@@ -2613,9 +2613,9 @@ window.SOLUCIONES_DATA = (function () {
         'No revisar la estructura periódicamente, esperando a que el óxido ya sea visible para actuar.',
       ],
       recommendedProducts: [
-        { nombre: 'Imprimación Sintética Secado Rápido SX-100', categoria: 'Talleres', formato: '15 L', precio: '88,75 €' },
-        { nombre: 'Imprimación Epoxi Anticorrosiva SXB-200',      categoria: 'Talleres', formato: '750 ml', precio: '14,40 €' },
-        { nombre: 'Titantech Esmalte Sintético Brillo EX-330',    categoria: 'Talleres', formato: '4 L', precio: '45,82 €' },
+        { nombre: 'Imprimación Sintética Secado Rápido SX-100', categoria: 'Talleres', formato: '15 L', precio: '88,75 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X10_0000_SX100_IMPRIMACION_SINTETICA_SECADO_RAPIDO_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'Imprimación Epoxi Anticorrosiva SXB-200',      categoria: 'Talleres', formato: '750 ml', precio: '14,40 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X20_0000_SXB200_IMPRIMACION_EPOXI_ANTICORROSIVA_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'Titantech Esmalte Sintético Brillo EX-330',    categoria: 'Talleres', formato: '4 L', precio: '45,82 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X33_0000_EX330_ESMALTE_SINTETICO_BRILLANTE_ES.pdf?v=2023-06-27-165500' },
       ],
       alternativeProducts: [
         { etiqueta: 'Ambiente de corrosión alta',     nombre: 'Titantech SXB-210 Imprimación Epoxi AE HB SB 15 L', precio: '307,34 €' },
@@ -2668,8 +2668,8 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar un espesor de esmalte de acabado excesivo, que puede afectar a la expansión de la intumescente en caso de incendio.',
       ],
       recommendedProducts: [
-        { nombre: 'Pintura Intumescente Agua A-80 IX-080',   categoria: 'Talleres', formato: '25 kg', precio: '384,72 €' },
-        { nombre: 'Titantech Imprimación Sintética SX-100',   categoria: 'Talleres', formato: '15 L', precio: '88,75 €' },
+        { nombre: 'Pintura Intumescente Agua A-80 IX-080',   categoria: 'Talleres', formato: '25 kg', precio: '384,72 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X08_0000_IX080_PINTURA_INTUMESCENTE_A80_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'Titantech Imprimación Sintética SX-100',   categoria: 'Talleres', formato: '15 L', precio: '88,75 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X10_0000_SX100_IMPRIMACION_SINTETICA_SECADO_RAPIDO_ES.pdf?v=2023-06-27-165500' },
       ],
       alternativeProducts: [
         { etiqueta: 'Mayor resistencia al fuego (R120-R180)', nombre: 'Titantech IX-085 Intumescente A85 25 kg', precio: '392,16 €' },
@@ -2721,8 +2721,8 @@ window.SOLUCIONES_DATA = (function () {
         'Manipular la pieza antes de que la laca haya curado del todo.',
       ],
       recommendedProducts: [
-        { nombre: 'Titantech MXB-970 Fondo Poliuretano',       categoria: 'Talleres', formato: '750 ml', precio: '12,52 €' },
-        { nombre: 'Titantech MXB-960 Laca Poliuretano Satinada', categoria: 'Talleres', formato: '6 L', precio: '72,36 €' },
+        { nombre: 'Titantech MXB-970 Fondo Poliuretano',       categoria: 'Talleres', formato: '750 ml', precio: '12,52 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X97_0000_MXB970_LACA_POLIURETANO_BLANCA_MATE_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'Titantech MXB-960 Laca Poliuretano Satinada', categoria: 'Talleres', formato: '6 L', precio: '72,36 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X96_0000_MXB960_LACA_POLIURETANO_BLANCA_SATINADA_ES.pdf?v=2023-06-27-165500' },
       ],
       alternativeProducts: [
         { etiqueta: 'Acabado incoloro', nombre: 'Laca Poliuretano Incolora MXB-950' },
@@ -2989,8 +2989,8 @@ window.SOLUCIONES_DATA = (function () {
         'No revisar el resultado con luz rasante antes de dar el trabajo por terminado.',
       ],
       recommendedProducts: [
-        { nombre: 'TITAN-PRO S-60 PLACAS MULTIYESO 4 L.BL.MATE', categoria: 'Pinturas', formato: '4 L', precio: '24,79 €' },
-        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €' },
+        { nombre: 'TITAN-PRO S-60 PLACAS MULTIYESO 4 L.BL.MATE', categoria: 'Pinturas', formato: '4 L', precio: '24,79 €', fichaTecnica: 'https://www.titanpro.es/productos/s-60-pintura-placas-multi-yeso' },
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
       ],
       alternativeProducts: [
         { etiqueta: 'Formato grande', nombre: 'TITAN-PRO S-60 P.PLACAS MULTIYESO 15 L.BL.MATE', precio: '71,03 €' },
@@ -3315,7 +3315,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'TITAN LIMPIADOR ANTIMOHO 500 ML.', categoria: 'Droguería', formato: '500 ml', precio: '4,84 €' },
-        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €' },
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
       ],
       alternativeProducts: [
         { etiqueta: 'Método alternativo de limpieza', nombre: 'LEJIA ACE 2 L.REGULAR', precio: '1,75 €' },
@@ -4727,7 +4727,7 @@ window.SOLUCIONES_DATA = (function () {
         ],
       },
       recommendedProducts: [
-        { nombre: 'TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE', categoria: 'Pintura', formato: '1 L', precio: '8,54 €' },
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE', categoria: 'Pintura', formato: '1 L', precio: '8,54 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
         { nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', categoria: 'Pintura', formato: '750 ml', precio: '17,67 €' },
       ],
       alternativeProducts: [],
