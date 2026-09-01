@@ -5123,9 +5123,27 @@ window.SOLUCIONES_DATA = (function () {
   ]);
 
   function palabrasSignificativas(texto) {
-    return normalizarTexto(texto)
-      .split(/[^a-z0-9áéíóúñ]+/i)
-      .filter((w) => w.length >= 4 && !STOPWORDS_BUSQUEDA.has(w));
+    const t = normalizarTexto(texto);
+    const palabras = t.split(/[^a-z0-9áéíóúñ]+/i)
+      // Palabras normales: mínimo 4 letras. Códigos de producto cortos
+      // (p.ej. "p60", "ex330") se permiten desde 2 caracteres, pero solo
+      // si combinan letra Y dígito — un fragmento puramente numérico
+      // como "60" (lo que queda de "P-60" al partir por el guion) NO
+      // basta por sí solo: coincidiría por igual con "R-60", "S-60" o
+      // cualquier otro código que también termine en 60, perdiendo
+      // justo la parte que distingue un código de otro.
+      .filter((w) => (w.length >= 4 || (w.length >= 2 && /[a-z]/i.test(w) && /\d/.test(w))) && !STOPWORDS_BUSQUEDA.has(w));
+    // Códigos de producto con guion ("p-60", "pxb-730", "ex-330"):
+    // capturados aparte como token combinado sin el guion, para no
+    // depender de que el split genérico los mantenga unidos — así
+    // buscar "p-60" añade también "p60" a la lista de términos, en vez
+    // de perderse entre los fragmentos "p" y "60" por separado.
+    const codigos = t.match(/[a-z]{1,4}-\d{2,4}/gi) || [];
+    codigos.forEach((c) => {
+      const combinado = c.replace(/-/g, '');
+      if (combinado.length >= 3 && !palabras.includes(combinado)) palabras.push(combinado);
+    });
+    return palabras;
   }
 
   function contienePalabra(textoNorm, palabra) {
@@ -5134,12 +5152,37 @@ window.SOLUCIONES_DATA = (function () {
     return new RegExp('(^|[^a-z0-9áéíóúñ])' + palabra + '($|[^a-z0-9áéíóúñ])').test(textoNorm);
   }
 
+  // Coincidencia de código de producto ignorando guiones/puntos/espacios:
+  // "p60" o "p-60" deben encontrar por igual un producto llamado
+  // "TITAN P-60 P.VINILICA...". contienePalabra() por sí sola no basta
+  // aquí porque exige límites de palabra completos, y un guion ya cuenta
+  // como límite — "p60" nunca sería "la misma palabra" que "p-60" para esa
+  // función aunque sean el mismo código para cualquier persona.
+  function coincideCodigoProducto(textoNorm, terminoNorm) {
+    const bSinSep = terminoNorm.replace(/[^a-z0-9]/g, '');
+    if (bSinSep.length < 3) return false;
+    const tSinSep = textoNorm.replace(/[^a-z0-9]/g, '');
+    const i = tSinSep.indexOf(bSinSep);
+    if (i === -1) return false;
+    // El carácter justo después de la coincidencia no puede ser otro
+    // dígito: si no, "p60" "encontraría" el "60" que hay dentro de
+    // "hp600" (de un código totalmente distinto, p.ej. una pistola
+    // "1.5HP-600"), quedándose solo con el principio de un número más
+    // largo en vez del código completo real.
+    const siguiente = tSinSep.charAt(i + bSinSep.length);
+    if (siguiente && /\d/.test(siguiente)) return false;
+    return true;
+  }
+
   // Búsqueda global entre TODAS las soluciones (título, descripción,
-  // categoría/subcategoría y migas de pan) — a diferencia de
-  // diagnosticarPorTexto(), que solo reconoce los ~53 "problemas
-  // frecuentes" curados a mano, esta función encuentra cualquier guía
-  // cuyo contenido mencione la palabra buscada, para quien ya sabe qué
-  // palabra quiere buscar y no quiere navegar por toda la página.
+  // categoría/subcategoría, migas de pan, Y los productos recomendados de
+  // cada una) — a diferencia de diagnosticarPorTexto(), que solo reconoce
+  // los ~90 "problemas frecuentes" curados a mano, esta función encuentra
+  // cualquier guía cuyo contenido O cuyos productos mencionen lo buscado.
+  // Incluir los productos es lo que permite que buscar el código de un
+  // barniz o una pintura concreta (p.ej. "p60", "pxb-730") lleve
+  // directamente a la guía que lo usa, no solo a guías que mencionan esa
+  // palabra en el título.
   function buscarSolucionesPorTexto(texto) {
     const palabras = palabrasSignificativas(texto);
     if (!palabras.length) return [];
@@ -5149,15 +5192,65 @@ window.SOLUCIONES_DATA = (function () {
       const restoNorm = normalizarTexto(
         [s.description, s.category, s.subcategory, (s.breadcrumb || []).join(' ')].filter(Boolean).join(' ')
       );
+      const productosNorm = (s.recommendedProducts || [])
+        .map((p) => normalizarTexto(p.nombre || ''))
+        .join(' | ');
       let puntuacion = 0;
       palabras.forEach((w) => {
         if (contienePalabra(tituloNorm, w)) puntuacion += 3; // el título pesa más
         else if (contienePalabra(restoNorm, w)) puntuacion += 1;
+        else if (contienePalabra(productosNorm, w) || coincideCodigoProducto(productosNorm, w)) puntuacion += 2;
       });
       if (puntuacion > 0) resultados.push({ solucion: s, puntuacion });
     });
     resultados.sort((a, b) => b.puntuacion - a.puntuacion);
     return resultados.map((r) => r.solucion);
+  }
+
+  // Índice de todos los productos con ficha técnica de fabricante
+  // conocida (TitanTech/TitanPro, ver recommendedProducts[].fichaTecnica),
+  // construido una sola vez y cacheado — permite responder directamente a
+  // "ficha técnica p60" o "ficha técnica pxb-730" sin depender de que esa
+  // guía aparezca entre los resultados normales de búsqueda.
+  let indiceFichaTecnicaCache = null;
+  function construirIndiceFichaTecnica() {
+    if (indiceFichaTecnicaCache) return indiceFichaTecnicaCache;
+    const indice = [];
+    Object.values(soluciones).forEach((sol) => {
+      (sol.recommendedProducts || []).forEach((p) => {
+        if (p.fichaTecnica) {
+          indice.push({
+            nombre: p.nombre,
+            fichaTecnica: p.fichaTecnica,
+            codigoNorm: normalizarTexto(p.nombre).replace(/[^a-z0-9]/g, ''),
+            solutionSlug: sol.slug,
+            solutionTitle: sol.title,
+          });
+        }
+      });
+    });
+    indiceFichaTecnicaCache = indice;
+    return indice;
+  }
+
+  // Detecta consultas del tipo "ficha técnica X" (o simplemente "X" si X
+  // ya es un código reconocible) y devuelve el producto + enlace directo
+  // a su ficha técnica de fabricante si hay una coincidencia razonable.
+  // null si no hay nada que se le parezca lo suficiente.
+  function buscarFichaTecnicaPorTexto(texto) {
+    const t = normalizarTexto(texto);
+    if (!t.trim()) return null;
+    // Si la consulta menciona explícitamente "ficha" (técnica o no), se
+    // interpreta el resto como el código a buscar; si no, se prueba con
+    // el texto completo tal cual (para que un buscador ya centrado en
+    // fichas técnicas, o alguien que solo teclea el código, funcione
+    // igual sin tener que escribir la palabra "ficha").
+    const m = t.match(/\bficha\s*(tecnica|técnica)?\s*(?:de(?:l)?)?\s*(.*)/);
+    const consulta = (m && m[2].trim()) ? m[2] : t;
+    const codigoBuscado = consulta.replace(/[^a-z0-9]/g, '');
+    if (codigoBuscado.length < 3) return null;
+    const indice = construirIndiceFichaTecnica();
+    return indice.find((p) => coincideCodigoProducto(p.codigoNorm, codigoBuscado)) || null;
   }
 
   // Búsqueda combinada — pensada para el buscador rápido del hero, donde
@@ -5249,6 +5342,6 @@ window.SOLUCIONES_DATA = (function () {
     acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, resolverProductoReal,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal,
   };
 })();

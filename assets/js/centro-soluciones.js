@@ -70,26 +70,37 @@
         resultados.innerHTML = '';
         return;
       }
+
+      // Detecta consultas de ficha técnica ("ficha técnica p60", "ficha
+      // de pxb-730", o directamente el código "p60") ANTES que cualquier
+      // otra cosa — si hay coincidencia, se muestra como un resultado
+      // destacado propio, con enlace directo al PDF del fabricante,
+      // encima de las guías que puedan encontrarse además con el mismo
+      // texto. Ver buscarFichaTecnicaPorTexto en soluciones-data.js.
+      const fichaDirecta = D.buscarFichaTecnicaPorTexto(texto);
+
       // Combina el diagnóstico curado (~90 términos/sinónimos, incluye
       // coloquialismos como "cloro" para la guía de piscinas aunque esa
       // palabra no aparezca escrita en su título) con la coincidencia
-      // literal en título/descripción — antes solo se usaba esta segunda,
-      // mucho más limitada. Ver buscarSolucionesCombinado en
-      // soluciones-data.js para el porqué completo.
+      // literal en título/descripción/productos — antes solo se usaba
+      // esta segunda, mucho más limitada. Ver buscarSolucionesCombinado
+      // en soluciones-data.js para el porqué completo.
       const encontradas = D.buscarSolucionesCombinado(texto).slice(0, 12);
-      if (encontradas.length) {
-        mostrarResultadosBusquedaHero(encontradas, texto);
+
+      if (fichaDirecta || encontradas.length) {
+        mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta);
         return;
       }
 
-      // Ni el diagnóstico ni el título/descripción de ninguna guía
-      // encajan — antes esto ya terminaba en "no hemos encontrado nada",
-      // dando la sensación de un buscador roto para cualquier término no
-      // anticipado (p. ej. "moscas", sin guía propia aunque sí haya
-      // insecticidas reales en el catálogo). Último recurso: buscar de
-      // verdad en el catálogo completo (mismo mecanismo que ya usaba
-      // "¿Tienes un problema?" como respaldo) y proponer esos productos
-      // en vez de dejar a la persona sin nada.
+      // Ni el diagnóstico ni el título/descripción/productos de ninguna
+      // guía encajan, ni hay ficha técnica reconocible — antes esto ya
+      // terminaba en "no hemos encontrado nada", dando la sensación de un
+      // buscador roto para cualquier término no anticipado (p. ej.
+      // "moscas", sin guía propia aunque sí haya insecticidas reales en
+      // el catálogo). Último recurso: buscar de verdad en el catálogo
+      // completo (mismo mecanismo que ya usaba "¿Tienes un problema?"
+      // como respaldo) y proponer esos productos en vez de dejar a la
+      // persona sin nada.
       resultados.innerHTML = `<p class="cs-hero__buscador-contador">Buscando en el catálogo completo para "${texto}"…</p>`;
       resultados.style.display = 'block';
       D.buscarProductosEnCatalogo(texto).then((productos) => {
@@ -116,9 +127,22 @@
       });
     }
 
-    function mostrarResultadosBusquedaHero(encontradas, texto) {
+    function mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta) {
+      const bloqueFicha = fichaDirecta ? `
+        <div class="cs-hero__ficha-directa">
+          <span aria-hidden="true">📋</span>
+          <div>
+            <strong>Ficha técnica de fabricante:</strong> ${fichaDirecta.nombre}
+            <a href="${fichaDirecta.fichaTecnica}" target="_blank" rel="noopener" class="cs-hero__buscador-chip" style="margin-left:10px;">Abrir PDF →</a>
+          </div>
+        </div>
+      ` : '';
+      const contador = encontradas.length
+        ? `<p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>`
+        : (fichaDirecta ? `<p class="cs-hero__buscador-contador">No hay una guía específica para "${texto}", pero sí la ficha técnica del producto:</p>` : '');
       resultados.innerHTML = `
-        <p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>
+        ${bloqueFicha}
+        ${contador}
         <div class="cs-hero__buscador-lista">
           ${encontradas.map((s) => {
             const area = D.areas.find((a) => a.id === s.category);

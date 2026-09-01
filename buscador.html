@@ -3808,6 +3808,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Coincidencia exacta o por inclusión de la frase completa
         if (t.includes(b)) return true;
 
+        // Coincidencia ignorando guiones/puntos/espacios — pensada para
+        // códigos de producto tipo "P-60", "PXB-730", "EX-330": buscar
+        // "p60" o "p-60" debe encontrar "P-60" por igual. Sin este paso,
+        // "p60" (3 caracteres) nunca coincidía: la tolerancia difusa de
+        // más abajo está deliberadamente desactivada para palabras de 3
+        // caracteres o menos (para no dar falsos positivos), así que un
+        // código corto con guion nunca llegaba a compararse de verdad.
+        // Se exige un mínimo de 3 caracteres ya sin separadores para
+        // evitar coincidencias demasiado amplias con búsquedas triviales.
+        const bSinSep = b.replace(/[^a-z0-9]/g, '');
+        if (bSinSep.length >= 3) {
+            const tSinSep = t.replace(/[^a-z0-9]/g, '');
+            const i = tSinSep.indexOf(bSinSep);
+            // El carácter justo después de la coincidencia no puede ser
+            // otro dígito: si no, "p60" "encontraría" el "60" que hay
+            // dentro de un código totalmente distinto como "hp600",
+            // quedándose con el principio de un número más largo en vez
+            // del código completo real.
+            if (i !== -1 && !/\d/.test(tSinSep.charAt(i + bSinSep.length) || '')) return true;
+        }
+
         const palabrasBusqueda = b.split(/\s+/).filter(Boolean);
         if (!palabrasBusqueda.length) return true;
         const palabrasTexto = t.split(/\s+/).filter(Boolean);

@@ -208,8 +208,26 @@
   line-height: 1.6;
   font-size: 0.92rem;
 }
+.cs-hero__ficha-directa {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  line-height: 1.5;
+}
+.cs-hero__ficha-directa span[aria-hidden] {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
 @media (max-width: 640px) {
   .cs-hero__buscador-resultados { padding: 14px; }
+  .cs-hero__ficha-directa { flex-direction: column; }
 }
 .cs-hero__ctas {
   display: flex;
