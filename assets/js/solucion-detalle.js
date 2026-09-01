@@ -2,6 +2,27 @@
   const D = window.SOLUCIONES_DATA;
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
 
+  // Fallback del logo de una carta de colores si la imagen no carga —
+  // como función global en vez de JS inline dentro del atributo onerror:
+  // el HTML inline necesitaba comillas simples anidadas dentro de otras
+  // comillas simples (el propio insertAdjacentHTML('...', '<span
+  // class=\'...\'>...')) que el navegador cortaba de forma prematura,
+  // rompiendo el atributo entero con un error real de "missing ) after
+  // argument list" — bug real encontrado al añadir una segunda carta de
+  // colores a una misma solución (ver colorCharts más abajo), pero que
+  // ya afectaba también a la carta única de las demás soluciones.
+  window.cargarFallbackColorChart = function (img) {
+    img.onerror = null;
+    img.style.display = 'none';
+    const contenedor = img.parentElement;
+    const previo = contenedor.querySelector('.cs-colorchart-fallback');
+    if (previo) previo.remove();
+    const span = document.createElement('span');
+    span.className = 'cs-colorchart-fallback';
+    span.textContent = '🎨';
+    contenedor.insertBefore(span, contenedor.firstChild);
+  };
+
   function badgeDificultad(dificultad) {
     const clase = dificultad === 'Fácil' ? 'facil' : dificultad === 'Difícil' ? 'dificil' : 'media';
     return `<span class="cs-badge-dificultad cs-badge-dificultad--${clase}">${dificultad}</span>`;
@@ -79,9 +100,17 @@
           </div>
           ${sol.colorChart ? `
           <a class="cs-colorchart-link" href="${sol.colorChart.url}" target="_blank" rel="noopener">
-            ${sol.colorChart.logo ? `<img class="cs-colorchart-link__logo" src="${sol.colorChart.logo}" alt="${sol.colorChart.label}" loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.parentElement.querySelector('.cs-colorchart-fallback')?.remove(); this.parentElement.insertAdjacentHTML('afterbegin', '<span class=\'cs-colorchart-fallback\'>🎨</span>');">` : '🎨'}
+            ${sol.colorChart.logo ? `<img class="cs-colorchart-link__logo" src="${sol.colorChart.logo}" alt="${sol.colorChart.label}" loading="lazy" onerror="cargarFallbackColorChart(this)">` : '🎨'}
             <span>${sol.colorChart.label}</span>
           </a>` : ''}
+          ${sol.colorCharts && sol.colorCharts.length ? `
+          <div style="display:flex;flex-wrap:wrap;gap:10px;${sol.colorChart ? 'margin-top:10px;' : ''}">
+            ${sol.colorCharts.map((cc) => `
+            <a class="cs-colorchart-link" href="${cc.url}" target="_blank" rel="noopener">
+              ${cc.logo ? `<img class="cs-colorchart-link__logo" src="${cc.logo}" alt="${cc.label}" loading="lazy" onerror="cargarFallbackColorChart(this)">` : '🎨'}
+              <span>${cc.label}</span>
+            </a>`).join('')}
+          </div>` : ''}
         </div>
       </section>
 

@@ -89,6 +89,7 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'pegamento',     label: 'Tengo restos de pegamento',            solutionSlug: 'quitar-restos-pegamento' },
     { id: 'marcas_lijado', label: 'Hay marcas de lijado',                 solutionSlug: 'corregir-marcas-lijado' },
     { id: 'mal_acabado',   label: 'El acabado no ha quedado bien',        solutionSlug: 'restaurar-mueble-madera' },
+    { id: 'igualar_color_madera', label: 'Necesito igualar el color de un mueble nuevo con el resto', solutionSlug: 'igualar-color-madera-barniz' },
     { id: 'descuelgue',    label: 'La pintura se descuelga',              solutionSlug: 'corregir-descuelgues-pintura' },
     { id: 'burbujas',      label: 'Han aparecido burbujas',                solutionSlug: 'restaurar-mueble-madera' },
     { id: 'blanquecino',   label: 'El barniz ha quedado blanquecino',     solutionSlug: 'restaurar-mueble-madera' },
@@ -240,6 +241,7 @@ window.SOLUCIONES_DATA = (function () {
         { title: 'Pintar un mueble',                    solutionSlug: 'restaurar-mueble-madera' },
         { title: 'Restaurar un mueble antiguo',         solutionSlug: 'restaurar-mueble-madera' },
         { title: 'Cambiar el color',                     solutionSlug: 'restaurar-mueble-madera' },
+        { title: 'Igualar el color de una silla nueva', solutionSlug: 'igualar-color-madera-barniz' },
         { title: 'Barnizar una mesa',                   solutionSlug: 'restaurar-mueble-madera' },
         { title: 'Eliminar barniz',                     solutionSlug: 'decapar-pintura-mueble' },
         { title: 'Pintar madera barnizada',             solutionSlug: 'restaurar-mueble-madera' },
@@ -604,10 +606,79 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción rápida',      nombre: 'Barniz al agua secado rápido', precio: '19,95 €' },
         { etiqueta: 'Opción profesional', nombre: 'Sistema de tinte + barniz de poliuretano', precio: '38,95 €' },
       ],
-      relatedSolutions: ['eliminar-oxido-metal', 'decapar-pintura-mueble', 'lacado-profesional-muebles'],
+      relatedSolutions: ['igualar-color-madera-barniz', 'eliminar-oxido-metal', 'decapar-pintura-mueble', 'lacado-profesional-muebles'],
       seo: {
         title: 'Cómo restaurar un mueble de madera | Guía — Orencio Matas',
         description: 'Aprende a restaurar un mueble de madera antiguo o deteriorado: decapado, lijado, reparación de desperfectos y barnizado.',
+      },
+    },
+    'igualar-color-madera-barniz': {
+      slug: 'igualar-color-madera-barniz',
+      title: 'Cómo igualar el color de una silla o mueble de madera nueva al resto',
+      description: 'Consigue que una silla, mesa o mueble de madera nuevo quede exactamente del mismo tono que el resto de tu mobiliario: primero se sella el poro y después se aplica el barniz del color adecuado.',
+      category: 'madera', subcategory: 'Igualar color',
+      problem: 'igualar_color_madera',
+      objective: 'acabado',
+      surface: 'madera',
+      difficulty: 'Media',
+      estimatedTime: '1 día (por los secados entre manos)',
+      result: 'Silla o mueble nuevo con el mismo tono que el resto del mobiliario de madera',
+      // Dos líneas de barniz Titan verificadas en el catálogo real, ambas
+      // disponibles en los mismos tonos de madera (roble, nogal, teca,
+      // caoba...): BARNIZ TITANLUX (sintético, la línea clásica) y BARNIZ
+      // TITAN ECO (al agua). Se muestran las dos cartas de colores a
+      // propósito — el cliente de ayer necesitaba la opción al agua, pero
+      // otro cliente con la misma necesidad podría preferir la sintética
+      // (secado más lento pero acabado más resistente) — así se elige con
+      // el bote real delante en vez de forzar una sola opción.
+      colorCharts: [
+        { label: 'Carta de colores Barniz Titanlux (sintético)', url: 'https://www.titanlux.es/', logo: 'https://static.titanlux.es/web/logo.png' },
+        { label: 'Carta de colores Barniz Titan Eco (al agua)', url: 'https://www.titanlux.es/', logo: 'https://static.titanlux.es/web/logo.png' },
+      ],
+      breadcrumb: ['Centro de Soluciones', 'Madera y restauración', 'Igualar color'],
+      materials: [
+        { fase: 'Preparación',    familiaSugerida: 'Abrasivos',            items: ['Lija de grano fino (220-240)'] },
+        { fase: 'Sellado del poro', familiaSugerida: 'Protectores para madera', items: ['XYLAZEL TAPAPOROS AL AGUA 750 ML.'] },
+        { fase: 'Color y acabado', familiaSugerida: 'Barnices',            items: ['BARNIZ TITANLUX SATINADO 750 ML.ROBLE (sintético)', 'BARNIZ TITAN ECO SATIN.750 ML.NOGAL (al agua)'] },
+      ],
+      receta: [
+        { fase: 'Lijar',    emoji: '🪵' },
+        { fase: 'Sellar',   emoji: '🧴' },
+        { fase: 'Barnizar', emoji: '🎨' },
+        { fase: 'Igualar',  emoji: '✅' },
+      ],
+      steps: [
+        { n: 1, title: 'Lijado suave de la pieza nueva', text: 'Aunque la madera venga ya lijada de fábrica, pasa una lija de grano fino para abrir ligeramente el poro y que el sellador y el barniz agarren de forma uniforme en toda la pieza.', productos: ['Lija de grano fino (220-240)'] },
+        { n: 2, title: 'Sellado del poro', text: 'Aplica un tapaporos antes de barnizar — sin este paso, la madera nueva absorbe el barniz de forma irregular según la zona (más en los poros abiertos, menos en los cerrados), y el color final nunca queda uniforme ni igual al resto de tus muebles.', productos: ['XYLAZEL TAPAPOROS AL AGUA 750 ML.'] },
+        { n: 3, title: 'Elegir la línea de barniz', text: 'Titan ofrece el mismo abanico de tonos de madera en dos versiones: la sintética clásica (Barniz Titanlux, secado más lento pero acabado muy resistente) y la línea al agua (Barniz Titan Eco, seca más rápido y con menos olor). Compara el tono real de tu mueble actual con la carta de colores de la línea que prefieras antes de comprar el bote — la carta de colores en pantalla u orientativa nunca sustituye a ver el color real.', productos: [] },
+        { n: 4, title: 'Prueba en una zona oculta', text: 'Antes de barnizar toda la pieza, aplica una mano en la parte de abajo del asiento o en una zona que no se vea, deja secar del todo, y compara el resultado real bajo la misma luz con el resto de tu mobiliario. Es mucho más fiable que fiarte solo del tono del bote o de la carta de colores.', productos: [] },
+        { n: 5, title: 'Barnizado en manos finas', text: 'Aplica el barniz elegido en 2-3 manos finas, siguiendo la veta de la madera, lijando muy suavemente entre manos con una lija muy fina para que el acabado quede uniforme.', productos: ['BARNIZ TITANLUX SATINADO 750 ML.ROBLE (sintético)', 'BARNIZ TITAN ECO SATIN.750 ML.NOGAL (al agua)'] },
+      ],
+      professionalTips: [
+        'El color de un barniz cambia según el número de manos aplicadas y el tono original de la madera de debajo — dos maderas distintas con el mismo barniz pueden no quedar exactamente iguales. La prueba en zona oculta del paso 4 es el paso que marca la diferencia entre un color aproximado y uno realmente igualado.',
+        'Si la madera nueva es más clara o más oscura que el resto de tu mobiliario, a veces hace falta una mano extra (o una menos) del mismo barniz para compensar el tono de base — no siempre el mismo número de manos da el mismo resultado en maderas distintas.',
+      ],
+      commonMistakes: [
+        'Barnizar directamente sin sellar antes el poro (la causa más habitual de que el color quede irregular o más oscuro en unas zonas que en otras).',
+        'Comprar el bote solo mirando el color en la carta o en la pantalla, sin comparar con la madera real.',
+        'No hacer la prueba en una zona oculta antes de barnizar la pieza completa.',
+        'Mezclar barniz sintético y al agua sobre la misma pieza sin dejar secar y lijar bien entre ambos.',
+        'Aplicar el barniz en manos demasiado gruesas, lo que oscurece el tono más de lo esperado.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Lija de grano fino (220-240)', categoria: 'Abrasivos', precio: '0,90 €' },
+        { nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', categoria: 'Pinturas', precio: '13,38 €' },
+        { nombre: 'BARNIZ TITAN ECO SATIN.750 ML.NOGAL', categoria: 'Pinturas', precio: '17,42 €' },
+        { nombre: 'BARNIZ TITANLUX SATINADO 750 ML.ROBLE', categoria: 'Pinturas', precio: '16,46 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Sintético (más resistente)', nombre: 'BARNIZ TITANLUX SATINADO 750 ML.CAOBA', precio: '16,46 €' },
+        { etiqueta: 'Al agua (secado rápido, menos olor)', nombre: 'BARNIZ TITAN ECO SATIN.750 ML.TECA', precio: '17,42 €' },
+      ],
+      relatedSolutions: ['restaurar-mueble-madera', 'decapar-pintura-mueble', 'lacado-profesional-muebles'],
+      seo: {
+        title: 'Cómo igualar el color de una silla o mueble de madera | Orencio Matas',
+        description: 'Cómo conseguir que una silla o mueble de madera nuevo quede del mismo color que el resto: sellado del poro y barnizado con carta de colores Titan sintética y al agua.',
       },
     },
     'recuperar-brillo-carroceria': {
@@ -4815,6 +4886,11 @@ window.SOLUCIONES_DATA = (function () {
       'marcas_lijado': ['marca de lijado', 'marcas de lijado', 'se ven las rayas del lijado'],
       'descuelgue': ['descuelga', 'chorrea', 'chorreado', 'se corre la pintura'],
       'quitar_pintura': ['decapar', 'decapante', 'quitar pintura vieja', 'quitar pintura'],
+      // 'igualar_color_madera' ANTES de 'mal_acabado': una consulta sobre
+      // conseguir que un mueble nuevo haga juego de color con el resto no
+      // es lo mismo que un problema de acabado — se queda con frases
+      // específicas de igualar/combinar/hacer juego de color en madera.
+      'igualar_color_madera': ['mismo color', 'igual color', 'igualar el color', 'igualar color', 'combinar el color', 'que haga juego', 'hacer juego con', 'haga juego', 'hagan juego', 'mismo tono', 'igual tono', 'silla nueva', 'mueble nuevo del mismo', 'que pegue con'],
       'mal_acabado':['barniz', 'blanquecino', 'burbuja', 'madera', 'no ha quedado bien'],
       // 'renovar_banera_sanitario' ANTES de 'moho_junta': una consulta sobre
       // renovar/cambiar el aspecto de la bañera o el lavabo no es lo mismo
