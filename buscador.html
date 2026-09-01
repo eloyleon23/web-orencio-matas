@@ -3970,6 +3970,32 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             console.log(`reconciliarConTextoEnVivo: ${podados} producto(s) retirado(s) por haberse dado de baja.`);
         }
 
+        // Colapsar referencias duplicadas a una sola entrada — puede pasar
+        // si el JSON estático base (data/productos.json, que se regenera
+        // en un workflow de GitHub aparte con su propio horario, no al
+        // instante) todavía no se ha vuelto a generar tras fusionar/borrar
+        // en el Sheet dos filas que compartían referencia por error: esta
+        // fuente en vivo ya solo tiene UNA fila para esa referencia, pero
+        // el JSON estático que se cargó primero seguía teniendo las DOS
+        // entradas antiguas — como el .filter() de arriba solo retira lo
+        // que ya no existe EN ABSOLUTO en la fuente en vivo (no lo que
+        // está duplicado), ambas entradas sobrevivían y las dos se
+        // actualizaban con el mismo dato, mostrándose como un duplicado
+        // visual en los resultados aunque el Sheet y esta caché en vivo ya
+        // estuvieran perfectamente correctos. Bug real reportado.
+        const antesDeDeduplicar = TODOS.length;
+        const refsVistas = new Set();
+        TODOS = TODOS.filter(p => {
+            if (p.fabricante) return true; // catálogos de proveedor: sin referencia única global, no tocar
+            if (refsVistas.has(p.ref)) return false;
+            refsVistas.add(p.ref);
+            return true;
+        });
+        const deduplicados = antesDeDeduplicar - TODOS.length;
+        if (deduplicados > 0) {
+            console.log(`reconciliarConTextoEnVivo: ${deduplicados} entrada(s) duplicada(s) por referencia colapsada(s) a una sola.`);
+        }
+
         if (data.familias_orden) FAMILIAS_ORDEN = data.familias_orden;
         if (data.subfamilias_orden) SUBFAMILIAS_ORDEN = data.subfamilias_orden;
         if (productoActual) {
