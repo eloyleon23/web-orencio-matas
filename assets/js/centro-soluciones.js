@@ -70,14 +70,53 @@
         resultados.innerHTML = '';
         return;
       }
-      const encontradas = D.buscarSolucionesPorTexto(texto).slice(0, 12);
-      if (!encontradas.length) {
-        resultados.innerHTML = `
-          <p class="cs-hero__buscador-vacio">No hemos encontrado ninguna guía para "<strong>${texto}</strong>" — prueba con otra palabra, o cuéntanoslo con tus propias palabras en <a href="#cs-problema">¿Tienes un problema?</a>.</p>
-        `;
-        resultados.style.display = 'block';
+      // Combina el diagnóstico curado (~90 términos/sinónimos, incluye
+      // coloquialismos como "cloro" para la guía de piscinas aunque esa
+      // palabra no aparezca escrita en su título) con la coincidencia
+      // literal en título/descripción — antes solo se usaba esta segunda,
+      // mucho más limitada. Ver buscarSolucionesCombinado en
+      // soluciones-data.js para el porqué completo.
+      const encontradas = D.buscarSolucionesCombinado(texto).slice(0, 12);
+      if (encontradas.length) {
+        mostrarResultadosBusquedaHero(encontradas, texto);
         return;
       }
+
+      // Ni el diagnóstico ni el título/descripción de ninguna guía
+      // encajan — antes esto ya terminaba en "no hemos encontrado nada",
+      // dando la sensación de un buscador roto para cualquier término no
+      // anticipado (p. ej. "moscas", sin guía propia aunque sí haya
+      // insecticidas reales en el catálogo). Último recurso: buscar de
+      // verdad en el catálogo completo (mismo mecanismo que ya usaba
+      // "¿Tienes un problema?" como respaldo) y proponer esos productos
+      // en vez de dejar a la persona sin nada.
+      resultados.innerHTML = `<p class="cs-hero__buscador-contador">Buscando en el catálogo completo para "${texto}"…</p>`;
+      resultados.style.display = 'block';
+      D.buscarProductosEnCatalogo(texto).then((productos) => {
+        // El texto del cuadro pudo cambiar mientras la búsqueda estaba en
+        // vuelo (usuario sigue escribiendo) — no pisar un resultado más
+        // reciente con uno de una búsqueda ya obsoleta.
+        if (input.value.trim() !== texto) return;
+        if (!productos.length) {
+          resultados.innerHTML = `
+            <p class="cs-hero__buscador-vacio">No hemos encontrado ninguna guía para "<strong>${texto}</strong>" — prueba con otra palabra, cuéntanoslo con tus propias palabras en <a href="#cs-problema">¿Tienes un problema?</a>, o consulta el <a href="buscador.html?q=${encodeURIComponent(texto)}">buscador completo de productos</a>.</p>
+          `;
+          resultados.style.display = 'block';
+          return;
+        }
+        const urlBuscador = `buscador.html?q=${encodeURIComponent(texto)}`;
+        resultados.innerHTML = `
+          <p class="cs-hero__buscador-contador">No tenemos una guía específica para "${texto}", pero sí productos que pueden ayudarte:</p>
+          <div class="cs-productos-grid" style="margin-top:12px;">
+            ${productos.slice(0, 6).map((p) => renderTarjetaProductoCatalogo(p)).join('')}
+          </div>
+          <a class="cs-hero__buscador-chip" href="${urlBuscador}" style="margin-top:14px;display:inline-flex;">Ver todos los resultados en el buscador →</a>
+        `;
+        resultados.style.display = 'block';
+      });
+    }
+
+    function mostrarResultadosBusquedaHero(encontradas, texto) {
       resultados.innerHTML = `
         <p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>
         <div class="cs-hero__buscador-lista">

@@ -5084,6 +5084,37 @@ window.SOLUCIONES_DATA = (function () {
     return resultados.map((r) => r.solucion);
   }
 
+  // Búsqueda combinada — pensada para el buscador rápido del hero, donde
+  // el usuario escribe una palabra suelta esperando encontrar algo SIEMPRE
+  // que exista una guía relacionada, sin tener que "acertar" con el
+  // término exacto. Antes ese buscador solo llamaba a
+  // buscarSolucionesPorTexto (coincidencia literal en título/descripción),
+  // completamente ciego a los ~90 sinónimos y términos coloquiales que sí
+  // conoce diagnosticarPorTexto (p. ej. "cloro" no aparece escrito en el
+  // título ni la descripción de la guía de mantenimiento de piscinas, pero
+  // SÍ está en su lista de palabras clave) — bug real reportado: buscar
+  // "cloro" no devolvía nada pese a existir una guía perfectamente
+  // relacionada. Combina ambas fuentes, con el diagnóstico curado primero
+  // (más fiable, es una lista mantenida a mano) y sin repetir una misma
+  // guía si ya apareció por el otro camino.
+  function buscarSolucionesCombinado(texto) {
+    const vistos = new Set();
+    const resultado = [];
+    const { todasLasSoluciones } = diagnosticarPorTexto(texto);
+    todasLasSoluciones.forEach((s) => {
+      if (vistos.has(s.solutionSlug)) return;
+      vistos.add(s.solutionSlug);
+      const sol = soluciones[s.solutionSlug];
+      if (sol) resultado.push(sol);
+    });
+    buscarSolucionesPorTexto(texto).forEach((sol) => {
+      if (vistos.has(sol.slug)) return;
+      vistos.add(sol.slug);
+      resultado.push(sol);
+    });
+    return resultado;
+  }
+
   function buscarProductosEnCatalogo(texto) {
     const palabras = palabrasSignificativas(texto);
     if (!palabras.length) return Promise.resolve([]);
@@ -5142,6 +5173,6 @@ window.SOLUCIONES_DATA = (function () {
     acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, resolverProductoReal,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, resolverProductoReal,
   };
 })();
