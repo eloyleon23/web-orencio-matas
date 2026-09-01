@@ -3957,7 +3957,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function reconciliarConTextoEnVivo(texto) {
         const data = JSON.parse(texto);
         const porRef = new Map((data.productos || []).map(p => [p.ref, p]));
+        const refsYaCargadas = new Set();
         TODOS.forEach(p => {
+            if (!p.fabricante) refsYaCargadas.add(p.ref);
             const actualizado = porRef.get(p.ref);
             if (actualizado) {
                 Object.assign(p, actualizado);
@@ -3966,6 +3968,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 delete p._imgLocalOverride;
             }
         });
+
+        // Incorporar productos NUEVOS que ya existen en la fuente en vivo
+        // pero que no estaban en absoluto en TODOS todavía — bug real
+        // reportado: un producto recién sincronizado desde el CRM (o
+        // añadido a mano) existía correctamente en la caché en vivo, pero
+        // nunca aparecía al buscarlo aunque se cerrara y volviera a abrir
+        // el navegador. El bucle de arriba solo RECORRE lo que ya estaba
+        // en TODOS y lo parchea si encuentra coincidencia — nunca añadía
+        // entradas nuevas de porRef que no tuvieran ya una entrada previa
+        // que parchear. Esto pasaba en cuanto el JSON estático de partida
+        // (cacheado por el navegador, o simplemente generado unos minutos
+        // antes de la sincronización) no incluía todavía el producto:
+        // ninguna cantidad de recargas normales lo corregía, porque la
+        // reconciliación en sí nunca miraba más allá de lo ya cargado.
+        let nuevos = 0;
+        porRef.forEach((p, ref) => {
+            if (!refsYaCargadas.has(ref)) {
+                TODOS.push(p);
+                nuevos++;
+            }
+        });
+        if (nuevos > 0) {
+            console.log(`reconciliarConTextoEnVivo: ${nuevos} producto(s) nuevo(s) incorporado(s) que no estaban en la carga inicial.`);
+            construirIndiceSugerencias();
+        }
 
         // Retirar productos del catálogo principal que ya no aparecen en
         // absoluto en la fuente en vivo — desde que tanto el JSON estático
