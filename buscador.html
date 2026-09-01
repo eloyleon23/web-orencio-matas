@@ -5970,8 +5970,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         'LIJAS',
     ];
 
+    // Fichas técnicas reales de fabricante para productos Werku
+    // verificadas a mano navegando werku.com (no un patrón adivinado: la
+    // ruta del PDF varía de un producto a otro según cuándo se subió, así
+    // que no se puede construir automáticamente a partir del código). Los
+    // productos Werku del catálogo son herramientas — caían en familias
+    // excluidas de ficha técnica (brochas/lijas) o en droguería, así que
+    // nunca mostraban este botón aunque sí tengan una PDF real disponible.
+    // Clave: el código WK tal y como aparece en el nombre del producto en
+    // el Sheet (p.ej. "...WK500470 MALET" → WK500470).
+    const FICHAS_TECNICAS_WERKU = {
+        'WK500470': 'https://www.werku.com/wp-content/uploads/2022/05/WK500470_Techical_File_ESP.pdf',
+        'WK500600': 'https://www.werku.com/wp-content/uploads/2022/05/WK500600_Technical_File_ESP.pdf',
+        'WK401200': 'https://www.werku.com/Technical_File_ESP/WK401200_Technical_File_ESP.pdf',
+        'WK400750': 'https://www.werku.com/Technical_File_ESP/WK400750_Technical_File_ESP.pdf',
+    };
+
+    // Busca un código WK dentro del nombre del producto (p.ej. "PISTOLA
+    // GRAVEDAD WERKU 1.5HP-600 ML.WK500470 MALET" → "WK500470") y
+    // devuelve su ficha técnica si está en la lista verificada de arriba.
+    function fichaTecnicaWerku(p) {
+        const m = (p.nombre || '').match(/WK\d{6}/i);
+        if (!m) return null;
+        return FICHAS_TECNICAS_WERKU[m[0].toUpperCase()] || null;
+    }
+
     function productoTieneFichaTecnica(p) {
         if (p.ficha_url) return true; // enlace directo real (ej. Glasurit) — siempre disponible
+        if (fichaTecnicaWerku(p)) return true; // Werku verificado — ver FICHAS_TECNICAS_WERKU
         if (p.area !== 'pinturas') return false;
         const familia = quitarAcentosMay(p.familia);
         return !FAMILIAS_SIN_FICHA_TECNICA.includes(familia);
@@ -5997,6 +6023,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         if (p.ficha_url) {
             boton.href = p.ficha_url;
+            boton.style.display = 'inline-flex';
+            return;
+        }
+
+        const fichaWerku = fichaTecnicaWerku(p);
+        if (fichaWerku) {
+            boton.href = fichaWerku;
             boton.style.display = 'inline-flex';
             return;
         }

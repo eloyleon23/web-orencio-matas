@@ -2504,9 +2504,9 @@ window.SOLUCIONES_DATA = (function () {
         'No limpiar la pistola justo después de usarla, dejando que el producto se seque dentro.',
       ],
       recommendedProducts: [
-        { nombre: 'Pistola Gravedad Werku 1.5HP-600 ml (maletín)', categoria: 'Talleres', precio: '120,70 €' },
-        { nombre: 'Pistola Airless Werku 1/4"-250 bar',             categoria: 'Talleres', precio: '66,70 €' },
-        { nombre: 'Pistola Pintar Werku HVLP-I 500 W',              categoria: 'Talleres', precio: '68,55 €' },
+        { nombre: 'Pistola Gravedad Werku 1.5HP-600 ml (maletín)', categoria: 'Talleres', precio: '120,70 €', fichaTecnica: 'https://www.werku.com/wp-content/uploads/2022/05/WK500470_Techical_File_ESP.pdf' },
+        { nombre: 'Pistola Airless Werku 1/4"-250 bar',             categoria: 'Talleres', precio: '66,70 €', fichaTecnica: 'https://www.werku.com/wp-content/uploads/2022/05/WK500600_Technical_File_ESP.pdf' },
+        { nombre: 'Pistola Pintar Werku HVLP-I 500 W',              categoria: 'Talleres', precio: '68,55 €', fichaTecnica: 'https://www.werku.com/Technical_File_ESP/WK401200_Technical_File_ESP.pdf' },
       ],
       alternativeProducts: [
         { etiqueta: 'Airless con aire asistido (mejor acabado)', nombre: 'Pistola Airless Aire Asistido Werku', precio: '117,52 €' },
@@ -2559,7 +2559,7 @@ window.SOLUCIONES_DATA = (function () {
         'No limpiar el polvo de lijado antes de pintar.',
       ],
       recommendedProducts: [
-        { nombre: 'Lijadora Circular Rotorbital Werku 150 mm', categoria: 'Talleres', precio: '64,74 €' },
+        { nombre: 'Lijadora Circular Rotorbital Werku 150 mm', categoria: 'Talleres', precio: '64,74 €', fichaTecnica: 'https://www.werku.com/Technical_File_ESP/WK400750_Technical_File_ESP.pdf' },
         { nombre: 'Amoladora Werku 115-125 mm 900 W',           categoria: 'Talleres', precio: '46,88 €' },
       ],
       alternativeProducts: [
