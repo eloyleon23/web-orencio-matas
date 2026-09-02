@@ -136,12 +136,24 @@ En la Fase 2, con la Sheet como fuente real, este problema desaparece.
 ## PROBADO Y VERIFICADO (Playwright no aplica aquí — se verificó
 ## renderizando el PDF real a PNG con PyMuPDF e inspeccionando cada página)
 
-- Catálogo completo con tema "mensual" (septiembre 2026): 7 páginas, portada + 13 familias + cierre.
+- Catálogo completo con tema "mensual" (septiembre 2026): portada incrustada en página 1 + productos reales debajo + 13 familias + cierre.
 - Mismo set de datos con tema "campaña navidad": colores/textos cambian correctamente sin tocar el motor.
 - Producto nivel 5 (pulidora RUPES): bloque destacado a toda anchura, imagen grande, badge "PRODUCTO DESTACADO".
 - Ofertas: badge "-15%"/"-20%"/"-12%" superpuesto a la imagen + precio tachado + precio final en el color de acento del tema.
 - Validación con productos rotos a propósito: 2 errores bloqueantes correctamente excluidos, 4 warnings correctamente registrados y sin romper el resto del catálogo.
 - **Bug real encontrado y corregido**: la página de cierre forzaba `PageBreak()`, dejando una página final casi vacía cuando el catálogo terminaba pronto en una hoja. Se quitó el salto forzado — ahora el cierre aprovecha el hueco que quede en la última página de contenido, y solo salta de página si de verdad no cabe.
+
+### Revisión visual v2 (tras la primera ejecución real, tres cambios pedidos)
+1. **Portada suelta eliminada**: el logo y el titular de campaña van ahora incrustados como un banner de color arriba de la página 1, que sigue directamente con productos reales debajo — como el prototipo de referencia. `portada()` se sustituyó por `encabezado_campana()`.
+2. **Productos ocupando más espacio de página**:
+   - Cada familia pasó de ser varios flowables sueltos a **una sola `Table`** (banner + filas, con `SPAN` para los anchos de protagonismo). Al ser una única tabla, ReportLab puede partirla entre páginas de forma natural — antes, un `KeepTogether` de banner+primera fila podía saltar entero a la página siguiente dejando el resto de la página anterior en blanco.
+   - `t.repeatRows = 1`: si una familia se parte entre páginas, el banner se repite arriba en la página siguiente — evita que el banner quede huérfano solo al final de una página con nada debajo.
+   - Rejilla a **3 columnas** (antes 4): celdas más grandes.
+   - **Bug encontrado y corregido**: las imágenes de productos con protagonismo 3+ (celda ancha, banda completa, destacado) se veían pequeñas porque `componer_lienzo_cuadrado()` las forzaba a un lienzo cuadrado con mucho margen blanco alrededor, pensado para la uniformidad de una rejilla de celdas de 1 columna. Ahora `imagenes.py` acepta `cuadrado=False`: a partir de protagonismo 3 se usa la proporción real de la foto (solo recorte de margen blanco, sin lienzo cuadrado), aprovechando todo el ancho/alto de celda asignado.
+3. **Estilo más llamativo**: precio como **sticker de color sólido** (bloque con fondo, no texto suelto) — amarillo/tema normal, color de acento + "¡OFERTA!"/tachado cuando hay descuento. Cada familia es una caja con borde de color de acento. Título de campaña en banner de color a toda anchura con logo incrustado.
+- **Bug de `leading` encontrado y corregido**: varios `ParagraphStyle` con `fontSize` grande (19-21pt) sin `leading` explícito heredaban el `leading` por defecto de ReportLab (12pt, fijo, no relativo al tamaño de fuente) — el texto se salía por arriba de su caja/fondo de color. Se añadió `leading` explícito a todos los estilos con fuente ≥9pt.
+- **Compromiso de páginas**: el nuevo diseño (imágenes más grandes, `repeatRows`, banners repetidos) usa algo más de página por familia — el catálogo de prueba pasó de 7 a 9 páginas. Con datos reales de Sheet (familias con más productos, no 1-4 como en el set de prueba) la densidad por página mejora sola.
+
 
 ---
 
@@ -160,22 +172,23 @@ En la Fase 2, con la Sheet como fuente real, este problema desaparece.
      local), añadir en `imagenes.py` un `descargar_imagen_drive()`
      calcado del de `generar_catalogos.py` — el resto del pipeline de
      imagen (recorte, lienzo, badge) no necesita cambios.
-2. **Composición**: con familias muy pequeñas (1-2 productos, como en
-   el set de prueba) puede quedar algo de hueco en la página siguiente
-   a una familia grande — con datos reales de Sheet (familias con más
-   productos) esto se compensa solo. Si se quiere afinar más, se podría
-   añadir una heurística de "rellenar con la familia siguiente si cabe
-   en el hueco restante", pero no ha hecho falta para este prototipo.
-3. **Portada**: queda con bastante espacio en blanco en la mitad
-   inferior — es una decisión de diseño (limpieza), pero si se quiere
-   más presencia visual se podría añadir un recurso gráfico de campaña
-   (`Tema.decorativo`, ya existe el campo en el modelo, sin usar
-   todavía) o un resumen de la selección (nº de familias/ofertas).
-4. **Sin probar aún con productos de imagen alojada en Drive** (los
+2. **Composición**: con familias muy pequeñas (1-4 productos, como en
+   el set de prueba) puede quedar algo de hueco al final de la página
+   cuando la familia siguiente no cabe entera — con datos reales de
+   Sheet (familias con más productos) esto se compensa solo. Si se
+   quiere afinar más, se podría añadir una heurística de "adelantar
+   productos de la familia siguiente al hueco restante", pero no ha
+   hecho falta para este prototipo.
+3. **Sin probar aún con productos de imagen alojada en Drive** (los
    ~3.073 de la Sheet con precio real) por la restricción de red del
    entorno de desarrollo — debería funcionar igual en GitHub Actions
    (que sí tiene acceso a Drive), pero conviene una primera prueba real
    ahí antes de dar la Fase 2 por cerrada.
+4. **Pulido visual pendiente de una segunda vuelta de revisión** con
+   Eloy tras esta v2 (portada incrustada, tablas por familia con
+   `repeatRows`, imágenes a proporción real desde protagonismo 3,
+   precios en formato sticker) — quedó abierto si hacen falta más
+   ajustes de estilo/densidad tras verlo de nuevo.
 
 ---
 

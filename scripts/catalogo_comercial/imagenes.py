@@ -57,21 +57,32 @@ def componer_lienzo_cuadrado(pil_img, tamano=400, fondo='white'):
 _cache: dict = {}
 
 
-def cargar_imagen_local(ruta: Optional[str], tamano=400) -> Optional[PILImage.Image]:
+def cargar_imagen_local(ruta: Optional[str], tamano=400, cuadrado=True) -> Optional[PILImage.Image]:
     if not ruta:
         return None
-    if ruta in _cache:
-        return _cache[ruta]
+    clave = (ruta, tamano, cuadrado)
+    if clave in _cache:
+        return _cache[clave]
     if not os.path.exists(ruta):
-        _cache[ruta] = None
+        _cache[clave] = None
         return None
     try:
         img = PILImage.open(ruta).convert('RGB')
-        img = componer_lienzo_cuadrado(img, tamano=tamano)
-        _cache[ruta] = img
+        if cuadrado:
+            img = componer_lienzo_cuadrado(img, tamano=tamano)
+        else:
+            # Sin forzar lienzo cuadrado: solo recorta el margen blanco y
+            # escala manteniendo la proporción real de la foto. Se usa
+            # para productos anchos (protagonismo 3+), donde forzar un
+            # cuadrado dejaba mucho margen blanco inútil alrededor del
+            # producto y lo hacía parecer más pequeño de lo que la celda
+            # realmente permite.
+            img = recortar_margen_blanco(img)
+            img.thumbnail((tamano, tamano), PILImage.LANCZOS)
+        _cache[clave] = img
         return img
     except Exception:
-        _cache[ruta] = None
+        _cache[clave] = None
         return None
 
 
@@ -144,11 +155,15 @@ def pil_to_bytes(img: PILImage.Image, calidad=82) -> bytes:
     return buf.getvalue()
 
 
-def imagen_para_producto(producto, tamano=400) -> PILImage.Image:
+def imagen_para_producto(producto, tamano=400, cuadrado=True) -> PILImage.Image:
     """Punto de entrada único: resuelve imagen real o placeholder, y
     aplica el badge de descuento si corresponde. Usado tanto por el
-    grid normal como por el layout de producto estrella."""
-    img = cargar_imagen_local(producto.imagen_ruta, tamano=tamano)
+    grid normal como por el layout de producto estrella.
+
+    `cuadrado=False` mantiene la proporción real de la foto (sin
+    lienzo cuadrado con margen blanco) — se usa para productos con
+    protagonismo 3+ para aprovechar mejor el espacio ancho asignado."""
+    img = cargar_imagen_local(producto.imagen_ruta, tamano=tamano, cuadrado=cuadrado)
     if img is None:
         img = generar_placeholder(producto.nombre, tamano=tamano)
     if producto.oferta and producto.descuento_pct and producto.descuento_pct > 0:

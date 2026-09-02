@@ -37,7 +37,7 @@ class Tema:
         'Precios con IVA incluido salvo indicación contraria. Consulta disponibilidad con nuestro equipo.'
     )
     decorativo: Optional[str] = None   # ruta a asset gráfico opcional (esquinas, cintas, etc.)
-    cols_grid: int = 4                  # nº de columnas base de la rejilla de producto
+    cols_grid: int = 3                  # nº de columnas base de la rejilla de producto (cartel: menos columnas, imágenes más grandes)
 
 
 # ── Registro de temas ───────────────────────────────────────────────────────

@@ -29,9 +29,11 @@ from typing import List, Union
 
 from .modelo import Producto
 
-# nivel de protagonismo → nº de "espacios" de rejilla (con cols=4: 1 col x1fila
-# hasta 4 cols x1fila). Nivel 5 no aparece aquí porque no usa rejilla.
-NIVEL_A_ESPACIOS = {1: 1, 2: 1, 3: 2, 4: 4}
+# nivel de protagonismo → nº de "espacios" de rejilla, en unidades
+# LÓGICAS (no columnas físicas — eso lo resuelve render_pdf según
+# cols_grid del tema activo). 99 es un centinela para "fila completa",
+# se recorta automáticamente a `cols` al renderizar.
+NIVEL_A_ESPACIOS = {1: 1, 2: 1, 3: 2, 4: 99}
 
 
 @dataclass
