@@ -1,0 +1,84 @@
+name: Generar Catálogo Comercial de Talleres
+
+# FASE 1 (actual): solo workflow_dispatch manual, con el periodo como
+# entrada y el set de productos de PRUEBA estático (22 productos reales
+# con imagen, ver data/catalogo_comercial_prueba/productos_prueba.json).
+# El PDF resultante se sube como artefacto del propio run — no se envía
+# a nadie todavía, es para revisar el modelo visual/de composición.
+#
+# FASE 2 (preparada, no activa): repository_dispatch con tipo
+# 'generar_catalogo_comercial', pensado para que un Google Apps Script
+# dispare este workflow pasando periodo + productos reales de la Sheet
+# como client_payload (mismo patrón que ya usa
+# enviar_catalogo_personalizado.yml). Cuando se conecte, solo hace falta
+# añadir el paso de envío por email (Brevo) al final, calcado del que ya
+# existe en ese otro workflow — el resto del pipeline no cambia.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tipo_periodo:
+        description: 'Tipo de periodo'
+        required: true
+        type: choice
+        options: [mes, trimestre, campaña]
+        default: mes
+      valor_periodo:
+        description: "Valor del periodo (ej. 'septiembre', 'Q4', 'navidad')"
+        required: true
+        default: 'septiembre'
+      anio_periodo:
+        description: 'Año del periodo'
+        required: true
+        default: '2026'
+  repository_dispatch:
+    types: [generar_catalogo_comercial]
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install reportlab pillow cairosvg pymupdf requests
+
+      - name: Generar PDF (workflow_dispatch — modo prueba manual)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python scripts/generar_catalogo_comercial.py \
+            --tipo "${{ inputs.tipo_periodo }}" \
+            --valor "${{ inputs.valor_periodo }}" \
+            --anio "${{ inputs.anio_periodo }}"
+
+      - name: Guardar payload de la Fase 2 (repository_dispatch)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          echo '${{ toJson(github.event.client_payload) }}' > /tmp/payload_catalogo_comercial.json
+
+      - name: Generar PDF (repository_dispatch — Fase 2, Sheet vía Apps Script)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          python scripts/generar_catalogo_comercial.py --payload /tmp/payload_catalogo_comercial.json
+
+      - name: Subir PDF como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalogo-comercial-talleres
+          path: catalogos_output/catalogo_comercial_*.pdf
+          retention-days: 30
+
+      # FASE 2 — paso pendiente de activar cuando se conecte la Sheet:
+      # envío por email vía Brevo, calcado de
+      # .github/workflows/enviar_catalogo_personalizado.yml (mismo
+      # secreto BREVO_API_KEY, mismo patrón de adjuntar el PDF en base64).
