@@ -310,6 +310,65 @@ caja, no en la banda de color de arriba.
 
 ---
 
+### Revisión visual v6 (quinta vuelta — comparación directa con el prototipo)
+Eloy compartió el prototipo de referencia otra vez señalando que casi
+no tiene espacio en blanco, y dos quejas concretas: (1) las columnas
+seguían sin terminar a la misma altura (la izquierda más larga que la
+derecha en todas las páginas), y (2) la última página seguía con mucho
+hueco sin cubrir.
+
+**Diagnóstico con datos reales, no a ojo**: se midió con `Table.wrap()`
+cuánto ocupaba realmente cada caja y cuánta capacidad de columna había.
+La caja de cierre de v5 tenía una altura FIJA (~422pt) que en la
+práctica solo llenaba ~54% de una columna completa (~780pt) — de ahí
+el hueco grande en la última página. Además, decidir el reparto de
+familias SIN saber que el cierre iría detrás producía un punto de
+corte que luego no encajaba bien con el cierre (ej.: familias
+repartidas 197pt/383pt, y el cierre de 422pt sumándose al lado que ya
+era más grande, empeorando el desequilibrio en vez de arreglarlo).
+
+- **Cierre de altura elástica**: `construir_caja_cierre()` acepta ahora
+  un `alto_objetivo` opcional — mide primero el contenido de texto fijo
+  (título, dirección, contacto) y estira el gráfico de ubicación
+  (que es decorativo, así que estirarlo no rompe nada) para que la
+  caja entera ocupe exactamente esa altura.
+- **El cierre SÍ participa en la decisión de dónde cortar entre
+  columnas, pero con tamaño de marcador de posición**: se añade un
+  cierre "de mentira" (altura por defecto) a la lista que procesa
+  `planificar_columnas()`, para que el punto de corte de las familias
+  ya cuente con que el cierre irá detrás. Una vez decidido el corte,
+  se descarta ese marcador, se mide cuánto ocupan REALMENTE las
+  familias que quedaron en cada columna de la última página (izq=hi,
+  der=hd), y se reconstruye el cierre de verdad con
+  `alto_objetivo = hi - hd` (acotado a la capacidad real que quede) —
+  así el cierre iguala exactamente la columna más corta con la más
+  larga, en vez de tener un tamaño fijo que a veces sobra y a veces
+  falta.
+- **Resultado medido**: la página de cierre pasó de columnas a
+  55%/74% de la capacidad (mucho hueco) a terminar prácticamente
+  igualadas, con el gráfico de ubicación creciendo para ocupar el
+  espacio extra en vez de dejarlo en blanco. Probado también con un
+  caso límite de solo 2 productos (1 familia) — el cierre se ajusta
+  igual de bien sin romperse.
+- **Límite real que queda, y por qué NO es un bug**: en páginas de
+  solo productos (sin el cierre, que es el único elemento "elástico"
+  disponible), el hueco que pueda quedar depende de si existe algún
+  punto de corte entre familias, en el orden dado, que se acerque a
+  partir la página justo por la mitad. Se comprobó a mano con los
+  números reales del set de prueba: en la página 1, por ejemplo,
+  después del mejor corte posible (`HERRAMIENTAS` sola a la izquierda,
+  3 familias a la derecha) el siguiente elemento de la secuencia
+  (`SPRAY MAX`) NO cabe en el hueco que queda en ninguna de las dos
+  columnas — no es que el algoritmo no lo intente, es que
+  matemáticamente no cabe dado el tamaño real de esa familia y el hueco
+  disponible. Con datos reales de la Sheet (más familias, tamaños más
+  variados) hay muchas más combinaciones posibles y este límite se
+  nota mucho menos. La alternativa para apurarlo del todo sería
+  permitir reordenar FAMILIAS (no productos) para buscar mejores
+  combinaciones — ver pendiente más abajo.
+
+---
+
 ## PENDIENTE / ABIERTO
 
 1. **Fase 2 — Google Sheet + Apps Script**: no implementada a propósito
@@ -335,11 +394,25 @@ caja, no en la banda de color de arriba.
    generando el gráfico ilustrativo (pin + rejilla). Cuando llegue la
    captura, sustituir esa función por la carga de la imagen fija desde
    `assets/`, o dejar ambas rutas (imagen real si existe el archivo,
-   ilustración de respaldo si no).
-4. **Pulido visual**: v5 corrige columnas, redondeado completo y cierre
-   integrado — pendiente de una nueva revisión con Eloy para ver si
-   hace falta un ajuste más de detalle o si ya está listo para dar la
-   Fase 1 por cerrada.
+   ilustración de respaldo si no). Con el cierre ahora de altura
+   elástica (ver v6), si se sustituye por una imagen real habrá que
+   decidir si se recorta/ajusta a la altura objetivo o si se deja con
+   su proporción real y se compensa con más padding alrededor.
+4. **Pulido visual**: v6 corrige el hueco en blanco de la última página
+   (el cierre ahora es elástico y encaja exacto) — pendiente de una
+   nueva revisión con Eloy para confirmar si las páginas de solo
+   productos (sin margen para un elemento elástico) están ya lo
+   bastante ajustadas o si hace falta seguir iterando.
+5. **Reordenar familias para apurar el hueco restante (no implementado
+   a propósito)**: en páginas de solo productos, el límite que queda
+   viene de que el orden de familias es fijo. Se podría, sin tocar el
+   orden de PRODUCTOS dentro de cada familia, probar variantes del
+   ORDEN DE FAMILIAS dentro de una misma página (parecido a resolver un
+   pequeño "bin packing" con más libertad) para encontrar combinaciones
+   que aprovechen mejor el hueco. No se ha hecho porque cambia el orden
+   visual de las familias respecto a como aparecen en la Sheet, y eso
+   requiere confirmación explícita de Eloy antes de tocarlo (ver
+   principio de "no reordenar" documentado en composicion.py).
 
 ---
 

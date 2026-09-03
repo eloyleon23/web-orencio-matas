@@ -564,38 +564,56 @@ def generar_grafico_ubicacion(tema, ancho_px=640, alto_px=420):
 
 
 # ── Cierre: se trata como una caja más dentro del reparto de columnas ───
-def construir_caja_cierre(tema, st, logo_png, ancho):
+def construir_caja_cierre(tema, st, logo_png, ancho, alto_objetivo=None):
     """Devuelve una CajaRedondeada con la info de contacto + gráfico de
-    ubicación, dimensionada al ancho de UNA columna — se añade como una
-    caja más a la lista que reparte `planificar_columnas()`, así ocupa
-    el hueco que quede libre en la última página de productos en vez de
-    forzar una página nueva dedicada solo a esto."""
-    contenido = []
+    ubicación, dimensionada al ancho de UNA columna.
+
+    Si se indica `alto_objetivo`, el gráfico de ubicación se estira
+    (manteniendo el resto del contenido fijo) para que la caja entera
+    ocupe esa altura exacta — así se puede hacer que el cierre rellene
+    justo el hueco que quede libre en la última página, en vez de tener
+    una altura fija que unas veces sobra y otras falta."""
+    fijo = []
     if logo_png and os.path.exists(logo_png):
         with PILImage.open(logo_png) as im:
             ratio = im.height / im.width
-        contenido.append(RLImage(logo_png, width=16 * mm, height=16 * mm * ratio))
-        contenido.append(Spacer(1, 3 * mm))
+        fijo.append(RLImage(logo_png, width=16 * mm, height=16 * mm * ratio))
+        fijo.append(Spacer(1, 3 * mm))
 
-    contenido.append(Paragraph('¿Necesitas más información?', st['cierre_titulo']))
-    contenido.append(Paragraph(tema.texto_cierre, st['cierre_texto']))
-    contenido.append(Spacer(1, 4 * mm))
-    contenido.append(Paragraph('ORENCIO MATAS Y HERMANOS, S.L.', st['cierre_direccion']))
-    contenido.append(Paragraph('Av. Alfred Nobel, 2 · 13005 Ciudad Real', st['cierre_texto']))
-    contenido.append(Spacer(1, 2 * mm))
-    contenido.append(Paragraph('Tel. 926 221 217', st['cierre_texto']))
-    contenido.append(Paragraph('correo@orenciomatas.es · orenciomatas.es', st['cierre_texto']))
-    contenido.append(Spacer(1, 5 * mm))
-    contenido.append(Paragraph('ENCUÉNTRANOS', ParagraphStyle(
+    fijo.append(Paragraph('¿Necesitas más información?', st['cierre_titulo']))
+    fijo.append(Paragraph(tema.texto_cierre, st['cierre_texto']))
+    fijo.append(Spacer(1, 4 * mm))
+    fijo.append(Paragraph('ORENCIO MATAS Y HERMANOS, S.L.', st['cierre_direccion']))
+    fijo.append(Paragraph('Av. Alfred Nobel, 2 · 13005 Ciudad Real', st['cierre_texto']))
+    fijo.append(Spacer(1, 2 * mm))
+    fijo.append(Paragraph('Tel. 926 221 217', st['cierre_texto']))
+    fijo.append(Paragraph('correo@orenciomatas.es · orenciomatas.es', st['cierre_texto']))
+    fijo.append(Spacer(1, 5 * mm))
+    fijo.append(Paragraph('ENCUÉNTRANOS', ParagraphStyle(
         'encnos', fontName='Helvetica-Bold', fontSize=9.5, textColor=_c(tema.color_acento),
         alignment=TA_LEFT, spaceAfter=3)))
+    nota = Paragraph('Ilustración orientativa — mapa real pendiente de sustituir por una captura.', st['nota'])
+
+    ancho_grafico = ancho - 6 * mm
+    ratio_grafico = 420 / 640
+    alto_grafico_normal = ancho_grafico * ratio_grafico
+
+    if alto_objetivo:
+        # Mide el bloque fijo (todo menos el gráfico) para saber cuánto
+        # espacio le queda disponible al gráfico.
+        tabla_fijo = Table([[fijo + [Spacer(1, 2 * mm), nota]]], colWidths=[ancho])
+        tabla_fijo.setStyle(TableStyle([
+            ('LEFTPADDING', (0, 0), (-1, -1), 5), ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+            ('TOPPADDING', (0, 0), (-1, -1), 6), ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        _, alto_fijo_sin_grafico = tabla_fijo.wrap(ancho, 100000)
+        alto_grafico = max(30 * mm, min(alto_objetivo - alto_fijo_sin_grafico, 180 * mm))
+    else:
+        alto_grafico = alto_grafico_normal
 
     grafico = generar_grafico_ubicacion(tema)
-    ancho_grafico = ancho - 6 * mm
-    contenido.append(RLImage(io.BytesIO(grafico), width=ancho_grafico, height=ancho_grafico * 420 / 640))
-    contenido.append(Spacer(1, 2 * mm))
-    contenido.append(Paragraph(
-        'Ilustración orientativa — mapa real pendiente de sustituir por una captura.', st['nota']))
+    contenido = fijo + [RLImage(io.BytesIO(grafico), width=ancho_grafico, height=alto_grafico),
+                         Spacer(1, 2 * mm), nota]
 
     tabla = Table([[contenido]], colWidths=[ancho])
     tabla.setStyle(TableStyle([
@@ -643,17 +661,37 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
         _, alto = caja.wrap(COL_W, 100000)
         tablas.append((caja, alto + 2.5 * mm))
 
-    # El cierre (dirección/contacto/ubicación) se trata como una caja
-    # más de la secuencia — así el algoritmo de reparto la coloca donde
-    # quede hueco en la última página de productos, en vez de forzar
-    # una página nueva dedicada solo a esto.
-    caja_cierre = construir_caja_cierre(tema, st, logo_png, COL_W)
-    _, alto_cierre = caja_cierre.wrap(COL_W, 100000)
-    tablas.append((caja_cierre, alto_cierre + 2.5 * mm))
-
     alto_pagina1 = (FRAME_TOP - HEADER_BOX_H) - FRAME_BOTTOM
     alto_normal = FRAME_TOP - FRAME_BOTTOM
-    paginas = planificar_columnas(tablas, alto_pagina1, alto_normal)
+
+    # El cierre participa en la DECISIÓN de dónde cortar entre columnas
+    # (con un tamaño por defecto, de "marcador de posición") para que
+    # el punto de corte de las familias ya cuente con que el cierre irá
+    # detrás — si no, la fase de familias podía repartir de una forma
+    # que luego no dejaba ningún hueco razonable para el cierre. Una
+    # vez decidido el corte, se descarta el marcador y se construye el
+    # cierre DE VERDAD con tamaño elástico (el gráfico de ubicación se
+    # estira) para ocupar exactamente el hueco que quede en su columna,
+    # así la última página termina con las dos columnas igualadas.
+    marcador_cierre = construir_caja_cierre(tema, st, logo_png, COL_W)
+    _, alto_marcador = marcador_cierre.wrap(COL_W, 100000)
+    paginas = planificar_columnas(tablas + [(marcador_cierre, alto_marcador + 2.5 * mm)],
+                                   alto_pagina1, alto_normal)
+
+    izq_ultima, der_ultima = paginas[-1]
+    izq_ultima = [c for c in izq_ultima if c is not marcador_cierre]
+    der_ultima = [c for c in der_ultima if c is not marcador_cierre]
+    paginas[-1] = (izq_ultima, der_ultima)
+
+    alturas_por_id = {id(c): h for c, h in tablas}
+    hi = sum(alturas_por_id[id(c)] for c in izq_ultima)
+    hd = sum(alturas_por_id[id(c)] for c in der_ultima)
+    cap_ultima = alto_pagina1 if len(paginas) == 1 else alto_normal
+
+    ALTURA_MINIMA_CIERRE = 90 * mm
+    objetivo = max(hi - hd, ALTURA_MINIMA_CIERRE)
+    objetivo = min(objetivo, max(cap_ultima - hd, ALTURA_MINIMA_CIERRE))
+    caja_cierre = construir_caja_cierre(tema, st, logo_png, COL_W, alto_objetivo=objetivo)
 
     story = []
     encabezado_campana(story, periodo, tema, logo_png, st)
@@ -668,7 +706,9 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
         for t in der:
             story.append(t)
             story.append(Spacer(1, 2.5 * mm))
-        if idx < len(paginas) - 1:
+        if idx == len(paginas) - 1:
+            story.append(caja_cierre)
+        else:
             story.append(FrameBreak())
 
     doc.build(story)
