@@ -43,7 +43,7 @@ from reportlab.platypus import (BaseDocTemplate, Frame, PageTemplate, FrameBreak
 from PIL import Image as PILImage, ImageDraw
 
 from .composicion import ElementoGrid, espacios_de
-from .imagenes import imagen_para_producto, pil_to_bytes
+from .imagenes import imagen_para_producto, pil_to_bytes, preparar_para_incrustar
 
 W, H = A4
 MARGIN = 10 * mm
@@ -52,7 +52,7 @@ CW = W - 2 * MARGIN
 COL_W = (CW - GAP) / 2
 
 TOP_BAR_H = 12 * mm
-BOTTOM_BAR_H = 11 * mm
+BOTTOM_BAR_H = 18 * mm
 HEADER_BOX_H = 46 * mm
 FRAME_TOP = H - TOP_BAR_H - 1.5 * mm
 FRAME_BOTTOM = BOTTOM_BAR_H + 1.5 * mm
@@ -180,22 +180,34 @@ def make_header_footer(logo_png, tema, periodo):
         canvas.drawString(tx, H - 7.3 * mm, 'ORENCIO MATAS Y HERMANOS, S.L.')
         canvas.setFont('Helvetica', 7)
         canvas.drawRightString(W - MARGIN, H - 7.3 * mm, periodo.etiqueta)
-        canvas.setFillColor(COLOR_FONDO)
+
+        # Pie de página fijo, con el MISMO color que la cabecera (a
+        # petición de Eloy) — grande de sobra para incluir el logo y
+        # el disclaimer con presencia real, no como una nota al pie
+        # discreta. Aparece igual en todas las páginas, así que
+        # también ayuda a que el final de la página nunca se vea
+        # "en blanco" aunque las dos columnas no terminen a la misma
+        # altura exacta.
+        canvas.setFillColor(color)
         canvas.rect(0, 0, W, BOTTOM_BAR_H, fill=1, stroke=0)
-        canvas.setStrokeColor(COLOR_BORDE)
-        canvas.line(MARGIN, BOTTOM_BAR_H, W - MARGIN, BOTTOM_BAR_H)
-        # Disclaimer fijo en TODAS las páginas (como el prototipo de
-        # referencia) — también sirve para que la parte final de la
-        # página nunca quede visualmente "en blanco" del todo, aunque
-        # las dos columnas no terminen a exactamente la misma altura.
-        canvas.setFillColor(COLOR_GRIS)
-        canvas.setFont('Helvetica-Oblique', 6.5)
-        canvas.drawCentredString(W / 2, 7 * mm,
-                                  'Ofertas válidas hasta agotar existencias. Precios sujetos a cambios.')
-        canvas.setFont('Helvetica', 6)
-        canvas.drawString(MARGIN, 2.6 * mm,
+        if logo_png and os.path.exists(logo_png):
+            with PILImage.open(logo_png) as im:
+                ratio_logo = im.height / im.width
+            ch2 = 11 * mm
+            cw2 = ch2 / ratio_logo
+            canvas.drawImage(logo_png, MARGIN, (BOTTOM_BAR_H - ch2) / 2, height=ch2, width=cw2,
+                              preserveAspectRatio=True, mask='auto')
+            tx2 = MARGIN + cw2 + 5 * mm
+        else:
+            tx2 = MARGIN
+        canvas.setFillColor(color_texto)
+        canvas.setFont('Helvetica-BoldOblique', 9)
+        canvas.drawString(tx2, BOTTOM_BAR_H - 7 * mm,
+                           'Ofertas válidas hasta agotar existencias. Precios sujetos a cambios.')
+        canvas.setFont('Helvetica', 7)
+        canvas.drawString(tx2, BOTTOM_BAR_H - 13 * mm,
                            'Orencio Matas y Hnos, S.L. · 926 221 217 · correo@orenciomatas.es · orenciomatas.es')
-        canvas.drawRightString(W - MARGIN, 2.6 * mm, f'Pág. {doc.page}')
+        canvas.drawRightString(W - MARGIN, BOTTOM_BAR_H - 13 * mm, f'Pág. {doc.page}')
         canvas.restoreState()
     return hf
 
@@ -318,18 +330,20 @@ def sticker_precio(p, st, tema, ancho=30 * mm, horizontal=False):
 
 
 # ── Contenido de una celda de producto (rejilla normal) ──────────────────
-def _celda_producto(p, tema, st, ancho_celda):
-    factor = FACTOR_IMG.get(p.protagonismo, 1.0)
-    tamano_img = int(280 * factor)
+def _celda_producto(p, tema, st, ancho_celda, factor_extra=1.0):
+    factor = FACTOR_IMG.get(p.protagonismo, 1.0) * factor_extra
+    tamano_img = int(320 * factor)
     cuadrado = p.protagonismo <= 2
-    pil = imagen_para_producto(p, tamano=min(tamano_img, 620), cuadrado=cuadrado)
-    img_bytes = pil_to_bytes(pil)
+    pil = imagen_para_producto(p, tamano=min(tamano_img, 900), cuadrado=cuadrado)
 
     cel_w = ancho_celda - 3 * mm
-    cel_h = 26 * mm * factor
+    cel_h = 30 * mm * factor
     iw, ih = pil.size
     ratio = min(cel_w / iw, cel_h / ih)
-    rl_img = RLImage(io.BytesIO(img_bytes), width=iw * ratio, height=ih * ratio)
+    ancho_final, alto_final = iw * ratio, ih * ratio
+    pil = preparar_para_incrustar(pil, ancho_final, alto_final)
+    img_bytes = pil_to_bytes(pil)
+    rl_img = RLImage(io.BytesIO(img_bytes), width=ancho_final, height=alto_final)
     rl_img.hAlign = 'CENTER'
 
     contenido = [rl_img, Spacer(1, 1 * mm)]
@@ -348,17 +362,20 @@ def _celda_producto(p, tema, st, ancho_celda):
 
 
 # ── Layout horizontal (familias de UN solo producto: imagen grande) ─────
-def _fila_producto_horizontal(p, tema, st, ancho_total):
-    pil = imagen_para_producto(p, tamano=560, cuadrado=False)
-    img_bytes = pil_to_bytes(pil, calidad=88)
+def _fila_producto_horizontal(p, tema, st, ancho_total, factor_extra=1.0):
+    pil = imagen_para_producto(p, tamano=min(int(650 * factor_extra), 1100), cuadrado=False)
     iw, ih = pil.size
 
-    img_w = ancho_total * 0.46
+    MIN_FICHA = 34 * mm  # nunca dejar la columna de texto/precio más estrecha que esto
+    img_w_max = max(ancho_total * 0.30, ancho_total - 6 * mm - MIN_FICHA)
+    img_w = min(ancho_total * 0.46 * factor_extra, img_w_max)
     img_h = img_w * (ih / iw)
-    max_h = 52 * mm
+    max_h = min(52 * mm * factor_extra, 260 * mm)
     if img_h > max_h:
         img_h = max_h
         img_w = img_h * (iw / ih)
+    pil = preparar_para_incrustar(pil, img_w, img_h)
+    img_bytes = pil_to_bytes(pil)
     rl_img = RLImage(io.BytesIO(img_bytes), width=img_w, height=img_h)
 
     ancho_ficha = ancho_total - img_w - 6 * mm
@@ -385,7 +402,7 @@ def _fila_producto_horizontal(p, tema, st, ancho_total):
 
 
 # ── Tabla única por familia, dimensionada al ancho de UNA columna ───────
-def construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png=None):
+def construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png=None, factor_extra=1.0, relleno_extra=0.0):
     todos_productos = [p for e in bloque.elementos if isinstance(e, ElementoGrid) for p in e.productos]
     style_cmds = [
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -419,7 +436,8 @@ def construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png=None):
         # Familia con un único producto: fila horizontal a toda anchura,
         # imagen grande a un lado y precio/info al otro — mucho mejor
         # aprovechamiento que una celda de rejilla vertical de 1 columna.
-        data.append([_fila_producto_horizontal(todos_productos[0], tema, st, ancho)] + [''] * (cols - 1))
+        data.append([_fila_producto_horizontal(todos_productos[0], tema, st, ancho, factor_extra=factor_extra)]
+                    + [''] * (cols - 1))
         style_cmds += [
             ('SPAN', (0, 1), (cols - 1, 1)),
             ('TOPPADDING', (0, 1), (-1, 1), 5), ('BOTTOMPADDING', (0, 1), (-1, 1), 5),
@@ -448,12 +466,19 @@ def construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png=None):
             suma_actual = 0
             row_idx += 1
 
-        for p in todos_productos:
+        num_productos = len(todos_productos)
+        for i, p in enumerate(todos_productos):
             span = max(1, min(cols, espacios_de(p)))
             if suma_actual + span > cols:
                 cerrar_fila()
             col_inicio = suma_actual
-            fila_actual.append(_celda_producto(p, tema, st, ancho_col_interna * span))
+            # El "estirado" para llegar al final de página (factor_extra)
+            # solo se aplica a la ÚLTIMA fila de la familia — así el
+            # resto de productos mantiene su tamaño normal y solo crece
+            # la imagen que de verdad tiene sitio libre debajo.
+            es_ultimo = (i == num_productos - 1)
+            fe = factor_extra if es_ultimo else 1.0
+            fila_actual.append(_celda_producto(p, tema, st, ancho_col_interna * span, factor_extra=fe))
             for _ in range(span - 1):
                 fila_actual.append('')
             if span > 1:
@@ -466,8 +491,60 @@ def construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png=None):
 
     t = Table(data, colWidths=[ancho / cols] * cols)
     t.setStyle(TableStyle(style_cmds))
+    if relleno_extra > 0:
+        # Cuando ni siquiera agrandar la imagen al máximo razonable
+        # basta para llegar a la altura pedida (una foto no se puede
+        # alargar sin perder su proporción real), se rellena el resto
+        # con aire dentro de la propia caja — así el BORDE de la caja
+        # sigue llegando hasta abajo, aunque el contenido no crezca
+        # más. Es el último recurso, después de intentar agrandar la
+        # imagen todo lo posible.
+        t.setStyle(TableStyle([('BOTTOMPADDING', (0, len(data) - 1), (-1, len(data) - 1), relleno_extra)]))
     t.repeatRows = 1
     return CajaRedondeada(t, _c(tema.color_acento), radio=5, grosor=1)
+
+
+def construir_tabla_familia_ajustada(bloque, tema, st, cols, ancho, logo_png, alto_objetivo):
+    """Como `construir_tabla_familia()`, pero agranda la imagen del
+    ÚLTIMO producto de la familia (por búsqueda binaria sobre
+    `factor_extra`) hasta que la caja completa llegue lo más cerca
+    posible de `alto_objetivo` sin pasarse — así el bloque llega hasta
+    el final de página en vez de dejar un hueco debajo. Es la misma
+    idea que el cierre "elástico", aplicada ahora a cualquier familia,
+    no solo a la caja de contacto.
+
+    Una foto no se puede alargar sin límite sin perder su proporción
+    real (una imagen ancha y baja no puede convertirse en alta y
+    estrecha) — si tras agrandarla todo lo razonable la caja SIGUE sin
+    llegar a `alto_objetivo`, el resto se rellena como aire dentro de
+    la propia caja (`relleno_extra`), como último recurso, para que al
+    menos el borde de la caja llegue hasta abajo."""
+    caja = construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png, factor_extra=1.0)
+    _, alto_actual = caja.wrap(ancho, 100000)
+    if alto_actual >= alto_objetivo - 3:
+        return caja
+
+    lo, hi = 1.0, 3.5
+    mejor_caja, mejor_alto = caja, alto_actual
+    for _ in range(7):
+        mid = (lo + hi) / 2
+        candidato = construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png, factor_extra=mid)
+        _, alto_c = candidato.wrap(ancho, 100000)
+        if alto_c >= alto_objetivo:
+            hi = mid
+            if mejor_alto < alto_objetivo or alto_c < mejor_alto:
+                mejor_caja, mejor_alto = candidato, alto_c
+        else:
+            lo = mid
+            if mejor_alto < alto_objetivo and alto_c > mejor_alto:
+                mejor_caja, mejor_alto = candidato, alto_c
+
+    deficit = alto_objetivo - mejor_alto
+    if deficit > 5:
+        factor_maximo = hi if mejor_alto < alto_objetivo else lo
+        mejor_caja = construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png,
+                                              factor_extra=factor_maximo, relleno_extra=deficit)
+    return mejor_caja
 
 
 # ── Reparto balanceado de cajas entre las dos columnas de cada página ───
@@ -634,15 +711,36 @@ def planificar_columnas(items, capacidad_pagina1, capacidad_normal, no_adelantar
 
 
 # ── Gráfico ilustrativo de ubicación (NO es un mapa real, ver nota) ─────
-def generar_grafico_ubicacion(tema, ancho_px=640, alto_px=420):
-    """Genera una tarjeta ilustrativa de "encuéntranos" con un pin de
-    localización, en los colores del tema. No es una captura de mapa
-    real: este entorno de generación no tiene acceso de red a ningún
-    proveedor de mapas (Google/OSM/etc.), así que en vez de simularlo
-    con datos falsos se opta por un gráfico decorativo honesto. Si en
-    el futuro se quiere un mapa real, la vía más sencilla es una Google
-    Static Maps API key como secreto de GitHub Actions (con red sí
-    disponible) que sustituya esta función."""
+RUTA_MAPA_REAL = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                               'assets', 'mapa', 'ubicacion_orencio_matas.png')
+# Posición de la nave dentro de esa captura, en fracción del ancho/alto
+# de la imagen (0-1) — medida a mano sobre el marcador azul de Google
+# Maps que ya trae la captura. Si se sustituye la imagen por otra
+# captura distinta, hay que volver a medir este punto.
+MARCADOR_FX, MARCADOR_FY = 0.526, 0.429
+
+
+def _dibujar_pin(draw, cx, punta_y, radio, color_rgb, color_sombra_rgb):
+    """Dibuja un pin de localización (con halo de círculos concéntricos)
+    cuya PUNTA cae exactamente en (cx, punta_y) — reutilizado tanto por
+    el gráfico ilustrativo como por el marcador sobre el mapa real."""
+    cy = punta_y - int(radio * 2.5)
+    for i in range(3):
+        rr = radio + i * int(radio * 0.75)
+        alpha_col = tuple(min(255, c + (255 - c) * (i + 1) / 4) for c in color_rgb)
+        draw.ellipse((cx - rr, cy - rr, cx + rr, cy + rr), outline=tuple(int(c) for c in alpha_col), width=2)
+    draw.polygon([(cx - radio, cy), (cx + radio, cy), (cx, punta_y)], fill=color_rgb)
+    draw.ellipse((cx - radio, cy - radio, cx + radio, cy + radio), fill=color_rgb)
+    r_int = int(radio * 0.45)
+    draw.ellipse((cx - r_int, cy - r_int, cx + r_int, cy + r_int), fill=(255, 255, 255))
+    sombra_w = radio
+    draw.ellipse((cx - sombra_w, punta_y - 6, cx + sombra_w, punta_y + 6), fill=color_sombra_rgb)
+
+
+def generar_grafico_ubicacion_ilustrativo(tema, ancho_px=640, alto_px=420):
+    """Tarjeta ilustrativa de respaldo (pin + rejilla decorativa en los
+    colores del tema) — se usa solo si no hay ninguna captura de mapa
+    real disponible en `assets/mapa/`."""
     principal = colors.HexColor(tema.color_principal)
     acento = colors.HexColor(tema.color_acento)
     r, g, b = [int(v * 255) for v in (principal.red, principal.green, principal.blue)]
@@ -663,31 +761,51 @@ def generar_grafico_ubicacion(tema, ancho_px=640, alto_px=420):
     for y in range(0, alto_px, paso * 3):
         draw.line([(0, y), (ancho_px, y)], fill=linea, width=3)
 
-    cx, cy = ancho_px // 2, int(alto_px * 0.44)
-    # El radio del pin se calcula proporcional al lado MENOR del
-    # lienzo (no a uno fijo en píxeles) — así, si el gráfico se genera
-    # más alto o más ancho para encajar en un hueco distinto, el pin
-    # sigue siendo un círculo real y no una elipse deformada, y su
-    # tamaño se mantiene proporcionado al espacio disponible.
+    cx = ancho_px // 2
     radio = max(18, min(60, int(min(ancho_px, alto_px) * 0.11)))
-    for i in range(3):
-        rr = radio + i * int(radio * 0.75)
-        alpha_col = tuple(min(255, c + (255 - c) * (i + 1) / 4) for c in (ra, ga, ba))
-        draw.ellipse((cx - rr, cy - rr, cx + rr, cy + rr), outline=tuple(int(c) for c in alpha_col), width=2)
-
-    punta_y = cy + int(radio * 2.5)
-    draw.polygon([(cx - radio, cy), (cx + radio, cy), (cx, punta_y)], fill=(ra, ga, ba))
-    draw.ellipse((cx - radio, cy - radio, cx + radio, cy + radio), fill=(ra, ga, ba))
-    r_int = int(radio * 0.45)
-    draw.ellipse((cx - r_int, cy - r_int, cx + r_int, cy + r_int), fill=(255, 255, 255))
-
-    sombra_w = radio
-    draw.ellipse((cx - sombra_w, punta_y - 6, cx + sombra_w, punta_y + 6),
-                 fill=tuple(min(255, c + (255 - c) // 2) for c in claro))
+    punta_y = int(alto_px * 0.44) + int(radio * 2.5)
+    _dibujar_pin(draw, cx, punta_y, radio, (ra, ga, ba), claro)
 
     buf = io.BytesIO()
     img.save(buf, 'PNG')
     return buf.getvalue()
+
+
+def generar_imagen_ubicacion(tema, ancho_px=640, alto_px=420):
+    """Punto de entrada único para la imagen de "encuéntranos": usa la
+    captura de mapa REAL si existe (`assets/mapa/ubicacion_orencio_matas.png`,
+    con una chincheta dibujada encima justo sobre la nave, marcada con
+    `MARCADOR_FX`/`MARCADOR_FY`), y si no cae al gráfico ilustrativo de
+    respaldo. La foto se encaja ENTERA dentro del lienzo (sin recortar
+    ni deformar) — si la proporción pedida no coincide con la de la
+    foto, se añade un margen de color a los lados, nunca se estira."""
+    if not os.path.exists(RUTA_MAPA_REAL):
+        return generar_grafico_ubicacion_ilustrativo(tema, ancho_px, alto_px)
+
+    acento = colors.HexColor(tema.color_acento)
+    ra, ga, ba = [int(v * 255) for v in (acento.red, acento.green, acento.blue)]
+
+    base = PILImage.open(RUTA_MAPA_REAL).convert('RGB')
+    bw, bh = base.size
+    fondo = (245, 242, 235)  # tono neutro parecido al del propio mapa
+    lienzo = PILImage.new('RGB', (ancho_px, alto_px), fondo)
+    escala = min(ancho_px / bw, alto_px / bh)
+    nueva_w, nueva_h = max(1, int(bw * escala)), max(1, int(bh * escala))
+    base_r = base.resize((nueva_w, nueva_h), PILImage.LANCZOS)
+    off_x, off_y = (ancho_px - nueva_w) // 2, (alto_px - nueva_h) // 2
+    lienzo.paste(base_r, (off_x, off_y))
+
+    draw = ImageDraw.Draw(lienzo)
+    mx = off_x + MARCADOR_FX * nueva_w
+    my = off_y + MARCADOR_FY * nueva_h
+    radio = max(10, min(34, int(min(ancho_px, alto_px) * 0.06)))
+    _dibujar_pin(draw, int(mx), int(my), radio, (ra, ga, ba), fondo)
+
+    buf = io.BytesIO()
+    lienzo.save(buf, 'PNG')
+    return buf.getvalue()
+
+
 
 
 # ── Cierre: se trata como una caja más dentro del reparto de columnas ───
@@ -721,7 +839,11 @@ def construir_caja_cierre(tema, st, logo_png, ancho, alto_objetivo=None):
     fijo.append(Paragraph('ENCUÉNTRANOS', ParagraphStyle(
         'encnos', fontName='Helvetica-Bold', fontSize=9.5, textColor=_c(tema.color_acento),
         alignment=TA_LEFT, spaceAfter=3)))
-    nota = Paragraph('Ilustración orientativa — mapa real pendiente de sustituir por una captura.', st['nota'])
+    hay_mapa_real = os.path.exists(RUTA_MAPA_REAL)
+    nota = Paragraph(
+        'Chincheta orientativa sobre la ubicación de la nave.' if hay_mapa_real
+        else 'Ilustración orientativa — mapa real pendiente de sustituir por una captura.',
+        st['nota'])
 
     ancho_grafico = ancho - 6 * mm
     ratio_grafico = 420 / 640
@@ -740,7 +862,7 @@ def construir_caja_cierre(tema, st, logo_png, ancho, alto_objetivo=None):
     else:
         alto_grafico = alto_grafico_normal
 
-    grafico = generar_grafico_ubicacion(tema, ancho_px=640, alto_px=max(200, int(round(640 * alto_grafico / ancho_grafico))))
+    grafico = generar_imagen_ubicacion(tema, ancho_px=640, alto_px=max(200, int(round(640 * alto_grafico / ancho_grafico))))
     contenido = fijo + [RLImage(io.BytesIO(grafico), width=ancho_grafico, height=alto_grafico),
                          Spacer(1, 2 * mm), nota]
 
@@ -842,6 +964,37 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
     objetivo = max(hi - hd, ALTURA_MINIMA_CIERRE)
     objetivo = min(objetivo, max(cap_ultima - hd, ALTURA_MINIMA_CIERRE))
     caja_cierre = construir_caja_cierre(tema, st, logo_png, COL_W, alto_objetivo=objetivo)
+
+    # Prioridad máxima: que cada columna llegue hasta abajo de página,
+    # en TODAS las páginas (no solo en la última, que ya lo consigue
+    # con el cierre elástico). Se hace estirando la imagen de la ÚLTIMA
+    # familia de cada columna (búsqueda binaria sobre su tamaño, ver
+    # `construir_tabla_familia_ajustada`) hasta que la columna entera
+    # llegue lo más cerca posible del límite real de la página.
+    bloque_por_caja_id = {id(caja): bloque for (caja, _), bloque in zip(tablas, bloques)}
+
+    def estirar_ultima_de_columna(lista_cajas, capacidad):
+        if not lista_cajas:
+            return lista_cajas
+        resto, ultimo = lista_cajas[:-1], lista_cajas[-1]
+        bloque_ultimo = bloque_por_caja_id.get(id(ultimo))
+        if bloque_ultimo is None:
+            return lista_cajas
+        otras_alturas = sum(alturas_por_id.get(id(c), 0.0) for c in resto)
+        objetivo_ultimo = capacidad - otras_alturas - (2.5 * mm if resto else 0.0)
+        nueva = construir_tabla_familia_ajustada(bloque_ultimo, tema, st, tema.cols_grid, COL_W,
+                                                  logo_png, objetivo_ultimo)
+        return resto + [nueva]
+
+    for idx in range(len(paginas)):
+        capacidad_pagina = (alto_pagina1 if idx == 0 else alto_normal) - MARGEN_SEGURIDAD
+        izq_p, der_p = paginas[idx]
+        izq_p = estirar_ultima_de_columna(izq_p, cap_ultima if idx == len(paginas) - 1 else capacidad_pagina)
+        if idx != len(paginas) - 1:
+            # La columna derecha de la ÚLTIMA página no se estira aquí:
+            # ya la rellena el cierre elástico justo detrás.
+            der_p = estirar_ultima_de_columna(der_p, capacidad_pagina)
+        paginas[idx] = (izq_p, der_p)
 
     story = []
     encabezado_campana(story, periodo, tema, logo_png, st)

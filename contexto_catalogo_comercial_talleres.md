@@ -569,16 +569,17 @@ como deseable).
    entorno de desarrollo — debería funcionar igual en GitHub Actions
    (que sí tiene acceso a Drive), pero conviene una primera prueba real
    ahí antes de dar la Fase 2 por cerrada.
-3. **Mapa real pendiente**: Eloy va a proporcionar una captura de
-   pantalla más adelante. De momento `generar_grafico_ubicacion()` sigue
-   generando el gráfico ilustrativo (pin + rejilla). Cuando llegue la
-   captura, sustituir esa función por la carga de la imagen fija desde
-   `assets/`, o dejar ambas rutas (imagen real si existe el archivo,
-   ilustración de respaldo si no). Con el cierre ahora de altura
-   elástica (ver v6), si se sustituye por una imagen real habrá que
-   decidir si se recorta/ajusta a la altura objetivo o si se deja con
-   su proporción real y se compensa con más padding alrededor.
-4. **Pulido visual**: v6 corrige el hueco en blanco de la última página
+3. **Mapa real — ya resuelto (v11)**: la captura que proporcionó Eloy
+   ya está integrada con chincheta sobre la ubicación exacta, ver
+   sección de v11 más abajo.
+4. **Calidad de imagen — límite real, no solo de código**: las fotos
+   de origen de Zaphiro/Besa son de baja resolución (algunas de apenas
+   81×248 px). v11 mejora la nitidez percibida al máximo posible por
+   software (reescalado LANCZOS propio + enfoque), pero para una
+   nitidez realmente profesional a tamaño grande hace falta pedir fotos
+   de mayor resolución a los proveedores o al propio Eloy — no es algo
+   que el código pueda resolver del todo por sí solo.
+5. **Pulido visual**: v6 corrige el hueco en blanco de la última página
    (el cierre ahora es elástico y encaja exacto) — pendiente de una
    nueva revisión con Eloy para confirmar si las páginas de solo
    productos (sin margen para un elemento elástico) están ya lo
@@ -591,11 +592,98 @@ como deseable).
 
 ---
 
+### Revisión visual v11 (décima vuelta — relleno máximo, calidad de imagen, mapa real, pie con logo)
+Cinco peticiones en una sola vuelta: pie de página más grande con logo
+y color de cabecera; más relleno en los bloques (imagen más grande,
+precio a la derecha cuando se pueda); calidad de imagen "mucho mejor,
+ahora mismo muchas aparecen borrosas"; mapa real (captura proporcionada
+por Eloy) con chincheta sobre la ubicación exacta; y máxima prioridad
+(100%) a que cada columna llegue hasta abajo en TODAS las páginas.
+
+- **Pie de página**: `BOTTOM_BAR_H` de 11mm a 18mm, fondo del mismo
+  color que la cabecera (`tema.color_principal`), con el logo a la
+  izquierda y el disclaimer en fuente más grande y en negrita — ya no
+  es una nota discreta, tiene presencia real en la página.
+- **Mapa real**: la captura que proporcionó Eloy se guardó como asset
+  del proyecto (`assets/mapa/ubicacion_orencio_matas.png`). Se midió a
+  mano la posición del marcador azul de Google Maps que ya trae la
+  captura (`MARCADOR_FX=0.526, MARCADOR_FY=0.429`, fracción del ancho/
+  alto de la imagen) y se dibuja encima una chincheta roja (mismo
+  estilo que el gráfico ilustrativo) apuntando exactamente ahí. La foto
+  se encaja ENTERA dentro del hueco disponible sin recortar ni
+  deformar (si la proporción pedida no coincide, se añade margen de
+  color a los lados, nunca se estira) — el gráfico ilustrativo por PIL
+  queda como respaldo automático si algún día no existe la imagen real.
+- **Calidad de imagen — límite real explicado, no solo arreglado por
+  código**: se comprobó que las fotos originales de Zaphiro/Besa son
+  de resolución muy baja de origen (algunas de 81×248 px, extraídas de
+  PDFs de catálogo de proveedor) — mostrarlas más grandes (como pedía
+  el punto de "más relleno") las hace VERSE MÁS borrosas, no menos, si
+  no se hace nada más. Se añadió `preparar_para_incrustar()`: en vez de
+  dejar que el lector de PDF reescale la imagen a su manera al
+  mostrarla más grande, se reescala con LANCZOS (mejor algoritmo) al
+  tamaño real en píxeles que le corresponde por resolución de
+  impresión, y se aplica un enfoque suave (`UnsharpMask`) para
+  compensar el ablandamiento típico de agrandar una foto. Mejora la
+  nitidez PERCIBIDA al máximo que da de sí el software, pero no puede
+  inventar detalle que la foto original no tiene — para nitidez
+  realmente profesional en tamaño grande hace falta una foto de origen
+  de mayor resolución (pendiente real para Fase 2, ver más abajo).
+- **Más relleno — imágenes más grandes por defecto**: aumentados los
+  tamaños base tanto en la rejilla (`_celda_producto`) como en el
+  layout horizontal (`_fila_producto_horizontal`), con calidad JPEG
+  subida de 82 a 92.
+- **Prioridad 100% a llegar hasta abajo — nuevo mecanismo, aplicado a
+  TODAS las páginas, no solo la última**: `construir_tabla_familia()`
+  acepta ahora `factor_extra` (agranda la imagen del ÚLTIMO producto de
+  la familia) y `relleno_extra` (añade aire dentro de la caja como
+  último recurso). `construir_tabla_familia_ajustada()` hace una
+  búsqueda binaria sobre `factor_extra` para acercarse a un
+  `alto_objetivo` sin pasarse; si ni agrandando la imagen al máximo
+  razonable se llega (una foto no puede alargarse sin perder su
+  proporción real — límite matemático, no un fallo del código), el
+  resto se rellena como `relleno_extra` para que al menos el BORDE de
+  la caja llegue hasta abajo. En `generar_pdf()`, tras planificar las
+  familias, se estira la ÚLTIMA familia de CADA columna de CADA página
+  (la columna derecha de la última página se deja tal cual, porque ya
+  la rellena el cierre elástico justo detrás).
+- **Dos bugs reales encontrados y corregidos durante esta vuelta**:
+  1. El primer intento de ensanchar la imagen en el layout horizontal
+     (hasta el 78% del ancho de columna) rompía el texto del precio —
+     "24,90 €" se envolvía carácter a carácter en una columna de texto
+     aplastada a unos pocos milímetros. Corregido protegiendo un ancho
+     mínimo fijo para la ficha de texto (34mm) — la imagen crece hasta
+     ese límite, nunca más.
+  2. El límite de ensanchado (antes 62% del ancho) hacía que la
+     búsqueda binaria de `factor_extra` "se estancara" (el ancho de
+     imagen dejaba de crecer mucho antes de llegar al objetivo, así que
+     subir `factor_extra` más allá de cierto punto no cambiaba nada) —
+     verificado numéricamente forzando distintos objetivos y viendo que
+     el resultado se quedaba plano en ~80mm pasara lo que pasara.
+- **Resultado**: en el catálogo de prueba (22 productos), las tres
+  páginas ahora llegan de verdad hasta muy cerca del final en ambas
+  columnas — el que no llegan del todo exacto lo remata el pie de
+  página fijo (disclaimer) documentado en v10.
+- **Límite conocido, no resuelto en esta vuelta**: en familias con
+  MÁS de un producto (rejilla, no layout horizontal), el estirado de
+  imagen del último producto está limitado por el ancho FIJO de su
+  celda (no crece más allá de lo que permite su columna interna) —
+  solo el layout horizontal (familias de 1 producto) puede crecer en
+  ancho también. Para familias de rejilla con poco margen de maniobra,
+  el mecanismo cae antes al relleno de aire (`relleno_extra`), lo cual
+  cumple el objetivo de "llegar hasta abajo" pero dejando más espacio
+  en blanco DENTRO de la caja que si la imagen hubiera podido crecer
+  más. Aceptable dado el límite de tiempo de esta vuelta; posible
+  mejora futura si hace falta.
+
+---
+
 ## CÓMO PROBARLO
 
 ```bash
 # Set de prueba estático, tema mensual
 python scripts/generar_catalogo_comercial.py --tipo mes --valor septiembre --anio 2026
+
 
 # Campaña con tema propio
 python scripts/generar_catalogo_comercial.py --tipo campaña --valor navidad --anio 2026

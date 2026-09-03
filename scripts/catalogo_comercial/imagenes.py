@@ -149,10 +149,35 @@ def añadir_badge_descuento(img: PILImage.Image, descuento_pct) -> PILImage.Imag
     return img
 
 
-def pil_to_bytes(img: PILImage.Image, calidad=82) -> bytes:
+def pil_to_bytes(img: PILImage.Image, calidad=92) -> bytes:
     buf = io.BytesIO()
     img.save(buf, 'JPEG', quality=calidad, optimize=True)
     return buf.getvalue()
+
+
+def preparar_para_incrustar(pil_img: PILImage.Image, ancho_pt: float, alto_pt: float, dpi_objetivo: int = 220) -> PILImage.Image:
+    """Antes de incrustar una imagen en el PDF, la escala nosotros
+    mismos (con LANCZOS, mejor que el reescalado que aplicaría el lector
+    de PDF por su cuenta) hasta el tamaño real en píxeles que le
+    corresponde a `dpi_objetivo` en el tamaño final de impresión, y le
+    aplica un enfoque suave (unsharp mask) para compensar el
+    ablandamiento típico de agrandar una foto.
+
+    IMPORTANTE — límite real, no solo de código: las fotos originales
+    de los catálogos de proveedor (Zaphiro/Besa) son de resolución muy
+    baja (algunas de apenas 80-250 px de lado, extraídas de PDFs de
+    catálogo). Esta función mejora la nitidez PERCIBIDA al máximo que
+    da de sí el software, pero no puede inventar detalle que la foto
+    original no tiene — para una nitidez realmente profesional en
+    tamaño grande hace falta una foto de origen de mayor resolución
+    (ver `contexto_catalogo_comercial_talleres.md`)."""
+    from PIL import ImageFilter
+    ancho_px_obj = max(1, int(round(ancho_pt / 72 * dpi_objetivo)))
+    alto_px_obj = max(1, int(round(alto_pt / 72 * dpi_objetivo)))
+    if pil_img.width < ancho_px_obj or pil_img.height < alto_px_obj:
+        pil_img = pil_img.resize((ancho_px_obj, alto_px_obj), PILImage.LANCZOS)
+        pil_img = pil_img.filter(ImageFilter.UnsharpMask(radius=1.3, percent=65, threshold=2))
+    return pil_img
 
 
 def imagen_para_producto(producto, tamano=400, cuadrado=True) -> PILImage.Image:
