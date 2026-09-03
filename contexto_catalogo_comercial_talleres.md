@@ -481,6 +481,47 @@ caso probado (incluido el límite de 2 productos).
 
 ---
 
+### Revisión visual v9 (octava vuelta — insistencia en la alineación exacta)
+Eloy volvió a insistir: "no puede ser que los bloques de la izquierda
+tengan un margen de 1cm al final de la página y los de la derecha 2cm
+— tienen que tener el mismo margen".
+
+- **Búsqueda local ampliada**: la mejora local de v8 solo probaba
+  INTERCAMBIAR una familia de una columna por otra. Se amplió para
+  probar también MOVER una familia sin intercambiar nada (si a la
+  columna destino le queda hueco libre) — hay reordenaciones que
+  mejoran el equilibrio y que un intercambio 1-por-1 nunca puede
+  encontrar porque no existe una familia "de vuelta" del tamaño justo.
+- **Varios puntos de partida (reinicios aleatorios)**: la búsqueda
+  local (por muy potente que sea) puede quedarse en un óptimo que no es
+  el mejor posible según por dónde empiece. Se añadieron 12 intentos
+  con pequeñas variaciones aleatorias en el orden de asignación inicial
+  (con semilla fija, para que el resultado sea siempre el mismo para el
+  mismo catálogo), quedándose con el que menor diferencia total consiga
+  tras aplicarle la mejora local. Determinista y rápido (<0,3s para 13
+  familias).
+- **Resultado medido** (mismo catálogo de prueba): página 1 de 6,7mm a
+  5,2mm, página 2 de 23mm a 17,5mm, página 3 se mantiene en ~2,5mm.
+- **Límite matemático verificado para el set de prueba concreto**: se
+  comprobó a mano que, del conjunto de familias que caen en las
+  páginas 2-3, la familia "PRODUCTOS DE PULIR" (335pt) es bastante más
+  grande que el resto (que ronda 170-200pt cada una) — no existe
+  ninguna combinación de las demás familias que la compense con más
+  precisión que ~50pt de diferencia, por simple aritmética de los
+  tamaños concretos disponibles. No es una limitación del algoritmo de
+  búsqueda (ya prueba intercambios, movimientos y varios puntos de
+  partida): es que, con estas 13 familias concretas y estos tamaños
+  concretos, ~17mm de diferencia en la página 2 puede ser cercano al
+  mínimo matemático alcanzable sin partir una familia en dos columnas
+  (lo que rompería la caja como bloque visual único) o sin reducir
+  artificialmente su contenido. **Con datos reales de la Sheet (muchas
+  más familias, tamaños más variados y graduales) hay muchas más
+  combinaciones posibles y este límite debería notarse mucho menos o
+  desaparecer** — pendiente de confirmar con un catálogo de prueba más
+  grande si Eloy lo considera necesario antes de cerrar la Fase 1.
+
+---
+
 ## PENDIENTE / ABIERTO
 
 1. **Fase 2 — Google Sheet + Apps Script**: no implementada a propósito

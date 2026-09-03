@@ -464,6 +464,71 @@ def construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png=None):
 
 
 # ── Reparto balanceado de cajas entre las dos columnas de cada página ───
+def _mejorar_localmente(columnas):
+    """Ajusta `columnas` in-place probando, en cada ronda, todos los
+    movimientos posibles entre DOS COLUMNAS CUALESQUIERA (tanto mover
+    una familia sin más como intercambiar una de cada columna) y
+    aplicando el que más reduzca la diferencia total entre columnas de
+    todo el documento, hasta que no quede ninguno que mejore nada."""
+    def diferencia_total():
+        total = 0.0
+        for k in range(0, len(columnas), 2):
+            ci, cj = columnas[k], columnas[k + 1]
+            total += abs(sum(a for _, _, a in ci['items']) - sum(a for _, _, a in cj['items']))
+        return total
+
+    cambiado = True
+    intentos = 0
+    while cambiado and intentos < 300:
+        cambiado = False
+        intentos += 1
+        actual = diferencia_total()
+        mejor_delta, mejor_mov = 0.0, None
+        for i in range(len(columnas)):
+            for j in range(len(columnas)):
+                if i == j:
+                    continue
+                ci, cj = columnas[i], columnas[j]
+                carga_i = sum(x[2] for x in ci['items'])
+                carga_j = sum(x[2] for x in cj['items'])
+                for a in ci['items']:
+                    ha = a[2]
+                    if carga_j + ha > cj['capacidad']:
+                        continue
+                    ci['items'].remove(a); cj['items'].append(a)
+                    delta = actual - diferencia_total()
+                    ci['items'].append(a); cj['items'].remove(a)
+                    if delta > mejor_delta:
+                        mejor_delta, mejor_mov = delta, ('mover', i, j, a)
+                if i < j:
+                    for a in ci['items']:
+                        for b in cj['items']:
+                            ha, hb = a[2], b[2]
+                            if abs(ha - hb) < 0.01:
+                                continue
+                            nueva_i, nueva_j = carga_i - ha + hb, carga_j - hb + ha
+                            if nueva_i > ci['capacidad'] or nueva_j > cj['capacidad']:
+                                continue
+                            ci['items'].remove(a); ci['items'].append(b)
+                            cj['items'].remove(b); cj['items'].append(a)
+                            delta = actual - diferencia_total()
+                            ci['items'].remove(b); ci['items'].append(a)
+                            cj['items'].remove(a); cj['items'].append(b)
+                            if delta > mejor_delta:
+                                mejor_delta, mejor_mov = delta, ('intercambiar', i, j, a, b)
+        if mejor_mov:
+            if mejor_mov[0] == 'mover':
+                _, i, j, a = mejor_mov
+                columnas[i]['items'].remove(a)
+                columnas[j]['items'].append(a)
+            else:
+                _, i, j, a, b = mejor_mov
+                columnas[i]['items'].remove(a); columnas[i]['items'].append(b)
+                columnas[j]['items'].remove(b); columnas[j]['items'].append(a)
+            cambiado = True
+    return diferencia_total()
+
+
 def planificar_columnas(items, capacidad_pagina1, capacidad_normal, no_adelantar=frozenset()):
     """`items`: lista de (flowable, alto). Devuelve una lista de páginas
     [(lista_izq, lista_der), ...].
@@ -492,79 +557,63 @@ def planificar_columnas(items, capacidad_pagina1, capacidad_normal, no_adelantar
     no lo necesita, ver `generar_pdf`), se deja disponible por si hace
     falta en el futuro.
     """
+    import random
+
     candidatos = [(idx, flow, alto) for idx, (flow, alto) in enumerate(items) if flow not in no_adelantar]
-    ordenados = sorted(candidatos, key=lambda t: -t[2])
 
-    columnas = []  # cada: {'capacidad': float, 'restante': float, 'items': [(idx, flow, alto)]}
+    def construir_y_mejorar(aleatorio):
+        ordenados = sorted(candidatos, key=lambda t: -t[2])
+        if aleatorio:
+            # Reordena ligeramente los empates y bloques de tamaño
+            # parecido antes de asignar — genera un punto de partida
+            # distinto para que la mejora local pueda explorar otra
+            # zona del espacio de soluciones y, a veces, encontrar un
+            # reparto mejor que el de la asignación puramente greedy.
+            ordenados = ordenados[:]
+            for k in range(0, len(ordenados) - 1, 2):
+                if random.random() < 0.5:
+                    ordenados[k], ordenados[k + 1] = ordenados[k + 1], ordenados[k]
 
-    def abrir_pagina():
-        cap = capacidad_pagina1 if not columnas else capacidad_normal
-        columnas.append({'capacidad': cap, 'restante': cap, 'items': []})
-        columnas.append({'capacidad': cap, 'restante': cap, 'items': []})
+        columnas = []  # cada: {'capacidad': float, 'restante': float, 'items': [(idx, flow, alto)]}
 
-    for idx, flow, alto in ordenados:
-        candidatas = [c for c in columnas if c['restante'] >= alto]
-        if candidatas:
-            columna = max(candidatas, key=lambda c: c['restante'])
-        else:
+        def abrir_pagina():
+            cap = capacidad_pagina1 if not columnas else capacidad_normal
+            columnas.append({'capacidad': cap, 'restante': cap, 'items': []})
+            columnas.append({'capacidad': cap, 'restante': cap, 'items': []})
+
+        for idx, flow, alto in ordenados:
+            candidatas = [c for c in columnas if c['restante'] >= alto]
+            if candidatas:
+                columna = max(candidatas, key=lambda c: c['restante'])
+            else:
+                abrir_pagina()
+                columna = max(columnas[-2:], key=lambda c: c['restante'])
+            columna['items'].append((idx, flow, alto))
+            columna['restante'] -= alto
+
+        if not columnas:
             abrir_pagina()
-            columna = max(columnas[-2:], key=lambda c: c['restante'])
-        columna['items'].append((idx, flow, alto))
-        columna['restante'] -= alto
 
-    if not columnas:
-        abrir_pagina()
+        _mejorar_localmente(columnas)
+        return columnas
 
-    # Mejora local: el reparto anterior (LPT, "menos cargada primero")
-    # es bueno en general pero no siempre encuentra el mejor resultado
-    # posible. Se afina con intercambios de una familia entre DOS
-    # COLUMNAS CUALESQUIERA del documento (no solo las de la misma
-    # página) — a veces la familia que más desequilibra una página en
-    # realidad encaja mejor en otra página distinta. Cada intercambio
-    # solo se aplica si reduce la suma total de "diferencia entre
-    # columnas de cada página" en todo el documento, y solo si ambas
-    # columnas siguen dentro de su capacidad tras el cambio. Se repite
-    # hasta que ya no queda ningún intercambio que mejore nada.
-    def diferencia_total():
-        total = 0.0
-        for k in range(0, len(columnas), 2):
-            ci, cj = columnas[k], columnas[k + 1]
-            total += abs(sum(a for _, _, a in ci['items']) - sum(a for _, _, a in cj['items']))
-        return total
-
-    cambiado = True
-    intentos = 0
-    while cambiado and intentos < 200:
-        cambiado = False
-        intentos += 1
-        actual = diferencia_total()
-        mejor_delta, mejor_par = 0.0, None
-        for i in range(len(columnas)):
-            for j in range(i + 1, len(columnas)):
-                ci, cj = columnas[i], columnas[j]
-                for a in ci['items']:
-                    for b in cj['items']:
-                        ha, hb = a[2], b[2]
-                        if abs(ha - hb) < 0.01:
-                            continue
-                        carga_i = sum(x[2] for x in ci['items'])
-                        carga_j = sum(x[2] for x in cj['items'])
-                        nueva_i, nueva_j = carga_i - ha + hb, carga_j - hb + ha
-                        if nueva_i > ci['capacidad'] or nueva_j > cj['capacidad']:
-                            continue
-                        ci['items'].remove(a); ci['items'].append(b)
-                        cj['items'].remove(b); cj['items'].append(a)
-                        nueva_total = diferencia_total()
-                        ci['items'].remove(b); ci['items'].append(a)
-                        cj['items'].remove(a); cj['items'].append(b)
-                        delta = actual - nueva_total
-                        if delta > mejor_delta:
-                            mejor_delta, mejor_par = delta, (i, j, a, b)
-        if mejor_par:
-            i, j, a, b = mejor_par
-            columnas[i]['items'].remove(a); columnas[i]['items'].append(b)
-            columnas[j]['items'].remove(b); columnas[j]['items'].append(a)
-            cambiado = True
+    # Prueba varios puntos de partida (uno "greedy" puro + varios con
+    # pequeñas variaciones aleatorias en el orden de asignación) y se
+    # queda con el que, tras la mejora local, tenga menos diferencia
+    # total entre columnas — la búsqueda local por sí sola puede
+    # quedarse en un óptimo que no es el mejor posible; probar varios
+    # puntos de partida distintos ayuda a escapar de eso.
+    random.seed(12345)  # determinista: mismo catálogo -> mismo resultado siempre
+    mejor_columnas, mejor_diff = None, None
+    for intento in range(12):
+        columnas = construir_y_mejorar(aleatorio=(intento > 0))
+        diff = sum(
+            abs(sum(a for _, _, a in columnas[k]['items']) - sum(a for _, _, a in columnas[k + 1]['items']))
+            for k in range(0, len(columnas), 2)
+        )
+        if mejor_diff is None or diff < mejor_diff:
+            mejor_diff, mejor_columnas = diff, columnas
+    columnas = mejor_columnas
 
     for c in columnas:
         c['items'].sort(key=lambda t: t[0])
