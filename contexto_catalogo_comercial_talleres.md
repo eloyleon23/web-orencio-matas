@@ -752,3 +752,131 @@ También disponible como workflow manual en GitHub Actions → "Generar
 Catálogo Comercial de Talleres" → Run workflow, con el periodo como
 inputs. El PDF resultante se sube como artefacto del run (no se envía
 a nadie en esta fase).
+
+---
+
+## V3 — PIVOTE DE DIRECCIÓN VISUAL (tras brief `brief_claude_catalogo_v3_colores_corporativos.md`)
+
+Tras varias vueltas puliendo alineación de la maqueta v1/v2 (2 columnas
+de "fichas" con caja/borde por familia), Eloy compartió un brief
+completo pidiendo un cambio de dirección: no repintar colores sobre la
+maqueta anterior, sino **replantear la composición desde cero** como un
+folleto comercial B2B editorial (identidad corporativa clara, menos
+cajas, jerarquía real por nivel de protagonismo, layouts asimétricos).
+
+**Decisión importante**: v2 (`render_pdf.py`, con motor de dos columnas
++ balanceo + estirado) **se mantiene intacto**, no se ha borrado ni
+modificado su lógica de reparto — sirve como referencia de comparación
+y sigue siendo accesible con `--motor v2`. Todo el trabajo nuevo vive
+en `layout_engine.py` (`--motor v3`, por defecto).
+
+### Qué se reutilizó tal cual (sin tocar)
+`modelo.py`, `reglas_comerciales.py`, `composicion.py`, `imagenes.py`
+— la separación DATOS/REGLAS/CAMPAÑA que ya existía encajaba
+directamente con la arquitectura que pide el brief (punto 22). Solo se
+amplió `campanas.Tema` con los nuevos roles de color corporativos
+(ver abajo), sin quitar los campos antiguos que sigue usando v2.
+
+### Cambio arquitectónico clave: de 2 columnas balanceadas a 1 columna de flujo libre
+La v1/v2 tenía que resolver un problema muy difícil (balancear dos
+columnas para que terminen a la misma altura) que generó una cascada
+de bugs reales a lo largo de varias sesiones (ver historial de
+versiones v4-v12 más arriba). La V3 evita ese problema de raíz: la
+página es un ÚNICO frame a todo el ancho, y ReportLab pagina el
+contenido de forma automática — ya no hace falta ningún algoritmo de
+reparto, "estirado" de imágenes para llegar al final, relleno de aire
+ni relleno decorativo. Dentro de un patrón de layout SÍ se usan 2-3
+columnas internas (imagen grande + ficha al lado), pero es una
+composición fija de ESE bloque, no algo que haya que balancear con
+nada más de la página.
+
+### Paleta corporativa (`Tema`, campos nuevos)
+```
+color_fondo            '#FFFFFF'   base de la página
+color_fondo_alterno     '#F3F4F6'  gris muy claro, pie de página
+color_estructura        '#23262B'  antracita — bandas de familia, cabecera, texto
+color_identidad         '#0E7490'  turquesa/azul — badges DESTACADO, acentos, enlaces
+color_precio            '#D91B1B'  rojo — SIEMPRE el precio final
+color_descuento         '#F4B400'  amarillo — SIEMPRE el % de descuento/ahorro
+```
+Regla del brief (punto 15) aplicada literalmente: `color_estructura` y
+`color_precio` NO cambian entre campañas (nunca se pierde la marca);
+solo `color_identidad` varía por campaña (turquesa en mensual, verde en
+Navidad, manteniendo antracita+rojo constantes — verificado
+visualmente, ver captura de portada de Navidad).
+
+### Sistema de layouts (`layout_engine.py`)
+- `disenar_familia(bloque, tema, ancho)` — dispatcher central: mira la
+  mezcla REAL de niveles de protagonismo presentes en la familia y
+  elige el patrón, tal como pide el punto 4 del brief ("el nivel debe
+  cambiar el lenguaje de composición, no ser una variable que cambia
+  el tamaño de una tarjeta"):
+  - nivel 5 presente + secundarios → `layout_hero_secundarios` (imagen
+    gigante 60% + hasta 4 secundarios en columna estrecha)
+  - nivel 5 solo → `layout_hero_absoluto` (imagen+ficha a toda anchura)
+  - 2+ productos nivel 4 → `layout_doble_protagonista` (dos bloques
+    iguales, imagen grande cada uno)
+  - nivel 4 solo + secundarios → `layout_hero_secundarios` (hero más
+    modesto que el de nivel 5)
+  - solo niveles 1-3 → nivel 3 como hero pequeño + `layout_grid_comercial`
+    (grid compacto de 3 columnas, sin cajas) para el resto
+- Todos los patrones comparten: `banda_familia()` (cabecera antracita a
+  todo el ancho), `bloque_precio()` (rojo/amarillo consistente en las 4
+  variantes de tamaño: chico/normal/grande/hero), `badge_nivel()`
+  (DESTACADO turquesa para nivel≥4, ★ RECOMENDADO para nivel 2).
+- Portada de campaña real (`construir_portada`): titular + claim +
+  intro + 2-4 productos protagonistas del catálogo completo (los de
+  mayor `protagonismo`, nunca inventados) + lista de familias en texto
+  corrido — cumple los 4 puntos del punto 10 del brief (quién somos /
+  qué campaña / qué productos / que hay ofertas) en una sola pantalla.
+- Cierre (`construir_cierre`): reutiliza el mapa real + chincheta ya
+  validados en v2 (misma imagen, mismo cálculo de posición del
+  marcador), con estética actualizada a la paleta V3.
+
+### Bugs reales encontrados y corregidos durante la construcción de V3
+1. **Chips de familia apilados uno por línea**: el primer intento de
+   "en este catálogo encontrarás" usaba píldoras de color con envoltura
+   manual (medir ancho de cada chip y decidir saltos de línea a mano)
+   — la medición fallaba y cada chip ocupaba una fila entera. Sustituido
+   por un único `Paragraph` con los nombres de familia separados por
+   " · ", dejando que ReportLab envuelva el texto de forma nativa (más
+   simple y sin ese bug posible).
+2. **Tarjetas secundarias con imagen minúscula**: `_tarjeta_secundaria()`
+   forzaba lienzo cuadrado (`cuadrado=True`) sobre fotos de producto muy
+   apaisadas (p.ej. un banco de trabajo 368×230) — el margen blanco
+   añadido para cuadrar la foto dejaba el producto visible diminuto
+   dentro de su propio recuadro. Corregido usando `cuadrado=False`
+   (mantiene la proporción real, sin lienzo cuadrado forzado) también
+   para las tarjetas secundarias, no solo para el hero — mismo ajuste
+   que ya se había aplicado en v2 para protagonismo≥3.
+3. **Banda de familia huérfana al final de la portada**: sin salto de
+   página explícito entre la portada y el contenido, ReportLab a veces
+   colocaba la banda de la primera familia sola al final de la página 1
+   sin nada debajo. Corregido con un `PageBreak()` explícito tras la
+   portada.
+
+### Pendiente / próximos pasos de V3
+- **Validar con Eloy** que esta dirección es la correcta antes de
+  seguir puliendo — es una primera pasada funcional, no un pulido
+  final (quedan matices: el badge de descuento que ya trae la propia
+  foto del producto, en rojo fijo desde `imagenes.py`, no se ha
+  recoloreado a la paleta V3 — es cosmético y menor, pendiente si se
+  quiere unificar del todo).
+- El repertorio de layouts implementado (4 patrones + dispatcher) es
+  un subconjunto deliberadamente más pequeño que los 6-10 patrones que
+  sugiere el brief (punto 6) — suficiente para demostrar el sistema
+  con el catálogo de prueba; se puede ampliar con más variantes
+  (Layout Oferta específico, Layout Cierre comercial con selección de
+  productos) si tras validar la dirección se pide más variedad.
+- Sin tocar todavía: integración con Google Sheets + Apps Script +
+  email (explícitamente pospuesto por el propio brief, punto 26, hasta
+  validar el modelo visual).
+
+### Cómo generar
+```bash
+# V3 (nuevo motor editorial, por defecto)
+python scripts/generar_catalogo_comercial.py --tipo mes --valor septiembre --anio 2026
+
+# V2 (maqueta anterior, para comparar)
+python scripts/generar_catalogo_comercial.py --tipo mes --valor septiembre --anio 2026 --motor v2
+```

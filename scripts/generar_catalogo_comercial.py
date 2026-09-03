@@ -36,6 +36,7 @@ from catalogo_comercial.reglas_comerciales import calcular_precios_catalogo
 from catalogo_comercial.campanas import resolver_tema
 from catalogo_comercial.composicion import componer
 from catalogo_comercial.render_pdf import generar_pdf
+from catalogo_comercial.layout_engine import generar_pdf_v3
 
 RUTA_PROTOTIPO = os.path.join(os.path.dirname(__file__), '..', 'data',
                                'catalogo_comercial_prueba', 'productos_prueba.json')
@@ -70,6 +71,8 @@ def parse_args():
     ap.add_argument('--productos', help="JSON alternativo solo con la lista de productos")
     ap.add_argument('--carpeta-imagenes', default=CARPETA_IMAGENES_TALLERES)
     ap.add_argument('--salida', help="Ruta del PDF de salida")
+    ap.add_argument('--motor', choices=['v2', 'v3'], default='v3',
+                     help="v3 (por defecto): composición editorial nueva. v2: maqueta anterior de fichas, para comparar.")
     return ap.parse_args()
 
 
@@ -136,7 +139,10 @@ def main():
     # 5. Render
     logo_png = preparar_logo()
     salida = args.salida or os.path.join(OUTPUT_DIR, f"catalogo_comercial_{slug_periodo(periodo)}.pdf")
-    info = generar_pdf(periodo, tema, bloques, logo_png, salida, resultado)
+    if args.motor == 'v3':
+        info = generar_pdf_v3(periodo, tema, bloques, logo_png, salida, resultado)
+    else:
+        info = generar_pdf(periodo, tema, bloques, logo_png, salida, resultado)
 
     print(f"\n✓ PDF generado: {salida}")
     print(f"  {info.get('paginas', '?')} páginas · {info.get('productos', 0)} productos")

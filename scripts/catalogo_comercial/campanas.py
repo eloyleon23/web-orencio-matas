@@ -23,9 +23,28 @@ from .modelo import Periodo
 @dataclass
 class Tema:
     id: str
-    color_principal: str        # fondo de banners/portada
-    color_acento: str           # precios, badges de oferta
-    color_texto_sobre_principal: str = '#FFFFFF'
+    # ── Paleta corporativa V3 (folleto claro/comercial, ver brief) ──────
+    # Cada color tiene un ROL FIJO, no es intercambiable entre sí:
+    #   estructura → antracita: cabeceras, navegación, títulos de familia
+    #   identidad  → turquesa/azul corporativo: destacados, badges suaves
+    #   precio     → rojo: precio final, la llamada comercial principal
+    #   descuento  → amarillo: % de ahorro, elemento de atención
+    #   fondo      → blanco/gris muy claro: base de la página, "aire"
+    # La campaña puede variar `identidad` (para dar variedad estacional)
+    # pero NUNCA `estructura`/`precio`/`descuento` — así la marca no se
+    # disuelve entre campañas (ver punto 15 del brief).
+    color_fondo: str = '#FFFFFF'
+    color_fondo_alterno: str = '#F3F4F6'
+    color_estructura: str = '#23262B'
+    color_identidad: str = '#0E7490'
+    color_precio: str = '#D91B1B'
+    color_descuento: str = '#F4B400'
+    color_texto: str = '#23262B'
+    color_texto_claro: str = '#FFFFFF'
+    # ── Campos heredados (v2, aún usados por render_pdf.py) ─────────────
+    color_principal: str = '#E4E7EB'
+    color_acento: str = '#d91b1b'
+    color_texto_sobre_principal: str = '#2B2A29'
     titulo_portada_template: str = 'CATÁLOGO DE {etiqueta_mayus}'
     claim_portada: str = 'Selección de productos para tu taller'
     texto_intro: str = (
@@ -50,6 +69,7 @@ TEMA_MENSUAL = Tema(
     color_principal='#E4E7EB',
     color_acento='#d91b1b',
     color_texto_sobre_principal='#2B2A29',
+    color_identidad='#0E7490',
     titulo_portada_template='OFERTAS DEL MES · {etiqueta_mayus}',
     claim_portada='Selección mensual para talleres y carrocerías',
 )
@@ -59,6 +79,7 @@ TEMA_TRIMESTRAL = Tema(
     color_principal='#2B2A29',
     color_acento='#F9B101',
     color_texto_sobre_principal='#FFFFFF',
+    color_identidad='#0E7490',
     titulo_portada_template='CATÁLOGO {etiqueta_mayus}',
     claim_portada='Lo mejor del trimestre para tu taller',
     texto_intro=(
@@ -72,6 +93,7 @@ TEMA_NAVIDAD = Tema(
     color_principal='#8C1D22',
     color_acento='#1E7A4C',
     color_texto_sobre_principal='#FFFFFF',
+    color_identidad='#1E7A4C',
     titulo_portada_template='{etiqueta_mayus}',
     claim_portada='Regala herramientas, regala productividad',
     texto_intro=(
@@ -85,6 +107,7 @@ TEMA_PRIMAVERA = Tema(
     color_principal='#1E7A4C',
     color_acento='#d91b1b',
     color_texto_sobre_principal='#FFFFFF',
+    color_identidad='#1E7A4C',
     titulo_portada_template='{etiqueta_mayus}',
     claim_portada='Renueva tu taller para la nueva temporada',
 )
@@ -94,6 +117,7 @@ TEMA_VERANO = Tema(
     color_principal='#0081A9',
     color_acento='#F9B101',
     color_texto_sobre_principal='#FFFFFF',
+    color_identidad='#0081A9',
     titulo_portada_template='{etiqueta_mayus}',
     claim_portada='Prepara tu taller para la temporada alta',
 )
@@ -105,6 +129,7 @@ TEMA_CAMPANA_GENERICO = Tema(
     color_principal='#2B2A29',
     color_acento='#F9B101',
     color_texto_sobre_principal='#FFFFFF',
+    color_identidad='#0E7490',
     titulo_portada_template='{etiqueta_mayus}',
     claim_portada='Condiciones especiales de campaña',
 )
