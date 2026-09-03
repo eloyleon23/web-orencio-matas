@@ -52,7 +52,7 @@ CW = W - 2 * MARGIN
 COL_W = (CW - GAP) / 2
 
 TOP_BAR_H = 12 * mm
-BOTTOM_BAR_H = 7 * mm
+BOTTOM_BAR_H = 11 * mm
 HEADER_BOX_H = 46 * mm
 FRAME_TOP = H - TOP_BAR_H - 1.5 * mm
 FRAME_BOTTOM = BOTTOM_BAR_H + 1.5 * mm
@@ -184,7 +184,14 @@ def make_header_footer(logo_png, tema, periodo):
         canvas.rect(0, 0, W, BOTTOM_BAR_H, fill=1, stroke=0)
         canvas.setStrokeColor(COLOR_BORDE)
         canvas.line(MARGIN, BOTTOM_BAR_H, W - MARGIN, BOTTOM_BAR_H)
+        # Disclaimer fijo en TODAS las páginas (como el prototipo de
+        # referencia) — también sirve para que la parte final de la
+        # página nunca quede visualmente "en blanco" del todo, aunque
+        # las dos columnas no terminen a exactamente la misma altura.
         canvas.setFillColor(COLOR_GRIS)
+        canvas.setFont('Helvetica-Oblique', 6.5)
+        canvas.drawCentredString(W / 2, 7 * mm,
+                                  'Ofertas válidas hasta agotar existencias. Precios sujetos a cambios.')
         canvas.setFont('Helvetica', 6)
         canvas.drawString(MARGIN, 2.6 * mm,
                            'Orencio Matas y Hnos, S.L. · 926 221 217 · correo@orenciomatas.es · orenciomatas.es')

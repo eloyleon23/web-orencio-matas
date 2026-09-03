@@ -522,6 +522,33 @@ tengan un margen de 1cm al final de la página y los de la derecha 2cm
 
 ---
 
+### Revisión visual v10 (novena vuelta — disclaimer fijo como solución práctica)
+Eloy propuso una solución práctica al problema de alineación: añadir
+un pie de página fijo con el texto "Ofertas válidas hasta agotar
+existencias. Precios sujetos a cambios" (igual que lleva el prototipo
+de referencia en sus tres hojas) — así la parte final de la página
+nunca queda visualmente en blanco del todo, y la alineación exacta
+entre columnas deja de ser estrictamente necesaria (aunque se mantenga
+como deseable).
+
+- Se amplió la franja inferior fija (`BOTTOM_BAR_H`, de 7mm a 11mm)
+  para poder mostrar DOS líneas: el disclaimer (centrado, cursiva, gris,
+  arriba) y la línea de contacto + nº de página que ya existía (abajo),
+  dibujadas ambas en el `onPage` callback (`make_header_footer`), así
+  que aparecen automáticamente en TODAS las páginas sin tocar el
+  contenido de las cajas de familia ni el algoritmo de reparto.
+- No sustituye el trabajo de alineación de v8/v9 (se mantiene tal
+  cual, sigue siendo la mejor alineación posible encontrada) — es un
+  complemento que hace que el resultado final se vea bien rematado
+  incluso en el peor caso.
+- Se mantiene también el texto propio del bloque de cierre ("Oferta
+  válida durante el periodo indicado en portada..."), con una
+  redacción algo distinta y complementaria — no se ha visto necesario
+  quitar ninguno de los dos, es habitual en folletos reales tener un
+  disclaimer breve en cada página y uno más completo en el cierre.
+
+---
+
 ## PENDIENTE / ABIERTO
 
 1. **Fase 2 — Google Sheet + Apps Script**: no implementada a propósito
