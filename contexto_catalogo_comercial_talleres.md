@@ -947,3 +947,79 @@ python scripts/generar_catalogo_comercial.py --tipo mes --valor septiembre --ani
 Con estos arreglos y ambas variantes generadas, queda pendiente que
 Eloy elija cuál de las dos (con o sin cajas) prefiere como base
 definitiva antes de seguir ampliando el repertorio de layouts.
+
+---
+
+## V3 — tercera vuelta (cabeceras huérfanas + reordenamiento de familias para rellenar huecos)
+Eloy rechazó la variante con cajas ("no está ordenado") — se descarta
+como base, aunque el código de la variante (`--cajas`) se deja
+disponible por si se quiere retomar más adelante. Sobre la versión sin
+cajas, señaló dos problemas reales: cabeceras de familia que no
+estaban en la misma página que sus productos, y espacio en blanco
+todavía abundante.
+
+### Bug real — cabecera de familia huérfana
+`disenar_familia()` solo mantenía unida (`KeepTogether`) la banda de
+familia con el `Spacer` que la sigue, NO con el primer bloque de
+contenido real. Si el primer producto no cabía en lo que quedaba de
+página, la banda se quedaba sola al final de una página y el
+contenido empezaba solo, sin cabecera visible, al principio de la
+siguiente. Confirmado visualmente: "ABRASIVOS" aparecía sola al final
+de la página 2, sin ningún producto debajo.
+
+Corregido reestructurando la función para separar explícitamente
+"cabecera + primer bloque de contenido" (ahora sí en un único
+`KeepTogether`) del resto de la familia (que sigue paginando con
+normalidad, sin necesidad de mantenerse unido a nada).
+
+### Espacio en blanco — causa real medida, no solo "hay hueco"
+Con la cabecera ya arreglada, se midió (con `Table.wrap()`, no a ojo)
+por qué la página 2 seguía con ~90mm de hueco tras "HERRAMIENTAS":
+quedaban 68mm libres, pero la familia MÁS COMPACTA del catálogo de
+prueba necesitaba 76mm para su cabecera+primer bloque — ninguna
+familia cabía, así que la siguiente familia completa se iba entera a
+la página siguiente sin usar ese hueco.
+
+Dos arreglos combinados:
+1. **Tamaños de imagen por defecto reducidos** en los distintos
+   patrones de layout (hero absoluto 100mm→82mm, hero+secundarios
+   78mm→56mm, doble protagonista 58mm→48mm, tarjeta secundaria en
+   columna de hero 58mm→48mm) — bloques algo más compactos sin perder
+   la jerarquía visual entre niveles.
+2. **Reordenamiento de FAMILIAS para paginar mejor**
+   (`_ordenar_familias_para_paginar()`, nueva función): simula el
+   avance página a página con las alturas reales medidas de cada
+   familia y, cuando la siguiente familia en el orden original no cabe
+   en el hueco que queda, busca más adelante en la cola una familia
+   más pequeña que SÍ quepa y la adelanta — la familia salteada sigue
+   procesándose después, en cuanto haya hueco para ella. Mucho más
+   simple que el reparto de v2 porque aquí solo hace falta decidir UN
+   orden lineal, no balancear dos columnas.
+   **Importante, y hay que ser explícito sobre esto**: esto reordena
+   en qué PÁGINA aparece cada familia completa, nunca los PRODUCTOS
+   dentro de una familia (que siguen siempre en el orden de la Sheet).
+   Es una interpretación deliberadamente flexible del punto 16 del
+   brief ("el orden de la Sheet es la fuente de verdad... salvo que la
+   propia arquitectura requiera una agrupación por familia") — si Eloy
+   prefiere el orden de familias estrictamente literal aunque eso
+   implique más espacio en blanco, hay que desactivar esta función
+   (queda aislada y es trivial de quitar sin tocar nada más).
+
+### Resultado medido
+Con el mismo catálogo de prueba: 8 páginas → 7 páginas, y visualmente
+2-3 familias por página en la mayoría de los casos donde antes solo
+cabía 1 con mucho hueco debajo (confirmado en las páginas 2, 3 y 4).
+Rendimiento: ~1,1s para todo el catálogo (la medición de alturas
+llama a `disenar_familia()` dos veces por familia — una para medir,
+otra para el render final — pero las imágenes están cacheadas en
+`imagenes.py` así que no se reprocesan desde disco).
+
+### Pendiente
+La página de cierre sigue con bastante espacio en blanco al final —
+no se ha tocado en esta vuelta (el cierre no pasa por
+`_ordenar_familias_para_paginar`, va siempre al final). Si hace falta
+apurarlo más, la vía más simple sería dejar que la ÚLTIMA familia del
+catálogo (la que quede justo antes del cierre) se calcule sabiendo
+cuánto hueco le va a quedar al cierre detrás, similar a como se hacía
+en v2 — no implementado todavía, pendiente de que Eloy confirme si
+merece la pena antes de seguir.

@@ -217,7 +217,7 @@ def _ficha_texto_producto(producto, tema, tam_nombre=12, tam_ref=8):
     return [Paragraph(producto.nombre, est_nombre), Paragraph(f'Ref: {producto.referencia}', est_ref)]
 
 
-def layout_hero_absoluto(producto, tema, ancho, alto_img=100 * mm):
+def layout_hero_absoluto(producto, tema, ancho, alto_img=82 * mm):
     """Nivel 5 dominando la composición: imagen enorme a un lado, ficha
     y precio HERO al otro — debe notarse en menos de un segundo que es
     el producto estrella (regla del punto 4 del brief)."""
@@ -267,7 +267,7 @@ def _tarjeta_secundaria(producto, tema, ancho, alto_img=28 * mm):
     return t
 
 
-def layout_hero_secundarios(hero, secundarios, tema, ancho, alto_hero=78 * mm):
+def layout_hero_secundarios(hero, secundarios, tema, ancho, alto_hero=56 * mm):
     """Un producto protagonista (nivel 4-5) + 2-4 productos secundarios
     en columna estrecha al lado — asimetría deliberada, no un grid
     uniforme (punto 5 del brief). Si no hay secundarios, cae en
@@ -319,7 +319,7 @@ def layout_doble_protagonista(p1, p2, tema, ancho):
     ancho_col = (ancho - 8 * mm) / 2
 
     def bloque(p):
-        img, aw, ah = _imagen_fit(p, ancho_col, 58 * mm, cuadrado=False)
+        img, aw, ah = _imagen_fit(p, ancho_col, 48 * mm, cuadrado=False)
         info = []
         b = badge_nivel(p, tema)
         if b:
@@ -384,7 +384,6 @@ def disenar_familia(bloque, tema, ancho):
     if not productos:
         return []
 
-    story = [banda_familia(bloque.familia, tema, ancho), Spacer(1, 5 * mm)]
     heroes5 = [p for p in productos if p.protagonismo == 5]
     heroes4 = [p for p in productos if p.protagonismo == 4]
     resto = [p for p in productos if p.protagonismo <= 3]
@@ -416,25 +415,44 @@ def disenar_familia(bloque, tema, ancho):
         resto_final = resto
         if nivel3:
             otros = [x for x in resto if x is not nivel3[0]]
-            bloques_layout.append(layout_hero_secundarios(nivel3[0], otros[:4], tema, ancho, alto_hero=60 * mm))
+            bloques_layout.append(layout_hero_secundarios(nivel3[0], otros[:4], tema, ancho, alto_hero=48 * mm))
             usados = {id(nivel3[0])} | {id(p) for p in otros[:4]}
             resto_final = [p for p in resto if id(p) not in usados]
 
-    for b in bloques_layout:
-        story += b
-        story.append(Spacer(1, 4 * mm))
+    # Construye la lista de "bloques" de contenido (cada uno una lista
+    # de flowables) SIN mezclarlos aún con la cabecera — así se puede
+    # mantener la cabecera unida solo al PRIMER bloque real (con
+    # KeepTogether) y dejar que el resto de la familia pagine con
+    # normalidad. Antes solo se mantenía unida la cabecera con el
+    # espaciador que la sigue, así que si el primer producto no cabía
+    # en lo que quedaba de página, la cabecera se quedaba sola al final
+    # de una página y el contenido empezaba solo en la siguiente —
+    # bug real señalado por Eloy ("las cabeceras no están correctamente
+    # en la hoja de los productos").
+    todos_bloques = list(bloques_layout)
     if resto_final:
         if not bloques_layout and len(resto_final) == 1:
             # Familia con un único producto y sin protagonismo alto: en
             # vez de una rejilla pequeña con mucho hueco alrededor, se
             # le da presencia real a todo el ancho (imagen más modesta
             # que un HERO de verdad, pero sin dejar huecos en blanco).
-            story += layout_hero_absoluto(resto_final[0], tema, ancho, alto_img=55 * mm)
+            todos_bloques.append(layout_hero_absoluto(resto_final[0], tema, ancho, alto_img=40 * mm))
         else:
-            story += layout_grid_comercial(resto_final, tema, ancho)
+            todos_bloques.append(layout_grid_comercial(resto_final, tema, ancho))
 
-    story.append(Spacer(1, 8 * mm))
-    return [KeepTogether(story[:2])] + story[2:]
+    if not todos_bloques:
+        return []
+
+    cabecera = [banda_familia(bloque.familia, tema, ancho), Spacer(1, 5 * mm)]
+    primer_bloque = cabecera + todos_bloques[0]
+
+    resto_cuerpo = []
+    for b in todos_bloques[1:]:
+        resto_cuerpo.append(Spacer(1, 4 * mm))
+        resto_cuerpo += b
+    resto_cuerpo.append(Spacer(1, 8 * mm))
+
+    return [KeepTogether(primer_bloque)] + resto_cuerpo
 
 
 # ── Cabecera / pie — deliberadamente LIGEROS (el brief pide "clara, ─────
@@ -647,6 +665,61 @@ def construir_cierre(tema, logo_png, ancho):
 
 
 # ── Orquestador ───────────────────────────────────────────────────────
+# ── Orden de familias que mejor aprovecha cada página ────────────────────
+def _ordenar_familias_para_paginar(bloques, tema, ancho, capacidad_pagina):
+    """Decide en qué ORDEN colocar las familias para aprovechar mejor
+    cada página — nunca reordena PRODUCTOS dentro de una familia (eso
+    sigue siendo siempre el orden de la Sheet), solo decide qué familia
+    completa viene primero cuando la siguiente en el orden original no
+    cabe entera en el hueco que quede en la página actual.
+
+    Por qué hace falta: cada familia se mantiene unida a su cabecera
+    con `KeepTogether` (para no dejar una cabecera huérfana al final de
+    una página sin nada debajo, bug real señalado por Eloy) — pero eso
+    significa que si la familia entera no cabe en lo que queda de
+    página, se desborda COMPLETA a la siguiente, dejando la página
+    actual con un hueco que ninguna familia posterior llega a rellenar
+    porque el orden ya las descarta a todas. Adelantar una familia más
+    pequeña que SÍ quepa (y retomar la salteada después) evita ese
+    hueco. Mucho más simple que el reparto de v2 porque aquí solo hay
+    que decidir UN orden lineal, no balancear dos columnas."""
+    MARGEN = 3 * mm
+    alturas_cabecera, alturas_totales = {}, {}
+    for b in bloques:
+        flowables = disenar_familia(b, tema, ancho)
+        if not flowables:
+            alturas_cabecera[id(b)] = 0
+            alturas_totales[id(b)] = 0
+            continue
+        primer = Table([[flowables[0]._content]], colWidths=[ancho])
+        h_cab = primer.wrap(ancho, 100000)[1]
+        resto = Table([[flowables[1:]]], colWidths=[ancho]) if len(flowables) > 1 else None
+        h_resto = resto.wrap(ancho, 100000)[1] if resto else 0
+        alturas_cabecera[id(b)] = h_cab
+        alturas_totales[id(b)] = h_cab + h_resto
+
+    cola = list(bloques)
+    orden_final = []
+    espacio_restante = capacidad_pagina
+    while cola:
+        candidato = cola[0]
+        if alturas_cabecera[id(candidato)] <= espacio_restante - MARGEN:
+            elegido = cola.pop(0)
+        else:
+            elegido = None
+            for i in range(1, len(cola)):
+                if alturas_cabecera[id(cola[i])] <= espacio_restante - MARGEN:
+                    elegido = cola.pop(i)
+                    break
+            if elegido is None:
+                espacio_restante = capacidad_pagina
+                continue
+        orden_final.append(elegido)
+        h_total = alturas_totales[id(elegido)]
+        espacio_restante = max(0.0, espacio_restante - h_total) if h_total <= espacio_restante else 0.0
+    return orden_final
+
+
 def generar_pdf_v3(periodo, tema, bloques, logo_png, out_path, resultado=None, redondeado=False):
     """Punto de entrada equivalente a `render_pdf.generar_pdf()` (misma
     firma, + `redondeado`) pero con el motor editorial V3 — flujo a una
@@ -663,10 +736,13 @@ def generar_pdf_v3(periodo, tema, bloques, logo_png, out_path, resultado=None, r
     tpl = PageTemplate(id='contenido', frames=[frame], onPage=make_header_footer(logo_png, tema, periodo))
     doc = BaseDocTemplate(out_path, pagesize=A4, pageTemplates=[tpl])
 
+    capacidad_pagina = FRAME_TOP - FRAME_BOTTOM
+    bloques_ordenados = _ordenar_familias_para_paginar(bloques, tema, CW, capacidad_pagina)
+
     story = construir_portada(periodo, tema, bloques, logo_png, CW)
     from reportlab.platypus import PageBreak
     story.append(PageBreak())
-    for bloque in bloques:
+    for bloque in bloques_ordenados:
         story += disenar_familia(bloque, tema, CW)
     story += construir_cierre(tema, logo_png, CW)
 
