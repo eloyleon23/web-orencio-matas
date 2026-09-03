@@ -1057,3 +1057,54 @@ ni la jerarquía visual entre niveles — verificado visualmente en
 varias páginas, los bloques siguen leyéndose con holgura, no
 apretados. La reducción se nota igual en el tema de Navidad (7→6) y en
 la variante `--cajas` (8→7).
+
+---
+
+## V3 — quinta vuelta (portada más llamativa)
+Eloy pidió que la portada fuera más llamativa — "hay mucho espacio en
+blanco y no hay nada que determine que sea un folleto de descuentos".
+Rediseño completo de `construir_portada()`:
+
+- **Banda de titular a todo el ancho** con fondo antracita (color de
+  estructura) y texto en blanco — logo + título + claim dentro del
+  bloque, en vez de texto suelto sobre fondo blanco.
+- **Aviso de descuento grande** ("¡AHORRA HASTA UN -X% EN PRODUCTOS
+  SELECCIONADOS!"), fondo amarillo (color de descuento), calculado del
+  MAYOR descuento real presente en el catálogo (nunca inventado) —
+  aparece justo debajo del titular, lo primero que se lee tras el
+  título. Si no hay ningún producto en oferta ese mes, el aviso
+  desaparece sin más (probado, no deja hueco raro).
+- **Productos protagonistas con imágenes más grandes** (antes 46mm,
+  ahora con altura fija de imagen reservada — ver bug de abajo) sobre
+  un fondo gris muy claro que agrupa visualmente la sección.
+
+### Dos bugs reales encontrados y corregidos
+1. **Texto del claim cortado** ("...CARROCERÍA" sin la S final): el
+   ancho interior de la tabla anidada (logo + texto) no descontaba el
+   padding de la tabla exterior (9mm a cada lado) — el texto se
+   clipaba en vez de envolver. Corregido calculando el ancho interior
+   real (`ancho - 18mm`) antes de repartir columnas.
+2. **Insignias DESTACADO/precio a distinta altura entre las 3 tarjetas
+   de producto**: cada imagen se ajustaba a su propia proporción real
+   (una foto apaisada queda más baja que una alargada dentro del mismo
+   límite máximo), así que el contenido de debajo (insignia, nombre,
+   precio) arrancaba en una altura distinta en cada columna, dando
+   sensación de fila descuadrada. Corregido reservando SIEMPRE la
+   misma altura fija para la imagen (con la foto centrada dentro),
+   independientemente de su proporción real — mismo principio que ya
+   se aplicaba en otras partes del motor.
+
+### Ajuste de espaciado tras el rediseño
+El primer rediseño (con altura de imagen fija a 62mm) desbordaba a una
+página 2 casi vacía (confirmado visualmente: la página 2 solo tenía
+cabecera/pie, sin contenido). Se recortaron varios paddings/spacers
+del bloque de portada (banda de titular 11→8mm, aviso 5→3.5mm,
+espaciadores intermedios 6→4mm, imagen de producto 62→52mm) hasta que
+volvió a caber entera en una sola página.
+
+### Resultado
+6 páginas (igual que antes del rediseño, sin coste adicional de
+páginas), portada con presencia real de folleto de ofertas desde el
+primer vistazo. Verificado con ambos temas (el de Navidad ajusta
+colores correctamente: verde en vez de turquesa, antracita y rojo
+constantes) y con el caso límite sin descuentos.

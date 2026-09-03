@@ -511,62 +511,115 @@ def make_header_footer(logo_png, tema, periodo):
 
 # ── Portada — verdadera portada de campaña, no un título suelto ─────────
 def construir_portada(periodo, tema, bloques, logo_png, ancho):
+    """Portada de campaña con impacto visual real (punto 10 del brief):
+    debe quedar claro en un vistazo que esto es un folleto de ofertas,
+    no solo un título con espacio en blanco alrededor. Bloque de color
+    a todo el ancho para el titular, aviso de descuento grande cuando
+    hay ofertas reales en el catálogo, e imágenes de producto más
+    grandes que en la primera versión de la portada."""
     story = []
-    story.append(Spacer(1, 4 * mm))
 
     titulo = periodo.etiqueta.upper()
-    est_titulo = ParagraphStyle('pt', fontName='Helvetica-Bold', fontSize=34, textColor=_c(tema.color_estructura),
-                                 alignment=TA_LEFT, leading=36)
-    est_claim = ParagraphStyle('pc', fontName='Helvetica-Bold', fontSize=17, textColor=_c(tema.color_identidad),
-                                alignment=TA_LEFT, leading=20)
+    est_titulo = ParagraphStyle('pt', fontName='Helvetica-Bold', fontSize=32, textColor=colors.white,
+                                 alignment=TA_LEFT, leading=34)
+    est_claim = ParagraphStyle('pc', fontName='Helvetica-Bold', fontSize=15, textColor=colors.white,
+                                alignment=TA_LEFT, leading=18)
+    bloque_titulo = [Paragraph(titulo, est_titulo), Spacer(1, 2 * mm), Paragraph(tema.claim_portada.upper(), est_claim)]
+    if logo_png and os.path.exists(logo_png):
+        with PILImage.open(logo_png) as im:
+            ratio = im.height / im.width
+        img_logo = RLImage(logo_png, width=20 * mm, height=20 * mm * ratio)
+        ancho_interior = ancho - 18 * mm  # descuenta el padding de 9mm a cada lado de `banner`
+        celda_banner = Table([[img_logo, bloque_titulo]], colWidths=[26 * mm, ancho_interior - 26 * mm])
+        celda_banner.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        contenido_banner = celda_banner
+    else:
+        contenido_banner = bloque_titulo
+    banner = Table([[contenido_banner]], colWidths=[ancho])
+    banner.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), _c(tema.color_estructura)),
+        ('LEFTPADDING', (0, 0), (-1, -1), 9 * mm), ('RIGHTPADDING', (0, 0), (-1, -1), 9 * mm),
+        ('TOPPADDING', (0, 0), (-1, -1), 8 * mm), ('BOTTOMPADDING', (0, 0), (-1, -1), 8 * mm),
+    ]))
+    story.append(banner)
+
+    # Aviso de descuento GRANDE — lo primero que se ve tras el titular,
+    # para que quede claro a primera vista que es un folleto de ofertas
+    # y no un catálogo técnico. Se calcula el mayor descuento REAL
+    # presente en el catálogo (nunca inventado).
+    todos = [p for b in bloques for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]
+    descuento_max = 0.0
+    for p in todos:
+        if p.oferta and p.descuento_pct and float(p.descuento_pct) > descuento_max:
+            descuento_max = float(p.descuento_pct)
+
+    if descuento_max > 0:
+        est_ahorro = ParagraphStyle('pa', fontName='Helvetica-Bold', fontSize=19, textColor=_c(tema.color_estructura),
+                                     alignment=TA_LEFT, leading=22)
+        aviso = Table([[Paragraph(f'¡AHORRA HASTA UN -{int(descuento_max)}% EN PRODUCTOS SELECCIONADOS!',
+                                   est_ahorro)]], colWidths=[ancho])
+        aviso.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), _c(tema.color_descuento)),
+            ('LEFTPADDING', (0, 0), (-1, -1), 9 * mm), ('RIGHTPADDING', (0, 0), (-1, -1), 9 * mm),
+            ('TOPPADDING', (0, 0), (-1, -1), 3.5 * mm), ('BOTTOMPADDING', (0, 0), (-1, -1), 3.5 * mm),
+        ]))
+        story.append(aviso)
+
+    story.append(Spacer(1, 4 * mm))
     est_sub = ParagraphStyle('ps', fontName='Helvetica', fontSize=10.5, textColor=_c('#4B5563'),
                               alignment=TA_LEFT, leading=14)
-    story.append(Paragraph(titulo, est_titulo))
-    story.append(Paragraph(tema.claim_portada.upper(), est_claim))
-    story.append(Spacer(1, 2.5 * mm))
     story.append(Paragraph(tema.texto_intro, est_sub))
-    story.append(Spacer(1, 3 * mm))
-    linea = Table([['']], colWidths=[ancho], rowHeights=[1.6])
-    linea.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, -1), _c(tema.color_descuento))]))
-    story.append(linea)
-    story.append(Spacer(1, 8 * mm))
+    story.append(Spacer(1, 4 * mm))
 
     # 2-4 productos protagonistas de portada: los de mayor protagonismo
     # de todo el catálogo, en el orden en que aparecen (nunca inventados
     # ni reordenados por precio) — punto 10 del brief.
-    todos = [p for b in bloques for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]
     destacados = sorted([p for p in todos if p.protagonismo >= 4], key=lambda p: (-p.protagonismo, p.orden))[:4]
     if not destacados:
         destacados = sorted(todos, key=lambda p: -p.protagonismo)[:3]
 
     if destacados:
-        est_int = ParagraphStyle('pi', fontName='Helvetica-Bold', fontSize=11, textColor=_c(tema.color_estructura),
-                                  alignment=TA_LEFT, leading=13)
+        est_int = ParagraphStyle('pi', fontName='Helvetica-Bold', fontSize=12, textColor=_c(tema.color_estructura),
+                                  alignment=TA_LEFT, leading=14)
         story.append(Paragraph('LOS PROTAGONISTAS DE ESTE CATÁLOGO', est_int))
-        story.append(Spacer(1, 4 * mm))
+        story.append(Spacer(1, 4.5 * mm))
         n = min(len(destacados), 3)
         ancho_col = (ancho - (n - 1) * 6 * mm) / n
 
         def tarjeta_portada(p):
-            img, aw, ah = _imagen_fit(p, ancho_col * 0.92, 46 * mm, cuadrado=False)
-            contenido = [img, Spacer(1, 2.5 * mm)]
+            img, aw, ah = _imagen_fit(p, ancho_col * 0.96, 52 * mm, cuadrado=False)
+            # Reservar SIEMPRE los mismos 62mm de alto para la imagen
+            # (centrada dentro), aunque la foto real ocupe menos por su
+            # proporción — si no, las insignias DESTACADO/precio de
+            # cada tarjeta quedan a alturas distintas según la forma de
+            # cada foto y la fila se ve descuadrada.
+            celda_img = Table([[img]], colWidths=[ancho_col], rowHeights=[52 * mm])
+            celda_img.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                            ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
+            contenido = [celda_img, Spacer(1, 3 * mm)]
             b = badge_nivel(p, tema)
             if b:
                 contenido.append(b)
-                contenido.append(Spacer(1, 1.5 * mm))
-            contenido += _ficha_texto_producto(p, tema, tam_nombre=10, tam_ref=7)
-            contenido.append(Spacer(1, 2 * mm))
-            contenido += bloque_precio(p, tema, tam='normal')
+                contenido.append(Spacer(1, 2 * mm))
+            contenido += _ficha_texto_producto(p, tema, tam_nombre=11, tam_ref=7.5)
+            contenido.append(Spacer(1, 2.5 * mm))
+            contenido += bloque_precio(p, tema, tam='grande')
             t = Table([[contenido]], colWidths=[ancho_col])
             t.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                                    ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
+                                    ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4)]))
             return t
 
         fila = Table([[tarjeta_portada(p) for p in destacados[:n]]], colWidths=[ancho_col] * n)
-        fila.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                                   ('LEFTPADDING', (0, 0), (-1, -1), 3 * mm), ('RIGHTPADDING', (0, 0), (-1, -1), 3 * mm)]))
+        fila.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'), ('BACKGROUND', (0, 0), (-1, -1), _c(tema.color_fondo_alterno)),
+            ('LEFTPADDING', (0, 0), (-1, -1), 4 * mm), ('RIGHTPADDING', (0, 0), (-1, -1), 4 * mm),
+            ('TOPPADDING', (0, 0), (-1, -1), 4 * mm), ('BOTTOMPADDING', (0, 0), (-1, -1), 4 * mm),
+        ]))
         story.append(fila)
-        story.append(Spacer(1, 9 * mm))
+        story.append(Spacer(1, 5 * mm))
 
     familias = [b.familia for b in bloques]
     est_fam_tit = ParagraphStyle('ft', fontName='Helvetica-Bold', fontSize=10, textColor=_c(tema.color_estructura),
