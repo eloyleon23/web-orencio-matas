@@ -41,12 +41,13 @@ class Tema:
 
 
 # ── Registro de temas ───────────────────────────────────────────────────────
-# Colores corporativos base (naranja/amarillo Zaphiro-Talleres, coherente con
-# AREAS['talleres'] de generar_catalogos.py: '#F9B101' + texto oscuro).
+# Tema mensual: gris claro neutro (antes amarillo mostaza — cambiado a
+# petición de Eloy, no encajaba). El acento (rojo, para ofertas y
+# precios) se mantiene igual.
 
 TEMA_MENSUAL = Tema(
     id='mensual',
-    color_principal='#F9B101',
+    color_principal='#E4E7EB',
     color_acento='#d91b1b',
     color_texto_sobre_principal='#2B2A29',
     titulo_portada_template='OFERTAS DEL MES · {etiqueta_mayus}',

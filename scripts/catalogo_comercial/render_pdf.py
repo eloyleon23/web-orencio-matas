@@ -99,10 +99,14 @@ def estilos(tema):
                                            alignment=TA_CENTER, leading=8),
         'sticker_precio': ParagraphStyle('stp', fontName='Helvetica-Bold', fontSize=11.5, textColor=colors.white,
                                           alignment=TA_CENTER, leading=13.5),
+        'sticker_precio_normal': ParagraphStyle('stpn', fontName='Helvetica-Bold', fontSize=11.5,
+                                                 textColor=texto_sobre_principal, alignment=TA_CENTER, leading=13.5),
         'sticker_tachado_h': ParagraphStyle('stth', fontName='Helvetica-Bold', fontSize=8, textColor=colors.white,
                                              alignment=TA_LEFT, leading=10),
         'sticker_precio_h': ParagraphStyle('stph', fontName='Helvetica-Bold', fontSize=16, textColor=colors.white,
                                             alignment=TA_LEFT, leading=19),
+        'sticker_precio_h_normal': ParagraphStyle('stphn', fontName='Helvetica-Bold', fontSize=16,
+                                                   textColor=texto_sobre_principal, alignment=TA_LEFT, leading=19),
         'sin_iva': ParagraphStyle('si', fontName='Helvetica', fontSize=5.3, textColor=COLOR_GRIS,
                                    alignment=TA_CENTER, spaceBefore=1, leading=6.5),
         'sin_iva_h': ParagraphStyle('sih', fontName='Helvetica', fontSize=7, textColor=COLOR_GRIS,
@@ -278,7 +282,10 @@ def _badge_logo(logo_png, diametro_px=64):
 def sticker_precio(p, st, tema, ancho=30 * mm, horizontal=False):
     fondo = _c(tema.color_acento) if p.oferta else _c(tema.color_principal)
     est_tachado = st['sticker_tachado_h'] if horizontal else st['sticker_tachado']
-    est_precio = st['sticker_precio_h'] if horizontal else st['sticker_precio']
+    if p.oferta:
+        est_precio = st['sticker_precio_h'] if horizontal else st['sticker_precio']
+    else:
+        est_precio = st['sticker_precio_h_normal'] if horizontal else st['sticker_precio_normal']
     filas = []
     if p.oferta and p.descuento_pct and p.descuento_pct > 0:
         filas.append([Paragraph(f'<strike>{_fmt(p.precio_con_iva)} €</strike> -{int(p.descuento_pct)}%', est_tachado)])
@@ -457,36 +464,50 @@ def construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png=None):
 
 
 # ── Reparto balanceado de cajas entre las dos columnas de cada página ───
-def planificar_columnas(items, capacidad_pagina1, capacidad_normal):
+def planificar_columnas(items, capacidad_pagina1, capacidad_normal, no_adelantar=frozenset()):
     """`items`: lista de (flowable, alto). Devuelve una lista de páginas
-    [(lista_izq, lista_der), ...]. Decide en qué punto de la secuencia
-    cortar entre columna izquierda y derecha para que ambas queden lo
-    más igualadas posible en altura, SIN reordenar nada — solo decide
-    dónde cae el corte. Respeta que un `Frame` de ReportLab solo avanza
-    hacia delante (no se puede "volver" a la izquierda de la misma
-    página), así que cada página consume un tramo contiguo de la
-    secuencia total."""
-    paginas = []
-    i = 0
-    n = len(items)
-    primera = True
-    while i < n:
-        capacidad = capacidad_pagina1 if primera else capacidad_normal
-        mejor_fin = i  # exclusivo
-        mejor_split = 0
-        j = i
+    [(lista_izq, lista_der), ...]. Decide en qué tramo de la secuencia va
+    cada página y dónde cae el corte entre columna izquierda y derecha
+    para que ambas queden lo más igualadas posible en altura. Respeta
+    que un `Frame` de ReportLab solo avanza hacia delante dentro de una
+    página (no se puede "volver" a la izquierda de la misma página).
+
+    A partir de esta versión SÍ se permite adelantar una familia desde
+    más adelante en la secuencia para rellenar el hueco que quede en la
+    columna más corta de la página actual (con permiso explícito de
+    Eloy) — solo cuando encaja mejor que dejar el hueco en blanco. El
+    orden de PRODUCTOS dentro de cada familia nunca se toca; esto solo
+    reordena en qué página/columna cae cada CAJA de familia completa.
+
+    `no_adelantar`: flowables que NUNCA se adelantan para rellenar un
+    hueco (siguen pudiendo aparecer por el mecanismo normal de ventana)
+    — se usa para el marcador de posición del cierre: si se le dejara
+    adelantar, podría acabar rellenando el hueco de una página
+    intermedia y dejar la página final (la que de verdad lleva el
+    cierre) sin él.
+    """
+    HORIZONTE = 6          # cuántas familias siguientes se consideran para rellenar un hueco
+    HUECO_MINIMO = 12      # por debajo de esto no merece la pena seguir rellenando (pt)
+
+    def mejor_ventana(restantes, capacidad):
+        """Sobre `restantes` (lista mutable de (flowable, alto), en su
+        orden actual), busca la ventana inicial más larga [0, fin) para
+        la que existe algún corte válido, y el corte que minimiza la
+        diferencia de altura entre las dos columnas."""
+        n = len(restantes)
+        mejor_fin, mejor_split = 0, 0
+        j = 0
         while j < n:
-            ventana = items[i:j + 1]
-            alturas = [h for _, h in ventana]
+            alturas = [h for _, h in restantes[:j + 1]]
             prefijos = [0.0]
             for h in alturas:
                 prefijos.append(prefijos[-1] + h)
             total = prefijos[-1]
-            if total > 2 * capacidad and j > i:
+            if total > 2 * capacidad and j > 0:
                 break
             mejor_diff = None
             mejor_k = None
-            for k in range(0, len(ventana) + 1):
+            for k in range(0, len(alturas) + 1):
                 izq, der = prefijos[k], total - prefijos[k]
                 if izq <= capacidad and der <= capacidad:
                     diff = abs(izq - der)
@@ -494,19 +515,48 @@ def planificar_columnas(items, capacidad_pagina1, capacidad_normal):
                         mejor_diff, mejor_k = diff, k
             if mejor_k is None:
                 break
-            mejor_fin = j + 1
-            mejor_split = mejor_k
+            mejor_fin, mejor_split = j + 1, mejor_k
             j += 1
-        if mejor_fin == i:
+        if mejor_fin == 0:
             # Ni un solo elemento cabe en una columna (caso raro, caja
-            # más alta que la página entera) — se coloca igualmente en
-            # la izquierda y que ReportLab la parta si hace falta.
-            mejor_fin = i + 1
-            mejor_split = 1
-        izq = [items[k][0] for k in range(i, i + mejor_split)]
-        der = [items[k][0] for k in range(i + mejor_split, mejor_fin)]
-        paginas.append((izq, der))
-        i = mejor_fin
+            # más alta que la página entera) — se coloca igual en la
+            # izquierda y que ReportLab la parta si hace falta.
+            return 1, 1
+        return mejor_fin, mejor_split
+
+    restantes = list(items)
+    paginas = []
+    primera = True
+    while restantes:
+        capacidad = capacidad_pagina1 if primera else capacidad_normal
+        fin, split = mejor_ventana(restantes, capacidad)
+        pagina = restantes[:fin]
+        izq = pagina[:split]
+        der = pagina[split:]
+        del restantes[:fin]
+
+        # Intentar rellenar el hueco de la columna más corta trayendo
+        # una familia de más adelante en la secuencia que encaje bien.
+        for _ in range(HORIZONTE):
+            hi = sum(h for _, h in izq)
+            hd = sum(h for _, h in der)
+            col_corta_es_izq = hi <= hd
+            hueco = capacidad - (hi if col_corta_es_izq else hd)
+            if hueco < HUECO_MINIMO or not restantes:
+                break
+            candidatos = restantes[:HORIZONTE]
+            mejor_idx, mejor_alto = None, 0
+            for idx, (flow, h) in enumerate(candidatos):
+                if flow in no_adelantar:
+                    continue
+                if h <= hueco and h > mejor_alto:
+                    mejor_idx, mejor_alto = idx, h
+            if mejor_idx is None:
+                break
+            elegido = restantes.pop(mejor_idx)
+            (izq if col_corta_es_izq else der).append(elegido)
+
+        paginas.append(([f for f, _ in izq], [f for f, _ in der]))
         primera = False
     return paginas
 
@@ -676,7 +726,7 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
     marcador_cierre = construir_caja_cierre(tema, st, logo_png, COL_W)
     _, alto_marcador = marcador_cierre.wrap(COL_W, 100000)
     paginas = planificar_columnas(tablas + [(marcador_cierre, alto_marcador + 2.5 * mm)],
-                                   alto_pagina1, alto_normal)
+                                   alto_pagina1, alto_normal, no_adelantar={marcador_cierre})
 
     izq_ultima, der_ultima = paginas[-1]
     izq_ultima = [c for c in izq_ultima if c is not marcador_cierre]

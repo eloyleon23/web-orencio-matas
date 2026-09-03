@@ -369,7 +369,51 @@ era más grande, empeorando el desequilibrio en vez de arreglarlo).
 
 ---
 
+### Revisión visual v7 (sexta vuelta — color y reordenación de familias autorizada)
+Eloy aprobó explícitamente reordenar familias para aprovechar mejor el
+espacio ("me parece bien la propuesta, adelante"), insistió en que la
+alineación entre columnas es un punto muy importante, y pidió cambiar
+el amarillo mostaza del tema mensual por un gris claro.
+
+- **Color del tema mensual**: `TEMA_MENSUAL.color_principal` pasó de
+  `#F9B101` (amarillo mostaza) a `#E4E7EB` (gris claro neutro). El
+  acento (rojo, ofertas/precios) no se tocó.
+  **Ajuste necesario derivado**: el sticker de precio normal (sin
+  oferta) usaba SIEMPRE texto blanco sobre el color principal — con un
+  amarillo fuerte eso se leía bien, pero sobre gris claro el texto
+  blanco desaparece. Se añadieron variantes de estilo
+  (`sticker_precio_normal`, `sticker_precio_h_normal`) que usan
+  `tema.color_texto_sobre_principal` en vez de blanco fijo, y
+  `sticker_precio()` elige el estilo correcto según si el producto
+  está en oferta (fondo acento, texto blanco) o no (fondo principal,
+  texto del tema). Los temas de campaña (fondos oscuros) no se ven
+  afectados porque su `color_texto_sobre_principal` ya era blanco.
+- **`planificar_columnas()` ahora puede reordenar familias entre
+  columnas para rellenar huecos** (con permiso explícito): tras decidir
+  el corte de cada página con el mismo mecanismo de ventana que ya
+  había, se añadió un paso adicional que mira las próximas familias en
+  la secuencia (hasta 6 de margen) y, si alguna encaja en el hueco que
+  quede en la columna más corta, la "adelanta" a esa página — quitándola
+  de su posición original. Se repite varias veces por página mientras
+  el hueco siga siendo significativo (>12pt) y haya candidatas. El
+  orden de PRODUCTOS dentro de cada familia nunca se toca, solo el
+  orden en que aparecen las CAJAS de familia completas.
+- **Bug potencial encontrado y evitado antes de que llegara a
+  producirse**: el marcador de posición del cierre (ver v6) es, por
+  construcción, el último elemento de la secuencia — si se le hubiera
+  dejado participar en el nuevo mecanismo de "adelantar", podría haber
+  rellenado el hueco de una página intermedia y dejar la página final
+  (la que de verdad necesita el cierre) sin él. Se añadió el parámetro
+  `no_adelantar` a `planificar_columnas()` específicamente para excluir
+  el marcador de cierre de ese mecanismo — sigue pudiendo aparecer por
+  la vía normal (la ventana), solo no se le adelanta artificialmente.
+- Probado con ambos temas, con productos inválidos a propósito, y con
+  el caso límite de 2 productos — todo sin romperse.
+
+---
+
 ## PENDIENTE / ABIERTO
+
 
 1. **Fase 2 — Google Sheet + Apps Script**: no implementada a propósito
    (tal como pedía el encargo). Cuando se aborde:
@@ -403,16 +447,11 @@ era más grande, empeorando el desequilibrio en vez de arreglarlo).
    nueva revisión con Eloy para confirmar si las páginas de solo
    productos (sin margen para un elemento elástico) están ya lo
    bastante ajustadas o si hace falta seguir iterando.
-5. **Reordenar familias para apurar el hueco restante (no implementado
-   a propósito)**: en páginas de solo productos, el límite que queda
-   viene de que el orden de familias es fijo. Se podría, sin tocar el
-   orden de PRODUCTOS dentro de cada familia, probar variantes del
-   ORDEN DE FAMILIAS dentro de una misma página (parecido a resolver un
-   pequeño "bin packing" con más libertad) para encontrar combinaciones
-   que aprovechen mejor el hueco. No se ha hecho porque cambia el orden
-   visual de las familias respecto a como aparecen en la Sheet, y eso
-   requiere confirmación explícita de Eloy antes de tocarlo (ver
-   principio de "no reordenar" documentado en composicion.py).
+5. **Reordenar familias — ya implementado (v7)**, ver sección anterior.
+   Sigue habiendo un límite duro: si NINGUNA familia restante (dentro
+   del horizonte de búsqueda) cabe en el hueco exacto que quede, el
+   hueco se queda — no se fuerza a encoger ni recomponer una familia
+   para que quepa a la fuerza.
 
 ---
 
