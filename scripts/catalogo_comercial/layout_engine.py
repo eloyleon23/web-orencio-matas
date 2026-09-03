@@ -28,7 +28,7 @@ import io
 import os
 from decimal import Decimal
 
-from PIL import Image as PILImage, ImageDraw
+from PIL import Image as PILImage, ImageDraw, ImageFont
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -509,7 +509,67 @@ def make_header_footer(logo_png, tema, periodo):
     return hf
 
 
+class _DocConExtras(BaseDocTemplate):
+    """BaseDocTemplate con un hook para dibujar ENCIMA del contenido de
+    una página concreta (no debajo, como hace `onPage` normalmente) —
+    necesario para que la pegatina de estallido de la portada quede
+    POR DELANTE de la banda de título, no tapada por ella. `onPage` se
+    ejecuta antes de que el contenido de la página se dibuje (pensado
+    para fondos/decoración); `afterPage()` se ejecuta después — aquí es
+    donde hace falta engancharse para un elemento que debe superponerse."""
+
+    def __init__(self, *args, dibujar_despues_pagina=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._dibujar_despues_pagina = dibujar_despues_pagina
+
+    def afterPage(self):
+        if self._dibujar_despues_pagina:
+            self._dibujar_despues_pagina(self.canv, self)
+
+
 # ── Portada — verdadera portada de campaña, no un título suelto ─────────
+def generar_estallido(color_rgb, texto_pct, texto_color_rgb=(255, 255, 255), lado_px=340, puntas=13, angulo=-8):
+    """Pegatina de "estallido" (silueta de estrella irregular) con el
+    % de descuento dentro, dibujada con PIL — el elemento gráfico más
+    reconocible de un folleto de ofertas real (Lidl, Aldi...) y que
+    faltaba por completo en la portada anterior: un bloque de color
+    plano con texto no se lee como "oferta", una pegatina sí."""
+    import math
+    img = PILImage.new('RGBA', (lado_px, lado_px), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    cx, cy = lado_px // 2, lado_px // 2
+    r_out, r_in = lado_px * 0.49, lado_px * 0.35
+    ang0 = math.radians(angulo)
+    puntos = []
+    for i in range(puntas * 2):
+        ang = ang0 + math.pi * i / puntas
+        r = r_out if i % 2 == 0 else r_in
+        puntos.append((cx + r * math.sin(ang), cy - r * math.cos(ang)))
+    draw.polygon(puntos, fill=color_rgb)
+
+    # Texto grande centrado ("-20%" en dos líneas: número grande + "%")
+    numero = texto_pct.replace('%', '').strip()
+    fs_num = int(lado_px * 0.30)
+    fs_sub = int(lado_px * 0.135)
+    try:
+        font_num = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fs_num)
+        font_sub = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fs_sub)
+    except Exception:
+        font_num = ImageFont.load_default()
+        font_sub = font_num
+    bbox_n = draw.textbbox((0, 0), numero, font=font_num)
+    bbox_s = draw.textbbox((0, 0), 'DTO.', font=font_sub)
+    alto_total = (bbox_n[3] - bbox_n[1]) + (bbox_s[3] - bbox_s[1]) + 6
+    y0 = cy - alto_total / 2 - bbox_n[1]
+    draw.text((cx - (bbox_n[2] - bbox_n[0]) / 2, y0), numero, font=font_num, fill=texto_color_rgb)
+    y1 = y0 + (bbox_n[3] - bbox_n[1]) + 8
+    draw.text((cx - (bbox_s[2] - bbox_s[0]) / 2, y1), 'DTO.', font=font_sub, fill=texto_color_rgb)
+
+    buf = io.BytesIO()
+    img.save(buf, 'PNG')
+    return buf.getvalue()
+
+
 def construir_portada(periodo, tema, bloques, logo_png, ancho):
     """Portada de campaña con impacto visual real (punto 10 del brief):
     debe quedar claro en un vistazo que esto es un folleto de ofertas,
@@ -518,6 +578,18 @@ def construir_portada(periodo, tema, bloques, logo_png, ancho):
     hay ofertas reales en el catálogo, e imágenes de producto más
     grandes que en la primera versión de la portada."""
     story = []
+
+    todos = [p for b in bloques for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]
+    descuento_max = 0.0
+    for p in todos:
+        if p.oferta and p.descuento_pct and float(p.descuento_pct) > descuento_max:
+            descuento_max = float(p.descuento_pct)
+    # Ancho que la pegatina de estallido ocupa sobre la esquina derecha
+    # de la banda (ver `_dibujar_sticker_portada`) — se reserva como
+    # hueco en blanco a la derecha del texto del título para que un
+    # nombre de campaña largo (p.ej. "CAMPAÑA DE NAVIDAD 2026") nunca
+    # quede tapado por la pegatina, sea cual sea su longitud real.
+    hueco_estallido = 42 * mm if descuento_max > 0 else 0
 
     titulo = periodo.etiqueta.upper()
     est_titulo = ParagraphStyle('pt', fontName='Helvetica-Bold', fontSize=32, textColor=colors.white,
@@ -530,7 +602,10 @@ def construir_portada(periodo, tema, bloques, logo_png, ancho):
             ratio = im.height / im.width
         img_logo = RLImage(logo_png, width=20 * mm, height=20 * mm * ratio)
         ancho_interior = ancho - 18 * mm  # descuenta el padding de 9mm a cada lado de `banner`
-        celda_banner = Table([[img_logo, bloque_titulo]], colWidths=[26 * mm, ancho_interior - 26 * mm])
+        ancho_texto = ancho_interior - 26 * mm - hueco_estallido
+        filas_banner = [[img_logo, bloque_titulo, '']] if hueco_estallido else [[img_logo, bloque_titulo]]
+        anchos_banner = [26 * mm, ancho_texto, hueco_estallido] if hueco_estallido else [26 * mm, ancho_texto]
+        celda_banner = Table(filas_banner, colWidths=anchos_banner)
         celda_banner.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
@@ -546,29 +621,18 @@ def construir_portada(periodo, tema, bloques, logo_png, ancho):
     ]))
     story.append(banner)
 
-    # Aviso de descuento GRANDE — lo primero que se ve tras el titular,
-    # para que quede claro a primera vista que es un folleto de ofertas
-    # y no un catálogo técnico. Se calcula el mayor descuento REAL
-    # presente en el catálogo (nunca inventado).
-    todos = [p for b in bloques for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]
-    descuento_max = 0.0
-    for p in todos:
-        if p.oferta and p.descuento_pct and float(p.descuento_pct) > descuento_max:
-            descuento_max = float(p.descuento_pct)
-
+    # Aviso de descuento — el titular textual se acompaña con una
+    # pegatina de "estallido" superpuesta sobre la esquina de la banda
+    # (dibujada aparte, ver `_dibujar_sticker_portada` / generar_pdf_v3)
+    # con el mayor descuento REAL del catálogo, nunca inventado. Aquí
+    # solo queda una línea de texto breve para no duplicar el mensaje.
+    story.append(Spacer(1, 5 * mm))
     if descuento_max > 0:
-        est_ahorro = ParagraphStyle('pa', fontName='Helvetica-Bold', fontSize=19, textColor=_c(tema.color_estructura),
-                                     alignment=TA_LEFT, leading=22)
-        aviso = Table([[Paragraph(f'¡AHORRA HASTA UN -{int(descuento_max)}% EN PRODUCTOS SELECCIONADOS!',
-                                   est_ahorro)]], colWidths=[ancho])
-        aviso.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), _c(tema.color_descuento)),
-            ('LEFTPADDING', (0, 0), (-1, -1), 9 * mm), ('RIGHTPADDING', (0, 0), (-1, -1), 9 * mm),
-            ('TOPPADDING', (0, 0), (-1, -1), 3.5 * mm), ('BOTTOMPADDING', (0, 0), (-1, -1), 3.5 * mm),
-        ]))
-        story.append(aviso)
-
-    story.append(Spacer(1, 4 * mm))
+        est_ahorro = ParagraphStyle('pa', fontName='Helvetica-Bold', fontSize=13, textColor=_c(tema.color_precio),
+                                     alignment=TA_LEFT, leading=16)
+        story.append(Paragraph('Descuentos activos en productos seleccionados de este catálogo — ¡no te los pierdas!',
+                                est_ahorro))
+        story.append(Spacer(1, 3 * mm))
     est_sub = ParagraphStyle('ps', fontName='Helvetica', fontSize=10.5, textColor=_c('#4B5563'),
                               alignment=TA_LEFT, leading=14)
     story.append(Paragraph(tema.texto_intro, est_sub))
@@ -779,6 +843,32 @@ def _ordenar_familias_para_paginar(bloques, tema, ancho, capacidad_pagina):
     return orden_final
 
 
+def _rgb(hexcolor):
+    c = _c(hexcolor)
+    return tuple(int(v * 255) for v in (c.red, c.green, c.blue))
+
+
+def _dibujar_sticker_portada(descuento_max, tema):
+    """Callback de dibujo (para el `onPage` de la plantilla de portada)
+    que superpone la pegatina de estallido sobre la esquina de la
+    banda del título — solo en la página 1, y solo si hay algún
+    descuento real que anunciar."""
+    if descuento_max <= 0:
+        return None
+    img_bytes = generar_estallido(_rgb(tema.color_descuento), f'-{int(descuento_max)}%',
+                                   texto_color_rgb=_rgb(tema.color_estructura))
+
+    def extra(canvas, doc):
+        if doc.page != 1:
+            return
+        from reportlab.lib.utils import ImageReader
+        lado = 52 * mm
+        x = W - lado - 7 * mm
+        y = H - TOP_BAR_H - 3 * mm - lado
+        canvas.drawImage(ImageReader(io.BytesIO(img_bytes)), x, y, width=lado, height=lado, mask='auto')
+    return extra
+
+
 def generar_pdf_v3(periodo, tema, bloques, logo_png, out_path, resultado=None, redondeado=False):
     """Punto de entrada equivalente a `render_pdf.generar_pdf()` (misma
     firma, + `redondeado`) pero con el motor editorial V3 — flujo a una
@@ -790,10 +880,22 @@ def generar_pdf_v3(periodo, tema, bloques, logo_png, out_path, resultado=None, r
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     _config['redondeado'] = redondeado
 
+    todos = [p for b in bloques for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]
+    descuento_max = 0.0
+    for p in todos:
+        if p.oferta and p.descuento_pct and float(p.descuento_pct) > descuento_max:
+            descuento_max = float(p.descuento_pct)
+
     frame = Frame(MARGIN, FRAME_BOTTOM, CW, FRAME_TOP - FRAME_BOTTOM,
                    leftPadding=0, rightPadding=0, topPadding=2, bottomPadding=0, id='unica')
     tpl = PageTemplate(id='contenido', frames=[frame], onPage=make_header_footer(logo_png, tema, periodo))
-    doc = BaseDocTemplate(out_path, pagesize=A4, pageTemplates=[tpl])
+
+    def dibujar_despues_pagina(canvas, doc):
+        sticker = _dibujar_sticker_portada(descuento_max, tema)
+        if sticker:
+            sticker(canvas, doc)
+
+    doc = _DocConExtras(out_path, pagesize=A4, pageTemplates=[tpl], dibujar_despues_pagina=dibujar_despues_pagina)
 
     capacidad_pagina = FRAME_TOP - FRAME_BOTTOM
     bloques_ordenados = _ordenar_familias_para_paginar(bloques, tema, CW, capacidad_pagina)

@@ -1108,3 +1108,65 @@ páginas), portada con presencia real de folleto de ofertas desde el
 primer vistazo. Verificado con ambos temas (el de Navidad ajusta
 colores correctamente: verde en vez de turquesa, antracita y rojo
 constantes) y con el caso límite sin descuentos.
+
+---
+
+## V3 — sexta vuelta (pegatina de "estallido" real, no solo bloques de color)
+Eloy insistió tras la vuelta anterior: "sigo sin verlo como un folleto
+publicitario". El diagnóstico real: bloques de color planos y bien
+ordenados leen como "diseño corporativo pulido", no como "folleto de
+ofertas" — a un folleto de ofertas real (Lidl, Aldi...) le falta el
+elemento gráfico más reconocible del género: una PEGATINA de estallido
+(silueta de estrella irregular) con el descuento dentro, superpuesta
+físicamente sobre el diseño, no un rectángulo de color más.
+
+### Elemento nuevo: `generar_estallido()`
+Genera con PIL una silueta de estrella irregular (13 puntas, ángulo
+ligeramente rotado para dar sensación de dinamismo, no una estrella
+perfectamente simétrica) rellena del color de descuento, con el "-X%"
+grande y "DTO." debajo, en fuente `DejaVuSans-Bold` de sistema. Se
+coloca superpuesta sobre la esquina de la banda del título — con el
+mayor descuento REAL del catálogo, igual que en la vuelta anterior,
+nunca inventado, y desaparece igual de limpio si no hay ofertas ese
+mes (probado).
+
+### Bug real de arquitectura encontrado y corregido — el `onPage` dibuja DEBAJO del contenido, no encima
+Primer intento: pasar la pegatina como parte del `onPage` de la
+plantilla de página (igual mecanismo que cabecera/pie). Resultado: la
+pegatina quedaba TAPADA casi por completo por la banda oscura del
+título — confirmado visualmente y con análisis de píxeles. La causa
+es de arquitectura de ReportLab: `onPage` se dibuja ANTES de que el
+contenido normal (flowables) de esa página se pinte encima —
+pensado para fondos/decoración, no para overlays. Corregido con una
+subclase de `BaseDocTemplate` que engancha `afterPage()` (se ejecuta
+DESPUÉS de que el contenido de la página ya está dibujado) — ahí sí
+queda por delante, como una pegatina real superpuesta al diseño.
+
+### Bug real de posicionamiento — coordenadas mal calculadas (dos veces)
+El primer intento de posición (`H - TOP_BAR_H - lado + 24mm`) sacaba
+la pegatina por el borde SUPERIOR de la página (se dibujaba con la
+parte de arriba fuera del área imprimible). El segundo intento
+quedaba correcto en altura pero se salía por el borde DERECHO.
+Corregido calculando la posición directamente desde las esquinas de
+la página (`W - lado - margen`, `H - TOP_BAR_H - margen - lado`) en
+vez de arrastrar una fórmula relativa a la banda que no tenía en
+cuenta bien el sistema de coordenadas de `canvas.drawImage()` (esquina
+inferior izquierda de la imagen, no la superior).
+
+### Bug real — el texto del título largo quedaba tapado por la pegatina
+Con nombres de campaña más largos ("CAMPAÑA DE NAVIDAD 2026" + claim
+en 2 líneas), el texto se extendía hasta pisar visualmente la
+pegatina, que es un elemento de canvas ajeno al flujo de texto
+(reportlab no sabe que ahí hay algo y deja que el párrafo ocupe todo
+su ancho asignado). Corregido reservando un hueco fijo (42mm) a la
+derecha del título — como una tercera columna vacía en la tabla del
+banner — sólo cuando hay pegatina que mostrar, para que el texto
+NUNCA invada esa zona sea cual sea su longitud real.
+
+### Resultado
+Portada con una pegatina de descuento real superpuesta sobre la banda
+de título, en vez de un rectángulo de color plano — el elemento que
+más caracteriza visualmente a un folleto de ofertas de supermercado.
+6 páginas, sin coste adicional. Probado con ambos temas (incluido el
+caso de título largo que reveló el bug de solapamiento) y con el
+caso sin descuentos.
