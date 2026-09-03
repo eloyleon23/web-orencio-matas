@@ -152,7 +152,60 @@ En la Fase 2, con la Sheet como fuente real, este problema desaparece.
    - **Bug encontrado y corregido**: las imágenes de productos con protagonismo 3+ (celda ancha, banda completa, destacado) se veían pequeñas porque `componer_lienzo_cuadrado()` las forzaba a un lienzo cuadrado con mucho margen blanco alrededor, pensado para la uniformidad de una rejilla de celdas de 1 columna. Ahora `imagenes.py` acepta `cuadrado=False`: a partir de protagonismo 3 se usa la proporción real de la foto (solo recorte de margen blanco, sin lienzo cuadrado), aprovechando todo el ancho/alto de celda asignado.
 3. **Estilo más llamativo**: precio como **sticker de color sólido** (bloque con fondo, no texto suelto) — amarillo/tema normal, color de acento + "¡OFERTA!"/tachado cuando hay descuento. Cada familia es una caja con borde de color de acento. Título de campaña en banner de color a toda anchura con logo incrustado.
 - **Bug de `leading` encontrado y corregido**: varios `ParagraphStyle` con `fontSize` grande (19-21pt) sin `leading` explícito heredaban el `leading` por defecto de ReportLab (12pt, fijo, no relativo al tamaño de fuente) — el texto se salía por arriba de su caja/fondo de color. Se añadió `leading` explícito a todos los estilos con fuente ≥9pt.
-- **Compromiso de páginas**: el nuevo diseño (imágenes más grandes, `repeatRows`, banners repetidos) usa algo más de página por familia — el catálogo de prueba pasó de 7 a 9 páginas. Con datos reales de Sheet (familias con más productos, no 1-4 como en el set de prueba) la densidad por página mejora sola.
+### Revisión visual v3 (segunda vuelta — "no se parece nada al prototipo")
+Tras la v2, Eloy fue tajante: seguía sin parecerse al prototipo real, mal
+estructurado, con mucho hueco en blanco. La causa de fondo era de
+**arquitectura**, no de estilo: v2 maquetaba cada familia como una caja a
+todo el ancho de página (una debajo de otra) — el prototipo real es un
+cartel A4 a **dos columnas** con secciones pequeñas y densas, como un
+folleto de supermercado.
+
+Cambio de fondo en v3:
+- **Página a dos columnas de verdad**, usando `BaseDocTemplate` +
+  `Frame`/`PageTemplate` de ReportLab (el mecanismo pensado para
+  folletos/boletines a columnas) — no una tabla a todo el ancho. Página 1
+  tiene una plantilla especial con 3 frames (cabecera ancho completo +
+  dos columnas debajo); el resto de páginas solo tiene las dos columnas.
+- `composicion.py` se simplificó: el nivel 5 ya no es un "bloque de
+  página propia" (no tenía sentido en una columna de ~90mm) — ahora es,
+  como los demás niveles, una celda de la rejilla de su familia, solo
+  que ocupa la columna completa con la imagen más grande.
+- Tarjetas de producto mucho más compactas (fuentes más pequeñas, menos
+  padding, sticker de precio más pequeño) para que quepan varias por
+  columna, como en el prototipo.
+- **Bug real encontrado y corregido — importante para quien retome
+  esto**: se intentó primero un reparto "inteligente" de las cajas de
+  familia entre columnas por altura acumulada (bin-packing manual,
+  colocando cada caja en la columna con menos contenido usado). Este
+  enfoque **rompía el documento**: los `Frame` de ReportLab solo avanzan
+  hacia delante dentro de una página (izquierda → derecha → página
+  nueva) — un `FrameBreak()` desde la columna derecha NUNCA vuelve a la
+  izquierda de la misma página, siempre salta a la izquierda de una
+  página nueva. El algoritmo asumía que podía "volver" a la izquierda
+  libremente, lo que desincronizaba el `story` real de ReportLab con el
+  seguimiento manual de qué columna tocaba, produciendo páginas con una
+  sola familia y muchísimo hueco (justo lo contrario de lo que se
+  buscaba). Se eliminó ese código y se dejó que ReportLab haga el
+  relleno secuencial nativo (coloca cada caja en la columna actual; si
+  no cabe, la sigue automáticamente en la siguiente columna/página) —
+  es el comportamiento correcto y estable para este tipo de
+  maquetación. Documentado también como comentario largo en
+  `generar_pdf()` para que no se repita el mismo intento.
+- **Resultado**: el catálogo de prueba pasó de 9 páginas (v2, muy poco
+  denso) a **3 páginas** (v3), con aspecto mucho más parecido al
+  cartel de oferta real de referencia.
+- **Limitación conocida y aceptada**: al preservar el orden de familias
+  (primera aparición en la Sheet) y no poder "volver atrás" de columna,
+  puede quedar algo de hueco al final de una columna cuando la familia
+  siguiente no cabe en el resto de esa columna pero sí cabría si se
+  reordenara — es inherente al relleno secuencial de columnas
+  respetando el orden, igual que en cualquier maquetación de folleto
+  real. No se ha intentado reordenar familias para rellenar huecos
+  porque cambiaría el orden documentado como principio del proyecto
+  (aunque, a diferencia del orden de PRODUCTOS dentro de una familia,
+  el encargo original no exige explícitamente mantener el orden de
+  FAMILIAS — si se quiere apurar más el aprovechamiento del espacio,
+  ahí hay margen a explorar en el futuro).
 
 
 ---
@@ -184,11 +237,17 @@ En la Fase 2, con la Sheet como fuente real, este problema desaparece.
    entorno de desarrollo — debería funcionar igual en GitHub Actions
    (que sí tiene acceso a Drive), pero conviene una primera prueba real
    ahí antes de dar la Fase 2 por cerrada.
-4. **Pulido visual pendiente de una segunda vuelta de revisión** con
-   Eloy tras esta v2 (portada incrustada, tablas por familia con
-   `repeatRows`, imágenes a proporción real desde protagonismo 3,
-   precios en formato sticker) — quedó abierto si hacen falta más
-   ajustes de estilo/densidad tras verlo de nuevo.
+4. **Pulido visual**: v3 ya se parece de verdad al prototipo (dos
+   columnas, secciones densas, sticker de precio) — pendiente de una
+   nueva revisión visual con Eloy para ver si hace falta un ajuste más
+   de detalle (tamaños, colores, tipografías) o si ya está listo para
+   dar la Fase 1 por cerrada.
+5. **Reparto de familias entre columnas**: se preserva el orden de
+   familias (primera aparición) y el relleno de columnas es secuencial
+   (ReportLab nativo) — puede dejar algo de hueco al final de una
+   columna en catálogos con familias muy desiguales en tamaño. Si se
+   quiere apurar más, habría que decidir con Eloy si se permite
+   reordenar FAMILIAS (no productos) para rellenar huecos.
 
 ---
 

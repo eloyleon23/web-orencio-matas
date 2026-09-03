@@ -37,7 +37,7 @@ class Tema:
         'Precios con IVA incluido salvo indicación contraria. Consulta disponibilidad con nuestro equipo.'
     )
     decorativo: Optional[str] = None   # ruta a asset gráfico opcional (esquinas, cintas, etc.)
-    cols_grid: int = 3                  # nº de columnas base de la rejilla de producto (cartel: menos columnas, imágenes más grandes)
+    cols_grid: int = 2                  # columnas internas DENTRO de cada caja de familia (la página en sí va a 2 columnas — ver render_pdf.py)
 
 
 # ── Registro de temas ───────────────────────────────────────────────────────
