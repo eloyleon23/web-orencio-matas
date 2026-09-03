@@ -237,17 +237,77 @@ Cambio de fondo en v3:
    entorno de desarrollo — debería funcionar igual en GitHub Actions
    (que sí tiene acceso a Drive), pero conviene una primera prueba real
    ahí antes de dar la Fase 2 por cerrada.
-4. **Pulido visual**: v3 ya se parece de verdad al prototipo (dos
-   columnas, secciones densas, sticker de precio) — pendiente de una
-   nueva revisión visual con Eloy para ver si hace falta un ajuste más
-   de detalle (tamaños, colores, tipografías) o si ya está listo para
-   dar la Fase 1 por cerrada.
-5. **Reparto de familias entre columnas**: se preserva el orden de
-   familias (primera aparición) y el relleno de columnas es secuencial
-   (ReportLab nativo) — puede dejar algo de hueco al final de una
-   columna en catálogos con familias muy desiguales en tamaño. Si se
-   quiere apurar más, habría que decidir con Eloy si se permite
-   reordenar FAMILIAS (no productos) para rellenar huecos.
+4. **Mapa de la página de cierre no es un mapa real** — es un gráfico
+   ilustrativo generado con PIL (pin + rejilla decorativa en los
+   colores del tema), porque este entorno de desarrollo no tiene
+   acceso de red a ningún proveedor de mapas (Google/OSM/etc. no están
+   en la lista blanca de dominios). Si se quiere un mapa real:
+   - Opción A: Google Static Maps API (necesita API key, factible como
+     secreto de GitHub Actions — allí sí hay red — sustituyendo
+     `generar_grafico_ubicacion()` por una descarga real).
+   - Opción B: pedir a Eloy una captura de pantalla del mapa y usarla
+     como asset fijo en `assets/`.
+5. **Reparto de familias entre columnas — ya resuelto (v4)**: ver
+   sección siguiente.
+6. **Pulido visual**: v4 ya se parece de verdad al prototipo (dos
+   columnas balanceadas, esquinas redondeadas, icono en cada caja,
+   familias de un producto en horizontal, cierre a página completa) —
+   pendiente de una nueva revisión visual con Eloy para ver si hace
+   falta un ajuste más de detalle o si ya está listo para dar la Fase 1
+   por cerrada.
+
+### Revisión visual v4 (tercera vuelta)
+Eloy pidió, con el PDF de v3 delante: (1) que las cajas de la columna
+izquierda y derecha terminen alineadas al final, (2) que las familias
+de un solo producto aprovechen mejor el hueco poniendo la imagen más
+grande con el precio al lado (no debajo), (3) esquinas redondeadas en
+las cajas como el prototipo, (4) un icono/logo pequeño en la esquina de
+cada caja, (5) cabecera de página 1 más grande, y (6) una página de
+cierre a página completa con dirección + mapa en miniatura.
+
+- **Alineación real de columnas (`planificar_columnas`)**: se sustituyó
+  el relleno secuencial "primero que cabe" (que dejaba a la izquierda
+  todo lo que cupiera y el resto a la derecha, sin más criterio) por un
+  algoritmo que mide la altura real de cada caja (`Table.wrap()`) y
+  decide el PUNTO DE CORTE entre columna izquierda y derecha que
+  minimiza la diferencia de altura entre ambas, para cada página. Sigue
+  sin reordenar familias — solo decide dónde cae el corte dentro del
+  mismo orden. Resultado: columnas visiblemente igualadas al final,
+  frente al desnivel claro de v3.
+- **Familias de un solo producto → layout horizontal**: `construir_tabla_familia`
+  detecta cuándo una familia tiene un único producto y usa
+  `_fila_producto_horizontal()` (imagen grande a un lado, nombre/precio
+  al otro) en vez de la celda de rejilla vertical — mismo patrón que ya
+  se usaba para el nivel 5 en v2/v3, generalizado a cualquier familia
+  de 1 producto independientemente de su protagonismo.
+- **Esquinas redondeadas**: nuevo Flowable `CajaRedondeada` que envuelve
+  cada caja de familia (y la cabecera de campaña) y dibuja el borde con
+  `canvas.roundRect()` — `TableStyle` no soporta esquinas redondeadas de
+  forma nativa, así que el borde se dibuja aparte, encima del contenido
+  de la tabla interior. Implementa también `split()` (delega en la
+  tabla interior) para que las cajas que no quepan enteras en una
+  columna se sigan partiendo correctamente entre página/columna.
+- **Icono en cada caja**: badge circular con el logo de la empresa
+  (recortado a círculo con PIL) incrustado en la esquina izquierda del
+  banner de cada familia, junto al nombre.
+- **Cabecera de página 1 más grande**: logo más grande y tipografía de
+  titular mayor. **Bug real encontrado y corregido**: con el logo a
+  30mm de ancho, su altura real (proporción 1.23) se iba a 37mm — 1,8pt
+  más que la caja de cabecera reservada (`HEADER_BOX_H`), lo justo para
+  que ReportLab considerase que el bloque entero "no cabía" en el frame
+  de cabecera y lo empujase COMPLETO al frame de la columna izquierda
+  (el titular de campaña aparecía descolocado, encajado y cortado en la
+  columna izquierda en vez de arriba a todo lo ancho). Se corrigió
+  limitando el ancho del logo también por la altura máxima seguro
+  disponible, no solo fijándolo a un valor fijo — lección para
+  cualquier imagen de proporción desconocida colocada en un frame de
+  altura ajustada: limitar SIEMPRE por el eje que pueda desbordar, no
+  solo por uno de los dos.
+- **Página de cierre a página completa**: nueva plantilla de página
+  (`tpl_cierre`, un único frame a todo el ancho) usada solo para la
+  última página — dirección, contacto y una tarjeta "ENCUÉNTRANOS" con
+  gráfico ilustrativo de ubicación (no es un mapa real, ver pendiente
+  arriba).
 
 ---
 
