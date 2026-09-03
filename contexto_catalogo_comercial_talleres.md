@@ -1170,3 +1170,94 @@ más caracteriza visualmente a un folleto de ofertas de supermercado.
 6 páginas, sin coste adicional. Probado con ambos temas (incluido el
 caso de título largo que reveló el bug de solapamiento) y con el
 caso sin descuentos.
+
+---
+
+## V4 — PIVOTE FINAL: folleto denso fiel al prototipo original
+
+Eloy compartió de nuevo la imagen del prototipo de referencia con un
+ultimátum claro: "si no llegamos a un modelo como el prototipo
+prefiero que lo dejemos porque el diseño conseguido actualmente no es
+el objetivo al que queremos llegar".
+
+### Diagnóstico honesto, dicho así de claro
+El brief que dio origen a V3 pedía explícitamente alejarse de una
+rejilla densa de tarjetas con borde ("menos cajas", "editorial",
+"asimétrico") — pero el prototipo de referencia ES precisamente eso:
+una rejilla densa de tarjetas con borde, precio en pegatina roja
+sólida, cinta de descuento diagonal en la esquina de cada foto, y
+cabeceras de categoría con corte en chevron. Son dos objetivos
+contrapuestos, y varias vueltas de V3 se dedicaron a perseguir el
+objetivo equivocado (el del brief) en vez del que Eloy tenía realmente
+en mente (el del prototipo). Reconocido explícitamente antes de seguir
+invirtiendo tiempo en la misma dirección.
+
+### Nuevo módulo: `layout_flyer.py` (`--motor v4`, ahora por defecto)
+Arquitectura: igual que V3 (una sola columna a todo el ancho, flujo
+natural, sin balanceo de columnas) pero con tarjetas de tamaño
+UNIFORME en vez de layouts asimétricos de héroe — con tarjetas
+uniformes, las filas de la rejilla se autoalinean sin necesitar ningún
+algoritmo de reparto, la lección más cara de las v1/v2.
+
+- **`BandaCategoria`**: cabecera con corte diagonal en chevron al
+  final de la banda (`Flowable` que dibuja un rectángulo + un
+  triángulo con `canvas.drawPath()`) — el detalle que más distingue al
+  prototipo de una banda de color plana y corriente.
+- **Cinta de descuento en la esquina de la foto**: no hubo que
+  construir nada nuevo — `imagen_para_producto()` de `imagenes.py` YA
+  compone esta cinta roja con sombra (`añadir_badge_descuento()`,
+  construida en v1/v2) sobre la imagen del producto si tiene oferta.
+  Coincide casi exactamente con el estilo del prototipo, reutilizado
+  tal cual.
+- **`sticker_precio_flyer()`**: precio en pegatina roja sólida, texto
+  blanco grande y en negrita — igual que el prototipo.
+- **`tarjeta_producto()`**: imagen + nombre + referencia + precio,
+  envuelta en `CajaRedondeada` (reutilizada de v2) con borde fino gris.
+- **Pegatina de estallido en portada**: reutilizada de V3
+  (`generar_estallido()`, `_DocConExtras.afterPage()`) sin cambios —
+  ya funcionaba bien ahí.
+- **Mapa real + chincheta del cierre**: reutilizado de V3
+  (`generar_imagen_ubicacion()`) a través de un adaptador mínimo
+  (`_TemaColorAdapter`, solo expone `color_precio`) para no tener que
+  duplicar esa función ni acoplar `layout_flyer.py` al sistema de
+  `Tema` completo de V3, que aquí no hace falta (V4 usa una paleta
+  fija: gris azulado + rojo, igual que el prototipo, no varía por
+  campaña).
+
+### Bug real encontrado y corregido durante la construcción
+**Precio tachado ilegible dentro de la pegatina roja**: el primer
+intento ponía el precio tachado (color gris `#8A9099`) DENTRO de la
+misma pegatina roja, encima del precio final — contraste insuficiente,
+casi invisible. Corregido sacándolo FUERA de la pegatina, en una línea
+aparte encima, sobre fondo blanco — coincide además con cómo lo hace
+el propio prototipo (tachado sobre fondo blanco, precio final ya
+dentro de la pegatina roja).
+
+### Decisión de diseño validada visualmente antes de fijarla
+Se probó primero adaptar el número de columnas al número de productos
+de cada familia (igual que se hizo en V3 para huecos similares) —
+resultado: una tarjeta única estirada a todo el ancho con la imagen
+pequeña perdida en el centro, mucho PEOR que dejar el hueco en blanco.
+Descartado tras verlo, y sustituido por CENTRAR la fila incompleta
+(huecos repartidos a los dos lados en vez de solo a la derecha) — se
+ve intencionado, no un resto abandonado.
+
+### Resultado
+5 páginas para el catálogo de 22 productos (menos que las 6 de V3, más
+denso). Visualmente mucho más cercano al prototipo de referencia:
+rejilla de tarjetas con borde, chevron en las cabeceras, precio en
+rojo sólido, cinta de descuento diagonal en cada foto con oferta.
+Probado con ambos temas, caso límite de 2 productos, y catálogo con
+errores forzados — sin errores.
+
+### Pendiente
+- Confirmar con Eloy si esta dirección (V4) sí es la que se buscaba,
+  antes de seguir puliendo detalles.
+- V4 usa una paleta FIJA (gris azulado + rojo) que no varía por
+  campaña, a diferencia de V3 — decisión deliberada por fidelidad al
+  prototipo, pero pendiente de confirmar si se quiere alguna variación
+  estacional más adelante (p.ej. un acento verde en Navidad).
+- Los iconos de categoría del prototipo (llave inglesa, spray,
+  mascarilla...) no se han implementado — la banda de categoría v4
+  solo tiene el corte en chevron, sin icono. Pendiente si se considera
+  necesario.
