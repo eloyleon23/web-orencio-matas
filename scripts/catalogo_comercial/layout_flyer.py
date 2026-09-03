@@ -64,7 +64,7 @@ class BandaCategoria(Flowable):
     flecha/chevron) — el detalle que más distingue visualmente al
     prototipo de referencia de una banda de color plana y corriente."""
 
-    def __init__(self, texto, ancho, alto=10.5 * mm, color_fondo=COLOR_CABECERA, color_texto=colors.white):
+    def __init__(self, texto, ancho, alto=7.5 * mm, color_fondo=COLOR_CABECERA, color_texto=colors.white):
         Flowable.__init__(self)
         self.texto = texto
         self.width = ancho
@@ -90,8 +90,8 @@ class BandaCategoria(Flowable):
         c.setFillColor(_c(self.color_fondo))
         c.drawPath(p, fill=1, stroke=0)
         c.setFillColor(self.color_texto)
-        c.setFont('Helvetica-Bold', self.height * 0.40)
-        c.drawString(3.5 * mm, self.height * 0.30, self.texto.upper())
+        c.setFont('Helvetica-Bold', self.height * 0.46)
+        c.drawString(3.5 * mm, self.height * 0.32, self.texto.upper())
         c.restoreState()
 
 
@@ -156,7 +156,7 @@ def tarjeta_producto(p, ancho, alto_img=30 * mm):
     return CajaRedondeada(tabla, _c(COLOR_BORDE_TARJETA), radio=3, grosor=0.8)
 
 
-def grid_categoria(bloque, ancho, cols=3, alto_img=30 * mm):
+def grid_categoria(bloque, ancho, cols=4, alto_img=26 * mm):
     """Cabecera de categoría + rejilla de tarjetas — la cabecera va
     unida (KeepTogether) a la PRIMERA fila de tarjetas para que nunca
     quede huérfana al final de una página, igual lección aprendida que
@@ -345,7 +345,7 @@ class _TemaColorAdapter:
 
 
 # ── Orquestador ───────────────────────────────────────────────────────
-def generar_pdf_flyer(periodo, tema, bloques, logo_png, out_path, resultado=None, cols=3):
+def generar_pdf_flyer(periodo, tema, bloques, logo_png, out_path, resultado=None, cols=4):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     frame = Frame(MARGIN, FRAME_BOTTOM, CW, FRAME_TOP - FRAME_BOTTOM,

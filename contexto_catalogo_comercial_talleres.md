@@ -1261,3 +1261,24 @@ errores forzados — sin errores.
   mascarilla...) no se han implementado — la banda de categoría v4
   solo tiene el corte en chevron, sin icono. Pendiente si se considera
   necesario.
+
+---
+
+## V4 — segunda vuelta (cabecera más pequeña, 4 columnas)
+Eloy confirmó que V4 va en la dirección correcta ("está mejor") y
+pidió aprovechar mejor el espacio: cabecera de familia más pequeña y
+más productos por fila.
+
+- `BandaCategoria`: altura de 10,5mm a 7,5mm (fuente ajustada
+  proporcionalmente para que siga siendo legible).
+- `grid_categoria()` / `generar_pdf_flyer()`: de 3 a 4 columnas por
+  fila (`alto_img` de 30mm a 26mm para que las tarjetas más estrechas
+  sigan teniendo buenas proporciones).
+
+### Resultado
+22 productos / 13 familias: de 5 a **4 páginas**. Confirmado
+visualmente que con 4 columnas una familia como HERRAMIENTAS (4
+productos) entra ahora en una sola fila, y varias páginas ya combinan
+3-5 categorías completas sin apenas espacio perdido. Misma mejora en
+el tema de Navidad (5→4 páginas). Sin regresiones en el caso límite de
+2 productos ni en el catálogo con errores forzados.
