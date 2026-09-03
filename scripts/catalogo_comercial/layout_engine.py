@@ -246,7 +246,7 @@ def layout_hero_absoluto(producto, tema, ancho, alto_img=82 * mm):
     return [fila]
 
 
-def _tarjeta_secundaria(producto, tema, ancho, alto_img=28 * mm):
+def _tarjeta_secundaria(producto, tema, ancho, alto_img=22 * mm):
     """Producto pequeño usado como acompañante (columna de secundarios,
     grid comercial): imagen discreta + nombre + precio, sin caja ni
     borde propio — solo una fina línea inferior de separación."""
@@ -354,7 +354,7 @@ def layout_grid_comercial(productos, tema, ancho, cols=3):
     la familia solo tiene 1-2 productos secundarios."""
     cols = max(1, min(cols, len(productos)))
     ancho_col = ancho / cols
-    alto_img = 24 * mm if cols >= 3 else 34 * mm
+    alto_img = 21 * mm if cols >= 3 else 30 * mm
     filas = []
     fila_actual = []
     for i, p in enumerate(productos):
@@ -443,14 +443,14 @@ def disenar_familia(bloque, tema, ancho):
     if not todos_bloques:
         return []
 
-    cabecera = [banda_familia(bloque.familia, tema, ancho), Spacer(1, 5 * mm)]
+    cabecera = [banda_familia(bloque.familia, tema, ancho), Spacer(1, 3.5 * mm)]
     primer_bloque = cabecera + todos_bloques[0]
 
     resto_cuerpo = []
     for b in todos_bloques[1:]:
-        resto_cuerpo.append(Spacer(1, 4 * mm))
+        resto_cuerpo.append(Spacer(1, 3 * mm))
         resto_cuerpo += b
-    resto_cuerpo.append(Spacer(1, 8 * mm))
+    resto_cuerpo.append(Spacer(1, 5 * mm))
 
     return [KeepTogether(primer_bloque)] + resto_cuerpo
 
@@ -706,11 +706,17 @@ def _ordenar_familias_para_paginar(bloques, tema, ancho, capacidad_pagina):
         if alturas_cabecera[id(candidato)] <= espacio_restante - MARGEN:
             elegido = cola.pop(0)
         else:
-            elegido = None
+            # No cabe la siguiente en orden — se busca, de entre TODAS
+            # las que quedan, la que MEJOR aproveche el hueco (la más
+            # grande que aún quepa), no solo la primera que encaje. Así
+            # se apura el hueco al máximo en vez de conformarse con la
+            # primera candidata pequeña que aparezca.
+            mejor_i, mejor_h = None, -1
             for i in range(1, len(cola)):
-                if alturas_cabecera[id(cola[i])] <= espacio_restante - MARGEN:
-                    elegido = cola.pop(i)
-                    break
+                h = alturas_cabecera[id(cola[i])]
+                if h <= espacio_restante - MARGEN and h > mejor_h:
+                    mejor_i, mejor_h = i, h
+            elegido = cola.pop(mejor_i) if mejor_i is not None else None
             if elegido is None:
                 espacio_restante = capacidad_pagina
                 continue

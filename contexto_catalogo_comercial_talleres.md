@@ -1023,3 +1023,37 @@ catálogo (la que quede justo antes del cierre) se calcule sabiendo
 cuánto hueco le va a quedar al cierre detrás, similar a como se hacía
 en v2 — no implementado todavía, pendiente de que Eloy confirme si
 merece la pena antes de seguir.
+
+---
+
+## V3 — cuarta vuelta (apurar más el espacio para reducir páginas)
+Eloy confirmó que la mejora anterior iba en buena dirección pero pidió
+apurar más el espacio para reducir el número de páginas.
+
+Dos ajustes más sobre el mismo mecanismo ya construido (no hizo falta
+nada nuevo, solo afinar lo que ya había):
+
+1. **Reordenamiento de familias — de "primera que quepa" a "la que
+   mejor aproveche el hueco"**: `_ordenar_familias_para_paginar()`
+   antes se conformaba con la PRIMERA familia posterior que cupiera en
+   el hueco restante; ahora busca, entre TODAS las que quedan, la más
+   GRANDE que aún quepa (mejor ajuste, no el primero que encaja) — así
+   se apura el hueco al máximo en vez de dejarse margen de sobra con
+   una familia pequeña cuando cabría una más grande.
+2. **Espaciadores y tamaños de imagen reducidos un poco más en varios
+   sitios**: el margen de seguridad de la simulación (6mm→3mm), los
+   espaciadores entre cabecera/bloques dentro de una familia (5mm→
+   3,5mm, 4mm→3mm, 8mm→5mm al final), y sobre todo el tamaño de las
+   tarjetas secundarias que se apilan junto a un producto HERO
+   (28mm→22mm de imagen) y las de la rejilla comercial (24mm→21mm /
+   34mm→30mm) — estas tarjetas pequeñas se repiten mucho y eran las
+   que más "peso muerto" acumulaban en las familias con varios
+   productos.
+
+### Resultado medido
+Mismo catálogo de prueba (22 productos, 13 familias): **8 páginas →
+6 páginas** (el punto de partida de esta sesión) sin perder legibilidad
+ni la jerarquía visual entre niveles — verificado visualmente en
+varias páginas, los bloques siguen leyéndose con holgura, no
+apretados. La reducción se nota igual en el tema de Navidad (7→6) y en
+la variante `--cajas` (8→7).
