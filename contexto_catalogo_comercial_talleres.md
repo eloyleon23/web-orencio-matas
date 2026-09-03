@@ -412,8 +412,76 @@ el amarillo mostaza del tema mensual por un gris claro.
 
 ---
 
-## PENDIENTE / ABIERTO
+### Revisión visual v8 (séptima vuelta — alineación real + mapa deformado)
+Eloy insistió de nuevo en la alineación ("te reitero... es un punto muy
+importante para cerrar la primera versión") y señaló que el mapa con
+el pin se veía estirado/deformado.
 
+Esta vuelta encontró y corrigió **tres bugs reales encadenados**, cada
+uno enmascarando al siguiente hasta aislarlos con una reproducción
+mínima (sin contenido real, solo cajas de colores del tamaño exacto):
+
+1. **Mapa deformado — causa y arreglo**: `generar_grafico_ubicacion()`
+   siempre generaba la imagen a una proporción fija (640×420) y luego
+   el cierre elástico la ESTIRABA a la altura que hiciera falta,
+   deformando el pin (círculo) en una elipse. Arreglado generando el
+   gráfico ya con las proporciones exactas que necesita cada vez (el
+   radio del pin se calcula proporcional al lado menor del lienzo, no
+   a un valor fijo en píxeles) — así nunca hay que estirar nada.
+
+2. **Reordenación de familias — sustituida por un algoritmo mejor**: el
+   mecanismo de v7 (mirar unas pocas familias por delante) se cambió
+   por un balanceo GLOBAL tipo "longest processing time first"
+   (procesar las familias de mayor a menor altura, asignar cada una a
+   la columna con menos carga acumulada de TODAS las abiertas) — y
+   luego se añadió una segunda pasada de MEJORA LOCAL: probar
+   intercambios de una familia entre dos columnas CUALESQUIERA del
+   documento (no solo las de la misma página), aplicando el que más
+   reduzca la diferencia total entre columnas, hasta que no quede
+   ninguno que mejore. Fue necesario tras comprobar que los intercambios
+   limitados a la misma página no bastaban: a veces la familia que más
+   desequilibra una página en realidad encaja mucho mejor en otra
+   página distinta (verificado con datos reales: mover "PRODUCTOS DE
+   PULIR" de la página 2 a la 3 mejoraba las dos a la vez).
+
+3. **Bug real — desbordamiento por margen insuficiente**: con el reparto
+   ajustándose cada vez más al límite exacto de cada columna, alguna
+   página quedaba con menos de 2pt de margen entre lo medido
+   (`Table.wrap()`) y la capacidad real — cualquier mínima diferencia
+   de redondeo entre esa medición y lo que ReportLab renderiza de
+   verdad bastaba para desbordar una familia entera a la
+   columna/página siguiente, descolocando todo lo que venía detrás
+   (síntoma: una familia entera desaparecía de donde debía estar y
+   aparecía en el lado opuesto de la página siguiente). Se reprodujo
+   con un caso mínimo (cajas de colores sin contenido real) para
+   aislarlo del ruido del catálogo completo. Arreglado restando un
+   margen de seguridad fijo (`MARGEN_SEGURIDAD = 15pt`) a la capacidad
+   usada SOLO al planificar (no al tamaño real de los frames).
+
+4. **Bug real — el cierre "se pasaba" cuando el hueco natural era
+   pequeño**: el cierre tiene una altura mínima real (~122mm, todo su
+   texto fijo más el gráfico más pequeño posible) — si el hueco natural
+   entre columnas de la última página era MENOR que ese mínimo, forzar
+   el cierre igualmente lo hacía "pasarse" y dejaba la OTRA columna con
+   un hueco nuevo en vez de arreglar el que había (verificado: un hueco
+   natural de 41pt con un mínimo de 346pt producía un desequilibrio
+   final de 305pt, peor que sin tocar nada). Arreglado repartiendo la
+   ÚLTIMA página de forma distinta a las demás: se reserva desde el
+   principio el hueco mínimo del cierre en la columna derecha (columna
+   izquierda con capacidad completa, columna derecha con
+   `capacidad − altura_mínima_del_cierre`) y se reparten las familias
+   de esa página dentro de esas dos capacidades ya asimétricas, en vez
+   de repartir primero e intentar encajar el cierre después.
+
+**Resultado medido** (antes → después de esta vuelta, con el mismo
+catálogo de prueba): página 1 sin cambios (ya estaba bien, ~7mm),
+página 2 de 47mm a 23mm de diferencia entre columnas, página 3
+(con cierre) de 110mm a 2,4mm. El mapa ya no se ve deformado en ningún
+caso probado (incluido el límite de 2 productos).
+
+---
+
+## PENDIENTE / ABIERTO
 
 1. **Fase 2 — Google Sheet + Apps Script**: no implementada a propósito
    (tal como pedía el encargo). Cuando se aborde:

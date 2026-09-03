@@ -466,98 +466,114 @@ def construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png=None):
 # ── Reparto balanceado de cajas entre las dos columnas de cada página ───
 def planificar_columnas(items, capacidad_pagina1, capacidad_normal, no_adelantar=frozenset()):
     """`items`: lista de (flowable, alto). Devuelve una lista de páginas
-    [(lista_izq, lista_der), ...]. Decide en qué tramo de la secuencia va
-    cada página y dónde cae el corte entre columna izquierda y derecha
-    para que ambas queden lo más igualadas posible en altura. Respeta
-    que un `Frame` de ReportLab solo avanza hacia delante dentro de una
-    página (no se puede "volver" a la izquierda de la misma página).
+    [(lista_izq, lista_der), ...].
 
-    A partir de esta versión SÍ se permite adelantar una familia desde
-    más adelante en la secuencia para rellenar el hueco que quede en la
-    columna más corta de la página actual (con permiso explícito de
-    Eloy) — solo cuando encaja mejor que dejar el hueco en blanco. El
-    orden de PRODUCTOS dentro de cada familia nunca se toca; esto solo
-    reordena en qué página/columna cae cada CAJA de familia completa.
+    Reparte con un balanceo GLOBAL (todas las páginas a la vez), no
+    página a página: procesa las familias de MAYOR a MENOR altura y
+    asigna cada una a la columna que en ese momento tenga MENOS carga
+    acumulada entre todas las ya abiertas (abriendo una página nueva
+    solo cuando ninguna columna abierta tiene ya hueco). Es el mismo
+    principio que el reparto de tareas entre trabajadores para acabar
+    todos a la vez ("longest processing time first"), y evita el fallo
+    real de una primera versión: repartir maximizando cada página por
+    separado, sin mirar hacia delante, podía dejar la ÚLTIMA página con
+    una sola familia huérfana sin nada que la acompañe (todo lo demás
+    ya se había "gastado" en páginas anteriores).
 
-    `no_adelantar`: flowables que NUNCA se adelantan para rellenar un
-    hueco (siguen pudiendo aparecer por el mecanismo normal de ventana)
-    — se usa para el marcador de posición del cierre: si se le dejara
-    adelantar, podría acabar rellenando el hueco de una página
-    intermedia y dejar la página final (la que de verdad lleva el
-    cierre) sin él.
+    Esto significa que el orden de FAMILIAS puede cambiar respecto al
+    original si así se consigue un mejor aprovechamiento del espacio
+    (autorizado explícitamente por Eloy). El orden de PRODUCTOS dentro
+    de cada familia nunca se toca. Dentro de cada columna, las familias
+    elegidas se muestran después en su orden original relativo, para
+    que la lectura no salte de forma caótica.
+
+    `no_adelantar`: flowables que se excluyen de este reparto por
+    tamaño (se gestionan aparte) — no se usa actualmente (el cierre ya
+    no lo necesita, ver `generar_pdf`), se deja disponible por si hace
+    falta en el futuro.
     """
-    HORIZONTE = 6          # cuántas familias siguientes se consideran para rellenar un hueco
-    HUECO_MINIMO = 12      # por debajo de esto no merece la pena seguir rellenando (pt)
+    candidatos = [(idx, flow, alto) for idx, (flow, alto) in enumerate(items) if flow not in no_adelantar]
+    ordenados = sorted(candidatos, key=lambda t: -t[2])
 
-    def mejor_ventana(restantes, capacidad):
-        """Sobre `restantes` (lista mutable de (flowable, alto), en su
-        orden actual), busca la ventana inicial más larga [0, fin) para
-        la que existe algún corte válido, y el corte que minimiza la
-        diferencia de altura entre las dos columnas."""
-        n = len(restantes)
-        mejor_fin, mejor_split = 0, 0
-        j = 0
-        while j < n:
-            alturas = [h for _, h in restantes[:j + 1]]
-            prefijos = [0.0]
-            for h in alturas:
-                prefijos.append(prefijos[-1] + h)
-            total = prefijos[-1]
-            if total > 2 * capacidad and j > 0:
-                break
-            mejor_diff = None
-            mejor_k = None
-            for k in range(0, len(alturas) + 1):
-                izq, der = prefijos[k], total - prefijos[k]
-                if izq <= capacidad and der <= capacidad:
-                    diff = abs(izq - der)
-                    if mejor_diff is None or diff < mejor_diff:
-                        mejor_diff, mejor_k = diff, k
-            if mejor_k is None:
-                break
-            mejor_fin, mejor_split = j + 1, mejor_k
-            j += 1
-        if mejor_fin == 0:
-            # Ni un solo elemento cabe en una columna (caso raro, caja
-            # más alta que la página entera) — se coloca igual en la
-            # izquierda y que ReportLab la parta si hace falta.
-            return 1, 1
-        return mejor_fin, mejor_split
+    columnas = []  # cada: {'capacidad': float, 'restante': float, 'items': [(idx, flow, alto)]}
 
-    restantes = list(items)
+    def abrir_pagina():
+        cap = capacidad_pagina1 if not columnas else capacidad_normal
+        columnas.append({'capacidad': cap, 'restante': cap, 'items': []})
+        columnas.append({'capacidad': cap, 'restante': cap, 'items': []})
+
+    for idx, flow, alto in ordenados:
+        candidatas = [c for c in columnas if c['restante'] >= alto]
+        if candidatas:
+            columna = max(candidatas, key=lambda c: c['restante'])
+        else:
+            abrir_pagina()
+            columna = max(columnas[-2:], key=lambda c: c['restante'])
+        columna['items'].append((idx, flow, alto))
+        columna['restante'] -= alto
+
+    if not columnas:
+        abrir_pagina()
+
+    # Mejora local: el reparto anterior (LPT, "menos cargada primero")
+    # es bueno en general pero no siempre encuentra el mejor resultado
+    # posible. Se afina con intercambios de una familia entre DOS
+    # COLUMNAS CUALESQUIERA del documento (no solo las de la misma
+    # página) — a veces la familia que más desequilibra una página en
+    # realidad encaja mejor en otra página distinta. Cada intercambio
+    # solo se aplica si reduce la suma total de "diferencia entre
+    # columnas de cada página" en todo el documento, y solo si ambas
+    # columnas siguen dentro de su capacidad tras el cambio. Se repite
+    # hasta que ya no queda ningún intercambio que mejore nada.
+    def diferencia_total():
+        total = 0.0
+        for k in range(0, len(columnas), 2):
+            ci, cj = columnas[k], columnas[k + 1]
+            total += abs(sum(a for _, _, a in ci['items']) - sum(a for _, _, a in cj['items']))
+        return total
+
+    cambiado = True
+    intentos = 0
+    while cambiado and intentos < 200:
+        cambiado = False
+        intentos += 1
+        actual = diferencia_total()
+        mejor_delta, mejor_par = 0.0, None
+        for i in range(len(columnas)):
+            for j in range(i + 1, len(columnas)):
+                ci, cj = columnas[i], columnas[j]
+                for a in ci['items']:
+                    for b in cj['items']:
+                        ha, hb = a[2], b[2]
+                        if abs(ha - hb) < 0.01:
+                            continue
+                        carga_i = sum(x[2] for x in ci['items'])
+                        carga_j = sum(x[2] for x in cj['items'])
+                        nueva_i, nueva_j = carga_i - ha + hb, carga_j - hb + ha
+                        if nueva_i > ci['capacidad'] or nueva_j > cj['capacidad']:
+                            continue
+                        ci['items'].remove(a); ci['items'].append(b)
+                        cj['items'].remove(b); cj['items'].append(a)
+                        nueva_total = diferencia_total()
+                        ci['items'].remove(b); ci['items'].append(a)
+                        cj['items'].remove(a); cj['items'].append(b)
+                        delta = actual - nueva_total
+                        if delta > mejor_delta:
+                            mejor_delta, mejor_par = delta, (i, j, a, b)
+        if mejor_par:
+            i, j, a, b = mejor_par
+            columnas[i]['items'].remove(a); columnas[i]['items'].append(b)
+            columnas[j]['items'].remove(b); columnas[j]['items'].append(a)
+            cambiado = True
+
+    for c in columnas:
+        c['items'].sort(key=lambda t: t[0])
+
     paginas = []
-    primera = True
-    while restantes:
-        capacidad = capacidad_pagina1 if primera else capacidad_normal
-        fin, split = mejor_ventana(restantes, capacidad)
-        pagina = restantes[:fin]
-        izq = pagina[:split]
-        der = pagina[split:]
-        del restantes[:fin]
-
-        # Intentar rellenar el hueco de la columna más corta trayendo
-        # una familia de más adelante en la secuencia que encaje bien.
-        for _ in range(HORIZONTE):
-            hi = sum(h for _, h in izq)
-            hd = sum(h for _, h in der)
-            col_corta_es_izq = hi <= hd
-            hueco = capacidad - (hi if col_corta_es_izq else hd)
-            if hueco < HUECO_MINIMO or not restantes:
-                break
-            candidatos = restantes[:HORIZONTE]
-            mejor_idx, mejor_alto = None, 0
-            for idx, (flow, h) in enumerate(candidatos):
-                if flow in no_adelantar:
-                    continue
-                if h <= hueco and h > mejor_alto:
-                    mejor_idx, mejor_alto = idx, h
-            if mejor_idx is None:
-                break
-            elegido = restantes.pop(mejor_idx)
-            (izq if col_corta_es_izq else der).append(elegido)
-
-        paginas.append(([f for f, _ in izq], [f for f, _ in der]))
-        primera = False
+    for i in range(0, len(columnas), 2):
+        izq = [f for _, f, _ in columnas[i]['items']]
+        der = [f for _, f, _ in columnas[i + 1]['items']]
+        paginas.append((izq, der))
     return paginas
 
 
@@ -580,7 +596,7 @@ def generar_grafico_ubicacion(tema, ancho_px=640, alto_px=420):
     img = PILImage.new('RGB', (ancho_px, alto_px), claro)
     draw = ImageDraw.Draw(img)
 
-    paso = 46
+    paso = max(28, min(ancho_px, alto_px) // 10)
     linea = tuple(min(255, c + 14) if c < 235 else c - 10 for c in claro)
     for x in range(0, ancho_px, paso):
         draw.line([(x, 0), (x, alto_px)], fill=linea, width=1)
@@ -592,9 +608,14 @@ def generar_grafico_ubicacion(tema, ancho_px=640, alto_px=420):
         draw.line([(0, y), (ancho_px, y)], fill=linea, width=3)
 
     cx, cy = ancho_px // 2, int(alto_px * 0.44)
-    radio = 30
+    # El radio del pin se calcula proporcional al lado MENOR del
+    # lienzo (no a uno fijo en píxeles) — así, si el gráfico se genera
+    # más alto o más ancho para encajar en un hueco distinto, el pin
+    # sigue siendo un círculo real y no una elipse deformada, y su
+    # tamaño se mantiene proporcionado al espacio disponible.
+    radio = max(18, min(60, int(min(ancho_px, alto_px) * 0.11)))
     for i in range(3):
-        rr = radio + i * 22
+        rr = radio + i * int(radio * 0.75)
         alpha_col = tuple(min(255, c + (255 - c) * (i + 1) / 4) for c in (ra, ga, ba))
         draw.ellipse((cx - rr, cy - rr, cx + rr, cy + rr), outline=tuple(int(c) for c in alpha_col), width=2)
 
@@ -618,11 +639,13 @@ def construir_caja_cierre(tema, st, logo_png, ancho, alto_objetivo=None):
     """Devuelve una CajaRedondeada con la info de contacto + gráfico de
     ubicación, dimensionada al ancho de UNA columna.
 
-    Si se indica `alto_objetivo`, el gráfico de ubicación se estira
-    (manteniendo el resto del contenido fijo) para que la caja entera
-    ocupe esa altura exacta — así se puede hacer que el cierre rellene
-    justo el hueco que quede libre en la última página, en vez de tener
-    una altura fija que unas veces sobra y otras falta."""
+    Si se indica `alto_objetivo`, el gráfico de ubicación se REGENERA
+    con las proporciones exactas que necesite (no se estira una imagen
+    ya hecha — eso deformaba el pin/círculos en una elipse) para que la
+    caja entera ocupe esa altura exacta — así se puede hacer que el
+    cierre rellene justo el hueco que quede libre en la última página,
+    en vez de tener una altura fija que unas veces sobra y otras
+    falta."""
     fijo = []
     if logo_png and os.path.exists(logo_png):
         with PILImage.open(logo_png) as im:
@@ -661,7 +684,7 @@ def construir_caja_cierre(tema, st, logo_png, ancho, alto_objetivo=None):
     else:
         alto_grafico = alto_grafico_normal
 
-    grafico = generar_grafico_ubicacion(tema)
+    grafico = generar_grafico_ubicacion(tema, ancho_px=640, alto_px=max(200, int(round(640 * alto_grafico / ancho_grafico))))
     contenido = fijo + [RLImage(io.BytesIO(grafico), width=ancho_grafico, height=alto_grafico),
                          Spacer(1, 2 * mm), nota]
 
@@ -679,11 +702,12 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
     Nota de diseño importante (para quien retome esto): los `Frame` de
     ReportLab solo avanzan HACIA DELANTE dentro de una página (columna
     izquierda → columna derecha → página nueva); nunca vuelven atrás.
-    `planificar_columnas()` respeta esa restricción — solo decide EN
-    QUÉ PUNTO de la secuencia (ya ordenada) cae el corte entre columna
-    izquierda y derecha de cada página, para que ambas terminen a una
-    altura lo más parecida posible. No reordena cajas de familia entre
-    sí (eso rompería el orden documentado del catálogo).
+    `planificar_columnas()` respeta esa restricción, pero SÍ puede
+    reordenar en qué página/columna cae cada caja de familia (con
+    permiso explícito de Eloy) para maximizar el aprovechamiento del
+    espacio — busca por programación dinámica, entre TODAS las
+    familias que queden por colocar, la combinación que mejor llene y
+    mejor iguale cada columna.
     """
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     st = estilos(tema)
@@ -714,31 +738,51 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
     alto_pagina1 = (FRAME_TOP - HEADER_BOX_H) - FRAME_BOTTOM
     alto_normal = FRAME_TOP - FRAME_BOTTOM
 
-    # El cierre participa en la DECISIÓN de dónde cortar entre columnas
-    # (con un tamaño por defecto, de "marcador de posición") para que
-    # el punto de corte de las familias ya cuente con que el cierre irá
-    # detrás — si no, la fase de familias podía repartir de una forma
-    # que luego no dejaba ningún hueco razonable para el cierre. Una
-    # vez decidido el corte, se descarta el marcador y se construye el
-    # cierre DE VERDAD con tamaño elástico (el gráfico de ubicación se
-    # estira) para ocupar exactamente el hueco que quede en su columna,
-    # así la última página termina con las dos columnas igualadas.
-    marcador_cierre = construir_caja_cierre(tema, st, logo_png, COL_W)
-    _, alto_marcador = marcador_cierre.wrap(COL_W, 100000)
-    paginas = planificar_columnas(tablas + [(marcador_cierre, alto_marcador + 2.5 * mm)],
-                                   alto_pagina1, alto_normal, no_adelantar={marcador_cierre})
+    # Margen de seguridad al PLANIFICAR (no al tamaño real de los
+    # frames): sin él, el reparto podía calcular un ajuste casi exacto
+    # al límite de la columna (a veces con menos de 2pt de margen) —
+    # cualquier mínima diferencia entre lo medido (Table.wrap) y lo que
+    # ReportLab renderiza de verdad al construir el documento final
+    # bastaba para desbordar una familia a la columna/página
+    # siguiente, descolocando todo lo que venía detrás. Restar unos
+    # puntos de margen aquí evita ese problema sin cambiar el tamaño
+    # real de página.
+    MARGEN_SEGURIDAD = 15
+    paginas = planificar_columnas(tablas, alto_pagina1 - MARGEN_SEGURIDAD, alto_normal - MARGEN_SEGURIDAD)
 
-    izq_ultima, der_ultima = paginas[-1]
-    izq_ultima = [c for c in izq_ultima if c is not marcador_cierre]
-    der_ultima = [c for c in der_ultima if c is not marcador_cierre]
+    cap_ultima = (alto_pagina1 if len(paginas) == 1 else alto_normal) - MARGEN_SEGURIDAD
+    ALTURA_MINIMA_CIERRE = construir_caja_cierre(tema, st, logo_png, COL_W, alto_objetivo=1).wrap(COL_W, 100000)[1]
+
+    # El cierre tiene un tamaño mínimo real (todo su texto fijo + un
+    # gráfico mínimo) — si el hueco natural entre columnas de la última
+    # página es MENOR que ese mínimo, añadir el cierre igualmente
+    # "se pasa" y deja la otra columna con un hueco nuevo, en vez de
+    # arreglar el que había. Por eso la última página se REPARTE
+    # aparte, reservando de entrada el hueco mínimo del cierre en la
+    # columna derecha, en vez de repartir las familias primero y
+    # encajar el cierre después.
+    alturas_por_id = {id(c): h for c, h in tablas}
+    orden_por_id = {id(c): i for i, (c, _) in enumerate(tablas)}
+    items_ultima = sorted(paginas[-1][0] + paginas[-1][1], key=lambda f: -alturas_por_id[id(f)])
+
+    cap_izq = cap_ultima
+    cap_der = max(cap_ultima - ALTURA_MINIMA_CIERRE - 2.5 * mm, ALTURA_MINIMA_CIERRE)
+    bin_izq = {'restante': cap_izq, 'items': []}
+    bin_der = {'restante': cap_der, 'items': []}
+    for f in items_ultima:
+        h = alturas_por_id[id(f)]
+        candidatas = [b for b in (bin_izq, bin_der) if b['restante'] >= h]
+        b = max(candidatas, key=lambda b: b['restante']) if candidatas else max((bin_izq, bin_der), key=lambda b: b['restante'])
+        b['items'].append(f)
+        b['restante'] -= h
+
+    izq_ultima = sorted(bin_izq['items'], key=lambda f: orden_por_id[id(f)])
+    der_ultima = sorted(bin_der['items'], key=lambda f: orden_por_id[id(f)])
     paginas[-1] = (izq_ultima, der_ultima)
 
-    alturas_por_id = {id(c): h for c, h in tablas}
     hi = sum(alturas_por_id[id(c)] for c in izq_ultima)
     hd = sum(alturas_por_id[id(c)] for c in der_ultima)
-    cap_ultima = alto_pagina1 if len(paginas) == 1 else alto_normal
 
-    ALTURA_MINIMA_CIERRE = 90 * mm
     objetivo = max(hi - hd, ALTURA_MINIMA_CIERRE)
     objetivo = min(objetivo, max(cap_ultima - hd, ALTURA_MINIMA_CIERRE))
     caja_cierre = construir_caja_cierre(tema, st, logo_png, COL_W, alto_objetivo=objetivo)
