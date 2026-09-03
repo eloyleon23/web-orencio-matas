@@ -543,7 +543,8 @@ def construir_tabla_familia_ajustada(bloque, tema, st, cols, ancho, logo_png, al
     if deficit > 5:
         factor_maximo = hi if mejor_alto < alto_objetivo else lo
         mejor_caja = construir_tabla_familia(bloque, tema, st, cols, ancho, logo_png,
-                                              factor_extra=factor_maximo, relleno_extra=deficit)
+                                              factor_extra=factor_maximo,
+                                              relleno_extra=min(deficit, 25 * mm))
     return mejor_caja
 
 
@@ -808,6 +809,89 @@ def generar_imagen_ubicacion(tema, ancho_px=640, alto_px=420):
 
 
 
+# ── Relleno decorativo (banners tipo folleto, cuando ni agrandar la ──────
+# imagen ni el aire dentro de la caja bastan para llegar al final) ──────
+_contador_relleno = {'i': 0}
+
+
+def construir_relleno_decorativo(tema, st, logo_png, ancho, alto_objetivo, descuento_max=0):
+    """Bloque decorativo "de folleto" (banner de ahorro, invitación a la
+    web, o logo grande) dimensionado para ocupar aproximadamente
+    `alto_objetivo` — se usa como ÚLTIMO recurso cuando ni agrandar la
+    imagen del último producto ni el aire dentro de su caja bastan para
+    llegar al final de la columna. Rota entre 3 variantes (con semilla
+    determinista, no aleatoria) para que no se repita siempre la misma
+    si hacen falta varias en el mismo catálogo."""
+    _contador_relleno['i'] += 1
+    variantes = ['ahorro', 'web', 'logo'] if descuento_max > 0 else ['web', 'logo']
+    tipo = variantes[_contador_relleno['i'] % len(variantes)]
+
+    contenido = []
+    if tipo == 'ahorro':
+        relleno_fondo = _c(tema.color_acento)
+        borde = relleno_fondo
+        est_tit = ParagraphStyle('reo_t', fontName='Helvetica-Bold', fontSize=13, textColor=colors.white,
+                                  alignment=TA_CENTER, leading=16)
+        est_pct = ParagraphStyle('reo_p', fontName='Helvetica-Bold', fontSize=40, textColor=colors.white,
+                                  alignment=TA_CENTER, leading=44)
+        est_sub = ParagraphStyle('reo_s', fontName='Helvetica', fontSize=9, textColor=colors.white,
+                                  alignment=TA_CENTER, leading=12)
+        contenido += [
+            Paragraph('¡AHORRA HASTA!', est_tit),
+            Paragraph(f'-{int(descuento_max)}%', est_pct),
+            Paragraph('en productos seleccionados de este catálogo', est_sub),
+        ]
+    elif tipo == 'web':
+        relleno_fondo = _c(tema.color_principal)
+        borde = _c(tema.color_acento)
+        color_txt = _c(tema.color_texto_sobre_principal)
+        if logo_png and os.path.exists(logo_png):
+            with PILImage.open(logo_png) as im:
+                ratio = im.height / im.width
+            img = RLImage(logo_png, width=18 * mm, height=18 * mm * ratio)
+            img.hAlign = 'CENTER'
+            contenido.append(img)
+            contenido.append(Spacer(1, 4 * mm))
+        est_tit = ParagraphStyle('reo_wt', fontName='Helvetica-Bold', fontSize=10, textColor=color_txt,
+                                  alignment=TA_CENTER, leading=13)
+        est_web = ParagraphStyle('reo_ww', fontName='Helvetica-Bold', fontSize=19, textColor=_c(tema.color_acento),
+                                  alignment=TA_CENTER, leading=23)
+        contenido += [
+            Paragraph('DESCUBRE TODO NUESTRO CATÁLOGO EN', est_tit),
+            Spacer(1, 2 * mm),
+            Paragraph('orenciomatas.es', est_web),
+        ]
+    else:
+        relleno_fondo = COLOR_FONDO
+        borde = _c(tema.color_acento)
+        if logo_png and os.path.exists(logo_png):
+            with PILImage.open(logo_png) as im:
+                ratio = im.height / im.width
+            ancho_logo = min(34 * mm, ancho * 0.42)
+            img = RLImage(logo_png, width=ancho_logo, height=ancho_logo * ratio)
+            img.hAlign = 'CENTER'
+            contenido.append(img)
+            contenido.append(Spacer(1, 4 * mm))
+        est_tag = ParagraphStyle('reo_lt', fontName='Helvetica-Bold', fontSize=9.5, textColor=COLOR_GRIS,
+                                  alignment=TA_CENTER, leading=13)
+        contenido.append(Paragraph('SUMINISTROS PARA TALLERES Y CARROCERÍAS', est_tag))
+
+    tabla = Table([[contenido]], colWidths=[ancho])
+    tabla.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6), ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6), ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    _, alto_natural = tabla.wrap(ancho, 100000)
+    extra = max(0.0, alto_objetivo - alto_natural)
+    if extra > 0:
+        tabla.setStyle(TableStyle([
+            ('TOPPADDING', (0, 0), (-1, -1), 6 + extra / 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6 + extra / 2),
+        ]))
+    return CajaRedondeada(tabla, borde, radio=5, grosor=1, relleno=relleno_fondo)
+
+
 # ── Cierre: se trata como una caja más dentro del reparto de columnas ───
 def construir_caja_cierre(tema, st, logo_png, ancho, alto_objetivo=None):
     """Devuelve una CajaRedondeada con la info de contacto + gráfico de
@@ -913,6 +997,15 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
         _, alto = caja.wrap(COL_W, 100000)
         tablas.append((caja, alto + 2.5 * mm))
 
+    descuento_max_global = 0.0
+    for bloque in bloques:
+        for elemento in bloque.elementos:
+            if not isinstance(elemento, ElementoGrid):
+                continue
+            for p in elemento.productos:
+                if p.oferta and p.descuento_pct and float(p.descuento_pct) > descuento_max_global:
+                    descuento_max_global = float(p.descuento_pct)
+
     alto_pagina1 = (FRAME_TOP - HEADER_BOX_H) - FRAME_BOTTOM
     alto_normal = FRAME_TOP - FRAME_BOTTOM
 
@@ -956,14 +1049,6 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
 
     izq_ultima = sorted(bin_izq['items'], key=lambda f: orden_por_id[id(f)])
     der_ultima = sorted(bin_der['items'], key=lambda f: orden_por_id[id(f)])
-    paginas[-1] = (izq_ultima, der_ultima)
-
-    hi = sum(alturas_por_id[id(c)] for c in izq_ultima)
-    hd = sum(alturas_por_id[id(c)] for c in der_ultima)
-
-    objetivo = max(hi - hd, ALTURA_MINIMA_CIERRE)
-    objetivo = min(objetivo, max(cap_ultima - hd, ALTURA_MINIMA_CIERRE))
-    caja_cierre = construir_caja_cierre(tema, st, logo_png, COL_W, alto_objetivo=objetivo)
 
     # Prioridad máxima: que cada columna llegue hasta abajo de página,
     # en TODAS las páginas (no solo en la última, que ya lo consigue
@@ -973,7 +1058,7 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
     # llegue lo más cerca posible del límite real de la página.
     bloque_por_caja_id = {id(caja): bloque for (caja, _), bloque in zip(tablas, bloques)}
 
-    def estirar_ultima_de_columna(lista_cajas, capacidad):
+    def estirar_ultima_de_columna(lista_cajas, capacidad, permitir_relleno_decorativo=True):
         if not lista_cajas:
             return lista_cajas
         resto, ultimo = lista_cajas[:-1], lista_cajas[-1]
@@ -984,16 +1069,51 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
         objetivo_ultimo = capacidad - otras_alturas - (2.5 * mm if resto else 0.0)
         nueva = construir_tabla_familia_ajustada(bloque_ultimo, tema, st, tema.cols_grid, COL_W,
                                                   logo_png, objetivo_ultimo)
-        return resto + [nueva]
+        resultado = resto + [nueva]
 
-    for idx in range(len(paginas)):
+        # Si ni agrandar la imagen ni el aire dentro de la caja bastan
+        # para llegar al objetivo (límite real de mantener la
+        # proporción de una foto), el resto del hueco se rellena con
+        # un banner llamativo tipo folleto (ahorro / web / logo) en vez
+        # de dejarlo en blanco — "hay que aprovechar los espacios".
+        # (No se aplica en la columna izquierda de la ÚLTIMA página:
+        # ahí el hueco lo mide y lo llena el cierre elástico justo
+        # después, y añadir aquí también un relleno descuadraba ese
+        # cálculo — verificado con un catálogo de solo 2 productos.)
+        if permitir_relleno_decorativo:
+            _, alto_nueva = nueva.wrap(COL_W, 100000)
+            hueco_restante = objetivo_ultimo - alto_nueva - 2.5 * mm
+            if hueco_restante > 18 * mm:
+                relleno = construir_relleno_decorativo(tema, st, logo_png, COL_W, hueco_restante,
+                                                         descuento_max=descuento_max_global)
+                resultado.append(relleno)
+        return resultado
+
+    # La columna IZQUIERDA de la última página se estira ANTES de medir
+    # el hueco para el cierre — si se hiciera al revés (calcular el
+    # tamaño del cierre primero y estirar la izquierda después, como en
+    # una versión anterior), el cierre quedaba dimensionado para una
+    # izquierda que luego crecía, y las dos columnas volvían a quedar
+    # descuadradas.
+    izq_ultima = estirar_ultima_de_columna(izq_ultima, cap_ultima, permitir_relleno_decorativo=False)
+    hi = 0.0
+    for c in izq_ultima:
+        if id(c) in alturas_por_id:
+            hi += alturas_por_id[id(c)]
+        else:
+            hi += c.wrap(COL_W, 100000)[1] + 2.5 * mm
+    hd = sum(alturas_por_id[id(c)] for c in der_ultima)
+
+    objetivo = max(hi - hd, ALTURA_MINIMA_CIERRE)
+    objetivo = min(objetivo, max(cap_ultima - hd, ALTURA_MINIMA_CIERRE))
+    caja_cierre = construir_caja_cierre(tema, st, logo_png, COL_W, alto_objetivo=objetivo)
+    paginas[-1] = (izq_ultima, der_ultima)
+
+    for idx in range(len(paginas) - 1):
         capacidad_pagina = (alto_pagina1 if idx == 0 else alto_normal) - MARGEN_SEGURIDAD
         izq_p, der_p = paginas[idx]
-        izq_p = estirar_ultima_de_columna(izq_p, cap_ultima if idx == len(paginas) - 1 else capacidad_pagina)
-        if idx != len(paginas) - 1:
-            # La columna derecha de la ÚLTIMA página no se estira aquí:
-            # ya la rellena el cierre elástico justo detrás.
-            der_p = estirar_ultima_de_columna(der_p, capacidad_pagina)
+        izq_p = estirar_ultima_de_columna(izq_p, capacidad_pagina)
+        der_p = estirar_ultima_de_columna(der_p, capacidad_pagina)
         paginas[idx] = (izq_p, der_p)
 
     story = []

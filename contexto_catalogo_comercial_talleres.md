@@ -678,6 +678,63 @@ por Eloy) con chincheta sobre la ubicación exacta; y máxima prioridad
 
 ---
 
+### Revisión visual v12 (undécima vuelta — alineación real de páginas 1/3 y relleno llamativo tipo folleto)
+Eloy señaló que la página 2 estaba perfecta pero la 1 y la 3 no
+terminaban de cuadrar, y pidió una idea concreta para aprovechar
+huecos: banners tipo folleto de supermercado (Lidl) — "Ahorra hasta
+X%", invitación a visitar la web, o el logo en grande — en vez de
+dejar espacio en blanco, tanto dentro de las cajas como fuera.
+
+- **Bug real de medición encontrado y corregido primero**: el script
+  de comprobación de alineación por píxeles daba diferencias de 22-72mm
+  que parecían enormes — pero el propio pie de página nuevo de v11
+  (con el logo de la empresa, que tiene tonos rojos en su diseño)
+  estaba siendo detectado por error como si fuera el borde rojo de una
+  caja de producto, falseando la medición. Corregido excluyendo la
+  franja del pie del análisis — con eso, páginas 1 y 2 ya medían
+  2,0mm y 0,4mm de diferencia (muy bien), y solo la página 3 tenía un
+  problema real (47,9mm).
+- **Bug real de la página 3 — orden de cálculo**: el tamaño del cierre
+  elástico se calculaba ANTES de estirar la imagen de la familia de la
+  columna izquierda — así que el cierre quedaba dimensionado para una
+  izquierda que LUEGO crecía (por el nuevo mecanismo de "estirar la
+  última familia de cada columna" de v11), y las dos columnas volvían
+  a quedar descuadradas. Corregido invirtiendo el orden: ahora se
+  estira primero la columna izquierda de la última página, se mide su
+  altura YA estirada, y el cierre se dimensiona para igualar ESA
+  altura real. Resultado: página 3 de 47,9mm a 2,5mm de diferencia.
+- **Relleno decorativo tipo folleto** (`construir_relleno_decorativo`):
+  cuando ni agrandar la imagen del último producto ni el aire dentro
+  de su caja (tope de 25mm, antes sin tope) bastan para llegar al
+  final de la columna, se añade un banner llamativo adicional, con 3
+  variantes que rotan (no aleatorias, deterministas):
+    - **"¡AHORRA HASTA -X%!"** — con el mayor descuento real presente
+      en el catálogo (calculado una vez, escaneando todos los
+      productos), fondo del color de acento.
+    - **"Descubre todo nuestro catálogo en orenciomatas.es"** — con el
+      logo, fondo del color principal del tema.
+    - **Logo grande** — con el eslogan "Suministros para talleres y
+      carrocerías", fondo neutro — el recurso de última instancia
+      cuando no hay descuentos que anunciar.
+  Cada variante es tan elástica como el resto de bloques: se mide su
+  altura natural y se reparte el hueco sobrante como padding arriba y
+  abajo del contenido (centrado), no solo abajo.
+- **Bug real de regresión encontrado y corregido durante esta misma
+  vuelta**: aplicar el relleno decorativo también en la columna
+  IZQUIERDA de la ÚLTIMA página interfería con el cálculo del cierre
+  (la izquierda podía crecer con un relleno completo, inflando el
+  objetivo del cierre más allá de lo razonable) y llegó a provocar una
+  página extra innecesaria en un catálogo de prueba de solo 2
+  productos. Se desactivó el relleno decorativo específicamente ahí
+  (`permitir_relleno_decorativo=False`) — en esa columna concreta el
+  hueco ya lo resuelve el cierre elástico justo después, no hace falta
+  duplicar el mecanismo.
+- Probado con el catálogo de 22 productos (ambos temas) y con el caso
+  límite de 2 productos — confirmado que ya no se genera ninguna
+  página extra de más.
+
+---
+
 ## CÓMO PROBARLO
 
 ```bash
