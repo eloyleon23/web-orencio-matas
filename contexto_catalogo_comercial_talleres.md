@@ -210,52 +210,6 @@ Cambio de fondo en v3:
 
 ---
 
-## PENDIENTE / ABIERTO
-
-1. **Fase 2 — Google Sheet + Apps Script**: no implementada a propósito
-   (tal como pedía el encargo). Cuando se aborde:
-   - Nueva hoja o pestaña en el Sheet con las columnas del punto 5 del
-     encargo (familia, nombre, referencia, precio_sin/con_iva,
-     descuento_pct, oferta, protagonismo, imagen).
-   - Apps Script que lea esa hoja, valide mínimamente, y dispare este
-     workflow vía `repository_dispatch` con `client_payload: {periodo, productos}` — mismo patrón que `enviar_catalogo_personalizado.yml`.
-   - Añadir el paso de envío por email (Brevo) al final del workflow,
-     calcado del que ya existe en ese otro workflow.
-   - Cuando la imagen venga de Drive (no de `assets/imagenes_talleres/`
-     local), añadir en `imagenes.py` un `descargar_imagen_drive()`
-     calcado del de `generar_catalogos.py` — el resto del pipeline de
-     imagen (recorte, lienzo, badge) no necesita cambios.
-2. **Composición**: con familias muy pequeñas (1-4 productos, como en
-   el set de prueba) puede quedar algo de hueco al final de la página
-   cuando la familia siguiente no cabe entera — con datos reales de
-   Sheet (familias con más productos) esto se compensa solo. Si se
-   quiere afinar más, se podría añadir una heurística de "adelantar
-   productos de la familia siguiente al hueco restante", pero no ha
-   hecho falta para este prototipo.
-3. **Sin probar aún con productos de imagen alojada en Drive** (los
-   ~3.073 de la Sheet con precio real) por la restricción de red del
-   entorno de desarrollo — debería funcionar igual en GitHub Actions
-   (que sí tiene acceso a Drive), pero conviene una primera prueba real
-   ahí antes de dar la Fase 2 por cerrada.
-4. **Mapa de la página de cierre no es un mapa real** — es un gráfico
-   ilustrativo generado con PIL (pin + rejilla decorativa en los
-   colores del tema), porque este entorno de desarrollo no tiene
-   acceso de red a ningún proveedor de mapas (Google/OSM/etc. no están
-   en la lista blanca de dominios). Si se quiere un mapa real:
-   - Opción A: Google Static Maps API (necesita API key, factible como
-     secreto de GitHub Actions — allí sí hay red — sustituyendo
-     `generar_grafico_ubicacion()` por una descarga real).
-   - Opción B: pedir a Eloy una captura de pantalla del mapa y usarla
-     como asset fijo en `assets/`.
-5. **Reparto de familias entre columnas — ya resuelto (v4)**: ver
-   sección siguiente.
-6. **Pulido visual**: v4 ya se parece de verdad al prototipo (dos
-   columnas balanceadas, esquinas redondeadas, icono en cada caja,
-   familias de un producto en horizontal, cierre a página completa) —
-   pendiente de una nueva revisión visual con Eloy para ver si hace
-   falta un ajuste más de detalle o si ya está listo para dar la Fase 1
-   por cerrada.
-
 ### Revisión visual v4 (tercera vuelta)
 Eloy pidió, con el PDF de v3 delante: (1) que las cajas de la columna
 izquierda y derecha terminen alineadas al final, (2) que las familias
@@ -307,7 +261,85 @@ cierre a página completa con dirección + mapa en miniatura.
   (`tpl_cierre`, un único frame a todo el ancho) usada solo para la
   última página — dirección, contacto y una tarjeta "ENCUÉNTRANOS" con
   gráfico ilustrativo de ubicación (no es un mapa real, ver pendiente
-  arriba).
+  arriba). **Sustituido en v5** (ver abajo) — se quitó la página
+  dedicada.
+
+---
+
+### Revisión visual v5 (cuarta vuelta)
+Con el PDF de v4 delante, Eloy pidió tres ajustes más: (1) las columnas
+seguían sin quedar igualadas al final (la derecha más corta), (2) no
+quería una página de cierre aparte — mejor aprovechar el hueco que
+quedara en la última página de productos con la dirección, dejando el
+mapa real pendiente de una captura que proporcionará más adelante, y
+(3) los bordes redondeados solo se veían en la parte inferior de cada
+caja, no en la banda de color de arriba.
+
+- **Cierre integrado en el reparto de columnas**: se eliminó la
+  plantilla de página dedicada (`tpl_cierre`) y la caja de cierre
+  (`construir_caja_cierre()`, dimensionada al ancho de UNA columna, no
+  de toda la página) se añade como una caja más al final de la lista
+  que procesa `planificar_columnas()`. El propio algoritmo de balanceo
+  la coloca donde haga falta para igualar las columnas de la última
+  página — en la práctica, casi siempre encaja justo en el hueco que
+  antes quedaba vacío. Efecto secundario bueno: como ya no hay página
+  dedicada, el catálogo de prueba bajó de 4 a 3 páginas.
+- **Esquinas redondeadas en todo el bloque, no solo abajo — bug real
+  encontrado y corregido**: `TableStyle` siempre pinta los fondos de
+  color de celda como rectángulos de esquina viva; la banda de color
+  de la cabecera de cada caja "asomaba" por encima de la esquina
+  redondeada del `CajaRedondeada`, así que solo se veía redondeado
+  donde no había ningún relleno de color encima (la parte blanca
+  inferior). Solución: `CajaRedondeada.draw()` ahora usa
+  `canvas.clipPath()` con la silueta redondeada ANTES de dibujar el
+  contenido interior — así cualquier fondo de color que dibuje la
+  tabla de dentro (incluida la cabecera) se recorta automáticamente a
+  la forma redondeada, en vez de tener que tratar cada caso por
+  separado. El borde se dibuja aparte, después, sin recorte, para que
+  quede nítido.
+- **Alineación de columnas — ya bastante mejor, con un límite real**:
+  con el cierre integrado, la página final quedó prácticamente
+  igualada (era el caso más visible). En las páginas de solo productos
+  la diferencia real observada es de ~1cm o menos en la mayoría de
+  casos — el límite lo pone la propia distribución de tamaños de las
+  familias (si la primera familia de una página es muy grande, por
+  ejemplo, el punto de corte óptimo puede no ser un empate perfecto).
+  No es un bug, es la mejor solución posible dentro de la restricción
+  de no reordenar familias ni partir una familia entre columnas de
+  forma artificial.
+
+---
+
+## PENDIENTE / ABIERTO
+
+1. **Fase 2 — Google Sheet + Apps Script**: no implementada a propósito
+   (tal como pedía el encargo). Cuando se aborde:
+   - Nueva hoja o pestaña en el Sheet con las columnas del punto 5 del
+     encargo (familia, nombre, referencia, precio_sin/con_iva,
+     descuento_pct, oferta, protagonismo, imagen).
+   - Apps Script que lea esa hoja, valide mínimamente, y dispare este
+     workflow vía `repository_dispatch` con `client_payload: {periodo, productos}` — mismo patrón que `enviar_catalogo_personalizado.yml`.
+   - Añadir el paso de envío por email (Brevo) al final del workflow,
+     calcado del que ya existe en ese otro workflow.
+   - Cuando la imagen venga de Drive (no de `assets/imagenes_talleres/`
+     local), añadir en `imagenes.py` un `descargar_imagen_drive()`
+     calcado del de `generar_catalogos.py` — el resto del pipeline de
+     imagen (recorte, lienzo, badge) no necesita cambios.
+2. **Sin probar aún con productos de imagen alojada en Drive** (los
+   ~3.073 de la Sheet con precio real) por la restricción de red del
+   entorno de desarrollo — debería funcionar igual en GitHub Actions
+   (que sí tiene acceso a Drive), pero conviene una primera prueba real
+   ahí antes de dar la Fase 2 por cerrada.
+3. **Mapa real pendiente**: Eloy va a proporcionar una captura de
+   pantalla más adelante. De momento `generar_grafico_ubicacion()` sigue
+   generando el gráfico ilustrativo (pin + rejilla). Cuando llegue la
+   captura, sustituir esa función por la carga de la imagen fija desde
+   `assets/`, o dejar ambas rutas (imagen real si existe el archivo,
+   ilustración de respaldo si no).
+4. **Pulido visual**: v5 corrige columnas, redondeado completo y cierre
+   integrado — pendiente de una nueva revisión con Eloy para ver si
+   hace falta un ajuste más de detalle o si ya está listo para dar la
+   Fase 1 por cerrada.
 
 ---
 

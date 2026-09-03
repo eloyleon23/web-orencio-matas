@@ -221,13 +221,24 @@ class CajaRedondeada(Flowable):
         if self.relleno is not None:
             c.setFillColor(self.relleno)
             c.roundRect(0, 0, self.width, self.height, self.radio, stroke=0, fill=1)
+        # Recorta TODO el contenido interior (incluidos los fondos de
+        # color de cabecera, que TableStyle dibuja siempre como
+        # rectángulos de esquina viva) a la silueta redondeada — si no
+        # se recorta así, solo se veía redondeado donde no había ningún
+        # relleno de color encima (la parte blanca inferior), y la
+        # banda de color de la cabecera "asomaba" con esquinas rectas.
+        path = c.beginPath()
+        path.roundRect(0, 0, self.width, self.height, self.radio)
+        c.clipPath(path, stroke=0, fill=0)
+        self.contenido.drawOn(self.canv, 0, 0)
+        c.restoreState()
+
         if self.grosor:
+            c.saveState()
             c.setStrokeColor(self.color_borde)
             c.setLineWidth(self.grosor)
-            c.roundRect(0.5, 0.5, max(self.width - 1, 0), max(self.height - 1, 0),
-                        self.radio, stroke=1, fill=0)
-        c.restoreState()
-        self.contenido.drawOn(self.canv, 0, 0)
+            c.roundRect(0.5, 0.5, max(self.width - 1, 0), max(self.height - 1, 0), self.radio, stroke=1, fill=0)
+            c.restoreState()
 
     def split(self, availWidth, availHeight):
         piezas = self.contenido.split(availWidth, availHeight)
@@ -552,40 +563,46 @@ def generar_grafico_ubicacion(tema, ancho_px=640, alto_px=420):
     return buf.getvalue()
 
 
-# ── Cierre: página completa dedicada ─────────────────────────────────────
-def cierre_pagina_completa(story, tema, st, logo_png, ancho):
-    grafico = generar_grafico_ubicacion(tema)
-    grafico_img = RLImage(io.BytesIO(grafico), width=ancho, height=ancho * 420 / 640)
-
-    bloque_texto = [
-        Paragraph('¿Necesitas más información?', st['cierre_titulo']),
-        Paragraph(tema.texto_cierre, st['cierre_texto']),
-        Spacer(1, 7 * mm),
-        Paragraph('ORENCIO MATAS Y HERMANOS, S.L.', st['cierre_direccion']),
-        Paragraph('Av. Alfred Nobel, 2 · 13005 Ciudad Real', st['cierre_texto']),
-        Spacer(1, 3 * mm),
-        Paragraph('Tel. 926 221 217', st['cierre_texto']),
-        Paragraph('correo@orenciomatas.es · orenciomatas.es', st['cierre_texto']),
-    ]
-
+# ── Cierre: se trata como una caja más dentro del reparto de columnas ───
+def construir_caja_cierre(tema, st, logo_png, ancho):
+    """Devuelve una CajaRedondeada con la info de contacto + gráfico de
+    ubicación, dimensionada al ancho de UNA columna — se añade como una
+    caja más a la lista que reparte `planificar_columnas()`, así ocupa
+    el hueco que quede libre en la última página de productos en vez de
+    forzar una página nueva dedicada solo a esto."""
+    contenido = []
     if logo_png and os.path.exists(logo_png):
         with PILImage.open(logo_png) as im:
             ratio = im.height / im.width
-        bloque_texto = [RLImage(logo_png, width=26 * mm, height=26 * mm * ratio), Spacer(1, 6 * mm)] + bloque_texto
+        contenido.append(RLImage(logo_png, width=16 * mm, height=16 * mm * ratio))
+        contenido.append(Spacer(1, 3 * mm))
 
-    story.append(Spacer(1, 8 * mm))
-    story.append(Table([[bloque_texto]], colWidths=[ancho],
-                        style=TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0),
-                                           ('TOPPADDING', (0, 0), (-1, -1), 0)])))
-    story.append(Spacer(1, 10 * mm))
-    story.append(Paragraph('ENCUÉNTRANOS', ParagraphStyle('encnos', fontName='Helvetica-Bold', fontSize=10,
-                                                            textColor=_c(tema.color_acento), alignment=TA_LEFT,
-                                                            spaceAfter=4)))
-    story.append(CajaRedondeada(grafico_img, COLOR_BORDE, radio=8, grosor=1))
-    story.append(Spacer(1, 4 * mm))
-    story.append(Paragraph(
-        'Ilustración orientativa de la zona — abre la ubicación exacta en tu buscador de mapas favorito '
-        'buscando "Orencio Matas y Hermanos, Ciudad Real".', st['nota']))
+    contenido.append(Paragraph('¿Necesitas más información?', st['cierre_titulo']))
+    contenido.append(Paragraph(tema.texto_cierre, st['cierre_texto']))
+    contenido.append(Spacer(1, 4 * mm))
+    contenido.append(Paragraph('ORENCIO MATAS Y HERMANOS, S.L.', st['cierre_direccion']))
+    contenido.append(Paragraph('Av. Alfred Nobel, 2 · 13005 Ciudad Real', st['cierre_texto']))
+    contenido.append(Spacer(1, 2 * mm))
+    contenido.append(Paragraph('Tel. 926 221 217', st['cierre_texto']))
+    contenido.append(Paragraph('correo@orenciomatas.es · orenciomatas.es', st['cierre_texto']))
+    contenido.append(Spacer(1, 5 * mm))
+    contenido.append(Paragraph('ENCUÉNTRANOS', ParagraphStyle(
+        'encnos', fontName='Helvetica-Bold', fontSize=9.5, textColor=_c(tema.color_acento),
+        alignment=TA_LEFT, spaceAfter=3)))
+
+    grafico = generar_grafico_ubicacion(tema)
+    ancho_grafico = ancho - 6 * mm
+    contenido.append(RLImage(io.BytesIO(grafico), width=ancho_grafico, height=ancho_grafico * 420 / 640))
+    contenido.append(Spacer(1, 2 * mm))
+    contenido.append(Paragraph(
+        'Ilustración orientativa — mapa real pendiente de sustituir por una captura.', st['nota']))
+
+    tabla = Table([[contenido]], colWidths=[ancho])
+    tabla.setStyle(TableStyle([
+        ('LEFTPADDING', (0, 0), (-1, -1), 5), ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 6), ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    return CajaRedondeada(tabla, _c(tema.color_acento), radio=5, grosor=1)
 
 
 # ── Orquestación: documento a dos columnas con cabecera en página 1 ─────
@@ -614,20 +631,25 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
                        leftPadding=0, rightPadding=0, topPadding=2, bottomPadding=0, id='izq')
     frame_der = Frame(MARGIN + COL_W + GAP, FRAME_BOTTOM, COL_W, FRAME_TOP - FRAME_BOTTOM,
                        leftPadding=0, rightPadding=0, topPadding=2, bottomPadding=0, id='der')
-    frame_cierre = Frame(MARGIN, FRAME_BOTTOM, CW, FRAME_TOP - FRAME_BOTTOM,
-                          leftPadding=0, rightPadding=0, topPadding=2, bottomPadding=0, id='cierre')
 
     tpl_pagina1 = PageTemplate(id='pagina1', frames=[frame_header, frame_izq_p1, frame_der_p1], onPage=hf)
     tpl_siguientes = PageTemplate(id='siguientes', frames=[frame_izq, frame_der], onPage=hf)
-    tpl_cierre = PageTemplate(id='cierre', frames=[frame_cierre], onPage=hf)
 
-    doc = BaseDocTemplate(out_path, pagesize=A4, pageTemplates=[tpl_pagina1, tpl_siguientes, tpl_cierre])
+    doc = BaseDocTemplate(out_path, pagesize=A4, pageTemplates=[tpl_pagina1, tpl_siguientes])
 
     tablas = []
     for bloque in bloques:
         caja = construir_tabla_familia(bloque, tema, st, cols=tema.cols_grid, ancho=COL_W, logo_png=logo_png)
         _, alto = caja.wrap(COL_W, 100000)
         tablas.append((caja, alto + 2.5 * mm))
+
+    # El cierre (dirección/contacto/ubicación) se trata como una caja
+    # más de la secuencia — así el algoritmo de reparto la coloca donde
+    # quede hueco en la última página de productos, en vez de forzar
+    # una página nueva dedicada solo a esto.
+    caja_cierre = construir_caja_cierre(tema, st, logo_png, COL_W)
+    _, alto_cierre = caja_cierre.wrap(COL_W, 100000)
+    tablas.append((caja_cierre, alto_cierre + 2.5 * mm))
 
     alto_pagina1 = (FRAME_TOP - HEADER_BOX_H) - FRAME_BOTTOM
     alto_normal = FRAME_TOP - FRAME_BOTTOM
@@ -648,10 +670,6 @@ def generar_pdf(periodo, tema, bloques, logo_png, out_path, resultado_validacion
             story.append(Spacer(1, 2.5 * mm))
         if idx < len(paginas) - 1:
             story.append(FrameBreak())
-
-    story.append(NextPageTemplate('cierre'))
-    story.append(FrameBreak())
-    cierre_pagina_completa(story, tema, st, logo_png, CW)
 
     doc.build(story)
 
