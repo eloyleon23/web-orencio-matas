@@ -73,6 +73,8 @@ def parse_args():
     ap.add_argument('--salida', help="Ruta del PDF de salida")
     ap.add_argument('--motor', choices=['v2', 'v3'], default='v3',
                      help="v3 (por defecto): composición editorial nueva. v2: maqueta anterior de fichas, para comparar.")
+    ap.add_argument('--cajas', action='store_true',
+                     help="Solo con --motor v3: envuelve los productos en bloques de esquinas redondeadas (prueba de comparación).")
     return ap.parse_args()
 
 
@@ -140,7 +142,7 @@ def main():
     logo_png = preparar_logo()
     salida = args.salida or os.path.join(OUTPUT_DIR, f"catalogo_comercial_{slug_periodo(periodo)}.pdf")
     if args.motor == 'v3':
-        info = generar_pdf_v3(periodo, tema, bloques, logo_png, salida, resultado)
+        info = generar_pdf_v3(periodo, tema, bloques, logo_png, salida, resultado, redondeado=args.cajas)
     else:
         info = generar_pdf(periodo, tema, bloques, logo_png, salida, resultado)
 

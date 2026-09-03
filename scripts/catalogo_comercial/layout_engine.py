@@ -40,6 +40,7 @@ from reportlab.platypus import (BaseDocTemplate, Frame, PageTemplate, FrameBreak
 
 from .composicion import ElementoGrid
 from .imagenes import imagen_para_producto, pil_to_bytes, preparar_para_incrustar
+from .render_pdf import CajaRedondeada
 
 W, H = A4
 MARGIN = 14 * mm
@@ -48,6 +49,31 @@ TOP_BAR_H = 22 * mm
 BOTTOM_BAR_H = 16 * mm
 FRAME_TOP = H - TOP_BAR_H - 2 * mm
 FRAME_BOTTOM = BOTTOM_BAR_H + 2 * mm
+
+# Interruptor de la variante "bloques redondeados" (prueba a petición
+# de Eloy, para comparar contra la composición sin cajas del brief) —
+# lo activa `generar_pdf_v3(..., redondeado=True)`. Vive en un dict a
+# nivel de módulo (no como parámetro en cada función de layout) para no
+# tener que ensuciar la firma de toda la cadena de llamadas por una
+# prueba puntual.
+_config = {'redondeado': False}
+
+
+def _quizas_redondear(contenido, ancho, tema, color_borde=None, radio=6, relleno=None):
+    """Si la variante de bloques redondeados está activa, envuelve el
+    contenido (una lista de flowables, o ya una Table) en una caja con
+    esquinas redondeadas — si no, lo devuelve tal cual."""
+    if not _config['redondeado']:
+        return contenido
+    if isinstance(contenido, list):
+        t = Table([[contenido]], colWidths=[ancho])
+        t.setStyle(TableStyle([
+            ('LEFTPADDING', (0, 0), (-1, -1), 8), ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8), ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        contenido = t
+    color = color_borde or _c(tema.color_identidad)
+    return CajaRedondeada(contenido, color, radio=radio, grosor=1, relleno=relleno)
 
 RUTA_MAPA_REAL = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                                'assets', 'mapa', 'ubicacion_orencio_matas.png')
@@ -123,14 +149,23 @@ def bloque_precio(producto, tema, tam='normal', alinear='left'):
     if hay_oferta:
         badge = chip(f'-{int(producto.descuento_pct)}%', _c(tema.color_descuento), _c(tema.color_estructura),
                      fontsize=fs_pct)
-        tabla_precio = Table([[fila_precio, badge]], colWidths=[None, None])
-        tabla_precio.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (0, 0), 6), ('RIGHTPADDING', (1, 0), (1, 0), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        tabla_precio.hAlign = alinear.upper() if alinear != 'left' else 'LEFT'
-        filas.append(tabla_precio)
+        if tam == 'hero':
+            # A tamaño HERO el precio ya es muy grande — poner la
+            # insignia al lado (no debajo) hacía que "€" se cortara a
+            # otra línea por falta de ancho. Se apila debajo en su
+            # lugar, sigue siendo llamativa sin romper el número.
+            filas.append(fila_precio)
+            filas.append(Spacer(1, 2 * mm))
+            filas.append(badge)
+        else:
+            tabla_precio = Table([[fila_precio, badge]], colWidths=[None, None])
+            tabla_precio.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (0, 0), 6), ('RIGHTPADDING', (1, 0), (1, 0), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            tabla_precio.hAlign = alinear.upper() if alinear != 'left' else 'LEFT'
+            filas.append(tabla_precio)
     else:
         filas.append(fila_precio)
     return filas
@@ -182,13 +217,13 @@ def _ficha_texto_producto(producto, tema, tam_nombre=12, tam_ref=8):
     return [Paragraph(producto.nombre, est_nombre), Paragraph(f'Ref: {producto.referencia}', est_ref)]
 
 
-def layout_hero_absoluto(producto, tema, ancho):
+def layout_hero_absoluto(producto, tema, ancho, alto_img=100 * mm):
     """Nivel 5 dominando la composición: imagen enorme a un lado, ficha
     y precio HERO al otro — debe notarse en menos de un segundo que es
     el producto estrella (regla del punto 4 del brief)."""
     ancho_img = ancho * 0.56
     ancho_info = ancho - ancho_img - 8 * mm
-    img, aw, ah = _imagen_fit(producto, ancho_img, 100 * mm, cuadrado=False)
+    img, aw, ah = _imagen_fit(producto, ancho_img, alto_img, cuadrado=False)
 
     info = []
     b = badge_nivel(producto, tema)
@@ -200,11 +235,14 @@ def layout_hero_absoluto(producto, tema, ancho):
     info += bloque_precio(producto, tema, tam='hero')
 
     fila = Table([[img, info]], colWidths=[ancho_img + 4 * mm, ancho_info])
+    pad_h = 9 if _config['redondeado'] else 0
     fila.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('ALIGN', (0, 0), (0, 0), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (0, 0), 4 * mm),
+        ('LEFTPADDING', (0, 0), (-1, -1), pad_h), ('RIGHTPADDING', (0, 0), (0, 0), 4 * mm),
         ('TOPPADDING', (0, 0), (-1, -1), 6), ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
     ]))
+    if _config['redondeado']:
+        fila = CajaRedondeada(fila, _c(tema.color_identidad), radio=8, grosor=1.2)
     return [fila]
 
 
@@ -217,19 +255,26 @@ def _tarjeta_secundaria(producto, tema, ancho, alto_img=28 * mm):
     contenido.append(Spacer(1, 1.5 * mm))
     contenido += bloque_precio(producto, tema, tam='chico')
     t = Table([[contenido]], colWidths=[ancho])
+    pad = 6 if _config['redondeado'] else 2
     t.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 2), ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-        ('TOPPADDING', (0, 0), (-1, -1), 3), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-        ('LINEBELOW', (0, 0), (-1, -1), 0.6, _c('#E1E4E8')),
+        ('LEFTPADDING', (0, 0), (-1, -1), pad), ('RIGHTPADDING', (0, 0), (-1, -1), pad),
+        ('TOPPADDING', (0, 0), (-1, -1), pad), ('BOTTOMPADDING', (0, 0), (-1, -1), 5 if not _config['redondeado'] else pad),
+        ('LINEBELOW', (0, 0), (-1, -1), 0 if _config['redondeado'] else 0.6, _c('#E1E4E8')),
     ]))
+    if _config['redondeado']:
+        return CajaRedondeada(t, _c(tema.color_identidad), radio=5, grosor=1)
     return t
 
 
 def layout_hero_secundarios(hero, secundarios, tema, ancho, alto_hero=78 * mm):
     """Un producto protagonista (nivel 4-5) + 2-4 productos secundarios
     en columna estrecha al lado — asimetría deliberada, no un grid
-    uniforme (punto 5 del brief)."""
+    uniforme (punto 5 del brief). Si no hay secundarios, cae en
+    `layout_hero_absoluto` (a todo el ancho) en vez de dejar el 40%
+    derecho de la página en blanco."""
+    if not secundarios:
+        return layout_hero_absoluto(hero, tema, ancho, alto_img=alto_hero)
     ancho_hero = ancho * 0.6
     ancho_sec = ancho - ancho_hero - 6 * mm
     img, aw, ah = _imagen_fit(hero, ancho_hero, alto_hero, cuadrado=False)
@@ -244,11 +289,14 @@ def layout_hero_secundarios(hero, secundarios, tema, ancho, alto_hero=78 * mm):
     info += bloque_precio(hero, tema, tam='grande')
 
     columna_hero = Table([[img], [Spacer(1, 3 * mm)], [info]], colWidths=[ancho_hero])
+    pad_hero = 9 if _config['redondeado'] else 0
     columna_hero.setStyle(TableStyle([
         ('ALIGN', (0, 0), (0, 0), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('LEFTPADDING', (0, 0), (-1, -1), pad_hero), ('RIGHTPADDING', (0, 0), (-1, -1), pad_hero),
+        ('TOPPADDING', (0, 0), (-1, -1), pad_hero), ('BOTTOMPADDING', (0, 0), (-1, -1), pad_hero),
     ]))
+    if _config['redondeado']:
+        columna_hero = CajaRedondeada(columna_hero, _c(tema.color_identidad), radio=8, grosor=1.2)
 
     filas_sec = [[_tarjeta_secundaria(p, tema, ancho_sec)] for p in secundarios]
     columna_sec = Table(filas_sec, colWidths=[ancho_sec]) if filas_sec else None
@@ -280,14 +328,18 @@ def layout_doble_protagonista(p1, p2, tema, ancho):
         info += _ficha_texto_producto(p, tema, tam_nombre=12.5, tam_ref=8)
         info.append(Spacer(1, 2.5 * mm))
         info += bloque_precio(p, tema, tam='normal')
-        return [img, Spacer(1, 3 * mm)] + info
+        contenido = [img, Spacer(1, 3 * mm)] + info
+        if _config['redondeado']:
+            return _quizas_redondear(contenido, ancho_col, tema, radio=7)
+        return contenido
 
     fila = Table([[bloque(p1), bloque(p2)]], colWidths=[ancho_col, ancho_col])
+    pad_lat = 0 if _config['redondeado'] else 4 * mm
     fila.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'), ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (0, 0), 0), ('RIGHTPADDING', (0, 0), (0, 0), 4 * mm),
-        ('LEFTPADDING', (1, 0), (1, 0), 4 * mm), ('RIGHTPADDING', (1, 0), (1, 0), 0),
-        ('LINEAFTER', (0, 0), (0, 0), 0.6, _c('#E1E4E8')),
+        ('LEFTPADDING', (0, 0), (0, 0), 0), ('RIGHTPADDING', (0, 0), (0, 0), pad_lat),
+        ('LEFTPADDING', (1, 0), (1, 0), pad_lat), ('RIGHTPADDING', (1, 0), (1, 0), 0),
+        ('LINEAFTER', (0, 0), (0, 0), 0 if _config['redondeado'] else 0.6, _c('#E1E4E8')),
         ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
     ]))
     return [fila]
@@ -296,12 +348,17 @@ def layout_doble_protagonista(p1, p2, tema, ancho):
 def layout_grid_comercial(productos, tema, ancho, cols=3):
     """Productos secundarios (nivel 1-2) — grid compacto, poco peso
     visual, para no competir con los productos protagonistas de la
-    misma familia. Sin cajas: solo una línea fina bajo cada fila."""
+    misma familia. Sin cajas: solo una línea fina bajo cada fila.
+    El número de columnas se adapta al número real de productos (nunca
+    más columnas que productos) para no dejar huecos en blanco cuando
+    la familia solo tiene 1-2 productos secundarios."""
+    cols = max(1, min(cols, len(productos)))
     ancho_col = ancho / cols
+    alto_img = 24 * mm if cols >= 3 else 34 * mm
     filas = []
     fila_actual = []
     for i, p in enumerate(productos):
-        fila_actual.append(_tarjeta_secundaria(p, tema, ancho_col, alto_img=24 * mm))
+        fila_actual.append(_tarjeta_secundaria(p, tema, ancho_col, alto_img=alto_img))
         if len(fila_actual) == cols:
             filas.append(fila_actual)
             fila_actual = []
@@ -367,7 +424,14 @@ def disenar_familia(bloque, tema, ancho):
         story += b
         story.append(Spacer(1, 4 * mm))
     if resto_final:
-        story += layout_grid_comercial(resto_final, tema, ancho)
+        if not bloques_layout and len(resto_final) == 1:
+            # Familia con un único producto y sin protagonismo alto: en
+            # vez de una rejilla pequeña con mucho hueco alrededor, se
+            # le da presencia real a todo el ancho (imagen más modesta
+            # que un HERO de verdad, pero sin dejar huecos en blanco).
+            story += layout_hero_absoluto(resto_final[0], tema, ancho, alto_img=55 * mm)
+        else:
+            story += layout_grid_comercial(resto_final, tema, ancho)
 
     story.append(Spacer(1, 8 * mm))
     return [KeepTogether(story[:2])] + story[2:]
@@ -583,11 +647,16 @@ def construir_cierre(tema, logo_png, ancho):
 
 
 # ── Orquestador ───────────────────────────────────────────────────────
-def generar_pdf_v3(periodo, tema, bloques, logo_png, out_path, resultado=None):
+def generar_pdf_v3(periodo, tema, bloques, logo_png, out_path, resultado=None, redondeado=False):
     """Punto de entrada equivalente a `render_pdf.generar_pdf()` (misma
-    firma) pero con el motor editorial V3 — flujo a una sola columna,
-    sin necesidad de balancear nada entre izquierda/derecha."""
+    firma, + `redondeado`) pero con el motor editorial V3 — flujo a una
+    sola columna, sin necesidad de balancear nada entre izquierda/
+    derecha. `redondeado=True` activa la variante de prueba con los
+    productos envueltos en bloques de esquinas redondeadas (a petición
+    de Eloy, para comparar contra la composición sin cajas del brief
+    original)."""
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    _config['redondeado'] = redondeado
 
     frame = Frame(MARGIN, FRAME_BOTTOM, CW, FRAME_TOP - FRAME_BOTTOM,
                    leftPadding=0, rightPadding=0, topPadding=2, bottomPadding=0, id='unica')

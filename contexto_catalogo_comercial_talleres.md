@@ -880,3 +880,70 @@ python scripts/generar_catalogo_comercial.py --tipo mes --valor septiembre --ani
 # V2 (maqueta anterior, para comparar)
 python scripts/generar_catalogo_comercial.py --tipo mes --valor septiembre --anio 2026 --motor v2
 ```
+
+---
+
+## V3 — segunda vuelta (menos espacio en blanco + prueba de bloques redondeados)
+Eloy validó la dirección ("no tiene mala pinta") pero señaló que
+seguía habiendo mucho espacio en blanco, y pidió una prueba
+incorporando bloques redondeados alrededor de los productos para
+comparar visualmente.
+
+### Bug real encontrado y corregido — huecos en familias de un solo producto
+El espacio en blanco más llamativo venía de una causa muy concreta:
+las familias con UN SOLO producto de nivel bajo/medio (sin nivel 4-5)
+caían en `layout_hero_secundarios` con la lista de secundarios VACÍA
+(la columna "hero" solo ocupa el 60% del ancho, dejando el 40% derecho
+en blanco) o en `layout_grid_comercial` con `cols=3` fijos aunque solo
+hubiera 1 producto (2 columnas completas en blanco al lado). Con 13
+familias y varias de ellas de un solo producto en el catálogo de
+prueba, este patrón se repetía varias veces por página.
+
+Tres arreglos:
+1. `layout_hero_secundarios()` ahora detecta cuándo `secundarios` está
+   vacío y cae directamente en `layout_hero_absoluto()` (a todo el
+   ancho) en vez de dejar una columna fantasma sin usar.
+2. `layout_grid_comercial()` adapta el número de columnas al número
+   real de productos (`cols = min(cols, len(productos))`) — nunca más
+   columnas vacías que las que hacen falta.
+3. En `disenar_familia()`, cuando una familia queda con un único
+   producto sin protagonismo alto y sin ningún otro bloque de layout,
+   se le da presencia completa vía `layout_hero_absoluto()` (con una
+   imagen algo más modesta, 55mm) en vez de la tarjeta pequeña del
+   grid comercial — un producto solo en su familia merece ocupar el
+   ancho de la página, no quedar como una miniatura con hueco al lado.
+
+### Bug real encontrado y corregido — precio HERO con descuento se cortaba
+Al ensanchar los layouts de un solo producto, apareció un caso real:
+un precio a tamaño "hero" (fontSize 40) con insignia de descuento al
+lado partía el símbolo "€" a otra línea por falta de ancho en la fila.
+Corregido: a tamaño `hero` específicamente, la insignia de descuento
+se apila DEBAJO del precio en vez de al lado (a los demás tamaños
+sigue yendo al lado, ahí sí cabe con margen).
+
+### Prueba de bloques redondeados (`--cajas`)
+A petición explícita de Eloy, se implementó como VARIANTE de
+comparación (no sustituye la composición sin cajas que pedía el brief
+original): `generar_pdf_v3(..., redondeado=True)` / CLI `--cajas`.
+Reutiliza `CajaRedondeada` de `render_pdf.py` (v2) sin duplicar
+código. Activado con un interruptor a nivel de módulo
+(`layout_engine._config['redondeado']`) que envuelve cada bloque de
+producto — hero, doble protagonista, tarjetas secundarias y grid — en
+una caja de esquinas redondeadas con el color de identidad de la
+campaña como borde. Requirió ajustar el padding interno de varias
+piezas (por defecto muy ceñido, pensado para composición sin bordes)
+para que el texto no quedara pegado al borde de la caja.
+
+### Cómo generar
+```bash
+# V3 sin cajas (composición del brief original)
+python scripts/generar_catalogo_comercial.py --tipo mes --valor septiembre --anio 2026
+
+# V3 con bloques redondeados (variante de comparación)
+python scripts/generar_catalogo_comercial.py --tipo mes --valor septiembre --anio 2026 --cajas
+```
+
+### Pendiente
+Con estos arreglos y ambas variantes generadas, queda pendiente que
+Eloy elija cuál de las dos (con o sin cajas) prefiere como base
+definitiva antes de seguir ampliando el repertorio de layouts.
