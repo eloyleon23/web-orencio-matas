@@ -146,7 +146,7 @@ ALTO_NOMBRE = 8.4 * mm
 ALTO_PRECIO = 9.5 * mm
 
 
-def tarjeta_producto(p, ancho, alto_img=32 * mm, etiqueta_familia=None):
+def tarjeta_producto(p, ancho, alto_img=38 * mm, etiqueta_familia=None):
     hay_oferta = bool(p.oferta and p.descuento_pct and p.descuento_pct > 0)
     pil = imagen_para_producto(p, tamano=500, cuadrado=True)  # ya trae la cinta roja si hay oferta
     iw, ih = pil.size
@@ -218,7 +218,7 @@ COLOR_LOGO_VERDE = '#008C50'
 PALETA_LOGO = [COLOR_LOGO_ROJO, COLOR_LOGO_TEAL, COLOR_LOGO_NARANJA, COLOR_LOGO_VERDE]
 
 
-def tarjeta_relleno(ancho, alto_img=32 * mm, logo_png=None, con_etiqueta=False):
+def tarjeta_relleno(ancho, alto_img=38 * mm, logo_png=None, con_etiqueta=False):
     """Tarjeta decorativa para rellenar huecos en filas incompletas —
     a petición de Eloy ("necesito llenar los espacios en blanco...
     en general no quiero que haya huecos en blanco"). Rota entre 3
@@ -286,7 +286,7 @@ def tarjeta_relleno(ancho, alto_img=32 * mm, logo_png=None, con_etiqueta=False):
 
 
 
-def _fila_con_relleno(tarjetas, cols, ancho_col, alto_img=32 * mm, logo_png=None, con_etiqueta=False, centrar=True):
+def _fila_con_relleno(tarjetas, cols, ancho_col, alto_img=38 * mm, logo_png=None, con_etiqueta=False, centrar=True):
     faltan = cols - len(tarjetas)
     if faltan <= 0:
         return tarjetas
@@ -298,7 +298,7 @@ def _fila_con_relleno(tarjetas, cols, ancho_col, alto_img=32 * mm, logo_png=None
     return rellenos[:izq] + tarjetas + rellenos[izq:]
 
 
-def grid_categoria(bloque, ancho, cols=4, alto_img=32 * mm, productos=None, logo_png=None):
+def grid_categoria(bloque, ancho, cols=4, alto_img=38 * mm, productos=None, logo_png=None):
     """Cabecera de categoría + rejilla de tarjetas — la cabecera va
     unida (KeepTogether) a la PRIMERA fila de tarjetas para que nunca
     quede huérfana al final de una página. Recibe `productos` ya
@@ -370,7 +370,7 @@ def preparar_grupos(bloques, cols):
     return completas, pool
 
 
-def agrupar_sueltos(pool, ancho, cols=4, alto_img=32 * mm, logo_png=None):
+def agrupar_sueltos(pool, ancho, cols=4, alto_img=38 * mm, logo_png=None):
     """Reparte en una rejilla compartida todo lo que no llegó a llenar
     una fila completa de su propia familia (`pool`, lista de
     (producto, nombre_familia)) — sin banda de categoría propia, cada

@@ -1547,3 +1547,46 @@ variante de logo dedicada — mucho más vivo que el gris plano anterior.
 Pie de página con todo el texto correctamente centrado. Mismo
 catálogo de prueba, sigue en 3 páginas. Sin regresiones en ambos temas
 ni en los casos límite.
+
+---
+
+## V4 — novena vuelta ("HASTA -20%", imágenes más grandes, e intento de mapa real)
+Eloy señaló tres cosas: el "-20%" de la pegatina de la portada daba a
+entender que TODO estaba al 20% (cuando es el descuento máximo),
+algunas imágenes seguían siendo pequeñas, y el mapa del cierre "se ve
+fatal" — compartió el enlace real de Google Maps de la nave.
+
+### "HASTA -X%" en vez de solo "-X%"
+`generar_estallido()`: la pegatina pasa de dos líneas ("-20" / "DTO.")
+a tres ("HASTA" / "-20" / "DTO.") — deja claro que es un tope máximo,
+no un precio plano para todo el catálogo. Recalculados los tamaños de
+fuente para que las tres líneas quepan con margen dentro del círculo
+inscrito de la estrella (verificado con zoom, se lee bien sin
+solaparse).
+
+### Imágenes de producto más grandes
+`alto_img` por defecto en toda la cadena de funciones: 32mm → 38mm.
+
+### Mapa — límite real, no solo de código
+Resuelta la URL corta que compartió Eloy: coordenadas reales
+38.98337, -3.91027 (Av. Alfred Nobel, 2, Ciudad Real). Intenté
+conseguir una captura de mapa nueva y nítida de dos formas — vía
+navegador (Claude in Chrome no está conectado en esta sesión) y vía
+una API de mapas estática sin clave (ningún dominio de mapas está en
+la lista de dominios permitidos de la red del entorno) — ninguna
+disponible en esta sesión. La captura real que usa el proyecto
+(`assets/mapa/ubicacion_orencio_matas.png`, proporcionada por Eloy
+hace varias sesiones) es de solo 426×226px; al ampliarla para el
+hueco del cierre se nota borrosa. Aplicado un afilado (`ImageFilter.
+UnsharpMask`) tras el remuestreo — mismo principio que ya se usa para
+las fotos de producto en `imagenes.py` — mejora algo la nitidez
+PERCIBIDA, pero no puede inventar detalle que la captura original no
+tiene. **Pendiente real, no resuelto del todo**: para un mapa
+realmente nítido hace falta una captura de mayor resolución (Eloy
+puede volver a compartir una, a más zoom/resolución) o acceso a
+navegador en una sesión futura donde Claude in Chrome esté conectado.
+
+### Resultado
+Verificado con ambos temas y sin regresiones en los casos límite.
+Mismo catálogo de prueba, sigue en 3 páginas pese a imágenes más
+grandes.

@@ -28,7 +28,7 @@ import io
 import os
 from decimal import Decimal
 
-from PIL import Image as PILImage, ImageDraw, ImageFont
+from PIL import Image as PILImage, ImageDraw, ImageFont, ImageFilter
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -548,28 +548,34 @@ def generar_estallido(color_rgb, texto_pct, texto_color_rgb=(255, 255, 255), lad
         puntos.append((cx + r * math.sin(ang), cy - r * math.cos(ang)))
     draw.polygon(puntos, fill=color_rgb)
 
-    # Texto grande centrado ("-20%" en dos líneas: número grande + "DTO.")
-    # — tamaños calculados para caber con margen dentro del círculo
-    # inscrito (radio interior), no solo "a ojo": la primera versión se
-    # salía y el número quedaba pegado/solapado con "DTO."
+    # Texto centrado en TRES líneas: "HASTA" (pequeño) + "-20%" (grande)
+    # + "DTO." (pequeño) — a petición de Eloy: poner solo "-20%" daba
+    # sensación de que TODO estuviera al 20%, cuando es el descuento
+    # máximo. "HASTA" dejaba claro que es un tope, no un precio plano.
+    # Tamaños recalculados para las tres líneas cupieran con margen
+    # dentro del círculo inscrito de la estrella.
     numero = texto_pct.replace('%', '').strip()
-    fs_num = int(lado_px * 0.235)
-    fs_sub = int(lado_px * 0.095)
+    fs_top = int(lado_px * 0.082)
+    fs_num = int(lado_px * 0.205)
+    fs_sub = int(lado_px * 0.082)
     try:
+        font_top = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fs_top)
         font_num = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fs_num)
         font_sub = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fs_sub)
     except Exception:
-        font_num = ImageFont.load_default()
-        font_sub = font_num
+        font_top = font_num = font_sub = ImageFont.load_default()
+    bbox_t = draw.textbbox((0, 0), 'HASTA', font=font_top)
     bbox_n = draw.textbbox((0, 0), numero, font=font_num)
     bbox_s = draw.textbbox((0, 0), 'DTO.', font=font_sub)
-    h_n, h_s = bbox_n[3] - bbox_n[1], bbox_s[3] - bbox_s[1]
-    espacio = lado_px * 0.018
-    alto_total = h_n + h_s + espacio
-    y0 = cy - alto_total / 2 - bbox_n[1]
-    draw.text((cx - (bbox_n[2] - bbox_n[0]) / 2, y0), numero, font=font_num, fill=texto_color_rgb)
-    y1 = y0 + h_n + espacio - bbox_s[1] + bbox_n[1]
-    draw.text((cx - (bbox_s[2] - bbox_s[0]) / 2, y1), 'DTO.', font=font_sub, fill=texto_color_rgb)
+    h_t, h_n, h_s = bbox_t[3] - bbox_t[1], bbox_n[3] - bbox_n[1], bbox_s[3] - bbox_s[1]
+    espacio = lado_px * 0.012
+    alto_total = h_t + h_n + h_s + espacio * 2
+    y0 = cy - alto_total / 2 - bbox_t[1]
+    draw.text((cx - (bbox_t[2] - bbox_t[0]) / 2, y0), 'HASTA', font=font_top, fill=texto_color_rgb)
+    y1 = y0 + h_t + espacio - bbox_n[1] + bbox_t[1]
+    draw.text((cx - (bbox_n[2] - bbox_n[0]) / 2, y1), numero, font=font_num, fill=texto_color_rgb)
+    y2 = y1 + h_n + espacio - bbox_s[1] + bbox_n[1]
+    draw.text((cx - (bbox_s[2] - bbox_s[0]) / 2, y2), 'DTO.', font=font_sub, fill=texto_color_rgb)
 
     buf = io.BytesIO()
     img.save(buf, 'PNG')
@@ -737,6 +743,14 @@ def generar_imagen_ubicacion(tema, ancho_px=640, alto_px=420):
     escala = min(ancho_px / bw, alto_px / bh)
     nueva_w, nueva_h = max(1, int(bw * escala)), max(1, int(bh * escala))
     base_r = base.resize((nueva_w, nueva_h), PILImage.LANCZOS)
+    # La captura original es de baja resolución (426×226px) — al
+    # ampliarla para el hueco del cierre se nota borrosa ("se ve
+    # fatal", señalado por Eloy). Un afilado (unsharp mask) tras el
+    # remuestreo no puede inventar detalle que la foto original no
+    # tiene, pero sí mejora bastante la nitidez PERCIBIDA — mismo
+    # principio que ya se aplica a las fotos de producto en
+    # `preparar_para_incrustar()` (imagenes.py).
+    base_r = base_r.filter(ImageFilter.UnsharpMask(radius=1.6, percent=110, threshold=2))
     off_x, off_y = (ancho_px - nueva_w) // 2, (alto_px - nueva_h) // 2
     lienzo.paste(base_r, (off_x, off_y))
     draw = ImageDraw.Draw(lienzo)
