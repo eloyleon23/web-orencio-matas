@@ -1511,3 +1511,39 @@ sigue en 3 páginas (el número de página no cambia, solo se rellena lo
 que ya estaba vacío). Verificado con ambos temas y el caso límite de 2
 productos — el hueco de esa única fila también se rellena
 correctamente con el icono de "%" y el logo.
+
+---
+
+## V4 — octava vuelta (pie de página centrado + colores reales del logo en los rellenos)
+Eloy señaló dos detalles: el texto legal del pie no estaba centrado, y
+los bloques de relleno con texto se veían "muy planos" — pidió que
+usaran los colores del logo corporativo y que apareciera también el
+logo, "algo que enganche y sea llamativo".
+
+### Pie de página centrado
+La línea pequeña de texto legal ("Ofertas válidas...") se dibujaba con
+`drawString` pegada al margen izquierdo, con "Pág. N" aparte a la
+derecha — visualmente descentrada respecto al eslogan grande de
+encima, que sí estaba centrado. Corregido: todo en una única línea
+centrada con `drawCentredString` (texto legal + datos de contacto +
+número de página, separados por "·").
+
+### Colores reales del logo, no genéricos
+Antes de tocar nada, extraje los colores REALES del archivo del logo
+(`assets/logos/logo_calidad.svg`) analizando los píxeles del PNG
+renderizado, en vez de inventar una paleta a ojo: rojo `#DC1414`,
+naranja `#F0A000`, azul/teal `#0078A0`, verde `#008C50` (más el gris
+antracita de la montaña, ya en uso). Estos 4 colores (`PALETA_LOGO`)
+ahora rotan como fondo de la variante "eslogan" de `tarjeta_relleno()`
+— antes siempre el mismo gris plano. La variante "%" pasa de amarillo
+genérico al naranja real del logo. El logo de la empresa aparece
+ahora también dentro de la tarjeta de eslogan (antes solo en su
+propia variante dedicada), reforzando la marca en más sitios.
+
+### Resultado
+Verificado visualmente: los bloques de relleno alternan ahora entre 4
+colores de marca reales (rojo, naranja, teal, verde) además de la
+variante de logo dedicada — mucho más vivo que el gris plano anterior.
+Pie de página con todo el texto correctamente centrado. Mismo
+catálogo de prueba, sigue en 3 páginas. Sin regresiones en ambos temas
+ni en los casos límite.

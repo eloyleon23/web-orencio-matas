@@ -206,46 +206,72 @@ def tarjeta_producto(p, ancho, alto_img=32 * mm, etiqueta_familia=None):
 _contador_relleno_flyer = {'i': 0}
 
 
+# Colores reales extraídos del logo corporativo (no inventados — medidos
+# de los píxeles del propio archivo `assets/logos/logo_calidad.svg`) para
+# que los bloques de relleno usen la paleta de marca real, no un genérico
+# gris plano — petición de Eloy: "que tuvieran un color de los del logo
+# corporativos... algo que enganche y sea llamativo".
+COLOR_LOGO_ROJO = '#DC1414'
+COLOR_LOGO_NARANJA = '#F0A000'
+COLOR_LOGO_TEAL = '#0078A0'
+COLOR_LOGO_VERDE = '#008C50'
+PALETA_LOGO = [COLOR_LOGO_ROJO, COLOR_LOGO_TEAL, COLOR_LOGO_NARANJA, COLOR_LOGO_VERDE]
+
+
 def tarjeta_relleno(ancho, alto_img=32 * mm, logo_png=None, con_etiqueta=False):
     """Tarjeta decorativa para rellenar huecos en filas incompletas —
     a petición de Eloy ("necesito llenar los espacios en blanco...
     en general no quiero que haya huecos en blanco"). Rota entre 3
     variantes deterministas (eslogan de gancho, icono grande de "%",
     logo de la empresa) y mide EXACTAMENTE lo mismo que una tarjeta de
-    producto normal, para que la rejilla no se descuadre."""
+    producto normal, para que la rejilla no se descuadre. Las tres
+    variantes usan la paleta REAL del logo (`PALETA_LOGO`) y el propio
+    logo aparece también en el eslogan, no solo en su propia variante
+    — antes el eslogan era texto plano sobre un único gris, "muy
+    plano" según Eloy."""
     _contador_relleno_flyer['i'] += 1
     tipo = ['eslogan', 'porcentaje', 'logo'][_contador_relleno_flyer['i'] % 3]
+    color_rotativo = PALETA_LOGO[(_contador_relleno_flyer['i'] // 3) % len(PALETA_LOGO)]
     alto_hueco = ALTO_ETIQUETA_FAM + 1 * mm if con_etiqueta else 0
     alto_total = alto_hueco + alto_img + 1 * mm + ALTO_NOMBRE + 1 * mm + ALTO_PRECIO
+
+    def _logo_flowable(ancho_logo):
+        if not (logo_png and os.path.exists(logo_png)):
+            return None
+        with PILImage.open(logo_png) as im:
+            ratio = im.height / im.width
+        img_logo = RLImage(logo_png, width=ancho_logo, height=ancho_logo * ratio)
+        img_logo.hAlign = 'CENTER'
+        return img_logo
 
     if tipo == 'eslogan':
         frases = ['¡NO TE LO\nPIERDAS!', '¡APROVECHA\nAHORA!', 'CALIDAD Y\nBUEN PRECIO', '¡OFERTA\nESPECIAL!']
         frase = frases[(_contador_relleno_flyer['i'] // 3) % len(frases)].replace('\n', '<br/>')
-        est = ParagraphStyle('trf', fontName='Helvetica-Bold', fontSize=11.5, textColor=colors.white,
-                              alignment=TA_CENTER, leading=14)
-        contenido = Paragraph(frase, est)
-        fondo, borde = _c(COLOR_CABECERA), _c(COLOR_CABECERA)
+        est = ParagraphStyle('trf', fontName='Helvetica-Bold', fontSize=12.5, textColor=colors.white,
+                              alignment=TA_CENTER, leading=15)
+        contenido = []
+        logo_flow = _logo_flowable(14 * mm)
+        if logo_flow:
+            contenido += [logo_flow, Spacer(1, 2.5 * mm)]
+        contenido.append(Paragraph(frase, est))
+        fondo, borde = _c(color_rotativo), _c(color_rotativo)
     elif tipo == 'porcentaje':
-        est_pct = ParagraphStyle('trp', fontName='Helvetica-Bold', fontSize=30, textColor=_c(COLOR_PRECIO),
-                                  alignment=TA_CENTER, leading=32)
-        est_sub = ParagraphStyle('trs', fontName='Helvetica-Bold', fontSize=8.5, textColor=_c(COLOR_CABECERA),
-                                  alignment=TA_CENTER, leading=10.5)
+        est_pct = ParagraphStyle('trp', fontName='Helvetica-Bold', fontSize=32, textColor=colors.white,
+                                  alignment=TA_CENTER, leading=34)
+        est_sub = ParagraphStyle('trs', fontName='Helvetica-Bold', fontSize=9, textColor=colors.white,
+                                  alignment=TA_CENTER, leading=11)
         contenido = [Paragraph('%', est_pct), Spacer(1, 1 * mm), Paragraph('OFERTAS<br/>DEL MES', est_sub)]
-        fondo, borde = _c(COLOR_DESCUENTO), _c(COLOR_PRECIO)
+        fondo, borde = _c(COLOR_LOGO_NARANJA), _c(COLOR_LOGO_NARANJA)
     else:  # logo
         piezas = []
-        if logo_png and os.path.exists(logo_png):
-            with PILImage.open(logo_png) as im:
-                ratio = im.height / im.width
-            ancho_logo = min(20 * mm, ancho * 0.5)
-            img_logo = RLImage(logo_png, width=ancho_logo, height=ancho_logo * ratio)
-            img_logo.hAlign = 'CENTER'
-            piezas += [img_logo, Spacer(1, 2.5 * mm)]
-        est_web = ParagraphStyle('trw', fontName='Helvetica-Bold', fontSize=8.5, textColor=_c(COLOR_CABECERA),
-                                  alignment=TA_CENTER, leading=10)
+        logo_flow = _logo_flowable(min(22 * mm, ancho * 0.55))
+        if logo_flow:
+            piezas += [logo_flow, Spacer(1, 3 * mm)]
+        est_web = ParagraphStyle('trw', fontName='Helvetica-Bold', fontSize=9, textColor=colors.white,
+                                  alignment=TA_CENTER, leading=11)
         piezas.append(Paragraph('orenciomatas.es', est_web))
         contenido = piezas
-        fondo, borde = colors.white, _c(COLOR_BORDE_TARJETA)
+        fondo, borde = _c(COLOR_CABECERA), _c(COLOR_CABECERA)
 
     celda = Table([[contenido]], colWidths=[ancho], rowHeights=[alto_total])
     celda.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -256,6 +282,8 @@ def tarjeta_relleno(ancho, alto_img=32 * mm, logo_png=None, con_etiqueta=False):
         ('TOPPADDING', (0, 0), (-1, -1), 2.5), ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
     ]))
     return CajaRedondeada(tabla, borde, radio=3, grosor=1.0, relleno=fondo)
+
+
 
 
 def _fila_con_relleno(tarjetas, cols, ancho_col, alto_img=32 * mm, logo_png=None, con_etiqueta=False, centrar=True):
@@ -424,10 +452,10 @@ def make_header_footer(logo_png, tema, periodo):
                                   '¡OFERTAS POR TIEMPO LIMITADO — APROVÉCHALAS ANTES DE QUE SE AGOTEN!')
         canvas.setFont('Helvetica', 5.6)
         canvas.setFillColor(_c('#FFD9D9'))
-        canvas.drawString(MARGIN, BOTTOM_BAR_H - 8 * mm,
-                           'Ofertas válidas hasta agotar existencias. Precios sujetos a cambios. '
-                           'Orencio Matas y Hnos, S.L. · 926 221 217 · orenciomatas.es')
-        canvas.drawRightString(W - MARGIN, BOTTOM_BAR_H - 8 * mm, f'Pág. {doc.page}')
+        canvas.drawCentredString(W / 2, BOTTOM_BAR_H - 8 * mm,
+                                  'Ofertas válidas hasta agotar existencias. Precios sujetos a cambios. · '
+                                  'Orencio Matas y Hnos, S.L. · 926 221 217 · orenciomatas.es · '
+                                  f'Pág. {doc.page}')
         canvas.restoreState()
     return hf
 
