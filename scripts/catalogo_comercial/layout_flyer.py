@@ -420,6 +420,103 @@ def banner_eslogan(texto, ancho, alto=8 * mm):
     return t
 
 
+def banner_gancho_grande(ancho, alto_objetivo, logo_png=None):
+    """Bloque de cierre de página llamativo — a petición de Eloy:
+    "añade un bloque justo abajo de cada página entre el pie y los
+    productos de relleno, algo con gancho". A diferencia de
+    `banner_eslogan` (una franja fina entre categorías), este ocupa
+    TODO el hueco que quede al final de una página real — se
+    dimensiona de forma elástica (relleno interno arriba/abajo,
+    centrando el contenido) para llegar exactamente hasta el pie,
+    igual que la lección ya aprendida en V3 con los rellenos
+    decorativos de página."""
+    _contador_relleno_flyer['i'] += 1
+    color_fondo = PALETA_LOGO[(_contador_relleno_flyer['i'] // 5) % len(PALETA_LOGO)]
+    contenido = []
+    if logo_png and os.path.exists(logo_png):
+        with PILImage.open(logo_png) as im:
+            ratio = im.height / im.width
+        ancho_logo = min(20 * mm, ancho * 0.12)
+        img_logo = RLImage(logo_png, width=ancho_logo, height=ancho_logo * ratio)
+        img_logo.hAlign = 'CENTER'
+        contenido += [img_logo, Spacer(1, 3 * mm)]
+    est_tit = ParagraphStyle('bgt', fontName='Helvetica-Bold', fontSize=15, textColor=colors.white,
+                              alignment=TA_CENTER, leading=18)
+    est_sub = ParagraphStyle('bgs', fontName='Helvetica-Bold', fontSize=10, textColor=colors.white,
+                              alignment=TA_CENTER, leading=13)
+    frases = [
+        ('¿QUIERES VER MÁS OFERTAS?', 'Visítanos en orenciomatas.es o pásate por nuestra tienda'),
+        ('CALIDAD PROFESIONAL', 'Todo lo que necesitas para tu taller, al mejor precio'),
+        ('¡NO ESPERES MÁS!', 'Estas ofertas son por tiempo limitado — consulta disponibilidad'),
+    ]
+    tit, sub = frases[(_contador_relleno_flyer['i'] // 5) % len(frases)]
+    contenido += [Paragraph(tit, est_tit), Spacer(1, 2 * mm), Paragraph(sub, est_sub)]
+
+    celda = Table([[contenido]], colWidths=[ancho])
+    celda.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4)]))
+    _, alto_natural = celda.wrap(ancho, 100000)
+    extra = max(0.0, alto_objetivo - alto_natural)
+    if extra > 0:
+        celda.setStyle(TableStyle([
+            ('TOPPADDING', (0, 0), (-1, -1), 4 + extra / 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 4 + extra / 2),
+        ]))
+    return CajaRedondeada(celda, _c(color_fondo), radio=4, grosor=1.2, relleno=_c(color_fondo))
+
+
+def _medir_alto(elem, ancho):
+    """`KeepTogether.wrap()` necesita un `canvas` real asignado (falla
+    fuera del proceso normal de construcción del documento) — para
+    poder medir su altura en la simulación de `_rellenar_fin_pagina` se
+    mide su contenido interno directamente envuelto en una Table, en
+    vez de llamar a `.wrap()` sobre el propio KeepTogether."""
+    if isinstance(elem, KeepTogether):
+        t = Table([[elem._content]], colWidths=[ancho])
+        return t.wrap(ancho, 100000)[1]
+    return elem.wrap(ancho, 100000)[1]
+
+
+def _rellenar_fin_pagina(story, capacidad_pagina, ancho, logo_png):
+    """Recorre el flujo ya construido simulando en qué página caerá
+    cada elemento (midiendo alturas con `wrap`, mismo principio que ya
+    se usó en V3 para el reparto de familias) y, allí donde quede un
+    hueco considerable al final de una página antes del pie, inserta
+    un `banner_gancho_grande` dimensionado para llenarlo exactamente
+    — a petición de Eloy: "sigo viendo mucho espacio en blanco en
+    todas las páginas... algo con gancho"."""
+    UMBRAL = 30 * mm
+    ALTO_MAX_GANCHO = 65 * mm
+    resultado = []
+    acumulado = 0.0
+    for elem in story:
+        try:
+            h = _medir_alto(elem, ancho)
+        except Exception:
+            resultado.append(elem)
+            continue
+        if h > capacidad_pagina:
+            resultado.append(elem)
+            acumulado = 0.0
+            continue
+        if acumulado + h > capacidad_pagina:
+            hueco = capacidad_pagina - acumulado
+            if hueco > UMBRAL:
+                resultado.append(banner_gancho_grande(ancho, min(hueco - 3 * mm, ALTO_MAX_GANCHO), logo_png))
+                resultado.append(Spacer(1, 3 * mm))
+            acumulado = h
+        else:
+            acumulado += h
+        resultado.append(elem)
+    # El hueco al FINAL del documento (tras el cierre) no se rellena
+    # aquí — es el punto donde más se acumula el pequeño desajuste
+    # entre esta medición aproximada y el renderizado real de
+    # ReportLab, y probarlo generó una página extra suelta con un
+    # bloque flotando solo y mucho más hueco todavía (verificado
+    # visualmente, descartado). El hueco tras el cierre es back con
+    # el final natural del documento, no un desperdicio de rejilla.
+    return resultado
+
+
 def make_header_footer(logo_png, tema, periodo):
     def hf(canvas, doc):
         canvas.saveState()
@@ -543,7 +640,8 @@ def construir_cierre(tema, logo_png, ancho):
                         'Precios con IVA incluido salvo indicación contraria.', est_p), Spacer(1, 4 * mm),
               Paragraph('ORENCIO MATAS Y HERMANOS, S.L.', est_dir),
               Paragraph('Av. Alfred Nobel, 2 · 13005 Ciudad Real', est_p), Spacer(1, 1.5 * mm),
-              Paragraph('Tel. 926 221 217 · correo@orenciomatas.es', est_p)]
+              Paragraph('Tel. 926 221 217 · correo@orenciomatas.es', est_p),
+              Paragraph('www.orenciomatas.es', est_p)]
     grafico = generar_imagen_ubicacion(_TemaColorAdapter(), ancho_px=640, alto_px=int(640 * 0.62))
     mapa = [RLImage(io.BytesIO(grafico), width=ancho_mapa, height=ancho_mapa * 0.62)]
     fila = Table([[texto, mapa]], colWidths=[ancho_texto, ancho_mapa])
@@ -593,6 +691,9 @@ def generar_pdf_flyer(periodo, tema, bloques, logo_png, out_path, resultado=None
             story += [banner_eslogan(eslogans[(i // 4) % len(eslogans)], CW), Spacer(1, 3 * mm)]
     story += agrupar_sueltos(pool, CW, cols=cols, logo_png=logo_png)
     story += construir_cierre(tema, logo_png, CW)
+
+    capacidad_pagina = FRAME_TOP - FRAME_BOTTOM
+    story = _rellenar_fin_pagina(story, capacidad_pagina, CW, logo_png)
 
     doc.build(story)
 

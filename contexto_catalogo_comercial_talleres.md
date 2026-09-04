@@ -1590,3 +1590,86 @@ navegador en una sesión futura donde Claude in Chrome esté conectado.
 Verificado con ambos temas y sin regresiones en los casos límite.
 Mismo catálogo de prueba, sigue en 3 páginas pese a imágenes más
 grandes.
+
+---
+
+## V4 — décima vuelta (mapa real de alta resolución, logos de fabricante, bloque gancho de fin de página, web en el cierre)
+Eloy compartió una captura de mapa mucho mejor y pidió tres cosas más:
+rellenar el espacio en blanco al final de cada página con "algo con
+gancho", añadir los logos de los fabricantes que se ofertan (Zaphiro,
+Besa, etc.), y la URL de la web nueva en la dirección de contacto.
+
+### Mapa real de alta resolución
+Eloy compartió una captura nueva (791×472px, ~3,5× más píxeles que la
+anterior de 426×226px). Sustituido el asset
+(`assets/mapa/ubicacion_orencio_matas.png`) y recalibrada la posición
+exacta de la chincheta: en vez de calcular a ojo, se analizaron los
+píxeles de la captura para encontrar el centro real del icono azul de
+Google Maps (`MARCADOR_FX=0.599, MARCADOR_FY=0.473`, antes
+0.526/0.429). Resultado nítido y con la chincheta apuntando
+exactamente al icono real, verificado visualmente.
+
+### Logos de fabricante — bug real encontrado y corregido
+Nueva `añadir_logo_fabricante()` en `imagenes.py`: compone el logo
+real del fabricante (Zaphiro, Besa, y preparado también Glasurit,
+Baslac, TitanTech, TitanPro para cuando aparezcan en el catálogo real)
+en la esquina inferior derecha de la foto de cada producto, con un
+fondo blanco semitransparente detrás para que se lea sobre cualquier
+foto. Reutiliza el campo `fabricante` que ya existía en el modelo de
+datos (`Producto.fabricante`) y los assets de logo que ya vivían en
+`assets/proveedores/` de sesiones anteriores del proyecto — no hizo
+falta pedir ni generar nada nuevo.
+
+**Bug real**: el primer logo de Zaphiro probado
+(`zaphiro_logo_transparente.png`) resultó ser blanco puro sobre fondo
+transparente — invisible sobre la insignia blanca (confirmado
+analizando los píxeles: todo el contenido opaco era RGB 255,255,255).
+Es la misma lección que ya se había documentado en sesiones anteriores
+del proyecto sobre este mismo logo. Corregido usando
+`zaphiro_logo_oscuro.png` (versión de color oscuro del mismo archivo,
+ya disponible en el repo) en su lugar.
+
+### Bloque "gancho" al final de cada página — con una regresión real detectada y corregida en el camino
+Nueva `banner_gancho_grande()` + `_rellenar_fin_pagina()`: simula en
+qué página caerá cada elemento del documento (midiendo alturas con
+`wrap()`) y, donde quede un hueco considerable antes del pie, inserta
+un bloque llamativo (logo + frase de gancho, rotando entre 3 mensajes
+y los 4 colores de `PALETA_LOGO`) dimensionado para llenarlo
+exactamente.
+
+**Problema real encontrado en la primera versión**: `KeepTogether.
+wrap()` lanza un error fuera del proceso normal de construcción del
+documento (necesita un `canvas` real asignado) — sin capturarlo, la
+simulación fallaba silenciosamente para cada banda de categoría.
+Corregido midiendo su contenido interno (`._content`) envuelto en una
+`Table` en vez de llamar a `.wrap()` sobre el propio `KeepTogether`.
+
+**Segunda regresión real, encontrada tras arreglar la primera**: con
+la medición ya funcionando, el hueco calculado al FINAL del documento
+(tras el cierre) resultó ir acumulando el pequeño desajuste entre esta
+medición aproximada y el renderizado real de ReportLab — el resultado
+visual era una PÁGINA EXTRA suelta con el bloque de gancho flotando
+solo y todavía más espacio en blanco alrededor, peor que el problema
+original. Detectado renderizando y mirando la página 4 generada.
+Corregido de forma conservadora: se dejó de intentar rellenar
+específicamente el hueco al final del documento (el punto donde más
+se nota el desajuste acumulado), se subió el umbral mínimo para
+intervenir (18mm→30mm) y se limitó la altura máxima del bloque
+insertado (65mm) para que, aunque la estimación esté algo desviada en
+algún punto intermedio, el efecto visual sea como mucho "un bloque
+algo más alto de lo ideal", nunca una página extra rota.
+
+### Web en el cierre
+Añadida la línea "www.orenciomatas.es" al bloque de dirección de
+contacto del cierre.
+
+### Resultado y limitación conocida
+Verificado visualmente: el hueco de la página intermedia del catálogo
+de prueba (página 2 de 3) se rellena correctamente con el bloque de
+gancho, llegando justo hasta el pie. La página 1 y la última (con el
+mapa) siguen con algo de espacio sin rellenar — el sistema de
+medición no es lo bastante preciso como para acertar en todas las
+páginas, y se priorizó deliberadamente evitar el riesgo de una página
+extra rota antes que perseguir el 100% de precisión. Sin regresiones
+en ambos temas ni en los casos límite (2 productos, catálogo con
+errores forzados).

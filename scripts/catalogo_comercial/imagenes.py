@@ -149,6 +149,57 @@ def añadir_badge_descuento(img: PILImage.Image, descuento_pct) -> PILImage.Imag
     return img
 
 
+RUTA_PROVEEDORES = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                                 'assets', 'proveedores')
+# Solo se listan aquí las marcas de las que Eloy confirmó que se dispone
+# de logo real en la web/assets del proyecto — nunca se inventa ni se
+# usa un logo genérico para una marca sin archivo propio.
+LOGOS_FABRICANTE = {
+    'zaphiro': 'zaphiro_logo_oscuro.png',
+    'besa': 'besa_logo_recortado.png',
+    'glasurit': 'Glaurit_recortado.png',
+    'baslac': 'Logo_baslac.jpg',
+    'titantech': 'logo-titantech.jpg',
+    'titanpro': 'LOGO-TITANPRO.png',
+}
+
+
+def añadir_logo_fabricante(img: PILImage.Image, fabricante) -> PILImage.Image:
+    """Insignia con el logo real del fabricante, pegada a la esquina
+    inferior derecha de la foto de producto (la cinta de descuento ya
+    ocupa la superior izquierda — ver `añadir_badge_descuento`). Fondo
+    blanco semitransparente detrás del logo para que se lea sobre
+    cualquier foto, clara u oscura. A petición de Eloy: "que aparezca
+    el logo de los productos que ofertamos... de las que disponemos en
+    la web (Zaphiro, Besa, etc)"."""
+    if not fabricante:
+        return img
+    archivo = LOGOS_FABRICANTE.get(fabricante.strip().lower())
+    if not archivo:
+        return img
+    ruta = os.path.join(RUTA_PROVEEDORES, archivo)
+    if not os.path.exists(ruta):
+        return img
+    img = img.copy().convert('RGBA')
+    w, h = img.size
+    logo = PILImage.open(ruta).convert('RGBA')
+    lw, lh = logo.size
+    ancho_destino = int(w * 0.34)
+    alto_destino = max(1, int(ancho_destino * lh / lw))
+    alto_max = int(h * 0.17)
+    if alto_destino > alto_max:
+        alto_destino = alto_max
+        ancho_destino = max(1, int(alto_destino * lw / lh))
+    logo_r = logo.resize((ancho_destino, alto_destino), PILImage.LANCZOS)
+    pad = max(2, int(alto_destino * 0.22))
+    badge = PILImage.new('RGBA', (ancho_destino + pad * 2, alto_destino + pad * 2), (255, 255, 255, 230))
+    badge.paste(logo_r, (pad, pad), logo_r)
+    x = w - badge.width - max(2, int(w * 0.02))
+    y = h - badge.height - max(2, int(h * 0.02))
+    img.alpha_composite(badge, (x, y))
+    return img.convert('RGB')
+
+
 def pil_to_bytes(img: PILImage.Image, calidad=92) -> bytes:
     buf = io.BytesIO()
     img.save(buf, 'JPEG', quality=calidad, optimize=True)
@@ -193,4 +244,5 @@ def imagen_para_producto(producto, tamano=400, cuadrado=True) -> PILImage.Image:
         img = generar_placeholder(producto.nombre, tamano=tamano)
     if producto.oferta and producto.descuento_pct and producto.descuento_pct > 0:
         img = añadir_badge_descuento(img, producto.descuento_pct)
+    img = añadir_logo_fabricante(img, producto.fabricante)
     return img

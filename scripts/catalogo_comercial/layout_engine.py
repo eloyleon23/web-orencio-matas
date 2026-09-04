@@ -77,7 +77,7 @@ def _quizas_redondear(contenido, ancho, tema, color_borde=None, radio=6, relleno
 
 RUTA_MAPA_REAL = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                                'assets', 'mapa', 'ubicacion_orencio_matas.png')
-MARCADOR_FX, MARCADOR_FY = 0.526, 0.429
+MARCADOR_FX, MARCADOR_FY = 0.599, 0.473
 
 
 def _c(hexcolor: str):
