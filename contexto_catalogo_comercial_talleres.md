@@ -1329,3 +1329,56 @@ mejora en el tema de Navidad (verificado que el título más largo
 "CAMPAÑA DE NAVIDAD 2026" sigue sin chocar con la pegatina de
 estallido, pese a la banda más pequeña). Sin regresiones en el caso
 límite de 2 productos ni en el catálogo con errores forzados.
+
+---
+
+## V4 — cuarta vuelta (tarjetas de altura uniforme + agrupación generalizada de restos)
+Eloy señaló dos problemas reales muy concretos: "las cajas de los
+productos no tienen los mismos tamaños, hay algunos que son más
+grandes que otros siendo la imagen pequeña" y "hay familias con dos
+productos por fila. En esa fila habría que introducir otra familia con
+dos productos o bien dos familias con un producto cada una".
+
+### Bug real — tarjetas de distinto tamaño con la misma imagen
+Causa real: dentro de una fila, `Table` estira la ALTURA de la fila a
+la más alta (por ejemplo, un producto con nombre de 3 líneas), pero
+cada tarjeta es su propia `CajaRedondeada` con el borde ajustado a SU
+PROPIA altura de contenido — así que las tarjetas con nombres más
+cortos quedaban con su caja más pequeña, flotando dentro de una fila
+más alta, dando la sensación de tamaños distintos con la misma imagen
+pequeña. Corregido reservando una altura FIJA para cada bloque interno
+de la tarjeta (etiqueta de familia, nombre+referencia, precio) en vez
+de dejar que el texto determine la altura — ahora todas las tarjetas
+del catálogo miden EXACTAMENTE lo mismo, no solo dentro de una fila
+sino en todo el documento. Como efecto añadido, la pegatina de precio
+(roja) queda siempre a la misma altura entre tarjetas de la misma fila
+aunque unas tengan descuento (con tachado encima) y otras no.
+
+### Generalización de la agrupación — de "familias de 1" a "cualquier resto de fila"
+`agrupar_sueltos()` (de la vuelta anterior) solo agrupaba familias
+ENTERAS de un único producto. Nueva función `preparar_grupos()`:
+separa cada familia en (a) sus filas COMPLETAS (múltiplos de columnas,
+que sí se quedan con banda de categoría propia) y (b) lo que sobra sin
+llegar a llenar una fila — tanto si sobran 1-3 productos de una
+familia grande como si la familia entera es más pequeña que una fila.
+TODO lo que sobra de TODAS las familias se junta en un único mazo
+(cada producto etiquetado con su familia) y se reparte después en
+filas compartidas. Verificado visualmente: una fila de la rejilla de
+"sueltos" combina ahora 2 productos de ABRASIVOS (el resto de una
+familia de 6) + 1 de PRODUCTOS CHAPISTA + 1 de PROTECCIÓN LABORAL,
+exactamente el ejemplo que puso Eloy.
+
+### Bug real encontrado y corregido durante la implementación
+La altura fija reservada para la etiqueta de familia dentro de las
+tarjetas "sueltas" (3,6mm) no era suficiente para nombres largos como
+"PREPARACIÓN DE PINTURAS COMPLEMENTOS" — la segunda línea se recortaba
+visualmente. Corregido a 6,2mm (dos líneas completas) tras comprobar
+la longitud real de todos los nombres de familia del catálogo de
+prueba, no solo a ojo.
+
+### Resultado
+Mismo catálogo de prueba: de **3 a 2 páginas**. Todas las tarjetas
+miden exactamente lo mismo en todo el documento. Sin regresiones en
+ambos temas, el caso límite de 2 productos (ahora tratado como "resto"
+y agrupado igualmente, ya que 2 < 4 columnas) ni el catálogo con
+errores forzados.

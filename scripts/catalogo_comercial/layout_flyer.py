@@ -125,6 +125,18 @@ def sticker_precio_flyer(p, ancho, alto=9 * mm):
 
 # ── Tarjeta de producto — imagen (con cinta de descuento ya incrustada ──
 # por imagenes.py) + nombre + precio, dentro de una caja con borde. ──────
+# Todas las medidas internas (etiqueta, nombre, precio) son de ALTURA
+# FIJA — así todas las tarjetas del catálogo miden exactamente lo
+# mismo, tenga el producto un nombre corto o uno que ocupe 2 líneas.
+# Antes cada tarjeta se ajustaba a su propio contenido y la fila entera
+# se estiraba a la más alta, dejando aire suelto dentro de las tarjetas
+# más cortas (bug real señalado por Eloy: "las cajas no tienen los
+# mismos tamaños").
+ALTO_ETIQUETA_FAM = 6.2 * mm
+ALTO_NOMBRE = 8.4 * mm
+ALTO_PRECIO = 9.5 * mm
+
+
 def tarjeta_producto(p, ancho, alto_img=26 * mm, etiqueta_familia=None):
     pil = imagen_para_producto(p, tamano=500, cuadrado=True)  # ya trae la cinta roja si hay oferta
     iw, ih = pil.size
@@ -141,22 +153,30 @@ def tarjeta_producto(p, ancho, alto_img=26 * mm, etiqueta_familia=None):
                                  alignment=TA_CENTER, leading=8.2)
     est_ref = ParagraphStyle('tr', fontName='Helvetica', fontSize=5.5, textColor=_c('#9AA0A6'),
                               alignment=TA_CENTER, leading=6.8)
+    celda_nombre = Table([[[Paragraph(p.nombre, est_nombre), Paragraph(f'Ref: {p.referencia}', est_ref)]]],
+                          colWidths=[ancho], rowHeights=[ALTO_NOMBRE])
+    celda_nombre.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                                       ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
+
+    celda_precio = Table([[sticker_precio_flyer(p, ancho - 5 * mm)]], colWidths=[ancho], rowHeights=[ALTO_PRECIO])
+    celda_precio.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+                                       ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
 
     contenido = []
     if etiqueta_familia:
-        # Tarjetas "sueltas" (familias de 1 solo producto, agrupadas
-        # juntas para no dejar huecos — ver `agrupar_sueltos`): sin
-        # banda de categoría propia, así que el nombre de familia va
-        # integrado como una etiqueta pequeña dentro de la tarjeta.
+        # Tarjetas "sueltas" (familias con menos productos que columnas
+        # tiene la rejilla, agrupadas juntas para no dejar huecos — ver
+        # `agrupar_sueltos`): sin banda de categoría propia, así que el
+        # nombre de familia va integrado como una etiqueta pequeña de
+        # altura fija dentro de la tarjeta.
         est_fam = ParagraphStyle('tf', fontName='Helvetica-Bold', fontSize=5.8, textColor=_c(COLOR_CABECERA),
                                   alignment=TA_CENTER, leading=7)
-        contenido.append(Paragraph(etiqueta_familia.upper(), est_fam))
-        contenido.append(Spacer(1, 0.8 * mm))
-    contenido += [
-        celda_img, Spacer(1, 1 * mm),
-        Paragraph(p.nombre, est_nombre), Paragraph(f'Ref: {p.referencia}', est_ref),
-        Spacer(1, 1 * mm),
-    ] + sticker_precio_flyer(p, ancho - 5 * mm)
+        celda_etiq = Table([[Paragraph(etiqueta_familia.upper(), est_fam)]], colWidths=[ancho],
+                            rowHeights=[ALTO_ETIQUETA_FAM])
+        celda_etiq.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                         ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
+        contenido.append(celda_etiq)
+    contenido += [celda_img, Spacer(1, 1 * mm), celda_nombre, Spacer(1, 1 * mm), celda_precio]
     tabla = Table([[contenido]], colWidths=[ancho])
     tabla.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -178,17 +198,16 @@ def _fila_con_relleno(tarjetas, cols, centrar=True):
     return [''] * izq + tarjetas + [''] * der
 
 
-def grid_categoria(bloque, ancho, cols=4, alto_img=26 * mm):
+def grid_categoria(bloque, ancho, cols=4, alto_img=26 * mm, productos=None):
     """Cabecera de categoría + rejilla de tarjetas — la cabecera va
     unida (KeepTogether) a la PRIMERA fila de tarjetas para que nunca
-    quede huérfana al final de una página. Solo se usa para familias
-    con MÁS de un producto — las de un único producto se agrupan aparte
-    (ver `agrupar_sueltos`) para no dejar huecos en blanco: se probó a
-    ensanchar la tarjeta de una familia de 1 solo producto para que
-    ocupara todo el ancho, pero el resultado se veía peor (imagen
-    pequeña perdida en una tarjeta enorme) — agruparlas junto a otras
-    en su misma situación es la solución que sí funciona."""
-    productos = [p for e in bloque.elementos if isinstance(e, ElementoGrid) for p in e.productos]
+    quede huérfana al final de una página. Recibe `productos` ya
+    filtrado (solo las filas COMPLETAS de esa familia — ver
+    `preparar_grupos`); lo que sobre de esa familia sin llegar a llenar
+    una fila entera se agrupa aparte con sobras de otras familias (ver
+    `agrupar_sueltos`) para no dejar ninguna fila a medias."""
+    if productos is None:
+        productos = [p for e in bloque.elementos if isinstance(e, ElementoGrid) for p in e.productos]
     if not productos:
         return []
     ancho_col = ancho / cols
@@ -219,20 +238,46 @@ def grid_categoria(bloque, ancho, cols=4, alto_img=26 * mm):
     return resultado
 
 
-def agrupar_sueltos(bloques_single, ancho, cols=4, alto_img=26 * mm):
-    """Familias de UN SOLO producto: en vez de que cada una abra su
-    propia banda de categoría (y deje 3 de 4 columnas en blanco al
-    lado), se agrupan todas juntas en una única rejilla compartida —
-    cada tarjeta lleva su propio nombre de familia como etiqueta
-    interna. Justo lo que pidió Eloy: 'acopla productos que solo haya
-    uno de la familia al lado de otros en su misma situación'."""
-    if not bloques_single:
+def preparar_grupos(bloques, cols):
+    """Separa cada familia en (a) sus filas COMPLETAS (múltiplos de
+    `cols`, que sí llenan la rejilla entera y se quedan con su banda de
+    categoría propia) y (b) lo que sobra sin llegar a llenar una fila
+    — tanto si sobran 1-3 productos de una familia grande como si la
+    familia ENTERA tiene menos productos que columnas. Todo lo que
+    sobra de TODAS las familias se junta en un único mazo (cada
+    producto etiquetado con su propia familia) para repartirlo después
+    en filas compartidas sin huecos — ver `agrupar_sueltos`.
+
+    Esto es la generalización de lo que ya hacía para familias de un
+    solo producto: ahora una familia con 2 productos (que antes se
+    quedaba sola en una fila con 2 huecos en blanco) también se agrupa
+    con otras en su misma situación, tal como pidió Eloy."""
+    completas = []
+    pool = []
+    for b in bloques:
+        productos = [p for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]
+        if not productos:
+            continue
+        n_completas = (len(productos) // cols) * cols
+        if n_completas > 0:
+            completas.append((b, productos[:n_completas]))
+        for p in productos[n_completas:]:
+            pool.append((p, b.familia))
+    return completas, pool
+
+
+def agrupar_sueltos(pool, ancho, cols=4, alto_img=26 * mm):
+    """Reparte en una rejilla compartida todo lo que no llegó a llenar
+    una fila completa de su propia familia (`pool`, lista de
+    (producto, nombre_familia)) — sin banda de categoría propia, cada
+    tarjeta lleva su nombre de familia como etiqueta interna. Justo lo
+    que pidió Eloy: 'acopla productos que solo haya uno de la familia
+    al lado de otros en su misma situación' — generalizado a CUALQUIER
+    sobra de fila, no solo a familias enteras de un único producto."""
+    if not pool:
         return []
     ancho_col = ancho / cols
-    tarjetas = []
-    for b in bloques_single:
-        p = [prod for e in b.elementos if isinstance(e, ElementoGrid) for prod in e.productos][0]
-        tarjetas.append(tarjeta_producto(p, ancho_col, alto_img, etiqueta_familia=b.familia))
+    tarjetas = [tarjeta_producto(p, ancho_col, alto_img, etiqueta_familia=nombre_fam) for p, nombre_fam in pool]
 
     filas = []
     fila_actual = []
@@ -412,11 +457,10 @@ def generar_pdf_flyer(periodo, tema, bloques, logo_png, out_path, resultado=None
     doc = _DocConExtras(out_path, pagesize=A4, pageTemplates=[tpl], dibujar_despues_pagina=dibujar_despues_pagina)
 
     story = list(story_portada)
-    multi = [b for b in bloques if len([p for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]) > 1]
-    single = [b for b in bloques if len([p for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]) == 1]
-    for bloque in multi:
-        story += grid_categoria(bloque, CW, cols=cols)
-    story += agrupar_sueltos(single, CW, cols=cols)
+    completas, pool = preparar_grupos(bloques, cols)
+    for bloque, productos in completas:
+        story += grid_categoria(bloque, CW, cols=cols, productos=productos)
+    story += agrupar_sueltos(pool, CW, cols=cols)
     story += construir_cierre(tema, logo_png, CW)
 
     doc.build(story)
