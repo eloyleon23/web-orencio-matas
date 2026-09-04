@@ -1435,3 +1435,43 @@ Mismo catálogo de prueba: sigue en **2 páginas** pese a las imágenes
 más grandes (el resto de recortes de la vuelta anterior dejaron
 margen de sobra). Verificado con ambos temas y sin regresiones en los
 casos límite.
+
+---
+
+## V4 — sexta vuelta (bug real: casi todas las categorías perdían su banda propia)
+Eloy reportó: "las categorías o familias solo está apareciendo una. El
+resto no están apareciendo" — y tras pedir aclaración, confirmó que
+veía 2 páginas pero solo la banda de "Herramientas" visible como
+categoría propia.
+
+### Diagnóstico
+No era un fallo de renderizado — comprobé con extracción de texto que
+los 13 nombres de familia SÍ estaban en el PDF. El problema real era
+de diseño: en la vuelta anterior, `preparar_grupos()` generalizó la
+agrupación de "restos" a CUALQUIER familia que no fuera múltiplo
+exacto de `cols` (4) — con un catálogo de 13 familias donde la
+mayoría tiene 1-3 productos, solo `HERRAMIENTAS` (con exactamente 4)
+conservaba banda de categoría propia; las otras 12 perdían su
+identidad visual y quedaban reducidas a una etiqueta de texto pequeña
+dentro de una rejilla compartida anónima. Confirmado renderizando y
+comparando: exactamente el síntoma descrito.
+
+### Corrección
+`preparar_grupos()` reescrita: el umbral para agrupar deja de ser "no
+es múltiplo de columnas" y pasa a ser simplemente "tiene 1 solo
+producto". Cualquier familia con 2 o más productos conserva SIEMPRE su
+banda de categoría propia y muestra TODOS sus productos (con la última
+fila centrada si no llega a llenar la rejilla) — aunque eso implique
+algo de espacio sin aprovechar al final de esa fila. Solo las familias
+de un único producto se agrupan juntas sin banda propia, como ya
+hacía la versión de hace dos vueltas (con la que Eloy no había puesto
+ninguna objeción sobre categorías desaparecidas).
+
+### Resultado
+Mismo catálogo de prueba: de 2 a 3 páginas (coste aceptado a cambio de
+que cada categoría vuelva a ser identificable de un vistazo — la
+identidad de cada familia importa más que apurar el último milímetro
+de espacio en blanco). Todas las mejoras de la vuelta anterior
+(descuentos resaltados, estallido corregido, eslogan, imágenes más
+grandes, acentos de color) se mantienen intactas. Verificado con
+ambos temas y sin regresiones en los casos límite.

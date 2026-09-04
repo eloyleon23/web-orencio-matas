@@ -256,30 +256,34 @@ def grid_categoria(bloque, ancho, cols=4, alto_img=32 * mm, productos=None):
 
 
 def preparar_grupos(bloques, cols):
-    """Separa cada familia en (a) sus filas COMPLETAS (múltiplos de
-    `cols`, que sí llenan la rejilla entera y se quedan con su banda de
-    categoría propia) y (b) lo que sobra sin llegar a llenar una fila
-    — tanto si sobran 1-3 productos de una familia grande como si la
-    familia ENTERA tiene menos productos que columnas. Todo lo que
-    sobra de TODAS las familias se junta en un único mazo (cada
-    producto etiquetado con su propia familia) para repartirlo después
-    en filas compartidas sin huecos — ver `agrupar_sueltos`.
+    """Separa las familias en (a) las que tienen 2 o más productos —
+    se quedan con su banda de categoría propia, mostrando TODOS sus
+    productos (aunque la última fila no llegue a llenar la rejilla
+    entera, centrada) — y (b) las familias de UN SOLO producto, que se
+    agrupan aparte sin banda propia (ver `agrupar_sueltos`) para no
+    dejar 3 de 4 columnas en blanco al lado de una única tarjeta.
 
-    Esto es la generalización de lo que ya hacía para familias de un
-    solo producto: ahora una familia con 2 productos (que antes se
-    quedaba sola en una fila con 2 huecos en blanco) también se agrupa
-    con otras en su misma situación, tal como pidió Eloy."""
+    Se probó antes a generalizar esto también a los RESTOS de familias
+    grandes (p.ej. agrupar los 2 productos que sobran de una familia
+    de 6 junto con otras familias pequeñas) — el resultado, con un
+    catálogo real de muchas familias pequeñas, era que casi ninguna
+    familia conservaba su propia banda (Eloy: "solo aparece Herramientas,
+    el resto no aparecen") — la categoría dejaba de leerse como tal.
+    Revertido: cada familia con 2+ productos SIEMPRE tiene su propia
+    banda visible, aunque eso implique algo de espacio sin usar al
+    final de su última fila — la identidad de cada categoría importa
+    más que apurar el último milímetro."""
     completas = []
     pool = []
     for b in bloques:
         productos = [p for e in b.elementos if isinstance(e, ElementoGrid) for p in e.productos]
         if not productos:
             continue
-        n_completas = (len(productos) // cols) * cols
-        if n_completas > 0:
-            completas.append((b, productos[:n_completas]))
-        for p in productos[n_completas:]:
-            pool.append((p, b.familia))
+        if len(productos) >= 2:
+            completas.append((b, productos))
+        else:
+            for p in productos:
+                pool.append((p, b.familia))
     return completas, pool
 
 
