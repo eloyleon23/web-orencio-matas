@@ -420,6 +420,46 @@ def banner_eslogan(texto, ancho, alto=8 * mm):
     return t
 
 
+class GanchoElastico(Flowable):
+    """Flowable "autoconsciente" — en vez de intentar PREDECIR cuánto
+    hueco quedará al final de cada página (lo que se probó primero con
+    una simulación de dos pasadas, y falló: `afterFlowable` de
+    ReportLab dispara una vez por cada sub-elemento interno, no una
+    vez por cada elemento de la lista que se le pasa a `doc.build()`,
+    así que los índices nunca coincidían con los del flujo original),
+    esta clase usa el hueco REAL que ReportLab le ofrece en su propio
+    `wrap()` — llamado en el momento exacto en que se coloca, con el
+    `availHeight` real que queda en la página en ese punto. Solo
+    reclama ese hueco si está en un rango "razonable" (ver
+    `MIN_ALTO`/`MAX_ALTO`): ni tan pequeño que no valga la pena, ni tan
+    grande que sea evidente que acaba de empezar una página nueva (en
+    ese caso no hay "hueco al final", hay una página entera por
+    delante, y no hay que rellenar nada ahí)."""
+    MIN_ALTO = 15 * mm
+    MAX_ALTO = 90 * mm
+
+    def __init__(self, ancho, logo_png=None):
+        Flowable.__init__(self)
+        self.ancho = ancho
+        self.logo_png = logo_png
+        self._contenido = None
+        self._alto = 0.0
+
+    def wrap(self, availWidth, availHeight):
+        if availHeight < self.MIN_ALTO or availHeight > self.MAX_ALTO:
+            self._contenido = None
+            self._alto = 0.0
+            return (availWidth, 0.0)
+        self._contenido = banner_gancho_grande(self.ancho, availHeight - 1 * mm, self.logo_png)
+        _, h = self._contenido.wrap(availWidth, availHeight)
+        self._alto = h
+        return (availWidth, h)
+
+    def draw(self):
+        if self._contenido is not None and self._alto > 0:
+            self._contenido.drawOn(self.canv, 0, 0)
+
+
 def banner_gancho_grande(ancho, alto_objetivo, logo_png=None):
     """Bloque de cierre de página llamativo — a petición de Eloy:
     "añade un bloque justo abajo de cada página entre el pie y los
@@ -462,59 +502,6 @@ def banner_gancho_grande(ancho, alto_objetivo, logo_png=None):
             ('TOPPADDING', (0, 0), (-1, -1), 4 + extra / 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 4 + extra / 2),
         ]))
     return CajaRedondeada(celda, _c(color_fondo), radio=4, grosor=1.2, relleno=_c(color_fondo))
-
-
-def _medir_alto(elem, ancho):
-    """`KeepTogether.wrap()` necesita un `canvas` real asignado (falla
-    fuera del proceso normal de construcción del documento) — para
-    poder medir su altura en la simulación de `_rellenar_fin_pagina` se
-    mide su contenido interno directamente envuelto en una Table, en
-    vez de llamar a `.wrap()` sobre el propio KeepTogether."""
-    if isinstance(elem, KeepTogether):
-        t = Table([[elem._content]], colWidths=[ancho])
-        return t.wrap(ancho, 100000)[1]
-    return elem.wrap(ancho, 100000)[1]
-
-
-def _rellenar_fin_pagina(story, capacidad_pagina, ancho, logo_png):
-    """Recorre el flujo ya construido simulando en qué página caerá
-    cada elemento (midiendo alturas con `wrap`, mismo principio que ya
-    se usó en V3 para el reparto de familias) y, allí donde quede un
-    hueco considerable al final de una página antes del pie, inserta
-    un `banner_gancho_grande` dimensionado para llenarlo exactamente
-    — a petición de Eloy: "sigo viendo mucho espacio en blanco en
-    todas las páginas... algo con gancho"."""
-    UMBRAL = 30 * mm
-    ALTO_MAX_GANCHO = 65 * mm
-    resultado = []
-    acumulado = 0.0
-    for elem in story:
-        try:
-            h = _medir_alto(elem, ancho)
-        except Exception:
-            resultado.append(elem)
-            continue
-        if h > capacidad_pagina:
-            resultado.append(elem)
-            acumulado = 0.0
-            continue
-        if acumulado + h > capacidad_pagina:
-            hueco = capacidad_pagina - acumulado
-            if hueco > UMBRAL:
-                resultado.append(banner_gancho_grande(ancho, min(hueco - 3 * mm, ALTO_MAX_GANCHO), logo_png))
-                resultado.append(Spacer(1, 3 * mm))
-            acumulado = h
-        else:
-            acumulado += h
-        resultado.append(elem)
-    # El hueco al FINAL del documento (tras el cierre) no se rellena
-    # aquí — es el punto donde más se acumula el pequeño desajuste
-    # entre esta medición aproximada y el renderizado real de
-    # ReportLab, y probarlo generó una página extra suelta con un
-    # bloque flotando solo y mucho más hueco todavía (verificado
-    # visualmente, descartado). El hueco tras el cierre es back con
-    # el final natural del documento, no un desperdicio de rejilla.
-    return resultado
 
 
 def make_header_footer(logo_png, tema, periodo):
@@ -660,21 +647,28 @@ class _TemaColorAdapter:
 
 # ── Orquestador ───────────────────────────────────────────────────────
 def generar_pdf_flyer(periodo, tema, bloques, logo_png, out_path, resultado=None, cols=4):
+    """Genera el documento a una sola pasada. Para rellenar el hueco
+    real al final de cada página (petición de Eloy: "la primera página
+    y la última siguen teniendo espacio en blanco al final") se usa
+    `GanchoElastico` — un Flowable que consulta el hueco REAL que le
+    ofrece ReportLab en su propio `wrap()` en el momento exacto en que
+    se coloca, en vez de intentar PREDECIRLO de antemano.
+
+    (Se probó antes una simulación de dos pasadas — construir el
+    documento "en seco" para medir posiciones reales con
+    `afterFlowable` y luego reinsertar en una segunda construcción —
+    pero `afterFlowable` de ReportLab dispara una vez por cada
+    sub-elemento INTERNO al colocar cada flowable en el frame, no una
+    vez por cada elemento de la lista que se le pasa a `doc.build()` —
+    los índices nunca coincidían con los de la lista original (19
+    elementos de la lista vs 35 disparos de `afterFlowable` en el
+    catálogo de prueba). Descartado por sencillamente no ser el modelo
+    correcto de la API — `GanchoElastico` no tiene ese problema porque
+    no intenta correlacionar índices con nada, solo reacciona al hueco
+    real que le llega en su propio `wrap()`.)"""
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-    frame = Frame(MARGIN, FRAME_BOTTOM, CW, FRAME_TOP - FRAME_BOTTOM,
-                   leftPadding=0, rightPadding=0, topPadding=2, bottomPadding=0, id='unica')
-    tpl = PageTemplate(id='contenido', frames=[frame], onPage=make_header_footer(logo_png, tema, periodo))
-
     story_portada, descuento_max = construir_portada(periodo, tema, bloques, logo_png, CW)
-
-    def dibujar_despues_pagina(canvas, doc):
-        sticker = _dibujar_sticker_portada(descuento_max)
-        if sticker:
-            sticker(canvas, doc)
-
-    doc = _DocConExtras(out_path, pagesize=A4, pageTemplates=[tpl], dibujar_despues_pagina=dibujar_despues_pagina)
-
     story = list(story_portada)
     completas, pool = preparar_grupos(bloques, cols)
     eslogans = [
@@ -684,17 +678,24 @@ def generar_pdf_flyer(periodo, tema, bloques, logo_png, out_path, resultado=None
     ]
     for i, (bloque, productos) in enumerate(completas):
         story += grid_categoria(bloque, CW, cols=cols, productos=productos, logo_png=logo_png)
-        # Cada pocas categorías se intercala un eslogan llamativo — a
-        # petición de Eloy, para romper la monotonía visual entre
-        # bloques de productos, no solo en el pie de página.
+        story.append(GanchoElastico(CW, logo_png))
         if (i + 1) % 4 == 0 and i + 1 < len(completas):
             story += [banner_eslogan(eslogans[(i // 4) % len(eslogans)], CW), Spacer(1, 3 * mm)]
     story += agrupar_sueltos(pool, CW, cols=cols, logo_png=logo_png)
+    story.append(GanchoElastico(CW, logo_png))
     story += construir_cierre(tema, logo_png, CW)
+    story.append(GanchoElastico(CW, logo_png))
 
-    capacidad_pagina = FRAME_TOP - FRAME_BOTTOM
-    story = _rellenar_fin_pagina(story, capacidad_pagina, CW, logo_png)
+    frame = Frame(MARGIN, FRAME_BOTTOM, CW, FRAME_TOP - FRAME_BOTTOM,
+                   leftPadding=0, rightPadding=0, topPadding=2, bottomPadding=0, id='unica')
+    tpl = PageTemplate(id='contenido', frames=[frame], onPage=make_header_footer(logo_png, tema, periodo))
 
+    def dibujar_despues_pagina(canvas, doc):
+        sticker = _dibujar_sticker_portada(descuento_max)
+        if sticker:
+            sticker(canvas, doc)
+
+    doc = _DocConExtras(out_path, pagesize=A4, pageTemplates=[tpl], dibujar_despues_pagina=dibujar_despues_pagina)
     doc.build(story)
 
     total_productos = sum(len(e.productos) for b in bloques for e in b.elementos if isinstance(e, ElementoGrid))

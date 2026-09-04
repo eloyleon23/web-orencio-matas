@@ -1673,3 +1673,68 @@ páginas, y se priorizó deliberadamente evitar el riesgo de una página
 extra rota antes que perseguir el 100% de precisión. Sin regresiones
 en ambos temas ni en los casos límite (2 productos, catálogo con
 errores forzados).
+
+---
+
+## V4 — undécima vuelta (bloque gancho: rediseño robusto, límite real documentado)
+Eloy insistió: "la primera página y la última siguen teniendo espacio
+en blanco al final". Se abordó con un rediseño completo del mecanismo,
+con dos intentos reales antes de asentarse en el estado actual.
+
+### Intento 1 (descartado): simulación de dos pasadas con datos reales
+Se implementó una subclase de `BaseDocTemplate` con `afterFlowable()`
+para grabar, en una construcción "en seco" a un archivo temporal, la
+página y el hueco real tras cada elemento del documento (usando
+`self.frame._y - self.frame._y1`, dato real de ReportLab, no una
+estimación con `wrap()` como en el intento de la vuelta anterior).
+
+**Bug real que lo descartó**: `afterFlowable()` dispara una vez por
+cada sub-elemento INTERNO que ReportLab coloca en el frame, no una vez
+por cada elemento de la lista que se le pasa a `doc.build()` —
+comprobado con datos reales: 19 elementos en la lista original
+generaron 35 disparos de `afterFlowable`. Los índices nunca podían
+coincidir entre el registro y la reconstrucción del flujo, así que las
+inserciones caían en el sitio equivocado (verificado: sin ningún
+cambio visible en la página 1 pese a que los datos medidos eran
+correctos).
+
+### Intento 2 (adoptado, con límite real documentado): Flowable autoconsciente
+`GanchoElastico`: en vez de predecir el hueco de antemano, es un
+Flowable que en su propio método `wrap(availWidth, availHeight)`
+recibe el hueco REAL que ReportLab le ofrece en el momento exacto en
+que se coloca — sin ninguna simulación previa. Solo reclama ese hueco
+si cae dentro de un rango razonable (`MIN_ALTO=15mm`,
+`MAX_ALTO=90mm`): ni tan pequeño que no valga la pena, ni tan grande
+que sea probable que se trate de espacio que la SIGUIENTE categoría
+podría aprovechar con normalidad.
+
+**Límite real encontrado al ajustar el rango**: se probó a ampliar
+`MAX_ALTO` a 220mm para intentar cubrir también los huecos grandes de
+la página 1 — el resultado fue una explosión a 8 páginas (de las 3
+normales). Causa: al reclamar agresivamente cualquier hueco grande,
+el bloque "roba" espacio que la categoría siguiente habría ocupado con
+total normalidad, empujándola a una página nueva de forma innecesaria,
+en cascada. Revertido a `MAX_ALTO=90mm` (el valor estable) tras
+confirmar el problema visualmente.
+
+### Estado real, sin adornar
+El mecanismo rellena huecos MODERADOS (15-90mm) de forma robusta y
+sin efectos secundarios. Los huecos GRANDES que quedan en la página 1
+y en la última página del catálogo de prueba **no se resuelven** con
+este mecanismo — intentarlo de forma agresiva resultó, de forma
+demostrada, en un problema peor (páginas de más) que el que se
+pretendía arreglar. No se ha encontrado en esta sesión una forma de
+distinguir de forma fiable, solo con la información que ofrece
+`wrap()`, entre "esto es el final real de una página con mucho hueco
+sin usar" y "esto es hueco intermedio que la siguiente categoría va a
+ocupar con normalidad" — ambos casos pueden presentar un
+`availHeight` igual de grande en el momento de la llamada.
+
+### Pendiente honesto
+Si se quiere cerrar del todo el hueco de páginas concretas, el camino
+que queda por explorar (no abordado por límite de tiempo de esta
+sesión) sería un sistema de "mirar hacia adelante" — conocer de
+antemano la altura de la SIGUIENTE categoría antes de decidir si el
+`GanchoElastico` debe reclamar el hueco o cederlo, en vez de decidir
+solo con el hueco disponible en ese instante. Es una pieza de trabajo
+más grande, no un simple ajuste de umbral.
