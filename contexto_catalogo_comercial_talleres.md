@@ -1475,3 +1475,39 @@ de espacio en blanco). Todas las mejoras de la vuelta anterior
 (descuentos resaltados, estallido corregido, eslogan, imágenes más
 grandes, acentos de color) se mantienen intactas. Verificado con
 ambos temas y sin regresiones en los casos límite.
+
+---
+
+## V4 — séptima vuelta (rellenar huecos con eslogan, logo o icono de %)
+Eloy pidió llenar los espacios en blanco de las filas incompletas con
+contenido real en vez de dejarlos vacíos: "bien con algún eslogan de
+gancho, otros con el logo nuestro y con algún icono de % a modo de
+descuento... en general no quiero que haya huecos en blanco".
+
+### Nueva `tarjeta_relleno()`
+Genera una tarjeta decorativa que mide EXACTAMENTE lo mismo que una
+tarjeta de producto normal (calculado a partir de las mismas
+constantes de altura fija — `ALTO_NOMBRE`, `ALTO_PRECIO`, y
+`ALTO_ETIQUETA_FAM` cuando hace falta encajar en la rejilla de
+"sueltos"), así que sustituye los huecos vacíos sin descuadrar la
+fila. Rota entre 3 variantes deterministas:
+- **Eslogan**: fondo antracita, frase corta en blanco y negrita
+  ("¡No te lo pierdas!", "¡Aprovecha ahora!"...).
+- **Icono de "%"**: fondo amarillo (color de descuento), un "%" grande
+  en rojo + "OFERTAS DEL MES" debajo.
+- **Logo**: fondo blanco, el logo de la empresa centrado +
+  "orenciomatas.es" debajo.
+
+`_fila_con_relleno()` (ya existía para centrar filas incompletas) pasa
+de rellenar con celdas vacías (`''`) a rellenar con estas tarjetas
+reales. Se aplica tanto a las filas incompletas de una familia con
+banda propia como a la última fila de la rejilla de "sueltos".
+
+### Resultado
+Verificado visualmente: cada hueco que antes quedaba en blanco ahora
+tiene una de las tres variantes, con buena mezcla en todo el
+documento (nunca dos iguales seguidas). Mismo catálogo de prueba,
+sigue en 3 páginas (el número de página no cambia, solo se rellena lo
+que ya estaba vacío). Verificado con ambos temas y el caso límite de 2
+productos — el hueco de esa única fila también se rellena
+correctamente con el icono de "%" y el logo.
