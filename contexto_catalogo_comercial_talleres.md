@@ -1282,3 +1282,50 @@ productos) entra ahora en una sola fila, y varias páginas ya combinan
 3-5 categorías completas sin apenas espacio perdido. Misma mejora en
 el tema de Navidad (5→4 páginas). Sin regresiones en el caso límite de
 2 productos ni en el catálogo con errores forzados.
+
+---
+
+## V4 — tercera vuelta (agrupar familias de un solo producto + súper reducido)
+Eloy pidió el ajuste final: "quiero que esté todo junto evitando
+espacios en blanco. Reduce, acopla productos que solo haya uno de la
+familia al lado de otros en su misma situación. Tiene que ser súper
+reducido."
+
+### Nuevo mecanismo: `agrupar_sueltos()`
+Las familias con UN SOLO producto ya no abren su propia banda de
+categoría (que dejaba 3 de 4 columnas en blanco al lado, visto en la
+vuelta anterior). Ahora se separan en dos grupos antes de renderizar:
+- **Multi-producto** (2+): tratamiento normal, banda de categoría
+  propia + rejilla (`grid_categoria`, sin cambios de fondo).
+- **Un solo producto**: se agrupan TODAS juntas en una única rejilla
+  compartida al final del catálogo (`agrupar_sueltos`) — sin banda de
+  categoría propia; cada tarjeta lleva su nombre de familia como una
+  etiqueta pequeña integrada arriba, para no perder la información de
+  a qué categoría pertenece.
+
+Exactamente lo pedido: "acopla productos que solo haya uno de la
+familia al lado de otros en su misma situación" — verificado
+visualmente, `PRODUCTOS CHAPISTA`, `PROTECCIÓN LABORAL`, `SPRAY MAX` y
+`CINTAS DE ENMASCARAR` (4 familias de 1 producto) ahora comparten una
+misma fila de 4 columnas en vez de 4 bandas con hueco cada una.
+
+### "Súper reducido" — recortes generales
+- Márgenes de página: 10mm → 7mm.
+- Cabecera/pie de página: 20mm/14mm → 15mm/10mm (con un bug real
+  corregido de paso: con el pie más bajo, la segunda línea de texto
+  del pie quedaba en coordenada Y NEGATIVA, es decir, fuera de la
+  página — detectado antes de generar el PDF final, corregido
+  recalculando los desplazamientos).
+- Banda de portada: relleno interno 7mm → 4,5mm, título 26pt → 22pt.
+- Pegatina de estallido: 48mm → 34mm (proporcional a la banda más
+  pequeña — si no, sobresalía demasiado de una banda ya más baja).
+- Tarjeta de producto: relleno interno, tamaños de fuente y
+  espaciadores entre elementos reducidos en general.
+
+### Resultado
+Mismo catálogo de prueba (22 productos, 13 familias): de **4 a 3
+páginas**. La página 1 llega a encajar 5 categorías completas. Misma
+mejora en el tema de Navidad (verificado que el título más largo
+"CAMPAÑA DE NAVIDAD 2026" sigue sin chocar con la pegatina de
+estallido, pese a la banda más pequeña). Sin regresiones en el caso
+límite de 2 productos ni en el catálogo con errores forzados.
