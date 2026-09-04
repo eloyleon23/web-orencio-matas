@@ -1382,3 +1382,56 @@ miden exactamente lo mismo en todo el documento. Sin regresiones en
 ambos temas, el caso límite de 2 productos (ahora tratado como "resto"
 y agrupado igualmente, ya que 2 < 4 columnas) ni el catálogo con
 errores forzados.
+
+---
+
+## V4 — quinta vuelta (más llamativo: descuentos resaltados, estallido arreglado, eslogan, imágenes más grandes)
+Eloy pidió un giro más hacia el estilo folleto llamativo, con 5 puntos
+concretos.
+
+### 1. Productos con descuento más resaltados
+`tarjeta_producto()`: las tarjetas con oferta real ahora llevan borde
+rojo más grueso (0,8pt → 1,6pt) y un tinte de fondo cálido muy suave
+(`COLOR_FONDO_OFERTA`, `#FFF7E0`) — se distinguen de un vistazo de las
+que no tienen oferta, sin romper la altura uniforme de las tarjetas
+(el borde/relleno se dibuja sobre el mismo rectángulo, no cambia el
+contenido interno).
+
+### 2. Estallido de descuento "mal formado" — bug real corregido
+Diagnóstico exacto tras hacer zoom: el número ("-20") y "DTO." se
+solapaban, y la estrella se veía blanda/asimétrica. Causa: los
+tamaños de fuente (30%/13,5% del lado) sumaban más altura de la que
+cabía con margen en el radio interior de la estrella — no se había
+comprobado el ajuste real, solo calculado a ojo. `generar_estallido()`
+corregida: fuentes más pequeñas y proporcionadas (23,5%/9,5%), cálculo
+de espaciado vertical explícito entre las dos líneas, y la propia
+estrella con menos puntas (11 en vez de 13) y radios interior/exterior
+con más contraste (proporción 0,65 en vez de 0,71) para que las puntas
+se vean definidas en vez de redondeadas.
+
+### 3. Eslogan llamativo entre productos y en el pie
+Nueva `banner_eslogan()`: banda roja a todo el ancho con texto blanco
+en negrita, insertada automáticamente cada 4 categorías completas
+(rotando entre 3 frases: "¡Aprovecha estas ofertas!", "Precios
+especiales por tiempo limitado", "Calidad profesional al mejor
+precio") para romper la monotonía visual de la rejilla. El pie de
+página deja de ser una franja gris discreta y pasa a ser una banda
+roja con el mismo mensaje de urgencia en grande, y los datos de
+contacto en texto pequeño debajo.
+
+### 4. "En general sigue siendo muy plano"
+`BandaCategoria`: añadida una franja roja de acento a la izquierda
+(2,3mm) y la punta del chevron ahora también en rojo (antes todo en
+un único gris azulado) — dos toques de color que rompen la monotonía
+de la cabecera sin cambiar su tamaño ni su legibilidad.
+
+### 5. Imágenes pequeñas, cuesta diferenciar productos
+`alto_img` por defecto: 26mm → 32mm en todas las funciones que lo usan
+(`tarjeta_producto`, `grid_categoria`, `agrupar_sueltos`) — fotos
+notablemente más grandes y reconocibles.
+
+### Resultado
+Mismo catálogo de prueba: sigue en **2 páginas** pese a las imágenes
+más grandes (el resto de recortes de la vuelta anterior dejaron
+margen de sobra). Verificado con ambos temas y sin regresiones en los
+casos límite.

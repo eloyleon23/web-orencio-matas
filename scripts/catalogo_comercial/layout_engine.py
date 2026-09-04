@@ -528,17 +528,18 @@ class _DocConExtras(BaseDocTemplate):
 
 
 # ── Portada — verdadera portada de campaña, no un título suelto ─────────
-def generar_estallido(color_rgb, texto_pct, texto_color_rgb=(255, 255, 255), lado_px=340, puntas=13, angulo=-8):
+def generar_estallido(color_rgb, texto_pct, texto_color_rgb=(255, 255, 255), lado_px=340, puntas=11, angulo=-6):
     """Pegatina de "estallido" (silueta de estrella irregular) con el
     % de descuento dentro, dibujada con PIL — el elemento gráfico más
-    reconocible de un folleto de ofertas real (Lidl, Aldi...) y que
-    faltaba por completo en la portada anterior: un bloque de color
-    plano con texto no se lee como "oferta", una pegatina sí."""
+    reconocible de un folleto de ofertas real (Lidl, Aldi...). Puntas
+    más marcadas (menos puntas, mayor contraste entre radio interior y
+    exterior) que la primera versión, que quedaba blanda/redondeada en
+    vez de leerse como una pegatina de oferta de verdad."""
     import math
     img = PILImage.new('RGBA', (lado_px, lado_px), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     cx, cy = lado_px // 2, lado_px // 2
-    r_out, r_in = lado_px * 0.49, lado_px * 0.35
+    r_out, r_in = lado_px * 0.47, lado_px * 0.305
     ang0 = math.radians(angulo)
     puntos = []
     for i in range(puntas * 2):
@@ -547,10 +548,13 @@ def generar_estallido(color_rgb, texto_pct, texto_color_rgb=(255, 255, 255), lad
         puntos.append((cx + r * math.sin(ang), cy - r * math.cos(ang)))
     draw.polygon(puntos, fill=color_rgb)
 
-    # Texto grande centrado ("-20%" en dos líneas: número grande + "%")
+    # Texto grande centrado ("-20%" en dos líneas: número grande + "DTO.")
+    # — tamaños calculados para caber con margen dentro del círculo
+    # inscrito (radio interior), no solo "a ojo": la primera versión se
+    # salía y el número quedaba pegado/solapado con "DTO."
     numero = texto_pct.replace('%', '').strip()
-    fs_num = int(lado_px * 0.30)
-    fs_sub = int(lado_px * 0.135)
+    fs_num = int(lado_px * 0.235)
+    fs_sub = int(lado_px * 0.095)
     try:
         font_num = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fs_num)
         font_sub = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fs_sub)
@@ -559,10 +563,12 @@ def generar_estallido(color_rgb, texto_pct, texto_color_rgb=(255, 255, 255), lad
         font_sub = font_num
     bbox_n = draw.textbbox((0, 0), numero, font=font_num)
     bbox_s = draw.textbbox((0, 0), 'DTO.', font=font_sub)
-    alto_total = (bbox_n[3] - bbox_n[1]) + (bbox_s[3] - bbox_s[1]) + 6
+    h_n, h_s = bbox_n[3] - bbox_n[1], bbox_s[3] - bbox_s[1]
+    espacio = lado_px * 0.018
+    alto_total = h_n + h_s + espacio
     y0 = cy - alto_total / 2 - bbox_n[1]
     draw.text((cx - (bbox_n[2] - bbox_n[0]) / 2, y0), numero, font=font_num, fill=texto_color_rgb)
-    y1 = y0 + (bbox_n[3] - bbox_n[1]) + 8
+    y1 = y0 + h_n + espacio - bbox_s[1] + bbox_n[1]
     draw.text((cx - (bbox_s[2] - bbox_s[0]) / 2, y1), 'DTO.', font=font_sub, fill=texto_color_rgb)
 
     buf = io.BytesIO()

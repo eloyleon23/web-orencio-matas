@@ -45,7 +45,9 @@ FRAME_BOTTOM = BOTTOM_BAR_H + 1.5 * mm
 
 COLOR_CABECERA = '#3E4A56'   # gris azulado oscuro — mismo tono que el prototipo
 COLOR_PRECIO = '#D91B1B'
+COLOR_DESCUENTO = '#F4B400'  # amarillo — resalta las tarjetas con oferta
 COLOR_BORDE_TARJETA = '#D8DCE1'
+COLOR_FONDO_OFERTA = '#FFF7E0'  # tinte cálido muy suave, solo para tarjetas con descuento
 
 
 def _c(hexcolor):
@@ -82,12 +84,19 @@ class BandaCategoria(Flowable):
         w_rect = self.width - corte
         c.setFillColor(_c(self.color_fondo))
         c.rect(0, 0, w_rect, self.height, fill=1, stroke=0)
+        # Franja roja de acento a la izquierda + punta del chevron en
+        # rojo — dos toques de color para que la banda no sea un único
+        # tono plano de gris (petición de Eloy: "en general sigue
+        # siendo muy plano").
+        acento = 2.3 * mm
+        c.setFillColor(_c(COLOR_PRECIO))
+        c.rect(0, 0, acento, self.height, fill=1, stroke=0)
         p = c.beginPath()
         p.moveTo(w_rect, 0)
         p.lineTo(self.width, self.height / 2)
         p.lineTo(w_rect, self.height)
         p.close()
-        c.setFillColor(_c(self.color_fondo))
+        c.setFillColor(_c(COLOR_PRECIO))
         c.drawPath(p, fill=1, stroke=0)
         c.setFillColor(self.color_texto)
         c.setFont('Helvetica-Bold', self.height * 0.46)
@@ -137,7 +146,8 @@ ALTO_NOMBRE = 8.4 * mm
 ALTO_PRECIO = 9.5 * mm
 
 
-def tarjeta_producto(p, ancho, alto_img=26 * mm, etiqueta_familia=None):
+def tarjeta_producto(p, ancho, alto_img=32 * mm, etiqueta_familia=None):
+    hay_oferta = bool(p.oferta and p.descuento_pct and p.descuento_pct > 0)
     pil = imagen_para_producto(p, tamano=500, cuadrado=True)  # ya trae la cinta roja si hay oferta
     iw, ih = pil.size
     cel_w, cel_h = ancho - 4 * mm, alto_img
@@ -183,6 +193,13 @@ def tarjeta_producto(p, ancho, alto_img=26 * mm, etiqueta_familia=None):
         ('LEFTPADDING', (0, 0), (-1, -1), 2.5), ('RIGHTPADDING', (0, 0), (-1, -1), 2.5),
         ('TOPPADDING', (0, 0), (-1, -1), 2.5), ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
     ]))
+    # Las tarjetas con oferta real se resaltan con borde rojo más
+    # grueso y un tinte de fondo cálido muy suave — a petición de
+    # Eloy ("a los productos con descuento que esté más resaltado o
+    # llamativo"), para que no queden con el mismo peso visual que un
+    # producto sin ninguna oferta.
+    if hay_oferta:
+        return CajaRedondeada(tabla, _c(COLOR_PRECIO), radio=3, grosor=1.6, relleno=_c(COLOR_FONDO_OFERTA))
     return CajaRedondeada(tabla, _c(COLOR_BORDE_TARJETA), radio=3, grosor=0.8)
 
 
@@ -198,7 +215,7 @@ def _fila_con_relleno(tarjetas, cols, centrar=True):
     return [''] * izq + tarjetas + [''] * der
 
 
-def grid_categoria(bloque, ancho, cols=4, alto_img=26 * mm, productos=None):
+def grid_categoria(bloque, ancho, cols=4, alto_img=32 * mm, productos=None):
     """Cabecera de categoría + rejilla de tarjetas — la cabecera va
     unida (KeepTogether) a la PRIMERA fila de tarjetas para que nunca
     quede huérfana al final de una página. Recibe `productos` ya
@@ -266,7 +283,7 @@ def preparar_grupos(bloques, cols):
     return completas, pool
 
 
-def agrupar_sueltos(pool, ancho, cols=4, alto_img=26 * mm):
+def agrupar_sueltos(pool, ancho, cols=4, alto_img=32 * mm):
     """Reparte en una rejilla compartida todo lo que no llegó a llenar
     una fila completa de su propia familia (`pool`, lista de
     (producto, nombre_familia)) — sin banda de categoría propia, cada
@@ -300,6 +317,21 @@ def agrupar_sueltos(pool, ancho, cols=4, alto_img=26 * mm):
 
 
 # ── Cabecera / pie ────────────────────────────────────────────────────
+def banner_eslogan(texto, ancho, alto=8 * mm):
+    """Banda de eslogan llamativa — a petición de Eloy ("incluir algún
+    texto... indicando que aproveche la oportunidad"), se inserta entre
+    bloques de productos para romper la monotonía visual de la rejilla,
+    no solo en el pie de página."""
+    est = ParagraphStyle('be', fontName='Helvetica-Bold', fontSize=10, textColor=colors.white,
+                          alignment=TA_CENTER, leading=alto * 0.85 / mm)
+    t = Table([[Paragraph(texto, est)]], colWidths=[ancho], rowHeights=[alto])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), _c(COLOR_PRECIO)),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    return t
+
+
 def make_header_footer(logo_png, tema, periodo):
     def hf(canvas, doc):
         canvas.saveState()
@@ -324,17 +356,18 @@ def make_header_footer(logo_png, tema, periodo):
         canvas.setLineWidth(1.4)
         canvas.line(MARGIN, H - TOP_BAR_H + 1.5 * mm, W - MARGIN, H - TOP_BAR_H + 1.5 * mm)
 
-        canvas.setFillColor(_c('#F3F4F6'))
+        canvas.setFillColor(_c(COLOR_PRECIO))
         canvas.rect(0, 0, W, BOTTOM_BAR_H, fill=1, stroke=0)
-        canvas.setFillColor(_c('#374151'))
-        canvas.setFont('Helvetica-BoldOblique', 7.5)
-        canvas.drawString(MARGIN, BOTTOM_BAR_H - 4 * mm,
-                           'Ofertas válidas hasta agotar existencias. Precios sujetos a cambios.')
-        canvas.setFont('Helvetica', 6)
-        canvas.setFillColor(_c('#6B7280'))
-        canvas.drawString(MARGIN, BOTTOM_BAR_H - 7.5 * mm,
-                           'Orencio Matas y Hnos, S.L. · 926 221 217 · correo@orenciomatas.es · orenciomatas.es')
-        canvas.drawRightString(W - MARGIN, BOTTOM_BAR_H - 7.5 * mm, f'Pág. {doc.page}')
+        canvas.setFillColor(colors.white)
+        canvas.setFont('Helvetica-Bold', 8.5)
+        canvas.drawCentredString(W / 2, BOTTOM_BAR_H - 4.3 * mm,
+                                  '¡OFERTAS POR TIEMPO LIMITADO — APROVÉCHALAS ANTES DE QUE SE AGOTEN!')
+        canvas.setFont('Helvetica', 5.6)
+        canvas.setFillColor(_c('#FFD9D9'))
+        canvas.drawString(MARGIN, BOTTOM_BAR_H - 8 * mm,
+                           'Ofertas válidas hasta agotar existencias. Precios sujetos a cambios. '
+                           'Orencio Matas y Hnos, S.L. · 926 221 217 · orenciomatas.es')
+        canvas.drawRightString(W - MARGIN, BOTTOM_BAR_H - 8 * mm, f'Pág. {doc.page}')
         canvas.restoreState()
     return hf
 
@@ -458,8 +491,18 @@ def generar_pdf_flyer(periodo, tema, bloques, logo_png, out_path, resultado=None
 
     story = list(story_portada)
     completas, pool = preparar_grupos(bloques, cols)
-    for bloque, productos in completas:
+    eslogans = [
+        '🔧 ¡APROVECHA ESTAS OFERTAS ANTES DE QUE SE AGOTEN! 🔧',
+        '⚡ PRECIOS ESPECIALES POR TIEMPO LIMITADO ⚡',
+        '✔ CALIDAD PROFESIONAL AL MEJOR PRECIO ✔',
+    ]
+    for i, (bloque, productos) in enumerate(completas):
         story += grid_categoria(bloque, CW, cols=cols, productos=productos)
+        # Cada pocas categorías se intercala un eslogan llamativo — a
+        # petición de Eloy, para romper la monotonía visual entre
+        # bloques de productos, no solo en el pie de página.
+        if (i + 1) % 4 == 0 and i + 1 < len(completas):
+            story += [banner_eslogan(eslogans[(i // 4) % len(eslogans)], CW), Spacer(1, 3 * mm)]
     story += agrupar_sueltos(pool, CW, cols=cols)
     story += construir_cierre(tema, logo_png, CW)
 
