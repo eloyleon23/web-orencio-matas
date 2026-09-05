@@ -157,6 +157,8 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'fachada_piedra_absorbe_agua', label: 'La fachada de piedra o ladrillo absorbe mucha agua', solutionSlug: 'hidrofugar-fachada-piedra-ladrillo' },
     { id: 'grietas_fachada',       label: 'Tengo grietas o fisuras en la fachada',        solutionSlug: 'reparar-fisuras-fachada-hormigon' },
     { id: 'salitre_fachada',       label: 'Tengo manchas blancas de salitre en la fachada', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
+    { id: 'proteger_fachada_monocapa', label: 'Necesito proteger o hidrofugar un mortero monocapa', solutionSlug: 'proteger-fachada-mortero-monocapa' },
+    { id: 'pintar_metal_general',  label: 'Quiero pintar una superficie de metal',         solutionSlug: 'pintar-metal-antioxidante-interior-exterior' },
     { id: 'pintar_verja_hierro',   label: 'Quiero pintar una verja o barandilla de hierro', solutionSlug: 'pintar-reja-verja-hierro' },
     { id: 'pintar_pladur',         label: 'Quiero pintar placas de pladur nuevas',          solutionSlug: 'pintar-placas-pladur-yeso-laminado' },
     { id: 'pintar_directo_oxido',  label: 'Quiero pintar el óxido sin quitarlo ni imprimar', solutionSlug: 'pintar-metal-oxidado-directo-oxiron' },
@@ -546,10 +548,69 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción rápida',      nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.NEGRO', precio: '19,95 €' },
         { etiqueta: 'Trabajos pequeños',  nombre: 'Aerosol antioxidante', precio: '8,95 €' },
       ],
-      relatedSolutions: ['pintar-plastico-coche', 'restaurar-mueble-madera', 'quitar-restos-pegamento', 'proteger-estructura-metalica-corrosion'],
+      relatedSolutions: ['pintar-plastico-coche', 'restaurar-mueble-madera', 'quitar-restos-pegamento', 'proteger-estructura-metalica-corrosion', 'pintar-metal-antioxidante-interior-exterior'],
       seo: {
         title: 'Cómo eliminar el óxido del metal | Guía — Orencio Matas',
         description: 'Cómo tratar y eliminar el óxido de una superficie metálica paso a paso, con convertidor, imprimación antioxidante y esmalte acrílico o sintético de acabado.',
+      },
+    },
+
+    'pintar-metal-antioxidante-interior-exterior': {
+      slug: 'pintar-metal-antioxidante-interior-exterior',
+      title: 'Cómo pintar una superficie de metal en interior y exterior',
+      description: 'Guía completa para pintar cualquier superficie metálica con una pintura antioxidante al agua o sintética, tanto en interior como en exterior, con todo el material necesario: pintura, herramienta de aplicación y protección de la zona de trabajo.',
+      category: 'metal', subcategory: 'Pintar metal (interior y exterior)',
+      problem: 'pintar_metal_general',
+      objective: 'pintar',
+      surface: 'metal',
+      difficulty: 'Fácil',
+      estimatedTime: '1 día, incluyendo el secado entre manos',
+      result: 'Superficie metálica pintada de forma uniforme y protegida frente al óxido, tanto en interior como en exterior',
+      colorChart: { label: 'Encuentra tu color en Titanlux', url: 'https://www.titanlux.es/', logo: 'https://static.titanlux.es/web/logo.png' },
+      breadcrumb: ['Centro de Soluciones', 'Metal', 'Pintar metal (interior y exterior)'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Lijas y desengrasantes', items: ['Lija de grano medio', 'Desengrasante'] },
+        { fase: 'Protección de la zona', familiaSugerida: 'Productos de enmascarado', items: ['Cinta de carrocero', 'Papel o film de enmascarar'] },
+        { fase: 'Pintura',     familiaSugerida: 'Esmaltes antioxidantes', items: ['Esmalte antioxidante al agua (interior) o sintético (exterior)'] },
+        { fase: 'Aplicación',  familiaSugerida: 'Útiles de aplicación',   items: ['Brocha, rodillo o pincel según la pieza', 'Cubeta para rodillo'] },
+      ],
+      receta: [
+        { fase: 'Preparar',  emoji: '🧽' },
+        { fase: 'Proteger',  emoji: '🎗️' },
+        { fase: 'Pintar',    emoji: '🎨' },
+        { fase: 'Secar',     emoji: '⏳' },
+      ],
+      steps: [
+        { n: 1, title: 'Preparar la superficie', text: 'Lija ligeramente para dar agarre (sobre todo si la superficie está brillante o ya pintada) y desengrasa a fondo — cualquier resto de grasa impide que la pintura se adhiera bien, sea cual sea la calidad del producto.', productos: ['Lija de grano medio', 'Desengrasante'] },
+        { n: 2, title: 'Proteger lo que no vas a pintar', text: 'Enmascara con cinta de carrocero las zonas de corte y cubre con papel o film el entorno — mucho más rápido de hacer bien ahora que de limpiar salpicaduras después.', productos: ['Cinta de carrocero', 'Papel o film de enmascarar'] },
+        { n: 3, title: 'Elegir entre pintura al agua o sintética', text: 'En interior, una pintura antioxidante al agua seca más rápido y apenas tiene olor — ideal para radiadores, muebles metálicos o rejas de ventana interiores. En exterior (verjas, barandillas, mobiliario de jardín), una pintura sintética resiste mejor la intemperie a largo plazo.', productos: ['Esmalte antioxidante al agua (interior) o sintético (exterior)'] },
+        { n: 4, title: 'Aplicar con la herramienta adecuada', text: 'Usa brocha en perfiles y zonas estrechas, rodillo en superficies planas grandes, y pincel fino en detalles — vertiendo la pintura en una cubeta para cargar la herramienta de forma uniforme en vez de mojarla directamente en el bote.', productos: ['Brocha, rodillo o pincel según la pieza', 'Cubeta para rodillo'] },
+        { n: 5, title: 'Aplicar una segunda mano', text: 'Respeta el tiempo de secado entre manos indicado en el envase antes de aplicar la segunda — da mucha más protección y un acabado más uniforme que una sola mano gruesa.', productos: [] },
+      ],
+      professionalTips: [
+        'Si la pieza ya tiene algo de óxido superficial, muchos esmaltes antioxidantes "3 en 1" (imprimación + color + protección) se pueden aplicar directamente sin necesidad de imprimación aparte — revisa la ficha técnica del producto elegido para confirmarlo.',
+        'La pintura al agua limpia las herramientas con agua y jabón; la sintética necesita disolvente — tenlo en cuenta antes de elegir si te importa la limpieza posterior de brochas y rodillos.',
+      ],
+      commonMistakes: [
+        'No desengrasar antes de pintar, aunque la superficie parezca limpia a simple vista.',
+        'Usar una pintura de interior en una pieza de exterior expuesta a la lluvia, que se degrada mucho antes.',
+        'Saltarse el enmascarado pensando que se puede limpiar después la salpicadura con facilidad.',
+        'Aplicar una sola mano gruesa en vez de dos manos finas, lo que suele dar peor acabado y menos protección real.',
+      ],
+      recommendedProducts: [
+        { nombre: 'Oxiron Agua Liso Brillo Negro (esmalte acrílico, al agua)', categoria: 'Pinturas', formato: '750 ml', precio: '20,63 €' },
+        { nombre: 'BROCHA PRENSADA ESSENTIAL COMPETIDOR S-10 Nº 10', categoria: 'Herramientas', formato: 'Nº 10', precio: '3,74 €' },
+        { nombre: '.CINTA FINA NARANJA ZAPHIRO 18MM X 50M', categoria: 'Talleres', formato: '18mm x 50m', precio: '3,44 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Para exterior (más resistente a la intemperie)', nombre: 'Oxiron Forja Negro (esmalte sintético al disolvente)', precio: '15,85 €' },
+        { etiqueta: 'Superficies planas grandes', nombre: 'RODILLO ESP/FACHADAS SUPER FELPON 22 CMS.', precio: '7,88 €' },
+        { etiqueta: 'Cubrir zonas amplias o irregulares', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', precio: '3,07 €' },
+      ],
+      relatedSolutions: ['eliminar-oxido-metal', 'elegir-pintura-segun-superficie-metal-madera-exterior', 'elegir-brocha-rodillo-pintar', 'elegir-cinta-papel-enmascarar'],
+      seo: {
+        title: 'Cómo pintar una superficie de metal en interior y exterior | Orencio Matas',
+        description: 'Guía completa para pintar metal con pintura antioxidante al agua o sintética, con toda la herramienta y protección necesarias.',
       },
     },
 
@@ -1601,7 +1662,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Formato pequeño/retoque', nombre: 'Morakron Fachadas Ladrillo 1 L', precio: '5,52 €' },
         { etiqueta: 'Revestimiento con textura', nombre: 'Revotex Revestimiento Fachadas 4 L', precio: '21,73 €' },
       ],
-      relatedSolutions: ['impermeabilizar-terraza-goteras', 'pintar-pared-interior'],
+      relatedSolutions: ['impermeabilizar-terraza-goteras', 'pintar-pared-interior', 'reparar-fisuras-fachada-hormigon', 'proteger-fachada-mortero-monocapa'],
       seo: {
         title: 'Cómo pintar una fachada exterior | Orencio Matas',
         description: 'Guía para preparar y pintar una fachada exterior con un sistema hidrófugo resistente a la intemperie.',
@@ -2780,7 +2841,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Fachadas grandes', nombre: 'HIDROFUGANTE INVISIBLE AGUA S-40 15 L.INCOLORO', precio: '110,12 €' },
         { etiqueta: 'Si además hay que fijar el soporte antes', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.', precio: '28,85 €' },
       ],
-      relatedSolutions: ['tratar-fachada-humedad-capilaridad', 'reparar-fisuras-fachada-hormigon', 'pintar-fachada-exterior'],
+      relatedSolutions: ['tratar-fachada-humedad-capilaridad', 'reparar-fisuras-fachada-hormigon', 'proteger-fachada-mortero-monocapa', 'pintar-fachada-exterior'],
       seo: {
         title: 'Cómo hidrofugar una fachada de piedra o ladrillo | Orencio Matas',
         description: 'Guía para aplicar un hidrofugante invisible sobre piedra, ladrillo visto o mortero, protegiendo la fachada de la lluvia sin alterar su aspecto.',
@@ -2819,6 +2880,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       professionalTips: [
         'Una fisura no tratada seguirá siendo un punto de entrada de agua aunque el resto de la fachada quede perfecta — no merece la pena pintar por encima sin haberla sellado antes con un producto realmente elástico.',
+        'El R-50 se puede teñir sin problema con el sistema Titancolor (usando la versión de base neutra) para que combine con el color real de la fachada — no hace falta conformarse con blanco.',
       ],
       commonMistakes: [
         'Tapar una fisura con una pintura normal, sin capacidad de elongación, que se vuelve a abrir con el primer movimiento del muro.',
@@ -2828,16 +2890,70 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.', categoria: 'Pinturas', formato: '4 L', precio: '30,77 €' },
-        { nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BLANCO MATE', categoria: 'Pinturas', formato: '15 L', precio: '96,85 €' },
+        { nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BLANCO MATE', categoria: 'Pinturas', formato: '15 L', precio: '96,85 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/ee/02/0a/94/tp_r50_revestimiento_elastico_antifisuras_mate_00_00_00_ftecnicaes.pdf' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Para teñir con Titancolor', nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BASE NEUTRA', precio: '74,49 €' },
+        { etiqueta: 'Para teñir con Titancolor', nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BASE NEUTRA', precio: '74,49 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/ee/02/0a/94/tp_r50_revestimiento_elastico_antifisuras_mate_00_00_00_ftecnicaes.pdf' },
         { etiqueta: 'Imprimación en formato grande', nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 10 L.', precio: '69,89 €' },
       ],
-      relatedSolutions: ['hidrofugar-fachada-piedra-ladrillo', 'tratar-fachada-humedad-capilaridad', 'pintar-fachada-exterior'],
+      relatedSolutions: ['hidrofugar-fachada-piedra-ladrillo', 'tratar-fachada-humedad-capilaridad', 'pintar-fachada-exterior', 'proteger-fachada-mortero-monocapa'],
       seo: {
         title: 'Cómo reparar y sellar fisuras en una fachada de hormigón | Orencio Matas',
         description: 'Guía para sellar fisuras de hasta 2 mm en fachadas de hormigón o mortero con un revestimiento elástico antifisuras.',
+      },
+    },
+
+    'proteger-fachada-mortero-monocapa': {
+      slug: 'proteger-fachada-mortero-monocapa',
+      title: 'Cómo proteger un mortero monocapa con efecto hidrofugante',
+      description: 'Protege un mortero monocapa (o cualquier fachada ya terminada) con un revestimiento acrílico siliconado con efecto hidrofugante, repeliendo el agua de lluvia y reforzando el acabado sin necesidad de teñir el producto.',
+      category: 'pintura', subcategory: 'Fachadas',
+      problem: 'proteger_fachada_monocapa',
+      objective: 'proteger',
+      surface: 'pared',
+      difficulty: 'Media',
+      estimatedTime: '1-2 días (imprimación si hace falta + 2 manos de acabado con secado entre capas)',
+      result: 'Mortero monocapa o fachada protegidos con un revestimiento hidrofugante que repele la lluvia y refuerza la durabilidad del acabado',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Limpieza exterior',     items: ['Limpieza de la fachada eliminando polvo y suciedad'] },
+        { fase: 'Imprimación', familiaSugerida: 'Imprimaciones fachada', items: ['Imprimación fijadora (solo si el mortero es muy poroso o pulverulento)'] },
+        { fase: 'Acabado',     familiaSugerida: 'Revestimientos fachada', items: ['Revestimiento acrílico siliconado hidrofugante'] },
+      ],
+      receta: [
+        { fase: 'Limpiar',    emoji: '🧴' },
+        { fase: 'Imprimar',   emoji: '🔧' },
+        { fase: 'Proteger',   emoji: '💧' },
+        { fase: 'Acabar',     emoji: '🏠' },
+      ],
+      steps: [
+        { n: 1, title: 'Limpiar la superficie', text: 'Elimina polvo, suciedad y restos de pintura suelta o mal adherida del mortero monocapa o de la fachada ya pintada.', productos: ['Limpieza de la fachada eliminando polvo y suciedad'] },
+        { n: 2, title: 'Imprimar si el soporte es muy poroso', text: 'En un mortero monocapa nuevo, muy poroso o pulverulento, una imprimación fijadora mejora la adherencia y el rendimiento del revestimiento — en un mortero ya consolidado o una fachada ya pintada no suele ser necesaria.', productos: ['Imprimación fijadora (solo si el mortero es muy poroso o pulverulento)'] },
+        { n: 3, title: 'Aplicar el revestimiento acrílico siliconado', text: 'Aplica el revestimiento en dos manos, dejando secar entre ellas. El componente siliconado le da un efecto hidrofugante real: el agua de lluvia resbala en vez de penetrar, sin perder la transpirabilidad del muro.', productos: ['Revestimiento acrílico siliconado hidrofugante'] },
+        { n: 4, title: 'Revisar juntas y remates', text: 'Presta atención extra a juntas de dilatación, vierteaguas y remates — son los puntos por donde con más frecuencia se filtra agua aunque el resto de la superficie quede bien protegida.', productos: [] },
+      ],
+      professionalTips: [
+        'Este revestimiento NO se puede teñir a medida (a diferencia del R-50 antifisuras, que sí admite teñido con Titancolor) — viene en su gama de colores de fábrica, así que conviene elegir el tono antes de comprar la cantidad necesaria.',
+        'Si la fachada tiene fisuras además de necesitar protección hidrofugante, trata primero las fisuras con un revestimiento elástico antifisuras — este producto protege frente al agua, pero no está pensado para absorber el movimiento de una grieta.',
+      ],
+      commonMistakes: [
+        'Aplicarlo sobre suciedad o pintura suelta sin limpiar antes.',
+        'Esperar poder teñirlo como el revestimiento antifisuras — este viene en colores de fábrica, no se tiñe a medida.',
+        'No revisar juntas de dilatación y remates, los puntos donde más falla la protección con el tiempo.',
+        'Usarlo pensando que también repara fisuras — para eso hace falta un revestimiento elástico antifisuras, no este.',
+      ],
+      recommendedProducts: [
+        { nombre: 'REVEST.ACRILICO SILICONADO R-20 15 L.BLANCO', categoria: 'Pinturas', formato: '15 L', precio: '89,90 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/22/95/62/89/tp_r20_revestimiento_acrilico_siliconado_mate_00_00_00_ftecnicaes.pdf' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Formato pequeño/retoque', nombre: 'REVEST.ACRILICO SILICONADO R-20 4 L.BLANCO', precio: '28,45 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/22/95/62/89/tp_r20_revestimiento_acrilico_siliconado_mate_00_00_00_ftecnicaes.pdf' },
+        { etiqueta: 'Si el mortero es muy poroso', nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.', precio: '30,77 €' },
+      ],
+      relatedSolutions: ['reparar-fisuras-fachada-hormigon', 'hidrofugar-fachada-piedra-ladrillo', 'pintar-fachada-exterior'],
+      seo: {
+        title: 'Cómo proteger un mortero monocapa con efecto hidrofugante | Orencio Matas',
+        description: 'Guía para proteger un mortero monocapa o una fachada con un revestimiento acrílico siliconado hidrofugante, sin necesidad de teñirlo.',
       },
     },
 
@@ -3770,7 +3886,7 @@ window.SOLUCIONES_DATA = (function () {
           { id: 'verjas', label: 'Verjas o superficies estrechas', nombre: 'RODILLO MINI ESPECIAL VERJAS PENTRILO RF.07665', motivo: 'Formato mini, pensado para barrotes y perfiles estrechos donde un rodillo normal no entra bien.' },
         ],
       },
-      relatedSolutions: ['pintar-pared-interior', 'solucionar-problemas-pintura-aplicacion'],
+      relatedSolutions: ['pintar-pared-interior', 'solucionar-problemas-pintura-aplicacion', 'pintar-metal-antioxidante-interior-exterior'],
       seo: {
         title: 'Cómo elegir la brocha y el rodillo adecuados para pintar | Orencio Matas',
         description: 'Guía para elegir brocha y rodillo según la superficie y el acabado, y cómo combinarlos para un resultado uniforme.',
@@ -3830,7 +3946,7 @@ window.SOLUCIONES_DATA = (function () {
           { id: 'irregular', label: 'El resto del vehículo o una zona irregular', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', motivo: 'El film se adapta mejor que el papel a formas irregulares, y ya lleva la cinta incorporada.' },
         ],
       },
-      relatedSolutions: ['pintar-plastico-coche', 'elegir-pistola-pintar'],
+      relatedSolutions: ['pintar-plastico-coche', 'elegir-pistola-pintar', 'pintar-metal-antioxidante-interior-exterior'],
       seo: {
         title: 'Cómo elegir la cinta y el papel de enmascarar antes de pintar | Orencio Matas',
         description: 'Guía para elegir cinta de carrocero, papel y film de enmascarado para proteger correctamente antes de pintar.',
@@ -4487,7 +4603,7 @@ window.SOLUCIONES_DATA = (function () {
           { id: 'fachada', label: 'Fachada exterior', nombre: 'O.MATAS PINT.HIDRAFUGA FACHADAS 20 L.INVISIBLE', motivo: 'Pintura hidrófuga: repele el agua de lluvia dejando que el muro siga transpirando, evitando que se quede humedad atrapada dentro.' },
         ],
       },
-      relatedSolutions: ['eliminar-oxido-metal', 'proteger-madera-exterior', 'pintar-fachada-exterior'],
+      relatedSolutions: ['eliminar-oxido-metal', 'proteger-madera-exterior', 'pintar-fachada-exterior', 'pintar-metal-antioxidante-interior-exterior'],
       seo: {
         title: 'Qué pintura elegir según la superficie: metal, madera o fachada | Orencio Matas',
         description: 'Selector para elegir la pintura correcta según la superficie: antioxidante para metal, barniz UV para madera exterior, hidrófuga para fachada.',
@@ -4947,6 +5063,13 @@ window.SOLUCIONES_DATA = (function () {
       'humedad_interior': ['humedad', 'pared con humedad', 'mancha de humedad', 'humedad en una pared'],
       'limpiar_herramientas': ['brochas y rodillos', 'limpiar la brocha', 'limpiar el rodillo', 'limpieza de pinceles'],
       'elegir_pintura_superficie': ['que pintura elegir', 'qué pintura elegir', 'pintura antioxidante', 'pintura para metal', 'pintura para madera'],
+      // 'pintar_metal_general' es la guía completa paso a paso (con todo
+      // el material necesario); 'elegir_pintura_superficie' de arriba es
+      // solo un selector rápido de 5 min — se dejan ambas, ya que
+      // diagnosticarPorTexto() devuelve todas las coincidencias, no solo
+      // la primera, así que una búsqueda amplia como "pintura para metal"
+      // ya muestra las dos y quien busca decide cuál le interesa más.
+      'pintar_metal_general': ['pintar metal', 'pintar hierro', 'como pintar metal', 'cómo pintar metal', 'como pintar hierro', 'cómo pintar hierro', 'pintar una superficie metalica', 'pintar una superficie metálica', 'pintar una superficie de metal', 'superficie de metal', 'esmalte antioxidante', 'pintura antioxidante', 'antioxidante al agua', 'antioxidante sintetico', 'antioxidante sintético'],
       'material_desechable_taller': ['mono desechable', 'material desechable', 'proteccion desechable', 'protección desechable'],
       'pintar_renovar_piscina': ['pintar piscina', 'pintar la piscina', 'renovar piscina', 'renovar la piscina', 'renovar mi piscina', 'pintura de piscina', 'pintura para piscinas'],
       'elegir_imprimacion': ['imprimacion', 'imprimación', 'necesito imprimacion', 'que imprimacion'],
@@ -4976,8 +5099,13 @@ window.SOLUCIONES_DATA = (function () {
       // concreta apunte a la solución correcta en vez de caer siempre en la
       // guía general de pintar fachada exterior.
       'fachada_piedra_absorbe_agua': ['hidrofugar', 'piedra vista', 'ladrillo visto', 'impermeabilizar la piedra', 'fachada de piedra', 'absorbe agua', 'absorbe mucha agua'],
-      'grietas_fachada': ['grieta en la fachada', 'grietas en la fachada', 'fisura en la fachada', 'fisuras en la fachada', 'fachada agrietada'],
+      'grietas_fachada': ['grieta en la fachada', 'grietas en la fachada', 'fisura en la fachada', 'fisuras en la fachada', 'fisuras en fachada', 'fisura en fachada', 'fachada agrietada', 'revestimiento elastico antifisuras', 'revestimiento elástico antifisuras', 'revestimiento antifisuras', 'revestimiento', 'fachada', 'r-50', 'r 50', 'r50'],
       'salitre_fachada': ['salitre', 'eflorescencia', 'eflorescencias', 'manchas blancas en la fachada', 'capilaridad'],
+      // 'proteger_fachada_monocapa' ANTES de 'fachada_deteriorada' (que
+      // reacciona a la palabra genérica "fachada"): una consulta sobre
+      // proteger/hidrofugar un mortero monocapa concreto no debe caer en
+      // la guía general de pintar fachada exterior.
+      'proteger_fachada_monocapa': ['mortero monocapa', 'monocapa', 'revestimiento acrilico siliconado', 'revestimiento acrílico siliconado', 'revestimiento', 'fachada', 'hidrofugante fachada', 'hidrofugante para fachada', 'proteccion de fachada', 'protección de fachada', 'proteccion de fachadas', 'protección de fachadas', 'r-20', 'r 20', 'r20'],
       // 'acabado_forjado_metal' ANTES de 'pintar_verja_hierro': si el usuario
       // pide específicamente un acabado de forja/pavonado/martelé, no debe
       // caer en la guía genérica de pintar una verja con esmalte liso.
