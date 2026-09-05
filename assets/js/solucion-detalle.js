@@ -157,6 +157,33 @@
         </div>
       </section>` : ''}
 
+      ${sol.calculadoraTemple ? `
+      <!-- Calculadora de pasta al temple: Kg necesarios + agua de dilución -->
+      <section class="cs-section no-imprimir">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-heading__eyebrow">Antes de comprar</p>
+            <h2>¿Cuánta pasta al temple necesitas?</h2>
+          </div>
+          <div class="cs-calculadora">
+            <div class="cs-calculadora__campos">
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-temple-tipo">Acabado</label>
+                <select id="cs-calc-temple-tipo">
+                  ${sol.calculadoraTemple.opciones.map((o) => `<option value="${o.id}">${o.label}</option>`).join('')}
+                </select>
+              </div>
+              <div class="cs-calculadora__campo">
+                <label for="cs-calc-temple-superficie">Superficie a pintar (m²)</label>
+                <input type="number" id="cs-calc-temple-superficie" min="0" step="0.5" placeholder="Ej: 20">
+              </div>
+            </div>
+            <p id="cs-calc-temple-resultado" class="cs-calculadora__resultado"></p>
+            <p class="cs-calculadora__nota">Rendimiento y dilución según el modo de empleo del propio fabricante — pueden variar ligeramente según el estado y la absorción de la superficie.</p>
+          </div>
+        </div>
+      </section>` : ''}
+
       ${sol.calculadoraCloro ? `
       <!-- Calculadora de dosis de hipoclorito de sodio (choque/mantenimiento de piscina) -->
       <section class="cs-section no-imprimir">
@@ -427,6 +454,7 @@
     renderProductosRecomendados(sol);
     renderProductosAlternativos(sol);
     wireCalculadoraCantidad(sol);
+    wireCalculadoraTemple(sol);
     wireCalculadoraCloro(sol);
     wireSelectorSuperficie(sol);
     wireCalculadoraCantidadMultiple(sol);
@@ -450,6 +478,55 @@
     };
     inputSuperficie.addEventListener('input', calcular);
     inputManos.addEventListener('input', calcular);
+  }
+
+  // Calculadora de pasta al temple — a diferencia del resto de
+  // calculadoras (que solo dan litros de pintura), aquí hacen falta
+  // DOS datos: Kg de pasta a comprar Y cuánta agua de dilución añadir,
+  // porque son productos en polvo/pasta que se preparan antes de
+  // aplicar. El acabado LISO tiene una proporción de agua fija (600-700
+  // ml/Kg, según el modo de empleo del fabricante); GOTELÉ y PICADO no
+  // tienen una proporción fija — el propio fabricante indica "según la
+  // densidad deseada" — así que para esos dos solo se calculan los Kg
+  // y se explica que el agua se ajusta a ojo, en vez de inventar una
+  // cifra que el fabricante no da.
+  function wireCalculadoraTemple(sol) {
+    if (!sol.calculadoraTemple) return;
+    const selectTipo = $('#cs-calc-temple-tipo');
+    const inputSuperficie = $('#cs-calc-temple-superficie');
+    const resultado = $('#cs-calc-temple-resultado');
+    if (!selectTipo || !inputSuperficie || !resultado) return;
+
+    const calcular = () => {
+      const opcion = sol.calculadoraTemple.opciones.find((o) => o.id === selectTipo.value);
+      const superficie = parseFloat(inputSuperficie.value);
+      if (!opcion || !superficie || superficie <= 0) { resultado.innerHTML = ''; return; }
+
+      if (opcion.rendimientoMin && opcion.rendimientoMax) {
+        // Acabado liso: rango de rendimiento Y rango de dilución fijos.
+        const kgMin = superficie / opcion.rendimientoMax;
+        const kgMax = superficie / opcion.rendimientoMin;
+        const kgMedio = (kgMin + kgMax) / 2;
+        const aguaMinL = (kgMedio * opcion.aguaMinMlKg) / 1000;
+        const aguaMaxL = (kgMedio * opcion.aguaMaxMlKg) / 1000;
+        resultado.innerHTML = `Necesitarás aproximadamente <strong>${kgMin.toFixed(1).replace('.', ',')}-${kgMax.toFixed(1).replace('.', ',')} Kg</strong> de pasta al temple ` +
+          `(${superficie} m² ÷ ${opcion.rendimientoMin}-${opcion.rendimientoMax} m²/Kg orientativos para acabado liso). ` +
+          `Dilúyela con aproximadamente <strong>${aguaMinL.toFixed(1).replace('.', ',')}-${aguaMaxL.toFixed(1).replace('.', ',')} L de agua</strong> ` +
+          `(${opcion.aguaMinMlKg}-${opcion.aguaMaxMlKg} ml de agua por Kg de pintura, según el modo de empleo del fabricante).`;
+      } else {
+        // Gotelé/picado: rendimiento fijo, pero el agua se ajusta "según
+        // la densidad deseada" — el propio fabricante no da una cifra
+        // fija, así que no se inventa una aquí tampoco.
+        const kg = superficie / opcion.rendimiento;
+        resultado.innerHTML = `Necesitarás aproximadamente <strong>${kg.toFixed(1).replace('.', ',')} Kg</strong> de pasta al temple ` +
+          `(${superficie} m² ÷ ${opcion.rendimiento} m²/Kg orientativo para acabado ${opcion.label.toLowerCase()}). ` +
+          `La cantidad de agua se ajusta <strong>según la densidad que busques</strong> (el fabricante no da aquí una proporción fija, a diferencia del acabado liso) — añade agua poco a poco, probando antes en una zona pequeña, hasta conseguir la textura deseada.`;
+      }
+    };
+
+    selectTipo.addEventListener('change', calcular);
+    inputSuperficie.addEventListener('input', calcular);
+    calcular();
   }
 
   // Calculadora de dosis de hipoclorito de sodio para piscinas — dos

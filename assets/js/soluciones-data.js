@@ -159,6 +159,7 @@ window.SOLUCIONES_DATA = (function () {
     { id: 'salitre_fachada',       label: 'Tengo manchas blancas de salitre en la fachada', solutionSlug: 'tratar-fachada-humedad-capilaridad' },
     { id: 'proteger_fachada_monocapa', label: 'Necesito proteger o hidrofugar un mortero monocapa', solutionSlug: 'proteger-fachada-mortero-monocapa' },
     { id: 'pintar_metal_general',  label: 'Quiero pintar una superficie de metal',         solutionSlug: 'pintar-metal-antioxidante-interior-exterior' },
+    { id: 'pintar_techo_temple',   label: 'Quiero pintar un techo con pasta al temple',    solutionSlug: 'pintar-techo-pasta-temple' },
     { id: 'pintar_verja_hierro',   label: 'Quiero pintar una verja o barandilla de hierro', solutionSlug: 'pintar-reja-verja-hierro' },
     { id: 'pintar_pladur',         label: 'Quiero pintar placas de pladur nuevas',          solutionSlug: 'pintar-placas-pladur-yeso-laminado' },
     { id: 'pintar_directo_oxido',  label: 'Quiero pintar el óxido sin quitarlo ni imprimar', solutionSlug: 'pintar-metal-oxidado-directo-oxiron' },
@@ -1155,10 +1156,77 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Opción económica (retoques)', nombre: 'Jamicolor Pintura Plástica Mate Int/Ext 750 ml Blanco', precio: '2,54 €' },
         { etiqueta: 'Mayor cobertura',              nombre: 'Gilmaplas Pintura Plástica Satinada Extra 15 L', precio: '65,88 €' },
       ],
-      relatedSolutions: ['restaurar-mueble-madera', 'eliminar-moho-pared-antes-pintar'],
+      relatedSolutions: ['restaurar-mueble-madera', 'eliminar-moho-pared-antes-pintar', 'pintar-techo-pasta-temple'],
       seo: {
         title: 'Cómo pintar una pared por dentro | Orencio Matas',
         description: 'Guía para preparar, imprimar si hace falta, y pintar correctamente una pared de interior, con dos manos de pintura plástica.',
+      },
+    },
+
+    'pintar-techo-pasta-temple': {
+      slug: 'pintar-techo-pasta-temple',
+      title: 'Cómo pintar un techo de interior con pasta al temple',
+      description: 'Pinta un techo (o pared) de interior con pasta al temple, la pintura tradicional en polvo/pasta que se diluye con agua, en acabado liso, gotelé o picado según cuánta densidad le des a la mezcla.',
+      category: 'pintura', subcategory: 'Pintura de interior',
+      problem: 'pintar_techo_temple',
+      objective: 'pintar',
+      surface: 'pared',
+      difficulty: 'Fácil',
+      estimatedTime: '1 día (según acabado y tiempo de secado entre manos)',
+      result: 'Techo o pared de interior pintados con pasta al temple, en el acabado liso, gotelé o picado elegido',
+      colorChart: null,
+      breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Pintura de interior'],
+      calculadoraTemple: {
+        opciones: [
+          { id: 'liso',   label: 'Liso',   rendimientoMin: 6, rendimientoMax: 7, aguaMinMlKg: 600, aguaMaxMlKg: 700 },
+          { id: 'gotele', label: 'Gotelé', rendimiento: 1 },
+          { id: 'picado', label: 'Picado', rendimiento: 1 },
+        ],
+      },
+      materials: [
+        { fase: 'Preparación', familiaSugerida: 'Lijas y limpieza',    items: ['Lija fina (si hay imperfecciones)', 'Limpieza de polvo y grasa'] },
+        { fase: 'Dilución',    familiaSugerida: 'Pasta al temple',     items: ['Recipiente limpio para diluir', 'Agua'] },
+        { fase: 'Pintura',     familiaSugerida: 'Pasta al temple',     items: ['Pasta al temple (liso, gotelé o picado)'] },
+        { fase: 'Aplicación',  familiaSugerida: 'Útiles de aplicación', items: ['Rodillo de pelo corto (liso) o pistola de gotelé (gotelé/picado)', 'Brocha para remates', 'Cinta de carrocero y plástico de protección'] },
+      ],
+      receta: [
+        { fase: 'Preparar', emoji: '🧹' },
+        { fase: 'Diluir',   emoji: '💧' },
+        { fase: 'Aplicar',  emoji: '🎨' },
+        { fase: 'Secar',    emoji: '⏳' },
+      ],
+      steps: [
+        { n: 1, title: 'Preparar la superficie', text: 'Elimina el polvo y la grasa del techo o pared, y lija ligeramente cualquier imperfección — la pasta al temple cubre bien pero no disimula grietas ni desconchones importantes.', productos: ['Lija fina (si hay imperfecciones)', 'Limpieza de polvo y grasa'] },
+        { n: 2, title: 'Proteger la zona de trabajo', text: 'En gotelé o picado aplicado a pistola las salpicaduras llegan mucho más lejos que con rodillo — protege suelo y muebles con plástico y cinta de carrocero antes de empezar.', productos: ['Cinta de carrocero y plástico de protección'] },
+        { n: 3, title: 'Diluir la pasta al temple', text: 'Deposita el contenido en un recipiente limpio y agita unos momentos antes de añadir el agua. Remueve lentamente mientras vas agregando el agua poco a poco: para acabado liso, entre 600 y 700 ml de agua por Kg de pintura; para gotelé o picado, ve añadiendo agua según la densidad que busques (más agua, gota más fina; menos agua, textura más gruesa) — usa la calculadora de abajo como punto de partida.', productos: ['Recipiente limpio para diluir', 'Agua', 'Pasta al temple (liso, gotelé o picado)'] },
+        { n: 4, title: 'Aplicar según el acabado', text: 'En liso, aplica con rodillo de pelo corto en pasadas cruzadas, rematando ángulos y esquinas con brocha. En gotelé o picado, aplica con pistola de gotelé (o el útil recomendado por el fabricante) manteniendo siempre la misma distancia y presión para que la textura salga uniforme en toda la superficie.', productos: ['Rodillo de pelo corto (liso) o pistola de gotelé (gotelé/picado)', 'Brocha para remates'] },
+        { n: 5, title: 'Dejar secar y repasar si hace falta', text: 'Deja secar por completo. En acabado liso, una segunda mano suele dar un resultado más uniforme; en gotelé y picado, con una mano bien aplicada suele ser suficiente.', productos: [] },
+      ],
+      professionalTips: [
+        'Si vas a aplicar a pistola (gotelé o picado), protégete con mascarilla — así lo indica el propio fabricante en el envase.',
+        'La pasta al temple se limpia solo con agua mientras está fresca — una vez seca sobre suelos o muebles cuesta mucho más, de ahí la importancia de proteger bien antes de empezar.',
+        'Antes de diluir toda la pasta para gotelé o picado, prueba la densidad en una zona pequeña oculta — así evitas quedarte corto o pasarte de agua en toda la mezcla de una vez.',
+      ],
+      commonMistakes: [
+        'No agitar bien la pasta antes de empezar a añadir el agua, dejando grumos que luego se notan en la superficie.',
+        'Añadir toda el agua de golpe en vez de ir removiendo lentamente mientras se agrega poco a poco.',
+        'No proteger suelo y muebles antes de aplicar gotelé o picado a pistola, donde las salpicaduras llegan mucho más lejos que con rodillo.',
+        'Aplicar a pistola sin mascarilla.',
+      ],
+      recommendedProducts: [
+        { nombre: 'PASTA AL TEMPLE LISO SACO 22 KG.', categoria: 'Pinturas', formato: '22 Kg', precio: '7,24 €' },
+        { nombre: 'PASTA AL TEMPLE BOLSA 1 KG. BLANCA (S/20 bolsas)', categoria: 'Pinturas', formato: '1 Kg', precio: '0,77 €' },
+      ],
+      alternativeProducts: [
+        { etiqueta: 'Formato granel',              nombre: 'PASTA AL TEMPLE GRANEL SACO 22 KG.', precio: '7,18 €' },
+        { etiqueta: 'Versión reforzada',            nombre: 'PASTA AL TEMPLE REFORZADA BOLSA 5 KG.BLA/CREMA', precio: '4,51 €' },
+        { etiqueta: 'Específica para gotelé',       nombre: 'PASTA AL TEMPLE GOTELE JAFEP 25 KG.', precio: '11,30 €' },
+        { etiqueta: 'Formato intermedio',           nombre: 'PASTA AL TEMPLE BOLSA 5 KG. BLANCA (S/4 bolsas)', precio: '3,30 €' },
+      ],
+      relatedSolutions: ['pintar-pared-interior', 'elegir-brocha-rodillo-pintar', 'elegir-cinta-papel-enmascarar'],
+      seo: {
+        title: 'Cómo pintar un techo de interior con pasta al temple | Orencio Matas',
+        description: 'Guía para diluir y aplicar pasta al temple en techos y paredes de interior, en acabado liso, gotelé o picado, con calculadora de cantidad y dilución.',
       },
     },
 
@@ -3886,7 +3954,7 @@ window.SOLUCIONES_DATA = (function () {
           { id: 'verjas', label: 'Verjas o superficies estrechas', nombre: 'RODILLO MINI ESPECIAL VERJAS PENTRILO RF.07665', motivo: 'Formato mini, pensado para barrotes y perfiles estrechos donde un rodillo normal no entra bien.' },
         ],
       },
-      relatedSolutions: ['pintar-pared-interior', 'solucionar-problemas-pintura-aplicacion', 'pintar-metal-antioxidante-interior-exterior'],
+      relatedSolutions: ['pintar-pared-interior', 'solucionar-problemas-pintura-aplicacion', 'pintar-metal-antioxidante-interior-exterior', 'pintar-techo-pasta-temple'],
       seo: {
         title: 'Cómo elegir la brocha y el rodillo adecuados para pintar | Orencio Matas',
         description: 'Guía para elegir brocha y rodillo según la superficie y el acabado, y cómo combinarlos para un resultado uniforme.',
@@ -3946,7 +4014,7 @@ window.SOLUCIONES_DATA = (function () {
           { id: 'irregular', label: 'El resto del vehículo o una zona irregular', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', motivo: 'El film se adapta mejor que el papel a formas irregulares, y ya lleva la cinta incorporada.' },
         ],
       },
-      relatedSolutions: ['pintar-plastico-coche', 'elegir-pistola-pintar', 'pintar-metal-antioxidante-interior-exterior'],
+      relatedSolutions: ['pintar-plastico-coche', 'elegir-pistola-pintar', 'pintar-metal-antioxidante-interior-exterior', 'pintar-techo-pasta-temple'],
       seo: {
         title: 'Cómo elegir la cinta y el papel de enmascarar antes de pintar | Orencio Matas',
         description: 'Guía para elegir cinta de carrocero, papel y film de enmascarado para proteger correctamente antes de pintar.',
@@ -5070,6 +5138,7 @@ window.SOLUCIONES_DATA = (function () {
       // la primera, así que una búsqueda amplia como "pintura para metal"
       // ya muestra las dos y quien busca decide cuál le interesa más.
       'pintar_metal_general': ['pintar metal', 'pintar hierro', 'como pintar metal', 'cómo pintar metal', 'como pintar hierro', 'cómo pintar hierro', 'pintar una superficie metalica', 'pintar una superficie metálica', 'pintar una superficie de metal', 'superficie de metal', 'esmalte antioxidante', 'pintura antioxidante', 'antioxidante al agua', 'antioxidante sintetico', 'antioxidante sintético'],
+      'pintar_techo_temple': ['pasta al temple', 'pintura al temple', 'temple liso', 'temple gotele', 'temple gotelé', 'temple picado', 'pintar techo', 'pintar un techo', 'pintar el techo', 'gotele', 'gotelé', 'picado techo'],
       'material_desechable_taller': ['mono desechable', 'material desechable', 'proteccion desechable', 'protección desechable'],
       'pintar_renovar_piscina': ['pintar piscina', 'pintar la piscina', 'renovar piscina', 'renovar la piscina', 'renovar mi piscina', 'pintura de piscina', 'pintura para piscinas'],
       'elegir_imprimacion': ['imprimacion', 'imprimación', 'necesito imprimacion', 'que imprimacion'],
