@@ -1217,7 +1217,18 @@
   border: 1px dashed rgba(18, 20, 23, 0.16);
   border-radius: var(--radius-medium);
   background: var(--primary-white);
+  /* Ahora es un <button> clicable (antes un <div> estático) — se
+     resetean las propiedades por defecto del navegador para que se
+     vea igual que antes, y se añade un hover sutil como pista de que
+     ahora se puede pulsar (mismo criterio que .cs-producto-card). */
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+.cs-alternativa-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+.cs-alternativa-card--cargando { opacity: 0.6; cursor: default; }
 .cs-alternativa-card__etiqueta {
   display: inline-block;
   margin-bottom: 8px;

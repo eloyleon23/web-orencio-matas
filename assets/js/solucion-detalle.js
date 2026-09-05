@@ -370,9 +370,9 @@
             <p class="section-heading__eyebrow">Según tu caso</p>
             <h2>También puedes utilizar</h2>
           </div>
-          <div class="cs-alternativas">
+          <div class="cs-alternativas" id="cs-productos-alternativos">
             ${sol.alternativeProducts.map((a) => `
-              <div class="cs-alternativa-card">
+              <div class="cs-alternativa-card cs-alternativa-card--cargando">
                 <span class="cs-alternativa-card__etiqueta">${a.etiqueta}</span>
                 <div class="cs-alternativa-card__nombre">${a.nombre}</div>
                 <div class="cs-alternativa-card__precio">${a.precio}</div>
@@ -425,6 +425,7 @@
     `;
 
     renderProductosRecomendados(sol);
+    renderProductosAlternativos(sol);
     wireCalculadoraCantidad(sol);
     wireCalculadoraCloro(sol);
     wireSelectorSuperficie(sol);
@@ -656,6 +657,47 @@
         renderTarjetasProducto(cont, listaFinal);
         actualizarBarraExportar(sol, listaFinal);
       });
+  }
+
+  // ── "También puedes utilizar" (alternativeProducts) — a petición de
+  // Eloy: que estas tarjetas también se puedan pulsar para ver el
+  // detalle y el enlace al buscador, igual que ya hacían las de
+  // "Qué necesitas" (recommendedProducts). Mismo mecanismo de
+  // resolución contra el catálogo real y el mismo modal — se
+  // reutiliza `construirEntradaProducto`/`abrirModalProducto` en vez
+  // de duplicar la lógica, solo cambia el contenedor y la plantilla
+  // visual de la tarjeta (más compacta, con "etiqueta" en vez de
+  // "categoría", para no perder el aspecto distinto que ya tenía esta
+  // sección).
+  function renderProductosAlternativos(sol) {
+    const cont = $('#cs-productos-alternativos');
+    if (!cont || !sol.alternativeProducts || !sol.alternativeProducts.length) return;
+
+    Promise.all(sol.alternativeProducts.map((a) => D.resolverProductoReal(a.nombre)))
+      .then((resueltos) => {
+        const listaFinal = sol.alternativeProducts.map((mock, i) =>
+          construirEntradaProducto({ ...mock, categoria: mock.etiqueta }, resueltos[i]));
+        renderTarjetasAlternativas(cont, listaFinal);
+      })
+      .catch(() => {
+        const listaFinal = sol.alternativeProducts.map((mock) =>
+          construirEntradaProducto({ ...mock, categoria: mock.etiqueta }, null));
+        renderTarjetasAlternativas(cont, listaFinal);
+      });
+  }
+
+  function renderTarjetasAlternativas(cont, lista) {
+    cont.innerHTML = lista.map((p, i) => `
+      <button type="button" class="cs-alternativa-card" data-idx="${i}">
+        <span class="cs-alternativa-card__etiqueta">${p.categoria}</span>
+        <div class="cs-alternativa-card__nombre">${p.nombre}</div>
+        <div class="cs-alternativa-card__precio">${p.mostrarPrecio ? p.precio : (p.esReal ? 'Consultar precio y disponibilidad' : p.precio)}</div>
+      </button>
+    `).join('');
+
+    cont.querySelectorAll('.cs-alternativa-card').forEach((btn, i) => {
+      btn.addEventListener('click', () => abrirModalProducto(lista[i]));
+    });
   }
 
   // Combina el producto "mock" (siempre presente, es lo que ya sabíamos
