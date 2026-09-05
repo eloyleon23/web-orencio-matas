@@ -5289,17 +5289,29 @@ window.SOLUCIONES_DATA = (function () {
   function coincideCodigoProducto(textoNorm, terminoNorm) {
     const bSinSep = terminoNorm.replace(/[^a-z0-9]/g, '');
     if (bSinSep.length < 3) return false;
-    const tSinSep = textoNorm.replace(/[^a-z0-9]/g, '');
+    // Se localiza la coincidencia ignorando separadores (para que "r50"
+    // encuentre "R-50"), pero SIN perder la posición real dentro del
+    // texto ORIGINAL — a diferencia de la versión anterior, que
+    // primero eliminaba TODOS los separadores del texto objetivo y ya
+    // no podía distinguir "R-50 15 L" (con espacio real, código
+    // completo) de un código realmente pegado a más dígitos como
+    // "HP-600" (bug real: buscar "r50" no encontraba el R-50 porque,
+    // tras quitar los espacios, quedaba pegado al "15" del formato,
+    // y el carácter siguiente parecía "otro dígito del mismo número").
+    const posicionesAlfanum = [];
+    for (let idx = 0; idx < textoNorm.length; idx++) {
+      if (/[a-z0-9]/.test(textoNorm[idx])) posicionesAlfanum.push(idx);
+    }
+    const tSinSep = posicionesAlfanum.map((idx) => textoNorm[idx]).join('');
     const i = tSinSep.indexOf(bSinSep);
     if (i === -1) return false;
-    // El carácter justo después de la coincidencia no puede ser otro
-    // dígito: si no, "p60" "encontraría" el "60" que hay dentro de
-    // "hp600" (de un código totalmente distinto, p.ej. una pistola
-    // "1.5HP-600"), quedándose solo con el principio de un número más
-    // largo en vez del código completo real.
-    const siguiente = tSinSep.charAt(i + bSinSep.length);
-    if (siguiente && /\d/.test(siguiente)) return false;
-    return true;
+    const posUltimoCaracterReal = posicionesAlfanum[i + bSinSep.length - 1];
+    const siguienteEnOriginal = textoNorm.charAt(posUltimoCaracterReal + 1);
+    if (!siguienteEnOriginal || !/[a-z0-9]/.test(siguienteEnOriginal)) return true; // fin de texto o separador real: código completo
+    // Pegado a otro carácter alfanumérico sin separador real de por
+    // medio: solo se rechaza si es OTRO DÍGITO (mismo caso a evitar de
+    // siempre: "p60" dentro de "hp600"). Pegado a una letra sí se acepta.
+    return !/\d/.test(siguienteEnOriginal);
   }
 
   // Búsqueda global entre TODAS las soluciones (título, descripción,
@@ -5350,7 +5362,7 @@ window.SOLUCIONES_DATA = (function () {
           indice.push({
             nombre: p.nombre,
             fichaTecnica: p.fichaTecnica,
-            codigoNorm: normalizarTexto(p.nombre).replace(/[^a-z0-9]/g, ''),
+            codigoNorm: normalizarTexto(p.nombre),
             solutionSlug: sol.slug,
             solutionTitle: sol.title,
           });
