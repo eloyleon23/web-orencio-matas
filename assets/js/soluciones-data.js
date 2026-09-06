@@ -5493,18 +5493,62 @@ window.SOLUCIONES_DATA = (function () {
     return resultado;
   }
 
-  function buscarProductosEnCatalogo(texto) {
+  function buscarProductosEnCatalogo(texto, familiasFiltro) {
     const palabras = palabrasSignificativas(texto);
     if (!palabras.length) return Promise.resolve([]);
     return cargarCatalogoReal().then((productos) => {
-      const resultados = [];
+      const puntuar = (lista) => {
+        const resultados = [];
+        lista.forEach((p) => {
+          const nombreNorm = normalizarTexto(p.nombre || '');
+          const coincidencias = palabras.filter((w) => contienePalabra(nombreNorm, w)).length;
+          if (coincidencias > 0) resultados.push({ producto: p, coincidencias });
+        });
+        resultados.sort((a, b) => b.coincidencias - a.coincidencias);
+        return resultados.slice(0, 8).map((r) => r.producto);
+      };
+
+      // Si la IA identificó categorías reales relevantes ("área >
+      // familia"), se restringe la búsqueda a esos productos primero —
+      // evita el caso real detectado por Eloy: buscar "aire" para
+      // "limpiar un aire acondicionado" encontraba ambientadores y
+      // colonias (contienen la palabra "aire" en el nombre) en vez de
+      // productos de limpieza, porque la búsqueda solo miraba el
+      // nombre, nunca la categoría real del producto.
+      if (familiasFiltro && familiasFiltro.length) {
+        const clavesFiltro = new Set(familiasFiltro.map((f) => normalizarTexto(f)));
+        const filtrados = productos.filter((p) => clavesFiltro.has(normalizarTexto(`${p.area} > ${p.familia}`)));
+        if (filtrados.length) {
+          const conFiltro = puntuar(filtrados);
+          if (conFiltro.length) return conFiltro;
+          // Las categorías existen pero ningún nombre de esa categoría
+          // contiene las palabras — se prueba sin restringir como red
+          // de seguridad, para no devolver menos que antes.
+        }
+      }
+      return puntuar(productos);
+    });
+  }
+
+  // Lista compacta de categorías REALES del catálogo ("área > familia",
+  // sin duplicados) — se manda a la IA junto con la consulta para que
+  // pueda acotar la búsqueda de producto a una categoría real en vez de
+  // limitarse a palabras sueltas del nombre (ver el porqué completo en
+  // buscarProductosEnCatalogo). Nunca se inventa esta lista a mano: sale
+  // directa del catálogo real ya cargado, así que se mantiene sola.
+  function obtenerTaxonomiaCatalogo() {
+    return cargarCatalogoReal().then((productos) => {
+      const vistos = new Set();
+      const lista = [];
       productos.forEach((p) => {
-        const nombreNorm = normalizarTexto(p.nombre || '');
-        const coincidencias = palabras.filter((w) => contienePalabra(nombreNorm, w)).length;
-        if (coincidencias > 0) resultados.push({ producto: p, coincidencias });
+        if (!p.area || !p.familia) return;
+        const clave = `${p.area} > ${p.familia}`;
+        if (!vistos.has(clave)) {
+          vistos.add(clave);
+          lista.push(clave);
+        }
       });
-      resultados.sort((a, b) => b.coincidencias - a.coincidencias);
-      return resultados.slice(0, 8).map((r) => r.producto);
+      return lista.sort();
     });
   }
 
@@ -5570,7 +5614,7 @@ window.SOLUCIONES_DATA = (function () {
   // productos que se muestra, nunca lo que diga el propio texto.
   function buscarSolucionIA(texto) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
-    if (!url || !texto || !texto.trim()) return Promise.resolve({ solucion: null, respuesta: '', terminos: [] });
+    if (!url || !texto || !texto.trim()) return Promise.resolve({ solucion: null, respuesta: '', terminos: [], familias: [] });
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
       slug,
@@ -5578,22 +5622,23 @@ window.SOLUCIONES_DATA = (function () {
       description: soluciones[slug].description,
     }));
 
-    return fetch(url, {
+    return obtenerTaxonomiaCatalogo().then((taxonomia) => fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones de buscador.html
-      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo }),
-    })
+      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia }),
+    }))
       .then((res) => res.json())
       .then((data) => {
-        if (!data || !data.success) return { solucion: null, respuesta: '', terminos: [] };
+        if (!data || !data.success) return { solucion: null, respuesta: '', terminos: [], familias: [] };
         const solucion = (data.slug && soluciones[data.slug]) || null;
         const respuesta = solucion ? '' : (data.respuesta || '');
         const terminos = Array.isArray(data.terminos) ? data.terminos : [];
-        return { solucion, respuesta, terminos };
+        const familias = Array.isArray(data.familias) ? data.familias : [];
+        return { solucion, respuesta, terminos, familias };
       })
       .catch((err) => {
         console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
-        return { solucion: null, respuesta: '', terminos: [] };
+        return { solucion: null, respuesta: '', terminos: [], familias: [] };
       });
   }
 
@@ -5601,6 +5646,6 @@ window.SOLUCIONES_DATA = (function () {
     acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo,
   };
 })();

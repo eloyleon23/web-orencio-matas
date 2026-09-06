@@ -3988,6 +3988,7 @@ function procesarBuscarSolucionIA(data) {
   try {
     const consulta = (data.consulta || '').toString().trim();
     const catalogo = data.catalogo;
+    const taxonomia = Array.isArray(data.taxonomia) ? data.taxonomia : [];
     if (!consulta || !Array.isArray(catalogo) || !catalogo.length) {
       throw new Error('Faltan datos requeridos: consulta o catalogo');
     }
@@ -4000,19 +4001,31 @@ function procesarBuscarSolucionIA(data) {
       return (i + 1) + '. slug="' + s.slug + '" — ' + s.title + ' — ' + (s.description || '');
     }).join('\n');
 
+    // Lista de categorías REALES del catálogo ("área > familia") — a
+    // petición de Eloy tras detectar un caso real: buscar "aire" para
+    // "limpiar un aire acondicionado" encontraba ambientadores y
+    // colonias (contienen la palabra "aire" en el nombre) en vez de
+    // productos de limpieza, porque antes solo se buscaba por palabra
+    // suelta en el nombre, nunca por categoría real. Con esta lista, la
+    // IA puede acotar la búsqueda a una categoría real en vez de
+    // limitarse a asociación libre de palabras.
+    const listadoTaxonomia = taxonomia.length ? taxonomia.map(function (t) { return '- ' + t; }).join('\n') : '(sin categorías disponibles)';
+
     const prompt = 'Eres el motor de búsqueda del Centro de Soluciones de Orencio Matas y Hermanos, ' +
       'una tienda de droguería, perfumería, pinturas y suministros para talleres y carrocerías.\n' +
       'Un cliente ha escrito esta consulta con sus propias palabras:\n"' + consulta + '"\n\n' +
       'Estas son TODAS las guías escritas a mano disponibles (y solo estas — no existen otras):\n' + listado + '\n\n' +
+      'Estas son TODAS las categorías reales de nuestro catálogo de productos (formato "área > familia" — y solo estas, no existen otras):\n' + listadoTaxonomia + '\n\n' +
       'Responde EXACTAMENTE con estas líneas, sin nada más:\n' +
       'SLUG: <el slug de la guía que mejor resuelva la consulta, copiado EXACTAMENTE como aparece arriba, o NINGUNA si ninguna encaja de verdad>\n' +
       'RESPUESTA: <SOLO si SLUG es NINGUNA — una explicación breve y práctica en 2-4 frases de cómo abordar el problema del cliente y qué tipo de producto o material usar. IMPORTANTE: no menciones NUNCA una marca ni un nombre de producto concreto, solo el TIPO genérico (p.ej. "un desinfectante neutro", "un cepillo de cerdas suaves", "un producto específico para algas de piscina") — los productos reales se buscan aparte, en nuestro catálogo. Si SLUG no es NINGUNA, deja esta línea completamente vacía.>\n' +
-      'TERMINOS: <3 a 6 palabras clave en español, separadas por comas, de los TIPOS de producto que ayudarían con esta consulta — incluso si SLUG no es NINGUNA. Si de verdad no hay ningún producto de droguería/perfumería/pintura/talleres remotamente relacionado, deja esta línea vacía>';
+      'TERMINOS: <3 a 6 palabras clave en español, separadas por comas, de los TIPOS de producto que ayudarían con esta consulta — incluso si SLUG no es NINGUNA. Si de verdad no hay ningún producto de droguería/perfumería/pintura/talleres remotamente relacionado, deja esta línea vacía>\n' +
+      'FAMILIAS: <0 a 3 categorías copiadas EXACTAMENTE como aparecen en la lista de categorías reales de arriba (formato "área > familia"), las que de verdad contendrían el tipo de producto que ayudaría con esta consulta — deja vacío si ninguna categoría real encaja bien, nunca inventes una categoría que no esté en la lista>';
 
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=' + GEMINI_API_KEY;
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 220 },
+      generationConfig: { temperature: 0.2, maxOutputTokens: 300 },
     };
     const options = {
       method: 'post',
@@ -4025,7 +4038,7 @@ function procesarBuscarSolucionIA(data) {
     const codigo = resp.getResponseCode();
     if (codigo !== 200) {
       console.error('Error de Gemini:', codigo, resp.getContentText());
-      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, respuesta: '', terminos: [] }))
+      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, respuesta: '', terminos: [], familias: [] }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -4039,6 +4052,7 @@ function procesarBuscarSolucionIA(data) {
     let slugPropuesto = null;
     let respuestaIA = '';
     let terminos = [];
+    let familiasPropuestas = [];
     let seccionActual = null;
     textoRespuesta.split('\n').forEach(function (linea) {
       const l = linea.trim();
@@ -4052,24 +4066,34 @@ function procesarBuscarSolucionIA(data) {
         const resto = l.replace(/^TERMINOS:/i, '').trim();
         terminos = resto ? resto.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
         seccionActual = null;
+      } else if (/^FAMILIAS:/i.test(l)) {
+        const resto = l.replace(/^FAMILIAS:/i, '').trim();
+        familiasPropuestas = resto ? resto.split(';').map(function (t) { return t.trim(); }).filter(Boolean) : [];
+        seccionActual = null;
       } else if (seccionActual === 'respuesta' && l) {
         respuestaIA = (respuestaIA + ' ' + l).trim();
       }
     });
 
     const slugValido = catalogo.some(function (s) { return s.slug === slugPropuesto; });
+    // Igual que con el slug, nunca se confía a ciegas en las familias
+    // devueltas — se comprueba que existan de verdad en la taxonomía
+    // recibida antes de aceptarlas, por si el modelo "alucina" una.
+    const familiasValidas = familiasPropuestas.filter(function (f) { return taxonomia.indexOf(f) !== -1; });
     console.log('Consulta:', consulta, '| Gemini slug:', JSON.stringify(slugPropuesto), '| válido:', slugValido,
-      '| respuesta:', JSON.stringify(respuestaIA), '| términos:', JSON.stringify(terminos));
+      '| respuesta:', JSON.stringify(respuestaIA), '| términos:', JSON.stringify(terminos),
+      '| familias:', JSON.stringify(familiasValidas));
 
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
       slug: slugValido ? slugPropuesto : null,
       respuesta: slugValido ? '' : respuestaIA, // si hay guía real, no hace falta el texto genérico
       terminos: terminos,
+      familias: familiasValidas,
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarBuscarSolucionIA:', err);
-    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, respuesta: '', terminos: [], error: err.message }))
+    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, respuesta: '', terminos: [], familias: [], error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

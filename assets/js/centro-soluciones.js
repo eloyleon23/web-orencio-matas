@@ -135,7 +135,7 @@
     // resultados ya mostrada (caso del botón "pedir ayuda a la IA" bajo
     // demanda, cuando la coincidencia curada existe pero es floja).
     function ejecutarBusquedaIA(texto, contenedor, esAdicional) {
-      D.buscarSolucionIA(texto).then(({ solucion, respuesta, terminos }) => {
+      D.buscarSolucionIA(texto).then(({ solucion, respuesta, terminos, familias }) => {
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
 
         if (solucion) {
@@ -168,7 +168,7 @@
         // función de Apps Script aún no desplegada), se prueba con el
         // texto tal cual como último intento.
         const terminosBusqueda = (terminos && terminos.length) ? terminos.join(' ') : texto;
-        D.buscarProductosEnCatalogo(terminosBusqueda).then((productos) => {
+        D.buscarProductosEnCatalogo(terminosBusqueda, familias).then((productos) => {
           if (input.value.trim() !== texto) return;
 
           if (!productos.length) {
