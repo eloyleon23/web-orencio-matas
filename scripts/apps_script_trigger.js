@@ -3970,14 +3970,20 @@ function procesarEnviarContacto(data) {
 // siempre que el slug devuelto exista de verdad entre los recibidos antes
 // de aceptarlo, por si "alucina" un slug que no existe.
 //
-// Devuelve TANTO un slug de guía (si encaja alguna) COMO unos términos de
-// búsqueda de producto — a petición de Eloy: "el principal objetivo es
-// vender a partir de mostrar nuestros productos", así que aunque no haya
-// una guía completa que encaje, el cliente puede usar esos términos para
-// buscar productos REALES en el catálogo (con buscarProductosEnCatalogo,
-// el mismo motor de siempre, solo que con términos ya limpiados por la
-// IA en vez del texto tal cual lo escribió el cliente) en vez de mandar a
-// la persona sin nada.
+// Devuelve TRES cosas — a petición de Eloy: casos como "limpieza interior
+// de una barrica de madera" o "quitar el verde del borde de la piscina"
+// no tienen (ni tendrán nunca todos) una guía propia escrita a mano, pero
+// sí merece la pena ofrecer una orientación y productos reales:
+// - slug: una guía existente si encaja alguna (caso ya cubierto antes).
+// - respuesta: una explicación breve y práctica generada por la IA para
+//   problemas SIN guía propia — a propósito, se le pide que NUNCA nombre
+//   marcas ni productos concretos (solo el TIPO de producto/material),
+//   así el texto no puede "inventar" un producto que no vendemos; los
+//   productos que de verdad se muestran salen siempre de la búsqueda
+//   real de catálogo de abajo, nunca de lo que diga este texto.
+// - terminos: palabras clave de producto (como ya se hacía) que
+//   alimentan buscarProductosEnCatalogo — la ÚNICA fuente de productos
+//   reales, "productos siempre de los disponibles" tal cual pidió Eloy.
 function procesarBuscarSolucionIA(data) {
   try {
     const consulta = (data.consulta || '').toString().trim();
@@ -3997,15 +4003,16 @@ function procesarBuscarSolucionIA(data) {
     const prompt = 'Eres el motor de búsqueda del Centro de Soluciones de Orencio Matas y Hermanos, ' +
       'una tienda de droguería, perfumería, pinturas y suministros para talleres y carrocerías.\n' +
       'Un cliente ha escrito esta consulta con sus propias palabras:\n"' + consulta + '"\n\n' +
-      'Estas son TODAS las guías disponibles (y solo estas — no existen otras):\n' + listado + '\n\n' +
-      'Responde EXACTAMENTE con estas dos líneas, sin nada más:\n' +
+      'Estas son TODAS las guías escritas a mano disponibles (y solo estas — no existen otras):\n' + listado + '\n\n' +
+      'Responde EXACTAMENTE con estas líneas, sin nada más:\n' +
       'SLUG: <el slug de la guía que mejor resuelva la consulta, copiado EXACTAMENTE como aparece arriba, o NINGUNA si ninguna encaja de verdad>\n' +
-      'TERMINOS: <2 a 4 palabras clave en español, separadas por comas, del tipo de PRODUCTO que ayudaría con esta consulta — incluso si SLUG es NINGUNA. Si de verdad no hay ningún producto de droguería/perfumería/pintura/talleres remotamente relacionado, deja esta línea vacía>';
+      'RESPUESTA: <SOLO si SLUG es NINGUNA — una explicación breve y práctica en 2-4 frases de cómo abordar el problema del cliente y qué tipo de producto o material usar. IMPORTANTE: no menciones NUNCA una marca ni un nombre de producto concreto, solo el TIPO genérico (p.ej. "un desinfectante neutro", "un cepillo de cerdas suaves", "un producto específico para algas de piscina") — los productos reales se buscan aparte, en nuestro catálogo. Si SLUG no es NINGUNA, deja esta línea completamente vacía.>\n' +
+      'TERMINOS: <3 a 6 palabras clave en español, separadas por comas, de los TIPOS de producto que ayudarían con esta consulta — incluso si SLUG no es NINGUNA. Si de verdad no hay ningún producto de droguería/perfumería/pintura/talleres remotamente relacionado, deja esta línea vacía>';
 
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=' + GEMINI_API_KEY;
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: 60 },
+      generationConfig: { temperature: 0.2, maxOutputTokens: 220 },
     };
     const options = {
       method: 'post',
@@ -4018,7 +4025,7 @@ function procesarBuscarSolucionIA(data) {
     const codigo = resp.getResponseCode();
     if (codigo !== 200) {
       console.error('Error de Gemini:', codigo, resp.getContentText());
-      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, terminos: [] }))
+      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, respuesta: '', terminos: [] }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -4026,30 +4033,43 @@ function procesarBuscarSolucionIA(data) {
     const textoRespuesta = ((((json.candidates || [])[0] || {}).content || {}).parts || [{}])[0].text || '';
 
     // Parseo línea a línea — tolerante a que el modelo añada espacios de
-    // más o mayúsculas/minúsculas distintas en las etiquetas.
+    // más o mayúsculas/minúsculas distintas en las etiquetas. RESPUESTA
+    // puede llevar varias frases seguidas sin salto de línea, así que se
+    // acumula todo lo que no empiece por otra etiqueta conocida.
     let slugPropuesto = null;
+    let respuestaIA = '';
     let terminos = [];
+    let seccionActual = null;
     textoRespuesta.split('\n').forEach(function (linea) {
       const l = linea.trim();
       if (/^SLUG:/i.test(l)) {
         slugPropuesto = l.replace(/^SLUG:/i, '').trim();
+        seccionActual = null;
+      } else if (/^RESPUESTA:/i.test(l)) {
+        respuestaIA = l.replace(/^RESPUESTA:/i, '').trim();
+        seccionActual = 'respuesta';
       } else if (/^TERMINOS:/i.test(l)) {
         const resto = l.replace(/^TERMINOS:/i, '').trim();
         terminos = resto ? resto.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
+        seccionActual = null;
+      } else if (seccionActual === 'respuesta' && l) {
+        respuestaIA = (respuestaIA + ' ' + l).trim();
       }
     });
 
     const slugValido = catalogo.some(function (s) { return s.slug === slugPropuesto; });
-    console.log('Consulta:', consulta, '| Gemini slug:', JSON.stringify(slugPropuesto), '| válido:', slugValido, '| términos:', JSON.stringify(terminos));
+    console.log('Consulta:', consulta, '| Gemini slug:', JSON.stringify(slugPropuesto), '| válido:', slugValido,
+      '| respuesta:', JSON.stringify(respuestaIA), '| términos:', JSON.stringify(terminos));
 
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
       slug: slugValido ? slugPropuesto : null,
+      respuesta: slugValido ? '' : respuestaIA, // si hay guía real, no hace falta el texto genérico
       terminos: terminos,
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarBuscarSolucionIA:', err);
-    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, terminos: [], error: err.message }))
+    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, respuesta: '', terminos: [], error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

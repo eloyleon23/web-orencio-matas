@@ -85,10 +85,30 @@
       // literal en título/descripción/productos — antes solo se usaba
       // esta segunda, mucho más limitada. Ver buscarSolucionesCombinado
       // en soluciones-data.js para el porqué completo.
+      //
+      // El diagnóstico CURADO se guarda aparte del combinado a
+      // propósito: la coincidencia literal es bastante más ruidosa (p.
+      // ej. "limpieza interior de una barrica de madera" encuentra 32
+      // guías por solapar palabras sueltas como "limpieza"/"madera" con
+      // media web, sin que ninguna trate de verdad ese caso concreto) —
+      // si se usara solo "¿ha encontrado algo el combinado?" para
+      // decidir si merece la pena llamar a la IA automáticamente, casi
+      // nunca se llegaría a llamar, aunque ese "algo" fuera ruido sin
+      // relación real con lo que pedía el cliente.
+      const curadas = D.diagnosticarPorTexto(texto).todasLasSoluciones.length;
       const encontradas = D.buscarSolucionesCombinado(texto).slice(0, 12);
 
-      if (fichaDirecta || encontradas.length) {
+      if (fichaDirecta || curadas) {
+        // Aun con coincidencia curada, esta puede ser floja para
+        // consultas raras (p. ej. "limpieza interior de una barrica de
+        // madera" encuentra 1 resultado curado, probablemente por
+        // solape incidental, no porque exista de verdad una guía sobre
+        // barricas) — se deja siempre visible un botón para pedir
+        // también la ayuda de la IA bajo demanda (nunca automático
+        // aquí, para no gastar en cada búsqueda que ya tiene un
+        // resultado razonable), tal como pidió Eloy para casos así.
         mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta);
+        wireBotonPedirIA(texto);
         return;
       }
 
@@ -99,55 +119,109 @@
       // buscador general — pero si aquí ya no hay nada, en el buscador
       // tampoco lo habrá, y ese enlace daba sensación de que algo
       // funcionaba mal (Eloy). Ahora: se le da una oportunidad a la
-      // búsqueda inteligente con IA (ver buscarSolucionIA en
-      // soluciones-data.js) — solo entra en juego aquí, en el caso que
-      // hoy ya fallaba, así que no añade coste a las búsquedas que el
-      // motor de palabras clave ya resuelve bien.
+      // búsqueda inteligente con IA automáticamente — solo entra en
+      // juego aquí, en el caso que hoy ya fallaba del todo, así que no
+      // añade coste a las búsquedas que el motor de palabras clave ya
+      // resuelve razonablemente bien.
       resultados.innerHTML = `<p class="cs-hero__buscador-contador">Buscando para "${texto}"…</p>`;
       resultados.style.display = 'block';
-      D.buscarSolucionIA(texto).then(({ solucion, terminos }) => {
+      ejecutarBusquedaIA(texto, resultados, false);
+    }
+
+    // Ejecuta la búsqueda inteligente con IA y escribe el resultado en
+    // el `contenedor` indicado — puede ser `resultados` entero
+    // (reemplazando todo, caso automático de "no se ha encontrado
+    // nada") o un sub-bloque que se añade DEBAJO de una lista de
+    // resultados ya mostrada (caso del botón "pedir ayuda a la IA" bajo
+    // demanda, cuando la coincidencia curada existe pero es floja).
+    function ejecutarBusquedaIA(texto, contenedor, esAdicional) {
+      D.buscarSolucionIA(texto).then(({ solucion, respuesta, terminos }) => {
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
 
         if (solucion) {
-          mostrarResultadosBusquedaHero([solucion], texto, null, true);
+          if (esAdicional) {
+            const area = D.areas.find((a) => a.id === solucion.category);
+            const emoji = area ? area.emoji : '🛠️';
+            contenedor.innerHTML = `
+              <p class="cs-hero__buscador-contador" style="margin-top:14px;">🤖 Sugerido por IA:</p>
+              <div class="cs-hero__buscador-lista">
+                <a class="cs-hero__buscador-chip" href="${urlSolucion(solucion.slug)}"><span aria-hidden="true">${emoji}</span> ${solucion.title}</a>
+              </div>
+            `;
+          } else {
+            mostrarResultadosBusquedaHero([solucion], texto, null, true);
+          }
           return;
         }
 
-        // Ninguna guía encaja, pero la IA puede haber sugerido palabras
-        // clave de producto (p. ej. "jabón, desinfectante" para una
-        // consulta rara sobre un perro y una pastilla de jabón) — a
-        // petición de Eloy: "el principal objetivo es vender a partir de
-        // mostrar nuestros productos", así que se busca con esos
-        // términos en el catálogo REAL en vez de rendirse. Si la IA no
-        // dio términos útiles (o la llamada falló del todo — sin
-        // conexión, o la función de Apps Script aún no desplegada), se
-        // prueba con el texto tal cual como último intento.
+        // Ninguna guía escrita a mano encaja (casos como "limpieza
+        // interior de una barrica de madera" o "quitar el verde del
+        // borde de la piscina" nunca tendrán una guía propia para cada
+        // caso posible) — a petición de Eloy: que la IA ofrezca una
+        // solución alternativa igualmente, con productos SIEMPRE de los
+        // disponibles. `respuesta` es la orientación que genera la IA
+        // (nunca nombra marcas ni productos concretos — eso lo evita el
+        // propio prompt); los productos que se muestran de verdad salen
+        // siempre de la búsqueda real de catálogo con `terminos`, nunca
+        // de lo que diga el texto de la IA. Si la IA no dio términos
+        // útiles (o la llamada falló del todo — sin conexión, o la
+        // función de Apps Script aún no desplegada), se prueba con el
+        // texto tal cual como último intento.
         const terminosBusqueda = (terminos && terminos.length) ? terminos.join(' ') : texto;
         D.buscarProductosEnCatalogo(terminosBusqueda).then((productos) => {
           if (input.value.trim() !== texto) return;
 
           if (!productos.length) {
+            if (esAdicional) {
+              contenedor.innerHTML = `<p class="cs-hero__buscador-contador" style="margin-top:14px;">🤖 La IA tampoco ha encontrado nada más específico para esto.</p>`;
+              return;
+            }
             // De verdad no hay nada — ni guía, ni sugerencia de IA con
             // producto real. Se dice así de claro, SIN enlace al
             // buscador general (ahí tampoco habría nada) — a petición
             // expresa de Eloy, para no dar sensación de que el buscador
             // funciona mal.
-            resultados.innerHTML = `
+            contenedor.innerHTML = `
               <p class="cs-hero__buscador-vacio">No hemos encontrado ninguna solución para "<strong>${texto}</strong>" — prueba a contárnoslo con otras palabras en <a href="#cs-problema">¿Tienes un problema?</a>, o llámanos y te ayudamos directamente.</p>
             `;
-            resultados.style.display = 'block';
+            contenedor.style.display = 'block';
             return;
           }
 
-          resultados.innerHTML = `
-            <p class="cs-hero__buscador-contador">🤖 No tenemos una guía específica para "${texto}", pero estos productos pueden ayudarte:</p>
+          const bloqueRespuesta = respuesta ? `
+            <div class="cs-hero__ia-respuesta" style="margin-top:${esAdicional ? '14px' : '0'};">
+              <p><span aria-hidden="true">🤖</span> <strong>Sugerencia de IA</strong> — no es una de nuestras guías, pero puede orientarte:</p>
+              <p>${respuesta}</p>
+            </div>
+          ` : `<p class="cs-hero__buscador-contador" style="margin-top:${esAdicional ? '14px' : '0'};">🤖 ${esAdicional ? 'Además, estos' : 'No tenemos una guía específica para "' + texto + '", pero estos'} productos pueden ayudarte:</p>`;
+
+          contenedor.innerHTML = `
+            ${bloqueRespuesta}
+            <p class="cs-hero__buscador-contador" style="margin-top:14px;">Productos que podrían servirte:</p>
             <div class="cs-productos-grid" style="margin-top:12px;">
               ${productos.slice(0, 6).map((p) => renderTarjetaProductoCatalogo(p)).join('')}
             </div>
           `;
-          resultados.style.display = 'block';
+          contenedor.style.display = 'block';
         });
       });
+    }
+
+    // Botón "pedir ayuda a la IA" bajo demanda — se añade al final de
+    // los resultados curados/combinados cuando estos existen pero
+    // pueden ser flojos para consultas raras. Nunca se lanza la llamada
+    // a la IA sola con solo mostrar resultados normales; hace falta que
+    // el propio cliente lo pida, para no gastar en cada búsqueda que ya
+    // tiene un resultado razonable.
+    function wireBotonPedirIA(texto) {
+      const boton = $('#cs-hero-pedir-ia');
+      const extra = $('#cs-hero-ia-extra');
+      if (!boton || !extra) return;
+      boton.addEventListener('click', () => {
+        boton.disabled = true;
+        boton.textContent = 'Preguntando a la IA…';
+        ejecutarBusquedaIA(texto, extra, true);
+      }, { once: true });
     }
 
     function mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta, esSugerenciaIA) {
@@ -180,6 +254,10 @@
             return `<a class="cs-hero__buscador-chip" href="${urlSolucion(s.slug)}"><span aria-hidden="true">${emoji}</span> ${s.title}</a>`;
           }).join('')}
         </div>
+        ${esSugerenciaIA ? '' : `
+          <button type="button" class="cs-hero__pedir-ia" id="cs-hero-pedir-ia">🤖 ¿No es esto lo que buscabas? Pregunta a nuestra IA</button>
+          <div id="cs-hero-ia-extra"></div>
+        `}
       `;
       resultados.style.display = 'block';
     }

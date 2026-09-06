@@ -5559,13 +5559,18 @@ window.SOLUCIONES_DATA = (function () {
   // también (que el slug exista de verdad en `soluciones`) — nunca se
   // confía a ciegas en dos sitios distintos por si acaso.
   //
-  // Devuelve { solucion, terminos }: `solucion` es la guía si Gemini
-  // encontró una que encaje (o null); `terminos` son las palabras clave
-  // de producto que sugiere aunque no haya guía — se usan para buscar
-  // productos REALES en el catálogo en vez de dejar al cliente sin nada.
+  // Devuelve { solucion, respuesta, terminos }: `solucion` es la guía si
+  // Gemini encontró una que encaje (o null); `respuesta` es una
+  // explicación breve generada por la IA para problemas SIN guía propia
+  // (p. ej. "limpieza interior de una barrica de madera") — nunca
+  // nombra marcas ni productos concretos, solo el tipo de producto o
+  // material, así el texto no puede "inventar" nada que no vendamos;
+  // `terminos` son las palabras clave de producto que se usan para
+  // buscar productos REALES en el catálogo — la única fuente de
+  // productos que se muestra, nunca lo que diga el propio texto.
   function buscarSolucionIA(texto) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
-    if (!url || !texto || !texto.trim()) return Promise.resolve({ solucion: null, terminos: [] });
+    if (!url || !texto || !texto.trim()) return Promise.resolve({ solucion: null, respuesta: '', terminos: [] });
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
       slug,
@@ -5580,14 +5585,15 @@ window.SOLUCIONES_DATA = (function () {
     })
       .then((res) => res.json())
       .then((data) => {
-        if (!data || !data.success) return { solucion: null, terminos: [] };
+        if (!data || !data.success) return { solucion: null, respuesta: '', terminos: [] };
         const solucion = (data.slug && soluciones[data.slug]) || null;
+        const respuesta = solucion ? '' : (data.respuesta || '');
         const terminos = Array.isArray(data.terminos) ? data.terminos : [];
-        return { solucion, terminos };
+        return { solucion, respuesta, terminos };
       })
       .catch((err) => {
         console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
-        return { solucion: null, terminos: [] };
+        return { solucion: null, respuesta: '', terminos: [] };
       });
   }
 

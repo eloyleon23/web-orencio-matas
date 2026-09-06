@@ -225,6 +225,35 @@
   font-size: 1.2rem;
   flex-shrink: 0;
 }
+.cs-hero__ia-respuesta {
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  line-height: 1.5;
+}
+.cs-hero__ia-respuesta p:first-child { margin-bottom: 4px; }
+.cs-hero__ia-respuesta p:last-child { margin-bottom: 0; }
+.cs-hero__pedir-ia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border: 1px dashed #a78bfa;
+  border-radius: 999px;
+  background: transparent;
+  color: #6d28d9;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.cs-hero__pedir-ia:hover { background: #f5f3ff; }
+.cs-hero__pedir-ia:disabled { opacity: 0.6; cursor: default; }
 @media (max-width: 640px) {
   .cs-hero__buscador-resultados { padding: 14px; }
   .cs-hero__ficha-directa { flex-direction: column; }
