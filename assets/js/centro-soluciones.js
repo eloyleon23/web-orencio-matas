@@ -93,14 +93,27 @@
       }
 
       // Ni el diagnóstico ni el título/descripción/productos de ninguna
-      // guía encajan, ni hay ficha técnica reconocible — antes esto ya
-      // terminaba en "no hemos encontrado nada", dando la sensación de un
-      // buscador roto para cualquier término no anticipado (p. ej.
-      // "moscas", sin guía propia aunque sí haya insecticidas reales en
-      // el catálogo). Último recurso: buscar de verdad en el catálogo
-      // completo (mismo mecanismo que ya usaba "¿Tienes un problema?"
-      // como respaldo) y proponer esos productos en vez de dejar a la
-      // persona sin nada.
+      // guía encajan, ni hay ficha técnica reconocible. Antes esto caía
+      // directo a la búsqueda en el catálogo de productos — ahora, antes
+      // de rendirse, se le da una oportunidad a la búsqueda inteligente
+      // con IA (ver buscarSolucionIA en soluciones-data.js): solo entra
+      // en juego aquí, en el caso que hoy ya fallaba, así que no añade
+      // coste a las búsquedas que el motor de palabras clave ya resuelve
+      // bien. Si tampoco encuentra nada (o no hay conexión, o la función
+      // de Apps Script aún no está desplegada), se sigue cayendo al mismo
+      // respaldo de siempre sin que el usuario note ninguna diferencia.
+      resultados.innerHTML = `<p class="cs-hero__buscador-contador">Buscando para "${texto}"…</p>`;
+      resultados.style.display = 'block';
+      D.buscarSolucionIA(texto).then((solucionIA) => {
+        if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
+        if (solucionIA) {
+          mostrarResultadosBusquedaHero([solucionIA], texto, null, true);
+          return;
+        }
+        buscarEnCatalogoComoUltimoRecurso();
+      });
+
+      function buscarEnCatalogoComoUltimoRecurso() {
       resultados.innerHTML = `<p class="cs-hero__buscador-contador">Buscando en el catálogo completo para "${texto}"…</p>`;
       resultados.style.display = 'block';
       D.buscarProductosEnCatalogo(texto).then((productos) => {
@@ -125,9 +138,10 @@
         `;
         resultados.style.display = 'block';
       });
+      }
     }
 
-    function mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta) {
+    function mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta, esSugerenciaIA) {
       const bloqueFicha = fichaDirecta ? `
         <div class="cs-hero__ficha-directa">
           <span aria-hidden="true">📋</span>
@@ -137,9 +151,16 @@
           </div>
         </div>
       ` : '';
-      const contador = encontradas.length
-        ? `<p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>`
-        : (fichaDirecta ? `<p class="cs-hero__buscador-contador">No hay una guía específica para "${texto}", pero sí la ficha técnica del producto:</p>` : '');
+      // Cuando el resultado viene de la búsqueda inteligente con IA (ver
+      // buscarSolucionIA) en vez del motor de palabras clave habitual, se
+      // avisa de forma transparente — mismo criterio de honestidad que ya
+      // se aplica en el asistente de diagnóstico (nunca simular una
+      // coincidencia segura que en realidad no lo es).
+      const contador = esSugerenciaIA
+        ? `<p class="cs-hero__buscador-contador">🤖 Sugerido por IA para "${texto}" — no es una coincidencia exacta de palabras, pero puede ser lo que buscas:</p>`
+        : (encontradas.length
+          ? `<p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>`
+          : (fichaDirecta ? `<p class="cs-hero__buscador-contador">No hay una guía específica para "${texto}", pero sí la ficha técnica del producto:</p>` : ''));
       resultados.innerHTML = `
         ${bloqueFicha}
         ${contador}

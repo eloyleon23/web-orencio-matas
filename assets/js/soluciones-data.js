@@ -5547,10 +5547,47 @@ window.SOLUCIONES_DATA = (function () {
     });
   }
 
+  // ── Búsqueda inteligente con IA (red de seguridad) ──────────────────────
+  // Se usa SOLO cuando el motor de palabras clave de arriba
+  // (diagnosticarPorTexto/buscarSolucionesCombinado) no ha encontrado
+  // nada — así el coste de la llamada a la IA (gratis en el nivel de
+  // Google Gemini, pero con límite de peticiones al día) se gasta solo en
+  // las búsquedas que hoy ya fallan, no en todas. El catálogo que se
+  // manda es COMPACTO a propósito (solo slug/título/descripción, no los
+  // datos completos de cada guía) para no disparar el tamaño de la
+  // petición. La respuesta del servidor se vuelve a comprobar aquí
+  // también (que el slug exista de verdad en `soluciones`) — nunca se
+  // confía a ciegas en dos sitios distintos por si acaso.
+  function buscarSolucionIA(texto) {
+    const url = window.GOOGLE_APPS_SCRIPT_URL;
+    if (!url || !texto || !texto.trim()) return Promise.resolve(null);
+
+    const catalogo = Object.keys(soluciones).map((slug) => ({
+      slug,
+      title: soluciones[slug].title,
+      description: soluciones[slug].description,
+    }));
+
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones de buscador.html
+      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data || !data.success || !data.slug) return null;
+        return soluciones[data.slug] || null;
+      })
+      .catch((err) => {
+        console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
+        return null;
+      });
+  }
+
   return {
     acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA,
   };
 })();

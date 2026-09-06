@@ -17,6 +17,17 @@ const DRIVE_IMAGENES_ID   = '13O7N_q6IisAhsvSoXogKJ2PUDVQfUKRe';
 // ya no hace falta, hace tiempo que no se usa la clave desde el cliente.
 const BREVO_API_KEY = 'PON_AQUI_LA_NUEVA_CLAVE_DE_BREVO';
 
+// Clave de API de Google Gemini — usada SOLO desde aquí, en el servidor,
+// para la búsqueda inteligente del Centro de Soluciones (ver
+// procesarBuscarSolucionIA más abajo). Se obtiene gratis en
+// https://aistudio.google.com/apikey (sin tarjeta de crédito, nivel
+// gratuito permanente con límites de peticiones por minuto/día —
+// suficiente para el volumen de una tienda). Igual que con Brevo, este
+// archivo de referencia en el repo solo lleva un texto de relleno; la
+// clave real solo se pega aquí en el editor de Apps Script, que no es
+// público como GitHub.
+const GEMINI_API_KEY = 'PON_AQUI_TU_CLAVE_DE_GOOGLE_AI_STUDIO';
+
 // ── Menú personalizado ─────────────────────────────────────────────────────
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -3337,6 +3348,11 @@ function doPost(e) {
       return procesarEnviarContacto(data);
     }
 
+    if (accion === 'buscar_solucion_ia') {
+      console.log('Acción: buscar_solucion_ia');
+      return procesarBuscarSolucionIA(data);
+    }
+
     if (accion === 'sincronizar_cache_completo') {
       console.log('Acción: sincronizar_cache_completo');
       return procesarSincronizarCacheCompleto(data);
@@ -3937,6 +3953,80 @@ function procesarEnviarContacto(data) {
   } catch (err) {
     console.error('Error en procesarEnviarContacto:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Búsqueda inteligente con IA (Centro de Soluciones) ──────────────────────
+// Red de seguridad: el cliente (soluciones-data.js) SOLO llama a esto
+// cuando su propio motor de palabras clave no ha encontrado nada — así el
+// coste (gratis en el nivel de Google Gemini, pero con límite de
+// peticiones al día) se gasta solo en las búsquedas que hoy ya fallan, no
+// en todas. El cliente manda también un catálogo COMPACTO (solo
+// slug/título/descripción de cada guía, no los datos completos) en cada
+// petición, en vez de mantener aquí una copia de qué guías existen — así
+// solo hay un sitio (soluciones-data.js) donde dar de alta una guía nueva.
+// Nunca se confía a ciegas en lo que responda el modelo: se comprueba
+// siempre que el slug devuelto exista de verdad entre los recibidos antes
+// de aceptarlo, por si "alucina" un slug que no existe.
+function procesarBuscarSolucionIA(data) {
+  try {
+    const consulta = (data.consulta || '').toString().trim();
+    const catalogo = data.catalogo;
+    if (!consulta || !Array.isArray(catalogo) || !catalogo.length) {
+      throw new Error('Faltan datos requeridos: consulta o catalogo');
+    }
+
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
+      throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
+    }
+
+    const listado = catalogo.map(function (s, i) {
+      return (i + 1) + '. slug="' + s.slug + '" — ' + s.title + ' — ' + (s.description || '');
+    }).join('\n');
+
+    const prompt = 'Eres el motor de búsqueda del Centro de Soluciones de Orencio Matas y Hermanos, ' +
+      'una tienda de droguería, perfumería, pinturas y suministros para talleres y carrocerías.\n' +
+      'Un cliente ha escrito esta consulta con sus propias palabras:\n"' + consulta + '"\n\n' +
+      'Estas son TODAS las guías disponibles (y solo estas — no existen otras):\n' + listado + '\n\n' +
+      'Responde ÚNICAMENTE con el "slug" de la guía que mejor resuelva la consulta del cliente, ' +
+      'copiado EXACTAMENTE como aparece arriba, sin comillas ni texto adicional. ' +
+      'Si NINGUNA guía encaja de verdad con lo que pide, responde exactamente: NINGUNA';
+
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=' + GEMINI_API_KEY;
+    const payload = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0, maxOutputTokens: 30 },
+    };
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    };
+
+    const resp = UrlFetchApp.fetch(url, options);
+    const codigo = resp.getResponseCode();
+    if (codigo !== 200) {
+      console.error('Error de Gemini:', codigo, resp.getContentText());
+      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const json = JSON.parse(resp.getContentText());
+    const textoRespuesta = ((((json.candidates || [])[0] || {}).content || {}).parts || [{}])[0].text || '';
+    const slugPropuesto = textoRespuesta.trim();
+
+    const slugValido = catalogo.some(function (s) { return s.slug === slugPropuesto; });
+    console.log('Consulta:', consulta, '| Gemini respondió:', JSON.stringify(slugPropuesto), '| válido:', slugValido);
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      slug: slugValido ? slugPropuesto : null,
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarBuscarSolucionIA:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
