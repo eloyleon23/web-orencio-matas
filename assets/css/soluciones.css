@@ -272,6 +272,15 @@
 .cs-ia-feedback__btn:hover { background: #f3f4f6; }
 .cs-ia-feedback__btn.is-selected { border-color: var(--accent-primary, #16a34a); background: #f0fdf4; }
 .cs-ia-feedback__btn:disabled { cursor: default; opacity: 0.85; }
+.cs-hero__buscador-aviso {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  color: #9a3412;
+  line-height: 1.5;
+}
 @media (max-width: 640px) {
   .cs-hero__buscador-resultados { padding: 14px; }
   .cs-hero__ficha-directa { flex-direction: column; }

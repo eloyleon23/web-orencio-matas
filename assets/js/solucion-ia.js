@@ -76,6 +76,18 @@
     `;
   }
 
+  function renderFueraDeAlcance(mensaje) {
+    cont.innerHTML = `
+      <div class="container" style="padding:60px 20px;text-align:center;max-width:600px;margin:0 auto;">
+        <h1 style="font-family:var(--font-heading);font-size:1.8rem;margin-bottom:12px;">Consulta fuera de nuestro ámbito</h1>
+        <p class="cs-hero__buscador-aviso" style="display:inline-block;text-align:left;margin-bottom:20px;">
+          <span aria-hidden="true">⚠️</span> ${escaparHtml(mensaje || 'Este asistente solo puede ayudarte con productos y soluciones de droguería, perfumería, pintura, limpieza del hogar y talleres/carrocerías.')}
+        </p>
+        <p><a class="btn-primary" href="../centro-soluciones.html">← Volver al Centro de Soluciones</a></p>
+      </div>
+    `;
+  }
+
   function wireFeedback() {
     // De momento solo la interacción visual ("¿te ha servido?") —
     // guardar estas respuestas para que la IA aprenda de ellas es un
@@ -184,6 +196,14 @@
     renderCargando();
 
     D.buscarSolucionIA(consulta).then((datos) => {
+      // A petición de Eloy: "limitar las preguntas... informando si la
+      // pregunta es inapropiada" — se corta ANTES de intentar montar
+      // cualquier contenido si la propia IA marcó la consulta como
+      // fuera de alcance del negocio.
+      if (datos.fueraDeAlcance) {
+        renderFueraDeAlcance(datos.mensaje);
+        return;
+      }
       // Si la IA (o el propio motor de palabras clave, dentro de
       // buscarSolucionIA) en realidad encuentra una guía real ya
       // escrita a mano, no tiene sentido montar una versión dinámica de

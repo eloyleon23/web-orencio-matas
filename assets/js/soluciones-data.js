@@ -5612,9 +5612,19 @@ window.SOLUCIONES_DATA = (function () {
   // `terminos` son las palabras clave de producto que se usan para
   // buscar productos REALES en el catálogo — la única fuente de
   // productos que se muestra, nunca lo que diga el propio texto.
+  // A petición de Eloy: "limitar las preguntas de los usuarios a que
+  // tengan el alcance de nuestro negocio... informando si la pregunta
+  // es inapropiada". El propio motor de IA (procesarBuscarSolucionIA en
+  // Apps Script) clasifica esto ANTES de generar nada — si la consulta
+  // no tiene que ver con droguería/perfumería/pintura/talleres, o es
+  // inapropiada, o es un intento de manipular las instrucciones del
+  // sistema, `fueraDeAlcance` viene en `true` con un `mensaje` para
+  // mostrar, y ninguno de los demás campos se rellena (nunca se genera
+  // ni una guía ni productos para ese caso).
   function buscarSolucionIA(texto) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
-    if (!url || !texto || !texto.trim()) return Promise.resolve({ solucion: null, titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] });
+    const vacio = { solucion: null, fueraDeAlcance: false, mensaje: '', titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] };
+    if (!url || !texto || !texto.trim()) return Promise.resolve(vacio);
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
       slug,
@@ -5629,18 +5639,21 @@ window.SOLUCIONES_DATA = (function () {
     }))
       .then((res) => res.json())
       .then((data) => {
-        if (!data || !data.success) return { solucion: null, titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] };
+        if (!data || !data.success) return vacio;
+        if (data.fueraDeAlcance) {
+          return { ...vacio, fueraDeAlcance: true, mensaje: data.mensaje || '' };
+        }
         const solucion = (data.slug && soluciones[data.slug]) || null;
         const titulo = solucion ? '' : (data.titulo || '');
         const respuesta = solucion ? '' : (data.respuesta || '');
         const pasos = solucion ? [] : (Array.isArray(data.pasos) ? data.pasos : []);
         const terminos = Array.isArray(data.terminos) ? data.terminos : [];
         const familias = Array.isArray(data.familias) ? data.familias : [];
-        return { solucion, titulo, respuesta, pasos, terminos, familias };
+        return { solucion, fueraDeAlcance: false, mensaje: '', titulo, respuesta, pasos, terminos, familias };
       })
       .catch((err) => {
         console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
-        return { solucion: null, titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] };
+        return vacio;
       });
   }
 

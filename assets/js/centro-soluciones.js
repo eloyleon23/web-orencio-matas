@@ -135,8 +135,22 @@
     // resultados ya mostrada (caso del botón "pedir ayuda a la IA" bajo
     // demanda, cuando la coincidencia curada existe pero es floja).
     function ejecutarBusquedaIA(texto, contenedor, esAdicional) {
-      D.buscarSolucionIA(texto).then(({ solucion, respuesta, terminos, familias }) => {
+      D.buscarSolucionIA(texto).then(({ solucion, fueraDeAlcance, mensaje, respuesta, terminos, familias }) => {
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
+
+        // A petición de Eloy: "limitar las preguntas... informando si
+        // la pregunta es inapropiada". Se corta aquí ANTES de mostrar
+        // ningún resultado ni buscar ningún producto — el aviso es lo
+        // único que se muestra.
+        if (fueraDeAlcance) {
+          contenedor.innerHTML = `
+            <p class="cs-hero__buscador-aviso" style="margin-top:${esAdicional ? '14px' : '0'};">
+              <span aria-hidden="true">⚠️</span> ${mensaje || 'Este asistente solo puede ayudarte con productos y soluciones de droguería, perfumería, pintura, limpieza del hogar y talleres/carrocerías.'}
+            </p>
+          `;
+          contenedor.style.display = 'block';
+          return;
+        }
 
         if (solucion) {
           if (esAdicional) {
