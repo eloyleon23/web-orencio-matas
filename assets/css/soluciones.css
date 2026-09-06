@@ -254,6 +254,24 @@
 }
 .cs-hero__pedir-ia:hover { background: #f5f3ff; }
 .cs-hero__pedir-ia:disabled { opacity: 0.6; cursor: default; }
+.cs-ia-feedback {
+  background: var(--bg-alt, #f8f9fa);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+}
+.cs-ia-feedback__btn {
+  padding: 10px 16px;
+  border: 1px solid rgba(18, 20, 23, 0.16);
+  border-radius: 999px;
+  background: var(--primary-white);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.cs-ia-feedback__btn:hover { background: #f3f4f6; }
+.cs-ia-feedback__btn.is-selected { border-color: var(--accent-primary, #16a34a); background: #f0fdf4; }
+.cs-ia-feedback__btn:disabled { cursor: default; opacity: 0.85; }
 @media (max-width: 640px) {
   .cs-hero__buscador-resultados { padding: 14px; }
   .cs-hero__ficha-directa { flex-direction: column; }

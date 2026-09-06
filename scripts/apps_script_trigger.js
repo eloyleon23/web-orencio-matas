@@ -3970,12 +3970,14 @@ function procesarEnviarContacto(data) {
 // siempre que el slug devuelto exista de verdad entre los recibidos antes
 // de aceptarlo, por si "alucina" un slug que no existe.
 //
-// Devuelve TRES cosas — a petición de Eloy: casos como "limpieza interior
+// Devuelve VARIAS cosas — a petición de Eloy: casos como "limpieza interior
 // de una barrica de madera" o "quitar el verde del borde de la piscina"
 // no tienen (ni tendrán nunca todos) una guía propia escrita a mano, pero
-// sí merece la pena ofrecer una orientación y productos reales:
+// sí merece la pena ofrecer una orientación completa y productos reales,
+// incluso en una página propia dedicada a esa consulta (ver
+// soluciones/solucion-ia.html):
 // - slug: una guía existente si encaja alguna (caso ya cubierto antes).
-// - respuesta: una explicación breve y práctica generada por la IA para
+// - titulo / respuesta / pasos: contenido generado por la IA para
 //   problemas SIN guía propia — a propósito, se le pide que NUNCA nombre
 //   marcas ni productos concretos (solo el TIPO de producto/material),
 //   así el texto no puede "inventar" un producto que no vendemos; los
@@ -3984,6 +3986,10 @@ function procesarEnviarContacto(data) {
 // - terminos: palabras clave de producto (como ya se hacía) que
 //   alimentan buscarProductosEnCatalogo — la ÚNICA fuente de productos
 //   reales, "productos siempre de los disponibles" tal cual pidió Eloy.
+// - familias: categorías reales ("área > familia") para acotar esa
+//   búsqueda a la categoría correcta (evita el caso real detectado por
+//   Eloy: "aire acondicionado" encontrando colonias con "aire" en el
+//   nombre en vez de productos de limpieza).
 function procesarBuscarSolucionIA(data) {
   try {
     const consulta = (data.consulta || '').toString().trim();
@@ -4018,14 +4024,16 @@ function procesarBuscarSolucionIA(data) {
       'Estas son TODAS las categorías reales de nuestro catálogo de productos (formato "área > familia" — y solo estas, no existen otras):\n' + listadoTaxonomia + '\n\n' +
       'Responde EXACTAMENTE con estas líneas, sin nada más:\n' +
       'SLUG: <el slug de la guía que mejor resuelva la consulta, copiado EXACTAMENTE como aparece arriba, o NINGUNA si ninguna encaja de verdad>\n' +
-      'RESPUESTA: <SOLO si SLUG es NINGUNA — una explicación breve y práctica en 2-4 frases de cómo abordar el problema del cliente y qué tipo de producto o material usar. IMPORTANTE: no menciones NUNCA una marca ni un nombre de producto concreto, solo el TIPO genérico (p.ej. "un desinfectante neutro", "un cepillo de cerdas suaves", "un producto específico para algas de piscina") — los productos reales se buscan aparte, en nuestro catálogo. Si SLUG no es NINGUNA, deja esta línea completamente vacía.>\n' +
+      'TITULO: <SOLO si SLUG es NINGUNA — un título corto (4-8 palabras) tipo "Cómo limpiar una barrica de madera por dentro", para encabezar una página dedicada a esta consulta. Si SLUG no es NINGUNA, deja vacío.>\n' +
+      'RESPUESTA: <SOLO si SLUG es NINGUNA — una explicación breve y práctica en 2-4 frases de cómo abordar el problema del cliente en conjunto, a modo de introducción antes de los pasos. IMPORTANTE: no menciones NUNCA una marca ni un nombre de producto concreto, solo el TIPO genérico (p.ej. "un desinfectante neutro", "un cepillo de cerdas suaves") — los productos reales se buscan aparte, en nuestro catálogo. Si SLUG no es NINGUNA, deja vacío.>\n' +
+      'PASOS: <SOLO si SLUG es NINGUNA — de 3 a 5 pasos concretos para resolver el problema, cada uno con un título corto y una descripción de una frase, en el formato "Título del paso: descripción del paso", separando cada paso del siguiente con " || " (dos barras verticales con espacios). IMPORTANTE: igual que en RESPUESTA, nunca nombres marcas ni productos concretos, solo el tipo genérico. Si SLUG no es NINGUNA, deja vacío.>\n' +
       'TERMINOS: <3 a 6 palabras clave en español, separadas por comas, de los TIPOS de producto que ayudarían con esta consulta — incluso si SLUG no es NINGUNA. Si de verdad no hay ningún producto de droguería/perfumería/pintura/talleres remotamente relacionado, deja esta línea vacía>\n' +
       'FAMILIAS: <0 a 3 categorías copiadas EXACTAMENTE como aparecen en la lista de categorías reales de arriba (formato "área > familia"), las que de verdad contendrían el tipo de producto que ayudaría con esta consulta — deja vacío si ninguna categoría real encaja bien, nunca inventes una categoría que no esté en la lista>';
 
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=' + GEMINI_API_KEY;
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 300 },
+      generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
     };
     const options = {
       method: 'post',
@@ -4038,7 +4046,7 @@ function procesarBuscarSolucionIA(data) {
     const codigo = resp.getResponseCode();
     if (codigo !== 200) {
       console.error('Error de Gemini:', codigo, resp.getContentText());
-      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, respuesta: '', terminos: [], familias: [] }))
+      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -4050,7 +4058,9 @@ function procesarBuscarSolucionIA(data) {
     // puede llevar varias frases seguidas sin salto de línea, así que se
     // acumula todo lo que no empiece por otra etiqueta conocida.
     let slugPropuesto = null;
+    let tituloIA = '';
     let respuestaIA = '';
+    let pasosIA = [];
     let terminos = [];
     let familiasPropuestas = [];
     let seccionActual = null;
@@ -4059,9 +4069,16 @@ function procesarBuscarSolucionIA(data) {
       if (/^SLUG:/i.test(l)) {
         slugPropuesto = l.replace(/^SLUG:/i, '').trim();
         seccionActual = null;
+      } else if (/^TITULO:/i.test(l)) {
+        tituloIA = l.replace(/^TITULO:/i, '').trim();
+        seccionActual = null;
       } else if (/^RESPUESTA:/i.test(l)) {
         respuestaIA = l.replace(/^RESPUESTA:/i, '').trim();
         seccionActual = 'respuesta';
+      } else if (/^PASOS:/i.test(l)) {
+        const resto = l.replace(/^PASOS:/i, '').trim();
+        pasosIA = resto ? resto.split('||').map(function (t) { return t.trim(); }).filter(Boolean) : [];
+        seccionActual = null;
       } else if (/^TERMINOS:/i.test(l)) {
         const resto = l.replace(/^TERMINOS:/i, '').trim();
         terminos = resto ? resto.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
@@ -4075,25 +4092,37 @@ function procesarBuscarSolucionIA(data) {
       }
     });
 
+    // Cada paso llega como "Título: descripción" — se separa aquí en
+    // dos campos para que el cliente pueda pintarlos como en el resto
+    // de guías de la web (título en negrita + texto debajo).
+    const pasosEstructurados = pasosIA.map(function (p) {
+      const idx = p.indexOf(':');
+      if (idx === -1) return { titulo: p, texto: '' };
+      return { titulo: p.slice(0, idx).trim(), texto: p.slice(idx + 1).trim() };
+    });
+
     const slugValido = catalogo.some(function (s) { return s.slug === slugPropuesto; });
     // Igual que con el slug, nunca se confía a ciegas en las familias
     // devueltas — se comprueba que existan de verdad en la taxonomía
     // recibida antes de aceptarlas, por si el modelo "alucina" una.
     const familiasValidas = familiasPropuestas.filter(function (f) { return taxonomia.indexOf(f) !== -1; });
     console.log('Consulta:', consulta, '| Gemini slug:', JSON.stringify(slugPropuesto), '| válido:', slugValido,
-      '| respuesta:', JSON.stringify(respuestaIA), '| términos:', JSON.stringify(terminos),
+      '| titulo:', JSON.stringify(tituloIA), '| respuesta:', JSON.stringify(respuestaIA),
+      '| pasos:', pasosEstructurados.length, '| términos:', JSON.stringify(terminos),
       '| familias:', JSON.stringify(familiasValidas));
 
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
       slug: slugValido ? slugPropuesto : null,
+      titulo: slugValido ? '' : tituloIA,
       respuesta: slugValido ? '' : respuestaIA, // si hay guía real, no hace falta el texto genérico
+      pasos: slugValido ? [] : pasosEstructurados,
       terminos: terminos,
       familias: familiasValidas,
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarBuscarSolucionIA:', err);
-    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, respuesta: '', terminos: [], familias: [], error: err.message }))
+    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, titulo: '', respuesta: '', pasos: [], terminos: [], familias: [], error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

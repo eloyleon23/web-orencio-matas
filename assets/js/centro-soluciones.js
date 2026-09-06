@@ -195,12 +195,14 @@
             </div>
           ` : `<p class="cs-hero__buscador-contador" style="margin-top:${esAdicional ? '14px' : '0'};">🤖 ${esAdicional ? 'Además, estos' : 'No tenemos una guía específica para "' + texto + '", pero estos'} productos pueden ayudarte:</p>`;
 
+          const urlSolucionIA = `soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`;
           contenedor.innerHTML = `
             ${bloqueRespuesta}
             <p class="cs-hero__buscador-contador" style="margin-top:14px;">Productos que podrían servirte:</p>
             <div class="cs-productos-grid" style="margin-top:12px;">
               ${productos.slice(0, 6).map((p) => renderTarjetaProductoCatalogo(p)).join('')}
             </div>
+            <a class="cs-hero__buscador-chip" href="${urlSolucionIA}" style="margin-top:14px;display:inline-flex;">🤖 Ver la solución completa, paso a paso →</a>
           `;
           contenedor.style.display = 'block';
         });

@@ -5614,7 +5614,7 @@ window.SOLUCIONES_DATA = (function () {
   // productos que se muestra, nunca lo que diga el propio texto.
   function buscarSolucionIA(texto) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
-    if (!url || !texto || !texto.trim()) return Promise.resolve({ solucion: null, respuesta: '', terminos: [], familias: [] });
+    if (!url || !texto || !texto.trim()) return Promise.resolve({ solucion: null, titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] });
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
       slug,
@@ -5629,16 +5629,18 @@ window.SOLUCIONES_DATA = (function () {
     }))
       .then((res) => res.json())
       .then((data) => {
-        if (!data || !data.success) return { solucion: null, respuesta: '', terminos: [], familias: [] };
+        if (!data || !data.success) return { solucion: null, titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] };
         const solucion = (data.slug && soluciones[data.slug]) || null;
+        const titulo = solucion ? '' : (data.titulo || '');
         const respuesta = solucion ? '' : (data.respuesta || '');
+        const pasos = solucion ? [] : (Array.isArray(data.pasos) ? data.pasos : []);
         const terminos = Array.isArray(data.terminos) ? data.terminos : [];
         const familias = Array.isArray(data.familias) ? data.familias : [];
-        return { solucion, respuesta, terminos, familias };
+        return { solucion, titulo, respuesta, pasos, terminos, familias };
       })
       .catch((err) => {
         console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
-        return { solucion: null, respuesta: '', terminos: [], familias: [] };
+        return { solucion: null, titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] };
       });
   }
 
