@@ -94,51 +94,60 @@
 
       // Ni el diagnóstico ni el título/descripción/productos de ninguna
       // guía encajan, ni hay ficha técnica reconocible. Antes esto caía
-      // directo a la búsqueda en el catálogo de productos — ahora, antes
-      // de rendirse, se le da una oportunidad a la búsqueda inteligente
-      // con IA (ver buscarSolucionIA en soluciones-data.js): solo entra
-      // en juego aquí, en el caso que hoy ya fallaba, así que no añade
-      // coste a las búsquedas que el motor de palabras clave ya resuelve
-      // bien. Si tampoco encuentra nada (o no hay conexión, o la función
-      // de Apps Script aún no está desplegada), se sigue cayendo al mismo
-      // respaldo de siempre sin que el usuario note ninguna diferencia.
+      // directo a la búsqueda en el catálogo de productos con el texto
+      // TAL CUAL lo escribió el cliente, y si no había nada, redirigía al
+      // buscador general — pero si aquí ya no hay nada, en el buscador
+      // tampoco lo habrá, y ese enlace daba sensación de que algo
+      // funcionaba mal (Eloy). Ahora: se le da una oportunidad a la
+      // búsqueda inteligente con IA (ver buscarSolucionIA en
+      // soluciones-data.js) — solo entra en juego aquí, en el caso que
+      // hoy ya fallaba, así que no añade coste a las búsquedas que el
+      // motor de palabras clave ya resuelve bien.
       resultados.innerHTML = `<p class="cs-hero__buscador-contador">Buscando para "${texto}"…</p>`;
       resultados.style.display = 'block';
-      D.buscarSolucionIA(texto).then((solucionIA) => {
+      D.buscarSolucionIA(texto).then(({ solucion, terminos }) => {
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
-        if (solucionIA) {
-          mostrarResultadosBusquedaHero([solucionIA], texto, null, true);
+
+        if (solucion) {
+          mostrarResultadosBusquedaHero([solucion], texto, null, true);
           return;
         }
-        buscarEnCatalogoComoUltimoRecurso();
-      });
 
-      function buscarEnCatalogoComoUltimoRecurso() {
-      resultados.innerHTML = `<p class="cs-hero__buscador-contador">Buscando en el catálogo completo para "${texto}"…</p>`;
-      resultados.style.display = 'block';
-      D.buscarProductosEnCatalogo(texto).then((productos) => {
-        // El texto del cuadro pudo cambiar mientras la búsqueda estaba en
-        // vuelo (usuario sigue escribiendo) — no pisar un resultado más
-        // reciente con uno de una búsqueda ya obsoleta.
-        if (input.value.trim() !== texto) return;
-        if (!productos.length) {
+        // Ninguna guía encaja, pero la IA puede haber sugerido palabras
+        // clave de producto (p. ej. "jabón, desinfectante" para una
+        // consulta rara sobre un perro y una pastilla de jabón) — a
+        // petición de Eloy: "el principal objetivo es vender a partir de
+        // mostrar nuestros productos", así que se busca con esos
+        // términos en el catálogo REAL en vez de rendirse. Si la IA no
+        // dio términos útiles (o la llamada falló del todo — sin
+        // conexión, o la función de Apps Script aún no desplegada), se
+        // prueba con el texto tal cual como último intento.
+        const terminosBusqueda = (terminos && terminos.length) ? terminos.join(' ') : texto;
+        D.buscarProductosEnCatalogo(terminosBusqueda).then((productos) => {
+          if (input.value.trim() !== texto) return;
+
+          if (!productos.length) {
+            // De verdad no hay nada — ni guía, ni sugerencia de IA con
+            // producto real. Se dice así de claro, SIN enlace al
+            // buscador general (ahí tampoco habría nada) — a petición
+            // expresa de Eloy, para no dar sensación de que el buscador
+            // funciona mal.
+            resultados.innerHTML = `
+              <p class="cs-hero__buscador-vacio">No hemos encontrado ninguna solución para "<strong>${texto}</strong>" — prueba a contárnoslo con otras palabras en <a href="#cs-problema">¿Tienes un problema?</a>, o llámanos y te ayudamos directamente.</p>
+            `;
+            resultados.style.display = 'block';
+            return;
+          }
+
           resultados.innerHTML = `
-            <p class="cs-hero__buscador-vacio">No hemos encontrado ninguna guía para "<strong>${texto}</strong>" — prueba con otra palabra, cuéntanoslo con tus propias palabras en <a href="#cs-problema">¿Tienes un problema?</a>, o consulta el <a href="buscador.html?q=${encodeURIComponent(texto)}">buscador completo de productos</a>.</p>
+            <p class="cs-hero__buscador-contador">🤖 No tenemos una guía específica para "${texto}", pero estos productos pueden ayudarte:</p>
+            <div class="cs-productos-grid" style="margin-top:12px;">
+              ${productos.slice(0, 6).map((p) => renderTarjetaProductoCatalogo(p)).join('')}
+            </div>
           `;
           resultados.style.display = 'block';
-          return;
-        }
-        const urlBuscador = `buscador.html?q=${encodeURIComponent(texto)}`;
-        resultados.innerHTML = `
-          <p class="cs-hero__buscador-contador">No tenemos una guía específica para "${texto}", pero sí productos que pueden ayudarte:</p>
-          <div class="cs-productos-grid" style="margin-top:12px;">
-            ${productos.slice(0, 6).map((p) => renderTarjetaProductoCatalogo(p)).join('')}
-          </div>
-          <a class="cs-hero__buscador-chip" href="${urlBuscador}" style="margin-top:14px;display:inline-flex;">Ver todos los resultados en el buscador →</a>
-        `;
-        resultados.style.display = 'block';
+        });
       });
-      }
     }
 
     function mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta, esSugerenciaIA) {

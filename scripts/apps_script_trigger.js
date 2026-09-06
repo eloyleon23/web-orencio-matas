@@ -3969,6 +3969,15 @@ function procesarEnviarContacto(data) {
 // Nunca se confía a ciegas en lo que responda el modelo: se comprueba
 // siempre que el slug devuelto exista de verdad entre los recibidos antes
 // de aceptarlo, por si "alucina" un slug que no existe.
+//
+// Devuelve TANTO un slug de guía (si encaja alguna) COMO unos términos de
+// búsqueda de producto — a petición de Eloy: "el principal objetivo es
+// vender a partir de mostrar nuestros productos", así que aunque no haya
+// una guía completa que encaje, el cliente puede usar esos términos para
+// buscar productos REALES en el catálogo (con buscarProductosEnCatalogo,
+// el mismo motor de siempre, solo que con términos ya limpiados por la
+// IA en vez del texto tal cual lo escribió el cliente) en vez de mandar a
+// la persona sin nada.
 function procesarBuscarSolucionIA(data) {
   try {
     const consulta = (data.consulta || '').toString().trim();
@@ -3989,14 +3998,14 @@ function procesarBuscarSolucionIA(data) {
       'una tienda de droguería, perfumería, pinturas y suministros para talleres y carrocerías.\n' +
       'Un cliente ha escrito esta consulta con sus propias palabras:\n"' + consulta + '"\n\n' +
       'Estas son TODAS las guías disponibles (y solo estas — no existen otras):\n' + listado + '\n\n' +
-      'Responde ÚNICAMENTE con el "slug" de la guía que mejor resuelva la consulta del cliente, ' +
-      'copiado EXACTAMENTE como aparece arriba, sin comillas ni texto adicional. ' +
-      'Si NINGUNA guía encaja de verdad con lo que pide, responde exactamente: NINGUNA';
+      'Responde EXACTAMENTE con estas dos líneas, sin nada más:\n' +
+      'SLUG: <el slug de la guía que mejor resuelva la consulta, copiado EXACTAMENTE como aparece arriba, o NINGUNA si ninguna encaja de verdad>\n' +
+      'TERMINOS: <2 a 4 palabras clave en español, separadas por comas, del tipo de PRODUCTO que ayudaría con esta consulta — incluso si SLUG es NINGUNA. Si de verdad no hay ningún producto de droguería/perfumería/pintura/talleres remotamente relacionado, deja esta línea vacía>';
 
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=' + GEMINI_API_KEY;
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: 30 },
+      generationConfig: { temperature: 0, maxOutputTokens: 60 },
     };
     const options = {
       method: 'post',
@@ -4009,24 +4018,38 @@ function procesarBuscarSolucionIA(data) {
     const codigo = resp.getResponseCode();
     if (codigo !== 200) {
       console.error('Error de Gemini:', codigo, resp.getContentText());
-      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null }))
+      return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, terminos: [] }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
     const json = JSON.parse(resp.getContentText());
     const textoRespuesta = ((((json.candidates || [])[0] || {}).content || {}).parts || [{}])[0].text || '';
-    const slugPropuesto = textoRespuesta.trim();
+
+    // Parseo línea a línea — tolerante a que el modelo añada espacios de
+    // más o mayúsculas/minúsculas distintas en las etiquetas.
+    let slugPropuesto = null;
+    let terminos = [];
+    textoRespuesta.split('\n').forEach(function (linea) {
+      const l = linea.trim();
+      if (/^SLUG:/i.test(l)) {
+        slugPropuesto = l.replace(/^SLUG:/i, '').trim();
+      } else if (/^TERMINOS:/i.test(l)) {
+        const resto = l.replace(/^TERMINOS:/i, '').trim();
+        terminos = resto ? resto.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
+      }
+    });
 
     const slugValido = catalogo.some(function (s) { return s.slug === slugPropuesto; });
-    console.log('Consulta:', consulta, '| Gemini respondió:', JSON.stringify(slugPropuesto), '| válido:', slugValido);
+    console.log('Consulta:', consulta, '| Gemini slug:', JSON.stringify(slugPropuesto), '| válido:', slugValido, '| términos:', JSON.stringify(terminos));
 
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
       slug: slugValido ? slugPropuesto : null,
+      terminos: terminos,
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarBuscarSolucionIA:', err);
-    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, error: err.message }))
+    return ContentService.createTextOutput(JSON.stringify({ success: false, slug: null, terminos: [], error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

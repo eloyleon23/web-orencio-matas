@@ -5558,9 +5558,14 @@ window.SOLUCIONES_DATA = (function () {
   // petición. La respuesta del servidor se vuelve a comprobar aquí
   // también (que el slug exista de verdad en `soluciones`) — nunca se
   // confía a ciegas en dos sitios distintos por si acaso.
+  //
+  // Devuelve { solucion, terminos }: `solucion` es la guía si Gemini
+  // encontró una que encaje (o null); `terminos` son las palabras clave
+  // de producto que sugiere aunque no haya guía — se usan para buscar
+  // productos REALES en el catálogo en vez de dejar al cliente sin nada.
   function buscarSolucionIA(texto) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
-    if (!url || !texto || !texto.trim()) return Promise.resolve(null);
+    if (!url || !texto || !texto.trim()) return Promise.resolve({ solucion: null, terminos: [] });
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
       slug,
@@ -5575,12 +5580,14 @@ window.SOLUCIONES_DATA = (function () {
     })
       .then((res) => res.json())
       .then((data) => {
-        if (!data || !data.success || !data.slug) return null;
-        return soluciones[data.slug] || null;
+        if (!data || !data.success) return { solucion: null, terminos: [] };
+        const solucion = (data.slug && soluciones[data.slug]) || null;
+        const terminos = Array.isArray(data.terminos) ? data.terminos : [];
+        return { solucion, terminos };
       })
       .catch((err) => {
         console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
-        return null;
+        return { solucion: null, terminos: [] };
       });
   }
 
