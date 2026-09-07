@@ -3052,6 +3052,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="sin-resultados" class="sin-resultados" style="display:none;">
             <i class="fa-solid fa-box-open"></i>
             <p>No se han encontrado productos con estos filtros.<br>Prueba a ampliar la búsqueda.</p>
+            <button type="button" id="btn-preguntar-ia-producto" style="display:none;">🤖 Preguntar a la IA</button>
+            <p id="ia-producto-mensaje" style="display:none;"></p>
+            <div id="ia-producto-resultados" class="grid-productos" style="display:none;"></div>
         </div>
 
         <button class="btn-cargar-mas" id="btn-cargar-mas" style="display:none;">Cargar más productos</button>
@@ -4428,6 +4431,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
+        $('btn-preguntar-ia-producto').addEventListener('click', preguntarIAProducto);
         $('btn-compartir-resultados').addEventListener('click', compartirResultados);
         $('btn-cerrar-disclaimer').addEventListener('click', ocultarDisclaimerPrecios);
         $('btn-info-disclaimer').addEventListener('click', mostrarDisclaimerPrecios);
@@ -5475,6 +5479,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             cont.innerHTML = '';
             sinResultados.style.display = '';
             btnMas.style.display = 'none';
+            // Botón "Preguntar a la IA" — solo tiene sentido si hay texto
+            // que interpretar (un filtro sin texto, p. ej. "solo oferta"
+            // sin resultados, no es algo que la IA pueda ayudar a
+            // reformular). Se limpia cualquier resultado de IA de una
+            // búsqueda anterior al entrar aquí de nuevo, para no dejar
+            // una sugerencia vieja mezclada con el filtro actual.
+            const btnIA = $('btn-preguntar-ia-producto');
+            const mensajeIA = $('ia-producto-mensaje');
+            const resultadosIA = $('ia-producto-resultados');
+            if (btnIA) {
+                const textoActual = $('f-texto').value.trim();
+                btnIA.style.display = textoActual ? '' : 'none';
+                btnIA.disabled = false;
+                btnIA.textContent = '🤖 Preguntar a la IA';
+                btnIA.dataset.textoConsultado = '';
+            }
+            if (mensajeIA) mensajeIA.style.display = 'none';
+            if (resultadosIA) { resultadosIA.style.display = 'none'; resultadosIA.innerHTML = ''; }
             return;
         }
         sinResultados.style.display = 'none';
@@ -5596,6 +5618,119 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             </div>
         `;
         return card;
+    }
+
+    // ── Búsqueda inteligente de producto con IA (red de seguridad) ──
+    // Solo se llama bajo demanda (botón "Preguntar a la IA" en "sin
+    // resultados"), nunca automático — el buscador filtra en vivo con
+    // cada tecla, así que disparar esto solo también sería carísimo e
+    // inútil mientras la persona sigue escribiendo.
+    function calcularTaxonomiaProductos() {
+        const vistos = new Set();
+        const lista = [];
+        TODOS.forEach(p => {
+            if (!p.area || !p.familia) return;
+            const clave = `${p.area} > ${p.familia}`;
+            if (!vistos.has(clave)) { vistos.add(clave); lista.push(clave); }
+        });
+        return lista.sort();
+    }
+
+    // Puntuación por número de palabras coincidentes (no la coincidencia
+    // estricta "todas las palabras" de coincide(), que sería demasiado
+    // exigente para una sopa de palabras clave generada por IA) — mismo
+    // criterio ya probado en el Centro de Soluciones: si la IA dio
+    // categorías reales, se restringe primero a esas (evita el caso real
+    // ya visto allí de palabras sueltas encontrando productos de una
+    // categoría totalmente distinta), con una búsqueda sin restringir
+    // como red de seguridad si el filtro no encuentra nada.
+    function buscarProductosConTerminosIA(terminos, familiasFiltro) {
+        const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        const palabras = (terminos || []).join(' ').split(/\s+/).map(normalizar).filter(w => w.length >= 3);
+        if (!palabras.length) return [];
+        const puntuar = (lista) => {
+            const resultados = [];
+            lista.forEach(p => {
+                const nombreNorm = normalizar(p.nombre || '');
+                const coincidencias = palabras.filter(w => nombreNorm.includes(w)).length;
+                if (coincidencias > 0) resultados.push({ producto: p, coincidencias });
+            });
+            resultados.sort((a, b) => b.coincidencias - a.coincidencias);
+            return resultados.slice(0, 12).map(r => r.producto);
+        };
+        if (familiasFiltro && familiasFiltro.length) {
+            const claves = new Set(familiasFiltro.map(normalizar));
+            const filtrados = activos.filter(p => claves.has(normalizar(`${p.area} > ${p.familia}`)));
+            if (filtrados.length) {
+                const conFiltro = puntuar(filtrados);
+                if (conFiltro.length) return conFiltro;
+            }
+        }
+        return puntuar(activos);
+    }
+
+    function preguntarIAProducto() {
+        const texto = $('f-texto').value.trim();
+        if (!texto) return;
+        const btn = $('btn-preguntar-ia-producto');
+        const mensajeIA = $('ia-producto-mensaje');
+        const resultadosIA = $('ia-producto-resultados');
+
+        btn.disabled = true;
+        btn.textContent = '🤖 Preguntando a la IA… puede tardar unos segundos';
+        mensajeIA.style.display = 'none';
+        resultadosIA.style.display = 'none';
+        resultadosIA.innerHTML = '';
+
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) return;
+
+        // Límite de tiempo real — mismo criterio que el Centro de
+        // Soluciones: si Apps Script o Gemini se quedan colgados, no se
+        // deja al usuario esperando sin control indefinidamente.
+        const controlador = new AbortController();
+        const limiteTiempo = setTimeout(() => controlador.abort(), 15000);
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS
+            body: JSON.stringify({ accion: 'buscar_producto_ia', consulta: texto, taxonomia: calcularTaxonomiaProductos() }),
+            signal: controlador.signal,
+        }).finally(() => clearTimeout(limiteTiempo))
+          .then(res => res.json())
+          .then(data => {
+              if ($('f-texto').value.trim() !== texto) return; // el texto cambió mientras tanto
+              btn.disabled = false;
+              btn.textContent = '🤖 Preguntar a la IA';
+
+              if (!data || !data.success) {
+                  mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
+                  mensajeIA.style.display = '';
+                  return;
+              }
+              if (data.fueraDeAlcance) {
+                  mensajeIA.textContent = '⚠️ ' + (data.mensaje || 'Este asistente solo puede ayudarte a buscar productos de droguería, perfumería, pintura, limpieza del hogar y talleres/carrocerías.');
+                  mensajeIA.style.display = '';
+                  return;
+              }
+              const productos = buscarProductosConTerminosIA(data.terminos, data.familias);
+              if (!productos.length) {
+                  mensajeIA.textContent = 'La IA tampoco ha encontrado productos concretos para esta búsqueda.';
+                  mensajeIA.style.display = '';
+                  return;
+              }
+              resultadosIA.innerHTML = '';
+              productos.forEach(p => resultadosIA.appendChild(crearTarjeta(p)));
+              resultadosIA.style.display = '';
+          })
+          .catch(err => {
+              console.error('Error en preguntarIAProducto (se continúa sin sugerencia de IA):', err);
+              if ($('f-texto').value.trim() !== texto) return;
+              btn.disabled = false;
+              btn.textContent = '🤖 Preguntar a la IA';
+              mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
+              mensajeIA.style.display = '';
+          });
     }
 
     // ── Abrir modal con detalle del producto ──
