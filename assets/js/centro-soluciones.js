@@ -136,7 +136,7 @@
     // "pedir ayuda a la IA" (cuando sí hay algo, pero puede ser flojo)
     // usa un modal aparte — ver pedirAyudaIAModal más abajo.
     function ejecutarBusquedaIA(texto) {
-      D.buscarSolucionIA(texto).then(({ solucion, fueraDeAlcance, mensaje, respuesta, terminos, familias }) => {
+      D.buscarSolucionIA(texto).then(({ solucion, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
 
         // A petición de Eloy: "limitar las preguntas... informando si
@@ -195,7 +195,6 @@
             </div>
           ` : `<p class="cs-hero__buscador-contador">🤖 No tenemos una guía específica para "${texto}", pero estos productos pueden ayudarte:</p>`;
 
-          const urlSolucionIA = `soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`;
           const bloqueProductos = productos.length ? `
             <p class="cs-hero__buscador-contador" style="margin-top:14px;">Productos que podrían servirte:</p>
             <div class="cs-productos-grid" style="margin-top:12px;">
@@ -205,9 +204,24 @@
           resultados.innerHTML = `
             ${bloqueRespuesta}
             ${bloqueProductos}
-            <a class="cs-hero__buscador-chip" href="${urlSolucionIA}" style="margin-top:14px;display:inline-flex;">🤖 Ver la solución completa, paso a paso →</a>
+            <button type="button" class="cs-hero__buscador-chip" id="cs-hero-ver-completa" style="margin-top:14px;">🤖 Ver la solución completa, paso a paso →</button>
           `;
           resultados.style.display = 'block';
+
+          // A petición de Eloy: este botón también tiene que avisar con
+          // el mismo modal — antes era un enlace normal que saltaba
+          // directo a la página sin ningún aviso de "esto está en
+          // marcha". Ya se tienen todos los datos de esta misma
+          // respuesta, así que no hace falta preguntarle a la IA otra
+          // vez — se reutiliza el modal solo para el aviso visual y la
+          // transición, guardando los datos para que la página de
+          // destino los reutilice (ver irASolucionCompletaConDatos).
+          const btnVerCompleta = $('#cs-hero-ver-completa');
+          if (btnVerCompleta) {
+            btnVerCompleta.addEventListener('click', () => irASolucionCompletaConDatos(texto, {
+              titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias,
+            }));
+          }
         });
       });
     }
@@ -231,7 +245,7 @@
       `;
       overlay.style.display = 'flex';
 
-      D.buscarSolucionIA(texto).then(({ solucion, fueraDeAlcance, mensaje, titulo, respuesta, pasos, terminos, familias }) => {
+      D.buscarSolucionIA(texto).then(({ solucion, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
         if (fueraDeAlcance) {
           contenido.innerHTML = `
             <p class="cs-ia-modal-spinner" aria-hidden="true">⚠️</p>
@@ -247,7 +261,7 @@
           // Se guarda lo ya obtenido para que la página dinámica no
           // tenga que volver a preguntarle a la IA lo mismo dos veces.
           try {
-            sessionStorage.setItem(`cs_ia_${texto}`, JSON.stringify({ titulo, respuesta, pasos, terminos, familias }));
+            sessionStorage.setItem(`cs_ia_${texto}`, JSON.stringify({ titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }));
           } catch (e) { /* almacenamiento no disponible, no es crítico */ }
           window.location.href = `soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`;
           return;
@@ -257,6 +271,32 @@
           <p class="cs-ia-modal-texto">No hemos encontrado ninguna solución para "<strong>${texto}</strong>". Prueba a contárnoslo con otras palabras, o llámanos y te ayudamos directamente.</p>
         `;
       });
+    }
+
+    // A petición de Eloy: el botón "Ver la solución completa, paso a
+    // paso" (que aparece bajo una respuesta de IA ya mostrada en el
+    // buscador del hero) también tiene que avisar con un modal antes de
+    // saltar de página — antes era un enlace normal sin ningún aviso.
+    // A diferencia de pedirAyudaIAModal, aquí NO hace falta volver a
+    // preguntarle a la IA: los datos ya se tienen de la respuesta que
+    // se acaba de mostrar, así que el modal solo sirve de transición
+    // visual breve mientras se guardan en sessionStorage y se navega.
+    function irASolucionCompletaConDatos(texto, datos) {
+      const overlay = $('#cs-ia-modal-overlay');
+      const contenido = $('#cs-ia-modal-contenido');
+      if (!overlay || !contenido) {
+        window.location.href = `soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`;
+        return;
+      }
+      contenido.innerHTML = `
+        <p class="cs-ia-modal-spinner" aria-hidden="true">🤖</p>
+        <p class="cs-ia-modal-texto">Preparando la solución completa…</p>
+      `;
+      overlay.style.display = 'flex';
+      try {
+        sessionStorage.setItem(`cs_ia_${texto}`, JSON.stringify(datos));
+      } catch (e) { /* almacenamiento no disponible, no es crítico */ }
+      window.location.href = `soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`;
     }
 
     function cerrarModalIA() {
