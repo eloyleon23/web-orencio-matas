@@ -5638,11 +5638,25 @@ window.SOLUCIONES_DATA = (function () {
       description: soluciones[slug].description,
     }));
 
-    return obtenerTaxonomiaCatalogo().then((taxonomia) => fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones de buscador.html
-      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia }),
-    }))
+    return obtenerTaxonomiaCatalogo().then((taxonomia) => {
+      // Límite de tiempo real en el propio navegador — a petición de
+      // Eloy: "he tenido que actualizar la web porque no termina". Sin
+      // esto, si Apps Script o Gemini se quedan colgados por lo que
+      // sea, la petición podía quedarse esperando indefinidamente sin
+      // que el usuario tuviera ninguna forma de saberlo salvo recargar
+      // la página a ciegas. Con AbortController, pasados 15s se corta
+      // la espera aquí mismo y se trata como un error técnico normal
+      // (con su botón de reintentar ya existente), en vez de dejar la
+      // pestaña colgada sin control.
+      const controlador = new AbortController();
+      const limiteTiempo = setTimeout(() => controlador.abort(), 15000);
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones de buscador.html
+        body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia }),
+        signal: controlador.signal,
+      }).finally(() => clearTimeout(limiteTiempo));
+    })
       .then((res) => res.json())
       .then((data) => {
         if (!data) return { ...vacio, errorTecnico: true };
@@ -5662,8 +5676,9 @@ window.SOLUCIONES_DATA = (function () {
         return { solucion, errorTecnico: false, fueraDeAlcance: false, mensaje: '', titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias };
       })
       .catch((err) => {
-        // Fallo de red/CORS/etc. antes de llegar a tener respuesta
-        // alguna — también es un error técnico, no "no hay solución".
+        // Fallo de red/CORS/límite de tiempo agotado/etc. antes de
+        // llegar a tener respuesta alguna — también es un error
+        // técnico, no "no hay solución".
         console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
         return { ...vacio, errorTecnico: true };
       });

@@ -4118,19 +4118,23 @@ function procesarBuscarSolucionIA(data) {
     // Reintentos con espera breve — a petición de Eloy tras ver en el
     // propio _debug un HTTP 503 real de Gemini ("This model is
     // currently experiencing high demand... try again later"): es un
-    // pico de carga puntual del propio Gemini, no un fallo nuestro, y
-    // suele resolverse solo en cuestión de 1-2 segundos. Sin
-    // reintentos, cualquier pico de tráfico de Google se traducía
-    // directamente en un "no hemos encontrado nada" para el cliente.
+    // pico de carga puntual del propio Gemini, no un fallo nuestro. Se
+    // reduce a como MUCHO 1 reintento (2 intentos en total, antes eran
+    // 3) tras comprobar que, combinado con una consulta que ya de por
+    // sí tarda en generar (el caso "SLUG=NINGUNA" con alternativa
+    // completa), varios intentos lentos seguidos alargaban la espera en
+    // vez de ayudar — mejor fallar antes y dejar que el cliente lo
+    // reintente él mismo (con su propio botón) que acumular reintentos
+    // aquí sin que el usuario tenga forma de saber cuánto va a tardar.
     let resp;
     let codigo;
-    const INTENTOS_MAXIMOS = 3;
+    const INTENTOS_MAXIMOS = 2;
     for (let intento = 1; intento <= INTENTOS_MAXIMOS; intento++) {
       resp = UrlFetchApp.fetch(url, options);
       codigo = resp.getResponseCode();
       if (codigo !== 503 || intento === INTENTOS_MAXIMOS) break;
       console.log('Gemini devolvió 503 (sobrecarga temporal) — reintento', intento, 'de', INTENTOS_MAXIMOS - 1);
-      Utilities.sleep(1000 * intento); // 1s, luego 2s
+      Utilities.sleep(1000);
     }
     console.log('=== RESPUESTA DE GEMINI — código HTTP:', codigo, '===');
     console.log('Respuesta completa (JSON en bruto):', resp.getContentText());
