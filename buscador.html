@@ -1215,6 +1215,13 @@
             display: block;
             color: #cbd5e1;
         }
+        .icono-ia-producto {
+            display: inline-block;
+            width: 1.1em;
+            height: 1.1em;
+            vertical-align: -0.2em;
+            object-fit: contain;
+        }
 
         .cargando-inicial {
             text-align: center;
@@ -3052,7 +3059,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="sin-resultados" class="sin-resultados" style="display:none;">
             <i class="fa-solid fa-box-open"></i>
             <p>No se han encontrado productos con estos filtros.<br>Prueba a ampliar la búsqueda.</p>
-            <button type="button" id="btn-preguntar-ia-producto" style="display:none;">🤖 Preguntar a la IA</button>
+            <button type="button" id="btn-preguntar-ia-producto" style="display:none;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA</button>
             <p id="ia-producto-mensaje" style="display:none;"></p>
             <div id="ia-producto-resultados" class="grid-productos" style="display:none;"></div>
         </div>
@@ -5492,7 +5499,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 const textoActual = $('f-texto').value.trim();
                 btnIA.style.display = textoActual ? '' : 'none';
                 btnIA.disabled = false;
-                btnIA.textContent = '🤖 Preguntar a la IA';
+                btnIA.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA';
                 btnIA.dataset.textoConsultado = '';
             }
             if (mensajeIA) mensajeIA.style.display = 'none';
@@ -5677,7 +5684,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const resultadosIA = $('ia-producto-resultados');
 
         btn.disabled = true;
-        btn.textContent = '🤖 Preguntando a la IA… puede tardar unos segundos';
+        btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntando a la IA… puede tardar unos segundos';
         mensajeIA.style.display = 'none';
         resultadosIA.style.display = 'none';
         resultadosIA.innerHTML = '';
@@ -5701,7 +5708,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
           .then(data => {
               if ($('f-texto').value.trim() !== texto) return; // el texto cambió mientras tanto
               btn.disabled = false;
-              btn.textContent = '🤖 Preguntar a la IA';
+              btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA';
 
               if (!data || !data.success) {
                   mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
@@ -5727,7 +5734,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               console.error('Error en preguntarIAProducto (se continúa sin sugerencia de IA):', err);
               if ($('f-texto').value.trim() !== texto) return;
               btn.disabled = false;
-              btn.textContent = '🤖 Preguntar a la IA';
+              btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA';
               mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
               mensajeIA.style.display = '';
           });
