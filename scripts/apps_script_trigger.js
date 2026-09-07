@@ -4039,10 +4039,26 @@ function procesarBuscarSolucionIA(data) {
       'MENSAJE_FUERA_ALCANCE: solo si FUERA_DE_ALCANCE=SI. Un mensaje breve y amable (1-2 frases), sin citar la consulta, explicando que este asistente solo ayuda con droguería/perfumería/pintura/limpieza del hogar/talleres. Si NO, deja vacío.\n' +
       'SLUG: solo si FUERA_DE_ALCANCE=NO. El slug de la guía que mejor resuelva la consulta, copiado EXACTAMENTE como aparece arriba, o NINGUNA si ninguna encaja de verdad. Si FUERA_DE_ALCANCE=SI, deja vacío.\n' +
       '\n' +
-      'Las siguientes 4 líneas (TITULO/RESPUESTA/PASOS/TERMINOS/FAMILIAS) rellénalas SIEMPRE que FUERA_DE_ALCANCE=NO — incluso si ya diste un SLUG real arriba (por si acaso no fuera válido, es mejor tener una alternativa lista que dejar al cliente sin nada). Si FUERA_DE_ALCANCE=SI, deja las 5 vacías.\n' +
+      // Vuelta a generar TITULO/RESPUESTA/PASOS/TERMINOS/FAMILIAS SOLO
+      // cuando SLUG=NINGUNA (no siempre) — a petición de Eloy tras
+      // comprobar que el recorte del tamaño del PROMPT de entrada no
+      // mejoraba los tiempos de forma notable: en un modelo de
+      // lenguaje, generar texto de salida es varias veces más lento
+      // que leer texto de entrada, así que pedirle SIEMPRE una
+      // alternativa completa (aunque ya hubiera encontrado una guía
+      // real y esa alternativa se fuera a descartar) era el verdadero
+      // cuello de botella, no el tamaño del listado de guías. Ahora
+      // que la comprobación del slug es más tolerante (quita comillas/
+      // puntos de más) y el cliente YA tiene su propio último recurso
+      // (buscar productos con el texto tal cual si todo llega vacío,
+      // ver pedirAyudaIAModal/ejecutarBusquedaIA en centro-
+      // soluciones.js), volver a la versión condicional es seguro: en
+      // el peor caso, ese último recurso sigue dando algo, nunca "no
+      // hemos encontrado nada" sin más.
+      'Las siguientes 4 líneas (TITULO/RESPUESTA/PASOS/TERMINOS/FAMILIAS) rellénalas SOLO si SLUG=NINGUNA (y FUERA_DE_ALCANCE=NO) — si ya diste un SLUG real, déjalas VACÍAS, no hace falta nada más.\n' +
       'TITULO: título corto (4-8 palabras) tipo "Cómo limpiar una barrica de madera por dentro", para encabezar una página dedicada a esta consulta.\n' +
-      'RESPUESTA: explicación breve y práctica en 2-4 frases de cómo abordar el problema, a modo de introducción antes de los pasos. NUNCA menciones una marca ni un producto concreto, solo el TIPO genérico (p.ej. "un desinfectante neutro") — los productos reales se buscan aparte.\n' +
-      'PASOS: de 3 a 5 pasos concretos, cada uno "Título corto: descripción de una frase", separados entre sí por " || " (dos barras verticales con espacios). NUNCA nombres marcas ni productos concretos, solo el tipo genérico.\n' +
+      'RESPUESTA: explicación breve y práctica en 1-3 frases de cómo abordar el problema, a modo de introducción antes de los pasos. NUNCA menciones una marca ni un producto concreto, solo el TIPO genérico (p.ej. "un desinfectante neutro") — los productos reales se buscan aparte.\n' +
+      'PASOS: de 3 a 4 pasos concretos y breves, cada uno "Título corto: descripción de una frase corta", separados entre sí por " || " (dos barras verticales con espacios). NUNCA nombres marcas ni productos concretos, solo el tipo genérico.\n' +
       'TERMINOS: 3 a 6 palabras clave en español separadas por comas, de los TIPOS de producto que ayudarían con esta consulta. Sé específico y evita palabras sueltas muy genéricas que puedan confundirse con otra cosa (p.ej. para "aire acondicionado" usa "desengrasante equipos" o "limpiador de rejillas", NUNCA la palabra suelta "aire", que en nuestro catálogo también aparece en perfumes y colonias). Si de verdad no hay ningún producto remotamente relacionado, deja vacío.\n' +
       'FAMILIAS: 0 a 3 categorías copiadas EXACTAMENTE de la lista de categorías reales de arriba (formato "área > familia") que de verdad contendrían el tipo de producto que ayudaría — vacío si ninguna encaja, nunca inventes una que no esté en la lista.';
 
@@ -4065,7 +4081,7 @@ function procesarBuscarSolucionIA(data) {
       // Nota: los modelos Gemini 3.x ignoran valores personalizados de
       // temperature/top-K/top-P (usan siempre los suyos por defecto) —
       // no rompe nada dejarlo aquí, simplemente no tiene efecto.
-      generationConfig: { temperature: 0.2, maxOutputTokens: 900 },
+      generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
       // Umbrales de seguridad explícitos — sin esto, Gemini usa un
       // umbral por defecto bastante estricto que puede bloquear la
       // respuesta ENTERA (con HTTP 200 pero sin "candidates", ver más
