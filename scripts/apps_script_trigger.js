@@ -4077,8 +4077,11 @@ function procesarBuscarSolucionIA(data) {
     console.log('Respuesta completa (JSON en bruto):', resp.getContentText());
     if (codigo !== 200) {
       console.error('Error de Gemini (HTTP):', codigo, resp.getContentText());
-      return ContentService.createTextOutput(JSON.stringify({ success: false, fueraDeAlcance: false, mensaje: '', slug: null, titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [] }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false, fueraDeAlcance: false, mensaje: '', slug: null, titulo: '', respuesta: '',
+        pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [],
+        _debug: { promptEnviado: prompt, errorHttp: codigo, respuestaCrudaGemini: resp.getContentText() },
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     const json = JSON.parse(resp.getContentText());
@@ -4192,6 +4195,7 @@ function procesarBuscarSolucionIA(data) {
         resultado: '',
         terminos: [],
         familias: [],
+        _debug: { promptEnviado: prompt, respuestaCrudaGemini: textoRespuesta },
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -4227,6 +4231,17 @@ function procesarBuscarSolucionIA(data) {
       resultado: slugValido ? '' : resultadoIA,
       terminos: terminos,
       familias: familiasValidas,
+      // Campo TEMPORAL de depuración — a petición de Eloy: la vista de
+      // "Ejecuciones" de Apps Script no le mostraba los registros
+      // (console.log) de forma fiable ("no hay ningún registro
+      // disponible"), así que en vez de depender de esa vista, el
+      // prompt exacto enviado y la respuesta cruda de Gemini viajan
+      // aquí también — visibles directamente en la pestaña Red del
+      // navegador (F12 → Red → la petición a .../exec → Respuesta),
+      // que ya confirmó que sí funciona. Quitar este campo una vez
+      // resuelto el problema de fondo, no debe quedarse en producción
+      // de forma permanente (aumenta el tamaño de cada respuesta).
+      _debug: { promptEnviado: prompt, respuestaCrudaGemini: textoRespuesta },
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarBuscarSolucionIA:', err);
