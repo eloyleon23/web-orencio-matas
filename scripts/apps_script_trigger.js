@@ -4061,8 +4061,20 @@ function procesarBuscarSolucionIA(data) {
       muteHttpExceptions: true,
     };
 
+    // A petición de Eloy: "¿de qué manera puedo ver las peticiones que
+    // le llegan a Gemini?" — hasta ahora solo se registraba un resumen
+    // (slug/respuesta/términos ya interpretados), nunca el texto EXACTO
+    // que se manda ni la respuesta en bruto tal cual la devuelve
+    // Gemini. Se registran ambos aquí — visibles en el editor de Apps
+    // Script, menú "Ejecuciones" (Executions), abriendo la ejecución de
+    // 'doPost' correspondiente a esa búsqueda concreta.
+    console.log('=== PETICIÓN A GEMINI — consulta:', consulta, '===');
+    console.log('Prompt completo enviado:', prompt);
+
     const resp = UrlFetchApp.fetch(url, options);
     const codigo = resp.getResponseCode();
+    console.log('=== RESPUESTA DE GEMINI — código HTTP:', codigo, '===');
+    console.log('Respuesta completa (JSON en bruto):', resp.getContentText());
     if (codigo !== 200) {
       console.error('Error de Gemini (HTTP):', codigo, resp.getContentText());
       return ContentService.createTextOutput(JSON.stringify({ success: false, fueraDeAlcance: false, mensaje: '', slug: null, titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [] }))
