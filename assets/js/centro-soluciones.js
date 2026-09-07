@@ -378,6 +378,22 @@
       if (btnCerrar) btnCerrar.addEventListener('click', cerrarModalIA);
       if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrarModalIA(); });
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarModalIA(); });
+
+      // A petición de Eloy: al pulsar "atrás" en el navegador justo
+      // después de que el modal redirigiera a una solución, el modal
+      // volvía a aparecer abierto (con su último estado, normalmente
+      // el spinner de "Preguntando a la IA…") en vez de mostrar
+      // limpiamente los resultados de búsqueda que ya había debajo.
+      // Causa real: el navegador puede restaurar la página
+      // EXACTAMENTE como estaba en el instante de navegar fuera
+      // (bfcache) — y ese instante era justo cuando el modal seguía
+      // abierto, a medio redirigir. "pageshow" se dispara tanto en
+      // cargas normales como en restauraciones desde bfcache — cerrar
+      // el modal aquí siempre es inofensivo (si ya estaba cerrado, no
+      // cambia nada visible) y cubre el caso real sin depender de que
+      // el navegador marque event.persisted exactamente como cabría
+      // esperar en todos los casos.
+      window.addEventListener('pageshow', cerrarModalIA);
     })();
 
     // Botón "pedir ayuda a la IA" bajo demanda — se añade al final de
