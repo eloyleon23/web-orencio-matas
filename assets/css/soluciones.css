@@ -281,6 +281,50 @@
   color: #9a3412;
   line-height: 1.5;
 }
+.cs-ia-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 21, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.cs-ia-modal-box {
+  position: relative;
+  background: var(--primary-white);
+  border-radius: var(--radius-medium);
+  padding: 32px 28px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-hover);
+}
+.cs-ia-modal-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text-gray);
+  padding: 4px 8px;
+}
+.cs-ia-modal-spinner {
+  font-size: 2.4rem;
+  margin-bottom: 12px;
+  animation: cs-ia-pulso 1.2s ease-in-out infinite;
+}
+@keyframes cs-ia-pulso {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+}
+.cs-ia-modal-texto { font-size: 1rem; color: var(--text-dark); line-height: 1.5; margin: 0; }
+.cs-ia-modal-box .cs-hero__buscador-aviso,
+.cs-ia-modal-box .cs-hero__buscador-vacio { text-align: left; margin-top: 4px; }
+.cs-ia-modal-box .btn-primary { margin-top: 16px; display: inline-block; }
 @media (max-width: 640px) {
   .cs-hero__buscador-resultados { padding: 14px; }
   .cs-hero__ficha-directa { flex-direction: column; }

@@ -5623,7 +5623,7 @@ window.SOLUCIONES_DATA = (function () {
   // ni una guía ni productos para ese caso).
   function buscarSolucionIA(texto) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
-    const vacio = { solucion: null, fueraDeAlcance: false, mensaje: '', titulo: '', respuesta: '', pasos: [], terminos: [], familias: [] };
+    const vacio = { solucion: null, fueraDeAlcance: false, mensaje: '', titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [] };
     if (!url || !texto || !texto.trim()) return Promise.resolve(vacio);
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
@@ -5647,9 +5647,12 @@ window.SOLUCIONES_DATA = (function () {
         const titulo = solucion ? '' : (data.titulo || '');
         const respuesta = solucion ? '' : (data.respuesta || '');
         const pasos = solucion ? [] : (Array.isArray(data.pasos) ? data.pasos : []);
+        const dificultad = solucion ? '' : (data.dificultad || '');
+        const tiempo = solucion ? '' : (data.tiempo || '');
+        const resultado = solucion ? '' : (data.resultado || '');
         const terminos = Array.isArray(data.terminos) ? data.terminos : [];
         const familias = Array.isArray(data.familias) ? data.familias : [];
-        return { solucion, fueraDeAlcance: false, mensaje: '', titulo, respuesta, pasos, terminos, familias };
+        return { solucion, fueraDeAlcance: false, mensaje: '', titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias };
       })
       .catch((err) => {
         console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
