@@ -4003,8 +4003,20 @@ function procesarBuscarSolucionIA(data) {
       throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
     }
 
-    const listado = catalogo.map(function (s, i) {
-      return (i + 1) + '. slug="' + s.slug + '" — ' + s.title + ' — ' + (s.description || '');
+    // A petición de Eloy: las respuestas estaban tardando demasiado —
+    // el listado de las 80 guías con título Y descripción completa en
+    // cada una (más las ~150 categorías) hacía que el prompt fuera muy
+    // largo, y un prompt más largo tarda más en procesarse en cada
+    // consulta, sin excepción. Se recorta la descripción a un fragmento
+    // corto (el título ya suele bastar para que la IA sepa de qué va
+    // cada guía; el trozo de descripción es solo un empate de
+    // desambiguación, no hace falta completo) y se quita la numeración
+    // "1. 2. 3." (no aporta nada, Gemini solo necesita copiar el slug
+    // literal). Reduce el tamaño del bloque de guías de forma notable
+    // sin perder la información que de verdad se usa para decidir.
+    const listado = catalogo.map(function (s) {
+      const descCorta = (s.description || '').slice(0, 70);
+      return 'slug="' + s.slug + '" — ' + s.title + (descCorta ? ' — ' + descCorta + '…' : '');
     }).join('\n');
 
     // Lista de categorías REALES del catálogo ("área > familia") — a
@@ -4015,7 +4027,7 @@ function procesarBuscarSolucionIA(data) {
     // suelta en el nombre, nunca por categoría real. Con esta lista, la
     // IA puede acotar la búsqueda a una categoría real en vez de
     // limitarse a asociación libre de palabras.
-    const listadoTaxonomia = taxonomia.length ? taxonomia.map(function (t) { return '- ' + t; }).join('\n') : '(sin categorías disponibles)';
+    const listadoTaxonomia = taxonomia.length ? taxonomia.join('\n') : '(sin categorías disponibles)';
 
     const prompt = 'Eres el motor de búsqueda del Centro de Soluciones de Orencio Matas y Hermanos, ' +
       'una tienda de droguería, perfumería, pinturas y suministros para talleres y carrocerías.\n' +

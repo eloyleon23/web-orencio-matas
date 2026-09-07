@@ -3,6 +3,20 @@
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
   const $all = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
 
+  // A petición de Eloy: "me preocupa que ganemos en dar más soluciones
+  // pero estemos penalizando la eficiencia y rapidez". Una parte real
+  // de la lentitud de la PRIMERA pregunta a la IA en cada visita era
+  // que, hasta ese momento, nunca se había cargado el catálogo real de
+  // productos (necesario tanto para la taxonomía que se le manda a
+  // Gemini como para buscar productos después) — esa descarga se
+  // sumaba en el camino crítico de la primera consulta. Se adelanta
+  // aquí, en segundo plano, nada más entrar en la página, sin esperar
+  // a que el usuario pregunte nada — cargarCatalogoReal() ya cachea el
+  // resultado, así que si el usuario pregunta antes de que termine,
+  // simplemente reutiliza esta misma descarga ya en marcha, y si nunca
+  // hace falta, no se ha bloqueado ni ralentizado nada más.
+  if (D && D.cargarCatalogoReal) D.cargarCatalogoReal().catch(() => {});
+
   function urlSolucion(slug) {
     return `soluciones/solucion.html?slug=${encodeURIComponent(slug)}`;
   }
@@ -258,7 +272,7 @@
 
       contenido.innerHTML = `
         <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
-        <p class="cs-ia-modal-texto">Preguntando a la IA…</p>
+        <p class="cs-ia-modal-texto">Preguntando a la IA…<br><small style="color:var(--text-gray);font-weight:400;">Puede tardar unos segundos, gracias por tu paciencia.</small></p>
       `;
       overlay.style.display = 'flex';
 

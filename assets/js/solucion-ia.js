@@ -88,7 +88,7 @@
   function renderCargando() {
     cont.innerHTML = `
       <div class="container" style="padding:60px 20px;text-align:center;">
-        <p style="font-size:1.1rem;color:var(--text-gray);"><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> Preguntando a la IA…</p>
+        <p style="font-size:1.1rem;color:var(--text-gray);"><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> Preguntando a la IA…<br><small>Puede tardar unos segundos.</small></p>
       </div>
     `;
   }
