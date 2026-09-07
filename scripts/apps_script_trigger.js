@@ -4034,9 +4034,25 @@ function procesarBuscarSolucionIA(data) {
       'TERMINOS: 3 a 6 palabras clave en español separadas por comas, de los TIPOS de producto que ayudarían con esta consulta. Sé específico y evita palabras sueltas muy genéricas que puedan confundirse con otra cosa (p.ej. para "aire acondicionado" usa "desengrasante equipos" o "limpiador de rejillas", NUNCA la palabra suelta "aire", que en nuestro catálogo también aparece en perfumes y colonias). Si de verdad no hay ningún producto remotamente relacionado, deja vacío.\n' +
       'FAMILIAS: 0 a 3 categorías copiadas EXACTAMENTE de la lista de categorías reales de arriba (formato "área > familia") que de verdad contendrían el tipo de producto que ayudaría — vacío si ninguna encaja, nunca inventes una que no esté en la lista.';
 
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=' + GEMINI_API_KEY;
+    // CAUSA REAL de todos los fallos anteriores (encontrada por fin con
+    // datos reales del campo _debug, no adivinada): el modelo
+    // 'gemini-2.5-flash-lite' fue retirado por Google — cada llamada
+    // devolvía HTTP 404 con el mensaje "This model ... is no longer
+    // available to new users. Please update your code to use
+    // models/gemini-3.5-flash-lite". Todo lo demás que se fue ajustando
+    // antes (umbrales de seguridad, simplificar el prompt, subir
+    // maxOutputTokens) eran cambios razonables por su cuenta, pero
+    // NINGUNO era la causa real — la llamada nunca llegó a completarse
+    // ni una sola vez. Si Google vuelve a retirar el modelo en el
+    // futuro, el mensaje de error de la API ya lo dice explícitamente
+    // (visible en el campo _debug.respuestaCrudaGemini de la propia
+    // respuesta): revisar ahí primero antes de tocar nada del prompt.
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' + GEMINI_API_KEY;
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
+      // Nota: los modelos Gemini 3.x ignoran valores personalizados de
+      // temperature/top-K/top-P (usan siempre los suyos por defecto) —
+      // no rompe nada dejarlo aquí, simplemente no tiene efecto.
       generationConfig: { temperature: 0.2, maxOutputTokens: 900 },
       // Umbrales de seguridad explícitos — sin esto, Gemini usa un
       // umbral por defecto bastante estricto que puede bloquear la
