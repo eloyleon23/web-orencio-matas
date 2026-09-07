@@ -88,7 +88,7 @@
   function renderCargando() {
     cont.innerHTML = `
       <div class="container" style="padding:60px 20px;text-align:center;">
-        <p style="font-size:1.1rem;color:var(--text-gray);">🤖 Preguntando a la IA…</p>
+        <p style="font-size:1.1rem;color:var(--text-gray);"><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> Preguntando a la IA…</p>
       </div>
     `;
   }
@@ -199,7 +199,7 @@
       <section class="cs-section" style="padding-top:10px;">
         <div class="container">
           <div class="cs-hero__ia-respuesta" style="margin-bottom:16px;max-width:680px;">
-            <p><span aria-hidden="true">🤖</span> <strong>Solución generada por IA</strong> — no es una de nuestras guías escritas por el equipo, así que consúltanos si tienes dudas.</p>
+            <p><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> <strong>Solución generada por IA</strong> — no es una de nuestras guías escritas por el equipo, así que consúltanos si tienes dudas.</p>
           </div>
           <h1 style="font-family:var(--font-heading);font-size:clamp(1.8rem,4vw,2.6rem);font-weight:900;color:var(--text-dark);max-width:760px;margin-bottom:16px;">${escaparHtml(titulo)}</h1>
           ${datos.respuesta ? `<p style="max-width:680px;color:var(--text-gray);font-size:1.05rem;line-height:1.6;">${escaparHtml(datos.respuesta)}</p>` : ''}

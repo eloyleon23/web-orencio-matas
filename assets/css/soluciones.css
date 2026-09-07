@@ -317,9 +317,17 @@
   margin-bottom: 12px;
   animation: cs-ia-pulso 1.2s ease-in-out infinite;
 }
+.cs-ia-modal-spinner img.cs-icono-ia { width: 48px; height: 48px; }
 @keyframes cs-ia-pulso {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.15); opacity: 0.7; }
+}
+.cs-icono-ia {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.2em;
+  object-fit: contain;
 }
 .cs-ia-modal-texto { font-size: 1rem; color: var(--text-dark); line-height: 1.5; margin: 0; }
 .cs-ia-modal-box .cs-hero__buscador-aviso,

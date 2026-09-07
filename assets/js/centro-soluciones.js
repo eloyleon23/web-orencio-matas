@@ -190,10 +190,10 @@
 
           const bloqueRespuesta = respuesta ? `
             <div class="cs-hero__ia-respuesta">
-              <p><span aria-hidden="true">🤖</span> <strong>Sugerencia de IA</strong> — no es una de nuestras guías, pero puede orientarte:</p>
+              <p><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> <strong>Sugerencia de IA</strong> — no es una de nuestras guías, pero puede orientarte:</p>
               <p>${respuesta}</p>
             </div>
-          ` : `<p class="cs-hero__buscador-contador">🤖 No tenemos una guía específica para "${texto}", pero estos productos pueden ayudarte:</p>`;
+          ` : `<p class="cs-hero__buscador-contador"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> No tenemos una guía específica para "${texto}", pero estos productos pueden ayudarte:</p>`;
 
           const bloqueProductos = productos.length ? `
             <p class="cs-hero__buscador-contador" style="margin-top:14px;">Productos que podrían servirte:</p>
@@ -204,7 +204,7 @@
           resultados.innerHTML = `
             ${bloqueRespuesta}
             ${bloqueProductos}
-            <button type="button" class="cs-hero__buscador-chip" id="cs-hero-ver-completa" style="margin-top:14px;">🤖 Ver la solución completa, paso a paso →</button>
+            <button type="button" class="cs-hero__buscador-chip" id="cs-hero-ver-completa" style="margin-top:14px;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> Ver la solución completa, paso a paso →</button>
           `;
           resultados.style.display = 'block';
 
@@ -240,7 +240,7 @@
       if (!overlay || !contenido) return;
 
       contenido.innerHTML = `
-        <p class="cs-ia-modal-spinner" aria-hidden="true">🤖</p>
+        <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
         <p class="cs-ia-modal-texto">Preguntando a la IA…</p>
       `;
       overlay.style.display = 'flex';
@@ -266,10 +266,30 @@
           window.location.href = `soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`;
           return;
         }
-        contenido.innerHTML = `
-          <p class="cs-ia-modal-spinner" aria-hidden="true">🤔</p>
-          <p class="cs-ia-modal-texto">No hemos encontrado ninguna solución para "<strong>${texto}</strong>". Prueba a contárnoslo con otras palabras, o llámanos y te ayudamos directamente.</p>
-        `;
+        // Bug real detectado por Eloy ("pintar paredes" -> "no hemos
+        // encontrado nada" pese a ser un caso obvio con muchos
+        // productos reales): si la IA no da NINGÚN dato aprovechable
+        // (ni guía, ni título/respuesta/pasos/términos), antes se
+        // rendía aquí mismo sin más — a diferencia de la búsqueda
+        // automática del hero, que SÍ probaba una búsqueda de productos
+        // con el texto tal cual como último recurso. Se aplica ahora el
+        // mismo último intento aquí, antes de decir que no hay nada.
+        D.buscarProductosEnCatalogo(texto).then((productos) => {
+          if (productos.length) {
+            try {
+              sessionStorage.setItem(`cs_ia_${texto}`, JSON.stringify({
+                titulo: `Productos para: ${texto}`, respuesta: '', pasos: [],
+                dificultad: '', tiempo: '', resultado: '', terminos: [texto], familias: [],
+              }));
+            } catch (e) { /* no crítico */ }
+            window.location.href = `soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`;
+            return;
+          }
+          contenido.innerHTML = `
+            <p class="cs-ia-modal-spinner" aria-hidden="true">🤔</p>
+            <p class="cs-ia-modal-texto">No hemos encontrado ninguna solución para "<strong>${texto}</strong>". Prueba a contárnoslo con otras palabras, o llámanos y te ayudamos directamente.</p>
+          `;
+        });
       });
     }
 
@@ -289,7 +309,7 @@
         return;
       }
       contenido.innerHTML = `
-        <p class="cs-ia-modal-spinner" aria-hidden="true">🤖</p>
+        <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
         <p class="cs-ia-modal-texto">Preparando la solución completa…</p>
       `;
       overlay.style.display = 'flex';
@@ -341,7 +361,7 @@
       // se aplica en el asistente de diagnóstico (nunca simular una
       // coincidencia segura que en realidad no lo es).
       const contador = esSugerenciaIA
-        ? `<p class="cs-hero__buscador-contador">🤖 Sugerido por IA para "${texto}" — no es una coincidencia exacta de palabras, pero puede ser lo que buscas:</p>`
+        ? `<p class="cs-hero__buscador-contador"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> Sugerido por IA para "${texto}" — no es una coincidencia exacta de palabras, pero puede ser lo que buscas:</p>`
         : (encontradas.length
           ? `<p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>`
           : (fichaDirecta ? `<p class="cs-hero__buscador-contador">No hay una guía específica para "${texto}", pero sí la ficha técnica del producto:</p>` : ''));
@@ -356,7 +376,7 @@
           }).join('')}
         </div>
         ${esSugerenciaIA ? '' : `
-          <button type="button" class="cs-hero__pedir-ia" id="cs-hero-pedir-ia">🤖 ¿No es esto lo que buscabas? Pregunta a nuestra IA</button>
+          <button type="button" class="cs-hero__pedir-ia" id="cs-hero-pedir-ia"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> ¿No es esto lo que buscabas? Pregunta a nuestra IA</button>
         `}
       `;
       resultados.style.display = 'block';
