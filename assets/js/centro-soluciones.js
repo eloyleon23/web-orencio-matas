@@ -395,8 +395,19 @@
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        // e.isComposing evita cortar una letra con tilde/acento a
+        // medio componer (p. ej. en algunos teclados "á" se compone en
+        // dos pulsaciones) — sin esto, pulsar Enter justo después de
+        // una vocal acentuada podía capturar el valor del campo un
+        // instante ANTES de que esa última letra terminara de
+        // insertarse (bug real detectado: una búsqueda de "limpiar
+        // sofá" llegaba a la IA como "limpiar sof", sin la á). El
+        // setTimeout(…, 0) da un respiro adicional a la siguiente
+        // vuelta del bucle de eventos por si el navegador aún no ha
+        // terminado de actualizar input.value en ese mismo instante.
+        if (e.isComposing) return;
         clearTimeout(temporizadorBusqueda);
-        ejecutarBusqueda();
+        setTimeout(ejecutarBusqueda, 0);
       }
     });
     input.addEventListener('input', () => {
