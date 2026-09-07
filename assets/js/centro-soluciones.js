@@ -137,7 +137,10 @@
       // juego aquí, en el caso que hoy ya fallaba del todo, así que no
       // añade coste a las búsquedas que el motor de palabras clave ya
       // resuelve razonablemente bien.
-      resultados.innerHTML = `<p class="cs-hero__buscador-contador">Buscando para "${texto}"…</p>`;
+      resultados.innerHTML = `
+        <p class="cs-hero__buscador-contador"><img src="assets/logos/apple-touch-icon.png" alt="" class="cs-icono-ia"> Preguntando a la IA para "${texto}"…</p>
+        <p style="color:var(--text-gray);font-size:0.85rem;margin-top:4px;">Puede tardar unos segundos, gracias por tu paciencia.</p>
+      `;
       resultados.style.display = 'block';
       ejecutarBusquedaIA(texto);
     }
