@@ -136,8 +136,25 @@
     // "pedir ayuda a la IA" (cuando sí hay algo, pero puede ser flojo)
     // usa un modal aparte — ver pedirAyudaIAModal más abajo.
     function ejecutarBusquedaIA(texto) {
-      D.buscarSolucionIA(texto).then(({ solucion, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+      D.buscarSolucionIA(texto).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
+
+        // A petición de Eloy: si ha habido un problema TÉCNICO de
+        // verdad (Gemini caído/saturado, sin conexión...), no se debe
+        // decir "no hemos encontrado nada" — eso da a entender que el
+        // problema no tiene solución en nuestro catálogo, cuando en
+        // realidad ni siquiera se ha llegado a comprobar. Se anima a
+        // reintentarlo en vez de dar la sensación de un callejón sin
+        // salida.
+        if (errorTecnico) {
+          resultados.innerHTML = `
+            <p class="cs-hero__buscador-aviso">
+              <span aria-hidden="true">🔄</span> Ha habido un problema al consultar con nuestro asistente — no es que no exista una solución, es un fallo puntual. Vuelve a intentarlo en unos segundos, o cuéntanoslo en <a href="#cs-problema">¿Tienes un problema?</a>.
+            </p>
+          `;
+          resultados.style.display = 'block';
+          return;
+        }
 
         // A petición de Eloy: "limitar las preguntas... informando si
         // la pregunta es inapropiada". Se corta aquí ANTES de mostrar
@@ -245,7 +262,21 @@
       `;
       overlay.style.display = 'flex';
 
-      D.buscarSolucionIA(texto).then(({ solucion, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+      D.buscarSolucionIA(texto).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+        if (errorTecnico) {
+          // A petición de Eloy: distinto de "no hay solución" — aquí sí
+          // tiene sentido un botón de reintentar directo, porque el
+          // modal ya está abierto y el usuario no ha perdido nada al
+          // esperar.
+          contenido.innerHTML = `
+            <p class="cs-ia-modal-spinner" aria-hidden="true">🔄</p>
+            <p class="cs-ia-modal-texto">Ha habido un problema al consultar con nuestro asistente — no es que no exista una solución, es un fallo puntual.</p>
+            <button type="button" class="btn-primary" id="cs-ia-reintentar" style="margin-top:14px;">Reintentar</button>
+          `;
+          const btnReintentar = $('#cs-ia-reintentar');
+          if (btnReintentar) btnReintentar.addEventListener('click', () => pedirAyudaIAModal(texto));
+          return;
+        }
         if (fueraDeAlcance) {
           contenido.innerHTML = `
             <p class="cs-ia-modal-spinner" aria-hidden="true">⚠️</p>

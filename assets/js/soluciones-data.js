@@ -5623,7 +5623,13 @@ window.SOLUCIONES_DATA = (function () {
   // ni una guía ni productos para ese caso).
   function buscarSolucionIA(texto) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
-    const vacio = { solucion: null, fueraDeAlcance: false, mensaje: '', titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [] };
+    // errorTecnico distingue "no se ha encontrado nada" (búsqueda
+    // normal sin resultado) de "algo ha fallado de verdad" (sin
+    // conexión, Gemini caído/saturado, o cualquier error inesperado) —
+    // a petición de Eloy: en el segundo caso hay que decirle al
+    // usuario que lo intente de nuevo, no darle a entender que
+    // simplemente no existe ninguna solución para su problema.
+    const vacio = { solucion: null, errorTecnico: false, fueraDeAlcance: false, mensaje: '', titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [] };
     if (!url || !texto || !texto.trim()) return Promise.resolve(vacio);
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
@@ -5639,7 +5645,8 @@ window.SOLUCIONES_DATA = (function () {
     }))
       .then((res) => res.json())
       .then((data) => {
-        if (!data || !data.success) return vacio;
+        if (!data) return { ...vacio, errorTecnico: true };
+        if (!data.success) return { ...vacio, errorTecnico: !!data.errorTecnico };
         if (data.fueraDeAlcance) {
           return { ...vacio, fueraDeAlcance: true, mensaje: data.mensaje || '' };
         }
@@ -5652,11 +5659,13 @@ window.SOLUCIONES_DATA = (function () {
         const resultado = solucion ? '' : (data.resultado || '');
         const terminos = Array.isArray(data.terminos) ? data.terminos : [];
         const familias = Array.isArray(data.familias) ? data.familias : [];
-        return { solucion, fueraDeAlcance: false, mensaje: '', titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias };
+        return { solucion, errorTecnico: false, fueraDeAlcance: false, mensaje: '', titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias };
       })
       .catch((err) => {
+        // Fallo de red/CORS/etc. antes de llegar a tener respuesta
+        // alguna — también es un error técnico, no "no hay solución".
         console.error('Error en buscarSolucionIA (se continúa sin sugerencia de IA):', err);
-        return vacio;
+        return { ...vacio, errorTecnico: true };
       });
   }
 

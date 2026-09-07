@@ -4109,7 +4109,7 @@ function procesarBuscarSolucionIA(data) {
     if (codigo !== 200) {
       console.error('Error de Gemini (HTTP):', codigo, resp.getContentText());
       return ContentService.createTextOutput(JSON.stringify({
-        success: false, fueraDeAlcance: false, mensaje: '', slug: null, titulo: '', respuesta: '',
+        success: false, errorTecnico: true, fueraDeAlcance: false, mensaje: '', slug: null, titulo: '', respuesta: '',
         pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [],
         _debug: { promptEnviado: prompt, errorHttp: codigo, respuestaCrudaGemini: resp.getContentText() },
       })).setMimeType(ContentService.MimeType.JSON);
@@ -4276,7 +4276,7 @@ function procesarBuscarSolucionIA(data) {
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarBuscarSolucionIA:', err);
-    return ContentService.createTextOutput(JSON.stringify({ success: false, fueraDeAlcance: false, mensaje: '', slug: null, titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [], error: err.message }))
+    return ContentService.createTextOutput(JSON.stringify({ success: false, errorTecnico: true, fueraDeAlcance: false, mensaje: '', slug: null, titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [], error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

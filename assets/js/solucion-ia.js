@@ -113,6 +113,23 @@
     `;
   }
 
+  // A petición de Eloy: distinto de "no hemos encontrado una solución"
+  // — aquí SÍ ha habido un problema real (Gemini caído/saturado, sin
+  // conexión...), así que el mensaje anima a reintentarlo en vez de
+  // dar a entender que no existe ninguna solución para el problema.
+  function renderErrorTecnico(consulta) {
+    cont.innerHTML = `
+      <div class="container" style="padding:60px 20px;text-align:center;max-width:600px;margin:0 auto;">
+        <h1 style="font-family:var(--font-heading);font-size:1.8rem;margin-bottom:12px;">Ha habido un problema técnico</h1>
+        <p style="color:var(--text-gray);margin-bottom:20px;">No hemos podido consultar con nuestro asistente para "<strong>${escaparHtml(consulta)}</strong>" — no es que no exista una solución, es un fallo puntual. Vuelve a intentarlo en unos segundos.</p>
+        <button type="button" class="btn-primary" id="cs-ia-reintentar-pagina">🔄 Reintentar</button>
+        <p style="margin-top:16px;"><a href="../centro-soluciones.html">← Volver al Centro de Soluciones</a></p>
+      </div>
+    `;
+    const btn = $('#cs-ia-reintentar-pagina');
+    if (btn) btn.addEventListener('click', () => window.location.reload());
+  }
+
   function renderFueraDeAlcance(mensaje) {
     cont.innerHTML = `
       <div class="container" style="padding:60px 20px;text-align:center;max-width:600px;margin:0 auto;">
@@ -297,6 +314,7 @@
 
     renderCargando();
     D.buscarSolucionIA(consulta).then((datos) => {
+      if (datos.errorTecnico) { renderErrorTecnico(consulta); return; }
       if (datos.fueraDeAlcance) { renderFueraDeAlcance(datos.mensaje); return; }
       if (datos.solucion) {
         window.location.href = `solucion.html?slug=${encodeURIComponent(datos.solucion.slug)}`;
