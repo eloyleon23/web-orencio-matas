@@ -84,7 +84,7 @@
       resultados.innerHTML = '';
     }
 
-    function ejecutarBusqueda() {
+    function ejecutarBusqueda(esConfirmacion) {
       const texto = input.value.trim();
       if (!texto) {
         resultados.style.display = 'none';
@@ -133,6 +133,20 @@
         return;
       }
 
+      // A petición de Eloy: "conforme te pones a escribir salta la
+      // modal de la IA" — si esto viene del filtro en vivo mientras se
+      // teclea (no una confirmación explícita del usuario), no se hace
+      // nada más todavía. Es muy normal que un texto a medio escribir
+      // no coincida con nada curado, y abrir el modal en ese instante
+      // interrumpe al usuario mientras sigue pensando/escribiendo. Solo
+      // se intenta con la IA cuando el usuario confirma de verdad (ver
+      // wiring de Enter/lupa/pausa larga más abajo).
+      if (!esConfirmacion) {
+        resultados.style.display = 'none';
+        resultados.innerHTML = '';
+        return;
+      }
+
       // Ni el diagnóstico ni el título/descripción/productos de ninguna
       // guía encajan, ni hay ficha técnica reconocible. Antes esto caía
       // directo a la búsqueda en el catálogo de productos con el texto
@@ -140,10 +154,9 @@
       // buscador general — pero si aquí ya no hay nada, en el buscador
       // tampoco lo habrá, y ese enlace daba sensación de que algo
       // funcionaba mal (Eloy). Ahora: se le da una oportunidad a la
-      // búsqueda inteligente con IA automáticamente — solo entra en
-      // juego aquí, en el caso que hoy ya fallaba del todo, así que no
-      // añade coste a las búsquedas que el motor de palabras clave ya
-      // resuelve razonablemente bien.
+      // búsqueda inteligente con IA cuando el usuario confirma su
+      // búsqueda — no añade coste a las búsquedas que el motor de
+      // palabras clave ya resuelve razonablemente bien.
       //
       // El progreso de la espera ahora se muestra en el modal
       // compartido (ver abrirModalEsperaIA), no aquí — se deja
@@ -555,7 +568,21 @@
     // ruidoso, casi cualquier solución tendría alguna coincidencia).
     const MIN_CARACTERES_BUSQUEDA_VIVA = 2;
     const RETRASO_BUSQUEDA_VIVA_MS = 250;
+    // A petición de Eloy: "conforme te pones a escribir salta la modal
+    // de la IA" — el filtro curado (barato, solo palabras clave) se
+    // sigue actualizando con cada tecla tras un respiro corto (250ms),
+    // pero la llamada automática a la IA (que ahora abre un modal, más
+    // intrusivo que el simple texto de antes) NO debe dispararse solo
+    // porque en un instante intermedio de la escritura no haya nada
+    // curado todavía — eso pasa constantemente mientras se teclea
+    // letra a letra. La IA automática solo se dispara en dos casos: (a)
+    // el usuario confirma explícitamente con Enter/lupa, o (b) ha
+    // pasado una pausa bastante más larga sin teclear nada (ver
+    // RETRASO_IA_AUTOMATICA_MS), señal de que probablemente ha
+    // terminado de escribir su búsqueda.
+    const RETRASO_IA_AUTOMATICA_MS = 1400;
     let temporizadorBusqueda = null;
+    let temporizadorIAAutomatica = null;
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -572,21 +599,31 @@
         // terminado de actualizar input.value en ese mismo instante.
         if (e.isComposing) return;
         clearTimeout(temporizadorBusqueda);
-        setTimeout(ejecutarBusqueda, 0);
+        clearTimeout(temporizadorIAAutomatica);
+        setTimeout(() => ejecutarBusqueda(true), 0);
       }
     });
     input.addEventListener('input', () => {
       btnLimpiar.style.display = input.value ? 'flex' : 'none';
       clearTimeout(temporizadorBusqueda);
+      clearTimeout(temporizadorIAAutomatica);
       if (input.value.trim().length < MIN_CARACTERES_BUSQUEDA_VIVA) {
         resultados.style.display = 'none';
         resultados.innerHTML = '';
         return;
       }
-      temporizadorBusqueda = setTimeout(ejecutarBusqueda, RETRASO_BUSQUEDA_VIVA_MS);
+      // Filtro curado en vivo — NUNCA dispara la IA automáticamente
+      // (esConfirmacion=false), solo actualiza resultados por palabras
+      // clave, que es barato e instantáneo.
+      temporizadorBusqueda = setTimeout(() => ejecutarBusqueda(false), RETRASO_BUSQUEDA_VIVA_MS);
+      // Si tras una pausa bastante más larga el usuario sigue sin haber
+      // tecleado nada más, SÍ se considera una confirmación implícita —
+      // ahí es donde puede llegar a abrirse el modal de la IA si no hay
+      // nada curado.
+      temporizadorIAAutomatica = setTimeout(() => ejecutarBusqueda(true), RETRASO_IA_AUTOMATICA_MS);
     });
-    if (btnLupa) btnLupa.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); ejecutarBusqueda(); });
-    if (btnLimpiar) btnLimpiar.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); limpiar(); });
+    if (btnLupa) btnLupa.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); clearTimeout(temporizadorIAAutomatica); ejecutarBusqueda(true); });
+    if (btnLimpiar) btnLimpiar.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); clearTimeout(temporizadorIAAutomatica); limpiar(); });
   }
 
   // ── "Tengo un problema" ─────────────────────────────────────────────────
