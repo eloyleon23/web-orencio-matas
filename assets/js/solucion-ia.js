@@ -89,7 +89,7 @@
           <div class="cs-producto-card__ref">Ref: ${p.ref}</div>
           <div class="${precioClass}">${precio}</div>
         </a>
-        <button type="button" class="cs-producto-quitar no-imprimir" data-ref="${escaparHtml(p.ref)}" title="No me interesa este producto" aria-label="Quitar este producto de la lista">✕</button>
+        <button type="button" class="cs-producto-quitar no-imprimir" data-ref="${escaparHtml(p.ref)}" title="Quitar «${escaparHtml(p.nombre)}» de la lista" aria-label="Quitar este producto de la lista">✕</button>
       </div>
     `;
   }
@@ -311,14 +311,12 @@
             <p class="section-heading__eyebrow">Ya sabes qué hacer</p>
             <h2>Productos que podrían servirte</h2>
           </div>
+          <div class="cs-ia-productos-otra-vez-bar no-imprimir" id="cs-ia-productos-otra-vez-bar" style="display:none;"></div>
           <div id="cs-ia-productos-cargando" class="cs-ia-productos-espera">
             <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
             <p>Buscando productos en nuestro catálogo…</p>
           </div>
           <div class="cs-productos-grid" id="cs-ia-productos-grid"></div>
-          <div class="cs-ia-productos-otra-vez-bar no-imprimir" id="cs-ia-productos-otra-vez-bar" style="display:none;">
-            <button type="button" class="cs-hero__pedir-ia" id="cs-ia-productos-otra-vez">No es lo que buscaba, prueba otra vez</button>
-          </div>
           <div class="cs-exportar-bar" id="cs-ia-exportar-bar" style="display:none;">
             <div class="cs-exportar-bar__acciones no-imprimir">
               <button type="button" class="btn-primary" id="cs-exportar-pdf">📄 Descargar como PDF</button>
@@ -378,7 +376,7 @@
             // Ya había productos antes (los de la búsqueda anterior
             // siguen en la rejilla) — solo se avisa de que no hay más
             // alternativas, sin borrar lo que ya había.
-            barraOtraVez.innerHTML = `<p style="color:var(--text-gray);font-size:0.9rem;">La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.</p>`;
+            barraOtraVez.innerHTML = `<p class="cs-ia-productos-aviso-nota">La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.</p>`;
             barraOtraVez.style.display = '';
             return;
           }
@@ -400,11 +398,25 @@
         refsProductosExcluidos = refsProductosExcluidos.concat(productos.map((p) => p.ref));
         grid.innerHTML += productos.slice(0, 8).map(renderTarjetaProducto).join('');
         wireProductosQuitar();
-        barraOtraVez.innerHTML = `<button type="button" class="cs-hero__pedir-ia" id="cs-ia-productos-otra-vez">No es lo que buscaba, prueba otra vez</button>`;
+        renderAvisoOtraVez();
         barraOtraVez.style.display = '';
         wireBotonProductosOtraVez();
         $('#cs-ia-exportar-bar').style.display = '';
       });
+    }
+
+    // Aviso "Sugerido por IA" + botón "otra vez" — mismo formato ya
+    // usado en buscador.html (icono de la marca + texto + botón), en
+    // vez de un botón suelto. A petición de Eloy: colocado ENCIMA de
+    // los resultados (como en el buscador), no debajo.
+    function renderAvisoOtraVez() {
+      $('#cs-ia-productos-otra-vez-bar').innerHTML = `
+        <div class="cs-ia-productos-aviso">
+          <img src="../assets/logos/apple-touch-icon.png" alt="" class="cs-icono-ia">
+          <span><strong>Sugerido por IA</strong> a partir de tu búsqueda — puede contener errores, comprueba bien que es el producto que buscas.</span>
+          <button type="button" class="cs-hero__pedir-ia" id="cs-ia-productos-otra-vez">No es lo que buscaba, prueba otra vez</button>
+        </div>
+      `;
     }
 
     // Botón "No es lo que buscaba, prueba otra vez" — reutiliza la
@@ -435,7 +447,7 @@
             cargando.style.display = 'none';
             if (!data || !data.success || data.fueraDeAlcance || !data.terminos || !data.terminos.length) {
               const barraOtraVez = $('#cs-ia-productos-otra-vez-bar');
-              barraOtraVez.innerHTML = `<p style="color:var(--text-gray);font-size:0.9rem;">La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.</p>`;
+              barraOtraVez.innerHTML = `<p class="cs-ia-productos-aviso-nota">La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.</p>`;
               barraOtraVez.style.display = '';
               return;
             }
@@ -454,14 +466,17 @@
     // Botón "✕" en cada tarjeta — a petición de Eloy: "dar la opción de
     // poder marcar los productos que no son candidatos para quitar, ya
     // que si el usuario quiere exportar a PDF, no interesa que
-    // aparezcan productos que al usuario no le interesan". Se quita del
-    // DOM directamente (el PDF se genera con window.print(), así que lo
-    // que no está en la página tampoco sale impreso) y se añade a la
-    // lista de excluidos para que tampoco vuelva a aparecer si se pide
-    // "otra vez" después. Delegación de eventos en el propio grid, para
-    // que funcione también con las tarjetas añadidas después de un
-    // "otra vez" sin tener que volver a enganchar cada botón nuevo uno
-    // a uno.
+    // aparezcan productos que al usuario no le interesan". Se pide
+    // confirmación antes de quitar (Eloy: "al clicar en ella deberíamos
+    // avisar al usuario que se quitará de la lista") — evita quitar por
+    // error un producto que sí interesaba, sobre todo en móvil donde un
+    // toque accidental es más fácil. Se quita del DOM directamente (el
+    // PDF se genera con window.print(), así que lo que no está en la
+    // página tampoco sale impreso) y se añade a la lista de excluidos
+    // para que tampoco vuelva a aparecer si se pide "otra vez" después.
+    // Delegación de eventos en el propio grid, para que funcione
+    // también con las tarjetas añadidas después de un "otra vez" sin
+    // tener que volver a enganchar cada botón nuevo uno a uno.
     function wireProductosQuitar() {
       const grid = $('#cs-ia-productos-grid');
       if (!grid || grid.dataset.wireQuitarListo) return;
@@ -471,9 +486,11 @@
         if (!btn) return;
         e.preventDefault();
         e.stopPropagation();
+        const wrap = btn.closest('.cs-producto-card-wrap');
+        const nombre = wrap ? (wrap.querySelector('.cs-producto-card__nombre') || {}).textContent : '';
+        if (!window.confirm(`¿Quitar "${(nombre || 'este producto').trim()}" de la lista? No volverá a aparecer.`)) return;
         const ref = btn.dataset.ref;
         if (ref && !refsProductosExcluidos.includes(ref)) refsProductosExcluidos.push(ref);
-        const wrap = btn.closest('.cs-producto-card-wrap');
         if (wrap) wrap.remove();
       });
     }
