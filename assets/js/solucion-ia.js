@@ -85,12 +85,60 @@
     `;
   }
 
+  // ── Espera con mensajes progresivos — mismo patrón que el modal del
+  // Centro de Soluciones y de buscador.html, adaptado a página completa
+  // (sin overlay, ya que aquí no hay contenido "detrás" que tapar). El
+  // botón "Cancelar" en este contexto vuelve al Centro de Soluciones,
+  // ya que esta página no tiene nada más que mostrar sin un resultado.
+  const MENSAJES_ESPERA_IA = [
+    'Preguntando a la IA…',
+    'Seguimos en ello — recopilando la información adecuada…',
+    'Ya casi… gracias por tu paciencia',
+    'Esto está tardando más de lo normal, pero seguimos intentándolo…',
+    'Seguimos esperando respuesta — puedes cancelar si prefieres no seguir esperando',
+  ];
+  const INTERVALO_MENSAJE_ESPERA_MS = 15000;
+  const LIMITE_SEGURIDAD_ESPERA_MS = 120000;
+
   function renderCargando() {
     cont.innerHTML = `
-      <div class="container" style="padding:60px 20px;text-align:center;">
-        <p style="font-size:1.1rem;color:var(--text-gray);"><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> Preguntando a la IA…<br><small>Puede tardar unos segundos.</small></p>
+      <div class="container" style="padding:70px 20px;">
+        <div class="cs-ia-modal-box cs-ia-modal-box--esperando" style="position:static;margin:0 auto;">
+          <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
+          <p class="cs-ia-modal-texto" id="solucion-ia-espera-texto"></p>
+          <button type="button" class="cs-ia-modal-cancelar" id="solucion-ia-espera-cancelar">Cancelar</button>
+        </div>
       </div>
     `;
+  }
+
+  // Pone en marcha los mensajes rotativos y el botón de cancelar;
+  // devuelve { signal, finalizar } — se pasa `signal` a
+  // D.buscarSolucionIA() y se llama a finalizar() en cuanto haya
+  // respuesta, antes de decidir qué renderizar.
+  function iniciarEsperaIA() {
+    const elTexto = $('#solucion-ia-espera-texto');
+    const elCancelar = $('#solucion-ia-espera-cancelar');
+    let paso = 0;
+    elTexto.textContent = MENSAJES_ESPERA_IA[0];
+    const intervalo = setInterval(() => {
+      paso = Math.min(paso + 1, MENSAJES_ESPERA_IA.length - 1);
+      elTexto.textContent = MENSAJES_ESPERA_IA[paso];
+    }, INTERVALO_MENSAJE_ESPERA_MS);
+
+    let canceladoPorUsuario = false;
+    const controlador = new AbortController();
+    const limiteSeguridad = setTimeout(() => controlador.abort(), LIMITE_SEGURIDAD_ESPERA_MS);
+    elCancelar.addEventListener('click', () => {
+      canceladoPorUsuario = true;
+      controlador.abort();
+    });
+
+    function finalizar() {
+      clearInterval(intervalo);
+      clearTimeout(limiteSeguridad);
+    }
+    return { signal: controlador.signal, finalizar, fueCancelado: () => canceladoPorUsuario };
   }
 
   function renderSinConsulta() {
@@ -123,6 +171,23 @@
         <h1 style="font-family:var(--font-heading);font-size:1.8rem;margin-bottom:12px;">Ha habido un problema técnico</h1>
         <p style="color:var(--text-gray);margin-bottom:20px;">No hemos podido consultar con nuestro asistente para "<strong>${escaparHtml(consulta)}</strong>" — no es que no exista una solución, es un fallo puntual. Vuelve a intentarlo en unos segundos.</p>
         <button type="button" class="btn-primary" id="cs-ia-reintentar-pagina">🔄 Reintentar</button>
+        <p style="margin-top:16px;"><a href="../centro-soluciones.html">← Volver al Centro de Soluciones</a></p>
+      </div>
+    `;
+    const btn = $('#cs-ia-reintentar-pagina');
+    if (btn) btn.addEventListener('click', () => window.location.reload());
+  }
+
+  // A petición de Eloy: en vez de un corte automático a los 15s, el
+  // propio usuario decide si cancelar (ver iniciarEsperaIA) — este es
+  // el mensaje que se muestra si lo hace, distinto de un fallo técnico
+  // real.
+  function renderCancelado(consulta) {
+    cont.innerHTML = `
+      <div class="container" style="padding:60px 20px;text-align:center;max-width:600px;margin:0 auto;">
+        <h1 style="font-family:var(--font-heading);font-size:1.8rem;margin-bottom:12px;">Búsqueda cancelada</h1>
+        <p style="color:var(--text-gray);margin-bottom:20px;">Has cancelado la consulta para "<strong>${escaparHtml(consulta)}</strong>". Puedes intentarlo de nuevo cuando quieras.</p>
+        <button type="button" class="btn-primary" id="cs-ia-reintentar-pagina">🔄 Intentarlo de nuevo</button>
         <p style="margin-top:16px;"><a href="../centro-soluciones.html">← Volver al Centro de Soluciones</a></p>
       </div>
     `;
@@ -313,7 +378,10 @@
     if (cache) { renderSolucionIA(consulta, cache); return; }
 
     renderCargando();
-    D.buscarSolucionIA(consulta).then((datos) => {
+    const { signal, finalizar, fueCancelado } = iniciarEsperaIA();
+    D.buscarSolucionIA(consulta, signal).then((datos) => {
+      finalizar();
+      if (datos.errorTecnico && fueCancelado()) { renderCancelado(consulta); return; }
       if (datos.errorTecnico) { renderErrorTecnico(consulta); return; }
       if (datos.fueraDeAlcance) { renderFueraDeAlcance(datos.mensaje); return; }
       if (datos.solucion) {

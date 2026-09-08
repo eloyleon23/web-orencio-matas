@@ -5621,7 +5621,7 @@ window.SOLUCIONES_DATA = (function () {
   // sistema, `fueraDeAlcance` viene en `true` con un `mensaje` para
   // mostrar, y ninguno de los demás campos se rellena (nunca se genera
   // ni una guía ni productos para ese caso).
-  function buscarSolucionIA(texto) {
+  function buscarSolucionIA(texto, signal) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
     // errorTecnico distingue "no se ha encontrado nada" (búsqueda
     // normal sin resultado) de "algo ha fallado de verdad" (sin
@@ -5638,25 +5638,21 @@ window.SOLUCIONES_DATA = (function () {
       description: soluciones[slug].description,
     }));
 
-    return obtenerTaxonomiaCatalogo().then((taxonomia) => {
-      // Límite de tiempo real en el propio navegador — a petición de
-      // Eloy: "he tenido que actualizar la web porque no termina". Sin
-      // esto, si Apps Script o Gemini se quedan colgados por lo que
-      // sea, la petición podía quedarse esperando indefinidamente sin
-      // que el usuario tuviera ninguna forma de saberlo salvo recargar
-      // la página a ciegas. Con AbortController, pasados 15s se corta
-      // la espera aquí mismo y se trata como un error técnico normal
-      // (con su botón de reintentar ya existente), en vez de dejar la
-      // pestaña colgada sin control.
-      const controlador = new AbortController();
-      const limiteTiempo = setTimeout(() => controlador.abort(), 15000);
-      return fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones de buscador.html
-        body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia }),
-        signal: controlador.signal,
-      }).finally(() => clearTimeout(limiteTiempo));
-    })
+    // La señal de cancelación (AbortController) ya NO se crea aquí
+    // dentro con un límite fijo de 15s — a petición de Eloy: "he
+    // tenido que repetir la petición unas 3 veces" porque 15s se
+    // quedaba corto en casos reales. Ahora es quien LLAMA a esta
+    // función quien decide cuánto esperar y cómo informar del
+    // progreso (mensajes rotativos, botón cancelar) — mismo patrón ya
+    // aplicado en buscador.html. Si no se pasa ninguna señal, la
+    // petición no tiene límite de tiempo por este lado (queda sujeta
+    // solo al límite natural del navegador/red).
+    return obtenerTaxonomiaCatalogo().then((taxonomia) => fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones de buscador.html
+      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia }),
+      signal: signal,
+    }))
       .then((res) => res.json())
       .then((data) => {
         if (!data) return { ...vacio, errorTecnico: true };

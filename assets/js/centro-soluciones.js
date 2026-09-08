@@ -3,6 +3,13 @@
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
   const $all = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
 
+  // Si hay una petición de IA en curso con el modal abierto, esta
+  // función la cancela — usada tanto por el botón "Cancelar" propio del
+  // modal como por cualquier otra forma de cerrarlo (X, click fuera,
+  // Escape, volver atrás en el navegador), para no dejar una petición
+  // viva en segundo plano sin que el usuario lo sepa.
+  let cancelarModalIAEnCurso = null;
+
   // A petición de Eloy: "me preocupa que ganemos en dar más soluciones
   // pero estemos penalizando la eficiencia y rapidez". Una parte real
   // de la lentitud de la PRIMERA pregunta a la IA en cada visita era
@@ -137,11 +144,11 @@
       // juego aquí, en el caso que hoy ya fallaba del todo, así que no
       // añade coste a las búsquedas que el motor de palabras clave ya
       // resuelve razonablemente bien.
-      resultados.innerHTML = `
-        <p class="cs-hero__buscador-contador"><img src="assets/logos/apple-touch-icon.png" alt="" class="cs-icono-ia"> Preguntando a la IA para "${texto}"…</p>
-        <p style="color:var(--text-gray);font-size:0.85rem;margin-top:4px;">Puede tardar unos segundos, gracias por tu paciencia.</p>
-      `;
-      resultados.style.display = 'block';
+      //
+      // El progreso de la espera ahora se muestra en el modal
+      // compartido (ver abrirModalEsperaIA), no aquí — se deja
+      // `resultados` oculto mientras tanto, para no duplicar el mensaje
+      // de "preguntando a la IA" debajo del propio modal.
       ejecutarBusquedaIA(texto);
     }
 
@@ -152,9 +159,92 @@
     // coincidencia literal han encontrado NADA. El caso del botón
     // "pedir ayuda a la IA" (cuando sí hay algo, pero puede ser flojo)
     // usa un modal aparte — ver pedirAyudaIAModal más abajo.
+    // ── Espera con mensajes progresivos para las llamadas a la IA ──
+    // A petición de Eloy (mismo patrón ya aplicado y aprobado en
+    // buscador.html): cortar a los 15s se quedaba corto en pruebas
+    // reales — en vez de un corte automático "normal", se informa por
+    // fases cada 15s de que se sigue trabajando, y es el propio usuario
+    // quien decide si cancelar o seguir esperando. Queda un límite de
+    // seguridad muy generoso (2 minutos) solo para el caso extremo de
+    // que Apps Script/Gemini se hayan quedado colgados de verdad.
+    const MENSAJES_ESPERA_IA = [
+      'Preguntando a la IA…',
+      'Seguimos en ello — recopilando la información adecuada…',
+      'Ya casi… gracias por tu paciencia',
+      'Esto está tardando más de lo normal, pero seguimos intentándolo…',
+      'Seguimos esperando respuesta — puedes cancelar si prefieres no seguir esperando',
+    ];
+    const INTERVALO_MENSAJE_ESPERA_MS = 15000;
+    const LIMITE_SEGURIDAD_ESPERA_MS = 120000;
+
+    // Pone en marcha los mensajes rotativos y el botón de cancelar;
+    // devuelve una función para detenerlo todo cuando la petición acabe
+    // (con éxito, error, o cancelación).
+    function iniciarEsperaIA(elTexto, elCancelar, onCancelar) {
+      let paso = 0;
+      elTexto.textContent = MENSAJES_ESPERA_IA[0];
+      const intervalo = setInterval(() => {
+        paso = Math.min(paso + 1, MENSAJES_ESPERA_IA.length - 1);
+        elTexto.textContent = MENSAJES_ESPERA_IA[paso];
+      }, INTERVALO_MENSAJE_ESPERA_MS);
+      elCancelar.onclick = onCancelar;
+      return () => { clearInterval(intervalo); elCancelar.onclick = null; };
+    }
+
+    // Abre el modal compartido de espera (mismo #cs-ia-modal-overlay que
+    // ya existía) con el sistema de mensajes progresivos + cancelación.
+    // Devuelve { signal, finalizar, fueCancelado } — el llamador pasa
+    // `signal` a D.buscarSolucionIA() y llama a finalizar() en cuanto
+    // tenga respuesta (éxito o error), antes de decidir qué mostrar.
+    function abrirModalEsperaIA() {
+      const overlay = $('#cs-ia-modal-overlay');
+      const contenido = $('#cs-ia-modal-contenido');
+      const box = overlay.querySelector('.cs-ia-modal-box');
+      contenido.innerHTML = `
+        <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
+        <p class="cs-ia-modal-texto" id="cs-ia-modal-texto-dinamico"></p>
+        <button type="button" class="cs-ia-modal-cancelar" id="cs-ia-modal-cancelar-btn">Cancelar</button>
+      `;
+      if (box) box.classList.add('cs-ia-modal-box--esperando');
+      overlay.style.display = 'flex';
+
+      let canceladoPorUsuario = false;
+      const controlador = new AbortController();
+      const limiteSeguridad = setTimeout(() => controlador.abort(), LIMITE_SEGURIDAD_ESPERA_MS);
+      const detenerMensajes = iniciarEsperaIA($('#cs-ia-modal-texto-dinamico'), $('#cs-ia-modal-cancelar-btn'), () => {
+        canceladoPorUsuario = true;
+        controlador.abort();
+      });
+
+      // Registrada globalmente para que cerrar el modal por otras vías
+      // (X, click fuera, Escape — ver wireModalIACierre) cancele también
+      // la petición en curso, en vez de dejarla viva en segundo plano.
+      cancelarModalIAEnCurso = () => { canceladoPorUsuario = true; controlador.abort(); };
+
+      function finalizar() {
+        clearTimeout(limiteSeguridad);
+        detenerMensajes();
+        if (box) box.classList.remove('cs-ia-modal-box--esperando');
+        cancelarModalIAEnCurso = null;
+      }
+      return { signal: controlador.signal, finalizar, fueCancelado: () => canceladoPorUsuario };
+    }
+
     function ejecutarBusquedaIA(texto) {
-      D.buscarSolucionIA(texto).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+      const { signal, finalizar, fueCancelado } = abrirModalEsperaIA();
+      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+        finalizar();
+        cerrarModalIA();
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
+
+        // A petición de Eloy: si el propio usuario canceló desde el
+        // modal (o lo cerró de cualquier otra forma), se le dice así de
+        // claro — distinto de un fallo técnico real.
+        if (errorTecnico && fueCancelado()) {
+          resultados.innerHTML = `<p class="cs-hero__buscador-vacio">Búsqueda cancelada. Puedes intentarlo de nuevo cuando quieras.</p>`;
+          resultados.style.display = 'block';
+          return;
+        }
 
         // A petición de Eloy: si ha habido un problema TÉCNICO de
         // verdad (Gemini caído/saturado, sin conexión...), no se debe
@@ -273,13 +363,18 @@
       const contenido = $('#cs-ia-modal-contenido');
       if (!overlay || !contenido) return;
 
-      contenido.innerHTML = `
-        <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
-        <p class="cs-ia-modal-texto">Preguntando a la IA…<br><small style="color:var(--text-gray);font-weight:400;">Puede tardar unos segundos, gracias por tu paciencia.</small></p>
-      `;
-      overlay.style.display = 'flex';
+      const { signal, finalizar, fueCancelado } = abrirModalEsperaIA();
 
-      D.buscarSolucionIA(texto).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+        finalizar();
+
+        if (errorTecnico && fueCancelado()) {
+          contenido.innerHTML = `
+            <p class="cs-ia-modal-spinner" aria-hidden="true">🤔</p>
+            <p class="cs-ia-modal-texto">Búsqueda cancelada. Puedes intentarlo de nuevo cuando quieras.</p>
+          `;
+          return;
+        }
         if (errorTecnico) {
           // A petición de Eloy: distinto de "no hay solución" — aquí sí
           // tiene sentido un botón de reintentar directo, porque el
@@ -370,6 +465,12 @@
     function cerrarModalIA() {
       const overlay = $('#cs-ia-modal-overlay');
       if (overlay) overlay.style.display = 'none';
+      // A petición de Eloy (mismo patrón de buscador.html): cerrar el
+      // modal por cualquier vía (X, click fuera, Escape, "atrás" del
+      // navegador) cancela también la petición en curso, si la hay —
+      // nunca se deja una llamada a la IA viva en segundo plano sin que
+      // el usuario lo sepa.
+      if (cancelarModalIAEnCurso) cancelarModalIAEnCurso();
     }
 
     (function wireModalIACierre() {
