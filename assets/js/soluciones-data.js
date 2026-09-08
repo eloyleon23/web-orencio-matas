@@ -1325,11 +1325,11 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar una capa demasiado gruesa esperando que dure más (queda pegajosa).',
       ],
       recommendedProducts: [
-        { nombre: 'Alex Abrillantador Terrazo/Mármol',   categoria: 'Droguería', formato: '1.500 ml', precio: '3,68 €' },
-        { nombre: 'Alex Express Abrillantador Terrazo',   categoria: 'Droguería', formato: '750 ml',   precio: '2,69 €' },
-        { nombre: 'Asevi Abrillantador de Suelos',        categoria: 'Droguería', formato: '1.100 ml', precio: '2,66 €' },
+        { nombre: 'ASEVI FREGASUELOS CONCENT.1.150 ML.PH NEUTRO', categoria: 'Droguería', formato: '1,150 L', precio: '1,75 €' },
+        { nombre: 'CASELLI A-9 ABRILLANTADOR 1,5 L.MARMOL/TERRAZO', categoria: 'Droguería', formato: '1,5 L', precio: '6,10 €' },
       ],
       alternativeProducts: [
+        { etiqueta: 'Para superficies grandes', nombre: 'CASELLI A-9 ABRILLANTADOR 5 L.MARMOL/TERRAZO', precio: '19,06 €' },
         { etiqueta: 'Opción profesional', nombre: 'C-100 Thomil Renovador Limpiador Neutro Suelos Abrillantador 4 L', precio: '18,42 €' },
         { etiqueta: 'Protección extra',   nombre: 'Alex Cera Incolora 750 ml', precio: '3,68 €' },
       ],

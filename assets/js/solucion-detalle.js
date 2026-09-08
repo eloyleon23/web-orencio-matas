@@ -451,8 +451,7 @@
       </div>
     `;
 
-    renderProductosRecomendados(sol);
-    renderProductosAlternativos(sol);
+    renderProductosRecomendadosYAlternativos(sol);
     wireCalculadoraCantidad(sol);
     wireCalculadoraTemple(sol);
     wireCalculadoraCloro(sol);
@@ -707,7 +706,52 @@
     return productos.reduce((acc, p) => acc + parsePrecio(p.precio), 0).toFixed(2).replace('.', ',');
   }
 
-  function renderProductosRecomendados(sol) {
+  // A petición de Eloy, tras detectar (auditoría real contra el
+  // catálogo completo) que 26 de las 80 guías tenían el mismo tipo de
+  // problema: dos entradas MOCK distintas (a veces dentro de "Qué
+  // necesitas", a veces una en "Qué necesitas" y otra en "También
+  // puedes utilizar") resolviendo a la MISMA referencia real —
+  // resultando en la misma tarjeta de producto mostrada dos veces. Caso
+  // real que lo hizo evidente: la guía de abrillantar mármol/terrazo
+  // recomendaba "Alex Abrillantador Terrazo/Mármol" y "Alex Express
+  // Abrillantador Terrazo" como si fueran dos productos distintos —
+  // ninguna de las dos marcas existe en el catálogo real para este uso
+  // (solo existe Caselli A-9, en dos formatos), así que ambas
+  // resolvían al mismo producto real.
+  //
+  // recommendedProducts y alternativeProducts se resuelven ahora JUNTOS
+  // en una sola pasada (antes cada sección se resolvía por separado, sin
+  // que una supiera lo que había encontrado la otra) — si una entrada
+  // resuelve a una referencia que YA ha usado una entrada anterior (los
+  // recomendados van primero), esa segunda coincidencia se descarta y
+  // se muestra con los datos mock originales en su lugar, en vez de
+  // repetir la misma tarjeta.
+  function renderProductosRecomendadosYAlternativos(sol) {
+    const mockRecomendados = sol.recommendedProducts || [];
+    const mockAlternativos = sol.alternativeProducts || [];
+    const todosMock = mockRecomendados.concat(mockAlternativos);
+
+    Promise.all(todosMock.map((p) => D.resolverProductoReal(p.nombre)))
+      .then((resueltos) => {
+        const refsUsadas = new Set();
+        const sinDuplicar = resueltos.map((real) => {
+          if (!real) return null;
+          if (refsUsadas.has(real.ref)) return null; // duplicado -> se descarta, cae al mock
+          refsUsadas.add(real.ref);
+          return real;
+        });
+        renderProductosRecomendados(sol, sinDuplicar.slice(0, mockRecomendados.length));
+        renderProductosAlternativos(sol, sinDuplicar.slice(mockRecomendados.length));
+      })
+      .catch(() => {
+        // Si falla la resolución (sin conexión, etc.), al menos se
+        // mantienen los datos mock con los que ya se contaba.
+        renderProductosRecomendados(sol, mockRecomendados.map(() => null));
+        renderProductosAlternativos(sol, mockAlternativos.map(() => null));
+      });
+  }
+
+  function renderProductosRecomendados(sol, resueltos) {
     const cont = $('#cs-productos-recomendados');
 
     // Estado inicial mientras se resuelve contra el catálogo real —
@@ -721,19 +765,9 @@
       </div>
     `).join('');
 
-    Promise.all(sol.recommendedProducts.map((p) => D.resolverProductoReal(p.nombre)))
-      .then((resueltos) => {
-        const listaFinal = sol.recommendedProducts.map((mock, i) => construirEntradaProducto(mock, resueltos[i]));
-        renderTarjetasProducto(cont, listaFinal);
-        actualizarBarraExportar(sol, listaFinal);
-      })
-      .catch(() => {
-        // Si falla la resolución (sin conexión, etc.), al menos se
-        // mantienen los datos de referencia con los que ya se contaba.
-        const listaFinal = sol.recommendedProducts.map((mock) => construirEntradaProducto(mock, null));
-        renderTarjetasProducto(cont, listaFinal);
-        actualizarBarraExportar(sol, listaFinal);
-      });
+    const listaFinal = sol.recommendedProducts.map((mock, i) => construirEntradaProducto(mock, resueltos[i]));
+    renderTarjetasProducto(cont, listaFinal);
+    actualizarBarraExportar(sol, listaFinal);
   }
 
   // ── "También puedes utilizar" (alternativeProducts) — a petición de
@@ -746,21 +780,13 @@
   // visual de la tarjeta (más compacta, con "etiqueta" en vez de
   // "categoría", para no perder el aspecto distinto que ya tenía esta
   // sección).
-  function renderProductosAlternativos(sol) {
+  function renderProductosAlternativos(sol, resueltos) {
     const cont = $('#cs-productos-alternativos');
     if (!cont || !sol.alternativeProducts || !sol.alternativeProducts.length) return;
 
-    Promise.all(sol.alternativeProducts.map((a) => D.resolverProductoReal(a.nombre)))
-      .then((resueltos) => {
-        const listaFinal = sol.alternativeProducts.map((mock, i) =>
-          construirEntradaProducto({ ...mock, categoria: mock.etiqueta }, resueltos[i]));
-        renderTarjetasAlternativas(cont, listaFinal);
-      })
-      .catch(() => {
-        const listaFinal = sol.alternativeProducts.map((mock) =>
-          construirEntradaProducto({ ...mock, categoria: mock.etiqueta }, null));
-        renderTarjetasAlternativas(cont, listaFinal);
-      });
+    const listaFinal = sol.alternativeProducts.map((mock, i) =>
+      construirEntradaProducto({ ...mock, categoria: mock.etiqueta }, resueltos[i]));
+    renderTarjetasAlternativas(cont, listaFinal);
   }
 
   function renderTarjetasAlternativas(cont, lista) {
