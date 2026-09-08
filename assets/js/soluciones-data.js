@@ -5493,13 +5493,15 @@ window.SOLUCIONES_DATA = (function () {
     return resultado;
   }
 
-  function buscarProductosEnCatalogo(texto, familiasFiltro) {
+  function buscarProductosEnCatalogo(texto, familiasFiltro, refsExcluir) {
     const palabras = palabrasSignificativas(texto);
     if (!palabras.length) return Promise.resolve([]);
+    const excluir = new Set(refsExcluir || []);
     return cargarCatalogoReal().then((productos) => {
       const puntuar = (lista) => {
         const resultados = [];
         lista.forEach((p) => {
+          if (excluir.has(p.ref)) return;
           const nombreNorm = normalizarTexto(p.nombre || '');
           const coincidencias = palabras.filter((w) => contienePalabra(nombreNorm, w)).length;
           if (coincidencias > 0) resultados.push({ producto: p, coincidencias });

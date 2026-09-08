@@ -1298,6 +1298,38 @@
   font-style: italic;
   font-weight: 500;
 }
+.cs-producto-card-wrap { position: relative; }
+.cs-producto-card-wrap .cs-producto-card { height: 100%; }
+.cs-producto-quitar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(18, 20, 23, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-gray);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.cs-producto-quitar:hover { background: #fee2e2; color: #b91c1c; transform: scale(1.08); }
+.cs-ia-productos-espera {
+  text-align: center;
+  padding: 24px 20px;
+}
+.cs-ia-productos-espera .cs-ia-modal-spinner img.cs-icono-ia { width: 40px; height: 40px; }
+.cs-ia-productos-espera p { color: var(--text-gray); margin: 0; }
+.cs-ia-productos-otra-vez-bar {
+  text-align: center;
+  margin-top: 20px;
+}
 
 .cs-exportar-bar {
   display: flex;

@@ -70,18 +70,27 @@
     const precio = precioReal ? `${p.precio_con} €` : 'Consultar precio y disponibilidad';
     const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
+    // A petición de Eloy: poder quitar productos concretos que no le
+    // interesan al usuario, sobre todo pensando en la exportación a
+    // PDF — un botón "✕" independiente del enlace de la tarjeta (por
+    // eso va en un <div> envolvente aparte, con position:relative, en
+    // vez de dentro del propio <a>, para que hacer clic en él no
+    // navegue también al buscador).
     return `
-      <a class="cs-producto-card" href="../buscador.html?ref=${encodeURIComponent(p.ref)}">
-        <div class="cs-producto-card__imagen-wrap">
-          ${p.img
-            ? `<img class="cs-producto-card__imagen" src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${escaparHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
-            : `<span class="cs-producto-card__imagen-fallback">📦</span>`}
-        </div>
-        <span class="cs-producto-card__categoria">${areaLabel}${p.familia ? ' · ' + p.familia : ''}</span>
-        <div class="cs-producto-card__nombre">${escaparHtml(p.nombre)}</div>
-        <div class="cs-producto-card__ref">Ref: ${p.ref}</div>
-        <div class="${precioClass}">${precio}</div>
-      </a>
+      <div class="cs-producto-card-wrap" data-ref="${escaparHtml(p.ref)}">
+        <a class="cs-producto-card" href="../buscador.html?ref=${encodeURIComponent(p.ref)}">
+          <div class="cs-producto-card__imagen-wrap">
+            ${p.img
+              ? `<img class="cs-producto-card__imagen" src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${escaparHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
+              : `<span class="cs-producto-card__imagen-fallback">📦</span>`}
+          </div>
+          <span class="cs-producto-card__categoria">${areaLabel}${p.familia ? ' · ' + p.familia : ''}</span>
+          <div class="cs-producto-card__nombre">${escaparHtml(p.nombre)}</div>
+          <div class="cs-producto-card__ref">Ref: ${p.ref}</div>
+          <div class="${precioClass}">${precio}</div>
+        </a>
+        <button type="button" class="cs-producto-quitar no-imprimir" data-ref="${escaparHtml(p.ref)}" title="No me interesa este producto" aria-label="Quitar este producto de la lista">✕</button>
+      </div>
     `;
   }
 
@@ -302,8 +311,14 @@
             <p class="section-heading__eyebrow">Ya sabes qué hacer</p>
             <h2>Productos que podrían servirte</h2>
           </div>
-          <div id="cs-ia-productos-cargando" style="text-align:center;padding:20px;color:var(--text-gray);">Buscando productos en nuestro catálogo…</div>
+          <div id="cs-ia-productos-cargando" class="cs-ia-productos-espera">
+            <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
+            <p>Buscando productos en nuestro catálogo…</p>
+          </div>
           <div class="cs-productos-grid" id="cs-ia-productos-grid"></div>
+          <div class="cs-ia-productos-otra-vez-bar no-imprimir" id="cs-ia-productos-otra-vez-bar" style="display:none;">
+            <button type="button" class="cs-hero__pedir-ia" id="cs-ia-productos-otra-vez">No es lo que buscaba, prueba otra vez</button>
+          </div>
           <div class="cs-exportar-bar" id="cs-ia-exportar-bar" style="display:none;">
             <div class="cs-exportar-bar__acciones no-imprimir">
               <button type="button" class="btn-primary" id="cs-exportar-pdf">📄 Descargar como PDF</button>
@@ -331,32 +346,139 @@
 
     wireFeedback();
     wireAcciones(titulo);
+    wireProductosQuitar();
 
     // Productos reales — misma lógica que en la búsqueda del hero
     // (centro-soluciones.js): términos + familias reales de la IA
     // alimentan buscarProductosEnCatalogo, la única fuente de productos
     // que se muestra (nunca lo que diga el propio texto de la IA).
-    const terminosBusqueda = (datos.terminos && datos.terminos.length) ? datos.terminos.join(' ') : consulta;
-    D.buscarProductosEnCatalogo(terminosBusqueda, datos.familias).then((productos) => {
-      $('#cs-ia-productos-cargando').style.display = 'none';
-      if (!productos.length) {
-        // A petición de Eloy: si no se encuentran productos adecuados,
-        // NO se deja la sección vacía — se dice honestamente que no se
-        // han encontrado y se ofrecen dos formas de continuar
-        // (buscador completo y contacto directo).
-        $('#cs-ia-productos-grid').innerHTML = `
-          <div class="cs-hero__buscador-aviso" style="grid-column:1/-1;">
-            No hemos podido encontrar productos concretos para esta solución en nuestro catálogo —
-            <a href="../buscador.html?q=${encodeURIComponent(consulta)}">consulta el buscador completo</a>
-            o <a href="../index.html#contacto">contacta con nuestro equipo</a> y te asesoramos directamente.
-          </div>
-        `;
+    //
+    // Se guarda el estado (términos ya probados, referencias ya
+    // mostradas/descartadas) en este cierre — a petición de Eloy: "que
+    // pueda hacer una nueva búsqueda sobre los productos para traer
+    // algo más adecuado" — mismo mecanismo ya usado en buscador.html
+    // para "No es lo que buscaba, prueba otra vez".
+    let terminosProductosUsados = (datos.terminos && datos.terminos.length) ? datos.terminos.slice() : [];
+    let refsProductosExcluidos = [];
+
+    function buscarYRenderizarProductos(terminos, familias, esOtraVez) {
+      const cargando = $('#cs-ia-productos-cargando');
+      const grid = $('#cs-ia-productos-grid');
+      const barraOtraVez = $('#cs-ia-productos-otra-vez-bar');
+      cargando.style.display = '';
+      if (!esOtraVez) grid.innerHTML = '';
+      barraOtraVez.style.display = 'none';
+
+      const terminosBusqueda = (terminos && terminos.length) ? terminos.join(' ') : consulta;
+      D.buscarProductosEnCatalogo(terminosBusqueda, familias, refsProductosExcluidos).then((productos) => {
+        cargando.style.display = 'none';
+
+        if (!productos.length) {
+          if (esOtraVez) {
+            // Ya había productos antes (los de la búsqueda anterior
+            // siguen en la rejilla) — solo se avisa de que no hay más
+            // alternativas, sin borrar lo que ya había.
+            barraOtraVez.innerHTML = `<p style="color:var(--text-gray);font-size:0.9rem;">La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.</p>`;
+            barraOtraVez.style.display = '';
+            return;
+          }
+          // A petición de Eloy: si no se encuentran productos
+          // adecuados, NO se deja la sección vacía — se dice
+          // honestamente que no se han encontrado y se ofrecen dos
+          // formas de continuar (buscador completo y contacto directo).
+          grid.innerHTML = `
+            <div class="cs-hero__buscador-aviso" style="grid-column:1/-1;">
+              No hemos podido encontrar productos concretos para esta solución en nuestro catálogo —
+              <a href="../buscador.html?q=${encodeURIComponent(consulta)}">consulta el buscador completo</a>
+              o <a href="../index.html#contacto">contacta con nuestro equipo</a> y te asesoramos directamente.
+            </div>
+          `;
+          $('#cs-ia-exportar-bar').style.display = '';
+          return;
+        }
+
+        refsProductosExcluidos = refsProductosExcluidos.concat(productos.map((p) => p.ref));
+        grid.innerHTML += productos.slice(0, 8).map(renderTarjetaProducto).join('');
+        wireProductosQuitar();
+        barraOtraVez.innerHTML = `<button type="button" class="cs-hero__pedir-ia" id="cs-ia-productos-otra-vez">No es lo que buscaba, prueba otra vez</button>`;
+        barraOtraVez.style.display = '';
+        wireBotonProductosOtraVez();
         $('#cs-ia-exportar-bar').style.display = '';
-        return;
-      }
-      $('#cs-ia-productos-grid').innerHTML = productos.slice(0, 8).map(renderTarjetaProducto).join('');
-      $('#cs-ia-exportar-bar').style.display = '';
-    });
+      });
+    }
+
+    // Botón "No es lo que buscaba, prueba otra vez" — reutiliza la
+    // MISMA acción de Apps Script ya construida para el buscador
+    // principal (buscar_producto_ia), pasando los términos ya probados
+    // para que la IA intente un enfoque distinto, y excluyendo siempre
+    // los productos ya mostrados o descartados manualmente.
+    function wireBotonProductosOtraVez() {
+      const btn = $('#cs-ia-productos-otra-vez');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) return;
+        $('#cs-ia-productos-otra-vez-bar').style.display = 'none';
+        const cargando = $('#cs-ia-productos-cargando');
+        cargando.innerHTML = `
+          <p class="cs-ia-modal-spinner" aria-hidden="true"><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"></p>
+          <p>Buscando una alternativa…</p>
+        `;
+        cargando.style.display = '';
+        D.obtenerTaxonomiaCatalogo().then((taxonomia) => fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ accion: 'buscar_producto_ia', consulta, taxonomia, terminosPrevios: terminosProductosUsados }),
+        }))
+          .then((res) => res.json())
+          .then((data) => {
+            cargando.style.display = 'none';
+            if (!data || !data.success || data.fueraDeAlcance || !data.terminos || !data.terminos.length) {
+              const barraOtraVez = $('#cs-ia-productos-otra-vez-bar');
+              barraOtraVez.innerHTML = `<p style="color:var(--text-gray);font-size:0.9rem;">La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.</p>`;
+              barraOtraVez.style.display = '';
+              return;
+            }
+            terminosProductosUsados = terminosProductosUsados.concat(data.terminos);
+            buscarYRenderizarProductos(data.terminos, data.familias, true);
+          })
+          .catch(() => {
+            cargando.style.display = 'none';
+            const barraOtraVez = $('#cs-ia-productos-otra-vez-bar');
+            barraOtraVez.innerHTML = `<p class="cs-hero__buscador-aviso">Ha habido un problema al buscar una alternativa. Vuelve a intentarlo en unos segundos.</p>`;
+            barraOtraVez.style.display = '';
+          });
+      }, { once: true });
+    }
+
+    // Botón "✕" en cada tarjeta — a petición de Eloy: "dar la opción de
+    // poder marcar los productos que no son candidatos para quitar, ya
+    // que si el usuario quiere exportar a PDF, no interesa que
+    // aparezcan productos que al usuario no le interesan". Se quita del
+    // DOM directamente (el PDF se genera con window.print(), así que lo
+    // que no está en la página tampoco sale impreso) y se añade a la
+    // lista de excluidos para que tampoco vuelva a aparecer si se pide
+    // "otra vez" después. Delegación de eventos en el propio grid, para
+    // que funcione también con las tarjetas añadidas después de un
+    // "otra vez" sin tener que volver a enganchar cada botón nuevo uno
+    // a uno.
+    function wireProductosQuitar() {
+      const grid = $('#cs-ia-productos-grid');
+      if (!grid || grid.dataset.wireQuitarListo) return;
+      grid.dataset.wireQuitarListo = '1';
+      grid.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cs-producto-quitar');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const ref = btn.dataset.ref;
+        if (ref && !refsProductosExcluidos.includes(ref)) refsProductosExcluidos.push(ref);
+        const wrap = btn.closest('.cs-producto-card-wrap');
+        if (wrap) wrap.remove();
+      });
+    }
+
+    buscarYRenderizarProductos(datos.terminos, datos.familias, false);
   }
 
   function init() {
