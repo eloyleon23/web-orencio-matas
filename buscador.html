@@ -1293,6 +1293,33 @@
         }
         .btn-ia-producto-otra-vez:hover { background: #f5f3ff; }
         .btn-ia-producto-otra-vez:disabled { opacity: 0.6; cursor: default; }
+        .ia-producto-espera {
+            margin-top: 18px;
+            padding: 14px 18px;
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+        .ia-producto-espera p {
+            margin: 0 0 10px;
+            font-size: 0.9rem;
+            color: var(--muted);
+            min-height: 2.4em;
+        }
+        .btn-ia-producto-cancelar {
+            padding: 7px 16px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-ia-producto-cancelar:hover { background: #f1f5f9; }
 
         .cargando-inicial {
             text-align: center;
@@ -3131,6 +3158,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <i class="fa-solid fa-box-open"></i>
             <p>No se han encontrado productos con estos filtros.<br>Prueba a ampliar la búsqueda.</p>
             <button type="button" id="btn-preguntar-ia-producto" class="btn-preguntar-ia-producto" style="display:none;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA</button>
+            <div id="ia-producto-espera" class="ia-producto-espera" style="display:none;">
+                <p id="ia-producto-espera-texto"></p>
+                <button type="button" id="btn-ia-producto-cancelar" class="btn-ia-producto-cancelar">Cancelar</button>
+            </div>
             <p id="ia-producto-mensaje" class="ia-producto-mensaje-aviso" style="display:none;"></p>
         </div>
 
@@ -3139,6 +3170,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <img src="assets/logos/apple-touch-icon.png" alt="" class="icono-ia-producto">
                 <span><strong>Sugerido por IA</strong> a partir de tu búsqueda — puede contener errores, comprueba bien que es el producto que buscas.</span>
                 <button type="button" id="btn-ia-producto-otra-vez" class="btn-ia-producto-otra-vez">No es lo que buscaba, prueba otra vez</button>
+            </div>
+            <div id="ia-producto-espera-otra-vez" class="ia-producto-espera" style="display:none;">
+                <p id="ia-producto-espera-otra-vez-texto"></p>
+                <button type="button" id="btn-ia-producto-cancelar-otra-vez" class="btn-ia-producto-cancelar">Cancelar</button>
             </div>
             <div id="ia-producto-resultados" class="grid-productos"></div>
         </div>
@@ -3754,6 +3789,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // terminoIAActivo cada vez que cambia el texto de búsqueda.
     let terminosPreviosIA = [];
     let refsExcluidosIA = [];
+    // Si hay una petición de IA de producto en curso (esperando
+    // respuesta), esta función la cancela y limpia su temporizador de
+    // mensajes — se usa cuando el texto de búsqueda cambia mientras la
+    // IA sigue pensando, para no dejar el bloque de espera "colgado"
+    // visualmente ni un intervalo de mensajes corriendo sin motivo.
+    let cancelarPeticionIAProductoEnCurso = null;
     let familiasMostradas = 0;   // cuántas familias ya se han pintado (paginación)
     const FAMILIAS_POR_CARGA = 3; // cuántas familias se cargan cada vez (~12 productos aprox)
 
@@ -5614,7 +5655,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
             // Texto distinto del que tenían los resultados de IA (o no
             // había ninguno vigente) — se limpian y se vuelve al estado
-            // normal de "sin resultados".
+            // normal de "sin resultados". Si había una petición de IA
+            // todavía en marcha para el texto anterior, se cancela — no
+            // tiene sentido seguir esperando una respuesta para una
+            // búsqueda que el usuario ya ha abandonado, y evita dejar el
+            // bloque de espera visible sin motivo.
+            if (cancelarPeticionIAProductoEnCurso) cancelarPeticionIAProductoEnCurso();
             restaurarContadorEstandar(0);
             terminoIAActivo = null;
             terminosPreviosIA = [];
@@ -5622,6 +5668,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             seccionIA.style.display = 'none';
             $('ia-producto-resultados').innerHTML = '';
             sinResultados.style.display = '';
+            $('ia-producto-espera').style.display = 'none';
+            $('ia-producto-espera-otra-vez').style.display = 'none';
 
             // Botón "Preguntar a la IA" — solo tiene sentido si hay texto
             // que interpretar (un filtro sin texto, p. ej. "solo oferta"
@@ -5640,10 +5688,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         restaurarContadorEstandar(resultadosActuales.length);
         // Resultados normales encontrados — cualquier estado de IA de
-        // una búsqueda anterior queda obsoleto.
+        // una búsqueda anterior queda obsoleto, incluida una petición
+        // que pudiera seguir en marcha.
+        if (cancelarPeticionIAProductoEnCurso) cancelarPeticionIAProductoEnCurso();
         terminoIAActivo = null;
         seccionIA.style.display = 'none';
         sinResultados.style.display = 'none';
+        $('ia-producto-espera').style.display = 'none';
+        $('ia-producto-espera-otra-vez').style.display = 'none';
 
         const grupos = agruparPorFamilia(resultadosActuales);
 
@@ -5814,6 +5866,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return puntuar(activos);
     }
 
+    // ── Espera con mensajes progresivos para las llamadas a la IA ──
+    // A petición de Eloy: cortar a los 15s se quedaba corto en sus
+    // pruebas (tuvo que repetir la búsqueda varias veces) — en vez de
+    // un corte automático "normal", se informa por fases cada 15s de
+    // que se sigue trabajando, y es el propio usuario quien decide si
+    // cancelar o seguir esperando. Queda un límite de seguridad muy
+    // generoso (2 minutos) solo para el caso extremo de que Apps
+    // Script/Gemini se hayan quedado colgados de verdad — no es un
+    // corte "normal" esperable, es la última red de seguridad.
+    const MENSAJES_ESPERA_IA = [
+        'Preguntando a la IA…',
+        'Seguimos en ello — recopilando la información adecuada…',
+        'Ya casi… gracias por tu paciencia',
+        'Esto está tardando más de lo normal, pero seguimos intentándolo…',
+        'Seguimos esperando respuesta — puedes cancelar si prefieres no seguir esperando',
+    ];
+    const INTERVALO_MENSAJE_ESPERA_MS = 15000;
+    const LIMITE_SEGURIDAD_ESPERA_MS = 120000;
+
+    // Pone en marcha los mensajes rotativos y el botón de cancelar;
+    // devuelve una función para detenerlo todo cuando la petición acabe
+    // (con éxito, error, o cancelación).
+    function iniciarEsperaIA(elTexto, elCancelar, onCancelar) {
+        let paso = 0;
+        elTexto.textContent = MENSAJES_ESPERA_IA[0];
+        const intervalo = setInterval(() => {
+            paso = Math.min(paso + 1, MENSAJES_ESPERA_IA.length - 1);
+            elTexto.textContent = MENSAJES_ESPERA_IA[paso];
+        }, INTERVALO_MENSAJE_ESPERA_MS);
+        elCancelar.onclick = onCancelar;
+        return () => { clearInterval(intervalo); elCancelar.onclick = null; };
+    }
+
     function preguntarIAProducto(esOtraVez) {
         const texto = $('f-texto').value.trim();
         if (!texto) return;
@@ -5822,26 +5907,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const mensajeIA = $('ia-producto-mensaje');
         const seccionIA = $('ia-producto-seccion');
         const resultadosIA = $('ia-producto-resultados');
+        const espera = esOtraVez ? $('ia-producto-espera-otra-vez') : $('ia-producto-espera');
+        const esperaTexto = esOtraVez ? $('ia-producto-espera-otra-vez-texto') : $('ia-producto-espera-texto');
+        const btnCancelar = esOtraVez ? $('btn-ia-producto-cancelar-otra-vez') : $('btn-ia-producto-cancelar');
 
         if (esOtraVez) {
-            btnOtraVez.disabled = true;
-            btnOtraVez.textContent = 'Buscando otra alternativa…';
+            btnOtraVez.style.display = 'none';
         } else {
-            btn.disabled = true;
-            btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntando a la IA… puede tardar unos segundos';
+            btn.style.display = 'none';
             mensajeIA.style.display = 'none';
             seccionIA.style.display = 'none';
             resultadosIA.innerHTML = '';
         }
+        espera.style.display = '';
 
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) return;
 
-        // Límite de tiempo real — mismo criterio que el Centro de
-        // Soluciones: si Apps Script o Gemini se quedan colgados, no se
-        // deja al usuario esperando sin control indefinidamente.
+        let canceladoPorUsuario = false;
         const controlador = new AbortController();
-        const limiteTiempo = setTimeout(() => controlador.abort(), 15000);
+        const limiteSeguridad = setTimeout(() => controlador.abort(), LIMITE_SEGURIDAD_ESPERA_MS);
+        const detenerMensajes = iniciarEsperaIA(esperaTexto, btnCancelar, () => {
+            canceladoPorUsuario = true;
+            controlador.abort();
+        });
+
+        function finalizarEspera() {
+            clearTimeout(limiteSeguridad);
+            detenerMensajes();
+            cancelarPeticionIAProductoEnCurso = null;
+            espera.style.display = 'none';
+            if (esOtraVez) { btnOtraVez.style.display = ''; } else { btn.style.display = ''; }
+        }
+        cancelarPeticionIAProductoEnCurso = () => { canceladoPorUsuario = true; controlador.abort(); };
 
         fetch(url, {
             method: 'POST',
@@ -5854,19 +5952,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 terminosPrevios: esOtraVez ? terminosPreviosIA : [],
             }),
             signal: controlador.signal,
-        }).finally(() => clearTimeout(limiteTiempo))
+        })
           .then(res => res.json())
           .then(data => {
               if ($('f-texto').value.trim() !== texto) return; // el texto cambió mientras tanto
-              btn.disabled = false;
-              btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA';
-              btnOtraVez.disabled = false;
-              btnOtraVez.textContent = 'No es lo que buscaba, prueba otra vez';
+              finalizarEspera();
 
               if (!data || !data.success) {
                   mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
                   mensajeIA.style.display = '';
-                  if (esOtraVez) { mensajeIA.style.display = ''; seccionIA.style.display = ''; } // se deja ver lo anterior debajo del aviso
+                  if (esOtraVez) { seccionIA.style.display = ''; } // se deja ver lo anterior debajo del aviso
                   return;
               }
               if (data.fueraDeAlcance) {
@@ -5903,14 +5998,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               seccionIA.style.display = '';
           })
           .catch(err => {
-              console.error('Error en preguntarIAProducto (se continúa sin sugerencia de IA):', err);
               if ($('f-texto').value.trim() !== texto) return;
-              btn.disabled = false;
-              btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA';
-              btnOtraVez.disabled = false;
-              btnOtraVez.textContent = 'No es lo que buscaba, prueba otra vez';
+              finalizarEspera();
+              if (canceladoPorUsuario) {
+                  mensajeIA.textContent = 'Búsqueda cancelada. Puedes intentarlo de nuevo cuando quieras.';
+                  mensajeIA.style.display = '';
+                  if (esOtraVez) seccionIA.style.display = '';
+                  return;
+              }
+              console.error('Error en preguntarIAProducto (se continúa sin sugerencia de IA):', err);
               mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
               mensajeIA.style.display = '';
+              if (esOtraVez) seccionIA.style.display = '';
           });
     }
 
