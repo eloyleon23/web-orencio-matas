@@ -5632,7 +5632,15 @@ window.SOLUCIONES_DATA = (function () {
   // una suposición genérica. Es la MISMA idea que llevamos usando en el
   // buscador con la búsqueda de código corto (p60, pxb-730): antes de
   // dejar que la IA "adivine", comprobar primero qué existe de verdad.
-  function buscarCandidatosProductosParaIA(texto) {
+  // Puntuación compartida — un código de producto (p. ej. "p40" en la
+  // consulta coincidiendo con "P-40" en el nombre real, ignorando el
+  // guion) es una señal MUCHO más fuerte y específica que una palabra
+  // suelta cualquiera — sin este peso extra, un candidato genuino como
+  // "TITANPRO P-40..." podía quedar hundido entre otros productos que
+  // solo comparten una palabra genérica como "pintura" (bug real
+  // detectado tras las pruebas de Eloy con "P40 de TitanPro").
+  const PUNTUACION_CODIGO_PRODUCTO = 3;
+  function puntuarCandidatosProductos(texto) {
     const palabras = palabrasSignificativas(texto);
     if (!palabras.length) return Promise.resolve([]);
     return cargarCatalogoReal().then((productos) => {
@@ -5641,25 +5649,49 @@ window.SOLUCIONES_DATA = (function () {
         const nombreNorm = normalizarTexto(p.nombre || '');
         let puntuacion = 0;
         palabras.forEach((w) => {
-          // Un código de producto (p. ej. "p40" en la consulta
-          // coincidiendo con "P-40" en el nombre real, ignorando el
-          // guion) es una señal MUCHO más fuerte y específica que una
-          // palabra suelta cualquiera — sin este peso extra, un
-          // candidato genuino como "TITANPRO P-40..." podía quedar
-          // hundido entre otros productos que solo comparten una
-          // palabra genérica como "pintura" (bug real detectado tras
-          // las pruebas de Eloy con "P40 de TitanPro").
-          if (coincideCodigoProducto(nombreNorm, w)) puntuacion += 3;
+          if (coincideCodigoProducto(nombreNorm, w)) puntuacion += PUNTUACION_CODIGO_PRODUCTO;
           else if (contienePalabra(nombreNorm, w)) puntuacion += 1;
         });
         if (puntuacion > 0) resultados.push({ producto: p, puntuacion });
       });
       resultados.sort((a, b) => b.puntuacion - a.puntuacion);
+      return resultados;
+    });
+  }
+
+  function buscarCandidatosProductosParaIA(texto) {
+    return puntuarCandidatosProductos(texto).then((resultados) =>
       // Compacto a propósito (solo nombre + área + familia) — no hace
       // falta precio/ref/imagen para que la IA sepa que el producto
       // existe de verdad y de qué tipo es; eso mantiene el prompt
       // pequeño y rápido, igual que el resto de esta integración.
-      return resultados.slice(0, 8).map((r) => `${r.producto.nombre} (${r.producto.area} > ${r.producto.familia})`);
+      resultados.slice(0, 8).map((r) => `${r.producto.nombre} (${r.producto.area} > ${r.producto.familia})`));
+  }
+
+  // A petición de Eloy, tras un segundo fallo real: aunque el TEXTO ya
+  // se ancla bien (ver buscarCandidatosProductosParaIA/prompt2 en Apps
+  // Script), el PRODUCTO mostrado seguía siendo el equivocado —
+  // "TITANPRO P-40" (pintura de fachada) sugería "TITAN UNA CAPA"
+  // (pintura de interior) porque ambos comparten familia real
+  // "pinturas > AKZONOBEL", y el filtro por familia no distingue
+  // productos concretos dentro de ella. Causa de fondo: los productos
+  // a MOSTRAR se buscaban de nuevo con los TERMINOS que Gemini
+  // regeneraba de forma independiente en el paso 2 — un segundo punto
+  // donde la IA podía desviarse, aunque el texto ya no alucinara.
+  //
+  // Cuando la propia consulta ya apunta con ALTA CONFIANZA a un
+  // producto real por coincidencia de código (p. ej. "p40" -> "P-40"),
+  // esa coincidencia es 100% determinista y no depende de que ninguna
+  // IA "adivine" bien — así que se usa DIRECTAMENTE como los productos
+  // a mostrar, sin pasar por una segunda búsqueda con los términos de
+  // Gemini que podría acabar trayendo algo distinto de la misma
+  // familia. Devuelve null si no hay ninguna coincidencia de código
+  // (para que el llamador siga con el camino normal, términos+familias
+  // de la IA).
+  function buscarProductosPorCoincidenciaFuerte(texto) {
+    return puntuarCandidatosProductos(texto).then((resultados) => {
+      const fuertes = resultados.filter((r) => r.puntuacion >= PUNTUACION_CODIGO_PRODUCTO);
+      return fuertes.length ? fuertes.slice(0, 8).map((r) => r.producto) : null;
     });
   }
 
@@ -5726,6 +5758,6 @@ window.SOLUCIONES_DATA = (function () {
     acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo, buscarCandidatosProductosParaIA,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo, buscarCandidatosProductosParaIA, buscarProductosPorCoincidenciaFuerte,
   };
 })();

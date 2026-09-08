@@ -368,7 +368,23 @@
       barraOtraVez.style.display = 'none';
 
       const terminosBusqueda = (terminos && terminos.length) ? terminos.join(' ') : consulta;
-      D.buscarProductosEnCatalogo(terminosBusqueda, familias, refsProductosExcluidos).then((productos) => {
+      // A petición de Eloy, tras un segundo fallo real: si la propia
+      // consulta original ya apunta con ALTA CONFIANZA a un producto
+      // real por coincidencia de código (p. ej. "p40" -> "P-40"), se usa
+      // DIRECTAMENTE en vez de la búsqueda por términos/familias que
+      // regeneró la IA — que puede acabar trayendo otro producto de la
+      // misma familia real (mismo bug ya corregido en el hero:
+      // "TITANPRO P-40" sugiriendo "Titan Una Capa"). Solo se aplica en
+      // la carga inicial, nunca en "otra vez" — ahí el usuario ya dijo
+      // que ese producto no le servía, así que debe seguir el camino
+      // normal con los nuevos términos que pidió la IA.
+      const busquedaProductos = esOtraVez
+        ? D.buscarProductosEnCatalogo(terminosBusqueda, familias, refsProductosExcluidos)
+        : D.buscarProductosPorCoincidenciaFuerte(consulta).then((fuertes) => {
+            const filtrados = fuertes ? fuertes.filter((p) => !refsProductosExcluidos.includes(p.ref)) : null;
+            return (filtrados && filtrados.length) ? filtrados : D.buscarProductosEnCatalogo(terminosBusqueda, familias, refsProductosExcluidos);
+          });
+      busquedaProductos.then((productos) => {
         cargando.style.display = 'none';
 
         if (!productos.length) {

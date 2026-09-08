@@ -308,8 +308,21 @@
         // útiles (o la llamada falló del todo — sin conexión, o la
         // función de Apps Script aún no desplegada), se prueba con el
         // texto tal cual como último intento.
+        //
+        // A petición de Eloy, tras un segundo fallo real: "P40 TitanPro"
+        // (pintura de fachada) sugería "Titan Una Capa" (pintura de
+        // interior) porque ambos comparten familia real y los TERMINOS
+        // que regenera Gemini en el paso 2 pueden ser demasiado
+        // genéricos para distinguir dentro de esa familia. Si la propia
+        // consulta ya apunta con ALTA CONFIANZA a un producto real por
+        // coincidencia de código (determinista, no depende de que
+        // ninguna IA "adivine"), se usa DIRECTAMENTE — solo si no hay
+        // ninguna coincidencia así de fuerte se recurre a la búsqueda
+        // por términos/familias que generó la IA.
         const terminosBusqueda = (terminos && terminos.length) ? terminos.join(' ') : texto;
-        D.buscarProductosEnCatalogo(terminosBusqueda, familias).then((productos) => {
+        D.buscarProductosPorCoincidenciaFuerte(texto).then((fuertes) =>
+          fuertes || D.buscarProductosEnCatalogo(terminosBusqueda, familias)
+        ).then((productos) => {
           if (input.value.trim() !== texto) return;
 
           if (!productos.length && !respuesta) {

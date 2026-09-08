@@ -5876,7 +5876,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // sin ninguna relación real (bug real detectado tras las pruebas de
     // Eloy con "P40 de TitanPro").
     const STOPWORDS_CANDIDATOS_IA = new Set(['que', 'para', 'como', 'pero', 'desde', 'esta', 'este', 'estos', 'estas', 'tengo', 'necesito', 'quiero', 'puedo', 'hacer', 'tiene', 'sobre', 'entre', 'donde', 'cuando', 'unos', 'unas', 'poco', 'muy', 'con', 'del', 'las', 'los', 'una', 'uno']);
-    function calcularCandidatosProductosParaIA(texto) {
+    const PUNTUACION_CODIGO_PRODUCTO_IA = 3;
+    function puntuarCandidatosProductosIA(texto) {
         const palabras = normalizar(texto).split(/[^a-z0-9áéíóúñ]+/i).filter(w => w.length >= 3 && !STOPWORDS_CANDIDATOS_IA.has(w));
         if (!palabras.length) return [];
         const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
@@ -5899,7 +5900,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 // tras las pruebas de Eloy con "P40 de TitanPro").
                 if (wSinSep.length >= 3) {
                     const i = nombreSinSep.indexOf(wSinSep);
-                    if (i !== -1 && !/\d/.test(nombreSinSep.charAt(i + wSinSep.length) || '')) { puntuacion += 3; return; }
+                    if (i !== -1 && !/\d/.test(nombreSinSep.charAt(i + wSinSep.length) || '')) { puntuacion += PUNTUACION_CODIGO_PRODUCTO_IA; return; }
                 }
                 // Coincidencia por PALABRA COMPLETA, no subcadena — sin
                 // esto, "con" (de "con la pintura") coincidía dentro de
@@ -5912,7 +5913,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (puntuacion > 0) resultados.push({ producto: p, puntuacion });
         });
         resultados.sort((a, b) => b.puntuacion - a.puntuacion);
-        return resultados.slice(0, 8).map(r => `${r.producto.nombre} (${r.producto.area} > ${r.producto.familia})`);
+        return resultados;
+    }
+    function calcularCandidatosProductosParaIA(texto) {
+        return puntuarCandidatosProductosIA(texto).slice(0, 8).map(r => `${r.producto.nombre} (${r.producto.area} > ${r.producto.familia})`);
+    }
+    // A petición de Eloy, tras un segundo fallo real: aunque el texto ya
+    // se ancla bien con los candidatos de arriba, el PRODUCTO mostrado
+    // seguía siendo el equivocado — "TITANPRO P-40" (pintura de
+    // fachada) sugería "TITAN UNA CAPA" (pintura de interior) porque
+    // ambos comparten familia real, y los TERMINOS que regenera Gemini
+    // pueden ser demasiado genéricos para distinguir dentro de ella. Si
+    // la propia consulta ya apunta con ALTA CONFIANZA a un producto real
+    // por coincidencia de código (determinista, no depende de que la IA
+    // "adivine"), se usa DIRECTAMENTE en vez de fiarse de una segunda
+    // búsqueda con los términos que generó la IA. Devuelve null si no
+    // hay ninguna coincidencia de código, para que el llamador siga con
+    // el camino normal (términos+familias de la IA).
+    function buscarProductosPorCoincidenciaFuerte(texto) {
+        const fuertes = puntuarCandidatosProductosIA(texto).filter(r => r.puntuacion >= PUNTUACION_CODIGO_PRODUCTO_IA);
+        return fuertes.length ? fuertes.slice(0, 8).map(r => r.producto) : null;
     }
 
     // Puntuación por número de palabras coincidentes (no la coincidencia
@@ -6073,7 +6093,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               // intento(s) anterior(es), aunque la IA repita algún
               // término parecido — así nunca se repite un producto que
               // el cliente ya dijo que no le servía.
-              const productos = buscarProductosConTerminosIA(data.terminos, data.familias, refsExcluidosIA);
+              //
+              // Si es la primera búsqueda (no "otra vez") y el propio
+              // texto ya apunta con alta confianza a un producto real
+              // por coincidencia de código, se usa DIRECTAMENTE en vez
+              // de la búsqueda por los términos que regeneró la IA —
+              // mismo criterio y mismo porqué que en el Centro de
+              // Soluciones (evita el caso real "P40 TitanPro" sugiriendo
+              // un producto de otra línea de la misma familia).
+              let productos = null;
+              if (!esOtraVez) {
+                  const fuertes = buscarProductosPorCoincidenciaFuerte(texto);
+                  if (fuertes) productos = fuertes.filter(p => !refsExcluidosIA.includes(p.ref));
+              }
+              if (!productos || !productos.length) {
+                  productos = buscarProductosConTerminosIA(data.terminos, data.familias, refsExcluidosIA);
+              }
               if (!productos.length) {
                   mensajeIA.textContent = esOtraVez
                       ? 'La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.'
