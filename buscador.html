@@ -1265,7 +1265,8 @@
         .ia-producto-aviso {
             display: flex;
             align-items: center;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 10px 14px;
             max-width: 900px;
             margin: 0 auto 16px;
             padding: 12px 16px;
@@ -1276,6 +1277,22 @@
             font-size: 0.9rem;
         }
         .ia-producto-aviso .icono-ia-producto { width: 1.4em; height: 1.4em; flex-shrink: 0; }
+        .ia-producto-aviso span { flex: 1 1 260px; }
+        .btn-ia-producto-otra-vez {
+            flex-shrink: 0;
+            padding: 8px 14px;
+            border: 1px solid #a78bfa;
+            border-radius: 999px;
+            background: #fff;
+            color: #6d28d9;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s ease;
+        }
+        .btn-ia-producto-otra-vez:hover { background: #f5f3ff; }
+        .btn-ia-producto-otra-vez:disabled { opacity: 0.6; cursor: default; }
 
         .cargando-inicial {
             text-align: center;
@@ -3077,7 +3094,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- ── RESULTADOS ── -->
     <section>
         <div class="resultados-header resultados-header--sin-interaccion" id="resultados-header">
-            <div class="resultados-count">
+            <div class="resultados-count" id="resultados-count">
                 <strong id="num-resultados">—</strong> resultados
             </div>
             <div class="resultados-header__acciones">
@@ -3120,7 +3137,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="ia-producto-seccion" style="display:none;">
             <div class="ia-producto-aviso">
                 <img src="assets/logos/apple-touch-icon.png" alt="" class="icono-ia-producto">
-                <span><strong>Sugerido por IA</strong> a partir de tu búsqueda — puede contener errores, revisa bien el producto antes de comprar.</span>
+                <span><strong>Sugerido por IA</strong> a partir de tu búsqueda — puede contener errores, comprueba bien que es el producto que buscas.</span>
+                <button type="button" id="btn-ia-producto-otra-vez" class="btn-ia-producto-otra-vez">No es lo que buscaba, prueba otra vez</button>
             </div>
             <div id="ia-producto-resultados" class="grid-productos"></div>
         </div>
@@ -3728,6 +3746,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // "faltaría mantener los resultados que ha devuelto la IA hasta que
     // el usuario limpie los filtros o introduzca otro criterio".
     let terminoIAActivo = null;
+    // Para el botón "No es lo que buscaba, prueba otra vez" — se
+    // acumulan los términos ya probados (para pedirle a la IA un
+    // enfoque distinto, no las mismas palabras) y las referencias ya
+    // mostradas (para no repetir los mismos productos aunque el nuevo
+    // intento vuelva a dar términos parecidos). Se reinician junto con
+    // terminoIAActivo cada vez que cambia el texto de búsqueda.
+    let terminosPreviosIA = [];
+    let refsExcluidosIA = [];
     let familiasMostradas = 0;   // cuántas familias ya se han pintado (paginación)
     const FAMILIAS_POR_CARGA = 3; // cuántas familias se cargan cada vez (~12 productos aprox)
 
@@ -4508,7 +4534,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
-        $('btn-preguntar-ia-producto').addEventListener('click', preguntarIAProducto);
+        $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
+        $('btn-ia-producto-otra-vez').addEventListener('click', () => preguntarIAProducto(true));
         $('btn-compartir-resultados').addEventListener('click', compartirResultados);
         $('btn-cerrar-disclaimer').addEventListener('click', ocultarDisclaimerPrecios);
         $('btn-info-disclaimer').addEventListener('click', mostrarDisclaimerPrecios);
@@ -5543,9 +5570,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
+    // Contador de resultados — dos formatos: el estándar de siempre, y
+    // uno propio para cuando los resultados vienen de la IA (a petición
+    // de Eloy: antes se quedaba en "0 resultados" mientras se mostraban
+    // los productos sugeridos, porque el contador solo miraba
+    // resultadosActuales, que sigue en 0 en ese caso).
+    function restaurarContadorEstandar(n) {
+        $('resultados-count').innerHTML = `<strong id="num-resultados">${n}</strong> resultados`;
+    }
+    function mostrarContadorIA(n) {
+        $('resultados-count').innerHTML = `<strong>${n}</strong> resultados sugeridos por IA`;
+    }
+
     // ── Renderizar resultados (con paginación de 12 en 12 aprox) ──
     function renderResultados() {
-        $('num-resultados').textContent = resultadosActuales.length;
         $('btn-solicitar').disabled = resultadosActuales.length === 0;
 
         const cont = $('contenedor-resultados');
@@ -5568,6 +5606,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // propio usuario haya cambiado nada (p. ej. tras cerrar el
             // modal de detalle de un producto).
             if (terminoIAActivo !== null && terminoIAActivo === textoActual) {
+                mostrarContadorIA($('ia-producto-resultados').children.length);
                 sinResultados.style.display = 'none';
                 seccionIA.style.display = '';
                 return;
@@ -5576,7 +5615,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // Texto distinto del que tenían los resultados de IA (o no
             // había ninguno vigente) — se limpian y se vuelve al estado
             // normal de "sin resultados".
+            restaurarContadorEstandar(0);
             terminoIAActivo = null;
+            terminosPreviosIA = [];
+            refsExcluidosIA = [];
             seccionIA.style.display = 'none';
             $('ia-producto-resultados').innerHTML = '';
             sinResultados.style.display = '';
@@ -5596,6 +5638,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
 
+        restaurarContadorEstandar(resultadosActuales.length);
         // Resultados normales encontrados — cualquier estado de IA de
         // una búsqueda anterior queda obsoleto.
         terminoIAActivo = null;
@@ -5745,8 +5788,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ya visto allí de palabras sueltas encontrando productos de una
     // categoría totalmente distinta), con una búsqueda sin restringir
     // como red de seguridad si el filtro no encuentra nada.
-    function buscarProductosConTerminosIA(terminos, familiasFiltro) {
-        const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+    function buscarProductosConTerminosIA(terminos, familiasFiltro, refsExcluir) {
+        const excluir = new Set(refsExcluir || []);
+        const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()) && !excluir.has(p.ref));
         const palabras = (terminos || []).join(' ').split(/\s+/).map(normalizar).filter(w => w.length >= 3);
         if (!palabras.length) return [];
         const puntuar = (lista) => {
@@ -5770,19 +5814,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return puntuar(activos);
     }
 
-    function preguntarIAProducto() {
+    function preguntarIAProducto(esOtraVez) {
         const texto = $('f-texto').value.trim();
         if (!texto) return;
         const btn = $('btn-preguntar-ia-producto');
+        const btnOtraVez = $('btn-ia-producto-otra-vez');
         const mensajeIA = $('ia-producto-mensaje');
         const seccionIA = $('ia-producto-seccion');
         const resultadosIA = $('ia-producto-resultados');
 
-        btn.disabled = true;
-        btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntando a la IA… puede tardar unos segundos';
-        mensajeIA.style.display = 'none';
-        seccionIA.style.display = 'none';
-        resultadosIA.innerHTML = '';
+        if (esOtraVez) {
+            btnOtraVez.disabled = true;
+            btnOtraVez.textContent = 'Buscando otra alternativa…';
+        } else {
+            btn.disabled = true;
+            btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntando a la IA… puede tardar unos segundos';
+            mensajeIA.style.display = 'none';
+            seccionIA.style.display = 'none';
+            resultadosIA.innerHTML = '';
+        }
 
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) return;
@@ -5796,7 +5846,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS
-            body: JSON.stringify({ accion: 'buscar_producto_ia', consulta: texto, taxonomia: calcularTaxonomiaProductos() }),
+            body: JSON.stringify({
+                accion: 'buscar_producto_ia', consulta: texto, taxonomia: calcularTaxonomiaProductos(),
+                // Solo en "otra vez": los términos ya probados, para que
+                // la IA intente un enfoque genuinamente distinto en vez
+                // de devolver prácticamente lo mismo otra vez.
+                terminosPrevios: esOtraVez ? terminosPreviosIA : [],
+            }),
             signal: controlador.signal,
         }).finally(() => clearTimeout(limiteTiempo))
           .then(res => res.json())
@@ -5804,10 +5860,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               if ($('f-texto').value.trim() !== texto) return; // el texto cambió mientras tanto
               btn.disabled = false;
               btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA';
+              btnOtraVez.disabled = false;
+              btnOtraVez.textContent = 'No es lo que buscaba, prueba otra vez';
 
               if (!data || !data.success) {
                   mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
                   mensajeIA.style.display = '';
+                  if (esOtraVez) { mensajeIA.style.display = ''; seccionIA.style.display = ''; } // se deja ver lo anterior debajo del aviso
                   return;
               }
               if (data.fueraDeAlcance) {
@@ -5815,19 +5874,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                   mensajeIA.style.display = '';
                   return;
               }
-              const productos = buscarProductosConTerminosIA(data.terminos, data.familias);
+              // Excluye siempre los productos ya mostrados en el/los
+              // intento(s) anterior(es), aunque la IA repita algún
+              // término parecido — así nunca se repite un producto que
+              // el cliente ya dijo que no le servía.
+              const productos = buscarProductosConTerminosIA(data.terminos, data.familias, refsExcluidosIA);
               if (!productos.length) {
-                  mensajeIA.textContent = 'La IA tampoco ha encontrado productos concretos para esta búsqueda.';
+                  mensajeIA.textContent = esOtraVez
+                      ? 'La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.'
+                      : 'La IA tampoco ha encontrado productos concretos para esta búsqueda.';
                   mensajeIA.style.display = '';
+                  if (esOtraVez) { seccionIA.style.display = ''; btnOtraVez.style.display = 'none'; } // no tiene sentido seguir ofreciendo "otra vez" si ya no hay más
                   return;
               }
               // Éxito de verdad: se recuerda para qué texto son válidos
-              // estos resultados (ver renderResultados) y se muestran en
-              // su propia sección, separada del mensaje de "sin
-              // resultados" — con su aviso de que vienen de la IA.
+              // estos resultados (ver renderResultados), se acumulan los
+              // términos y referencias ya usados (por si se pide "otra
+              // vez" de nuevo) y se muestran en su propia sección,
+              // separada del mensaje de "sin resultados".
               terminoIAActivo = texto;
+              terminosPreviosIA = terminosPreviosIA.concat(data.terminos || []);
+              refsExcluidosIA = refsExcluidosIA.concat(productos.map(p => p.ref));
               resultadosIA.innerHTML = '';
               productos.forEach(p => resultadosIA.appendChild(crearTarjeta(p)));
+              mostrarContadorIA(resultadosIA.children.length);
+              mensajeIA.style.display = 'none';
               $('sin-resultados').style.display = 'none';
               seccionIA.style.display = '';
           })
@@ -5836,6 +5907,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               if ($('f-texto').value.trim() !== texto) return;
               btn.disabled = false;
               btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA';
+              btnOtraVez.disabled = false;
+              btnOtraVez.textContent = 'No es lo que buscaba, prueba otra vez';
               mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
               mensajeIA.style.display = '';
           });
