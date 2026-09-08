@@ -1298,8 +1298,16 @@
   font-style: italic;
   font-weight: 500;
 }
-.cs-producto-card-wrap { position: relative; z-index: 0; }
-.cs-producto-card-wrap .cs-producto-card { height: 100%; }
+.cs-producto-card-wrap {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cs-producto-card-wrap .cs-producto-card {
+  height: auto;
+  flex: 1 1 auto;
+}
 .cs-producto-quitar {
   position: absolute;
   top: 10px;
@@ -1321,6 +1329,21 @@
   transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 .cs-producto-quitar:hover { background: #fee2e2; color: #b91c1c; transform: scale(1.1); }
+.cs-producto-card__ficha {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 8px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-blue);
+  background: #e8f1fc;
+  border: 1px solid #a9cdf2;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.cs-producto-card__ficha:hover { background: #d3e6fb; }
 .cs-ia-productos-espera {
   text-align: center;
   padding: 24px 20px;

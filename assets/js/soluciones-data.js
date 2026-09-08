@@ -5433,6 +5433,67 @@ window.SOLUCIONES_DATA = (function () {
   // ya es un código reconocible) y devuelve el producto + enlace directo
   // a su ficha técnica de fabricante si hay una coincidencia razonable.
   // null si no hay nada que se le parezca lo suficiente.
+  // ── Ficha técnica de fabricante para PRODUCTOS REALES de la solución
+  // dinámica (generada por IA) ────────────────────────────────────────
+  // A petición de Eloy: "que la IA además busque, si es posible, sobre
+  // la solución dinámica propuesta fichas técnicas de los productos
+  // principales... sobre todo cuando son de pintura, herramientas como
+  // Werku o cualquier producto delicado". IMPORTANTE — la IA NUNCA
+  // "busca" ni construye una URL nueva por su cuenta: eso violaría el
+  // principio ya establecido en este proyecto de "nunca adivinar una
+  // ficha técnica por patrón de URL, siempre verificar navegando la
+  // página real del fabricante" (aprendido con Werku, cuya ruta de PDF
+  // cambia según cuándo se subió cada documento). En su lugar, se
+  // reutilizan aquí las MISMAS fichas técnicas YA VERIFICADAS a mano
+  // que usa buscador.html (Werku por código WK) — solo que ahora
+  // también se aplican a los productos que muestra la solución
+  // dinámica, no solo a los de guías escritas a mano. Para el resto de
+  // pinturas (sin ficha directa conocida), se ofrece un enlace de
+  // búsqueda de Google ya construido con los términos del producto —
+  // el mismo mecanismo de respaldo que ya usa buscador.html, nunca una
+  // URL inventada.
+  const FAMILIAS_SIN_FICHA_TECNICA = ['BROCHAS Y UTILES DE APLICACION', 'LIJAS'];
+  const FICHAS_TECNICAS_WERKU = {
+    WK500470: 'https://www.werku.com/wp-content/uploads/2022/05/WK500470_Techical_File_ESP.pdf',
+    WK500600: 'https://www.werku.com/wp-content/uploads/2022/05/WK500600_Technical_File_ESP.pdf',
+    WK401200: 'https://www.werku.com/Technical_File_ESP/WK401200_Technical_File_ESP.pdf',
+    WK400750: 'https://www.werku.com/Technical_File_ESP/WK400750_Technical_File_ESP.pdf',
+  };
+  function fichaTecnicaWerku(p) {
+    const m = (p.nombre || '').match(/WK\d{6}/i);
+    if (!m) return null;
+    return FICHAS_TECNICAS_WERKU[m[0].toUpperCase()] || null;
+  }
+  function limpiarNombreParaFicha(nombre) {
+    return (nombre || '')
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/\bREF\.?\s*\S+/gi, ' ')
+      .replace(/\bRF\.?\s*\S+/gi, ' ')
+      .replace(/\d+(?:[.,]\d+)?\s*(ML|L|KG|GR|G)\b/gi, ' ')
+      .replace(/\./g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  // Devuelve { href } si el producto tiene una ficha técnica real
+  // conocida (directa, o Werku verificado) o razonablemente buscable
+  // (pinturas que no sean simples herramientas de aplicación), o null
+  // si no aplica ninguna (p. ej. brochas, lijas, droguería/perfumería
+  // sin ficha de fabricante conocida).
+  function obtenerFichaTecnicaProducto(p) {
+    if (!p) return null;
+    if (p.ficha_url) return { href: p.ficha_url };
+    const fichaWerku = fichaTecnicaWerku(p);
+    if (fichaWerku) return { href: fichaWerku };
+    if (p.area !== 'pinturas') return null;
+    const familiaMay = normalizarTexto(p.familia || '').toUpperCase();
+    if (FAMILIAS_SIN_FICHA_TECNICA.some((f) => familiaMay.includes(f))) return null;
+    const familia = (p.familia || '').toUpperCase();
+    const esTitan = familia.includes('TITAN') || familia.includes('AKZONOBEL');
+    const terminos = limpiarNombreParaFicha(p.nombre);
+    const consulta = (esTitan ? 'Titan ' : '') + terminos + ' ficha técnica';
+    return { href: `https://www.google.com/search?q=${encodeURIComponent(consulta)}` };
+  }
+
   function buscarFichaTecnicaPorTexto(texto) {
     const t = normalizarTexto(texto);
     if (!t.trim()) return null;
@@ -5758,6 +5819,6 @@ window.SOLUCIONES_DATA = (function () {
     acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo, buscarCandidatosProductosParaIA, buscarProductosPorCoincidenciaFuerte,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo, buscarCandidatosProductosParaIA, buscarProductosPorCoincidenciaFuerte, obtenerFichaTecnicaProducto,
   };
 })();

@@ -70,6 +70,15 @@
     const precio = precioReal ? `${p.precio_con} €` : 'Consultar precio y disponibilidad';
     const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
+    // A petición de Eloy: "que la IA además busque fichas técnicas de
+    // los productos principales... sobre todo pintura, herramientas
+    // como Werku o cualquier producto delicado". Nunca se inventa una
+    // URL — se reutilizan las fichas YA VERIFICADAS a mano (Werku por
+    // código, mismo mecanismo que buscador.html) o, para el resto de
+    // pinturas, un enlace de búsqueda de Google ya construido con los
+    // términos del producto. Ver obtenerFichaTecnicaProducto en
+    // soluciones-data.js para el porqué completo.
+    const fichaTecnica = D.obtenerFichaTecnicaProducto(p);
     // A petición de Eloy: poder quitar productos concretos que no le
     // interesan al usuario, sobre todo pensando en la exportación a
     // PDF — un botón "✕" independiente del enlace de la tarjeta (por
@@ -90,6 +99,7 @@
           <div class="${precioClass}">${precio}</div>
         </a>
         <button type="button" class="cs-producto-quitar no-imprimir" data-ref="${escaparHtml(p.ref)}" title="Quitar «${escaparHtml(p.nombre)}» de la lista" aria-label="Quitar este producto de la lista">✕</button>
+        ${fichaTecnica ? `<a class="cs-producto-card__ficha no-imprimir" href="${fichaTecnica.href}" target="_blank" rel="noopener">📋 Ficha técnica del fabricante</a>` : ''}
       </div>
     `;
   }
