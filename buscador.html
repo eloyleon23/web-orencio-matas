@@ -1268,7 +1268,7 @@
             flex-wrap: wrap;
             gap: 10px 14px;
             max-width: 900px;
-            margin: 0 auto 16px;
+            margin: 0 0 16px auto;
             padding: 12px 16px;
             background: #f5f3ff;
             border: 1px solid #ddd6fe;
@@ -1276,6 +1276,7 @@
             color: var(--text, #1e293b);
             font-size: 0.9rem;
         }
+        .ia-producto-aviso--abajo { margin: 20px 0 0 auto; }
         .ia-producto-aviso .icono-ia-producto { width: 1.4em; height: 1.4em; flex-shrink: 0; }
         .ia-producto-aviso span { flex: 1 1 260px; }
         .btn-ia-producto-otra-vez {
@@ -1302,6 +1303,18 @@
             background: #fafafa;
             border: 1px solid var(--border);
             border-radius: 10px;
+            text-align: center;
+        }
+        .ia-producto-espera-icono {
+            width: 2.2em;
+            height: 2.2em;
+            display: block;
+            margin: 0 auto 10px;
+            animation: ia-producto-pulso 1.4s ease-in-out infinite;
+        }
+        @keyframes ia-producto-pulso {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.6; }
         }
         .ia-producto-espera p {
             margin: 0 0 10px;
@@ -3159,6 +3172,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <p>No se han encontrado productos con estos filtros.<br>Prueba a ampliar la búsqueda.</p>
             <button type="button" id="btn-preguntar-ia-producto" class="btn-preguntar-ia-producto" style="display:none;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA</button>
             <div id="ia-producto-espera" class="ia-producto-espera" style="display:none;">
+                <img src="assets/logos/apple-touch-icon.png" alt="" class="ia-producto-espera-icono">
                 <p id="ia-producto-espera-texto"></p>
                 <button type="button" id="btn-ia-producto-cancelar" class="btn-ia-producto-cancelar">Cancelar</button>
             </div>
@@ -3172,10 +3186,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <button type="button" id="btn-ia-producto-otra-vez" class="btn-ia-producto-otra-vez">No es lo que buscaba, prueba otra vez</button>
             </div>
             <div id="ia-producto-espera-otra-vez" class="ia-producto-espera" style="display:none;">
+                <img src="assets/logos/apple-touch-icon.png" alt="" class="ia-producto-espera-icono">
                 <p id="ia-producto-espera-otra-vez-texto"></p>
                 <button type="button" id="btn-ia-producto-cancelar-otra-vez" class="btn-ia-producto-cancelar">Cancelar</button>
             </div>
             <div id="ia-producto-resultados" class="grid-productos"></div>
+            <div class="ia-producto-aviso ia-producto-aviso--abajo">
+                <img src="assets/logos/apple-touch-icon.png" alt="" class="icono-ia-producto">
+                <span><strong>Sugerido por IA</strong> a partir de tu búsqueda — puede contener errores, comprueba bien que es el producto que buscas.</span>
+                <button type="button" id="btn-ia-producto-otra-vez-abajo" class="btn-ia-producto-otra-vez">No es lo que buscaba, prueba otra vez</button>
+            </div>
         </div>
 
 
@@ -4577,6 +4597,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
         $('btn-ia-producto-otra-vez').addEventListener('click', () => preguntarIAProducto(true));
+        // Botón duplicado al final de la rejilla — a petición de Eloy,
+        // para no obligar al usuario a volver a subir tras hacer scroll
+        // por muchos resultados. Antes de lanzar la búsqueda, se hace
+        // scroll suave hasta el aviso de arriba (donde vive el bloque
+        // de progreso de la espera) para que el usuario vea qué está
+        // pasando sin tener que buscarlo.
+        $('btn-ia-producto-otra-vez-abajo').addEventListener('click', () => {
+            $('ia-producto-seccion').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            preguntarIAProducto(true);
+        });
         $('btn-compartir-resultados').addEventListener('click', compartirResultados);
         $('btn-cerrar-disclaimer').addEventListener('click', ocultarDisclaimerPrecios);
         $('btn-info-disclaimer').addEventListener('click', mostrarDisclaimerPrecios);
@@ -5903,7 +5933,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const texto = $('f-texto').value.trim();
         if (!texto) return;
         const btn = $('btn-preguntar-ia-producto');
-        const btnOtraVez = $('btn-ia-producto-otra-vez');
+        // Dos botones "otra vez" — uno arriba y otro duplicado al final
+        // de la rejilla (a petición de Eloy, para no obligar a volver a
+        // subir tras hacer scroll con muchos resultados) — se mantienen
+        // siempre sincronizados entre sí.
+        const botonesOtraVez = [$('btn-ia-producto-otra-vez'), $('btn-ia-producto-otra-vez-abajo')];
         const mensajeIA = $('ia-producto-mensaje');
         const seccionIA = $('ia-producto-seccion');
         const resultadosIA = $('ia-producto-resultados');
@@ -5912,7 +5946,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const btnCancelar = esOtraVez ? $('btn-ia-producto-cancelar-otra-vez') : $('btn-ia-producto-cancelar');
 
         if (esOtraVez) {
-            btnOtraVez.style.display = 'none';
+            botonesOtraVez.forEach(b => { b.style.display = 'none'; });
         } else {
             btn.style.display = 'none';
             mensajeIA.style.display = 'none';
@@ -5937,7 +5971,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             detenerMensajes();
             cancelarPeticionIAProductoEnCurso = null;
             espera.style.display = 'none';
-            if (esOtraVez) { btnOtraVez.style.display = ''; } else { btn.style.display = ''; }
+            if (esOtraVez) { botonesOtraVez.forEach(b => { b.style.display = ''; }); } else { btn.style.display = ''; }
         }
         cancelarPeticionIAProductoEnCurso = () => { canceladoPorUsuario = true; controlador.abort(); };
 
@@ -5979,7 +6013,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                       ? 'La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.'
                       : 'La IA tampoco ha encontrado productos concretos para esta búsqueda.';
                   mensajeIA.style.display = '';
-                  if (esOtraVez) { seccionIA.style.display = ''; btnOtraVez.style.display = 'none'; } // no tiene sentido seguir ofreciendo "otra vez" si ya no hay más
+                  if (esOtraVez) { seccionIA.style.display = ''; botonesOtraVez.forEach(b => { b.style.display = 'none'; }); } // no tiene sentido seguir ofreciendo "otra vez" si ya no hay más
                   return;
               }
               // Éxito de verdad: se recuerda para qué texto son válidos
