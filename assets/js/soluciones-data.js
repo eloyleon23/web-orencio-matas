@@ -546,7 +546,6 @@ window.SOLUCIONES_DATA = (function () {
       alternativeProducts: [
         { etiqueta: 'Esmalte sintético (más resistente en exterior)', nombre: 'Oxiron Forja Negro (esmalte sintético al disolvente)', precio: '15,85 €' },
         { etiqueta: 'Opción profesional sintética', nombre: 'Hammerite Esmalte Liso Hierro y Óxido Negro 750 ml', precio: '17,67 €' },
-        { etiqueta: 'Opción rápida',      nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.NEGRO', precio: '19,95 €' },
         { etiqueta: 'Trabajos pequeños',  nombre: 'Aerosol antioxidante', precio: '8,95 €' },
       ],
       relatedSolutions: ['pintar-plastico-coche', 'restaurar-mueble-madera', 'quitar-restos-pegamento', 'proteger-estructura-metalica-corrosion', 'pintar-metal-antioxidante-interior-exterior'],
@@ -904,13 +903,13 @@ window.SOLUCIONES_DATA = (function () {
         'Poner el suelo en servicio antes del tiempo de curado total indicado.',
       ],
       recommendedProducts: [
-        { nombre: 'TITANTECH PXB-700 Base Epoxi Suelos 4 L Base Neutra', categoria: 'Talleres', formato: '4 L', precio: '72,93 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
-        { nombre: 'TITANTECH PXB-700 Endurecedor Epoxi Suelos',          categoria: 'Talleres', formato: '1 L', precio: '15,55 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
-        { nombre: 'TITANTECH PXB-700 Epoxi Suelos 15 L Base Neutra',     categoria: 'Talleres', formato: '15 L (superficies grandes)', precio: '253,56 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'TITANTECH PXB-700 BASE EPOXI SUELOS 4 L.B.NEUT', categoria: 'Talleres', formato: '4 L', precio: '74,54 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'TITANTECH PXB-700 ENDUREC.EPOXI SUELOS 1 L.',          categoria: 'Talleres', formato: '1 L', precio: '15,55 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
       ],
       alternativeProducts: [
+        { etiqueta: 'Para superficies grandes', nombre: 'TITANTECH PXB700 BASE EPOXI SUELOS BN 0597 15 L.', precio: '231,23 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
         { etiqueta: 'Uso sanitario/alimentario', nombre: 'Epoxi Suelos Sanitaria AQ.PXB-720 Blanco Base 4 L', precio: '97,27 €' },
-        { etiqueta: 'Opción económica (superficie pequeña)', nombre: 'TITANTECH PXB-700 Epoxi Suelos 4 L Blanco', precio: '74,96 €' },
+        { etiqueta: 'Opción económica (superficie pequeña, color)', nombre: 'TITANTECH PXB-700 EPOXI SUELOS 4 L.BLANCO', precio: '71,18 €' },
         { etiqueta: 'Sin epoxi (más sencillo)', nombre: 'Barniz Titán Suelos con Poliuretano Satinado 4 L Incoloro', precio: '75,98 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal'],
@@ -1095,7 +1094,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Opción rápida (choque puntual)', nombre: 'Arrixaca Insecticida Cucarachas Spray 400 ml', precio: '2,49 €' },
-        { etiqueta: 'Varias zonas de la casa',        nombre: 'Cucal Trampa Cucarachas Est. 6 uds + Trampa Hormigas Est. 2 uds', precio: '3,68 € + 2,23 €' },
+        { etiqueta: 'Varias zonas de la casa',        nombre: 'CUCAL TRAMPA CUCARACHAS EST.6 UNIDS.', precio: '3,68 €' },
       ],
       relatedSolutions: ['sellar-juntas-bano', 'control-roedores'],
       seo: {
@@ -1153,8 +1152,8 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'TITANPRO P-40 P.Acrílica Premium Mate 15 L. Blanco', categoria: 'Pinturas', formato: '15 L',  precio: '66,03 €', fichaTecnica: 'https://www.titanpro.es/es/productos/p-40-pintura-acrilica-premium-mate' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Opción económica (retoques)', nombre: 'Jamicolor Pintura Plástica Mate Int/Ext 750 ml Blanco', precio: '2,54 €' },
-        { etiqueta: 'Mayor cobertura',              nombre: 'Gilmaplas Pintura Plástica Satinada Extra 15 L', precio: '65,88 €' },
+        { etiqueta: 'Opción económica (retoques)', nombre: 'O.MATAS PINT.PLASTICA MATE PROF.750 ML.BLANCO', precio: '3,48 €' },
+        { etiqueta: 'Mayor cobertura',              nombre: 'O.MATAS PINT.PLASTICA MATE PREMIUM 15 L.BLANCO', precio: '60,42 €' },
       ],
       relatedSolutions: ['restaurar-mueble-madera', 'eliminar-moho-pared-antes-pintar', 'pintar-techo-pasta-temple'],
       seo: {
@@ -1269,13 +1268,11 @@ window.SOLUCIONES_DATA = (function () {
         'Verter agua hirviendo directamente sobre tuberías de PVC (puede deformarlas).',
       ],
       recommendedProducts: [
-        { nombre: 'Destop Turbo Desatascador Gel',   categoria: 'Droguería', formato: '1 L',    precio: '4,94 €' },
         { nombre: 'Dirna Desatascador Turbo',         categoria: 'Droguería', formato: '500 ml', precio: '2,09 €' },
         { nombre: 'Paso Desatascador Gel Profesional', categoria: 'Droguería', formato: '1 L',   precio: '5,84 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Concentrado',              nombre: 'Dirna Desatascador Concentrado Microperlas 375 g', precio: '1,88 €' },
-        { etiqueta: 'Monodosis',                 nombre: 'PASO DESATASCADOR GEL PROFESIONAL 1 L.', precio: '0,61 €' },
         { etiqueta: 'Mantenimiento fosas sépticas', nombre: 'M.P.L. Activador Fosas Sépticas 400 g', precio: '4,96 €' },
       ],
       relatedSolutions: [],
@@ -1442,7 +1439,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Ratibrom ¡Zas! Trampa Ratas',         categoria: 'Droguería',                     precio: '5,53 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato grande/nave', nombre: 'Nogat Raticida Grano Ratas Resist. 5x50 g', precio: '4,57 €' },
+        { etiqueta: 'Formato grande/nave', nombre: 'ROE-BLOCK MASSÓ BD DUPLO 260+260 GRS.', precio: '5,71 €' },
         { etiqueta: 'Cebo fresco',          nombre: 'Brody Cebo Fresco B/100 g', precio: '1,33 €' },
       ],
       relatedSolutions: ['sellar-juntas-bano', 'control-plagas-cocina', 'proteger-ropa-polillas'],
@@ -1551,13 +1548,13 @@ window.SOLUCIONES_DATA = (function () {
         'No revisar las prendas guardadas hasta la siguiente temporada.',
       ],
       recommendedProducts: [
-        { nombre: 'Bloom Antipolilla Colgador Lavanda',      categoria: 'Droguería', formato: 'Dúo', precio: '1,48 €' },
+        { nombre: 'POLIL COLGADOR ANTIPOLILLA DUPLO LAVANDA', categoria: 'Droguería', formato: 'Dúo', precio: '1,78 €' },
         { nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.LAVANDA',            categoria: 'Droguería', formato: '3 bloques', precio: '3,46 €' },
         { nombre: 'Guardarropa Bonodor Nº2',                   categoria: 'Droguería', formato: '65x125 cm, 5 uds', precio: '2,66 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Sin olor',           nombre: 'Esens-Sensitive Antipolilla S/Olor Colgador Dúo', precio: '2,24 €' },
-        { etiqueta: 'Formato económico',  nombre: 'Bloom Antipolilla Bolitas B/24 uds Lavanda', precio: '0,63 €' },
+        { etiqueta: 'Otro aroma',         nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.COLONIA', precio: '3,76 €' },
+        { etiqueta: 'Formato económico',  nombre: 'ORION ANTIPOLILLA BOLAS BOLSA 20 UDS.LAVANDA', precio: '2,09 €' },
         { etiqueta: 'Prenda individual',  nombre: 'Guardarropa Zidar Trajes 5 Bolsas 65x125 cm', precio: '0,82 €' },
       ],
       relatedSolutions: ['control-plagas-cocina', 'control-roedores'],
@@ -1668,8 +1665,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'IMPRIMACION CHAPA/CRISTAL ZAPHIRO ZXS100 N 30ML.',            categoria: 'Talleres', precio: '2,31 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Opción económica',    nombre: 'Adhesivo PUR de Lunas ZXS150 310 ml', precio: '7,91 €' },
-        { etiqueta: 'Reparación puntual',  nombre: 'ADHESIVO LUNAS MS POLIMERO ZXS410 290 ML. ZAPHIRO', precio: '17,53 €' },
+        { etiqueta: 'Cinta protectora complementaria', nombre: '.CINTA LUNAS TRIM-MASK ZAPHIRO 50 MM.x10 M', precio: '15,19 €' },
       ],
       relatedSolutions: ['proteger-bajos-antigravilla'],
       seo: {
@@ -1782,7 +1778,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'REVEST.ANTIGOTERAS I-5 4 L.BLANCO',        categoria: 'Pinturas', formato: '4 L', precio: '21,05 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Opción económica (goteras puntuales)', nombre: 'Antigoteras LP-70 Caucho 750 ml', precio: '6,35 €' },
+        { etiqueta: 'Opción económica (goteras puntuales)', nombre: 'TITAN REVEST.ANTIGOTERAS 1 L.BLANCO', precio: '9,79 €' },
         { etiqueta: 'Terrazas transitables',                 nombre: 'Impermeabilización Terrazas Gilmaelas Caucho Acrílico 15 L', precio: '35,26 €' },
         { etiqueta: 'Cubiertas grandes/profesional',         nombre: 'Impermeabilización Membrana c/Poliuretano I-12 20 kg', precio: '90,63 €' },
       ],
@@ -1837,7 +1833,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Acetona Kelsia',                        categoria: 'Droguería', formato: '1 L', precio: '3,15 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato pequeño', nombre: 'Acetona Kelsia 200 ml', precio: '1,08 €' },
+        { etiqueta: 'Uso profesional/grandes cantidades', nombre: 'ACETONA GRANEL GERDISA ENV.20 L.', precio: '84,62 €' },
         { etiqueta: 'Herramienta mecánica alternativa', nombre: 'Rueda de Goma Quita Adhesivos c/Eje 100 mm', precio: '63,34 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal'],
@@ -1886,12 +1882,12 @@ window.SOLUCIONES_DATA = (function () {
         'Pintar sin limpiar bien el polvo de lijado.',
       ],
       recommendedProducts: [
-        { nombre: 'Lija al Agua P-1000', categoria: 'Talleres', precio: '1,36 €' },
+        { nombre: '.LIJA AL AGUA ZAPHIRO P-2000', categoria: 'Talleres', precio: '0,57 €' },
         { nombre: 'Lija al Agua P-1200', categoria: 'Talleres', precio: '1,91 €' },
         { nombre: 'Aparejo Titan Gris',  categoria: 'Pinturas', formato: '375 ml', precio: '8,93 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado extra fino', nombre: 'Lija al Agua Zaphiro P-1500', precio: '0,57 €' },
+        { etiqueta: 'Grano grueso (preparación inicial)', nombre: '.LIJA AL AGUA ZAPHIRO P-280', precio: '0,57 €' },
         { etiqueta: 'Piezas pequeñas',     nombre: 'Spray Aparejo Gris Medio Zaphiro 400 ml', precio: '16,02 €' },
       ],
       relatedSolutions: ['pintar-plastico-coche', 'corregir-descuelgues-pintura', 'elegir-lijadora-superficie'],
@@ -2101,7 +2097,6 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Opción completa/profesional', nombre: 'BODY LENS CLEAR SPRAY LACA FAROS 400 ML.', precio: '99,83 €' },
-        { etiqueta: 'Kit con polímero',              nombre: 'Kit Restauración Faros c/Polímero Zaphiro', precio: '96,50 €' },
       ],
       relatedSolutions: ['recuperar-brillo-carroceria'],
       seo: {
@@ -2148,12 +2143,12 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar una capa demasiado gruesa (el lasur se aplica en manos finas, no como una pintura).',
       ],
       recommendedProducts: [
-        { nombre: 'Xylazel S Lasur Satinado Incoloro',   categoria: 'Pinturas', formato: '750 ml', precio: '19,60 €' },
-        { nombre: 'Titán Protec. Lasur Satinado Roble',   categoria: 'Pinturas', formato: '750 ml', precio: '18,02 €' },
+        { nombre: 'BARNIZ TITAN PROTEC.LASUR SATIN.750 ML.INCOL.',   categoria: 'Pinturas', formato: '750 ml', precio: '18,02 €' },
+        { nombre: 'BARNIZ TITAN PROTEC.LASUR MATE 750 ML.ROBLE',   categoria: 'Pinturas', formato: '750 ml', precio: '17,32 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado mate',        nombre: 'Barniz Titán Protec. Lasur Eco Mate Incoloro', precio: '18,49 €' },
-        { etiqueta: 'Formato grande',      nombre: 'Xylazel Lasur Protect Plus 2,5 L Incoloro', precio: '55,42 €' },
+        { etiqueta: 'Acabado mate ecológico', nombre: 'BARNIZ TITAN PROTEC.LASUR ECO MATE 750 ML.INCOL.', precio: '18,49 €' },
+        { etiqueta: 'Formato grande',      nombre: 'PROTECTOR ECO LASUR MATE 4 L.INCOLORO 3800', precio: '81,40 €' },
         { etiqueta: 'Con aceite natural',  nombre: 'Lasur Aceite Mora Madera Satinado 1 L', precio: '12,32 €' },
       ],
       relatedSolutions: ['restaurar-mueble-madera'],
@@ -2206,7 +2201,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Titanlux Azulejos Agua Brillo Blanco',      categoria: 'Pinturas', formato: '750 ml', precio: '16,82 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado satinado', nombre: 'Titán Esmalte Sat. Azulejos Baños y Cocinas', precio: '18,09 €' },
+        { etiqueta: 'Acabado satinado', nombre: 'TITANLUX AZULEJOS AGUA SATIN.750 ML.BLANCO', precio: '16,82 €' },
         { etiqueta: 'Reparar juntas',    nombre: 'Baixens B-24 Juntas de Azulejo Tubo 200 g Blanco', precio: '2,11 €' },
       ],
       relatedSolutions: ['pintar-pared-interior', 'renovar-banera-lavabo-sanitario', 'sellar-juntas-bano'],
@@ -2256,8 +2251,8 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Bloom Electrónico Antimosquitos Pro + Recambio', categoria: 'Droguería', precio: '5,78 €' },
-        { nombre: 'AUTAN MOSQUITOS 100 ML.SPRAY ULTRA REPELENTE',     categoria: 'Droguería', formato: '500 ml', precio: '7,68 €' },
-        { nombre: 'Autan Mosquitos Spray Ultra Repelente',            categoria: 'Droguería', formato: '100 ml', precio: '5,65 €' },
+        { nombre: 'AUTAN MOSQUITOS 100 ML.SPRAY ULTRA REPELENTE',     categoria: 'Droguería', formato: '100 ml', precio: '5,65 €' },
+        { nombre: 'AUTAN KIDS REPELENTE DE INSECT.100 ML.VAP.',       categoria: 'Droguería', formato: '100 ml (niños)', precio: '6,16 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Sin electricidad', nombre: 'Orion Espirales Antimosquitos 10 uds', precio: '2,09 €' },
@@ -2475,8 +2470,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Paso Limpiador Acero Inox',    categoria: 'Droguería', formato: '500 ml', precio: '7,68 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Mantenimiento habitual', nombre: 'Tarni-Shield Paño Limpia Plata Larga Duración', precio: '3,36 €' },
-        { etiqueta: 'Formato grande plata',    nombre: 'Tarni-Shield Limpia Plata 1 L', precio: '11,43 €' },
+        { etiqueta: 'Mantenimiento habitual', nombre: 'AERHOGAR LIMPIAPLATA SPRAY 150 ML.', precio: '2,83 €' },
         { etiqueta: 'Uso profesional acero',   nombre: 'Inoxbrill Limpiador Abrillantador Acero Inox 5 L', precio: '32,72 €' },
       ],
       relatedSolutions: [],
@@ -2584,7 +2578,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Sin lejía',           nombre: 'Asevi Oxy Active Multiusos Sin Lejía', precio: '1,57 €' },
-        { etiqueta: 'Uso profesional/grandes superficies', nombre: 'Asevi Gerpostar Desinfectante Multiusos 5 kg', precio: '11,30 €' },
+        { etiqueta: 'Uso profesional/grandes superficies', nombre: 'ASEVI GERPOSTAR DESINF.MULTIUSOS 5 KG.PROF.', precio: '11,30 €' },
       ],
       relatedSolutions: ['usar-lejia-segura'],
       seo: {
@@ -2638,7 +2632,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Pistola Pintar Werku HVLP-I 500 W',              categoria: 'Talleres', precio: '68,55 €', fichaTecnica: 'https://www.werku.com/Technical_File_ESP/WK401200_Technical_File_ESP.pdf' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Airless con aire asistido (mejor acabado)', nombre: 'Pistola Airless Aire Asistido Werku', precio: '117,52 €' },
+        { etiqueta: 'Juego completo de pistolas gravedad', nombre: 'JUEGO PISTOLAS GRAVEDAD WERKU HVLPP-I 125-600 ML.', precio: '52,85 €' },
         { etiqueta: 'Gravedad económica',                          nombre: 'Pistola Gravedad Werku 1.7HP-600 ml', precio: '71,09 €' },
         { etiqueta: 'Gotelé/textura',                                nombre: 'Pistola Gravedad Werku Gotelé 6 L', precio: '44,41 €' },
       ],
@@ -2692,8 +2686,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Amoladora Werku 115-125 mm 900 W',           categoria: 'Talleres', precio: '46,88 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Inalámbrica (sin cable)', nombre: 'Amoladora Inalámbrica Werku 125 mm/20V', precio: '86,39 €' },
-        { etiqueta: 'Rotorbital de grano fino/detalle', nombre: 'Lijadora Werku Rotorbital 5 mm/5 mm-12000', precio: '76,17 €' },
+        { etiqueta: 'Rotorbital de mayor potencia', nombre: 'LIJADORA CIRC.ROTORBITAL WK400100 4MM/150MM/710 W', precio: '124,51 €' },
         { etiqueta: 'Discos de repuesto',        nombre: 'Disco Lija Circular Werku Grano 120, 225 mm (10 uds)', precio: '13,21 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'corregir-marcas-lijado', 'elegir-pistola-pintar'],
@@ -2749,7 +2742,7 @@ window.SOLUCIONES_DATA = (function () {
       alternativeProducts: [
         { etiqueta: 'Ambiente de corrosión alta',     nombre: 'Titantech SXB-210 Imprimación Epoxi AE HB SB 15 L', precio: '307,34 €' },
         { etiqueta: 'Acabado de altas prestaciones',   nombre: 'TITANTECH EX-390 ESM.FORJA DTM 4 L.BASE INCOL.', precio: '53,43 €' },
-        { etiqueta: 'Imprimación anticorrosiva fosfatante', nombre: 'Imprimación Fosfatante SX-140 Anticorrosiva 20 L', precio: '206,26 €' },
+        { etiqueta: 'Endurecedor del sistema epoxi', nombre: 'TITANTECH SXB-200 END.EPOXI ANTICORROS.800 ML.', precio: '12,55 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-acero-fuego'],
       seo: {
@@ -2906,7 +2899,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'HIDROFUGANTE INVISIBLE AGUA S-40 4 L.INCOLORO', categoria: 'Pinturas', formato: '4 L', precio: '42,54 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Fachadas grandes', nombre: 'HIDROFUGANTE INVISIBLE AGUA S-40 15 L.INCOLORO', precio: '110,12 €' },
+        { etiqueta: 'Fachadas grandes', nombre: 'TITAN-PRO S-40 HIDROFUGANTE INVISIB.20 L.INCOL.', precio: '157,13 €' },
         { etiqueta: 'Si además hay que fijar el soporte antes', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.', precio: '28,85 €' },
       ],
       relatedSolutions: ['tratar-fachada-humedad-capilaridad', 'reparar-fisuras-fachada-hormigon', 'proteger-fachada-mortero-monocapa', 'pintar-fachada-exterior'],
@@ -3015,7 +3008,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'REVEST.ACRILICO SILICONADO R-20 15 L.BLANCO', categoria: 'Pinturas', formato: '15 L', precio: '89,90 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/22/95/62/89/tp_r20_revestimiento_acrilico_siliconado_mate_00_00_00_ftecnicaes.pdf' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato pequeño/retoque', nombre: 'REVEST.ACRILICO SILICONADO R-20 4 L.BLANCO', precio: '28,45 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/22/95/62/89/tp_r20_revestimiento_acrilico_siliconado_mate_00_00_00_ftecnicaes.pdf' },
+        { etiqueta: 'Formato pequeño/retoque', nombre: 'REVEST.ACRILICO R-10 LISO 4 L.BLANCO MATE', precio: '16,93 €' },
         { etiqueta: 'Si el mortero es muy poroso', nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.', precio: '30,77 €' },
       ],
       relatedSolutions: ['reparar-fisuras-fachada-hormigon', 'hidrofugar-fachada-piedra-ladrillo', 'pintar-fachada-exterior'],
@@ -3126,7 +3119,7 @@ window.SOLUCIONES_DATA = (function () {
         { etiqueta: 'Acabado brillante', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.NEGRO', precio: '48,34 €' },
         { etiqueta: 'Acabado mate', nombre: 'COLORLUX MATE C/POLIURETANO 4 L.NEGRO', precio: '48,34 €' },
         { etiqueta: 'Imprimación en gris', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.GRIS', precio: '50,83 €' },
-        { etiqueta: 'Trabajos pequeños', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 750 GRIS', precio: '10,64 €' },
+        { etiqueta: 'Trabajos pequeños', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 750 ML.BLAN', precio: '11,37 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-metalica-corrosion', 'pintar-radiador-calefaccion'],
       seo: {
@@ -3334,12 +3327,7 @@ window.SOLUCIONES_DATA = (function () {
       recommendedProducts: [
         { nombre: 'TITANLUX ASPECTO CERAMICO 750 ML.BLANCO', categoria: 'Pinturas', formato: '750 ml', precio: '33,89 €' },
       ],
-      alternativeProducts: [
-        { etiqueta: 'Tono marfil', nombre: 'TITANLUX ASPECTO CERAMICO 750 ML.MARFIL', precio: '28,04 €' },
-        { etiqueta: 'Tono visón', nombre: 'TITANLUX ASPECTO CERAMICO 750 ML.VISON', precio: '28,04 €' },
-        { etiqueta: 'Tono gris cinzento', nombre: 'TITANLUX ASPECTO CERAMICO 750 MLGRIS CINZENTO', precio: '28,04 €' },
-        { etiqueta: 'Formulación Sanitarios', nombre: 'TITANLUX ASPECTO CERAMICO SANT.750 ML.BLANCO', precio: '34,04 €' },
-      ],
+      alternativeProducts: [],
       relatedSolutions: ['pintar-azulejos', 'sellar-juntas-bano'],
       seo: {
         title: 'Cómo renovar una bañera, lavabo o sanitario sin cambiarlo | Orencio Matas',
@@ -3819,7 +3807,6 @@ window.SOLUCIONES_DATA = (function () {
         'No limpiar el polvo entre pasadas de distinto grano.',
       ],
       recommendedProducts: [
-        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 080 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
         { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
         { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 060 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
       ],
