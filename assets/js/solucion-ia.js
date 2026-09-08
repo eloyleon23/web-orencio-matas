@@ -437,11 +437,11 @@
           <p>Buscando una alternativa…</p>
         `;
         cargando.style.display = '';
-        D.obtenerTaxonomiaCatalogo().then((taxonomia) => fetch(url, {
+        D.obtenerTaxonomiaCatalogo().then((taxonomia) => D.buscarCandidatosProductosParaIA(consulta).then((candidatosProductos) => fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ accion: 'buscar_producto_ia', consulta, taxonomia, terminosPrevios: terminosProductosUsados }),
-        }))
+          body: JSON.stringify({ accion: 'buscar_producto_ia', consulta, taxonomia, candidatosProductos, terminosPrevios: terminosProductosUsados }),
+        })))
           .then((res) => res.json())
           .then((data) => {
             cargando.style.display = 'none';

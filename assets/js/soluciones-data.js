@@ -5610,6 +5610,59 @@ window.SOLUCIONES_DATA = (function () {
   // sistema, `fueraDeAlcance` viene en `true` con un `mensaje` para
   // mostrar, y ninguno de los demás campos se rellena (nunca se genera
   // ni una guía ni productos para ese caso).
+  // ── Candidatos reales del catálogo para anclar la IA ────────────────────
+  // A petición de Eloy, tras un fallo grave detectado en pruebas reales:
+  // preguntar "qué puedo hacer con la pintura P40 de TitanPro" (un
+  // producto REAL de nuestro catálogo) devolvió una guía inventada sobre
+  // "aplicar masilla de poliéster para reparaciones de carrocería" — un
+  // tema completamente distinto, y productos de una marca de
+  // herramientas (Werku) sin ninguna relación. Causa real: el prompt le
+  // pedía a Gemini generar una respuesta desde su conocimiento general,
+  // sin darle NUNCA ningún producto real de nuestro catálogo como
+  // referencia — así que "P-40" (que en jerga de carrocería es también
+  // un grano de lija muy común) lo llevó a alucinar sobre reparación de
+  // carrocería en vez de sobre la pintura de pared que de verdad existe
+  // con ese código.
+  //
+  // Esta función busca en el catálogo YA CARGADO (sin ninguna llamada
+  // adicional) los productos reales cuyo nombre coincide con palabras de
+  // la consulta, y se manda esa lista corta a Gemini como ANCLA
+  // obligatoria — si alguno coincide de verdad con lo que pregunta el
+  // cliente, la respuesta debe basarse en ESE producto real, nunca en
+  // una suposición genérica. Es la MISMA idea que llevamos usando en el
+  // buscador con la búsqueda de código corto (p60, pxb-730): antes de
+  // dejar que la IA "adivine", comprobar primero qué existe de verdad.
+  function buscarCandidatosProductosParaIA(texto) {
+    const palabras = palabrasSignificativas(texto);
+    if (!palabras.length) return Promise.resolve([]);
+    return cargarCatalogoReal().then((productos) => {
+      const resultados = [];
+      productos.forEach((p) => {
+        const nombreNorm = normalizarTexto(p.nombre || '');
+        let puntuacion = 0;
+        palabras.forEach((w) => {
+          // Un código de producto (p. ej. "p40" en la consulta
+          // coincidiendo con "P-40" en el nombre real, ignorando el
+          // guion) es una señal MUCHO más fuerte y específica que una
+          // palabra suelta cualquiera — sin este peso extra, un
+          // candidato genuino como "TITANPRO P-40..." podía quedar
+          // hundido entre otros productos que solo comparten una
+          // palabra genérica como "pintura" (bug real detectado tras
+          // las pruebas de Eloy con "P40 de TitanPro").
+          if (coincideCodigoProducto(nombreNorm, w)) puntuacion += 3;
+          else if (contienePalabra(nombreNorm, w)) puntuacion += 1;
+        });
+        if (puntuacion > 0) resultados.push({ producto: p, puntuacion });
+      });
+      resultados.sort((a, b) => b.puntuacion - a.puntuacion);
+      // Compacto a propósito (solo nombre + área + familia) — no hace
+      // falta precio/ref/imagen para que la IA sepa que el producto
+      // existe de verdad y de qué tipo es; eso mantiene el prompt
+      // pequeño y rápido, igual que el resto de esta integración.
+      return resultados.slice(0, 8).map((r) => `${r.producto.nombre} (${r.producto.area} > ${r.producto.familia})`);
+    });
+  }
+
   function buscarSolucionIA(texto, signal) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
     // errorTecnico distingue "no se ha encontrado nada" (búsqueda
@@ -5636,10 +5689,10 @@ window.SOLUCIONES_DATA = (function () {
     // aplicado en buscador.html. Si no se pasa ninguna señal, la
     // petición no tiene límite de tiempo por este lado (queda sujeta
     // solo al límite natural del navegador/red).
-    return obtenerTaxonomiaCatalogo().then((taxonomia) => fetch(url, {
+    return Promise.all([obtenerTaxonomiaCatalogo(), buscarCandidatosProductosParaIA(texto)]).then(([taxonomia, candidatosProductos]) => fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones de buscador.html
-      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia }),
+      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia, candidatosProductos }),
       signal: signal,
     }))
       .then((res) => res.json())
@@ -5673,6 +5726,6 @@ window.SOLUCIONES_DATA = (function () {
     acciones, superficies, estados, usos, tamanos, resultados,
     problemasFrecuentes, areas, solucionesDestacadas, soluciones,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo,
+    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo, buscarCandidatosProductosParaIA,
   };
 })();

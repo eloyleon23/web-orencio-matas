@@ -5861,6 +5861,60 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return lista.sort();
     }
 
+    // Candidatos reales del catálogo para anclar la IA — mismo mecanismo
+    // y mismo porqué que en el Centro de Soluciones
+    // (buscarCandidatosProductosParaIA en soluciones-data.js): a
+    // petición de Eloy, tras un fallo real detectado en pruebas
+    // (preguntar por un producto real devolvía productos de una marca
+    // sin ninguna relación), se manda a Gemini una lista corta de
+    // productos REALES que coinciden por palabras con la consulta, para
+    // que sus TERMINOS se ANCLEN a lo que existe de verdad en el
+    // catálogo en vez de a una suposición de su conocimiento general.
+    // Palabras vacías comunes que no aportan significado — sin filtrarlas,
+    // "con" en "hacer con la pintura..." coincidía por subcadena dentro
+    // de nombres reales como "CONCHA" o "CONCENT.", metiendo candidatos
+    // sin ninguna relación real (bug real detectado tras las pruebas de
+    // Eloy con "P40 de TitanPro").
+    const STOPWORDS_CANDIDATOS_IA = new Set(['que', 'para', 'como', 'pero', 'desde', 'esta', 'este', 'estos', 'estas', 'tengo', 'necesito', 'quiero', 'puedo', 'hacer', 'tiene', 'sobre', 'entre', 'donde', 'cuando', 'unos', 'unas', 'poco', 'muy', 'con', 'del', 'las', 'los', 'una', 'uno']);
+    function calcularCandidatosProductosParaIA(texto) {
+        const palabras = normalizar(texto).split(/[^a-z0-9áéíóúñ]+/i).filter(w => w.length >= 3 && !STOPWORDS_CANDIDATOS_IA.has(w));
+        if (!palabras.length) return [];
+        const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        const resultados = [];
+        activos.forEach(p => {
+            const nombreNorm = normalizar(p.nombre || '');
+            const nombreSinSep = nombreNorm.replace(/[^a-z0-9]/g, '');
+            let puntuacion = 0;
+            palabras.forEach(w => {
+                const wSinSep = w.replace(/[^a-z0-9]/g, '');
+                // Un código de producto (p. ej. "p40" coincidiendo con
+                // "P-40" en el nombre real, ignorando el guion) es una
+                // señal MUCHO más fuerte y específica que una palabra
+                // suelta cualquiera — mismo criterio ya usado en
+                // coincide(), con la misma protección de no quedar
+                // "pegado" a otro dígito (para que "p60" no encuentre el
+                // "60" de "hp600"). Sin este peso extra, un candidato
+                // genuino podía quedar hundido entre productos que solo
+                // comparten una palabra genérica (bug real detectado
+                // tras las pruebas de Eloy con "P40 de TitanPro").
+                if (wSinSep.length >= 3) {
+                    const i = nombreSinSep.indexOf(wSinSep);
+                    if (i !== -1 && !/\d/.test(nombreSinSep.charAt(i + wSinSep.length) || '')) { puntuacion += 3; return; }
+                }
+                // Coincidencia por PALABRA COMPLETA, no subcadena — sin
+                // esto, "con" (de "con la pintura") coincidía dentro de
+                // "CONCHA" o "CONCENT.", metiendo candidatos sin
+                // relación real (mismo tipo de bug ya corregido antes en
+                // otros buscadores del sitio: "olor" dentro de
+                // "incolora").
+                if (new RegExp('(^|[^a-z0-9áéíóúñ])' + w + '($|[^a-z0-9áéíóúñ])').test(nombreNorm)) puntuacion += 1;
+            });
+            if (puntuacion > 0) resultados.push({ producto: p, puntuacion });
+        });
+        resultados.sort((a, b) => b.puntuacion - a.puntuacion);
+        return resultados.slice(0, 8).map(r => `${r.producto.nombre} (${r.producto.area} > ${r.producto.familia})`);
+    }
+
     // Puntuación por número de palabras coincidentes (no la coincidencia
     // estricta "todas las palabras" de coincide(), que sería demasiado
     // exigente para una sopa de palabras clave generada por IA) — mismo
@@ -5991,6 +6045,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS
             body: JSON.stringify({
                 accion: 'buscar_producto_ia', consulta: texto, taxonomia: calcularTaxonomiaProductos(),
+                candidatosProductos: calcularCandidatosProductosParaIA(texto),
                 // Solo en "otra vez": los términos ya probados, para que
                 // la IA intente un enfoque genuinamente distinto en vez
                 // de devolver prácticamente lo mismo otra vez.
