@@ -4437,6 +4437,11 @@ function procesarSugerirComplementariosIA(data) {
     const producto = data.producto || {};
     const nombreProducto = (producto.nombre || '').toString().trim();
     const candidatos = Array.isArray(data.candidatos) ? data.candidatos : [];
+    // A petición de Eloy: límite dinámico según cuántos complementarios
+    // ya se estén mostrando (hasta un máximo total) — el cliente calcula
+    // el hueco disponible y lo manda aquí; por defecto (si no llega) se
+    // mantiene el comportamiento anterior de hasta 4.
+    const maximo = Number.isInteger(data.maximo) && data.maximo > 0 ? Math.min(data.maximo, 4) : 4;
     if (!nombreProducto || !candidatos.length) {
       throw new Error('Faltan datos requeridos: producto o candidatos');
     }
@@ -4448,11 +4453,11 @@ function procesarSugerirComplementariosIA(data) {
       'perfumería, pinturas y suministros para talleres y carrocerías.\n' +
       'Un cliente está viendo la ficha de este producto:\n"' + nombreProducto + '" (categoría: ' + (producto.area || '') + ' > ' + (producto.familia || '') + ')\n\n' +
       'Estos son productos REALES de nuestro catálogo que podrían ser un buen complemento (cópialos EXACTAMENTE tal cual aparecen, letra por letra, si los eliges):\n' + candidatos.join('\n') + '\n\n' +
-      'Elige de 2 a 4 de esos candidatos que un cliente razonablemente compraría JUNTO CON el producto principal para completar el trabajo — herramientas de aplicación, productos del paso anterior o posterior del proceso, protección, limpieza de herramientas, etc. NUNCA seleccione el mismo producto, ni una variante de él (mismo tipo de producto en otro color/tamaño/formato) — eso no es un complemento, es el mismo producto. Si de verdad ninguno de los candidatos tiene sentido como complemento real, no elijas ninguno.\n\n' +
+      'Elige hasta ' + maximo + ' de esos candidatos (pueden ser menos si no hay tantos que encajen de verdad) que un cliente razonablemente compraría JUNTO CON el producto principal para completar el trabajo — herramientas de aplicación, productos del paso anterior o posterior del proceso, protección, limpieza de herramientas, etc. NUNCA elijas el mismo producto, ni una variante de él (mismo tipo de producto en otro color/tamaño/formato) — eso no es un complemento, es el mismo producto. Si de verdad ninguno de los candidatos tiene sentido como complemento real, no elijas ninguno.\n\n' +
       'Responde EXACTAMENTE con este formato, una línea por cada producto elegido, copiando el nombre TAL CUAL aparece arriba (sin numerar, sin nada más):\n' +
       'PRODUCTO: nombre exacto del candidato 1\n' +
       'PRODUCTO: nombre exacto del candidato 2\n' +
-      '(y así hasta un máximo de 4 líneas — si no eliges ninguno, no escribas ninguna línea PRODUCTO)';
+      '(y así hasta un máximo de ' + maximo + ' líneas — si no eliges ninguno, no escribas ninguna línea PRODUCTO)';
 
     const r = llamarGemini_(prompt, 200);
     if (!r.ok) {
@@ -4474,7 +4479,7 @@ function procesarSugerirComplementariosIA(data) {
     // comprueba contra la lista real de candidatos antes de aceptarlo. Si
     // la IA "alucinara" un nombre parecido pero no exacto, se descarta en
     // vez de mostrarlo como si fuera real.
-    const sugerenciasValidas = elegidos.filter((nombre) => candidatos.indexOf(nombre) !== -1).slice(0, 4);
+    const sugerenciasValidas = elegidos.filter((nombre) => candidatos.indexOf(nombre) !== -1).slice(0, maximo);
     console.log('Complementarios IA — producto:', nombreProducto, '| elegidos por la IA:', JSON.stringify(elegidos), '| válidos tras comprobar:', JSON.stringify(sugerenciasValidas));
 
     return ContentService.createTextOutput(JSON.stringify({

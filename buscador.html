@@ -6936,86 +6936,85 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return regla.sugerir(catalogo).filter(Boolean).slice(0, 3);
     }
 
-    // ── Sugerencia de complementarios "al vuelo" con IA (PRUEBA DE
-    // CONCEPTO) ──────────────────────────────────────────────────────
-    // A petición de Eloy: "me preocupa mucho que las sugerencias sobre
-    // los productos no sean adecuadas. Podríamos hacer una prueba con un
-    // área y unas familias determinadas... si no, siempre podríamos
-    // dejarlo sin incluir". Alcance limitado a una lista explícita y
-    // reducida, no todo el catálogo, y solo bajo demanda (nunca
-    // automático).
+    // ── Sugerencia de complementarios "al vuelo" con IA ─────────────────
+    // A petición de Eloy: tras validar el mecanismo con droguería/pinturas,
+    // "te diría que lo integres en toda las áreas, familias y productos".
+    // Se quita el mapa manual de familias "complementarias" (que solo
+    // cubría un piloto reducido) y se sustituye por un muestreo
+    // ESTRATIFICADO por familia dentro de la MISMA área del producto — así
+    // funciona para cualquier producto de cualquier área sin tener que
+    // mantener a mano una lista de qué familia complementa a cuál.
     //
-    // HISTORIAL DEL ALCANCE (por qué el diseño es como es):
-    // 1er intento: talleres > ACABADO DE VEHICULOS. Funcionaba (el
-    //   botón sí se activaba, porque talleres no tiene ningún respaldo
-    //   de reglas fijas), pero Eloy pidió descartarlo: "los productos
-    //   de talleres es complejo de validar por falta de contexto y los
-    //   productos son muy técnicos" — más difícil juzgar si una
-    //   sugerencia tiene sentido de verdad sin ser especialista.
-    // 2º intento (actual): pinturas y droguería, que Eloy conoce bien y
-    //   puede evaluar con criterio directo. PERO estas dos áreas SÍ
-    //   tienen reglas fijas antiguas que cubren el 100% de sus
-    //   productos (productosComplementarios/productosComplementariosDrogueria)
-    //   — así que si el botón solo apareciera "cuando no hay nada más",
-    //   NUNCA llegaría a mostrarse aquí, igual que ya pasó al probarlo
-    //   la primera vez con pinturas. Por eso aquí el comportamiento es
-    //   distinto: el botón se muestra SIEMPRE que el producto esté en
-    //   esta lista, COMO OPCIÓN ADICIONAL para comparar, aunque ya haya
-    //   sugerencias de las reglas fijas o de "relacionados" — así Eloy
-    //   puede ver ambas cosas una junto a la otra y juzgar la calidad
-    //   real de la IA con conocimiento de causa.
+    // Mismo principio anti-alucinación que el resto de la integración: la
+    // IA nunca inventa un producto — solo puede ELEGIR entre una lista de
+    // productos REALES ya sacados del catálogo, y cada elección se vuelve
+    // a comprobar contra esa misma lista antes de aceptarla (ver
+    // procesarSugerirComplementariosIA en Apps Script).
     //
-    // Mismo principio anti-alucinación que el resto de la integración:
-    // la IA nunca inventa un producto — solo puede ELEGIR entre una
-    // lista de productos REALES del catálogo (de las familias marcadas
-    // aquí como "complementarias" de cada familia principal), y cada
-    // elección se vuelve a comprobar contra esa misma lista antes de
-    // aceptarla (ver procesarSugerirComplementariosIA en Apps Script).
-    const PILOTO_COMPLEMENTARIOS_IA = {
-        'pinturas > AKZONOBEL': ['pinturas > BROCHAS Y UTILES DE APLICACION', 'pinturas > AGUARRAS Y DISOLVENTES', 'pinturas > LIJAS'],
-        'pinturas > PINTURAS TITAN': ['pinturas > BROCHAS Y UTILES DE APLICACION', 'pinturas > AGUARRAS Y DISOLVENTES', 'pinturas > LIJAS'],
-        'drogueria > DETERGENTES ROPA': ['drogueria > SUAVIZANTES ROPA', 'drogueria > QUITAMANCHAS', 'drogueria > AZULETES Y ADITIVOS LAVADO'],
-        'drogueria > LIMPIADORES LIQUIDOS': ['drogueria > BAYETAS, GAMUZAS Y PAÑOS', 'drogueria > ESTROPAJOS', 'drogueria > GUANTES'],
-    };
+    // A petición de Eloy: nunca debe sugerir un producto que YA esté en
+    // la lista de complementarios mostrados (ni los de "relacionados"/
+    // reglas fijas, ni los que ya haya traído la propia IA en una vuelta
+    // anterior) — refsComplementariosMostrados se usa tanto para excluir
+    // candidatos como para saber cuántos quedan hasta el máximo.
+    const MAX_COMPLEMENTARIOS_TOTAL = 8;
     const MAX_CANDIDATOS_COMPLEMENTARIOS_IA = 30;
+    let refsComplementariosMostrados = [];
 
-    function clavePilotoComplementarios(p) {
-        return `${p.area} > ${p.familia}`;
-    }
-
-    // Muestreo aleatorio (no siempre los primeros N del catálogo, para no
-    // repetir exactamente los mismos candidatos en cada visita al mismo
-    // tipo de producto) de productos reales de las familias
-    // complementarias configuradas para la familia principal del
-    // producto que se está viendo.
-    function calcularCandidatosComplementarios(p) {
-        const familiasComplementarias = PILOTO_COMPLEMENTARIOS_IA[clavePilotoComplementarios(p)];
-        if (!familiasComplementarias) return [];
-        const claves = new Set(familiasComplementarias);
+    // Muestreo estratificado: agrupa por familia (dentro de la misma área
+    // del producto, excluyendo su propia familia — eso serían variantes
+    // del mismo producto, no un complemento) y va tomando de una familia
+    // distinta cada vez por turnos, en vez de un muestreo puramente
+    // aleatorio de toda el área (que sobrerrepresentaría a las familias
+    // más grandes y podría no incluir ninguna familia realmente
+    // complementaria). Cada familia se baraja también internamente para
+    // no repetir siempre los mismos productos de cada una.
+    function calcularCandidatosComplementarios(p, refsExcluir) {
+        const excluir = new Set(refsExcluir || []);
         const activos = TODOS.filter(x =>
             x.ref !== p.ref &&
-            !(x.fecha_baja && x.fecha_baja.toString().trim()) &&
-            claves.has(`${x.area} > ${x.familia}`)
+            x.area === p.area &&
+            x.familia !== p.familia &&
+            !excluir.has(x.ref) &&
+            !(x.fecha_baja && x.fecha_baja.toString().trim())
         );
-        // Baraja simple (Fisher-Yates) antes de recortar, así el
-        // muestreo no se queda siempre con el mismo orden del JSON.
-        for (let i = activos.length - 1; i > 0; i--) {
+        const porFamilia = {};
+        activos.forEach(x => { (porFamilia[x.familia] = porFamilia[x.familia] || []).push(x); });
+        const familias = Object.keys(porFamilia);
+        for (let i = familias.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [activos[i], activos[j]] = [activos[j], activos[i]];
+            [familias[i], familias[j]] = [familias[j], familias[i]];
         }
-        return activos.slice(0, MAX_CANDIDATOS_COMPLEMENTARIOS_IA);
+        familias.forEach(f => {
+            const lista = porFamilia[f];
+            for (let i = lista.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [lista[i], lista[j]] = [lista[j], lista[i]];
+            }
+        });
+        const candidatos = [];
+        let indice = 0;
+        while (candidatos.length < MAX_CANDIDATOS_COMPLEMENTARIOS_IA && familias.some(f => porFamilia[f].length > indice)) {
+            familias.forEach(f => {
+                if (candidatos.length >= MAX_CANDIDATOS_COMPLEMENTARIOS_IA) return;
+                if (porFamilia[f][indice]) candidatos.push(porFamilia[f][indice]);
+            });
+            indice++;
+        }
+        return candidatos;
     }
 
     function pedirComplementariosIA(p) {
         const btn = $('btn-complementarios-ia');
         const mensaje = $('complementarios-ia-mensaje');
-        const lista = $('complementarios-lista');
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) return;
 
-        const candidatos = calcularCandidatosComplementarios(p);
+        const huecoDisponible = MAX_COMPLEMENTARIOS_TOTAL - refsComplementariosMostrados.length;
+        if (huecoDisponible <= 0) { btn.style.display = 'none'; return; }
+
+        const candidatos = calcularCandidatosComplementarios(p, refsComplementariosMostrados);
         if (!candidatos.length) {
-            mensaje.textContent = 'No hay suficientes productos de referencia para sugerir algo con la IA.';
+            mensaje.textContent = 'No hay más productos de referencia para sugerir con la IA.';
             mensaje.style.display = '';
             btn.style.display = 'none';
             return;
@@ -7032,14 +7031,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 accion: 'sugerir_complementarios_ia',
                 producto: { nombre: p.nombre, area: p.area, familia: p.familia },
                 candidatos: candidatos.map(c => c.nombre),
+                maximo: Math.min(4, huecoDisponible),
             }),
         })
           .then(res => res.json())
           .then(data => {
               btn.disabled = false;
-              btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Sugerir con IA';
 
               if (!data || !data.success) {
+                  btn.innerHTML = textoBotonComplementariosIA();
                   mensaje.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente. Vuelve a intentarlo en unos segundos.';
                   mensaje.style.display = '';
                   return;
@@ -7048,36 +7048,51 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               // candidatos ya en memoria (no hace falta otra búsqueda) —
               // el servidor ya comprobó que cada nombre es EXACTO a uno
               // de los candidatos, así que esto siempre debería
-              // encontrar coincidencia.
+              // encontrar coincidencia. Se recorta también aquí al hueco
+              // disponible, por si la IA devolviera alguno de más.
               const sugerencias = (data.sugerencias || [])
                   .map(nombre => candidatos.find(c => c.nombre === nombre))
-                  .filter(Boolean);
+                  .filter(Boolean)
+                  .slice(0, huecoDisponible);
               if (!sugerencias.length) {
+                  btn.innerHTML = textoBotonComplementariosIA();
                   mensaje.textContent = 'La IA no ha encontrado ningún complemento claro para este producto.';
                   mensaje.style.display = '';
-                  btn.style.display = 'none';
                   return;
               }
               renderComplementarios(sugerencias, { append: true, esIA: true });
-              btn.style.display = 'none';
+              refsComplementariosMostrados = refsComplementariosMostrados.concat(sugerencias.map(s => s.ref));
+              if (refsComplementariosMostrados.length >= MAX_COMPLEMENTARIOS_TOTAL) {
+                  btn.style.display = 'none';
+              } else {
+                  btn.innerHTML = textoBotonComplementariosIA();
+              }
           })
           .catch(err => {
               console.error('Error en pedirComplementariosIA:', err);
               btn.disabled = false;
-              btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Sugerir con IA';
+              btn.innerHTML = textoBotonComplementariosIA();
               mensaje.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente. Vuelve a intentarlo en unos segundos.';
               mensaje.style.display = '';
           });
     }
 
+    // A petición de Eloy, para que el botón sea "más descriptivo para el
+    // usuario": "Ver sugerencias con IA" si todavía no se ha mostrado
+    // nada (ni relacionados ni reglas fijas), o "Ver más sugerencias con
+    // IA" si ya había algo — así se distingue con claridad si se está
+    // pidiendo la primera ronda o una adicional.
+    function textoBotonComplementariosIA() {
+        const texto = refsComplementariosMostrados.length ? 'Ver más sugerencias con IA' : 'Ver sugerencias con IA';
+        return `<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> ${texto}`;
+    }
+
     // Extraído de configurarComplementarios para poder reutilizarlo
     // también al pintar las sugerencias que llegan de la IA. `opciones.
-    // append` añade a lo que ya hubiera en vez de sustituirlo (para
-    // poder comparar visualmente sugerencia normal vs. sugerencia de
-    // IA), y `opciones.esIA` añade una pequeña etiqueta "IA" a cada
-    // tarjeta para distinguir el origen — a petición de Eloy, que en el
-    // piloto de pinturas/droguería quiere ver ambas sugerencias juntas,
-    // no que la IA sustituya silenciosamente lo que ya había.
+    // append` añade a lo que ya hubiera en vez de sustituirlo (para poder
+    // comparar visualmente sugerencia normal vs. sugerencia de IA), y
+    // `opciones.esIA` añade una pequeña etiqueta "IA" a cada tarjeta para
+    // distinguir el origen.
     function renderComplementarios(sugerencias, opciones) {
         opciones = opciones || {};
         const lista = $('complementarios-lista');
@@ -7121,8 +7136,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         btnIA.style.display = 'none';
         mensajeIA.style.display = 'none';
         btnIA.onclick = null;
-
-        const enPiloto = !!PILOTO_COMPLEMENTARIOS_IA[clavePilotoComplementarios(p)];
+        lista.innerHTML = '';
+        refsComplementariosMostrados = [];
 
         // Prioridad: la columna "relacionados" del Excel (editable
         // directamente ahí, sin tocar código) — si el producto la tiene
@@ -7157,26 +7172,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
 
-        if (!sugerencias.length && !enPiloto) {
-            bloque.style.display = 'none';
-            return;
+        if (sugerencias.length) {
+            renderComplementarios(sugerencias);
+            refsComplementariosMostrados = sugerencias.map(s => s.ref);
         }
 
-        // A petición de Eloy: en el alcance limitado del piloto de IA
-        // (pinturas y droguería, ver PILOTO_COMPLEMENTARIOS_IA), el
-        // botón "Sugerir con IA" se muestra SIEMPRE que el producto entre
-        // en ese alcance — incluso si ya hay sugerencias de "relacionados"
-        // o de las reglas fijas antiguas — como opción ADICIONAL para
-        // comparar, no solo como respaldo cuando falta cobertura. Estas
-        // dos áreas ya tienen sus propias sugerencias casi siempre, así
-        // que mostrar el botón solo "cuando no hay nada más" nunca
-        // llegaría a activarse en la práctica (ya pasó al probarlo la
-        // primera vez).
-        lista.innerHTML = '';
-        if (sugerencias.length) renderComplementarios(sugerencias);
         bloque.style.display = 'block';
-        if (enPiloto) {
+        // El botón de IA se ofrece siempre (como primera sugerencia si
+        // todavía no había nada, o como opción "ver más" para comparar
+        // si ya había relacionados/reglas fijas) — salvo que ya se haya
+        // alcanzado el máximo de complementarios a mostrar.
+        if (refsComplementariosMostrados.length < MAX_COMPLEMENTARIOS_TOTAL) {
             btnIA.style.display = '';
+            btnIA.innerHTML = textoBotonComplementariosIA();
             btnIA.onclick = () => pedirComplementariosIA(p);
         }
     }
