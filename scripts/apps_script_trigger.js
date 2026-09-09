@@ -17,6 +17,17 @@ const DRIVE_IMAGENES_ID   = '13O7N_q6IisAhsvSoXogKJ2PUDVQfUKRe';
 // ya no hace falta, hace tiempo que no se usa la clave desde el cliente.
 const BREVO_API_KEY = 'PON_AQUI_LA_NUEVA_CLAVE_DE_BREVO';
 
+// Clave SECRETA de reCAPTCHA v2 — a petición de Eloy, protección
+// anti-bots del formulario de contacto. Se consigue en
+// https://www.google.com/recaptcha/admin/create (junto con la SITE_KEY,
+// que va en index.html — esa sí puede ser pública, esta NO). Mientras
+// siga con este valor de PRUEBA oficial de Google (documentado en
+// https://developers.google.com/recaptcha/docs/faq — siempre válido,
+// pensado para desarrollo), la verificación pasa siempre y NO protege
+// de verdad, exactamente igual que la SITE_KEY de prueba en index.html.
+// Sustituir por la clave secreta real en cuanto Eloy la consiga.
+const RECAPTCHA_SECRET_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
+
 // Clave de API de Google Gemini — usada SOLO desde aquí, en el servidor,
 // para la búsqueda inteligente del Centro de Soluciones (ver
 // procesarBuscarSolucionIA más abajo). Se obtiene gratis en
@@ -3944,9 +3955,32 @@ function procesarEnviarContacto(data) {
     const email = data.email;
     const cuerpoHtml = data.cuerpoHtml;
     const area = (data.area || '').toString().trim();
+    const honeypot = (data.honeypot || '').toString().trim();
+    const tokenRecaptcha = (data.tokenRecaptcha || '').toString().trim();
+
+    // Honeypot: un bot que rellene este campo invisible (que el
+    // formulario real nunca muestra a una persona) se detecta aquí. Se
+    // finge éxito SIN mandar nada de verdad a Brevo — ni error visible
+    // para el bot, ni gasto de la cuota de envío de Brevo en spam.
+    if (honeypot) {
+      console.log('Formulario de contacto: honeypot relleno, descartado como spam silenciosamente');
+      return ContentService.createTextOutput(JSON.stringify({ success: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
     if (!nombre || !email || !cuerpoHtml) {
       throw new Error('Faltan datos requeridos: nombre, email o cuerpoHtml');
+    }
+
+    // reCAPTCHA — nunca basta con que el cliente diga que el usuario
+    // marcó la casilla; el servidor tiene que confirmarlo de verdad
+    // contra Google, o un bot podría saltarse la comprobación del
+    // navegador llamando directamente a este mismo endpoint.
+    if (!tokenRecaptcha || !verificarRecaptcha_(tokenRecaptcha)) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: 'No se ha podido verificar que no eres un robot. Por favor, vuelve a marcar la casilla de reCAPTCHA e inténtalo de nuevo.',
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     const destino = area === 'talleres'
@@ -3987,6 +4021,28 @@ function procesarEnviarContacto(data) {
     console.error('Error en procesarEnviarContacto:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Verifica un token de reCAPTCHA v2 contra la API oficial de Google.
+// Devuelve true solo si Google confirma success:true — cualquier fallo
+// de red o respuesta inesperada se trata como "no verificado" (nunca se
+// deja pasar un envío por duda, mejor pedir que se repita el checkbox).
+function verificarRecaptcha_(token) {
+  try {
+    const resp = UrlFetchApp.fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'post',
+      payload: { secret: RECAPTCHA_SECRET_KEY, response: token },
+      muteHttpExceptions: true,
+    });
+    const datos = JSON.parse(resp.getContentText());
+    if (!datos.success) {
+      console.error('reCAPTCHA no verificado:', JSON.stringify(datos['error-codes'] || []));
+    }
+    return !!datos.success;
+  } catch (err) {
+    console.error('Error al verificar reCAPTCHA:', err);
+    return false;
   }
 }
 
