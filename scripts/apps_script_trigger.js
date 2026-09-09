@@ -3920,19 +3920,42 @@ function procesarMarcarSinImagen(data) {
 // correo se sigue construyendo en el cliente (mismo diseño de siempre,
 // sin duplicar esa lógica aquí), pero el ENVÍO real pasa por aquí — la
 // clave de Brevo (ver BREVO_API_KEY arriba) nunca llega al navegador.
+//
+// Remitente actualizado a correo@orenciomatas.es (antes eloyleon23@gmail.com,
+// una dirección de pruebas) — verificado en Brevo por Eloy el 09/09/2026.
+// IMPORTANTE, lección real aprendida ese mismo día: Brevo exige que la
+// dirección de "sender" exista como remitente verificado en la cuenta;
+// si en algún momento se vuelve a EDITAR esa entrada en Brevo (en vez de
+// añadir una nueva) cambiando su email, la dirección antigua deja de
+// estar verificada de golpe y el envío empieza a fallar con "Sending has
+// been rejected because the sender you used ... is not valid" — hay que
+// mantener SIEMPRE el remitente de aquí sincronizado con lo que de
+// verdad está verificado en Brevo, nunca al revés.
+//
+// Separación por área (a petición de Eloy): el formulario tiene un
+// selector con dos opciones — "Droguería, Perfumería y Pinturas" (por
+// defecto) envía a correo@orenciomatas.es; "Talleres y Carrocerías" envía
+// a carroceria@orenciomatas.es (dirección ya añadida y verificada en
+// Brevo). Si el área no llega informada o no coincide con "talleres", se
+// usa el destino general por defecto — nunca se deja sin destino.
 function procesarEnviarContacto(data) {
   try {
     const nombre = data.nombre;
     const email = data.email;
     const cuerpoHtml = data.cuerpoHtml;
+    const area = (data.area || '').toString().trim();
 
     if (!nombre || !email || !cuerpoHtml) {
       throw new Error('Faltan datos requeridos: nombre, email o cuerpoHtml');
     }
 
+    const destino = area === 'talleres'
+      ? { email: 'carroceria@orenciomatas.es', name: 'Orencio Matas y Hnos — Talleres y Carrocerías' }
+      : { email: 'correo@orenciomatas.es', name: 'Orencio Matas y Hnos' };
+
     const payload = {
-      sender: { name: nombre, email: 'eloyleon23@gmail.com' },
-      to: [{ email: 'correo@orenciomatas.es', name: 'Orencio Matas y Hnos' }],
+      sender: { name: nombre, email: 'correo@orenciomatas.es' },
+      to: [destino],
       replyTo: { email: email, name: nombre },
       subject: 'Consulta recibida a través del formulario web — Orencio Matas y Hermanos',
       htmlContent: cuerpoHtml,

@@ -432,6 +432,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <input class="form-input" type="tel" name="telefono" id="form-telefono" autocomplete="tel" placeholder="Tu teléfono" />
             </label>
             <label>
+              <span>Área de tu consulta</span>
+              <select class="form-input" name="area" id="form-area">
+                <option value="general" selected>Droguería, Perfumería y Pinturas</option>
+                <option value="talleres">Talleres y Carrocerías</option>
+              </select>
+            </label>
+            <label>
               <span>Email</span>
               <input class="form-input" type="email" name="email" id="form-email" autocomplete="email" placeholder="tu@email.com" required />
             </label>
@@ -458,6 +465,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                 var nombre = document.getElementById('form-nombre').value.trim();
                 var telefono = document.getElementById('form-telefono').value.trim();
+                var area = document.getElementById('form-area').value;
                 var email = document.getElementById('form-email').value.trim();
                 var mensaje = document.getElementById('form-mensaje').value.trim();
                 var privacidad = document.getElementById('form-privacidad').checked;
@@ -495,6 +503,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   '<table width="100%" cellpadding="0" cellspacing="0">' +
                   '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;width:100px;">Nombre</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombre + '</td></tr>' +
                   (telefono ? '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Teléfono</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + telefono + '</td></tr>' : '') +
+                  '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Área</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + (area === 'talleres' ? 'Talleres y Carrocerías' : 'Droguería, Perfumería y Pinturas') + '</td></tr>' +
                   '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Email</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + email + '</td></tr>' +
                   '<tr><td style="padding:8px 0;color:#888;font-size:11px;vertical-align:top;">Mensaje</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;">' + mensaje.replace(/\n/g, '<br>') + '</td></tr>' +
                   '</table>' +
@@ -531,6 +540,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     accion: 'enviar_contacto',
                     nombre: nombre,
                     email: email,
+                    area: area,
                     cuerpoHtml: cuerpo
                   })
                 })
