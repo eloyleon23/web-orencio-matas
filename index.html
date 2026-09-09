@@ -29,6 +29,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   gtag('config', 'G-HMM85HSJ4Y');
 </script>
+<!-- reCAPTCHA v2 (checkbox "No soy un robot") — a petición de Eloy, como
+     protección adicional del formulario de contacto frente a bots. La
+     SITE_KEY real hay que sustituirla más abajo, en el <div
+     class="g-recaptcha">, cuando Eloy la consiga en
+     https://www.google.com/recaptcha/admin/create (reCAPTCHA v2,
+     "Casilla de verificación"). Mientras siga con la clave de prueba
+     de Google (siempre válida, pensada para desarrollo — nunca bloquea
+     el envío pero tampoco protege de verdad), el formulario sigue
+     funcionando con normalidad. -->
+<script src="https://www.google.com/recaptcha/api.js" defer></script>
 </head>
   <body>
 <!-- Google Tag Manager (noscript) -->
@@ -419,6 +429,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <input type="checkbox" name="privacidad" id="form-privacidad" required />
               <span>Acepto la <a href="politica-privacidad.html">Política de Privacidad</a></span>
             </label>
+            <!-- Honeypot anti-bots: campo invisible para personas, que los
+                 bots de formularios suelen rellenar automáticamente sin
+                 "ver" que está oculto. Si llega con algo escrito, se
+                 descarta el envío como spam (tanto aquí en el cliente como
+                 otra vez en el servidor, por si el bot se salta el
+                 JavaScript). tabindex="-1" y autocomplete="off" evitan que
+                 el propio autorrelleno del navegador lo toque por error. -->
+            <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+              <label>No rellenar este campo
+                <input type="text" name="web" id="form-honeypot" tabindex="-1" autocomplete="off" />
+              </label>
+            </div>
+            <!-- reCAPTCHA v2 — SITE_KEY de PRUEBA oficial de Google
+                 (siempre válida, pensada para desarrollo — NO protege de
+                 verdad, cualquiera la pasa). Sustituir por la clave real
+                 del sitio en cuanto Eloy la consiga en
+                 https://www.google.com/recaptcha/admin/create. -->
+            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
             <div id="form-mensaje-estado" style="display:none; margin-bottom:12px; padding:12px 16px; border-radius:6px; font-weight:600; font-size:0.95rem;"></div>
             <button class="btn-primary" type="submit" id="form-btn-enviar">ENVIAR MENSAJE →</button>
           </form>
@@ -438,9 +466,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 var email = document.getElementById('form-email').value.trim();
                 var mensaje = document.getElementById('form-mensaje').value.trim();
                 var privacidad = document.getElementById('form-privacidad').checked;
+                var honeypot = document.getElementById('form-honeypot').value;
+
+                // Honeypot: si este campo invisible llega con algo escrito,
+                // es casi con seguridad un bot (una persona nunca lo ve ni
+                // lo rellena) — se finge un envío correcto SIN mandar nada
+                // de verdad, para no darle pistas al bot de que fue
+                // detectado (si mostráramos un error, el bot podría
+                // aprender a evitar este campo la próxima vez).
+                if (honeypot) {
+                  mostrarEstado('✓ Mensaje enviado correctamente. Nos pondremos en contacto contigo pronto.', '#1a7a4a', '#edfaf3');
+                  form.reset();
+                  return;
+                }
 
                 if (!nombre || !email || !mensaje || !privacidad) {
                   mostrarEstado('Por favor, rellena todos los campos obligatorios y acepta la política de privacidad.', '#c0392b', '#fdf0ef');
+                  return;
+                }
+
+                // reCAPTCHA — a petición de Eloy, "algo que el usuario
+                // tenga que marcar" antes de poder enviar. Se comprueba
+                // aquí que se haya marcado (grecaptcha.getResponse() no
+                // vacío), y el propio token se manda también al servidor,
+                // que es quien lo verifica de verdad contra Google — el
+                // cliente nunca es de fiar del todo, un bot podría saltarse
+                // esta comprobación llamando directamente al servidor.
+                var tokenRecaptcha = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
+                if (!tokenRecaptcha) {
+                  mostrarEstado('Por favor, confirma que no eres un robot marcando la casilla de reCAPTCHA.', '#c0392b', '#fdf0ef');
                   return;
                 }
 
@@ -510,7 +564,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     nombre: nombre,
                     email: email,
                     area: area,
-                    cuerpoHtml: cuerpo
+                    cuerpoHtml: cuerpo,
+                    tokenRecaptcha: tokenRecaptcha,
+                    honeypot: honeypot
                   })
                 })
                 .then(function (res) { return res.json(); })
@@ -528,6 +584,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 .finally(function () {
                   btn.disabled = false;
                   btn.textContent = 'ENVIAR MENSAJE →';
+                  // El token de reCAPTCHA es de un solo uso — sin
+                  // resetear el widget, un segundo intento (tras un
+                  // fallo, por ejemplo) siempre fallaría la comprobación
+                  // del servidor aunque el usuario ya hubiera marcado la
+                  // casilla antes.
+                  if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
                 });
               });
 
