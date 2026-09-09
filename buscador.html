@@ -2089,6 +2089,7 @@
             text-align: center;
         }
         .complementario-item {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -2100,6 +2101,19 @@
             cursor: pointer;
             text-align: center;
             min-width: 0; /* evita que el texto empuje el ancho de la celda */
+        }
+        .complementario-badge-ia {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            padding: 2px 6px;
+            background: var(--blue);
+            color: #fff;
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            border-radius: 999px;
+            line-height: 1.4;
         }
         .complementario-item:hover { background: #eef2f7; }
         .complementario-item img {
@@ -6924,25 +6938,32 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Sugerencia de complementarios "al vuelo" con IA (PRUEBA DE
     // CONCEPTO) ──────────────────────────────────────────────────────
-    // Mismo alcance limitado: solo se activa para productos de talleres
-    // en la familia "ACABADO DE VEHICULOS" — un área SIN ningún respaldo
-    // de reglas fijas hasta ahora (esas reglas solo cubrían pinturas y
-    // droguería/perfumería), así que aquí el piloto sí llega a activarse
-    // de verdad en la práctica. Si funciona bien, se puede ampliar esta
-    // lista más adelante; si no convence, basta con vaciarla para
-    // desactivar la función entera sin tocar nada más.
-    //
     // A petición de Eloy: "me preocupa mucho que las sugerencias sobre
     // los productos no sean adecuadas. Podríamos hacer una prueba con un
     // área y unas familias determinadas... si no, siempre podríamos
-    // dejarlo sin incluir". Por eso el alcance es una lista explícita y
+    // dejarlo sin incluir". Alcance limitado a una lista explícita y
     // reducida, no todo el catálogo, y solo bajo demanda (nunca
-    // automático). NOTA IMPORTANTE descubierta al probarlo: un primer
-    // intento con familias de "pinturas" (AKZONOBEL/PINTURAS TITAN) no
-    // llegaba a activarse NUNCA en la práctica, porque el sistema de
-    // reglas fijas ya existente (productosComplementarios) cubre TODO
-    // el área de pinturas sin excepción — por eso se eligió talleres en
-    // su lugar, donde no existe ningún respaldo previo.
+    // automático).
+    //
+    // HISTORIAL DEL ALCANCE (por qué el diseño es como es):
+    // 1er intento: talleres > ACABADO DE VEHICULOS. Funcionaba (el
+    //   botón sí se activaba, porque talleres no tiene ningún respaldo
+    //   de reglas fijas), pero Eloy pidió descartarlo: "los productos
+    //   de talleres es complejo de validar por falta de contexto y los
+    //   productos son muy técnicos" — más difícil juzgar si una
+    //   sugerencia tiene sentido de verdad sin ser especialista.
+    // 2º intento (actual): pinturas y droguería, que Eloy conoce bien y
+    //   puede evaluar con criterio directo. PERO estas dos áreas SÍ
+    //   tienen reglas fijas antiguas que cubren el 100% de sus
+    //   productos (productosComplementarios/productosComplementariosDrogueria)
+    //   — así que si el botón solo apareciera "cuando no hay nada más",
+    //   NUNCA llegaría a mostrarse aquí, igual que ya pasó al probarlo
+    //   la primera vez con pinturas. Por eso aquí el comportamiento es
+    //   distinto: el botón se muestra SIEMPRE que el producto esté en
+    //   esta lista, COMO OPCIÓN ADICIONAL para comparar, aunque ya haya
+    //   sugerencias de las reglas fijas o de "relacionados" — así Eloy
+    //   puede ver ambas cosas una junto a la otra y juzgar la calidad
+    //   real de la IA con conocimiento de causa.
     //
     // Mismo principio anti-alucinación que el resto de la integración:
     // la IA nunca inventa un producto — solo puede ELEGIR entre una
@@ -6951,7 +6972,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // elección se vuelve a comprobar contra esa misma lista antes de
     // aceptarla (ver procesarSugerirComplementariosIA en Apps Script).
     const PILOTO_COMPLEMENTARIOS_IA = {
-        'talleres > ACABADO DE VEHICULOS': ['talleres > PROTECCION PERSONAL', 'talleres > UTILES DE PINTURA', 'talleres > PRODUCTOS DE ENMASCARADO'],
+        'pinturas > AKZONOBEL': ['pinturas > BROCHAS Y UTILES DE APLICACION', 'pinturas > AGUARRAS Y DISOLVENTES', 'pinturas > LIJAS'],
+        'pinturas > PINTURAS TITAN': ['pinturas > BROCHAS Y UTILES DE APLICACION', 'pinturas > AGUARRAS Y DISOLVENTES', 'pinturas > LIJAS'],
+        'drogueria > DETERGENTES ROPA': ['drogueria > SUAVIZANTES ROPA', 'drogueria > QUITAMANCHAS', 'drogueria > AZULETES Y ADITIVOS LAVADO'],
+        'drogueria > LIMPIADORES LIQUIDOS': ['drogueria > BAYETAS, GAMUZAS Y PAÑOS', 'drogueria > ESTROPAJOS', 'drogueria > GUANTES'],
     };
     const MAX_CANDIDATOS_COMPLEMENTARIOS_IA = 30;
 
@@ -7034,7 +7058,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                   btn.style.display = 'none';
                   return;
               }
-              renderComplementarios(sugerencias);
+              renderComplementarios(sugerencias, { append: true, esIA: true });
               btn.style.display = 'none';
           })
           .catch(err => {
@@ -7047,17 +7071,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // Extraído de configurarComplementarios para poder reutilizarlo
-    // también al pintar las sugerencias que llegan de la IA.
-    function renderComplementarios(sugerencias) {
+    // también al pintar las sugerencias que llegan de la IA. `opciones.
+    // append` añade a lo que ya hubiera en vez de sustituirlo (para
+    // poder comparar visualmente sugerencia normal vs. sugerencia de
+    // IA), y `opciones.esIA` añade una pequeña etiqueta "IA" a cada
+    // tarjeta para distinguir el origen — a petición de Eloy, que en el
+    // piloto de pinturas/droguería quiere ver ambas sugerencias juntas,
+    // no que la IA sustituya silenciosamente lo que ya había.
+    function renderComplementarios(sugerencias, opciones) {
+        opciones = opciones || {};
         const lista = $('complementarios-lista');
-        lista.innerHTML = sugerencias.map(s => {
+        const html = sugerencias.map(s => {
             const img = s.img
                 ? `<img src="${urlImagenProducto(s, 100)}" alt="" loading="lazy">`
                 : `<div style="width:64px;height:64px;"></div>`;
             const precio = s.mostrar_precio && s.precio_con
                 ? `${parseFloat(s.precio_con.replace(',', '.')).toFixed(2).replace('.', ',')} €`
                 : '';
+            const etiquetaIA = opciones.esIA ? `<span class="complementario-badge-ia">IA</span>` : '';
             return `<button type="button" class="complementario-item" data-ref="${escapeHtml(s.ref)}">
+                ${etiquetaIA}
                 ${img}
                 <div class="complementario-info">
                     <div class="complementario-nombre">${escapeHtml(s.nombre)}</div>
@@ -7066,7 +7099,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 </div>
             </button>`;
         }).join('');
+        if (opciones.append) lista.innerHTML += html; else lista.innerHTML = html;
         lista.querySelectorAll('.complementario-item').forEach(btn => {
+            // once:true evita volver a enganchar el listener en las
+            // tarjetas ya existentes cuando se llama con append:true.
+            if (btn.dataset.wireListo) return;
+            btn.dataset.wireListo = '1';
             btn.addEventListener('click', () => {
                 const ref = btn.dataset.ref;
                 const producto = TODOS.find(x => x.ref === ref);
@@ -7083,6 +7121,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         btnIA.style.display = 'none';
         mensajeIA.style.display = 'none';
         btnIA.onclick = null;
+
+        const enPiloto = !!PILOTO_COMPLEMENTARIOS_IA[clavePilotoComplementarios(p)];
 
         // Prioridad: la columna "relacionados" del Excel (editable
         // directamente ahí, sin tocar código) — si el producto la tiene
@@ -7117,24 +7157,28 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
 
-        if (!sugerencias.length) {
-            // Nada de lo anterior dio resultado — si este producto entra
-            // en el alcance limitado del piloto de IA, se ofrece el
-            // botón bajo demanda en vez de ocultar el bloque entero.
-            if (PILOTO_COMPLEMENTARIOS_IA[clavePilotoComplementarios(p)]) {
-                lista.innerHTML = '';
-                bloque.style.display = '';
-                btnIA.style.display = '';
-                btnIA.onclick = () => pedirComplementariosIA(p);
-                return;
-            }
+        if (!sugerencias.length && !enPiloto) {
             bloque.style.display = 'none';
             return;
         }
 
-        renderComplementarios(sugerencias);
-
+        // A petición de Eloy: en el alcance limitado del piloto de IA
+        // (pinturas y droguería, ver PILOTO_COMPLEMENTARIOS_IA), el
+        // botón "Sugerir con IA" se muestra SIEMPRE que el producto entre
+        // en ese alcance — incluso si ya hay sugerencias de "relacionados"
+        // o de las reglas fijas antiguas — como opción ADICIONAL para
+        // comparar, no solo como respaldo cuando falta cobertura. Estas
+        // dos áreas ya tienen sus propias sugerencias casi siempre, así
+        // que mostrar el botón solo "cuando no hay nada más" nunca
+        // llegaría a activarse en la práctica (ya pasó al probarlo la
+        // primera vez).
+        lista.innerHTML = '';
+        if (sugerencias.length) renderComplementarios(sugerencias);
         bloque.style.display = 'block';
+        if (enPiloto) {
+            btnIA.style.display = '';
+            btnIA.onclick = () => pedirComplementariosIA(p);
+        }
     }
 
     // Botón "Ver carta de colores": mismo enfoque que la ficha técnica (
