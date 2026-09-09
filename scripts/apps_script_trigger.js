@@ -3358,6 +3358,11 @@ function doPost(e) {
       return procesarBuscarProductoIA(data);
     }
 
+    if (accion === 'sugerir_complementarios_ia') {
+      console.log('Acción: sugerir_complementarios_ia');
+      return procesarSugerirComplementariosIA(data);
+    }
+
     if (accion === 'sincronizar_cache_completo') {
       console.log('Acción: sincronizar_cache_completo');
       return procesarSincronizarCacheCompleto(data);
@@ -4407,6 +4412,79 @@ function procesarBuscarProductoIA(data) {
   } catch (err) {
     console.error('Error en procesarBuscarProductoIA:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, errorTecnico: true, fueraDeAlcance: false, mensaje: '', terminos: [], familias: [], error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Sugerencia de complementarios "al vuelo" (prueba de concepto) ──────────
+// A petición de Eloy: "me preocupa mucho que las sugerencias sobre los
+// productos no sean adecuadas. Podríamos hacer una prueba con un área y
+// unas familias determinadas... si no, siempre podríamos dejarlo sin
+// incluir". Por eso el ALCANCE se decide en el CLIENTE (buscador.html,
+// lista PILOTO_COMPLEMENTARIOS_IA) — esta función del servidor no sabe
+// nada de "qué familias están en el piloto", solo recibe ya acotados los
+// candidatos reales entre los que puede elegir.
+//
+// Mismo principio anti-alucinación que el resto de la integración: la IA
+// NUNCA inventa un producto — solo puede ELEGIR, copiando el nombre EXACTO,
+// entre una lista de productos REALES que ya le pasa el cliente (de
+// familias pensadas de antemano como complementarias, p. ej. brochas y
+// disolventes para una pintura). Cada nombre que devuelva se vuelve a
+// comprobar aquí contra esa misma lista antes de aceptarlo — si no
+// coincide exactamente, se descarta en vez de mostrarlo.
+function procesarSugerirComplementariosIA(data) {
+  try {
+    const producto = data.producto || {};
+    const nombreProducto = (producto.nombre || '').toString().trim();
+    const candidatos = Array.isArray(data.candidatos) ? data.candidatos : [];
+    if (!nombreProducto || !candidatos.length) {
+      throw new Error('Faltan datos requeridos: producto o candidatos');
+    }
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
+      throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
+    }
+
+    const prompt = 'Eres un dependiente experto de Orencio Matas y Hermanos, una tienda de droguería, ' +
+      'perfumería, pinturas y suministros para talleres y carrocerías.\n' +
+      'Un cliente está viendo la ficha de este producto:\n"' + nombreProducto + '" (categoría: ' + (producto.area || '') + ' > ' + (producto.familia || '') + ')\n\n' +
+      'Estos son productos REALES de nuestro catálogo que podrían ser un buen complemento (cópialos EXACTAMENTE tal cual aparecen, letra por letra, si los eliges):\n' + candidatos.join('\n') + '\n\n' +
+      'Elige de 2 a 4 de esos candidatos que un cliente razonablemente compraría JUNTO CON el producto principal para completar el trabajo — herramientas de aplicación, productos del paso anterior o posterior del proceso, protección, limpieza de herramientas, etc. NUNCA seleccione el mismo producto, ni una variante de él (mismo tipo de producto en otro color/tamaño/formato) — eso no es un complemento, es el mismo producto. Si de verdad ninguno de los candidatos tiene sentido como complemento real, no elijas ninguno.\n\n' +
+      'Responde EXACTAMENTE con este formato, una línea por cada producto elegido, copiando el nombre TAL CUAL aparece arriba (sin numerar, sin nada más):\n' +
+      'PRODUCTO: nombre exacto del candidato 1\n' +
+      'PRODUCTO: nombre exacto del candidato 2\n' +
+      '(y así hasta un máximo de 4 líneas — si no eliges ninguno, no escribas ninguna línea PRODUCTO)';
+
+    const r = llamarGemini_(prompt, 200);
+    if (!r.ok) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false, errorTecnico: true, sugerencias: [],
+        _debug: { promptEnviado: prompt, errorHttp: r.errorHttp, respuestaCrudaGemini: r.respuestaCruda },
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const elegidos = [];
+    r.texto.split('\n').forEach((linea) => {
+      const l = linea.trim();
+      if (!/^PRODUCTO:/i.test(l)) return;
+      const nombre = l.replace(/^PRODUCTO:/i, '').trim().replace(/^["']+|["'.]+$/g, '');
+      if (nombre) elegidos.push(nombre);
+    });
+
+    // Nunca se confía a ciegas en lo que devuelve la IA — cada nombre se
+    // comprueba contra la lista real de candidatos antes de aceptarlo. Si
+    // la IA "alucinara" un nombre parecido pero no exacto, se descarta en
+    // vez de mostrarlo como si fuera real.
+    const sugerenciasValidas = elegidos.filter((nombre) => candidatos.indexOf(nombre) !== -1).slice(0, 4);
+    console.log('Complementarios IA — producto:', nombreProducto, '| elegidos por la IA:', JSON.stringify(elegidos), '| válidos tras comprobar:', JSON.stringify(sugerenciasValidas));
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      sugerencias: sugerenciasValidas,
+      _debug: { promptEnviado: prompt, respuestaCrudaGemini: r.texto },
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarSugerirComplementariosIA:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, errorTecnico: true, sugerencias: [], error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

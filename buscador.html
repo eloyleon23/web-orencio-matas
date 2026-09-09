@@ -2062,6 +2062,32 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 8px;
         }
+        .btn-complementarios-ia {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            margin-top: 10px;
+            padding: 9px 14px;
+            border: 1px dashed var(--blue);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--blue);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn-complementarios-ia:hover { background: #e8f1fc; }
+        .btn-complementarios-ia:disabled { opacity: 0.6; cursor: default; }
+        .btn-complementarios-ia .icono-ia-producto { width: 1.1em; height: 1.1em; }
+        .complementarios-ia-mensaje {
+            margin: 8px 0 0;
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-align: center;
+        }
         .complementario-item {
             display: flex;
             flex-direction: column;
@@ -3333,6 +3359,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div id="bloque-complementarios" class="bloque-complementarios" style="display:none;">
                     <p class="complementarios-titulo"><i class="fa-solid fa-layer-group"></i> Suele usarse junto a</p>
                     <div id="complementarios-lista" class="complementarios-lista"></div>
+                    <button type="button" id="btn-complementarios-ia" class="btn-complementarios-ia" style="display:none;">
+                        <img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Sugerir con IA
+                    </button>
+                    <p id="complementarios-ia-mensaje" class="complementarios-ia-mensaje" style="display:none;"></p>
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
@@ -6892,9 +6922,167 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return regla.sugerir(catalogo).filter(Boolean).slice(0, 3);
     }
 
+    // ── Sugerencia de complementarios "al vuelo" con IA (PRUEBA DE
+    // CONCEPTO) ──────────────────────────────────────────────────────
+    // Mismo alcance limitado: solo se activa para productos de talleres
+    // en la familia "ACABADO DE VEHICULOS" — un área SIN ningún respaldo
+    // de reglas fijas hasta ahora (esas reglas solo cubrían pinturas y
+    // droguería/perfumería), así que aquí el piloto sí llega a activarse
+    // de verdad en la práctica. Si funciona bien, se puede ampliar esta
+    // lista más adelante; si no convence, basta con vaciarla para
+    // desactivar la función entera sin tocar nada más.
+    //
+    // A petición de Eloy: "me preocupa mucho que las sugerencias sobre
+    // los productos no sean adecuadas. Podríamos hacer una prueba con un
+    // área y unas familias determinadas... si no, siempre podríamos
+    // dejarlo sin incluir". Por eso el alcance es una lista explícita y
+    // reducida, no todo el catálogo, y solo bajo demanda (nunca
+    // automático). NOTA IMPORTANTE descubierta al probarlo: un primer
+    // intento con familias de "pinturas" (AKZONOBEL/PINTURAS TITAN) no
+    // llegaba a activarse NUNCA en la práctica, porque el sistema de
+    // reglas fijas ya existente (productosComplementarios) cubre TODO
+    // el área de pinturas sin excepción — por eso se eligió talleres en
+    // su lugar, donde no existe ningún respaldo previo.
+    //
+    // Mismo principio anti-alucinación que el resto de la integración:
+    // la IA nunca inventa un producto — solo puede ELEGIR entre una
+    // lista de productos REALES del catálogo (de las familias marcadas
+    // aquí como "complementarias" de cada familia principal), y cada
+    // elección se vuelve a comprobar contra esa misma lista antes de
+    // aceptarla (ver procesarSugerirComplementariosIA en Apps Script).
+    const PILOTO_COMPLEMENTARIOS_IA = {
+        'talleres > ACABADO DE VEHICULOS': ['talleres > PROTECCION PERSONAL', 'talleres > UTILES DE PINTURA', 'talleres > PRODUCTOS DE ENMASCARADO'],
+    };
+    const MAX_CANDIDATOS_COMPLEMENTARIOS_IA = 30;
+
+    function clavePilotoComplementarios(p) {
+        return `${p.area} > ${p.familia}`;
+    }
+
+    // Muestreo aleatorio (no siempre los primeros N del catálogo, para no
+    // repetir exactamente los mismos candidatos en cada visita al mismo
+    // tipo de producto) de productos reales de las familias
+    // complementarias configuradas para la familia principal del
+    // producto que se está viendo.
+    function calcularCandidatosComplementarios(p) {
+        const familiasComplementarias = PILOTO_COMPLEMENTARIOS_IA[clavePilotoComplementarios(p)];
+        if (!familiasComplementarias) return [];
+        const claves = new Set(familiasComplementarias);
+        const activos = TODOS.filter(x =>
+            x.ref !== p.ref &&
+            !(x.fecha_baja && x.fecha_baja.toString().trim()) &&
+            claves.has(`${x.area} > ${x.familia}`)
+        );
+        // Baraja simple (Fisher-Yates) antes de recortar, así el
+        // muestreo no se queda siempre con el mismo orden del JSON.
+        for (let i = activos.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [activos[i], activos[j]] = [activos[j], activos[i]];
+        }
+        return activos.slice(0, MAX_CANDIDATOS_COMPLEMENTARIOS_IA);
+    }
+
+    function pedirComplementariosIA(p) {
+        const btn = $('btn-complementarios-ia');
+        const mensaje = $('complementarios-ia-mensaje');
+        const lista = $('complementarios-lista');
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) return;
+
+        const candidatos = calcularCandidatosComplementarios(p);
+        if (!candidatos.length) {
+            mensaje.textContent = 'No hay suficientes productos de referencia para sugerir algo con la IA.';
+            mensaje.style.display = '';
+            btn.style.display = 'none';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Pensando…';
+        mensaje.style.display = 'none';
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS
+            body: JSON.stringify({
+                accion: 'sugerir_complementarios_ia',
+                producto: { nombre: p.nombre, area: p.area, familia: p.familia },
+                candidatos: candidatos.map(c => c.nombre),
+            }),
+        })
+          .then(res => res.json())
+          .then(data => {
+              btn.disabled = false;
+              btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Sugerir con IA';
+
+              if (!data || !data.success) {
+                  mensaje.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente. Vuelve a intentarlo en unos segundos.';
+                  mensaje.style.display = '';
+                  return;
+              }
+              // Se resuelven los nombres devueltos contra los propios
+              // candidatos ya en memoria (no hace falta otra búsqueda) —
+              // el servidor ya comprobó que cada nombre es EXACTO a uno
+              // de los candidatos, así que esto siempre debería
+              // encontrar coincidencia.
+              const sugerencias = (data.sugerencias || [])
+                  .map(nombre => candidatos.find(c => c.nombre === nombre))
+                  .filter(Boolean);
+              if (!sugerencias.length) {
+                  mensaje.textContent = 'La IA no ha encontrado ningún complemento claro para este producto.';
+                  mensaje.style.display = '';
+                  btn.style.display = 'none';
+                  return;
+              }
+              renderComplementarios(sugerencias);
+              btn.style.display = 'none';
+          })
+          .catch(err => {
+              console.error('Error en pedirComplementariosIA:', err);
+              btn.disabled = false;
+              btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Sugerir con IA';
+              mensaje.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente. Vuelve a intentarlo en unos segundos.';
+              mensaje.style.display = '';
+          });
+    }
+
+    // Extraído de configurarComplementarios para poder reutilizarlo
+    // también al pintar las sugerencias que llegan de la IA.
+    function renderComplementarios(sugerencias) {
+        const lista = $('complementarios-lista');
+        lista.innerHTML = sugerencias.map(s => {
+            const img = s.img
+                ? `<img src="${urlImagenProducto(s, 100)}" alt="" loading="lazy">`
+                : `<div style="width:64px;height:64px;"></div>`;
+            const precio = s.mostrar_precio && s.precio_con
+                ? `${parseFloat(s.precio_con.replace(',', '.')).toFixed(2).replace('.', ',')} €`
+                : '';
+            return `<button type="button" class="complementario-item" data-ref="${escapeHtml(s.ref)}">
+                ${img}
+                <div class="complementario-info">
+                    <div class="complementario-nombre">${escapeHtml(s.nombre)}</div>
+                    <div class="complementario-ref">Ref: ${escapeHtml(s.ref)}</div>
+                    <div class="complementario-precio">${precio}</div>
+                </div>
+            </button>`;
+        }).join('');
+        lista.querySelectorAll('.complementario-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ref = btn.dataset.ref;
+                const producto = TODOS.find(x => x.ref === ref);
+                if (producto) abrirModalProducto(producto);
+            });
+        });
+    }
+
     function configurarComplementarios(p) {
         const bloque = $('bloque-complementarios');
         const lista = $('complementarios-lista');
+        const btnIA = $('btn-complementarios-ia');
+        const mensajeIA = $('complementarios-ia-mensaje');
+        btnIA.style.display = 'none';
+        mensajeIA.style.display = 'none';
+        btnIA.onclick = null;
 
         // Prioridad: la columna "relacionados" del Excel (editable
         // directamente ahí, sin tocar código) — si el producto la tiene
@@ -6930,34 +7118,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         if (!sugerencias.length) {
+            // Nada de lo anterior dio resultado — si este producto entra
+            // en el alcance limitado del piloto de IA, se ofrece el
+            // botón bajo demanda en vez de ocultar el bloque entero.
+            if (PILOTO_COMPLEMENTARIOS_IA[clavePilotoComplementarios(p)]) {
+                lista.innerHTML = '';
+                bloque.style.display = '';
+                btnIA.style.display = '';
+                btnIA.onclick = () => pedirComplementariosIA(p);
+                return;
+            }
             bloque.style.display = 'none';
             return;
         }
 
-        lista.innerHTML = sugerencias.map(s => {
-            const img = s.img
-                ? `<img src="${urlImagenProducto(s, 100)}" alt="" loading="lazy">`
-                : `<div style="width:64px;height:64px;"></div>`;
-            const precio = s.mostrar_precio && s.precio_con
-                ? `${parseFloat(s.precio_con.replace(',', '.')).toFixed(2).replace('.', ',')} €`
-                : '';
-            return `<button type="button" class="complementario-item" data-ref="${escapeHtml(s.ref)}">
-                ${img}
-                <div class="complementario-info">
-                    <div class="complementario-nombre">${escapeHtml(s.nombre)}</div>
-                    <div class="complementario-ref">Ref: ${escapeHtml(s.ref)}</div>
-                    <div class="complementario-precio">${precio}</div>
-                </div>
-            </button>`;
-        }).join('');
-
-        lista.querySelectorAll('.complementario-item').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const ref = btn.dataset.ref;
-                const producto = TODOS.find(x => x.ref === ref);
-                if (producto) abrirModalProducto(producto);
-            });
-        });
+        renderComplementarios(sugerencias);
 
         bloque.style.display = 'block';
     }
