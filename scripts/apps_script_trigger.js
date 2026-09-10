@@ -20,9 +20,16 @@ const BREVO_API_KEY = 'PON_AQUI_LA_NUEVA_CLAVE_DE_BREVO';
 // Clave SECRETA de reCAPTCHA v2 — a petición de Eloy, protección
 // anti-bots del formulario de contacto. Registrada por Eloy en
 // https://www.google.com/recaptcha/admin/create (junto con la SITE_KEY,
-// que va en index.html — esa sí puede ser pública, esta NO). Ya con la
-// clave real del sitio, sustituida el 10/09/2026.
-const RECAPTCHA_SECRET_KEY = '6LfgCrMtAAAAAO9RKlvO4W0pBTsNanbO0Nr6BTcJ';
+// que va en index.html — esa sí puede ser pública, esta NO).
+//
+// TEMPORALMENTE revertida a la clave de PRUEBA oficial de Google tras
+// un error real en producción con la clave real: "Error para el
+// propietario del sitio web: el tipo de clave no es válido" — la clave
+// que registró Eloy probablemente se creó como v3/Enterprise en vez de
+// "v2 — Casilla de verificación", que es el tipo que este código
+// espera. Volver a poner la clave real en cuanto se resuelva desde el
+// panel de Google reCAPTCHA.
+const RECAPTCHA_SECRET_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
 
 // Clave de API de Google Gemini — usada SOLO desde aquí, en el servidor,
 // para la búsqueda inteligente del Centro de Soluciones (ver
