@@ -272,24 +272,56 @@
 
   function renderSolucionIA(consulta, datos) {
     const titulo = datos.titulo || `Solución para: ${consulta}`;
+    // A petición de Eloy: consultas de tipo "ficha técnica de X" ahora
+    // usan grounding real con Google Search (ver el porqué completo en
+    // procesarBuscarSolucionIA/llamarGemini_ en Apps Script) — el campo
+    // "pasos" se reutiliza aquí para mostrar las especificaciones
+    // técnicas encontradas en vez de un procedimiento a seguir, así que
+    // el título de la sección y el formato de cada línea cambian
+    // (sin numerar "Paso 1, Paso 2..." — no son pasos secuenciales).
+    const esProducto = datos.tipoConsulta === 'PRODUCTO';
     const pasosHtml = datos.pasos && datos.pasos.length ? `
       <section class="cs-section">
         <div class="container">
           <div class="section-heading">
-            <p class="section-heading__eyebrow">Cómo hacerlo</p>
-            <h2>Paso a paso</h2>
+            <p class="section-heading__eyebrow">${esProducto ? 'Lo que hemos encontrado' : 'Cómo hacerlo'}</p>
+            <h2>${esProducto ? 'Especificaciones técnicas' : 'Paso a paso'}</h2>
           </div>
           <div class="cs-timeline">
             ${datos.pasos.map((p, i) => `
               <div class="cs-timeline__paso">
-                <div class="cs-timeline__num">${i + 1}</div>
-                <div class="cs-timeline__titulo">Paso ${i + 1} — ${escaparHtml(p.titulo || '')}</div>
+                ${esProducto ? '' : `<div class="cs-timeline__num">${i + 1}</div>`}
+                <div class="cs-timeline__titulo">${esProducto ? '' : `Paso ${i + 1} — `}${escaparHtml(p.titulo || '')}</div>
                 ${p.texto ? `<p class="cs-timeline__texto">${escaparHtml(p.texto)}</p>` : ''}
               </div>
             `).join('')}
           </div>
         </div>
       </section>
+    ` : '';
+
+    // Fuentes citadas por la búsqueda real (grounding) — buena práctica
+    // de cita, además de ayudar a validar la información. Solo aparece
+    // cuando hay alguna (tipoConsulta='PRODUCTO' con resultados).
+    const fuentesHtml = datos.fuentes && datos.fuentes.length ? `
+      <div style="max-width:680px;margin-top:14px;font-size:0.88rem;color:var(--text-gray);">
+        <strong>Fuentes consultadas:</strong>
+        <ul style="margin:6px 0 0;padding-left:20px;">
+          ${datos.fuentes.map((f) => `<li><a href="${escaparHtml(f.url)}" target="_blank" rel="noopener noreferrer">${escaparHtml(f.titulo || f.url)}</a></li>`).join('')}
+        </ul>
+      </div>
+    ` : '';
+
+    // IMPORTANTE — requisito de cumplimiento de Google, no opcional:
+    // cuando la respuesta usa Grounding con Search, hay que mostrar el
+    // widget "Google Search Suggestions" (searchEntryPointHtml) EXACTAMENTE
+    // como lo devuelve la API, sin modificarlo, y debe permanecer
+    // visible siempre que se muestre esta respuesta — por eso se inyecta
+    // tal cual (no se escapa: es HTML de confianza que viene directo de
+    // la API de Google, no contenido de usuario). Ver
+    // https://ai.google.dev/gemini-api/docs/grounding/search-suggestions
+    const searchEntryPointHtml = datos.searchEntryPointHtml ? `
+      <div style="max-width:680px;margin-top:14px;">${datos.searchEntryPointHtml}</div>
     ` : '';
 
     cont.innerHTML = `
@@ -300,16 +332,19 @@
       <section class="cs-section" style="padding-top:10px;">
         <div class="container">
           <div class="cs-hero__ia-respuesta" style="margin-bottom:16px;max-width:680px;">
-            <p><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> <strong>Solución generada por IA</strong> — no es una de nuestras guías escritas por el equipo, así que consúltanos si tienes dudas.</p>
+            <p><img src="../assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> <strong>${esProducto ? 'Información generada por IA' : 'Solución generada por IA'}</strong> — no es una de nuestras guías escritas por el equipo, así que consúltanos si tienes dudas.</p>
           </div>
           <h1 style="font-family:var(--font-heading);font-size:clamp(1.8rem,4vw,2.6rem);font-weight:900;color:var(--text-dark);max-width:760px;margin-bottom:16px;">${escaparHtml(titulo)}</h1>
           ${datos.respuesta ? `<p style="max-width:680px;color:var(--text-gray);font-size:1.05rem;line-height:1.6;">${escaparHtml(datos.respuesta)}</p>` : ''}
+          ${fuentesHtml}
+          ${searchEntryPointHtml}
+          ${esProducto ? '' : `
           <div class="cs-info-resumen">
             <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Dificultad</div><div class="cs-info-resumen__valor">${badgeDificultad(datos.dificultad)}</div></div>
             <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Tiempo estimado</div><div class="cs-info-resumen__valor">${escaparHtml(datos.tiempo || 'Variable')}</div></div>
             <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Origen</div><div class="cs-info-resumen__valor">Sugerido por IA</div></div>
             <div class="cs-info-resumen__item"><div class="cs-info-resumen__label">Resultado</div><div class="cs-info-resumen__valor">${escaparHtml(datos.resultado || 'Problema resuelto')}</div></div>
-          </div>
+          </div>`}
         </div>
       </section>
 

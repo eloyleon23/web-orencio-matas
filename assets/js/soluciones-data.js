@@ -5764,7 +5764,7 @@ window.SOLUCIONES_DATA = (function () {
     // a petición de Eloy: en el segundo caso hay que decirle al
     // usuario que lo intente de nuevo, no darle a entender que
     // simplemente no existe ninguna solución para su problema.
-    const vacio = { solucion: null, errorTecnico: false, fueraDeAlcance: false, mensaje: '', titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [] };
+    const vacio = { solucion: null, errorTecnico: false, fueraDeAlcance: false, mensaje: '', tipoConsulta: 'GUIA', titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [], fuentes: [], searchEntryPointHtml: '' };
     if (!url || !texto || !texto.trim()) return Promise.resolve(vacio);
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
@@ -5796,6 +5796,7 @@ window.SOLUCIONES_DATA = (function () {
           return { ...vacio, fueraDeAlcance: true, mensaje: data.mensaje || '' };
         }
         const solucion = (data.slug && soluciones[data.slug]) || null;
+        const tipoConsulta = data.tipoConsulta === 'PRODUCTO' ? 'PRODUCTO' : 'GUIA';
         const titulo = solucion ? '' : (data.titulo || '');
         const respuesta = solucion ? '' : (data.respuesta || '');
         const pasos = solucion ? [] : (Array.isArray(data.pasos) ? data.pasos : []);
@@ -5804,7 +5805,15 @@ window.SOLUCIONES_DATA = (function () {
         const resultado = solucion ? '' : (data.resultado || '');
         const terminos = Array.isArray(data.terminos) ? data.terminos : [];
         const familias = Array.isArray(data.familias) ? data.familias : [];
-        return { solucion, errorTecnico: false, fueraDeAlcance: false, mensaje: '', titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias };
+        // fuentes y searchEntryPointHtml solo llegan con contenido en la
+        // rama tipoConsulta='PRODUCTO' (la única con Grounding/Search
+        // activado) — ver el porqué completo en procesarBuscarSolucionIA
+        // y llamarGemini_ en Apps Script. searchEntryPointHtml es HTML
+        // que Google exige mostrar TAL CUAL, sin modificar — se pasa sin
+        // tocar, nunca se reconstruye ni se sanea aquí.
+        const fuentes = solucion ? [] : (Array.isArray(data.fuentes) ? data.fuentes : []);
+        const searchEntryPointHtml = solucion ? '' : (data.searchEntryPointHtml || '');
+        return { solucion, errorTecnico: false, fueraDeAlcance: false, mensaje: '', tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml };
       })
       .catch((err) => {
         // Fallo de red/CORS/límite de tiempo agotado/etc. antes de

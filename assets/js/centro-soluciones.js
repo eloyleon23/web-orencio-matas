@@ -245,7 +245,7 @@
 
     function ejecutarBusquedaIA(texto) {
       const { signal, finalizar, fueCancelado } = abrirModalEsperaIA();
-      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }) => {
         finalizar();
         cerrarModalIA();
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
@@ -369,7 +369,7 @@
           const btnVerCompleta = $('#cs-hero-ver-completa');
           if (btnVerCompleta) {
             btnVerCompleta.addEventListener('click', () => irASolucionCompletaConDatos(texto, {
-              titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias,
+              tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml,
             }));
           }
         });
@@ -391,7 +391,7 @@
 
       const { signal, finalizar, fueCancelado } = abrirModalEsperaIA();
 
-      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }) => {
+      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }) => {
         finalizar();
 
         if (errorTecnico && fueCancelado()) {
@@ -430,7 +430,7 @@
           // Se guarda lo ya obtenido para que la página dinámica no
           // tenga que volver a preguntarle a la IA lo mismo dos veces.
           try {
-            sessionStorage.setItem(`cs_ia_${texto}`, JSON.stringify({ titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias }));
+            sessionStorage.setItem(`cs_ia_${texto}`, JSON.stringify({ tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }));
           } catch (e) { /* almacenamiento no disponible, no es crítico */ }
           window.location.href = `soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`;
           return;

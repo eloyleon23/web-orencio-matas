@@ -4081,11 +4081,43 @@ function verificarRecaptcha_(token) {
 // función reutilizable porque ahora hay DOS llamadas posibles (ver
 // procesarBuscarSolucionIA), no una sola. Registra siempre el prompt
 // exacto y la respuesta en bruto (ver comentario en su punto de uso).
-function llamarGemini_(prompt, maxOutputTokens) {
+// A petición de Eloy: "necesito que la IA entre en juego y nos ayude a
+// buscar la ficha técnica o la información relevante que pueda disponer"
+// — para eso hace falta que Gemini pueda buscar de verdad en la web
+// (no solo generar texto de su conocimiento general, que tiene fecha de
+// corte y no conoce productos ni fabricantes concretos). La API de
+// Gemini soporta esto de forma nativa con la herramienta "Grounding con
+// Google Search" (tools: [{google_search:{}}]) — el propio modelo
+// decide si buscar, ejecuta la búsqueda, y sintetiza una respuesta
+// citando las fuentes reales. Confirmado soportado en el modelo que ya
+// usa este proyecto (gemini-3.5-flash-lite).
+//
+// conBusquedaWeb (parámetro nuevo, opcional — por defecto false, así
+// que ninguna llamada existente a esta función se ve afectada) activa
+// esa herramienta SOLO cuando de verdad hace falta (información sobre
+// un producto/marca concreta) — nunca para el resto de flujos (guías,
+// complementarios, etc.), que deben quedarse anclados estrictamente al
+// catálogo propio, no a contenido externo de la web.
+//
+// IMPORTANTE — requisito de cumplimiento de Google, no opcional: cuando
+// la respuesta usa grounding con Search, hay que mostrar el widget
+// "Google Search Suggestions" (groundingMetadata.searchEntryPoint.
+// renderedContent) EXACTAMENTE como lo da la API, sin modificarlo, y
+// debe permanecer visible siempre que se muestre esa respuesta — ver
+// https://ai.google.dev/gemini-api/docs/grounding/search-suggestions.
+// Por eso esta función siempre devuelve ese HTML tal cual junto con las
+// fuentes citadas (groundingChunks), para que el cliente lo renderice
+// sin tocarlo.
+function llamarGemini_(prompt, maxOutputTokens, conBusquedaWeb) {
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' + GEMINI_API_KEY;
   const payload = {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.2, maxOutputTokens: maxOutputTokens },
+    // Google recomienda una temperatura algo más alta para grounding
+    // con Search (favorece que el modelo sintetice mejor los
+    // resultados reales en vez de ceñirse a un patrón muy rígido) — se
+    // mantiene la temperatura baja habitual (0.2) para el resto de
+    // llamadas, donde interesa más la consistencia.
+    generationConfig: { temperature: conBusquedaWeb ? 0.4 : 0.2, maxOutputTokens: maxOutputTokens },
     safetySettings: [
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
@@ -4093,9 +4125,12 @@ function llamarGemini_(prompt, maxOutputTokens) {
       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
     ],
   };
+  if (conBusquedaWeb) {
+    payload.tools = [{ google_search: {} }];
+  }
   const options = { method: 'post', contentType: 'application/json', payload: JSON.stringify(payload), muteHttpExceptions: true };
 
-  console.log('=== PETICIÓN A GEMINI ===');
+  console.log('=== PETICIÓN A GEMINI ===', conBusquedaWeb ? '(con Grounding/Google Search)' : '');
   console.log('Prompt completo enviado:', prompt);
 
   let resp;
@@ -4113,7 +4148,7 @@ function llamarGemini_(prompt, maxOutputTokens) {
 
   if (codigo !== 200) {
     console.error('Error de Gemini (HTTP):', codigo, resp.getContentText());
-    return { ok: false, errorHttp: codigo, respuestaCruda: resp.getContentText(), texto: '' };
+    return { ok: false, errorHttp: codigo, respuestaCruda: resp.getContentText(), texto: '', fuentes: [], searchEntryPointHtml: '' };
   }
 
   const json = JSON.parse(resp.getContentText());
@@ -4127,11 +4162,23 @@ function llamarGemini_(prompt, maxOutputTokens) {
     console.error('Gemini NO devolvió candidatos (posible bloqueo de seguridad). promptFeedback:',
       JSON.stringify(json.promptFeedback || {}), '| respuesta completa:', JSON.stringify(json));
   }
-  const texto = ((((json.candidates || [])[0] || {}).content || {}).parts || [{}])[0].text || '';
-  if (json.candidates && json.candidates[0] && json.candidates[0].finishReason && json.candidates[0].finishReason !== 'STOP') {
-    console.error('Gemini terminó con finishReason inesperado:', json.candidates[0].finishReason, '| texto parcial:', JSON.stringify(texto));
+  const primerCandidato = (json.candidates || [])[0] || {};
+  const texto = ((primerCandidato.content || {}).parts || [{}])[0].text || '';
+  if (primerCandidato.finishReason && primerCandidato.finishReason !== 'STOP') {
+    console.error('Gemini terminó con finishReason inesperado:', primerCandidato.finishReason, '| texto parcial:', JSON.stringify(texto));
   }
-  return { ok: true, errorHttp: null, respuestaCruda: resp.getContentText(), texto: texto };
+  const groundingMetadata = primerCandidato.groundingMetadata || null;
+  const fuentes = groundingMetadata
+    ? (groundingMetadata.groundingChunks || [])
+        .map(function (c) { return c.web; })
+        .filter(Boolean)
+        .map(function (w) { return { titulo: w.title || '', url: w.uri || '' }; })
+    : [];
+  const searchEntryPointHtml = groundingMetadata ? ((groundingMetadata.searchEntryPoint || {}).renderedContent || '') : '';
+  if (conBusquedaWeb) {
+    console.log('Grounding — búsquedas realizadas:', JSON.stringify((groundingMetadata || {}).webSearchQueries || []), '| fuentes:', fuentes.length);
+  }
+  return { ok: true, errorHttp: null, respuestaCruda: resp.getContentText(), texto: texto, fuentes: fuentes, searchEntryPointHtml: searchEntryPointHtml };
 }
 
 // Búsqueda inteligente con IA (Centro de Soluciones) — ver detalle
@@ -4280,25 +4327,34 @@ function procesarBuscarSolucionIA(data) {
     // A petición de Eloy, tras el caso real del "radiador Aitsa": cuando
     // el PASO 1 detecta que la consulta pide información/ficha técnica
     // de un PRODUCTO concreto (no una guía de "cómo hacer algo"), se usa
-    // un prompt distinto — centrado en reconocer honestamente si
-    // tenemos ese producto, SIN forzar el formato de guía paso a paso
-    // (que no tiene sentido aquí) y SIN inventar características
-    // técnicas que no podemos verificar. La ficha técnica real (si
-    // existe) la resuelve el CLIENTE contra datos ya verificados
-    // (obtenerFichaTecnicaProducto en soluciones-data.js) — la IA nunca
-    // debe inventar ni afirmar que existe una ficha técnica concreta.
+    // un prompt distinto — con la herramienta de BÚSQUEDA REAL EN LA WEB
+    // activada (Grounding con Google Search, ver el comentario completo
+    // junto a llamarGemini_ más arriba) para poder dar información
+    // técnica de verdad, no solo "sí lo tenemos en catálogo" — que era
+    // insuficiente ("no aporta el valor que quiero", según Eloy). Sigue
+    // sin forzar el formato de guía paso a paso (PASOS se reutiliza
+    // aquí para las especificaciones técnicas encontradas, no para
+    // pasos a seguir) y sigue sin inventar nada que no pueda verificar
+    // — ahora puede VERIFICARLO de verdad buscando en la web, en vez de
+    // tener que quedarse callado por no saberlo de su conocimiento
+    // general.
     const prompt2 = tipoConsulta === 'PRODUCTO'
       ? 'Eres el motor de búsqueda del Centro de Soluciones de Orencio Matas y Hermanos, ' +
         'una tienda de droguería, perfumería, pinturas y suministros para talleres y carrocerías.\n' +
         'Un cliente pide información sobre un producto o marca concreta, con sus propias palabras:\n"' + consulta + '"\n\n' +
         'Estas son TODAS las categorías reales de nuestro catálogo de productos (formato "área > familia" — y solo estas, no existen otras):\n' + listadoTaxonomia + '\n' +
         bloqueCandidatos + '\n' +
-        'IMPORTANTE — no alucines: NUNCA inventes características técnicas, potencia, dimensiones, materiales u otros datos del producto que no puedas verificar contra los candidatos reales de arriba. Si alguno de los candidatos parece ser el producto que busca el cliente, tu respuesta debe confirmarlo con honestidad (usando su nombre real) SIN describir especificaciones que no conoces — los datos reales (precio, imagen, ficha si existe) se muestran aparte, en la propia tarjeta del producto. Si ningún candidato encaja, dilo con honestidad en vez de inventar que sí lo tenemos.\n\n' +
+        'Tienes acceso a búsqueda real en la web — úsala para encontrar información técnica genuina de este producto o marca (fabricante, tiendas que lo vendan, catálogos técnicos, manuales) antes de responder. No te quedes solo con lo que ya sepas de memoria.\n\n' +
+        'REGLAS IMPORTANTES:\n' +
+        '- Si alguno de los candidatos reales de arriba parece ser el producto que busca el cliente, tu RESPUESTA debe confirmarlo con su nombre real, indicando que lo tenemos en catálogo (el precio y la imagen se muestran aparte, en la propia tarjeta).\n' +
+        '- Si no encuentras información técnica fiable en la búsqueda, sé honesto: dilo con naturalidad en vez de inventar datos o rellenar con generalidades vagas.\n' +
+        '- NUNCA copies frases completas tal cual de una página web — redacta la información SIEMPRE con tus propias palabras, resumiendo lo esencial, nunca citando textualmente ni aunque sea una sola frase larga.\n' +
+        '- Si no encuentras el producto en ninguna búsqueda ni entre los candidatos, dilo con honestidad y sugiere contactar directamente con la tienda para consultar disponibilidad — nunca inventes que sí lo tenemos.\n\n' +
         'Responde EXACTAMENTE con estas líneas, sin nada más:\n' +
-        'TITULO: título corto (4-8 palabras) tipo "Sobre el calefactor Aitsa" — usa el nombre de marca/producto TAL CUAL lo escribió el cliente, sin corregirlo ni inventar el nombre exacto del fabricante si no lo conoces con certeza.\n' +
-        'RESPUESTA: 2-3 frases honestas. Si hay candidatos reales que encajan, confirma que tenemos ese producto (o algo muy similar) en catálogo, e invita a consultar la ficha completa (precio, imagen, más detalles) justo debajo. Si NO hay ningún candidato que encaje de verdad, dilo con honestidad y sugiere contactar directamente con la tienda para consultar disponibilidad. NUNCA inventes datos técnicos del producto (potencia, voltaje, medidas, materiales...).\n' +
-        'PASOS: deja esta línea vacía (no aplica a una consulta de información de producto, no es una guía de "cómo hacer algo") — escribe "PASOS:" sin nada detrás.\n' +
-        'TERMINOS: 2 a 5 palabras clave en español que describan el producto para buscarlo en el catálogo. Si hay candidatos reales de arriba que encajan, usa términos que los describan bien (incluyendo la marca si aparece en su nombre real). Si de verdad no hay ningún producto remotamente relacionado, deja vacío.\n' +
+        'TITULO: título corto (4-8 palabras) tipo "Ficha técnica del calefactor Aitsa" — usa el nombre de marca/producto TAL CUAL lo escribió el cliente, sin corregirlo ni inventar el nombre exacto del fabricante si no lo conoces con certeza.\n' +
+        'RESPUESTA: 2-3 frases de introducción — confirma si tenemos el producto en catálogo (si hay candidatos reales que encajan) y resume en una frase de qué tipo de producto se trata, sin entrar aún en las especificaciones detalladas (esas van en PASOS).\n' +
+        'PASOS: LAS ESPECIFICACIONES TÉCNICAS reales que hayas encontrado en tu búsqueda (potencia, dimensiones, materiales, características, lo que sea relevante para este tipo de producto), cada una como "Nombre de la característica: valor o descripción breve", separadas entre sí por " || " (dos barras verticales con espacios). De 3 a 6 líneas si encontraste información suficiente. Si no encontraste NADA fiable, escribe "PASOS:" sin nada detrás — nunca inventes especificaciones para rellenar.\n' +
+        'TERMINOS: 2 a 5 palabras clave en español que describan el producto para buscarlo en nuestro catálogo. Si hay candidatos reales de arriba que encajan, usa términos que los describan bien (incluyendo la marca si aparece en su nombre real). Si de verdad no hay ningún producto remotamente relacionado, deja vacío.\n' +
         'FAMILIAS: 1 a 3 categorías copiadas EXACTAMENTE de la lista de categorías reales de arriba (formato "área > familia") — si hay candidatos reales de arriba, usa la categoría que aparece junto a ellos. Deja vacío solo si de verdad ninguna categoría real encaja.'
       : 'Eres el motor de búsqueda del Centro de Soluciones de Orencio Matas y Hermanos, ' +
         'una tienda de droguería, perfumería, pinturas y suministros para talleres y carrocerías.\n' +
@@ -4315,7 +4371,10 @@ function procesarBuscarSolucionIA(data) {
         'TERMINOS: 3 a 6 palabras clave en español separadas por comas, de los TIPOS de producto que ayudarían con esta consulta. Sé específico y evita palabras sueltas muy genéricas que puedan confundirse con otra cosa — usa siempre 2 palabras juntas que aclaren el sentido en vez de una sola ambigua. Ejemplos reales de este error a evitar: para "aire acondicionado" usa "desengrasante equipos" o "limpiador de rejillas", NUNCA la palabra suelta "aire" (aparece también en perfumes y colonias); para "limpiar un baño" usa "cepillo de baño" o "cepillo sanitario", NUNCA la palabra suelta "cepillo" (aparece también en cepillos de dientes y de peinar). Si hay candidatos reales de arriba que encajan, usa términos que los describan bien. Si de verdad no hay ningún producto remotamente relacionado, deja vacío.\n' +
         'FAMILIAS: 1 a 3 categorías copiadas EXACTAMENTE de la lista de categorías reales de arriba (formato "área > familia") que de verdad contendrían el tipo de producto que ayudaría. Esto es MUY IMPORTANTE para no mezclar productos de categorías equivocadas — si hay candidatos reales de arriba, usa la categoría "área > familia" que aparece junto a ellos. Intenta dar SIEMPRE al menos 1 categoría cuando exista algo remotamente relacionado, y déjalo vacío solo si de verdad ninguna categoría real encaja.';
 
-    const r2 = llamarGemini_(prompt2, 500);
+    // maxOutputTokens más alto para el caso PRODUCTO: la respuesta con
+    // búsqueda real puede necesitar más espacio (varias especificaciones
+    // técnicas encontradas, no solo un par de frases).
+    const r2 = llamarGemini_(prompt2, tipoConsulta === 'PRODUCTO' ? 700 : 500, tipoConsulta === 'PRODUCTO');
     if (!r2.ok) return respuestaError(r2.errorHttp, r2.respuestaCruda, prompt2);
 
     let tituloIA = '';
@@ -4390,6 +4449,12 @@ function procesarBuscarSolucionIA(data) {
       resultado: resultadoIA,
       terminos: terminos,
       familias: familiasValidas,
+      // Solo tienen contenido cuando tipoConsulta='PRODUCTO' (única rama
+      // con Grounding/Search activado) — fuentes citadas y el widget de
+      // atribución que Google exige mostrar tal cual, sin modificar, ver
+      // el comentario completo junto a llamarGemini_.
+      fuentes: r2.fuentes || [],
+      searchEntryPointHtml: r2.searchEntryPointHtml || '',
       // Campo TEMPORAL de depuración — quitar una vez resuelto el
       // problema de fondo, no debe quedarse en producción de forma
       // permanente (aumenta el tamaño de cada respuesta). Se deja

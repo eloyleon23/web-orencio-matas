@@ -96,8 +96,15 @@
    página no comparte la hoja de estilos concreta de esa otra. */
 .cs-hero__buscador {
   max-width: 480px;
-  margin: 0 0 30px;
+  margin: 0 0 10px;
 }
+.cs-hero__buscador-ayuda {
+  max-width: 480px;
+  margin: 0 0 30px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+.cs-hero__buscador-ayuda em { font-style: normal; color: rgba(255, 255, 255, 0.85); }
 .cs-hero__buscador-caja {
   position: relative;
 }
