@@ -14,3 +14,10 @@ imagenes_tool/fallos_sincronizacion.csv
 
 # sage_sync: credenciales de acceso a Sage 200, nunca al repo
 sage_sync/credenciales_sage.json
+
+# relacionados_tool: artefactos de ejecucion local (Excel generado,
+# progreso de checkpoint, catalogo de entrada) — nunca al repo
+relacionados_tool/*.xlsx
+relacionados_tool/checkpoint_relacionados_ia.json
+relacionados_tool/productos.json
+__pycache__/

@@ -113,3 +113,87 @@ Las reglas son deliberadamente conservadoras: si no encuentran un
 candidato claro, no sugieren nada — mejor eso que una sugerencia sin
 sentido. Vuelve a ejecutar el script tras añadir reglas nuevas para
 ver el resultado.
+
+---
+
+# Herramienta con IA — generar_sugerencias_relacionados_ia.py
+
+Complementa a la de reglas fijas: cubre el resto del catálogo con
+criterio de la IA (Gemini), reutilizando **exactamente** el mismo
+mecanismo ya afinado y probado en producción el 10/09/2026 en el
+propio buscador (botón "Ver sugerencias con IA" en la ficha de cada
+producto) — mismo muestreo de candidatos, mismo prompt, misma
+validación anti-alucinación, con el bug de parseo (que descartaba
+sugerencias buenas por quitar puntos finales del nombre) ya corregido.
+
+## Alcance
+
+Solo **droguería, perfumería y pinturas** — Talleres queda excluido a
+propósito, por el mismo motivo que ya se explica arriba para la
+herramienta de reglas (riesgo de mezclar sistemas químicos
+incompatibles sin poder juzgarlo con fiabilidad solo por el nombre,
+ni siquiera con IA).
+
+A día de hoy (10/09/2026) hay **4.801 productos** de esas tres áreas
+sin `relacionados` informado ni `relacionados_gestionado` (los que ya
+se decidió a propósito dejar sin ninguno se respetan, no se sugiere
+encima).
+
+## Uso
+
+```bash
+pip install openpyxl requests
+export GEMINI_API_KEY="la-misma-clave-que-usa-apps-script"
+
+# Prueba rápida primero, SIEMPRE — para revisar que la calidad
+# convence antes de lanzar el catálogo completo:
+python3 generar_sugerencias_relacionados_ia.py --entrada productos.json --limite 20
+
+# Ejecución completa. Con los ~4.800 productos actuales y la pausa por
+# defecto (1,2 s entre peticiones, para no saturar la cuota de la API),
+# puede tardar del orden de 2 a 4 horas reales (la pausa configurada
+# más el tiempo de red/respuesta de cada petición) — se puede dejar
+# corriendo en segundo plano.
+python3 generar_sugerencias_relacionados_ia.py --entrada productos.json --salida sugerencias_ia.xlsx
+```
+
+## Se puede interrumpir y reanudar sin perder nada
+
+Guarda el progreso cada 20 productos en `checkpoint_relacionados_ia.json`
+(ruta configurable con `--checkpoint`). Si se corta por lo que sea
+(Ctrl+C, se cierra la terminal, se cae la conexión), basta con volver a
+lanzar **el mismo comando** — retoma justo donde se quedó, sin repetir
+peticiones ya hechas ni gastar cuota de más.
+
+## Cómo revisar y aplicar las sugerencias
+
+**Exactamente el mismo procedimiento** que la herramienta de reglas
+(ver arriba) — mismas columnas en el Excel de salida
+(`referencia, relacionados_sugeridos, relacionados_nombres, regla`),
+con `regla` siempre a `"ia"` para poder distinguir el origen si se
+mezclan ambos Excel en la misma pestaña `Sugerencias_Temp` antes de
+importar. Recuerda siempre escribir con espacio tras la coma
+(`"ref1, ref2"`) al copiar a la columna `relacionados` real — una
+lista sin espacios se interpreta como número decimal con la
+configuración regional española del Sheet.
+
+## Por qué el mismo mecanismo que ya usa el buscador, no algo nuevo
+
+Se probó y afinó en pruebas reales de Eloy sobre productos concretos
+antes de generalizarlo en lote:
+
+- **Candidatos siempre reales**: la IA nunca inventa un producto, solo
+  puede elegir (copiando el nombre exacto) entre una muestra
+  ESTRATIFICADA por familia dentro de la misma área — nunca de su
+  propia familia (eso serían variantes del mismo producto, no un
+  complemento).
+- **Criterio "misma tarea, no mismo tema"**: el prompt incluye el
+  ejemplo real de error ya detectado (para un abono líquido, no
+  sugerir césped artificial — ambos "de jardín", pero el césped
+  artificial no se abona) para anclar el criterio y evitar
+  asociaciones temáticas superficiales.
+- **Cada candidato lleva su familia real** junto al nombre en el
+  prompt, no solo el nombre a secas — para que la IA pueda descartar
+  con más criterio.
+- **Validación estricta**: cada sugerencia se comprueba letra por letra
+  contra la lista real de candidatos antes de aceptarla.
