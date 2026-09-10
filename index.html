@@ -439,16 +439,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <!-- reCAPTCHA v2 — SITE_KEY real del sitio, registrada por
                  Eloy en el panel de Google reCAPTCHA. -->
-            <!-- reCAPTCHA v2 — TEMPORALMENTE revertido a la SITE_KEY de
-                 PRUEBA oficial de Google (siempre válida, no protege de
-                 verdad) tras un error real en producción con la clave
-                 real: "Error para el propietario del sitio web: el tipo
-                 de clave no es válido" — la clave que registró Eloy
-                 probablemente se creó como v3/Enterprise en vez de "v2 —
-                 Casilla de verificación", que es el tipo que este código
-                 espera. Volver a poner la clave real en cuanto se
-                 resuelva desde el panel de Google reCAPTCHA. -->
-            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+            <!-- reCAPTCHA v2 — SITE_KEY real del sitio (tipo "v2: Casilla
+                 de verificación", verificado correctamente esta vez),
+                 registrada por Eloy en el panel de Google reCAPTCHA el
+                 10/09/2026 tras corregir el tipo de clave (el primer
+                 intento se había creado como v3 por error). -->
+            <div class="g-recaptcha" data-sitekey="6LeXpLMtAAAAALjpLDNDAHEOy0zWOCtZmeCa9rad"></div>
             <div id="form-mensaje-estado" style="display:none; margin-bottom:12px; padding:12px 16px; border-radius:6px; font-weight:600; font-size:0.95rem;"></div>
             <button class="btn-primary" type="submit" id="form-btn-enviar">ENVIAR MENSAJE →</button>
           </form>
