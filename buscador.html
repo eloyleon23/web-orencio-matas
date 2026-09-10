@@ -7115,8 +7115,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS
             body: JSON.stringify({
                 accion: 'sugerir_complementarios_ia',
-                producto: { nombre: p.nombre, area: p.area, familia: p.familia },
-                candidatos: candidatos.map(c => c.nombre),
+                // A petición de Eloy: "hay que mejorarlo añadiendo no
+                // sólo el producto, sino la familia y algún detalle más
+                // para poder acertar con productos sugeridos" — se manda
+                // la familia y subfamilia también del producto
+                // principal y de cada candidato (no solo el nombre),
+                // para que la IA pueda distinguir mejor entre productos
+                // que solo COMPARTEN TEMA (p.ej. "jardín") de los que de
+                // verdad sirven para la MISMA tarea.
+                producto: { nombre: p.nombre, area: p.area, familia: p.familia, subfamilia: p.subfamilia || '' },
+                candidatos: candidatos.map(c => ({ nombre: c.nombre, familia: c.familia, subfamilia: c.subfamilia || '' })),
                 maximo: Math.min(4, huecoDisponible),
             }),
         })

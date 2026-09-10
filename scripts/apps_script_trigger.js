@@ -4513,27 +4513,55 @@ function procesarSugerirComplementariosIA(data) {
   try {
     const producto = data.producto || {};
     const nombreProducto = (producto.nombre || '').toString().trim();
-    const candidatos = Array.isArray(data.candidatos) ? data.candidatos : [];
+    const candidatosRaw = Array.isArray(data.candidatos) ? data.candidatos : [];
+    // A petición de Eloy: "hay que mejorarlo añadiendo no sólo el
+    // producto, sino la familia y algún detalle más para poder acertar
+    // con productos sugeridos" — cada candidato pasa ahora como objeto
+    // {nombre, familia, subfamilia} en vez de un simple string con el
+    // nombre a secas, para que la IA vea de qué categoría real es cada
+    // uno y pueda descartar con más criterio los que solo comparten
+    // tema/ubicación pero no tarea real (ver el caso ya corregido del
+    // césped artificial junto al abono, ambos "de jardín" pero sin
+    // relación funcional). Compatibilidad hacia atrás por si algún
+    // cliente desplegado aún manda el formato antiguo (array de
+    // strings, solo nombre).
+    const candidatosInfo = candidatosRaw.map((c) => (typeof c === 'string' ? { nombre: c, familia: '', subfamilia: '' } : (c || {})));
+    const nombresCandidatos = candidatosInfo.map((c) => c.nombre);
     // A petición de Eloy: límite dinámico según cuántos complementarios
     // ya se estén mostrando (hasta un máximo total) — el cliente calcula
     // el hueco disponible y lo manda aquí; por defecto (si no llega) se
     // mantiene el comportamiento anterior de hasta 4.
     const maximo = Number.isInteger(data.maximo) && data.maximo > 0 ? Math.min(data.maximo, 4) : 4;
-    if (!nombreProducto || !candidatos.length) {
+    if (!nombreProducto || !candidatosInfo.length) {
       throw new Error('Faltan datos requeridos: producto o candidatos');
     }
     if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
       throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
     }
 
+    // "Subfamilia" en el catálogo real muchas veces vale literalmente
+    // "General" (sin ningún matiz útil, ver por ejemplo toda la familia
+    // ABONOS Y JARDINERIA) — se omite en ese caso para no meter ruido
+    // en el prompt, solo se incluye cuando aporta algo de verdad.
+    function detalleFamilia(item) {
+      const familia = item.familia || 'sin familia conocida';
+      const sub = (item.subfamilia && item.subfamilia !== 'General') ? item.subfamilia : null;
+      return sub ? `${familia} > ${sub}` : familia;
+    }
+
+    const listaCandidatos = candidatosInfo
+      .map((c) => `${c.nombre}  [familia real del catálogo: ${detalleFamilia(c)}]`)
+      .join('\n');
+    const detalleProducto = detalleFamilia(producto);
+
     const prompt = 'Eres un dependiente experto de Orencio Matas y Hermanos, una tienda de droguería, ' +
       'perfumería, pinturas y suministros para talleres y carrocerías.\n' +
-      'Un cliente está viendo la ficha de este producto:\n"' + nombreProducto + '" (categoría: ' + (producto.area || '') + ' > ' + (producto.familia || '') + ')\n\n' +
-      'Estos son productos REALES de nuestro catálogo, de varias familias distintas dentro de la misma área — pueden no tener ninguna relación real con el producto principal, revísalos con criterio (cópialos EXACTAMENTE tal cual aparecen, letra por letra, si los eliges):\n' + candidatos.join('\n') + '\n\n' +
+      'Un cliente está viendo la ficha de este producto:\n"' + nombreProducto + '" (familia real del catálogo: ' + detalleProducto + ')\n\n' +
+      'Estos son productos REALES de nuestro catálogo, de varias familias distintas dentro de la misma área — pueden no tener ninguna relación real con el producto principal. Junto a cada uno se indica SU PROPIA familia (y subfamilia si la tiene) dentro del catálogo — úsala como pista principal para juzgar si encaja de verdad, no te fijes solo en el nombre (cópialos EXACTAMENTE tal cual aparecen ANTES del corchete, letra por letra, si los eliges — el corchete "[familia real del catálogo: ...]" es solo información para ti, nunca forma parte del nombre del producto):\n' + listaCandidatos + '\n\n' +
       'Elige hasta ' + maximo + ' de esos candidatos (pueden ser menos, o ninguno) que un cliente compraría de verdad JUNTO CON el producto principal para la MISMA tarea o actividad concreta — no basta con que "sean del mismo tema" o "sirvan para el mismo sitio en general" (jardín, baño, coche...), tienen que servir literalmente para el mismo trabajo. Piensa en herramientas de aplicación del propio producto, algo del paso justo anterior o posterior del mismo proceso, protección para usarlo, o limpieza de lo empleado — nunca un producto que solo comparta ámbito o ubicación de forma genérica.\n\n' +
       'EJEMPLO REAL DE ERROR A EVITAR: para un abono líquido de jardín, NO seleccionar césped artificial ni sus accesorios (cinta de unión, adhesivo, cortador) — el césped artificial no se abona, por muy "de jardín" que suenen ambos. Sería un acierto, en cambio, un producto de riego o un fertilizante complementario para plantas reales.\n\n' +
       'NUNCA elijas el mismo producto, ni una variante de él (mismo tipo de producto en otro color/tamaño/formato) — eso no es un complemento, es el mismo producto. Ante la duda, es mucho mejor no elegir ninguno que forzar una relación dudosa — un acierto real vale más que cuatro sugerencias de relleno.\n\n' +
-      'Responde EXACTAMENTE con este formato, una línea por cada producto elegido, copiando el nombre TAL CUAL aparece arriba (sin numerar, sin nada más):\n' +
+      'Responde EXACTAMENTE con este formato, una línea por cada producto elegido, copiando SOLO el nombre del producto (nunca el corchete de familia) TAL CUAL aparece arriba, sin numerar, sin nada más:\n' +
       'PRODUCTO: nombre exacto del candidato 1\n' +
       'PRODUCTO: nombre exacto del candidato 2\n' +
       '(y así hasta un máximo de ' + maximo + ' líneas — si no eliges ninguno, no escribas ninguna línea PRODUCTO)';
@@ -4550,7 +4578,16 @@ function procesarSugerirComplementariosIA(data) {
     r.texto.split('\n').forEach((linea) => {
       const l = linea.trim();
       if (!/^PRODUCTO:/i.test(l)) return;
-      const nombre = l.replace(/^PRODUCTO:/i, '').trim().replace(/^["']+|["'.]+$/g, '');
+      // OJO: solo se quitan comillas sueltas al principio/final, NUNCA
+      // puntos — a diferencia del SLUG de soluciones (que nunca lleva
+      // punto), casi todos los nombres reales de este catálogo TERMINAN
+      // en punto de forma legítima (abreviaturas de unidad: "1 L.",
+      // "500 ML.", "4 KG."...). Quitar el punto aquí rompía la
+      // comparación exacta contra los candidatos reales — una sugerencia
+      // BUENA de la IA se descartaba en silencio por no coincidir tras
+      // la limpieza (bug real encontrado el 10/09/2026 al depurar por
+      // qué apenas se veían sugerencias).
+      const nombre = l.replace(/^PRODUCTO:/i, '').trim().replace(/^["']+|["']+$/g, '');
       if (nombre) elegidos.push(nombre);
     });
 
@@ -4558,7 +4595,7 @@ function procesarSugerirComplementariosIA(data) {
     // comprueba contra la lista real de candidatos antes de aceptarlo. Si
     // la IA "alucinara" un nombre parecido pero no exacto, se descarta en
     // vez de mostrarlo como si fuera real.
-    const sugerenciasValidas = elegidos.filter((nombre) => candidatos.indexOf(nombre) !== -1).slice(0, maximo);
+    const sugerenciasValidas = elegidos.filter((nombre) => nombresCandidatos.indexOf(nombre) !== -1).slice(0, maximo);
     console.log('Complementarios IA — producto:', nombreProducto, '| elegidos por la IA:', JSON.stringify(elegidos), '| válidos tras comprobar:', JSON.stringify(sugerenciasValidas));
 
     return ContentService.createTextOutput(JSON.stringify({
