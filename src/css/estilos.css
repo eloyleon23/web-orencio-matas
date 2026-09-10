@@ -1237,6 +1237,19 @@ ol {
   box-shadow: 0 0 0 3px rgba(217, 27, 27, 0.18);
 }
 
+/* El <select> en sí hereda bien el texto blanco sobre fondo oscuro del
+   resto del formulario mientras está cerrado — pero el desplegable con
+   las opciones lo pinta el sistema operativo con SU PROPIO fondo, casi
+   siempre claro en escritorio (no así en la mayoría de móviles, donde
+   el selector nativo ya fuerza colores legibles por su cuenta). Sin
+   esta regla, las opciones quedaban con texto blanco sobre ese fondo
+   claro — invisibles al desplegar en escritorio, aunque el select
+   cerrado se viera bien. */
+select.form-input option {
+  color: #1a1a1a;
+  background: #fff;
+}
+
 textarea.form-input {
   resize: vertical;
 }
