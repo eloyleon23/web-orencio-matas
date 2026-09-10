@@ -5621,7 +5621,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (card) {
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        setTimeout(() => abrirModalProducto(producto), card ? 350 : 0);
+        setTimeout(() => abrirModalProducto(producto, { pushHistorial: true }), card ? 350 : 0);
     }
 
     function parseFecha(str) {
@@ -5852,7 +5852,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         card.className = 'producto-card';
         card.style.cursor = 'pointer';
         card.dataset.ref = p.ref;
-        card.addEventListener('click', () => abrirModalProducto(p));
+        card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
 
         const urlImg = urlImagenProducto(p, 300);
         const imgHtml = urlImg
@@ -6193,7 +6193,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Abrir modal con detalle del producto ──
-    function abrirModalProducto(p) {
+    function abrirModalProducto(p, opciones) {
+        opciones = opciones || {};
         const imgSrc = urlImagenProducto(p, 800) || '';
         const tieneImagen = !!imgSrc;
 
@@ -6338,7 +6339,47 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         $('modal-producto-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+
+        // A petición de Eloy: "si clico en un producto sugerido... si le
+        // das atrás te saca del buscador. Debería ir al producto del que
+        // viene el usuario". Solo las aperturas por interacción directa
+        // del usuario (tarjeta del listado, resultado único de una
+        // búsqueda, o un producto sugerido/complementario dentro del
+        // modal) piden esto explícitamente con opciones.pushHistorial —
+        // los re-renderizados del MISMO producto (tras actualizar
+        // imagen, dar de baja, marcar sin imagen) y la apertura inicial
+        // desde un enlace compartido (?ref=, que ya limpia la URL aparte)
+        // no lo piden, para no crear entradas de historial de más. Se
+        // apoya en el propio parámetro ?ref= de la URL (mismo mecanismo
+        // que ya usa abrirProductoDesdeURL), sin necesidad de mantener
+        // una pila aparte en JavaScript — cada "capa" de navegación por
+        // productos es una entrada real del historial del navegador.
+        if (opciones.pushHistorial) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('ref', p.ref);
+            window.history.pushState({ modalProductoRef: p.ref }, '', url);
+        }
     }
+
+    // Ver el comentario junto a opciones.pushHistorial en
+    // abrirModalProducto: al pulsar "atrás" estando en un producto al
+    // que se llegó por una de esas aperturas, se vuelve al producto
+    // anterior (leyendo el ?ref= que deja la propia entrada de
+    // historial) en vez de salir del buscador. Si no queda ningún ref
+    // anterior en la URL, se cierra el modal y el usuario se queda en el
+    // buscador con los resultados — nunca "expulsado" de la página.
+    window.addEventListener('popstate', () => {
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get('ref');
+        if (ref) {
+            const producto = TODOS.find(p => String(p.ref) === String(ref));
+            if (producto) {
+                abrirModalProducto(producto);
+                return;
+            }
+        }
+        cerrarModalProducto();
+    });
 
     // Construye la URL para compartir un producto: la página actual + el
     // parámetro ?ref=<referencia>. Al abrir ese enlace, el buscador detecta el
@@ -6959,6 +7000,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const MAX_COMPLEMENTARIOS_TOTAL = 8;
     const MAX_CANDIDATOS_COMPLEMENTARIOS_IA = 30;
     let refsComplementariosMostrados = [];
+    // Superset de refsComplementariosMostrados: además de lo VISIBLE en
+    // pantalla, incluye TODAS las referencias de p.relacionados aunque
+    // no quepan en las 4 que se muestran — sin esto, un producto que
+    // técnicamente ya está en "relacionados" (solo que fuera de las 4
+    // primeras) podía volver a aparecer "sugerido por IA" como si fuera
+    // nuevo. Se usa SIEMPRE para calcular candidatos, nunca para el
+    // límite de 8 (para eso sigue sirviendo solo refsComplementariosMostrados,
+    // que refleja lo que de verdad ocupa espacio en la rejilla).
+    let refsComplementariosExcluidos = [];
 
     // Muestreo estratificado: agrupa por familia (dentro de la misma área
     // del producto, excluyendo su propia familia — eso serían variantes
@@ -7003,6 +7053,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return candidatos;
     }
 
+    // A petición de Eloy: mensajes progresivos en el botón mientras se
+    // espera la respuesta de la IA — mismo patrón ya usado en el resto
+    // del sitio (buscador de productos, Centro de Soluciones), para no
+    // dar sensación de que el botón "se ha quedado pillado". Sin modal
+    // ni botón de cancelar aquí (a diferencia de iniciarEsperaIA): esta
+    // es una acción más pequeña y contextual dentro de la ficha de
+    // producto, el propio botón deshabilitado ya deja claro que está en
+    // curso.
+    const MENSAJES_ESPERA_COMPLEMENTARIOS_IA = [
+        'Pensando…',
+        'Revisando el catálogo…',
+        'Ya casi…',
+        'Esto está tardando un poco más de lo normal…',
+    ];
+    function iniciarEsperaComplementariosIA(btn) {
+        let paso = 0;
+        btn.innerHTML = `<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> ${MENSAJES_ESPERA_COMPLEMENTARIOS_IA[0]}`;
+        const intervalo = setInterval(() => {
+            paso = Math.min(paso + 1, MENSAJES_ESPERA_COMPLEMENTARIOS_IA.length - 1);
+            btn.innerHTML = `<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> ${MENSAJES_ESPERA_COMPLEMENTARIOS_IA[paso]}`;
+        }, 4000);
+        return () => clearInterval(intervalo);
+    }
+
     function pedirComplementariosIA(p) {
         const btn = $('btn-complementarios-ia');
         const mensaje = $('complementarios-ia-mensaje');
@@ -7012,7 +7086,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const huecoDisponible = MAX_COMPLEMENTARIOS_TOTAL - refsComplementariosMostrados.length;
         if (huecoDisponible <= 0) { btn.style.display = 'none'; return; }
 
-        const candidatos = calcularCandidatosComplementarios(p, refsComplementariosMostrados);
+        // A petición de Eloy: "se siguen incluyendo en sugeridos por IA
+        // algunos productos con la misma referencia que alguno que ya
+        // está en relacionados". Causa real: refsComplementariosMostrados
+        // solo recoge las referencias que se MUESTRAN (recortado a 4),
+        // pero p.relacionados puede tener más de 4 — las que se quedan
+        // fuera de esas primeras 4 seguían sin excluirse de los
+        // candidatos, así que la IA podía "redescubrir" un producto que
+        // técnicamente ya estaba en relacionados, solo que no se
+        // enseñaba en pantalla. refsComplementariosExcluidos es el
+        // conjunto completo (todo relacionados + todo lo mostrado en
+        // pantalla, sea de donde sea), siempre usado para los candidatos.
+        const yaHabiaAlgoMostrado = refsComplementariosMostrados.length > 0;
+        const candidatos = calcularCandidatosComplementarios(p, refsComplementariosExcluidos);
         if (!candidatos.length) {
             mensaje.textContent = 'No hay más productos de referencia para sugerir con la IA.';
             mensaje.style.display = '';
@@ -7021,8 +7107,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         btn.disabled = true;
-        btn.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Pensando…';
         mensaje.style.display = 'none';
+        const detenerEspera = iniciarEsperaComplementariosIA(btn);
 
         fetch(url, {
             method: 'POST',
@@ -7036,6 +7122,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         })
           .then(res => res.json())
           .then(data => {
+              detenerEspera();
               btn.disabled = false;
 
               if (!data || !data.success) {
@@ -7056,12 +7143,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                   .slice(0, huecoDisponible);
               if (!sugerencias.length) {
                   btn.innerHTML = textoBotonComplementariosIA();
-                  mensaje.textContent = 'La IA no ha encontrado ningún complemento claro para este producto.';
+                  // A petición de Eloy: si ya había algo mostrado
+                  // (relacionados, reglas fijas, o una vuelta anterior de
+                  // la propia IA), el mensaje debe dejarlo claro en vez
+                  // de sonar como si no se hubiera encontrado nada en
+                  // absoluto.
+                  mensaje.textContent = yaHabiaAlgoMostrado
+                      ? 'No se han encontrado más sugerencias claras para este producto.'
+                      : 'La IA no ha encontrado ningún complemento claro para este producto.';
                   mensaje.style.display = '';
                   return;
               }
               renderComplementarios(sugerencias, { append: true, esIA: true });
-              refsComplementariosMostrados = refsComplementariosMostrados.concat(sugerencias.map(s => s.ref));
+              const nuevasRefs = sugerencias.map(s => s.ref);
+              refsComplementariosMostrados = refsComplementariosMostrados.concat(nuevasRefs);
+              refsComplementariosExcluidos = refsComplementariosExcluidos.concat(nuevasRefs);
               if (refsComplementariosMostrados.length >= MAX_COMPLEMENTARIOS_TOTAL) {
                   btn.style.display = 'none';
               } else {
@@ -7069,6 +7165,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               }
           })
           .catch(err => {
+              detenerEspera();
               console.error('Error en pedirComplementariosIA:', err);
               btn.disabled = false;
               btn.innerHTML = textoBotonComplementariosIA();
@@ -7123,7 +7220,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             btn.addEventListener('click', () => {
                 const ref = btn.dataset.ref;
                 const producto = TODOS.find(x => x.ref === ref);
-                if (producto) abrirModalProducto(producto);
+                if (producto) abrirModalProducto(producto, { pushHistorial: true });
             });
         });
     }
@@ -7138,12 +7235,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         btnIA.onclick = null;
         lista.innerHTML = '';
         refsComplementariosMostrados = [];
+        refsComplementariosExcluidos = [];
 
         // Prioridad: la columna "relacionados" del Excel (editable
         // directamente ahí, sin tocar código) — si el producto la tiene
         // informada, se usa tal cual.
         let sugerencias = [];
         if (Array.isArray(p.relacionados) && p.relacionados.length) {
+            // TODAS las referencias de relacionados se excluyen de los
+            // candidatos de la IA, aunque solo se muestren las 4
+            // primeras — ver el comentario junto a la declaración de
+            // refsComplementariosExcluidos más arriba.
+            refsComplementariosExcluidos = p.relacionados.slice();
             sugerencias = p.relacionados
                 .map(ref => TODOS.find(x => x.ref === ref))
                 .filter(Boolean)
@@ -7175,6 +7278,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (sugerencias.length) {
             renderComplementarios(sugerencias);
             refsComplementariosMostrados = sugerencias.map(s => s.ref);
+            // Fusión (Set para no duplicar): si venían de "relacionados",
+            // refsComplementariosExcluidos ya tenía el array COMPLETO
+            // (incluyendo las que no se muestran); si venían de las
+            // reglas fijas, aquí es la primera vez que se puebla.
+            refsComplementariosExcluidos = Array.from(new Set(refsComplementariosExcluidos.concat(refsComplementariosMostrados)));
         }
 
         bloque.style.display = 'block';
@@ -7230,6 +7338,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalProducto() {
         $('modal-producto-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        // Si se llegó aquí con un ?ref= en la URL (por haber navegado por
+        // productos del listado o sugeridos dentro del modal), se limpia
+        // sin crear ni quitar ninguna entrada de historial — un cierre
+        // manual (X, clic fuera, ESC) no debe dejar el parámetro suelto
+        // en la URL.
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('ref')) {
+            const limpia = window.location.origin + window.location.pathname + window.location.hash;
+            window.history.replaceState({}, '', limpia);
+        }
     }
 
     // ── Actualizar imagen de producto ──
