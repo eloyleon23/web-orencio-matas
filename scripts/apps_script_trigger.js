@@ -18,15 +18,11 @@ const DRIVE_IMAGENES_ID   = '13O7N_q6IisAhsvSoXogKJ2PUDVQfUKRe';
 const BREVO_API_KEY = 'PON_AQUI_LA_NUEVA_CLAVE_DE_BREVO';
 
 // Clave SECRETA de reCAPTCHA v2 — a petición de Eloy, protección
-// anti-bots del formulario de contacto. Se consigue en
+// anti-bots del formulario de contacto. Registrada por Eloy en
 // https://www.google.com/recaptcha/admin/create (junto con la SITE_KEY,
-// que va en index.html — esa sí puede ser pública, esta NO). Mientras
-// siga con este valor de PRUEBA oficial de Google (documentado en
-// https://developers.google.com/recaptcha/docs/faq — siempre válido,
-// pensado para desarrollo), la verificación pasa siempre y NO protege
-// de verdad, exactamente igual que la SITE_KEY de prueba en index.html.
-// Sustituir por la clave secreta real en cuanto Eloy la consiga.
-const RECAPTCHA_SECRET_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
+// que va en index.html — esa sí puede ser pública, esta NO). Ya con la
+// clave real del sitio, sustituida el 10/09/2026.
+const RECAPTCHA_SECRET_KEY = '6LfgCrMtAAAAAO9RKlvO4W0pBTsNanbO0Nr6BTcJ';
 
 // Clave de API de Google Gemini — usada SOLO desde aquí, en el servidor,
 // para la búsqueda inteligente del Centro de Soluciones (ver

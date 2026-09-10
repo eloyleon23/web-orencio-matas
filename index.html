@@ -44,14 +44,10 @@
   }
 </script>
 <!-- reCAPTCHA v2 (checkbox "No soy un robot") — a petición de Eloy, como
-     protección adicional del formulario de contacto frente a bots. La
-     SITE_KEY real hay que sustituirla más abajo, en el <div
-     class="g-recaptcha">, cuando Eloy la consiga en
-     https://www.google.com/recaptcha/admin/create (reCAPTCHA v2,
-     "Casilla de verificación"). Mientras siga con la clave de prueba
-     de Google (siempre válida, pensada para desarrollo — nunca bloquea
-     el envío pero tampoco protege de verdad), el formulario sigue
-     funcionando con normalidad. -->
+     protección adicional del formulario de contacto frente a bots. Ya
+     con la SITE_KEY real del sitio (registrada por Eloy en
+     https://www.google.com/recaptcha/admin/create, reCAPTCHA v2,
+     "Casilla de verificación"), sustituida el 10/09/2026. -->
 <script src="https://www.google.com/recaptcha/api.js" defer></script>
 </head>
   <body>
@@ -472,12 +468,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <input type="text" name="web" id="form-honeypot" tabindex="-1" autocomplete="off" />
               </label>
             </div>
-            <!-- reCAPTCHA v2 — SITE_KEY de PRUEBA oficial de Google
-                 (siempre válida, pensada para desarrollo — NO protege de
-                 verdad, cualquiera la pasa). Sustituir por la clave real
-                 del sitio en cuanto Eloy la consiga en
-                 https://www.google.com/recaptcha/admin/create. -->
-            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+            <!-- reCAPTCHA v2 — SITE_KEY real del sitio, registrada por
+                 Eloy en el panel de Google reCAPTCHA. -->
+            <div class="g-recaptcha" data-sitekey="6LfgCrMtAAAAADiUArHnp-8MzH-gKL6OcFctzqA_"></div>
             <div id="form-mensaje-estado" style="display:none; margin-bottom:12px; padding:12px 16px; border-radius:6px; font-weight:600; font-size:0.95rem;"></div>
             <button class="btn-primary" type="submit" id="form-btn-enviar">ENVIAR MENSAJE →</button>
           </form>
