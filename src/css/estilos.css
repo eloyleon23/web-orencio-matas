@@ -1778,7 +1778,14 @@ textarea.form-input {
   }
 }
 
-.form-consent {
+/* .quote-form label ya define display:grid para el resto de campos
+   (etiqueta arriba, campo debajo) — con más especificidad que
+   .form-consent a secas (2 partes de selector frente a 1), esa regla
+   ganaba y forzaba lo mismo aquí, apilando el checkbox y el texto en
+   filas separadas del grid en vez de ponerlos uno junto al otro. Se
+   sube la especificidad de forma natural (.quote-form .form-consent,
+   sin necesitar !important) para que esta regla gane como toca. */
+.quote-form .form-consent {
   display: flex;
   align-items: flex-start;
   gap: 12px;
