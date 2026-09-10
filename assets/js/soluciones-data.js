@@ -5299,6 +5299,54 @@ window.SOLUCIONES_DATA = (function () {
     return (t || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
+  // Diccionario de abreviaturas SISTEMÁTICAS de este catálogo (nombres de
+  // producto muy comprimidos por límite de caracteres) — caso real que
+  // motivó esto: un cliente pidió "imprimación para madera en spray" y
+  // ni la búsqueda ni la IA encontraron SPRAY TITAN IMP.MULTIUSOS, porque
+  // "imprimación" completa nunca aparece en ningún nombre real del
+  // catálogo, solo su abreviatura "IMP.". Cada entrada se verificó contra
+  // el catálogo real antes de añadirla (grep de la abreviatura + revisión
+  // manual de varios ejemplos) para evitar el mismo tipo de colisión ya
+  // visto antes en este proyecto ("sata" en "desatascador", "cola" en
+  // "descolado") — se excluyó a propósito, por ejemplo, "inst" (que en
+  // este catálogo real es la marca "Instituto Español", no
+  // "instantáneo", pese a parecerlo a primera vista).
+  const ABREVIATURAS_CATALOGO = {
+    imp: 'imprimacion',
+    esm: 'esmalte',
+    limp: 'limpiador',
+    desinf: 'desinfectante',
+    protec: 'proteccion',
+    deterg: 'detergente',
+    suaviz: 'suavizante',
+    sint: 'sintetico',
+    incol: 'incoloro',
+    elect: 'electrico',
+    perf: 'perfumado',
+    revest: 'revestimiento',
+    efect: 'efecto',
+    prof: 'profesional',
+  };
+
+  // Añade al final la forma completa de cualquier abreviatura conocida
+  // que aparezca en el texto — NUNCA sustituye ni quita nada, solo suma,
+  // para que una búsqueda con la palabra completa encuentre productos
+  // que solo llevan la forma abreviada (y viceversa, que ya funcionaba
+  // sin este cambio). A propósito NO se aplica dentro de normalizarTexto()
+  // en sí: esa función también se usa para comparar IGUALDAD EXACTA de
+  // nombres en resolverProductoReal, donde añadir texto extra rompería
+  // esa comparación — se aplica solo en los puntos donde de verdad se
+  // compara "contiene esta palabra", nunca donde importa el texto exacto.
+  function conAbreviaturasExpandidas(textoNorm) {
+    const palabras = textoNorm.split(/[^a-z0-9áéíóúñ]+/i).filter(Boolean);
+    const extra = [];
+    palabras.forEach((p) => {
+      const expandida = ABREVIATURAS_CATALOGO[p];
+      if (expandida && palabras.indexOf(expandida) === -1) extra.push(expandida);
+    });
+    return extra.length ? textoNorm + ' ' + extra.join(' ') : textoNorm;
+  }
+
   const STOPWORDS_BUSQUEDA = new Set([
     'que', 'para', 'como', 'pero', 'desde', 'esta', 'este', 'estos', 'estas',
     'tengo', 'necesito', 'quiero', 'puedo', 'hacer', 'tiene', 'sobre', 'entre',
@@ -5384,13 +5432,13 @@ window.SOLUCIONES_DATA = (function () {
     if (!palabras.length) return [];
     const resultados = [];
     Object.values(soluciones).forEach((s) => {
-      const tituloNorm = normalizarTexto(s.title || '');
-      const restoNorm = normalizarTexto(
+      const tituloNorm = conAbreviaturasExpandidas(normalizarTexto(s.title || ''));
+      const restoNorm = conAbreviaturasExpandidas(normalizarTexto(
         [s.description, s.category, s.subcategory, (s.breadcrumb || []).join(' ')].filter(Boolean).join(' ')
-      );
-      const productosNorm = (s.recommendedProducts || [])
+      ));
+      const productosNorm = conAbreviaturasExpandidas((s.recommendedProducts || [])
         .map((p) => normalizarTexto(p.nombre || ''))
-        .join(' | ');
+        .join(' | '));
       let puntuacion = 0;
       palabras.forEach((w) => {
         if (contienePalabra(tituloNorm, w)) puntuacion += 3; // el título pesa más
@@ -5550,7 +5598,7 @@ window.SOLUCIONES_DATA = (function () {
         const resultados = [];
         lista.forEach((p) => {
           if (excluir.has(p.ref)) return;
-          const nombreNorm = normalizarTexto(p.nombre || '');
+          const nombreNorm = conAbreviaturasExpandidas(normalizarTexto(p.nombre || ''));
           const coincidencias = palabras.filter((w) => contienePalabra(nombreNorm, w)).length;
           if (coincidencias > 0) resultados.push({ producto: p, coincidencias });
         });
@@ -5634,7 +5682,7 @@ window.SOLUCIONES_DATA = (function () {
       let mejorPuntuacion = 0;
       productos.forEach((p) => {
         const pn = normalizarTexto(p.nombre || '');
-        const puntuacion = palabras.filter((w) => contienePalabra(pn, w)).length;
+        const puntuacion = palabras.filter((w) => contienePalabra(conAbreviaturasExpandidas(pn), w)).length;
         if (puntuacion > mejorPuntuacion) { mejorPuntuacion = puntuacion; mejor = p; }
       });
       return mejorPuntuacion >= 2 ? mejor : null;
@@ -5707,7 +5755,7 @@ window.SOLUCIONES_DATA = (function () {
     return cargarCatalogoReal().then((productos) => {
       const resultados = [];
       productos.forEach((p) => {
-        const nombreNorm = normalizarTexto(p.nombre || '');
+        const nombreNorm = conAbreviaturasExpandidas(normalizarTexto(p.nombre || ''));
         let puntuacion = 0;
         palabras.forEach((w) => {
           if (coincideCodigoProducto(nombreNorm, w)) puntuacion += PUNTUACION_CODIGO_PRODUCTO;

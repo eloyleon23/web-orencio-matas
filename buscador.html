@@ -3877,11 +3877,52 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const $ = (id) => document.getElementById(id);
 
     // ── Normalizar texto para búsqueda fuzzy (sin tildes, minúsculas) ──
+    // Diccionario de abreviaturas SISTEMÁTICAS de este catálogo, usado por
+    // normalizar() más abajo — ver el comentario completo junto a su uso.
+    const ABREVIATURAS_CATALOGO = {
+        imp: 'imprimacion',
+        esm: 'esmalte',
+        limp: 'limpiador',
+        desinf: 'desinfectante',
+        protec: 'proteccion',
+        deterg: 'detergente',
+        suaviz: 'suavizante',
+        sint: 'sintetico',
+        incol: 'incoloro',
+        elect: 'electrico',
+        perf: 'perfumado',
+        revest: 'revestimiento',
+        efect: 'efecto',
+        prof: 'profesional',
+    };
+
     function normalizar(txt) {
-        return (txt || '').toString()
+        const base = (txt || '').toString()
             .toLowerCase()
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
             .trim();
+        // Expansión de abreviaturas SISTEMÁTICAS de este catálogo (nombres
+        // de producto muy comprimidos por límite de caracteres) — caso
+        // real que motivó esto: un cliente pidió "imprimación para madera
+        // en spray" y ni la búsqueda encontró SPRAY TITAN IMP.MULTIUSOS,
+        // porque "imprimación" completa nunca aparece en ningún nombre
+        // real del catálogo, solo su abreviatura "IMP.". Se AÑADE al
+        // final la forma completa cuando se detecta la abreviatura,
+        // nunca se sustituye nada — así una búsqueda con la palabra
+        // completa encuentra productos que solo llevan la forma
+        // abreviada (y viceversa, que ya funcionaba sin este cambio).
+        // Mismo diccionario que en soluciones-data.js (Centro de
+        // Soluciones), cada entrada verificada contra el catálogo real
+        // antes de añadirla para evitar colisiones — se excluyó a
+        // propósito, por ejemplo, "inst" (que en este catálogo real es
+        // la marca "Instituto Español", no "instantáneo").
+        const palabras = base.split(/[^a-z0-9áéíóúñ]+/i).filter(Boolean);
+        const extra = [];
+        palabras.forEach(p => {
+            const expandida = ABREVIATURAS_CATALOGO[p];
+            if (expandida && palabras.indexOf(expandida) === -1) extra.push(expandida);
+        });
+        return extra.length ? base + ' ' + extra.join(' ') : base;
     }
 
     // ── Sugerencias de búsqueda (autocompletar estilo Amazon) ──
