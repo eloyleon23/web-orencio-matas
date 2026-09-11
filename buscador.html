@@ -1553,6 +1553,36 @@
             color: var(--muted);
             margin-top: 4px;
         }
+        /* Precio a mayor — información interna, deliberadamente discreta y
+           con un aviso visual (fondo distinto) para no confundirse nunca
+           con el precio de venta al público de arriba. */
+        .modal-producto-precio-mayor-bloque {
+            margin: -8px 0 20px;
+        }
+        .modal-producto-btn-precio-mayor {
+            background: #f1f5f9;
+            border: 1px dashed var(--muted);
+            color: var(--muted);
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .modal-producto-btn-precio-mayor:hover {
+            background: #e2e8f0;
+        }
+        .modal-producto-precio-mayor-valores {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            color: #78350f;
+            margin-top: 6px;
+        }
+        .modal-producto-precio-mayor-valores strong {
+            font-size: 1.05rem;
+        }
         .modal-producto-detalles p {
             margin: 8px 0;
             color: var(--text);
@@ -3327,6 +3357,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
                 <p class="modal-producto-descripcion" id="modal-producto-descripcion" style="display:none;"></p>
                 <div class="modal-producto-precio" id="modal-producto-precio"></div>
+                <!-- Precio de venta a MAYOR — información interna, nunca
+                     visible para el público (ver window.MOSTRAR_PRECIO_MAYOR
+                     en la configuración del buscador, más abajo en este
+                     archivo). Oculto tras un botón a propósito. -->
+                <div id="modal-producto-precio-mayor-bloque" class="modal-producto-precio-mayor-bloque" style="display:none;">
+                    <button type="button" id="modal-producto-btn-ver-precio-mayor" class="modal-producto-btn-precio-mayor">
+                        <i class="fa-solid fa-eye"></i> Ver precio mayor
+                    </button>
+                    <div id="modal-producto-precio-mayor-valores" class="modal-producto-precio-mayor-valores" style="display:none;"></div>
+                </div>
                 <div class="modal-producto-detalles">
                     <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
                     <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
@@ -3737,6 +3777,13 @@ window.MOSTRAR_FILTRO_IMAGENES_REVISADAS = true;
 // Botón para dar de baja / reactivar un producto (fase de desarrollo — se
 // restringirá al perfil administrador cuando exista esa distinción)
 window.MOSTRAR_BOTON_GESTION_BAJA = true;
+// Precio de venta a MAYOR (sin/con IVA) en la ficha de detalle, oculto
+// tras un botón — a petición de Eloy, 11/09/2026. INFORMACIÓN INTERNA,
+// NUNCA debe verse en producción/release: si en algún momento se prepara
+// una copia de release con el buscador incluido, este valor debe pasar
+// a false en ESA copia antes de subir nada, igual que ya se hace con el
+// resto de flags de "fase de desarrollo" de este bloque.
+window.MOSTRAR_PRECIO_MAYOR = true;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -6324,6 +6371,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         }
         $('modal-producto-precio').innerHTML = precioHtml;
+
+        // Precio de venta a MAYOR, oculto tras un botón — información
+        // interna, nunca debe verse en producción/release (ver
+        // window.MOSTRAR_PRECIO_MAYOR en la configuración de arriba del
+        // archivo). Se recalcula cada vez que se abre la ficha, así que
+        // vuelve a quedar oculto tras el botón al cambiar de producto o
+        // reabrir el mismo.
+        const bloquePrecioMayor = $('modal-producto-precio-mayor-bloque');
+        const btnPrecioMayor = $('modal-producto-btn-ver-precio-mayor');
+        const valoresPrecioMayor = $('modal-producto-precio-mayor-valores');
+        const precioMayorSin = p.precio_mayor_sin ? parseFloat(p.precio_mayor_sin.toString().replace(',', '.')) : 0;
+        if (window.MOSTRAR_PRECIO_MAYOR && precioMayorSin > 0) {
+            bloquePrecioMayor.style.display = '';
+            btnPrecioMayor.style.display = '';
+            valoresPrecioMayor.style.display = 'none';
+            valoresPrecioMayor.innerHTML = '';
+            btnPrecioMayor.onclick = () => {
+                const iva = parseFloat((p.iva || '21').toString().replace(',', '.')) || 21;
+                const mayorConIva = precioMayorSin * (1 + iva / 100);
+                const sinTxt = precioMayorSin.toFixed(2).replace('.', ',');
+                const conTxt = mayorConIva.toFixed(2).replace('.', ',');
+                valoresPrecioMayor.innerHTML = `<strong>${conTxt} €</strong> con IVA &nbsp;·&nbsp; ${sinTxt} € sin IVA`;
+                valoresPrecioMayor.style.display = '';
+                btnPrecioMayor.style.display = 'none';
+            };
+        } else {
+            bloquePrecioMayor.style.display = 'none';
+        }
 
         // Mostrar botón de actualizar imagen si está activado en configuración
         if (window.MOSTRAR_BOTON_REPORTAR_IMAGEN) {

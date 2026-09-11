@@ -137,6 +137,16 @@ def exportar_productos_json(productos, familias, subfamilias):
 
         precio_sin = p.get('precio_sin_iva', '').strip()
         precio_con = p.get('precio_con_iva', '').strip()
+        # Precio de venta a MAYOR sin IVA (a petición de Eloy, 11/09/2026)
+        # — se exporta siempre que el proceso tenga el precio disponible,
+        # igual que el resto de precios, aunque de momento SOLO se
+        # muestra oculto tras un botón en la ficha de detalle del
+        # buscador (funcionalidad que debe quedar SIEMPRE fuera de
+        # release/IONOS). El "con IVA" no se exporta aparte: se calcula
+        # en el cliente reutilizando el mismo % de IVA ya exportado para
+        # el producto (campo 'iva', si se añade más adelante) o el que ya
+        # se use para precio_con/precio_sin.
+        precio_mayor_sin = p.get('precio_mayor_sin_iva', '').strip()
 
         # Productos relacionados / compra conjunta: columna "relacionados"
         # del Sheet, lista de referencias separadas por comas. Editable
@@ -165,6 +175,15 @@ def exportar_productos_json(productos, familias, subfamilias):
             'mostrar_precio': es_si(p.get('mostrar_precio', '')),
             'precio_sin': precio_sin,
             'precio_con': precio_con,
+            # 'iva' se exporta a partir de aquí (a petición de Eloy, junto
+            # con precio_mayor_sin) — antes no hacía falta en el cliente,
+            # ya que precio_sin/precio_con ya venían calculados; ahora se
+            # necesita para poder calcular el precio mayor CON IVA en el
+            # buscador, reutilizando el mismo % ya almacenado en el Sheet
+            # para el producto en vez de derivarlo por división (frágil
+            # ante redondeos).
+            'iva':       p.get('iva', '').strip(),
+            'precio_mayor_sin': precio_mayor_sin,
             'fecha':     p.get('fecha_registro', '').strip(),
             'espacios':  p.get('espacios_a_ocupar', '1').strip() or '1',
             'imagen_validada': p.get('imagen_validada', '').strip(),

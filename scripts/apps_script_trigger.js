@@ -143,6 +143,19 @@ function sincronizarRegistroProductos() {
     sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('fecha_alta');
     prodHeaderRow.push('fecha_alta');
   }
+  // Precio de venta a MAYOR sin IVA (a petición de Eloy, 11/09/2026) —
+  // llega del Excel de actualización (columna PrecioMayorSinIVA, ya
+  // presente en COLUMNAS_CRM_EXCEL desde antes, pero nunca se trasladaba
+  // a la hoja Productos). De momento SOLO se usa para mostrarlo oculto
+  // tras un botón en la ficha de detalle del buscador (ver
+  // MOSTRAR_PRECIO_MAYOR en buscador.html) — funcionalidad que debe
+  // quedar SIEMPRE fuera de release/IONOS, nunca visible a clientes. El
+  // "con IVA" no se guarda aparte: se calcula en el momento de mostrarlo
+  // reutilizando el mismo % de IVA ya almacenado para el producto.
+  if (!prodHeaderRow.includes('precio_mayor_sin_iva')) {
+    sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('precio_mayor_sin_iva');
+    prodHeaderRow.push('precio_mayor_sin_iva');
+  }
 
   const PROD = {};
   prodHeaderRow.forEach((h, i) => { PROD[h] = i; });
@@ -194,6 +207,7 @@ function sincronizarRegistroProductos() {
     const ean          = fila[COL['CodigoEAN']]          ? fila[COL['CodigoEAN']].toString().trim()          : '';
     const desc         = fila[COL['DescripcionArticulo']] ? fila[COL['DescripcionArticulo']].toString().trim() : '';
     const precioSinIva = parseFloat(fila[COL['PrecioPublicoSinIVA']]) || 0;
+    const precioMayorSinIva = COL['PrecioMayorSinIVA'] !== undefined ? (parseFloat(fila[COL['PrecioMayorSinIVA']]) || 0) : 0;
     const iva          = parseFloat(fila[COL['IVA']])               || 21;
     const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
     const familia      = fila[COL['Familia']] ? fila[COL['Familia']].toString().trim() : '';
@@ -227,6 +241,18 @@ function sincronizarRegistroProductos() {
             cambios = true;
           }
         });
+        // Aparte de checks: solo se actualiza si el Excel trae de verdad
+        // un precio mayor (> 0) para esta fila — a diferencia del resto
+        // de campos, aquí NO queremos sobrescribir con "0" un valor que
+        // ya pudiera existir en el Sheet cuando el Excel simplemente no
+        // trae ese dato para este producto en concreto.
+        if (precioMayorSinIva > 0 && PROD['precio_mayor_sin_iva'] !== undefined) {
+          const valPrecioMayor = formatPrecio_(precioMayorSinIva);
+          if (prodRow[PROD['precio_mayor_sin_iva']].toString().trim() != valPrecioMayor) {
+            prodRow[PROD['precio_mayor_sin_iva']] = valPrecioMayor;
+            cambios = true;
+          }
+        }
         if (cambios && PROD['fecha_registro'] !== undefined) prodRow[PROD['fecha_registro']] = hoy;
 
         actualizados++;
@@ -247,6 +273,7 @@ function sincronizarRegistroProductos() {
         set('precio_sin_iva',      formatPrecio_(precioSinIva));
         set('iva',                 iva);
         set('precio_con_iva',      formatPrecio_(precioConIva));
+        if (precioMayorSinIva > 0) set('precio_mayor_sin_iva', formatPrecio_(precioMayorSinIva));
         set('mostrar_precio',      'si');
         set('incluir_en_catalogo', 'si');
         set('oferta',              'no');
@@ -353,6 +380,7 @@ function actualizarPreciosProductos() {
         const prodRowNum = prodRowIdx + 2;
 
         const precioSinIva = parseFloat(fila[COL['PrecioPublicoSinIVA']]) || 0;
+        const precioMayorSinIva = COL['PrecioMayorSinIVA'] !== undefined ? (parseFloat(fila[COL['PrecioMayorSinIVA']]) || 0) : 0;
         const iva          = parseFloat(fila[COL['IVA']]) || 21;
         const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
 
@@ -369,6 +397,14 @@ function actualizarPreciosProductos() {
         // Actualizar precio con IVA
         if (PROD['precio_con_iva'] !== undefined) {
           sheetProd.getRange(prodRowNum, PROD['precio_con_iva'] + 1).setValue(formatPrecio_(precioConIva));
+        }
+
+        // Actualizar precio mayor sin IVA — solo si el Excel trae de
+        // verdad un valor (> 0) para esta fila, igual que en
+        // sincronizarRegistroProductos(): no sobrescribir con "0" un
+        // valor ya existente cuando el Excel simplemente no lo trae.
+        if (precioMayorSinIva > 0 && PROD['precio_mayor_sin_iva'] !== undefined) {
+          sheetProd.getRange(prodRowNum, PROD['precio_mayor_sin_iva'] + 1).setValue(formatPrecio_(precioMayorSinIva));
         }
 
         // Actualizar fecha_registro
@@ -2902,6 +2938,14 @@ function regenerarCacheCompletaDesdeSheet_() {
         mostrar_precio: esSi_(valorCelda_(row, 'mostrar_precio')),
         precio_sin: valorCelda_(row, 'precio_sin_iva'),
         precio_con: valorCelda_(row, 'precio_con_iva'),
+        // Precio de venta a MAYOR sin IVA + el % de IVA del producto (a
+        // petición de Eloy, 11/09/2026) — ver el porqué completo junto
+        // al mismo cambio en generar_productos_json.py. De momento SOLO
+        // se usa oculto tras un botón en la ficha de detalle del
+        // buscador, funcionalidad que debe quedar SIEMPRE fuera de
+        // release/IONOS.
+        iva: valorCelda_(row, 'iva'),
+        precio_mayor_sin: valorCelda_(row, 'precio_mayor_sin_iva'),
         fecha: valorCelda_(row, 'fecha_registro'),
         espacios: valorCelda_(row, 'espacios_a_ocupar') || '1',
         imagen_validada: valorCelda_(row, 'imagen_validada'),
