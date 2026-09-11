@@ -4348,6 +4348,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         iniciarComprobacionActualizaciones();
         aplicarFiltrosDesdeURL();
         abrirProductoDesdeURL();
+        // A petición de Eloy: al entrar o recargar la página, el foco del
+        // teclado se pone automáticamente en la barra de búsqueda — muy
+        // útil con el lector de códigos de barras, que "escribe"
+        // directamente donde esté el foco sin tener que tocar antes la
+        // pantalla. Si ?ref= ya abrió el modal de un producto (enlace
+        // compartido), se respeta esa vista y no se le quita el foco —
+        // el usuario probablemente quiere ver ese producto, no buscar.
+        if (!$('modal-producto-overlay').classList.contains('activo')) {
+            $('f-texto').focus();
+        }
     }
 
     function cargarProductosAdicionalesEnSegundoPlano() {
@@ -7398,6 +7408,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             window.history.replaceState({}, '', limpia);
         }
     }
+
+    // A petición de Eloy: al pulsar Escape estando dentro de la ficha de
+    // detalle de un producto, se cierra el modal Y se vuelve a poner el
+    // foco en la barra de búsqueda — mismo motivo que el autofocus de
+    // mostrarResultadosPorPrimeraVez(): con el lector de códigos de
+    // barras el foco tiene que estar en el campo de texto para que
+    // "escriba" ahí, y Escape es el gesto natural para "ya he visto este
+    // producto, sigo escaneando el siguiente".
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if ($('modal-producto-overlay').classList.contains('activo')) {
+            cerrarModalProducto();
+            $('f-texto').focus();
+        }
+    });
 
     // ── Actualizar imagen de producto ──
     let productoActual = null;
