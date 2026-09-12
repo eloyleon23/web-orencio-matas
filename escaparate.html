@@ -1,0 +1,1227 @@
+<!doctype html>
+<html lang="es">
+  <head>
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Escaparate OM — productos destacados de temporada y campañas comerciales de Orencio Matas y Hnos, S.L." />
+    <!-- Página aún en fase de prototipo, sin enlazar desde ningún menú:
+         que no la indexen mientras tanto. Quitar esta etiqueta cuando
+         se decida publicarla de verdad. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Escaparate | Orencio Matas y Hnos, S.L.</title>
+    <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:ital,wght@0,700;0,800;0,900;1,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <!-- Google tag (gtag.js) -->
+    <script>
+  // Ver nota en el bloque de Google Tag Manager: solo en el dominio
+  // oficial orenciomatas.es.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    var _gtagScript = document.createElement('script');
+    _gtagScript.async = true;
+    _gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y';
+    document.head.appendChild(_gtagScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HMM85HSJ4Y');
+  }
+    </script>
+
+    <style>
+      :root{
+        --paper:#F5F6F8;
+        --paper-raised:#FFFFFF;
+        --glass:#FAFAFC;
+        --ink:#0F1115;
+        --ink-soft:#4A4E58;
+        --ink-faint:#80838C;
+        --line:#E1E3E8;
+        --line-strong:#C7CBD3;
+        --shadow-soft: 0 10px 30px rgba(15,17,21,.08);
+        --shadow-strong: 0 20px 50px rgba(15,17,21,.22);
+
+        --accent:#1D67C9;
+        --accent-2:#4C7A22;
+        --accent-vivid:#1D67C9;
+        --accent-vivid-2:#6CAB36;
+        --wash: rgba(29,103,201,0.08);
+
+        --radius-s: 6px;
+        --radius-m: 10px;
+        --radius-l: 16px;
+        --maxw: 1180px;
+      }
+
+      @media (prefers-color-scheme: dark){
+        :root:not([data-theme="light"]){
+          --paper:#0F1115;
+          --paper-raised:#181B21;
+          --glass:#14161B;
+          --ink:#F1F2F4;
+          --ink-soft:#B7BBC2;
+          --ink-faint:#82858E;
+          --line:#262A32;
+          --line-strong:#383D48;
+        }
+      }
+      :root[data-theme="dark"]{
+        --paper:#0F1115;
+        --paper-raised:#181B21;
+        --glass:#14161B;
+        --ink:#F1F2F4;
+        --ink-soft:#B7BBC2;
+        --ink-faint:#82858E;
+        --line:#262A32;
+        --line-strong:#383D48;
+      }
+
+      *{box-sizing:border-box;}
+      html{-webkit-text-size-adjust:100%;}
+      body{
+        margin:0;
+        background:var(--paper);
+        color:var(--ink);
+        font-family:'Inter', ui-sans-serif, system-ui, sans-serif;
+        padding-inline:20px;
+        padding-block:0 64px;
+        -webkit-font-smoothing:antialiased;
+      }
+      @media (prefers-reduced-motion: reduce){
+        *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+      }
+
+      a{color:inherit;}
+      button{font-family:inherit;}
+      .wrap{max-width:var(--maxw); margin-inline:auto;}
+
+      h1,h2,h3{font-family:'Montserrat', ui-sans-serif, system-ui, sans-serif; font-weight:800; margin:0; text-wrap:balance;}
+
+      .mono{font-family:'IBM Plex Mono', ui-monospace, monospace;}
+      .tabular{font-variant-numeric:tabular-nums;}
+
+      .eyebrow{
+        font-family:'IBM Plex Mono', monospace;
+        font-size:11.5px;
+        letter-spacing:.14em;
+        text-transform:uppercase;
+        color:var(--ink-faint);
+      }
+
+      /* ---------- Fascia superior ---------- */
+      .fascia{
+        max-width:var(--maxw); margin-inline:auto;
+        display:flex; align-items:center; justify-content:space-between;
+        gap:16px; padding-block:22px 14px;
+        border-bottom:1px solid var(--line);
+      }
+      .brand{display:flex; align-items:center; gap:10px; text-decoration:none;}
+      .brand-dot{
+        width:20px; height:20px; border-radius:50%; flex:none;
+        background:conic-gradient(from -45deg, #E52323 0 25%, #F5B400 25% 50%, #1D67C9 50% 75%, #6CAB36 75% 100%);
+        box-shadow:0 0 0 2px var(--paper-raised), 0 0 0 3px var(--line);
+      }
+      .brand .mark{ font-family:'Montserrat', sans-serif; font-weight:900; font-size:20px; letter-spacing:-0.01em; }
+      .brand .sep{color:var(--line-strong); font-weight:400;}
+      .brand .name{font-family:'Montserrat', sans-serif; font-weight:600; font-style:italic; font-size:16px; color:var(--ink-soft);}
+      .proto-ribbon{
+        font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:.08em;
+        text-transform:uppercase; color:var(--accent);
+        border:1px solid currentColor; border-radius:99px;
+        padding:5px 11px; white-space:nowrap;
+      }
+
+      /* ---------- Vitrina (hero) ---------- */
+      .vitrina{
+        max-width:var(--maxw); margin:26px auto 0;
+        position:relative;
+        background:
+          linear-gradient(180deg, var(--wash), transparent 62%),
+          var(--paper-raised);
+        border:1px solid var(--line);
+        border-radius:var(--radius-l);
+        padding:40px clamp(20px,4vw,52px) 34px;
+        overflow:hidden;
+        transition:background 420ms ease, border-color 420ms ease;
+        min-height:220px;
+      }
+      .vitrina::before{
+        content:"";
+        position:absolute; left:0; right:0; top:50%;
+        height:1px; background:var(--line);
+        opacity:.7;
+      }
+      .vitrina::after{
+        content:"";
+        position:absolute; top:0; bottom:0; left:50%;
+        width:1px; background:var(--line);
+        opacity:.55;
+        display:none;
+      }
+      @media (min-width:860px){ .vitrina::after{display:block;} }
+
+      .vitrina-top{
+        position:relative; z-index:1;
+        display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px;
+        margin-bottom:18px;
+      }
+      .badge{
+        display:inline-flex; align-items:center; gap:6px;
+        font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.06em;
+        text-transform:uppercase; padding:5px 10px 5px 8px; border-radius:99px;
+        border:1px solid var(--line-strong); color:var(--ink-soft);
+      }
+      .badge svg{width:13px; height:13px;}
+      .badge.manual{ color:var(--accent); border-color:var(--accent); background:var(--wash); }
+      .badge.ia{ color:var(--accent-2); border-color:var(--accent-2); }
+      .badge.tipo{ color:var(--ink-faint); }
+
+      .vitrina h1{
+        position:relative; z-index:1;
+        font-size:clamp(28px, 5vw, 50px);
+        line-height:1.05; font-weight:800;
+        max-width:18ch;
+      }
+      .vitrina .accent-word{ color:var(--accent); font-style:italic; font-weight:600; }
+
+      .vitrina p.sub{
+        position:relative; z-index:1;
+        margin:14px 0 0; max-width:56ch;
+        color:var(--ink-soft); font-size:16.5px; line-height:1.55;
+      }
+
+      .vitrina-meta{
+        position:relative; z-index:1;
+        display:flex; flex-wrap:wrap; gap:22px;
+        margin-top:24px; padding-top:20px; border-top:1px dashed var(--line-strong);
+      }
+      .vitrina-meta .item{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-soft);}
+      .vitrina-meta svg{width:16px; height:16px; color:var(--accent); flex:none;}
+
+      .overlap-note{
+        position:relative; z-index:1;
+        margin-top:18px; padding:12px 14px;
+        background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s);
+        font-size:13px; color:var(--ink-soft); display:none; gap:8px;
+      }
+      .overlap-note.show{display:flex;}
+      .overlap-note svg{width:16px; height:16px; flex:none; margin-top:2px; color:var(--accent-2);}
+      .overlap-note b{color:var(--ink);}
+
+      .vitrina-empty{ position:relative; z-index:1; text-align:left; }
+      .vitrina-empty h1{ font-size:clamp(24px,4vw,34px); max-width:22ch; }
+      .vitrina-empty p{ color:var(--ink-soft); margin-top:10px; max-width:56ch; font-size:15.5px; line-height:1.55; }
+      .vitrina-empty .btn{ margin-top:18px; }
+
+      .vitrina-error{
+        position:relative; z-index:1; display:flex; gap:10px; align-items:flex-start;
+        background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s);
+        padding:14px 16px; font-size:13.5px; color:var(--ink-soft); margin-top:6px;
+      }
+      .vitrina-error svg{ width:17px; height:17px; flex:none; color:#C81E1E; margin-top:1px; }
+      .vitrina-error code{ background:var(--glass); padding:1px 5px; border-radius:4px; font-size:12px; }
+
+      /* ---------- Perchero de campañas (selector) ---------- */
+      .rail-section{ max-width:var(--maxw); margin:30px auto 0; }
+      .rail-label{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:2px; flex-wrap:wrap;}
+      .rail{
+        display:flex; flex-wrap:wrap; gap:16px 10px;
+        padding-top:18px; margin-top:6px;
+        border-top:1px dashed var(--line-strong);
+      }
+      .tag{
+        position:relative;
+        font-family:'IBM Plex Mono', monospace; font-size:12.5px;
+        background:var(--paper-raised); border:1px solid var(--line-strong);
+        border-radius:4px 10px 10px 4px;
+        padding:9px 14px 9px 22px;
+        cursor:pointer; color:var(--ink-soft);
+        transform:rotate(var(--rot,-1.4deg));
+        transition:transform 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      }
+      .tag::before{
+        content:""; position:absolute; left:9px; top:50%; translate:0 -50%;
+        width:5px; height:5px; border-radius:50%; border:1.4px solid var(--ink-faint);
+        background:var(--paper);
+      }
+      .tag:nth-child(2n){ --rot:1.2deg; }
+      .tag:nth-child(3n){ --rot:-0.5deg; }
+      .tag:hover{ transform:rotate(0deg) translateY(-2px); box-shadow:var(--shadow-soft); }
+      .tag:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+      .tag.active{
+        color:var(--accent); border-color:var(--accent); background:var(--wash);
+        transform:rotate(0deg) translateY(-2px);
+        font-weight:500;
+      }
+      .tag .dot{ font-weight:600; }
+
+      /* ---------- Estantes de producto ---------- */
+      .shelf-section{ max-width:var(--maxw); margin:44px auto 0; }
+      .shelf-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:18px; }
+      .shelf-head h2{ font-size:21px; font-weight:800; }
+      .shelf-head .count{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); }
+
+      .shelf{
+        display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
+        gap:16px;
+      }
+      .card{
+        background:var(--paper-raised); border:1px solid var(--line);
+        border-radius:var(--radius-m); padding:14px 14px 16px;
+        display:flex; flex-direction:column; gap:10px;
+        transition:transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      }
+      .card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-soft); border-color:var(--line-strong); }
+
+      .card .icon-tile{
+        aspect-ratio:1.5/1; border-radius:var(--radius-s);
+        display:flex; align-items:center; justify-content:center;
+        position:relative; overflow:hidden;
+        background:
+          radial-gradient(120% 140% at 20% 0%, var(--wash), transparent 60%),
+          var(--paper);
+        border:1px solid var(--line);
+      }
+      .card .icon-tile svg{ width:36px; height:36px; color:var(--accent-vivid); }
+      .card .icon-tile img{
+        position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
+        padding:8px; background:var(--paper-raised);
+      }
+
+      .card .fam{ font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+      .card .nombre{ font-size:14px; line-height:1.32; font-weight:600; min-height:2.6em; }
+      .card .precio{ font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:16px; }
+      .card .precio .iva{ font-size:10px; color:var(--ink-faint); font-weight:400; margin-left:4px;}
+
+      .barcode{ height:20px; align-self:flex-start; min-width:74px; opacity:.85; }
+      .ref-line{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      .ref-line .ref{ font-size:10px; color:var(--ink-faint); }
+
+      .card .go{
+        margin-top:2px; display:inline-flex; align-items:center; gap:5px;
+        font-size:12.5px; font-weight:600; color:var(--accent); text-decoration:none;
+        border-top:1px solid var(--line); padding-top:10px;
+      }
+      .card .go svg{ width:13px; height:13px; transition:translate 140ms ease; }
+      .card .go:hover svg{ translate:2px 0; }
+
+      .shelf-ia{ background:var(--glass); border:1px solid var(--line); border-radius:var(--radius-l); padding:22px clamp(16px,3vw,30px); margin-top:14px; }
+      .shelf-ia .shelf-head h2{ display:flex; align-items:center; gap:8px; }
+      .shelf-ia .shelf-head h2 svg{ width:18px; height:18px; color:var(--accent-2); }
+      .card.ia-card .icon-tile svg{ color:var(--accent-vivid-2); }
+      .card.ia-card{ border-style:dashed; }
+
+      .empty-shelf{ color:var(--ink-faint); font-size:13.5px; padding:18px 0; }
+
+      /* ---------- Panel interno ---------- */
+      .internal-note{
+        max-width:var(--maxw); margin:50px auto 0;
+        display:flex; align-items:center; gap:10px;
+        font-size:12px; color:var(--ink-faint);
+        padding-top:16px; border-top:1px solid var(--line);
+      }
+      .internal-note svg{ width:15px; height:15px; flex:none; }
+
+      .tools-dock{
+        position:fixed; right:18px; bottom:18px; z-index:40;
+        display:flex; flex-direction:column; gap:10px; align-items:flex-end;
+      }
+      .tools-dock .hint{
+        font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.04em;
+        color:var(--ink-faint); background:var(--paper-raised); border:1px solid var(--line);
+        padding:4px 9px; border-radius:99px;
+      }
+      .dock-btn{
+        display:flex; align-items:center; gap:9px;
+        background:var(--ink); color:var(--paper);
+        border:none; border-radius:99px; padding:12px 18px 12px 14px;
+        font-size:13.5px; font-weight:600; cursor:pointer;
+        box-shadow:var(--shadow-strong);
+        transition:transform 140ms ease, background 140ms ease;
+      }
+      .dock-btn svg{ width:17px; height:17px; }
+      .dock-btn:hover{ transform:translateY(-2px); }
+      .dock-btn.secondary{ background:var(--paper-raised); color:var(--ink); border:1px solid var(--line-strong); }
+
+      /* ---------- Modales ---------- */
+      dialog{
+        border:none; border-radius:var(--radius-l); padding:0;
+        width:min(680px, 92vw); max-height:86vh;
+        background:var(--paper-raised); color:var(--ink);
+        box-shadow:var(--shadow-strong);
+      }
+      dialog::backdrop{ background:rgba(15,17,21,.45); backdrop-filter:blur(2px); }
+      .modal-head{
+        display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+        padding:22px 24px 16px; border-bottom:1px solid var(--line);
+      }
+      .modal-head h3{ font-size:19px; font-weight:800; }
+      .modal-head .modal-sub{ font-size:12.5px; color:var(--ink-faint); margin-top:4px; }
+      .modal-close{
+        background:none; border:1px solid var(--line-strong); border-radius:50%;
+        width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+        cursor:pointer; color:var(--ink-soft); flex:none;
+      }
+      .modal-close svg{ width:14px; height:14px; }
+      .modal-body{ padding:18px 24px; overflow-y:auto; max-height:calc(86vh - 150px); }
+      .modal-foot{
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+        padding:14px 24px 20px; border-top:1px solid var(--line);
+      }
+
+      .field{ display:flex; flex-direction:column; gap:6px; }
+      .field label{ font-size:12px; font-weight:600; color:var(--ink-soft); }
+      .field input, .field select{
+        font-family:inherit; font-size:14px; padding:9px 11px;
+        border:1px solid var(--line-strong); border-radius:var(--radius-s);
+        background:var(--paper); color:var(--ink);
+      }
+      .field input:focus, .field select:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+      .filters-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+      .filters-row .field{ flex:1; min-width:150px; }
+
+      .picker-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+      .pick-card{
+        border:1.5px solid var(--line); border-radius:var(--radius-s); padding:10px;
+        cursor:pointer; display:flex; flex-direction:column; gap:6px; text-align:left;
+        background:var(--paper); position:relative;
+      }
+      .pick-card .fam{ font-size:9.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; font-family:'IBM Plex Mono',monospace;}
+      .pick-card .nombre{ font-size:12.5px; font-weight:600; line-height:1.3; min-height:2.5em; }
+      .pick-card .precio{ font-family:'IBM Plex Mono',monospace; font-size:13px; }
+      .pick-card .check{
+        position:absolute; top:8px; right:8px; width:19px; height:19px; border-radius:5px;
+        border:1.5px solid var(--line-strong); background:var(--paper-raised);
+        display:flex; align-items:center; justify-content:center;
+      }
+      .pick-card .check svg{ width:12px; height:12px; opacity:0; color:#fff; }
+      .pick-card.selected{ border-color:var(--accent); background:var(--wash); }
+      .pick-card.selected .check{ background:var(--accent); border-color:var(--accent); }
+      .pick-card.selected .check svg{ opacity:1; }
+      .picker-empty{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
+      .picker-loading{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
+
+      .selected-count{ font-size:13px; color:var(--ink-soft); }
+      .selected-count b{ color:var(--accent); font-family:'IBM Plex Mono',monospace; }
+
+      .btn{
+        font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
+        border-radius:99px; padding:10px 18px; border:1px solid transparent;
+      }
+      .btn.primary{ background:var(--accent); color:#fff; }
+      .btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
+      .btn.ghost{ background:none; border-color:var(--line-strong); color:var(--ink-soft); }
+      .btn.danger-ghost{ background:none; border:1px solid #C81E1E; color:#C81E1E; }
+
+      .campaign-row{
+        display:flex; align-items:center; gap:12px; padding:12px 0;
+        border-bottom:1px solid var(--line);
+      }
+      .campaign-row:last-child{ border-bottom:none; }
+      .campaign-row .swatch{ width:8px; height:34px; border-radius:4px; flex:none; }
+      .campaign-row .info{ flex:1; min-width:0; cursor:pointer; }
+      .campaign-row .info .name{ font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .campaign-row .info .dates{ font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; margin-top:2px; }
+      .campaign-row .row-actions{ display:flex; gap:6px; flex:none; }
+      .icon-btn{
+        width:30px; height:30px; border-radius:50%; border:1px solid var(--line-strong);
+        background:var(--paper); color:var(--ink-soft); display:flex; align-items:center; justify-content:center;
+        cursor:pointer;
+      }
+      .icon-btn svg{ width:14px; height:14px; }
+      .icon-btn:hover{ border-color:var(--accent); color:var(--accent); }
+      .icon-btn.danger:hover{ border-color:#C81E1E; color:#C81E1E; }
+      .mini-badge{
+        font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; font-family:'IBM Plex Mono',monospace;
+        padding:2px 7px; border-radius:99px; border:1px solid currentColor;
+      }
+      .mini-badge.live{ color:#1a7a4c; border-color:#1a7a4c; background:rgba(26,122,76,.09); }
+
+      .new-campaign{ margin-top:22px; padding-top:18px; border-top:1px dashed var(--line-strong); }
+      .new-campaign h4{ font-family:'Montserrat',sans-serif; font-size:15px; font-weight:800; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+      .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .grid-2 .span2{ grid-column:1 / -1; }
+      @media (max-width:520px){ .grid-2{ grid-template-columns:1fr; } }
+      .chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+      .chip{
+        font-size:12px; padding:6px 12px; border-radius:99px; border:1px solid var(--line-strong);
+        cursor:pointer; color:var(--ink-soft); background:var(--paper);
+      }
+      .chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+      .form-msg{ font-size:12.5px; margin-top:10px; display:none; }
+      .form-msg.show{ display:block; }
+      .form-msg.error{ color:#C81E1E; }
+      .form-msg.ok{ color:#1a7a4c; }
+
+      /* Toast */
+      .toast{
+        position:fixed; left:50%; bottom:26px; translate:-50% 0;
+        background:var(--ink); color:var(--paper);
+        padding:12px 18px; border-radius:99px; font-size:13.5px;
+        display:flex; align-items:center; gap:9px;
+        opacity:0; pointer-events:none; transition:opacity 220ms ease, transform 220ms ease;
+        transform:translate(-50%, 8px);
+        z-index:80; max-width:90vw;
+        box-shadow:var(--shadow-strong);
+      }
+      .toast.show{ opacity:1; transform:translate(-50%,0); }
+      .toast svg{ width:15px; height:15px; color:#F5B400; flex:none; }
+      .toast.error svg{ color:#FF6B6B; }
+
+      footer.note{
+        max-width:var(--maxw); margin:56px auto 0; padding-top:22px; border-top:1px solid var(--line);
+        font-size:12.5px; color:var(--ink-faint); line-height:1.6;
+      }
+
+      .spinner-line{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:13.5px; position:relative; z-index:1; }
+      .spinner-dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 1.1s ease-in-out infinite; }
+      @keyframes pulse{ 0%,100%{opacity:.25;} 50%{opacity:1;} }
+    </style>
+  </head>
+  <body>
+
+<div class="fascia">
+  <a class="brand" href="#" onclick="return false;" aria-label="Escaparate OM">
+    <span class="brand-dot"></span>
+    <span class="mark">OM</span><span class="sep">/</span><span class="name">Escaparate</span>
+  </a>
+  <div class="proto-ribbon">En construcción · sin enlazar aún</div>
+</div>
+
+<main class="wrap">
+
+  <section class="vitrina" id="vitrina">
+    <div class="spinner-line" id="cargando">
+      <span class="spinner-dot"></span> Cargando el escaparate…
+    </div>
+  </section>
+
+  <section class="rail-section" id="railSection" hidden>
+    <div class="rail-label">
+      <span class="eyebrow">Campañas configuradas</span>
+      <span class="eyebrow" id="railHint" style="color:var(--ink-faint)"></span>
+    </div>
+    <div class="rail" id="rail"></div>
+  </section>
+
+  <section class="shelf-section" id="shelfSection" hidden>
+    <div class="shelf-head">
+      <h2 id="shelfTitle">Productos de la campaña</h2>
+      <span class="count" id="shelfCount"></span>
+    </div>
+    <div class="shelf" id="shelf"></div>
+  </section>
+
+  <section class="shelf-section shelf-ia" id="iaSection" hidden>
+    <div class="shelf-head">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M19 15.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9z"/></svg>
+        Sugeridos por IA para ampliar la campaña
+      </h2>
+      <span class="count" id="iaCount"></span>
+    </div>
+    <div class="shelf" id="iaShelf"></div>
+  </section>
+
+  <p class="internal-note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+    Los dos botones inferiores (añadir productos / gestionar campañas) están controlados por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo deben existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b> (mismo patrón que el precio a mayor).
+  </p>
+
+  <footer class="note">
+    Escaparate OM — página en construcción, todavía sin enlazar desde ningún menú. Los productos se cargan desde <span class="mono">data/productos.json</span> (el mismo catálogo real del buscador) y las campañas se guardan en una hoja nueva del Sheet ("Campañas"), a través de Apps Script.
+  </footer>
+</main>
+
+<div class="tools-dock" id="toolsDock" hidden>
+  <span class="hint">visible sólo en preproducción</span>
+  <button class="dock-btn secondary" id="btnCampanas">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h2M8 17h5"/></svg>
+    Gestionar campañas
+  </button>
+  <button class="dock-btn" id="btnProductos" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+    Asignar productos
+  </button>
+</div>
+
+<!-- Modal A: asignar productos -->
+<dialog id="modalProductos">
+  <div class="modal-head">
+    <div>
+      <h3>Asignar productos a la campaña</h3>
+      <div class="modal-sub">Editando: <b id="modalProdCampana" style="color:var(--accent)"></b></div>
+    </div>
+    <button class="modal-close" data-close-productos><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="modal-body">
+    <div class="filters-row">
+      <div class="field">
+        <label for="fFamilia">Familia</label>
+        <select id="fFamilia"><option value="">Todas las familias</option></select>
+      </div>
+      <div class="field">
+        <label for="fBusca">Buscar por nombre o referencia</label>
+        <input id="fBusca" type="text" placeholder="p. ej. limpiador, radiador, 84221...">
+      </div>
+    </div>
+    <div class="picker-grid" id="pickerGrid"></div>
+  </div>
+  <div class="modal-foot">
+    <span class="selected-count"><b id="selCount">0</b> seleccionados</span>
+    <div style="display:flex; gap:10px;">
+      <button class="btn ghost" data-close-productos>Cancelar</button>
+      <button class="btn primary" id="btnConfirmAdd">Guardar productos</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Modal B: gestionar campañas -->
+<dialog id="modalCampanas">
+  <div class="modal-head">
+    <div>
+      <h3>Campañas de Escaparate OM</h3>
+      <div class="modal-sub">Manuales e IA conviven; si coinciden en fechas, gana siempre la manual.</div>
+    </div>
+    <button class="modal-close" data-close-campanas><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="modal-body">
+    <div id="campaignList"><span class="picker-loading">Cargando campañas…</span></div>
+
+    <div class="new-campaign">
+      <h4><span id="formTitulo">+ Nueva campaña manual</span> <button class="btn ghost" id="btnCancelarEdicion" style="display:none; padding:4px 12px; font-size:12px;">Cancelar edición</button></h4>
+      <input type="hidden" id="ncId" value="">
+      <div class="grid-2">
+        <div class="field span2">
+          <label for="ncNombre">Nombre de la campaña</label>
+          <input id="ncNombre" type="text" placeholder="p. ej. Vuelta al cole, Rebajas de enero...">
+        </div>
+        <div class="field">
+          <label for="ncTipo">Tipo</label>
+          <select id="ncTipo">
+            <option value="temporada">Temporada</option>
+            <option value="comercial">Comercial (liquidación, evento...)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ncColor">Acento de color</label>
+          <select id="ncColor">
+            <option value="ambar_verde">Ámbar y verde</option>
+            <option value="rojo_verde">Rojo y verde</option>
+            <option value="verde_ambar">Verde y ámbar</option>
+            <option value="azul_ambar">Azul y ámbar</option>
+            <option value="rojo_negro">Rojo y negro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ncInicio">Fecha de inicio</label>
+          <input id="ncInicio" type="date">
+        </div>
+        <div class="field">
+          <label for="ncFin">Fecha de fin</label>
+          <input id="ncFin" type="date">
+        </div>
+        <div class="field span2">
+          <label>Áreas a las que aplica (ninguna marcada = todas)</label>
+          <div class="chip-row" id="ncAreas">
+            <span class="chip" data-area="drogueria">Droguería</span>
+            <span class="chip" data-area="perfumeria">Perfumería</span>
+            <span class="chip" data-area="pinturas">Pinturas</span>
+            <span class="chip" data-area="talleres">Talleres y carrocerías</span>
+          </div>
+        </div>
+      </div>
+      <p class="form-msg" id="formMsg"></p>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <span class="selected-count" style="font-size:12px;">Los productos se asignan en el siguiente paso</span>
+    <button class="btn primary" id="btnGuardarCampana">Guardar y asignar productos →</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span id="toastMsg"></span></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ══════════════════════════════════════════════════════════════════
+  // CONFIGURACIÓN — mismo patrón que buscador.html (window.MOSTRAR_X)
+  // ══════════════════════════════════════════════════════════════════
+  // Controla si se muestran los dos botones de gestión (asignar
+  // productos / gestionar campañas) y sus modales. DEBE pasar a false
+  // en cualquier copia de "release" que en el futuro incluya esta
+  // página — igual que MOSTRAR_PRECIO_MAYOR en buscador.html.
+  window.MOSTRAR_GESTION_CAMPANAS = true;
+
+  // Mismo Web App de Apps Script que usa buscador.html. Las acciones
+  // nuevas (obtener_campanas / guardar_campana /
+  // actualizar_productos_campana / eliminar_campana) sólo funcionarán
+  // en cuanto esa parte de scripts/apps_script_trigger.js se haya
+  // copiado al editor real de Apps Script y desplegado como nueva
+  // versión de ESTA MISMA implementación (ver nota al pie del chat).
+  window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+
+  const PRODUCTOS_URL = './data/productos.json';
+
+  const $ = (sel, ctx) => (ctx||document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
+  // precio_con/precio_sin llegan como texto con coma decimal (p.ej. "2,15",
+  // formato español del Sheet) — no como número — hay que convertir antes
+  // de poder formatear u operar con ellos.
+  const precioNum = v => parseFloat((v==null?'':v.toString()).replace(',', '.')) || 0;
+  const fmtEUR = n => precioNum(n).toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
+
+  /* ---------------- Paleta de marca (design/design-system.md) ---------------- */
+  // negro #0F1115 · rojo #E52323 · amarillo #F5B400 · verde #6CAB36 · azul #1D67C9
+  // "accent"/"accent2": versiones algo más oscuras del amarillo/verde para que
+  // el texto sobre fondo claro tenga contraste suficiente. "vivid"/"vivid2":
+  // los hex EXACTOS del logo, para iconos y fondos (ahí el contraste no es problema).
+  const COLOR_SETS = {
+    ambar_verde: {accent:"#A15E00", accent2:"#4C7A22", vivid:"#F5B400", vivid2:"#6CAB36", wash:"rgba(245,180,0,0.12)"},
+    rojo_verde:  {accent:"#C81E1E", accent2:"#4C7A22", vivid:"#E52323", vivid2:"#6CAB36", wash:"rgba(229,35,35,0.10)"},
+    verde_ambar: {accent:"#4C7A22", accent2:"#A15E00", vivid:"#6CAB36", vivid2:"#F5B400", wash:"rgba(108,171,54,0.10)"},
+    azul_ambar:  {accent:"#1D67C9", accent2:"#A15E00", vivid:"#1D67C9", vivid2:"#F5B400", wash:"rgba(29,103,201,0.10)"},
+    rojo_negro:  {accent:"#C81E1E", accent2:"#0F1115", vivid:"#E52323", vivid2:"#0F1115", wash:"rgba(229,35,35,0.09)"}
+  };
+  function colorSetDe(id){ return COLOR_SETS[id] || COLOR_SETS.rojo_verde; }
+
+  /* ---------------- Iconos de línea (un único estilo) ---------------- */
+  const ICONS = {
+    perfume: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8h8M22 8v5.5c0 1-1.6 1.7-3 2.8-2.3 1.8-4 4-4 8.2v13c0 2 1.5 3.5 3.5 3.5h11c2 0 3.5-1.5 3.5-3.5v-13c0-4.2-1.7-6.4-4-8.2-1.4-1.1-3-1.8-3-2.8V8"/><path d="M18 27h12M20 32h8"/></svg>',
+    radiator: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="12" width="34" height="24" rx="2"/><path d="M13 12v24M19 12v24M25 12v24M31 12v24M37 12v24"/><path d="M11 40h4M33 40h4"/></svg>',
+    mosquito: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="24" rx="5" ry="8"/><path d="M24 16V9M18 12l-5-4M30 12l5-4M18 30l-9 4M30 30l9 4M18 24H8M30 24h10"/></svg>',
+    leaf: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 34C10 20 22 9 38 9c1 16-10 28-24 26-3-.4-5-1.4-6-1z"/><path d="M13 35c6-10 13-16 22-21"/></svg>',
+    pool: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 6 3 3-3 6-3 3 3 6 3M6 28c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 6 3 3-3 6-3 3 3 6 3M6 36c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 6 3 3-3 6-3 3 3 6 3"/></svg>',
+    spray: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 18h10l3-4h5M18 18v22a2 2 0 002 2h8a2 2 0 002-2V18M18 18l-2-4M14 24h2M13 29h2M14 34h2"/></svg>',
+    paint: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6h14v10l4 4v6H10v-6l4-4z"/><path d="M18 26v9c0 4 3 7 6 7s6-3 6-7v-9"/></svg>',
+    glove: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 22V9a3 3 0 016 0v9M22 18V7a3 3 0 016 0v11M28 18V9a3 3 0 016 0v13M34 22v-4a3 3 0 016 0v14c0 7-5 12-12 12h-4c-6 0-10-3-12-8l-4-9a2.6 2.6 0 014-3l4 4"/></svg>',
+    wrench: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M31 10a8 8 0 00-10.9 9L8 31.1 12.9 36l12-12.1A8 8 0 0035 13l-6 6-5-5z"/></svg>',
+    tag: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M25 6h11a2 2 0 012 2v11a2 2 0 01-.6 1.4L20.4 38.4a2 2 0 01-2.8 0l-8-8a2 2 0 010-2.8L27.6 9.6A2 2 0 0125 6z"/><circle cx="32" cy="15" r="2.4"/></svg>',
+    bottle: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 6h10M20 6v6.5c0 1-1.2 1.6-2.3 2.6C15.8 17 14 19.6 14 24v13a3 3 0 003 3h14a3 3 0 003-3V24c0-4.4-1.8-7-3.7-8.9-1.1-1-2.3-1.6-2.3-2.6V6"/></svg>',
+    sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>'
+  };
+
+  function iconFor(p){
+    const n = (p.nombre||"").toLowerCase(), f = (p.familia||"").toLowerCase(), a = (p.area||"").toLowerCase();
+    if(n.includes("piscina")) return ICONS.pool;
+    if(f.includes("colonia") || f.includes("perfum")) return ICONS.perfume;
+    if(n.includes("radiador")) return ICONS.radiator;
+    if(n.includes("mosquit") || f.includes("antiparasitario")) return ICONS.mosquito;
+    if(f.includes("insecticida") || f.includes("jardin") || f.includes("camping")) return ICONS.leaf;
+    if(f.includes("guantes")) return ICONS.glove;
+    if(f.includes("pintura") || f.includes("barniz") || f.includes("brochas") || f.includes("esmalte")) return ICONS.paint;
+    if(a === "talleres") return ICONS.wrench;
+    if(f.includes("limpia") || f.includes("ambientador") || f.includes("deterg")) return ICONS.spray;
+    if(a === "perfumeria") return ICONS.perfume;
+    if(a === "pinturas") return ICONS.paint;
+    return ICONS.bottle;
+  }
+
+  function barcodeSVG(ref){
+    let bars = "", x = 2;
+    for(const d of (ref||"")){
+      const w = 1 + (parseInt(d,10)||0) % 3;
+      bars += `<rect x="${x}" y="1" width="${w}" height="18" fill="var(--ink)"/>`;
+      x += w + 1.6;
+    }
+    return `<svg class="barcode" viewBox="0 0 ${x+2} 20" preserveAspectRatio="none" style="background:var(--paper-raised); border-radius:2px;">${bars}</svg>`;
+  }
+
+  function urlImagenProducto(p, tamano){
+    tamano = tamano || 300;
+    if(!p.img) return null;
+    return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
+  }
+
+  /* ---------------- Estado ---------------- */
+  let PRODUCTS = {};          // ref -> producto (de data/productos.json)
+  let PRODUCTS_LIST = [];     // array plano, para el picker
+  let CAMPAIGNS = [];         // de Apps Script (obtener_campanas)
+  let productosOK = false;
+  let campanasOK = false;
+  let activeId = null;
+  const HOY = new Date();
+
+  function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
+  function activaEn(camp, fecha){
+    if(!camp.fechaInicio || !camp.fechaFin) return false;
+    return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
+  }
+  function campanaDeHoy(){
+    const activas = CAMPAIGNS.filter(c=>activaEn(c, HOY));
+    const manual = activas.find(c=>c.origen==="manual");
+    return manual || activas[0] || null;
+  }
+  function solapaConManual(camp){
+    if(!camp || camp.origen!=="ia") return null;
+    return CAMPAIGNS.find(o => o.origen==="manual" && o.id!==camp.id &&
+      new Date(o.fechaInicio+"T00:00:00") <= new Date(camp.fechaFin+"T23:59:59") &&
+      new Date(o.fechaFin+"T23:59:59") >= new Date(camp.fechaInicio+"T00:00:00"));
+  }
+
+  /* ---------------- Carga de datos ---------------- */
+  async function cargarProductos(){
+    const resp = await fetch(PRODUCTOS_URL, { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const datos = await resp.json();
+    PRODUCTS_LIST = datos.productos || [];
+    PRODUCTS = {};
+    PRODUCTS_LIST.forEach(p => { PRODUCTS[p.ref] = p; });
+  }
+
+  async function cargarCampanas(){
+    const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas', { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const datos = await resp.json();
+    if(datos.error) throw new Error(datos.error);
+    CAMPAIGNS = datos.campanas || [];
+  }
+
+  async function iniciar(){
+    const [rProductos, rCampanas] = await Promise.allSettled([cargarProductos(), cargarCampanas()]);
+    productosOK = rProductos.status === 'fulfilled';
+    campanasOK = rCampanas.status === 'fulfilled';
+
+    if(!productosOK){
+      console.error('Error cargando productos:', rProductos.reason);
+    }
+    if(!campanasOK){
+      console.error('Error cargando campañas:', rCampanas.reason);
+    }
+
+    if($("#btnProductos")) $("#btnProductos").disabled = !campanasOK;
+
+    if(!productosOK){
+      mostrarErrorVitrina('No se han podido cargar los productos del catálogo (' + PRODUCTOS_URL + ').');
+      return;
+    }
+    if(!campanasOK){
+      mostrarErrorVitrina('No se ha podido conectar con la gestión de campañas. Lo más probable es que todavía no se haya desplegado la nueva versión de Apps Script (acción <code>obtener_campanas</code>) — revisa la nota al pie de esta página.', true);
+      return;
+    }
+
+    activeId = campanaDeHoy() ? campanaDeHoy().id : (CAMPAIGNS[0] ? CAMPAIGNS[0].id : null);
+    if(window.MOSTRAR_GESTION_CAMPANAS){
+      $("#toolsDock").hidden = false;
+    }
+    render();
+  }
+
+  function mostrarErrorVitrina(msg, mostrarDockIgual){
+    $("#vitrina").innerHTML = `
+      <div class="vitrina-empty">
+        <h1>Escaparate OM</h1>
+        <div class="vitrina-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 16.5h.01M10.3 3.9L2.7 17.5A1.8 1.8 0 004.3 20h15.4a1.8 1.8 0 001.6-2.5L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg>
+          <span>${msg}</span>
+        </div>
+      </div>`;
+    if(mostrarDockIgual && window.MOSTRAR_GESTION_CAMPANAS){
+      $("#toolsDock").hidden = false;
+      $("#btnProductos").disabled = true;
+    }
+  }
+
+  /* ---------------- Render ---------------- */
+  function productCard(ref, {ia=false}={}){
+    const p = PRODUCTS[ref];
+    if(!p) return `<article class="card"><span class="fam">Referencia no encontrada</span><span class="nombre mono">${ref}</span></article>`;
+    const imgUrl = urlImagenProducto(p, 300);
+    const buscadorURL = `./buscador.html?ref=${encodeURIComponent(ref)}`;
+    return `
+      <article class="card ${ia?'ia-card':''}">
+        <div class="icon-tile">
+          ${iconFor(p)}
+          ${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+        </div>
+        <span class="fam">${p.familia||''}</span>
+        <span class="nombre">${p.nombre||''}</span>
+        <div class="ref-line">
+          <span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
+        </div>
+        <div class="ref-line">
+          ${barcodeSVG(p.ref)}
+          <span class="ref mono">${p.ref}</span>
+        </div>
+        <a class="go" href="${buscadorURL}" target="_blank" rel="noopener">
+          Ver ficha en el buscador
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+      </article>`;
+  }
+
+  function render(){
+    $("#railSection").hidden = false;
+    renderRail();
+
+    if(!CAMPAIGNS.length){
+      $("#vitrina").innerHTML = `
+        <div class="vitrina-empty">
+          <span class="badge tipo">SIN CAMPAÑAS TODAVÍA</span>
+          <h1 style="margin-top:14px">Este escaparate está listo, pero vacío</h1>
+          <p>Usa "Gestionar campañas" para crear la primera — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
+        </div>`;
+      $("#shelfSection").hidden = true;
+      $("#iaSection").hidden = true;
+      return;
+    }
+
+    if(!activeId || !findCampaign(activeId)) activeId = CAMPAIGNS[0].id;
+    const c = findCampaign(activeId);
+    const cs = colorSetDe(c.colorSet);
+    const root = document.documentElement;
+    root.style.setProperty('--accent', cs.accent);
+    root.style.setProperty('--accent-2', cs.accent2);
+    root.style.setProperty('--accent-vivid', cs.vivid);
+    root.style.setProperty('--accent-vivid-2', cs.vivid2);
+    root.style.setProperty('--wash', cs.wash);
+
+    const hoyActiva = activaEn(c, HOY);
+    $("#vitrina").innerHTML = `
+      <div class="vitrina-top">
+        <span class="badge ${c.origen}">${c.origen==="manual" ? ICONS.tag : ICONS.sparkle} ${c.origen==="manual" ? "Campaña manual" : "Generada por IA"}</span>
+        <span class="badge tipo">${c.tipo==="temporada" ? "Temporada" : "Comercial"}</span>
+        ${hoyActiva ? `<span class="badge" style="color:#1a7a4c;border-color:#1a7a4c;background:rgba(26,122,76,.09)">● activa hoy</span>` : `<span class="badge">fuera de fecha hoy</span>`}
+      </div>
+      <h1>${c.nombre}</h1>
+      <p class="sub">${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}.</p>
+      <div class="vitrina-meta">
+        <span class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+          <span>${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}</span>
+        </span>
+        <span class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M4 8h16M9 12a3 3 0 006 0"/></svg>
+          <span>${c.productos.length} producto${c.productos.length===1?'':'s'} destacados</span>
+        </span>
+      </div>
+      <div class="overlap-note" id="overlapNote"></div>
+    `;
+
+    const solapa = solapaConManual(c);
+    if(solapa){
+      const note = $("#overlapNote");
+      note.classList.add("show");
+      note.innerHTML = `${ICONS.sparkle.replace('sparkle','')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent-2)"><path d="M12 9v4M12 16.5h.01M10.3 3.9L2.7 17.5A1.8 1.8 0 004.3 20h15.4a1.8 1.8 0 001.6-2.5L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg><span>Esta campaña de IA solapa con <b>«${solapa.nombre}»</b> (manual, ${fmtFecha(solapa.fechaInicio)}–${fmtFecha(solapa.fechaFin)}). En producción la manual manda mientras dure.</span>`;
+    }
+
+    $("#shelfSection").hidden = false;
+    $("#shelfTitle").textContent = `Productos de «${c.nombre}»`;
+    $("#shelfCount").textContent = `${c.productos.length} ref.`;
+    $("#shelf").innerHTML = c.productos.length
+      ? c.productos.map(r=>productCard(r)).join("")
+      : `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
+
+    $("#iaSection").hidden = true; // la generación automática de sugerencias IA es una fase futura (ver nota al usuario)
+  }
+
+  function renderRail(){
+    if(!CAMPAIGNS.length){ $("#rail").innerHTML = ''; $("#railHint").textContent=''; return; }
+    const hoy = campanaDeHoy();
+    $("#railHint").textContent = hoy ? `hoy tocaría: ${hoy.nombre}` : 'ninguna campaña cubre la fecha de hoy';
+    $("#rail").innerHTML = CAMPAIGNS.map(c=>{
+      const isHoy = hoy && c.id===hoy.id;
+      const isActive = c.id===activeId;
+      return `<button class="tag ${isActive?'active':''}" data-id="${c.id}">
+        ${isHoy ? '<span class="dot">● </span>' : ''}${c.nombre}
+      </button>`;
+    }).join("");
+    $$("#rail .tag").forEach(btn=>{
+      btn.addEventListener("click", ()=>{ activeId = btn.dataset.id; render(); });
+    });
+  }
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer;
+  function toast(msg, isError){
+    const el = $("#toast");
+    $("#toastMsg").textContent = msg;
+    el.classList.toggle('error', !!isError);
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>el.classList.remove("show"), 4200);
+  }
+
+  /* ---------------- Modal A: asignar productos ---------------- */
+  const modalProductos = $("#modalProductos");
+  let selected = new Set();
+
+  function familiasDisponibles(){
+    return Array.from(new Set(PRODUCTS_LIST.map(p=>p.familia).filter(Boolean))).sort();
+  }
+  function fillFamiliaSelect(){
+    const sel = $("#fFamilia");
+    sel.innerHTML = `<option value="">Todas las familias</option>` +
+      familiasDisponibles().map(f=>`<option value="${f}">${f}</option>`).join("");
+  }
+  function renderPicker(){
+    const fam = $("#fFamilia").value;
+    const q = $("#fBusca").value.trim().toLowerCase();
+    if(!q && !fam){
+      $("#pickerGrid").innerHTML = `<p class="picker-empty">Escribe algo o elige una familia para empezar a buscar entre los ${PRODUCTS_LIST.length.toLocaleString('es-ES')} productos del catálogo.</p>`;
+      return;
+    }
+    const items = PRODUCTS_LIST.filter(p=>{
+      if(fam && p.familia!==fam) return false;
+      if(q && !((p.nombre||'').toLowerCase().includes(q) || (p.ref||'').includes(q))) return false;
+      return true;
+    }).slice(0, 120);
+    $("#pickerGrid").innerHTML = items.map(p=>`
+      <button type="button" class="pick-card ${selected.has(p.ref)?'selected':''}" data-ref="${p.ref}">
+        <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+        <span class="fam">${p.familia||''}</span>
+        <span class="nombre">${p.nombre}</span>
+        <span class="precio">${fmtEUR(p.precio_con)} €</span>
+      </button>`).join("") || `<p class="picker-empty">Sin resultados para este filtro.</p>`;
+    $$(".pick-card", $("#pickerGrid")).forEach(card=>{
+      card.addEventListener("click", ()=>{
+        const ref = card.dataset.ref;
+        if(selected.has(ref)) selected.delete(ref); else selected.add(ref);
+        card.classList.toggle("selected");
+        updateSelCount();
+      });
+    });
+  }
+  function updateSelCount(){ $("#selCount").textContent = selected.size; }
+
+  function openModalProductos(campaignId){
+    const c = findCampaign(campaignId);
+    if(!c) return;
+    selected = new Set(c.productos);
+    updateSelCount();
+    $("#modalProdCampana").textContent = c.nombre;
+    modalProductos.dataset.campaignId = campaignId;
+    fillFamiliaSelect();
+    $("#fBusca").value = "";
+    $("#fFamilia").value = "";
+    renderPicker();
+    modalProductos.showModal();
+  }
+  $("#btnProductos").addEventListener("click", ()=>{ if(activeId) openModalProductos(activeId); });
+  $("#fFamilia").addEventListener("change", renderPicker);
+  $("#fBusca").addEventListener("input", renderPicker);
+
+  $("#btnConfirmAdd").addEventListener("click", async ()=>{
+    const campaignId = modalProductos.dataset.campaignId;
+    const btn = $("#btnConfirmAdd");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones del proyecto
+        body: JSON.stringify({ accion:'actualizar_productos_campana', id:campaignId, productos:Array.from(selected) }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      const c = findCampaign(campaignId);
+      if(c) c.productos = Array.from(selected);
+      modalProductos.close();
+      render();
+      toast(`Productos guardados en «${c ? c.nombre : campaignId}».`);
+    } catch(err){
+      toast('No se pudo guardar: ' + err.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  /* ---------------- Modal B: gestionar campañas ---------------- */
+  const modalCampanas = $("#modalCampanas");
+
+  function renderCampaignList(){
+    if(!CAMPAIGNS.length){
+      $("#campaignList").innerHTML = `<p class="picker-empty">Todavía no hay ninguna campaña. Crea la primera con el formulario de abajo.</p>`;
+      return;
+    }
+    $("#campaignList").innerHTML = CAMPAIGNS.map(c=>{
+      const cs = colorSetDe(c.colorSet);
+      const live = activaEn(c, HOY);
+      return `<div class="campaign-row">
+        <span class="swatch" style="background:linear-gradient(135deg, ${cs.vivid} 50%, ${cs.vivid2} 50%)"></span>
+        <div class="info" data-edit="${c.id}">
+          <div class="name">${c.nombre}
+            <span class="mini-badge" style="color:${c.origen==='manual'?cs.accent:cs.accent2}">${c.origen==='manual'?'Manual':'IA'}</span>
+            <span class="mini-badge" style="color:var(--ink-faint)">${c.tipo==='temporada'?'Temporada':'Comercial'}</span>
+            ${live?'<span class="mini-badge live">activa hoy</span>':''}
+          </div>
+          <div class="dates">${fmtFecha(c.fechaInicio)} – ${fmtFecha(c.fechaFin)} · ${c.productos.length} productos</div>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn" data-productos="${c.id}" title="Asignar productos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <button class="icon-btn danger" data-eliminar="${c.id}" title="Eliminar campaña">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v13a1 1 0 001 1h6a1 1 0 001-1V7"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }).join("");
+
+    $$("[data-edit]", $("#campaignList")).forEach(el=>{
+      el.addEventListener("click", ()=>cargarFormularioEdicion(el.dataset.edit));
+    });
+    $$("[data-productos]", $("#campaignList")).forEach(el=>{
+      el.addEventListener("click", (ev)=>{ ev.stopPropagation(); modalCampanas.close(); openModalProductos(el.dataset.productos); });
+    });
+    $$("[data-eliminar]", $("#campaignList")).forEach(el=>{
+      el.addEventListener("click", async (ev)=>{
+        ev.stopPropagation();
+        const c = findCampaign(el.dataset.eliminar);
+        if(!c) return;
+        if(!confirm(`¿Eliminar la campaña «${c.nombre}»? Esta acción no se puede deshacer.`)) return;
+        try{
+          const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+            method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+            body: JSON.stringify({ accion:'eliminar_campana', id:c.id })
+          });
+          const data = await resp.json();
+          if(!data.success) throw new Error(data.error || 'Error desconocido');
+          CAMPAIGNS = CAMPAIGNS.filter(x=>x.id!==c.id);
+          if(activeId===c.id) activeId = null;
+          renderCampaignList();
+          render();
+          toast(`Campaña «${c.nombre}» eliminada.`);
+        }catch(err){ toast('No se pudo eliminar: ' + err.message, true); }
+      });
+    });
+  }
+
+  let areasSel = new Set();
+  function pintarAreas(){
+    $$("#ncAreas .chip").forEach(chip=>{
+      chip.classList.toggle('on', areasSel.has(chip.dataset.area));
+    });
+  }
+  $$("#ncAreas .chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      const a = chip.dataset.area;
+      if(areasSel.has(a)) areasSel.delete(a); else areasSel.add(a);
+      pintarAreas();
+    });
+  });
+
+  function limpiarFormulario(){
+    $("#ncId").value = "";
+    $("#ncNombre").value = "";
+    $("#ncTipo").value = "temporada";
+    $("#ncColor").value = "rojo_verde";
+    $("#ncInicio").value = "";
+    $("#ncFin").value = "";
+    areasSel = new Set();
+    pintarAreas();
+    $("#formTitulo").textContent = "+ Nueva campaña manual";
+    $("#btnCancelarEdicion").style.display = "none";
+    $("#btnGuardarCampana").textContent = "Guardar y asignar productos →";
+    $("#formMsg").className = "form-msg";
+  }
+  function cargarFormularioEdicion(id){
+    const c = findCampaign(id);
+    if(!c) return;
+    $("#ncId").value = c.id;
+    $("#ncNombre").value = c.nombre;
+    $("#ncTipo").value = c.tipo;
+    $("#ncColor").value = c.colorSet;
+    $("#ncInicio").value = c.fechaInicio;
+    $("#ncFin").value = c.fechaFin;
+    areasSel = new Set(c.areas || []);
+    pintarAreas();
+    $("#formTitulo").textContent = `Editando «${c.nombre}»`;
+    $("#btnCancelarEdicion").style.display = "inline-block";
+    $("#btnGuardarCampana").textContent = "Guardar cambios";
+    $("#formMsg").className = "form-msg";
+    $("#ncNombre").focus();
+  }
+  $("#btnCancelarEdicion").addEventListener("click", limpiarFormulario);
+
+  $("#btnCampanas").addEventListener("click", ()=>{
+    limpiarFormulario();
+    renderCampaignList();
+    modalCampanas.showModal();
+  });
+
+  $("#btnGuardarCampana").addEventListener("click", async ()=>{
+    const msg = $("#formMsg");
+    const nombre = $("#ncNombre").value.trim();
+    const fechaInicio = $("#ncInicio").value;
+    const fechaFin = $("#ncFin").value;
+    if(!nombre || !fechaInicio || !fechaFin){
+      msg.textContent = "Rellena al menos el nombre y las dos fechas.";
+      msg.className = "form-msg show error";
+      return;
+    }
+    if(fechaFin < fechaInicio){
+      msg.textContent = "La fecha de fin no puede ser anterior a la de inicio.";
+      msg.className = "form-msg show error";
+      return;
+    }
+    const btn = $("#btnGuardarCampana");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = "Guardando…";
+    try{
+      const payload = {
+        accion:'guardar_campana',
+        id: $("#ncId").value || undefined,
+        nombre, fechaInicio, fechaFin,
+        tipo: $("#ncTipo").value,
+        colorSet: $("#ncColor").value,
+        areas: Array.from(areasSel),
+      };
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+
+      const esNueva = !payload.id;
+      await cargarCampanas(); // recarga desde el Sheet — fuente única de verdad
+      activeId = data.id;
+      renderCampaignList();
+      render();
+      toast(esNueva ? `Campaña «${nombre}» creada.` : `Campaña «${nombre}» actualizada.`);
+      if(esNueva){
+        modalCampanas.close();
+        openModalProductos(data.id);
+      } else {
+        limpiarFormulario();
+      }
+    } catch(err){
+      msg.textContent = "No se pudo guardar: " + err.message;
+      msg.className = "form-msg show error";
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  /* cerrar modales */
+  $$('[data-close-productos]').forEach(b=>b.addEventListener('click', ()=>modalProductos.close()));
+  $$('[data-close-campanas]').forEach(b=>b.addEventListener('click', ()=>modalCampanas.close()));
+
+  iniciar();
+})();
+</script>
+  </body>
+</html>
