@@ -3345,6 +3345,16 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // NUEVO — Escaparate OM (campañas de temporada/comerciales). Sin
+    // caché en Drive a propósito: la hoja "Campañas" es pequeña (unas
+    // pocas decenas de filas como mucho), así que se lee en directo en
+    // cada llamada — más simple que mantener otra caché sincronizada y
+    // siempre al día sin parcheos.
+    if (accion === 'obtener_campanas') {
+      return ContentService.createTextOutput(JSON.stringify({ campanas: leerCampanas_() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     // Devuelve, por área, el ID de Drive del PDF (si ya existe) y los
     // datos de páginas/productos — null para un área si el catálogo
     // todavía no se ha generado nunca, para que la web pueda seguir
@@ -3403,6 +3413,22 @@ function doPost(e) {
     if (accion === 'actualizar_relacionados') {
       console.log('Acción: actualizar_relacionados');
       return procesarActualizarRelacionados(data);
+    }
+
+    // NUEVO — Escaparate OM
+    if (accion === 'guardar_campana') {
+      console.log('Acción: guardar_campana');
+      return procesarGuardarCampana(data);
+    }
+
+    if (accion === 'actualizar_productos_campana') {
+      console.log('Acción: actualizar_productos_campana');
+      return procesarActualizarProductosCampana(data);
+    }
+
+    if (accion === 'eliminar_campana') {
+      console.log('Acción: eliminar_campana');
+      return procesarEliminarCampana(data);
     }
 
     if (accion === 'dar_baja_producto') {
@@ -3809,6 +3835,240 @@ function procesarActualizarRelacionados(data) {
 
   } catch (err) {
     console.error('Error al procesar actualización de relacionados:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ESCAPARATE OM — Campañas de temporada/comerciales (escaparate.html)
+// ═══════════════════════════════════════════════════════════════════
+// Hoja nueva "Campañas" (se crea sola, con sus cabeceras, la primera
+// vez que se llama a cualquiera de estas acciones si todavía no
+// existe — no hace falta crearla a mano en el Sheet).
+//
+// Por ahora sólo se gestionan campañas MANUALES desde aquí — el campo
+// "origen" ya admite 'ia' de cara a una futura generación automática
+// de campañas, pero nada en este bloque escribe todavía ese valor.
+// La prioridad "manual gana a IA si coinciden en fechas" se calcula
+// en el propio escaparate.html a partir de estos datos, no aquí.
+//
+// Columnas: id | nombre | tipo | origen | color_set | fecha_inicio |
+//           fecha_fin | areas | productos | fecha_creacion |
+//           fecha_actualizacion
+//
+// "areas" y "productos" son listas separadas por coma CON ESPACIO
+// tras la coma — mismo motivo que la columna "relacionados" de
+// Productos: Sheets con configuración regional española interpreta
+// la coma sin espacio como separador decimal y corrompe el dato.
+//
+// Sin caché en Drive a propósito (a diferencia de productos.json):
+// esta hoja tiene, como mucho, unas pocas decenas de filas, así que
+// se lee directamente en cada doGet — mucho más simple que mantener
+// sincronizada otra caché, y siempre al día sin parcheos.
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'fecha_creacion', 'fecha_actualizacion'];
+
+function obtenerHojaCampanas_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Campañas');
+  if (!sheet) {
+    sheet = ss.insertSheet('Campañas');
+    sheet.getRange(1, 1, 1, CABECERAS_CAMPANAS_.length).setValues([CABECERAS_CAMPANAS_]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+// Cabecera de columna (tal cual esté escrita en la hoja) → índice,
+// normalizando a minúsculas y guiones bajos — mismo criterio que ya
+// se usa de forma ad-hoc para la hoja Productos en el resto de este
+// archivo, aquí como función reutilizable.
+function mapaCabeceras_(headers) {
+  const mapa = {};
+  headers.forEach((h, i) => { mapa[h.toString().toLowerCase().trim().replace(/\s+/g, '_')] = i; });
+  return mapa;
+}
+
+// Las fechas pueden llegar como objeto Date (si se han tecleado con
+// el selector de fecha nativo de Sheets) o como texto plano (si se
+// han escrito o pegado) — se normalizan siempre a 'YYYY-MM-DD' para
+// que el front-end no tenga que lidiar con las dos formas.
+function formatearFechaISO_(valor) {
+  if (!valor) return '';
+  if (Object.prototype.toString.call(valor) === '[object Date]') {
+    return Utilities.formatDate(valor, Session.getScriptTimeZone() || 'Europe/Madrid', 'yyyy-MM-dd');
+  }
+  return valor.toString().trim().slice(0, 10);
+}
+
+function leerCampanas_() {
+  const sheet = obtenerHojaCampanas_();
+  const datos = sheet.getDataRange().getValues();
+  if (datos.length < 2) return [];
+  const COL = mapaCabeceras_(datos[0]);
+  const partirLista = (val) => (val || '').toString().split(',').map(s => s.trim()).filter(Boolean);
+
+  const campanas = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    const id = (fila[COL['id']] || '').toString().trim();
+    if (!id) continue; // fila en blanco
+    campanas.push({
+      id: id,
+      nombre: (fila[COL['nombre']] || '').toString(),
+      tipo: (fila[COL['tipo']] || 'temporada').toString(),
+      origen: (fila[COL['origen']] || 'manual').toString(),
+      colorSet: (fila[COL['color_set']] || 'rojo_verde').toString(),
+      fechaInicio: formatearFechaISO_(fila[COL['fecha_inicio']]),
+      fechaFin: formatearFechaISO_(fila[COL['fecha_fin']]),
+      areas: partirLista(fila[COL['areas']]),
+      productos: partirLista(fila[COL['productos']]),
+      fechaCreacion: (fila[COL['fecha_creacion']] || '').toString(),
+      fechaActualizacion: (fila[COL['fecha_actualizacion']] || '').toString(),
+    });
+  }
+  return campanas;
+}
+
+// Crea una campaña manual nueva, o actualiza los campos "de cabecera"
+// de una existente (nombre/tipo/color/fechas/áreas) si llega un id
+// que ya existe. Los productos NO se tocan aquí — eso lo gestiona
+// actualizar_productos_campana, para que el modal de "seleccionar
+// productos" pueda guardar sin reenviar el resto del formulario.
+function procesarGuardarCampana(data) {
+  try {
+    console.log('procesarGuardarCampana iniciado:', data);
+
+    const nombre = (data.nombre || '').toString().trim();
+    const fechaInicio = (data.fechaInicio || '').toString().trim();
+    const fechaFin = (data.fechaFin || '').toString().trim();
+    if (!nombre || !fechaInicio || !fechaFin) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Faltan campos obligatorios: nombre, fecha de inicio o fecha de fin.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const sheet = obtenerHojaCampanas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    const ahoraISO = new Date().toISOString();
+
+    const idExistente = (data.id || '').toString().trim();
+    let filaIdx = -1;
+    if (idExistente) {
+      for (let i = 1; i < datos.length; i++) {
+        if ((datos[i][COL['id']] || '').toString().trim() === idExistente) { filaIdx = i; break; }
+      }
+    }
+
+    const areas = Array.isArray(data.areas) ? data.areas.join(', ') : '';
+    const tipo = data.tipo === 'comercial' ? 'comercial' : 'temporada';
+    const colorSet = (data.colorSet || 'rojo_verde').toString();
+
+    if (filaIdx === -1) {
+      const id = 'manual-' + new Date().getTime();
+      const fila = new Array(CABECERAS_CAMPANAS_.length).fill('');
+      fila[COL['id']] = id;
+      fila[COL['nombre']] = nombre;
+      fila[COL['tipo']] = tipo;
+      fila[COL['origen']] = 'manual';
+      fila[COL['color_set']] = colorSet;
+      fila[COL['fecha_inicio']] = fechaInicio;
+      fila[COL['fecha_fin']] = fechaFin;
+      fila[COL['areas']] = areas;
+      fila[COL['productos']] = '';
+      fila[COL['fecha_creacion']] = ahoraISO;
+      fila[COL['fecha_actualizacion']] = ahoraISO;
+      sheet.getRange(sheet.getLastRow() + 1, 1, 1, CABECERAS_CAMPANAS_.length).setValues([fila]);
+      console.log('Campaña creada:', id);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, id: id }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['nombre'] + 1).setValue(nombre);
+    sheet.getRange(filaNum, COL['tipo'] + 1).setValue(tipo);
+    sheet.getRange(filaNum, COL['color_set'] + 1).setValue(colorSet);
+    sheet.getRange(filaNum, COL['fecha_inicio'] + 1).setValue(fechaInicio);
+    sheet.getRange(filaNum, COL['fecha_fin'] + 1).setValue(fechaFin);
+    sheet.getRange(filaNum, COL['areas'] + 1).setValue(areas);
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
+    console.log('Campaña actualizada:', idExistente);
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, id: idExistente }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarGuardarCampana:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Sustituye la lista completa de productos de una campaña (mismo
+// patrón "reemplazar, no fusionar" que actualizar_relacionados) — el
+// propio escaparate.html es quien decide qué refs quedan tras añadir
+// o quitar en el modal, y manda la lista final ya resuelta.
+function procesarActualizarProductosCampana(data) {
+  try {
+    console.log('procesarActualizarProductosCampana iniciado:', data);
+
+    const id = (data.id || '').toString().trim();
+    const productos = Array.isArray(data.productos) ? data.productos : [];
+    if (!id) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta el id de la campaña.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const sheet = obtenerHojaCampanas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+
+    let filaIdx = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) { filaIdx = i; break; }
+    }
+    if (filaIdx === -1) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Campaña no encontrada.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['productos'] + 1).setValue(productos.join(', '));
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
+    console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos');
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, productos: productos }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarActualizarProductosCampana:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function procesarEliminarCampana(data) {
+  try {
+    console.log('procesarEliminarCampana iniciado:', data);
+
+    const id = (data.id || '').toString().trim();
+    if (!id) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta el id de la campaña.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const sheet = obtenerHojaCampanas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) {
+        sheet.deleteRow(i + 1);
+        console.log('Campaña eliminada:', id);
+        return ContentService.createTextOutput(JSON.stringify({ success: true }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Campaña no encontrada.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarEliminarCampana:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
