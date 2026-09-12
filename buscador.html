@@ -6377,21 +6377,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // window.MOSTRAR_PRECIO_MAYOR en la configuración de arriba del
         // archivo). Se recalcula cada vez que se abre la ficha, así que
         // vuelve a quedar oculto tras el botón al cambiar de producto o
-        // reabrir el mismo.
+        // reabrir el mismo. El "con IVA" ya llega calculado desde el
+        // Sheet (columna precio_mayor_con_iva) — no se calcula aquí, a
+        // petición de Eloy, igual que el precio normal.
         const bloquePrecioMayor = $('modal-producto-precio-mayor-bloque');
         const btnPrecioMayor = $('modal-producto-btn-ver-precio-mayor');
         const valoresPrecioMayor = $('modal-producto-precio-mayor-valores');
         const precioMayorSin = p.precio_mayor_sin ? parseFloat(p.precio_mayor_sin.toString().replace(',', '.')) : 0;
+        const precioMayorCon = p.precio_mayor_con ? parseFloat(p.precio_mayor_con.toString().replace(',', '.')) : 0;
         if (window.MOSTRAR_PRECIO_MAYOR && precioMayorSin > 0) {
             bloquePrecioMayor.style.display = '';
             btnPrecioMayor.style.display = '';
             valoresPrecioMayor.style.display = 'none';
             valoresPrecioMayor.innerHTML = '';
             btnPrecioMayor.onclick = () => {
-                const iva = parseFloat((p.iva || '21').toString().replace(',', '.')) || 21;
-                const mayorConIva = precioMayorSin * (1 + iva / 100);
                 const sinTxt = precioMayorSin.toFixed(2).replace('.', ',');
-                const conTxt = mayorConIva.toFixed(2).replace('.', ',');
+                const conTxt = precioMayorCon.toFixed(2).replace('.', ',');
                 valoresPrecioMayor.innerHTML = `<strong>${conTxt} €</strong> con IVA &nbsp;·&nbsp; ${sinTxt} € sin IVA`;
                 valoresPrecioMayor.style.display = '';
                 btnPrecioMayor.style.display = 'none';

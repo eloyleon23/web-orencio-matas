@@ -143,18 +143,24 @@ function sincronizarRegistroProductos() {
     sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('fecha_alta');
     prodHeaderRow.push('fecha_alta');
   }
-  // Precio de venta a MAYOR sin IVA (a petición de Eloy, 11/09/2026) —
-  // llega del Excel de actualización (columna PrecioMayorSinIVA, ya
+  // Precio de venta a MAYOR sin/con IVA (a petición de Eloy, 11/09/2026)
+  // — llega del Excel de actualización (columna PrecioMayorSinIVA, ya
   // presente en COLUMNAS_CRM_EXCEL desde antes, pero nunca se trasladaba
   // a la hoja Productos). De momento SOLO se usa para mostrarlo oculto
   // tras un botón en la ficha de detalle del buscador (ver
   // MOSTRAR_PRECIO_MAYOR en buscador.html) — funcionalidad que debe
   // quedar SIEMPRE fuera de release/IONOS, nunca visible a clientes. El
-  // "con IVA" no se guarda aparte: se calcula en el momento de mostrarlo
-  // reutilizando el mismo % de IVA ya almacenado para el producto.
+  // "con IVA" se calcula y se guarda YA CALCULADO aquí mismo (igual que
+  // precio_con_iva para el precio normal), no al vuelo en el cliente —
+  // así cualquier proceso que lea la hoja lo tiene disponible
+  // directamente, sin tener que repetir el cálculo.
   if (!prodHeaderRow.includes('precio_mayor_sin_iva')) {
     sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('precio_mayor_sin_iva');
     prodHeaderRow.push('precio_mayor_sin_iva');
+  }
+  if (!prodHeaderRow.includes('precio_mayor_con_iva')) {
+    sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('precio_mayor_con_iva');
+    prodHeaderRow.push('precio_mayor_con_iva');
   }
 
   const PROD = {};
@@ -210,6 +216,7 @@ function sincronizarRegistroProductos() {
     const precioMayorSinIva = COL['PrecioMayorSinIVA'] !== undefined ? (parseFloat(fila[COL['PrecioMayorSinIVA']]) || 0) : 0;
     const iva          = parseFloat(fila[COL['IVA']])               || 21;
     const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
+    const precioMayorConIva = Math.round(precioMayorSinIva * (1 + iva / 100) * 100) / 100;
     const familia      = fila[COL['Familia']] ? fila[COL['Familia']].toString().trim() : '';
     const fechaAlta     = COL['FechaAlta'] !== undefined ? fila[COL['FechaAlta']] : '';
 
@@ -253,6 +260,13 @@ function sincronizarRegistroProductos() {
             cambios = true;
           }
         }
+        if (precioMayorSinIva > 0 && PROD['precio_mayor_con_iva'] !== undefined) {
+          const valPrecioMayorConIva = formatPrecio_(precioMayorConIva);
+          if (prodRow[PROD['precio_mayor_con_iva']].toString().trim() != valPrecioMayorConIva) {
+            prodRow[PROD['precio_mayor_con_iva']] = valPrecioMayorConIva;
+            cambios = true;
+          }
+        }
         if (cambios && PROD['fecha_registro'] !== undefined) prodRow[PROD['fecha_registro']] = hoy;
 
         actualizados++;
@@ -273,7 +287,10 @@ function sincronizarRegistroProductos() {
         set('precio_sin_iva',      formatPrecio_(precioSinIva));
         set('iva',                 iva);
         set('precio_con_iva',      formatPrecio_(precioConIva));
-        if (precioMayorSinIva > 0) set('precio_mayor_sin_iva', formatPrecio_(precioMayorSinIva));
+        if (precioMayorSinIva > 0) {
+          set('precio_mayor_sin_iva', formatPrecio_(precioMayorSinIva));
+          set('precio_mayor_con_iva', formatPrecio_(precioMayorConIva));
+        }
         set('mostrar_precio',      'si');
         set('incluir_en_catalogo', 'si');
         set('oferta',              'no');
@@ -383,6 +400,7 @@ function actualizarPreciosProductos() {
         const precioMayorSinIva = COL['PrecioMayorSinIVA'] !== undefined ? (parseFloat(fila[COL['PrecioMayorSinIVA']]) || 0) : 0;
         const iva          = parseFloat(fila[COL['IVA']]) || 21;
         const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
+        const precioMayorConIva = Math.round(precioMayorSinIva * (1 + iva / 100) * 100) / 100;
 
         // Actualizar precio sin IVA
         if (PROD['precio_sin_iva'] !== undefined) {
@@ -399,12 +417,17 @@ function actualizarPreciosProductos() {
           sheetProd.getRange(prodRowNum, PROD['precio_con_iva'] + 1).setValue(formatPrecio_(precioConIva));
         }
 
-        // Actualizar precio mayor sin IVA — solo si el Excel trae de
+        // Actualizar precio mayor sin/con IVA — solo si el Excel trae de
         // verdad un valor (> 0) para esta fila, igual que en
         // sincronizarRegistroProductos(): no sobrescribir con "0" un
         // valor ya existente cuando el Excel simplemente no lo trae.
-        if (precioMayorSinIva > 0 && PROD['precio_mayor_sin_iva'] !== undefined) {
-          sheetProd.getRange(prodRowNum, PROD['precio_mayor_sin_iva'] + 1).setValue(formatPrecio_(precioMayorSinIva));
+        if (precioMayorSinIva > 0) {
+          if (PROD['precio_mayor_sin_iva'] !== undefined) {
+            sheetProd.getRange(prodRowNum, PROD['precio_mayor_sin_iva'] + 1).setValue(formatPrecio_(precioMayorSinIva));
+          }
+          if (PROD['precio_mayor_con_iva'] !== undefined) {
+            sheetProd.getRange(prodRowNum, PROD['precio_mayor_con_iva'] + 1).setValue(formatPrecio_(precioMayorConIva));
+          }
         }
 
         // Actualizar fecha_registro
@@ -2946,6 +2969,7 @@ function regenerarCacheCompletaDesdeSheet_() {
         // release/IONOS.
         iva: valorCelda_(row, 'iva'),
         precio_mayor_sin: valorCelda_(row, 'precio_mayor_sin_iva'),
+        precio_mayor_con: valorCelda_(row, 'precio_mayor_con_iva'),
         fecha: valorCelda_(row, 'fecha_registro'),
         espacios: valorCelda_(row, 'espacios_a_ocupar') || '1',
         imagen_validada: valorCelda_(row, 'imagen_validada'),
