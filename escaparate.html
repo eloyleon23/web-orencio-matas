@@ -650,6 +650,19 @@
       .form-msg.error{ color:#C81E1E; }
       .form-msg.ok{ color:#1a7a4c; }
 
+      .campana-img-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+      .campana-img-preview{
+        width:88px; height:88px; border-radius:var(--radius-s); flex:none;
+        border:1px dashed var(--line-strong); background:var(--paper);
+        display:flex; align-items:center; justify-content:center; overflow:hidden;
+      }
+      .campana-img-preview img{ width:100%; height:100%; object-fit:cover; }
+      .campana-img-vacio{ font-size:10.5px; color:var(--ink-faint); text-align:center; padding:0 8px; }
+      .campana-img-acciones{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+      .campana-img-acciones .btn{ padding:8px 14px; font-size:12.5px; }
+      .campana-img-acciones .btn:disabled{ opacity:.45; cursor:not-allowed; }
+      .campana-img-hint{ font-size:11.5px; color:var(--ink-faint); flex-basis:100%; }
+
       /* Toast */
       .toast{
         position:fixed; left:50%; bottom:26px; translate:-50% 0;
@@ -938,6 +951,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <span class="chip" data-area="talleres">Talleres y carrocerías</span>
           </div>
         </div>
+        <div class="field span2">
+          <label>Imagen de fondo (opcional) — se ve difuminada detrás del texto, junto con la animación de la estación</label>
+          <div class="campana-img-row">
+            <div class="campana-img-preview" id="campanaImgPreview">
+              <span class="campana-img-vacio">Sin imagen</span>
+            </div>
+            <div class="campana-img-acciones">
+              <input type="file" id="campanaImgInput" accept="image/*" style="display:none">
+              <button type="button" class="btn ghost" id="btnSubirImagenCampana" disabled>Subir imagen</button>
+              <button type="button" class="btn ghost danger-ghost" id="btnQuitarImagenCampana" style="display:none">Quitar imagen</button>
+              <span class="campana-img-hint" id="campanaImgHint">Guarda primero la campaña (nombre y fechas) para poder subir una imagen.</span>
+            </div>
+          </div>
+        </div>
       </div>
       <p class="form-msg" id="formMsg"></p>
     </div>
@@ -1043,6 +1070,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(!p.img) return null;
     return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
   }
+  function urlImagenCampana(driveId, tamano){
+    tamano = tamano || 900;
+    if(!driveId) return null;
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w${tamano}`;
+  }
 
   /* ---------------- Estado ---------------- */
   let PRODUCTS = {};          // ref -> producto (de data/productos.json)
@@ -1121,10 +1153,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     return 'otono'; // 8,9,10
   }
 
-  function pintarVisualEstacional(el, fechaRef){
+  function pintarVisualEstacional(el, fechaRef, imagenUrl){
     if(!el) return;
     const est = ESTACIONES[estacionParaFecha(fechaRef)];
-    el.style.setProperty('--vitrina-visual-bg', est.fondo);
+    // Si la campaña tiene imagen de fondo propia, se pinta debajo del
+    // degradado de la estación (ambos quedan detrás del contenido y
+    // difuminados por .vitrina-visual — ver CSS) — así la campaña "habla
+    // de sí misma" con una foto real, sin perder la animación estacional
+    // por encima.
+    const fondoFinal = imagenUrl ? `url('${imagenUrl}') center/cover no-repeat, ${est.fondo}` : est.fondo;
+    el.style.setProperty('--vitrina-visual-bg', fondoFinal);
     const N = est.n || 16;
     const opRango = est.op || [0.4, 0.8];
     let html = '';
@@ -1307,7 +1345,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // Estación según el INICIO de la campaña, no el día de hoy — así una
     // campaña de verano programada en julio se ve "de verano" se mire
     // cuando se mire (ver comentario junto a pintarVisualEstacional).
-    pintarVisualEstacional($("#vitrinaVisual"), c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY);
+    pintarVisualEstacional($("#vitrinaVisual"), c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY, urlImagenCampana(c.imagenFondo));
 
     const solapa = solapaConManual(c);
     if(solapa){
@@ -1733,6 +1771,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
   });
 
+  function pintarImagenCampanaForm(id, imagenId){
+    const preview = $("#campanaImgPreview");
+    const btnSubir = $("#btnSubirImagenCampana");
+    const btnQuitar = $("#btnQuitarImagenCampana");
+    const hint = $("#campanaImgHint");
+    if(!id){
+      preview.innerHTML = '<span class="campana-img-vacio">Sin imagen</span>';
+      btnSubir.disabled = true;
+      btnQuitar.style.display = 'none';
+      hint.textContent = 'Guarda primero la campaña (nombre y fechas) para poder subir una imagen.';
+      return;
+    }
+    btnSubir.disabled = false;
+    const url = urlImagenCampana(imagenId, 300);
+    preview.innerHTML = url ? `<img src="${url}" alt="">` : '<span class="campana-img-vacio">Sin imagen</span>';
+    btnQuitar.style.display = imagenId ? 'inline-block' : 'none';
+    hint.textContent = imagenId ? '' : 'Se verá difuminada de fondo en la vitrina, junto con la animación de la estación.';
+  }
+
   function limpiarFormulario(){
     $("#ncId").value = "";
     $("#ncNombre").value = "";
@@ -1746,6 +1803,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#btnCancelarEdicion").style.display = "none";
     $("#btnGuardarCampana").textContent = "Guardar y asignar productos →";
     $("#formMsg").className = "form-msg";
+    pintarImagenCampanaForm(null, null);
   }
   function cargarFormularioEdicion(id){
     const c = findCampaign(id);
@@ -1762,9 +1820,82 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#btnCancelarEdicion").style.display = "inline-block";
     $("#btnGuardarCampana").textContent = "Guardar cambios";
     $("#formMsg").className = "form-msg";
+    pintarImagenCampanaForm(c.id, c.imagenFondo);
     $("#ncNombre").focus();
   }
   $("#btnCancelarEdicion").addEventListener("click", limpiarFormulario);
+
+  $("#btnSubirImagenCampana").addEventListener("click", ()=>{ $("#campanaImgInput").click(); });
+  $("#campanaImgInput").addEventListener("change", async (ev)=>{
+    const file = ev.target.files[0];
+    ev.target.value = ''; // permite volver a elegir el mismo archivo más adelante si hace falta
+    if(!file) return;
+    const id = $("#ncId").value;
+    if(!id) return; // el botón está deshabilitado sin id, esto es solo un cinturón de seguridad
+    if(!file.type.startsWith('image/')){
+      toast('Elige un archivo de imagen.', true);
+      return;
+    }
+    const LIMITE_MB = 5;
+    if(file.size > LIMITE_MB*1024*1024){
+      toast(`La imagen pesa demasiado (máximo ${LIMITE_MB} MB).`, true);
+      return;
+    }
+    const btnSubir = $("#btnSubirImagenCampana");
+    const original = btnSubir.textContent;
+    btnSubir.disabled = true; btnSubir.textContent = 'Subiendo…';
+    try{
+      const base64 = await new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+        reader.readAsDataURL(file);
+      });
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          accion:'actualizar_imagen_campana', id,
+          archivo: { nombre:file.name, tipo:file.type, datos: base64 },
+        }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      const c = findCampaign(id);
+      if(c) c.imagenFondo = data.imagenFondo;
+      pintarImagenCampanaForm(id, data.imagenFondo);
+      if(id === activeId) render();
+      toast('Imagen de campaña actualizada.');
+    } catch(err){
+      toast('No se pudo subir la imagen: ' + err.message, true);
+    } finally {
+      btnSubir.disabled = false; btnSubir.textContent = original;
+    }
+  });
+  $("#btnQuitarImagenCampana").addEventListener("click", async ()=>{
+    const id = $("#ncId").value;
+    if(!id) return;
+    if(!confirm('¿Quitar la imagen de fondo de esta campaña?')) return;
+    const btn = $("#btnQuitarImagenCampana");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Quitando…';
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ accion:'eliminar_imagen_campana', id }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      const c = findCampaign(id);
+      if(c) c.imagenFondo = '';
+      pintarImagenCampanaForm(id, '');
+      if(id === activeId) render();
+      toast('Imagen de campaña eliminada.');
+    } catch(err){
+      toast('No se pudo quitar la imagen: ' + err.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
 
   $("#btnCampanas").addEventListener("click", ()=>{
     limpiarFormulario();

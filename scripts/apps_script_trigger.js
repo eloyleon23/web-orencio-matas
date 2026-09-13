@@ -3436,6 +3436,16 @@ function doPost(e) {
       return procesarSugerirCategoriasCampanaIA(data);
     }
 
+    if (accion === 'actualizar_imagen_campana') {
+      console.log('Acción: actualizar_imagen_campana');
+      return procesarActualizarImagenCampana(data);
+    }
+
+    if (accion === 'eliminar_imagen_campana') {
+      console.log('Acción: eliminar_imagen_campana');
+      return procesarEliminarImagenCampana(data);
+    }
+
     if (accion === 'dar_baja_producto') {
       console.log('Acción: dar_baja_producto');
       return procesarDarBajaProducto(data);
@@ -3871,7 +3881,7 @@ function procesarActualizarRelacionados(data) {
 // esta hoja tiene, como mucho, unas pocas decenas de filas, así que
 // se lee directamente en cada doGet — mucho más simple que mantener
 // sincronizada otra caché, y siempre al día sin parcheos.
-const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaCampanas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -3957,6 +3967,7 @@ function leerCampanas_() {
       areas: partirLista(fila[COL['areas']]),
       productos: partirLista(fila[COL['productos']]),
       destacados: leerDestacados(fila[COL['destacados']]),
+      imagenFondo: (fila[COL['imagen_fondo']] || '').toString().trim(),
       fechaCreacion: (fila[COL['fecha_creacion']] || '').toString(),
       fechaActualizacion: (fila[COL['fecha_actualizacion']] || '').toString(),
     });
@@ -4104,6 +4115,105 @@ function procesarActualizarProductosCampana(data) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarActualizarProductosCampana:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Subcarpeta propia dentro de la carpeta de imágenes del catálogo (no
+// mezclada con las ~12.858 imágenes de producto, pero tampoco exige que
+// Eloy cree/configure nada a mano — se autocrea la primera vez).
+function obtenerCarpetaImagenesCampanas_() {
+  const padre = DriveApp.getFolderById(DRIVE_IMAGENES_ID);
+  const iter = padre.getFoldersByName('imagenes_campanas_escaparate');
+  if (iter.hasNext()) return iter.next();
+  return padre.createFolder('imagenes_campanas_escaparate');
+}
+
+// Sube/reemplaza la imagen de fondo de una campaña. Igual que con las
+// imágenes de producto (procesarActualizarImagen), el archivo llega en
+// base64 desde escaparate.html. Si ya había una imagen anterior para
+// esta campaña, se envía a la papelera de Drive para no ir acumulando
+// archivos huérfanos cada vez que se cambia la imagen.
+function procesarActualizarImagenCampana(data) {
+  try {
+    console.log('procesarActualizarImagenCampana iniciado, campaña:', data && data.id);
+    const id = (data.id || '').toString().trim();
+    const archivo = data.archivo;
+    if (!id || !archivo || !archivo.datos) {
+      throw new Error('Faltan datos requeridos: id de campaña o archivo.');
+    }
+
+    const sheet = obtenerHojaCampanas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    let filaIdx = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) { filaIdx = i; break; }
+    }
+    if (filaIdx === -1) throw new Error('Campaña no encontrada.');
+
+    const extension = (archivo.nombre || 'imagen.jpg').split('.').pop().toLowerCase();
+    const decoded = Utilities.base64Decode(archivo.datos);
+    const blob = Utilities.newBlob(decoded, archivo.tipo || 'image/jpeg', id + '.' + extension);
+
+    const anteriorId = (datos[filaIdx][COL['imagen_fondo']] || '').toString().trim();
+    if (anteriorId) {
+      try { DriveApp.getFileById(anteriorId).setTrashed(true); }
+      catch (e) { console.log('No se pudo enviar a la papelera la imagen anterior (puede que ya no exista):', e.message); }
+    }
+
+    const carpeta = obtenerCarpetaImagenesCampanas_();
+    const driveFile = carpeta.createFile(blob);
+    try {
+      driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (sharingError) {
+      console.log('No se pudo compartir la imagen de campaña públicamente:', sharingError.message);
+    }
+
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['imagen_fondo'] + 1).setValue(driveFile.getId());
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
+    console.log('Imagen de campaña actualizada:', id, '→', driveFile.getId());
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, imagenFondo: driveFile.getId() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarActualizarImagenCampana:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function procesarEliminarImagenCampana(data) {
+  try {
+    const id = (data.id || '').toString().trim();
+    if (!id) throw new Error('Falta el id de la campaña.');
+
+    const sheet = obtenerHojaCampanas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    let filaIdx = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) { filaIdx = i; break; }
+    }
+    if (filaIdx === -1) throw new Error('Campaña no encontrada.');
+
+    const actualId = (datos[filaIdx][COL['imagen_fondo']] || '').toString().trim();
+    if (actualId) {
+      try { DriveApp.getFileById(actualId).setTrashed(true); }
+      catch (e) { console.log('No se pudo enviar a la papelera la imagen (puede que ya no exista):', e.message); }
+    }
+
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['imagen_fondo'] + 1).setValue('');
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
+    console.log('Imagen de campaña eliminada:', id);
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarEliminarImagenCampana:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
