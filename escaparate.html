@@ -153,7 +153,6 @@
         overflow:hidden;
         transition:background 420ms ease, border-color 420ms ease;
         min-height:220px;
-        display:flex; align-items:stretch; gap:clamp(20px,3vw,36px);
       }
       .vitrina::before{
         content:"";
@@ -163,26 +162,22 @@
       }
       .vitrina-content{
         position:relative; z-index:1;
-        flex:1 1 auto; min-width:0;
       }
-      /* Panel decorativo del lado derecho de la vitrina — antes era hueco
-         vacío en pantallas grandes (queja real de Eloy con capturas).
-         Solo en escritorio: en móvil no hay sitio y no aporta tanto. Se
-         rellena con partículas animadas según la estación que le toque a
-         la campaña (ver pintarVisualEstacional en el JS) — otoño con
-         hojas, invierno con copos, primavera con pétalos/hojas verdes,
-         verano con burbujas de agua subiendo. */
+      /* Panel estacional: ahora es un FONDO a pantalla completa detrás de
+         todo el contenido (antes era una columna aparte a la derecha —
+         Eloy lo vio en vivo y pidió que pasara a fondo difuminado, con
+         hojas más grandes y reconocibles como de arce, en vez de "el
+         bloque" separado). inset negativo + blur para que el desenfoque
+         no se corte en seco en el borde — el overflow:hidden de .vitrina
+         ya recorta todo a las esquinas redondeadas de la tarjeta. */
       .vitrina-visual{
-        display:none;
-        position:relative; z-index:0;
-        flex:0 0 clamp(220px, 30%, 320px);
-        border-radius:var(--radius-m);
+        display:block;
+        position:absolute; inset:-30px; z-index:0;
         overflow:hidden;
-        border:1px solid var(--line);
         background:var(--vitrina-visual-bg, linear-gradient(180deg, var(--wash), var(--paper)));
+        filter:blur(5px);
         pointer-events:none;
       }
-      @media (min-width:900px){ .vitrina-visual{ display:block; } }
       .vitrina-visual .particula{
         position:absolute; top:0; left:0;
         animation:flotarParticula var(--dur,9s) linear infinite;
@@ -1091,25 +1086,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       fondo: 'linear-gradient(160deg, #EAF2FA, #DCEBF7 55%, #CFE3F2)',
       colores: ['#8FB8DD','#A9C9E6','#6FA3D1'],
       forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M2 12h20M6 4l1 3-3 1M18 4l-1 3 3 1M6 20l1-3-3-1M18 20l-1-3 3-1"/></svg>`,
-      dir: 1, tam: [10,18], dur: [7,13],
+      dir: 1, tam: [16,26], dur: [7,13], n: 16, op: [0.30,0.55],
     },
     primavera: {
       fondo: 'linear-gradient(160deg, #F1FBEF, #E3F6E0 55%, #D3F0D6)',
       colores: ['#6FBE6B','#8FD98A','#F3B6C7'],
       forma: (c) => `<svg viewBox="0 0 24 24" fill="${c}"><path d="M12 2c4 3 6 6 6 10a6 6 0 01-12 0c0-4 2-7 6-10z"/></svg>`,
-      dir: 1, tam: [10,17], dur: [8,14],
+      dir: 1, tam: [16,24], dur: [8,14], n: 16, op: [0.30,0.55],
     },
     verano: {
       fondo: 'linear-gradient(160deg, #E7F6FB, #D3EEF7 55%, #BFE4F2)',
       colores: ['#4FB6DA','#7FCBE6','#3A9FC4'],
       forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="9.3" cy="8.8" r="1.7" fill="${c}" stroke="none" opacity=".55"/></svg>`,
-      dir: -1, tam: [8,16], dur: [6,11],
+      dir: -1, tam: [14,22], dur: [6,11], n: 16, op: [0.30,0.55],
     },
+    // Hojas de arce reales (silueta de 5 lóbulos + peciolo), no la forma
+    // genérica de gota anterior — a petición de Eloy tras ver el efecto
+    // en vivo. Más grandes que el resto de estaciones a propósito (van
+    // de fondo, difuminadas detrás del contenido, así que necesitan más
+    // tamaño para seguir leyéndose como "hojas" y no como manchas).
     otono: {
       fondo: 'linear-gradient(160deg, #FBF0DF, #F5DFB6 55%, #EAC48D)',
-      colores: ['#C97A34','#B5541F','#D9A441'],
-      forma: (c) => `<svg viewBox="0 0 24 24" fill="${c}"><path d="M12 2c5 2 8 6 8 11a8 8 0 01-16 0c0-5 3-9 8-11z"/><path d="M12 5v15" stroke="rgba(0,0,0,.22)" stroke-width="1"/></svg>`,
-      dir: 1, tam: [11,19], dur: [6,10],
+      colores: ['#C97A34','#B5541F','#D9A441','#A8632A'],
+      forma: (c) => `<svg viewBox="0 0 100 100" fill="${c}"><path d="M50,10 L61.8,33.8 L88,37.6 L69,56.2 L73.5,82.4 L50,70 L26.5,82.4 L31,56.2 L12,37.6 L26.5,17.6 Z"/><path d="M50,68 L48,94" stroke="rgba(70,40,10,.4)" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>`,
+      dir: 1, tam: [34,58], dur: [7,12], n: 11, op: [0.32,0.58],
     },
   };
 
@@ -1125,17 +1125,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(!el) return;
     const est = ESTACIONES[estacionParaFecha(fechaRef)];
     el.style.setProperty('--vitrina-visual-bg', est.fondo);
-    const N = 16;
+    const N = est.n || 16;
+    const opRango = est.op || [0.4, 0.8];
     let html = '';
     for(let i=0;i<N;i++){
       const color = pick(est.colores);
       const tam = est.tam[0] + Math.random()*(est.tam[1]-est.tam[0]);
       const dur = est.dur[0] + Math.random()*(est.dur[1]-est.dur[0]);
-      const delay = -(Math.random()*dur); // negativo: ya "en vuelo" desde el primer pintado, en vez de que las 16 nazcan a la vez arriba
+      const delay = -(Math.random()*dur); // negativo: ya "en vuelo" desde el primer pintado, en vez de que nazcan todas a la vez arriba
       const x = 2 + Math.random()*94;
       const drift = Math.round(Math.random()*44-22);
       const rot = Math.round(Math.random()*300+60);
-      const op = (0.4 + Math.random()*0.4).toFixed(2);
+      const op = (opRango[0] + Math.random()*(opRango[1]-opRango[0])).toFixed(2);
       html += `<span class="particula" style="left:${x.toFixed(1)}%; animation-delay:${delay.toFixed(1)}s; --dur:${dur.toFixed(1)}s; --drift:${drift}px; --rot:${rot}deg; --dir:${est.dir}; --op:${op}; --tam:${tam.toFixed(0)}px;">${est.forma(color)}</span>`;
     }
     el.innerHTML = html;
