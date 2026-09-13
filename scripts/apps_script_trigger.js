@@ -3431,6 +3431,11 @@ function doPost(e) {
       return procesarEliminarCampana(data);
     }
 
+    if (accion === 'sugerir_categorias_campana_ia') {
+      console.log('Acción: sugerir_categorias_campana_ia');
+      return procesarSugerirCategoriasCampanaIA(data);
+    }
+
     if (accion === 'dar_baja_producto') {
       console.log('Acción: dar_baja_producto');
       return procesarDarBajaProducto(data);
@@ -5033,6 +5038,84 @@ function procesarSugerirComplementariosIA(data) {
   } catch (err) {
     console.error('Error en procesarSugerirComplementariosIA:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, errorTecnico: true, sugerencias: [], error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Escaparate OM: sugerir categorías con IA para una campaña ───────────────
+// A diferencia de procesarSugerirComplementariosIA (que sí manda productos
+// reales candidatos y valida el nombre exacto elegido), aquí la IA NUNCA ve
+// el catálogo ni tiene ocasión de nombrar un producto concreto — solo
+// propone TÉRMINOS DE BÚSQUEDA/CATEGORÍAS en español a partir del título,
+// fechas y áreas de la campaña (p. ej. "protector solar", "repelente
+// mosquitos"). Es el propio front-end (escaparate.html) quien, con esos
+// términos, busca productos reales en el catálogo ya cargado en el
+// navegador y añade a la selección solo lo que encuentra de verdad. Esto
+// hace estructuralmente imposible que aparezca un producto inventado —
+// ni siquiera hace falta la comprobación "¿existe este nombre exacto en
+// la lista de candidatos?" que sí hace falta en complementarios, porque
+// aquí la IA nunca emite un nombre de producto en primer lugar.
+function procesarSugerirCategoriasCampanaIA(data) {
+  try {
+    const nombreCampana = (data.nombre || '').toString().trim();
+    const tipo = data.tipo === 'comercial' ? 'comercial' : 'temporada';
+    const fechaInicio = (data.fechaInicio || '').toString().trim();
+    const fechaFin = (data.fechaFin || '').toString().trim();
+    const areas = Array.isArray(data.areas) ? data.areas.filter(Boolean) : [];
+
+    if (!nombreCampana) {
+      throw new Error('Falta el nombre de la campaña.');
+    }
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
+      throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
+    }
+
+    const descripcionAreas = areas.length
+      ? areas.join(', ')
+      : 'todas las áreas de la tienda (droguería, perfumería, pinturas, y talleres y carrocerías)';
+    const descripcionFechas = (fechaInicio && fechaFin)
+      ? ('del ' + fechaInicio + ' al ' + fechaFin)
+      : 'sin fechas concretas todavía';
+
+    const prompt = 'Eres el encargado de escaparatismo de Orencio Matas y Hermanos, una tienda física con droguería, ' +
+      'perfumería, pinturas, y talleres y carrocerías.\n\n' +
+      'Vas a preparar una campaña con estas características:\n' +
+      '- Nombre de la campaña: "' + nombreCampana + '"\n' +
+      '- Tipo: ' + (tipo === 'comercial' ? 'campaña comercial' : 'campaña de temporada') + '\n' +
+      '- Fechas: ' + descripcionFechas + '\n' +
+      '- Áreas del catálogo a las que debe ceñirse: ' + descripcionAreas + '\n\n' +
+      'Sugiere entre 6 y 12 TIPOS DE PRODUCTO o CATEGORÍAS concretas — nunca marcas ni nombres de producto exactos, no los inventes, no los conoces — que tendría sentido destacar en esta campaña, pensando en lo que buscaría de verdad un cliente de una tienda física española en esas fechas. Cada uno debe ser un término de búsqueda corto (2 a 4 palabras) en español, tal y como lo escribiría un cliente en un buscador (p. ej. "protector solar", "repelente de mosquitos", "pintura para exteriores"). No repitas conceptos casi idénticos entre sí.\n\n' +
+      'Responde EXACTAMENTE con este formato, un término por línea, sin numerar, sin explicaciones ni nada más:\n' +
+      'TERMINO: primer término\n' +
+      'TERMINO: segundo término\n' +
+      '(y así hasta un máximo de 12 líneas)';
+
+    const r = llamarGemini_(prompt, 220);
+    if (!r.ok) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false, error: 'La IA no respondió correctamente (HTTP ' + r.errorHttp + ').',
+        _debug: { promptEnviado: prompt, errorHttp: r.errorHttp, respuestaCrudaGemini: r.respuestaCruda },
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const terminos = [];
+    r.texto.split('\n').forEach((linea) => {
+      const l = linea.trim();
+      if (!/^TERMINO:/i.test(l)) return;
+      const termino = l.replace(/^TERMINO:/i, '').trim().replace(/^["']+|["']+$/g, '');
+      if (termino && terminos.indexOf(termino) === -1) terminos.push(termino);
+    });
+
+    console.log('Sugerir categorías campaña IA — campaña:', nombreCampana, '| términos:', JSON.stringify(terminos));
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      terminos: terminos.slice(0, 12),
+      _debug: { promptEnviado: prompt, respuestaCrudaGemini: r.texto },
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarSugerirCategoriasCampanaIA:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

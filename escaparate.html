@@ -79,6 +79,14 @@
 
       *{box-sizing:border-box;}
       html{-webkit-text-size-adjust:100%;}
+      /* overflow-x:clip como red de seguridad: los "tags" rotados del
+         rail de campañas (ver .tag más abajo, usan transform:rotate())
+         amplían su caja pintada más allá de su caja de layout, y los
+         navegadores cuentan esa caja pintada para el scroll horizontal
+         de la página — sin esto, un tag rotado cerca del borde derecho
+         puede añadir una barra de scroll horizontal en móvil aunque el
+         layout "sobre el papel" quepa perfectamente. */
+      html, body{ overflow-x:clip; }
       body{
         margin:0;
         background:var(--paper);
@@ -380,20 +388,47 @@
         cursor:pointer; display:flex; flex-direction:column; gap:6px; text-align:left;
         background:var(--paper); position:relative;
       }
+      .pick-card .pick-img{
+        aspect-ratio:1.6/1; border-radius:5px; overflow:hidden; position:relative;
+        background:var(--paper-raised); border:1px solid var(--line);
+        display:flex; align-items:center; justify-content:center;
+      }
+      .pick-card .pick-img svg{ width:22px; height:22px; color:var(--ink-faint); opacity:.6; }
+      .pick-card .pick-img img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:4px; }
       .pick-card .fam{ font-size:9.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
       .pick-card .nombre{ font-size:12.5px; font-weight:600; line-height:1.3; min-height:2.5em; }
       .pick-card .precio{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
       .pick-card .check{
         position:absolute; top:8px; right:8px; width:19px; height:19px; border-radius:5px;
         border:1.5px solid var(--line-strong); background:var(--paper-raised);
-        display:flex; align-items:center; justify-content:center;
+        display:flex; align-items:center; justify-content:center; z-index:1;
       }
       .pick-card .check svg{ width:12px; height:12px; opacity:0; color:#fff; }
       .pick-card.selected{ border-color:var(--accent); background:var(--wash); }
       .pick-card.selected .check{ background:var(--accent); border-color:var(--accent); }
       .pick-card.selected .check svg{ opacity:1; }
+      .pick-card.ia-pick{ border-style:dashed; }
       .picker-empty{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
       .picker-loading{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
+      .picker-section-label{
+        grid-column:1/-1; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+        font-size:12px; color:var(--ink-soft); margin:2px 0 -2px;
+      }
+      .picker-section-label svg{ width:14px; height:14px; color:var(--accent-2); flex:none; }
+      .picker-section-label b{ color:var(--ink); }
+
+      .ia-suggest-row{
+        display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+        margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--line-strong);
+      }
+      .btn.ia{
+        display:inline-flex; align-items:center; gap:7px;
+        background:var(--paper-raised); border:1px solid var(--accent-2); color:var(--accent-2);
+      }
+      .btn.ia svg{ width:15px; height:15px; }
+      .btn.ia:disabled{ opacity:.55; cursor:not-allowed; }
+      .ia-suggest-hint{ font-size:12px; color:var(--ink-faint); flex:1; min-width:180px; }
+      .ia-suggest-hint.error{ color:#C81E1E; }
 
       .selected-count{ font-size:13px; color:var(--ink-soft); }
       .selected-count b{ color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -646,6 +681,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <button class="modal-close" data-close-productos><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="modal-body">
+    <div class="ia-suggest-row">
+      <button class="btn ia" id="btnSugerirIA" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
+        Sugerir productos con IA
+      </button>
+      <span class="ia-suggest-hint" id="iaSuggestHint">Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.</span>
+    </div>
     <div class="filters-row">
       <div class="field">
         <label for="fFamilia">Familia</label>
@@ -864,7 +906,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   async function cargarCampanas(){
-    const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas', { cache:'no-store' });
+    // El parámetro "_ts" no lo usa el servidor para nada — es solo para
+    // que cada llamada tenga una URL distinta. Los Web Apps de Apps
+    // Script desplegados para acceso público pueden quedar cacheados en
+    // el borde de Google para peticiones GET idénticas (además de
+    // cualquier caché del propio navegador, que 'no-store' ya evita) —
+    // sin esto, una campaña recién creada podía no aparecer al recargar
+    // hasta que ese caché expirase por sí solo.
+    const url = window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now();
+    const resp = await fetch(url, { cache:'no-store' });
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
     const datos = await resp.json();
     if(datos.error) throw new Error(datos.error);
@@ -1039,6 +1089,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   /* ---------------- Modal A: asignar productos ---------------- */
   const modalProductos = $("#modalProductos");
   let selected = new Set();
+  let sugeridosIA = [];       // refs sugeridas por la IA en la sesión actual del modal
+  const HINT_IA_DEFECTO = 'Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.';
 
   function familiasDisponibles(){
     return Array.from(new Set(PRODUCTS_LIST.map(p=>p.familia).filter(Boolean))).sort();
@@ -1048,25 +1100,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     sel.innerHTML = `<option value="">Todas las familias</option>` +
       familiasDisponibles().map(f=>`<option value="${f}">${f}</option>`).join("");
   }
-  function renderPicker(){
-    const fam = $("#fFamilia").value;
-    const q = $("#fBusca").value.trim().toLowerCase();
-    if(!q && !fam){
-      $("#pickerGrid").innerHTML = `<p class="picker-empty">Escribe algo o elige una familia para empezar a buscar entre los ${PRODUCTS_LIST.length.toLocaleString('es-ES')} productos del catálogo.</p>`;
-      return;
-    }
-    const items = PRODUCTS_LIST.filter(p=>{
-      if(fam && p.familia!==fam) return false;
-      if(q && !((p.nombre||'').toLowerCase().includes(q) || (p.ref||'').includes(q))) return false;
-      return true;
-    }).slice(0, 120);
-    $("#pickerGrid").innerHTML = items.map(p=>`
-      <button type="button" class="pick-card ${selected.has(p.ref)?'selected':''}" data-ref="${p.ref}">
+
+  function pickCardHTML(p, esIA){
+    const imgUrl = urlImagenProducto(p, 200);
+    return `
+      <button type="button" class="pick-card ${selected.has(p.ref)?'selected':''} ${esIA?'ia-pick':''}" data-ref="${p.ref}">
         <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+        <span class="pick-img">
+          ${iconFor(p)}
+          ${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+        </span>
         <span class="fam">${p.familia||''}</span>
         <span class="nombre">${p.nombre}</span>
         <span class="precio">${fmtEUR(p.precio_con)} €</span>
-      </button>`).join("") || `<p class="picker-empty">Sin resultados para este filtro.</p>`;
+      </button>`;
+  }
+  function attachPickCardHandlers(){
     $$(".pick-card", $("#pickerGrid")).forEach(card=>{
       card.addEventListener("click", ()=>{
         const ref = card.dataset.ref;
@@ -1076,24 +1125,145 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       });
     });
   }
+
+  function renderPicker(){
+    const fam = $("#fFamilia").value;
+    const q = $("#fBusca").value.trim().toLowerCase();
+    if(!q && !fam){
+      // Sin búsqueda activa: si hay sugerencias de IA pendientes de
+      // revisión para esta campaña, se muestran en vez del mensaje
+      // vacío — el usuario puede quitarlas (clic) o buscar más abajo
+      // para añadir manualmente, sin perder lo ya sugerido.
+      if(sugeridosIA.length){
+        const items = sugeridosIA.map(ref=>PRODUCTS[ref]).filter(Boolean);
+        $("#pickerGrid").innerHTML =
+          `<div class="picker-section-label">${ICONS.sparkle}<b>${items.length} sugerido${items.length===1?'':'s'} por IA</b> para esta campaña — quita los que no encajen o busca abajo para añadir más.</div>` +
+          items.map(p=>pickCardHTML(p, true)).join("");
+        attachPickCardHandlers();
+        return;
+      }
+      $("#pickerGrid").innerHTML = `<p class="picker-empty">Escribe algo, elige una familia, o usa "Sugerir productos con IA" para empezar a buscar entre los ${PRODUCTS_LIST.length.toLocaleString('es-ES')} productos del catálogo.</p>`;
+      return;
+    }
+    const items = PRODUCTS_LIST.filter(p=>{
+      if(fam && p.familia!==fam) return false;
+      if(q && !((p.nombre||'').toLowerCase().includes(q) || (p.ref||'').includes(q))) return false;
+      return true;
+    }).slice(0, 120);
+    $("#pickerGrid").innerHTML = items.map(p=>pickCardHTML(p, false)).join("") || `<p class="picker-empty">Sin resultados para este filtro.</p>`;
+    attachPickCardHandlers();
+  }
   function updateSelCount(){ $("#selCount").textContent = selected.size; }
 
   function openModalProductos(campaignId){
     const c = findCampaign(campaignId);
     if(!c) return;
     selected = new Set(c.productos);
+    sugeridosIA = [];
     updateSelCount();
     $("#modalProdCampana").textContent = c.nombre;
     modalProductos.dataset.campaignId = campaignId;
     fillFamiliaSelect();
     $("#fBusca").value = "";
     $("#fFamilia").value = "";
+    $("#iaSuggestHint").classList.remove('error');
+    $("#iaSuggestHint").textContent = HINT_IA_DEFECTO;
     renderPicker();
     modalProductos.showModal();
   }
   $("#btnProductos").addEventListener("click", ()=>{ if(activeId) openModalProductos(activeId); });
   $("#fFamilia").addEventListener("change", renderPicker);
   $("#fBusca").addEventListener("input", renderPicker);
+
+  /* ---------------- Sugerir productos con IA (Modal A) ----------------
+     La IA NUNCA ve el catálogo ni propone nombres de producto exactos —
+     solo propone categorías/términos de búsqueda en español a partir del
+     título, fechas y áreas de la campaña. La búsqueda de productos reales
+     que coinciden con esos términos se hace aquí, en el propio navegador,
+     contra PRODUCTS_LIST (ya cargado). Así es imposible que aparezca un
+     producto que no exista de verdad en el catálogo — el mismo principio
+     de "nunca confiar a ciegas en la IA" que ya se aplica en complementarios
+     y en el Centro de Soluciones, aquí llevado al extremo de no darle a la
+     IA ninguna oportunidad de nombrar un producto concreto. */
+  function quitarAcentos(s){
+    return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function palabrasSignificativas(s){
+    return quitarAcentos(s).toLowerCase().split(/[^a-z0-9]+/i).filter(w=>w.length>=3);
+  }
+  function productoCoincideConTermino(p, palabrasTermino){
+    const texto = quitarAcentos([p.nombre, p.familia, p.subfamilia].filter(Boolean).join(' ')).toLowerCase();
+    const coincidencias = palabrasTermino.filter(w=>texto.includes(w));
+    const minimo = palabrasTermino.length <= 2 ? palabrasTermino.length : palabrasTermino.length - 1;
+    return coincidencias.length >= Math.max(1, minimo);
+  }
+  function buscarProductosPorTermino(termino, areasCampana){
+    const palabras = palabrasSignificativas(termino);
+    if(!palabras.length) return [];
+    let pool = PRODUCTS_LIST;
+    if(Array.isArray(areasCampana) && areasCampana.length){
+      const areasNorm = areasCampana.map(a=>quitarAcentos(a).toLowerCase().trim());
+      pool = pool.filter(p=>areasNorm.includes(quitarAcentos(p.area||'').toLowerCase().trim()));
+    }
+    return pool.filter(p=>productoCoincideConTermino(p, palabras)).slice(0, 4);
+  }
+
+  async function sugerirProductosIA(){
+    const campaignId = modalProductos.dataset.campaignId;
+    const c = findCampaign(campaignId);
+    if(!c) return;
+    const btn = $("#btnSugerirIA");
+    const hint = $("#iaSuggestHint");
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `${ICONS.sparkle} Pensando ideas…`;
+    hint.classList.remove('error');
+    hint.textContent = 'Consultando la IA y buscando después en el catálogo real — puede tardar unos segundos.';
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          accion: 'sugerir_categorias_campana_ia',
+          nombre: c.nombre, tipo: c.tipo, fechaInicio: c.fechaInicio, fechaFin: c.fechaFin, areas: c.areas,
+        }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'La IA no ha podido generar sugerencias.');
+      const terminos = data.terminos || [];
+      if(!terminos.length) throw new Error('La IA no ha propuesto ninguna categoría para esta campaña.');
+
+      const encontrados = new Map(); // ref -> producto real
+      terminos.forEach(t=>{
+        buscarProductosPorTermino(t, c.areas).forEach(p=>{
+          if(!encontrados.has(p.ref)) encontrados.set(p.ref, p);
+        });
+      });
+
+      const resumenTerminos = terminos.slice(0,4).join(', ') + (terminos.length>4 ? '…' : '');
+      if(!encontrados.size){
+        hint.classList.add('error');
+        hint.textContent = `La IA propuso ${terminos.length} categorías (${resumenTerminos}), pero ninguna encontró productos reales en el catálogo${c.areas && c.areas.length ? ' dentro de ' + c.areas.join(', ') : ''}. Prueba a buscar manualmente.`;
+        return;
+      }
+
+      sugeridosIA = Array.from(encontrados.keys());
+      sugeridosIA.forEach(ref=>selected.add(ref));
+      updateSelCount();
+      $("#fBusca").value = '';
+      $("#fFamilia").value = '';
+      renderPicker();
+      hint.classList.remove('error');
+      hint.textContent = `${encontrados.size} producto${encontrados.size===1?'':'s'} sugeridos a partir de ${terminos.length} categorías de IA (${resumenTerminos}). Quita los que no encajen o sigue buscando para añadir más.`;
+    } catch(err){
+      hint.classList.add('error');
+      hint.textContent = 'No se pudo sugerir con IA: ' + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  }
+  $("#btnSugerirIA").addEventListener("click", sugerirProductosIA);
 
   $("#btnConfirmAdd").addEventListener("click", async ()=>{
     const campaignId = modalProductos.dataset.campaignId;
