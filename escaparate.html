@@ -362,16 +362,17 @@
          el bloque (más área = más protagonismo, como un producto puesto
          al frente en un escaparate real). El bloque SIEMPRE ocupa el
          100% de las columnas/filas que le tocan (alineado a ras con el
-         resto de tarjetas, sin margen de aire alrededor — antes tenía un
-         max-width del 93% para poder desplazarlo con justify-self, pero
-         eso lo dejaba "flotando" sin encajar con la rejilla del resto).
-         "posV" se aplica como order inline por producto (ver
-         productCard()); "alinH=derecha" ancla el bloque al final de la
-         fila con grid-column:.../-1 en las reglas [data-alin="derecha"]
-         de abajo (mismos topes de tamaño por pantalla que el resto).
-         "izquierda"/"centro" usan la colocación automática normal (no
-         hay forma fiable en CSS puro de centrar un bloque de ancho
-         variable dentro de una rejilla auto-fill sin JS adicional). */
+         resto de tarjetas, sin margen de aire alrededor).
+         "posV" reordena el propio array de productos en JS antes de
+         pintar (ver render()), no con CSS order — mezclar "order" con
+         grid-auto-flow:dense daba huecos raros y bloques que no
+         encajaban bien con sus vecinos (feedback real de Eloy con
+         captura). "alinH" de momento NO tiene efecto visual: anclar un
+         bloque al borde derecho de su fila mientras otros usan la
+         colocación automática normal creaba el mismo problema de huecos
+         — se guarda el valor por si se retoma más adelante con un
+         enfoque distinto, pero todos los destacados usan hoy la misma
+         colocación automática + dense, sea cual sea su alinH. */
       .card-destacado-badge{
         position:absolute; top:10px; right:10px; z-index:2;
         display:inline-flex; align-items:center; gap:4px;
@@ -384,11 +385,6 @@
       .card[data-tam="4"]{ grid-column:span 3; grid-row:span 2; }
       .card[data-tam="5"]{ grid-column:span 3; grid-row:span 3; }
       .card[data-tam="6"]{ grid-column:span 4; grid-row:span 3; }
-      .card[data-tam="2"][data-alin="derecha"]{ grid-column:span 2 / -1; }
-      .card[data-tam="3"][data-alin="derecha"]{ grid-column:span 2 / -1; }
-      .card[data-tam="4"][data-alin="derecha"]{ grid-column:span 3 / -1; }
-      .card[data-tam="5"][data-alin="derecha"]{ grid-column:span 3 / -1; }
-      .card[data-tam="6"][data-alin="derecha"]{ grid-column:span 4 / -1; }
       /* La foto tiene que ser lo primero en aprovechar el bloque más
          grande — antes se quedaba con su tamaño normal (aspect-ratio fijo)
          y todo el hueco extra de un bloque más alto se iba en espacio en
@@ -401,18 +397,15 @@
       .card[data-tam="5"] .precio, .card[data-tam="6"] .precio{ font-size:23px; }
       @media (max-width:820px){
         .card[data-tam="4"], .card[data-tam="5"], .card[data-tam="6"]{ grid-column:span 3; grid-row:span 2; }
-        .card[data-tam="4"][data-alin="derecha"], .card[data-tam="5"][data-alin="derecha"], .card[data-tam="6"][data-alin="derecha"]{ grid-column:span 3 / -1; }
       }
       @media (max-width:600px){
         .card[data-tam]{ grid-column:span 2; grid-row:span 1; }
-        .card[data-tam][data-alin="derecha"]{ grid-column:span 2 / -1; }
         .card[data-tam] .nombre{ font-size:14px; }
         .card[data-tam] .precio{ font-size:16px; }
         .card[data-tam] .icon-tile{ min-height:100px; }
       }
       @media (max-width:420px){
         .card[data-tam]{ grid-column:span 1; }
-        .card[data-tam][data-alin="derecha"]{ grid-column:span 1 / -1; }
       }
 
       .card .icon-tile{
@@ -1369,15 +1362,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   /* ---------------- Render ---------------- */
-  const ORDEN_POR_POSICION_ = { arriba: -100, medio: 0, abajo: 100 };
-
   function productCard(ref, {ia=false, destacado=null}={}){
     const p = PRODUCTS[ref];
     if(!p) return `<article class="card"><span class="fam">Referencia no encontrada</span><span class="nombre mono">${ref}</span></article>`;
     const imgUrl = urlImagenProducto(p, 300);
     const buscadorURL = `./buscador.html?ref=${encodeURIComponent(ref)}`;
     const tam = destacado && destacado.tamano > 1 ? destacado.tamano : 1;
-    const atributoTam = tam > 1 ? ` data-tam="${tam}" data-alin="${destacado.alinH || 'centro'}" style="order:${ORDEN_POR_POSICION_[destacado.posV] ?? 0};"` : '';
+    const atributoTam = tam > 1 ? ` data-tam="${tam}" data-alin="${destacado.alinH || 'centro'}"` : '';
     return `
       <article class="card ${ia?'ia-card':''}"${atributoTam}>
         ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
@@ -1471,8 +1462,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#shelfCount").textContent = `${c.productos.length} ref.`;
     const destacadosMap = {};
     (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{ if(d && d.ref) destacadosMap[d.ref] = d; });
-    $("#shelf").innerHTML = c.productos.length
-      ? c.productos.map(r=>productCard(r, { destacado: destacadosMap[r] || null })).join("")
+    // "posV" reordena aquí el array antes de pintar (arriba primero,
+    // abajo al final, medio conserva su orden relativo) — con
+    // Array.prototype.sort estable (garantizado desde ES2019) los
+    // empates entre productos con el mismo posV mantienen su orden
+    // original. Se hace así, en vez de con CSS "order", porque mezclar
+    // "order" con grid-auto-flow:dense daba huecos raros y bloques que
+    // no encajaban bien con sus vecinos (feedback real de Eloy).
+    const PESO_POSICION_ = { arriba: -1, medio: 0, abajo: 1 };
+    const productosOrdenados = c.productos.slice().sort((a, b) => {
+      const pa = PESO_POSICION_[(destacadosMap[a] || {}).posV] || 0;
+      const pb = PESO_POSICION_[(destacadosMap[b] || {}).posV] || 0;
+      return pa - pb;
+    });
+    $("#shelf").innerHTML = productosOrdenados.length
+      ? productosOrdenados.map(r=>productCard(r, { destacado: destacadosMap[r] || null })).join("")
       : `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
 
     $("#iaSection").hidden = true; // la generación automática de sugerencias IA es una fase futura (ver nota al usuario)
