@@ -177,32 +177,59 @@
         100%{ top:calc(50% + (var(--dir,1) * 65%)); transform:translateX(var(--drift,0px)) rotate(var(--rot,180deg)); opacity:0; }
       }
 
-      /* ---------- Vitrina (hero) ---------- */
-      .vitrina{
+      /* ---------- Bloques de campaña, plegables ----------
+         Antes había UNA vitrina fija para "la campaña activa" elegida
+         en el rail. A petición de Eloy (varias campañas activas a la
+         vez deben verse una debajo de otra, en orden de fecha, cada una
+         plegable) esto pasa a ser una LISTA de <details> — uno por
+         campaña, ordenados por fecha de inicio — cada uno con su propio
+         resumen (clicable para plegar/desplegar, nativo de <details>,
+         sin JS para abrir/cerrar) y su propio estante de productos
+         dentro. El color de cada campaña se fija como variables CSS
+         LOCALES en el propio bloque (no en :root), así varias campañas
+         con colores distintos conviven sin pisarse. */
+      .campana-bloque{
         max-width:var(--maxw); margin:26px auto 0;
         position:relative; z-index:1;
         background:rgba(255,255,255,.6);
         backdrop-filter:blur(11px); -webkit-backdrop-filter:blur(11px);
         border:1px solid var(--line);
         border-radius:var(--radius-l);
-        padding:40px clamp(20px,4vw,52px) 34px;
         overflow:hidden;
-        transition:background 420ms ease, border-color 420ms ease;
-        min-height:220px;
       }
-      .vitrina::before{
-        content:"";
-        position:absolute; left:0; right:0; top:50%;
-        height:1px; background:var(--line);
-        opacity:.7;
+      .campana-bloque-resumen{
+        list-style:none; cursor:pointer; user-select:none;
+        display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+        padding:26px clamp(20px,4vw,44px);
       }
-      .vitrina-content{
+      .campana-bloque-resumen::-webkit-details-marker{ display:none; }
+      .campana-bloque-resumen-info{ display:flex; flex-direction:column; gap:10px; min-width:0; flex:1 1 auto; }
+      .campana-bloque-resumen h2{ font-size:clamp(22px, 3.6vw, 34px); line-height:1.1; }
+      .campana-bloque-fechas{
+        display:flex; align-items:center; gap:7px;
+        font-size:13px; color:var(--ink-faint);
+      }
+      .campana-bloque-fechas svg{ width:15px; height:15px; flex:none; color:var(--accent); }
+      .campana-bloque-caret{
+        width:22px; height:22px; color:var(--ink-faint); flex:none; margin-top:4px;
+        transition:transform 180ms ease;
+      }
+      .campana-bloque[open] .campana-bloque-caret{ transform:rotate(180deg); }
+      .campana-bloque-cuerpo{
         position:relative; z-index:1;
+        padding:0 clamp(20px,4vw,44px) 34px;
+        border-top:1px solid var(--line);
+        padding-top:26px;
+      }
+      .campana-bloque-top{
+        position:relative; z-index:1;
+        display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px;
+        margin-bottom:14px;
       }
       /* Foto de campaña: NÍTIDA (sin difuminar), en un bloque pequeño a
-         la derecha, anclado arriba (no estirado a toda la altura de la
-         vitrina — eso la hacía innecesariamente grande), solo en
-         escritorio (900px+) — nunca en móvil. */
+         la derecha, anclado arriba (no estirado a toda la altura del
+         bloque), solo en escritorio (900px+) — nunca en móvil. */
+      .campana-bloque-cuerpo-flex{ display:block; }
       .vitrina-foto{
         display:none;
         flex:0 0 clamp(140px, 20%, 210px);
@@ -212,9 +239,9 @@
       }
       .vitrina-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
       @media (min-width:900px){
-        .vitrina.tiene-imagen{ display:flex; align-items:flex-start; gap:clamp(20px,3vw,36px); }
-        .vitrina.tiene-imagen .vitrina-content{ flex:1 1 auto; min-width:0; }
-        .vitrina.tiene-imagen .vitrina-foto{ display:block; }
+        .campana-bloque-cuerpo-flex.tiene-imagen{ display:flex; align-items:flex-start; gap:clamp(20px,3vw,36px); }
+        .campana-bloque-cuerpo-flex.tiene-imagen .campana-bloque-info-y-shelf{ flex:1 1 auto; min-width:0; }
+        .campana-bloque-cuerpo-flex.tiene-imagen .vitrina-foto{ display:block; }
       }
 
       /* ---------- Bloque de cierre (tras los productos) ----------
@@ -263,18 +290,12 @@
         line-height:1.1; color:var(--ink); margin:0;
       }
 
-      .vitrina h2{
-        position:relative; z-index:1;
-        font-size:clamp(28px, 5vw, 50px);
-        line-height:1.05; font-weight:800;
-        max-width:18ch;
-      }
-      .vitrina .accent-word{ color:var(--accent); font-style:italic; font-weight:600; }
+      .accent-word{ color:var(--accent); font-style:italic; font-weight:600; }
 
-      .vitrina p.sub{
+      .campana-bloque-cuerpo p.sub{
         position:relative; z-index:1;
-        margin:14px 0 0; max-width:56ch;
-        color:var(--ink-soft); font-size:16.5px; line-height:1.55;
+        margin:0; max-width:56ch;
+        color:var(--ink-soft); font-size:15.5px; line-height:1.55;
       }
 
       .vitrina-meta{
@@ -295,8 +316,22 @@
       .overlap-note svg{width:16px; height:16px; flex:none; margin-top:2px; color:var(--accent-2);}
       .overlap-note b{color:var(--ink);}
 
+      /* Variante no plegable de .campana-bloque, para el estado vacío
+         (sin campañas) — no hay nada que plegar ahí. */
+      .campana-bloque-plano{
+        max-width:var(--maxw); margin:26px auto 0;
+        position:relative; z-index:1;
+        background:rgba(255,255,255,.6);
+        backdrop-filter:blur(11px); -webkit-backdrop-filter:blur(11px);
+        border:1px solid var(--line);
+        border-radius:var(--radius-l);
+        padding:40px clamp(20px,4vw,52px) 34px;
+        overflow:hidden;
+        min-height:220px;
+      }
+
       .vitrina-empty{ position:relative; z-index:1; text-align:left; }
-      .vitrina-empty h1{ font-size:clamp(24px,4vw,34px); max-width:22ch; }
+      .vitrina-empty h2{ font-size:clamp(24px,4vw,34px); max-width:22ch; }
       .vitrina-empty p{ color:var(--ink-soft); margin-top:10px; max-width:56ch; font-size:15.5px; line-height:1.55; }
       .vitrina-empty .btn{ margin-top:18px; }
 
@@ -809,7 +844,7 @@
         font-size:12.5px; color:var(--ink-faint); line-height:1.6;
       }
 
-      .spinner-line{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:13.5px; position:relative; z-index:1; }
+      .spinner-line{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:13.5px; position:relative; z-index:1; max-width:var(--maxw); margin:26px auto 0; padding:0 2px; }
       .spinner-dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 1.1s ease-in-out infinite; }
       @keyframes pulse{ 0%,100%{opacity:.25;} 50%{opacity:1;} }
     </style>
@@ -874,11 +909,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="escaparate-lienzo" id="escaparateLienzo">
     <div class="fondo-estacional" id="fondoEstacional" aria-hidden="true"></div>
 
-    <section class="vitrina" id="vitrina">
-      <div class="spinner-line" id="cargando">
-        <span class="spinner-dot"></span> Cargando el escaparate…
-      </div>
-    </section>
+    <div class="spinner-line" id="cargando">
+      <span class="spinner-dot"></span> Cargando el escaparate…
+    </div>
 
     <section class="rail-section" id="railSection" hidden>
       <div class="rail-label">
@@ -888,24 +921,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="rail" id="rail"></div>
     </section>
 
-    <section class="shelf-section" id="shelfSection" hidden>
-      <div class="shelf-head">
-        <h2 id="shelfTitle">Productos de la campaña</h2>
-        <span class="count" id="shelfCount"></span>
-      </div>
-      <div class="shelf" id="shelf"></div>
-    </section>
-
-    <section class="shelf-section shelf-ia" id="iaSection" hidden>
-      <div class="shelf-head">
-        <h2>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M19 15.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9z"/></svg>
-          Sugeridos por IA para ampliar la campaña
-        </h2>
-        <span class="count" id="iaCount"></span>
-      </div>
-      <div class="shelf" id="iaShelf"></div>
-    </section>
+    <div id="campanasLista"></div>
 
     <section class="vitrina-cierre" id="vitrinaCierre" hidden>
       <p class="vitrina-cierre-frase" id="vitrinaCierreFrase"></p>
@@ -983,10 +999,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <button class="dock-btn secondary" id="btnCampanas">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h2M8 17h5"/></svg>
     Gestionar campañas
-  </button>
-  <button class="dock-btn" id="btnProductos" disabled>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
-    Asignar productos
   </button>
 </div>
 
@@ -1357,20 +1369,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     el.innerHTML = particulas;
   }
 
-  // Foto de campaña: aparte del fondo estacional, nítida (nunca
-  // difuminada), en su propio bloque — ver .vitrina-foto en el CSS.
-  function pintarFotoCampana(driveId){
-    const bloque = $("#vitrinaFoto");
-    if(!bloque) return;
-    const url = urlImagenCampana(driveId, 900);
-    if(!url){ bloque.hidden = true; bloque.innerHTML = ''; return; }
-    bloque.hidden = false;
-    bloque.innerHTML = `<img src="${url}" alt="">`;
-  }
-
   /* ---------------- Carga de datos ---------------- */
   async function cargarProductos(){
-    const resp = await fetch(PRODUCTOS_URL, { cache:'no-store' });
+    // "_ts" en la URL: igual que en cargarCampanas(), para que cada
+    // carga sea una URL distinta y no pueda servirse cacheada (ni por el
+    // navegador —cache:'no-store' ya cubre eso— ni por el CDN de GitHub
+    // Pages, que sí puede servir una versión desactualizada del archivo
+    // estático). Detectado con datos reales: productos ya añadidos a una
+    // campaña seguían mostrando su foto antigua en el escaparate después
+    // de actualizarla desde el buscador, pese a que el propio buscador
+    // ya mostraba la nueva — el buscador tiene su propio mecanismo de
+    // hash/versión para esto (ver productos_version.json), el escaparate
+    // no lo tenía todavía.
+    const resp = await fetch(PRODUCTOS_URL + '?_ts=' + Date.now(), { cache:'no-store' });
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
     const datos = await resp.json();
     PRODUCTS_LIST = datos.productos || [];
@@ -1406,7 +1417,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       console.error('Error cargando campañas:', rCampanas.reason);
     }
 
-    if($("#btnProductos")) $("#btnProductos").disabled = !campanasOK;
+    $("#cargando").hidden = true;
 
     if(!productosOK){
       mostrarErrorVitrina('No se han podido cargar los productos del catálogo (' + PRODUCTOS_URL + ').');
@@ -1425,17 +1436,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   function mostrarErrorVitrina(msg, mostrarDockIgual){
-    $("#vitrina").innerHTML = `
-      <div class="vitrina-empty">
-        <h1>Escaparate OM</h1>
-        <div class="vitrina-error">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 16.5h.01M10.3 3.9L2.7 17.5A1.8 1.8 0 004.3 20h15.4a1.8 1.8 0 001.6-2.5L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg>
-          <span>${msg}</span>
+    $("#cargando").hidden = true;
+    $("#campanasLista").innerHTML = `
+      <div class="campana-bloque-plano">
+        <div class="vitrina-empty">
+          <h2>Escaparate OM</h2>
+          <div class="vitrina-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 16.5h.01M10.3 3.9L2.7 17.5A1.8 1.8 0 004.3 20h15.4a1.8 1.8 0 001.6-2.5L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg>
+            <span>${msg}</span>
+          </div>
         </div>
       </div>`;
     if(mostrarDockIgual && window.MOSTRAR_GESTION_CAMPANAS){
       $("#toolsDock").hidden = false;
-      $("#btnProductos").disabled = true;
     }
   }
 
@@ -1470,74 +1483,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </article>`;
   }
 
-  function render(){
-    $("#railSection").hidden = false;
-    renderRail();
-
-    if(!CAMPAIGNS.length){
-      $("#vitrina").innerHTML = `
-        <div class="vitrina-content">
-          <div class="vitrina-empty">
-            <span class="badge tipo">SIN CAMPAÑAS TODAVÍA</span>
-            <h2 style="margin-top:14px">Este escaparate está listo, pero vacío</h2>
-            <p>Usa "Gestionar campañas" para crear la primera — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
-          </div>
-        </div>`;
-      $("#vitrina").classList.remove('tiene-imagen');
-      $("#shelfSection").hidden = true;
-      $("#iaSection").hidden = true;
-      $("#vitrinaCierre").hidden = true;
-      pintarFondoEstacional(HOY); // al final, tras ocultar/vaciar todo lo demás, para medir la altura ya definitiva del lienzo
-      return;
-    }
-
-    if(!activeId || !findCampaign(activeId)) activeId = CAMPAIGNS[0].id;
-    const c = findCampaign(activeId);
+  // Un bloque de campaña completo (resumen plegable + cuerpo con foto,
+  // estante de productos, etc.) — antes era una única "vitrina" fija;
+  // ahora se genera una vez por campaña, porque varias pueden convivir a
+  // la vez en la página (petición de Eloy: verlas una debajo de otra en
+  // vez de solo la "activa"). Los colores se fijan como variables CSS
+  // LOCALES (style= en el propio <details>), no en :root, para que cada
+  // bloque pueda tener los suyos sin pisar a los demás.
+  function campanaBloqueHTML(c){
     const cs = colorSetDe(c);
-    const root = document.documentElement;
-    root.style.setProperty('--accent', cs.accent);
-    root.style.setProperty('--accent-2', cs.accent2);
-    root.style.setProperty('--accent-vivid', cs.vivid);
-    root.style.setProperty('--accent-vivid-2', cs.vivid2);
-    root.style.setProperty('--wash', cs.wash);
-
     const hoyActiva = activaEn(c, HOY);
-    $("#vitrina").innerHTML = `
-      <div class="vitrina-content">
-        <div class="vitrina-top">
-          <span class="badge ${c.origen}">${c.origen==="manual" ? ICONS.tag : ICONS.sparkle} ${c.origen==="manual" ? "Campaña manual" : "Generada por IA"}</span>
-          <span class="badge tipo">${c.tipo==="temporada" ? "Temporada" : "Comercial"}</span>
-          ${hoyActiva ? `<span class="badge" style="color:#1a7a4c;border-color:#1a7a4c;background:rgba(26,122,76,.09)">● activa hoy</span>` : `<span class="badge">fuera de fecha hoy</span>`}
-        </div>
-        <h2>${c.nombre}</h2>
-        <p class="sub">${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}.</p>
-        <div class="vitrina-meta">
-          <span class="item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
-            <span>${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}</span>
-          </span>
-          <span class="item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M4 8h16M9 12a3 3 0 006 0"/></svg>
-            <span>${c.productos.length} producto${c.productos.length===1?'':'s'} destacados</span>
-          </span>
-        </div>
-        <div class="overlap-note" id="overlapNote"></div>
-      </div>
-      <div class="vitrina-foto" id="vitrinaFoto" hidden></div>
-    `;
-    $("#vitrina").classList.toggle('tiene-imagen', !!c.imagenFondo);
-    pintarFotoCampana(c.imagenFondo);
-
     const solapa = solapaConManual(c);
-    if(solapa){
-      const note = $("#overlapNote");
-      note.classList.add("show");
-      note.innerHTML = `${ICONS.sparkle.replace('sparkle','')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent-2)"><path d="M12 9v4M12 16.5h.01M10.3 3.9L2.7 17.5A1.8 1.8 0 004.3 20h15.4a1.8 1.8 0 001.6-2.5L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg><span>Esta campaña de IA solapa con <b>«${solapa.nombre}»</b> (manual, ${fmtFecha(solapa.fechaInicio)}–${fmtFecha(solapa.fechaFin)}). En producción la manual manda mientras dure.</span>`;
-    }
-
-    $("#shelfSection").hidden = false;
-    $("#shelfTitle").textContent = `Productos de «${c.nombre}»`;
-    $("#shelfCount").textContent = `${c.productos.length} ref.`;
     const destacadosMap = {};
     (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{ if(d && d.ref) destacadosMap[d.ref] = d; });
     // "posV" reordena aquí el array antes de pintar (arriba primero,
@@ -1553,27 +1509,104 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const pb = PESO_POSICION_[(destacadosMap[b] || {}).posV] || 0;
       return pa - pb;
     });
-    $("#shelf").innerHTML = productosOrdenados.length
+    const shelfHTML = productosOrdenados.length
       ? productosOrdenados.map(r=>productCard(r, { destacado: destacadosMap[r] || null })).join("")
       : `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
+    const fotoUrl = urlImagenCampana(c.imagenFondo, 900);
+    const estiloColores = `--accent:${cs.accent}; --accent-2:${cs.accent2}; --accent-vivid:${cs.vivid}; --accent-vivid-2:${cs.vivid2}; --wash:${cs.wash};`;
 
-    $("#iaSection").hidden = true; // la generación automática de sugerencias IA es una fase futura (ver nota al usuario)
+    return `
+      <details class="campana-bloque" data-campana-id="${c.id}" style="${estiloColores}">
+        <summary class="campana-bloque-resumen">
+          <div class="campana-bloque-resumen-info">
+            <div class="campana-bloque-top">
+              <span class="badge ${c.origen}">${c.origen==="manual" ? ICONS.tag : ICONS.sparkle} ${c.origen==="manual" ? "Campaña manual" : "Generada por IA"}</span>
+              <span class="badge tipo">${c.tipo==="temporada" ? "Temporada" : "Comercial"}</span>
+              ${hoyActiva ? `<span class="badge" style="color:#1a7a4c;border-color:#1a7a4c;background:rgba(26,122,76,.09)">● activa hoy</span>` : `<span class="badge">fuera de fecha hoy</span>`}
+            </div>
+            <h2>${c.nombre}</h2>
+            <span class="campana-bloque-fechas">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+              ${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)} · ${c.productos.length} producto${c.productos.length===1?'':'s'}
+            </span>
+          </div>
+          <svg class="campana-bloque-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="campana-bloque-cuerpo">
+          <p class="sub">${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}.</p>
+          ${solapa ? `<div class="overlap-note show">${ICONS.sparkle.replace('sparkle','')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent-2)"><path d="M12 9v4M12 16.5h.01M10.3 3.9L2.7 17.5A1.8 1.8 0 004.3 20h15.4a1.8 1.8 0 001.6-2.5L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg><span>Esta campaña de IA solapa con <b>«${solapa.nombre}»</b> (manual, ${fmtFecha(solapa.fechaInicio)}–${fmtFecha(solapa.fechaFin)}). En producción la manual manda mientras dure.</span></div>` : ''}
+          <div class="campana-bloque-cuerpo-flex${fotoUrl?' tiene-imagen':''}" style="margin-top:22px">
+            <div class="campana-bloque-info-y-shelf">
+              <div class="shelf-head">
+                <h2>Productos de «${c.nombre}»</h2>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span class="count">${c.productos.length} ref.</span>
+                  <button type="button" class="btn ghost btn-asignar-productos" data-campana-id="${c.id}" style="padding:6px 12px; font-size:12px;">Asignar productos</button>
+                </div>
+              </div>
+              <div class="shelf">${shelfHTML}</div>
+            </div>
+            ${fotoUrl ? `<div class="vitrina-foto"><img src="${fotoUrl}" alt=""></div>` : ''}
+          </div>
+        </div>
+      </details>`;
+  }
 
-    // Bloque de cierre, con la frase opcional definida en el formulario de
-    // campaña. Sin frase, se ve igual el bloque, solo que sin texto
-    // encima ("se verá sólo el bloque de cierre").
+  let estadoAbierto = {}; // id de campaña -> bool (abierta/plegada). Por defecto, todas abiertas.
+
+  function render(){
+    $("#railSection").hidden = false;
+    renderRail();
+
+    if(!CAMPAIGNS.length){
+      $("#campanasLista").innerHTML = `
+        <div class="campana-bloque-plano">
+          <div class="vitrina-empty">
+            <span class="badge tipo">SIN CAMPAÑAS TODAVÍA</span>
+            <h2 style="margin-top:14px">Este escaparate está listo, pero vacío</h2>
+            <p>Usa "Gestionar campañas" para crear la primera — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
+          </div>
+        </div>`;
+      $("#vitrinaCierre").hidden = true;
+      pintarFondoEstacional(HOY); // al final, tras vaciar todo lo demás, para medir la altura ya definitiva del lienzo
+      return;
+    }
+
+    // Ordenadas por fecha de inicio — para que dos campañas que se
+    // solapen en el tiempo se vean una debajo de otra en ese orden, en
+    // vez de que solo se pudiera ver "la activa" (petición de Eloy).
+    const ordenadas = CAMPAIGNS.slice().sort((a, b) =>
+      new Date(a.fechaInicio+"T00:00:00") - new Date(b.fechaInicio+"T00:00:00"));
+    $("#campanasLista").innerHTML = ordenadas.map(c=>campanaBloqueHTML(c)).join("");
+
+    $$("#campanasLista .campana-bloque").forEach(det=>{
+      const id = det.dataset.campanaId;
+      if(estadoAbierto[id] === undefined) estadoAbierto[id] = true; // abierta por defecto
+      det.open = estadoAbierto[id];
+      det.addEventListener('toggle', () => { estadoAbierto[id] = det.open; });
+    });
+
+    // Bloque de cierre: uno solo para toda la lista (no uno por
+    // campaña) — usa la frase de la campaña activa hoy si hay alguna,
+    // si no la última por fecha, a modo de colofón de la página.
+    const campanaCierre = campanaDeHoy() || ordenadas[ordenadas.length - 1];
     $("#vitrinaCierre").hidden = false;
-    $("#vitrinaCierreFrase").textContent = c.eslogan || '';
-    $("#vitrinaCierreFrase").hidden = !c.eslogan;
+    $("#vitrinaCierreFrase").textContent = campanaCierre.eslogan || '';
+    $("#vitrinaCierreFrase").hidden = !campanaCierre.eslogan;
 
-    // Estación según el INICIO de la campaña, no el día de hoy — así una
-    // campaña de verano programada en julio se ve "de verano" se mire
-    // cuando se mire. Se pinta AL FINAL, después de que shelf/cierre ya
-    // estén en el DOM, para medir la altura real y definitiva del
-    // lienzo completo (ver pintarFondoEstacional).
-    const fechaRefEstacion = c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY;
+    // Estación según el INICIO de esa misma campaña de cierre. Se pinta
+    // AL FINAL, después de que toda la lista y el cierre ya estén en el
+    // DOM, para medir la altura real y definitiva del lienzo completo.
+    const fechaRefEstacion = campanaCierre.fechaInicio ? new Date(campanaCierre.fechaInicio+"T00:00:00") : HOY;
     pintarFondoEstacional(fechaRefEstacion);
   }
+
+  // Delegado (los botones se regeneran en cada render): abre el modal de
+  // asignar productos para la campaña de ese bloque en concreto.
+  $("#campanasLista").addEventListener("click", (ev) => {
+    const btn = ev.target.closest(".btn-asignar-productos");
+    if(btn) openModalProductos(btn.dataset.campanaId);
+  });
 
   function renderRail(){
     if(!CAMPAIGNS.length){ $("#rail").innerHTML = ''; $("#railHint").textContent=''; return; }
@@ -1581,13 +1614,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#railHint").textContent = hoy ? `hoy tocaría: ${hoy.nombre}` : 'ninguna campaña cubre la fecha de hoy';
     $("#rail").innerHTML = CAMPAIGNS.map(c=>{
       const isHoy = hoy && c.id===hoy.id;
-      const isActive = c.id===activeId;
-      return `<button class="tag ${isActive?'active':''}" data-id="${c.id}">
+      return `<button class="tag" data-id="${c.id}">
         ${isHoy ? '<span class="dot">● </span>' : ''}${c.nombre}
       </button>`;
     }).join("");
+    // Cada chip del rail es un atajo: despliega esa campaña (por si el
+    // usuario la había plegado) y hace scroll hasta ella — ya no existe
+    // el concepto de "campaña activa única", todas pueden verse a la vez.
     $$("#rail .tag").forEach(btn=>{
-      btn.addEventListener("click", ()=>{ activeId = btn.dataset.id; render(); });
+      btn.addEventListener("click", ()=>{
+        const id = btn.dataset.id;
+        estadoAbierto[id] = true;
+        const det = document.querySelector(`.campana-bloque[data-campana-id="${id}"]`);
+        if(det){
+          det.open = true;
+          det.scrollIntoView({ behavior:'smooth', block:'start' });
+        }
+      });
     });
   }
 
@@ -1781,7 +1824,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     renderPicker();
     modalProductos.showModal();
   }
-  $("#btnProductos").addEventListener("click", ()=>{ if(activeId) openModalProductos(activeId); });
   $("#fFamilia").addEventListener("change", renderPicker);
   $("#fBusca").addEventListener("input", renderPicker);
 
@@ -2085,7 +2127,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const c = findCampaign(id);
       if(c) c.imagenFondo = data.imagenFondo;
       pintarImagenCampanaForm(id, data.imagenFondo);
-      if(id === activeId) render();
+      render(); // cualquier campaña visible puede necesitar refresco, ya no solo "la activa"
       toast('Imagen de campaña actualizada.');
     } catch(err){
       toast('No se pudo subir la imagen: ' + err.message, true);
@@ -2110,7 +2152,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const c = findCampaign(id);
       if(c) c.imagenFondo = '';
       pintarImagenCampanaForm(id, '');
-      if(id === activeId) render();
+      render(); // cualquier campaña visible puede necesitar refresco, ya no solo "la activa"
       toast('Imagen de campaña eliminada.');
     } catch(err){
       toast('No se pudo quitar la imagen: ' + err.message, true);
@@ -2198,6 +2240,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   })();
+
+  // Expuesto en window a propósito: útil para depuración manual desde la
+  // consola del navegador (ej. forzar un repintado tras tocar algo a
+  // mano) y para las pruebas automatizadas de este archivo.
+  window.render = render;
 
   iniciar();
 })();
