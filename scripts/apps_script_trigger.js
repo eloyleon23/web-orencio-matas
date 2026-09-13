@@ -3871,7 +3871,7 @@ function procesarActualizarRelacionados(data) {
 // esta hoja tiene, como mucho, unas pocas decenas de filas, así que
 // se lee directamente en cada doGet — mucho más simple que mantener
 // sincronizada otra caché, y siempre al día sin parcheos.
-const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaCampanas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -3880,6 +3880,19 @@ function obtenerHojaCampanas_() {
     sheet = ss.insertSheet('Campañas');
     sheet.getRange(1, 1, 1, CABECERAS_CAMPANAS_.length).setValues([CABECERAS_CAMPANAS_]);
     sheet.setFrozenRows(1);
+    return sheet;
+  }
+  // Migración ligera: si la hoja "Campañas" ya existía de antes de
+  // añadir una columna nueva (como "destacados"), se añade al final sin
+  // tocar ninguna fila existente — así no hace falta que Eloy edite el
+  // Sheet a mano cada vez que este proyecto añade un campo nuevo.
+  const cabecerasActuales = sheet.getLastColumn() > 0
+    ? sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => h.toString().toLowerCase().trim().replace(/\s+/g, '_'))
+    : [];
+  const faltantes = CABECERAS_CAMPANAS_.filter(h => cabecerasActuales.indexOf(h) === -1);
+  if (faltantes.length) {
+    sheet.getRange(1, sheet.getLastColumn() + 1, 1, faltantes.length).setValues([faltantes]);
+    console.log('Hoja Campañas: columnas añadidas por migración automática:', JSON.stringify(faltantes));
   }
   return sheet;
 }
@@ -3912,6 +3925,21 @@ function leerCampanas_() {
   if (datos.length < 2) return [];
   const COL = mapaCabeceras_(datos[0]);
   const partirLista = (val) => (val || '').toString().split(',').map(s => s.trim()).filter(Boolean);
+  // "destacados" guarda JSON (no una lista simple separada por comas,
+  // como el resto de columnas) porque cada entrada necesita varios
+  // campos (tamaño, alineación, posición) — se ignora en silencio si
+  // viniera corrupto en vez de romper la lectura de toda la campaña.
+  const leerDestacados = (val) => {
+    const texto = (val || '').toString().trim();
+    if (!texto) return [];
+    try {
+      const arr = JSON.parse(texto);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      console.error('destacados con JSON inválido, se ignora:', texto);
+      return [];
+    }
+  };
 
   const campanas = [];
   for (let i = 1; i < datos.length; i++) {
@@ -3928,6 +3956,7 @@ function leerCampanas_() {
       fechaFin: formatearFechaISO_(fila[COL['fecha_fin']]),
       areas: partirLista(fila[COL['areas']]),
       productos: partirLista(fila[COL['productos']]),
+      destacados: leerDestacados(fila[COL['destacados']]),
       fechaCreacion: (fila[COL['fecha_creacion']] || '').toString(),
       fechaActualizacion: (fila[COL['fecha_actualizacion']] || '').toString(),
     });
@@ -4011,13 +4040,42 @@ function procesarGuardarCampana(data) {
 // Sustituye la lista completa de productos de una campaña (mismo
 // patrón "reemplazar, no fusionar" que actualizar_relacionados) — el
 // propio escaparate.html es quien decide qué refs quedan tras añadir
-// o quitar en el modal, y manda la lista final ya resuelta.
+// o quitar en el modal, y manda la lista final ya resuelta. También
+// sustituye "destacados" (tamaño/alineación/posición de los productos
+// marcados como protagonistas del escaparate) en el mismo guardado,
+// para no necesitar una acción aparte.
+const TAMANOS_DESTACADO_VALIDOS_ = [1, 2, 3, 4, 5, 6];
+const ALINEACIONES_VALIDAS_ = ['izquierda', 'centro', 'derecha'];
+const POSICIONES_VALIDAS_ = ['arriba', 'medio', 'abajo'];
+
+function sanearDestacados_(destacadosRaw, refsValidas) {
+  if (!Array.isArray(destacadosRaw)) return [];
+  const refsSet = new Set(refsValidas);
+  const vistos = new Set();
+  const resultado = [];
+  destacadosRaw.forEach((d) => {
+    if (!d || typeof d !== 'object') return;
+    const ref = (d.ref || '').toString().trim();
+    // Nunca se guarda un destacado de un producto que ya no está en la
+    // campaña (podría quedar "huérfano" en el JSON si no se limpiara).
+    if (!ref || !refsSet.has(ref) || vistos.has(ref)) return;
+    const tamano = TAMANOS_DESTACADO_VALIDOS_.indexOf(parseInt(d.tamano, 10)) !== -1 ? parseInt(d.tamano, 10) : 1;
+    if (tamano === 1) return; // tamaño normal = no hace falta guardar entrada
+    const alinH = ALINEACIONES_VALIDAS_.indexOf(d.alinH) !== -1 ? d.alinH : 'centro';
+    const posV = POSICIONES_VALIDAS_.indexOf(d.posV) !== -1 ? d.posV : 'medio';
+    vistos.add(ref);
+    resultado.push({ ref: ref, tamano: tamano, alinH: alinH, posV: posV });
+  });
+  return resultado;
+}
+
 function procesarActualizarProductosCampana(data) {
   try {
     console.log('procesarActualizarProductosCampana iniciado:', data);
 
     const id = (data.id || '').toString().trim();
     const productos = Array.isArray(data.productos) ? data.productos : [];
+    const destacados = sanearDestacados_(data.destacados, productos);
     if (!id) {
       return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta el id de la campaña.' }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -4038,10 +4096,11 @@ function procesarActualizarProductosCampana(data) {
 
     const filaNum = filaIdx + 1;
     sheet.getRange(filaNum, COL['productos'] + 1).setValue(productos.join(', '));
+    sheet.getRange(filaNum, COL['destacados'] + 1).setValue(destacados.length ? JSON.stringify(destacados) : '');
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
-    console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos');
+    console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos,', destacados.length, 'destacados');
 
-    return ContentService.createTextOutput(JSON.stringify({ success: true, productos: productos }))
+    return ContentService.createTextOutput(JSON.stringify({ success: true, productos: productos, destacados: destacados }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarActualizarProductosCampana:', err);
