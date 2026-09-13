@@ -86,15 +86,21 @@
          (solo la cabecera y el pie de página usan fondo oscuro). */
 
       *{box-sizing:border-box;}
-      html{-webkit-text-size-adjust:100%;}
-      /* overflow-x:clip como red de seguridad: los "tags" rotados del
-         rail de campañas (ver .tag más abajo, usan transform:rotate())
-         amplían su caja pintada más allá de su caja de layout, y los
-         navegadores cuentan esa caja pintada para el scroll horizontal
-         de la página — sin esto, un tag rotado cerca del borde derecho
-         puede añadir una barra de scroll horizontal en móvil aunque el
-         layout "sobre el papel" quepa perfectamente. */
-      html, body{ overflow-x:clip; }
+      html{-webkit-text-size-adjust:100%; max-width:100%;}
+      /* overflow-x:hidden (no "clip") como red de seguridad: los "tags"
+         rotados del rail de campañas (ver .tag más abajo, usan
+         transform:rotate()) amplían su caja pintada más allá de su caja
+         de layout, y los navegadores cuentan esa caja pintada para el
+         scroll horizontal de la página — sin esto, un tag rotado cerca
+         del borde derecho puede añadir desplazamiento horizontal en
+         móvil aunque el layout "sobre el papel" quepa perfectamente.
+         "clip" es más nuevo que "hidden" y puede no soportarse en
+         versiones de Safari/iOS algo antiguas — con "clip" sin aplicar
+         (valor inválido, ignorado) el problema volvía a notarse en
+         móvil (reportado por Eloy: "efecto raro... como si se
+         desplazase el contenido"), así que se usa "hidden" a propósito,
+         universalmente soportado. */
+      html, body{ overflow-x:hidden; width:100%; }
       body{
         margin:0;
         background:var(--paper);
@@ -156,7 +162,6 @@
       .fondo-estacional{
         position:absolute; inset:0; z-index:0;
         overflow:hidden;
-        background:var(--fondo-estacional-bg, linear-gradient(180deg, var(--wash), var(--paper)));
         pointer-events:none;
       }
       .fondo-estacional .particula{
@@ -194,19 +199,20 @@
       .vitrina-content{
         position:relative; z-index:1;
       }
-      /* Foto de campaña: NÍTIDA (sin difuminar — a diferencia del fondo,
-         esta sí es una imagen real que hay que poder reconocer), en su
-         propio bloque a la derecha, solo en escritorio (900px+) — nunca
-         en móvil, petición explícita de Eloy ("ocuparía mucho"). */
+      /* Foto de campaña: NÍTIDA (sin difuminar), en un bloque pequeño a
+         la derecha, anclado arriba (no estirado a toda la altura de la
+         vitrina — eso la hacía innecesariamente grande), solo en
+         escritorio (900px+) — nunca en móvil. */
       .vitrina-foto{
         display:none;
-        flex:0 0 clamp(240px, 34%, 380px);
+        flex:0 0 clamp(140px, 20%, 210px);
+        aspect-ratio:4/3;
         border-radius:var(--radius-m); overflow:hidden; border:1px solid var(--line);
         position:relative; z-index:1;
       }
       .vitrina-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
       @media (min-width:900px){
-        .vitrina.tiene-imagen{ display:flex; align-items:stretch; gap:clamp(20px,3vw,36px); }
+        .vitrina.tiene-imagen{ display:flex; align-items:flex-start; gap:clamp(20px,3vw,36px); }
         .vitrina.tiene-imagen .vitrina-content{ flex:1 1 auto; min-width:0; }
         .vitrina.tiene-imagen .vitrina-foto{ display:block; }
       }
@@ -251,7 +257,13 @@
       .badge.ia{ color:var(--accent-2); border-color:var(--accent-2); }
       .badge.tipo{ color:var(--ink-faint); }
 
-      .vitrina h1{
+      .escaparate-titulo{ max-width:var(--maxw); margin:22px auto 0; padding:0 2px; }
+      .escaparate-titulo h1{
+        font-size:clamp(22px, 3.4vw, 32px);
+        line-height:1.1; color:var(--ink); margin:0;
+      }
+
+      .vitrina h2{
         position:relative; z-index:1;
         font-size:clamp(28px, 5vw, 50px);
         line-height:1.05; font-weight:800;
@@ -363,6 +375,13 @@
          al frente en un escaparate real). El bloque SIEMPRE ocupa el
          100% de las columnas/filas que le tocan (alineado a ras con el
          resto de tarjetas, sin margen de aire alrededor).
+         A propósito, los tamaños 2 y 3 son SOLO más anchos (1 fila) y no
+         más altos — un bloque que ocupa varias filas es mucho más
+         propenso a dejar huecos junto a sus vecinos con
+         grid-auto-flow:dense (hacen falta piezas de relleno del tamaño
+         exacto para no dejar agujeros), así que el "salto a varias
+         filas" se reserva solo para los tamaños 4-6, más grandes y
+         menos numerosos en una campaña típica.
          "posV" reordena el propio array de productos en JS antes de
          pintar (ver render()), no con CSS order — mezclar "order" con
          grid-auto-flow:dense daba huecos raros y bloques que no
@@ -381,10 +400,10 @@
       }
       .card-destacado-badge svg{ width:10px; height:10px; }
       .card[data-tam="2"]{ grid-column:span 2; }
-      .card[data-tam="3"]{ grid-column:span 2; grid-row:span 2; }
-      .card[data-tam="4"]{ grid-column:span 3; grid-row:span 2; }
-      .card[data-tam="5"]{ grid-column:span 3; grid-row:span 3; }
-      .card[data-tam="6"]{ grid-column:span 4; grid-row:span 3; }
+      .card[data-tam="3"]{ grid-column:span 3; }
+      .card[data-tam="4"]{ grid-column:span 2; grid-row:span 2; }
+      .card[data-tam="5"]{ grid-column:span 3; grid-row:span 2; }
+      .card[data-tam="6"]{ grid-column:span 4; grid-row:span 2; }
       /* La foto tiene que ser lo primero en aprovechar el bloque más
          grande — antes se quedaba con su tamaño normal (aspect-ratio fijo)
          y todo el hueco extra de un bloque más alto se iba en espacio en
@@ -396,7 +415,7 @@
       .card[data-tam="3"] .precio, .card[data-tam="4"] .precio{ font-size:19px; }
       .card[data-tam="5"] .precio, .card[data-tam="6"] .precio{ font-size:23px; }
       @media (max-width:820px){
-        .card[data-tam="4"], .card[data-tam="5"], .card[data-tam="6"]{ grid-column:span 3; grid-row:span 2; }
+        .card[data-tam="6"]{ grid-column:span 3; }
       }
       @media (max-width:600px){
         .card[data-tam]{ grid-column:span 2; grid-row:span 1; }
@@ -502,7 +521,7 @@
       /* ---------- Modales ---------- */
       dialog{
         border:none; border-radius:var(--radius-l); padding:0;
-        width:min(680px, 92vw); max-height:86vh;
+        width:min(680px, 92vw); max-height:86vh; max-height:86dvh;
         background:var(--paper-raised); color:var(--ink);
         box-shadow:var(--shadow-strong);
       }
@@ -519,7 +538,17 @@
         cursor:pointer; color:var(--ink-soft); flex:none;
       }
       .modal-close svg{ width:14px; height:14px; }
-      .modal-body{ padding:18px 24px; overflow-y:auto; max-height:calc(86vh - 150px); }
+      /* max-height en dvh (no solo vh): en Safari/iOS "vh" se calcula
+         sobre el visor más grande posible, sin descontar la barra de
+         Chrome/Safari cuando está visible — eso empujaba el pie del
+         modal (Guardar/Cancelar) fuera de la pantalla visible en móvil
+         (reportado por Eloy: "complejo acceder a los botones de arriba
+         y abajo"). "dvh" sí se ajusta en tiempo real; se deja "vh" antes
+         como fallback para navegadores que no soporten "dvh" todavía. */
+      .modal-body{
+        padding:18px 24px; overflow-y:auto;
+        max-height:calc(86vh - 150px); max-height:calc(86dvh - 150px);
+      }
       .modal-foot{
         display:flex; align-items:center; justify-content:space-between; gap:12px;
         padding:14px 24px 20px; border-top:1px solid var(--line);
@@ -676,9 +705,14 @@
       /* ---------- Botón "volver arriba" ----------
          Mismo umbral (500px de scroll) y comportamiento que ya usa
          Centro de Soluciones (.cs-btn-subir en assets/css/soluciones.css)
-         — duplicado aquí porque esta página no carga ese CSS/JS. */
+         — duplicado aquí porque esta página no carga ese CSS/JS.
+         A la IZQUIERDA a propósito: el dock de gestión (Asignar
+         productos / Gestionar campañas) ya ocupa la esquina inferior
+         derecha (.tools-dock, right:18px;bottom:18px) — con las dos
+         cosas a la derecha se solapaban entre sí, sobre todo en móvil
+         (motivo real de que "faltara" — estaba tapado/mezclado). */
       .btn-volver-arriba{
-        position:fixed; right:20px; bottom:20px; z-index:400;
+        position:fixed; left:20px; bottom:20px; z-index:400;
         width:48px; height:48px; border:none; border-radius:50%;
         background:var(--primary-red, #d91b1b); color:#fff;
         font-size:1.3rem; font-weight:900; cursor:pointer;
@@ -689,7 +723,7 @@
       .btn-volver-arriba.is-visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
       .btn-volver-arriba:hover{ background:color-mix(in srgb, var(--primary-red, #d91b1b) 86%, #000); }
       @media (max-width:640px){
-        .btn-volver-arriba{ right:14px; bottom:14px; width:44px; height:44px; font-size:1.15rem; }
+        .btn-volver-arriba{ left:14px; bottom:14px; width:44px; height:44px; font-size:1.15rem; }
       }
 
       .campaign-row{
@@ -744,6 +778,16 @@
       .campana-img-acciones .btn{ padding:8px 14px; font-size:12.5px; }
       .campana-img-acciones .btn:disabled{ opacity:.45; cursor:not-allowed; }
       .campana-img-hint{ font-size:11.5px; color:var(--ink-faint); flex-basis:100%; }
+
+      .color-personalizado-row{ display:flex; gap:18px; flex-wrap:wrap; }
+      .color-swatch-label{
+        display:flex; align-items:center; gap:8px;
+        font-size:12.5px; font-weight:600; color:var(--ink-soft);
+      }
+      .color-swatch-label input[type="color"]{
+        width:38px; height:32px; padding:2px; border:1px solid var(--line-strong);
+        border-radius:6px; background:var(--paper); cursor:pointer;
+      }
 
       /* Toast */
       .toast{
@@ -822,6 +866,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <main class="wrap">
+
+  <div class="escaparate-titulo">
+    <h1>Acércate a nuestro escaparate</h1>
+  </div>
 
   <div class="escaparate-lienzo" id="escaparateLienzo">
     <div class="fondo-estacional" id="fondoEstacional" aria-hidden="true"></div>
@@ -1022,7 +1070,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <option value="verde_ambar">Verde y ámbar</option>
             <option value="azul_ambar">Azul y ámbar</option>
             <option value="rojo_negro">Rojo y negro</option>
+            <option value="personalizado">Personalizado…</option>
           </select>
+        </div>
+        <div class="field span2" id="ncColorPersonalizadoRow" style="display:none">
+          <label>Colores personalizados</label>
+          <div class="color-personalizado-row">
+            <label class="color-swatch-label">Principal <input type="color" id="ncColorP1" value="#D91B1B"></label>
+            <label class="color-swatch-label">Secundario <input type="color" id="ncColorP2" value="#008743"></label>
+          </div>
         </div>
         <div class="field">
           <label for="ncInicio">Fecha de inicio</label>
@@ -1115,7 +1171,28 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     azul_ambar:  {accent:"#005689", accent2:"#8A6400", vivid:"#006DAE", vivid2:"#F1B300", wash:"rgba(0,109,174,0.10)"},
     rojo_negro:  {accent:"#B81717", accent2:"#1A1A1A", vivid:"#D91B1B", vivid2:"#1A1A1A", wash:"rgba(217,27,27,0.09)"}
   };
-  function colorSetDe(id){ return COLOR_SETS[id] || COLOR_SETS.rojo_verde; }
+  function hexARgba(hex, alpha){
+    const m = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex || '');
+    if(!m) return `rgba(217,27,27,${alpha})`;
+    const r = parseInt(m[1],16), g = parseInt(m[2],16), b = parseInt(m[3],16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  // Recibe la campaña completa (no solo el id de colorSet) porque
+  // "personalizado" necesita también sus dos colores propios guardados
+  // en la campaña. El principal/secundario personalizados se usan tal
+  // cual, tanto para "accent" (texto) como para "vivid" (iconos/fondos)
+  // — a diferencia de los sets predefinidos no hay una versión ya
+  // oscurecida para contraste; si el usuario elige un color muy claro,
+  // el contraste del texto puede resentirse un poco.
+  function colorSetDe(c){
+    if(c && c.colorSet === 'personalizado'){
+      const HEX_VALIDO = /^#[0-9a-fA-F]{6}$/;
+      const p1 = HEX_VALIDO.test(c.colorPersonalizado1) ? c.colorPersonalizado1 : '#D91B1B';
+      const p2 = HEX_VALIDO.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : '#008743';
+      return { accent:p1, accent2:p2, vivid:p1, vivid2:p2, wash:hexARgba(p1, 0.10) };
+    }
+    return COLOR_SETS[c && c.colorSet] || COLOR_SETS.rojo_verde;
+  }
 
   /* ---------------- Iconos de línea (un único estilo) ---------------- */
   const ICONS = {
@@ -1258,7 +1335,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const lienzo = $("#escaparateLienzo");
     if(!el || !lienzo) return;
     const est = ESTACIONES[estacionParaFecha(fechaRef)];
-    el.style.setProperty('--fondo-estacional-bg', est.fondo);
+    // Solo las partículas — sin degradado de color de fondo (petición de
+    // Eloy: "quítale el color del fondo, solo quiero las hojas").
     const ALTURA_REFERENCIA = 800; // altura con la que se calibraron los rangos dur/n de ESTACIONES
     const altura = lienzo.offsetHeight || ALTURA_REFERENCIA;
     const escala = Math.max(1, altura / ALTURA_REFERENCIA);
@@ -1401,7 +1479,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="vitrina-content">
           <div class="vitrina-empty">
             <span class="badge tipo">SIN CAMPAÑAS TODAVÍA</span>
-            <h1 style="margin-top:14px">Este escaparate está listo, pero vacío</h1>
+            <h2 style="margin-top:14px">Este escaparate está listo, pero vacío</h2>
             <p>Usa "Gestionar campañas" para crear la primera — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
           </div>
         </div>`;
@@ -1415,7 +1493,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     if(!activeId || !findCampaign(activeId)) activeId = CAMPAIGNS[0].id;
     const c = findCampaign(activeId);
-    const cs = colorSetDe(c.colorSet);
+    const cs = colorSetDe(c);
     const root = document.documentElement;
     root.style.setProperty('--accent', cs.accent);
     root.style.setProperty('--accent-2', cs.accent2);
@@ -1431,7 +1509,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <span class="badge tipo">${c.tipo==="temporada" ? "Temporada" : "Comercial"}</span>
           ${hoyActiva ? `<span class="badge" style="color:#1a7a4c;border-color:#1a7a4c;background:rgba(26,122,76,.09)">● activa hoy</span>` : `<span class="badge">fuera de fecha hoy</span>`}
         </div>
-        <h1>${c.nombre}</h1>
+        <h2>${c.nombre}</h2>
         <p class="sub">${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}.</p>
         <div class="vitrina-meta">
           <span class="item">
@@ -1836,7 +1914,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       return;
     }
     $("#campaignList").innerHTML = CAMPAIGNS.map(c=>{
-      const cs = colorSetDe(c.colorSet);
+      const cs = colorSetDe(c);
       const live = activaEn(c, HOY);
       return `<div class="campaign-row">
         <span class="swatch" style="background:linear-gradient(135deg, ${cs.vivid} 50%, ${cs.vivid2} 50%)"></span>
@@ -1921,11 +1999,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     hint.textContent = imagenId ? '' : 'Se verá difuminada de fondo en la vitrina, junto con la animación de la estación.';
   }
 
+  function actualizarVisibilidadColorPersonalizado(){
+    $("#ncColorPersonalizadoRow").style.display = $("#ncColor").value === 'personalizado' ? 'block' : 'none';
+  }
+  $("#ncColor").addEventListener("change", actualizarVisibilidadColorPersonalizado);
+
   function limpiarFormulario(){
     $("#ncId").value = "";
     $("#ncNombre").value = "";
     $("#ncTipo").value = "temporada";
     $("#ncColor").value = "rojo_verde";
+    $("#ncColorP1").value = "#D91B1B";
+    $("#ncColorP2").value = "#008743";
     $("#ncInicio").value = "";
     $("#ncFin").value = "";
     $("#ncEslogan").value = "";
@@ -1936,6 +2021,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#btnGuardarCampana").textContent = "Guardar y asignar productos →";
     $("#formMsg").className = "form-msg";
     pintarImagenCampanaForm(null, null);
+    actualizarVisibilidadColorPersonalizado();
   }
   function cargarFormularioEdicion(id){
     const c = findCampaign(id);
@@ -1944,6 +2030,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#ncNombre").value = c.nombre;
     $("#ncTipo").value = c.tipo;
     $("#ncColor").value = c.colorSet;
+    $("#ncColorP1").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado1) ? c.colorPersonalizado1 : "#D91B1B";
+    $("#ncColorP2").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : "#008743";
     $("#ncInicio").value = c.fechaInicio;
     $("#ncFin").value = c.fechaFin;
     $("#ncEslogan").value = c.eslogan || "";
@@ -1954,6 +2042,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#btnGuardarCampana").textContent = "Guardar cambios";
     $("#formMsg").className = "form-msg";
     pintarImagenCampanaForm(c.id, c.imagenFondo);
+    actualizarVisibilidadColorPersonalizado();
     $("#ncNombre").focus();
   }
   $("#btnCancelarEdicion").addEventListener("click", limpiarFormulario);
@@ -2061,6 +2150,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         nombre, fechaInicio, fechaFin,
         tipo: $("#ncTipo").value,
         colorSet: $("#ncColor").value,
+        colorPersonalizado1: $("#ncColorP1").value,
+        colorPersonalizado2: $("#ncColorP2").value,
         areas: Array.from(areasSel),
         eslogan: $("#ncEslogan").value.trim(),
       };

@@ -3881,7 +3881,7 @@ function procesarActualizarRelacionados(data) {
 // esta hoja tiene, como mucho, unas pocas decenas de filas, así que
 // se lee directamente en cada doGet — mucho más simple que mantener
 // sincronizada otra caché, y siempre al día sin parcheos.
-const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaCampanas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -3962,6 +3962,8 @@ function leerCampanas_() {
       tipo: (fila[COL['tipo']] || 'temporada').toString(),
       origen: (fila[COL['origen']] || 'manual').toString(),
       colorSet: (fila[COL['color_set']] || 'rojo_verde').toString(),
+      colorPersonalizado1: (fila[COL['color_personalizado_1']] || '').toString().trim(),
+      colorPersonalizado2: (fila[COL['color_personalizado_2']] || '').toString().trim(),
       fechaInicio: formatearFechaISO_(fila[COL['fecha_inicio']]),
       fechaFin: formatearFechaISO_(fila[COL['fecha_fin']]),
       areas: partirLista(fila[COL['areas']]),
@@ -4010,6 +4012,12 @@ function procesarGuardarCampana(data) {
     const tipo = data.tipo === 'comercial' ? 'comercial' : 'temporada';
     const colorSet = (data.colorSet || 'rojo_verde').toString();
     const eslogan = (data.eslogan || '').toString().trim().slice(0, 200);
+    // Colores personalizados: solo se guardan si colorSet='personalizado'
+    // y tienen pinta de hex válido — si no, se guardan vacíos (el
+    // front-end ya tiene sus propios colores de reserva para ese caso).
+    const HEX_VALIDO_ = /^#[0-9a-fA-F]{6}$/;
+    const colorPersonalizado1 = (colorSet === 'personalizado' && HEX_VALIDO_.test(data.colorPersonalizado1 || '')) ? data.colorPersonalizado1 : '';
+    const colorPersonalizado2 = (colorSet === 'personalizado' && HEX_VALIDO_.test(data.colorPersonalizado2 || '')) ? data.colorPersonalizado2 : '';
 
     if (filaIdx === -1) {
       const id = 'manual-' + new Date().getTime();
@@ -4019,6 +4027,8 @@ function procesarGuardarCampana(data) {
       fila[COL['tipo']] = tipo;
       fila[COL['origen']] = 'manual';
       fila[COL['color_set']] = colorSet;
+      fila[COL['color_personalizado_1']] = colorPersonalizado1;
+      fila[COL['color_personalizado_2']] = colorPersonalizado2;
       fila[COL['fecha_inicio']] = fechaInicio;
       fila[COL['fecha_fin']] = fechaFin;
       fila[COL['areas']] = areas;
@@ -4036,6 +4046,8 @@ function procesarGuardarCampana(data) {
     sheet.getRange(filaNum, COL['nombre'] + 1).setValue(nombre);
     sheet.getRange(filaNum, COL['tipo'] + 1).setValue(tipo);
     sheet.getRange(filaNum, COL['color_set'] + 1).setValue(colorSet);
+    sheet.getRange(filaNum, COL['color_personalizado_1'] + 1).setValue(colorPersonalizado1);
+    sheet.getRange(filaNum, COL['color_personalizado_2'] + 1).setValue(colorPersonalizado2);
     sheet.getRange(filaNum, COL['fecha_inicio'] + 1).setValue(fechaInicio);
     sheet.getRange(filaNum, COL['fecha_fin'] + 1).setValue(fechaFin);
     sheet.getRange(filaNum, COL['areas'] + 1).setValue(areas);
