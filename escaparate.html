@@ -465,6 +465,48 @@
       .ia-suggest-hint{ font-size:12px; color:var(--ink-faint); flex:1; min-width:180px; }
       .ia-suggest-hint.error{ color:#C81E1E; }
 
+      /* ---------- Productos ya asignados a la campaña (editar/quitar) ----------
+         Antes, para quitar un producto ya asignado había que "adivinar" su
+         nombre y buscarlo de nuevo entre miles de productos — casi
+         imposible en la práctica. Esta sección lista SIEMPRE lo que ya
+         está en la campaña, sea cual sea el filtro de búsqueda activo. */
+      .selected-section{
+        margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--line-strong);
+      }
+      .selected-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+      .selected-head-title{ font-size:13px; font-weight:600; color:var(--ink-soft); }
+      .selected-head-title b{ color:var(--ink); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .link-btn{
+        background:none; border:none; padding:0; font-size:12.5px; font-weight:600;
+        color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:2px;
+      }
+      .link-btn:disabled{ opacity:.4; cursor:not-allowed; text-decoration:none; }
+      .selected-chips{ display:flex; flex-wrap:wrap; gap:8px; max-height:190px; overflow-y:auto; padding:2px; }
+      .selected-chips:empty::after{
+        content:"Todavía no hay productos en esta campaña — búscalos abajo o usa \"Sugerir con IA\".";
+        color:var(--ink-faint); font-size:12.5px;
+      }
+      .chip-producto{
+        display:flex; align-items:center; gap:7px;
+        border:1px solid var(--line-strong); border-radius:99px; padding:4px 8px 4px 4px;
+        background:var(--paper); max-width:230px;
+      }
+      .chip-producto .chip-img{
+        width:26px; height:26px; border-radius:50%; overflow:hidden; flex:none;
+        background:var(--paper-raised); border:1px solid var(--line);
+        display:flex; align-items:center; justify-content:center;
+      }
+      .chip-producto .chip-img svg{ width:13px; height:13px; color:var(--ink-faint); opacity:.6; }
+      .chip-producto .chip-img img{ width:100%; height:100%; object-fit:cover; }
+      .chip-producto .chip-nombre{ font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .chip-producto .chip-quitar{
+        flex:none; width:18px; height:18px; border-radius:50%; border:none; padding:0;
+        background:var(--line); display:flex; align-items:center; justify-content:center;
+        cursor:pointer; color:var(--ink-soft); transition:background 140ms ease, color 140ms ease;
+      }
+      .chip-producto .chip-quitar:hover{ background:#C81E1E; color:#fff; }
+      .chip-producto .chip-quitar svg{ width:9px; height:9px; }
+
       .selected-count{ font-size:13px; color:var(--ink-soft); }
       .selected-count b{ color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
@@ -722,6 +764,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         Sugerir productos con IA
       </button>
       <span class="ia-suggest-hint" id="iaSuggestHint">Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.</span>
+    </div>
+    <div class="selected-section">
+      <div class="selected-head">
+        <span class="selected-head-title">Productos en esta campaña (<b id="selectedHeadCount">0</b>)</span>
+        <button type="button" class="link-btn" id="btnQuitarTodos">Quitar todos</button>
+      </div>
+      <div class="selected-chips" id="selectedChips"></div>
     </div>
     <div class="filters-row">
       <div class="field">
@@ -1234,6 +1283,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         if(selected.has(ref)) selected.delete(ref); else selected.add(ref);
         card.classList.toggle("selected");
         updateSelCount();
+        renderSeleccionados();
       });
     });
   }
@@ -1267,12 +1317,53 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
   function updateSelCount(){ $("#selCount").textContent = selected.size; }
 
+  // Lista SIEMPRE visible de lo que ya está en la campaña (independiente
+  // del filtro de búsqueda activo) — antes, para quitar un producto ya
+  // asignado había que volver a encontrarlo entre miles de productos.
+  function renderSeleccionados(){
+    const cont = $("#selectedChips");
+    const refs = Array.from(selected);
+    $("#selectedHeadCount").textContent = refs.length;
+    $("#btnQuitarTodos").disabled = !refs.length;
+    cont.innerHTML = refs.map(ref=>{
+      const p = PRODUCTS[ref];
+      const nombre = (p ? p.nombre : ref).replace(/"/g,'&quot;');
+      const imgUrl = p ? urlImagenProducto(p, 80) : null;
+      return `<span class="chip-producto" title="${nombre}">
+        <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
+        <span class="chip-nombre">${nombre}</span>
+        <button type="button" class="chip-quitar" data-quitar="${ref}" title="Quitar de la campaña" aria-label="Quitar ${nombre}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </span>`;
+    }).join("");
+    $$("[data-quitar]", cont).forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        selected.delete(btn.dataset.quitar);
+        sugeridosIA = sugeridosIA.filter(r=>r!==btn.dataset.quitar);
+        updateSelCount();
+        renderSeleccionados();
+        renderPicker(); // por si el mismo producto se ve también en la búsqueda/sugerencias, para desmarcarlo ahí también
+      });
+    });
+  }
+  $("#btnQuitarTodos").addEventListener("click", ()=>{
+    if(!selected.size) return;
+    if(!confirm(`¿Quitar los ${selected.size} productos de esta campaña? El cambio no se guarda hasta que pulses "Guardar productos".`)) return;
+    selected.clear();
+    sugeridosIA = [];
+    updateSelCount();
+    renderSeleccionados();
+    renderPicker();
+  });
+
   function openModalProductos(campaignId){
     const c = findCampaign(campaignId);
     if(!c) return;
     selected = new Set(c.productos);
     sugeridosIA = [];
     updateSelCount();
+    renderSeleccionados();
     $("#modalProdCampana").textContent = c.nombre;
     modalProductos.dataset.campaignId = campaignId;
     fillFamiliaSelect();
@@ -1362,6 +1453,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       sugeridosIA = Array.from(encontrados.keys());
       sugeridosIA.forEach(ref=>selected.add(ref));
       updateSelCount();
+      renderSeleccionados();
       $("#fBusca").value = '';
       $("#fFamilia").value = '';
       renderPicker();
