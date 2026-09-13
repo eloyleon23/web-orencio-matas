@@ -140,13 +140,44 @@
         padding:5px 11px; white-space:nowrap;
       }
 
+      /* ---------- Lienzo del escaparate (fondo estacional único) ----------
+         A petición de Eloy: el efecto de partículas (hojas, copos...) ya
+         no vive dentro de cada bloque por separado — es UN solo fondo
+         continuo detrás de la cabecera, los productos (visible en los
+         huecos entre tarjetas) y el bloque de cierre, todo junto, como
+         si fuera el propio escaparate. Las tarjetas de producto siguen
+         siendo opacas (no tiene sentido que un producto "se difumine"),
+         pero la cabecera y el bloque de cierre pasan a fondo translúcido
+         con backdrop-filter: así el texto queda siempre nítido y legible
+         SIN necesidad de difuminar las hojas en sí (que ahora se ven
+         nítidas, tal y como pidió Eloy) — el desenfoque solo se aplica a
+         lo que se ve A TRAVÉS de la tarjeta, no a las hojas mismas. */
+      .escaparate-lienzo{ position:relative; }
+      .fondo-estacional{
+        position:absolute; inset:0; z-index:0;
+        overflow:hidden;
+        background:var(--fondo-estacional-bg, linear-gradient(180deg, var(--wash), var(--paper)));
+        pointer-events:none;
+      }
+      .fondo-estacional .particula{
+        position:absolute; top:0; left:0;
+        animation:flotarParticula var(--dur,9s) linear infinite;
+        will-change:transform, top, opacity;
+      }
+      .fondo-estacional .particula svg{ display:block; width:var(--tam,16px); height:var(--tam,16px); }
+      @keyframes flotarParticula{
+        0%{ top:calc(50% - (var(--dir,1) * 65%)); transform:translateX(0) rotate(0deg); opacity:0; }
+        12%{ opacity:var(--op,.7); }
+        88%{ opacity:var(--op,.7); }
+        100%{ top:calc(50% + (var(--dir,1) * 65%)); transform:translateX(var(--drift,0px)) rotate(var(--rot,180deg)); opacity:0; }
+      }
+
       /* ---------- Vitrina (hero) ---------- */
       .vitrina{
         max-width:var(--maxw); margin:26px auto 0;
-        position:relative;
-        background:
-          linear-gradient(180deg, var(--wash), transparent 62%),
-          var(--paper-raised);
+        position:relative; z-index:1;
+        background:rgba(255,255,255,.6);
+        backdrop-filter:blur(11px); -webkit-backdrop-filter:blur(11px);
         border:1px solid var(--line);
         border-radius:var(--radius-l);
         padding:40px clamp(20px,4vw,52px) 34px;
@@ -163,65 +194,36 @@
       .vitrina-content{
         position:relative; z-index:1;
       }
-      /* Panel estacional (degradado + partículas animadas): SIEMPRE de
-         fondo a pantalla completa, detrás de todo el contenido, en
-         cualquier tamaño de pantalla — esto no cambia.
-         La FOTO de la campaña (si tiene) es aparte: vive en
-         .vitrina-visual-imagen, oculta por defecto (nunca en móvil, por
-         petición explícita — "ocuparía mucho y no me interesa"), y en
-         escritorio (900px+) SOLO si hay foto, toda la vitrina pasa a dos
-         columnas (.vitrina.tiene-imagen) para que la foto no quede detrás
-         del texto y lo haga ilegible — el efecto de blur/partículas se
-         mantiene igual, solo que confinado a ese bloque lateral en vez de
-         a pantalla completa. */
-      .vitrina-visual{
-        display:block;
-        position:absolute; inset:-30px; z-index:0;
-        overflow:hidden;
-        background:var(--vitrina-visual-bg, linear-gradient(180deg, var(--wash), var(--paper)));
-        filter:blur(5px);
-        pointer-events:none;
+      /* Foto de campaña: NÍTIDA (sin difuminar — a diferencia del fondo,
+         esta sí es una imagen real que hay que poder reconocer), en su
+         propio bloque a la derecha, solo en escritorio (900px+) — nunca
+         en móvil, petición explícita de Eloy ("ocuparía mucho"). */
+      .vitrina-foto{
+        display:none;
+        flex:0 0 clamp(240px, 34%, 380px);
+        border-radius:var(--radius-m); overflow:hidden; border:1px solid var(--line);
+        position:relative; z-index:1;
       }
-      .vitrina-visual-imagen{
-        display:none; /* la foto de campaña nunca se ve en móvil */
-        position:absolute; inset:0; z-index:0;
-        background-position:center; background-size:cover; background-repeat:no-repeat;
-      }
-      .vitrina-visual .particula{
-        position:absolute; top:0; left:0;
-        animation:flotarParticula var(--dur,9s) linear infinite;
-        will-change:transform, top, opacity;
-      }
-      .vitrina-visual .particula svg{ display:block; width:var(--tam,16px); height:var(--tam,16px); }
-      @keyframes flotarParticula{
-        0%{ top:calc(50% - (var(--dir,1) * 65%)); transform:translateX(0) rotate(0deg); opacity:0; }
-        12%{ opacity:var(--op,.7); }
-        88%{ opacity:var(--op,.7); }
-        100%{ top:calc(50% + (var(--dir,1) * 65%)); transform:translateX(var(--drift,0px)) rotate(var(--rot,180deg)); opacity:0; }
-      }
+      .vitrina-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
       @media (min-width:900px){
-        .vitrina-visual-imagen{ display:block; }
         .vitrina.tiene-imagen{ display:flex; align-items:stretch; gap:clamp(20px,3vw,36px); }
         .vitrina.tiene-imagen .vitrina-content{ flex:1 1 auto; min-width:0; }
-        .vitrina.tiene-imagen .vitrina-visual{
-          position:relative; inset:auto; z-index:0;
-          flex:0 0 clamp(240px, 34%, 380px);
-          border-radius:var(--radius-m); overflow:hidden; border:1px solid var(--line);
-        }
+        .vitrina.tiene-imagen .vitrina-foto{ display:block; }
       }
 
       /* ---------- Bloque de cierre (tras los productos) ----------
-         Mismo tratamiento visual que la vitrina de cabecera (misma
-         .vitrina-visual reutilizada: degradado + partículas de la
-         estación, difuminadas) pero la mitad de alto, sin foto de
-         campaña (esa ya se ve arriba), y con una frase corta opcional
-         a modo de cierre/eslogan. Si la campaña no tiene frase definida,
-         el bloque se ve igual mismo así (solo el efecto, sin texto). */
+         La mitad de alto que la cabecera, mismo fondo translúcido con
+         backdrop-filter (el fondo estacional único ya está detrás, a
+         nivel de .escaparate-lienzo — este bloque no pinta sus propias
+         partículas), con una frase corta opcional a modo de cierre. Si
+         la campaña no tiene frase definida, el bloque se ve igual, solo
+         que sin texto encima. */
       .vitrina-cierre{
         max-width:var(--maxw); margin:32px auto 40px;
-        position:relative; overflow:hidden;
+        position:relative; z-index:1; overflow:hidden;
         border:1px solid var(--line); border-radius:var(--radius-l);
-        background:linear-gradient(180deg, var(--wash), transparent 62%), var(--paper-raised);
+        background:rgba(255,255,255,.6);
+        backdrop-filter:blur(11px); -webkit-backdrop-filter:blur(11px);
         min-height:110px; /* la mitad aprox. de los 220px de .vitrina */
         display:flex; align-items:center; justify-content:center;
         padding:26px clamp(20px,4vw,52px);
@@ -295,7 +297,7 @@
       .vitrina-error code{ background:var(--glass); padding:1px 5px; border-radius:4px; font-size:12px; }
 
       /* ---------- Perchero de campañas (selector) ---------- */
-      .rail-section{ max-width:var(--maxw); margin:30px auto 0; }
+      .rail-section{ max-width:var(--maxw); margin:30px auto 0; position:relative; z-index:1; }
       .rail-label{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:2px; flex-wrap:wrap;}
       .rail{
         display:flex; flex-wrap:wrap; gap:16px 10px;
@@ -329,7 +331,7 @@
       .tag .dot{ font-weight:600; }
 
       /* ---------- Estantes de producto ---------- */
-      .shelf-section{ max-width:var(--maxw); margin:44px auto 0; }
+      .shelf-section{ max-width:var(--maxw); margin:44px auto 0; position:relative; z-index:1; }
       .shelf-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:18px; }
       .shelf-head h2{ font-size:21px; font-weight:800; }
       .shelf-head .count{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:var(--ink-faint); }
@@ -828,43 +830,46 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <main class="wrap">
 
-  <section class="vitrina" id="vitrina">
-    <div class="spinner-line" id="cargando">
-      <span class="spinner-dot"></span> Cargando el escaparate…
-    </div>
-  </section>
+  <div class="escaparate-lienzo" id="escaparateLienzo">
+    <div class="fondo-estacional" id="fondoEstacional" aria-hidden="true"></div>
 
-  <section class="rail-section" id="railSection" hidden>
-    <div class="rail-label">
-      <span class="eyebrow">Campañas configuradas</span>
-      <span class="eyebrow" id="railHint" style="color:var(--ink-faint)"></span>
-    </div>
-    <div class="rail" id="rail"></div>
-  </section>
+    <section class="vitrina" id="vitrina">
+      <div class="spinner-line" id="cargando">
+        <span class="spinner-dot"></span> Cargando el escaparate…
+      </div>
+    </section>
 
-  <section class="shelf-section" id="shelfSection" hidden>
-    <div class="shelf-head">
-      <h2 id="shelfTitle">Productos de la campaña</h2>
-      <span class="count" id="shelfCount"></span>
-    </div>
-    <div class="shelf" id="shelf"></div>
-  </section>
+    <section class="rail-section" id="railSection" hidden>
+      <div class="rail-label">
+        <span class="eyebrow">Campañas configuradas</span>
+        <span class="eyebrow" id="railHint" style="color:var(--ink-faint)"></span>
+      </div>
+      <div class="rail" id="rail"></div>
+    </section>
 
-  <section class="shelf-section shelf-ia" id="iaSection" hidden>
-    <div class="shelf-head">
-      <h2>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M19 15.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9z"/></svg>
-        Sugeridos por IA para ampliar la campaña
-      </h2>
-      <span class="count" id="iaCount"></span>
-    </div>
-    <div class="shelf" id="iaShelf"></div>
-  </section>
+    <section class="shelf-section" id="shelfSection" hidden>
+      <div class="shelf-head">
+        <h2 id="shelfTitle">Productos de la campaña</h2>
+        <span class="count" id="shelfCount"></span>
+      </div>
+      <div class="shelf" id="shelf"></div>
+    </section>
 
-  <section class="vitrina-cierre" id="vitrinaCierre" hidden>
-    <div class="vitrina-visual" id="vitrinaCierreVisual" aria-hidden="true"></div>
-    <p class="vitrina-cierre-frase" id="vitrinaCierreFrase"></p>
-  </section>
+    <section class="shelf-section shelf-ia" id="iaSection" hidden>
+      <div class="shelf-head">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M19 15.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9z"/></svg>
+          Sugeridos por IA para ampliar la campaña
+        </h2>
+        <span class="count" id="iaCount"></span>
+      </div>
+      <div class="shelf" id="iaShelf"></div>
+    </section>
+
+    <section class="vitrina-cierre" id="vitrinaCierre" hidden>
+      <p class="vitrina-cierre-frase" id="vitrinaCierreFrase"></p>
+    </section>
+  </div>
 
   <p class="internal-note">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1249,25 +1254,28 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     return 'otono'; // 8,9,10
   }
 
-  function pintarVisualEstacional(el, fechaRef, imagenUrl){
-    if(!el) return;
+  // Un único fondo para todo el lienzo (cabecera + productos + cierre),
+  // en vez de una instancia de partículas por bloque — la altura real
+  // varía mucho según cuántos productos tenga la campaña, así que tanto
+  // la cantidad de partículas como su velocidad de caída se recalibran
+  // según la altura real medida, para que la densidad y el ritmo se
+  // vean naturales tanto con pocos productos como con muchos.
+  function pintarFondoEstacional(fechaRef){
+    const el = $("#fondoEstacional");
+    const lienzo = $("#escaparateLienzo");
+    if(!el || !lienzo) return;
     const est = ESTACIONES[estacionParaFecha(fechaRef)];
-    // El degradado de la estación va en .vitrina-visual (siempre, fondo
-    // completo). La foto de campaña (si hay) va en un div propio
-    // .vitrina-visual-imagen, que el CSS oculta en móvil y que en
-    // escritorio pasa a bloque lateral cuando .vitrina tiene la clase
-    // "tiene-imagen" — así nunca queda detrás del texto compitiendo por
-    // legibilidad. Ambos quedan igualmente difuminados por el filter:blur
-    // de .vitrina-visual.
-    el.style.setProperty('--vitrina-visual-bg', est.fondo);
-    const imgDiv = `<div class="vitrina-visual-imagen"${imagenUrl ? ` style="background-image:url('${imagenUrl}')"` : ''}></div>`;
-    const N = est.n || 16;
+    el.style.setProperty('--fondo-estacional-bg', est.fondo);
+    const ALTURA_REFERENCIA = 800; // altura con la que se calibraron los rangos dur/n de ESTACIONES
+    const altura = lienzo.offsetHeight || ALTURA_REFERENCIA;
+    const escala = Math.max(1, altura / ALTURA_REFERENCIA);
+    const N = Math.round((est.n || 16) * escala);
     const opRango = est.op || [0.4, 0.8];
     let particulas = '';
     for(let i=0;i<N;i++){
       const color = pick(est.colores);
       const tam = est.tam[0] + Math.random()*(est.tam[1]-est.tam[0]);
-      const dur = est.dur[0] + Math.random()*(est.dur[1]-est.dur[0]);
+      const dur = (est.dur[0] + Math.random()*(est.dur[1]-est.dur[0])) * escala;
       const delay = -(Math.random()*dur); // negativo: ya "en vuelo" desde el primer pintado, en vez de que nazcan todas a la vez arriba
       const x = 2 + Math.random()*94;
       const drift = Math.round(Math.random()*44-22);
@@ -1275,7 +1283,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const op = (opRango[0] + Math.random()*(opRango[1]-opRango[0])).toFixed(2);
       particulas += `<span class="particula" style="left:${x.toFixed(1)}%; animation-delay:${delay.toFixed(1)}s; --dur:${dur.toFixed(1)}s; --drift:${drift}px; --rot:${rot}deg; --dir:${est.dir}; --op:${op}; --tam:${tam.toFixed(0)}px;">${est.forma(color)}</span>`;
     }
-    el.innerHTML = imgDiv + particulas;
+    el.innerHTML = particulas;
+  }
+
+  // Foto de campaña: aparte del fondo estacional, nítida (nunca
+  // difuminada), en su propio bloque — ver .vitrina-foto en el CSS.
+  function pintarFotoCampana(driveId){
+    const bloque = $("#vitrinaFoto");
+    if(!bloque) return;
+    const url = urlImagenCampana(driveId, 900);
+    if(!url){ bloque.hidden = true; bloque.innerHTML = ''; return; }
+    bloque.hidden = false;
+    bloque.innerHTML = `<img src="${url}" alt="">`;
   }
 
   /* ---------------- Carga de datos ---------------- */
@@ -1394,13 +1413,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <h1 style="margin-top:14px">Este escaparate está listo, pero vacío</h1>
             <p>Usa "Gestionar campañas" para crear la primera — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
           </div>
-        </div>
-        <div class="vitrina-visual" id="vitrinaVisual" aria-hidden="true"></div>`;
+        </div>`;
       $("#vitrina").classList.remove('tiene-imagen');
-      pintarVisualEstacional($("#vitrinaVisual"), HOY);
       $("#shelfSection").hidden = true;
       $("#iaSection").hidden = true;
       $("#vitrinaCierre").hidden = true;
+      pintarFondoEstacional(HOY); // al final, tras ocultar/vaciar todo lo demás, para medir la altura ya definitiva del lienzo
       return;
     }
 
@@ -1436,14 +1454,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <div class="overlap-note" id="overlapNote"></div>
       </div>
-      <div class="vitrina-visual" id="vitrinaVisual" aria-hidden="true"></div>
+      <div class="vitrina-foto" id="vitrinaFoto" hidden></div>
     `;
     $("#vitrina").classList.toggle('tiene-imagen', !!c.imagenFondo);
-    // Estación según el INICIO de la campaña, no el día de hoy — así una
-    // campaña de verano programada en julio se ve "de verano" se mire
-    // cuando se mire (ver comentario junto a pintarVisualEstacional).
-    const fechaRefEstacion = c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY;
-    pintarVisualEstacional($("#vitrinaVisual"), fechaRefEstacion, urlImagenCampana(c.imagenFondo));
+    pintarFotoCampana(c.imagenFondo);
 
     const solapa = solapaConManual(c);
     if(solapa){
@@ -1463,14 +1477,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     $("#iaSection").hidden = true; // la generación automática de sugerencias IA es una fase futura (ver nota al usuario)
 
-    // Bloque de cierre: mismo efecto estacional que la cabecera (sin foto
-    // de campaña, esa ya se ve arriba), con la frase opcional definida en
-    // el formulario de campaña. Sin frase, se ve igual el bloque, solo
-    // que sin texto encima ("se verá sólo el bloque de cierre").
+    // Bloque de cierre, con la frase opcional definida en el formulario de
+    // campaña. Sin frase, se ve igual el bloque, solo que sin texto
+    // encima ("se verá sólo el bloque de cierre").
     $("#vitrinaCierre").hidden = false;
-    pintarVisualEstacional($("#vitrinaCierreVisual"), fechaRefEstacion);
     $("#vitrinaCierreFrase").textContent = c.eslogan || '';
     $("#vitrinaCierreFrase").hidden = !c.eslogan;
+
+    // Estación según el INICIO de la campaña, no el día de hoy — así una
+    // campaña de verano programada en julio se ve "de verano" se mire
+    // cuando se mire. Se pinta AL FINAL, después de que shelf/cierre ya
+    // estén en el DOM, para medir la altura real y definitiva del
+    // lienzo completo (ver pintarFondoEstacional).
+    const fechaRefEstacion = c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY;
+    pintarFondoEstacional(fechaRefEstacion);
   }
 
   function renderRail(){
