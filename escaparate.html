@@ -163,13 +163,17 @@
       .vitrina-content{
         position:relative; z-index:1;
       }
-      /* Panel estacional: ahora es un FONDO a pantalla completa detrás de
-         todo el contenido (antes era una columna aparte a la derecha —
-         Eloy lo vio en vivo y pidió que pasara a fondo difuminado, con
-         hojas más grandes y reconocibles como de arce, en vez de "el
-         bloque" separado). inset negativo + blur para que el desenfoque
-         no se corte en seco en el borde — el overflow:hidden de .vitrina
-         ya recorta todo a las esquinas redondeadas de la tarjeta. */
+      /* Panel estacional (degradado + partículas animadas): SIEMPRE de
+         fondo a pantalla completa, detrás de todo el contenido, en
+         cualquier tamaño de pantalla — esto no cambia.
+         La FOTO de la campaña (si tiene) es aparte: vive en
+         .vitrina-visual-imagen, oculta por defecto (nunca en móvil, por
+         petición explícita — "ocuparía mucho y no me interesa"), y en
+         escritorio (900px+) SOLO si hay foto, toda la vitrina pasa a dos
+         columnas (.vitrina.tiene-imagen) para que la foto no quede detrás
+         del texto y lo haga ilegible — el efecto de blur/partículas se
+         mantiene igual, solo que confinado a ese bloque lateral en vez de
+         a pantalla completa. */
       .vitrina-visual{
         display:block;
         position:absolute; inset:-30px; z-index:0;
@@ -177,6 +181,11 @@
         background:var(--vitrina-visual-bg, linear-gradient(180deg, var(--wash), var(--paper)));
         filter:blur(5px);
         pointer-events:none;
+      }
+      .vitrina-visual-imagen{
+        display:none; /* la foto de campaña nunca se ve en móvil */
+        position:absolute; inset:0; z-index:0;
+        background-position:center; background-size:cover; background-repeat:no-repeat;
       }
       .vitrina-visual .particula{
         position:absolute; top:0; left:0;
@@ -189,6 +198,39 @@
         12%{ opacity:var(--op,.7); }
         88%{ opacity:var(--op,.7); }
         100%{ top:calc(50% + (var(--dir,1) * 65%)); transform:translateX(var(--drift,0px)) rotate(var(--rot,180deg)); opacity:0; }
+      }
+      @media (min-width:900px){
+        .vitrina-visual-imagen{ display:block; }
+        .vitrina.tiene-imagen{ display:flex; align-items:stretch; gap:clamp(20px,3vw,36px); }
+        .vitrina.tiene-imagen .vitrina-content{ flex:1 1 auto; min-width:0; }
+        .vitrina.tiene-imagen .vitrina-visual{
+          position:relative; inset:auto; z-index:0;
+          flex:0 0 clamp(240px, 34%, 380px);
+          border-radius:var(--radius-m); overflow:hidden; border:1px solid var(--line);
+        }
+      }
+
+      /* ---------- Bloque de cierre (tras los productos) ----------
+         Mismo tratamiento visual que la vitrina de cabecera (misma
+         .vitrina-visual reutilizada: degradado + partículas de la
+         estación, difuminadas) pero la mitad de alto, sin foto de
+         campaña (esa ya se ve arriba), y con una frase corta opcional
+         a modo de cierre/eslogan. Si la campaña no tiene frase definida,
+         el bloque se ve igual mismo así (solo el efecto, sin texto). */
+      .vitrina-cierre{
+        max-width:var(--maxw); margin:32px auto 40px;
+        position:relative; overflow:hidden;
+        border:1px solid var(--line); border-radius:var(--radius-l);
+        background:linear-gradient(180deg, var(--wash), transparent 62%), var(--paper-raised);
+        min-height:110px; /* la mitad aprox. de los 220px de .vitrina */
+        display:flex; align-items:center; justify-content:center;
+        padding:26px clamp(20px,4vw,52px);
+        text-align:center;
+      }
+      .vitrina-cierre-frase{
+        position:relative; z-index:1; margin:0;
+        font-style:italic; font-weight:600; color:var(--ink);
+        font-size:clamp(15px, 2.2vw, 20px); max-width:60ch;
       }
 
       .vitrina-top{
@@ -295,6 +337,13 @@
       .shelf{
         display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
         grid-auto-rows:minmax(272px, auto);
+        /* dense: rellena huecos con productos normales que vengan más
+           adelante en el orden, en vez de dejarlos en blanco cuando un
+           producto destacado ocupa varias columnas/filas — sin esto,
+           productos normales podían "heredar" la altura de una fila
+           compartida con un destacado y quedar con muchísimo aire vacío
+           (queja real de Eloy con captura de pantalla real). */
+        grid-auto-flow:dense;
         gap:16px;
       }
       .card{
@@ -309,11 +358,18 @@
       /* ---------- Productos destacados (tamaño 2-6, ver Modal A) ----------
          "tamaño" se traduce en cuántas columnas/filas de la rejilla ocupa
          el bloque (más área = más protagonismo, como un producto puesto
-         al frente en un escaparate real). "alinH"/"posV" (fijados desde
-         el modal de asignar productos) se aplican como justify-self/order
-         inline por producto — ver productCard(). En pantallas estrechas
-         se "desescala" progresivamente para no pedir más columnas de las
-         que realmente caben (ver medias más abajo). */
+         al frente en un escaparate real). El bloque SIEMPRE ocupa el
+         100% de las columnas/filas que le tocan (alineado a ras con el
+         resto de tarjetas, sin margen de aire alrededor — antes tenía un
+         max-width del 93% para poder desplazarlo con justify-self, pero
+         eso lo dejaba "flotando" sin encajar con la rejilla del resto).
+         "posV" se aplica como order inline por producto (ver
+         productCard()); "alinH=derecha" ancla el bloque al final de la
+         fila con grid-column:.../-1 en las reglas [data-alin="derecha"]
+         de abajo (mismos topes de tamaño por pantalla que el resto).
+         "izquierda"/"centro" usan la colocación automática normal (no
+         hay forma fiable en CSS puro de centrar un bloque de ancho
+         variable dentro de una rejilla auto-fill sin JS adicional). */
       .card-destacado-badge{
         position:absolute; top:10px; right:10px; z-index:2;
         display:inline-flex; align-items:center; gap:4px;
@@ -321,28 +377,40 @@
         text-transform:uppercase; letter-spacing:.04em; padding:4px 9px; border-radius:99px;
       }
       .card-destacado-badge svg{ width:10px; height:10px; }
-      .card[data-tam]{ max-width:93%; }
       .card[data-tam="2"]{ grid-column:span 2; }
       .card[data-tam="3"]{ grid-column:span 2; grid-row:span 2; }
       .card[data-tam="4"]{ grid-column:span 3; grid-row:span 2; }
       .card[data-tam="5"]{ grid-column:span 3; grid-row:span 3; }
       .card[data-tam="6"]{ grid-column:span 4; grid-row:span 3; }
-      .card[data-tam] .icon-tile{ aspect-ratio:1.9/1; }
+      .card[data-tam="2"][data-alin="derecha"]{ grid-column:span 2 / -1; }
+      .card[data-tam="3"][data-alin="derecha"]{ grid-column:span 2 / -1; }
+      .card[data-tam="4"][data-alin="derecha"]{ grid-column:span 3 / -1; }
+      .card[data-tam="5"][data-alin="derecha"]{ grid-column:span 3 / -1; }
+      .card[data-tam="6"][data-alin="derecha"]{ grid-column:span 4 / -1; }
+      /* La foto tiene que ser lo primero en aprovechar el bloque más
+         grande — antes se quedaba con su tamaño normal (aspect-ratio fijo)
+         y todo el hueco extra de un bloque más alto se iba en espacio en
+         blanco antes de "Ver ficha". Ahora crece (flex:1) para ocupar
+         siempre el hueco vertical que sobre dentro del bloque. */
+      .card[data-tam] .icon-tile{ flex:1 1 auto; aspect-ratio:auto; min-height:140px; }
       .card[data-tam="3"] .nombre, .card[data-tam="4"] .nombre{ font-size:17px; }
       .card[data-tam="5"] .nombre, .card[data-tam="6"] .nombre{ font-size:21px; }
       .card[data-tam="3"] .precio, .card[data-tam="4"] .precio{ font-size:19px; }
       .card[data-tam="5"] .precio, .card[data-tam="6"] .precio{ font-size:23px; }
       @media (max-width:820px){
         .card[data-tam="4"], .card[data-tam="5"], .card[data-tam="6"]{ grid-column:span 3; grid-row:span 2; }
+        .card[data-tam="4"][data-alin="derecha"], .card[data-tam="5"][data-alin="derecha"], .card[data-tam="6"][data-alin="derecha"]{ grid-column:span 3 / -1; }
       }
       @media (max-width:600px){
-        .card[data-tam]{ grid-column:span 2; grid-row:span 1; max-width:none; }
+        .card[data-tam]{ grid-column:span 2; grid-row:span 1; }
+        .card[data-tam][data-alin="derecha"]{ grid-column:span 2 / -1; }
         .card[data-tam] .nombre{ font-size:14px; }
         .card[data-tam] .precio{ font-size:16px; }
-        .card[data-tam] .icon-tile{ aspect-ratio:1.5/1; }
+        .card[data-tam] .icon-tile{ min-height:100px; }
       }
       @media (max-width:420px){
         .card[data-tam]{ grid-column:span 1; }
+        .card[data-tam][data-alin="derecha"]{ grid-column:span 1 / -1; }
       }
 
       .card .icon-tile{
@@ -610,6 +678,25 @@
       .btn.ghost{ background:none; border-color:var(--line-strong); color:var(--ink-soft); }
       .btn.danger-ghost{ background:none; border:1px solid #C81E1E; color:#C81E1E; }
 
+      /* ---------- Botón "volver arriba" ----------
+         Mismo umbral (500px de scroll) y comportamiento que ya usa
+         Centro de Soluciones (.cs-btn-subir en assets/css/soluciones.css)
+         — duplicado aquí porque esta página no carga ese CSS/JS. */
+      .btn-volver-arriba{
+        position:fixed; right:20px; bottom:20px; z-index:400;
+        width:48px; height:48px; border:none; border-radius:50%;
+        background:var(--primary-red, #d91b1b); color:#fff;
+        font-size:1.3rem; font-weight:900; cursor:pointer;
+        box-shadow:0 10px 26px rgba(217,27,27,.35);
+        opacity:0; transform:translateY(12px); pointer-events:none;
+        transition:opacity .25s ease, transform .25s ease, background .2s ease;
+      }
+      .btn-volver-arriba.is-visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
+      .btn-volver-arriba:hover{ background:color-mix(in srgb, var(--primary-red, #d91b1b) 86%, #000); }
+      @media (max-width:640px){
+        .btn-volver-arriba{ right:14px; bottom:14px; width:44px; height:44px; font-size:1.15rem; }
+      }
+
       .campaign-row{
         display:flex; align-items:center; gap:12px; padding:12px 0;
         border-bottom:1px solid var(--line);
@@ -772,6 +859,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <span class="count" id="iaCount"></span>
     </div>
     <div class="shelf" id="iaShelf"></div>
+  </section>
+
+  <section class="vitrina-cierre" id="vitrinaCierre" hidden>
+    <div class="vitrina-visual" id="vitrinaCierreVisual" aria-hidden="true"></div>
+    <p class="vitrina-cierre-frase" id="vitrinaCierreFrase"></p>
   </section>
 
   <p class="internal-note">
@@ -950,6 +1042,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <span class="chip" data-area="pinturas">Pinturas</span>
             <span class="chip" data-area="talleres">Talleres y carrocerías</span>
           </div>
+        </div>
+        <div class="field span2">
+          <label for="ncEslogan">Frase de cierre (opcional) — se ve en un bloque pequeño debajo de los productos</label>
+          <input id="ncEslogan" type="text" maxlength="200" placeholder="p. ej. Todo lo que necesitas para un otoño impecable.">
         </div>
         <div class="field span2">
           <label>Imagen de fondo (opcional) — se ve difuminada detrás del texto, junto con la animación de la estación</label>
@@ -1156,16 +1252,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   function pintarVisualEstacional(el, fechaRef, imagenUrl){
     if(!el) return;
     const est = ESTACIONES[estacionParaFecha(fechaRef)];
-    // Si la campaña tiene imagen de fondo propia, se pinta debajo del
-    // degradado de la estación (ambos quedan detrás del contenido y
-    // difuminados por .vitrina-visual — ver CSS) — así la campaña "habla
-    // de sí misma" con una foto real, sin perder la animación estacional
-    // por encima.
-    const fondoFinal = imagenUrl ? `url('${imagenUrl}') center/cover no-repeat, ${est.fondo}` : est.fondo;
-    el.style.setProperty('--vitrina-visual-bg', fondoFinal);
+    // El degradado de la estación va en .vitrina-visual (siempre, fondo
+    // completo). La foto de campaña (si hay) va en un div propio
+    // .vitrina-visual-imagen, que el CSS oculta en móvil y que en
+    // escritorio pasa a bloque lateral cuando .vitrina tiene la clase
+    // "tiene-imagen" — así nunca queda detrás del texto compitiendo por
+    // legibilidad. Ambos quedan igualmente difuminados por el filter:blur
+    // de .vitrina-visual.
+    el.style.setProperty('--vitrina-visual-bg', est.fondo);
+    const imgDiv = `<div class="vitrina-visual-imagen"${imagenUrl ? ` style="background-image:url('${imagenUrl}')"` : ''}></div>`;
     const N = est.n || 16;
     const opRango = est.op || [0.4, 0.8];
-    let html = '';
+    let particulas = '';
     for(let i=0;i<N;i++){
       const color = pick(est.colores);
       const tam = est.tam[0] + Math.random()*(est.tam[1]-est.tam[0]);
@@ -1175,9 +1273,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const drift = Math.round(Math.random()*44-22);
       const rot = Math.round(Math.random()*300+60);
       const op = (opRango[0] + Math.random()*(opRango[1]-opRango[0])).toFixed(2);
-      html += `<span class="particula" style="left:${x.toFixed(1)}%; animation-delay:${delay.toFixed(1)}s; --dur:${dur.toFixed(1)}s; --drift:${drift}px; --rot:${rot}deg; --dir:${est.dir}; --op:${op}; --tam:${tam.toFixed(0)}px;">${est.forma(color)}</span>`;
+      particulas += `<span class="particula" style="left:${x.toFixed(1)}%; animation-delay:${delay.toFixed(1)}s; --dur:${dur.toFixed(1)}s; --drift:${drift}px; --rot:${rot}deg; --dir:${est.dir}; --op:${op}; --tam:${tam.toFixed(0)}px;">${est.forma(color)}</span>`;
     }
-    el.innerHTML = html;
+    el.innerHTML = imgDiv + particulas;
   }
 
   /* ---------------- Carga de datos ---------------- */
@@ -1253,7 +1351,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   /* ---------------- Render ---------------- */
   const ORDEN_POR_POSICION_ = { arriba: -100, medio: 0, abajo: 100 };
-  const JUSTIFY_POR_ALINEACION_ = { izquierda: 'start', centro: 'center', derecha: 'end' };
 
   function productCard(ref, {ia=false, destacado=null}={}){
     const p = PRODUCTS[ref];
@@ -1261,12 +1358,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const imgUrl = urlImagenProducto(p, 300);
     const buscadorURL = `./buscador.html?ref=${encodeURIComponent(ref)}`;
     const tam = destacado && destacado.tamano > 1 ? destacado.tamano : 1;
-    const atributoTam = tam > 1 ? ` data-tam="${tam}"` : '';
-    const estiloExtra = tam > 1
-      ? ` style="order:${ORDEN_POR_POSICION_[destacado.posV] ?? 0}; justify-self:${JUSTIFY_POR_ALINEACION_[destacado.alinH] || 'stretch'};"`
-      : '';
+    const atributoTam = tam > 1 ? ` data-tam="${tam}" data-alin="${destacado.alinH || 'centro'}" style="order:${ORDEN_POR_POSICION_[destacado.posV] ?? 0};"` : '';
     return `
-      <article class="card ${ia?'ia-card':''}"${atributoTam}${estiloExtra}>
+      <article class="card ${ia?'ia-card':''}"${atributoTam}>
         ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
         <div class="icon-tile">
           ${iconFor(p)}
@@ -1302,9 +1396,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
         </div>
         <div class="vitrina-visual" id="vitrinaVisual" aria-hidden="true"></div>`;
+      $("#vitrina").classList.remove('tiene-imagen');
       pintarVisualEstacional($("#vitrinaVisual"), HOY);
       $("#shelfSection").hidden = true;
       $("#iaSection").hidden = true;
+      $("#vitrinaCierre").hidden = true;
       return;
     }
 
@@ -1342,10 +1438,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <div class="vitrina-visual" id="vitrinaVisual" aria-hidden="true"></div>
     `;
+    $("#vitrina").classList.toggle('tiene-imagen', !!c.imagenFondo);
     // Estación según el INICIO de la campaña, no el día de hoy — así una
     // campaña de verano programada en julio se ve "de verano" se mire
     // cuando se mire (ver comentario junto a pintarVisualEstacional).
-    pintarVisualEstacional($("#vitrinaVisual"), c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY, urlImagenCampana(c.imagenFondo));
+    const fechaRefEstacion = c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY;
+    pintarVisualEstacional($("#vitrinaVisual"), fechaRefEstacion, urlImagenCampana(c.imagenFondo));
 
     const solapa = solapaConManual(c);
     if(solapa){
@@ -1364,6 +1462,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       : `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
 
     $("#iaSection").hidden = true; // la generación automática de sugerencias IA es una fase futura (ver nota al usuario)
+
+    // Bloque de cierre: mismo efecto estacional que la cabecera (sin foto
+    // de campaña, esa ya se ve arriba), con la frase opcional definida en
+    // el formulario de campaña. Sin frase, se ve igual el bloque, solo
+    // que sin texto encima ("se verá sólo el bloque de cierre").
+    $("#vitrinaCierre").hidden = false;
+    pintarVisualEstacional($("#vitrinaCierreVisual"), fechaRefEstacion);
+    $("#vitrinaCierreFrase").textContent = c.eslogan || '';
+    $("#vitrinaCierreFrase").hidden = !c.eslogan;
   }
 
   function renderRail(){
@@ -1797,6 +1904,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#ncColor").value = "rojo_verde";
     $("#ncInicio").value = "";
     $("#ncFin").value = "";
+    $("#ncEslogan").value = "";
     areasSel = new Set();
     pintarAreas();
     $("#formTitulo").textContent = "+ Nueva campaña manual";
@@ -1814,6 +1922,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#ncColor").value = c.colorSet;
     $("#ncInicio").value = c.fechaInicio;
     $("#ncFin").value = c.fechaFin;
+    $("#ncEslogan").value = c.eslogan || "";
     areasSel = new Set(c.areas || []);
     pintarAreas();
     $("#formTitulo").textContent = `Editando «${c.nombre}»`;
@@ -1929,6 +2038,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         tipo: $("#ncTipo").value,
         colorSet: $("#ncColor").value,
         areas: Array.from(areasSel),
+        eslogan: $("#ncEslogan").value.trim(),
       };
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -1961,9 +2071,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   $$('[data-close-productos]').forEach(b=>b.addEventListener('click', ()=>modalProductos.close()));
   $$('[data-close-campanas]').forEach(b=>b.addEventListener('click', ()=>modalCampanas.close()));
 
+  /* Botón "volver arriba" — mismo umbral (500px) y comportamiento que en
+     Centro de Soluciones (assets/js/centro-soluciones.js). */
+  (function wireBotonVolverArriba(){
+    const btn = $("#btnVolverArriba");
+    if(!btn) return;
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('is-visible', window.scrollY > 500);
+    });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+
   iniciar();
 })();
 </script>
+    <button type="button" id="btnVolverArriba" class="btn-volver-arriba" aria-label="Volver arriba">↑</button>
     <script src="./src/js/app.js?v=20260829"></script>
     <script src="./src/js/analytics-consent.js?v=20260829"></script>
   </body>

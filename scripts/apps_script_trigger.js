@@ -3881,7 +3881,7 @@ function procesarActualizarRelacionados(data) {
 // esta hoja tiene, como mucho, unas pocas decenas de filas, así que
 // se lee directamente en cada doGet — mucho más simple que mantener
 // sincronizada otra caché, y siempre al día sin parcheos.
-const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaCampanas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -3968,6 +3968,7 @@ function leerCampanas_() {
       productos: partirLista(fila[COL['productos']]),
       destacados: leerDestacados(fila[COL['destacados']]),
       imagenFondo: (fila[COL['imagen_fondo']] || '').toString().trim(),
+      eslogan: (fila[COL['eslogan']] || '').toString(),
       fechaCreacion: (fila[COL['fecha_creacion']] || '').toString(),
       fechaActualizacion: (fila[COL['fecha_actualizacion']] || '').toString(),
     });
@@ -4008,6 +4009,7 @@ function procesarGuardarCampana(data) {
     const areas = Array.isArray(data.areas) ? data.areas.join(', ') : '';
     const tipo = data.tipo === 'comercial' ? 'comercial' : 'temporada';
     const colorSet = (data.colorSet || 'rojo_verde').toString();
+    const eslogan = (data.eslogan || '').toString().trim().slice(0, 200);
 
     if (filaIdx === -1) {
       const id = 'manual-' + new Date().getTime();
@@ -4021,6 +4023,7 @@ function procesarGuardarCampana(data) {
       fila[COL['fecha_fin']] = fechaFin;
       fila[COL['areas']] = areas;
       fila[COL['productos']] = '';
+      fila[COL['eslogan']] = eslogan;
       fila[COL['fecha_creacion']] = ahoraISO;
       fila[COL['fecha_actualizacion']] = ahoraISO;
       sheet.getRange(sheet.getLastRow() + 1, 1, 1, CABECERAS_CAMPANAS_.length).setValues([fila]);
@@ -4036,6 +4039,7 @@ function procesarGuardarCampana(data) {
     sheet.getRange(filaNum, COL['fecha_inicio'] + 1).setValue(fechaInicio);
     sheet.getRange(filaNum, COL['fecha_fin'] + 1).setValue(fechaFin);
     sheet.getRange(filaNum, COL['areas'] + 1).setValue(areas);
+    sheet.getRange(filaNum, COL['eslogan'] + 1).setValue(eslogan);
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
     console.log('Campaña actualizada:', idExistente);
 
