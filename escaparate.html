@@ -30,7 +30,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:ital,wght@0,700;0,800;0,900;1,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/css/estilos.css?v=20260829" />
     <!-- Google tag (gtag.js) -->
     <script>
   // Ver nota en el bloque de Google Tag Manager: solo en el dominio
@@ -60,11 +61,11 @@
         --shadow-soft: 0 10px 30px rgba(15,17,21,.08);
         --shadow-strong: 0 20px 50px rgba(15,17,21,.22);
 
-        --accent:#1D67C9;
-        --accent-2:#4C7A22;
-        --accent-vivid:#1D67C9;
-        --accent-vivid-2:#6CAB36;
-        --wash: rgba(29,103,201,0.08);
+        --accent:#005689;
+        --accent-2:#006E37;
+        --accent-vivid:#006DAE;
+        --accent-vivid-2:#008743;
+        --wash: rgba(0,109,174,0.08);
 
         --radius-s: 6px;
         --radius-m: 10px;
@@ -72,28 +73,9 @@
         --maxw: 1180px;
       }
 
-      @media (prefers-color-scheme: dark){
-        :root:not([data-theme="light"]){
-          --paper:#0F1115;
-          --paper-raised:#181B21;
-          --glass:#14161B;
-          --ink:#F1F2F4;
-          --ink-soft:#B7BBC2;
-          --ink-faint:#82858E;
-          --line:#262A32;
-          --line-strong:#383D48;
-        }
-      }
-      :root[data-theme="dark"]{
-        --paper:#0F1115;
-        --paper-raised:#181B21;
-        --glass:#14161B;
-        --ink:#F1F2F4;
-        --ink-soft:#B7BBC2;
-        --ink-faint:#82858E;
-        --line:#262A32;
-        --line-strong:#383D48;
-      }
+      /* Nota: esta página NO ofrece variante oscura a propósito — el
+         fondo debe ser siempre claro, igual que el resto del sitio
+         (solo la cabecera y el pie de página usan fondo oscuro). */
 
       *{box-sizing:border-box;}
       html{-webkit-text-size-adjust:100%;}
@@ -102,9 +84,11 @@
         background:var(--paper);
         color:var(--ink);
         font-family:'Inter', ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing:antialiased;
+      }
+      .wrap{
         padding-inline:20px;
         padding-block:0 64px;
-        -webkit-font-smoothing:antialiased;
       }
       @media (prefers-reduced-motion: reduce){
         *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
@@ -116,35 +100,25 @@
 
       h1,h2,h3{font-family:'Montserrat', ui-sans-serif, system-ui, sans-serif; font-weight:800; margin:0; text-wrap:balance;}
 
-      .mono{font-family:'IBM Plex Mono', ui-monospace, monospace;}
+      .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
       .tabular{font-variant-numeric:tabular-nums;}
 
       .eyebrow{
-        font-family:'IBM Plex Mono', monospace;
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         font-size:11.5px;
         letter-spacing:.14em;
         text-transform:uppercase;
         color:var(--ink-faint);
       }
 
-      /* ---------- Fascia superior ---------- */
-      .fascia{
-        max-width:var(--maxw); margin-inline:auto;
-        display:flex; align-items:center; justify-content:space-between;
-        gap:16px; padding-block:22px 14px;
-        border-bottom:1px solid var(--line);
+      /* ---------- Aviso de prototipo (bajo la cabecera real) ---------- */
+      .proto-banner{
+        max-width:var(--maxw); margin:18px auto 0;
+        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
       }
-      .brand{display:flex; align-items:center; gap:10px; text-decoration:none;}
-      .brand-dot{
-        width:20px; height:20px; border-radius:50%; flex:none;
-        background:conic-gradient(from -45deg, #E52323 0 25%, #F5B400 25% 50%, #1D67C9 50% 75%, #6CAB36 75% 100%);
-        box-shadow:0 0 0 2px var(--paper-raised), 0 0 0 3px var(--line);
-      }
-      .brand .mark{ font-family:'Montserrat', sans-serif; font-weight:900; font-size:20px; letter-spacing:-0.01em; }
-      .brand .sep{color:var(--line-strong); font-weight:400;}
-      .brand .name{font-family:'Montserrat', sans-serif; font-weight:600; font-style:italic; font-size:16px; color:var(--ink-soft);}
       .proto-ribbon{
-        font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:.08em;
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size:10.5px; letter-spacing:.08em;
         text-transform:uppercase; color:var(--accent);
         border:1px solid currentColor; border-radius:99px;
         padding:5px 11px; white-space:nowrap;
@@ -177,7 +151,7 @@
         opacity:.55;
         display:none;
       }
-      @media (min-width:860px){ .vitrina::after{display:block;} }
+      @media (min-width:900px){ .vitrina::after{display:block;} }
 
       .vitrina-top{
         position:relative; z-index:1;
@@ -186,7 +160,7 @@
       }
       .badge{
         display:inline-flex; align-items:center; gap:6px;
-        font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.06em;
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11px; letter-spacing:.06em;
         text-transform:uppercase; padding:5px 10px 5px 8px; border-radius:99px;
         border:1px solid var(--line-strong); color:var(--ink-soft);
       }
@@ -250,7 +224,7 @@
       }
       .tag{
         position:relative;
-        font-family:'IBM Plex Mono', monospace; font-size:12.5px;
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12.5px;
         background:var(--paper-raised); border:1px solid var(--line-strong);
         border-radius:4px 10px 10px 4px;
         padding:9px 14px 9px 22px;
@@ -278,7 +252,7 @@
       .shelf-section{ max-width:var(--maxw); margin:44px auto 0; }
       .shelf-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:18px; }
       .shelf-head h2{ font-size:21px; font-weight:800; }
-      .shelf-head .count{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); }
+      .shelf-head .count{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:var(--ink-faint); }
 
       .shelf{
         display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
@@ -307,9 +281,9 @@
         padding:8px; background:var(--paper-raised);
       }
 
-      .card .fam{ font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+      .card .fam{ font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
       .card .nombre{ font-size:14px; line-height:1.32; font-weight:600; min-height:2.6em; }
-      .card .precio{ font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:16px; }
+      .card .precio{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:500; font-size:16px; }
       .card .precio .iva{ font-size:10px; color:var(--ink-faint); font-weight:400; margin-left:4px;}
 
       .barcode{ height:20px; align-self:flex-start; min-width:74px; opacity:.85; }
@@ -340,13 +314,14 @@
         padding-top:16px; border-top:1px solid var(--line);
       }
       .internal-note svg{ width:15px; height:15px; flex:none; }
+      .internal-note.tight{ margin-top:12px; padding-top:0; border-top:none; }
 
       .tools-dock{
         position:fixed; right:18px; bottom:18px; z-index:40;
         display:flex; flex-direction:column; gap:10px; align-items:flex-end;
       }
       .tools-dock .hint{
-        font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.04em;
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:10px; letter-spacing:.04em;
         color:var(--ink-faint); background:var(--paper-raised); border:1px solid var(--line);
         padding:4px 9px; border-radius:99px;
       }
@@ -405,9 +380,9 @@
         cursor:pointer; display:flex; flex-direction:column; gap:6px; text-align:left;
         background:var(--paper); position:relative;
       }
-      .pick-card .fam{ font-size:9.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; font-family:'IBM Plex Mono',monospace;}
+      .pick-card .fam{ font-size:9.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
       .pick-card .nombre{ font-size:12.5px; font-weight:600; line-height:1.3; min-height:2.5em; }
-      .pick-card .precio{ font-family:'IBM Plex Mono',monospace; font-size:13px; }
+      .pick-card .precio{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
       .pick-card .check{
         position:absolute; top:8px; right:8px; width:19px; height:19px; border-radius:5px;
         border:1.5px solid var(--line-strong); background:var(--paper-raised);
@@ -421,7 +396,7 @@
       .picker-loading{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
 
       .selected-count{ font-size:13px; color:var(--ink-soft); }
-      .selected-count b{ color:var(--accent); font-family:'IBM Plex Mono',monospace; }
+      .selected-count b{ color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
       .btn{
         font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
@@ -440,7 +415,7 @@
       .campaign-row .swatch{ width:8px; height:34px; border-radius:4px; flex:none; }
       .campaign-row .info{ flex:1; min-width:0; cursor:pointer; }
       .campaign-row .info .name{ font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-      .campaign-row .info .dates{ font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; margin-top:2px; }
+      .campaign-row .info .dates{ font-size:12px; color:var(--ink-faint); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-top:2px; }
       .campaign-row .row-actions{ display:flex; gap:6px; flex:none; }
       .icon-btn{
         width:30px; height:30px; border-radius:50%; border:1px solid var(--line-strong);
@@ -451,7 +426,7 @@
       .icon-btn:hover{ border-color:var(--accent); color:var(--accent); }
       .icon-btn.danger:hover{ border-color:#C81E1E; color:#C81E1E; }
       .mini-badge{
-        font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; font-family:'IBM Plex Mono',monospace;
+        font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         padding:2px 7px; border-radius:99px; border:1px solid currentColor;
       }
       .mini-badge.live{ color:#1a7a4c; border-color:#1a7a4c; background:rgba(26,122,76,.09); }
@@ -460,7 +435,7 @@
       .new-campaign h4{ font-family:'Montserrat',sans-serif; font-size:15px; font-weight:800; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;}
       .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
       .grid-2 .span2{ grid-column:1 / -1; }
-      @media (max-width:520px){ .grid-2{ grid-template-columns:1fr; } }
+      @media (max-width:480px){ .grid-2{ grid-template-columns:1fr; } }
       .chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
       .chip{
         font-size:12px; padding:6px 12px; border-radius:99px; border:1px solid var(--line-strong);
@@ -484,7 +459,7 @@
         box-shadow:var(--shadow-strong);
       }
       .toast.show{ opacity:1; transform:translate(-50%,0); }
-      .toast svg{ width:15px; height:15px; color:#F5B400; flex:none; }
+      .toast svg{ width:15px; height:15px; color:#F1B300; flex:none; }
       .toast.error svg{ color:#FF6B6B; }
 
       footer.note{
@@ -498,12 +473,53 @@
     </style>
   </head>
   <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
-<div class="fascia">
-  <a class="brand" href="#" onclick="return false;" aria-label="Escaparate OM">
-    <span class="brand-dot"></span>
-    <span class="mark">OM</span><span class="sep">/</span><span class="name">Escaparate</span>
-  </a>
+<header class="site-header" id="inicio">
+  <div class="navbar" data-navbar>
+    <div class="container navbar__inner">
+      <a class="navbar__logo" href="index.html" aria-label="Ir al inicio">
+        <img class="navbar__logo-image" src="./assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
+      </a>
+      <button class="navbar__toggle" type="button" aria-label="Abrir menú de navegación" aria-controls="main-navigation" aria-expanded="false" data-menu-toggle>
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="navbar__nav" id="main-navigation" aria-label="Navegación principal" data-mobile-menu>
+        <ul class="navbar__menu">
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="empresa.html">Empresa</a></li>
+          <li><a href="historia.html">Historia</a></li>
+          <li class="navbar__item--dropdown">
+            <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
+            <ul class="navbar__submenu">
+              <li><a href="buscador.html">Buscador</a></li>
+              <li class="navbar__item--dropdown">
+                <a href="productos.html">Ver catálogos <span class="navbar__caret">&#9662;</span></a>
+                <ul class="navbar__submenu">
+                  <li><a href="catalogo_drogueria.html">Droguería</a></li>
+                  <li><a href="catalogo_perfumeria.html">Perfumería</a></li>
+                  <li><a href="catalogo_pinturas.html">Pinturas</a></li>
+                  <li><a href="catalogo_talleres.html">Talleres</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="servicios.html">Servicios</a></li>
+          <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+          <li><a href="profesionales.html">Profesionales</a></li>
+          <li><a href="actualidad.html">Actualidad</a></li>
+          <li><a href="index.html#contacto">Contacto</a></li>
+        </ul>
+        <a class="btn-primary navbar__cta" href="index.html#contacto">CONTACTAR</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="proto-banner">
   <div class="proto-ribbon">En construcción · sin enlazar aún</div>
 </div>
 
@@ -547,10 +563,66 @@
     Los dos botones inferiores (añadir productos / gestionar campañas) están controlados por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo deben existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b> (mismo patrón que el precio a mayor).
   </p>
 
-  <footer class="note">
+  <p class="internal-note tight">
     Escaparate OM — página en construcción, todavía sin enlazar desde ningún menú. Los productos se cargan desde <span class="mono">data/productos.json</span> (el mismo catálogo real del buscador) y las campañas se guardan en una hoja nueva del Sheet ("Campañas"), a través de Apps Script.
-  </footer>
+  </p>
 </main>
+
+<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div class="site-footer__brand">
+      <a href="index.html" aria-label="Ir al inicio">
+        <img src="./assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="190" height="64" />
+      </a>
+      <p>Más de 100 años ofreciendo soluciones profesionales en droguería, perfumería, pinturas y suministros para automoción.</p>
+      <div class="site-footer__social" aria-label="Redes sociales">
+        <a href="https://www.instagram.com/orenciomatas/" aria-label="Instagram">◎</a>
+      </div>
+    </div>
+    <nav class="site-footer__column" aria-label="Navegación del footer">
+      <h2>Navegación</h2>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="empresa.html">Empresa</a></li>
+        <li><a href="historia.html">Historia</a></li>
+        <li><a href="productos.html">Productos</a></li>
+        <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+        <li><a href="profesionales.html">Profesionales</a></li>
+        <li><a href="servicios.html">Servicios</a></li>
+        <li><a href="actualidad.html">Actualidad</a></li>
+        <li><a href="index.html#contacto">Contacto</a></li>
+      </ul>
+    </nav>
+    <nav class="site-footer__column" aria-label="Servicios del footer">
+      <h2>Servicios</h2>
+      <ul>
+        <li><a href="productos.html">Droguería profesional</a></li>
+        <li><a href="productos.html">Pinturas carrocería</a></li>
+        <li><a href="productos.html">Perfumería</a></li>
+        <li><a href="productos.html">Suministros taller</a></li>
+        <li><a href="servicios.html">Distribución</a></li>
+      </ul>
+    </nav>
+    <div class="site-footer__column site-footer__contact">
+      <h2>Contacto rápido</h2>
+      <address>
+        <span>Av. Alfred Nobel, 2<br />13005 Ciudad Real</span>
+        <a href="tel:+34926221217">926 221 217</a>
+        <a href="mailto:correo@orenciomatas.es">correo@orenciomatas.es</a>
+      </address>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <div class="container site-footer__bottom-inner">
+      <p>© <span class="current-year">2026</span> Orencio Matas y Hnos, S.L. Todos los derechos reservados.</p>
+      <nav aria-label="Enlaces legales">
+        <a href="politica-privacidad.html">Política de Privacidad</a>
+        <a href="aviso-legal.html">Aviso Legal</a>
+        <a href="politica-cookies.html">Cookies</a>
+      </nav>
+    </div>
+  </div>
+</footer>
 
 <div class="tools-dock" id="toolsDock" hidden>
   <span class="hint">visible sólo en preproducción</span>
@@ -693,17 +765,17 @@
   const fmtEUR = n => precioNum(n).toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2});
   const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
 
-  /* ---------------- Paleta de marca (design/design-system.md) ---------------- */
-  // negro #0F1115 · rojo #E52323 · amarillo #F5B400 · verde #6CAB36 · azul #1D67C9
-  // "accent"/"accent2": versiones algo más oscuras del amarillo/verde para que
-  // el texto sobre fondo claro tenga contraste suficiente. "vivid"/"vivid2":
-  // los hex EXACTOS del logo, para iconos y fondos (ahí el contraste no es problema).
+  /* ---------------- Paleta de marca (src/css/estilos.css, tokens reales) ---------------- */
+  // negro #1a1a1a · rojo #d91b1b · amarillo #f1b300 · verde #008743 · azul #006dae
+  // "accent"/"accent2": versiones algo más oscuras para que el texto sobre
+  // fondo claro tenga contraste suficiente. "vivid"/"vivid2": los tokens
+  // exactos de la web, para iconos y fondos (ahí el contraste no es problema).
   const COLOR_SETS = {
-    ambar_verde: {accent:"#A15E00", accent2:"#4C7A22", vivid:"#F5B400", vivid2:"#6CAB36", wash:"rgba(245,180,0,0.12)"},
-    rojo_verde:  {accent:"#C81E1E", accent2:"#4C7A22", vivid:"#E52323", vivid2:"#6CAB36", wash:"rgba(229,35,35,0.10)"},
-    verde_ambar: {accent:"#4C7A22", accent2:"#A15E00", vivid:"#6CAB36", vivid2:"#F5B400", wash:"rgba(108,171,54,0.10)"},
-    azul_ambar:  {accent:"#1D67C9", accent2:"#A15E00", vivid:"#1D67C9", vivid2:"#F5B400", wash:"rgba(29,103,201,0.10)"},
-    rojo_negro:  {accent:"#C81E1E", accent2:"#0F1115", vivid:"#E52323", vivid2:"#0F1115", wash:"rgba(229,35,35,0.09)"}
+    ambar_verde: {accent:"#8A6400", accent2:"#006E37", vivid:"#F1B300", vivid2:"#008743", wash:"rgba(241,179,0,0.12)"},
+    rojo_verde:  {accent:"#B81717", accent2:"#006E37", vivid:"#D91B1B", vivid2:"#008743", wash:"rgba(217,27,27,0.10)"},
+    verde_ambar: {accent:"#006E37", accent2:"#8A6400", vivid:"#008743", vivid2:"#F1B300", wash:"rgba(0,135,67,0.10)"},
+    azul_ambar:  {accent:"#005689", accent2:"#8A6400", vivid:"#006DAE", vivid2:"#F1B300", wash:"rgba(0,109,174,0.10)"},
+    rojo_negro:  {accent:"#B81717", accent2:"#1A1A1A", vivid:"#D91B1B", vivid2:"#1A1A1A", wash:"rgba(217,27,27,0.09)"}
   };
   function colorSetDe(id){ return COLOR_SETS[id] || COLOR_SETS.rojo_verde; }
 
@@ -1223,5 +1295,8 @@
   iniciar();
 })();
 </script>
+    <script src="./src/js/app.js?v=20260829"></script>
+    <script src="./src/js/analytics-consent.js?v=20260829"></script>
   </body>
 </html>
+
