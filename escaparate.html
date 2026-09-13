@@ -72,6 +72,14 @@
         --radius-l: 16px;
         --maxw: 1180px;
       }
+      /* En monitores grandes, 1180px deja mucho margen sin usar a los
+         lados (queja real de Eloy con capturas de pantalla) — se amplía
+         progresivamente el ancho útil de la página sin tocar los límites
+         de longitud de línea del texto (h1/p.sub siguen topados en "ch",
+         así que el texto no se vuelve ilegible, solo hay más sitio para
+         el panel estacional, el rail y los estantes de producto). */
+      @media (min-width:1440px){ :root{ --maxw:1320px; } }
+      @media (min-width:1800px){ :root{ --maxw:1520px; } }
 
       /* Nota: esta página NO ofrece variante oscura a propósito — el
          fondo debe ser siempre claro, igual que el resto del sitio
@@ -145,6 +153,7 @@
         overflow:hidden;
         transition:background 420ms ease, border-color 420ms ease;
         min-height:220px;
+        display:flex; align-items:stretch; gap:clamp(20px,3vw,36px);
       }
       .vitrina::before{
         content:"";
@@ -152,14 +161,40 @@
         height:1px; background:var(--line);
         opacity:.7;
       }
-      .vitrina::after{
-        content:"";
-        position:absolute; top:0; bottom:0; left:50%;
-        width:1px; background:var(--line);
-        opacity:.55;
-        display:none;
+      .vitrina-content{
+        position:relative; z-index:1;
+        flex:1 1 auto; min-width:0;
       }
-      @media (min-width:900px){ .vitrina::after{display:block;} }
+      /* Panel decorativo del lado derecho de la vitrina — antes era hueco
+         vacío en pantallas grandes (queja real de Eloy con capturas).
+         Solo en escritorio: en móvil no hay sitio y no aporta tanto. Se
+         rellena con partículas animadas según la estación que le toque a
+         la campaña (ver pintarVisualEstacional en el JS) — otoño con
+         hojas, invierno con copos, primavera con pétalos/hojas verdes,
+         verano con burbujas de agua subiendo. */
+      .vitrina-visual{
+        display:none;
+        position:relative; z-index:0;
+        flex:0 0 clamp(220px, 30%, 320px);
+        border-radius:var(--radius-m);
+        overflow:hidden;
+        border:1px solid var(--line);
+        background:var(--vitrina-visual-bg, linear-gradient(180deg, var(--wash), var(--paper)));
+        pointer-events:none;
+      }
+      @media (min-width:900px){ .vitrina-visual{ display:block; } }
+      .vitrina-visual .particula{
+        position:absolute; top:0; left:0;
+        animation:flotarParticula var(--dur,9s) linear infinite;
+        will-change:transform, top, opacity;
+      }
+      .vitrina-visual .particula svg{ display:block; width:var(--tam,16px); height:var(--tam,16px); }
+      @keyframes flotarParticula{
+        0%{ top:calc(50% - (var(--dir,1) * 65%)); transform:translateX(0) rotate(0deg); opacity:0; }
+        12%{ opacity:var(--op,.7); }
+        88%{ opacity:var(--op,.7); }
+        100%{ top:calc(50% + (var(--dir,1) * 65%)); transform:translateX(var(--drift,0px)) rotate(var(--rot,180deg)); opacity:0; }
+      }
 
       .vitrina-top{
         position:relative; z-index:1;
@@ -895,6 +930,72 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       new Date(o.fechaFin+"T23:59:59") >= new Date(camp.fechaInicio+"T00:00:00"));
   }
 
+  /* ---------------- Panel visual estacional (vitrina) ----------------
+     Puramente decorativo, pensado para llenar el hueco vacío del lado
+     derecho de la vitrina en pantallas grandes y dar vida de "escaparate
+     real". La estación se calcula a partir de la FECHA DE INICIO de la
+     campaña (no del día de hoy) — así una campaña de verano programada
+     en julio se ve "de verano" se mire cuando se mire, en vez de
+     depender de qué día es hoy realmente. En el estado vacío (sin
+     campañas todavía) no hay fecha de campaña de la que partir, así que
+     ahí sí se usa HOY. */
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  const ESTACIONES = {
+    invierno: {
+      fondo: 'linear-gradient(160deg, #EAF2FA, #DCEBF7 55%, #CFE3F2)',
+      colores: ['#8FB8DD','#A9C9E6','#6FA3D1'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M2 12h20M6 4l1 3-3 1M18 4l-1 3 3 1M6 20l1-3-3-1M18 20l-1-3 3-1"/></svg>`,
+      dir: 1, tam: [10,18], dur: [7,13],
+    },
+    primavera: {
+      fondo: 'linear-gradient(160deg, #F1FBEF, #E3F6E0 55%, #D3F0D6)',
+      colores: ['#6FBE6B','#8FD98A','#F3B6C7'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="${c}"><path d="M12 2c4 3 6 6 6 10a6 6 0 01-12 0c0-4 2-7 6-10z"/></svg>`,
+      dir: 1, tam: [10,17], dur: [8,14],
+    },
+    verano: {
+      fondo: 'linear-gradient(160deg, #E7F6FB, #D3EEF7 55%, #BFE4F2)',
+      colores: ['#4FB6DA','#7FCBE6','#3A9FC4'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="9.3" cy="8.8" r="1.7" fill="${c}" stroke="none" opacity=".55"/></svg>`,
+      dir: -1, tam: [8,16], dur: [6,11],
+    },
+    otono: {
+      fondo: 'linear-gradient(160deg, #FBF0DF, #F5DFB6 55%, #EAC48D)',
+      colores: ['#C97A34','#B5541F','#D9A441'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="${c}"><path d="M12 2c5 2 8 6 8 11a8 8 0 01-16 0c0-5 3-9 8-11z"/><path d="M12 5v15" stroke="rgba(0,0,0,.22)" stroke-width="1"/></svg>`,
+      dir: 1, tam: [11,19], dur: [6,10],
+    },
+  };
+
+  function estacionParaFecha(fecha){
+    const mes = fecha.getMonth(); // 0=enero … 11=diciembre
+    if(mes===11 || mes===0 || mes===1) return 'invierno';
+    if(mes>=2 && mes<=4) return 'primavera';
+    if(mes>=5 && mes<=7) return 'verano';
+    return 'otono'; // 8,9,10
+  }
+
+  function pintarVisualEstacional(el, fechaRef){
+    if(!el) return;
+    const est = ESTACIONES[estacionParaFecha(fechaRef)];
+    el.style.setProperty('--vitrina-visual-bg', est.fondo);
+    const N = 16;
+    let html = '';
+    for(let i=0;i<N;i++){
+      const color = pick(est.colores);
+      const tam = est.tam[0] + Math.random()*(est.tam[1]-est.tam[0]);
+      const dur = est.dur[0] + Math.random()*(est.dur[1]-est.dur[0]);
+      const delay = -(Math.random()*dur); // negativo: ya "en vuelo" desde el primer pintado, en vez de que las 16 nazcan a la vez arriba
+      const x = 2 + Math.random()*94;
+      const drift = Math.round(Math.random()*44-22);
+      const rot = Math.round(Math.random()*300+60);
+      const op = (0.4 + Math.random()*0.4).toFixed(2);
+      html += `<span class="particula" style="left:${x.toFixed(1)}%; animation-delay:${delay.toFixed(1)}s; --dur:${dur.toFixed(1)}s; --drift:${drift}px; --rot:${rot}deg; --dir:${est.dir}; --op:${op}; --tam:${tam.toFixed(0)}px;">${est.forma(color)}</span>`;
+    }
+    el.innerHTML = html;
+  }
+
   /* ---------------- Carga de datos ---------------- */
   async function cargarProductos(){
     const resp = await fetch(PRODUCTOS_URL, { cache:'no-store' });
@@ -1000,11 +1101,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     if(!CAMPAIGNS.length){
       $("#vitrina").innerHTML = `
-        <div class="vitrina-empty">
-          <span class="badge tipo">SIN CAMPAÑAS TODAVÍA</span>
-          <h1 style="margin-top:14px">Este escaparate está listo, pero vacío</h1>
-          <p>Usa "Gestionar campañas" para crear la primera — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
-        </div>`;
+        <div class="vitrina-content">
+          <div class="vitrina-empty">
+            <span class="badge tipo">SIN CAMPAÑAS TODAVÍA</span>
+            <h1 style="margin-top:14px">Este escaparate está listo, pero vacío</h1>
+            <p>Usa "Gestionar campañas" para crear la primera — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
+          </div>
+        </div>
+        <div class="vitrina-visual" id="vitrinaVisual" aria-hidden="true"></div>`;
+      pintarVisualEstacional($("#vitrinaVisual"), HOY);
       $("#shelfSection").hidden = true;
       $("#iaSection").hidden = true;
       return;
@@ -1022,25 +1127,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     const hoyActiva = activaEn(c, HOY);
     $("#vitrina").innerHTML = `
-      <div class="vitrina-top">
-        <span class="badge ${c.origen}">${c.origen==="manual" ? ICONS.tag : ICONS.sparkle} ${c.origen==="manual" ? "Campaña manual" : "Generada por IA"}</span>
-        <span class="badge tipo">${c.tipo==="temporada" ? "Temporada" : "Comercial"}</span>
-        ${hoyActiva ? `<span class="badge" style="color:#1a7a4c;border-color:#1a7a4c;background:rgba(26,122,76,.09)">● activa hoy</span>` : `<span class="badge">fuera de fecha hoy</span>`}
+      <div class="vitrina-content">
+        <div class="vitrina-top">
+          <span class="badge ${c.origen}">${c.origen==="manual" ? ICONS.tag : ICONS.sparkle} ${c.origen==="manual" ? "Campaña manual" : "Generada por IA"}</span>
+          <span class="badge tipo">${c.tipo==="temporada" ? "Temporada" : "Comercial"}</span>
+          ${hoyActiva ? `<span class="badge" style="color:#1a7a4c;border-color:#1a7a4c;background:rgba(26,122,76,.09)">● activa hoy</span>` : `<span class="badge">fuera de fecha hoy</span>`}
+        </div>
+        <h1>${c.nombre}</h1>
+        <p class="sub">${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}.</p>
+        <div class="vitrina-meta">
+          <span class="item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+            <span>${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}</span>
+          </span>
+          <span class="item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M4 8h16M9 12a3 3 0 006 0"/></svg>
+            <span>${c.productos.length} producto${c.productos.length===1?'':'s'} destacados</span>
+          </span>
+        </div>
+        <div class="overlap-note" id="overlapNote"></div>
       </div>
-      <h1>${c.nombre}</h1>
-      <p class="sub">${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}.</p>
-      <div class="vitrina-meta">
-        <span class="item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
-          <span>${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}</span>
-        </span>
-        <span class="item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M4 8h16M9 12a3 3 0 006 0"/></svg>
-          <span>${c.productos.length} producto${c.productos.length===1?'':'s'} destacados</span>
-        </span>
-      </div>
-      <div class="overlap-note" id="overlapNote"></div>
+      <div class="vitrina-visual" id="vitrinaVisual" aria-hidden="true"></div>
     `;
+    // Estación según el INICIO de la campaña, no el día de hoy — así una
+    // campaña de verano programada en julio se ve "de verano" se mire
+    // cuando se mire (ver comentario junto a pintarVisualEstacional).
+    pintarVisualEstacional($("#vitrinaVisual"), c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY);
 
     const solapa = solapaConManual(c);
     if(solapa){
