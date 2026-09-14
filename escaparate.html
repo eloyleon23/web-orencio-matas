@@ -320,23 +320,25 @@
       .vitrina-error code{ background:var(--glass); padding:1px 5px; border-radius:4px; font-size:12px; }
 
       /* ---------- Perchero de campañas (selector) ---------- */
-      .rail-section{ max-width:var(--maxw); margin:30px auto 0; position:relative; z-index:1; }
+      .rail-section{ max-width:var(--maxw); margin:22px auto 0; position:relative; z-index:1; }
       .rail-label{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:2px; flex-wrap:wrap;}
       .rail{
         display:flex; flex-wrap:wrap; gap:12px;
         padding-top:18px; margin-top:6px;
         border-top:1px dashed var(--line-strong);
       }
-      /* Cada tag lleva el color propio de SU campaña (--tag-color,
-         inyectado inline desde renderRail — colorSetDe(c).vivid), como
-         una franja de color a la izquierda, para poder diferenciar
-         campañas de un vistazo antes incluso de leer el nombre. La
-         activa se rellena por completo con ese color (antes usaba
-         siempre var(--accent) global, igual para todas). Sin rotación:
-         se probó un efecto "washi tape" con cada tag ligeramente
-         girado, pero al no haber ya una única "activa" que se
-         enderezara, el conjunto se veía torcido/colgando (feedback real
-         de Eloy). */
+      /* Cada tag lleva el color propio de SU campaña (--tag-color y
+         --tag-wash, inyectados inline desde renderRail con los mismos
+         cs.accent/cs.wash que usa la propia vitrina de esa campaña —
+         antes usaba cs.vivid con relleno sólido, un estilo distinto al
+         de la vitrina; ahora la campaña activa se ve en el chip con
+         literalmente el mismo tono y el mismo tratamiento de fondo
+         suave que en su vitrina, no un color/estilo aparte), como una
+         franja de color a la izquierda para diferenciar campañas de un
+         vistazo antes incluso de leer el nombre. Sin rotación: se probó
+         un efecto "washi tape" con cada tag ligeramente girado, pero al
+         no haber ya una única "activa" que se enderezara, el conjunto
+         se veía torcido/colgando (feedback real de Eloy). */
       .tag{
         position:relative;
         font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12.5px; font-weight:600;
@@ -350,8 +352,10 @@
       .tag:hover{ transform:translateY(-2px); box-shadow:var(--shadow-soft); }
       .tag:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
       .tag.active{
-        background:var(--tag-color, var(--accent)); border-color:var(--tag-color, var(--accent));
-        color:#fff; box-shadow:var(--shadow-soft);
+        background:var(--tag-wash, var(--wash));
+        border-color:var(--tag-color, var(--accent));
+        color:var(--tag-color, var(--accent));
+        box-shadow:var(--shadow-soft);
       }
       .tag .dot{ font-weight:600; }
 
@@ -721,17 +725,27 @@
          — duplicado aquí porque esta página no carga ese CSS/JS.
          A la IZQUIERDA a propósito: el dock de gestión (Asignar
          productos / Gestionar campañas) ya ocupa la esquina inferior
-         derecha (.tools-dock, right:18px;bottom:18px) — con las dos
-         cosas a la derecha se solapaban entre sí, sobre todo en móvil
-         (motivo real de que "faltara" — estaba tapado/mezclado). */
+         derecha (.tools-dock, right:18px;bottom:18px).
+         Causa real de que "siguiera sin verse" en móvil pese a lo
+         anterior: el banner de cookies del sitio (.cookie-consent-banner
+         en src/js/analytics-consent.js) es position:fixed, ocupa TODO el
+         ancho (left:16px;right:16px;bottom:16px) y usa z-index:9999 —
+         muy por encima del 400 de este botón, así que en cualquier visita
+         donde el banner todavía esté visible (típico en una carga nueva,
+         justo el caso más habitual al probar), lo tapaba por completo,
+         sin importar en qué esquina inferior estuviera. Se sube el
+         z-index por encima de 9999 y, además, se reposiciona más arriba
+         mientras el banner esté visible (ver
+         ajustarPosicionBotonVolverArriba en el JS), para no quedar
+         superpuesto sobre su propio texto/botones. */
       .btn-volver-arriba{
-        position:fixed; left:20px; bottom:20px; z-index:400;
+        position:fixed; left:20px; bottom:20px; z-index:10000;
         width:48px; height:48px; border:none; border-radius:50%;
         background:var(--primary-red, #d91b1b); color:#fff;
         font-size:1.3rem; font-weight:900; cursor:pointer;
         box-shadow:0 10px 26px rgba(217,27,27,.35);
         opacity:0; transform:translateY(12px); pointer-events:none;
-        transition:opacity .25s ease, transform .25s ease, background .2s ease;
+        transition:opacity .25s ease, transform .25s ease, background .2s ease, bottom .2s ease;
       }
       .btn-volver-arriba.is-visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
       .btn-volver-arriba:hover{ background:color-mix(in srgb, var(--primary-red, #d91b1b) 86%, #000); }
@@ -887,18 +901,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="escaparate-lienzo" id="escaparateLienzo">
     <div class="fondo-estacional" id="fondoEstacional" aria-hidden="true"></div>
 
-    <section class="vitrina" id="vitrina">
-      <div class="spinner-line" id="cargando">
-        <span class="spinner-dot"></span> Cargando el escaparate…
-      </div>
-    </section>
-
     <section class="rail-section" id="railSection" hidden>
       <div class="rail-label">
         <span class="eyebrow">Campañas configuradas</span>
         <span class="eyebrow" id="railHint" style="color:var(--ink-faint)"></span>
       </div>
       <div class="rail" id="rail"></div>
+    </section>
+
+    <section class="vitrina" id="vitrina">
+      <div class="spinner-line" id="cargando">
+        <span class="spinner-dot"></span> Cargando el escaparate…
+      </div>
     </section>
 
     <section class="shelf-section" id="shelfSection" hidden>
@@ -979,6 +993,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
   </div>
 </footer>
+
+<!-- IMPORTANTE: tiene que ir ANTES del <script> principal (más abajo).
+     Bug real encontrado: vivía justo después del cierre de ese <script>,
+     así que en el momento en que el script se ejecutaba (síncrono, según
+     el HTML se va parseando) el botón todavía no existía en el DOM —
+     $("#btnVolverArriba") devolvía null y wireBotonVolverArriba() salía
+     en silencio sin enganchar ni el scroll ni el clic. El botón SÍ se
+     veía en el HTML final, pero nunca reaccionaba a nada — coincide
+     exactamente con "sigo sin ver el botón" (nunca llegaba a mostrarse
+     porque su opacidad de partida es 0 hasta que el scroll lo active). -->
+<button type="button" id="btnVolverArriba" class="btn-volver-arriba" aria-label="Volver arriba">↑</button>
 
 <div class="tools-dock" id="toolsDock" hidden>
   <span class="hint">visible sólo en preproducción</span>
@@ -1591,11 +1616,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     bloque.innerHTML = `<img src="${url}" alt="">`;
   }
 
-  // Cada chip del rail lleva el color propio de SU campaña (--tag-color,
-  // ver CSS) para poder diferenciarlas de un vistazo — antes todas
-  // compartían el mismo color genérico y solo se distinguían por texto
-  // (petición real de Eloy: "más vistosidad... que el usuario lo pueda
-  // diferenciar"). Clicar una la marca como activa y la muestra entera.
+  // Cada chip del rail lleva el mismo color/estilo que usa la vitrina de
+  // SU campaña (--tag-color = cs.accent, --tag-wash = cs.wash — ver CSS)
+  // para poder diferenciarlas de un vistazo, y para que la campaña
+  // activa se vea en el chip "igual" que en su propia vitrina (antes
+  // usaba un tono distinto, cs.vivid con relleno sólido). Clicar una la
+  // marca como activa y la muestra entera.
   function renderRail(){
     if(!CAMPAIGNS.length){ $("#rail").innerHTML = ''; $("#railHint").textContent=''; return; }
     const hoy = campanaDeHoy();
@@ -1604,7 +1630,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const isHoy = hoy && c.id===hoy.id;
       const isActive = c.id===activeId;
       const cs = colorSetDe(c);
-      return `<button class="tag ${isActive?'active':''}" data-id="${c.id}" style="--tag-color:${cs.vivid};">
+      return `<button class="tag ${isActive?'active':''}" data-id="${c.id}" style="--tag-color:${cs.accent}; --tag-wash:${cs.wash};">
         ${isHoy ? '<span class="dot">● </span>' : ''}${c.nombre}
       </button>`;
     }).join("");
@@ -2210,13 +2236,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   $("#btnProductos").addEventListener("click", ()=>{ if(activeId) openModalProductos(activeId); });
 
   /* Botón "volver arriba" — mismo umbral (500px) y comportamiento que en
-     Centro de Soluciones (assets/js/centro-soluciones.js). */
+     Centro de Soluciones (assets/js/centro-soluciones.js). Además, se
+     reposiciona por encima del banner de cookies mientras esté visible
+     (ver el comentario junto a .btn-volver-arriba en el CSS — el banner
+     ocupa todo el ancho inferior con z-index 9999, así que sin esto
+     quedaría tapado en cualquier visita nueva). */
   (function wireBotonVolverArriba(){
     const btn = $("#btnVolverArriba");
     if(!btn) return;
+    function ajustarPosicionBotonVolverArriba(){
+      const banner = document.querySelector('.cookie-consent-banner');
+      const bannerVisible = banner && banner.classList.contains('is-visible');
+      btn.style.bottom = bannerVisible ? '180px' : '';
+    }
     window.addEventListener('scroll', () => {
       btn.classList.toggle('is-visible', window.scrollY > 500);
+      ajustarPosicionBotonVolverArriba();
     });
+    ajustarPosicionBotonVolverArriba(); // por si el banner ya está visible antes del primer scroll
     btn.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -2230,7 +2267,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   iniciar();
 })();
 </script>
-    <button type="button" id="btnVolverArriba" class="btn-volver-arriba" aria-label="Volver arriba">↑</button>
     <script src="./src/js/app.js?v=20260829"></script>
     <script src="./src/js/analytics-consent.js?v=20260829"></script>
   </body>
