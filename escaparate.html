@@ -1331,26 +1331,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       dir: -1, tam: [14,22], dur: [6,11], n: 16, op: [0.30,0.55],
     },
     // Dos siluetas mezcladas al azar por partícula: la hoja genérica de
-    // antes (óvalo apuntado + nervio central) y una de arce (3 lóbulos
-    // angulosos con dientes, base a un solo punto) — "si cayeran
-    // también hojas de arce típicas de otoño estaría genial".
-    // El arce pasó por 3 iteraciones visuales reales (renderizado a PNG
-    // con cairosvg y revisado cada vez) antes de esta: lóbulos curvos
-    // suaves se leían como una flor; el primer intento anguloso tenía
-    // una base demasiado fina (bajaba en un triángulo estrecho hasta el
-    // tallo, sin cuerpo real de hoja); ensanchando esa zona de la base
-    // (más "hombro" antes de estrecharse al tallo) es lo que por fin
-    // dejó de parecer una estrella/shuriken y empezó a leerse como una
-    // hoja de verdad. Comprobado también a tamaño pequeño (30-52px, el
-    // rango real) y con rotación aleatoria, mezclada junto a la hoja
-    // genérica, tal y como se ven ambas de verdad.
+    // antes (óvalo apuntado + nervio central) y una de arce — Eloy pidió
+    // literalmente "🍁", así que el diseño de referencia final fue ese
+    // emoji, no una forma inventada: 5 lóbulos REDONDEADOS (no puntas
+    // afiladas — los intentos angulosos anteriores se leían como una
+    // estrella/shuriken, por muy anchos que se hicieran) más un TALLO
+    // curvo visible en la base, que es justo la seña de identidad que
+    // faltaba en todos los intentos previos (solo tenían una línea recta
+    // de nervio, sin nada que se pareciera a un tallo real). viewBox más
+    // alto (110 en vez de 100) para dejarle sitio al tallo sin recortarlo.
+    // Comprobado a tamaño pequeño (hasta ~36px) y con rotación aleatoria,
+    // mezclada junto a la hoja genérica, antes de subir.
     // Más grandes que el resto de estaciones a propósito (nítidas, sin
     // difuminar, necesitan tamaño real para leerse bien).
     otono: {
       fondo: 'linear-gradient(160deg, #FBF0DF, #F5DFB6 55%, #EAC48D)',
       colores: ['#C97A34','#B5541F','#D9A441','#A8632A'],
       forma: (c) => Math.random() < 0.45
-        ? `<svg viewBox="0 0 100 100" fill="${c}"><path d="M50,90 L66,74 L58,60 L85,52 L64,42 L74,22 L59,20 L50,5 L41,20 L26,22 L36,42 L15,52 L42,60 L34,74 Z"/><path d="M50,84 L50,16" stroke="rgba(70,40,10,.4)" stroke-width="2.2" fill="none"/></svg>`
+        ? `<svg viewBox="0 0 100 110" fill="${c}"><path d="M50,8 C58,18 60,26 58,32 C66,26 76,24 85,26 C78,34 74,40 74,46 C82,48 90,54 95,62 C85,62 76,64 70,68 C74,76 76,84 74,92 C66,86 60,82 55,80 C56,88 56,96 54,104 L50,96 L46,104 C44,96 44,88 45,80 C40,82 34,86 26,92 C24,84 26,76 30,68 C24,64 15,62 5,62 C10,54 18,48 26,46 C26,40 22,34 15,26 C24,24 34,26 42,32 C40,26 42,18 50,8 Z"/><path d="M50,80 C50,55 50,35 50,15" stroke="rgba(70,40,10,.4)" stroke-width="2" fill="none"/><path d="M48,104 C40,108 30,106 22,98" stroke="#7A5230" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`
         : `<svg viewBox="0 0 100 100" fill="${c}"><path d="M50,6 C74,18 88,42 82,64 C77,86 64,96 50,99 C36,96 23,86 18,64 C12,42 26,18 50,6 Z"/><path d="M50,14 C50,40 50,70 50,92" stroke="rgba(70,40,10,.45)" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M50,35 L34,28 M50,35 L66,28 M50,55 L30,50 M50,55 L70,50 M50,75 L34,72 M50,75 L66,72" stroke="rgba(70,40,10,.3)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
       dir: 1, tam: [30,52], dur: [7,12], n: 12, op: [0.4,0.7],
     },
