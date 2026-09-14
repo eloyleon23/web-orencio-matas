@@ -816,6 +816,15 @@
         border-radius:6px; background:var(--paper); cursor:pointer;
       }
 
+      .checkbox-label{
+        display:flex; align-items:flex-start; gap:9px;
+        font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer;
+      }
+      .checkbox-label input[type="checkbox"]{
+        width:17px; height:17px; margin-top:1px; accent-color:var(--accent); cursor:pointer; flex:none;
+      }
+      .field-hint{ font-size:12px; color:var(--ink-faint); margin:6px 0 0 26px; }
+
       /* Toast */
       .toast{
         position:fixed; left:50%; bottom:26px; translate:-50% 0;
@@ -1114,6 +1123,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="field">
           <label for="ncFin">Fecha de fin</label>
           <input id="ncFin" type="date">
+        </div>
+        <div class="field span2">
+          <label class="checkbox-label">
+            <input id="ncActiva" type="checkbox" checked>
+            Campaña activa — visible en la página de campañas, independientemente de las fechas
+          </label>
+          <p class="field-hint">Desmárcalo para preparar una campaña con antelación sin que se vea todavía, o para retirarla sin borrarla. Con esto marcado y las fechas en el futuro, sirve como avance de lo que viene.</p>
         </div>
         <div class="field span2">
           <label>Áreas a las que aplica (ninguna marcada = todas)</label>
@@ -1454,7 +1470,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       return;
     }
 
-    activeId = campanaDeHoy() ? campanaDeHoy().id : (CAMPAIGNS[0] ? CAMPAIGNS[0].id : null);
+    // Deep-link desde escaparate-campanas.html (?campana=ID): si viene
+    // con un id de campaña válido, se usa esa en vez de "la de hoy" —
+    // así se puede entrar directo a la campaña que se pinchó en la
+    // página de campañas, no siempre a la que tocaría hoy.
+    const idPorURL = new URLSearchParams(location.search).get('campana');
+    if(idPorURL && findCampaign(idPorURL)){
+      activeId = idPorURL;
+    } else {
+      activeId = campanaDeHoy() ? campanaDeHoy().id : (CAMPAIGNS[0] ? CAMPAIGNS[0].id : null);
+    }
     if(window.MOSTRAR_GESTION_CAMPANAS){
       $("#toolsDock").hidden = false;
     }
@@ -2072,6 +2097,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#ncInicio").value = "";
     $("#ncFin").value = "";
     $("#ncEslogan").value = "";
+    $("#ncActiva").checked = true;
     areasSel = new Set();
     pintarAreas();
     $("#formTitulo").textContent = "+ Nueva campaña manual";
@@ -2093,6 +2119,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#ncInicio").value = c.fechaInicio;
     $("#ncFin").value = c.fechaFin;
     $("#ncEslogan").value = c.eslogan || "";
+    $("#ncActiva").checked = c.activa !== false;
     areasSel = new Set(c.areas || []);
     pintarAreas();
     $("#formTitulo").textContent = `Editando «${c.nombre}»`;
@@ -2212,6 +2239,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         colorPersonalizado2: $("#ncColorP2").value,
         areas: Array.from(areasSel),
         eslogan: $("#ncEslogan").value.trim(),
+        activa: $("#ncActiva").checked,
       };
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
