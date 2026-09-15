@@ -4049,6 +4049,7 @@ function procesarGuardarCampana(data) {
       fila[COL['fecha_actualizacion']] = ahoraISO;
       sheet.getRange(sheet.getLastRow() + 1, 1, 1, CABECERAS_CAMPANAS_.length).setValues([fila]);
       console.log('Campaña creada:', id);
+      dispararWorkflowCampanasJson();
       return ContentService.createTextOutput(JSON.stringify({ success: true, id: id }))
         .setMimeType(ContentService.MimeType.JSON);
     }
@@ -4066,6 +4067,7 @@ function procesarGuardarCampana(data) {
     sheet.getRange(filaNum, COL['activa'] + 1).setValue(activa);
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
     console.log('Campaña actualizada:', idExistente);
+    dispararWorkflowCampanasJson();
 
     return ContentService.createTextOutput(JSON.stringify({ success: true, id: idExistente }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -4138,6 +4140,7 @@ function procesarActualizarProductosCampana(data) {
     sheet.getRange(filaNum, COL['destacados'] + 1).setValue(destacados.length ? JSON.stringify(destacados) : '');
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
     console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos,', destacados.length, 'destacados');
+    dispararWorkflowCampanasJson();
 
     return ContentService.createTextOutput(JSON.stringify({ success: true, productos: productos, destacados: destacados }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -4203,6 +4206,7 @@ function procesarActualizarImagenCampana(data) {
     sheet.getRange(filaNum, COL['imagen_fondo'] + 1).setValue(driveFile.getId());
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
     console.log('Imagen de campaña actualizada:', id, '→', driveFile.getId());
+    dispararWorkflowCampanasJson();
 
     return ContentService.createTextOutput(JSON.stringify({ success: true, imagenFondo: driveFile.getId() }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -4237,6 +4241,7 @@ function procesarEliminarImagenCampana(data) {
     sheet.getRange(filaNum, COL['imagen_fondo'] + 1).setValue('');
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
     console.log('Imagen de campaña eliminada:', id);
+    dispararWorkflowCampanasJson();
 
     return ContentService.createTextOutput(JSON.stringify({ success: true }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -4263,6 +4268,7 @@ function procesarEliminarCampana(data) {
       if ((datos[i][COL['id']] || '').toString().trim() === id) {
         sheet.deleteRow(i + 1);
         console.log('Campaña eliminada:', id);
+        dispararWorkflowCampanasJson();
         return ContentService.createTextOutput(JSON.stringify({ success: true }))
           .setMimeType(ContentService.MimeType.JSON);
       }
@@ -5487,6 +5493,65 @@ function dispararWorkflowProductosJson() {
     props.setProperty(ULTIMO_DISPARO_KEY, Date.now().toString());
   } else {
     console.error('Error al disparar workflow generar_productos_json:', resp.getContentText());
+  }
+}
+
+// ── Disparar regeneración de campanas.json (caché estática de Escaparate OM) ──
+// Mismo motivo y mismo patrón que dispararWorkflowProductosJson(): las
+// páginas públicas (escaparate.html, escaparate-campanas.html) leen
+// data/campanas.json en vez de llamar en vivo a obtener_campanas — mucho
+// más rápido (archivo estático de GitHub Pages, sin la latencia propia
+// de un Web App de Apps Script), a costa de que un cambio tarde unos
+// segundos/minutos en reflejarse en esas páginas hasta que este workflow
+// termine. Se llama tras CUALQUIER cambio real: crear/editar/eliminar
+// una campaña, cambiar sus productos, o su imagen (ver cada
+// procesarXxxCampana más abajo). El propio cron de cada 15 min del
+// workflow ya cubre cualquier disparo que fallara por lo que sea, así
+// que aquí también se puede fallar en silencio (solo log) sin cortar la
+// acción principal del usuario — igual que con productos.
+function dispararWorkflowCampanasJson() {
+  const props = PropertiesService.getScriptProperties();
+  const ULTIMO_DISPARO_KEY = 'ultimoDisparoWorkflowCampanasJson';
+  const MINUTOS_MINIMOS_ENTRE_DISPAROS = 1;
+
+  const ultimoDisparoStr = props.getProperty(ULTIMO_DISPARO_KEY);
+  if (ultimoDisparoStr) {
+    const minutosDesdeUltimo = (Date.now() - parseInt(ultimoDisparoStr, 10)) / 60000;
+    if (minutosDesdeUltimo < MINUTOS_MINIMOS_ENTRE_DISPAROS) {
+      console.log(`Workflow generar_campanas_json omitido: ya se disparó hace ${minutosDesdeUltimo.toFixed(1)} min (límite: ${MINUTOS_MINIMOS_ENTRE_DISPAROS} min). El cron de cada 15 min ya cubre este hueco.`);
+      return;
+    }
+  }
+
+  try {
+    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`;
+    const payload = JSON.stringify({
+      event_type: 'generar_campanas_json',
+      client_payload: { triggered_by: 'campana_modificada', timestamp: new Date().toISOString() }
+    });
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      },
+      payload: payload,
+      muteHttpExceptions: true
+    };
+    const resp = UrlFetchApp.fetch(url, options);
+    if (resp.getResponseCode() === 204) {
+      console.log('Workflow generar_campanas_json disparado correctamente');
+      props.setProperty(ULTIMO_DISPARO_KEY, Date.now().toString());
+    } else {
+      console.error('Error al disparar workflow generar_campanas_json:', resp.getContentText());
+    }
+  } catch (err) {
+    // Nunca debe cortar la acción principal del usuario (guardar/borrar/
+    // etc. ya se ha completado en el Sheet en este punto) — el cron de
+    // seguridad cubre cualquier fallo aquí.
+    console.error('Excepción al disparar workflow generar_campanas_json:', err);
   }
 }
 

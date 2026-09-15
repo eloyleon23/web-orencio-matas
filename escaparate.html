@@ -1373,6 +1373,39 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   async function cargarCampanas(){
+    // RUTA RÁPIDA: data/campanas.json es un archivo ESTÁTICO (GitHub
+    // Pages, caché de CDN), generado por scripts/generar_campanas_json.py
+    // y regenerado automáticamente tras cualquier cambio real (ver
+    // dispararWorkflowCampanasJson() en Apps Script) además de un cron de
+    // seguridad cada 15 min. Mucho más rápido que llamar en vivo a
+    // obtener_campanas en el Web App de Apps Script — esa latencia en
+    // CADA carga era la causa real de "la carga... es muy lenta" al
+    // entrar en un escaparate, reportada por Eloy. Timeout corto (3s):
+    // si tarda más, algo raro pasa y conviene pasar ya al respaldo.
+    try{
+      const controllerEstatico = new AbortController();
+      const timeoutEstatico = setTimeout(() => controllerEstatico.abort(), 3000);
+      try{
+        const respEstatico = await fetch('./data/campanas.json?_ts=' + Date.now(), { cache:'no-store', signal: controllerEstatico.signal });
+        if(respEstatico.ok){
+          const datosEstatico = await respEstatico.json();
+          if(Array.isArray(datosEstatico.campanas)){
+            CAMPAIGNS = datosEstatico.campanas;
+            return; // listo — ni siquiera hace falta tocar Apps Script
+          }
+        }
+      } finally {
+        clearTimeout(timeoutEstatico);
+      }
+    } catch(err){
+      // Archivo inexistente, JSON corrupto a mitad de una regeneración,
+      // red… cualquier fallo aquí cae silenciosamente al respaldo de
+      // abajo, sin interrumpir la carga real de la página.
+    }
+
+    // RESPALDO: llamada en vivo a Apps Script — más lenta, pero SIEMPRE
+    // funciona, incluso antes del primer despliegue del workflow nuevo o
+    // si este alguna vez fallara.
     // El parámetro "_ts" no lo usa el servidor para nada — es solo para
     // que cada llamada tenga una URL distinta. Los Web Apps de Apps
     // Script desplegados para acceso público pueden quedar cacheados en
@@ -1384,8 +1417,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // colgado sin resolver nunca (no solo si falla rápido), Promise.
     // allSettled esperaría indefinidamente a que esta promesa se asiente
     // — nunca se marcaría como rejected, así que la carga nunca
-    // terminaría (mismo tipo de cuelgue silencioso detectado y corregido
-    // en escaparate-campanas.html, aplicado aquí también por si acaso).
+    // terminaría.
     const url = window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now();
     const controller = new AbortController();
     const avisoTimeout = setTimeout(() => controller.abort(), 12000);

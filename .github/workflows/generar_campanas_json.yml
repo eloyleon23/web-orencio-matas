@@ -1,0 +1,73 @@
+name: Generar campanas.json
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [generar_campanas_json]
+  schedule:
+    # Cron de seguridad — las campañas cambian con mucha menos frecuencia
+    # que los productos, así que cada 15 min basta de sobra como red por
+    # si algún disparo puntual desde Apps Script fallara por lo que sea.
+    - cron: '*/15 * * * *'
+
+# Mismo motivo que en generar_productos_json.yml: evita que dos
+# ejecuciones solapadas (un disparo manual justo cuando salta el cron)
+# intenten hacer push a la vez.
+concurrency:
+  group: generar-campanas-json
+  cancel-in-progress: false
+
+jobs:
+  generar_json:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Generar campanas.json
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+        run: |
+          python scripts/generar_campanas_json.py
+
+      - name: Commit and push cambios
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Mismo reintento robusto que generar_productos_json.yml: en
+          # cada intento se vuelve a comitear el archivo YA REGENERADO en
+          # este run sobre la base más reciente de main, en vez de un
+          # simple "pull --rebase" que podría entrar en conflicto real.
+          for intento in 1 2 3; do
+            git add data/campanas.json
+            if git diff --staged --quiet; then
+              echo "Nada que subir (contenido ya al día)."
+              exit 0
+            fi
+            git commit -m "Auto: actualizar campanas.json desde Google Sheets"
+            if git push; then
+              echo "Push correcto (intento $intento)."
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento/3) — el remoto se movió mientras tanto."
+
+            cp data/campanas.json /tmp/campanas.json.regenerado
+            git reset --hard HEAD~1
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/campanas.json.regenerado data/campanas.json
+          done
+          echo "No se pudo hacer push tras 3 intentos." >&2
+          exit 1
