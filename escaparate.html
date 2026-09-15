@@ -66,6 +66,12 @@
         --accent-vivid:#006DAE;
         --accent-vivid-2:#008743;
         --wash: rgba(0,109,174,0.08);
+        /* Fijo, NUNCA sobrescrita por JS (a diferencia de --accent/
+           --accent-2, que sí cambian con el color de cada campaña) —
+           todo lo "de IA" del sitio usa este mismo verde siempre, para
+           que nunca dependa de qué color haya elegido una campaña en
+           concreto (ver .btn.ia para el porqué). */
+        --ia-color: #0E7A55;
 
         --radius-s: 6px;
         --radius-m: 10px;
@@ -265,7 +271,7 @@
       }
       .badge svg{width:13px; height:13px;}
       .badge.manual{ color:var(--accent); border-color:var(--accent); background:var(--wash); }
-      .badge.ia{ color:var(--accent-2); border-color:var(--accent-2); }
+      .badge.ia{ color:var(--ia-color); border-color:var(--ia-color); }
       .badge.tipo{ color:var(--ink-faint); }
 
       .escaparate-titulo{ max-width:var(--maxw); margin:22px auto 0; padding:0 2px; }
@@ -608,9 +614,20 @@
         display:flex; align-items:center; gap:12px; flex-wrap:wrap;
         margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--line-strong);
       }
+      /* Color FIJO para todo lo "de IA" (no var(--accent-2)) — ese
+         acento cambia con el color de cada campaña, y en una campaña con
+         colorSet "personalizado" el usuario puede elegir un secundario
+         muy claro (p.ej. amarillo pálido): con texto/borde en ese mismo
+         color sobre fondo blanco, el botón "Sugerir productos con IA"
+         quedaba casi ilegible (reportado real: "no se ve por el estilo
+         que tiene" — comprobado y confirmado con Playwright antes de
+         corregirlo). La identidad de "esto es IA" no tiene por qué
+         depender del color de la campaña en curso, así que se fija un
+         verde con contraste garantizado sobre blanco, igual siempre
+         (--ia-color, definida en :root). */
       .btn.ia{
         display:inline-flex; align-items:center; gap:7px;
-        background:var(--paper-raised); border:1px solid var(--accent-2); color:var(--accent-2);
+        background:var(--paper-raised); border:1px solid var(--ia-color); color:var(--ia-color);
       }
       .btn.ia svg{ width:15px; height:15px; }
       .btn.ia:disabled{ opacity:.55; cursor:not-allowed; }
