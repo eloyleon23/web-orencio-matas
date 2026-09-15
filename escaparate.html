@@ -506,7 +506,26 @@
       .dock-btn.secondary{ background:var(--paper-raised); color:var(--ink); border:1px solid var(--line-strong); }
 
       /* ---------- Modales ---------- */
+      /* display:flex + overflow:hidden en el propio <dialog>, con
+         .modal-head/.modal-foot con flex:none (tamaño fijo, nunca
+         encogen) y .modal-body como único elemento con flex:1+overflow-y
+         — así la cabecera y el pie quedan SIEMPRE fijos y solo el cuerpo
+         hace scroll, sea cual sea su altura real. Antes .modal-body
+         calculaba su max-height restando un margen fijo de 150px
+         (calc(86dvh - 150px)) asumiendo esa altura para cabecera+pie —
+         cuando el título ocupaba dos líneas en móvil (pantalla
+         estrecha) esa cuenta se quedaba corta, el conjunto se salía del
+         dialog, y el propio <dialog> (que por defecto también puede
+         hacer scroll) terminaba desplazando TODO junto, cabecera
+         incluida, dejando el botón de guardar inalcanzable (reportado
+         por Eloy: "se oculta la cabecera con el botón de cerrar" al
+         desplazar, y "se oculta el guardar" en el mismo modal y también
+         en el de gestionar productos). El min-height:0 en .modal-body es
+         imprescindible para que un hijo flex pueda encogerse por debajo
+         de su contenido y active su propio scroll — sin él, Safari/iOS
+         en particular ignora el overflow-y y vuelve a fallar igual. */
       dialog{
+        display:flex; flex-direction:column; overflow:hidden;
         border:none; border-radius:var(--radius-l); padding:0;
         width:min(680px, 92vw); max-height:86vh; max-height:86dvh;
         background:var(--paper-raised); color:var(--ink);
@@ -514,6 +533,7 @@
       }
       dialog::backdrop{ background:rgba(15,17,21,.45); backdrop-filter:blur(2px); }
       .modal-head{
+        flex:none;
         display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
         padding:22px 24px 16px; border-bottom:1px solid var(--line);
       }
@@ -525,18 +545,12 @@
         cursor:pointer; color:var(--ink-soft); flex:none;
       }
       .modal-close svg{ width:14px; height:14px; }
-      /* max-height en dvh (no solo vh): en Safari/iOS "vh" se calcula
-         sobre el visor más grande posible, sin descontar la barra de
-         Chrome/Safari cuando está visible — eso empujaba el pie del
-         modal (Guardar/Cancelar) fuera de la pantalla visible en móvil
-         (reportado por Eloy: "complejo acceder a los botones de arriba
-         y abajo"). "dvh" sí se ajusta en tiempo real; se deja "vh" antes
-         como fallback para navegadores que no soporten "dvh" todavía. */
       .modal-body{
-        padding:18px 24px; overflow-y:auto;
-        max-height:calc(86vh - 150px); max-height:calc(86dvh - 150px);
+        flex:1 1 auto; min-height:0; overflow-y:auto;
+        padding:18px 24px;
       }
       .modal-foot{
+        flex:none;
         display:flex; align-items:center; justify-content:space-between; gap:12px;
         padding:14px 24px 20px; border-top:1px solid var(--line);
       }
@@ -803,7 +817,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="escaparate-titulo escaparate-titulo-con-volver">
     <a class="volver-campanas" href="./escaparate-campanas.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg>
-      Volver a campañas
+      Volver al listado de escaparates
     </a>
     <h1>Acércate a nuestro escaparate</h1>
   </div>

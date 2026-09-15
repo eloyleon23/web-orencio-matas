@@ -207,8 +207,23 @@
       .btn-gestionar{ display:inline-flex; align-items:center; gap:7px; flex:none; }
       .btn-gestionar svg{ width:15px; height:15px; }
 
-      /* ---------- Modales (dialog) — idéntico a escaparate.html ---------- */
+      /* ---------- Modales (dialog) ----------
+         display:flex + overflow:hidden en el propio <dialog>, con
+         .modal-head/.modal-foot con flex:none y .modal-body como único
+         elemento con flex:1+overflow-y — cabecera y pie quedan SIEMPRE
+         fijos y solo el cuerpo hace scroll. Antes .modal-body calculaba
+         su max-height restando un margen fijo (150px) asumido para
+         cabecera+pie — en móvil, con el título en dos líneas, esa cuenta
+         se quedaba corta y el propio <dialog> terminaba desplazando TODO
+         junto, cabecera incluida, dejando el botón de guardar
+         inalcanzable (reportado real: "se oculta la cabecera con el
+         botón de cerrar" al desplazar, y "se oculta el guardar"). El
+         min-height:0 en .modal-body es imprescindible para que un hijo
+         flex pueda encogerse por debajo de su contenido y active su
+         propio scroll — sin él, Safari/iOS en particular ignora el
+         overflow-y y vuelve a fallar igual. */
       dialog{
+        display:flex; flex-direction:column; overflow:hidden;
         border:none; border-radius:var(--radius-l); padding:0;
         width:min(680px, 92vw); max-height:86vh; max-height:86dvh;
         background:var(--paper-raised); color:var(--ink);
@@ -216,6 +231,7 @@
       }
       dialog::backdrop{ background:rgba(15,17,21,.45); backdrop-filter:blur(2px); }
       .modal-head{
+        flex:none;
         display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
         padding:22px 24px 16px; border-bottom:1px solid var(--line);
       }
@@ -227,13 +243,12 @@
         cursor:pointer; color:var(--ink-soft); flex:none;
       }
       .modal-close svg{ width:14px; height:14px; }
-      /* dvh además de vh: ver nota igual en escaparate.html sobre la
-         barra de Safari/iOS empujando los botones fuera de la pantalla. */
       .modal-body{
-        padding:18px 24px; overflow-y:auto;
-        max-height:calc(86vh - 150px); max-height:calc(86dvh - 150px);
+        flex:1 1 auto; min-height:0; overflow-y:auto;
+        padding:18px 24px;
       }
       .modal-foot{
+        flex:none;
         display:flex; align-items:center; justify-content:space-between; gap:12px;
         padding:14px 24px 20px; border-top:1px solid var(--line);
       }
