@@ -92,6 +92,19 @@
          (solo la cabecera y el pie de página usan fondo oscuro). */
 
       *{box-sizing:border-box;}
+      /* Cualquier selector de autor que fije display en un elemento
+         (p.ej. .spinner-line{display:flex}, o .dock-btn{display:...})
+         gana siempre al atributo [hidden] nativo del navegador, que es
+         solo otra regla de usuario-agente — así que el.hidden=true en JS
+         puede dejar de tener efecto visual en cuanto ese elemento ya
+         tenga un display propio puesto por CSS de autor en cualquier
+         otro sitio (mismo bug de fondo detectado y corregido en
+         escaparate-campanas.html: "Cargando…" no se ocultaba nunca pese
+         a hidden=true). Regla añadida aquí también de forma preventiva,
+         por si algún elemento de esta página cae en el mismo caso.
+         Ver también el comentario junto a "dialog[open]" más abajo —
+         mismo tipo de problema, con el atributo open en vez de hidden. */
+      [hidden]{ display:none !important; }
       html{-webkit-text-size-adjust:100%; max-width:100%;}
       /* overflow-x:hidden (no "clip") como red de seguridad: los "tags"
          rotados del rail de campañas (ver .tag más abajo, usan
@@ -385,10 +398,18 @@
          — se guarda el valor por si se retoma más adelante con un
          enfoque distinto, pero todos los destacados usan hoy la misma
          colocación automática + dense, sea cual sea su alinH. */
+      /* Color FIJO (no var(--accent-2)) — mismo bug que ya se corrigió en
+         .btn.ia/.badge.ia: --accent-2 cambia con el color de cada
+         campaña, y con una campaña de colorSet "personalizado" con
+         secundario claro, el texto blanco sobre ese mismo fondo quedaba
+         casi invisible (reportado real: "se ha quedado con letra en
+         blanco con fondo en blanco... tiene que tener el mismo estilo
+         que en todos los escaparates" — exactamente lo que pide un color
+         fijo en vez de uno que varía por campaña). */
       .card-destacado-badge{
         position:absolute; top:10px; right:10px; z-index:2;
         display:inline-flex; align-items:center; gap:4px;
-        background:var(--accent-2); color:#fff; font-size:10px; font-weight:700;
+        background:#A66A00; color:#fff; font-size:10px; font-weight:700;
         text-transform:uppercase; letter-spacing:.04em; padding:4px 9px; border-radius:99px;
       }
       .card-destacado-badge svg{ width:10px; height:10px; }
@@ -529,13 +550,34 @@
          en el de gestionar productos). El min-height:0 en .modal-body es
          imprescindible para que un hijo flex pueda encogerse por debajo
          de su contenido y active su propio scroll — sin él, Safari/iOS
-         en particular ignora el overflow-y y vuelve a fallar igual. */
+         en particular ignora el overflow-y y vuelve a fallar igual.
+         IMPORTANTE — bug real introducido por ese mismo arreglo: display:
+         flex se aplicaba en el selector "dialog" a secas, sin condición
+         de [open]. El navegador oculta un <dialog> cerrado con su propia
+         regla "dialog:not([open]){display:none}", pero esa regla vive en
+         la hoja de estilos del USUARIO-AGENTE, y CUALQUIER regla de
+         autor (la mía) sin más, sin importar su especificidad, gana
+         siempre a una regla de usuario-agente — así que "dialog{display:
+         flex}" ganaba SIEMPRE, con el modal abierto o cerrado, y
+         cerrarlo (quitar el atributo open) dejaba de tener ningún efecto
+         visual: el modal se quedaba ahí, ya sin backdrop ni
+         centrado (eso sí depende de [open] nativamente), flotando
+         "detrás" del contenido de la página (reportado real: "se queda
+         detrás del contenido", "se sigue quedando abierta siempre").
+         Arreglado escopando display/overflow a "dialog[open]" — así, sin
+         el atributo open, ninguna regla de autor toca display y manda de
+         nuevo la regla nativa del navegador. Confirmado con Playwright
+         antes y después: display computado pasaba de "none" (nativo,
+         correcto) a "flex" (con el bug) incluso ya cerrado; con el
+         arreglo vuelve a "none" tras cerrar. */
       dialog{
-        display:flex; flex-direction:column; overflow:hidden;
         border:none; border-radius:var(--radius-l); padding:0;
         width:min(680px, 92vw); max-height:86vh; max-height:86dvh;
         background:var(--paper-raised); color:var(--ink);
         box-shadow:var(--shadow-strong);
+      }
+      dialog[open]{
+        display:flex; flex-direction:column; overflow:hidden;
       }
       dialog::backdrop{ background:rgba(15,17,21,.45); backdrop-filter:blur(2px); }
       .modal-head{
@@ -611,8 +653,11 @@
       .picker-section-label b{ color:var(--ink); }
 
       .ia-suggest-row{
-        display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+        display:flex; flex-direction:column; gap:10px;
         margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--line-strong);
+      }
+      .ia-suggest-controls{
+        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
       }
       /* Color FIJO para todo lo "de IA" (no var(--accent-2)) — ese
          acento cambia con el color de cada campaña, y en una campaña con
@@ -626,12 +671,23 @@
          verde con contraste garantizado sobre blanco, igual siempre
          (--ia-color, definida en :root). */
       .btn.ia{
-        display:inline-flex; align-items:center; gap:7px;
+        display:inline-flex; align-items:center; gap:7px; flex:none;
         background:var(--paper-raised); border:1px solid var(--ia-color); color:var(--ia-color);
       }
       .btn.ia svg{ width:15px; height:15px; }
       .btn.ia:disabled{ opacity:.55; cursor:not-allowed; }
-      .ia-suggest-hint{ font-size:12px; color:var(--ink-faint); flex:1; min-width:180px; }
+      /* Campo opcional para afinar la sugerencia con un criterio propio,
+         además de lo que ya se manda siempre (nombre, fechas, áreas) —
+         petición explícita: "el botón de la IA debería aceptar... algún
+         criterio de búsqueda". */
+      .ia-suggest-criterio{
+        flex:1 1 220px; min-width:200px;
+        font-family:inherit; font-size:13px; padding:9px 13px;
+        border:1px solid var(--line-strong); border-radius:99px;
+        background:var(--paper); color:var(--ink);
+      }
+      .ia-suggest-criterio:focus{ outline:2px solid var(--ia-color); outline-offset:1px; }
+      .ia-suggest-hint{ font-size:12px; color:var(--ink-faint); }
       .ia-suggest-hint.error{ color:#C81E1E; }
 
       /* ---------- Productos ya asignados a la campaña (editar/quitar) ----------
@@ -714,7 +770,12 @@
         font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
         border-radius:99px; padding:10px 18px; border:1px solid transparent;
       }
-      .btn.primary{ background:var(--accent); color:#fff; }
+      /* background FIJO (no var(--accent)) — mismo riesgo que ya se
+         corrigió en .btn.ia/.badge.ia/.card-destacado-badge: --accent
+         cambia con el color de cada campaña, y con un primario
+         personalizado claro este botón (usa para "Guardar productos",
+         entre otros) podía volverse igual de ilegible. */
+      .btn.primary{ background:var(--primary-red, #d91b1b); color:#fff; }
       .btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
       .btn.ghost{ background:none; border-color:var(--line-strong); color:var(--ink-soft); }
       .btn.danger-ghost{ background:none; border:1px solid #C81E1E; color:#C81E1E; }
@@ -957,10 +1018,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
   <div class="modal-body">
     <div class="ia-suggest-row">
-      <button class="btn ia" id="btnSugerirIA" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
-        Sugerir productos con IA
-      </button>
+      <div class="ia-suggest-controls">
+        <button class="btn ia" id="btnSugerirIA" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
+          Sugerir productos con IA
+        </button>
+        <input type="text" id="iaCriterioAdicional" class="ia-suggest-criterio" maxlength="200" placeholder="Criterio adicional opcional (p. ej. &quot;más orientado a exteriores&quot;)">
+      </div>
       <span class="ia-suggest-hint" id="iaSuggestHint">Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.</span>
     </div>
     <div class="selected-section">
@@ -1237,22 +1301,75 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   /* ---------------- Carga de datos ---------------- */
   async function cargarProductos(){
+    // ANTES: cada carga de esta página descargaba el catálogo COMPLETO
+    // (3,1 MB, ~6.363 productos) sin ningún tipo de caché — "_ts" +
+    // cache:'no-store' garantizaban datos frescos a propósito (ver más
+    // abajo por qué), pero al precio de repetir esa descarga entera en
+    // CADA visita, aunque no hubiera cambiado ni un solo producto desde
+    // la visita anterior. Con una conexión lenta esto es lento de
+    // verdad, y era la causa real de "la carga... es muy lenta"
+    // reportada por Eloy.
+    //
+    // AHORA: se comprueba primero productos_version.json (unos 80
+    // bytes, prácticamente instantáneo) — si su "version" coincide con
+    // la que se guardó la última vez en sessionStorage junto con el
+    // catálogo completo, se reutiliza ese catálogo ya guardado SIN
+    // volver a descargar los 3,1 MB. sessionStorage persiste entre
+    // navegaciones de página completa dentro de la misma pestaña (p.ej.
+    // entrar en un escaparate, volver al listado, entrar en otro), así
+    // que en una misma sesión de navegación el coste de los 3,1 MB se
+    // paga como mucho una vez, no en cada escaparate que se visite.
+    // Si productos_version.json no responde o falla por lo que sea, se
+    // seguía descargando el catálogo completo igualmente (mismo
+    // comportamiento de antes, sin caché, como red de seguridad).
+    const CACHE_KEY = 'om_escaparate_productos_cache_v1';
+    const CACHE_VERSION_KEY = 'om_escaparate_productos_version_v1';
+    try{
+      const versionResp = await fetch('./data/productos_version.json?_ts=' + Date.now(), { cache:'no-store' });
+      if(versionResp.ok){
+        const versionDatos = await versionResp.json();
+        const versionActual = versionDatos.version;
+        const versionCacheada = sessionStorage.getItem(CACHE_VERSION_KEY);
+        const textoCacheado = versionActual && sessionStorage.getItem(CACHE_KEY);
+        if(versionActual && versionActual === versionCacheada && textoCacheado){
+          const datos = JSON.parse(textoCacheado);
+          PRODUCTS_LIST = datos.productos || [];
+          PRODUCTS = {};
+          PRODUCTS_LIST.forEach(p => { PRODUCTS[p.ref] = p; });
+          return; // reutilizado sin descargar el catálogo completo de nuevo
+        }
+      }
+    } catch(err){
+      // Cualquier fallo aquí (red, JSON inválido, sessionStorage
+      // deshabilitado…) simplemente se ignora y se sigue con la carga
+      // completa de siempre, sin caché — nunca debe bloquear la carga
+      // real de productos por un problema en esta comprobación previa.
+    }
+
     // "_ts" en la URL: igual que en cargarCampanas(), para que cada
     // carga sea una URL distinta y no pueda servirse cacheada (ni por el
     // navegador —cache:'no-store' ya cubre eso— ni por el CDN de GitHub
     // Pages, que sí puede servir una versión desactualizada del archivo
     // estático). Detectado con datos reales: productos ya añadidos a una
     // campaña seguían mostrando su foto antigua en el escaparate después
-    // de actualizarla desde el buscador, pese a que el propio buscador
-    // ya mostraba la nueva — el buscador tiene su propio mecanismo de
-    // hash/versión para esto (ver productos_version.json), el escaparate
-    // no lo tenía todavía.
+    // de actualizarla desde el buscador. Con el mecanismo de versión de
+    // arriba esto se sigue cumpliendo igual (solo se reutiliza cuando la
+    // versión coincide de verdad), simplemente evitando la descarga
+    // completa cuando no hace falta.
     const resp = await fetch(PRODUCTOS_URL + '?_ts=' + Date.now(), { cache:'no-store' });
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
     const datos = await resp.json();
     PRODUCTS_LIST = datos.productos || [];
     PRODUCTS = {};
     PRODUCTS_LIST.forEach(p => { PRODUCTS[p.ref] = p; });
+    try{
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(datos));
+      if(datos.generado) sessionStorage.setItem(CACHE_VERSION_KEY, datos.generado);
+    } catch(err){
+      // sessionStorage lleno o no disponible (modo incógnito estricto,
+      // etc.) — no pasa nada, simplemente no se podrá reutilizar en la
+      // siguiente navegación y se volverá a descargar, como antes.
+    }
   }
 
   async function cargarCampanas(){
@@ -1690,6 +1807,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     fillFamiliaSelect();
     $("#fBusca").value = "";
     $("#fFamilia").value = "";
+    $("#iaCriterioAdicional").value = "";
     $("#iaSuggestHint").classList.remove('error');
     $("#iaSuggestHint").textContent = HINT_IA_DEFECTO;
     renderPicker();
@@ -1738,6 +1856,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(!c) return;
     const btn = $("#btnSugerirIA");
     const hint = $("#iaSuggestHint");
+    const criterioAdicional = $("#iaCriterioAdicional").value.trim();
     const original = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `${ICONS.sparkle} Pensando ideas…`;
@@ -1750,6 +1869,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         body: JSON.stringify({
           accion: 'sugerir_categorias_campana_ia',
           nombre: c.nombre, tipo: c.tipo, fechaInicio: c.fechaInicio, fechaFin: c.fechaFin, areas: c.areas,
+          criterioAdicional,
         }),
       });
       const data = await resp.json();
@@ -1779,7 +1899,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       $("#fFamilia").value = '';
       renderPicker();
       hint.classList.remove('error');
-      hint.textContent = `${encontrados.size} producto${encontrados.size===1?'':'s'} sugeridos a partir de ${terminos.length} categorías de IA (${resumenTerminos}). Quita los que no encajen o sigue buscando para añadir más.`;
+      hint.textContent = `${encontrados.size} producto${encontrados.size===1?'':'s'} sugeridos a partir de ${terminos.length} categorías de IA (${resumenTerminos})${criterioAdicional ? `, con el criterio "${criterioAdicional}"` : ''}. Quita los que no encajen o sigue buscando para añadir más.`;
     } catch(err){
       hint.classList.add('error');
       hint.textContent = 'No se pudo sugerir con IA: ' + err.message;

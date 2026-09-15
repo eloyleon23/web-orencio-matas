@@ -5259,6 +5259,15 @@ function procesarSugerirCategoriasCampanaIA(data) {
     const fechaInicio = (data.fechaInicio || '').toString().trim();
     const fechaFin = (data.fechaFin || '').toString().trim();
     const areas = Array.isArray(data.areas) ? data.areas.filter(Boolean) : [];
+    // Opcional: además de nombre/fechas/áreas (que ya se mandaban), el
+    // encargado puede escribir un criterio de búsqueda libre para
+    // orientar mejor las sugerencias (p. ej. "más orientado a limpieza
+    // de coches" o "solo productos de gama alta") — petición explícita
+    // de Eloy: "el botón de la IA debería aceptar como parámetro de
+    // entrada, aparte de lo que ya se mande, algún criterio de
+    // búsqueda". Límite de longitud igual que el eslogan, por
+    // consistencia con el resto de campos de texto libre del proyecto.
+    const criterioAdicional = (data.criterioAdicional || '').toString().trim().slice(0, 200);
 
     if (!nombreCampana) {
       throw new Error('Falta el nombre de la campaña.');
@@ -5280,8 +5289,10 @@ function procesarSugerirCategoriasCampanaIA(data) {
       '- Nombre de la campaña: "' + nombreCampana + '"\n' +
       '- Tipo: ' + (tipo === 'comercial' ? 'campaña comercial' : 'campaña de temporada') + '\n' +
       '- Fechas: ' + descripcionFechas + '\n' +
-      '- Áreas del catálogo a las que debe ceñirse: ' + descripcionAreas + '\n\n' +
-      'Sugiere entre 6 y 12 TIPOS DE PRODUCTO o CATEGORÍAS concretas — nunca marcas ni nombres de producto exactos, no los inventes, no los conoces — que tendría sentido destacar en esta campaña, pensando en lo que buscaría de verdad un cliente de una tienda física española en esas fechas. Cada uno debe ser un término de búsqueda corto (2 a 4 palabras) en español, tal y como lo escribiría un cliente en un buscador (p. ej. "protector solar", "repelente de mosquitos", "pintura para exteriores"). No repitas conceptos casi idénticos entre sí.\n\n' +
+      '- Áreas del catálogo a las que debe ceñirse: ' + descripcionAreas + '\n' +
+      (criterioAdicional ? '- Criterio adicional indicado a mano por el encargado, tenlo muy en cuenta: "' + criterioAdicional + '"\n' : '') +
+      '\n' +
+      'Sugiere entre 6 y 12 TIPOS DE PRODUCTO o CATEGORÍAS concretas — nunca marcas ni nombres de producto exactos, no los inventes, no los conoces — que tendría sentido destacar en esta campaña, pensando en lo que buscaría de verdad un cliente de una tienda física española en esas fechas' + (criterioAdicional ? ', y ajustándote al criterio adicional indicado arriba' : '') + '. Cada uno debe ser un término de búsqueda corto (2 a 4 palabras) en español, tal y como lo escribiría un cliente en un buscador (p. ej. "protector solar", "repelente de mosquitos", "pintura para exteriores"). No repitas conceptos casi idénticos entre sí.\n\n' +
       'Responde EXACTAMENTE con este formato, un término por línea, sin numerar, sin explicaciones ni nada más:\n' +
       'TERMINO: primer término\n' +
       'TERMINO: segundo término\n' +
@@ -5303,7 +5314,7 @@ function procesarSugerirCategoriasCampanaIA(data) {
       if (termino && terminos.indexOf(termino) === -1) terminos.push(termino);
     });
 
-    console.log('Sugerir categorías campaña IA — campaña:', nombreCampana, '| términos:', JSON.stringify(terminos));
+    console.log('Sugerir categorías campaña IA — campaña:', nombreCampana, '| criterio adicional:', criterioAdicional || '(ninguno)', '| términos:', JSON.stringify(terminos));
 
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
