@@ -273,6 +273,16 @@
         font-size:clamp(22px, 3.4vw, 32px);
         line-height:1.1; color:var(--ink); margin:0;
       }
+      .escaparate-titulo-con-volver{ display:flex; flex-direction:column; gap:12px; }
+      .volver-campanas{
+        display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
+        font-size:13px; font-weight:600; color:var(--ink-soft);
+        text-decoration:none; padding:6px 4px; margin-left:-4px;
+        transition:color 140ms ease, transform 140ms ease;
+      }
+      .volver-campanas svg{ width:16px; height:16px; transition:translate 140ms ease; }
+      .volver-campanas:hover{ color:var(--accent); }
+      .volver-campanas:hover svg{ translate:-2px 0; }
 
       .vitrina h2{
         position:relative; z-index:1;
@@ -318,46 +328,6 @@
       }
       .vitrina-error svg{ width:17px; height:17px; flex:none; color:#C81E1E; margin-top:1px; }
       .vitrina-error code{ background:var(--glass); padding:1px 5px; border-radius:4px; font-size:12px; }
-
-      /* ---------- Perchero de campañas (selector) ---------- */
-      .rail-section{ max-width:var(--maxw); margin:22px auto 0; position:relative; z-index:1; }
-      .rail-label{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:2px; flex-wrap:wrap;}
-      .rail{
-        display:flex; flex-wrap:wrap; gap:12px;
-        padding-top:18px; margin-top:6px;
-        border-top:1px dashed var(--line-strong);
-      }
-      /* Cada tag lleva el color propio de SU campaña (--tag-color y
-         --tag-wash, inyectados inline desde renderRail con los mismos
-         cs.accent/cs.wash que usa la propia vitrina de esa campaña —
-         antes usaba cs.vivid con relleno sólido, un estilo distinto al
-         de la vitrina; ahora la campaña activa se ve en el chip con
-         literalmente el mismo tono y el mismo tratamiento de fondo
-         suave que en su vitrina, no un color/estilo aparte), como una
-         franja de color a la izquierda para diferenciar campañas de un
-         vistazo antes incluso de leer el nombre. Sin rotación: se probó
-         un efecto "washi tape" con cada tag ligeramente girado, pero al
-         no haber ya una única "activa" que se enderezara, el conjunto
-         se veía torcido/colgando (feedback real de Eloy). */
-      .tag{
-        position:relative;
-        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12.5px; font-weight:600;
-        background:var(--paper-raised); border:1px solid var(--line-strong);
-        border-left:5px solid var(--tag-color, var(--line-strong));
-        border-radius:4px 10px 10px 4px;
-        padding:9px 16px 9px 13px;
-        cursor:pointer; color:var(--ink-soft);
-        transition:transform 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-      }
-      .tag:hover{ transform:translateY(-2px); box-shadow:var(--shadow-soft); }
-      .tag:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-      .tag.active{
-        background:var(--tag-wash, var(--wash));
-        border-color:var(--tag-color, var(--accent));
-        color:var(--tag-color, var(--accent));
-        box-shadow:var(--shadow-soft);
-      }
-      .tag .dot{ font-weight:600; }
 
       /* ---------- Estantes de producto ---------- */
       .shelf-section{ max-width:var(--maxw); margin:44px auto 0; position:relative; z-index:1; }
@@ -613,7 +583,6 @@
       .pick-card.selected .check svg{ opacity:1; }
       .pick-card.ia-pick{ border-style:dashed; }
       .picker-empty{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
-      .picker-loading{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
       .picker-section-label{
         grid-column:1/-1; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
         font-size:12px; color:var(--ink-soft); margin:2px 0 -2px;
@@ -753,78 +722,6 @@
         .btn-volver-arriba{ left:14px; bottom:14px; width:44px; height:44px; font-size:1.15rem; }
       }
 
-      .campaign-row{
-        display:flex; align-items:center; gap:12px; padding:12px 0;
-        border-bottom:1px solid var(--line);
-      }
-      .campaign-row:last-child{ border-bottom:none; }
-      .campaign-row .swatch{ width:8px; height:34px; border-radius:4px; flex:none; }
-      .campaign-row .info{ flex:1; min-width:0; cursor:pointer; }
-      .campaign-row .info .name{ font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-      .campaign-row .info .dates{ font-size:12px; color:var(--ink-faint); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-top:2px; }
-      .campaign-row .row-actions{ display:flex; gap:6px; flex:none; }
-      .icon-btn{
-        width:30px; height:30px; border-radius:50%; border:1px solid var(--line-strong);
-        background:var(--paper); color:var(--ink-soft); display:flex; align-items:center; justify-content:center;
-        cursor:pointer;
-      }
-      .icon-btn svg{ width:14px; height:14px; }
-      .icon-btn:hover{ border-color:var(--accent); color:var(--accent); }
-      .icon-btn.danger:hover{ border-color:#C81E1E; color:#C81E1E; }
-      .mini-badge{
-        font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        padding:2px 7px; border-radius:99px; border:1px solid currentColor;
-      }
-      .mini-badge.live{ color:#1a7a4c; border-color:#1a7a4c; background:rgba(26,122,76,.09); }
-
-      .new-campaign{ margin-top:22px; padding-top:18px; border-top:1px dashed var(--line-strong); }
-      .new-campaign h4{ font-family:'Montserrat',sans-serif; font-size:15px; font-weight:800; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;}
-      .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-      .grid-2 .span2{ grid-column:1 / -1; }
-      @media (max-width:480px){ .grid-2{ grid-template-columns:1fr; } }
-      .chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
-      .chip{
-        font-size:12px; padding:6px 12px; border-radius:99px; border:1px solid var(--line-strong);
-        cursor:pointer; color:var(--ink-soft); background:var(--paper);
-      }
-      .chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
-      .form-msg{ font-size:12.5px; margin-top:10px; display:none; }
-      .form-msg.show{ display:block; }
-      .form-msg.error{ color:#C81E1E; }
-      .form-msg.ok{ color:#1a7a4c; }
-
-      .campana-img-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-      .campana-img-preview{
-        width:88px; height:88px; border-radius:var(--radius-s); flex:none;
-        border:1px dashed var(--line-strong); background:var(--paper);
-        display:flex; align-items:center; justify-content:center; overflow:hidden;
-      }
-      .campana-img-preview img{ width:100%; height:100%; object-fit:cover; }
-      .campana-img-vacio{ font-size:10.5px; color:var(--ink-faint); text-align:center; padding:0 8px; }
-      .campana-img-acciones{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-      .campana-img-acciones .btn{ padding:8px 14px; font-size:12.5px; }
-      .campana-img-acciones .btn:disabled{ opacity:.45; cursor:not-allowed; }
-      .campana-img-hint{ font-size:11.5px; color:var(--ink-faint); flex-basis:100%; }
-
-      .color-personalizado-row{ display:flex; gap:18px; flex-wrap:wrap; }
-      .color-swatch-label{
-        display:flex; align-items:center; gap:8px;
-        font-size:12.5px; font-weight:600; color:var(--ink-soft);
-      }
-      .color-swatch-label input[type="color"]{
-        width:38px; height:32px; padding:2px; border:1px solid var(--line-strong);
-        border-radius:6px; background:var(--paper); cursor:pointer;
-      }
-
-      .checkbox-label{
-        display:flex; align-items:flex-start; gap:9px;
-        font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer;
-      }
-      .checkbox-label input[type="checkbox"]{
-        width:17px; height:17px; margin-top:1px; accent-color:var(--accent); cursor:pointer; flex:none;
-      }
-      .field-hint{ font-size:12px; color:var(--ink-faint); margin:6px 0 0 26px; }
-
       /* Toast */
       .toast{
         position:fixed; left:50%; bottom:26px; translate:-50% 0;
@@ -903,20 +800,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <main class="wrap">
 
-  <div class="escaparate-titulo">
+  <div class="escaparate-titulo escaparate-titulo-con-volver">
+    <a class="volver-campanas" href="./escaparate-campanas.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg>
+      Volver a campañas
+    </a>
     <h1>Acércate a nuestro escaparate</h1>
   </div>
 
   <div class="escaparate-lienzo" id="escaparateLienzo">
     <div class="fondo-estacional" id="fondoEstacional" aria-hidden="true"></div>
-
-    <section class="rail-section" id="railSection" hidden>
-      <div class="rail-label">
-        <span class="eyebrow">Campañas configuradas</span>
-        <span class="eyebrow" id="railHint" style="color:var(--ink-faint)"></span>
-      </div>
-      <div class="rail" id="rail"></div>
-    </section>
 
     <section class="vitrina" id="vitrina">
       <div class="spinner-line" id="cargando">
@@ -939,7 +832,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   <p class="internal-note">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-    Los dos botones inferiores (añadir productos / gestionar campañas) están controlados por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo deben existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b> (mismo patrón que el precio a mayor).
+    El botón inferior (asignar productos) está controlado por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo debe existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b> (mismo patrón que el precio a mayor). La creación/edición de campañas se gestiona ahora desde <span class="mono">escaparate-campanas.html</span>.
   </p>
 
   <p class="internal-note tight">
@@ -1016,10 +909,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <div class="tools-dock" id="toolsDock" hidden>
   <span class="hint">visible sólo en preproducción</span>
-  <button class="dock-btn secondary" id="btnCampanas">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h2M8 17h5"/></svg>
-    Gestionar campañas
-  </button>
   <button class="dock-btn" id="btnProductos" disabled>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
     Asignar productos
@@ -1071,102 +960,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </dialog>
 
-<!-- Modal B: gestionar campañas -->
-<dialog id="modalCampanas">
-  <div class="modal-head">
-    <div>
-      <h3>Campañas de Escaparate OM</h3>
-      <div class="modal-sub">Manuales e IA conviven; si coinciden en fechas, gana siempre la manual.</div>
-    </div>
-    <button class="modal-close" data-close-campanas><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-  </div>
-  <div class="modal-body">
-    <div id="campaignList"><span class="picker-loading">Cargando campañas…</span></div>
-
-    <div class="new-campaign">
-      <h4><span id="formTitulo">+ Nueva campaña manual</span> <button class="btn ghost" id="btnCancelarEdicion" style="display:none; padding:4px 12px; font-size:12px;">Cancelar edición</button></h4>
-      <input type="hidden" id="ncId" value="">
-      <div class="grid-2">
-        <div class="field span2">
-          <label for="ncNombre">Nombre de la campaña</label>
-          <input id="ncNombre" type="text" placeholder="p. ej. Vuelta al cole, Rebajas de enero...">
-        </div>
-        <div class="field">
-          <label for="ncTipo">Tipo</label>
-          <select id="ncTipo">
-            <option value="temporada">Temporada</option>
-            <option value="comercial">Comercial (liquidación, evento...)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="ncColor">Acento de color</label>
-          <select id="ncColor">
-            <option value="ambar_verde">Ámbar y verde</option>
-            <option value="rojo_verde">Rojo y verde</option>
-            <option value="verde_ambar">Verde y ámbar</option>
-            <option value="azul_ambar">Azul y ámbar</option>
-            <option value="rojo_negro">Rojo y negro</option>
-            <option value="personalizado">Personalizado…</option>
-          </select>
-        </div>
-        <div class="field span2" id="ncColorPersonalizadoRow" style="display:none">
-          <label>Colores personalizados</label>
-          <div class="color-personalizado-row">
-            <label class="color-swatch-label">Principal <input type="color" id="ncColorP1" value="#D91B1B"></label>
-            <label class="color-swatch-label">Secundario <input type="color" id="ncColorP2" value="#008743"></label>
-          </div>
-        </div>
-        <div class="field">
-          <label for="ncInicio">Fecha de inicio</label>
-          <input id="ncInicio" type="date">
-        </div>
-        <div class="field">
-          <label for="ncFin">Fecha de fin</label>
-          <input id="ncFin" type="date">
-        </div>
-        <div class="field span2">
-          <label class="checkbox-label">
-            <input id="ncActiva" type="checkbox" checked>
-            Campaña activa — visible en la página de campañas, independientemente de las fechas
-          </label>
-          <p class="field-hint">Desmárcalo para preparar una campaña con antelación sin que se vea todavía, o para retirarla sin borrarla. Con esto marcado y las fechas en el futuro, sirve como avance de lo que viene.</p>
-        </div>
-        <div class="field span2">
-          <label>Áreas a las que aplica (ninguna marcada = todas)</label>
-          <div class="chip-row" id="ncAreas">
-            <span class="chip" data-area="drogueria">Droguería</span>
-            <span class="chip" data-area="perfumeria">Perfumería</span>
-            <span class="chip" data-area="pinturas">Pinturas</span>
-            <span class="chip" data-area="talleres">Talleres y carrocerías</span>
-          </div>
-        </div>
-        <div class="field span2">
-          <label for="ncEslogan">Frase de cierre (opcional) — se ve en un bloque pequeño debajo de los productos</label>
-          <input id="ncEslogan" type="text" maxlength="200" placeholder="p. ej. Todo lo que necesitas para un otoño impecable.">
-        </div>
-        <div class="field span2">
-          <label>Imagen de fondo (opcional) — se ve difuminada detrás del texto, junto con la animación de la estación</label>
-          <div class="campana-img-row">
-            <div class="campana-img-preview" id="campanaImgPreview">
-              <span class="campana-img-vacio">Sin imagen</span>
-            </div>
-            <div class="campana-img-acciones">
-              <input type="file" id="campanaImgInput" accept="image/*" style="display:none">
-              <button type="button" class="btn ghost" id="btnSubirImagenCampana" disabled>Subir imagen</button>
-              <button type="button" class="btn ghost danger-ghost" id="btnQuitarImagenCampana" style="display:none">Quitar imagen</button>
-              <span class="campana-img-hint" id="campanaImgHint">Guarda primero la campaña (nombre y fechas) para poder subir una imagen.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <p class="form-msg" id="formMsg"></p>
-    </div>
-  </div>
-  <div class="modal-foot">
-    <span class="selected-count" style="font-size:12px;">Los productos se asignan en el siguiente paso</span>
-    <button class="btn primary" id="btnGuardarCampana">Guardar y asignar productos →</button>
-  </div>
-</dialog>
 
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span id="toastMsg"></span></div>
 
@@ -1532,17 +1325,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </article>`;
   }
 
-  // Un bloque de campaña completo (resumen plegable + cuerpo con foto,
-  // estante de productos, etc.) — antes era una única "vitrina" fija;
-  // ahora se genera una vez por campaña, porque varias pueden convivir a
-  // la vez en la página (petición de Eloy: verlas una debajo de otra en
-  // vez de solo la "activa"). Los colores se fijan como variables CSS
-  // LOCALES (style= en el propio <details>), no en :root, para que cada
-  // bloque pueda tener los suyos sin pisar a los demás.
+  // Muestra UNA sola campaña (la del parámetro ?campana=ID si viene en
+  // la URL, si no la que esté activa hoy) — la selección/navegación
+  // entre campañas ahora vive en escaparate-campanas.html, que enlaza
+  // aquí con ese parámetro; esta página ya no tiene selector propio.
   function render(){
-    $("#railSection").hidden = false;
-    renderRail();
-
     if(!CAMPAIGNS.length){
       $("#vitrina").innerHTML = `
         <div class="vitrina-content">
@@ -1650,29 +1437,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(!url){ bloque.hidden = true; bloque.innerHTML = ''; return; }
     bloque.hidden = false;
     bloque.innerHTML = `<img src="${url}" alt="">`;
-  }
-
-  // Cada chip del rail lleva el mismo color/estilo que usa la vitrina de
-  // SU campaña (--tag-color = cs.accent, --tag-wash = cs.wash — ver CSS)
-  // para poder diferenciarlas de un vistazo, y para que la campaña
-  // activa se vea en el chip "igual" que en su propia vitrina (antes
-  // usaba un tono distinto, cs.vivid con relleno sólido). Clicar una la
-  // marca como activa y la muestra entera.
-  function renderRail(){
-    if(!CAMPAIGNS.length){ $("#rail").innerHTML = ''; $("#railHint").textContent=''; return; }
-    const hoy = campanaDeHoy();
-    $("#railHint").textContent = hoy ? `hoy tocaría: ${hoy.nombre}` : 'ninguna campaña cubre la fecha de hoy';
-    $("#rail").innerHTML = CAMPAIGNS.map(c=>{
-      const isHoy = hoy && c.id===hoy.id;
-      const isActive = c.id===activeId;
-      const cs = colorSetDe(c);
-      return `<button class="tag ${isActive?'active':''}" data-id="${c.id}" style="--tag-color:${cs.accent}; --tag-wash:${cs.wash};">
-        ${isHoy ? '<span class="dot">● </span>' : ''}${c.nombre}
-      </button>`;
-    }).join("");
-    $$("#rail .tag").forEach(btn=>{
-      btn.addEventListener("click", ()=>{ activeId = btn.dataset.id; render(); });
-    });
   }
 
   /* ---------------- Toast ---------------- */
@@ -1988,289 +1752,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
   });
 
-  /* ---------------- Modal B: gestionar campañas ---------------- */
-  const modalCampanas = $("#modalCampanas");
-
-  function renderCampaignList(){
-    if(!CAMPAIGNS.length){
-      $("#campaignList").innerHTML = `<p class="picker-empty">Todavía no hay ninguna campaña. Crea la primera con el formulario de abajo.</p>`;
-      return;
-    }
-    $("#campaignList").innerHTML = CAMPAIGNS.map(c=>{
-      const cs = colorSetDe(c);
-      const live = activaEn(c, HOY);
-      return `<div class="campaign-row">
-        <span class="swatch" style="background:linear-gradient(135deg, ${cs.vivid} 50%, ${cs.vivid2} 50%)"></span>
-        <div class="info" data-edit="${c.id}">
-          <div class="name">${c.nombre}
-            <span class="mini-badge" style="color:${c.origen==='manual'?cs.accent:cs.accent2}">${c.origen==='manual'?'Manual':'IA'}</span>
-            <span class="mini-badge" style="color:var(--ink-faint)">${c.tipo==='temporada'?'Temporada':'Comercial'}</span>
-            ${live?'<span class="mini-badge live">activa hoy</span>':''}
-          </div>
-          <div class="dates">${fmtFecha(c.fechaInicio)} – ${fmtFecha(c.fechaFin)} · ${c.productos.length} productos</div>
-        </div>
-        <div class="row-actions">
-          <button class="icon-btn" data-productos="${c.id}" title="Asignar productos">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
-          <button class="icon-btn danger" data-eliminar="${c.id}" title="Eliminar campaña">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v13a1 1 0 001 1h6a1 1 0 001-1V7"/></svg>
-          </button>
-        </div>
-      </div>`;
-    }).join("");
-
-    $$("[data-edit]", $("#campaignList")).forEach(el=>{
-      el.addEventListener("click", ()=>cargarFormularioEdicion(el.dataset.edit));
-    });
-    $$("[data-productos]", $("#campaignList")).forEach(el=>{
-      el.addEventListener("click", (ev)=>{ ev.stopPropagation(); modalCampanas.close(); openModalProductos(el.dataset.productos); });
-    });
-    $$("[data-eliminar]", $("#campaignList")).forEach(el=>{
-      el.addEventListener("click", async (ev)=>{
-        ev.stopPropagation();
-        const c = findCampaign(el.dataset.eliminar);
-        if(!c) return;
-        if(!confirm(`¿Eliminar la campaña «${c.nombre}»? Esta acción no se puede deshacer.`)) return;
-        try{
-          const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
-            method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-            body: JSON.stringify({ accion:'eliminar_campana', id:c.id })
-          });
-          const data = await resp.json();
-          if(!data.success) throw new Error(data.error || 'Error desconocido');
-          CAMPAIGNS = CAMPAIGNS.filter(x=>x.id!==c.id);
-          if(activeId===c.id) activeId = null;
-          renderCampaignList();
-          render();
-          toast(`Campaña «${c.nombre}» eliminada.`);
-        }catch(err){ toast('No se pudo eliminar: ' + err.message, true); }
-      });
-    });
-  }
-
-  let areasSel = new Set();
-  function pintarAreas(){
-    $$("#ncAreas .chip").forEach(chip=>{
-      chip.classList.toggle('on', areasSel.has(chip.dataset.area));
-    });
-  }
-  $$("#ncAreas .chip").forEach(chip=>{
-    chip.addEventListener("click", ()=>{
-      const a = chip.dataset.area;
-      if(areasSel.has(a)) areasSel.delete(a); else areasSel.add(a);
-      pintarAreas();
-    });
-  });
-
-  function pintarImagenCampanaForm(id, imagenId){
-    const preview = $("#campanaImgPreview");
-    const btnSubir = $("#btnSubirImagenCampana");
-    const btnQuitar = $("#btnQuitarImagenCampana");
-    const hint = $("#campanaImgHint");
-    if(!id){
-      preview.innerHTML = '<span class="campana-img-vacio">Sin imagen</span>';
-      btnSubir.disabled = true;
-      btnQuitar.style.display = 'none';
-      hint.textContent = 'Guarda primero la campaña (nombre y fechas) para poder subir una imagen.';
-      return;
-    }
-    btnSubir.disabled = false;
-    const url = urlImagenCampana(imagenId, 300);
-    preview.innerHTML = url ? `<img src="${url}" alt="">` : '<span class="campana-img-vacio">Sin imagen</span>';
-    btnQuitar.style.display = imagenId ? 'inline-block' : 'none';
-    hint.textContent = imagenId ? '' : 'Se verá difuminada de fondo en la vitrina, junto con la animación de la estación.';
-  }
-
-  function actualizarVisibilidadColorPersonalizado(){
-    $("#ncColorPersonalizadoRow").style.display = $("#ncColor").value === 'personalizado' ? 'block' : 'none';
-  }
-  $("#ncColor").addEventListener("change", actualizarVisibilidadColorPersonalizado);
-
-  function limpiarFormulario(){
-    $("#ncId").value = "";
-    $("#ncNombre").value = "";
-    $("#ncTipo").value = "temporada";
-    $("#ncColor").value = "rojo_verde";
-    $("#ncColorP1").value = "#D91B1B";
-    $("#ncColorP2").value = "#008743";
-    $("#ncInicio").value = "";
-    $("#ncFin").value = "";
-    $("#ncEslogan").value = "";
-    $("#ncActiva").checked = true;
-    areasSel = new Set();
-    pintarAreas();
-    $("#formTitulo").textContent = "+ Nueva campaña manual";
-    $("#btnCancelarEdicion").style.display = "none";
-    $("#btnGuardarCampana").textContent = "Guardar y asignar productos →";
-    $("#formMsg").className = "form-msg";
-    pintarImagenCampanaForm(null, null);
-    actualizarVisibilidadColorPersonalizado();
-  }
-  function cargarFormularioEdicion(id){
-    const c = findCampaign(id);
-    if(!c) return;
-    $("#ncId").value = c.id;
-    $("#ncNombre").value = c.nombre;
-    $("#ncTipo").value = c.tipo;
-    $("#ncColor").value = c.colorSet;
-    $("#ncColorP1").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado1) ? c.colorPersonalizado1 : "#D91B1B";
-    $("#ncColorP2").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : "#008743";
-    $("#ncInicio").value = c.fechaInicio;
-    $("#ncFin").value = c.fechaFin;
-    $("#ncEslogan").value = c.eslogan || "";
-    $("#ncActiva").checked = c.activa !== false;
-    areasSel = new Set(c.areas || []);
-    pintarAreas();
-    $("#formTitulo").textContent = `Editando «${c.nombre}»`;
-    $("#btnCancelarEdicion").style.display = "inline-block";
-    $("#btnGuardarCampana").textContent = "Guardar cambios";
-    $("#formMsg").className = "form-msg";
-    pintarImagenCampanaForm(c.id, c.imagenFondo);
-    actualizarVisibilidadColorPersonalizado();
-    $("#ncNombre").focus();
-  }
-  $("#btnCancelarEdicion").addEventListener("click", limpiarFormulario);
-
-  $("#btnSubirImagenCampana").addEventListener("click", ()=>{ $("#campanaImgInput").click(); });
-  $("#campanaImgInput").addEventListener("change", async (ev)=>{
-    const file = ev.target.files[0];
-    ev.target.value = ''; // permite volver a elegir el mismo archivo más adelante si hace falta
-    if(!file) return;
-    const id = $("#ncId").value;
-    if(!id) return; // el botón está deshabilitado sin id, esto es solo un cinturón de seguridad
-    if(!file.type.startsWith('image/')){
-      toast('Elige un archivo de imagen.', true);
-      return;
-    }
-    const LIMITE_MB = 5;
-    if(file.size > LIMITE_MB*1024*1024){
-      toast(`La imagen pesa demasiado (máximo ${LIMITE_MB} MB).`, true);
-      return;
-    }
-    const btnSubir = $("#btnSubirImagenCampana");
-    const original = btnSubir.textContent;
-    btnSubir.disabled = true; btnSubir.textContent = 'Subiendo…';
-    try{
-      const base64 = await new Promise((resolve, reject)=>{
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
-        reader.readAsDataURL(file);
-      });
-      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
-        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({
-          accion:'actualizar_imagen_campana', id,
-          archivo: { nombre:file.name, tipo:file.type, datos: base64 },
-        }),
-      });
-      const data = await resp.json();
-      if(!data.success) throw new Error(data.error || 'Error desconocido');
-      const c = findCampaign(id);
-      if(c) c.imagenFondo = data.imagenFondo;
-      pintarImagenCampanaForm(id, data.imagenFondo);
-      if(id === activeId) render();
-      toast('Imagen de campaña actualizada.');
-    } catch(err){
-      toast('No se pudo subir la imagen: ' + err.message, true);
-    } finally {
-      btnSubir.disabled = false; btnSubir.textContent = original;
-    }
-  });
-  $("#btnQuitarImagenCampana").addEventListener("click", async ()=>{
-    const id = $("#ncId").value;
-    if(!id) return;
-    if(!confirm('¿Quitar la imagen de fondo de esta campaña?')) return;
-    const btn = $("#btnQuitarImagenCampana");
-    const original = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Quitando…';
-    try{
-      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
-        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({ accion:'eliminar_imagen_campana', id }),
-      });
-      const data = await resp.json();
-      if(!data.success) throw new Error(data.error || 'Error desconocido');
-      const c = findCampaign(id);
-      if(c) c.imagenFondo = '';
-      pintarImagenCampanaForm(id, '');
-      if(id === activeId) render();
-      toast('Imagen de campaña eliminada.');
-    } catch(err){
-      toast('No se pudo quitar la imagen: ' + err.message, true);
-    } finally {
-      btn.disabled = false; btn.textContent = original;
-    }
-  });
-
-  $("#btnCampanas").addEventListener("click", ()=>{
-    limpiarFormulario();
-    renderCampaignList();
-    modalCampanas.showModal();
-  });
-
-  $("#btnGuardarCampana").addEventListener("click", async ()=>{
-    const msg = $("#formMsg");
-    const nombre = $("#ncNombre").value.trim();
-    const fechaInicio = $("#ncInicio").value;
-    const fechaFin = $("#ncFin").value;
-    if(!nombre || !fechaInicio || !fechaFin){
-      msg.textContent = "Rellena al menos el nombre y las dos fechas.";
-      msg.className = "form-msg show error";
-      return;
-    }
-    if(fechaFin < fechaInicio){
-      msg.textContent = "La fecha de fin no puede ser anterior a la de inicio.";
-      msg.className = "form-msg show error";
-      return;
-    }
-    const btn = $("#btnGuardarCampana");
-    const original = btn.textContent;
-    btn.disabled = true; btn.textContent = "Guardando…";
-    try{
-      const payload = {
-        accion:'guardar_campana',
-        id: $("#ncId").value || undefined,
-        nombre, fechaInicio, fechaFin,
-        tipo: $("#ncTipo").value,
-        colorSet: $("#ncColor").value,
-        colorPersonalizado1: $("#ncColorP1").value,
-        colorPersonalizado2: $("#ncColorP2").value,
-        areas: Array.from(areasSel),
-        eslogan: $("#ncEslogan").value.trim(),
-        activa: $("#ncActiva").checked,
-      };
-      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
-        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify(payload)
-      });
-      const data = await resp.json();
-      if(!data.success) throw new Error(data.error || 'Error desconocido');
-
-      const esNueva = !payload.id;
-      await cargarCampanas(); // recarga desde el Sheet — fuente única de verdad
-      activeId = data.id;
-      renderCampaignList();
-      render();
-      toast(esNueva ? `Campaña «${nombre}» creada.` : `Campaña «${nombre}» actualizada.`);
-      if(esNueva){
-        modalCampanas.close();
-        openModalProductos(data.id);
-      } else {
-        limpiarFormulario();
-      }
-    } catch(err){
-      msg.textContent = "No se pudo guardar: " + err.message;
-      msg.className = "form-msg show error";
-    } finally {
-      btn.disabled = false; btn.textContent = original;
-    }
-  });
-
   /* cerrar modales */
   $$('[data-close-productos]').forEach(b=>b.addEventListener('click', ()=>modalProductos.close()));
-  $$('[data-close-campanas]').forEach(b=>b.addEventListener('click', ()=>modalCampanas.close()));
 
   $("#btnProductos").addEventListener("click", ()=>{ if(activeId) openModalProductos(activeId); });
 

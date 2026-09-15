@@ -104,6 +104,31 @@
       .campanas-titulo h1{ font-size:clamp(26px, 4.4vw, 40px); line-height:1.08; color:var(--ink); }
       .campanas-titulo p{ margin:10px 0 0; color:var(--ink-soft); font-size:15.5px; max-width:60ch; }
 
+      /* ---------- Insignia "se acerca la próxima estación" ----------
+         Pedido explícito: "algo llamativo... aparte del fondo... siempre
+         por adelantado a la estación, como preparatorio". El fondo de
+         partículas (arriba) refleja la estación ACTUAL; esta insignia,
+         en cambio, SIEMPRE anuncia la SIGUIENTE (ver SIGUIENTE_ESTACION
+         en el JS) — es un efecto de anticipación aparte, no solo una
+         variación del mismo fondo, con su propio brillo pulsante. */
+      .temporada-preview{
+        display:none; align-items:center; gap:9px;
+        padding:9px 18px 9px 14px; border-radius:99px;
+        font-size:13px; font-weight:700; color:#fff;
+        align-self:flex-start; margin-top:14px;
+        animation:pulsoPreview 2.8s ease-in-out infinite;
+      }
+      .temporada-preview-icono{ width:19px; height:19px; display:flex; flex:none; }
+      .temporada-preview-icono svg{ width:100%; height:100%; }
+      .temporada-preview.invierno{ background:linear-gradient(135deg, #6FA3D1, #9CC3E8); }
+      .temporada-preview.primavera{ background:linear-gradient(135deg, #5FAF5B, #8FD98A); }
+      .temporada-preview.verano{ background:linear-gradient(135deg, #E8A400, #FFCE4D); }
+      .temporada-preview.otono{ background:linear-gradient(135deg, #B5541F, #D9A441); }
+      @keyframes pulsoPreview{
+        0%,100%{ transform:scale(1); box-shadow:0 6px 16px rgba(0,0,0,.12); }
+        50%{ transform:scale(1.045); box-shadow:0 10px 26px rgba(0,0,0,.2); }
+      }
+
       .spinner-line{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:13.5px; position:relative; z-index:1; max-width:var(--maxw); margin:30px auto 0; padding:0 2px; }
       .spinner-dot{ width:8px; height:8px; border-radius:50%; background:var(--ink-faint); animation:pulso 1.1s ease-in-out infinite; }
       @keyframes pulso{ 0%,100%{opacity:.3;} 50%{opacity:1;} }
@@ -168,6 +193,153 @@
       }
       .internal-note svg{ width:15px; height:15px; flex:none; margin-top:1px; }
       .internal-note .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+      /* ---------- Botón "Gestionar campañas" junto al título ----------
+         Antes vivía en escaparate.html (dock flotante); la creación y
+         edición de campañas se ha movido aquí, que es donde tiene más
+         sentido (la vista general de todas las campañas), dejando
+         escaparate.html solo para ver el detalle de una en concreto. */
+      .campanas-titulo-fila{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+      .btn{
+        font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
+        border-radius:99px; padding:10px 18px; border:1px solid transparent;
+      }
+      .btn.primary{ background:var(--primary-red, #d91b1b); color:#fff; }
+      .btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
+      .btn.ghost{ background:none; border-color:var(--line-strong); color:var(--ink-soft); }
+      .btn.danger-ghost{ background:none; border:1px solid #C81E1E; color:#C81E1E; }
+      .btn-gestionar{ display:inline-flex; align-items:center; gap:7px; flex:none; }
+      .btn-gestionar svg{ width:15px; height:15px; }
+
+      /* ---------- Modales (dialog) — idéntico a escaparate.html ---------- */
+      dialog{
+        border:none; border-radius:var(--radius-l); padding:0;
+        width:min(680px, 92vw); max-height:86vh; max-height:86dvh;
+        background:var(--paper-raised); color:var(--ink);
+        box-shadow:var(--shadow-strong);
+      }
+      dialog::backdrop{ background:rgba(15,17,21,.45); backdrop-filter:blur(2px); }
+      .modal-head{
+        display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+        padding:22px 24px 16px; border-bottom:1px solid var(--line);
+      }
+      .modal-head h3{ font-size:19px; font-weight:800; }
+      .modal-head .modal-sub{ font-size:12.5px; color:var(--ink-faint); margin-top:4px; }
+      .modal-close{
+        background:none; border:1px solid var(--line-strong); border-radius:50%;
+        width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+        cursor:pointer; color:var(--ink-soft); flex:none;
+      }
+      .modal-close svg{ width:14px; height:14px; }
+      /* dvh además de vh: ver nota igual en escaparate.html sobre la
+         barra de Safari/iOS empujando los botones fuera de la pantalla. */
+      .modal-body{
+        padding:18px 24px; overflow-y:auto;
+        max-height:calc(86vh - 150px); max-height:calc(86dvh - 150px);
+      }
+      .modal-foot{
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+        padding:14px 24px 20px; border-top:1px solid var(--line);
+      }
+
+      .field{ display:flex; flex-direction:column; gap:6px; }
+      .field label{ font-size:12px; font-weight:600; color:var(--ink-soft); }
+      .field input, .field select{
+        font-family:inherit; font-size:14px; padding:9px 11px;
+        border:1px solid var(--line-strong); border-radius:var(--radius-s);
+        background:var(--paper); color:var(--ink);
+      }
+      .field input:focus, .field select:focus{ outline:2px solid var(--tarjeta-color, var(--ink)); outline-offset:1px; }
+
+      .picker-empty{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
+      .selected-count{ font-size:13px; color:var(--ink-soft); }
+
+      .campaign-row{
+        display:flex; align-items:center; gap:12px; padding:12px 0;
+        border-bottom:1px solid var(--line);
+      }
+      .campaign-row:last-child{ border-bottom:none; }
+      .campaign-row .swatch{ width:8px; height:34px; border-radius:4px; flex:none; }
+      .campaign-row .info{ flex:1; min-width:0; cursor:pointer; }
+      .campaign-row .info .name{ font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .campaign-row .info .dates{ font-size:12px; color:var(--ink-faint); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-top:2px; }
+      .campaign-row .row-actions{ display:flex; gap:6px; flex:none; }
+      .icon-btn{
+        width:30px; height:30px; border-radius:50%; border:1px solid var(--line-strong);
+        background:var(--paper); color:var(--ink-soft); display:flex; align-items:center; justify-content:center;
+        cursor:pointer;
+      }
+      .icon-btn svg{ width:14px; height:14px; }
+      .icon-btn:hover{ border-color:var(--ink); color:var(--ink); }
+      .icon-btn.danger:hover{ border-color:#C81E1E; color:#C81E1E; }
+      .mini-badge{
+        font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        padding:2px 7px; border-radius:99px; border:1px solid currentColor;
+      }
+      .mini-badge.live{ color:#1a7a4c; border-color:#1a7a4c; background:rgba(26,122,76,.09); }
+
+      .new-campaign{ margin-top:22px; padding-top:18px; border-top:1px dashed var(--line-strong); }
+      .new-campaign h4{ font-family:'Montserrat',sans-serif; font-size:15px; font-weight:800; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+      .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .grid-2 .span2{ grid-column:1 / -1; }
+      @media (max-width:480px){ .grid-2{ grid-template-columns:1fr; } }
+      .chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+      .chip{
+        font-size:12px; padding:6px 12px; border-radius:99px; border:1px solid var(--line-strong);
+        cursor:pointer; color:var(--ink-soft); background:var(--paper);
+      }
+      .chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+      .form-msg{ font-size:12.5px; margin-top:10px; display:none; }
+      .form-msg.show{ display:block; }
+      .form-msg.error{ color:#C81E1E; }
+      .form-msg.ok{ color:#1a7a4c; }
+
+      .campana-img-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+      .campana-img-preview{
+        width:88px; height:88px; border-radius:var(--radius-s); flex:none;
+        border:1px dashed var(--line-strong); background:var(--paper);
+        display:flex; align-items:center; justify-content:center; overflow:hidden;
+      }
+      .campana-img-preview img{ width:100%; height:100%; object-fit:cover; }
+      .campana-img-vacio{ font-size:10.5px; color:var(--ink-faint); text-align:center; padding:0 8px; }
+      .campana-img-acciones{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+      .campana-img-acciones .btn{ padding:8px 14px; font-size:12.5px; }
+      .campana-img-acciones .btn:disabled{ opacity:.45; cursor:not-allowed; }
+      .campana-img-hint{ font-size:11.5px; color:var(--ink-faint); flex-basis:100%; }
+
+      .color-personalizado-row{ display:flex; gap:18px; flex-wrap:wrap; }
+      .color-swatch-label{
+        display:flex; align-items:center; gap:8px;
+        font-size:12.5px; font-weight:600; color:var(--ink-soft);
+      }
+      .color-swatch-label input[type="color"]{
+        width:38px; height:32px; padding:2px; border:1px solid var(--line-strong);
+        border-radius:6px; background:var(--paper); cursor:pointer;
+      }
+
+      .checkbox-label{
+        display:flex; align-items:flex-start; gap:9px;
+        font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer;
+      }
+      .checkbox-label input[type="checkbox"]{
+        width:17px; height:17px; margin-top:1px; accent-color:var(--primary-red, #d91b1b); cursor:pointer; flex:none;
+      }
+      .field-hint{ font-size:12px; color:var(--ink-faint); margin:6px 0 0 26px; }
+
+      /* Toast */
+      .toast{
+        position:fixed; left:50%; bottom:26px; translate:-50% 0;
+        background:var(--ink); color:var(--paper);
+        padding:12px 18px; border-radius:99px; font-size:13.5px;
+        display:flex; align-items:center; gap:9px;
+        opacity:0; pointer-events:none; transition:opacity 220ms ease, transform 220ms ease;
+        transform:translate(-50%, 8px);
+        z-index:80; max-width:90vw;
+        box-shadow:var(--shadow-strong);
+      }
+      .toast.show{ opacity:1; transform:translate(-50%,0); }
+      .toast svg{ width:15px; height:15px; color:#F1B300; flex:none; }
+      .toast.error svg{ color:#FF6B6B; }
     </style>
   </head>
   <body>
@@ -220,8 +392,20 @@
 <main class="wrap">
 
   <div class="campanas-titulo">
-    <h1>Nuestras campañas</h1>
-    <p>Un vistazo rápido a lo que tenemos preparado — pincha en cualquiera para ver sus productos.</p>
+    <div class="campanas-titulo-fila">
+      <div>
+        <h1>Nuestras campañas</h1>
+        <p>Un vistazo rápido a lo que tenemos preparado — pincha en cualquiera para ver sus productos.</p>
+        <div class="temporada-preview" id="temporadaPreview">
+          <span class="temporada-preview-icono" id="temporadaPreviewIcono"></span>
+          <span id="temporadaPreviewTexto"></span>
+        </div>
+      </div>
+      <button type="button" class="btn primary btn-gestionar" id="btnCampanas" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h2M8 17h5"/></svg>
+        Gestionar campañas
+      </button>
+    </div>
   </div>
 
   <div class="escaparate-lienzo" id="escaparateLienzo">
@@ -236,11 +420,111 @@
 
   <p class="internal-note">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-    Página en construcción, todavía sin enlazar desde ningún menú. Muestra las campañas marcadas como "activa" en <span class="mono">escaparate.html</span> (independientemente de sus fechas) — gestiona esa casilla desde "Gestionar campañas" en esa misma página.
+    Página en construcción, todavía sin enlazar desde ningún menú. Muestra las campañas marcadas como "activa" (independientemente de sus fechas). El botón "Gestionar campañas" está controlado por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo debe existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b>.
   </p>
 </main>
 
+<!-- Modal: gestionar campañas (crear / editar / eliminar / activar) -->
+<dialog id="modalCampanas">
+  <div class="modal-head">
+    <div>
+      <h3>Campañas de Escaparate OM</h3>
+      <div class="modal-sub">Manuales e IA conviven; si coinciden en fechas, gana siempre la manual.</div>
+    </div>
+    <button class="modal-close" data-close-campanas><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="modal-body">
+    <div id="campaignList"><span class="picker-empty">Cargando campañas…</span></div>
+
+    <div class="new-campaign">
+      <h4><span id="formTitulo">+ Nueva campaña manual</span> <button class="btn ghost" id="btnCancelarEdicion" style="display:none; padding:4px 12px; font-size:12px;">Cancelar edición</button></h4>
+      <input type="hidden" id="ncId" value="">
+      <div class="grid-2">
+        <div class="field span2">
+          <label for="ncNombre">Nombre de la campaña</label>
+          <input id="ncNombre" type="text" placeholder="p. ej. Vuelta al cole, Rebajas de enero...">
+        </div>
+        <div class="field">
+          <label for="ncTipo">Tipo</label>
+          <select id="ncTipo">
+            <option value="temporada">Temporada</option>
+            <option value="comercial">Comercial (liquidación, evento...)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ncColor">Acento de color</label>
+          <select id="ncColor">
+            <option value="ambar_verde">Ámbar y verde</option>
+            <option value="rojo_verde">Rojo y verde</option>
+            <option value="verde_ambar">Verde y ámbar</option>
+            <option value="azul_ambar">Azul y ámbar</option>
+            <option value="rojo_negro">Rojo y negro</option>
+            <option value="personalizado">Personalizado…</option>
+          </select>
+        </div>
+        <div class="field span2" id="ncColorPersonalizadoRow" style="display:none">
+          <label>Colores personalizados</label>
+          <div class="color-personalizado-row">
+            <label class="color-swatch-label">Principal <input type="color" id="ncColorP1" value="#D91B1B"></label>
+            <label class="color-swatch-label">Secundario <input type="color" id="ncColorP2" value="#008743"></label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ncInicio">Fecha de inicio</label>
+          <input id="ncInicio" type="date">
+        </div>
+        <div class="field">
+          <label for="ncFin">Fecha de fin</label>
+          <input id="ncFin" type="date">
+        </div>
+        <div class="field span2">
+          <label class="checkbox-label">
+            <input id="ncActiva" type="checkbox" checked>
+            Campaña activa — visible en esta página, independientemente de las fechas
+          </label>
+          <p class="field-hint">Desmárcalo para preparar una campaña con antelación sin que se vea todavía, o para retirarla sin borrarla. Con esto marcado y las fechas en el futuro, sirve como avance de lo que viene.</p>
+        </div>
+        <div class="field span2">
+          <label>Áreas a las que aplica (ninguna marcada = todas)</label>
+          <div class="chip-row" id="ncAreas">
+            <span class="chip" data-area="drogueria">Droguería</span>
+            <span class="chip" data-area="perfumeria">Perfumería</span>
+            <span class="chip" data-area="pinturas">Pinturas</span>
+            <span class="chip" data-area="talleres">Talleres y carrocerías</span>
+          </div>
+        </div>
+        <div class="field span2">
+          <label for="ncEslogan">Frase de cierre (opcional) — se ve en un bloque pequeño debajo de los productos</label>
+          <input id="ncEslogan" type="text" maxlength="200" placeholder="p. ej. Todo lo que necesitas para un otoño impecable.">
+        </div>
+        <div class="field span2">
+          <label>Imagen de fondo (opcional) — se ve en la vitrina de la campaña</label>
+          <div class="campana-img-row">
+            <div class="campana-img-preview" id="campanaImgPreview">
+              <span class="campana-img-vacio">Sin imagen</span>
+            </div>
+            <div class="campana-img-acciones">
+              <input type="file" id="campanaImgInput" accept="image/*" style="display:none">
+              <button type="button" class="btn ghost" id="btnSubirImagenCampana" disabled>Subir imagen</button>
+              <button type="button" class="btn ghost danger-ghost" id="btnQuitarImagenCampana" style="display:none">Quitar imagen</button>
+              <span class="campana-img-hint" id="campanaImgHint">Guarda primero la campaña (nombre y fechas) para poder subir una imagen.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="form-msg" id="formMsg"></p>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <span class="selected-count">Pincha en la tarjeta de la campaña, ya en la página, para asignarle productos</span>
+    <button class="btn primary" id="btnGuardarCampana">Guardar campaña</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span id="toastMsg"></span></div>
+
 <footer class="site-footer">
+
   <div class="container site-footer__grid">
     <div class="site-footer__brand">
       <a href="index.html" aria-label="Ir al inicio">
@@ -300,12 +584,16 @@
 (function(){
   "use strict";
 
-  // Mismo Web App que escaparate.html — esta página solo LEE campañas
-  // (obtener_campanas), no gestiona nada; la gestión sigue viviendo en
-  // escaparate.html ("Gestionar campañas").
+  // Mismo Web App que escaparate.html. La creación/edición/borrado de
+  // campañas ("Gestionar campañas") vive AQUÍ ahora — antes estaba en
+  // escaparate.html, pero tiene más sentido en la vista general de
+  // todas las campañas; escaparate.html se queda solo con "Asignar
+  // productos" para la campaña que se esté viendo en cada momento.
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+  window.MOSTRAR_GESTION_CAMPANAS = true; // mismo patrón que en escaparate.html — false en cualquier copia futura de release
 
   const $ = (sel, ctx) => (ctx||document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
   const HOY = new Date();
   const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
   function activaEn(camp, fecha){
@@ -313,13 +601,24 @@
     return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
   }
 
+  /* ---------------- Toast ---------------- */
+  let toastTimer;
+  function toast(msg, isError){
+    const el = $("#toast");
+    $("#toastMsg").textContent = msg;
+    el.classList.toggle('error', !!isError);
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>el.classList.remove("show"), 4200);
+  }
+
   /* ---------------- Paleta de marca — mismos tokens que escaparate.html ---------------- */
   const COLOR_SETS = {
-    ambar_verde: {vivid:"#F1B300", vivid2:"#008743", wash:"rgba(241,179,0,0.12)"},
-    rojo_verde:  {vivid:"#D91B1B", vivid2:"#008743", wash:"rgba(217,27,27,0.10)"},
-    verde_ambar: {vivid:"#008743", vivid2:"#F1B300", wash:"rgba(0,135,67,0.10)"},
-    azul_ambar:  {vivid:"#006DAE", vivid2:"#F1B300", wash:"rgba(0,109,174,0.10)"},
-    rojo_negro:  {vivid:"#D91B1B", vivid2:"#1A1A1A", wash:"rgba(217,27,27,0.09)"},
+    ambar_verde: {accent:"#8A6400", accent2:"#006E37", vivid:"#F1B300", vivid2:"#008743", wash:"rgba(241,179,0,0.12)"},
+    rojo_verde:  {accent:"#B81717", accent2:"#006E37", vivid:"#D91B1B", vivid2:"#008743", wash:"rgba(217,27,27,0.10)"},
+    verde_ambar: {accent:"#006E37", accent2:"#8A6400", vivid:"#008743", vivid2:"#F1B300", wash:"rgba(0,135,67,0.10)"},
+    azul_ambar:  {accent:"#005689", accent2:"#8A6400", vivid:"#006DAE", vivid2:"#F1B300", wash:"rgba(0,109,174,0.10)"},
+    rojo_negro:  {accent:"#B81717", accent2:"#1A1A1A", vivid:"#D91B1B", vivid2:"#1A1A1A", wash:"rgba(217,27,27,0.09)"},
   };
   function hexARgba(hex, alpha){
     const m = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex || '');
@@ -332,9 +631,14 @@
       const HEX_VALIDO = /^#[0-9a-fA-F]{6}$/;
       const p1 = HEX_VALIDO.test(c.colorPersonalizado1) ? c.colorPersonalizado1 : '#D91B1B';
       const p2 = HEX_VALIDO.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : '#008743';
-      return { vivid:p1, vivid2:p2, wash:hexARgba(p1, 0.10) };
+      return { accent:p1, accent2:p2, vivid:p1, vivid2:p2, wash:hexARgba(p1, 0.10) };
     }
     return COLOR_SETS[c && c.colorSet] || COLOR_SETS.rojo_verde;
+  }
+  function urlImagenCampana(driveId, tamano){
+    tamano = tamano || 900;
+    if(!driveId) return null;
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w${tamano}`;
   }
 
   /* ---------------- Fondo estacional (idéntico a escaparate.html) ---------------- */
@@ -370,6 +674,36 @@
     if(mes>=5 && mes<=7) return 'verano';
     return 'otono';
   }
+
+  /* ---------------- Insignia "se acerca la próxima estación" ----------
+     A diferencia del fondo de partículas (que refleja la estación
+     ACTUAL), esta insignia SIEMPRE señala la SIGUIENTE — es el efecto
+     "por adelantado... como preparatorio" pedido aparte del fondo. */
+  const SIGUIENTE_ESTACION = { invierno:'primavera', primavera:'verano', verano:'otono', otono:'invierno' };
+  const TEXTO_PREVIEW = {
+    invierno: 'Se acerca el invierno — llegan las nieves',
+    primavera: 'Asoma la primavera',
+    verano: 'Ya huele a verano',
+    otono: 'Se acerca el otoño',
+  };
+  function iconoPreview(estacion){
+    if(estacion === 'invierno') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M2 12h20M6 4l1 3-3 1M18 4l-1 3 3 1M6 20l1-3-3-1M18 20l-1-3 3-1"/></svg>`;
+    if(estacion === 'primavera') return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c4 3 6 6 6 10a6 6 0 01-12 0c0-4 2-7 6-10z"/></svg>`;
+    if(estacion === 'verano') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4.3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.1 5.1l2.1 2.1M16.8 16.8l2.1 2.1M5.1 18.9L7.2 16.8M16.8 7.2l2.1-2.1"/></svg>`;
+    // otoño — mismo contorno que la hoja genérica del fondo, sin nervios (a este tamaño no se apreciarían)
+    return `<svg viewBox="0 0 100 100" fill="currentColor"><path d="M50,6 C74,18 88,42 82,64 C77,86 64,96 50,99 C36,96 23,86 18,64 C12,42 26,18 50,6 Z"/></svg>`;
+  }
+  function pintarPreviewEstacion(){
+    const el = $("#temporadaPreview");
+    if(!el) return;
+    const siguiente = SIGUIENTE_ESTACION[estacionParaFecha(HOY)];
+    el.classList.remove('invierno','primavera','verano','otono');
+    el.classList.add(siguiente);
+    el.style.display = 'inline-flex';
+    $("#temporadaPreviewIcono").innerHTML = iconoPreview(siguiente);
+    $("#temporadaPreviewTexto").textContent = TEXTO_PREVIEW[siguiente];
+  }
+
   // Esta página no está ligada a una campaña concreta (muestra varias a
   // la vez), así que la estación se calcula siempre a partir de HOY, no
   // de la fecha de ninguna campaña en particular.
@@ -399,6 +733,9 @@
   }
 
   /* ---------------- Tarjetas de campaña ---------------- */
+  let CAMPAIGNS = []; // TODAS las campañas (activas e inactivas) — la gestión (Modal B) necesita ver también las inactivas para poder reactivarlas
+  function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
+
   function campanaCardHTML(c){
     const cs = colorSetDe(c);
     const hoyActiva = activaEn(c, HOY);
@@ -422,47 +759,348 @@
       </a>`;
   }
 
-  async function iniciar(){
-    pintarFondoEstacional();
-    let campanas = [];
-    try{
-      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now(), { cache:'no-store' });
-      if(!resp.ok) throw new Error('HTTP ' + resp.status);
-      const datos = await resp.json();
-      if(datos.error) throw new Error(datos.error);
-      campanas = (datos.campanas || []).filter(c => c.activa !== false);
-    } catch(err){
-      $("#cargando").hidden = true;
-      $("#campanasGrid").outerHTML = `
-        <div class="campanas-error">
-          <h2>No se han podido cargar las campañas</h2>
-          <p>${err.message} — puede que todavía no se haya desplegado la nueva versión de Apps Script (acción <code>obtener_campanas</code>), o que la columna "activa" aún no exista en la hoja Campañas (se crea sola en el primer guardado tras desplegar).</p>
-        </div>`;
-      pintarFondoEstacional();
-      return;
-    }
-
-    $("#cargando").hidden = true;
-
-    if(!campanas.length){
-      $("#campanasGrid").outerHTML = `
+  // Separada de la carga inicial para poder llamarse de nuevo tras
+  // crear/editar/borrar/(des)activar una campaña desde el Modal B, sin
+  // tener que recargar toda la página. SIEMPRE deja el contenido DENTRO
+  // de #campanasGrid (nunca reemplaza el propio elemento con outerHTML),
+  // así el id se conserva entre repintados.
+  function renderCards(){
+    const activas = CAMPAIGNS.filter(c => c.activa !== false)
+      .slice()
+      .sort((a,b) => new Date(a.fechaInicio+"T00:00:00") - new Date(b.fechaInicio+"T00:00:00"));
+    const grid = $("#campanasGrid");
+    if(!activas.length){
+      grid.innerHTML = `
         <div class="campanas-vacio">
           <h2>Todavía no hay campañas activas para mostrar aquí</h2>
-          <p>Marca alguna como "activa" desde "Gestionar campañas" en <a href="./escaparate.html">escaparate.html</a> — no hace falta que sus fechas hayan empezado, sirve para dar un adelanto de lo que viene.</p>
+          <p>Marca alguna como "activa" desde "Gestionar campañas" — no hace falta que sus fechas hayan empezado, sirve para dar un adelanto de lo que viene.</p>
         </div>`;
+    } else {
+      grid.innerHTML = activas.map(campanaCardHTML).join("");
+    }
+    pintarFondoEstacional(); // se repinta con el contenido definitivo ya en el DOM, para medir la altura real
+  }
+
+  async function cargarCampanas(){
+    const resp = await fetch(GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now(), { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const datos = await resp.json();
+    if(datos.error) throw new Error(datos.error);
+    CAMPAIGNS = datos.campanas || [];
+  }
+
+  async function iniciar(){
+    // Todo el cuerpo va en un try/finally: pase lo que pase (incluido un
+    // error inesperado que no fuera simplemente "no se pudo conectar"),
+    // el spinner de carga SIEMPRE se oculta al final — antes, si algo
+    // fallaba fuera del try/catch interno (p.ej. al medir el lienzo la
+    // primera vez, antes de que hubiera nada dentro), "Cargando
+    // campañas…" se quedaba para siempre sin que se viera ningún error
+    // (reportado real: "se queda el 'Cargando campañas' todo el tiempo").
+    try{
       pintarFondoEstacional();
+      pintarPreviewEstacion();
+      try{
+        await cargarCampanas();
+      } catch(err){
+        $("#campanasGrid").innerHTML = `
+          <div class="campanas-error">
+            <h2>No se han podido cargar las campañas</h2>
+            <p>${err.message} — puede que todavía no se haya desplegado la nueva versión de Apps Script (acción <code>obtener_campanas</code>), o que la columna "activa" aún no exista en la hoja Campañas (se crea sola en el primer guardado tras desplegar).</p>
+          </div>`;
+        return;
+      }
+      renderCards();
+      if(window.MOSTRAR_GESTION_CAMPANAS){
+        $("#btnCampanas").hidden = false;
+      }
+    } finally {
+      $("#cargando").hidden = true;
+      pintarFondoEstacional();
+    }
+  }
+
+  /* ---------------- Modal: gestionar campañas ---------------- */
+  const modalCampanas = $("#modalCampanas");
+
+  function renderCampaignList(){
+    if(!CAMPAIGNS.length){
+      $("#campaignList").innerHTML = `<p class="picker-empty">Todavía no hay ninguna campaña. Crea la primera con el formulario de abajo.</p>`;
       return;
     }
+    // A diferencia de la rejilla pública (solo activas), aquí se listan
+    // TODAS — así se puede encontrar y reactivar una que estuviera
+    // desactivada.
+    $("#campaignList").innerHTML = CAMPAIGNS.map(c=>{
+      const cs = colorSetDe(c);
+      const live = activaEn(c, HOY);
+      return `<div class="campaign-row">
+        <span class="swatch" style="background:linear-gradient(135deg, ${cs.vivid} 50%, ${cs.vivid2} 50%)"></span>
+        <div class="info" data-edit="${c.id}">
+          <div class="name">${c.nombre}
+            <span class="mini-badge" style="color:${c.origen==='manual'?cs.accent:cs.accent2}">${c.origen==='manual'?'Manual':'IA'}</span>
+            <span class="mini-badge" style="color:var(--ink-faint)">${c.tipo==='temporada'?'Temporada':'Comercial'}</span>
+            ${live?'<span class="mini-badge live">activa hoy</span>':''}
+            ${c.activa===false?'<span class="mini-badge" style="color:#C81E1E;border-color:#C81E1E">desactivada</span>':''}
+          </div>
+          <div class="dates">${fmtFecha(c.fechaInicio)} – ${fmtFecha(c.fechaFin)} · ${c.productos.length} productos</div>
+        </div>
+        <div class="row-actions">
+          <a class="icon-btn" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" title="Ver / asignar productos" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </a>
+          <button class="icon-btn danger" data-eliminar="${c.id}" title="Eliminar campaña">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v13a1 1 0 001 1h6a1 1 0 001-1V7"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }).join("");
 
-    campanas.sort((a,b) => new Date(a.fechaInicio+"T00:00:00") - new Date(b.fechaInicio+"T00:00:00"));
-    $("#campanasGrid").innerHTML = campanas.map(campanaCardHTML).join("");
-
-    // Se repinta el fondo al final, con el grid de tarjetas ya en el DOM,
-    // para medir la altura real y definitiva del lienzo (igual que en
-    // escaparate.html — con pocas o muchas campañas la altura cambia
-    // mucho, y así la densidad/velocidad de las partículas se ajusta).
-    pintarFondoEstacional();
+    $$("[data-edit]", $("#campaignList")).forEach(el=>{
+      el.addEventListener("click", ()=>cargarFormularioEdicion(el.dataset.edit));
+    });
+    $$("[data-eliminar]", $("#campaignList")).forEach(el=>{
+      el.addEventListener("click", async (ev)=>{
+        ev.stopPropagation();
+        const c = findCampaign(el.dataset.eliminar);
+        if(!c) return;
+        if(!confirm(`¿Eliminar la campaña «${c.nombre}»? Esta acción no se puede deshacer.`)) return;
+        try{
+          const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+            body: JSON.stringify({ accion:'eliminar_campana', id:c.id })
+          });
+          const data = await resp.json();
+          if(!data.success) throw new Error(data.error || 'Error desconocido');
+          CAMPAIGNS = CAMPAIGNS.filter(x=>x.id!==c.id);
+          renderCampaignList();
+          renderCards();
+          toast(`Campaña «${c.nombre}» eliminada.`);
+        }catch(err){ toast('No se pudo eliminar: ' + err.message, true); }
+      });
+    });
   }
+
+  let areasSel = new Set();
+  function pintarAreas(){
+    $$("#ncAreas .chip").forEach(chip=>{
+      chip.classList.toggle('on', areasSel.has(chip.dataset.area));
+    });
+  }
+  $$("#ncAreas .chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      const a = chip.dataset.area;
+      if(areasSel.has(a)) areasSel.delete(a); else areasSel.add(a);
+      pintarAreas();
+    });
+  });
+
+  function pintarImagenCampanaForm(id, imagenId){
+    const preview = $("#campanaImgPreview");
+    const btnSubir = $("#btnSubirImagenCampana");
+    const btnQuitar = $("#btnQuitarImagenCampana");
+    const hint = $("#campanaImgHint");
+    if(!id){
+      preview.innerHTML = '<span class="campana-img-vacio">Sin imagen</span>';
+      btnSubir.disabled = true;
+      btnQuitar.style.display = 'none';
+      hint.textContent = 'Guarda primero la campaña (nombre y fechas) para poder subir una imagen.';
+      return;
+    }
+    btnSubir.disabled = false;
+    const url = urlImagenCampana(imagenId, 300);
+    preview.innerHTML = url ? `<img src="${url}" alt="">` : '<span class="campana-img-vacio">Sin imagen</span>';
+    btnQuitar.style.display = imagenId ? 'inline-block' : 'none';
+    hint.textContent = imagenId ? '' : 'Se verá en la vitrina de la campaña, junto con la animación de la estación.';
+  }
+
+  function actualizarVisibilidadColorPersonalizado(){
+    $("#ncColorPersonalizadoRow").style.display = $("#ncColor").value === 'personalizado' ? 'block' : 'none';
+  }
+  $("#ncColor").addEventListener("change", actualizarVisibilidadColorPersonalizado);
+
+  function limpiarFormulario(){
+    $("#ncId").value = "";
+    $("#ncNombre").value = "";
+    $("#ncTipo").value = "temporada";
+    $("#ncColor").value = "rojo_verde";
+    $("#ncColorP1").value = "#D91B1B";
+    $("#ncColorP2").value = "#008743";
+    $("#ncInicio").value = "";
+    $("#ncFin").value = "";
+    $("#ncEslogan").value = "";
+    $("#ncActiva").checked = true;
+    areasSel = new Set();
+    pintarAreas();
+    $("#formTitulo").textContent = "+ Nueva campaña manual";
+    $("#btnCancelarEdicion").style.display = "none";
+    $("#btnGuardarCampana").textContent = "Guardar campaña";
+    $("#formMsg").className = "form-msg";
+    pintarImagenCampanaForm(null, null);
+    actualizarVisibilidadColorPersonalizado();
+  }
+  function cargarFormularioEdicion(id){
+    const c = findCampaign(id);
+    if(!c) return;
+    $("#ncId").value = c.id;
+    $("#ncNombre").value = c.nombre;
+    $("#ncTipo").value = c.tipo;
+    $("#ncColor").value = c.colorSet;
+    $("#ncColorP1").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado1) ? c.colorPersonalizado1 : "#D91B1B";
+    $("#ncColorP2").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : "#008743";
+    $("#ncInicio").value = c.fechaInicio;
+    $("#ncFin").value = c.fechaFin;
+    $("#ncEslogan").value = c.eslogan || "";
+    $("#ncActiva").checked = c.activa !== false;
+    areasSel = new Set(c.areas || []);
+    pintarAreas();
+    $("#formTitulo").textContent = `Editando «${c.nombre}»`;
+    $("#btnCancelarEdicion").style.display = "inline-block";
+    $("#btnGuardarCampana").textContent = "Guardar cambios";
+    $("#formMsg").className = "form-msg";
+    pintarImagenCampanaForm(c.id, c.imagenFondo);
+    actualizarVisibilidadColorPersonalizado();
+    $("#ncNombre").focus();
+  }
+  $("#btnCancelarEdicion").addEventListener("click", limpiarFormulario);
+
+  $("#btnSubirImagenCampana").addEventListener("click", ()=>{ $("#campanaImgInput").click(); });
+  $("#campanaImgInput").addEventListener("change", async (ev)=>{
+    const file = ev.target.files[0];
+    ev.target.value = '';
+    if(!file) return;
+    const id = $("#ncId").value;
+    if(!id) return;
+    if(!file.type.startsWith('image/')){
+      toast('Elige un archivo de imagen.', true);
+      return;
+    }
+    const LIMITE_MB = 5;
+    if(file.size > LIMITE_MB*1024*1024){
+      toast(`La imagen pesa demasiado (máximo ${LIMITE_MB} MB).`, true);
+      return;
+    }
+    const btnSubir = $("#btnSubirImagenCampana");
+    const original = btnSubir.textContent;
+    btnSubir.disabled = true; btnSubir.textContent = 'Subiendo…';
+    try{
+      const base64 = await new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+        reader.readAsDataURL(file);
+      });
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          accion:'actualizar_imagen_campana', id,
+          archivo: { nombre:file.name, tipo:file.type, datos: base64 },
+        }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      const c = findCampaign(id);
+      if(c) c.imagenFondo = data.imagenFondo;
+      pintarImagenCampanaForm(id, data.imagenFondo);
+      toast('Imagen de campaña actualizada.');
+    } catch(err){
+      toast('No se pudo subir la imagen: ' + err.message, true);
+    } finally {
+      btnSubir.disabled = false; btnSubir.textContent = original;
+    }
+  });
+  $("#btnQuitarImagenCampana").addEventListener("click", async ()=>{
+    const id = $("#ncId").value;
+    if(!id) return;
+    if(!confirm('¿Quitar la imagen de fondo de esta campaña?')) return;
+    const btn = $("#btnQuitarImagenCampana");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Quitando…';
+    try{
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ accion:'eliminar_imagen_campana', id }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      const c = findCampaign(id);
+      if(c) c.imagenFondo = '';
+      pintarImagenCampanaForm(id, '');
+      toast('Imagen de campaña eliminada.');
+    } catch(err){
+      toast('No se pudo quitar la imagen: ' + err.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  $("#btnCampanas").addEventListener("click", ()=>{
+    limpiarFormulario();
+    renderCampaignList();
+    modalCampanas.showModal();
+  });
+  $$('[data-close-campanas]').forEach(b=>b.addEventListener('click', ()=>modalCampanas.close()));
+
+  $("#btnGuardarCampana").addEventListener("click", async ()=>{
+    const msg = $("#formMsg");
+    const nombre = $("#ncNombre").value.trim();
+    const fechaInicio = $("#ncInicio").value;
+    const fechaFin = $("#ncFin").value;
+    if(!nombre || !fechaInicio || !fechaFin){
+      msg.textContent = "Rellena al menos el nombre y las dos fechas.";
+      msg.className = "form-msg show error";
+      return;
+    }
+    if(fechaFin < fechaInicio){
+      msg.textContent = "La fecha de fin no puede ser anterior a la de inicio.";
+      msg.className = "form-msg show error";
+      return;
+    }
+    const btn = $("#btnGuardarCampana");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = "Guardando…";
+    try{
+      const payload = {
+        accion:'guardar_campana',
+        id: $("#ncId").value || undefined,
+        nombre, fechaInicio, fechaFin,
+        tipo: $("#ncTipo").value,
+        colorSet: $("#ncColor").value,
+        colorPersonalizado1: $("#ncColorP1").value,
+        colorPersonalizado2: $("#ncColorP2").value,
+        areas: Array.from(areasSel),
+        eslogan: $("#ncEslogan").value.trim(),
+        activa: $("#ncActiva").checked,
+      };
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+
+      const esNueva = !payload.id;
+      await cargarCampanas(); // recarga desde el Sheet — fuente única de verdad
+      renderCampaignList();
+      renderCards();
+      // Aquí ya no se salta a "Asignar productos" (esa gestión vive en
+      // escaparate.html, otra página) — se guarda y se sigue en el
+      // propio modal, con un aviso de qué hacer a continuación.
+      toast(esNueva
+        ? `Campaña «${nombre}» creada. Pincha en su tarjeta para asignarle productos.`
+        : `Campaña «${nombre}» actualizada.`);
+      if(esNueva){
+        cargarFormularioEdicion(data.id);
+      } else {
+        limpiarFormulario();
+      }
+    } catch(err){
+      msg.textContent = "No se pudo guardar: " + err.message;
+      msg.className = "form-msg show error";
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
 
   iniciar();
 })();
