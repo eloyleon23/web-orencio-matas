@@ -1499,6 +1499,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   /* ---------------- Modal A: asignar productos ---------------- */
   const modalProductos = $("#modalProductos");
+  // <dialog>.showModal() NO bloquea por sí solo el scroll de la página de
+  // fondo en todos los navegadores — se pudo comprobar en vivo que,
+  // aunque el modal se queda fijo y centrado (comportamiento nativo
+  // correcto), el fondo seguía desplazándose por detrás con la rueda del
+  // ratón/gesto táctil, dejando el pie de página (oscuro) asomando y
+  // solapado con la parte de abajo del modal (reportado real: "se ha
+  // quedado abierta y solapada al footer" — confirmado además con una
+  // captura real vía Playwright antes de corregirlo, haciendo scroll con
+  // el modal abierto). Se bloquea el overflow tanto de <html> como de
+  // <body>: el primer intento solo tocaba <body> y no bastaba, porque en
+  // este sitio el contenedor que de verdad hace scroll es <html> (tiene
+  // overflow-y:auto por defecto; <body> no es el que scrollea aquí) —
+  // confirmado también con Playwright, comprobando que scrollY seguía
+  // cambiando pese a poner overflow:hidden solo en <body>. El evento
+  // 'close' nativo del <dialog> cubre cualquier forma de cerrarlo (botón,
+  // tecla Escape, clic en el fondo), así que basta un único listener aquí
+  // para restaurar el scroll en todos los casos, sin repetirlo en cada
+  // punto donde se llama .close().
+  modalProductos.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
   let selected = new Set();
   let sugeridosIA = [];       // refs sugeridas por la IA en la sesión actual del modal
   let destacados = {};        // ref -> {tamano(1-6), alinH, posV} — solo entradas con tamano>1
@@ -1674,6 +1693,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $("#iaSuggestHint").classList.remove('error');
     $("#iaSuggestHint").textContent = HINT_IA_DEFECTO;
     renderPicker();
+    document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
     modalProductos.showModal();
   }
   $("#fFamilia").addEventListener("change", renderPicker);

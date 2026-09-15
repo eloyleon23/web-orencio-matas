@@ -822,6 +822,17 @@
 
   /* ---------------- Modal: gestionar campañas ---------------- */
   const modalCampanas = $("#modalCampanas");
+  // Ver el comentario equivalente en escaparate.html (modalProductos):
+  // <dialog>.showModal() no bloquea por sí solo el scroll de la página
+  // de fondo en todos los navegadores — sin esto, el fondo seguía
+  // desplazándose por detrás con el modal abierto, dejando el pie de
+  // página oscuro asomando y solapado (reportado real: "se ha quedado
+  // abierta y solapada al footer"). Se bloquea el overflow de <html> Y
+  // de <body> — aquí el que de verdad hace scroll es <html>, bloquear
+  // solo <body> no bastaba (confirmado con Playwright). El evento
+  // 'close' nativo cubre cualquier forma de cerrarlo (botón, Escape,
+  // clic en el fondo).
+  modalCampanas.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
 
   function renderCampaignList(){
     if(!CAMPAIGNS.length){
@@ -1037,6 +1048,7 @@
   $("#btnCampanas").addEventListener("click", ()=>{
     limpiarFormulario();
     renderCampaignList();
+    document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
     modalCampanas.showModal();
   });
   $$('[data-close-campanas]').forEach(b=>b.addEventListener('click', ()=>modalCampanas.close()));
