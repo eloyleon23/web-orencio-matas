@@ -18,12 +18,12 @@
 <!-- End Google Tag Manager -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Campañas activas de Orencio Matas y Hnos, S.L. — descubre las campañas de temporada y comerciales del momento." />
+    <meta name="description" content="Escaparates de temporada de Orencio Matas y Hnos, S.L. — descubre los escaparates de temporada y comerciales del momento." />
     <!-- Página aún en fase de prototipo, sin enlazar desde ningún menú:
          que no la indexen mientras tanto. Quitar esta etiqueta cuando
          se decida publicarla de verdad (igual que escaparate.html). -->
     <meta name="robots" content="noindex, nofollow" />
-    <title>Campañas | Orencio Matas y Hnos, S.L.</title>
+    <title>Escaparates | Orencio Matas y Hnos, S.L.</title>
     <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
@@ -104,27 +104,23 @@
       .campanas-titulo h1{ font-size:clamp(26px, 4.4vw, 40px); line-height:1.08; color:var(--ink); }
       .campanas-titulo p{ margin:10px 0 0; color:var(--ink-soft); font-size:15.5px; max-width:60ch; }
 
-      /* ---------- Insignia "se acerca la próxima estación" ----------
-         Pedido explícito: "algo llamativo... aparte del fondo... siempre
-         por adelantado a la estación, como preparatorio". El fondo de
-         partículas (arriba) refleja la estación ACTUAL; esta insignia,
-         en cambio, SIEMPRE anuncia la SIGUIENTE (ver SIGUIENTE_ESTACION
-         en el JS) — es un efecto de anticipación aparte, no solo una
-         variación del mismo fondo, con su propio brillo pulsante. */
-      .temporada-preview{
-        display:none; align-items:center; gap:9px;
+      /* ---------- Insignia de invitación ----------
+         Antes anunciaba la próxima estación — a Eloy no le convenció
+         ("no me gusta la chip de 'Se acerca el invierno'") y pidió una
+         frase de invitación fija en su lugar. Se queda el mismo formato
+         llamativo (brillo pulsante) pero con los colores de marca en vez
+         de un color por estación, ya que ya no depende de ninguna. */
+      .escaparates-invitacion{
+        display:inline-flex; align-items:center; gap:9px;
         padding:9px 18px 9px 14px; border-radius:99px;
         font-size:13px; font-weight:700; color:#fff;
         align-self:flex-start; margin-top:14px;
-        animation:pulsoPreview 2.8s ease-in-out infinite;
+        background:linear-gradient(135deg, var(--primary-red,#d91b1b), var(--primary-yellow,#f1b300));
+        animation:pulsoInvitacion 2.8s ease-in-out infinite;
       }
-      .temporada-preview-icono{ width:19px; height:19px; display:flex; flex:none; }
-      .temporada-preview-icono svg{ width:100%; height:100%; }
-      .temporada-preview.invierno{ background:linear-gradient(135deg, #6FA3D1, #9CC3E8); }
-      .temporada-preview.primavera{ background:linear-gradient(135deg, #5FAF5B, #8FD98A); }
-      .temporada-preview.verano{ background:linear-gradient(135deg, #E8A400, #FFCE4D); }
-      .temporada-preview.otono{ background:linear-gradient(135deg, #B5541F, #D9A441); }
-      @keyframes pulsoPreview{
+      .escaparates-invitacion-icono{ width:18px; height:18px; display:flex; flex:none; }
+      .escaparates-invitacion-icono svg{ width:100%; height:100%; }
+      @keyframes pulsoInvitacion{
         0%,100%{ transform:scale(1); box-shadow:0 6px 16px rgba(0,0,0,.12); }
         50%{ transform:scale(1.045); box-shadow:0 10px 26px rgba(0,0,0,.2); }
       }
@@ -394,16 +390,18 @@
   <div class="campanas-titulo">
     <div class="campanas-titulo-fila">
       <div>
-        <h1>Nuestras campañas</h1>
-        <p>Un vistazo rápido a lo que tenemos preparado — pincha en cualquiera para ver sus productos.</p>
-        <div class="temporada-preview" id="temporadaPreview">
-          <span class="temporada-preview-icono" id="temporadaPreviewIcono"></span>
-          <span id="temporadaPreviewTexto"></span>
+        <h1>Nuestros escaparates</h1>
+        <p>Un vistazo rápido a nuestros escaparates de temporada — pincha en cualquiera para ver sus productos.</p>
+        <div class="escaparates-invitacion">
+          <span class="escaparates-invitacion-icono">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M4 8h16M9 12a3 3 0 006 0"/></svg>
+          </span>
+          <span>Visita nuestros escaparates de temporada</span>
         </div>
       </div>
       <button type="button" class="btn primary btn-gestionar" id="btnCampanas" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h2M8 17h5"/></svg>
-        Gestionar campañas
+        Gestionar escaparates
       </button>
     </div>
   </div>
@@ -412,7 +410,7 @@
     <div class="fondo-estacional" id="fondoEstacional" aria-hidden="true"></div>
 
     <div class="spinner-line" id="cargando">
-      <span class="spinner-dot"></span> Cargando campañas…
+      <span class="spinner-dot"></span> Cargando escaparates…
     </div>
 
     <div class="campanas-grid" id="campanasGrid"></div>
@@ -420,28 +418,28 @@
 
   <p class="internal-note">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-    Página en construcción, todavía sin enlazar desde ningún menú. Muestra las campañas marcadas como "activa" (independientemente de sus fechas). El botón "Gestionar campañas" está controlado por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo debe existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b>.
+    Página en construcción, todavía sin enlazar desde ningún menú. Muestra los escaparates marcados como "activo" (independientemente de sus fechas). El botón "Gestionar escaparates" está controlado por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo debe existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b>.
   </p>
 </main>
 
-<!-- Modal: gestionar campañas (crear / editar / eliminar / activar) -->
+<!-- Modal: gestionar escaparates (crear / editar / eliminar / activar) -->
 <dialog id="modalCampanas">
   <div class="modal-head">
     <div>
-      <h3>Campañas de Escaparate OM</h3>
+      <h3>Escaparates de temporada</h3>
       <div class="modal-sub">Manuales e IA conviven; si coinciden en fechas, gana siempre la manual.</div>
     </div>
     <button class="modal-close" data-close-campanas><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="modal-body">
-    <div id="campaignList"><span class="picker-empty">Cargando campañas…</span></div>
+    <div id="campaignList"><span class="picker-empty">Cargando escaparates…</span></div>
 
     <div class="new-campaign">
-      <h4><span id="formTitulo">+ Nueva campaña manual</span> <button class="btn ghost" id="btnCancelarEdicion" style="display:none; padding:4px 12px; font-size:12px;">Cancelar edición</button></h4>
+      <h4><span id="formTitulo">+ Nuevo escaparate manual</span> <button class="btn ghost" id="btnCancelarEdicion" style="display:none; padding:4px 12px; font-size:12px;">Cancelar edición</button></h4>
       <input type="hidden" id="ncId" value="">
       <div class="grid-2">
         <div class="field span2">
-          <label for="ncNombre">Nombre de la campaña</label>
+          <label for="ncNombre">Nombre del escaparate</label>
           <input id="ncNombre" type="text" placeholder="p. ej. Vuelta al cole, Rebajas de enero...">
         </div>
         <div class="field">
@@ -480,9 +478,9 @@
         <div class="field span2">
           <label class="checkbox-label">
             <input id="ncActiva" type="checkbox" checked>
-            Campaña activa — visible en esta página, independientemente de las fechas
+            Escaparate activo — visible en esta página, independientemente de las fechas
           </label>
-          <p class="field-hint">Desmárcalo para preparar una campaña con antelación sin que se vea todavía, o para retirarla sin borrarla. Con esto marcado y las fechas en el futuro, sirve como avance de lo que viene.</p>
+          <p class="field-hint">Desmárcalo para preparar un escaparate con antelación sin que se vea todavía, o para retirarlo sin borrarlo. Con esto marcado y las fechas en el futuro, sirve como avance de lo que viene.</p>
         </div>
         <div class="field span2">
           <label>Áreas a las que aplica (ninguna marcada = todas)</label>
@@ -498,7 +496,7 @@
           <input id="ncEslogan" type="text" maxlength="200" placeholder="p. ej. Todo lo que necesitas para un otoño impecable.">
         </div>
         <div class="field span2">
-          <label>Imagen de fondo (opcional) — se ve en la vitrina de la campaña</label>
+          <label>Imagen de fondo (opcional) — se ve en la vitrina del escaparate</label>
           <div class="campana-img-row">
             <div class="campana-img-preview" id="campanaImgPreview">
               <span class="campana-img-vacio">Sin imagen</span>
@@ -516,8 +514,8 @@
     </div>
   </div>
   <div class="modal-foot">
-    <span class="selected-count">Pincha en la tarjeta de la campaña, ya en la página, para asignarle productos</span>
-    <button class="btn primary" id="btnGuardarCampana">Guardar campaña</button>
+    <span class="selected-count">Pincha en la tarjeta del escaparate, ya en la página, para asignarle productos</span>
+    <button class="btn primary" id="btnGuardarCampana">Guardar escaparate</button>
   </div>
 </dialog>
 
@@ -675,38 +673,9 @@
     return 'otono';
   }
 
-  /* ---------------- Insignia "se acerca la próxima estación" ----------
-     A diferencia del fondo de partículas (que refleja la estación
-     ACTUAL), esta insignia SIEMPRE señala la SIGUIENTE — es el efecto
-     "por adelantado... como preparatorio" pedido aparte del fondo. */
-  const SIGUIENTE_ESTACION = { invierno:'primavera', primavera:'verano', verano:'otono', otono:'invierno' };
-  const TEXTO_PREVIEW = {
-    invierno: 'Se acerca el invierno — llegan las nieves',
-    primavera: 'Asoma la primavera',
-    verano: 'Ya huele a verano',
-    otono: 'Se acerca el otoño',
-  };
-  function iconoPreview(estacion){
-    if(estacion === 'invierno') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M2 12h20M6 4l1 3-3 1M18 4l-1 3 3 1M6 20l1-3-3-1M18 20l-1-3 3-1"/></svg>`;
-    if(estacion === 'primavera') return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c4 3 6 6 6 10a6 6 0 01-12 0c0-4 2-7 6-10z"/></svg>`;
-    if(estacion === 'verano') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4.3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.1 5.1l2.1 2.1M16.8 16.8l2.1 2.1M5.1 18.9L7.2 16.8M16.8 7.2l2.1-2.1"/></svg>`;
-    // otoño — mismo contorno que la hoja genérica del fondo, sin nervios (a este tamaño no se apreciarían)
-    return `<svg viewBox="0 0 100 100" fill="currentColor"><path d="M50,6 C74,18 88,42 82,64 C77,86 64,96 50,99 C36,96 23,86 18,64 C12,42 26,18 50,6 Z"/></svg>`;
-  }
-  function pintarPreviewEstacion(){
-    const el = $("#temporadaPreview");
-    if(!el) return;
-    const siguiente = SIGUIENTE_ESTACION[estacionParaFecha(HOY)];
-    el.classList.remove('invierno','primavera','verano','otono');
-    el.classList.add(siguiente);
-    el.style.display = 'inline-flex';
-    $("#temporadaPreviewIcono").innerHTML = iconoPreview(siguiente);
-    $("#temporadaPreviewTexto").textContent = TEXTO_PREVIEW[siguiente];
-  }
-
-  // Esta página no está ligada a una campaña concreta (muestra varias a
-  // la vez), así que la estación se calcula siempre a partir de HOY, no
-  // de la fecha de ninguna campaña en particular.
+  // Esta página no está ligada a un escaparate concreto (muestra varios
+  // a la vez), así que la estación se calcula siempre a partir de HOY,
+  // no de la fecha de ningún escaparate en particular.
   function pintarFondoEstacional(){
     const el = $("#fondoEstacional");
     const lienzo = $("#escaparateLienzo");
@@ -753,7 +722,7 @@
         </span>
         ${eslogan ? `<p class="campana-card-eslogan">"${eslogan}"</p>` : '<span style="flex:1"></span>'}
         <span class="campana-card-cta">
-          Ver campaña
+          Ver escaparate
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
         </span>
       </a>`;
@@ -772,8 +741,8 @@
     if(!activas.length){
       grid.innerHTML = `
         <div class="campanas-vacio">
-          <h2>Todavía no hay campañas activas para mostrar aquí</h2>
-          <p>Marca alguna como "activa" desde "Gestionar campañas" — no hace falta que sus fechas hayan empezado, sirve para dar un adelanto de lo que viene.</p>
+          <h2>Todavía no hay escaparates activos para mostrar aquí</h2>
+          <p>Marca alguno como "activo" desde "Gestionar escaparates" — no hace falta que sus fechas hayan empezado, sirve para dar un adelanto de lo que viene.</p>
         </div>`;
     } else {
       grid.innerHTML = activas.map(campanaCardHTML).join("");
@@ -782,11 +751,28 @@
   }
 
   async function cargarCampanas(){
-    const resp = await fetch(GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now(), { cache:'no-store' });
-    if(!resp.ok) throw new Error('HTTP ' + resp.status);
-    const datos = await resp.json();
-    if(datos.error) throw new Error(datos.error);
-    CAMPAIGNS = datos.campanas || [];
+    // Timeout explícito con AbortController: el try/finally de iniciar()
+    // solo protege contra errores o excepciones — si el fetch se queda
+    // colgado sin resolver NUNCA (Apps Script tardando en "despertar",
+    // corte de red a mitad, etc.), el await de abajo se queda esperando
+    // indefinidamente y ni el catch ni el finally llegan a ejecutarse
+    // nunca, por mucho que estén bien escritos. Esto es justo lo que
+    // encaja con "se queda 'Cargando campañas' todo el tiempo" en vez de
+    // mostrar un error — no era una excepción, era un cuelgue silencioso.
+    const controller = new AbortController();
+    const avisoTimeout = setTimeout(() => controller.abort(), 12000);
+    try{
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now(), { cache:'no-store', signal: controller.signal });
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const datos = await resp.json();
+      if(datos.error) throw new Error(datos.error);
+      CAMPAIGNS = datos.campanas || [];
+    } catch(err){
+      if(err.name === 'AbortError') throw new Error('La respuesta ha tardado demasiado (más de 12 segundos) y se ha cancelado.');
+      throw err;
+    } finally {
+      clearTimeout(avisoTimeout);
+    }
   }
 
   async function iniciar(){
@@ -799,13 +785,12 @@
     // (reportado real: "se queda el 'Cargando campañas' todo el tiempo").
     try{
       pintarFondoEstacional();
-      pintarPreviewEstacion();
       try{
         await cargarCampanas();
       } catch(err){
         $("#campanasGrid").innerHTML = `
           <div class="campanas-error">
-            <h2>No se han podido cargar las campañas</h2>
+            <h2>No se han podido cargar los escaparates</h2>
             <p>${err.message} — puede que todavía no se haya desplegado la nueva versión de Apps Script (acción <code>obtener_campanas</code>), o que la columna "activa" aún no exista en la hoja Campañas (se crea sola en el primer guardado tras desplegar).</p>
           </div>`;
         return;
@@ -849,7 +834,7 @@
           <a class="icon-btn" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" title="Ver / asignar productos" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
           </a>
-          <button class="icon-btn danger" data-eliminar="${c.id}" title="Eliminar campaña">
+          <button class="icon-btn danger" data-eliminar="${c.id}" title="Eliminar escaparate">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v13a1 1 0 001 1h6a1 1 0 001-1V7"/></svg>
           </button>
         </div>
@@ -864,7 +849,7 @@
         ev.stopPropagation();
         const c = findCampaign(el.dataset.eliminar);
         if(!c) return;
-        if(!confirm(`¿Eliminar la campaña «${c.nombre}»? Esta acción no se puede deshacer.`)) return;
+        if(!confirm(`¿Eliminar el escaparate «${c.nombre}»? Esta acción no se puede deshacer.`)) return;
         try{
           const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
             method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -875,7 +860,7 @@
           CAMPAIGNS = CAMPAIGNS.filter(x=>x.id!==c.id);
           renderCampaignList();
           renderCards();
-          toast(`Campaña «${c.nombre}» eliminada.`);
+          toast(`Escaparate «${c.nombre}» eliminado.`);
         }catch(err){ toast('No se pudo eliminar: ' + err.message, true); }
       });
     });
@@ -904,14 +889,14 @@
       preview.innerHTML = '<span class="campana-img-vacio">Sin imagen</span>';
       btnSubir.disabled = true;
       btnQuitar.style.display = 'none';
-      hint.textContent = 'Guarda primero la campaña (nombre y fechas) para poder subir una imagen.';
+      hint.textContent = 'Guarda primero el escaparate (nombre y fechas) para poder subir una imagen.';
       return;
     }
     btnSubir.disabled = false;
     const url = urlImagenCampana(imagenId, 300);
     preview.innerHTML = url ? `<img src="${url}" alt="">` : '<span class="campana-img-vacio">Sin imagen</span>';
     btnQuitar.style.display = imagenId ? 'inline-block' : 'none';
-    hint.textContent = imagenId ? '' : 'Se verá en la vitrina de la campaña, junto con la animación de la estación.';
+    hint.textContent = imagenId ? '' : 'Se verá en la vitrina del escaparate, junto con la animación de la estación.';
   }
 
   function actualizarVisibilidadColorPersonalizado(){
@@ -932,9 +917,9 @@
     $("#ncActiva").checked = true;
     areasSel = new Set();
     pintarAreas();
-    $("#formTitulo").textContent = "+ Nueva campaña manual";
+    $("#formTitulo").textContent = "+ Nuevo escaparate manual";
     $("#btnCancelarEdicion").style.display = "none";
-    $("#btnGuardarCampana").textContent = "Guardar campaña";
+    $("#btnGuardarCampana").textContent = "Guardar escaparate";
     $("#formMsg").className = "form-msg";
     pintarImagenCampanaForm(null, null);
     actualizarVisibilidadColorPersonalizado();
@@ -1002,7 +987,7 @@
       const c = findCampaign(id);
       if(c) c.imagenFondo = data.imagenFondo;
       pintarImagenCampanaForm(id, data.imagenFondo);
-      toast('Imagen de campaña actualizada.');
+      toast('Imagen de escaparate actualizada.');
     } catch(err){
       toast('No se pudo subir la imagen: ' + err.message, true);
     } finally {
@@ -1012,7 +997,7 @@
   $("#btnQuitarImagenCampana").addEventListener("click", async ()=>{
     const id = $("#ncId").value;
     if(!id) return;
-    if(!confirm('¿Quitar la imagen de fondo de esta campaña?')) return;
+    if(!confirm('¿Quitar la imagen de fondo de este escaparate?')) return;
     const btn = $("#btnQuitarImagenCampana");
     const original = btn.textContent;
     btn.disabled = true; btn.textContent = 'Quitando…';
@@ -1026,7 +1011,7 @@
       const c = findCampaign(id);
       if(c) c.imagenFondo = '';
       pintarImagenCampanaForm(id, '');
-      toast('Imagen de campaña eliminada.');
+      toast('Imagen de escaparate eliminada.');
     } catch(err){
       toast('No se pudo quitar la imagen: ' + err.message, true);
     } finally {
@@ -1087,8 +1072,8 @@
       // escaparate.html, otra página) — se guarda y se sigue en el
       // propio modal, con un aviso de qué hacer a continuación.
       toast(esNueva
-        ? `Campaña «${nombre}» creada. Pincha en su tarjeta para asignarle productos.`
-        : `Campaña «${nombre}» actualizada.`);
+        ? `Escaparate «${nombre}» creado. Pincha en su tarjeta para asignarle productos.`
+        : `Escaparate «${nombre}» actualizado.`);
       if(esNueva){
         cargarFormularioEdicion(data.id);
       } else {

@@ -693,7 +693,7 @@
          Centro de Soluciones (.cs-btn-subir en assets/css/soluciones.css)
          — duplicado aquí porque esta página no carga ese CSS/JS.
          A la IZQUIERDA a propósito: el dock de gestión (Asignar
-         productos / Gestionar campañas) ya ocupa la esquina inferior
+         productos) ya ocupa la esquina inferior
          derecha (.tools-dock, right:18px;bottom:18px).
          Causa real de que "siguiera sin verse" en móvil pese a lo
          anterior: el banner de cookies del sitio (.cookie-consent-banner
@@ -1232,8 +1232,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // cualquier caché del propio navegador, que 'no-store' ya evita) —
     // sin esto, una campaña recién creada podía no aparecer al recargar
     // hasta que ese caché expirase por sí solo.
+    // Timeout explícito con AbortController: si el fetch se queda
+    // colgado sin resolver nunca (no solo si falla rápido), Promise.
+    // allSettled esperaría indefinidamente a que esta promesa se asiente
+    // — nunca se marcaría como rejected, así que la carga nunca
+    // terminaría (mismo tipo de cuelgue silencioso detectado y corregido
+    // en escaparate-campanas.html, aplicado aquí también por si acaso).
     const url = window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now();
-    const resp = await fetch(url, { cache:'no-store' });
+    const controller = new AbortController();
+    const avisoTimeout = setTimeout(() => controller.abort(), 12000);
+    let resp;
+    try{
+      resp = await fetch(url, { cache:'no-store', signal: controller.signal });
+    } catch(err){
+      if(err.name === 'AbortError') throw new Error('La respuesta ha tardado demasiado (más de 12 segundos) y se ha cancelado.');
+      throw err;
+    } finally {
+      clearTimeout(avisoTimeout);
+    }
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
     const datos = await resp.json();
     if(datos.error) throw new Error(datos.error);
@@ -1336,7 +1352,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div class="vitrina-empty">
             <span class="badge tipo">SIN CAMPAÑAS TODAVÍA</span>
             <h2 style="margin-top:14px">Este escaparate está listo, pero vacío</h2>
-            <p>Usa "Gestionar campañas" para crear la primera — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
+            <p>Usa "Gestionar escaparates" en <a href="./escaparate-campanas.html" style="color:inherit; text-decoration:underline;">escaparate-campanas.html</a> para crear el primero — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
           </div>
         </div>`;
       $("#vitrina").classList.remove('tiene-imagen');
