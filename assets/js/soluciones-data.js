@@ -399,7 +399,19 @@ window.SOLUCIONES_DATA = (function () {
   // ── Soluciones completas ────────────────────────────────────────────────
   // Cada fase de "materials" podrá mapearse en el futuro a una familia real
   // del catálogo (familiaSugerida) — hoy solo orienta.
-  const soluciones = {
+  // RESPALDO ESTÁTICO — red de seguridad, no la fuente de verdad.
+  // Hasta ahora estas 80 guías vivían aquí escritas a mano y ERAN la
+  // única fuente: cualquier cambio de contenido necesitaba un
+  // despliegue de verdad. Ahora la fuente real es el Sheet "Soluciones"
+  // (vía Apps Script + caché en Drive, mismo patrón que Escaparate OM —
+  // ver cargarSolucionesReales() más abajo), y este objeto se queda
+  // como respaldo: si Apps Script todavía no se ha desplegado con las
+  // acciones nuevas, o el Sheet todavía no se ha migrado, o falla la
+  // red, el Centro de Soluciones sigue funcionando con este contenido
+  // (ya desactualizado en ese momento, pero nunca roto). Se mantiene
+  // íntegro a propósito — es justo lo que hace de puente seguro durante
+  // la migración, no algo a limpiar de inmediato.
+  const SOLUCIONES_RESPALDO_ESTATICO = {
 
     'pintar-plastico-coche': {
       slug: 'pintar-plastico-coche',
@@ -4910,6 +4922,68 @@ window.SOLUCIONES_DATA = (function () {
     },
   };
 
+  // Esta es la que usa TODO el resto del archivo (búsqueda, diagnóstico,
+  // páginas de detalle...) — empieza como una copia del respaldo
+  // estático, para que la página tenga algo que mostrar desde el primer
+  // instante (sin esperar a ninguna red), y cargarSolucionesReales() la
+  // SUSTITUYE por completo si consigue traer datos frescos del Sheet.
+  // "let", no "const": se reasigna de verdad cuando llega la respuesta,
+  // no se parchea campo a campo — el resto de funciones del archivo
+  // acceden a "soluciones" por closure sobre esta variable, así que ven
+  // la sustitución sin que haya que tocar nada más.
+  let soluciones = Object.assign({}, SOLUCIONES_RESPALDO_ESTATICO);
+
+  // Carga las guías reales desde el Sheet "Soluciones" (vía Apps Script
+  // + caché en Drive — mismo patrón ya probado con Escaparate OM,
+  // obtener_campanas/obtener_soluciones). Se cachea la promesa (no solo
+  // el resultado) para que, si varias partes de la página llaman a esto
+  // casi a la vez durante el arranque, solo se dispare una petición de
+  // red real, no una por cada llamador.
+  //
+  // A diferencia de cargarCatalogoReal() (que sí puede quedarse
+  // simplemente "sin nada" si falla, un catálogo vacío no rompe nada),
+  // aquí un fallo de red NUNCA debe dejar el Centro de Soluciones sin
+  // contenido — por eso, si la petición falla, da un array vacío, o el
+  // propio servidor devuelve un error, se mantiene el respaldo estático
+  // ya asignado arriba en vez de vaciar "soluciones". Body de la
+  // función completa sea cual sea el resultado (éxito, vacío o error):
+  // el llamador siempre recibe algo utilizable en "soluciones".
+  let promesaCargaSoluciones = null;
+  function cargarSolucionesReales() {
+    if (promesaCargaSoluciones) return promesaCargaSoluciones;
+    const url = window.GOOGLE_APPS_SCRIPT_URL;
+    if (!url) {
+      console.warn('Centro de Soluciones: GOOGLE_APPS_SCRIPT_URL no está definida — usando el respaldo estático incluido en el código.');
+      return Promise.resolve(soluciones);
+    }
+    promesaCargaSoluciones = fetch(url + '?accion=obtener_soluciones&_ts=' + Date.now(), { cache: 'no-store' })
+      .then((resp) => {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.json();
+      })
+      .then((datos) => {
+        const lista = Array.isArray(datos && datos.soluciones) ? datos.soluciones : [];
+        // Solo se cuentan las que tienen slug de verdad — una fila corrupta
+        // en el Sheet (JSON inválido) ya se descarta en el propio Apps
+        // Script (leerSoluciones_), esto es una segunda red de seguridad.
+        const activas = lista.filter((s) => s && s.slug && s.activa !== false);
+        if (activas.length) {
+          const nuevas = {};
+          activas.forEach((s) => { nuevas[s.slug] = s; });
+          soluciones = nuevas;
+          console.log(`Centro de Soluciones: ${activas.length} guías cargadas desde el Sheet.`);
+        } else {
+          console.warn('Centro de Soluciones: obtener_soluciones no devolvió ninguna guía activa — usando el respaldo estático incluido en el código (¿Apps Script sin desplegar todavía, o Sheet sin migrar?).');
+        }
+        return soluciones;
+      })
+      .catch((err) => {
+        console.warn('Centro de Soluciones: no se ha podido cargar desde Apps Script, usando el respaldo estático incluido en el código.', err);
+        return soluciones;
+      });
+    return promesaCargaSoluciones;
+  }
+
   // ── Motor de diagnóstico del asistente (simulado) ───────────────────────
   // Combina las 4 respuestas del wizard y devuelve el slug de solución más
   // adecuado. En el futuro esta función se sustituiría por una consulta
@@ -5804,7 +5878,7 @@ window.SOLUCIONES_DATA = (function () {
     });
   }
 
-  function buscarSolucionIA(texto, signal) {
+  function buscarSolucionIA(texto, signal, forzarDinamica) {
     const url = window.GOOGLE_APPS_SCRIPT_URL;
     // errorTecnico distingue "no se ha encontrado nada" (búsqueda
     // normal sin resultado) de "algo ha fallado de verdad" (sin
@@ -5830,10 +5904,20 @@ window.SOLUCIONES_DATA = (function () {
     // aplicado en buscador.html. Si no se pasa ninguna señal, la
     // petición no tiene límite de tiempo por este lado (queda sujeta
     // solo al límite natural del navegador/red).
+    //
+    // forzarDinamica: petición real de Eloy — "si la solución
+    // propuesta devuelta no es la que busca el usuario, le demos la
+    // opción de que sea una solución 100% propuesta por IA con
+    // productos nuestros". Cuando se pasa true, el backend se salta el
+    // encaje con una guía escrita a mano y genera directamente la
+    // alternativa dinámica (mismo mecanismo que ya se usa cuando
+    // ninguna guía encaja por sí sola) — quien llama a esta función es
+    // quien decide cuándo forzarlo (típicamente, un botón "no es esto"
+    // junto a una guía ya encontrada).
     return Promise.all([obtenerTaxonomiaCatalogo(), buscarCandidatosProductosParaIA(texto)]).then(([taxonomia, candidatosProductos]) => fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones de buscador.html
-      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia, candidatosProductos }),
+      body: JSON.stringify({ accion: 'buscar_solucion_ia', consulta: texto, catalogo, taxonomia, candidatosProductos, forzarDinamica: !!forzarDinamica }),
       signal: signal,
     }))
       .then((res) => res.json())
@@ -5874,7 +5958,19 @@ window.SOLUCIONES_DATA = (function () {
 
   return {
     acciones, superficies, estados, usos, tamanos, resultados,
-    problemasFrecuentes, areas, solucionesDestacadas, soluciones,
+    problemasFrecuentes, areas, solucionesDestacadas,
+    // "soluciones" es un getter a propósito, no una propiedad normal:
+    // una propiedad normal ("soluciones," en abreviado) copiaría el
+    // VALOR de la variable en el momento en que se construye este
+    // objeto (justo al cargar la página, con el respaldo estático
+    // todavía puesto) — cargarSolucionesReales() reasigna la variable
+    // interna más tarde, y sin el getter ese cambio nunca se vería
+    // desde fuera (D.soluciones se quedaría congelado en el respaldo
+    // para siempre). Con el getter, cada acceso a D.soluciones lee la
+    // variable interna en ESE momento, así que ve la sustitución en
+    // cuanto ocurre.
+    get soluciones() { return soluciones; },
+    cargarSolucionesReales,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
     normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo, buscarCandidatosProductosParaIA, buscarProductosPorCoincidenciaFuerte, obtenerFichaTecnicaProducto,
   };

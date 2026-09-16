@@ -596,5 +596,7 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => {
+    D.cargarSolucionesReales().then(init);
+  });
 })();

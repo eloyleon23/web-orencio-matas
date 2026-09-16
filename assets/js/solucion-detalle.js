@@ -1137,8 +1137,10 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    render();
-    wireBotonSubir();
-    wireModalProducto();
+    D.cargarSolucionesReales().then(() => {
+      render();
+      wireBotonSubir();
+      wireModalProducto();
+    });
   });
 })();

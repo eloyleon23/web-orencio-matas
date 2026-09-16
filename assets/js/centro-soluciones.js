@@ -391,7 +391,15 @@
 
       const { signal, finalizar, fueCancelado } = abrirModalEsperaIA();
 
-      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }) => {
+      // forzarDinamica=true a propósito: este botón existe justo para
+      // cuando la guía ya encontrada NO es lo que el usuario buscaba —
+      // sin esto, se repetía la misma búsqueda con el mismo texto y
+      // Gemini podía volver a elegir esa misma guía (o cualquier otra
+      // encajada "a la fuerza"), dejando al usuario en el mismo sitio
+      // del que intentaba salir. Con el flag, se salta directamente a
+      // la solución 100% generada por IA con productos reales del
+      // catálogo (petición explícita de Eloy).
+      D.buscarSolucionIA(texto, signal, true).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }) => {
         finalizar();
 
         if (errorTecnico && fueCancelado()) {
@@ -1334,16 +1342,23 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    wireBuscadorHero();
-    renderGridAcciones();
-    renderGridSuperficies();
-    renderProblemas();
-    renderSolucionesDestacadas();
-    renderAreas();
-    wireAreasAcordeon();
-    wireAreasBuscador();
-    wireWizardOpenClose();
-    wireScrollAnclas();
-    wireBotonSubir();
+    // Espera a que cargarSolucionesReales() termine (o falle y se quede
+    // con el respaldo estático — nunca se rechaza, ver el porqué junto a
+    // su definición en soluciones-data.js) antes de pintar nada, para no
+    // renderizar dos veces (una con el respaldo, otra con lo real) ni
+    // dejar un parpadeo visible.
+    D.cargarSolucionesReales().then(() => {
+      wireBuscadorHero();
+      renderGridAcciones();
+      renderGridSuperficies();
+      renderProblemas();
+      renderSolucionesDestacadas();
+      renderAreas();
+      wireAreasAcordeon();
+      wireAreasBuscador();
+      wireWizardOpenClose();
+      wireScrollAnclas();
+      wireBotonSubir();
+    });
   });
 })();

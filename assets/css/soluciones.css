@@ -1045,7 +1045,11 @@
   position: fixed;
   inset: 0;
   background: rgba(15, 17, 21, 0.6);
-  z-index: 500;
+  /* Por encima del banner de cookies (z-index:9999) — mismo motivo que
+     .cs-gestion-dock más abajo: sin esto, en una visita nueva sin
+     consentimiento guardado, el banner puede tapar el propio modal
+     (asistente de diagnóstico, gestión de soluciones...). */
+  z-index: 10000;
   align-items: center;
   justify-content: center;
   padding: 20px;
@@ -1641,3 +1645,96 @@
 @media (max-width: 640px) {
   #cs-exportar-whatsapp { display: inline-flex; }
 }
+
+/* ── Gestión de guías (editor JSON manual, solo preproducción) ──────────── */
+.cs-gestion-dock {
+  /* z-index por encima del banner de cookies (z-index:9999 en
+     src/js/analytics-consent.js, ocupa todo el ancho inferior) — mismo
+     problema real ya encontrado y corregido en el botón "volver arriba"
+     de Escaparate OM: sin esto, en cualquier visita nueva sin
+     consentimiento guardado, el banner tapa por completo este botón. */
+  position: fixed; right: 18px; bottom: 18px; z-index: 10000;
+}
+.cs-gestion-dock-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #1a1a1a; color: #fff; border: none; border-radius: 99px;
+  padding: 12px 20px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 10px 26px rgba(0,0,0,.28);
+}
+.cs-gestion-dock-btn svg { width: 16px; height: 16px; }
+.cs-gestion-dock-btn:hover { background: #333; }
+
+#cs-gestion-modal .cs-gestion-caja {
+  background: #fff; border-radius: 16px; width: min(1080px, 96vw);
+  max-height: 90vh; max-height: 90dvh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 30px 70px rgba(0,0,0,.35);
+}
+.cs-gestion-cabecera {
+  flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  padding: 22px 26px 16px; border-bottom: 1px solid #e6e6e6;
+}
+.cs-gestion-cabecera h2 { font-size: 19px; font-weight: 800; margin: 0; }
+.cs-gestion-subtitulo { font-size: 12.5px; color: #767676; margin: 4px 0 0; }
+.cs-gestion-cerrar {
+  flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid #d8d8d8;
+  background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.cs-gestion-cerrar svg { width: 14px; height: 14px; }
+
+.cs-gestion-cuerpo {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  display: grid; grid-template-columns: 280px 1fr; gap: 22px;
+  padding: 20px 26px 26px;
+}
+@media (max-width: 780px) {
+  .cs-gestion-cuerpo { grid-template-columns: 1fr; }
+}
+
+.cs-gestion-lista-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.cs-gestion-input {
+  font-family: inherit; font-size: 13.5px; padding: 9px 12px;
+  border: 1px solid #d8d8d8; border-radius: 8px; width: 100%; box-sizing: border-box;
+}
+.cs-gestion-nueva-btn {
+  font-family: inherit; font-size: 13px; font-weight: 600; padding: 9px 12px;
+  border: 1px dashed #999; border-radius: 8px; background: #fafafa; cursor: pointer;
+}
+.cs-gestion-nueva-btn:hover { background: #f0f0f0; }
+.cs-gestion-lista {
+  border: 1px solid #e6e6e6; border-radius: 10px; overflow-y: auto; max-height: 55vh;
+}
+.cs-gestion-lista-vacio { padding: 16px; font-size: 13px; color: #999; margin: 0; }
+.cs-gestion-lista-item {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  border-bottom: 1px solid #f0f0f0; padding: 10px 12px; cursor: pointer; font-family: inherit;
+}
+.cs-gestion-lista-item:last-child { border-bottom: none; }
+.cs-gestion-lista-item:hover { background: #f7f7f7; }
+.cs-gestion-lista-item.is-activa { background: #eef6ff; }
+.cs-gestion-lista-item .cs-gestion-item-titulo { display: block; font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.cs-gestion-lista-item .cs-gestion-item-slug { display: block; font-size: 11px; color: #999; font-family: ui-monospace, monospace; margin-top: 2px; }
+.cs-gestion-lista-item .cs-gestion-item-inactiva { color: #c81e1e; font-weight: 700; }
+
+.cs-gestion-editor-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.cs-gestion-campo { display: flex; flex-direction: column; gap: 6px; }
+.cs-gestion-campo label { font-size: 12px; font-weight: 600; color: #555; line-height: 1.5; }
+.cs-gestion-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.cs-gestion-checkbox input { width: 16px; height: 16px; }
+.cs-gestion-textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.5;
+  padding: 12px; border: 1px solid #d8d8d8; border-radius: 8px; resize: vertical; width: 100%; box-sizing: border-box;
+  tab-size: 2;
+}
+.cs-gestion-msg { font-size: 12.5px; margin: 0; min-height: 1.2em; }
+.cs-gestion-msg.is-error { color: #c81e1e; }
+.cs-gestion-msg.is-ok { color: #1a7a4c; }
+.cs-gestion-acciones { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cs-gestion-btn {
+  font-family: inherit; font-size: 13.5px; font-weight: 600; padding: 10px 18px;
+  border-radius: 99px; border: 1px solid transparent; cursor: pointer;
+}
+.cs-gestion-btn--primario { background: #d91b1b; color: #fff; }
+.cs-gestion-btn--primario:disabled { opacity: .5; cursor: not-allowed; }
+.cs-gestion-btn--peligro { background: none; border-color: #c81e1e; color: #c81e1e; }
+.cs-gestion-btn--peligro:disabled { opacity: .4; cursor: not-allowed; }
