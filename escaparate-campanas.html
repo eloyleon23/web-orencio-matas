@@ -653,6 +653,73 @@
     return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
   }
 
+  /* ---------------- Caché de campañas entre páginas (sessionStorage) ----
+     Aunque obtener_campanas ya es rápida (caché en Drive, no Sheet en
+     directo), sigue siendo una petición de red — al entrar en un
+     escaparate desde esta lista, o al volver de un escaparate a esta
+     lista, no hace falta pedirlo de nuevo si ya lo teníamos. sessionStorage
+     es justo lo que hace falta aquí: compartido entre escaparate.html y
+     esta página SOLO dentro de la misma pestaña (no entre pestañas ni
+     entre visitas futuras), que es exactamente el alcance pedido.
+
+     Se invalida (se ignora la caché y se vuelve a pedir) en dos casos,
+     tal cual se pidió:
+     - Si la página se ha RECARGADO (F5 / botón de recargar) — se detecta
+       con la Navigation Timing API.
+     - Si NO se ha llegado aquí navegando desde la otra página de
+       Escaparate OM — es decir, la primera vez que se entra en el flujo
+       en esta pestaña (desde el menú, un enlace externo, una pestaña
+       nueva…), no desde "volver" o desde una tarjeta.
+     Se sigue usando cuando: se entra a un escaparate desde una tarjeta
+     de esta lista, o se vuelve de un escaparate a esta lista con el
+     enlace "Volver al listado" o el botón atrás del navegador.
+
+     Además, cualquier cambio real (crear/editar/eliminar un escaparate,
+     o tocar su imagen) actualiza esta misma caché al momento (ver cada
+     manejador más abajo, con cargarCampanas(true) o guardarCacheCampanasSesion()
+     directamente) — así el propio flujo de gestión nunca enseña datos
+     obsoletos a quien lo está usando, sin necesidad de "salir" de nada. */
+  const CACHE_CAMPANAS_KEY = 'om_escaparate_campanas_sesion_v1';
+
+  function paginaFueRecargada(){
+    try{
+      const entradas = performance.getEntriesByType('navigation');
+      return entradas.length > 0 && entradas[0].type === 'reload';
+    }catch(err){
+      return false; // API no disponible: mejor no invalidar de más
+    }
+  }
+  function vieneDeOtraPaginaDeEscaparates(){
+    try{
+      if(!document.referrer) return false;
+      const ref = new URL(document.referrer);
+      if(ref.origin !== location.origin) return false;
+      return /\/escaparate(-campanas)?\.html$/.test(ref.pathname);
+    }catch(err){
+      return false;
+    }
+  }
+  function leerCacheCampanasSesion(){
+    if(paginaFueRecargada() || !vieneDeOtraPaginaDeEscaparates()) return null;
+    try{
+      const guardado = sessionStorage.getItem(CACHE_CAMPANAS_KEY);
+      if(!guardado) return null;
+      const datos = JSON.parse(guardado);
+      return Array.isArray(datos.campanas) ? datos.campanas : null;
+    }catch(err){
+      return null;
+    }
+  }
+  function guardarCacheCampanasSesion(campanas){
+    try{
+      sessionStorage.setItem(CACHE_CAMPANAS_KEY, JSON.stringify({ campanas }));
+    }catch(err){
+      // sessionStorage lleno o deshabilitado (modo incógnito estricto,
+      // etc.) — no pasa nada, simplemente no se podrá reutilizar en la
+      // siguiente navegación.
+    }
+  }
+
   /* ---------------- Toast ---------------- */
   let toastTimer;
   function toast(msg, isError){
@@ -804,7 +871,22 @@
     pintarFondoEstacional(); // se repinta con el contenido definitivo ya en el DOM, para medir la altura real
   }
 
-  async function cargarCampanas(){
+  async function cargarCampanas(forzar){
+    // Ruta más rápida todavía que la caché en Drive: si ya tenemos las
+    // campañas de una navegación reciente dentro del mismo flujo (ver
+    // helpers de sessionStorage más arriba), reutilizarlas sin pedir
+    // nada — ni siquiera la petición rápida a Apps Script. "forzar" se
+    // usa justo después de un cambio real (crear/editar/eliminar/
+    // imagen), para saltarse la caché a propósito y traer lo que el
+    // servidor acaba de confirmar.
+    if(!forzar){
+      const cacheadas = leerCacheCampanasSesion();
+      if(cacheadas){
+        CAMPAIGNS = cacheadas;
+        return;
+      }
+    }
+
     // Llama directamente a la acción obtener_campanas del Web App de
     // Apps Script — ahora lee de una caché en Drive que el propio Apps
     // Script mantiene al día (regenerada de forma síncrona tras cada
@@ -831,6 +913,7 @@
       const datos = await resp.json();
       if(datos.error) throw new Error(datos.error);
       CAMPAIGNS = datos.campanas || [];
+      guardarCacheCampanasSesion(CAMPAIGNS);
     } catch(err){
       if(err.name === 'AbortError') throw new Error('La respuesta ha tardado demasiado (más de 12 segundos) y se ha cancelado.');
       throw err;
@@ -933,6 +1016,11 @@
           const data = await resp.json();
           if(!data.success) throw new Error(data.error || 'Error desconocido');
           CAMPAIGNS = CAMPAIGNS.filter(x=>x.id!==c.id);
+          // Sincroniza la caché de sesión con este mismo cambio local —
+          // el parcheo aquí es trivial (quitar uno por id) y ya se sabe
+          // confirmado por el servidor, así que no hace falta una nueva
+          // petición de red solo para refrescar la caché.
+          guardarCacheCampanasSesion(CAMPAIGNS);
           renderCampaignList();
           renderCards();
           toast(`Escaparate «${c.nombre}» eliminado.`);
@@ -1061,6 +1149,7 @@
       if(!data.success) throw new Error(data.error || 'Error desconocido');
       const c = findCampaign(id);
       if(c) c.imagenFondo = data.imagenFondo;
+      guardarCacheCampanasSesion(CAMPAIGNS);
       pintarImagenCampanaForm(id, data.imagenFondo);
       toast('Imagen de escaparate actualizada.');
     } catch(err){
@@ -1085,6 +1174,7 @@
       if(!data.success) throw new Error(data.error || 'Error desconocido');
       const c = findCampaign(id);
       if(c) c.imagenFondo = '';
+      guardarCacheCampanasSesion(CAMPAIGNS);
       pintarImagenCampanaForm(id, '');
       toast('Imagen de escaparate eliminada.');
     } catch(err){
@@ -1141,15 +1231,17 @@
       if(!data.success) throw new Error(data.error || 'Error desconocido');
 
       const esNueva = !payload.id;
-      // Vuelve a pedir las campañas sin más — ya no hace falta parchear
-      // CAMPAIGNS a mano en local: procesarGuardarCampana() regenera la
-      // caché de campañas en Drive de forma SÍNCRONA antes de devolver
-      // éxito (ver regenerarCacheCampanasDesdeSheet_ en Apps Script), así
-      // que en el momento en que esta respuesta llega, obtener_campanas
-      // ya devolvería el dato fresco — sin ningún desfase que cubrir a
-      // mano, y sin arriesgarse a que esta copia local del mapeo de
-      // campos se desincronice de lo que de verdad hace el servidor.
-      await cargarCampanas();
+      // Vuelve a pedir las campañas, FORZANDO que se salte la caché de
+      // sesión (ver cargarCampanas) — procesarGuardarCampana() regenera
+      // la caché de Drive de forma SÍNCRONA antes de devolver éxito (ver
+      // regenerarCacheCampanasDesdeSheet_ en Apps Script), así que en el
+      // momento en que esta respuesta llega, obtener_campanas ya
+      // devolvería el dato fresco. Sin el forzado, cargarCampanas()
+      // reutilizaría la caché de sesión (todavía con el dato de ANTES de
+      // este guardado) y el cambio no se vería hasta recargar o salir del
+      // flujo — justo lo que se pidió evitar ("si se edita un escaparate
+      // o se añade uno nuevo... refrescamos").
+      await cargarCampanas(true);
       renderCampaignList();
       renderCards();
       // Aquí ya no se salta a "Asignar productos" (esa gestión vive en

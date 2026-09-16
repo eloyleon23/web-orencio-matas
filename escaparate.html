@@ -1187,6 +1187,54 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   let activeId = null;
   const HOY = new Date();
 
+  /* ---------------- Caché de campañas entre páginas (sessionStorage) ----
+     Mismo mecanismo y mismas claves que en escaparate-campanas.html (ver
+     los comentarios completos allí) — duplicado a propósito, este
+     proyecto no comparte JS entre páginas. Al entrar aquí desde una
+     tarjeta de esa lista (o al volver a ella), se reutiliza lo que ya se
+     había pedido, sin otra petición de red. Se invalida si la página se
+     ha recargado o si no se ha llegado navegando desde la otra página de
+     Escaparate OM (primera entrada al flujo en esta pestaña). */
+  const CACHE_CAMPANAS_KEY = 'om_escaparate_campanas_sesion_v1';
+
+  function paginaFueRecargada(){
+    try{
+      const entradas = performance.getEntriesByType('navigation');
+      return entradas.length > 0 && entradas[0].type === 'reload';
+    }catch(err){
+      return false;
+    }
+  }
+  function vieneDeOtraPaginaDeEscaparates(){
+    try{
+      if(!document.referrer) return false;
+      const ref = new URL(document.referrer);
+      if(ref.origin !== location.origin) return false;
+      return /\/escaparate(-campanas)?\.html$/.test(ref.pathname);
+    }catch(err){
+      return false;
+    }
+  }
+  function leerCacheCampanasSesion(){
+    if(paginaFueRecargada() || !vieneDeOtraPaginaDeEscaparates()) return null;
+    try{
+      const guardado = sessionStorage.getItem(CACHE_CAMPANAS_KEY);
+      if(!guardado) return null;
+      const datos = JSON.parse(guardado);
+      return Array.isArray(datos.campanas) ? datos.campanas : null;
+    }catch(err){
+      return null;
+    }
+  }
+  function guardarCacheCampanasSesion(campanas){
+    try{
+      sessionStorage.setItem(CACHE_CAMPANAS_KEY, JSON.stringify({ campanas }));
+    }catch(err){
+      // sessionStorage lleno o deshabilitado — no pasa nada, simplemente
+      // no se podrá reutilizar en la siguiente navegación.
+    }
+  }
+
   function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
   function activaEn(camp, fecha){
     if(!camp.fechaInicio || !camp.fechaFin) return false;
@@ -1372,7 +1420,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
   }
 
-  async function cargarCampanas(){
+  async function cargarCampanas(forzar){
+    // Ruta más rápida todavía que la caché en Drive: si ya tenemos las
+    // campañas de una navegación reciente dentro del mismo flujo (p.ej.
+    // se acaba de entrar aquí desde una tarjeta de
+    // escaparate-campanas.html), reutilizarlas sin pedir nada.
+    if(!forzar){
+      const cacheadas = leerCacheCampanasSesion();
+      if(cacheadas){
+        CAMPAIGNS = cacheadas;
+        return;
+      }
+    }
+
     // Llama directamente a la acción obtener_campanas del Web App de
     // Apps Script — ahora lee de una caché en Drive que el propio Apps
     // Script mantiene al día (regenerada de forma síncrona tras cada
@@ -1412,6 +1472,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const datos = await resp.json();
     if(datos.error) throw new Error(datos.error);
     CAMPAIGNS = datos.campanas || [];
+    guardarCacheCampanasSesion(CAMPAIGNS);
   }
 
   async function iniciar(){
@@ -1939,6 +2000,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if(!data.success) throw new Error(data.error || 'Error desconocido');
       const c = findCampaign(campaignId);
       if(c){ c.productos = productosArr; c.destacados = data.destacados || destacadosArr; }
+      // Sincroniza la caché de sesión con este mismo cambio local — así
+      // si el usuario vuelve al listado o entra en otro escaparate, no
+      // ve el número de productos de antes de este guardado.
+      guardarCacheCampanasSesion(CAMPAIGNS);
       modalProductos.close();
       render();
       toast(`Productos guardados en «${c ? c.nombre : campaignId}».`);
