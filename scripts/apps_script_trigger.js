@@ -54,6 +54,7 @@ function onOpen() {
     .addItem('🖼️ Actualizar IDs de imagen desde Drive', 'actualizarImagenesDrive')
     .addItem('📧 Enviarme Excel de productos sin imagen', 'enviarExcelProductosSinImagenManual')
     .addItem('🔄 Regenerar caché completa del buscador', 'regenerarCacheCompletaManual')
+    .addItem('🏪 Regenerar caché de Escaparate OM', 'regenerarCacheCampanasManual')
     .addItem('🔗 Importar sugerencias de relacionados', 'importarSugerenciasRelacionados')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addItem('✅ Validar imagen de producto', 'validarImagenManual')
@@ -3345,13 +3346,15 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // NUEVO — Escaparate OM (campañas de temporada/comerciales). Sin
-    // caché en Drive a propósito: la hoja "Campañas" es pequeña (unas
-    // pocas decenas de filas como mucho), así que se lee en directo en
-    // cada llamada — más simple que mantener otra caché sincronizada y
-    // siempre al día sin parcheos.
+    // Escaparate OM (campañas de temporada/comerciales) — lee de la
+    // caché en Drive (ver regenerarCacheCampanasDesdeSheet_ más arriba),
+    // no del Sheet en directo: antes sí se leía en directo aquí mismo
+    // ("la hoja es pequeña, no hace falta otra caché"), pero eso no
+    // resolvía que Escaparate OM funcionara igual en IONOS sin
+    // redesplegar nada — con la caché, la misma URL sirve datos ya
+    // preparados, sin tocar el Sheet en cada visita.
     if (accion === 'obtener_campanas') {
-      return ContentService.createTextOutput(JSON.stringify({ campanas: leerCampanas_() }))
+      return ContentService.createTextOutput(JSON.stringify(leerCacheCampanas_()))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -3983,6 +3986,102 @@ function leerCampanas_() {
   return campanas;
 }
 
+// ── Caché de campañas en Drive (Escaparate OM) ──────────────────────────────
+// Mismo motivo y mismo patrón que la caché de productos de más arriba
+// (productos_cache.json / leerCacheProductos_ / regenerarCacheCompletaDesdeSheet_):
+// antes obtener_campanas llamaba a leerCampanas_() EN DIRECTO en cada
+// petición — deliberado en su momento ("la hoja es pequeña, más simple que
+// mantener otra caché"), pero eso no resolvía el objetivo real de fondo:
+// que Escaparate OM funcione igual de bien publicado en IONOS que en
+// GitHub Pages SIN depender de ningún redespliegue de la release (decisión
+// explícita de Eloy: main pasa a ser solo mantenimiento — productos,
+// imágenes, escaparates —, todo el tráfico real vive en release/IONOS, y
+// los cambios desde main deben reflejarse ahí sin tocar el despliegue).
+// Con esta caché, la misma URL de Apps Script sirve datos ya preparados
+// en Drive — sin leer el Sheet en cada visita, y sin ningún archivo de
+// git de por medio (se retira el intento anterior con
+// data/campanas.json + GitHub Actions: para una hoja tan pequeña, esta
+// caché en Drive es más simple y además funciona igual en cualquier
+// hosting, cosa que un archivo comprometido a git nunca podía garantizar
+// en IONOS).
+const NOMBRE_ARCHIVO_CAMPANAS_CACHE = 'campanas_cache.json';
+
+// Por nombre, no por ID fijo — mismo motivo que obtenerArchivoCache_ de
+// productos: no depender de un ID que se rompería si el archivo se
+// borrara alguna vez por error.
+function obtenerArchivoCampanasCache_() {
+  const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_CAMPANAS_CACHE);
+  if (archivos.hasNext()) {
+    return archivos.next();
+  }
+  const blobVacio = Utilities.newBlob('{"campanas":[]}', 'application/json', NOMBRE_ARCHIVO_CAMPANAS_CACHE);
+  const archivo = DriveApp.createFile(blobVacio);
+  archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  console.log('Archivo de caché de campañas creado en Drive:', archivo.getId());
+  return archivo;
+}
+
+function leerCacheCampanas_() {
+  try {
+    const archivo = obtenerArchivoCampanasCache_();
+    const contenido = archivo.getBlob().getDataAsString('UTF-8');
+    return JSON.parse(contenido);
+  } catch (e) {
+    console.error('leerCacheCampanas_: error leyendo la caché, devolviendo estructura vacía:', e);
+    return { campanas: [] };
+  }
+}
+
+function guardarCacheCampanas_(datos) {
+  const archivo = obtenerArchivoCampanasCache_();
+  archivo.setContent(JSON.stringify(datos));
+}
+
+// Regenera la caché completa reutilizando tal cual leerCampanas_() (ya
+// hace toda la lectura/mapeo de columnas del Sheet) — sin duplicar esa
+// lógica aquí. Se llama de forma SÍNCRONA justo después de cada cambio
+// real (crear/editar/eliminar campaña, cambiar productos, imagen — ver
+// cada procesarXxxCampana más abajo), así que en el momento en que esas
+// funciones devuelven éxito al cliente, la caché ya está al día — sin
+// esperar a ningún workflow externo.
+function regenerarCacheCampanasDesdeSheet_() {
+  const campanas = leerCampanas_();
+  const payload = {
+    generado: new Date().toISOString(),
+    total: campanas.length,
+    campanas: campanas,
+  };
+
+  // Mismo motivo que en la caché de productos: sin bloqueo, dos
+  // regeneraciones casi simultáneas (p.ej. guardar la campaña justo
+  // seguido de cambiarle los productos) podrían pisarse la una a la otra.
+  const lock = LockService.getScriptLock();
+  try {
+    lock.tryLock(15000);
+    guardarCacheCampanas_(payload);
+  } finally {
+    lock.releaseLock();
+  }
+  console.log(`regenerarCacheCampanasDesdeSheet_: ${campanas.length} campañas regeneradas y guardadas en la caché de Drive.`);
+  return payload;
+}
+
+// Versión para lanzar a mano desde el menú/panel, con aviso en pantalla —
+// normalmente no hace falta (las 5 acciones que tocan campañas ya la
+// regeneran solas), pero sirve como red de seguridad manual si alguna
+// vez hiciera falta forzarlo (p.ej. tras editar una campaña directamente
+// en el Sheet a mano, sin pasar por el formulario).
+function regenerarCacheCampanasManual() {
+  try {
+    const payload = regenerarCacheCampanasDesdeSheet_();
+    avisar_('Caché regenerada', `${payload.total} campañas regeneradas y guardadas en la caché de Drive.\n\nYa disponibles para Escaparate OM.`);
+    return { total: payload.total };
+  } catch (err) {
+    avisar_('Error', 'No se pudo regenerar la caché de campañas: ' + err.message);
+    throw err;
+  }
+}
+
 // Crea una campaña manual nueva, o actualiza los campos "de cabecera"
 // de una existente (nombre/tipo/color/fechas/áreas) si llega un id
 // que ya existe. Los productos NO se tocan aquí — eso lo gestiona
@@ -4049,7 +4148,7 @@ function procesarGuardarCampana(data) {
       fila[COL['fecha_actualizacion']] = ahoraISO;
       sheet.getRange(sheet.getLastRow() + 1, 1, 1, CABECERAS_CAMPANAS_.length).setValues([fila]);
       console.log('Campaña creada:', id);
-      dispararWorkflowCampanasJson();
+      regenerarCacheCampanasDesdeSheet_();
       return ContentService.createTextOutput(JSON.stringify({ success: true, id: id }))
         .setMimeType(ContentService.MimeType.JSON);
     }
@@ -4067,7 +4166,7 @@ function procesarGuardarCampana(data) {
     sheet.getRange(filaNum, COL['activa'] + 1).setValue(activa);
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
     console.log('Campaña actualizada:', idExistente);
-    dispararWorkflowCampanasJson();
+    regenerarCacheCampanasDesdeSheet_();
 
     return ContentService.createTextOutput(JSON.stringify({ success: true, id: idExistente }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -4140,7 +4239,7 @@ function procesarActualizarProductosCampana(data) {
     sheet.getRange(filaNum, COL['destacados'] + 1).setValue(destacados.length ? JSON.stringify(destacados) : '');
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
     console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos,', destacados.length, 'destacados');
-    dispararWorkflowCampanasJson();
+    regenerarCacheCampanasDesdeSheet_();
 
     return ContentService.createTextOutput(JSON.stringify({ success: true, productos: productos, destacados: destacados }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -4206,7 +4305,7 @@ function procesarActualizarImagenCampana(data) {
     sheet.getRange(filaNum, COL['imagen_fondo'] + 1).setValue(driveFile.getId());
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
     console.log('Imagen de campaña actualizada:', id, '→', driveFile.getId());
-    dispararWorkflowCampanasJson();
+    regenerarCacheCampanasDesdeSheet_();
 
     return ContentService.createTextOutput(JSON.stringify({ success: true, imagenFondo: driveFile.getId() }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -4241,7 +4340,7 @@ function procesarEliminarImagenCampana(data) {
     sheet.getRange(filaNum, COL['imagen_fondo'] + 1).setValue('');
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
     console.log('Imagen de campaña eliminada:', id);
-    dispararWorkflowCampanasJson();
+    regenerarCacheCampanasDesdeSheet_();
 
     return ContentService.createTextOutput(JSON.stringify({ success: true }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -4268,7 +4367,7 @@ function procesarEliminarCampana(data) {
       if ((datos[i][COL['id']] || '').toString().trim() === id) {
         sheet.deleteRow(i + 1);
         console.log('Campaña eliminada:', id);
-        dispararWorkflowCampanasJson();
+        regenerarCacheCampanasDesdeSheet_();
         return ContentService.createTextOutput(JSON.stringify({ success: true }))
           .setMimeType(ContentService.MimeType.JSON);
       }
@@ -5496,65 +5595,6 @@ function dispararWorkflowProductosJson() {
   }
 }
 
-// ── Disparar regeneración de campanas.json (caché estática de Escaparate OM) ──
-// Mismo motivo y mismo patrón que dispararWorkflowProductosJson(): las
-// páginas públicas (escaparate.html, escaparate-campanas.html) leen
-// data/campanas.json en vez de llamar en vivo a obtener_campanas — mucho
-// más rápido (archivo estático de GitHub Pages, sin la latencia propia
-// de un Web App de Apps Script), a costa de que un cambio tarde unos
-// segundos/minutos en reflejarse en esas páginas hasta que este workflow
-// termine. Se llama tras CUALQUIER cambio real: crear/editar/eliminar
-// una campaña, cambiar sus productos, o su imagen (ver cada
-// procesarXxxCampana más abajo). El propio cron de cada 15 min del
-// workflow ya cubre cualquier disparo que fallara por lo que sea, así
-// que aquí también se puede fallar en silencio (solo log) sin cortar la
-// acción principal del usuario — igual que con productos.
-function dispararWorkflowCampanasJson() {
-  const props = PropertiesService.getScriptProperties();
-  const ULTIMO_DISPARO_KEY = 'ultimoDisparoWorkflowCampanasJson';
-  const MINUTOS_MINIMOS_ENTRE_DISPAROS = 1;
-
-  const ultimoDisparoStr = props.getProperty(ULTIMO_DISPARO_KEY);
-  if (ultimoDisparoStr) {
-    const minutosDesdeUltimo = (Date.now() - parseInt(ultimoDisparoStr, 10)) / 60000;
-    if (minutosDesdeUltimo < MINUTOS_MINIMOS_ENTRE_DISPAROS) {
-      console.log(`Workflow generar_campanas_json omitido: ya se disparó hace ${minutosDesdeUltimo.toFixed(1)} min (límite: ${MINUTOS_MINIMOS_ENTRE_DISPAROS} min). El cron de cada 15 min ya cubre este hueco.`);
-      return;
-    }
-  }
-
-  try {
-    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`;
-    const payload = JSON.stringify({
-      event_type: 'generar_campanas_json',
-      client_payload: { triggered_by: 'campana_modificada', timestamp: new Date().toISOString() }
-    });
-    const options = {
-      method: 'post',
-      contentType: 'application/json',
-      headers: {
-        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'X-GitHub-Api-Version': '2022-11-28'
-      },
-      payload: payload,
-      muteHttpExceptions: true
-    };
-    const resp = UrlFetchApp.fetch(url, options);
-    if (resp.getResponseCode() === 204) {
-      console.log('Workflow generar_campanas_json disparado correctamente');
-      props.setProperty(ULTIMO_DISPARO_KEY, Date.now().toString());
-    } else {
-      console.error('Error al disparar workflow generar_campanas_json:', resp.getContentText());
-    }
-  } catch (err) {
-    // Nunca debe cortar la acción principal del usuario (guardar/borrar/
-    // etc. ya se ha completado en el Sheet en este punto) — el cron de
-    // seguridad cubre cualquier fallo aquí.
-    console.error('Excepción al disparar workflow generar_campanas_json:', err);
-  }
-}
-
 // ── Vista rápida: parchear productos.json al instante ──────────────────────
 // El workflow completo de GitHub Actions (dispararWorkflowProductosJson)
 // tarda del orden de un minuto en reflejarse (arranque del runner +
@@ -6192,6 +6232,7 @@ const FUNCIONES_PANEL = {
   actualizar_ids_imagen:         { etiqueta: '🖼️ Actualizar IDs de imagen desde Drive',        grupo: 'Imágenes',       fn: actualizarImagenesDrive,              confirmar: false },
   enviar_excel_sin_imagen:       { etiqueta: '📧 Enviarme Excel de productos sin imagen',       grupo: 'Imágenes',       fn: enviarExcelProductosSinImagenManual,  confirmar: false },
   regenerar_cache:               { etiqueta: '🔄 Regenerar caché completa del buscador',        grupo: 'Imágenes',       fn: regenerarCacheCompletaManual,         confirmar: false },
+  regenerar_cache_campanas:      { etiqueta: '🏪 Regenerar caché de Escaparate OM',              grupo: 'Imágenes',       fn: regenerarCacheCampanasManual,         confirmar: false },
   importar_sugerencias:          { etiqueta: '🔗 Importar sugerencias de relacionados',         grupo: 'Relacionados',   fn: importarSugerenciasRelacionados,      confirmar: false },
   compartir_imagenes:            { etiqueta: '🔓 Compartir imágenes Drive públicamente',        grupo: 'Imágenes',       fn: compartirImagenesDrive,               confirmar: true  },
   reevaluar_areas:               { etiqueta: '🗂️ Reevaluar áreas de todos los productos',      grupo: 'Clasificación',  fn: reevaluarAreasProductos,              confirmar: true  },

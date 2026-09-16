@@ -805,47 +805,24 @@
   }
 
   async function cargarCampanas(){
-    // RUTA RÁPIDA: data/campanas.json es un archivo ESTÁTICO (servido por
-    // GitHub Pages, con caché de CDN) generado por
-    // scripts/generar_campanas_json.py — se regenera automáticamente tras
-    // cualquier cambio real (crear/editar/eliminar una campaña, o sus
-    // productos/imagen — ver dispararWorkflowCampanasJson() en Apps
-    // Script) y también por un cron de seguridad cada 15 min. Leer esto
-    // es muchísimo más rápido que llamar en vivo a la acción
-    // obtener_campanas del Web App de Apps Script, que tiene su propia
-    // latencia (arranque en frío incluido) — esa latencia en CADA carga
-    // de página era la causa real de "la carga... es muy lenta"
-    // reportada por Eloy, tanto para el listado como para entrar/volver
-    // de un escaparate concreto. Timeout corto (3s): si el archivo
-    // estático tarda más que eso, algo raro pasa (o directamente no
-    // existe todavía) y conviene pasar ya al respaldo en vez de esperar.
-    try{
-      const controllerEstatico = new AbortController();
-      const timeoutEstatico = setTimeout(() => controllerEstatico.abort(), 3000);
-      try{
-        const respEstatico = await fetch('./data/campanas.json?_ts=' + Date.now(), { cache:'no-store', signal: controllerEstatico.signal });
-        if(respEstatico.ok){
-          const datosEstatico = await respEstatico.json();
-          if(Array.isArray(datosEstatico.campanas)){
-            CAMPAIGNS = datosEstatico.campanas;
-            return; // listo — ni siquiera hace falta tocar Apps Script
-          }
-        }
-      } finally {
-        clearTimeout(timeoutEstatico);
-      }
-    } catch(err){
-      // Archivo inexistente (todavía no se ha desplegado/generado nunca),
-      // JSON corrupto a mitad de una regeneración, red… cualquier fallo
-      // aquí cae silenciosamente al respaldo de abajo, sin interrumpir
-      // la carga real de la página.
-    }
-
-    // RESPALDO: llamada en vivo a Apps Script — más lenta, pero SIEMPRE
-    // funciona, incluso antes del primer despliegue del workflow nuevo o
-    // si este alguna vez fallara. Mismo timeout defensivo de siempre
-    // (ver comentario histórico): el try/finally de iniciar() por sí
-    // solo no basta si el propio fetch se queda colgado sin resolver.
+    // Llama directamente a la acción obtener_campanas del Web App de
+    // Apps Script — ahora lee de una caché en Drive que el propio Apps
+    // Script mantiene al día (regenerada de forma síncrona tras cada
+    // cambio real: crear/editar/eliminar una campaña, o tocar sus
+    // productos/imagen), no de la hoja de cálculo en directo como antes.
+    // Es lo bastante rápida para ser la única fuente, sin necesitar
+    // ningún archivo intermedio en git: la misma URL funciona igual de
+    // bien esté esta página en GitHub Pages o en IONOS, sin depender de
+    // ningún despliegue para reflejar un cambio — mismo patrón que ya
+    // usan buscador.html y Centro de Soluciones para los productos
+    // (decisión explícita de Eloy: main es solo mantenimiento, todo el
+    // tráfico real vive en release, y los cambios desde main deben
+    // verse ahí sin redesplegar nada).
+    //
+    // Timeout defensivo con AbortController: si el fetch se queda
+    // colgado sin resolver nunca (no solo si falla rápido), nada más lo
+    // detectaría — ni el catch ni el finally de iniciar() llegarían a
+    // ejecutarse nunca por sí solos.
     const controller = new AbortController();
     const avisoTimeout = setTimeout(() => controller.abort(), 12000);
     try{
@@ -1164,40 +1141,15 @@
       if(!data.success) throw new Error(data.error || 'Error desconocido');
 
       const esNueva = !payload.id;
-      const idFinal = data.id || payload.id;
-      // Se actualiza CAMPAIGNS EN LOCAL con lo que ya sabemos que se
-      // acaba de guardar, en vez de volver a llamar a cargarCampanas()
-      // — esa función ahora prioriza data/campanas.json (el archivo
-      // estático rápido), que tarda unos segundos/minutos en reflejar
-      // ESTE MISMO guardado (ver dispararWorkflowCampanasJson() en Apps
-      // Script) — sin este parcheo local, quien acaba de guardar vería
-      // su propio cambio "desaparecer" un instante hasta que el archivo
-      // se regenerase. Los campos que este formulario no toca
-      // (productos, destacados, imagenFondo, fechaCreacion) se
-      // conservan de la campaña existente si la había.
-      const existente = CAMPAIGNS.find(c => c.id === idFinal);
-      const campanaActualizada = {
-        id: idFinal,
-        nombre: payload.nombre,
-        tipo: payload.tipo,
-        origen: existente ? existente.origen : 'manual',
-        colorSet: payload.colorSet,
-        colorPersonalizado1: payload.colorPersonalizado1,
-        colorPersonalizado2: payload.colorPersonalizado2,
-        fechaInicio: payload.fechaInicio,
-        fechaFin: payload.fechaFin,
-        areas: payload.areas,
-        productos: existente ? existente.productos : [],
-        destacados: existente ? existente.destacados : [],
-        imagenFondo: existente ? existente.imagenFondo : '',
-        eslogan: payload.eslogan,
-        activa: payload.activa,
-        fechaCreacion: existente ? existente.fechaCreacion : new Date().toISOString(),
-        fechaActualizacion: new Date().toISOString(),
-      };
-      const idx = CAMPAIGNS.findIndex(c => c.id === idFinal);
-      if(idx !== -1) CAMPAIGNS[idx] = campanaActualizada;
-      else CAMPAIGNS.push(campanaActualizada);
+      // Vuelve a pedir las campañas sin más — ya no hace falta parchear
+      // CAMPAIGNS a mano en local: procesarGuardarCampana() regenera la
+      // caché de campañas en Drive de forma SÍNCRONA antes de devolver
+      // éxito (ver regenerarCacheCampanasDesdeSheet_ en Apps Script), así
+      // que en el momento en que esta respuesta llega, obtener_campanas
+      // ya devolvería el dato fresco — sin ningún desfase que cubrir a
+      // mano, y sin arriesgarse a que esta copia local del mapeo de
+      // campos se desincronice de lo que de verdad hace el servidor.
+      await cargarCampanas();
       renderCampaignList();
       renderCards();
       // Aquí ya no se salta a "Asignar productos" (esa gestión vive en

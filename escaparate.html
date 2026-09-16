@@ -1373,46 +1373,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   async function cargarCampanas(){
-    // RUTA RÁPIDA: data/campanas.json es un archivo ESTÁTICO (GitHub
-    // Pages, caché de CDN), generado por scripts/generar_campanas_json.py
-    // y regenerado automáticamente tras cualquier cambio real (ver
-    // dispararWorkflowCampanasJson() en Apps Script) además de un cron de
-    // seguridad cada 15 min. Mucho más rápido que llamar en vivo a
-    // obtener_campanas en el Web App de Apps Script — esa latencia en
-    // CADA carga era la causa real de "la carga... es muy lenta" al
-    // entrar en un escaparate, reportada por Eloy. Timeout corto (3s):
-    // si tarda más, algo raro pasa y conviene pasar ya al respaldo.
-    try{
-      const controllerEstatico = new AbortController();
-      const timeoutEstatico = setTimeout(() => controllerEstatico.abort(), 3000);
-      try{
-        const respEstatico = await fetch('./data/campanas.json?_ts=' + Date.now(), { cache:'no-store', signal: controllerEstatico.signal });
-        if(respEstatico.ok){
-          const datosEstatico = await respEstatico.json();
-          if(Array.isArray(datosEstatico.campanas)){
-            CAMPAIGNS = datosEstatico.campanas;
-            return; // listo — ni siquiera hace falta tocar Apps Script
-          }
-        }
-      } finally {
-        clearTimeout(timeoutEstatico);
-      }
-    } catch(err){
-      // Archivo inexistente, JSON corrupto a mitad de una regeneración,
-      // red… cualquier fallo aquí cae silenciosamente al respaldo de
-      // abajo, sin interrumpir la carga real de la página.
-    }
-
-    // RESPALDO: llamada en vivo a Apps Script — más lenta, pero SIEMPRE
-    // funciona, incluso antes del primer despliegue del workflow nuevo o
-    // si este alguna vez fallara.
-    // El parámetro "_ts" no lo usa el servidor para nada — es solo para
-    // que cada llamada tenga una URL distinta. Los Web Apps de Apps
-    // Script desplegados para acceso público pueden quedar cacheados en
-    // el borde de Google para peticiones GET idénticas (además de
-    // cualquier caché del propio navegador, que 'no-store' ya evita) —
-    // sin esto, una campaña recién creada podía no aparecer al recargar
-    // hasta que ese caché expirase por sí solo.
+    // Llama directamente a la acción obtener_campanas del Web App de
+    // Apps Script — ahora lee de una caché en Drive que el propio Apps
+    // Script mantiene al día (regenerada de forma síncrona tras cada
+    // cambio real: crear/editar/eliminar una campaña, o tocar sus
+    // productos/imagen), no de la hoja de cálculo en directo como antes.
+    // Es lo bastante rápida para ser la única fuente, sin necesitar
+    // ningún archivo intermedio en git: la misma URL funciona igual de
+    // bien esté esta página en GitHub Pages o en IONOS, sin depender de
+    // ningún despliegue para reflejar un cambio — mismo patrón que ya
+    // usan buscador.html y Centro de Soluciones para los productos
+    // (decisión explícita de Eloy: main es solo mantenimiento, todo el
+    // tráfico real vive en release, y los cambios desde main deben
+    // verse ahí sin redesplegar nada).
+    //
+    // "_ts" en la URL: para que cada llamada sea una URL distinta y no
+    // pueda quedar cacheada en el borde de Google para peticiones GET
+    // idénticas (además de cualquier caché del propio navegador, que
+    // 'no-store' ya evita).
     // Timeout explícito con AbortController: si el fetch se queda
     // colgado sin resolver nunca (no solo si falla rápido), Promise.
     // allSettled esperaría indefinidamente a que esta promesa se asiente
