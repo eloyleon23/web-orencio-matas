@@ -478,16 +478,25 @@
       }
       .card .precio{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:500; font-size:16px; }
       .card .precio .iva{ font-size:10px; color:var(--ink-faint); font-weight:400; margin-left:4px;}
-      /* Precio real tachado (más pequeño, petición explícita) encima del
-         precio ya rebajado — column en vez del space-between por
-         defecto de .ref-line, para apilarlos en vez de ponerlos a los
-         lados. */
-      .ref-line-precio-descuento{ flex-direction:column; align-items:flex-start; gap:1px; }
+      /* Column en vez del space-between por defecto de .ref-line: el
+         bloque de precio ahora siempre tiene al menos 2 líneas (con IVA
+         + sin IVA, petición explícita de Eloy), y 3 si además hay
+         descuento (+ el precio ya rebajado) — se apilan en vez de
+         ponerse a los lados. */
+      .ref-line-precio{ flex-direction:column; align-items:flex-start; gap:1px; }
       .precio-tachado{
         font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         font-size:12px; color:var(--ink-faint); text-decoration:line-through;
       }
       .precio-rebajado{ color:#D91B1B; }
+      /* Precio sin IVA — siempre del precio ORIGINAL (con o sin
+         descuento aplicado encima), nunca del precio ya rebajado: ese
+         se queda con un único número a propósito, para no duplicar la
+         misma información dos veces en la misma tarjeta. Viene ya
+         calculado del propio catálogo (p.precio_sin), no se recalcula
+         aquí a partir del % de IVA. */
+      .precio-siniva{ font-size:11px; color:var(--ink-faint); }
+      .precio-siniva-tachado{ text-decoration:line-through; }
 
       .barcode{ height:20px; align-self:flex-start; min-width:74px; opacity:.85; }
       .ref-line{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -1547,8 +1556,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // "precio ya rebajado" en ningún sitio, así que si el precio base
   // cambia en el Sheet, el descuento se sigue aplicando correctamente
   // sin tener que tocar nada de Escaparate OM.
+  // Bug real detectado por Eloy: con un precio real de "10,48€" y un
+  // 10% de descuento, el resultado mostrado era "0,00 €". Causa:
+  // Number("10,48") da NaN (el catálogo guarda los precios como texto
+  // con COMA decimal, no punto — "10,48", no "10.48"), y NaN||0 se
+  // convierte silenciosamente en 0 sin ningún error visible. precioNum()
+  // ya existe en este archivo precisamente para esto (sustituye la coma
+  // por un punto antes de convertir) — bastaba con usarla aquí también
+  // en vez de Number() a secas.
   function precioConDescuento(precioOriginal, porcentaje){
-    const p = Number(precioOriginal) || 0;
+    const p = precioNum(precioOriginal);
     const pct = Number(porcentaje) || 0;
     return Math.round(p * (1 - pct/100) * 100) / 100;
   }
@@ -1562,15 +1579,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const atributoTam = tam > 1 ? ` data-tam="${tam}" data-alin="${destacado.alinH || 'centro'}"` : '';
     const tieneDescuento = Number(descuento) > 0;
     const precioRebajado = tieneDescuento ? precioConDescuento(p.precio_con, descuento) : null;
-    // Bloque de precio: con descuento, el precio real se ve tachado y
-    // más pequeño, y justo debajo el precio ya rebajado en el tamaño
+    // p.precio_sin ya viene calculado del propio catálogo (no se
+    // recalcula aquí a partir del IVA — el % de IVA puede variar según
+    // la familia del producto, así que es más fiable confiar en el
+    // valor que ya trae el Sheet que rehacer la cuenta en el cliente).
+    // Petición explícita de Eloy: el precio ORIGINAL (con o sin
+    // descuento) debe indicar también su importe sin IVA; el precio YA
+    // rebajado, en cambio, se queda con un único número — sin su propio
+    // desglose sin IVA, para no duplicar esa información dos veces.
+    const precioSinIVA = `<span class="precio-siniva">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>`;
+    // Bloque de precio: con descuento, el precio real (con su sin IVA
+    // debajo, más pequeño y tachado también) se ve tachado y más
+    // pequeño, y justo debajo el precio ya rebajado en el tamaño
     // normal — al revés de lo habitual (precio grande primero) a
     // propósito, para que lo primero que llame la atención sea el precio
     // final a pagar, no el de partida.
     const bloquePrecio = tieneDescuento
       ? `<span class="precio-tachado">${fmtEUR(p.precio_con)}&nbsp;€</span>
+         <span class="precio-siniva precio-siniva-tachado">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>
          <span class="precio precio-rebajado">${fmtEUR(precioRebajado)}&nbsp;€<span class="iva">IVA inc.</span></span>`
-      : `<span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>`;
+      : `<span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
+         ${precioSinIVA}`;
     return `
       <article class="card ${ia?'ia-card':''}"${atributoTam}>
         ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
@@ -1581,7 +1610,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <span class="fam">${p.familia||''}</span>
         <span class="nombre">${p.nombre||''}</span>
-        <div class="ref-line ${tieneDescuento?'ref-line-precio-descuento':''}">
+        <div class="ref-line ref-line-precio">
           ${bloquePrecio}
         </div>
         <div class="ref-line">
