@@ -648,6 +648,22 @@
   }
 
   // ── "Tengo un problema" ─────────────────────────────────────────────────
+  // Esqueleto de carga: bloques grises con animación mientras se espera a
+  // cargarSolucionesReales() — sustituye al hueco en blanco que se veía
+  // antes durante ese instante (reportado real por Eloy). Número de
+  // bloques y anchos variados a propósito, para que se note que son un
+  // marcador de posición y no contenido real cargado mal.
+  function renderEsqueletoProblemas() {
+    const chips = $('#cs-problem-chips');
+    if (!chips) return;
+    const anchos = [62, 78, 55, 70, 48, 84, 60];
+    chips.innerHTML = Array.from({ length: 6 }).map((_, i) => `
+      <div class="cs-esqueleto cs-esqueleto--grupo">
+        <div class="cs-esqueleto__linea" style="width:${anchos[i % anchos.length]}%"></div>
+      </div>
+    `).join('');
+  }
+
   function renderProblemas() {
     const chips = $('#cs-problem-chips');
     if (chips) {
@@ -1342,23 +1358,33 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    // Espera a que cargarSolucionesReales() termine (o falle y se quede
-    // con el respaldo estático — nunca se rechaza, ver el porqué junto a
-    // su definición en soluciones-data.js) antes de pintar nada, para no
-    // renderizar dos veces (una con el respaldo, otra con lo real) ni
-    // dejar un parpadeo visible.
+    // De las secciones de esta página, la ÚNICA que necesita de verdad
+    // las guías reales del Sheet es "Problemas frecuentes" (agrupa cada
+    // chip por la categoría de su solución — D.soluciones[...]). El
+    // resto (acciones, superficies, destacadas, áreas) se construye a
+    // partir de listas fijas del propio código (D.acciones, D.
+    // solucionesDestacadas, etc.), así que esperar aquí a
+    // cargarSolucionesReales() antes de pintar NADA solo añadía un
+    // hueco en blanco innecesario en toda la página mientras llegaba la
+    // respuesta (reportado real: "que no se quede vacío"). Ahora todo
+    // eso se pinta al instante, y solo "Problemas frecuentes" muestra un
+    // esqueleto de carga (con animación, para que se note que está
+    // cargando y no que se ha quedado roto) hasta que los datos reales
+    // llegan.
+    wireBuscadorHero();
+    renderGridAcciones();
+    renderGridSuperficies();
+    renderEsqueletoProblemas();
+    renderSolucionesDestacadas();
+    renderAreas();
+    wireAreasAcordeon();
+    wireAreasBuscador();
+    wireWizardOpenClose();
+    wireScrollAnclas();
+    wireBotonSubir();
+
     D.cargarSolucionesReales().then(() => {
-      wireBuscadorHero();
-      renderGridAcciones();
-      renderGridSuperficies();
       renderProblemas();
-      renderSolucionesDestacadas();
-      renderAreas();
-      wireAreasAcordeon();
-      wireAreasBuscador();
-      wireWizardOpenClose();
-      wireScrollAnclas();
-      wireBotonSubir();
     });
   });
 })();

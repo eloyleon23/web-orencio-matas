@@ -205,6 +205,19 @@
       }
       .campana-card-cta svg{ width:14px; height:14px; transition:translate 140ms ease; }
       .campana-card:hover .campana-card-cta svg{ translate:3px 0; }
+      /* Miniatura de la imagen del escaparate, solo si tiene una asignada
+         — petición explícita de Eloy: "solo se vea en la vista web de
+         pc". Se oculta a partir de 900px, el mismo punto de corte que ya
+         usa el resto del sitio para el menú móvil, por coherencia. */
+      .campana-card-thumb{
+        position:absolute; top:16px; right:16px; width:56px; height:56px;
+        border-radius:12px; overflow:hidden; border:2px solid #fff;
+        box-shadow:0 6px 16px rgba(0,0,0,.2);
+      }
+      .campana-card-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+      @media (max-width:900px){
+        .campana-card-thumb{ display:none; }
+      }
 
       .internal-note{
         max-width:var(--maxw); margin:20px auto 0; padding:0 2px; position:relative; z-index:1;
@@ -423,7 +436,8 @@
               </li>
             </ul>
           </li>
-          <li><a href="servicios.html">Servicios</a></li>
+          <li><a href="escaparate-campanas.html">Exposición</a></li>
+              <li><a href="servicios.html">Servicios</a></li>
           <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
           <li><a href="profesionales.html">Profesionales</a></li>
           <li><a href="actualidad.html">Actualidad</a></li>
@@ -594,6 +608,7 @@
         <li><a href="empresa.html">Empresa</a></li>
         <li><a href="historia.html">Historia</a></li>
         <li><a href="productos.html">Productos</a></li>
+            <li><a href="escaparate-campanas.html">Exposición</a></li>
         <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
         <li><a href="profesionales.html">Profesionales</a></li>
         <li><a href="servicios.html">Servicios</a></li>
@@ -830,8 +845,13 @@
     const cs = colorSetDe(c);
     const hoyActiva = activaEn(c, HOY);
     const eslogan = (c.eslogan || '').trim();
+    // sz=200 (no el w900 que usa la vitrina grande de escaparate.html):
+    // aquí es solo una miniatura de 56x56px, pedir la versión grande de
+    // Drive sería desperdiciar ancho de banda sin ninguna ganancia visual.
+    const imgUrl = urlImagenCampana(c.imagenFondo, 200);
     return `
       <a class="campana-card" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" style="--tarjeta-color:${cs.vivid}; --tarjeta-wash:${cs.wash};">
+        ${imgUrl ? `<div class="campana-card-thumb"><img src="${imgUrl}" alt="" loading="lazy"></div>` : ''}
         <div class="campana-card-top">
           <span class="campana-card-badge">${c.tipo==='comercial' ? 'Comercial' : 'Temporada'}</span>
           ${hoyActiva ? '<span class="campana-card-badge hoy">● activa hoy</span>' : ''}

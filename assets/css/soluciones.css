@@ -1738,3 +1738,25 @@
 .cs-gestion-btn--primario:disabled { opacity: .5; cursor: not-allowed; }
 .cs-gestion-btn--peligro { background: none; border-color: #c81e1e; color: #c81e1e; }
 .cs-gestion-btn--peligro:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Esqueleto de carga (mientras se espera a cargarSolucionesReales) ──── */
+.cs-esqueleto {
+  border-radius: 10px; background: #eee; overflow: hidden; position: relative;
+  margin-bottom: 10px;
+}
+.cs-esqueleto--grupo { height: 46px; padding: 0 16px; display: flex; align-items: center; }
+.cs-esqueleto__linea { height: 14px; border-radius: 99px; background: #ddd; }
+/* Brillo que recorre el bloque de izquierda a derecha en bucle — la
+   señal visual de "esto está cargando", no de "esto está roto". */
+.cs-esqueleto::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+  transform: translateX(-100%);
+  animation: cs-esqueleto-brillo 1.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-esqueleto::after { animation: none; }
+}
+@keyframes cs-esqueleto-brillo {
+  100% { transform: translateX(100%); }
+}
