@@ -220,14 +220,6 @@
         .campana-card-thumb{ display:none; }
       }
 
-      .internal-note{
-        max-width:var(--maxw); margin:20px auto 0; padding:0 2px; position:relative; z-index:1;
-        display:flex; align-items:flex-start; gap:8px;
-        font-size:12px; color:var(--ink-faint); line-height:1.5;
-      }
-      .internal-note svg{ width:15px; height:15px; flex:none; margin-top:1px; }
-      .internal-note .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-
       /* ---------- Botón "Gestionar campañas" junto al título ----------
          Antes vivía en escaparate.html (dock flotante); la creación y
          edición de campañas se ha movido aquí, que es donde tiene más
@@ -480,11 +472,6 @@
 
     <div class="campanas-grid" id="campanasGrid"></div>
   </div>
-
-  <p class="internal-note">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-    Muestra los escaparates marcados como "activo" (independientemente de sus fechas). El botón "Gestionar escaparates" está controlado por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo debe existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b>.
-  </p>
 </main>
 
 <!-- Modal: gestionar escaparates (crear / editar / eliminar / activar) -->
