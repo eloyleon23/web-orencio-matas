@@ -3904,7 +3904,7 @@ function procesarActualizarRelacionados(data) {
 // esta hoja tiene, como mucho, unas pocas decenas de filas, así que
 // se lee directamente en cada doGet — mucho más simple que mantener
 // sincronizada otra caché, y siempre al día sin parcheos.
-const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'activa', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'descuento', 'activa', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaCampanas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -3994,6 +3994,14 @@ function leerCampanas_() {
       destacados: leerDestacados(fila[COL['destacados']]),
       imagenFondo: (fila[COL['imagen_fondo']] || '').toString().trim(),
       eslogan: (fila[COL['eslogan']] || '').toString(),
+      // Descuento general de la campaña (%), aplicado a todos sus
+      // productos salvo que uno tenga su propio descuento en
+      // "destacados" (ese manda como preferente — ver
+      // procesarActualizarProductosCampana). Vacío/0 = sin descuento.
+      descuento: (() => {
+        const n = parseFloat((fila[COL['descuento']] || '').toString().replace(',', '.'));
+        return isFinite(n) && n > 0 ? n : 0;
+      })(),
       // Solo un 'no' explícito la desactiva — así las campañas creadas
       // antes de que existiera esta columna (celda vacía) se siguen
       // tratando como activas por defecto, sin tener que revisarlas
@@ -4363,6 +4371,14 @@ function procesarGuardarCampana(data) {
     const HEX_VALIDO_ = /^#[0-9a-fA-F]{6}$/;
     const colorPersonalizado1 = (colorSet === 'personalizado' && HEX_VALIDO_.test(data.colorPersonalizado1 || '')) ? data.colorPersonalizado1 : '';
     const colorPersonalizado2 = (colorSet === 'personalizado' && HEX_VALIDO_.test(data.colorPersonalizado2 || '')) ? data.colorPersonalizado2 : '';
+    // Descuento general (%) aplicado a todos los productos de la
+    // campaña salvo que uno tenga el suyo propio (ver
+    // procesarActualizarProductosCampana, donde ese manda como
+    // preferente). Se acepta vacío/0 como "sin descuento", y se acota
+    // a un rango sensato (0-95) por si llega cualquier cosa rara desde
+    // el formulario.
+    const descuentoNum = parseFloat((data.descuento || '').toString().replace(',', '.'));
+    const descuento = (isFinite(descuentoNum) && descuentoNum > 0) ? Math.min(descuentoNum, 95) : '';
 
     if (filaIdx === -1) {
       const id = 'manual-' + new Date().getTime();
@@ -4379,6 +4395,7 @@ function procesarGuardarCampana(data) {
       fila[COL['areas']] = areas;
       fila[COL['productos']] = '';
       fila[COL['eslogan']] = eslogan;
+      fila[COL['descuento']] = descuento;
       fila[COL['activa']] = activa;
       fila[COL['fecha_creacion']] = ahoraISO;
       fila[COL['fecha_actualizacion']] = ahoraISO;
@@ -4399,6 +4416,7 @@ function procesarGuardarCampana(data) {
     sheet.getRange(filaNum, COL['fecha_fin'] + 1).setValue(fechaFin);
     sheet.getRange(filaNum, COL['areas'] + 1).setValue(areas);
     sheet.getRange(filaNum, COL['eslogan'] + 1).setValue(eslogan);
+    sheet.getRange(filaNum, COL['descuento'] + 1).setValue(descuento);
     sheet.getRange(filaNum, COL['activa'] + 1).setValue(activa);
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
     console.log('Campaña actualizada:', idExistente);
@@ -4436,11 +4454,26 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
     // campaña (podría quedar "huérfano" en el JSON si no se limpiara).
     if (!ref || !refsSet.has(ref) || vistos.has(ref)) return;
     const tamano = TAMANOS_DESTACADO_VALIDOS_.indexOf(parseInt(d.tamano, 10)) !== -1 ? parseInt(d.tamano, 10) : 1;
-    if (tamano === 1) return; // tamaño normal = no hace falta guardar entrada
     const alinH = ALINEACIONES_VALIDAS_.indexOf(d.alinH) !== -1 ? d.alinH : 'centro';
     const posV = POSICIONES_VALIDAS_.indexOf(d.posV) !== -1 ? d.posV : 'medio';
+    // Descuento (%) preferente de ESTE producto — manda sobre el
+    // descuento general de la campaña cuando está informado (ver
+    // procesarGuardarCampana). Acotado a un rango sensato (0-95); vacío/
+    // 0/no numérico = sin descuento propio (usará el de la campaña, si
+    // la campaña tuviera uno).
+    const descuentoNum = parseFloat((d.descuento || '').toString().replace(',', '.'));
+    const descuento = (isFinite(descuentoNum) && descuentoNum > 0) ? Math.min(descuentoNum, 95) : 0;
+    // Antes se omitía por completo cualquier producto con tamaño normal
+    // (tamano===1) — correcto cuando "destacados" solo servía para el
+    // tamaño/posición, pero ahora una entrada también hace falta para
+    // guardar un descuento propio aunque el producto no esté agrandado.
+    // Solo se omite si NO aporta nada de verdad (ni tamaño destacado ni
+    // descuento).
+    if (tamano === 1 && !descuento) return;
     vistos.add(ref);
-    resultado.push({ ref: ref, tamano: tamano, alinH: alinH, posV: posV });
+    const entrada = { ref: ref, tamano: tamano, alinH: alinH, posV: posV };
+    if (descuento) entrada.descuento = descuento;
+    resultado.push(entrada);
   });
   return resultado;
 }

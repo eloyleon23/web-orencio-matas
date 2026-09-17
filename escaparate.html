@@ -404,6 +404,19 @@
         text-transform:uppercase; letter-spacing:.04em; padding:4px 9px; border-radius:99px;
       }
       .card-destacado-badge svg{ width:10px; height:10px; }
+      /* Lado opuesto al de "Destacado" (izquierda en vez de derecha) para
+         que ambos chips puedan convivir en la misma tarjeta sin pisarse
+         si un producto está destacado Y tiene descuento a la vez. Rojo
+         de marca (#D91B1B), fijo y no ligado al color de la campaña —
+         mismo motivo que el resto de chips de este proyecto: con un
+         color personalizado de campaña muy claro, un chip con ese mismo
+         color de fondo podría quedar ilegible. */
+      .card-descuento-badge{
+        position:absolute; top:10px; left:10px; z-index:2;
+        display:inline-flex; align-items:center; gap:4px;
+        background:#D91B1B; color:#fff; font-size:10px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.03em; padding:4px 9px; border-radius:99px;
+      }
       .card[data-tam="2"]{ grid-column:span 2; }
       .card[data-tam="3"]{ grid-column:span 3; }
       .card[data-tam="4"]{ grid-column:span 2; grid-row:span 2; }
@@ -465,6 +478,16 @@
       }
       .card .precio{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:500; font-size:16px; }
       .card .precio .iva{ font-size:10px; color:var(--ink-faint); font-weight:400; margin-left:4px;}
+      /* Precio real tachado (más pequeño, petición explícita) encima del
+         precio ya rebajado — column en vez del space-between por
+         defecto de .ref-line, para apilarlos en vez de ponerlos a los
+         lados. */
+      .ref-line-precio-descuento{ flex-direction:column; align-items:flex-start; gap:1px; }
+      .precio-tachado{
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size:12px; color:var(--ink-faint); text-decoration:line-through;
+      }
+      .precio-rebajado{ color:#D91B1B; }
 
       .barcode{ height:20px; align-self:flex-start; min-width:74px; opacity:.85; }
       .ref-line{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -1500,24 +1523,48 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   /* ---------------- Render ---------------- */
-  function productCard(ref, {ia=false, destacado=null}={}){
+  // Precio final tras aplicar un descuento (%) — redondeado a 2
+  // decimales, como cualquier precio en EUR. Se calcula aquí, en el
+  // cliente, a partir del precio real del catálogo — nunca se guarda un
+  // "precio ya rebajado" en ningún sitio, así que si el precio base
+  // cambia en el Sheet, el descuento se sigue aplicando correctamente
+  // sin tener que tocar nada de Escaparate OM.
+  function precioConDescuento(precioOriginal, porcentaje){
+    const p = Number(precioOriginal) || 0;
+    const pct = Number(porcentaje) || 0;
+    return Math.round(p * (1 - pct/100) * 100) / 100;
+  }
+
+  function productCard(ref, {ia=false, destacado=null, descuento=0}={}){
     const p = PRODUCTS[ref];
     if(!p) return `<article class="card"><span class="fam">Referencia no encontrada</span><span class="nombre mono">${ref}</span></article>`;
     const imgUrl = urlImagenProducto(p, 300);
     const buscadorURL = `./buscador.html?ref=${encodeURIComponent(ref)}`;
     const tam = destacado && destacado.tamano > 1 ? destacado.tamano : 1;
     const atributoTam = tam > 1 ? ` data-tam="${tam}" data-alin="${destacado.alinH || 'centro'}"` : '';
+    const tieneDescuento = Number(descuento) > 0;
+    const precioRebajado = tieneDescuento ? precioConDescuento(p.precio_con, descuento) : null;
+    // Bloque de precio: con descuento, el precio real se ve tachado y
+    // más pequeño, y justo debajo el precio ya rebajado en el tamaño
+    // normal — al revés de lo habitual (precio grande primero) a
+    // propósito, para que lo primero que llame la atención sea el precio
+    // final a pagar, no el de partida.
+    const bloquePrecio = tieneDescuento
+      ? `<span class="precio-tachado">${fmtEUR(p.precio_con)}&nbsp;€</span>
+         <span class="precio precio-rebajado">${fmtEUR(precioRebajado)}&nbsp;€<span class="iva">IVA inc.</span></span>`
+      : `<span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>`;
     return `
       <article class="card ${ia?'ia-card':''}"${atributoTam}>
         ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
+        ${tieneDescuento ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
         <div class="icon-tile">
           ${iconFor(p)}
           ${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}
         </div>
         <span class="fam">${p.familia||''}</span>
         <span class="nombre">${p.nombre||''}</span>
-        <div class="ref-line">
-          <span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
+        <div class="ref-line ${tieneDescuento?'ref-line-precio-descuento':''}">
+          ${bloquePrecio}
         </div>
         <div class="ref-line">
           ${barcodeSVG(p.ref)}
@@ -1614,7 +1661,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       return pa - pb;
     });
     $("#shelf").innerHTML = productosOrdenados.length
-      ? productosOrdenados.map(r=>productCard(r, { destacado: destacadosMap[r] || null })).join("")
+      ? productosOrdenados.map(r=>{
+          const d = destacadosMap[r] || null;
+          // El descuento del producto (si lo tiene) manda como preferente
+          // sobre el general de la campaña — petición explícita: "si un
+          // producto también lo tiene añadido aplicará el indicado en el
+          // producto como preferente".
+          const descuentoEfectivo = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
+          return productCard(r, { destacado: d, descuento: descuentoEfectivo });
+        }).join("")
       : `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
 
     // Bloque de cierre, con la frase opcional definida en el formulario de
@@ -1678,12 +1733,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   modalProductos.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
   let selected = new Set();
   let sugeridosIA = [];       // refs sugeridas por la IA en la sesión actual del modal
-  let destacados = {};        // ref -> {tamano(1-6), alinH, posV} — solo entradas con tamano>1
+  let destacados = {};        // ref -> {tamano(1-6), alinH, posV, descuento(%)} — solo entradas con tamano>1 o descuento>0
   const HINT_IA_DEFECTO = 'Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.';
   const ETIQUETAS_ALINEACION = { izquierda:'Izda.', centro:'Centro', derecha:'Dcha.' };
   const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
   function destacadoActual(ref){
-    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio' };
+    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0 };
   }
 
   function familiasDisponibles(){
@@ -1764,14 +1819,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const imgUrl = p ? urlImagenProducto(p, 80) : null;
       const d = destacadoActual(ref);
       const esDestacado = d.tamano > 1;
-      const resumen = esDestacado
-        ? `${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`
-        : 'Destacar…';
+      const tieneDescuento = Number(d.descuento) > 0;
+      const partesResumen = [];
+      if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
+      if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
+      const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento…';
       return `<div class="chip-producto">
         <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
         <span class="chip-nombre" title="${nombre}">${nombre}</span>
-        <details class="destacar" ${esDestacado?'open':''}>
-          <summary class="${esDestacado?'activo':''}">${resumen}</summary>
+        <details class="destacar" ${(esDestacado||tieneDescuento)?'open':''}>
+          <summary class="${(esDestacado||tieneDescuento)?'activo':''}">${resumen}</summary>
           <div class="destacar-panel">
             <label>Tamaño
               <select data-campo="tamano" data-ref="${ref}">
@@ -1792,6 +1849,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <option value="abajo" ${d.posV==='abajo'?'selected':''}>Abajo</option>
               </select>
             </label>
+            <label>Descuento (%)
+              <input type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15" data-campo="descuento" data-ref="${ref}" value="${tieneDescuento ? d.descuento : ''}">
+            </label>
           </div>
         </details>
         <button type="button" class="chip-quitar" data-quitar="${ref}" title="Quitar de la campaña" aria-label="Quitar ${nombre}">
@@ -1810,13 +1870,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         renderPicker(); // por si el mismo producto se ve también en la búsqueda/sugerencias, para desmarcarlo ahí también
       });
     });
-    $$("select[data-campo]", cont).forEach(sel=>{
-      sel.addEventListener("change", ()=>{
-        const ref = sel.dataset.ref;
-        const campo = sel.dataset.campo;
+    $$("[data-campo]", cont).forEach(campo=>{
+      // 'change' para los dos tipos de campo (antes solo <select>, ahora
+      // también el <input type="number"> de descuento) — no 'input': con
+      // 'input' el resumen se recalcularía en cada tecla, y como
+      // renderSeleccionados() reconstruye todo el HTML de la lista, el
+      // campo de descuento perdería el foco a la primera cifra escrita.
+      // 'change' solo dispara al salir del campo (o pulsar Enter), que es
+      // justo cuando SÍ hace falta refrescar el resumen.
+      campo.addEventListener("change", ()=>{
+        const ref = campo.dataset.ref;
+        const nombreCampo = campo.dataset.campo;
         const actual = Object.assign({}, destacadoActual(ref));
-        actual[campo] = campo === 'tamano' ? parseInt(sel.value, 10) : sel.value;
-        if(actual.tamano <= 1) delete destacados[ref]; else destacados[ref] = actual;
+        if(nombreCampo === 'tamano') actual.tamano = parseInt(campo.value, 10);
+        else if(nombreCampo === 'descuento'){
+          const n = parseFloat(campo.value);
+          actual.descuento = (isFinite(n) && n > 0) ? Math.min(Math.round(n), 95) : 0;
+        }
+        else actual[nombreCampo] = campo.value;
+        // Antes se borraba la entrada entera en cuanto tamano<=1 — correcto
+        // cuando "destacados" solo servía para tamaño/posición, pero ahora
+        // también hace falta guardar un descuento propio aunque el
+        // producto no esté agrandado. Solo se borra si de verdad no
+        // aporta nada (ni tamaño destacado ni descuento).
+        if(actual.tamano <= 1 && !actual.descuento) delete destacados[ref];
+        else destacados[ref] = actual;
         renderSeleccionados(); // refresca el resumen del <summary> (y habilita/deshabilita alineación/posición)
       });
     });
@@ -1839,7 +1917,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     sugeridosIA = [];
     destacados = {};
     (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{
-      if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio' };
+      if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0 };
     });
     updateSelCount();
     renderSeleccionados();
@@ -1957,9 +2035,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const original = btn.textContent;
     btn.disabled = true; btn.textContent = 'Guardando…';
     const productosArr = Array.from(selected);
+    // Antes se excluía cualquier producto con tamano<=1 — correcto
+    // cuando esto solo guardaba tamaño/alineación/posición, pero ahora
+    // también hace falta una entrada para un producto con descuento
+    // propio aunque no esté agrandado (mismo criterio ya aplicado en
+    // sanearDestacados_ del backend, que es quien decide de verdad qué
+    // se guarda — esto es solo para no mandar de más).
     const destacadosArr = productosArr
-      .filter(ref => destacados[ref] && destacados[ref].tamano > 1)
-      .map(ref => ({ ref, tamano: destacados[ref].tamano, alinH: destacados[ref].alinH, posV: destacados[ref].posV }));
+      .filter(ref => destacados[ref] && (destacados[ref].tamano > 1 || Number(destacados[ref].descuento) > 0))
+      .map(ref => ({
+        ref, tamano: destacados[ref].tamano, alinH: destacados[ref].alinH, posV: destacados[ref].posV,
+        descuento: Number(destacados[ref].descuento) || 0,
+      }));
     try{
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',

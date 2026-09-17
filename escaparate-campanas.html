@@ -196,6 +196,18 @@
         border:1px solid var(--line-strong); border-radius:99px; padding:3px 9px;
       }
       .campana-card-badge.hoy{ color:#1a7a4c; border-color:#1a7a4c; background:rgba(26,122,76,.09); }
+      /* Color FIJO (no var(--tarjeta-color)) — mismo motivo que ya se
+         aplicó a .btn.ia y .card-destacado-badge: si dependiera del
+         color de cada campaña, con una campaña de color personalizado
+         claro este chip podría quedar igual de ilegible. El rojo de
+         marca (#D91B1B) es "llamativo" a propósito (petición explícita)
+         y ya es uno de los colores del logo. */
+      .campana-card-descuento{
+        display:inline-flex; align-items:center; gap:5px;
+        background:#D91B1B; color:#fff; font-size:11.5px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.03em; padding:5px 11px; border-radius:99px;
+        width:fit-content;
+      }
       .campana-card h2{ font-size:21px; line-height:1.18; margin-top:2px; }
       .campana-card-fechas{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-faint); }
       .campana-card-fechas svg{ width:14px; height:14px; flex:none; color:var(--tarjeta-color, var(--ink-faint)); }
@@ -547,6 +559,11 @@
           <label for="ncEslogan">Frase de cierre (opcional) — se ve en un bloque pequeño debajo de los productos</label>
           <input id="ncEslogan" type="text" maxlength="200" placeholder="p. ej. Todo lo que necesitas para un otoño impecable.">
         </div>
+        <div class="field">
+          <label for="ncDescuento">Descuento general del escaparate (%, opcional)</label>
+          <input id="ncDescuento" type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15">
+          <p class="field-hint">Se aplica a todos los productos del escaparate. Si además le pones un descuento propio a un producto concreto (desde "Asignar productos"), ese manda sobre este.</p>
+        </div>
         <div class="field span2">
           <label>Imagen de fondo (opcional) — se ve en la vitrina del escaparate</label>
           <div class="campana-img-row">
@@ -825,6 +842,17 @@
   let CAMPAIGNS = []; // TODAS las campañas (activas e inactivas) — la gestión (Modal B) necesita ver también las inactivas para poder reactivarlas
   function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
 
+  // "Hasta un ##% de dto.": el MÁXIMO entre el descuento general de la
+  // campaña y cualquier descuento propio de un producto concreto (que
+  // puede ser más alto que el general, ya que el propio es preferente
+  // — ver el campo "descuento" en destacados[]). Así el chip del
+  // listado siempre refleja el mejor descuento real disponible en ese
+  // escaparate, no solo el general, aunque solo UN producto lo tenga.
+  function descuentoMaximoCampana(c){
+    const propios = (c.destacados || []).map(d => Number(d.descuento) || 0);
+    return Math.max(Number(c.descuento) || 0, ...propios, 0);
+  }
+
   function campanaCardHTML(c){
     const cs = colorSetDe(c);
     const hoyActiva = activaEn(c, HOY);
@@ -833,6 +861,7 @@
     // aquí es solo una miniatura de 56x56px, pedir la versión grande de
     // Drive sería desperdiciar ancho de banda sin ninguna ganancia visual.
     const imgUrl = urlImagenCampana(c.imagenFondo, 200);
+    const descuentoMax = descuentoMaximoCampana(c);
     return `
       <a class="campana-card" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" style="--tarjeta-color:${cs.vivid}; --tarjeta-wash:${cs.wash};">
         ${imgUrl ? `<div class="campana-card-thumb"><img src="${imgUrl}" alt="" loading="lazy"></div>` : ''}
@@ -845,6 +874,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
           ${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}
         </span>
+        ${descuentoMax > 0 ? `<span class="campana-card-descuento">🏷️ Hasta un ${descuentoMax}% de dto.</span>` : ''}
         ${eslogan ? `<p class="campana-card-eslogan">"${eslogan}"</p>` : '<span style="flex:1"></span>'}
         <span class="campana-card-cta">
           Ver escaparate
@@ -1081,6 +1111,7 @@
     $("#ncInicio").value = "";
     $("#ncFin").value = "";
     $("#ncEslogan").value = "";
+    $("#ncDescuento").value = "";
     $("#ncActiva").checked = true;
     areasSel = new Set();
     pintarAreas();
@@ -1103,6 +1134,7 @@
     $("#ncInicio").value = c.fechaInicio;
     $("#ncFin").value = c.fechaFin;
     $("#ncEslogan").value = c.eslogan || "";
+    $("#ncDescuento").value = c.descuento || "";
     $("#ncActiva").checked = c.activa !== false;
     areasSel = new Set(c.areas || []);
     pintarAreas();
@@ -1225,6 +1257,7 @@
         colorPersonalizado2: $("#ncColorP2").value,
         areas: Array.from(areasSel),
         eslogan: $("#ncEslogan").value.trim(),
+        descuento: $("#ncDescuento").value,
         activa: $("#ncActiva").checked,
       };
       const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
