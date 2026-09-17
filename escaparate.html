@@ -1341,28 +1341,61 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   /* ---------------- Carga de datos ---------------- */
+  // Misma caché en vivo de Apps Script que ya usan buscador.html y
+  // Centro de Soluciones (ver PRODUCTOS_REMOTO_URL / cargarCatalogoReal
+  // en soluciones-data.js) — se actualiza de forma SÍNCRONA en el propio
+  // Apps Script justo tras subir/validar una imagen o regenerar la
+  // caché desde el menú, así que es la única fuente que refleja esos
+  // cambios al instante para cualquier visitante.
+  //
+  // Causa real de "hay fotos que no se han actualizado... a pesar de
+  // haber regenerado la caché de imágenes": escaparate.html leía
+  // EXCLUSIVAMENTE data/productos.json, el JSON estático del repo — y
+  // "regenerar caché" desde el menú de Apps Script
+  // (regenerarCacheCompletaManual) solo actualiza la caché en vivo de
+  // Drive que usan el buscador y Centro de Soluciones, NUNCA el archivo
+  // estático del repo (ese depende de un workflow de GitHub Actions
+  // totalmente aparte, disparado solo al actualizar una imagen
+  // individual desde el buscador — no al regenerar la caché completa).
+  // Así que una imagen recién puesta al día podía no verse nunca aquí,
+  // por mucho que se regenerase la caché, hasta que ese otro workflow
+  // se disparase por su cuenta. Mismo arreglo que ya se aplicó en
+  // Centro de Soluciones para este mismo problema.
+  const PRODUCTOS_REMOTO_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+
+  function asignarProductos(lista){
+    PRODUCTS_LIST = lista || [];
+    PRODUCTS = {};
+    PRODUCTS_LIST.forEach(p => { PRODUCTS[p.ref] = p; });
+  }
+
   async function cargarProductos(){
-    // ANTES: cada carga de esta página descargaba el catálogo COMPLETO
-    // (3,1 MB, ~6.363 productos) sin ningún tipo de caché — "_ts" +
-    // cache:'no-store' garantizaban datos frescos a propósito (ver más
-    // abajo por qué), pero al precio de repetir esa descarga entera en
-    // CADA visita, aunque no hubiera cambiado ni un solo producto desde
-    // la visita anterior. Con una conexión lenta esto es lento de
-    // verdad, y era la causa real de "la carga... es muy lenta"
-    // reportada por Eloy.
-    //
-    // AHORA: se comprueba primero productos_version.json (unos 80
-    // bytes, prácticamente instantáneo) — si su "version" coincide con
-    // la que se guardó la última vez en sessionStorage junto con el
-    // catálogo completo, se reutiliza ese catálogo ya guardado SIN
-    // volver a descargar los 3,1 MB. sessionStorage persiste entre
-    // navegaciones de página completa dentro de la misma pestaña (p.ej.
-    // entrar en un escaparate, volver al listado, entrar en otro), así
-    // que en una misma sesión de navegación el coste de los 3,1 MB se
-    // paga como mucho una vez, no en cada escaparate que se visite.
-    // Si productos_version.json no responde o falla por lo que sea, se
-    // seguía descargando el catálogo completo igualmente (mismo
-    // comportamiento de antes, sin caché, como red de seguridad).
+    // 1) Fuente de verdad: la caché en vivo de Apps Script. Sin caché de
+    // sesión aquí a propósito — es justo la caché de sesión sobre el
+    // archivo estático (ver más abajo) la que causaba parte del
+    // problema de fondo, y el catálogo completo tampoco cabría cómodo
+    // en sessionStorage junto con el resto de lo que ya se guarda ahí.
+    try{
+      const resp = await fetch(PRODUCTOS_REMOTO_URL);
+      if(resp.ok){
+        const datos = await resp.json();
+        const lista = (datos.productos || []).filter(p => !p.fecha_baja);
+        if(lista.length){
+          asignarProductos(lista);
+          return;
+        }
+      }
+    } catch(err){
+      // Apps Script caído/con cuota agotada/CORS — se sigue con el
+      // respaldo de abajo, nunca se deja al escaparate sin productos
+      // por esto.
+    }
+
+    // 2) RESPALDO — solo si Apps Script no responde: el JSON estático
+    // del propio despliegue, con el mismo mecanismo de antes
+    // (productos_version.json + sessionStorage) para no repetir la
+    // descarga completa (3,1 MB) en cada visita dentro de la misma
+    // sesión si hay que recurrir a este camino varias veces seguidas.
     const CACHE_KEY = 'om_escaparate_productos_cache_v1';
     const CACHE_VERSION_KEY = 'om_escaparate_productos_version_v1';
     try{
@@ -1374,35 +1407,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const textoCacheado = versionActual && sessionStorage.getItem(CACHE_KEY);
         if(versionActual && versionActual === versionCacheada && textoCacheado){
           const datos = JSON.parse(textoCacheado);
-          PRODUCTS_LIST = datos.productos || [];
-          PRODUCTS = {};
-          PRODUCTS_LIST.forEach(p => { PRODUCTS[p.ref] = p; });
-          return; // reutilizado sin descargar el catálogo completo de nuevo
+          asignarProductos(datos.productos);
+          return;
         }
       }
     } catch(err){
       // Cualquier fallo aquí (red, JSON inválido, sessionStorage
       // deshabilitado…) simplemente se ignora y se sigue con la carga
-      // completa de siempre, sin caché — nunca debe bloquear la carga
-      // real de productos por un problema en esta comprobación previa.
+      // completa de siempre, sin caché.
     }
 
-    // "_ts" en la URL: igual que en cargarCampanas(), para que cada
-    // carga sea una URL distinta y no pueda servirse cacheada (ni por el
-    // navegador —cache:'no-store' ya cubre eso— ni por el CDN de GitHub
-    // Pages, que sí puede servir una versión desactualizada del archivo
-    // estático). Detectado con datos reales: productos ya añadidos a una
-    // campaña seguían mostrando su foto antigua en el escaparate después
-    // de actualizarla desde el buscador. Con el mecanismo de versión de
-    // arriba esto se sigue cumpliendo igual (solo se reutiliza cuando la
-    // versión coincide de verdad), simplemente evitando la descarga
-    // completa cuando no hace falta.
     const resp = await fetch(PRODUCTOS_URL + '?_ts=' + Date.now(), { cache:'no-store' });
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
     const datos = await resp.json();
-    PRODUCTS_LIST = datos.productos || [];
-    PRODUCTS = {};
-    PRODUCTS_LIST.forEach(p => { PRODUCTS[p.ref] = p; });
+    asignarProductos(datos.productos);
     try{
       sessionStorage.setItem(CACHE_KEY, JSON.stringify(datos));
       if(datos.generado) sessionStorage.setItem(CACHE_VERSION_KEY, datos.generado);

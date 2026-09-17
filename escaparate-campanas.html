@@ -98,7 +98,15 @@
       /* ---------- Fondo estacional (idéntico al de escaparate.html, ver
          ese archivo para el porqué de cada decisión — duplicado a
          propósito, este proyecto no comparte JS/CSS entre páginas) ---------- */
-      .escaparate-lienzo{ position:relative; }
+      /* min-height a propósito: mientras #campanasGrid está vacío (justo
+         durante la carga, antes de que lleguen las tarjetas), un grid
+         sin elementos no aporta ninguna altura por sí solo — sin esto,
+         la página se quedaba con solo la línea de "Cargando
+         escaparates…" entre el título y el footer, dando sensación de
+         todo apelmazado sin espacio (reportado real por Eloy). Con la
+         altura mínima, el lienzo (y su fondo estacional animado) siempre
+         ocupan un espacio razonable, cargue lo que cargue dentro. */
+      .escaparate-lienzo{ position:relative; min-height:50vh; }
       .fondo-estacional{ position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
       .fondo-estacional .particula{
         position:absolute; top:0; left:0;
@@ -221,11 +229,15 @@
       /* Miniatura de la imagen del escaparate, solo si tiene una asignada
          — petición explícita de Eloy: "solo se vea en la vista web de
          pc". Se oculta a partir de 900px, el mismo punto de corte que ya
-         usa el resto del sitio para el menú móvil, por coherencia. */
+         usa el resto del sitio para el menú móvil, por coherencia.
+         Antes era un cuadrado pequeño flotando en la esquina superior
+         derecha (position:absolute) — a petición de Eloy ("prefiero que
+         ocupe más y quede entre las fechas y las frases de eslogan"),
+         ahora es un bloque ancho en el flujo normal de la tarjeta,
+         colocado en el HTML entre .campana-card-fechas y
+         .campana-card-eslogan. */
       .campana-card-thumb{
-        position:absolute; top:16px; right:16px; width:56px; height:56px;
-        border-radius:12px; overflow:hidden; border:2px solid #fff;
-        box-shadow:0 6px 16px rgba(0,0,0,.2);
+        width:100%; aspect-ratio:16/9; border-radius:10px; overflow:hidden; margin-top:2px;
       }
       .campana-card-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
       @media (max-width:900px){
@@ -857,14 +869,15 @@
     const cs = colorSetDe(c);
     const hoyActiva = activaEn(c, HOY);
     const eslogan = (c.eslogan || '').trim();
-    // sz=200 (no el w900 que usa la vitrina grande de escaparate.html):
-    // aquí es solo una miniatura de 56x56px, pedir la versión grande de
-    // Drive sería desperdiciar ancho de banda sin ninguna ganancia visual.
-    const imgUrl = urlImagenCampana(c.imagenFondo, 200);
+    // sz=500 (no el sz=200 de antes): la miniatura ya no es un cuadrado
+    // pequeño en una esquina, ahora ocupa todo el ancho de la tarjeta
+    // (ver .campana-card-thumb) — con 200px se vería borrosa al
+    // estirarla. Sigue siendo menor que el w900 de la vitrina grande de
+    // escaparate.html, que no hace falta aquí.
+    const imgUrl = urlImagenCampana(c.imagenFondo, 500);
     const descuentoMax = descuentoMaximoCampana(c);
     return `
       <a class="campana-card" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" style="--tarjeta-color:${cs.vivid}; --tarjeta-wash:${cs.wash};">
-        ${imgUrl ? `<div class="campana-card-thumb"><img src="${imgUrl}" alt="" loading="lazy"></div>` : ''}
         <div class="campana-card-top">
           <span class="campana-card-badge">${c.tipo==='comercial' ? 'Comercial' : 'Temporada'}</span>
           ${hoyActiva ? '<span class="campana-card-badge hoy">● activa hoy</span>' : ''}
@@ -875,6 +888,7 @@
           ${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}
         </span>
         ${descuentoMax > 0 ? `<span class="campana-card-descuento">🏷️ Hasta un ${descuentoMax}% de dto.</span>` : ''}
+        ${imgUrl ? `<div class="campana-card-thumb"><img src="${imgUrl}" alt="" loading="lazy"></div>` : ''}
         ${eslogan ? `<p class="campana-card-eslogan">"${eslogan}"</p>` : '<span style="flex:1"></span>'}
         <span class="campana-card-cta">
           Ver escaparate
