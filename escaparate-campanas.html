@@ -19,9 +19,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Escaparates de temporada de Orencio Matas y Hnos, S.L. — descubre los escaparates de temporada y comerciales del momento." />
-    <!-- Página aún en fase de prototipo, sin enlazar desde ningún menú:
-         que no la indexen mientras tanto. Quitar esta etiqueta cuando
-         se decida publicarla de verdad (igual que escaparate.html). -->
+    <!-- Ya enlazada desde "Exposición" en el menú principal de todo el
+         sitio. noindex/nofollow se mantiene por ahora — quitar esta
+         etiqueta cuando se decida que la página debe indexarse. -->
     <meta name="robots" content="noindex, nofollow" />
     <title>Escaparates | Orencio Matas y Hnos, S.L.</title>
     <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
@@ -90,9 +90,6 @@
       }
       h1,h2,h3{font-family:'Montserrat', ui-sans-serif, system-ui, sans-serif; font-weight:800; margin:0; text-wrap:balance;}
       .wrap{max-width:var(--maxw); margin-inline:auto; padding-inline:20px;}
-
-      .proto-banner{ background:#FBEAEA; border-bottom:1px solid #F0C9C9; padding:8px 0; text-align:center; }
-      .proto-ribbon{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#B81717; }
 
       /* ---------- Fondo estacional (idéntico al de escaparate.html, ver
          ese archivo para el porqué de cada decisión — duplicado a
@@ -449,10 +446,6 @@
   </div>
 </header>
 
-<div class="proto-banner">
-  <div class="proto-ribbon">En construcción · sin enlazar aún</div>
-</div>
-
 <main class="wrap">
 
   <div class="campanas-titulo">
@@ -486,7 +479,7 @@
 
   <p class="internal-note">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-    Página en construcción, todavía sin enlazar desde ningún menú. Muestra los escaparates marcados como "activo" (independientemente de sus fechas). El botón "Gestionar escaparates" está controlado por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo debe existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b>.
+    Muestra los escaparates marcados como "activo" (independientemente de sus fechas). El botón "Gestionar escaparates" está controlado por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo debe existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b>.
   </p>
 </main>
 

@@ -19,9 +19,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Escaparate OM — productos destacados de temporada y campañas comerciales de Orencio Matas y Hnos, S.L." />
-    <!-- Página aún en fase de prototipo, sin enlazar desde ningún menú:
-         que no la indexen mientras tanto. Quitar esta etiqueta cuando
-         se decida publicarla de verdad. -->
+    <!-- Ya enlazada desde "Exposición" en el menú principal de todo el
+         sitio. noindex/nofollow se mantiene por ahora — quitar esta
+         etiqueta cuando se decida que la página debe indexarse. -->
     <meta name="robots" content="noindex, nofollow" />
     <title>Escaparate | Orencio Matas y Hnos, S.L.</title>
     <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
@@ -150,19 +150,6 @@
         letter-spacing:.14em;
         text-transform:uppercase;
         color:var(--ink-faint);
-      }
-
-      /* ---------- Aviso de prototipo (bajo la cabecera real) ---------- */
-      .proto-banner{
-        max-width:var(--maxw); margin:18px auto 0;
-        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-      }
-      .proto-ribbon{
-        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size:10.5px; letter-spacing:.08em;
-        text-transform:uppercase; color:var(--accent);
-        border:1px solid currentColor; border-radius:99px;
-        padding:5px 11px; white-space:nowrap;
       }
 
       /* ---------- Lienzo del escaparate (fondo estacional único) ----------
@@ -509,7 +496,6 @@
         padding-top:16px; border-top:1px solid var(--line);
       }
       .internal-note svg{ width:15px; height:15px; flex:none; }
-      .internal-note.tight{ margin-top:12px; padding-top:0; border-top:none; }
 
       .tools-dock{
         position:fixed; right:18px; bottom:18px; z-index:40;
@@ -887,10 +873,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </header>
 
-<div class="proto-banner">
-  <div class="proto-ribbon">En construcción · sin enlazar aún</div>
-</div>
-
 <main class="wrap">
 
   <div class="escaparate-titulo escaparate-titulo-con-volver">
@@ -926,10 +908,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <p class="internal-note">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
     El botón inferior (asignar productos) está controlado por <span class="mono">window.MOSTRAR_GESTION_CAMPANAS</span> — sólo debe existir en <b style="color:var(--ink-soft)">main</b>, nunca en <b style="color:var(--ink-soft)">release</b> (mismo patrón que el precio a mayor). La creación/edición de campañas se gestiona ahora desde <span class="mono">escaparate-campanas.html</span>.
-  </p>
-
-  <p class="internal-note tight">
-    Escaparate OM — página en construcción, todavía sin enlazar desde ningún menú. Los productos se cargan desde <span class="mono">data/productos.json</span> (el mismo catálogo real del buscador) y las campañas se guardan en una hoja nueva del Sheet ("Campañas"), a través de Apps Script.
   </p>
 </main>
 
