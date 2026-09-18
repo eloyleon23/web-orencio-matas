@@ -1535,16 +1535,69 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
   }
 
-  async function cargarProductos(){
-    // 0) Reutilizar lo ya pedido en esta misma sesión de navegación, si
-    // se viene de otra página de Escaparate OM y no se ha recargado.
+  async function cargarProductosDeCampana(refs){
+    // Petición DIRIGIDA — solo los productos que de verdad hacen falta
+    // para pintar el estante público (los de la campaña activa, 10-30
+    // normalmente), no el catálogo entero (miles de productos, varios
+    // MB). Causa real de "tarda bastante en cargar" (reportado real por
+    // Eloy, incluso ya con la caché de sesión puesta): la PRIMERA visita
+    // de cada sesión (o tras recargar) seguía pidiendo el catálogo
+    // completo solo para acabar usando un puñado de productos de él. El
+    // catálogo completo sigue existiendo — se carga aparte, de forma
+    // perezosa, solo si se abre "Asignar productos" (ver
+    // cargarCatalogoCompleto) — la búsqueda de ahí sí necesita verlo
+    // entero para poder encontrar productos nuevos que añadir.
+    if(!refs || !refs.length){
+      asignarProductos([]);
+      return;
+    }
+    try{
+      const url = PRODUCTOS_REMOTO_URL + '&refs=' + encodeURIComponent(refs.join(','));
+      const resp = await fetch(url);
+      if(resp.ok){
+        const datos = await resp.json();
+        const lista = (datos.productos || []).filter(p => !p.fecha_baja);
+        if(lista.length){
+          asignarProductos(lista);
+          return;
+        }
+      }
+    } catch(err){
+      // Apps Script caído/con cuota agotada/CORS — se sigue con el
+      // respaldo de abajo.
+    }
+
+    // Respaldo — solo si Apps Script no responde: el JSON estático
+    // completo del propio despliegue, filtrado en el cliente a los refs
+    // pedidos (el archivo estático no admite filtrar en el servidor, es
+    // un archivo plano de GitHub Pages) — más lento que la vía normal,
+    // pero es un camino de emergencia poco frecuente, no el habitual.
+    const resp = await fetch(PRODUCTOS_URL + '?_ts=' + Date.now(), { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const datos = await resp.json();
+    const refsSet = new Set(refs);
+    asignarProductos((datos.productos || []).filter(p => refsSet.has(p.ref)));
+  }
+
+  // Catálogo COMPLETO — a diferencia de cargarProductosDeCampana(), este
+  // sí trae el catálogo entero. Se usa solo desde "Asignar productos"
+  // (openModalProductos), que necesita poder buscar entre TODOS los
+  // productos para añadir alguno nuevo a la campaña — no tiene sentido
+  // pagar ese coste en cada visita pública si nueve de cada diez
+  // visitantes nunca van a abrir ese modal. catalogoCompletoCargado
+  // evita repetir la carga si se abre el modal varias veces en la misma
+  // sesión de la página.
+  let catalogoCompletoCargado = false;
+  async function cargarCatalogoCompleto(){
+    if(catalogoCompletoCargado) return;
+
     const cacheados = leerCacheProductosRemotoSesion();
     if(cacheados){
       asignarProductos(cacheados);
+      catalogoCompletoCargado = true;
       return;
     }
 
-    // 1) Fuente de verdad: la caché en vivo de Apps Script.
     try{
       const resp = await fetch(PRODUCTOS_REMOTO_URL);
       if(resp.ok){
@@ -1553,20 +1606,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         if(lista.length){
           asignarProductos(lista);
           guardarCacheProductosRemotoSesion(lista);
+          catalogoCompletoCargado = true;
           return;
         }
       }
     } catch(err){
-      // Apps Script caído/con cuota agotada/CORS — se sigue con el
-      // respaldo de abajo, nunca se deja al escaparate sin productos
-      // por esto.
+      // sigue al respaldo de abajo
     }
 
-    // 2) RESPALDO — solo si Apps Script no responde: el JSON estático
-    // del propio despliegue, con el mismo mecanismo de antes
-    // (productos_version.json + sessionStorage) para no repetir la
-    // descarga completa (3,1 MB) en cada visita dentro de la misma
-    // sesión si hay que recurrir a este camino varias veces seguidas.
     const CACHE_KEY = 'om_escaparate_productos_cache_v1';
     const CACHE_VERSION_KEY = 'om_escaparate_productos_version_v1';
     try{
@@ -1577,15 +1624,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const versionCacheada = sessionStorage.getItem(CACHE_VERSION_KEY);
         const textoCacheado = versionActual && sessionStorage.getItem(CACHE_KEY);
         if(versionActual && versionActual === versionCacheada && textoCacheado){
-          const datos = JSON.parse(textoCacheado);
-          asignarProductos(datos.productos);
+          asignarProductos(JSON.parse(textoCacheado).productos);
+          catalogoCompletoCargado = true;
           return;
         }
       }
     } catch(err){
-      // Cualquier fallo aquí (red, JSON inválido, sessionStorage
-      // deshabilitado…) simplemente se ignora y se sigue con la carga
-      // completa de siempre, sin caché.
+      // sigue con la carga completa de siempre, sin caché
     }
 
     const resp = await fetch(PRODUCTOS_URL + '?_ts=' + Date.now(), { cache:'no-store' });
@@ -1596,10 +1641,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       sessionStorage.setItem(CACHE_KEY, JSON.stringify(datos));
       if(datos.generado) sessionStorage.setItem(CACHE_VERSION_KEY, datos.generado);
     } catch(err){
-      // sessionStorage lleno o no disponible (modo incógnito estricto,
-      // etc.) — no pasa nada, simplemente no se podrá reutilizar en la
-      // siguiente navegación y se volverá a descargar, como antes.
+      // sessionStorage lleno o no disponible — no reutilizable la
+      // próxima vez, pero no bloquea nada ahora.
     }
+    catalogoCompletoCargado = true;
   }
 
   async function cargarCampanas(forzar){
@@ -1659,23 +1704,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   async function iniciar(){
     wireModalProductoPublico();
-    const [rProductos, rCampanas] = await Promise.allSettled([cargarProductos(), cargarCampanas()]);
-    productosOK = rProductos.status === 'fulfilled';
-    campanasOK = rCampanas.status === 'fulfilled';
 
-    if(!productosOK){
-      console.error('Error cargando productos:', rProductos.reason);
-    }
-    if(!campanasOK){
-      console.error('Error cargando campañas:', rCampanas.reason);
+    // Campañas primero — hace falta saber los refs de la campaña activa
+    // ANTES de poder pedir solo esos productos en vez del catálogo
+    // completo (ver cargarProductosDeCampana). El propio dataset de
+    // campañas es pequeño (unas pocas decenas como mucho), así que
+    // secuenciar esto en vez de pedirlo en paralelo con productos no
+    // cuesta nada perceptible.
+    try{
+      await cargarCampanas();
+      campanasOK = true;
+    } catch(err){
+      campanasOK = false;
+      console.error('Error cargando campañas:', err);
     }
 
     if($("#btnProductos")) $("#btnProductos").disabled = !campanasOK;
 
-    if(!productosOK){
-      mostrarErrorVitrina('No se han podido cargar los productos del catálogo (' + PRODUCTOS_URL + ').');
-      return;
-    }
     if(!campanasOK){
       mostrarErrorVitrina('No se ha podido conectar con la gestión de campañas. Lo más probable es que todavía no se haya desplegado la nueva versión de Apps Script (acción <code>obtener_campanas</code>) — revisa la nota al pie de esta página.', true);
       return;
@@ -1691,6 +1736,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     } else {
       activeId = campanaDeHoy() ? campanaDeHoy().id : (CAMPAIGNS[0] ? CAMPAIGNS[0].id : null);
     }
+
+    const campanaActiva = activeId ? findCampaign(activeId) : null;
+    try{
+      await cargarProductosDeCampana(campanaActiva ? campanaActiva.productos : []);
+      productosOK = true;
+    } catch(err){
+      productosOK = false;
+      console.error('Error cargando productos:', err);
+    }
+
+    if(!productosOK){
+      mostrarErrorVitrina('No se han podido cargar los productos del catálogo.');
+      return;
+    }
+
     if(window.MOSTRAR_GESTION_CAMPANAS){
       $("#toolsDock").hidden = false;
     }
@@ -2237,28 +2297,58 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     renderPicker();
   });
 
-  function openModalProductos(campaignId){
+  async function openModalProductos(campaignId){
     const c = findCampaign(campaignId);
     if(!c) return;
-    selected = new Set(c.productos);
-    sugeridosIA = [];
-    destacados = {};
-    (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{
-      if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0 };
-    });
-    updateSelCount();
-    renderSeleccionados();
-    $("#modalProdCampana").textContent = c.nombre;
-    modalProductos.dataset.campaignId = campaignId;
-    fillFamiliaSelect();
-    $("#fBusca").value = "";
-    $("#fFamilia").value = "";
-    $("#iaCriterioAdicional").value = "";
-    $("#iaSuggestHint").classList.remove('error');
-    $("#iaSuggestHint").textContent = HINT_IA_DEFECTO;
-    renderPicker();
-    document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
-    modalProductos.showModal();
+    // El catálogo completo (para poder BUSCAR y añadir productos nuevos,
+    // no solo ver los ya asignados) se carga aquí, de forma perezosa —
+    // ver cargarCatalogoCompleto(). Los productos YA asignados a esta
+    // campaña se ven al instante de todas formas (ya están en PRODUCTS
+    // desde la carga dirigida de la vitrina pública), así que solo
+    // afecta a poder buscar más, no a lo que ya se ve nada más abrir.
+    const btn = $("#btnProductos");
+    const textoOriginal = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Cargando catálogo…'; }
+    try{
+      await cargarCatalogoCompleto();
+    } catch(err){
+      if(btn){ btn.disabled = false; btn.textContent = textoOriginal; }
+      toast('No se ha podido cargar el catálogo completo: ' + err.message, true);
+      return;
+    }
+    if(btn){ btn.disabled = false; btn.textContent = textoOriginal; }
+
+    // A partir de aquí, todo síncrono — pero envuelto en try/catch de
+    // todas formas: al ser esta función async, cualquier excepción sin
+    // capturar aquí dentro se convierte en un rechazo de promesa SIN
+    // CAPTURAR (nunca llega a window.onerror), silencioso para el
+    // usuario real y, en Node/jsdom, capaz de tirar abajo el proceso
+    // entero en vez de solo registrar el fallo — encontrado de verdad
+    // al probar esta función tras convertirla en async.
+    try{
+      selected = new Set(c.productos);
+      sugeridosIA = [];
+      destacados = {};
+      (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{
+        if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0 };
+      });
+      updateSelCount();
+      renderSeleccionados();
+      $("#modalProdCampana").textContent = c.nombre;
+      modalProductos.dataset.campaignId = campaignId;
+      fillFamiliaSelect();
+      $("#fBusca").value = "";
+      $("#fFamilia").value = "";
+      $("#iaCriterioAdicional").value = "";
+      $("#iaSuggestHint").classList.remove('error');
+      $("#iaSuggestHint").textContent = HINT_IA_DEFECTO;
+      renderPicker();
+      document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
+      modalProductos.showModal();
+    } catch(err){
+      console.error('Error abriendo el modal de productos:', err);
+      toast('No se ha podido abrir el modal de productos: ' + err.message, true);
+    }
   }
   $("#fFamilia").addEventListener("change", renderPicker);
   $("#fBusca").addEventListener("input", renderPicker);

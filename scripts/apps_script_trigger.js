@@ -3343,6 +3343,25 @@ function doGet(e) {
 
     if (accion === 'obtener_productos') {
       const datos = leerCacheProductos_();
+      // Filtro opcional por referencias (?refs=REF1,REF2,...) — para
+      // cuando solo hace falta un puñado concreto de productos, no el
+      // catálogo entero (miles de productos, varios MB). Usado por
+      // Escaparate OM: un escaparate normal solo tiene 10-30 productos,
+      // así que pedir el catálogo completo para mostrar esos pocos era
+      // la causa real de "tarda bastante en cargar" — la lectura de la
+      // caché en Drive sigue costando lo mismo (hay que leerla entera
+      // para poder filtrarla), pero la respuesta que viaja de vuelta al
+      // navegador — y su JSON.parse() en el cliente — pasa de varios MB
+      // a unos pocos KB. Sin "refs", se comporta exactamente igual que
+      // antes (devuelve todo), así que buscador.html y Centro de
+      // Soluciones no se ven afectados.
+      const refsParam = (e.parameter && e.parameter.refs || '').toString().trim();
+      if (refsParam) {
+        const refsSet = new Set(refsParam.split(',').map(r => r.trim()).filter(Boolean));
+        const filtrados = (datos.productos || []).filter(p => refsSet.has(p.ref));
+        return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, { productos: filtrados })))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
       return ContentService.createTextOutput(JSON.stringify(datos))
         .setMimeType(ContentService.MimeType.JSON);
     }
