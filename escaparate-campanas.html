@@ -204,6 +204,15 @@
         border:1px solid var(--line-strong); border-radius:99px; padding:3px 9px;
       }
       .campana-card-badge.hoy{ color:#1a7a4c; border-color:#1a7a4c; background:rgba(26,122,76,.09); }
+      /* Chips de área — fila propia, separada de .campana-card-top
+         (tipo/activa hoy), justo como se pidió. Colores fijos definidos
+         en JS (AREA_INFO), no aquí, porque dependen del área concreta de
+         cada chip, no de una clase CSS compartida. */
+      .campana-card-areas{ display:flex; flex-wrap:wrap; gap:6px; }
+      .campana-card-area-chip{
+        font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+        border-radius:99px; padding:3px 10px;
+      }
       /* Color FIJO (no var(--tarjeta-color)) — mismo motivo que ya se
          aplicó a .btn.ia y .card-destacado-badge: si dependiera del
          color de cada campaña, con una campaña de color personalizado
@@ -859,6 +868,35 @@
   let CAMPAIGNS = []; // TODAS las campañas (activas e inactivas) — la gestión (Modal B) necesita ver también las inactivas para poder reactivarlas
   function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
 
+  // Chip de área — petición explícita de Eloy: "aparte" de los chips de
+  // tipo/activa, con un color FIJO por área (uno de los del logo de la
+  // empresa), para que dos escaparates de la misma área compartan
+  // siempre el mismo color aunque tengan colorSet de campaña distinto.
+  // Por eso estos colores NO usan var(--tarjeta-color) — es justo lo
+  // contrario de lo que representa esta chip (la campaña puede cambiar
+  // de color, el área no). Los 4 colores son los mismos 4 del logo
+  // (rojo, ámbar, verde, azul) — encajan 1 a 1 con las 4 áreas reales
+  // del catálogo. Texto oscuro solo en la de ámbar: blanco sobre ese
+  // amarillo concreto queda con poco contraste (mismo motivo por el que
+  // ya se evitó depender de colores de campaña en otros chips de este
+  // proyecto — aquí el problema es justo el color en sí, no que varíe).
+  const AREA_INFO = {
+    drogueria: { etiqueta: 'Droguería', fondo: '#D91B1B', texto: '#fff' },
+    perfumeria: { etiqueta: 'Perfumería', fondo: '#F1B300', texto: '#3D2E00' },
+    pinturas: { etiqueta: 'Pinturas', fondo: '#008743', texto: '#fff' },
+    talleres: { etiqueta: 'Talleres', fondo: '#006DAE', texto: '#fff' },
+  };
+  function areasChipsHTML(c){
+    const areas = Array.isArray(c.areas) ? c.areas.filter(a => AREA_INFO[a]) : [];
+    // Sin áreas concretas = aplica a todas — no hay una única área que
+    // destacar con su color propio, así que no se pinta ningún chip.
+    if(!areas.length) return '';
+    return `<div class="campana-card-areas">${areas.map(a => {
+      const info = AREA_INFO[a];
+      return `<span class="campana-card-area-chip" style="background:${info.fondo}; color:${info.texto};">${info.etiqueta}</span>`;
+    }).join('')}</div>`;
+  }
+
   // "Hasta un ##% de dto.": el MÁXIMO entre el descuento general de la
   // campaña y cualquier descuento propio de un producto concreto (que
   // puede ser más alto que el general, ya que el propio es preferente
@@ -887,6 +925,7 @@
           <span class="campana-card-badge">${c.tipo==='comercial' ? 'Comercial' : 'Temporada'}</span>
           ${hoyActiva ? '<span class="campana-card-badge hoy">● activa hoy</span>' : ''}
         </div>
+        ${areasChipsHTML(c)}
         <h2>${c.nombre}</h2>
         <span class="campana-card-fechas">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
