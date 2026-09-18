@@ -358,13 +358,14 @@
         gap:16px;
       }
       .card{
-        position:relative;
+        position:relative; cursor:pointer;
         background:var(--paper-raised); border:1px solid var(--line);
         border-radius:var(--radius-m); padding:14px 14px 16px;
         display:flex; flex-direction:column; gap:10px;
         transition:transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
       }
       .card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-soft); border-color:var(--line-strong); }
+      .card:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
       /* ---------- Productos destacados (tamaño 2-6, ver Modal A) ----------
          "tamaño" se traduce en cuántas columnas/filas de la rejilla ocupa
@@ -792,6 +793,16 @@
       .btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
       .btn.ghost{ background:none; border-color:var(--line-strong); color:var(--ink-soft); }
       .btn.danger-ghost{ background:none; border:1px solid #C81E1E; color:#C81E1E; }
+      .btn.small{ padding:6px 13px; font-size:12.5px; }
+
+      /* Barra de "Añadir todos estos" — solo visible con un filtro
+         activo (texto o familia) y al menos un resultado pendiente de
+         añadir. Petición explícita de Eloy: "si una búsqueda recupera
+         todos los que interesan, no tener que meterlos de uno en uno". */
+      .picker-toolbar{
+        display:flex; align-items:center; justify-content:space-between; gap:10px;
+        margin:2px 0 10px; font-size:12.5px; color:var(--ink-faint);
+      }
 
       /* ---------- Botón "volver arriba" ----------
          Mismo umbral (500px de scroll) y comportamiento que ya usa
@@ -850,6 +861,68 @@
       .spinner-line{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:13.5px; position:relative; z-index:1; max-width:var(--maxw); margin:26px auto 0; padding:0 2px; }
       .spinner-dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 1.1s ease-in-out infinite; }
       @keyframes pulse{ 0%,100%{opacity:.25;} 50%{opacity:1;} }
+
+      /* ---------- Modal de detalle de producto (estante público) ----------
+         Mismo modal (estructura y clases) que ya usan buscador.html y
+         Centro de Soluciones — variables de color propias de esta página
+         en vez de las de soluciones.css. z-index por encima del banner
+         de cookies (9999) — mismo motivo ya aplicado a otros modales de
+         este proyecto: sin esto, en una visita nueva sin consentimiento
+         guardado, el banner puede tapar el modal. */
+      .modal-overlay{
+        display:none; position:fixed; inset:0; background:rgba(15,17,21,.6);
+        z-index:10000; align-items:center; justify-content:center; padding:20px;
+      }
+      .modal-overlay.activo{ display:flex; }
+      .modal-producto-box{
+        background:var(--paper-raised); border-radius:var(--radius-l);
+        max-width:900px; width:90%; max-height:85vh; overflow-y:auto;
+        position:relative; box-shadow:var(--shadow-strong);
+      }
+      .modal-producto-cerrar-sticky{ position:sticky; top:0; height:0; overflow:visible; z-index:20; }
+      .modal-producto-cerrar{
+        position:absolute; top:12px; right:12px; width:36px; height:36px; border-radius:50%;
+        background:var(--paper); border:none; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+        font-size:1.2rem; color:var(--ink-faint); z-index:10;
+        transition:background 0.2s, color 0.2s;
+      }
+      .modal-producto-cerrar:hover{ background:#D91B1B; color:#fff; }
+      .modal-producto-content{ display:grid; grid-template-columns:1fr 1fr; gap:0; }
+      .modal-producto-imagen{
+        position:relative; background:var(--paper);
+        display:flex; align-items:center; justify-content:center;
+        min-height:300px; padding:20px;
+      }
+      .modal-producto-imagen img{ max-width:100%; max-height:400px; object-fit:contain; border-radius:var(--radius-s); }
+      .modal-producto-sin-imagen{ font-size:4rem; opacity:.35; }
+      .modal-producto-info{ padding:30px; display:flex; flex-direction:column; min-width:0; }
+      .modal-producto-info h3{ font-size:1.5rem; color:var(--ink); margin:0 0 8px; line-height:1.3; overflow-wrap:break-word; }
+      .modal-producto-ref{ color:var(--ink-faint); font-size:0.9rem; margin:0 0 16px; }
+      .modal-producto-precio{ margin-bottom:20px; }
+      /* Rojo fijo (no var(--accent)) — mismo motivo que el resto de
+         elementos de precio/descuento de esta página: no debe depender
+         del color de la campaña en curso. */
+      .modal-producto-precio-con{ font-size:1.8rem; font-weight:700; color:#D91B1B; }
+      .modal-producto-precio-sin{ font-size:0.9rem; color:var(--ink-faint); margin-top:4px; }
+      .modal-producto-detalles p{ margin:8px 0; color:var(--ink-soft); font-size:0.95rem; }
+      .modal-producto-detalles strong{ color:var(--ink); }
+      .modal-producto-disclaimer{
+        margin-top:auto; padding-top:20px; border-top:1px solid var(--line);
+        font-size:0.85rem; color:var(--ink-faint); display:flex; align-items:center; gap:8px;
+      }
+      .modal-producto-ficha{
+        margin-top:12px; padding:8px 14px; background:#006DAE; color:#fff;
+        border:none; border-radius:var(--radius-s); font-size:0.82rem; font-weight:600; cursor:pointer;
+        display:inline-flex; align-items:center; justify-content:center; gap:7px;
+        text-decoration:none; transition:filter 0.15s; width:fit-content;
+      }
+      .modal-producto-ficha:hover{ filter:brightness(1.08); }
+      .modal-producto-ficha:active{ filter:brightness(.95); }
+      @media (max-width:640px){
+        .modal-producto-content{ grid-template-columns:1fr; }
+        .modal-producto-imagen{ min-height:220px; }
+      }
     </style>
   </head>
   <body>
@@ -1046,6 +1119,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <input id="fBusca" type="text" placeholder="p. ej. limpiador, radiador, 84221...">
       </div>
     </div>
+    <div class="picker-toolbar" id="pickerToolbar" hidden>
+      <span id="pickerResumen"></span>
+      <button type="button" class="btn ghost small" id="btnAnadirTodos">Añadir todos estos</button>
+    </div>
     <div class="picker-grid" id="pickerGrid"></div>
   </div>
   <div class="modal-foot">
@@ -1059,6 +1136,40 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span id="toastMsg"></span></div>
+
+<!-- Modal de detalle de producto (público, en el estante) — mismo modal
+     que ya usan buscador.html y Centro de Soluciones (misma estructura
+     y clases modal-producto-*, con las variables de color propias de
+     esta página), sin las partes de administración del modal real que
+     requieren el backend de Apps Script (actualizar/validar imagen, dar
+     de baja, gestionar relacionados) — no aplican en esta vista de solo
+     lectura. -->
+<div class="modal-overlay" id="modal-producto-overlay">
+  <div class="modal-producto-box" id="modal-producto-box">
+    <div class="modal-producto-cerrar-sticky">
+      <button class="modal-producto-cerrar" id="modal-producto-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-producto-content">
+      <div class="modal-producto-imagen">
+        <img id="modal-producto-img" src="" alt="" loading="lazy">
+        <div id="modal-producto-sin-imagen" class="modal-producto-sin-imagen" style="display:none;">📦</div>
+      </div>
+      <div class="modal-producto-info">
+        <h3 id="modal-producto-nombre"></h3>
+        <p class="modal-producto-ref" id="modal-producto-ref"></p>
+        <div class="modal-producto-precio" id="modal-producto-precio"></div>
+        <div class="modal-producto-detalles">
+          <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
+          <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
+        </div>
+        <p class="modal-producto-disclaimer">
+          ⓘ Los precios pueden variar y el producto está sujeto a disponibilidad; la imagen puede no coincidir exactamente con el producto real.
+        </p>
+        <a id="modal-producto-verbuscador" class="modal-producto-ficha" href="#" target="_blank" rel="noopener">📄 Ver ficha completa en el buscador</a>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -1389,12 +1500,51 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     PRODUCTS_LIST.forEach(p => { PRODUCTS[p.ref] = p; });
   }
 
+  // Caché de sesión sobre la fuente EN VIVO — mismo mecanismo y mismas
+  // reglas de invalidación que ya usa cargarCacheCampanasSesion() más
+  // abajo (reutiliza sus mismos helpers paginaFueRecargada/
+  // vieneDeOtraPaginaDeEscaparates). Antes esta fuente se pedía entera
+  // en CADA visita a un escaparate, sin ninguna reutilización — "tarda
+  // mucho en cargar" (reportado real por Eloy) al navegar entre varios
+  // escaparates seguidos, ya que el catálogo completo se volvía a
+  // descargar cada vez pese a no haber cambiado. Con esto, dentro de la
+  // misma sesión de navegación (sin recargar, sin salir del flujo) el
+  // catálogo se pide como mucho una vez — una recarga (F5) o una
+  // entrada nueva a la pestaña siempre vuelven a pedirlo fresco, así
+  // que nunca se pierde la frescura real que motivó quitar la caché del
+  // archivo estático.
+  const CACHE_PRODUCTOS_REMOTO_KEY = 'om_escaparate_productos_remoto_sesion_v1';
+  function leerCacheProductosRemotoSesion(){
+    if(paginaFueRecargada() || !vieneDeOtraPaginaDeEscaparates()) return null;
+    try{
+      const guardado = sessionStorage.getItem(CACHE_PRODUCTOS_REMOTO_KEY);
+      if(!guardado) return null;
+      const lista = JSON.parse(guardado);
+      return Array.isArray(lista) && lista.length ? lista : null;
+    }catch(err){
+      return null;
+    }
+  }
+  function guardarCacheProductosRemotoSesion(lista){
+    try{
+      sessionStorage.setItem(CACHE_PRODUCTOS_REMOTO_KEY, JSON.stringify(lista));
+    }catch(err){
+      // sessionStorage lleno (el catálogo completo puede pesar varios MB)
+      // o deshabilitado — no pasa nada, simplemente no se podrá
+      // reutilizar en la siguiente navegación.
+    }
+  }
+
   async function cargarProductos(){
-    // 1) Fuente de verdad: la caché en vivo de Apps Script. Sin caché de
-    // sesión aquí a propósito — es justo la caché de sesión sobre el
-    // archivo estático (ver más abajo) la que causaba parte del
-    // problema de fondo, y el catálogo completo tampoco cabría cómodo
-    // en sessionStorage junto con el resto de lo que ya se guarda ahí.
+    // 0) Reutilizar lo ya pedido en esta misma sesión de navegación, si
+    // se viene de otra página de Escaparate OM y no se ha recargado.
+    const cacheados = leerCacheProductosRemotoSesion();
+    if(cacheados){
+      asignarProductos(cacheados);
+      return;
+    }
+
+    // 1) Fuente de verdad: la caché en vivo de Apps Script.
     try{
       const resp = await fetch(PRODUCTOS_REMOTO_URL);
       if(resp.ok){
@@ -1402,6 +1552,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const lista = (datos.productos || []).filter(p => !p.fecha_baja);
         if(lista.length){
           asignarProductos(lista);
+          guardarCacheProductosRemotoSesion(lista);
           return;
         }
       }
@@ -1507,6 +1658,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   async function iniciar(){
+    wireModalProductoPublico();
     const [rProductos, rCampanas] = await Promise.allSettled([cargarProductos(), cargarCampanas()]);
     productosOK = rProductos.status === 'fulfilled';
     campanasOK = rCampanas.status === 'fulfilled';
@@ -1612,7 +1764,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       : `<span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
          ${precioSinIVA}`;
     return `
-      <article class="card ${ia?'ia-card':''}"${atributoTam}>
+      <article class="card ${ia?'ia-card':''}" data-ref="${p.ref}" data-descuento="${tieneDescuento?descuento:0}" role="button" tabindex="0" aria-label="Ver detalle de ${p.nombre||p.ref}"${atributoTam}>
         ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
         ${tieneDescuento ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
         <div class="icon-tile">
@@ -1628,11 +1780,99 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           ${barcodeSVG(p.ref)}
           <span class="ref mono">${p.ref}</span>
         </div>
-        <a class="go" href="${buscadorURL}" target="_blank" rel="noopener">
-          Ver ficha en el buscador
+        <span class="go">
+          Ver detalle
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
-        </a>
+        </span>
       </article>`;
+  }
+
+  // ---------- Modal de detalle de producto (estante público) ----------
+  // Mismo patrón que abrirModalProducto()/cerrarModalProducto() de
+  // solucion-detalle.js (Centro de Soluciones) — puerto fiel, con las
+  // variables de color propias de esta página. Petición explícita de
+  // Eloy: "poder visualizar el producto con más detalle clicando... y
+  // que se vea en una modal igual que en el centro de soluciones".
+  function abrirModalProductoPublico(ref, descuento){
+    const p = PRODUCTS[ref];
+    if(!p) return;
+    const overlay = $("#modal-producto-overlay");
+    if(!overlay) return;
+
+    const urlImg = urlImagenProducto(p, 600);
+    const img = $("#modal-producto-img");
+    const sinImagen = $("#modal-producto-sin-imagen");
+    if(urlImg){
+      img.src = urlImg; img.alt = p.nombre || '';
+      img.style.display = 'block';
+      img.onerror = () => { img.style.display = 'none'; sinImagen.style.display = 'flex'; };
+      sinImagen.style.display = 'none';
+    } else {
+      img.style.display = 'none';
+      sinImagen.style.display = 'flex';
+    }
+
+    $("#modal-producto-nombre").textContent = p.nombre || '';
+    $("#modal-producto-ref").textContent = p.ref ? `Ref: ${p.ref}` : '';
+
+    // Mismo tratamiento de precio que la propia tarjeta del estante
+    // (precio tachado + sin IVA tachado + precio rebajado si hay
+    // descuento efectivo; si no, precio + sin IVA) — el descuento ya
+    // viene calculado desde fuera (data-descuento de la tarjeta
+    // pulsada), no se recalcula aquí.
+    const tieneDescuento = Number(descuento) > 0;
+    let precioHtml;
+    if(tieneDescuento){
+      const precioRebajado = precioConDescuento(p.precio_con, descuento);
+      precioHtml = `<div class="modal-producto-precio-con precio-tachado" style="font-size:1rem;">${fmtEUR(p.precio_con)} €</div>
+        <div class="modal-producto-precio-sin precio-siniva-tachado">${fmtEUR(p.precio_sin)} € sin IVA</div>
+        <div class="modal-producto-precio-con" style="margin-top:6px;">${fmtEUR(precioRebajado)} € <span style="font-size:0.9rem; font-weight:400;">IVA inc.</span></div>`;
+    } else {
+      precioHtml = `<div class="modal-producto-precio-con">${fmtEUR(p.precio_con)} € <span style="font-size:0.9rem; font-weight:400;">IVA inc.</span></div>
+        <div class="modal-producto-precio-sin">${fmtEUR(p.precio_sin)} € sin IVA</div>`;
+    }
+    $("#modal-producto-precio").innerHTML = precioHtml;
+
+    $("#modal-producto-familia").textContent = p.familia || '—';
+    $("#modal-producto-area").textContent = p.area || '—';
+
+    const btnBuscador = $("#modal-producto-verbuscador");
+    btnBuscador.href = `./buscador.html?ref=${encodeURIComponent(p.ref)}`;
+
+    overlay.classList.add('activo');
+    document.body.style.overflow = 'hidden';
+  }
+  function cerrarModalProductoPublico(){
+    const overlay = $("#modal-producto-overlay");
+    if(!overlay) return;
+    overlay.classList.remove('activo');
+    document.body.style.overflow = '';
+  }
+  function wireModalProductoPublico(){
+    const overlay = $("#modal-producto-overlay");
+    if(overlay) overlay.addEventListener('click', (ev)=>{ if(ev.target===overlay) cerrarModalProductoPublico(); });
+    const btnCerrar = $("#modal-producto-cerrar");
+    if(btnCerrar) btnCerrar.addEventListener('click', cerrarModalProductoPublico);
+    document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape') cerrarModalProductoPublico(); });
+    // Delegado en #shelf (no en cada tarjeta individualmente): las
+    // tarjetas se reconstruyen por completo en cada render(), así que
+    // enganchar el listener en el contenedor fijo evita tener que
+    // re-engancharlo cada vez. Activa también con teclado (Enter/
+    // Espacio) al ser role="button" — accesible sin ratón.
+    const shelf = $("#shelf");
+    if(shelf){
+      shelf.addEventListener('click', (ev)=>{
+        const card = ev.target.closest('.card[data-ref]');
+        if(card) abrirModalProductoPublico(card.dataset.ref, card.dataset.descuento);
+      });
+      shelf.addEventListener('keydown', (ev)=>{
+        if(ev.key!=='Enter' && ev.key!==' ') return;
+        const card = ev.target.closest('.card[data-ref]');
+        if(!card) return;
+        ev.preventDefault();
+        abrirModalProductoPublico(card.dataset.ref, card.dataset.descuento);
+      });
+    }
   }
 
   // Muestra UNA sola campaña (la del parámetro ?campana=ID si viene en
@@ -1839,10 +2079,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
   }
 
+  let itemsPickerActual = []; // últimos resultados filtrados mostrados (para "Añadir todos estos")
   function renderPicker(){
     const fam = $("#fFamilia").value;
     const q = $("#fBusca").value.trim().toLowerCase();
+    const toolbar = $("#pickerToolbar");
     if(!q && !fam){
+      toolbar.hidden = true;
       // Sin búsqueda activa: si hay sugerencias de IA pendientes de
       // revisión para esta campaña, se muestran en vez del mensaje
       // vacío — el usuario puede quitarlas (clic) o buscar más abajo
@@ -1863,9 +2106,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if(q && !((p.nombre||'').toLowerCase().includes(q) || (p.ref||'').includes(q))) return false;
       return true;
     }).slice(0, 120);
+    itemsPickerActual = items;
+    // Botón "Añadir todos estos" — petición explícita de Eloy: "si una
+    // búsqueda recupera todos los que interesan, no tener que meterlos
+    // de uno en uno". Solo se muestra si hay algo que añadir de verdad
+    // (al menos un resultado que todavía no esté ya seleccionado) — no
+    // tiene sentido ofrecerlo con la lista vacía o si ya están todos
+    // añadidos.
+    const pendientes = items.filter(p=>!selected.has(p.ref));
+    if(items.length && pendientes.length){
+      toolbar.hidden = false;
+      $("#pickerResumen").textContent = `${items.length} resultado${items.length===1?'':'s'}${items.length>=120?' (mostrando los primeros 120)':''}`;
+      $("#btnAnadirTodos").textContent = pendientes.length===items.length ? `Añadir los ${items.length}` : `Añadir ${pendientes.length} pendiente${pendientes.length===1?'':'s'}`;
+    } else {
+      toolbar.hidden = true;
+    }
     $("#pickerGrid").innerHTML = items.map(p=>pickCardHTML(p, false)).join("") || `<p class="picker-empty">Sin resultados para este filtro.</p>`;
     attachPickCardHandlers();
   }
+  $("#btnAnadirTodos").addEventListener("click", ()=>{
+    itemsPickerActual.forEach(p=>selected.add(p.ref));
+    updateSelCount();
+    renderSeleccionados();
+    renderPicker(); // refresca el propio picker (marca como ya-añadidos, actualiza/oculta la barra)
+  });
   function updateSelCount(){ $("#selCount").textContent = selected.size; }
 
   // Lista SIEMPRE visible de lo que ya está en la campaña (independiente
@@ -2021,7 +2285,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const minimo = palabrasTermino.length <= 2 ? palabrasTermino.length : palabrasTermino.length - 1;
     return coincidencias.length >= Math.max(1, minimo);
   }
-  function buscarProductosPorTermino(termino, areasCampana){
+  function buscarProductosPorTermino(termino, areasCampana, limite){
     const palabras = palabrasSignificativas(termino);
     if(!palabras.length) return [];
     let pool = PRODUCTS_LIST;
@@ -2029,7 +2293,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const areasNorm = areasCampana.map(a=>quitarAcentos(a).toLowerCase().trim());
       pool = pool.filter(p=>areasNorm.includes(quitarAcentos(p.area||'').toLowerCase().trim()));
     }
-    return pool.filter(p=>productoCoincideConTermino(p, palabras)).slice(0, 4);
+    return pool.filter(p=>productoCoincideConTermino(p, palabras)).slice(0, limite || 4);
   }
 
   async function sugerirProductosIA(){
@@ -2065,6 +2329,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           if(!encontrados.has(p.ref)) encontrados.set(p.ref, p);
         });
       });
+      // El criterio adicional se busca TAMBIÉN literal contra el
+      // catálogo, sin pasar por la IA y sin capar a 4 resultados. Bug
+      // real reportado por Eloy: "poseidon", "aire de sevilla" (marcas
+      // concretas) no encontraban nada — porque el prompt le pide a la
+      // IA explícitamente que NUNCA use marcas o nombres de producto
+      // exactos como término (con razón: no los conoce de verdad y
+      // podría inventarlos), así que un criterio que ES una marca
+      // concreta nunca llegaba a buscarse de verdad, por mucho que el
+      // encargado lo escribiera tal cual. Esta búsqueda literal es
+      // aparte y no sustituye a las categorías de la IA, se suman.
+      if(criterioAdicional){
+        buscarProductosPorTermino(criterioAdicional, c.areas, 50).forEach(p=>{
+          if(!encontrados.has(p.ref)) encontrados.set(p.ref, p);
+        });
+      }
 
       const resumenTerminos = terminos.slice(0,4).join(', ') + (terminos.length>4 ? '…' : '');
       if(!encontrados.size){
