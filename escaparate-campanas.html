@@ -177,8 +177,14 @@
          superior + detalles), nunca como fondo dominante, para que la
          página sea "vistosa" sin salirse de la línea del logo (petición
          explícita de Eloy). */
+      /* minmax subido de 270px a 360px — con --maxw en su valor máximo
+         (1520px, pantallas ≥1800px), 270px dejaba caber 5 tarjetas por
+         fila (reportado real por Eloy, con foto): demasiado estrechas y
+         apretadas. Con 360px caben como mucho 4 en el ancho máximo, y 3
+         en el resto de anchos — "al menos tres por fila", tal como se
+         pidió, sin llegar a los 5 de antes. */
       .campanas-grid{
-        display:grid; grid-template-columns:repeat(auto-fill, minmax(270px,1fr));
+        display:grid; grid-template-columns:repeat(auto-fill, minmax(360px,1fr));
         gap:22px; max-width:var(--maxw); margin:28px auto 60px; position:relative; z-index:1;
       }
       .campana-card{
@@ -225,7 +231,17 @@
         text-transform:uppercase; letter-spacing:.03em; padding:5px 11px; border-radius:99px;
         width:fit-content;
       }
-      .campana-card h2{ font-size:21px; line-height:1.18; margin-top:2px; }
+      /* min-height a propósito: sin esto, un título de una sola línea
+         ("TITANPRO") deja todo lo que viene después (fecha, imagen,
+         frase, enlace) más arriba que en una tarjeta con título de dos
+         líneas ("Limpieza de otoño, orden en mente") — con varias
+         tarjetas en la misma fila, el resultado se ve desalineado entre
+         sí (reportado real por Eloy, con foto: "no queda alineado...
+         queda raro"). Con la altura mínima reservada para 2 líneas
+         siempre, da igual cuánto ocupe el texto real: lo de debajo
+         siempre empieza en la misma posición en toda la fila. Cálculo:
+         font-size 21px × line-height 1.18 × 2 líneas ≈ 50px. */
+      .campana-card h2{ font-size:21px; line-height:1.18; margin-top:2px; min-height:calc(21px * 1.18 * 2); }
       .campana-card-fechas{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-faint); }
       .campana-card-fechas svg{ width:14px; height:14px; flex:none; color:var(--tarjeta-color, var(--ink-faint)); }
       .campana-card-eslogan{ font-size:13.5px; color:var(--ink-soft); font-style:italic; margin:2px 0 0; flex:1; line-height:1.5; }
@@ -388,6 +404,12 @@
         width:88px; height:88px; border-radius:var(--radius-s); flex:none;
         border:1px dashed var(--line-strong); background:var(--paper);
         display:flex; align-items:center; justify-content:center; overflow:hidden;
+        transition:border-color 120ms ease, background 120ms ease;
+      }
+      /* Retroalimentación visual mientras se arrastra un archivo encima
+         — misma zona donde ya se ve la vista previa o "Sin imagen". */
+      .campana-img-preview.is-dragover{
+        border-color:var(--ink); border-style:solid; background:var(--line);
       }
       .campana-img-preview img{ width:100%; height:100%; object-fit:cover; }
       .campana-img-vacio{ font-size:10.5px; color:var(--ink-faint); text-align:center; padding:0 8px; }
@@ -552,6 +574,12 @@
             <label class="color-swatch-label">Secundario <input type="color" id="ncColorP2" value="#008743"></label>
           </div>
         </div>
+        <div class="field span2">
+          <label class="checkbox-label">
+            <input id="ncPermanente" type="checkbox">
+            Escaparate permanente — ignora las fechas, se mantiene activo mientras "Escaparate activo" esté marcado
+          </label>
+        </div>
         <div class="field">
           <label for="ncInicio">Fecha de inicio</label>
           <input id="ncInicio" type="date">
@@ -595,7 +623,7 @@
               <input type="file" id="campanaImgInput" accept="image/*" style="display:none">
               <button type="button" class="btn ghost" id="btnSubirImagenCampana" disabled>Subir imagen</button>
               <button type="button" class="btn ghost danger-ghost" id="btnQuitarImagenCampana" style="display:none">Quitar imagen</button>
-              <span class="campana-img-hint" id="campanaImgHint">Guarda primero la campaña (nombre y fechas) para poder subir una imagen.</span>
+              <span class="campana-img-hint" id="campanaImgHint">Guarda primero la campaña (nombre y fechas) para poder subir una imagen — luego también puedes arrastrarla sobre el recuadro o pegarla con Ctrl+V.</span>
             </div>
           </div>
         </div>
@@ -686,6 +714,11 @@
   const HOY = new Date();
   const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
   function activaEn(camp, fecha){
+    // Permanente ignora fechas por completo — solo depende de "activa",
+    // que ya se comprueba aparte (filtro de la lista pública). Petición
+    // explícita: "pasará a estar permanente mientras esté el checkbox
+    // Escaparate activo marcado".
+    if(camp.permanente) return true;
     if(!camp.fechaInicio || !camp.fechaFin) return false;
     return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
   }
@@ -929,7 +962,7 @@
         <h2>${c.nombre}</h2>
         <span class="campana-card-fechas">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
-          ${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}
+          ${c.permanente ? 'Permanente' : `${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}`}
         </span>
         ${descuentoMax > 0 ? `<span class="campana-card-descuento">🏷️ Hasta un ${descuentoMax}% de dto.</span>` : ''}
         ${imgUrl ? `<div class="campana-card-thumb"><img src="${imgUrl}" alt="" loading="lazy"></div>` : ''}
@@ -1078,7 +1111,7 @@
             ${live?'<span class="mini-badge live">activa hoy</span>':''}
             ${c.activa===false?'<span class="mini-badge" style="color:#C81E1E;border-color:#C81E1E">desactivada</span>':''}
           </div>
-          <div class="dates">${fmtFecha(c.fechaInicio)} – ${fmtFecha(c.fechaFin)} · ${c.productos.length} productos</div>
+          <div class="dates">${c.permanente ? 'Permanente' : `${fmtFecha(c.fechaInicio)} – ${fmtFecha(c.fechaFin)}`} · ${c.productos.length} productos</div>
         </div>
         <div class="row-actions">
           <a class="icon-btn" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" title="Ver / asignar productos" target="_blank" rel="noopener">
@@ -1151,13 +1184,25 @@
     const url = urlImagenCampana(imagenId, 300);
     preview.innerHTML = url ? `<img src="${url}" alt="">` : '<span class="campana-img-vacio">Sin imagen</span>';
     btnQuitar.style.display = imagenId ? 'inline-block' : 'none';
-    hint.textContent = imagenId ? '' : 'Se verá en la vitrina del escaparate, junto con la animación de la estación.';
+    hint.textContent = imagenId ? '' : 'Se verá en la vitrina del escaparate, junto con la animación de la estación. También puedes arrastrarla sobre el recuadro o pegarla con Ctrl+V.';
   }
 
   function actualizarVisibilidadColorPersonalizado(){
     $("#ncColorPersonalizadoRow").style.display = $("#ncColor").value === 'personalizado' ? 'block' : 'none';
   }
   $("#ncColor").addEventListener("change", actualizarVisibilidadColorPersonalizado);
+
+  // Al marcar "permanente", las fechas dejan de tener sentido (un
+  // escaparate permanente no depende de ningún rango) — se deshabilitan
+  // en vez de ocultarse, para que quien lo desmarque después recupere
+  // las fechas que hubiera puesto antes, sin tener que volver a
+  // escribirlas.
+  function actualizarCamposFechaSegunPermanente(){
+    const permanente = $("#ncPermanente").checked;
+    $("#ncInicio").disabled = permanente;
+    $("#ncFin").disabled = permanente;
+  }
+  $("#ncPermanente").addEventListener("change", actualizarCamposFechaSegunPermanente);
 
   function limpiarFormulario(){
     $("#ncId").value = "";
@@ -1168,6 +1213,8 @@
     $("#ncColorP2").value = "#008743";
     $("#ncInicio").value = "";
     $("#ncFin").value = "";
+    $("#ncPermanente").checked = false;
+    actualizarCamposFechaSegunPermanente();
     $("#ncEslogan").value = "";
     $("#ncDescuento").value = "";
     $("#ncActiva").checked = true;
@@ -1191,6 +1238,8 @@
     $("#ncColorP2").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : "#008743";
     $("#ncInicio").value = c.fechaInicio;
     $("#ncFin").value = c.fechaFin;
+    $("#ncPermanente").checked = c.permanente === true;
+    actualizarCamposFechaSegunPermanente();
     $("#ncEslogan").value = c.eslogan || "";
     $("#ncDescuento").value = c.descuento || "";
     $("#ncActiva").checked = c.activa !== false;
@@ -1206,14 +1255,22 @@
   }
   $("#btnCancelarEdicion").addEventListener("click", limpiarFormulario);
 
-  $("#btnSubirImagenCampana").addEventListener("click", ()=>{ $("#campanaImgInput").click(); });
-  $("#campanaImgInput").addEventListener("change", async (ev)=>{
-    const file = ev.target.files[0];
-    ev.target.value = '';
-    if(!file) return;
+  // Función compartida por las tres vías de subir una imagen (elegir
+  // archivo, arrastrar y soltar, pegar desde el portapapeles) — antes
+  // esta lógica solo vivía dentro del "change" del <input type="file">,
+  // así que aunque el botón ya avisaba de "guarda primero" con el
+  // texto de ayuda de abajo, no había ningún aviso equivalente para
+  // quien intentara arrastrar o pegar una imagen directamente sobre un
+  // escaparate todavía sin guardar — sencillamente no pasaba nada
+  // visible. Ahora las tres vías comparten el mismo aviso explícito
+  // (toast), no solo un texto de ayuda que se puede pasar por alto.
+  async function subirImagenCampana(file){
     const id = $("#ncId").value;
-    if(!id) return;
-    if(!file.type.startsWith('image/')){
+    if(!id){
+      toast('Guarda primero el escaparate (nombre y fechas) para poder añadir una imagen.', true);
+      return;
+    }
+    if(!file || !file.type || !file.type.startsWith('image/')){
       toast('Elige un archivo de imagen.', true);
       return;
     }
@@ -1236,7 +1293,7 @@
         method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
         body: JSON.stringify({
           accion:'actualizar_imagen_campana', id,
-          archivo: { nombre:file.name, tipo:file.type, datos: base64 },
+          archivo: { nombre:file.name || 'imagen-pegada.png', tipo:file.type, datos: base64 },
         }),
       });
       const data = await resp.json();
@@ -1249,9 +1306,59 @@
     } catch(err){
       toast('No se pudo subir la imagen: ' + err.message, true);
     } finally {
-      btnSubir.disabled = false; btnSubir.textContent = original;
+      btnSubir.disabled = !id; btnSubir.textContent = original;
     }
+  }
+
+  $("#btnSubirImagenCampana").addEventListener("click", ()=>{
+    if(!$("#ncId").value){
+      toast('Guarda primero el escaparate (nombre y fechas) para poder añadir una imagen.', true);
+      return;
+    }
+    $("#campanaImgInput").click();
   });
+  $("#campanaImgInput").addEventListener("change", (ev)=>{
+    const file = ev.target.files[0];
+    ev.target.value = '';
+    if(file) subirImagenCampana(file);
+  });
+
+  // Arrastrar y soltar sobre el recuadro de vista previa — misma zona
+  // donde ya se ve "Sin imagen" o la imagen actual.
+  const zonaImagenCampana = $("#campanaImgPreview");
+  ['dragenter','dragover'].forEach(evento => {
+    zonaImagenCampana.addEventListener(evento, (ev)=>{
+      ev.preventDefault();
+      zonaImagenCampana.classList.add('is-dragover');
+    });
+  });
+  ['dragleave','drop'].forEach(evento => {
+    zonaImagenCampana.addEventListener(evento, (ev)=>{
+      ev.preventDefault();
+      zonaImagenCampana.classList.remove('is-dragover');
+    });
+  });
+  zonaImagenCampana.addEventListener('drop', (ev)=>{
+    const file = ev.dataTransfer.files && ev.dataTransfer.files[0];
+    if(file) subirImagenCampana(file);
+  });
+
+  // Pegar desde el portapapeles (Ctrl+V / Cmd+V) — escucha en todo el
+  // documento en vez de solo en la zona de la imagen, porque una imagen
+  // copiada no se puede "hacer foco" en un <div> antes de pegar como sí
+  // se hace con un campo de texto; así funciona con solo tener el modal
+  // de gestión abierto. Se ignora si el modal no está abierto, para no
+  // interceptar un pegado normal de texto en cualquier otra parte del
+  // sitio.
+  document.addEventListener('paste', (ev)=>{
+    const modal = $("#modalCampanas");
+    if(!modal || !modal.open) return;
+    const item = Array.from(ev.clipboardData?.items || []).find(i => i.type.startsWith('image/'));
+    if(!item) return;
+    ev.preventDefault();
+    subirImagenCampana(item.getAsFile());
+  });
+
   $("#btnQuitarImagenCampana").addEventListener("click", async ()=>{
     const id = $("#ncId").value;
     if(!id) return;
@@ -1289,14 +1396,15 @@
   $("#btnGuardarCampana").addEventListener("click", async ()=>{
     const msg = $("#formMsg");
     const nombre = $("#ncNombre").value.trim();
+    const permanente = $("#ncPermanente").checked;
     const fechaInicio = $("#ncInicio").value;
     const fechaFin = $("#ncFin").value;
-    if(!nombre || !fechaInicio || !fechaFin){
-      msg.textContent = "Rellena al menos el nombre y las dos fechas.";
+    if(!nombre || (!permanente && (!fechaInicio || !fechaFin))){
+      msg.textContent = permanente ? "Rellena al menos el nombre." : "Rellena al menos el nombre y las dos fechas.";
       msg.className = "form-msg show error";
       return;
     }
-    if(fechaFin < fechaInicio){
+    if(!permanente && fechaFin < fechaInicio){
       msg.textContent = "La fecha de fin no puede ser anterior a la de inicio.";
       msg.className = "form-msg show error";
       return;
@@ -1308,7 +1416,7 @@
       const payload = {
         accion:'guardar_campana',
         id: $("#ncId").value || undefined,
-        nombre, fechaInicio, fechaFin,
+        nombre, fechaInicio, fechaFin, permanente,
         tipo: $("#ncTipo").value,
         colorSet: $("#ncColor").value,
         colorPersonalizado1: $("#ncColorP1").value,

@@ -1239,6 +1239,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
   function activaEn(camp, fecha){
+    if(camp.permanente) return true;
     if(!camp.fechaInicio || !camp.fechaFin) return false;
     return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
   }
@@ -1678,7 +1679,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="vitrina-meta">
           <span class="item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
-            <span>${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}</span>
+            <span>${c.permanente ? 'Permanente' : `${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}`}</span>
           </span>
           <span class="item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M4 8h16M9 12a3 3 0 006 0"/></svg>
@@ -1738,10 +1739,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     // Estación según el INICIO de la campaña, no el día de hoy — así una
     // campaña de verano programada en julio se ve "de verano" se mire
-    // cuando se mire. Se pinta AL FINAL, después de que shelf/cierre ya
-    // estén en el DOM, para medir la altura real y definitiva del
-    // lienzo completo (ver pintarFondoEstacional).
-    const fechaRefEstacion = c.fechaInicio ? new Date(c.fechaInicio+"T00:00:00") : HOY;
+    // cuando se mire. Excepción: un escaparate PERMANENTE siempre usa
+    // HOY — no tiene un "inicio" real que represente nada (y si lo
+    // tuviera guardado de antes de marcarlo como permanente, mostrar esa
+    // fecha vieja congelaría la estación para siempre en vez de ir
+    // cambiando con el año, que es lo esperable para algo permanente).
+    // Se pinta AL FINAL, después de que shelf/cierre ya estén en el DOM,
+    // para medir la altura real y definitiva del lienzo completo (ver
+    // pintarFondoEstacional).
+    const fechaRefEstacion = (!c.permanente && c.fechaInicio) ? new Date(c.fechaInicio+"T00:00:00") : HOY;
     pintarFondoEstacional(fechaRefEstacion);
   }
 

@@ -3904,7 +3904,7 @@ function procesarActualizarRelacionados(data) {
 // esta hoja tiene, como mucho, unas pocas decenas de filas, así que
 // se lee directamente en cada doGet — mucho más simple que mantener
 // sincronizada otra caché, y siempre al día sin parcheos.
-const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'descuento', 'activa', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'descuento', 'permanente', 'activa', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaCampanas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -4002,6 +4002,13 @@ function leerCampanas_() {
         const n = parseFloat((fila[COL['descuento']] || '').toString().replace(',', '.'));
         return isFinite(n) && n > 0 ? n : 0;
       })(),
+      // Escaparate permanente: ignora fechaInicio/fechaFin por completo
+      // para decidir si está "activo hoy" — solo depende de "activa"
+      // mientras esté marcado. Mismo criterio que 'activa': solo un
+      // 'si' explícito lo activa (al revés que 'activa', aquí lo normal
+      // es que NO sea permanente, así que el valor por defecto para
+      // filas antiguas debe ser "no permanente", no lo contrario).
+      permanente: (fila[COL['permanente']] || '').toString().trim().toLowerCase() === 'si',
       // Solo un 'no' explícito la desactiva — así las campañas creadas
       // antes de que existiera esta columna (celda vacía) se siguen
       // tratando como activas por defecto, sin tener que revisarlas
@@ -4338,8 +4345,13 @@ function procesarGuardarCampana(data) {
     const nombre = (data.nombre || '').toString().trim();
     const fechaInicio = (data.fechaInicio || '').toString().trim();
     const fechaFin = (data.fechaFin || '').toString().trim();
-    if (!nombre || !fechaInicio || !fechaFin) {
-      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Faltan campos obligatorios: nombre, fecha de inicio o fecha de fin.' }))
+    // Escaparate permanente: las fechas dejan de ser obligatorias — un
+    // escaparate permanente no depende de ningún rango de fechas para
+    // decidir si está activo, solo del propio checkbox "activa" (ver
+    // permanente en leerCampanas_ y activaEn en el frontend).
+    const permanente = data.permanente === true;
+    if (!nombre || (!permanente && (!fechaInicio || !fechaFin))) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Faltan campos obligatorios: nombre, y fecha de inicio/fin salvo que sea un escaparate permanente.' }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -4396,6 +4408,7 @@ function procesarGuardarCampana(data) {
       fila[COL['productos']] = '';
       fila[COL['eslogan']] = eslogan;
       fila[COL['descuento']] = descuento;
+      fila[COL['permanente']] = permanente ? 'si' : 'no';
       fila[COL['activa']] = activa;
       fila[COL['fecha_creacion']] = ahoraISO;
       fila[COL['fecha_actualizacion']] = ahoraISO;
@@ -4417,6 +4430,7 @@ function procesarGuardarCampana(data) {
     sheet.getRange(filaNum, COL['areas'] + 1).setValue(areas);
     sheet.getRange(filaNum, COL['eslogan'] + 1).setValue(eslogan);
     sheet.getRange(filaNum, COL['descuento'] + 1).setValue(descuento);
+    sheet.getRange(filaNum, COL['permanente'] + 1).setValue(permanente ? 'si' : 'no');
     sheet.getRange(filaNum, COL['activa'] + 1).setValue(activa);
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
     console.log('Campaña actualizada:', idExistente);
