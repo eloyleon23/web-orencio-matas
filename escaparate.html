@@ -1266,23 +1266,33 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
   const ESTACIONES = {
+    // Tamaño y opacidad de las tres estaciones de abajo (invierno,
+    // primavera, verano) subidos para igualar la presencia visual de
+    // otoño — comparando las cuatro una junto a otra, Eloy confirmó que
+    // "la única que veo que se aprecia algo es otoño, del resto apenas
+    // he apreciado algo". Antes: tam 14-26px, opacidad 0.30-0.55 (frente
+    // a los 30-52px / 0.4-0.7 de otoño, mucho más grande y opaco). Ahora
+    // más cerca de esos valores, sin ser idénticos — cada estación
+    // conserva su propio tamaño de forma (los copos/pétalos/burbujas son
+    // formas más simples que la hoja de otoño, así que no necesitan
+    // llegar exactamente igual de grandes para leerse bien).
     invierno: {
       fondo: 'linear-gradient(160deg, #EAF2FA, #DCEBF7 55%, #CFE3F2)',
       colores: ['#8FB8DD','#A9C9E6','#6FA3D1'],
       forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M2 12h20M6 4l1 3-3 1M18 4l-1 3 3 1M6 20l1-3-3-1M18 20l-1-3 3-1"/></svg>`,
-      dir: 1, tam: [16,26], dur: [7,13], n: 16, op: [0.30,0.55],
+      dir: 1, tam: [26,40], dur: [7,13], n: 14, op: [0.42,0.68],
     },
     primavera: {
       fondo: 'linear-gradient(160deg, #F1FBEF, #E3F6E0 55%, #D3F0D6)',
       colores: ['#6FBE6B','#8FD98A','#F3B6C7'],
       forma: (c) => `<svg viewBox="0 0 24 24" fill="${c}"><path d="M12 2c4 3 6 6 6 10a6 6 0 01-12 0c0-4 2-7 6-10z"/></svg>`,
-      dir: 1, tam: [16,24], dur: [8,14], n: 16, op: [0.30,0.55],
+      dir: 1, tam: [24,38], dur: [8,14], n: 14, op: [0.42,0.68],
     },
     verano: {
       fondo: 'linear-gradient(160deg, #E7F6FB, #D3EEF7 55%, #BFE4F2)',
       colores: ['#4FB6DA','#7FCBE6','#3A9FC4'],
       forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="9.3" cy="8.8" r="1.7" fill="${c}" stroke="none" opacity=".55"/></svg>`,
-      dir: -1, tam: [14,22], dur: [6,11], n: 16, op: [0.30,0.55],
+      dir: -1, tam: [22,34], dur: [6,11], n: 14, op: [0.42,0.68],
     },
     // Dos siluetas mezcladas al azar por partícula: la hoja genérica de
     // antes (óvalo apuntado + nervio central) y una de arce — Eloy pidió
