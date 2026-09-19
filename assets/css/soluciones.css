@@ -1533,6 +1533,98 @@
   font-size: 1.5rem;
 }
 
+/* ── Recurso descargable (infografías, protocolos...) ───────────────────
+   Genérico — cualquier solución con sol.recursoDescargable lo usa igual,
+   no es específico de ninguna solución en concreto. */
+.cs-recurso-descargable {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  margin-top: 22px;
+  padding: 16px;
+  border: 2px solid rgba(18, 20, 23, 0.1);
+  border-radius: var(--radius-medium);
+  background: var(--primary-white);
+  max-width: 620px;
+}
+.cs-recurso-descargable__preview {
+  position: relative;
+  flex: none;
+  width: 110px;
+  height: 115px;
+  padding: 0;
+  border: 1px solid var(--line, rgba(18,20,23,.12));
+  border-radius: var(--radius-small);
+  overflow: hidden;
+  cursor: pointer;
+  background: none;
+}
+.cs-recurso-descargable__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cs-recurso-descargable__lupa {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 6px;
+  background: rgba(15,17,21,.55); color: #fff;
+  font-size: 11px; font-weight: 700;
+  opacity: 0; transition: opacity 0.15s ease;
+}
+.cs-recurso-descargable__preview:hover .cs-recurso-descargable__lupa,
+.cs-recurso-descargable__preview:focus-visible .cs-recurso-descargable__lupa {
+  opacity: 1;
+}
+.cs-recurso-descargable__info { min-width: 0; }
+.cs-recurso-descargable__info h3 {
+  font-family: var(--font-heading); font-size: 1.05rem; margin: 0 0 6px; color: var(--text-dark);
+}
+.cs-recurso-descargable__info p {
+  font-size: 0.9rem; color: var(--text-gray); line-height: 1.5; margin: 0 0 12px;
+}
+.cs-recurso-descargable__descargar {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 99px;
+  background: var(--primary-red); color: #fff;
+  font-size: 0.85rem; font-weight: 700; text-decoration: none;
+}
+.cs-recurso-descargable__descargar:hover { filter: brightness(1.08); }
+
+/* Lightbox — z-index por encima del banner de cookies (9999), mismo
+   motivo que otros modales de este proyecto. */
+.cs-lightbox-overlay {
+  display: none; position: fixed; inset: 0; z-index: 10000;
+  background: rgba(10,11,14,.92);
+  align-items: center; justify-content: center;
+  padding: 40px 20px; flex-direction: column; gap: 16px;
+}
+.cs-lightbox-overlay.activo { display: flex; }
+.cs-lightbox-overlay img {
+  max-width: min(90vw, 900px); max-height: 78vh;
+  object-fit: contain; border-radius: var(--radius-small);
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.cs-lightbox-cerrar {
+  position: fixed; top: 18px; right: 18px; z-index: 1;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,.12); border: none; color: #fff;
+  font-size: 1.1rem; cursor: pointer;
+}
+.cs-lightbox-cerrar:hover { background: rgba(255,255,255,.22); }
+.cs-lightbox-descargar-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 22px; border-radius: 99px;
+  background: var(--primary-red); color: #fff;
+  font-size: 0.9rem; font-weight: 700; text-decoration: none;
+}
+.cs-lightbox-descargar-btn:hover { filter: brightness(1.08); }
+@media (max-width: 640px) {
+  .cs-recurso-descargable { flex-direction: column; max-width: 100%; }
+  .cs-recurso-descargable__preview { width: 100%; height: 180px; }
+}
+
 /* ── Calculadora de cantidad ───────────────────────────────────────────── */
 .cs-calculadora {
   max-width: 560px;

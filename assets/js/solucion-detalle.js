@@ -111,6 +111,18 @@
               <span>${cc.label}</span>
             </a>`).join('')}
           </div>` : ''}
+          ${sol.recursoDescargable ? `
+          <div class="cs-recurso-descargable">
+            <button type="button" class="cs-recurso-descargable__preview" id="cs-recurso-abrir" aria-label="Ver ${sol.recursoDescargable.titulo} en grande">
+              <img src="${sol.recursoDescargable.miniatura}" alt="${sol.recursoDescargable.titulo}" loading="lazy">
+              <span class="cs-recurso-descargable__lupa">🔍 Ver en grande</span>
+            </button>
+            <div class="cs-recurso-descargable__info">
+              <h3>${sol.recursoDescargable.titulo}</h3>
+              <p>${sol.recursoDescargable.descripcion}</p>
+              <a class="cs-recurso-descargable__descargar" href="${sol.recursoDescargable.imagenCompleta}" download>⬇️ Descargar infografía</a>
+            </div>
+          </div>` : ''}
         </div>
       </section>
 
@@ -1136,11 +1148,43 @@
     });
   }
 
+  // Lightbox del recurso descargable (infografías, protocolos...) — se
+  // re-engancha en cada render() porque el botón #cs-recurso-abrir solo
+  // existe si la solución actual tiene sol.recursoDescargable; si no
+  // existe en el DOM, addEventListener simplemente no hace nada.
+  function wireLightboxRecurso() {
+    const overlay = $('#cs-lightbox-overlay');
+    const btnAbrir = $('#cs-recurso-abrir');
+    if (!overlay || !btnAbrir) return;
+    // sol es local a render() — se recalcula aquí del mismo modo (mismo
+    // slug de la URL) en vez de depender de una variable compartida.
+    const slug = new URLSearchParams(window.location.search).get('slug') || 'pintar-plastico-coche';
+    const sol = D.soluciones[slug];
+    if (!sol || !sol.recursoDescargable) return;
+
+    const abrir = () => {
+      $('#cs-lightbox-img').src = sol.recursoDescargable.imagenCompleta;
+      $('#cs-lightbox-img').alt = sol.recursoDescargable.titulo;
+      $('#cs-lightbox-descargar').href = sol.recursoDescargable.imagenCompleta;
+      overlay.classList.add('activo');
+      document.body.style.overflow = 'hidden';
+    };
+    const cerrar = () => {
+      overlay.classList.remove('activo');
+      document.body.style.overflow = '';
+    };
+    btnAbrir.addEventListener('click', abrir);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+    $('#cs-lightbox-cerrar').addEventListener('click', cerrar);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrar(); });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     D.cargarSolucionesReales().then(() => {
       render();
       wireBotonSubir();
       wireModalProducto();
+      wireLightboxRecurso();
     });
   });
 })();
