@@ -91,7 +91,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </header>
 
     <main id="solucion-contenido">
-      <!-- Contenido renderizado por solucion-detalle.js según ?slug= -->
+      <!-- Contenido renderizado por solucion-detalle.js según ?slug=.
+           Esto de aquí es solo el estado INICIAL, visible desde que carga
+           el HTML hasta que termina render() — que sustituye por completo
+           este innerHTML, así que no hace falta ningún JS para quitarlo
+           luego. Antes esto se quedaba completamente en blanco (solo
+           cabecera y footer visibles) mientras se cargaban las guías
+           reales del Sheet — con una conexión lenta podía notarse mucho. -->
+      <div class="cs-carga-pagina">
+        <img src="../assets/logos/apple-touch-icon.png" alt="" class="cs-carga-pagina__icono">
+        <p>Cargando la solución…</p>
+      </div>
     </main>
 
     <footer class="site-footer">
@@ -177,6 +187,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <img id="cs-lightbox-img" src="" alt="">
       <a id="cs-lightbox-descargar" class="cs-lightbox-descargar-btn" href="" download>⬇️ Descargar</a>
     </div>
+
+    <!-- URL del Web App de Apps Script — necesaria para cargarSolucionesReales()
+         (soluciones-data.js) y para resolverProductoReal() contra el
+         catálogo real. Bug real encontrado: esta página nunca la tenía
+         definida (a diferencia de solucion-ia.html y centro-soluciones.html,
+         que sí), así que SIEMPRE caía al respaldo estático incluido en el
+         código — nunca llegaba a pedir el Sheet de verdad, por mucho que
+         se editara una guía o se regenerara la caché. -->
+    <script>
+      window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+    </script>
 
     <script src="../assets/js/soluciones-data.js?v=20260919a"></script>
     <script src="../assets/js/solucion-detalle.js?v=20260919a"></script>

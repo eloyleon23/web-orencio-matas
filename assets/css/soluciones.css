@@ -337,6 +337,36 @@
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.15); opacity: 0.6; }
 }
+/* Estado de carga de página completa (solucion.html) — mismo icono y
+   misma animación de pulso que ya usa la carga de IA (cs-ia-pulso),
+   pero a tamaño de página en vez de dentro de un modal. Se ve desde que
+   carga el HTML hasta que termina render(), que sustituye este bloque
+   entero — sin él, la página se quedaba con solo la cabecera y el
+   footer visibles mientras cargaban las guías reales del Sheet. */
+.cs-carga-pagina {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 60vh;
+  padding: 60px 20px;
+  text-align: center;
+}
+.cs-carga-pagina__icono {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  animation: cs-ia-pulso 1.4s ease-in-out infinite;
+}
+.cs-carga-pagina p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-ia-modal-spinner, .cs-carga-pagina__icono { animation: none; }
+}
 .cs-icono-ia {
   display: inline-block;
   width: 1.1em;
