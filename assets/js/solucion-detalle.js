@@ -652,7 +652,7 @@
         </div>
       `;
 
-      D.resolverProductoReal(opcion.nombre).then((real) => {
+      D.resolverProductoReal(opcion.nombre, opcion.ref).then((real) => {
         // Si el usuario ya ha cambiado de opción mientras se resolvía,
         // no pisar el resultado más reciente con uno que ha llegado tarde.
         const opcionActual = sol.selectorSuperficie.opciones.find((o) => o.id === select.value);
@@ -743,7 +743,7 @@
     const mockAlternativos = sol.alternativeProducts || [];
     const todosMock = mockRecomendados.concat(mockAlternativos);
 
-    Promise.all(todosMock.map((p) => D.resolverProductoReal(p.nombre)))
+    Promise.all(todosMock.map((p) => D.resolverProductoReal(p.nombre, p.ref)))
       .then((resueltos) => {
         const refsUsadas = new Set();
         const sinDuplicar = resueltos.map((real) => {

@@ -361,7 +361,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 category, subcategory, problem, objective, surface, difficulty, estimatedTime,
                 result, breadcrumb, materials[], receta[], steps[], professionalTips[],
                 commonMistakes[], recommendedProducts[], alternativeProducts[],
-                relatedSolutions[], seo{}. Opcionales: colorChart(s), calculadoraCantidad.
+                relatedSolutions[], seo{}. Opcionales: colorChart(s), calculadoraCantidad,
+                recursoDescargable. En recommendedProducts[]/alternativeProducts[], añade
+                "ref" (referencia real del producto) junto a "nombre" siempre que la sepas —
+                así el precio se resuelve por referencia exacta y se mantiene siempre
+                actualizado, en vez de por coincidencia de nombre (más frágil, y solo
+                se usa como respaldo cuando no hay ref).
               </label>
               <textarea id="cs-gestion-json" class="cs-gestion-textarea" rows="22" spellcheck="false" placeholder="{}"></textarea>
             </div>

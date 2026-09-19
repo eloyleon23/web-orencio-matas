@@ -488,12 +488,12 @@ window.SOLUCIONES_DATA = (function () {
         'Pintar sobre una superficie contaminada (grasa, silicona, polvo).',
       ],
       recommendedProducts: [
-        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA',            categoria: 'Limpieza',   formato: '1 L',  precio: '12,95 €' },
-        { nombre: 'LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972',                         categoria: 'Abrasivos',                  precio: '0,80 €' },
+        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', ref: '8411582261345',            categoria: 'Limpieza',   formato: '1 L',  precio: '12,95 €' },
+        { nombre: 'LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972', ref: '6016155',                         categoria: 'Abrasivos',                  precio: '0,80 €' },
         { nombre: 'Promotor de adherencia para plástico',  categoria: 'Talleres',                    precio: '18,95 €' },
-        { nombre: 'R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.',                      categoria: 'Talleres',                    precio: '24,95 €' },
+        { nombre: 'R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', ref: '3452571642023',                      categoria: 'Talleres',                    precio: '24,95 €' },
         { nombre: 'Pintura para carrocería',                categoria: 'Talleres',                    precio: '29,95 €' },
-        { nombre: 'Barniz 2K',                              categoria: 'Talleres',                    precio: '32,95 €' },
+        { nombre: 'Barniz 2K', ref: '140114041',                              categoria: 'Talleres',                    precio: '32,95 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción económica',      nombre: 'Aerosol plástico color + barniz 2 en 1', precio: '14,95 €' },
@@ -551,10 +551,10 @@ window.SOLUCIONES_DATA = (function () {
         'Olvidar los bordes y zonas ocultas, donde el óxido suele reaparecer antes.',
       ],
       recommendedProducts: [
-        { nombre: 'CEPILLO METALICO BRICOLAJE TENAJERO RF.11910', categoria: 'Herramientas', precio: '6,50 €' },
+        { nombre: 'CEPILLO METALICO BRICOLAJE TENAJERO RF.11910', ref: '8431771119103', categoria: 'Herramientas', precio: '6,50 €' },
         { nombre: 'Abrasivo grano grueso',      categoria: 'Abrasivos',   precio: '1,10 €' },
         { nombre: 'Convertidor de óxido',       categoria: 'Talleres',    precio: '16,95 €' },
-        { nombre: 'AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057',   categoria: 'Talleres',    precio: '21,95 €' },
+        { nombre: 'AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', ref: '140114055',   categoria: 'Talleres',    precio: '21,95 €' },
         { nombre: 'Oxiron Agua Liso Brillo Negro (esmalte acrílico, al agua)', categoria: 'Pinturas', formato: '750 ml', precio: '20,63 €' },
       ],
       alternativeProducts: [
@@ -613,13 +613,13 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Oxiron Agua Liso Brillo Negro (esmalte acrílico, al agua)', categoria: 'Pinturas', formato: '750 ml', precio: '20,63 €' },
-        { nombre: 'BROCHA PRENSADA ESSENTIAL COMPETIDOR S-10 Nº 10', categoria: 'Herramientas', formato: 'Nº 10', precio: '3,74 €' },
-        { nombre: '.CINTA FINA NARANJA ZAPHIRO 18MM X 50M', categoria: 'Talleres', formato: '18mm x 50m', precio: '3,44 €' },
+        { nombre: 'BROCHA PRENSADA ESSENTIAL COMPETIDOR S-10 Nº 10', ref: '8420118910107', categoria: 'Herramientas', formato: 'Nº 10', precio: '3,74 €' },
+        { nombre: '.CINTA FINA NARANJA ZAPHIRO 18MM X 50M', ref: '8068041', categoria: 'Talleres', formato: '18mm x 50m', precio: '3,44 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Para exterior (más resistente a la intemperie)', nombre: 'Oxiron Forja Negro (esmalte sintético al disolvente)', precio: '15,85 €' },
-        { etiqueta: 'Superficies planas grandes', nombre: 'RODILLO ESP/FACHADAS SUPER FELPON 22 CMS.', precio: '7,88 €' },
-        { etiqueta: 'Cubrir zonas amplias o irregulares', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', precio: '3,07 €' },
+        { etiqueta: 'Superficies planas grandes', nombre: 'RODILLO ESP/FACHADAS SUPER FELPON 22 CMS.', ref: '842011879106', precio: '7,88 €' },
+        { etiqueta: 'Cubrir zonas amplias o irregulares', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', ref: '140514012', precio: '3,07 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'elegir-pintura-segun-superficie-metal-madera-exterior', 'elegir-brocha-rodillo-pintar', 'elegir-cinta-papel-enmascarar'],
       seo: {
@@ -671,11 +671,11 @@ window.SOLUCIONES_DATA = (function () {
         'Barnizar en un ambiente húmedo (causa del aspecto blanquecino).',
       ],
       recommendedProducts: [
-        { nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.',   categoria: 'Droguería',  precio: '15,95 €' },
+        { nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.', ref: '8414800805512',   categoria: 'Droguería',  precio: '15,95 €' },
         { nombre: 'Lija de grano medio',    categoria: 'Abrasivos',  precio: '0,90 €' },
         { nombre: 'Lija de grano fino',     categoria: 'Abrasivos',  precio: '0,90 €' },
-        { nombre: 'Masilla para madera',    categoria: 'Pinturas',  precio: '9,95 €' },
-        { nombre: 'BARNIZ TITAN ECO SATIN.750 ML.TECA',     categoria: 'Pinturas',  precio: '22,95 €' },
+        { nombre: 'Masilla para madera', ref: '8414800101935',    categoria: 'Pinturas',  precio: '9,95 €' },
+        { nombre: 'BARNIZ TITAN ECO SATIN.750 ML.TECA', ref: '8414800422009',     categoria: 'Pinturas',  precio: '22,95 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción rápida',      nombre: 'Barniz al agua secado rápido', precio: '19,95 €' },
@@ -742,13 +742,13 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Lija de grano fino (220-240)', categoria: 'Abrasivos', precio: '0,90 €' },
-        { nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', categoria: 'Pinturas', precio: '13,38 €' },
-        { nombre: 'BARNIZ TITAN ECO SATIN.750 ML.NOGAL', categoria: 'Pinturas', precio: '17,42 €' },
-        { nombre: 'BARNIZ TITANLUX SATINADO 750 ML.ROBLE', categoria: 'Pinturas', precio: '16,46 €' },
+        { nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', ref: '8429656084783', categoria: 'Pinturas', precio: '13,38 €' },
+        { nombre: 'BARNIZ TITAN ECO SATIN.750 ML.NOGAL', ref: '8414800421941', categoria: 'Pinturas', precio: '17,42 €' },
+        { nombre: 'BARNIZ TITANLUX SATINADO 750 ML.ROBLE', ref: '8414800421422', categoria: 'Pinturas', precio: '16,46 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Sintético (más resistente)', nombre: 'BARNIZ TITANLUX SATINADO 750 ML.CAOBA', precio: '16,46 €' },
-        { etiqueta: 'Al agua (secado rápido, menos olor)', nombre: 'BARNIZ TITAN ECO SATIN.750 ML.TECA', precio: '17,42 €' },
+        { etiqueta: 'Sintético (más resistente)', nombre: 'BARNIZ TITANLUX SATINADO 750 ML.CAOBA', ref: '8414800421477', precio: '16,46 €' },
+        { etiqueta: 'Al agua (secado rápido, menos olor)', nombre: 'BARNIZ TITAN ECO SATIN.750 ML.TECA', ref: '8414800422009', precio: '17,42 €' },
       ],
       relatedSolutions: ['restaurar-mueble-madera', 'decapar-pintura-mueble', 'lacado-profesional-muebles'],
       seo: {
@@ -798,10 +798,10 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Champú de lavado',               categoria: 'Talleres',   precio: '9,95 €' },
-        { nombre: 'PLASTILINA LIMPIEZA ZAPHIRO 200 ML.',         categoria: 'Talleres',   precio: '14,95 €' },
+        { nombre: 'PLASTILINA LIMPIEZA ZAPHIRO 200 ML.', ref: '8118034',         categoria: 'Talleres',   precio: '14,95 €' },
         { nombre: 'Pasta de pulir de corte medio',   categoria: 'Talleres',   precio: '16,50 €' },
-        { nombre: 'PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.',            categoria: 'Talleres',   precio: '15,95 €' },
-        { nombre: 'PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.',   categoria: 'Talleres',   precio: '19,95 €' },
+        { nombre: 'PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.', ref: '8436044961335',            categoria: 'Talleres',   precio: '15,95 €' },
+        { nombre: 'PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.', ref: '140614009',   categoria: 'Talleres',   precio: '19,95 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción rápida',      nombre: 'Pulimento todo en uno (corte + brillo + protección)', precio: '21,95 €' },
@@ -857,12 +857,12 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'CEYS Silicona Stop Moho Cartucho 280 ml Blanco', categoria: 'Droguería', formato: '280 ml', precio: '5,98 €' },
-        { nombre: 'CEYS Silicona Stop Moho Tubo 125 ml Blanco',     categoria: 'Droguería', formato: '125 ml', precio: '5,02 €' },
+        { nombre: 'CEYS Silicona Stop Moho Tubo 125 ml Blanco', ref: '8411519755664',     categoria: 'Droguería', formato: '125 ml', precio: '5,02 €' },
         { nombre: 'Sellador Acrílico Blanco Baixens SA-37',         categoria: 'Droguería', formato: '310 ml', precio: '1,80 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Opción económica',   nombre: 'Sellaceys Silicona Cartucho 280 ml Translúcida', precio: '4,34 €' },
-        { etiqueta: 'Opción rápida',      nombre: 'CEYS Sellaceys Cinta Selladora Hogar Blanco (sin pistola)', precio: '9,91 €' },
+        { etiqueta: 'Opción económica',   nombre: 'Sellaceys Silicona Cartucho 280 ml Translúcida', ref: '8411519212259', precio: '4,34 €' },
+        { etiqueta: 'Opción rápida',      nombre: 'CEYS Sellaceys Cinta Selladora Hogar Blanco (sin pistola)', ref: '8411519755701', precio: '9,91 €' },
         { etiqueta: 'Trabajos pequeños',  nombre: 'Sellaceys Silicona Tubo 50 ml Blíster', precio: '2,48 €' },
       ],
       relatedSolutions: ['control-plagas-cocina', 'renovar-banera-lavabo-sanitario', 'pintar-azulejos', 'limpiar-moho-pared-azulejo'],
@@ -917,13 +917,13 @@ window.SOLUCIONES_DATA = (function () {
         'Poner el suelo en servicio antes del tiempo de curado total indicado.',
       ],
       recommendedProducts: [
-        { nombre: 'TITANTECH PXB-700 BASE EPOXI SUELOS 4 L.B.NEUT', categoria: 'Talleres', formato: '4 L', precio: '74,54 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
-        { nombre: 'TITANTECH PXB-700 ENDUREC.EPOXI SUELOS 1 L.',          categoria: 'Talleres', formato: '1 L', precio: '15,55 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'TITANTECH PXB-700 BASE EPOXI SUELOS 4 L.B.NEUT', ref: '8414800435016', categoria: 'Talleres', formato: '4 L', precio: '74,54 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'TITANTECH PXB-700 ENDUREC.EPOXI SUELOS 1 L.', ref: '8414800434187',          categoria: 'Talleres', formato: '1 L', precio: '15,55 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Para superficies grandes', nombre: 'TITANTECH PXB700 BASE EPOXI SUELOS BN 0597 15 L.', precio: '231,23 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
+        { etiqueta: 'Para superficies grandes', nombre: 'TITANTECH PXB700 BASE EPOXI SUELOS BN 0597 15 L.', ref: '8414800435023', precio: '231,23 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X70_0000_PXB700_EPOXI_SUELOS_ES.pdf?v=2023-06-27-165500' },
         { etiqueta: 'Uso sanitario/alimentario', nombre: 'Epoxi Suelos Sanitaria AQ.PXB-720 Blanco Base 4 L', precio: '97,27 €' },
-        { etiqueta: 'Opción económica (superficie pequeña, color)', nombre: 'TITANTECH PXB-700 EPOXI SUELOS 4 L.BLANCO', precio: '71,18 €' },
+        { etiqueta: 'Opción económica (superficie pequeña, color)', nombre: 'TITANTECH PXB-700 EPOXI SUELOS 4 L.BLANCO', ref: '8414800434996', precio: '71,18 €' },
         { etiqueta: 'Sin epoxi (más sencillo)', nombre: 'Barniz Titán Suelos con Poliuretano Satinado 4 L Incoloro', precio: '75,98 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal'],
@@ -974,16 +974,16 @@ window.SOLUCIONES_DATA = (function () {
         'No repetir la medición al día siguiente para confirmar el resultado.',
       ],
       recommendedProducts: [
-        { nombre: 'Astralpool Tiras Analíticas 3 en 1, 50 uds',   categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
+        { nombre: 'Astralpool Tiras Analíticas 3 en 1, 50 uds', ref: '8435283928031',   categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
         { nombre: 'Astralpool Minus Reductor de pH Líquido',       categoria: 'Piscinas', formato: '10 L',  precio: '23,12 €' },
-        { nombre: 'ASTRALPOOL INCREMENT.DE PH 5 KG.',                categoria: 'Piscinas', formato: '5 kg',  precio: '12,64 €' },
+        { nombre: 'ASTRALPOOL INCREMENT.DE PH 5 KG.', ref: '8420381727297',                categoria: 'Piscinas', formato: '5 kg',  precio: '12,64 €' },
         { nombre: 'Astralpool Cloro Rápido Granulado',              categoria: 'Piscinas', formato: '5 kg',  precio: '28,85 €' },
         { nombre: 'Astralpool Cloro Lento en Tableta',              categoria: 'Piscinas', formato: '5 kg',  precio: '33,93 €' },
         { nombre: 'Antialgas Líquido Astralpool',                   categoria: 'Piscinas', formato: '5 L',   precio: '10,04 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Todo en uno',       nombre: 'Astralpool Inverlong Dosificador Flotante Todo en 1', precio: '15,44 €' },
-        { etiqueta: 'Opción profesional/comunidad', nombre: 'CTX 15 REDUCTOR PH PROF.20 L.73670', precio: '35,07 €' },
+        { etiqueta: 'Opción profesional/comunidad', nombre: 'CTX 15 REDUCTOR PH PROF.20 L.73670', ref: '8420381550246', precio: '35,07 €' },
       ],
       relatedSolutions: ['tratamiento-choque-piscina', 'invernar-piscina'],
       seo: {
@@ -1044,14 +1044,14 @@ window.SOLUCIONES_DATA = (function () {
         dosisPorM3PorPpm: { 5: 20, 10: 10, 12: 8.3, 12.5: 8, 13: 7.7, 15: 6.7 },
       },
       recommendedProducts: [
-        { nombre: 'HIPOCLORITO SODICO 10 L.12 KG.ENVASE VERDE INCL.', categoria: 'Piscinas', formato: '10 L', precio: '12,58 €' },
-        { nombre: 'HIPOCLORITO SODICO 20 L.25 KG.ENV.AZUL RETORNABLE', categoria: 'Piscinas', formato: '20 L', precio: '16,52 €' },
-        { nombre: 'ASTRALPOOL TIRAS ANALITICAS 3 EN 1 50 UDS.41925', categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
-        { nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', categoria: 'Protección personal', formato: '50 uds', precio: '20,27 €' },
+        { nombre: 'HIPOCLORITO SODICO 10 L.12 KG.ENVASE VERDE INCL.', ref: '1401001', categoria: 'Piscinas', formato: '10 L', precio: '12,58 €' },
+        { nombre: 'HIPOCLORITO SODICO 20 L.25 KG.ENV.AZUL RETORNABLE', ref: '1401083', categoria: 'Piscinas', formato: '20 L', precio: '16,52 €' },
+        { nombre: 'ASTRALPOOL TIRAS ANALITICAS 3 EN 1 50 UDS.41925', ref: '8435283928031', categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
+        { nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', ref: '8430961390018', categoria: 'Protección personal', formato: '50 uds', precio: '20,27 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Formato granulado (alternativa)', nombre: 'Astralpool Cloro Rápido Granulado', precio: '28,85 €' },
-        { etiqueta: 'Ajuste de pH antes del choque', nombre: 'ASTRALPOOL INCREMENT.DE PH 5 KG.', precio: '12,64 €' },
+        { etiqueta: 'Ajuste de pH antes del choque', nombre: 'ASTRALPOOL INCREMENT.DE PH 5 KG.', ref: '8420381727297', precio: '12,64 €' },
       ],
       relatedSolutions: ['mantenimiento-piscina', 'invernar-piscina'],
       seo: {
@@ -1109,9 +1109,9 @@ window.SOLUCIONES_DATA = (function () {
         'Olvidar la segunda dosis de refuerzo del invernador a mitad de invierno.',
       ],
       recommendedProducts: [
-        { nombre: 'Astralpool Tiras Analíticas 3 en 1, 50 uds',   categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
+        { nombre: 'Astralpool Tiras Analíticas 3 en 1, 50 uds', ref: '8435283928031',   categoria: 'Piscinas', formato: '50 uds', precio: '13,84 €' },
         { nombre: 'Astralpool Minus Reductor de pH Líquido',       categoria: 'Piscinas', formato: '10 L',  precio: '23,12 €' },
-        { nombre: 'ASTRALPOOL INCREMENT.DE PH 5 KG.',                categoria: 'Piscinas', formato: '5 kg',  precio: '12,64 €' },
+        { nombre: 'ASTRALPOOL INCREMENT.DE PH 5 KG.', ref: '8420381727297',                categoria: 'Piscinas', formato: '5 kg',  precio: '12,64 €' },
         { nombre: 'Astralpool Cloro Rápido Granulado',              categoria: 'Piscinas', formato: '5 kg',  precio: '28,85 €' },
       ],
       alternativeProducts: [
@@ -1177,11 +1177,11 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Orion Cebo Matacucarachas Gel, B/3 uds',   categoria: 'Droguería', formato: '3 uds', precio: '2,29 €' },
         { nombre: 'Zum Gel Trampa contra las Hormigas',        categoria: 'Droguería',                  precio: '1,14 €' },
         { nombre: 'Cucal Insecticida en Polvo Cuca/Hormigas',  categoria: 'Droguería', formato: '200 g', precio: '3,56 €' },
-        { nombre: 'ARRIXACA INSECT.CUCARACHICIDA 750 ML.',                    categoria: 'Droguería', formato: '600 ml', precio: '7,56 €' },
+        { nombre: 'ARRIXACA INSECT.CUCARACHICIDA 750 ML.', ref: '8410757502191',                    categoria: 'Droguería', formato: '600 ml', precio: '7,56 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción rápida (choque puntual)', nombre: 'Arrixaca Insecticida Cucarachas Spray 400 ml', precio: '2,49 €' },
-        { etiqueta: 'Varias zonas de la casa',        nombre: 'CUCAL TRAMPA CUCARACHAS EST.6 UNIDS.', precio: '3,68 €' },
+        { etiqueta: 'Varias zonas de la casa',        nombre: 'CUCAL TRAMPA CUCARACHAS EST.6 UNIDS.', ref: '8436032711058', precio: '3,68 €' },
       ],
       relatedSolutions: ['sellar-juntas-bano', 'control-roedores'],
       seo: {
@@ -1234,13 +1234,13 @@ window.SOLUCIONES_DATA = (function () {
         'Retirar la cinta de carrocero demasiado tarde, arrancando pintura ya seca.',
       ],
       recommendedProducts: [
-        { nombre: 'Masilla Plástica Kolman',                          categoria: 'Pinturas', formato: '250 ml', precio: '2,48 €' },
-        { nombre: 'Imprimación Multiadherente al Agua Koman',         categoria: 'Pinturas', formato: '4 L',   precio: '46,63 €' },
-        { nombre: 'TITANPRO P-40 P.Acrílica Premium Mate 15 L. Blanco', categoria: 'Pinturas', formato: '15 L',  precio: '66,03 €', fichaTecnica: 'https://www.titanpro.es/es/productos/p-40-pintura-acrilica-premium-mate' },
+        { nombre: 'Masilla Plástica Kolman', ref: '8426741004800',                          categoria: 'Pinturas', formato: '250 ml', precio: '2,48 €' },
+        { nombre: 'Imprimación Multiadherente al Agua Koman', ref: '8426741131193',         categoria: 'Pinturas', formato: '4 L',   precio: '46,63 €' },
+        { nombre: 'TITANPRO P-40 P.Acrílica Premium Mate 15 L. Blanco', ref: '8414800394955', categoria: 'Pinturas', formato: '15 L',  precio: '66,03 €', fichaTecnica: 'https://www.titanpro.es/es/productos/p-40-pintura-acrilica-premium-mate' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Opción económica (retoques)', nombre: 'O.MATAS PINT.PLASTICA MATE PROF.750 ML.BLANCO', precio: '3,48 €' },
-        { etiqueta: 'Mayor cobertura',              nombre: 'O.MATAS PINT.PLASTICA MATE PREMIUM 15 L.BLANCO', precio: '60,42 €' },
+        { etiqueta: 'Opción económica (retoques)', nombre: 'O.MATAS PINT.PLASTICA MATE PROF.750 ML.BLANCO', ref: '8436616970048', precio: '3,48 €' },
+        { etiqueta: 'Mayor cobertura',              nombre: 'O.MATAS PINT.PLASTICA MATE PREMIUM 15 L.BLANCO', ref: '8436579261832', precio: '60,42 €' },
       ],
       relatedSolutions: ['restaurar-mueble-madera', 'eliminar-moho-pared-antes-pintar', 'pintar-techo-pasta-temple'],
       seo: {
@@ -1300,14 +1300,14 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar a pistola sin mascarilla.',
       ],
       recommendedProducts: [
-        { nombre: 'PASTA AL TEMPLE LISO SACO 22 KG.', categoria: 'Pinturas', formato: '22 Kg', precio: '7,24 €' },
-        { nombre: 'PASTA AL TEMPLE BOLSA 1 KG. BLANCA (S/20 bolsas)', categoria: 'Pinturas', formato: '1 Kg', precio: '0,77 €' },
+        { nombre: 'PASTA AL TEMPLE LISO SACO 22 KG.', ref: '1381347', categoria: 'Pinturas', formato: '22 Kg', precio: '7,24 €' },
+        { nombre: 'PASTA AL TEMPLE BOLSA 1 KG. BLANCA (S/20 bolsas)', ref: '1381041', categoria: 'Pinturas', formato: '1 Kg', precio: '0,77 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato granel',              nombre: 'PASTA AL TEMPLE GRANEL SACO 22 KG.', precio: '7,18 €' },
-        { etiqueta: 'Versión reforzada',            nombre: 'PASTA AL TEMPLE REFORZADA BOLSA 5 KG.BLA/CREMA', precio: '4,51 €' },
-        { etiqueta: 'Específica para gotelé',       nombre: 'PASTA AL TEMPLE GOTELE JAFEP 25 KG.', precio: '11,30 €' },
-        { etiqueta: 'Formato intermedio',           nombre: 'PASTA AL TEMPLE BOLSA 5 KG. BLANCA (S/4 bolsas)', precio: '3,30 €' },
+        { etiqueta: 'Formato granel',              nombre: 'PASTA AL TEMPLE GRANEL SACO 22 KG.', ref: '1381059', precio: '7,18 €' },
+        { etiqueta: 'Versión reforzada',            nombre: 'PASTA AL TEMPLE REFORZADA BOLSA 5 KG.BLA/CREMA', ref: '1381301', precio: '4,51 €' },
+        { etiqueta: 'Específica para gotelé',       nombre: 'PASTA AL TEMPLE GOTELE JAFEP 25 KG.', ref: '1381569', precio: '11,30 €' },
+        { etiqueta: 'Formato intermedio',           nombre: 'PASTA AL TEMPLE BOLSA 5 KG. BLANCA (S/4 bolsas)', ref: '1381190', precio: '3,30 €' },
       ],
       relatedSolutions: ['pintar-pared-interior', 'elegir-brocha-rodillo-pintar', 'elegir-cinta-papel-enmascarar'],
       seo: {
@@ -1355,12 +1355,12 @@ window.SOLUCIONES_DATA = (function () {
         'Verter agua hirviendo directamente sobre tuberías de PVC (puede deformarlas).',
       ],
       recommendedProducts: [
-        { nombre: 'Dirna Desatascador Turbo',         categoria: 'Droguería', formato: '500 ml', precio: '2,09 €' },
-        { nombre: 'Paso Desatascador Gel Profesional', categoria: 'Droguería', formato: '1 L',   precio: '5,84 €' },
+        { nombre: 'Dirna Desatascador Turbo', ref: '8428033000699',         categoria: 'Droguería', formato: '500 ml', precio: '2,09 €' },
+        { nombre: 'Paso Desatascador Gel Profesional', ref: '8411519750010', categoria: 'Droguería', formato: '1 L',   precio: '5,84 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Concentrado',              nombre: 'Dirna Desatascador Concentrado Microperlas 375 g', precio: '1,88 €' },
-        { etiqueta: 'Mantenimiento fosas sépticas', nombre: 'M.P.L. Activador Fosas Sépticas 400 g', precio: '4,96 €' },
+        { etiqueta: 'Concentrado',              nombre: 'Dirna Desatascador Concentrado Microperlas 375 g', ref: '8428033000057', precio: '1,88 €' },
+        { etiqueta: 'Mantenimiento fosas sépticas', nombre: 'M.P.L. Activador Fosas Sépticas 400 g', ref: '8436032039862', precio: '4,96 €' },
       ],
       relatedSolutions: [],
       seo: {
@@ -1409,13 +1409,13 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar una capa demasiado gruesa esperando que dure más (queda pegajosa).',
       ],
       recommendedProducts: [
-        { nombre: 'ASEVI FREGASUELOS CONCENT.1.150 ML.PH NEUTRO', categoria: 'Droguería', formato: '1,150 L', precio: '1,75 €' },
-        { nombre: 'CASELLI A-9 ABRILLANTADOR 1,5 L.MARMOL/TERRAZO', categoria: 'Droguería', formato: '1,5 L', precio: '6,10 €' },
+        { nombre: 'ASEVI FREGASUELOS CONCENT.1.150 ML.PH NEUTRO', ref: '8411582211548', categoria: 'Droguería', formato: '1,150 L', precio: '1,75 €' },
+        { nombre: 'CASELLI A-9 ABRILLANTADOR 1,5 L.MARMOL/TERRAZO', ref: '8410498170192', categoria: 'Droguería', formato: '1,5 L', precio: '6,10 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Para superficies grandes', nombre: 'CASELLI A-9 ABRILLANTADOR 5 L.MARMOL/TERRAZO', precio: '19,06 €' },
+        { etiqueta: 'Para superficies grandes', nombre: 'CASELLI A-9 ABRILLANTADOR 5 L.MARMOL/TERRAZO', ref: '8410498170437', precio: '19,06 €' },
         { etiqueta: 'Opción profesional', nombre: 'C-100 Thomil Renovador Limpiador Neutro Suelos Abrillantador 4 L', precio: '18,42 €' },
-        { etiqueta: 'Protección extra',   nombre: 'Alex Cera Incolora 750 ml', precio: '3,68 €' },
+        { etiqueta: 'Protección extra',   nombre: 'Alex Cera Incolora 750 ml', ref: '8410033752104', precio: '3,68 €' },
       ],
       relatedSolutions: [],
       seo: {
@@ -1471,7 +1471,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Manchas resistentes', nombre: 'Cebralin Quitamanchas Resistentes Roll-on 150 ml', precio: '3,50 €' },
-        { etiqueta: 'Tapicerías/sofás',    nombre: 'Espuma Limpiatapicerías Prof. Vinfer Spray 600 ml', precio: '3,30 €' },
+        { etiqueta: 'Tapicerías/sofás',    nombre: 'Espuma Limpiatapicerías Prof. Vinfer Spray 600 ml', ref: '8410836222750', precio: '3,30 €' },
       ],
       relatedSolutions: [],
       seo: {
@@ -1520,13 +1520,13 @@ window.SOLUCIONES_DATA = (function () {
         'No sellar las entradas una vez resuelto el problema.',
       ],
       recommendedProducts: [
-        { nombre: 'Nogat Raticida Estuche 6 sobres',   categoria: 'Droguería', formato: '10 g c/u', precio: '5,02 €' },
-        { nombre: 'Portacebos P.K 078',                  categoria: 'Droguería',                     precio: '6,22 €' },
-        { nombre: 'ROE-BLOCK PLUS MASSÓ RATICIDA 1 KG.',           categoria: 'Droguería', formato: '20x10 g', precio: '3,41 €' },
-        { nombre: 'Ratibrom ¡Zas! Trampa Ratas',         categoria: 'Droguería',                     precio: '5,53 €' },
+        { nombre: 'Nogat Raticida Estuche 6 sobres', ref: '8410429003070',   categoria: 'Droguería', formato: '10 g c/u', precio: '5,02 €' },
+        { nombre: 'Portacebos P.K 078', ref: '1431064',                  categoria: 'Droguería',                     precio: '6,22 €' },
+        { nombre: 'ROE-BLOCK PLUS MASSÓ RATICIDA 1 KG.', ref: '8424084002392',           categoria: 'Droguería', formato: '20x10 g', precio: '3,41 €' },
+        { nombre: 'Ratibrom ¡Zas! Trampa Ratas', ref: '8413707067429',         categoria: 'Droguería',                     precio: '5,53 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato grande/nave', nombre: 'ROE-BLOCK MASSÓ BD DUPLO 260+260 GRS.', precio: '5,71 €' },
+        { etiqueta: 'Formato grande/nave', nombre: 'ROE-BLOCK MASSÓ BD DUPLO 260+260 GRS.', ref: '8424084008745', precio: '5,71 €' },
         { etiqueta: 'Cebo fresco',          nombre: 'Brody Cebo Fresco B/100 g', precio: '1,33 €' },
       ],
       relatedSolutions: ['sellar-juntas-bano', 'control-plagas-cocina', 'proteger-ropa-polillas'],
@@ -1578,15 +1578,15 @@ window.SOLUCIONES_DATA = (function () {
         'Podar ramas gruesas sin sellar después el corte.',
       ],
       recommendedProducts: [
-        { nombre: 'HUMUS DE LOMBRIZ ABONO LIQUIDO 1 L.', categoria: 'Droguería', formato: '1,3 L', precio: '7,04 €' },
+        { nombre: 'HUMUS DE LOMBRIZ ABONO LIQUIDO 1 L.', ref: '1011076', categoria: 'Droguería', formato: '1,3 L', precio: '7,04 €' },
         { nombre: 'Gesal Insecticida Polivalente',          categoria: 'Droguería', formato: '500 ml (pistola)', precio: '4,32 €' },
         { nombre: 'Humus HLH Equisetem Fungicida',          categoria: 'Droguería', formato: '1 L', precio: '7,62 €' },
         { nombre: 'Compo Pasta Cicatrizante',               categoria: 'Droguería', formato: '250 g', precio: '8,74 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Plantas verdes/interior', nombre: 'Compo Fertilizante Líquido Plantas Verdes 1,3 L', precio: '7,15 €' },
-        { etiqueta: 'Formato pequeño',          nombre: 'Impex Abono Universal 1 L', precio: '4,73 €' },
-        { etiqueta: 'Contra hormigas específico', nombre: 'GESAL INSECT.ANTIHORMIGAS 500 GRS.', precio: '4,96 €' },
+        { etiqueta: 'Formato pequeño',          nombre: 'Impex Abono Universal 1 L', ref: '8413707072447', precio: '4,73 €' },
+        { etiqueta: 'Contra hormigas específico', nombre: 'GESAL INSECT.ANTIHORMIGAS 500 GRS.', ref: '8411056241118', precio: '4,96 €' },
       ],
       relatedSolutions: [],
       seo: {
@@ -1635,13 +1635,13 @@ window.SOLUCIONES_DATA = (function () {
         'No revisar las prendas guardadas hasta la siguiente temporada.',
       ],
       recommendedProducts: [
-        { nombre: 'POLIL COLGADOR ANTIPOLILLA DUPLO LAVANDA', categoria: 'Droguería', formato: 'Dúo', precio: '1,78 €' },
-        { nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.LAVANDA',            categoria: 'Droguería', formato: '3 bloques', precio: '3,46 €' },
+        { nombre: 'POLIL COLGADOR ANTIPOLILLA DUPLO LAVANDA', ref: '5000204171259', categoria: 'Droguería', formato: 'Dúo', precio: '1,78 €' },
+        { nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.LAVANDA', ref: '5000204171341',            categoria: 'Droguería', formato: '3 bloques', precio: '3,46 €' },
         { nombre: 'Guardarropa Bonodor Nº2',                   categoria: 'Droguería', formato: '65x125 cm, 5 uds', precio: '2,66 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Otro aroma',         nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.COLONIA', precio: '3,76 €' },
-        { etiqueta: 'Formato económico',  nombre: 'ORION ANTIPOLILLA BOLAS BOLSA 20 UDS.LAVANDA', precio: '2,09 €' },
+        { etiqueta: 'Otro aroma',         nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.COLONIA', ref: '5000204171372', precio: '3,76 €' },
+        { etiqueta: 'Formato económico',  nombre: 'ORION ANTIPOLILLA BOLAS BOLSA 20 UDS.LAVANDA', ref: '8411660035240', precio: '2,09 €' },
         { etiqueta: 'Prenda individual',  nombre: 'Guardarropa Zidar Trajes 5 Bolsas 65x125 cm', precio: '0,82 €' },
       ],
       relatedSolutions: ['control-plagas-cocina', 'control-roedores'],
@@ -1693,7 +1693,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Antigravilla Zaphiro Negro',           categoria: 'Talleres', formato: '1 L', precio: '8,08 €' },
-        { nombre: 'Imprimación Chapa/Cristal Zaphiro',    categoria: 'Talleres', formato: '30 ml', precio: '6,67 €' },
+        { nombre: 'Imprimación Chapa/Cristal Zaphiro', ref: '140414009',    categoria: 'Talleres', formato: '30 ml', precio: '6,67 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Color gris/bajos claros', nombre: 'Antigravilla Zaphiro Gris 1 L', precio: '7,48 €' },
@@ -1747,12 +1747,12 @@ window.SOLUCIONES_DATA = (function () {
         'Mover el vehículo antes del tiempo de curado mínimo indicado en la ficha técnica.',
       ],
       recommendedProducts: [
-        { nombre: 'Kit Adhesivo Lunas Zaphiro',         categoria: 'Talleres', precio: '14,99 €' },
+        { nombre: 'Kit Adhesivo Lunas Zaphiro', ref: '140414010',         categoria: 'Talleres', precio: '14,99 €' },
         { nombre: 'Adhesivo Lunas MS Polímero Zaphiro', categoria: 'Talleres', formato: '290 ml', precio: '13,02 €' },
-        { nombre: 'IMPRIMACION CHAPA/CRISTAL ZAPHIRO ZXS100 N 30ML.',            categoria: 'Talleres', precio: '2,31 €' },
+        { nombre: 'IMPRIMACION CHAPA/CRISTAL ZAPHIRO ZXS100 N 30ML.', ref: '140414009',            categoria: 'Talleres', precio: '2,31 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Cinta protectora complementaria', nombre: '.CINTA LUNAS TRIM-MASK ZAPHIRO 50 MM.x10 M', precio: '15,19 €' },
+        { etiqueta: 'Cinta protectora complementaria', nombre: '.CINTA LUNAS TRIM-MASK ZAPHIRO 50 MM.x10 M', ref: '8068031', precio: '15,19 €' },
       ],
       relatedSolutions: ['proteger-bajos-antigravilla'],
       seo: {
@@ -1804,7 +1804,7 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar una sola mano esperando la misma protección que con dos.',
       ],
       recommendedProducts: [
-        { nombre: 'TITAN-PRO R40 NF 100% ACRILICO MATE WHITE=WB 15 L.', categoria: 'Pinturas', formato: '15 L', precio: '95,41 €', fichaTecnica: 'https://www.titanpro.es/productos/r-40-revestimiento-liso-100-acrilico-puro' },
+        { nombre: 'TITAN-PRO R40 NF 100% ACRILICO MATE WHITE=WB 15 L.', ref: '8429656090692', categoria: 'Pinturas', formato: '15 L', precio: '95,41 €', fichaTecnica: 'https://www.titanpro.es/productos/r-40-revestimiento-liso-100-acrilico-puro' },
         { nombre: 'Aguaplast Exterior',                                  categoria: 'Pinturas', formato: '1,5 kg', precio: '5,43 €' },
         { nombre: 'Recambio Rodillo Fachadas Tripol',                     categoria: 'Pinturas', formato: '22 cm', precio: '4,69 €' },
       ],
@@ -1860,12 +1860,12 @@ window.SOLUCIONES_DATA = (function () {
         'No reforzar juntas, esquinas y encuentros con bajantes.',
       ],
       recommendedProducts: [
-        { nombre: 'Aguastop Antigoteras Caucho Fibra',       categoria: 'Pinturas', formato: '20 kg', precio: '93,12 €' },
+        { nombre: 'Aguastop Antigoteras Caucho Fibra', ref: '8411519933062',       categoria: 'Pinturas', formato: '20 kg', precio: '93,12 €' },
         { nombre: 'Aguaplast Masilla Estanqueidad',           categoria: 'Pinturas', formato: '1 kg', precio: '21,22 €' },
-        { nombre: 'REVEST.ANTIGOTERAS I-5 4 L.BLANCO',        categoria: 'Pinturas', formato: '4 L', precio: '21,05 €' },
+        { nombre: 'REVEST.ANTIGOTERAS I-5 4 L.BLANCO', ref: '8414800412895',        categoria: 'Pinturas', formato: '4 L', precio: '21,05 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Opción económica (goteras puntuales)', nombre: 'TITAN REVEST.ANTIGOTERAS 1 L.BLANCO', precio: '9,79 €' },
+        { etiqueta: 'Opción económica (goteras puntuales)', nombre: 'TITAN REVEST.ANTIGOTERAS 1 L.BLANCO', ref: '8414800136302', precio: '9,79 €' },
         { etiqueta: 'Terrazas transitables',                 nombre: 'Impermeabilización Terrazas Gilmaelas Caucho Acrílico 15 L', precio: '35,26 €' },
         { etiqueta: 'Cubiertas grandes/profesional',         nombre: 'Impermeabilización Membrana c/Poliuretano I-12 20 kg', precio: '90,63 €' },
       ],
@@ -1915,12 +1915,12 @@ window.SOLUCIONES_DATA = (function () {
         'No limpiar el resto de disolvente al terminar.',
       ],
       recommendedProducts: [
-        { nombre: 'Disco Quita Adhesivos Zaphiro 88 mm', categoria: 'Talleres', precio: '9,50 €' },
-        { nombre: 'Disolvente Universal M.P.L. Puro',     categoria: 'Pinturas', formato: '1 L', precio: '3,75 €' },
-        { nombre: 'Acetona Kelsia',                        categoria: 'Droguería', formato: '1 L', precio: '3,15 €' },
+        { nombre: 'Disco Quita Adhesivos Zaphiro 88 mm', ref: '8118059', categoria: 'Talleres', precio: '9,50 €' },
+        { nombre: 'Disolvente Universal M.P.L. Puro', ref: '8436032033006',     categoria: 'Pinturas', formato: '1 L', precio: '3,75 €' },
+        { nombre: 'Acetona Kelsia', ref: '8410088000403',                        categoria: 'Droguería', formato: '1 L', precio: '3,15 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Uso profesional/grandes cantidades', nombre: 'ACETONA GRANEL GERDISA ENV.20 L.', precio: '84,62 €' },
+        { etiqueta: 'Uso profesional/grandes cantidades', nombre: 'ACETONA GRANEL GERDISA ENV.20 L.', ref: '1411008', precio: '84,62 €' },
         { etiqueta: 'Herramienta mecánica alternativa', nombre: 'Rueda de Goma Quita Adhesivos c/Eje 100 mm', precio: '63,34 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal'],
@@ -1969,12 +1969,12 @@ window.SOLUCIONES_DATA = (function () {
         'Pintar sin limpiar bien el polvo de lijado.',
       ],
       recommendedProducts: [
-        { nombre: '.LIJA AL AGUA ZAPHIRO P-2000', categoria: 'Talleres', precio: '0,57 €' },
+        { nombre: '.LIJA AL AGUA ZAPHIRO P-2000', ref: '140214060', categoria: 'Talleres', precio: '0,57 €' },
         { nombre: 'Lija al Agua P-1200', categoria: 'Talleres', precio: '1,91 €' },
         { nombre: 'Aparejo Titan Gris',  categoria: 'Pinturas', formato: '375 ml', precio: '8,93 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Grano grueso (preparación inicial)', nombre: '.LIJA AL AGUA ZAPHIRO P-280', precio: '0,57 €' },
+        { etiqueta: 'Grano grueso (preparación inicial)', nombre: '.LIJA AL AGUA ZAPHIRO P-280', ref: '140214190', precio: '0,57 €' },
         { etiqueta: 'Piezas pequeñas',     nombre: 'Spray Aparejo Gris Medio Zaphiro 400 ml', precio: '16,02 €' },
       ],
       relatedSolutions: ['pintar-plastico-coche', 'corregir-descuelgues-pintura', 'elegir-lijadora-superficie'],
@@ -2076,10 +2076,10 @@ window.SOLUCIONES_DATA = (function () {
         'Usar herramientas metálicas muy afiladas que marcan la madera.',
       ],
       recommendedProducts: [
-        { nombre: 'Titan Decapante Gel Profesional', categoria: 'Pinturas', formato: '1 L', precio: '17,13 €' },
+        { nombre: 'Titan Decapante Gel Profesional', ref: '8414800805512', categoria: 'Pinturas', formato: '1 L', precio: '17,13 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Muebles grandes / varias piezas', nombre: 'Titan Decapante Gel Profesional 4 L', precio: '60,14 €' },
+        { etiqueta: 'Muebles grandes / varias piezas', nombre: 'Titan Decapante Gel Profesional 4 L', ref: '8414800805529', precio: '60,14 €' },
       ],
       relatedSolutions: ['restaurar-mueble-madera'],
       seo: {
@@ -2126,10 +2126,10 @@ window.SOLUCIONES_DATA = (function () {
         'Elegir una pintura anticalórica con menos temperatura soportada de la que la pieza alcanza en uso real.',
       ],
       recommendedProducts: [
-        { nombre: 'OXIRON ANTICALORICO 750 ML.NEGRO', categoria: 'Pinturas', formato: '750 ml', precio: '18,71 €' },
+        { nombre: 'OXIRON ANTICALORICO 750 ML.NEGRO', ref: '8429656067403', categoria: 'Pinturas', formato: '750 ml', precio: '18,71 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Tubos de escape (muy alta temperatura)', nombre: '.AK SPRAY ANTICALORICO 800º NEGRO 400 ML. 233099', precio: '15,19 €' },
+        { etiqueta: 'Tubos de escape (muy alta temperatura)', nombre: '.AK SPRAY ANTICALORICO 800º NEGRO 400 ML. 233099', ref: '140114039', precio: '15,19 €' },
         { etiqueta: 'Formato spray',                            nombre: 'SPRAY TITAN ANTICALORICO 400 ML NEGRO (302)', precio: '10,62 €' },
         { etiqueta: 'Acabado aluminio',                         nombre: 'TITAN ALUMINIO ANTICALORICO  750 ML', precio: '17,40 €' },
       ],
@@ -2179,11 +2179,11 @@ window.SOLUCIONES_DATA = (function () {
         'Usar un barniz normal en vez de uno específico con protección UV para faros.',
       ],
       recommendedProducts: [
-        { nombre: 'KIT RESTAURACION FAROS C/POLIMERO ZAPHIRO CR03061',              categoria: 'Talleres', precio: '42,87 €' },
-        { nombre: 'Spraymax Barniz 2K Óptica Faros 2en1',    categoria: 'Talleres', formato: '250 ml', precio: '25,35 €' },
+        { nombre: 'KIT RESTAURACION FAROS C/POLIMERO ZAPHIRO CR03061', ref: '140614026',              categoria: 'Talleres', precio: '42,87 €' },
+        { nombre: 'Spraymax Barniz 2K Óptica Faros 2en1', ref: '140114041',    categoria: 'Talleres', formato: '250 ml', precio: '25,35 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Opción completa/profesional', nombre: 'BODY LENS CLEAR SPRAY LACA FAROS 400 ML.', precio: '99,83 €' },
+        { etiqueta: 'Opción completa/profesional', nombre: 'BODY LENS CLEAR SPRAY LACA FAROS 400 ML.', ref: '8168034', precio: '99,83 €' },
       ],
       relatedSolutions: ['recuperar-brillo-carroceria'],
       seo: {
@@ -2230,12 +2230,12 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar una capa demasiado gruesa (el lasur se aplica en manos finas, no como una pintura).',
       ],
       recommendedProducts: [
-        { nombre: 'BARNIZ TITAN PROTEC.LASUR SATIN.750 ML.INCOL.',   categoria: 'Pinturas', formato: '750 ml', precio: '18,02 €' },
-        { nombre: 'BARNIZ TITAN PROTEC.LASUR MATE 750 ML.ROBLE',   categoria: 'Pinturas', formato: '750 ml', precio: '17,32 €' },
+        { nombre: 'BARNIZ TITAN PROTEC.LASUR SATIN.750 ML.INCOL.', ref: '8414800423143',   categoria: 'Pinturas', formato: '750 ml', precio: '18,02 €' },
+        { nombre: 'BARNIZ TITAN PROTEC.LASUR MATE 750 ML.ROBLE', ref: '8414800423600',   categoria: 'Pinturas', formato: '750 ml', precio: '17,32 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado mate ecológico', nombre: 'BARNIZ TITAN PROTEC.LASUR ECO MATE 750 ML.INCOL.', precio: '18,49 €' },
-        { etiqueta: 'Formato grande',      nombre: 'PROTECTOR ECO LASUR MATE 4 L.INCOLORO 3800', precio: '81,40 €' },
+        { etiqueta: 'Acabado mate ecológico', nombre: 'BARNIZ TITAN PROTEC.LASUR ECO MATE 750 ML.INCOL.', ref: '8414800423365', precio: '18,49 €' },
+        { etiqueta: 'Formato grande',      nombre: 'PROTECTOR ECO LASUR MATE 4 L.INCOLORO 3800', ref: '8414800423389', precio: '81,40 €' },
         { etiqueta: 'Con aceite natural',  nombre: 'Lasur Aceite Mora Madera Satinado 1 L', precio: '12,32 €' },
       ],
       relatedSolutions: ['restaurar-mueble-madera'],
@@ -2288,7 +2288,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Titanlux Azulejos Agua Brillo Blanco',      categoria: 'Pinturas', formato: '750 ml', precio: '16,82 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado satinado', nombre: 'TITANLUX AZULEJOS AGUA SATIN.750 ML.BLANCO', precio: '16,82 €' },
+        { etiqueta: 'Acabado satinado', nombre: 'TITANLUX AZULEJOS AGUA SATIN.750 ML.BLANCO', ref: '8414800381306', precio: '16,82 €' },
         { etiqueta: 'Reparar juntas',    nombre: 'Baixens B-24 Juntas de Azulejo Tubo 200 g Blanco', precio: '2,11 €' },
       ],
       relatedSolutions: ['pintar-pared-interior', 'renovar-banera-lavabo-sanitario', 'sellar-juntas-bano'],
@@ -2338,8 +2338,8 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Bloom Electrónico Antimosquitos Pro + Recambio', categoria: 'Droguería', precio: '5,78 €' },
-        { nombre: 'AUTAN MOSQUITOS 100 ML.SPRAY ULTRA REPELENTE',     categoria: 'Droguería', formato: '100 ml', precio: '5,65 €' },
-        { nombre: 'AUTAN KIDS REPELENTE DE INSECT.100 ML.VAP.',       categoria: 'Droguería', formato: '100 ml (niños)', precio: '6,16 €' },
+        { nombre: 'AUTAN MOSQUITOS 100 ML.SPRAY ULTRA REPELENTE', ref: '5000204425918',     categoria: 'Droguería', formato: '100 ml', precio: '5,65 €' },
+        { nombre: 'AUTAN KIDS REPELENTE DE INSECT.100 ML.VAP.', ref: '5000204285772',       categoria: 'Droguería', formato: '100 ml (niños)', precio: '6,16 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Sin electricidad', nombre: 'Orion Espirales Antimosquitos 10 uds', precio: '2,09 €' },
@@ -2446,12 +2446,12 @@ window.SOLUCIONES_DATA = (function () {
         'Usar pegamento instantáneo en piezas grandes o que necesitan cierta flexibilidad.',
       ],
       recommendedProducts: [
-        { nombre: 'Ceys Pegamento Tuberías PVC',               categoria: 'Droguería', precio: '4,10 €' },
-        { nombre: 'Cartucho Adhesivo para Césped Artificial',   categoria: 'Droguería', precio: '8,95 €' },
+        { nombre: 'Ceys Pegamento Tuberías PVC', ref: '8411519540017',               categoria: 'Droguería', precio: '4,10 €' },
+        { nombre: 'Cartucho Adhesivo para Césped Artificial', ref: '8436555084615',   categoria: 'Droguería', precio: '8,95 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Uso general',        nombre: 'Cola de contacto universal', precio: '5,50 €' },
-        { etiqueta: 'Reparación rápida',  nombre: 'SUPER GLUE-3 3 GRS.', precio: '2,20 €' },
+        { etiqueta: 'Reparación rápida',  nombre: 'SUPER GLUE-3 3 GRS.', ref: '8412432138312', precio: '2,20 €' },
       ],
       relatedSolutions: ['sellar-juntas-bano', 'desatascar-tuberia'],
       seo: {
@@ -2552,12 +2552,12 @@ window.SOLUCIONES_DATA = (function () {
         'Guardar la plata limpia sin ninguna protección, dejando que se oscurezca de nuevo enseguida.',
       ],
       recommendedProducts: [
-        { nombre: 'Tarni-Shield Limpia Plata',   categoria: 'Droguería', formato: '250 ml', precio: '2,35 €' },
+        { nombre: 'Tarni-Shield Limpia Plata', ref: '8410001109725',   categoria: 'Droguería', formato: '250 ml', precio: '2,35 €' },
         { nombre: 'Tarni-Shield Cobre',           categoria: 'Droguería', formato: '250 ml', precio: '2,72 €' },
-        { nombre: 'Paso Limpiador Acero Inox',    categoria: 'Droguería', formato: '500 ml', precio: '7,68 €' },
+        { nombre: 'Paso Limpiador Acero Inox', ref: '8411519730029',    categoria: 'Droguería', formato: '500 ml', precio: '7,68 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Mantenimiento habitual', nombre: 'AERHOGAR LIMPIAPLATA SPRAY 150 ML.', precio: '2,83 €' },
+        { etiqueta: 'Mantenimiento habitual', nombre: 'AERHOGAR LIMPIAPLATA SPRAY 150 ML.', ref: '8411322234059', precio: '2,83 €' },
         { etiqueta: 'Uso profesional acero',   nombre: 'Inoxbrill Limpiador Abrillantador Acero Inox 5 L', precio: '32,72 €' },
       ],
       relatedSolutions: [],
@@ -2611,7 +2611,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Mayor densidad/rendimiento', nombre: 'Lejía Ace Protección Más Densa 2 L', precio: '1,97 €' },
-        { etiqueta: 'Formato grande',               nombre: 'Lejía Dos Castillas 5 L', precio: '2,42 €' },
+        { etiqueta: 'Formato grande',               nombre: 'Lejía Dos Castillas 5 L', ref: '8414615020582', precio: '2,42 €' },
         { etiqueta: 'En pastillas (dosificación fácil)', nombre: 'Lejía en Pastillas HC-Chlor Tablet 1 kg', precio: '22,03 €' },
       ],
       relatedSolutions: ['limpiar-moho-pared-azulejo', 'desinfectar-casa'],
@@ -2665,7 +2665,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       alternativeProducts: [
         { etiqueta: 'Sin lejía',           nombre: 'Asevi Oxy Active Multiusos Sin Lejía', precio: '1,57 €' },
-        { etiqueta: 'Uso profesional/grandes superficies', nombre: 'ASEVI GERPOSTAR DESINF.MULTIUSOS 5 KG.PROF.', precio: '11,30 €' },
+        { etiqueta: 'Uso profesional/grandes superficies', nombre: 'ASEVI GERPOSTAR DESINF.MULTIUSOS 5 KG.PROF.', ref: '8411582241620', precio: '11,30 €' },
       ],
       relatedSolutions: ['usar-lejia-segura'],
       seo: {
@@ -2719,9 +2719,9 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Pistola Pintar Werku HVLP-I 500 W',              categoria: 'Talleres', precio: '68,55 €', fichaTecnica: 'https://www.werku.com/Technical_File_ESP/WK401200_Technical_File_ESP.pdf' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Juego completo de pistolas gravedad', nombre: 'JUEGO PISTOLAS GRAVEDAD WERKU HVLPP-I 125-600 ML.', precio: '52,85 €' },
-        { etiqueta: 'Gravedad económica',                          nombre: 'Pistola Gravedad Werku 1.7HP-600 ml', precio: '71,09 €' },
-        { etiqueta: 'Gotelé/textura',                                nombre: 'Pistola Gravedad Werku Gotelé 6 L', precio: '44,41 €' },
+        { etiqueta: 'Juego completo de pistolas gravedad', nombre: 'JUEGO PISTOLAS GRAVEDAD WERKU HVLPP-I 125-600 ML.', ref: '8424835006426', precio: '52,85 €' },
+        { etiqueta: 'Gravedad económica',                          nombre: 'Pistola Gravedad Werku 1.7HP-600 ml', ref: '8424835009397', precio: '71,09 €' },
+        { etiqueta: 'Gotelé/textura',                                nombre: 'Pistola Gravedad Werku Gotelé 6 L', ref: '8424835001766', precio: '44,41 €' },
       ],
       relatedSolutions: ['pintar-plastico-coche', 'pintar-fachada-exterior'],
       seo: {
@@ -2773,7 +2773,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Amoladora Werku 115-125 mm 900 W',           categoria: 'Talleres', precio: '46,88 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Rotorbital de mayor potencia', nombre: 'LIJADORA CIRC.ROTORBITAL WK400100 4MM/150MM/710 W', precio: '124,51 €' },
+        { etiqueta: 'Rotorbital de mayor potencia', nombre: 'LIJADORA CIRC.ROTORBITAL WK400100 4MM/150MM/710 W', ref: '8424835006549', precio: '124,51 €' },
         { etiqueta: 'Discos de repuesto',        nombre: 'Disco Lija Circular Werku Grano 120, 225 mm (10 uds)', precio: '13,21 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'corregir-marcas-lijado', 'elegir-pistola-pintar'],
@@ -2823,13 +2823,13 @@ window.SOLUCIONES_DATA = (function () {
       ],
       recommendedProducts: [
         { nombre: 'Imprimación Sintética Secado Rápido SX-100', categoria: 'Talleres', formato: '15 L', precio: '88,75 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X10_0000_SX100_IMPRIMACION_SINTETICA_SECADO_RAPIDO_ES.pdf?v=2023-06-27-165500' },
-        { nombre: 'Imprimación Epoxi Anticorrosiva SXB-200',      categoria: 'Talleres', formato: '750 ml', precio: '14,40 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X20_0000_SXB200_IMPRIMACION_EPOXI_ANTICORROSIVA_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'Imprimación Epoxi Anticorrosiva SXB-200', ref: '8414800429305',      categoria: 'Talleres', formato: '750 ml', precio: '14,40 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X20_0000_SXB200_IMPRIMACION_EPOXI_ANTICORROSIVA_ES.pdf?v=2023-06-27-165500' },
         { nombre: 'Titantech Esmalte Sintético Brillo EX-330',    categoria: 'Talleres', formato: '4 L', precio: '45,82 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X33_0000_EX330_ESMALTE_SINTETICO_BRILLANTE_ES.pdf?v=2023-06-27-165500' },
       ],
       alternativeProducts: [
         { etiqueta: 'Ambiente de corrosión alta',     nombre: 'Titantech SXB-210 Imprimación Epoxi AE HB SB 15 L', precio: '307,34 €' },
-        { etiqueta: 'Acabado de altas prestaciones',   nombre: 'TITANTECH EX-390 ESM.FORJA DTM 4 L.BASE INCOL.', precio: '53,43 €' },
-        { etiqueta: 'Endurecedor del sistema epoxi', nombre: 'TITANTECH SXB-200 END.EPOXI ANTICORROS.800 ML.', precio: '12,55 €' },
+        { etiqueta: 'Acabado de altas prestaciones',   nombre: 'TITANTECH EX-390 ESM.FORJA DTM 4 L.BASE INCOL.', ref: '8414800428841', precio: '53,43 €' },
+        { etiqueta: 'Endurecedor del sistema epoxi', nombre: 'TITANTECH SXB-200 END.EPOXI ANTICORROS.800 ML.', ref: '8414800434064', precio: '12,55 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-acero-fuego'],
       seo: {
@@ -2881,7 +2881,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Titantech Imprimación Sintética SX-100',   categoria: 'Talleres', formato: '15 L', precio: '88,75 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X10_0000_SX100_IMPRIMACION_SINTETICA_SECADO_RAPIDO_ES.pdf?v=2023-06-27-165500' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Mayor resistencia al fuego (R120-R180)', nombre: 'Titantech IX-085 Intumescente A85 25 kg', precio: '392,16 €' },
+        { etiqueta: 'Mayor resistencia al fuego (R120-R180)', nombre: 'Titantech IX-085 Intumescente A85 25 kg', ref: '8414800436389', precio: '392,16 €' },
         { etiqueta: 'Acabado poliuretano de altas prestaciones', nombre: 'Titantech EXB-560 Esmalte Poliuretano Brillante 4 L', precio: '100,91 €' },
       ],
       relatedSolutions: ['proteger-estructura-metalica-corrosion'],
@@ -2983,11 +2983,11 @@ window.SOLUCIONES_DATA = (function () {
         'Usarlo esperando que además selle grietas: solo protege frente a la absorción de agua, no repara fisuras.',
       ],
       recommendedProducts: [
-        { nombre: 'HIDROFUGANTE INVISIBLE AGUA S-40 4 L.INCOLORO', categoria: 'Pinturas', formato: '4 L', precio: '42,54 €' },
+        { nombre: 'HIDROFUGANTE INVISIBLE AGUA S-40 4 L.INCOLORO', ref: '8414800410006', categoria: 'Pinturas', formato: '4 L', precio: '42,54 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Fachadas grandes', nombre: 'TITAN-PRO S-40 HIDROFUGANTE INVISIB.20 L.INCOL.', precio: '157,13 €' },
-        { etiqueta: 'Si además hay que fijar el soporte antes', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.', precio: '28,85 €' },
+        { etiqueta: 'Fachadas grandes', nombre: 'TITAN-PRO S-40 HIDROFUGANTE INVISIB.20 L.INCOL.', ref: '8414800424782', precio: '157,13 €' },
+        { etiqueta: 'Si además hay que fijar el soporte antes', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.', ref: '8414800409963', precio: '28,85 €' },
       ],
       relatedSolutions: ['tratar-fachada-humedad-capilaridad', 'reparar-fisuras-fachada-hormigon', 'proteger-fachada-mortero-monocapa', 'pintar-fachada-exterior'],
       seo: {
@@ -3037,12 +3037,12 @@ window.SOLUCIONES_DATA = (function () {
         'No revisar los encuentros entre materiales de distinta naturaleza, donde suelen reaparecer las fisuras.',
       ],
       recommendedProducts: [
-        { nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.', categoria: 'Pinturas', formato: '4 L', precio: '30,77 €' },
-        { nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BLANCO MATE', categoria: 'Pinturas', formato: '15 L', precio: '96,85 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/ee/02/0a/94/tp_r50_revestimiento_elastico_antifisuras_mate_00_00_00_ftecnicaes.pdf' },
+        { nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.', ref: '8414800409949', categoria: 'Pinturas', formato: '4 L', precio: '30,77 €' },
+        { nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BLANCO MATE', ref: '8414800403909', categoria: 'Pinturas', formato: '15 L', precio: '96,85 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/ee/02/0a/94/tp_r50_revestimiento_elastico_antifisuras_mate_00_00_00_ftecnicaes.pdf' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Para teñir con Titancolor', nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BASE NEUTRA', precio: '74,49 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/ee/02/0a/94/tp_r50_revestimiento_elastico_antifisuras_mate_00_00_00_ftecnicaes.pdf' },
-        { etiqueta: 'Imprimación en formato grande', nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 10 L.', precio: '69,89 €' },
+        { etiqueta: 'Para teñir con Titancolor', nombre: 'REVEST.ANTIFISURAS ELASTICO R-50 15 L.BASE NEUTRA', ref: '8414800415148', precio: '74,49 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/ee/02/0a/94/tp_r50_revestimiento_elastico_antifisuras_mate_00_00_00_ftecnicaes.pdf' },
+        { etiqueta: 'Imprimación en formato grande', nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 10 L.', ref: '8414800409956', precio: '69,89 €' },
       ],
       relatedSolutions: ['hidrofugar-fachada-piedra-ladrillo', 'tratar-fachada-humedad-capilaridad', 'pintar-fachada-exterior', 'proteger-fachada-mortero-monocapa'],
       seo: {
@@ -3095,8 +3095,8 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'REVEST.ACRILICO SILICONADO R-20 15 L.BLANCO', categoria: 'Pinturas', formato: '15 L', precio: '89,90 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/22/95/62/89/tp_r20_revestimiento_acrilico_siliconado_mate_00_00_00_ftecnicaes.pdf' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato pequeño/retoque', nombre: 'REVEST.ACRILICO R-10 LISO 4 L.BLANCO MATE', precio: '16,93 €' },
-        { etiqueta: 'Si el mortero es muy poroso', nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.', precio: '30,77 €' },
+        { etiqueta: 'Formato pequeño/retoque', nombre: 'REVEST.ACRILICO R-10 LISO 4 L.BLANCO MATE', ref: '8414800394887', precio: '16,93 €' },
+        { etiqueta: 'Si el mortero es muy poroso', nombre: 'IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.', ref: '8414800409949', precio: '30,77 €' },
       ],
       relatedSolutions: ['reparar-fisuras-fachada-hormigon', 'hidrofugar-fachada-piedra-ladrillo', 'pintar-fachada-exterior'],
       seo: {
@@ -3145,12 +3145,12 @@ window.SOLUCIONES_DATA = (function () {
         'Saltarse la imprimación específica de siloxano, reduciendo la adherencia del acabado.',
       ],
       recommendedProducts: [
-        { nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.', categoria: 'Pinturas', formato: '4 L', precio: '28,85 €' },
-        { nombre: 'REVEST.TRANSP.SILOXANO R-60 15 L.BLANCO MATE', categoria: 'Pinturas', formato: '15 L', precio: '118,13 €' },
+        { nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.', ref: '8414800409963', categoria: 'Pinturas', formato: '4 L', precio: '28,85 €' },
+        { nombre: 'REVEST.TRANSP.SILOXANO R-60 15 L.BLANCO MATE', ref: '8414800403886', categoria: 'Pinturas', formato: '15 L', precio: '118,13 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Imprimación en formato grande', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 10 L.INCOLORO', precio: '65,51 €' },
-        { etiqueta: 'Imprimación blanca', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.BLANCO', precio: '30,06 €' },
+        { etiqueta: 'Imprimación en formato grande', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 10 L.INCOLORO', ref: '8414800409970', precio: '65,51 €' },
+        { etiqueta: 'Imprimación blanca', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 4 L.BLANCO', ref: '8414800409987', precio: '30,06 €' },
       ],
       relatedSolutions: ['hidrofugar-fachada-piedra-ladrillo', 'reparar-fisuras-fachada-hormigon', 'impermeabilizar-terraza-goteras'],
       seo: {
@@ -3199,14 +3199,14 @@ window.SOLUCIONES_DATA = (function () {
         'Manipular la pieza antes de que el esmalte haya curado del todo.',
       ],
       recommendedProducts: [
-        { nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.BLANCA', categoria: 'Pinturas', formato: '4 L', precio: '50,83 €' },
-        { nombre: 'COLORLUX SATINADO C/POLIURET.4 L.NEGRO', categoria: 'Pinturas', formato: '4 L', precio: '48,34 €' },
+        { nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.BLANCA', ref: '8414800410082', categoria: 'Pinturas', formato: '4 L', precio: '50,83 €' },
+        { nombre: 'COLORLUX SATINADO C/POLIURET.4 L.NEGRO', ref: '8414800413526', categoria: 'Pinturas', formato: '4 L', precio: '48,34 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado brillante', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.NEGRO', precio: '48,34 €' },
-        { etiqueta: 'Acabado mate', nombre: 'COLORLUX MATE C/POLIURETANO 4 L.NEGRO', precio: '48,34 €' },
-        { etiqueta: 'Imprimación en gris', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.GRIS', precio: '50,83 €' },
-        { etiqueta: 'Trabajos pequeños', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 750 ML.BLAN', precio: '11,37 €' },
+        { etiqueta: 'Acabado brillante', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.NEGRO', ref: '8414800413403', precio: '48,34 €' },
+        { etiqueta: 'Acabado mate', nombre: 'COLORLUX MATE C/POLIURETANO 4 L.NEGRO', ref: '8414800413496', precio: '48,34 €' },
+        { etiqueta: 'Imprimación en gris', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.GRIS', ref: '8414800410105', precio: '50,83 €' },
+        { etiqueta: 'Trabajos pequeños', nombre: 'IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 750 ML.BLAN', ref: '8414800410075', precio: '11,37 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'proteger-estructura-metalica-corrosion', 'pintar-radiador-calefaccion'],
       seo: {
@@ -3253,11 +3253,11 @@ window.SOLUCIONES_DATA = (function () {
         'No revisar el resultado con luz rasante antes de dar el trabajo por terminado.',
       ],
       recommendedProducts: [
-        { nombre: 'TITAN-PRO S-60 PLACAS MULTIYESO 4 L.BL.MATE', categoria: 'Pinturas', formato: '4 L', precio: '24,79 €', fichaTecnica: 'https://www.titanpro.es/productos/s-60-pintura-placas-multi-yeso' },
-        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
+        { nombre: 'TITAN-PRO S-60 PLACAS MULTIYESO 4 L.BL.MATE', ref: '8414800410051', categoria: 'Pinturas', formato: '4 L', precio: '24,79 €', fichaTecnica: 'https://www.titanpro.es/productos/s-60-pintura-placas-multi-yeso' },
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', ref: '8414800395945', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato grande', nombre: 'TITAN-PRO S-60 P.PLACAS MULTIYESO 15 L.BL.MATE', precio: '71,03 €' },
+        { etiqueta: 'Formato grande', nombre: 'TITAN-PRO S-60 P.PLACAS MULTIYESO 15 L.BL.MATE', ref: '8414800410068', precio: '71,03 €' },
         { etiqueta: 'Acabado de alta decoración', nombre: 'PINT.ACRILICA P-500 EXTRA PREMIUM 15 L.BLANCO MATE', precio: '69,67 €' },
       ],
       relatedSolutions: ['pintar-pared-interior'],
@@ -3306,12 +3306,12 @@ window.SOLUCIONES_DATA = (function () {
         'Usar esta técnica sobre superficies con grasa o aceite, que sí hay que desengrasar antes en cualquier sistema.',
       ],
       recommendedProducts: [
-        { nombre: 'OXIRON LISO BRILLANTE 750 ML.NEGRO', categoria: 'Pinturas', formato: '750 ml', precio: '17,19 €' },
+        { nombre: 'OXIRON LISO BRILLANTE 750 ML.NEGRO', ref: '8414800444094', categoria: 'Pinturas', formato: '750 ml', precio: '17,19 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado satinado', nombre: 'OXIRON LISO SATINADO 750 ML.NEGRO', precio: '17,57 €' },
+        { etiqueta: 'Acabado satinado', nombre: 'OXIRON LISO SATINADO 750 ML.NEGRO', ref: '8414800444247', precio: '17,57 €' },
         { etiqueta: 'Zonas de difícil acceso', nombre: 'SPRAY OXIRON P. 400 ML NEGRO (204)', precio: '11,65 €' },
-        { etiqueta: 'Si hay mucho óxido suelto antes de empezar', nombre: 'DESOXIDANTE TITAN MULTIUSOS 1 L.', precio: '11,43 €' },
+        { etiqueta: 'Si hay mucho óxido suelto antes de empezar', nombre: 'DESOXIDANTE TITAN MULTIUSOS 1 L.', ref: '8414800067668', precio: '11,43 €' },
       ],
       relatedSolutions: ['eliminar-oxido-metal', 'pintar-reja-verja-hierro', 'dar-acabado-forjado-metal-jardin'],
       seo: {
@@ -3359,11 +3359,11 @@ window.SOLUCIONES_DATA = (function () {
         'No dejar secar bien entre manos, empastando la textura decorativa en vez de marcarla con nitidez.',
       ],
       recommendedProducts: [
-        { nombre: 'OXIRON FORJA 750 ML.NEGRO', categoria: 'Pinturas', formato: '750 ml', precio: '15,06 €' },
-        { nombre: 'OXIRON PAVONADO 750 ML.NEGRO', categoria: 'Pinturas', formato: '750 ml', precio: '15,91 €' },
+        { nombre: 'OXIRON FORJA 750 ML.NEGRO', ref: '8414800440560', categoria: 'Pinturas', formato: '750 ml', precio: '15,06 €' },
+        { nombre: 'OXIRON PAVONADO 750 ML.NEGRO', ref: '8414800440812', categoria: 'Pinturas', formato: '750 ml', precio: '15,91 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado martillado', nombre: 'OXIRON MARTELE 750 ML.GRIS PLATA', precio: '17,19 €' },
+        { etiqueta: 'Acabado martillado', nombre: 'OXIRON MARTELE 750 ML.GRIS PLATA', ref: '8429656065720', precio: '17,19 €' },
         { etiqueta: 'Zonas de difícil acceso', nombre: 'SPRAY OXIRON P. 400 ML NEGRO (204)', precio: '11,65 €' },
       ],
       relatedSolutions: ['pintar-metal-oxidado-directo-oxiron', 'pintar-reja-verja-hierro', 'eliminar-oxido-metal'],
@@ -3463,13 +3463,13 @@ window.SOLUCIONES_DATA = (function () {
         'Pintar en pleno invierno con el radiador en uso, en vez de aprovechar primavera o verano.',
       ],
       recommendedProducts: [
-        { nombre: 'BRUGUER ESM.RADIADORES 750 ML.BLANCO', categoria: 'Pinturas', formato: '750 ml', precio: '16,25 €' },
+        { nombre: 'BRUGUER ESM.RADIADORES 750 ML.BLANCO', ref: '8429656037482', categoria: 'Pinturas', formato: '750 ml', precio: '16,25 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Imprimación (gris)', nombre: 'MINIO SINTETICO TITANLUX MATE 750 ML.GRIS', precio: '20,18 €' },
-        { etiqueta: 'Imprimación (naranja)', nombre: 'MINIO SINTETICO TITANLUX MATE 750 ML.NARANJA', precio: '20,18 €' },
-        { etiqueta: 'Brocha de codo', nombre: 'PALETINA RADIADOR Nº 18 CIRET', precio: '1,97 €' },
-        { etiqueta: 'Limpieza y dilución', nombre: 'AGUARRAS PINO KELSIA 750 ML.', precio: '2,52 €' },
+        { etiqueta: 'Imprimación (gris)', nombre: 'MINIO SINTETICO TITANLUX MATE 750 ML.GRIS', ref: '8429656081874', precio: '20,18 €' },
+        { etiqueta: 'Imprimación (naranja)', nombre: 'MINIO SINTETICO TITANLUX MATE 750 ML.NARANJA', ref: '8429656081850', precio: '20,18 €' },
+        { etiqueta: 'Brocha de codo', nombre: 'PALETINA RADIADOR Nº 18 CIRET', ref: '8412227430188', precio: '1,97 €' },
+        { etiqueta: 'Limpieza y dilución', nombre: 'AGUARRAS PINO KELSIA 750 ML.', ref: '8410088000038', precio: '2,52 €' },
       ],
       relatedSolutions: ['pintar-reja-verja-hierro', 'eliminar-oxido-metal'],
       seo: {
@@ -3519,11 +3519,11 @@ window.SOLUCIONES_DATA = (function () {
         'No ventilar la zona durante y después del tratamiento.',
       ],
       recommendedProducts: [
-        { nombre: 'TITAN LIMPIADOR ANTIMOHO 500 ML.', categoria: 'Droguería', formato: '500 ml', precio: '4,84 €' },
+        { nombre: 'TITAN LIMPIADOR ANTIMOHO 500 ML.', ref: '8429656084158', categoria: 'Droguería', formato: '500 ml', precio: '4,84 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Otra marca', nombre: 'PASO ELIMINA MOHO 500 ML.PISTOLA', precio: '4,96 €' },
-        { etiqueta: 'Método alternativo (diluida en agua)', nombre: 'LEJIA ACE 2 L.REGULAR', precio: '1,75 €' },
+        { etiqueta: 'Otra marca', nombre: 'PASO ELIMINA MOHO 500 ML.PISTOLA', ref: '8411519731019', precio: '4,96 €' },
+        { etiqueta: 'Método alternativo (diluida en agua)', nombre: 'LEJIA ACE 2 L.REGULAR', ref: '8001480020429', precio: '1,75 €' },
       ],
       relatedSolutions: ['eliminar-moho-pared-antes-pintar', 'usar-lejia-segura', 'sellar-juntas-bano'],
       seo: {
@@ -3573,13 +3573,13 @@ window.SOLUCIONES_DATA = (function () {
         'Usar una pintura cualquiera en vez de una formulada con conservante antimoho en zonas donde el moho es propenso a reaparecer.',
       ],
       recommendedProducts: [
-        { nombre: 'TITAN LIMPIADOR ANTIMOHO 500 ML.', categoria: 'Droguería', formato: '500 ml', precio: '4,84 €' },
-        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
+        { nombre: 'TITAN LIMPIADOR ANTIMOHO 500 ML.', ref: '8429656084158', categoria: 'Droguería', formato: '500 ml', precio: '4,84 €' },
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO', ref: '8414800395945', categoria: 'Pinturas', formato: '4 L', precio: '22,32 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Método alternativo de limpieza', nombre: 'LEJIA ACE 2 L.REGULAR', precio: '1,75 €' },
-        { etiqueta: 'Formato pequeño de pintura',      nombre: 'TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE', precio: '8,54 €' },
-        { etiqueta: 'Formato grande / base teñible',   nombre: 'PINT.VINILICA P-60 PREMIUM 15 L.BASE NEUTRA', precio: '49,91 €' },
+        { etiqueta: 'Método alternativo de limpieza', nombre: 'LEJIA ACE 2 L.REGULAR', ref: '8001480020429', precio: '1,75 €' },
+        { etiqueta: 'Formato pequeño de pintura',      nombre: 'TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE', ref: '8414800419221', precio: '8,54 €' },
+        { etiqueta: 'Formato grande / base teñible',   nombre: 'PINT.VINILICA P-60 PREMIUM 15 L.BASE NEUTRA', ref: '8414800415216', precio: '49,91 €' },
       ],
       calculadoraCantidad: { rendimiento: 9, etiqueta: 'pintura vinílica antimoho' },
       relatedSolutions: ['limpiar-moho-pared-azulejo', 'pintar-pared-interior', 'usar-lejia-segura'],
@@ -3632,12 +3632,12 @@ window.SOLUCIONES_DATA = (function () {
         'No lijar ni sellar una superficie muy lisa o brillante antes de pintar encima.',
       ],
       recommendedProducts: [
-        { nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', categoria: 'Pintura', formato: '5 L', precio: '25,16 €' },
-        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '10 uds', precio: '13,21 €' },
+        { nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', ref: '8425593110011', categoria: 'Pintura', formato: '5 L', precio: '25,16 €' },
+        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS', ref: '8424835010515', categoria: 'Abrasivos', formato: '10 uds', precio: '13,21 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Fijador incoloro para exterior', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 10 L.INCOLORO', precio: '65,51 €' },
-        { etiqueta: 'Fondo fijador universal', nombre: 'FONDO FIJADOR D13 10 L.INCOLORO', precio: '75,52 €' },
+        { etiqueta: 'Fijador incoloro para exterior', nombre: 'IMPRIMACION FIJADOR SILOXANO S-30 10 L.INCOLORO', ref: '8414800409970', precio: '65,51 €' },
+        { etiqueta: 'Fondo fijador universal', nombre: 'FONDO FIJADOR D13 10 L.INCOLORO', ref: '8414800070538', precio: '75,52 €' },
       ],
       relatedSolutions: ['pintar-pared-interior', 'eliminar-moho-pared-antes-pintar'],
       seo: {
@@ -3685,12 +3685,12 @@ window.SOLUCIONES_DATA = (function () {
         'Mezclar el desengrasante con lejía u otros productos químicos.',
       ],
       recommendedProducts: [
-        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', categoria: 'Limpieza', formato: '750 ml', precio: '2,14 €' },
-        { nombre: 'VOLGRASSS DESENGRASANTE 1 L.PISTOLA', categoria: 'Limpieza', formato: '1 L', precio: '2,86 €' },
+        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', ref: '8411582261345', categoria: 'Limpieza', formato: '750 ml', precio: '2,14 €' },
+        { nombre: 'VOLGRASSS DESENGRASANTE 1 L.PISTOLA', ref: '8436008360136', categoria: 'Limpieza', formato: '1 L', precio: '2,86 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Uso profesional / gran cantidad', nombre: 'VINFER DESENGRASANTE BAJA ESPUMA M4 5 L.', precio: '14,13 €' },
-        { etiqueta: 'Taller / grasa muy incrustada',    nombre: 'HERCOL DESENGRASANTE C/DISOLV.20 L.', precio: '180,10 €' },
+        { etiqueta: 'Uso profesional / gran cantidad', nombre: 'VINFER DESENGRASANTE BAJA ESPUMA M4 5 L.', ref: '8410836213178', precio: '14,13 €' },
+        { etiqueta: 'Taller / grasa muy incrustada',    nombre: 'HERCOL DESENGRASANTE C/DISOLV.20 L.', ref: '3033083008', precio: '180,10 €' },
       ],
       relatedSolutions: ['desinfectar-casa'],
       seo: {
@@ -3738,12 +3738,12 @@ window.SOLUCIONES_DATA = (function () {
         'No secar la grifería tras la ducha, acelerando que la cal vuelva a aparecer.',
       ],
       recommendedProducts: [
-        { nombre: 'L1 LIMPIADOR DESINCRUSTANTE BAÑOS 750 ML.PIST.', categoria: 'Limpieza', formato: '750 ml', precio: '2,23 €' },
-        { nombre: 'M.P.L.LIMP.DESINCRUST.WC GEL FRESH 1,500 ML.', categoria: 'Limpieza', formato: '1,5 L', precio: '1,98 €' },
+        { nombre: 'L1 LIMPIADOR DESINCRUSTANTE BAÑOS 750 ML.PIST.', ref: '8410836212607', categoria: 'Limpieza', formato: '750 ml', precio: '2,23 €' },
+        { nombre: 'M.P.L.LIMP.DESINCRUST.WC GEL FRESH 1,500 ML.', ref: '8436032037851', categoria: 'Limpieza', formato: '1,5 L', precio: '1,98 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Uso profesional / cal muy incrustada', nombre: 'DW-20 LIMPIADOR DESINCRUST.ACIDO 4 L.', precio: '36,47 €' },
-        { etiqueta: 'Formato pequeño de garrafa', nombre: 'TENAZ DESINCRUSTANTE SUPERF.5 L.REF.091', precio: '14,99 €' },
+        { etiqueta: 'Uso profesional / cal muy incrustada', nombre: 'DW-20 LIMPIADOR DESINCRUST.ACIDO 4 L.', ref: '8436024502510', precio: '36,47 €' },
+        { etiqueta: 'Formato pequeño de garrafa', nombre: 'TENAZ DESINCRUSTANTE SUPERF.5 L.REF.091', ref: '3033033007', precio: '14,99 €' },
       ],
       relatedSolutions: ['sellar-juntas-bano', 'limpiar-moho-pared-azulejo'],
       seo: {
@@ -3790,10 +3790,10 @@ window.SOLUCIONES_DATA = (function () {
         'No aclarar bien, dejando residuo del producto sobre la superficie.',
       ],
       recommendedProducts: [
-        { nombre: 'M.P.L.QUITACEMENTOS/LIMPIAJUNTAS 1 L.', categoria: 'Limpieza', formato: '1 L', precio: '2,75 €' },
+        { nombre: 'M.P.L.QUITACEMENTOS/LIMPIAJUNTAS 1 L.', ref: '8436032030029', categoria: 'Limpieza', formato: '1 L', precio: '2,75 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Decapante para restos más resistentes', nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.', precio: '17,13 €' },
+        { etiqueta: 'Decapante para restos más resistentes', nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.', ref: '8414800805512', precio: '17,13 €' },
       ],
       relatedSolutions: ['limpiar-moho-pared-azulejo', 'abrillantar-suelo-marmol'],
       seo: {
@@ -3841,12 +3841,12 @@ window.SOLUCIONES_DATA = (function () {
         'Limpiar con sol directo sobre el cristal.',
       ],
       recommendedProducts: [
-        { nombre: 'GLASSPON CRISTALES Y SUPERFICIES 5 L.', categoria: 'Limpieza', formato: '5 L', precio: '9,03 €' },
-        { nombre: 'BAYETA CISNE CRISTALES MICROFIBRA 38X40CMS.', categoria: 'Limpieza', formato: '38x40 cm', precio: '0,76 €' },
+        { nombre: 'GLASSPON CRISTALES Y SUPERFICIES 5 L.', ref: '8411582245604', categoria: 'Limpieza', formato: '5 L', precio: '9,03 €' },
+        { nombre: 'BAYETA CISNE CRISTALES MICROFIBRA 38X40CMS.', ref: '8410347104088', categoria: 'Limpieza', formato: '38x40 cm', precio: '0,76 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Uso profesional con mango y goma', nombre: 'LIMPIACRISTALES DUO RESSOL REF. 01771', precio: '10,93 €' },
-        { etiqueta: 'Formato profesional grande', nombre: 'LIMPIACRISTALES EXCELERATOR C/GOMA 45 CMS.RF.2338', precio: '38,12 €' },
+        { etiqueta: 'Uso profesional con mango y goma', nombre: 'LIMPIACRISTALES DUO RESSOL REF. 01771', ref: '3033184', precio: '10,93 €' },
+        { etiqueta: 'Formato profesional grande', nombre: 'LIMPIACRISTALES EXCELERATOR C/GOMA 45 CMS.RF.2338', ref: '8424559023389', precio: '38,12 €' },
       ],
       relatedSolutions: [],
       seo: {
@@ -3894,11 +3894,11 @@ window.SOLUCIONES_DATA = (function () {
         'No limpiar el polvo entre pasadas de distinto grano.',
       ],
       recommendedProducts: [
-        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
-        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 060 225 M/M 10 UDS', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
+        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS', ref: '8424835010515', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
+        { nombre: 'DISCO LIJA CIRCULAR WERKU GRANO 060 225 M/M 10 UDS', ref: '8424835010485', categoria: 'Abrasivos', formato: '225 mm', precio: '13,21 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Lija al agua para pulido fino', nombre: '.LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972', precio: '1,91 €' },
+        { etiqueta: 'Lija al agua para pulido fino', nombre: '.LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972', ref: '6016155', precio: '1,91 €' },
       ],
       // Selector interactivo: el usuario elige qué va a hacer y se le
       // muestra la lija/disco real del grano correspondiente, en vez de
@@ -3907,10 +3907,10 @@ window.SOLUCIONES_DATA = (function () {
       selectorSuperficie: {
         pregunta: '¿Qué necesitas hacer?',
         opciones: [
-          { id: 'desbastar', label: 'Desbastar (quitar pintura vieja, óxido grueso, nivelar)', nombre: 'LIJA TELA PLIEGO GRANO 2 (60) PENTRILO', motivo: 'Grano bajo (60): arranca material rápido para desbastar — nunca es el último paso, deja marca.' },
-          { id: 'preparar', label: 'Preparar antes de pintar o barnizar', nombre: 'LIJA PAPEL IMPERMEABLE PLIEGO GRANO 150 PENTRILO', motivo: 'Grano medio (150): suaviza las marcas del desbastado sin llevarse demasiado material — el más habitual antes de pintar.' },
-          { id: 'acabado', label: 'Último repaso antes de pintar, o entre manos', nombre: 'LIJA PAPEL IMPERMEABLE GRANO 320 PENTRILO', motivo: 'Grano fino (320): deja la superficie lisa al tacto sin marcar la pintura o el barniz de abajo.' },
-          { id: 'pulir', label: 'Pulir barniz, laca o pequeñas imperfecciones', nombre: 'LIJA PAPEL IMPERMEABLE GRANO 800 PENTRILO', motivo: 'Grano muy fino (800), para usar al agua: el que menos material arranca, pensado para pulir el acabado final.' },
+          { id: 'desbastar', label: 'Desbastar (quitar pintura vieja, óxido grueso, nivelar)', nombre: 'LIJA TELA PLIEGO GRANO 2 (60) PENTRILO', ref: '8420118091554', motivo: 'Grano bajo (60): arranca material rápido para desbastar — nunca es el último paso, deja marca.' },
+          { id: 'preparar', label: 'Preparar antes de pintar o barnizar', nombre: 'LIJA PAPEL IMPERMEABLE PLIEGO GRANO 150 PENTRILO', ref: '8420118091325', motivo: 'Grano medio (150): suaviza las marcas del desbastado sin llevarse demasiado material — el más habitual antes de pintar.' },
+          { id: 'acabado', label: 'Último repaso antes de pintar, o entre manos', nombre: 'LIJA PAPEL IMPERMEABLE GRANO 320 PENTRILO', ref: '8420118091370', motivo: 'Grano fino (320): deja la superficie lisa al tacto sin marcar la pintura o el barniz de abajo.' },
+          { id: 'pulir', label: 'Pulir barniz, laca o pequeñas imperfecciones', nombre: 'LIJA PAPEL IMPERMEABLE GRANO 800 PENTRILO', ref: '8420118091288', motivo: 'Grano muy fino (800), para usar al agua: el que menos material arranca, pensado para pulir el acabado final.' },
         ],
       },
       relatedSolutions: ['elegir-lijadora-superficie', 'corregir-marcas-lijado'],
@@ -3955,12 +3955,12 @@ window.SOLUCIONES_DATA = (function () {
         'No fijarse en si es EDP o EDT esperando la misma duración en ambos.',
       ],
       recommendedProducts: [
-        { nombre: 'TOUS EDP 90 ML.VAP.', categoria: 'Perfumería', formato: '90 ml', precio: '34,17 €' },
-        { nombre: 'SAPHIR ESTUCHE MINI DUPLO 200+30 ML.PERFECT WOMAN', categoria: 'Perfumería', formato: 'Estuche', precio: '13,02 €' },
+        { nombre: 'TOUS EDP 90 ML.VAP.', ref: '8437002110628', categoria: 'Perfumería', formato: '90 ml', precio: '34,17 €' },
+        { nombre: 'SAPHIR ESTUCHE MINI DUPLO 200+30 ML.PERFECT WOMAN', ref: '8424730042741', categoria: 'Perfumería', formato: 'Estuche', precio: '13,02 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Para hombre, formato estuche', nombre: 'SAPHIR ESTUCHE MINI DUPLO 200+30 ML.PERFECT MAN', precio: '13,02 €' },
-        { etiqueta: 'Colonia unisex clásica', nombre: 'ALVAREZ GOMEZ LATA EDT.300 ML+EMUL.HID.280 ML.', precio: '18,36 €' },
+        { etiqueta: 'Para hombre, formato estuche', nombre: 'SAPHIR ESTUCHE MINI DUPLO 200+30 ML.PERFECT MAN', ref: '8424730034043', precio: '13,02 €' },
+        { etiqueta: 'Colonia unisex clásica', nombre: 'ALVAREZ GOMEZ LATA EDT.300 ML+EMUL.HID.280 ML.', ref: '8422385194914', precio: '18,36 €' },
       ],
       relatedSolutions: [],
       seo: {
@@ -4005,12 +4005,12 @@ window.SOLUCIONES_DATA = (function () {
         'No limpiar bien la herramienta entre usos, endureciendo las cerdas o el pelo.',
       ],
       recommendedProducts: [
-        { nombre: 'BROCHA PRENSADA ESSENTIAL COMPETIDOR S-10 Nº 10', categoria: 'Herramientas', formato: 'Nº 10', precio: '3,74 €' },
-        { nombre: 'RODILLO ESP/FACHADAS SUPER FELPON 22 CMS.', categoria: 'Herramientas', formato: '22 cm', precio: '7,88 €' },
+        { nombre: 'BROCHA PRENSADA ESSENTIAL COMPETIDOR S-10 Nº 10', ref: '8420118910107', categoria: 'Herramientas', formato: 'Nº 10', precio: '3,74 €' },
+        { nombre: 'RODILLO ESP/FACHADAS SUPER FELPON 22 CMS.', ref: '842011879106', categoria: 'Herramientas', formato: '22 cm', precio: '7,88 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Brocha más ancha', nombre: 'BROCHA PRENSADA REDONDA C/COLG.Nº12 TINAJERO', precio: '5,66 €' },
-        { etiqueta: 'Rodillo para superficie lisa', nombre: 'RODILLO ESP.FACHADAS NESPOLI 22 CMS.FIBROR VERDE', precio: '6,40 €' },
+        { etiqueta: 'Brocha más ancha', nombre: 'BROCHA PRENSADA REDONDA C/COLG.Nº12 TINAJERO', ref: '843177031740', precio: '5,66 €' },
+        { etiqueta: 'Rodillo para superficie lisa', nombre: 'RODILLO ESP.FACHADAS NESPOLI 22 CMS.FIBROR VERDE', ref: '8412780000477', precio: '6,40 €' },
       ],
       // Selector interactivo: el usuario elige la superficie y se le
       // muestra el rodillo real del catálogo más adecuado para ella, en
@@ -4020,12 +4020,12 @@ window.SOLUCIONES_DATA = (function () {
       selectorSuperficie: {
         pregunta: '¿Sobre qué superficie vas a pintar?',
         opciones: [
-          { id: 'pared_lisa', label: 'Pared lisa (interior)', nombre: 'RECAMBIO RODILLO VELOUR 11 CMS.', motivo: 'Pelo corto tipo velour: ofrece un acabado fino y uniforme, sin apenas textura — ideal para paredes lisas.' },
-          { id: 'gotele', label: 'Gotelé o pared con textura', nombre: 'RODILLO TRILOX LANA NATURAL 22 CMS.', motivo: 'Pelo largo de lana natural: llega bien dentro de los huecos del gotelé sin dejar zonas sin cubrir.' },
-          { id: 'fachada', label: 'Fachada o exterior', nombre: 'RODILLO FIBROR BICOLOR ESPECIAL FACHADAS 22 CMS.', motivo: 'Pensado específicamente para la porosidad y el tacto rugoso de una fachada.' },
-          { id: 'suelo', label: 'Suelo', nombre: 'RECAMBIO RODILLO ESPECIAL SUELOS 45 CMS.PENTRILO', motivo: 'Formato ancho (45 cm) para cubrir más superficie de suelo en cada pasada.' },
-          { id: 'techos_altura', label: 'Techos o zonas altas', nombre: 'RODILLO ANTIGOTA SUPER 60 22 CMS.M/BIM.RF.71580', motivo: 'Diseño antigota: reduce las salpicaduras al trabajar por encima de la cabeza.' },
-          { id: 'verjas', label: 'Verjas o superficies estrechas', nombre: 'RODILLO MINI ESPECIAL VERJAS PENTRILO RF.07665', motivo: 'Formato mini, pensado para barrotes y perfiles estrechos donde un rodillo normal no entra bien.' },
+          { id: 'pared_lisa', label: 'Pared lisa (interior)', nombre: 'RECAMBIO RODILLO VELOUR 11 CMS.', ref: '8412780620071', motivo: 'Pelo corto tipo velour: ofrece un acabado fino y uniforme, sin apenas textura — ideal para paredes lisas.' },
+          { id: 'gotele', label: 'Gotelé o pared con textura', nombre: 'RODILLO TRILOX LANA NATURAL 22 CMS.', ref: '8412780023193', motivo: 'Pelo largo de lana natural: llega bien dentro de los huecos del gotelé sin dejar zonas sin cubrir.' },
+          { id: 'fachada', label: 'Fachada o exterior', nombre: 'RODILLO FIBROR BICOLOR ESPECIAL FACHADAS 22 CMS.', ref: '8412780103222', motivo: 'Pensado específicamente para la porosidad y el tacto rugoso de una fachada.' },
+          { id: 'suelo', label: 'Suelo', nombre: 'RECAMBIO RODILLO ESPECIAL SUELOS 45 CMS.PENTRILO', ref: '8420118173519', motivo: 'Formato ancho (45 cm) para cubrir más superficie de suelo en cada pasada.' },
+          { id: 'techos_altura', label: 'Techos o zonas altas', nombre: 'RODILLO ANTIGOTA SUPER 60 22 CMS.M/BIM.RF.71580', ref: '8420118715801', motivo: 'Diseño antigota: reduce las salpicaduras al trabajar por encima de la cabeza.' },
+          { id: 'verjas', label: 'Verjas o superficies estrechas', nombre: 'RODILLO MINI ESPECIAL VERJAS PENTRILO RF.07665', ref: '8420118076650', motivo: 'Formato mini, pensado para barrotes y perfiles estrechos donde un rodillo normal no entra bien.' },
         ],
       },
       relatedSolutions: ['pintar-pared-interior', 'solucionar-problemas-pintura-aplicacion', 'pintar-metal-antioxidante-interior-exterior', 'pintar-techo-pasta-temple'],
@@ -4071,21 +4071,21 @@ window.SOLUCIONES_DATA = (function () {
         'Dejar la cinta puesta demasiados días, dificultando su retirada limpia.',
       ],
       recommendedProducts: [
-        { nombre: '.CINTA FINA NARANJA ZAPHIRO 18MM X 50M', categoria: 'Talleres', formato: '18mm x 50m', precio: '3,44 €' },
-        { nombre: '.PAPEL ENMASCARAR ZAPHIRO PREMIUM 110 CM X 300 M.', categoria: 'Talleres', formato: '110cm x 300m', precio: '51,81 €' },
+        { nombre: '.CINTA FINA NARANJA ZAPHIRO 18MM X 50M', ref: '8068041', categoria: 'Talleres', formato: '18mm x 50m', precio: '3,44 €' },
+        { nombre: '.PAPEL ENMASCARAR ZAPHIRO PREMIUM 110 CM X 300 M.', ref: '140514050', categoria: 'Talleres', formato: '110cm x 300m', precio: '51,81 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Film con cinta incorporada', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', precio: '3,07 €' },
-        { etiqueta: 'Cinta de perfilar de precisión', nombre: '.CINTA PERFILAR BESA 12 MM. X 55 M.', precio: '11,53 €' },
+        { etiqueta: 'Film con cinta incorporada', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', ref: '140514012', precio: '3,07 €' },
+        { etiqueta: 'Cinta de perfilar de precisión', nombre: '.CINTA PERFILAR BESA 12 MM. X 55 M.', ref: '8435099910756', precio: '11,53 €' },
       ],
       // Selector interactivo: elige qué va a proteger y se le muestra el
       // producto real más adecuado para esa zona concreta.
       selectorSuperficie: {
         pregunta: '¿Qué vas a proteger?',
         opciones: [
-          { id: 'perfiles', label: 'Perfiles, molduras o un corte muy preciso', nombre: '.CINTA PERFILAR BESA 12 MM. X 55 M.', motivo: 'Cinta estrecha de precisión: pensada para conseguir un corte de pintura muy limpio en perfiles y molduras.' },
-          { id: 'paneles', label: 'Paneles de carrocería o superficies planas grandes', nombre: '.PAPEL ENMASCARAR ZAPHIRO PREMIUM 110 CM X 300 M.', motivo: 'Papel ancho, la opción habitual para cubrir superficies planas grandes al pintar con pistola.' },
-          { id: 'irregular', label: 'El resto del vehículo o una zona irregular', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', motivo: 'El film se adapta mejor que el papel a formas irregulares, y ya lleva la cinta incorporada.' },
+          { id: 'perfiles', label: 'Perfiles, molduras o un corte muy preciso', nombre: '.CINTA PERFILAR BESA 12 MM. X 55 M.', ref: '8435099910756', motivo: 'Cinta estrecha de precisión: pensada para conseguir un corte de pintura muy limpio en perfiles y molduras.' },
+          { id: 'paneles', label: 'Paneles de carrocería o superficies planas grandes', nombre: '.PAPEL ENMASCARAR ZAPHIRO PREMIUM 110 CM X 300 M.', ref: '140514050', motivo: 'Papel ancho, la opción habitual para cubrir superficies planas grandes al pintar con pistola.' },
+          { id: 'irregular', label: 'El resto del vehículo o una zona irregular', nombre: '.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.', ref: '140514012', motivo: 'El film se adapta mejor que el papel a formas irregulares, y ya lleva la cinta incorporada.' },
         ],
       },
       relatedSolutions: ['pintar-plastico-coche', 'elegir-pistola-pintar', 'pintar-metal-antioxidante-interior-exterior', 'pintar-techo-pasta-temple'],
@@ -4136,13 +4136,13 @@ window.SOLUCIONES_DATA = (function () {
         'No revisar el resultado con luz directa antes de dar el trabajo por terminado.',
       ],
       recommendedProducts: [
-        { nombre: '.PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.', categoria: 'Talleres', formato: '1 L', precio: '35,80 €' },
-        { nombre: '.BOINA PULIDO BODY AMARILLA 806 150 MM.', categoria: 'Talleres', formato: '150 mm', precio: '9,44 €' },
-        { nombre: '.PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.', categoria: 'Talleres', formato: '0,5 L', precio: '15,81 €' },
+        { nombre: '.PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.', ref: '8436044961335', categoria: 'Talleres', formato: '1 L', precio: '35,80 €' },
+        { nombre: '.BOINA PULIDO BODY AMARILLA 806 150 MM.', ref: '5203473030351', categoria: 'Talleres', formato: '150 mm', precio: '9,44 €' },
+        { nombre: '.PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.', ref: '140614009', categoria: 'Talleres', formato: '0,5 L', precio: '15,81 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Boina de alto corte (paso previo)', nombre: '.BOINA BOSSAUTO ALTO CORTE T120 VERDE 150X35MM', precio: '13,92 €' },
-        { etiqueta: 'Pulimento fino en formato pequeño', nombre: '.PULIMENTO FINO 807 SEAL POLISH BODY BEIGE 200 ML.', precio: '14,11 €' },
+        { etiqueta: 'Boina de alto corte (paso previo)', nombre: '.BOINA BOSSAUTO ALTO CORTE T120 VERDE 150X35MM', ref: '8436570042287', precio: '13,92 €' },
+        { etiqueta: 'Pulimento fino en formato pequeño', nombre: '.PULIMENTO FINO 807 SEAL POLISH BODY BEIGE 200 ML.', ref: '5203473807007', precio: '14,11 €' },
       ],
       relatedSolutions: ['recuperar-brillo-carroceria', 'corregir-marcas-lijado'],
       seo: {
@@ -4187,12 +4187,12 @@ window.SOLUCIONES_DATA = (function () {
         'No remover bien tras añadir el disolvente, quedando zonas más diluidas que otras.',
       ],
       recommendedProducts: [
-        { nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', categoria: 'Pintura', formato: '1 L', precio: '3,75 €' },
-        { nombre: 'AGUARRAS PINO KELSIA 500 ML.', categoria: 'Pintura', formato: '500 ml', precio: '1,75 €' },
+        { nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', ref: '8436032030203', categoria: 'Pintura', formato: '1 L', precio: '3,75 €' },
+        { nombre: 'AGUARRAS PINO KELSIA 500 ML.', ref: '8410088000281', categoria: 'Pintura', formato: '500 ml', precio: '1,75 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato profesional grande', nombre: 'DISOLVENTE UNIVERSAL PROF.C&Q 25 L.', precio: '76,17 €' },
-        { etiqueta: 'Disolvente específico epoxi', nombre: 'TITANTECH DX-820 DISOLVENTE EPOXI 5 L.', precio: '43,00 €' },
+        { etiqueta: 'Formato profesional grande', nombre: 'DISOLVENTE UNIVERSAL PROF.C&Q 25 L.', ref: '8436530850594', precio: '76,17 €' },
+        { etiqueta: 'Disolvente específico epoxi', nombre: 'TITANTECH DX-820 DISOLVENTE EPOXI 5 L.', ref: '8414800430509', precio: '43,00 €' },
       ],
       // Selector interactivo: elige para qué lo necesita y se le
       // recomienda el producto real más adecuado a ese uso concreto —
@@ -4201,11 +4201,11 @@ window.SOLUCIONES_DATA = (function () {
       selectorSuperficie: {
         pregunta: '¿Para qué lo necesitas?',
         opciones: [
-          { id: 'diluir_pintura', label: 'Diluir pintura o esmalte sintético', nombre: 'AGUARRAS PINO KELSIA 500 ML.', motivo: 'El aguarrás es la opción habitual para diluir esmaltes sintéticos domésticos sin perjudicar el color ni la cubrición.' },
-          { id: 'limpiar_pistola', label: 'Limpiar una pistola de pintar', nombre: 'DILUYENTE TITAN YATE 1 LITRO', motivo: 'Disuelve bien la pintura fresca de dentro de la pistola — imprescindible para que no se seque y obstruya la boquilla.' },
-          { id: 'limpiar_herramientas', label: 'Limpiar brochas o rodillos', nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', motivo: 'Disolvente universal, válido tanto para diluir como para limpiar herramientas manchadas de pintura al disolvente.' },
-          { id: 'eliminar_restos', label: 'Eliminar restos de pintura ya seca', nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.', motivo: 'Un disolvente normal no ablanda pintura ya seca — hace falta un decapante en gel, pensado específicamente para eso.' },
-          { id: 'desengrasar', label: 'Desengrasar una superficie', nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', motivo: 'Para grasa, lo adecuado es un desengrasante, no un disolvente de pintura — son productos distintos aunque a veces se confundan.' },
+          { id: 'diluir_pintura', label: 'Diluir pintura o esmalte sintético', nombre: 'AGUARRAS PINO KELSIA 500 ML.', ref: '8410088000281', motivo: 'El aguarrás es la opción habitual para diluir esmaltes sintéticos domésticos sin perjudicar el color ni la cubrición.' },
+          { id: 'limpiar_pistola', label: 'Limpiar una pistola de pintar', nombre: 'DILUYENTE TITAN YATE 1 LITRO', ref: '8414800058611', motivo: 'Disuelve bien la pintura fresca de dentro de la pistola — imprescindible para que no se seque y obstruya la boquilla.' },
+          { id: 'limpiar_herramientas', label: 'Limpiar brochas o rodillos', nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', ref: '8436032030203', motivo: 'Disolvente universal, válido tanto para diluir como para limpiar herramientas manchadas de pintura al disolvente.' },
+          { id: 'eliminar_restos', label: 'Eliminar restos de pintura ya seca', nombre: 'TITAN DECAPANTE GEL PROFESIONAL 1 LL.', ref: '8414800805512', motivo: 'Un disolvente normal no ablanda pintura ya seca — hace falta un decapante en gel, pensado específicamente para eso.' },
+          { id: 'desengrasar', label: 'Desengrasar una superficie', nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', ref: '8411582261345', motivo: 'Para grasa, lo adecuado es un desengrasante, no un disolvente de pintura — son productos distintos aunque a veces se confundan.' },
         ],
       },
       relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'pintar-pared-interior'],
@@ -4249,12 +4249,12 @@ window.SOLUCIONES_DATA = (function () {
         'No hidratar la piel después de la ducha, cuando mejor se absorbe la crema.',
       ],
       recommendedProducts: [
-        { nombre: 'AVENA KINESIA GEL 750 ML.', categoria: 'Perfumería', formato: '750 ml', precio: '2,66 €' },
-        { nombre: 'INST.ESPAÑOL CREMA CORPORAL 400 ML.CREMOSO M/KARIT', categoria: 'Perfumería', formato: '400 ml', precio: '3,23 €' },
+        { nombre: 'AVENA KINESIA GEL 750 ML.', ref: '8411135006249', categoria: 'Perfumería', formato: '750 ml', precio: '2,66 €' },
+        { nombre: 'INST.ESPAÑOL CREMA CORPORAL 400 ML.CREMOSO M/KARIT', ref: '8411047105313', categoria: 'Perfumería', formato: '400 ml', precio: '3,23 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Gel 2 en 1 con champú', nombre: 'DENENES GEL/CHAMPU 600 ML.SUEÑOS FELICES', precio: '3,40 €' },
-        { etiqueta: 'Crema corporal con aloe vera', nombre: 'INST.ESPAÑOL CREMA CORPORAL 400 ML.ALOE VERA', precio: '3,05 €' },
+        { etiqueta: 'Gel 2 en 1 con champú', nombre: 'DENENES GEL/CHAMPU 600 ML.SUEÑOS FELICES', ref: '8411061578759', precio: '3,40 €' },
+        { etiqueta: 'Crema corporal con aloe vera', nombre: 'INST.ESPAÑOL CREMA CORPORAL 400 ML.ALOE VERA', ref: '8411047143186', precio: '3,05 €' },
       ],
       relatedSolutions: ['perfumeria-elegir-fragancia-regalo'],
       seo: {
@@ -4304,12 +4304,12 @@ window.SOLUCIONES_DATA = (function () {
         'Usar una imprimación no adecuada al material de la pieza (metal/plástico).',
       ],
       recommendedProducts: [
-        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', categoria: 'Limpieza', formato: '750 ml', precio: '2,14 €' },
-        { nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', categoria: 'Talleres', formato: '400 ml', precio: '11,39 €' },
+        { nombre: 'ASEVI DESENGRASANTE 750 ML.PISTOLA', ref: '8411582261345', categoria: 'Limpieza', formato: '750 ml', precio: '2,14 €' },
+        { nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', ref: '140114055', categoria: 'Talleres', formato: '400 ml', precio: '11,39 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Imprimación específica para plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', precio: '65,62 €' },
-        { etiqueta: 'Desengrasante de mayor concentración', nombre: 'VOLGRASSS DESENGRASANTE 1 L.PISTOLA', precio: '2,86 €' },
+        { etiqueta: 'Imprimación específica para plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', ref: '3452571642023', precio: '65,62 €' },
+        { etiqueta: 'Desengrasante de mayor concentración', nombre: 'VOLGRASSS DESENGRASANTE 1 L.PISTOLA', ref: '8436008360136', precio: '2,86 €' },
       ],
       relatedSolutions: ['elegir-lija-grano-abrasivo', 'elegir-cinta-papel-enmascarar', 'eliminar-oxido-metal'],
       seo: {
@@ -4358,11 +4358,11 @@ window.SOLUCIONES_DATA = (function () {
         'No hacer una prueba previa antes de pintar la pieza definitiva.',
       ],
       recommendedProducts: [
-        { nombre: '.FILTRO BRONCE POROSO SAGOLA', categoria: 'Talleres', formato: 'Unidad', precio: '24,18 €' },
-        { nombre: 'DILUYENTE TITAN YATE 1 LITRO', categoria: 'Pintura', formato: '1 L', precio: '18,16 €' },
+        { nombre: '.FILTRO BRONCE POROSO SAGOLA', ref: '8058389', categoria: 'Talleres', formato: 'Unidad', precio: '24,18 €' },
+        { nombre: 'DILUYENTE TITAN YATE 1 LITRO', ref: '8414800058611', categoria: 'Pintura', formato: '1 L', precio: '18,16 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Vaso de recambio para pistola', nombre: '.VASO PLASTICO COLAD 700 ML S/TAPA 9370300', precio: '0,50 €' },
+        { etiqueta: 'Vaso de recambio para pistola', nombre: '.VASO PLASTICO COLAD 700 ML S/TAPA 9370300', ref: '8058102', precio: '0,50 €' },
       ],
       relatedSolutions: ['elegir-pistola-pintar', 'preparar-pieza-taller-antes-pintar'],
       seo: {
@@ -4409,11 +4409,11 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar la cera en una sola capa gruesa en vez de una fina y uniforme.',
       ],
       recommendedProducts: [
-        { nombre: '.P-C-92 LACA MATE 0,75 L. 2:1', categoria: 'Talleres', formato: '0,75 L', precio: '128,64 €' },
-        { nombre: '.PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.', categoria: 'Talleres', formato: '0,5 L', precio: '15,81 €' },
+        { nombre: '.P-C-92 LACA MATE 0,75 L. 2:1', ref: '4007440897104', categoria: 'Talleres', formato: '0,75 L', precio: '128,64 €' },
+        { nombre: '.PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.', ref: '140614009', categoria: 'Talleres', formato: '0,5 L', precio: '15,81 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Laca de secado rápido', nombre: '.A-C-10 LACA ECO BALANCE SECADO RAPIDO 1 L. 3:1:1', precio: '168,63 €' },
+        { etiqueta: 'Laca de secado rápido', nombre: '.A-C-10 LACA ECO BALANCE SECADO RAPIDO 1 L. 3:1:1', ref: '5085041', precio: '168,63 €' },
       ],
       relatedSolutions: ['eliminar-hologramas-pulido', 'recuperar-brillo-carroceria'],
       seo: {
@@ -4456,20 +4456,20 @@ window.SOLUCIONES_DATA = (function () {
         'Elegir mate en una zona de mucho tránsito o salpicaduras, que luego cuesta más limpiar.',
       ],
       recommendedProducts: [
-        { nombre: 'PINT.VINILICA P-50 EXTRA MATE 1 L.BLANCA', categoria: 'Pintura', formato: '1 L', precio: '6,30 €' },
-        { nombre: 'PINT.VINILICA P-40 PREMIUM 1 L.SATIN.BLANCO', categoria: 'Pintura', formato: '1 L', precio: '7,66 €' },
+        { nombre: 'PINT.VINILICA P-50 EXTRA MATE 1 L.BLANCA', ref: '8414800412758', categoria: 'Pintura', formato: '1 L', precio: '6,30 €' },
+        { nombre: 'PINT.VINILICA P-40 PREMIUM 1 L.SATIN.BLANCO', ref: '8414800439380', categoria: 'Pintura', formato: '1 L', precio: '7,66 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado brillante con poliuretano', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.BLANCO', precio: '48,38 €' },
+        { etiqueta: 'Acabado brillante con poliuretano', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.BLANCO', ref: '8414800413380', precio: '48,38 €' },
       ],
       // Selector interactivo: elige el efecto/uso que buscas y se le
       // recomienda la pintura real del acabado correspondiente.
       selectorSuperficie: {
         pregunta: '¿Qué buscas para tu pared?',
         opciones: [
-          { id: 'disimular', label: 'Disimular imperfecciones (techos, paredes en mal estado)', nombre: 'PINT.VINILICA P-50 EXTRA MATE 1 L.BLANCA', motivo: 'El acabado mate absorbe la luz y disimula mejor las pequeñas imperfecciones de la superficie.' },
-          { id: 'equilibrio', label: 'Equilibrio entre estética y facilidad de limpieza', nombre: 'PINT.VINILICA P-40 PREMIUM 1 L.SATIN.BLANCO', motivo: 'El satinado es más fácil de limpiar que el mate, sin llegar al reflejo del brillante — habitual en cocinas y baños.' },
-          { id: 'resistencia', label: 'Máxima resistencia a la limpieza y a los golpes', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.BLANCO', motivo: 'El brillante con poliuretano es el acabado más resistente a la limpieza frecuente y a los golpes.' },
+          { id: 'disimular', label: 'Disimular imperfecciones (techos, paredes en mal estado)', nombre: 'PINT.VINILICA P-50 EXTRA MATE 1 L.BLANCA', ref: '8414800412758', motivo: 'El acabado mate absorbe la luz y disimula mejor las pequeñas imperfecciones de la superficie.' },
+          { id: 'equilibrio', label: 'Equilibrio entre estética y facilidad de limpieza', nombre: 'PINT.VINILICA P-40 PREMIUM 1 L.SATIN.BLANCO', ref: '8414800439380', motivo: 'El satinado es más fácil de limpiar que el mate, sin llegar al reflejo del brillante — habitual en cocinas y baños.' },
+          { id: 'resistencia', label: 'Máxima resistencia a la limpieza y a los golpes', nombre: 'COLORLUX BRILLANTE C/POLIURET.4 L.BLANCO', ref: '8414800413380', motivo: 'El brillante con poliuretano es el acabado más resistente a la limpieza frecuente y a los golpes.' },
         ],
       },
       relatedSolutions: ['pintar-pared-interior', 'elegir-disolvente-diluir-pintura'],
@@ -4517,13 +4517,13 @@ window.SOLUCIONES_DATA = (function () {
         'Comprar en formatos pequeños para un uso de alto consumo diario, encareciendo el coste por unidad.',
       ],
       recommendedProducts: [
-        { nombre: 'MOPA CISNE SOFT 75 CMS.C/BASTIDOR REF.203075 AZUL', categoria: 'Limpieza', formato: '75 cm', precio: '11,57 €' },
-        { nombre: 'ROLLO BAYETA CISNE MICROPUNT PRECORT.0,40X8 MTS', categoria: 'Limpieza', formato: '0,40x8 m', precio: '5,34 €' },
-        { nombre: 'GUANTES EX.VINILO ECO S/POLVO T/XL C/100 UDS.', categoria: 'Limpieza', formato: '100 uds', precio: '3,56 €' },
+        { nombre: 'MOPA CISNE SOFT 75 CMS.C/BASTIDOR REF.203075 AZUL', ref: '1311062', categoria: 'Limpieza', formato: '75 cm', precio: '11,57 €' },
+        { nombre: 'ROLLO BAYETA CISNE MICROPUNT PRECORT.0,40X8 MTS', ref: '8410347101469', categoria: 'Limpieza', formato: '0,40x8 m', precio: '5,34 €' },
+        { nombre: 'GUANTES EX.VINILO ECO S/POLVO T/XL C/100 UDS.', ref: '8431026002150', categoria: 'Limpieza', formato: '100 uds', precio: '3,56 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Guantes de nitrilo', nombre: 'GUANTES JUPITER CENTURION NITRILO NYLON T/8', precio: '1,46 €' },
-        { etiqueta: 'Lejía en formato grande', nombre: 'LEJIA ACE 4 L.REGULAR', precio: '3,05 €' },
+        { etiqueta: 'Guantes de nitrilo', nombre: 'GUANTES JUPITER CENTURION NITRILO NYLON T/8', ref: '8430173270955', precio: '1,46 €' },
+        { etiqueta: 'Lejía en formato grande', nombre: 'LEJIA ACE 4 L.REGULAR', ref: '8001480020436', precio: '3,05 €' },
       ],
       relatedSolutions: ['usar-lejia-segura', 'desinfectar-casa'],
       seo: {
@@ -4574,14 +4574,14 @@ window.SOLUCIONES_DATA = (function () {
         'Rellenar un agujero profundo de una sola vez en vez de por capas.',
       ],
       recommendedProducts: [
-        { nombre: 'RUALAIX RX-422 MASILLA ACRYL.PINTABLE 300 GMS.', categoria: 'Pintura', formato: '300 g', precio: '2,29 €' },
-        { nombre: 'BAIXENS B-18C MASILLA TAPAGRIETAS CART.310 ML.', categoria: 'Pintura', formato: '310 ml', precio: '1,98 €' },
-        { nombre: 'TITAN PINTURA ANTIMANCHAS H24 750 ML.BLANCO MATE', categoria: 'Pintura', formato: '750 ml', precio: '18,25 €' },
+        { nombre: 'RUALAIX RX-422 MASILLA ACRYL.PINTABLE 300 GMS.', ref: '8425593030524', categoria: 'Pintura', formato: '300 g', precio: '2,29 €' },
+        { nombre: 'BAIXENS B-18C MASILLA TAPAGRIETAS CART.310 ML.', ref: '8425593011653', categoria: 'Pintura', formato: '310 ml', precio: '1,98 €' },
+        { nombre: 'TITAN PINTURA ANTIMANCHAS H24 750 ML.BLANCO MATE', ref: '8414800117530', categoria: 'Pintura', formato: '750 ml', precio: '18,25 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Sellador de manchas en spray', nombre: 'XYLAZEL SPRAY ANTIMANCHAS PAREDES/TECHOS 500', precio: '11,35 €' },
-        { etiqueta: 'Masilla para exterior', nombre: 'BAIXENS B-33C MASILLA TAPAGRIETAS EXTERIOR CAT.310', precio: '2,99 €' },
-        { etiqueta: 'Juego de espátulas para aplicar la masilla', nombre: 'JUEGO ESPATULAS ENMASILLAR WK601560 4 UDS.50-120', precio: '5,08 €' },
+        { etiqueta: 'Sellador de manchas en spray', nombre: 'XYLAZEL SPRAY ANTIMANCHAS PAREDES/TECHOS 500', ref: '8414956689356', precio: '11,35 €' },
+        { etiqueta: 'Masilla para exterior', nombre: 'BAIXENS B-33C MASILLA TAPAGRIETAS EXTERIOR CAT.310', ref: '8425593013282', precio: '2,99 €' },
+        { etiqueta: 'Juego de espátulas para aplicar la masilla', nombre: 'JUEGO ESPATULAS ENMASILLAR WK601560 4 UDS.50-120', ref: '8424835006327', precio: '5,08 €' },
       ],
       relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'pintar-pared-interior'],
       seo: {
@@ -4628,12 +4628,12 @@ window.SOLUCIONES_DATA = (function () {
         'Confundir una humedad por filtración con condensación y aplicar el tratamiento equivocado.',
       ],
       recommendedProducts: [
-        { nombre: 'PINTURA ANTIHUMEDAD KOLMAN 750 ML.', categoria: 'Pintura', formato: '750 ml', precio: '10,93 €' },
-        { nombre: 'SECADRY ANTIHUMEDAD 450 GRS.APARATO', categoria: 'Droguería', formato: '450 g', precio: '4,83 €' },
+        { nombre: 'PINTURA ANTIHUMEDAD KOLMAN 750 ML.', ref: '8426741003575', categoria: 'Pintura', formato: '750 ml', precio: '10,93 €' },
+        { nombre: 'SECADRY ANTIHUMEDAD 450 GRS.APARATO', ref: '8424084000480', categoria: 'Droguería', formato: '450 g', precio: '4,83 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Formato grande de pintura antihumedad', nombre: 'TITAN ANTIHUMEDAD D14 4 L.BLANCO MATE', precio: '47,84 €' },
-        { etiqueta: 'Recambio del absorbente de humedad', nombre: 'SECADRY ANTIHUMEDAD 450 GRS.RECAMBIO', precio: '2,86 €' },
+        { etiqueta: 'Formato grande de pintura antihumedad', nombre: 'TITAN ANTIHUMEDAD D14 4 L.BLANCO MATE', ref: '8414800070651', precio: '47,84 €' },
+        { etiqueta: 'Recambio del absorbente de humedad', nombre: 'SECADRY ANTIHUMEDAD 450 GRS.RECAMBIO', ref: '8424084000497', precio: '2,86 €' },
       ],
       relatedSolutions: ['eliminar-moho-pared-antes-pintar', 'manchas-grietas-antes-pintar'],
       seo: {
@@ -4680,11 +4680,11 @@ window.SOLUCIONES_DATA = (function () {
         'No retirar el exceso de pintura antes de empezar a limpiar, gastando mucho más producto del necesario.',
       ],
       recommendedProducts: [
-        { nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', categoria: 'Pintura', formato: '1 L', precio: '3,75 €' },
-        { nombre: 'BATIDOR Y LIMPIA RODILLOS PENTRILO CLIP 8', categoria: 'Herramientas', formato: 'Unidad', precio: '4,57 €' },
+        { nombre: 'DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.', ref: '8436032030203', categoria: 'Pintura', formato: '1 L', precio: '3,75 €' },
+        { nombre: 'BATIDOR Y LIMPIA RODILLOS PENTRILO CLIP 8', ref: '8420118081869', categoria: 'Herramientas', formato: 'Unidad', precio: '4,57 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Aguarrás para pintura sintética', nombre: 'AGUARRAS PINO KELSIA 500 ML.', precio: '1,75 €' },
+        { etiqueta: 'Aguarrás para pintura sintética', nombre: 'AGUARRAS PINO KELSIA 500 ML.', ref: '8410088000281', precio: '1,75 €' },
       ],
       relatedSolutions: ['elegir-brocha-rodillo-pintar', 'elegir-disolvente-diluir-pintura'],
       seo: {
@@ -4728,21 +4728,21 @@ window.SOLUCIONES_DATA = (function () {
         'Usar un barniz sin filtro UV en madera muy expuesta al sol.',
       ],
       recommendedProducts: [
-        { nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', categoria: 'Pintura', formato: '750 ml', precio: '17,67 €' },
-        { nombre: 'BARNIZ TITAN INTEMP. BRILLO 750 ML.INCOL.', categoria: 'Pintura', formato: '750 ml', precio: '14,13 €' },
+        { nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', ref: '8430078020136', categoria: 'Pintura', formato: '750 ml', precio: '17,67 €' },
+        { nombre: 'BARNIZ TITAN INTEMP. BRILLO 750 ML.INCOL.', ref: '8414800421644', categoria: 'Pintura', formato: '750 ml', precio: '14,13 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Esmalte antioxidante efecto martelé', nombre: 'OXIRON MARTELE 750 ML BLANCO (2966)', precio: '18,39 €' },
-        { etiqueta: 'Pintura hidrófuga de fachadas', nombre: 'O.MATAS PINT.HIDRAFUGA FACHADAS 20 L.INVISIBLE', precio: '89,41 €' },
+        { etiqueta: 'Esmalte antioxidante efecto martelé', nombre: 'OXIRON MARTELE 750 ML BLANCO (2966)', ref: '8414800051292', precio: '18,39 €' },
+        { etiqueta: 'Pintura hidrófuga de fachadas', nombre: 'O.MATAS PINT.HIDRAFUGA FACHADAS 20 L.INVISIBLE', ref: '1381605', precio: '89,41 €' },
       ],
       // Selector interactivo: elige sobre qué va a pintar y se le
       // recomienda la pintura real correspondiente.
       selectorSuperficie: {
         pregunta: '¿Sobre qué vas a pintar?',
         opciones: [
-          { id: 'metal', label: 'Metal o hierro (verjas, barandillas, mobiliario)', nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', motivo: 'Esmalte "3 en 1": imprimación, color y protección antioxidante en un solo producto, aplicable incluso sobre algo de óxido superficial.' },
-          { id: 'madera_exterior', label: 'Madera de exterior (puertas, ventanas, mobiliario de jardín)', nombre: 'BARNIZ TITAN INTEMP. BRILLO 750 ML.INCOL.', motivo: 'Barniz de intemperie: protege frente al sol y la humedad, las dos causas principales de deterioro de la madera exterior.' },
-          { id: 'fachada', label: 'Fachada exterior', nombre: 'O.MATAS PINT.HIDRAFUGA FACHADAS 20 L.INVISIBLE', motivo: 'Pintura hidrófuga: repele el agua de lluvia dejando que el muro siga transpirando, evitando que se quede humedad atrapada dentro.' },
+          { id: 'metal', label: 'Metal o hierro (verjas, barandillas, mobiliario)', nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', ref: '8430078020136', motivo: 'Esmalte "3 en 1": imprimación, color y protección antioxidante en un solo producto, aplicable incluso sobre algo de óxido superficial.' },
+          { id: 'madera_exterior', label: 'Madera de exterior (puertas, ventanas, mobiliario de jardín)', nombre: 'BARNIZ TITAN INTEMP. BRILLO 750 ML.INCOL.', ref: '8414800421644', motivo: 'Barniz de intemperie: protege frente al sol y la humedad, las dos causas principales de deterioro de la madera exterior.' },
+          { id: 'fachada', label: 'Fachada exterior', nombre: 'O.MATAS PINT.HIDRAFUGA FACHADAS 20 L.INVISIBLE', ref: '1381605', motivo: 'Pintura hidrófuga: repele el agua de lluvia dejando que el muro siga transpirando, evitando que se quede humedad atrapada dentro.' },
         ],
       },
       relatedSolutions: ['eliminar-oxido-metal', 'proteger-madera-exterior', 'pintar-fachada-exterior', 'pintar-metal-antioxidante-interior-exterior'],
@@ -4788,21 +4788,21 @@ window.SOLUCIONES_DATA = (function () {
         'Comprar una talla de mono demasiado ajustada, que se rompe con los movimientos.',
       ],
       recommendedProducts: [
-        { nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-L', categoria: 'Talleres', formato: 'Talla L', precio: '8,71 €' },
-        { nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', categoria: 'Protección personal', formato: '50 uds', precio: '20,27 €' },
+        { nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-L', ref: '8028147', categoria: 'Talleres', formato: 'Talla L', precio: '8,71 €' },
+        { nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', ref: '8430961390018', categoria: 'Protección personal', formato: '50 uds', precio: '20,27 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Talla M del mono desechable', nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-M', precio: '8,71 €' },
-        { etiqueta: 'Protección respiratoria para pintura', nombre: '.MASCARA PARA PINTURA FFA1P2 REF. 06941', precio: '38,05 €' },
+        { etiqueta: 'Talla M del mono desechable', nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-M', ref: '8028146', precio: '8,71 €' },
+        { etiqueta: 'Protección respiratoria para pintura', nombre: '.MASCARA PARA PINTURA FFA1P2 REF. 06941', ref: '6086001', precio: '38,05 €' },
       ],
       // Selector interactivo: elige qué parte necesita proteger y se le
       // recomienda el EPI real correspondiente.
       selectorSuperficie: {
         pregunta: '¿Qué necesitas proteger?',
         opciones: [
-          { id: 'cuerpo', label: 'El cuerpo (salpicaduras de pintura o químicos)', nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-L', motivo: 'Mono desechable de alta protección — cubre todo el cuerpo frente a salpicaduras al pintar con pistola o manipular químicos.' },
-          { id: 'manos', label: 'Las manos', nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', motivo: 'Guantes resistentes de un solo uso, en formato caja para poder cambiarlos con frecuencia.' },
-          { id: 'respiratoria', label: 'Las vías respiratorias (al pintar con pistola)', nombre: '.MASCARA PARA PINTURA FFA1P2 REF. 06941', motivo: 'Máscara específica para pintura, con filtro FFA1P2 — protege frente a los vapores del disolvente y la pintura al pulverizar.' },
+          { id: 'cuerpo', label: 'El cuerpo (salpicaduras de pintura o químicos)', nombre: '.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-L', ref: '8028147', motivo: 'Mono desechable de alta protección — cubre todo el cuerpo frente a salpicaduras al pintar con pistola o manipular químicos.' },
+          { id: 'manos', label: 'Las manos', nombre: 'GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL', ref: '8430961390018', motivo: 'Guantes resistentes de un solo uso, en formato caja para poder cambiarlos con frecuencia.' },
+          { id: 'respiratoria', label: 'Las vías respiratorias (al pintar con pistola)', nombre: '.MASCARA PARA PINTURA FFA1P2 REF. 06941', ref: '6086001', motivo: 'Máscara específica para pintura, con filtro FFA1P2 — protege frente a los vapores del disolvente y la pintura al pulverizar.' },
         ],
       },
       relatedSolutions: ['problemas-pulverizacion-pistola', 'elegir-pistola-pintar'],
@@ -4853,14 +4853,14 @@ window.SOLUCIONES_DATA = (function () {
         'Usar un disolvente genérico en vez del específico para pintura de piscinas.',
       ],
       recommendedProducts: [
-        { nombre: 'GLOBALPOOL P.PISCINAS CLOROCAUCHO 15 L.AZUL', categoria: 'Piscinas', formato: '15 L', precio: '74,81 €' },
-        { nombre: 'BAIXENS B-14 REPARADOR PISCINAS PTE.1 KG.', categoria: 'Piscinas', formato: '1 kg', precio: '3,81 €' },
-        { nombre: 'DISOLVENTE PISCINAS TOLLENS 1 L.', categoria: 'Piscinas', formato: '1 L', precio: '10,22 €' },
+        { nombre: 'GLOBALPOOL P.PISCINAS CLOROCAUCHO 15 L.AZUL', ref: '8436558049703', categoria: 'Piscinas', formato: '15 L', precio: '74,81 €' },
+        { nombre: 'BAIXENS B-14 REPARADOR PISCINAS PTE.1 KG.', ref: '8425593008776', categoria: 'Piscinas', formato: '1 kg', precio: '3,81 €' },
+        { nombre: 'DISOLVENTE PISCINAS TOLLENS 1 L.', ref: '8410549603587', categoria: 'Piscinas', formato: '1 L', precio: '10,22 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Renovador para piscinas ya pintadas', nombre: 'GLOBALPOOL RENOVA 4 L.BLANCO', precio: '47,18 €' },
-        { etiqueta: 'Pintura al agua (más fácil de aplicar)', nombre: 'TOLLENS PINT.PISCINAS BASE AGUA 4 L.AZUL MARINO', precio: '29,67 €' },
-        { etiqueta: 'Reparador en formato grande', nombre: 'BAIXENS B-14 REPARADOR PISCINAS SACO 5 KG.', precio: '17,53 €' },
+        { etiqueta: 'Renovador para piscinas ya pintadas', nombre: 'GLOBALPOOL RENOVA 4 L.BLANCO', ref: '8436616978037', precio: '47,18 €' },
+        { etiqueta: 'Pintura al agua (más fácil de aplicar)', nombre: 'TOLLENS PINT.PISCINAS BASE AGUA 4 L.AZUL MARINO', ref: '8410549098994', precio: '29,67 €' },
+        { etiqueta: 'Reparador en formato grande', nombre: 'BAIXENS B-14 REPARADOR PISCINAS SACO 5 KG.', ref: '8425593009803', precio: '17,53 €' },
       ],
       relatedSolutions: ['mantenimiento-piscina', 'tratamiento-choque-piscina'],
       seo: {
@@ -4906,22 +4906,22 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar la pintura antes de que la imprimación esté seca.',
       ],
       recommendedProducts: [
-        { nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', categoria: 'Talleres', formato: '400 ml', precio: '11,39 €' },
-        { nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', categoria: 'Pintura', formato: '750 ml', precio: '13,38 €' },
+        { nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', ref: '140114055', categoria: 'Talleres', formato: '400 ml', precio: '11,39 €' },
+        { nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', ref: '8429656084783', categoria: 'Pintura', formato: '750 ml', precio: '13,38 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Imprimación específica para plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', precio: '65,62 €' },
-        { etiqueta: 'Imprimación fijadora universal', nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', precio: '25,16 €' },
+        { etiqueta: 'Imprimación específica para plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', ref: '3452571642023', precio: '65,62 €' },
+        { etiqueta: 'Imprimación fijadora universal', nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', ref: '8425593110011', precio: '25,16 €' },
       ],
       // Selector interactivo: elige la superficie y se le recomienda la
       // imprimación real correspondiente.
       selectorSuperficie: {
         pregunta: '¿Sobre qué superficie vas a aplicar la imprimación?',
         opciones: [
-          { id: 'metal', label: 'Metal o hierro', nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', motivo: 'Imprimación de zinc-aluminio en spray: mejora la adherencia y protege frente al óxido en metal desnudo.' },
-          { id: 'madera_porosa', label: 'Madera o superficie porosa', nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', motivo: 'Sella los poros de la madera para que la pintura no se absorba de forma irregular.' },
-          { id: 'plastico', label: 'Plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', motivo: 'Imprimación específica para plástico — sin ella, la pintura apenas se agarra a esta superficie tan lisa.' },
-          { id: 'superficie_dificil', label: 'Superficie muy lisa, brillante o donde ya ha fallado antes', nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', motivo: 'Fijador universal para mejorar la adherencia en superficies difíciles donde la pintura normal no se agarra bien.' },
+          { id: 'metal', label: 'Metal o hierro', nombre: '.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057', ref: '140114055', motivo: 'Imprimación de zinc-aluminio en spray: mejora la adherencia y protege frente al óxido en metal desnudo.' },
+          { id: 'madera_porosa', label: 'Madera o superficie porosa', nombre: 'XYLAZEL TAPAPOROS AL AGUA 750 ML.', ref: '8429656084783', motivo: 'Sella los poros de la madera para que la pintura no se absorba de forma irregular.' },
+          { id: 'plastico', label: 'Plástico', nombre: '.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.', ref: '3452571642023', motivo: 'Imprimación específica para plástico — sin ella, la pintura apenas se agarra a esta superficie tan lisa.' },
+          { id: 'superficie_dificil', label: 'Superficie muy lisa, brillante o donde ya ha fallado antes', nombre: 'FIJAPREN RX-500 FIJADOR AL AGUA 5 L.', ref: '8425593110011', motivo: 'Fijador universal para mejorar la adherencia en superficies difíciles donde la pintura normal no se agarra bien.' },
         ],
       },
       relatedSolutions: ['solucionar-problemas-pintura-aplicacion', 'preparar-pieza-taller-antes-pintar', 'eliminar-oxido-metal'],
@@ -4985,8 +4985,8 @@ window.SOLUCIONES_DATA = (function () {
         ],
       },
       recommendedProducts: [
-        { nombre: 'TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE', categoria: 'Pintura', formato: '1 L', precio: '8,54 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
-        { nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', categoria: 'Pintura', formato: '750 ml', precio: '17,67 €' },
+        { nombre: 'TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE', ref: '8414800419221', categoria: 'Pintura', formato: '1 L', precio: '8,54 €', fichaTecnica: 'https://msp.images.akzonobel.com/prd/dh/eesbdm/documents/b7/70/6e/2c/tp_p60_vinilica_premium_mate_00_00_00_ftecnicaes.pdf' },
+        { nombre: 'HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO', ref: '8430078020136', categoria: 'Pintura', formato: '750 ml', precio: '17,67 €' },
       ],
       alternativeProducts: [],
       relatedSolutions: ['pintar-pared-interior', 'pintar-fachada-exterior', 'suelo-epoxi-garaje', 'eliminar-oxido-metal', 'restaurar-mueble-madera'],
@@ -5804,9 +5804,32 @@ window.SOLUCIONES_DATA = (function () {
   // imagen y referencia reales en vez del antiguo botón "Ver producto".
   // Devuelve null si no encuentra una coincidencia razonablemente segura
   // (mejor no mostrar nada real que mostrar un producto equivocado).
-  function resolverProductoReal(nombreMock) {
+  // Bug real reportado por Eloy: los productos recomendados/alternativos
+  // de una guía se identificaban SOLO por nombre (coincidencia exacta →
+  // inclusión → ranking de palabras) — nunca por referencia. Esto es
+  // frágil de dos formas: (1) si el nombre real del producto cambia
+  // aunque sea un poco en el catálogo, la coincidencia puede dejar de
+  // encontrarse (y la guía cae al precio "mock" congelado en el momento
+  // en que se escribió, que nunca se actualiza); (2) el ranking por
+  // palabras puede coincidir con un producto DISTINTO al que se quiso
+  // decir. refConocida (opcional, viene de recommendedProducts[].ref /
+  // alternativeProducts[].ref si la guía la tiene guardada) se comprueba
+  // PRIMERO — una referencia es exacta por definición, nunca ambigua, y
+  // sigue funcionando aunque el nombre del producto cambie por completo
+  // — así el precio/imagen que se muestra es siempre el real y actual
+  // del catálogo, nunca uno congelado. Si no hay refConocida, o el
+  // producto de esa referencia ya no existe (dado de baja, referencia
+  // mal escrita a mano...), se cae al emparejamiento por nombre de
+  // siempre, sin cambios — nunca deja de funcionar para las guías que
+  // todavía no tengan refs guardadas.
+  function resolverProductoReal(nombreMock, refConocida) {
     const nombreNorm = normalizarTexto(nombreMock);
     return cargarCatalogoReal().then((productos) => {
+      if (refConocida) {
+        const porRef = productos.find((p) => p.ref === refConocida);
+        if (porRef) return porRef;
+      }
+
       // 1) Coincidencia exacta (varias soluciones ya usan el nombre real
       //    tal cual, copiado directamente del catálogo al redactarlas).
       const exacto = productos.find((p) => normalizarTexto(p.nombre) === nombreNorm);
