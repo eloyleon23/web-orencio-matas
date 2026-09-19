@@ -6131,6 +6131,15 @@ function actualizarProductoEnJsonRemoto(referencia, camposActualizados) {
 const CORREO_CRM_REMITENTE   = 'correo@orenciomatas.es';
 const CORREO_CRM_ASUNTO      = 'Listado de productos actualizado';
 const CORREO_CRM_ETIQUETA    = 'CRM-Listado-Procesado';
+// Resumen automático tras sincronizar con el CRM (nuevos/actualizados/
+// errores) — a la corporativa, con la personal de Eloy en copia para
+// que también le llegue a él. Distinto del envío bajo demanda del Excel
+// de productos sin imagen (ver CORREO_RESUMEN_DESTINO más abajo, sin
+// tocar — es una acción manual y separada, Eloy no ha pedido cambiarla).
+const CORREO_RESUMEN_CRM_TO = 'correo@orenciomatas.es';
+const CORREO_RESUMEN_CRM_CC = 'eloyleon23@gmail.com';
+// Envío bajo demanda del Excel de productos sin imagen (menú de la
+// Sheet) — acción manual y separada del resumen automático de arriba.
 const CORREO_RESUMEN_DESTINO = 'eloyleon23@gmail.com';
 
 // Ejecutar manualmente desde el editor para (re)crear el disparador
@@ -6214,14 +6223,14 @@ function revisarCorreoListadoProductosManual() {
 
   if (!resultado.exito) {
     avisar_('Sincronización con problemas', 'Se encontró un correo del CRM, pero no se pudo sincronizar:\n\n' +
-      resultado.mensaje + '\n\nTambién se ha enviado un correo con este detalle a ' + CORREO_RESUMEN_DESTINO + '.');
+      resultado.mensaje + '\n\nTambién se ha enviado un correo con este detalle a ' + CORREO_RESUMEN_CRM_TO + ' (copia a ' + CORREO_RESUMEN_CRM_CC + ').');
     return { huboCorreo: true, exito: false, mensaje: resultado.mensaje };
   }
 
   const r = resultado.resultado;
   avisar_('Sincronización completada',
     `Nuevos: ${r.nuevos} | Actualizados: ${r.actualizados} | Saltados: ${r.saltados} | Errores: ${r.errores}\n\n` +
-    'Resumen completo enviado a ' + CORREO_RESUMEN_DESTINO + '.');
+    'Resumen completo enviado a ' + CORREO_RESUMEN_CRM_TO + ' (copia a ' + CORREO_RESUMEN_CRM_CC + ').');
   return { huboCorreo: true, exito: true, ...r };
 }
 
@@ -6349,7 +6358,8 @@ function enviarResumenSincronizacionCRM_(resultado) {
 
   if (resultado.error) {
     MailApp.sendEmail({
-      to: CORREO_RESUMEN_DESTINO,
+      to: CORREO_RESUMEN_CRM_TO,
+      cc: CORREO_RESUMEN_CRM_CC,
       subject: '❌ Sincronización de productos FALLIDA — ' + fecha,
       body: 'La sincronización automática de productos desde el correo del CRM ha fallado.\n\n' +
         'Error: ' + resultado.error + '\n\n' +
@@ -6383,26 +6393,12 @@ function enviarResumenSincronizacionCRM_(resultado) {
     ? `⚠️ Sincronización de productos completada con errores — ${fecha}`
     : `✓ Sincronización de productos completada — ${fecha}`;
 
-  // Adjuntar un Excel ya listo con los productos sin foto (nuevos y
-  // cualesquiera otros pendientes) — así el siguiente paso (lanzar
-  // buscar_imagenes_excel.py) no requiere ir a exportar y filtrar el
-  // Sheet a mano primero. Si por lo que sea falla la generación del
-  // Excel, no se corta el envío del resumen — se manda igualmente sin
-  // adjunto, ya que la información del cuerpo del correo sigue siendo
-  // útil por sí sola.
-  let adjuntos = [];
-  try {
-    const excelSinImagen = generarExcelProductosSinImagen_();
-    if (excelSinImagen) {
-      adjuntos.push(excelSinImagen.blob);
-      cuerpo += `Adjunto: ${excelSinImagen.total} productos sin foto listos para ` +
-        `buscar_imagenes_excel.py (incluye los nuevos de hoy y cualquier otro pendiente).\n\n`;
-    }
-  } catch (e) {
-    console.error('No se pudo generar el Excel de productos sin imagen: ' + e.message);
-  }
-
-  MailApp.sendEmail({ to: CORREO_RESUMEN_DESTINO, subject: asunto, body: cuerpo, attachments: adjuntos });
+  // Sin adjunto de Excel a propósito (petición explícita de Eloy: "quiero
+  // que quites de ese correo el excel que se envía adjunta con productos
+  // sin imagen. Solo quiero el resumen..."). generarExcelProductosSinImagen_()
+  // sigue existiendo y usándose igual en su propio envío bajo demanda
+  // (menú de la Sheet, ver más abajo) — aquí simplemente ya no se llama.
+  MailApp.sendEmail({ to: CORREO_RESUMEN_CRM_TO, cc: CORREO_RESUMEN_CRM_CC, subject: asunto, body: cuerpo });
 }
 
 // ── Enviar Excel de productos sin imagen bajo demanda (desde el menú) ─────
