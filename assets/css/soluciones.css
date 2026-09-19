@@ -1275,6 +1275,8 @@
 .cs-producto-card__nombre { flex-grow: 1; }
 .cs-producto-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
 .cs-producto-card--cargando { opacity: 0.6; }
+.cs-producto-card--esqueleto { cursor: default; }
+.cs-producto-card--esqueleto:hover { transform: none; box-shadow: var(--shadow-subtle); }
 .cs-producto-card__imagen-wrap {
   display: flex;
   align-items: center;

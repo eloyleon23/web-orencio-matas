@@ -50,6 +50,29 @@
     return parseFloat((precioStr || '0').replace('€', '').replace(',', '.').trim()) || 0;
   }
 
+  // Tarjetas esqueleto para "Productos que necesitas" mientras se
+  // resuelven de verdad contra el catálogo — antes ese hueco se quedaba
+  // completamente en blanco hasta que terminaba la resolución (podía
+  // notarse con una conexión lenta), y no había ninguna señal de que
+  // algo estuviera cargando. Mismas clases .cs-esqueleto ya usadas para
+  // esto mismo en "Problemas frecuentes" de la home del Centro de
+  // Soluciones (brillo animado, no un spinner giratorio — mejor UX para
+  // una rejilla de tarjetas: no hay salto brusco de layout cuando llega
+  // el contenido real, porque el hueco ya tiene más o menos la forma
+  // correcta desde el principio).
+  function skeletonProductos(n) {
+    const cantidad = Math.max(1, Math.min(n || 3, 8));
+    return Array.from({ length: cantidad }).map(() => `
+      <div class="cs-producto-card cs-producto-card--esqueleto">
+        <div class="cs-esqueleto" style="height:120px; border-radius:var(--radius-small); margin-bottom:14px;"></div>
+        <div class="cs-esqueleto" style="height:18px; width:60%; border-radius:999px; margin-bottom:10px;"></div>
+        <div class="cs-esqueleto" style="height:14px; width:90%; border-radius:99px; margin-bottom:6px;"></div>
+        <div class="cs-esqueleto" style="height:14px; width:75%; border-radius:99px; margin-bottom:14px;"></div>
+        <div class="cs-esqueleto" style="height:20px; width:40%; border-radius:99px;"></div>
+      </div>
+    `).join('');
+  }
+
   function render() {
     const params = new URLSearchParams(window.location.search);
     const slug = params.get('slug') || 'pintar-plastico-coche';
@@ -389,7 +412,7 @@
             <p class="section-heading__eyebrow">Ya sabes qué hacer</p>
             <h2>Productos que necesitas</h2>
           </div>
-          <div class="cs-productos-grid" id="cs-productos-recomendados"></div>
+          <div class="cs-productos-grid" id="cs-productos-recomendados">${skeletonProductos(sol.recommendedProducts.length)}</div>
           <div class="cs-exportar-bar">
             <p id="cs-total-productos">Total ${sol.recommendedProducts.length} productos* · <span class="precio-total">${sumaPrecios(sol.recommendedProducts)} €*</span></p>
             <p class="cs-total-disclaimer">* Precios y productos indicativos y orientativos. La cantidad, el formato y el precio final pueden variar; consulte con nuestro profesional en tienda.</p>
