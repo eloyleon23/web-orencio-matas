@@ -241,12 +241,14 @@
         .filtro-grupo.collapsable.collapsed label.titulo::after {
             transform: rotate(-90deg);
         }
-        .filtro-grupo.collapsable .familias-lista {
+        .filtro-grupo.collapsable .familias-lista,
+        .filtro-grupo.collapsable .rango-fechas {
             transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
             max-height: 220px;
             opacity: 1;
         }
-        .filtro-grupo.collapsable.collapsed .familias-lista {
+        .filtro-grupo.collapsable.collapsed .familias-lista,
+        .filtro-grupo.collapsable.collapsed .rango-fechas {
             max-height: 0;
             opacity: 0;
             overflow: hidden;
@@ -720,6 +722,23 @@
             border-radius: 8px;
             /* 16px evita el zoom automático de iOS al enfocar */
             font-size: 16px;
+        }
+
+        .rango-fechas {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 8px 2px 2px;
+        }
+        .rango-fechas .campo-fecha { display: flex; flex-direction: column; gap: 4px; }
+        .rango-fechas .campo-fecha span { font-size: 0.78rem; color: var(--muted); }
+        .rango-fechas input[type="date"] {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px; /* evita el zoom automático de iOS al enfocar, igual que el rango de precio */
         }
 
         .check-oferta {
@@ -3234,6 +3253,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
+        <!-- Plegado por defecto (petición explícita) — el usuario lo
+             despliega si quiere acotar por fecha de alta. Las fechas se
+             precargan con el rango real de lo que se está viendo en ese
+             momento (ver aplicarFiltros/fechaFiltroTocado), así que quien
+             lo despliega ya ve de entrada cuál es el rango actual antes
+             de tocar nada. -->
+        <div class="filtro-grupo collapsable collapsed" id="grupo-fecha-alta">
+            <label class="titulo">Fecha de alta</label>
+            <div class="rango-fechas">
+                <label class="campo-fecha"><span>Desde</span><input type="date" id="f-fecha-desde"></label>
+                <label class="campo-fecha"><span>Hasta</span><input type="date" id="f-fecha-hasta"></label>
+            </div>
+        </div>
+
         <div class="filtro-grupo" style="display: none;">
             <label class="check-oferta">
                 <input type="checkbox" id="f-oferta">
@@ -3959,6 +3992,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     let FAMILIAS_ORDEN = {}; // {familia: orden}
     let SUBFAMILIAS_ORDEN = {}; // {familia: {subfamilia: orden}}
     let resultadosActuales = []; // tras aplicar filtros
+
+    // ── Filtro de fecha de alta ──────────────────────────────────────────
+    // false mientras el usuario no haya tocado a mano ninguno de los dos
+    // campos: en ese estado, aplicarFiltros() recalcula el rango cada vez
+    // según los resultados actuales (ver más abajo) — en cuanto el usuario
+    // cambia un campo, se congela su elección y deja de recalcularse.
+    let fechaFiltroTocado = false;
+    function formatearFechaInput(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
     // Texto de búsqueda para el que hay resultados de IA vigentes
     // mostrados (null si no hay ninguno). Se usa para no perder esos
     // resultados si renderResultados() se vuelve a ejecutar por
@@ -4842,6 +4888,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         $('f-orden').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+        ['f-fecha-desde', 'f-fecha-hasta'].forEach(id => {
+            $(id).addEventListener('change', () => {
+                fechaFiltroTocado = true;
+                resetPaginacion();
+                aplicarFiltros();
+            });
+        });
         
         // Mostrar bloque de gestión de imágenes si está activado en configuración
         if (window.MOSTRAR_FILTRO_IMAGENES_REVISADAS) {
@@ -5615,6 +5668,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-precio-min').value = '';
         $('f-precio-max').value = '';
         $('f-orden').value = '';
+        $('f-fecha-desde').value = '';
+        $('f-fecha-hasta').value = '';
+        fechaFiltroTocado = false; // vuelve a precargarse solo en el siguiente aplicarFiltros()
         $('f-oferta').checked = false;
         $('f-imagenes-validadas').checked = false;
         $('f-tiene-imagen').checked = false;
@@ -5786,6 +5842,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
             return true;
         });
+
+        // Precarga/recalculo del rango de fechas — solo mientras el
+        // usuario no lo haya tocado a mano (petición explícita: "que
+        // vengan precargados con la fecha de inicio menor de los
+        // resultados que se muestran con los criterios actuales y como
+        // fecha mayor siempre la actual"). Se calcula sobre
+        // resultadosActuales YA filtrado por todo lo demás (arriba), pero
+        // TODAVÍA sin aplicar este filtro de fecha en sí — así refleja de
+        // verdad "lo que se está viendo ahora", no el catálogo completo
+        // ni un resultado ya recortado por fecha.
+        if (!fechaFiltroTocado) {
+            const fechasValidas = resultadosActuales.map(p => parseFecha(p.fecha)).filter(f => f > 0);
+            if (fechasValidas.length) {
+                $('f-fecha-desde').value = formatearFechaInput(new Date(Math.min(...fechasValidas)));
+            }
+            $('f-fecha-hasta').value = formatearFechaInput(new Date());
+        }
+        const fechaDesde = $('f-fecha-desde').value;
+        const fechaHasta = $('f-fecha-hasta').value;
+        if (fechaDesde || fechaHasta) {
+            resultadosActuales = resultadosActuales.filter(p => {
+                const f = parseFecha(p.fecha);
+                if (!f) return false; // sin fecha conocida -> no se puede evaluar el rango
+                if (fechaDesde && f < new Date(fechaDesde + 'T00:00:00').getTime()) return false;
+                if (fechaHasta && f > new Date(fechaHasta + 'T23:59:59').getTime()) return false;
+                return true;
+            });
+        }
 
         // Si no hay texto de búsqueda activo: priorizar últimos añadidos/editados (fecha_registro)
         if (!texto) {
@@ -6745,6 +6829,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         { tipo: 'texto',           id: 'f-precio-max',      param: 'pmax' },
         { tipo: 'checkbox-simple', id: 'f-oferta',          param: 'oferta' },
         { tipo: 'select',          id: 'f-orden',           param: 'orden' },
+        { tipo: 'texto',           id: 'f-fecha-desde',     param: 'fdesde' },
+        { tipo: 'texto',           id: 'f-fecha-hasta',     param: 'fhasta' },
         { tipo: 'checkbox-grupo',  contId: 'f-acabado',        param: 'acabado' },
         { tipo: 'checkbox-grupo',  contId: 'f-formato',        param: 'formato' },
         { tipo: 'checkbox-grupo',  contId: 'f-talla-taller',   param: 'talla' },
@@ -6839,6 +6925,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             else if (c.tipo === 'checkbox-simple') $(c.id).checked = (valor === '1');
             else if (c.tipo === 'checkbox-grupo') pendientes[c.contId] = valor.split('|');
         });
+
+        // Si el enlace trae una fecha concreta, se respeta tal cual (no se
+        // debe recalcular/sobrescribir con el rango automático) — mismo
+        // criterio que cuando el usuario las toca a mano. Se despliega el
+        // grupo, plegado por defecto, para que se vea de entrada sin tener
+        // que desplegarlo aparte.
+        if (params.has('fdesde') || params.has('fhasta')) {
+            fechaFiltroTocado = true;
+            $('grupo-fecha-alta').classList.remove('collapsed');
+        }
 
         const marcar = (contId) => {
             if (!pendientes[contId]) return;
