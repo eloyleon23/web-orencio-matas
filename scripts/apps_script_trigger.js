@@ -56,6 +56,7 @@ function onOpen() {
     .addItem('🔄 Regenerar caché completa del buscador', 'regenerarCacheCompletaManual')
     .addItem('🏪 Regenerar caché de Escaparate OM', 'regenerarCacheCampanasManual')
     .addItem('🧭 Regenerar caché del Centro de Soluciones', 'regenerarCacheSolucionesManual')
+    .addItem('🏷️ Añadir referencias a productos recomendados (una vez)', 'backfillRefsProductosRecomendados')
     .addItem('🔗 Importar sugerencias de relacionados', 'importarSugerenciasRelacionados')
     .addItem('🔓 Compartir imágenes Drive públicamente', 'compartirImagenesDrive')
     .addItem('✅ Validar imagen de producto', 'validarImagenManual')
@@ -4266,6 +4267,368 @@ function regenerarCacheSolucionesManual() {
   }
 }
 
+// ── Backfill de referencias en productos recomendados (una sola vez) ───────
+// Eloy: "en productos recomendados no veo el código de producto o
+// referencia y debería ir con eso" — el arreglo de resolverProductoReal()
+// (que ahora prioriza la referencia sobre el nombre, ver soluciones-data.js)
+// ya está en el código, pero el JSON que vive en la hoja real "Soluciones"
+// del Sheet se generó ANTES de calcular esas referencias, así que ninguna
+// guía las tiene todavía ahí — el código de la web nunca puede escribir
+// directamente en el Sheet del usuario, así que hace falta esta función
+// para aplicarlo de verdad sobre los datos reales.
+//
+// MAPA_REFS_BACKFILL_ se generó comparando el nombre "mock" de cada
+// producto recomendado contra el catálogo real (coincidencia exacta o por
+// inclusión, nunca el ranking más débil) — mismo cálculo ya verificado a
+// mano una vez sobre el código. Aplica el ref SOLO cuando la entrada
+// todavía no tiene uno propio, así que:
+//   - Es seguro ejecutarla varias veces (no vuelve a tocar lo que ya tiene ref).
+//   - NUNCA sobrescribe ninguna otra edición que hayas hecho a mano desde
+//     "Gestionar soluciones" (nombre, precio, productos añadidos o
+//     quitados, orden...) — solo añade el campo "ref" donde falte y el
+//     nombre coincide con algo del mapa, todo lo demás de cada guía se
+//     queda exactamente igual que está ahora en tu Sheet.
+//   - Si has renombrado o cambiado por completo un producto recomendado
+//     desde que se generó este mapa, esa entrada en concreto simplemente
+//     no encontrará coincidencia y se queda como está — no es un error.
+const MAPA_REFS_BACKFILL_ = {
+  'pintar-plastico-coche||ASEVI DESENGRASANTE 750 ML.PISTOLA': '8411582261345',
+  'pintar-plastico-coche||LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972': '6016155',
+  'pintar-plastico-coche||R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.': '3452571642023',
+  'pintar-plastico-coche||Barniz 2K': '140114041',
+  'eliminar-oxido-metal||CEPILLO METALICO BRICOLAJE TENAJERO RF.11910': '8431771119103',
+  'eliminar-oxido-metal||AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057': '140114055',
+  'pintar-metal-antioxidante-interior-exterior||BROCHA PRENSADA ESSENTIAL COMPETIDOR S-10 Nº 10': '8420118910107',
+  'pintar-metal-antioxidante-interior-exterior||.CINTA FINA NARANJA ZAPHIRO 18MM X 50M': '8068041',
+  'pintar-metal-antioxidante-interior-exterior||RODILLO ESP/FACHADAS SUPER FELPON 22 CMS.': '842011879106',
+  'pintar-metal-antioxidante-interior-exterior||.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.': '140514012',
+  'restaurar-mueble-madera||TITAN DECAPANTE GEL PROFESIONAL 1 LL.': '8414800805512',
+  'restaurar-mueble-madera||Masilla para madera': '8414800101935',
+  'restaurar-mueble-madera||BARNIZ TITAN ECO SATIN.750 ML.TECA': '8414800422009',
+  'igualar-color-madera-barniz||XYLAZEL TAPAPOROS AL AGUA 750 ML.': '8429656084783',
+  'igualar-color-madera-barniz||BARNIZ TITAN ECO SATIN.750 ML.NOGAL': '8414800421941',
+  'igualar-color-madera-barniz||BARNIZ TITANLUX SATINADO 750 ML.ROBLE': '8414800421422',
+  'igualar-color-madera-barniz||BARNIZ TITANLUX SATINADO 750 ML.CAOBA': '8414800421477',
+  'igualar-color-madera-barniz||BARNIZ TITAN ECO SATIN.750 ML.TECA': '8414800422009',
+  'recuperar-brillo-carroceria||PLASTILINA LIMPIEZA ZAPHIRO 200 ML.': '8118034',
+  'recuperar-brillo-carroceria||PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.': '8436044961335',
+  'recuperar-brillo-carroceria||PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.': '140614009',
+  'sellar-juntas-bano||CEYS Silicona Stop Moho Tubo 125 ml Blanco': '8411519755664',
+  'sellar-juntas-bano||Sellaceys Silicona Cartucho 280 ml Translúcida': '8411519212259',
+  'sellar-juntas-bano||CEYS Sellaceys Cinta Selladora Hogar Blanco (sin pistola)': '8411519755701',
+  'suelo-epoxi-garaje||TITANTECH PXB-700 BASE EPOXI SUELOS 4 L.B.NEUT': '8414800435016',
+  'suelo-epoxi-garaje||TITANTECH PXB-700 ENDUREC.EPOXI SUELOS 1 L.': '8414800434187',
+  'suelo-epoxi-garaje||TITANTECH PXB700 BASE EPOXI SUELOS BN 0597 15 L.': '8414800435023',
+  'suelo-epoxi-garaje||TITANTECH PXB-700 EPOXI SUELOS 4 L.BLANCO': '8414800434996',
+  'mantenimiento-piscina||Astralpool Tiras Analíticas 3 en 1, 50 uds': '8435283928031',
+  'mantenimiento-piscina||ASTRALPOOL INCREMENT.DE PH 5 KG.': '8420381727297',
+  'mantenimiento-piscina||CTX 15 REDUCTOR PH PROF.20 L.73670': '8420381550246',
+  'tratamiento-choque-piscina||HIPOCLORITO SODICO 10 L.12 KG.ENVASE VERDE INCL.': '1401001',
+  'tratamiento-choque-piscina||HIPOCLORITO SODICO 20 L.25 KG.ENV.AZUL RETORNABLE': '1401083',
+  'tratamiento-choque-piscina||ASTRALPOOL TIRAS ANALITICAS 3 EN 1 50 UDS.41925': '8435283928031',
+  'tratamiento-choque-piscina||GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL': '8430961390018',
+  'tratamiento-choque-piscina||ASTRALPOOL INCREMENT.DE PH 5 KG.': '8420381727297',
+  'invernar-piscina||Astralpool Tiras Analíticas 3 en 1, 50 uds': '8435283928031',
+  'invernar-piscina||ASTRALPOOL INCREMENT.DE PH 5 KG.': '8420381727297',
+  'control-plagas-cocina||ARRIXACA INSECT.CUCARACHICIDA 750 ML.': '8410757502191',
+  'control-plagas-cocina||CUCAL TRAMPA CUCARACHAS EST.6 UNIDS.': '8436032711058',
+  'pintar-pared-interior||Masilla Plástica Kolman': '8426741004800',
+  'pintar-pared-interior||Imprimación Multiadherente al Agua Koman': '8426741131193',
+  'pintar-pared-interior||TITANPRO P-40 P.Acrílica Premium Mate 15 L. Blanco': '8414800394955',
+  'pintar-pared-interior||O.MATAS PINT.PLASTICA MATE PROF.750 ML.BLANCO': '8436616970048',
+  'pintar-pared-interior||O.MATAS PINT.PLASTICA MATE PREMIUM 15 L.BLANCO': '8436579261832',
+  'pintar-techo-pasta-temple||PASTA AL TEMPLE LISO SACO 22 KG.': '1381347',
+  'pintar-techo-pasta-temple||PASTA AL TEMPLE BOLSA 1 KG. BLANCA (S/20 bolsas)': '1381041',
+  'pintar-techo-pasta-temple||PASTA AL TEMPLE GRANEL SACO 22 KG.': '1381059',
+  'pintar-techo-pasta-temple||PASTA AL TEMPLE REFORZADA BOLSA 5 KG.BLA/CREMA': '1381301',
+  'pintar-techo-pasta-temple||PASTA AL TEMPLE GOTELE JAFEP 25 KG.': '1381569',
+  'pintar-techo-pasta-temple||PASTA AL TEMPLE BOLSA 5 KG. BLANCA (S/4 bolsas)': '1381190',
+  'desatascar-tuberia||Dirna Desatascador Turbo': '8428033000699',
+  'desatascar-tuberia||Paso Desatascador Gel Profesional': '8411519750010',
+  'desatascar-tuberia||Dirna Desatascador Concentrado Microperlas 375 g': '8428033000057',
+  'desatascar-tuberia||M.P.L. Activador Fosas Sépticas 400 g': '8436032039862',
+  'abrillantar-suelo-marmol||ASEVI FREGASUELOS CONCENT.1.150 ML.PH NEUTRO': '8411582211548',
+  'abrillantar-suelo-marmol||CASELLI A-9 ABRILLANTADOR 1,5 L.MARMOL/TERRAZO': '8410498170192',
+  'abrillantar-suelo-marmol||CASELLI A-9 ABRILLANTADOR 5 L.MARMOL/TERRAZO': '8410498170437',
+  'abrillantar-suelo-marmol||Alex Cera Incolora 750 ml': '8410033752104',
+  'eliminar-manchas-ropa||Espuma Limpiatapicerías Prof. Vinfer Spray 600 ml': '8410836222750',
+  'control-roedores||Nogat Raticida Estuche 6 sobres': '8410429003070',
+  'control-roedores||Portacebos P.K 078': '1431064',
+  'control-roedores||ROE-BLOCK PLUS MASSÓ RATICIDA 1 KG.': '8424084002392',
+  'control-roedores||Ratibrom ¡Zas! Trampa Ratas': '8413707067429',
+  'control-roedores||ROE-BLOCK MASSÓ BD DUPLO 260+260 GRS.': '8424084008745',
+  'cuidado-plantas-jardin||HUMUS DE LOMBRIZ ABONO LIQUIDO 1 L.': '1011076',
+  'cuidado-plantas-jardin||Impex Abono Universal 1 L': '8413707072447',
+  'cuidado-plantas-jardin||GESAL INSECT.ANTIHORMIGAS 500 GRS.': '8411056241118',
+  'proteger-ropa-polillas||POLIL COLGADOR ANTIPOLILLA DUPLO LAVANDA': '5000204171259',
+  'proteger-ropa-polillas||POLIL COLGADOR ANTIPOLILLA 4 UDS.LAVANDA': '5000204171341',
+  'proteger-ropa-polillas||POLIL COLGADOR ANTIPOLILLA 4 UDS.COLONIA': '5000204171372',
+  'proteger-ropa-polillas||ORION ANTIPOLILLA BOLAS BOLSA 20 UDS.LAVANDA': '8411660035240',
+  'proteger-bajos-antigravilla||Imprimación Chapa/Cristal Zaphiro': '140414009',
+  'sellar-luna-parabrisas||Kit Adhesivo Lunas Zaphiro': '140414010',
+  'sellar-luna-parabrisas||IMPRIMACION CHAPA/CRISTAL ZAPHIRO ZXS100 N 30ML.': '140414009',
+  'sellar-luna-parabrisas||.CINTA LUNAS TRIM-MASK ZAPHIRO 50 MM.x10 M': '8068031',
+  'pintar-fachada-exterior||TITAN-PRO R40 NF 100% ACRILICO MATE WHITE=WB 15 L.': '8429656090692',
+  'impermeabilizar-terraza-goteras||Aguastop Antigoteras Caucho Fibra': '8411519933062',
+  'impermeabilizar-terraza-goteras||REVEST.ANTIGOTERAS I-5 4 L.BLANCO': '8414800412895',
+  'impermeabilizar-terraza-goteras||TITAN REVEST.ANTIGOTERAS 1 L.BLANCO': '8414800136302',
+  'quitar-restos-pegamento||Disco Quita Adhesivos Zaphiro 88 mm': '8118059',
+  'quitar-restos-pegamento||Disolvente Universal M.P.L. Puro': '8436032033006',
+  'quitar-restos-pegamento||Acetona Kelsia': '8410088000403',
+  'quitar-restos-pegamento||ACETONA GRANEL GERDISA ENV.20 L.': '1411008',
+  'corregir-marcas-lijado||.LIJA AL AGUA ZAPHIRO P-2000': '140214060',
+  'corregir-marcas-lijado||.LIJA AL AGUA ZAPHIRO P-280': '140214190',
+  'decapar-pintura-mueble||Titan Decapante Gel Profesional': '8414800805512',
+  'decapar-pintura-mueble||Titan Decapante Gel Profesional 4 L': '8414800805529',
+  'pintar-metal-calor||OXIRON ANTICALORICO 750 ML.NEGRO': '8429656067403',
+  'pintar-metal-calor||.AK SPRAY ANTICALORICO 800º NEGRO 400 ML. 233099': '140114039',
+  'restaurar-faros-coche||KIT RESTAURACION FAROS C/POLIMERO ZAPHIRO CR03061': '140614026',
+  'restaurar-faros-coche||Spraymax Barniz 2K Óptica Faros 2en1': '140114041',
+  'restaurar-faros-coche||BODY LENS CLEAR SPRAY LACA FAROS 400 ML.': '8168034',
+  'proteger-madera-exterior||BARNIZ TITAN PROTEC.LASUR SATIN.750 ML.INCOL.': '8414800423143',
+  'proteger-madera-exterior||BARNIZ TITAN PROTEC.LASUR MATE 750 ML.ROBLE': '8414800423600',
+  'proteger-madera-exterior||BARNIZ TITAN PROTEC.LASUR ECO MATE 750 ML.INCOL.': '8414800423365',
+  'proteger-madera-exterior||PROTECTOR ECO LASUR MATE 4 L.INCOLORO 3800': '8414800423389',
+  'pintar-azulejos||TITANLUX AZULEJOS AGUA SATIN.750 ML.BLANCO': '8414800381306',
+  'eliminar-mosquitos||AUTAN MOSQUITOS 100 ML.SPRAY ULTRA REPELENTE': '5000204425918',
+  'eliminar-mosquitos||AUTAN KIDS REPELENTE DE INSECT.100 ML.VAP.': '5000204285772',
+  'elegir-pegamento-material||Ceys Pegamento Tuberías PVC': '8411519540017',
+  'elegir-pegamento-material||Cartucho Adhesivo para Césped Artificial': '8436555084615',
+  'elegir-pegamento-material||SUPER GLUE-3 3 GRS.': '8412432138312',
+  'limpiar-plata-metales||Tarni-Shield Limpia Plata': '8410001109725',
+  'limpiar-plata-metales||Paso Limpiador Acero Inox': '8411519730029',
+  'limpiar-plata-metales||AERHOGAR LIMPIAPLATA SPRAY 150 ML.': '8411322234059',
+  'usar-lejia-segura||Lejía Dos Castillas 5 L': '8414615020582',
+  'desinfectar-casa||ASEVI GERPOSTAR DESINF.MULTIUSOS 5 KG.PROF.': '8411582241620',
+  'elegir-pistola-pintar||JUEGO PISTOLAS GRAVEDAD WERKU HVLPP-I 125-600 ML.': '8424835006426',
+  'elegir-pistola-pintar||Pistola Gravedad Werku 1.7HP-600 ml': '8424835009397',
+  'elegir-pistola-pintar||Pistola Gravedad Werku Gotelé 6 L': '8424835001766',
+  'elegir-lijadora-superficie||LIJADORA CIRC.ROTORBITAL WK400100 4MM/150MM/710 W': '8424835006549',
+  'proteger-estructura-metalica-corrosion||Imprimación Epoxi Anticorrosiva SXB-200': '8414800429305',
+  'proteger-estructura-metalica-corrosion||TITANTECH EX-390 ESM.FORJA DTM 4 L.BASE INCOL.': '8414800428841',
+  'proteger-estructura-metalica-corrosion||TITANTECH SXB-200 END.EPOXI ANTICORROS.800 ML.': '8414800434064',
+  'proteger-estructura-acero-fuego||Titantech IX-085 Intumescente A85 25 kg': '8414800436389',
+  'hidrofugar-fachada-piedra-ladrillo||HIDROFUGANTE INVISIBLE AGUA S-40 4 L.INCOLORO': '8414800410006',
+  'hidrofugar-fachada-piedra-ladrillo||TITAN-PRO S-40 HIDROFUGANTE INVISIB.20 L.INCOL.': '8414800424782',
+  'hidrofugar-fachada-piedra-ladrillo||IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.': '8414800409963',
+  'reparar-fisuras-fachada-hormigon||IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.': '8414800409949',
+  'reparar-fisuras-fachada-hormigon||REVEST.ANTIFISURAS ELASTICO R-50 15 L.BLANCO MATE': '8414800403909',
+  'reparar-fisuras-fachada-hormigon||REVEST.ANTIFISURAS ELASTICO R-50 15 L.BASE NEUTRA': '8414800415148',
+  'reparar-fisuras-fachada-hormigon||IMPRIMACION FIJ.SUPER PENETRANTE S-20 10 L.': '8414800409956',
+  'proteger-fachada-mortero-monocapa||REVEST.ACRILICO R-10 LISO 4 L.BLANCO MATE': '8414800394887',
+  'proteger-fachada-mortero-monocapa||IMPRIMACION FIJ.SUPER PENETRANTE S-20 4 L.INCOL.': '8414800409949',
+  'tratar-fachada-humedad-capilaridad||IMPRIMACION FIJADOR SILOXANO S-30 4 L.INCOL.': '8414800409963',
+  'tratar-fachada-humedad-capilaridad||REVEST.TRANSP.SILOXANO R-60 15 L.BLANCO MATE': '8414800403886',
+  'tratar-fachada-humedad-capilaridad||IMPRIMACION FIJADOR SILOXANO S-30 10 L.INCOLORO': '8414800409970',
+  'tratar-fachada-humedad-capilaridad||IMPRIMACION FIJADOR SILOXANO S-30 4 L.BLANCO': '8414800409987',
+  'pintar-reja-verja-hierro||IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.BLANCA': '8414800410082',
+  'pintar-reja-verja-hierro||COLORLUX SATINADO C/POLIURET.4 L.NEGRO': '8414800413526',
+  'pintar-reja-verja-hierro||COLORLUX BRILLANTE C/POLIURET.4 L.NEGRO': '8414800413403',
+  'pintar-reja-verja-hierro||COLORLUX MATE C/POLIURETANO 4 L.NEGRO': '8414800413496',
+  'pintar-reja-verja-hierro||IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 4 L.GRIS': '8414800410105',
+  'pintar-reja-verja-hierro||IMPRIMACION ANTIOX.S-70 MULTIADHERENTE 750 ML.BLAN': '8414800410075',
+  'pintar-placas-pladur-yeso-laminado||TITAN-PRO S-60 PLACAS MULTIYESO 4 L.BL.MATE': '8414800410051',
+  'pintar-placas-pladur-yeso-laminado||TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO': '8414800395945',
+  'pintar-placas-pladur-yeso-laminado||TITAN-PRO S-60 P.PLACAS MULTIYESO 15 L.BL.MATE': '8414800410068',
+  'pintar-metal-oxidado-directo-oxiron||OXIRON LISO BRILLANTE 750 ML.NEGRO': '8414800444094',
+  'pintar-metal-oxidado-directo-oxiron||OXIRON LISO SATINADO 750 ML.NEGRO': '8414800444247',
+  'pintar-metal-oxidado-directo-oxiron||DESOXIDANTE TITAN MULTIUSOS 1 L.': '8414800067668',
+  'dar-acabado-forjado-metal-jardin||OXIRON FORJA 750 ML.NEGRO': '8414800440560',
+  'dar-acabado-forjado-metal-jardin||OXIRON PAVONADO 750 ML.NEGRO': '8414800440812',
+  'dar-acabado-forjado-metal-jardin||OXIRON MARTELE 750 ML.GRIS PLATA': '8429656065720',
+  'pintar-radiador-calefaccion||BRUGUER ESM.RADIADORES 750 ML.BLANCO': '8429656037482',
+  'pintar-radiador-calefaccion||MINIO SINTETICO TITANLUX MATE 750 ML.GRIS': '8429656081874',
+  'pintar-radiador-calefaccion||MINIO SINTETICO TITANLUX MATE 750 ML.NARANJA': '8429656081850',
+  'pintar-radiador-calefaccion||PALETINA RADIADOR Nº 18 CIRET': '8412227430188',
+  'pintar-radiador-calefaccion||AGUARRAS PINO KELSIA 750 ML.': '8410088000038',
+  'limpiar-moho-pared-azulejo||TITAN LIMPIADOR ANTIMOHO 500 ML.': '8429656084158',
+  'limpiar-moho-pared-azulejo||PASO ELIMINA MOHO 500 ML.PISTOLA': '8411519731019',
+  'limpiar-moho-pared-azulejo||LEJIA ACE 2 L.REGULAR': '8001480020429',
+  'eliminar-moho-pared-antes-pintar||TITAN LIMPIADOR ANTIMOHO 500 ML.': '8429656084158',
+  'eliminar-moho-pared-antes-pintar||TITAN P-60 P.VINILICA PREMIUM MATE 4 L.BLANCO': '8414800395945',
+  'eliminar-moho-pared-antes-pintar||LEJIA ACE 2 L.REGULAR': '8001480020429',
+  'eliminar-moho-pared-antes-pintar||TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE': '8414800419221',
+  'eliminar-moho-pared-antes-pintar||PINT.VINILICA P-60 PREMIUM 15 L.BASE NEUTRA': '8414800415216',
+  'solucionar-problemas-pintura-aplicacion||FIJAPREN RX-500 FIJADOR AL AGUA 5 L.': '8425593110011',
+  'solucionar-problemas-pintura-aplicacion||DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS': '8424835010515',
+  'solucionar-problemas-pintura-aplicacion||IMPRIMACION FIJADOR SILOXANO S-30 10 L.INCOLORO': '8414800409970',
+  'solucionar-problemas-pintura-aplicacion||FONDO FIJADOR D13 10 L.INCOLORO': '8414800070538',
+  'eliminar-grasa-desengrasar||ASEVI DESENGRASANTE 750 ML.PISTOLA': '8411582261345',
+  'eliminar-grasa-desengrasar||VOLGRASSS DESENGRASANTE 1 L.PISTOLA': '8436008360136',
+  'eliminar-grasa-desengrasar||VINFER DESENGRASANTE BAJA ESPUMA M4 5 L.': '8410836213178',
+  'eliminar-grasa-desengrasar||HERCOL DESENGRASANTE C/DISOLV.20 L.': '3033083008',
+  'eliminar-cal-sarro-bano||L1 LIMPIADOR DESINCRUSTANTE BAÑOS 750 ML.PIST.': '8410836212607',
+  'eliminar-cal-sarro-bano||M.P.L.LIMP.DESINCRUST.WC GEL FRESH 1,500 ML.': '8436032037851',
+  'eliminar-cal-sarro-bano||DW-20 LIMPIADOR DESINCRUST.ACIDO 4 L.': '8436024502510',
+  'eliminar-cal-sarro-bano||TENAZ DESINCRUSTANTE SUPERF.5 L.REF.091': '3033033007',
+  'eliminar-restos-cemento-mortero||M.P.L.QUITACEMENTOS/LIMPIAJUNTAS 1 L.': '8436032030029',
+  'eliminar-restos-cemento-mortero||TITAN DECAPANTE GEL PROFESIONAL 1 LL.': '8414800805512',
+  'limpiar-cristales-sin-marcas||GLASSPON CRISTALES Y SUPERFICIES 5 L.': '8411582245604',
+  'limpiar-cristales-sin-marcas||BAYETA CISNE CRISTALES MICROFIBRA 38X40CMS.': '8410347104088',
+  'limpiar-cristales-sin-marcas||LIMPIACRISTALES DUO RESSOL REF. 01771': '3033184',
+  'limpiar-cristales-sin-marcas||LIMPIACRISTALES EXCELERATOR C/GOMA 45 CMS.RF.2338': '8424559023389',
+  'elegir-lija-grano-abrasivo||DISCO LIJA CIRCULAR WERKU GRANO 120 225 M/M 10 UDS': '8424835010515',
+  'elegir-lija-grano-abrasivo||DISCO LIJA CIRCULAR WERKU GRANO 060 225 M/M 10 UDS': '8424835010485',
+  'elegir-lija-grano-abrasivo||.LIJA AL AGUA 314 HOJA 230x280 MM. P-800 01972': '6016155',
+  'elegir-lija-grano-abrasivo||LIJA TELA PLIEGO GRANO 2 (60) PENTRILO': '8420118091554',
+  'elegir-lija-grano-abrasivo||LIJA PAPEL IMPERMEABLE PLIEGO GRANO 150 PENTRILO': '8420118091325',
+  'elegir-lija-grano-abrasivo||LIJA PAPEL IMPERMEABLE GRANO 320 PENTRILO': '8420118091370',
+  'elegir-lija-grano-abrasivo||LIJA PAPEL IMPERMEABLE GRANO 800 PENTRILO': '8420118091288',
+  'perfumeria-elegir-fragancia-regalo||TOUS EDP 90 ML.VAP.': '8437002110628',
+  'perfumeria-elegir-fragancia-regalo||SAPHIR ESTUCHE MINI DUPLO 200+30 ML.PERFECT WOMAN': '8424730042741',
+  'perfumeria-elegir-fragancia-regalo||SAPHIR ESTUCHE MINI DUPLO 200+30 ML.PERFECT MAN': '8424730034043',
+  'perfumeria-elegir-fragancia-regalo||ALVAREZ GOMEZ LATA EDT.300 ML+EMUL.HID.280 ML.': '8422385194914',
+  'elegir-brocha-rodillo-pintar||BROCHA PRENSADA ESSENTIAL COMPETIDOR S-10 Nº 10': '8420118910107',
+  'elegir-brocha-rodillo-pintar||RODILLO ESP/FACHADAS SUPER FELPON 22 CMS.': '842011879106',
+  'elegir-brocha-rodillo-pintar||BROCHA PRENSADA REDONDA C/COLG.Nº12 TINAJERO': '843177031740',
+  'elegir-brocha-rodillo-pintar||RODILLO ESP.FACHADAS NESPOLI 22 CMS.FIBROR VERDE': '8412780000477',
+  'elegir-brocha-rodillo-pintar||RECAMBIO RODILLO VELOUR 11 CMS.': '8412780620071',
+  'elegir-brocha-rodillo-pintar||RODILLO TRILOX LANA NATURAL 22 CMS.': '8412780023193',
+  'elegir-brocha-rodillo-pintar||RODILLO FIBROR BICOLOR ESPECIAL FACHADAS 22 CMS.': '8412780103222',
+  'elegir-brocha-rodillo-pintar||RECAMBIO RODILLO ESPECIAL SUELOS 45 CMS.PENTRILO': '8420118173519',
+  'elegir-brocha-rodillo-pintar||RODILLO ANTIGOTA SUPER 60 22 CMS.M/BIM.RF.71580': '8420118715801',
+  'elegir-brocha-rodillo-pintar||RODILLO MINI ESPECIAL VERJAS PENTRILO RF.07665': '8420118076650',
+  'elegir-cinta-papel-enmascarar||.CINTA FINA NARANJA ZAPHIRO 18MM X 50M': '8068041',
+  'elegir-cinta-papel-enmascarar||.PAPEL ENMASCARAR ZAPHIRO PREMIUM 110 CM X 300 M.': '140514050',
+  'elegir-cinta-papel-enmascarar||.FILM CON CINTA ZAPHIRO GOLD 25 YR.x120 CM.': '140514012',
+  'elegir-cinta-papel-enmascarar||.CINTA PERFILAR BESA 12 MM. X 55 M.': '8435099910756',
+  'eliminar-hologramas-pulido||.PULIMENTO FINO ZAPHIRO (PASO 2) SATURNO 1 L.': '8436044961335',
+  'eliminar-hologramas-pulido||.BOINA PULIDO BODY AMARILLA 806 150 MM.': '5203473030351',
+  'eliminar-hologramas-pulido||.PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.': '140614009',
+  'eliminar-hologramas-pulido||.BOINA BOSSAUTO ALTO CORTE T120 VERDE 150X35MM': '8436570042287',
+  'eliminar-hologramas-pulido||.PULIMENTO FINO 807 SEAL POLISH BODY BEIGE 200 ML.': '5203473807007',
+  'elegir-disolvente-diluir-pintura||DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.': '8436032030203',
+  'elegir-disolvente-diluir-pintura||AGUARRAS PINO KELSIA 500 ML.': '8410088000281',
+  'elegir-disolvente-diluir-pintura||DISOLVENTE UNIVERSAL PROF.C&Q 25 L.': '8436530850594',
+  'elegir-disolvente-diluir-pintura||TITANTECH DX-820 DISOLVENTE EPOXI 5 L.': '8414800430509',
+  'elegir-disolvente-diluir-pintura||DILUYENTE TITAN YATE 1 LITRO': '8414800058611',
+  'elegir-disolvente-diluir-pintura||TITAN DECAPANTE GEL PROFESIONAL 1 LL.': '8414800805512',
+  'elegir-disolvente-diluir-pintura||ASEVI DESENGRASANTE 750 ML.PISTOLA': '8411582261345',
+  'higiene-personal-cuidado-corporal||AVENA KINESIA GEL 750 ML.': '8411135006249',
+  'higiene-personal-cuidado-corporal||INST.ESPAÑOL CREMA CORPORAL 400 ML.CREMOSO M/KARIT': '8411047105313',
+  'higiene-personal-cuidado-corporal||DENENES GEL/CHAMPU 600 ML.SUEÑOS FELICES': '8411061578759',
+  'higiene-personal-cuidado-corporal||INST.ESPAÑOL CREMA CORPORAL 400 ML.ALOE VERA': '8411047143186',
+  'preparar-pieza-taller-antes-pintar||ASEVI DESENGRASANTE 750 ML.PISTOLA': '8411582261345',
+  'preparar-pieza-taller-antes-pintar||.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057': '140114055',
+  'preparar-pieza-taller-antes-pintar||.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.': '3452571642023',
+  'preparar-pieza-taller-antes-pintar||VOLGRASSS DESENGRASANTE 1 L.PISTOLA': '8436008360136',
+  'problemas-pulverizacion-pistola||.FILTRO BRONCE POROSO SAGOLA': '8058389',
+  'problemas-pulverizacion-pistola||DILUYENTE TITAN YATE 1 LITRO': '8414800058611',
+  'problemas-pulverizacion-pistola||.VASO PLASTICO COLAD 700 ML S/TAPA 9370300': '8058102',
+  'proteger-acabado-pintura-nueva||.P-C-92 LACA MATE 0,75 L. 2:1': '4007440897104',
+  'proteger-acabado-pintura-nueva||.PROTECTOR ALTO BRILLO ZAPHIRO WAX 0,5 L.': '140614009',
+  'proteger-acabado-pintura-nueva||.A-C-10 LACA ECO BALANCE SECADO RAPIDO 1 L. 3:1:1': '5085041',
+  'elegir-acabado-pintura-mate-satinado-brillante||PINT.VINILICA P-50 EXTRA MATE 1 L.BLANCA': '8414800412758',
+  'elegir-acabado-pintura-mate-satinado-brillante||PINT.VINILICA P-40 PREMIUM 1 L.SATIN.BLANCO': '8414800439380',
+  'elegir-acabado-pintura-mate-satinado-brillante||COLORLUX BRILLANTE C/POLIURET.4 L.BLANCO': '8414800413380',
+  'limpieza-profesional-hosteleria-empresas||MOPA CISNE SOFT 75 CMS.C/BASTIDOR REF.203075 AZUL': '1311062',
+  'limpieza-profesional-hosteleria-empresas||ROLLO BAYETA CISNE MICROPUNT PRECORT.0,40X8 MTS': '8410347101469',
+  'limpieza-profesional-hosteleria-empresas||GUANTES EX.VINILO ECO S/POLVO T/XL C/100 UDS.': '8431026002150',
+  'limpieza-profesional-hosteleria-empresas||GUANTES JUPITER CENTURION NITRILO NYLON T/8': '8430173270955',
+  'limpieza-profesional-hosteleria-empresas||LEJIA ACE 4 L.REGULAR': '8001480020436',
+  'manchas-grietas-antes-pintar||RUALAIX RX-422 MASILLA ACRYL.PINTABLE 300 GMS.': '8425593030524',
+  'manchas-grietas-antes-pintar||BAIXENS B-18C MASILLA TAPAGRIETAS CART.310 ML.': '8425593011653',
+  'manchas-grietas-antes-pintar||TITAN PINTURA ANTIMANCHAS H24 750 ML.BLANCO MATE': '8414800117530',
+  'manchas-grietas-antes-pintar||XYLAZEL SPRAY ANTIMANCHAS PAREDES/TECHOS 500': '8414956689356',
+  'manchas-grietas-antes-pintar||BAIXENS B-33C MASILLA TAPAGRIETAS EXTERIOR CAT.310': '8425593013282',
+  'manchas-grietas-antes-pintar||JUEGO ESPATULAS ENMASILLAR WK601560 4 UDS.50-120': '8424835006327',
+  'tratar-humedad-interior-pared||PINTURA ANTIHUMEDAD KOLMAN 750 ML.': '8426741003575',
+  'tratar-humedad-interior-pared||SECADRY ANTIHUMEDAD 450 GRS.APARATO': '8424084000480',
+  'tratar-humedad-interior-pared||TITAN ANTIHUMEDAD D14 4 L.BLANCO MATE': '8414800070651',
+  'tratar-humedad-interior-pared||SECADRY ANTIHUMEDAD 450 GRS.RECAMBIO': '8424084000497',
+  'limpiar-herramientas-maquinaria-pintura||DISOLVENTE UNIVERSAL M.P.L.PURO 1 L.': '8436032030203',
+  'limpiar-herramientas-maquinaria-pintura||BATIDOR Y LIMPIA RODILLOS PENTRILO CLIP 8': '8420118081869',
+  'limpiar-herramientas-maquinaria-pintura||AGUARRAS PINO KELSIA 500 ML.': '8410088000281',
+  'elegir-pintura-segun-superficie-metal-madera-exterior||HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO': '8430078020136',
+  'elegir-pintura-segun-superficie-metal-madera-exterior||BARNIZ TITAN INTEMP. BRILLO 750 ML.INCOL.': '8414800421644',
+  'elegir-pintura-segun-superficie-metal-madera-exterior||OXIRON MARTELE 750 ML BLANCO (2966)': '8414800051292',
+  'elegir-pintura-segun-superficie-metal-madera-exterior||O.MATAS PINT.HIDRAFUGA FACHADAS 20 L.INVISIBLE': '1381605',
+  'material-desechable-proteccion-taller||.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-L': '8028147',
+  'material-desechable-proteccion-taller||GUANTES LATEX AZUL EXT.FUERTE  50 UDS.T/M/L/XL': '8430961390018',
+  'material-desechable-proteccion-taller||.MONO ALTA PROTECC DESECHABLE CAT4/5/6 BOSSAU T-M': '8028146',
+  'material-desechable-proteccion-taller||.MASCARA PARA PINTURA FFA1P2 REF. 06941': '6086001',
+  'piscinas-pintar-renovar||GLOBALPOOL P.PISCINAS CLOROCAUCHO 15 L.AZUL': '8436558049703',
+  'piscinas-pintar-renovar||BAIXENS B-14 REPARADOR PISCINAS PTE.1 KG.': '8425593008776',
+  'piscinas-pintar-renovar||DISOLVENTE PISCINAS TOLLENS 1 L.': '8410549603587',
+  'piscinas-pintar-renovar||GLOBALPOOL RENOVA 4 L.BLANCO': '8436616978037',
+  'piscinas-pintar-renovar||TOLLENS PINT.PISCINAS BASE AGUA 4 L.AZUL MARINO': '8410549098994',
+  'piscinas-pintar-renovar||BAIXENS B-14 REPARADOR PISCINAS SACO 5 KG.': '8425593009803',
+  'elegir-imprimacion-superficie||.AK SPRAY IMPRIMACION ZINC-ALU 400 ML. 233057': '140114055',
+  'elegir-imprimacion-superficie||XYLAZEL TAPAPOROS AL AGUA 750 ML.': '8429656084783',
+  'elegir-imprimacion-superficie||.R-M IMPRIMACION PLASTICOS PM2A20 SPRAY 0,4 L.': '3452571642023',
+  'elegir-imprimacion-superficie||FIJAPREN RX-500 FIJADOR AL AGUA 5 L.': '8425593110011',
+  'cuanto-producto-necesito||TITAN P-60 P.VINILICA PREMIUM 1 L.BLANCO MATE': '8414800419221',
+  'cuanto-producto-necesito||HAMMERITE ESM.LISO HIERRO Y OXIDO 750 ML.BLANCO': '8430078020136',
+};
+function backfillRefsProductosRecomendados() {
+  const sheet = obtenerHojaSoluciones_();
+  const datos = sheet.getDataRange().getValues();
+  const cabeceras = datos[0];
+  const colSlug = cabeceras.indexOf('slug');
+  const colJson = cabeceras.indexOf('datos_json');
+  const colFechaAct = cabeceras.indexOf('fecha_actualizacion');
+  if (colSlug === -1 || colJson === -1) {
+    avisar_('Error', 'No se encontraron las columnas slug/datos_json en la hoja Soluciones.');
+    return;
+  }
+
+  let filasTocadas = 0;
+  let entradasBackfilled = 0;
+  let filasConError = [];
+  const zona = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+
+  for (let i = 1; i < datos.length; i++) {
+    const slug = (datos[i][colSlug] || '').toString().trim();
+    const jsonTexto = (datos[i][colJson] || '').toString();
+    if (!slug || !jsonTexto) continue;
+
+    let obj;
+    try {
+      obj = JSON.parse(jsonTexto);
+    } catch (e) {
+      filasConError.push(slug);
+      continue;
+    }
+
+    let tocada = false;
+    const aplicarEnLista = (lista) => {
+      if (!Array.isArray(lista)) return;
+      lista.forEach((item) => {
+        if (!item || item.ref || !item.nombre) return; // ya tiene ref, o no aplica -> no se toca
+        const clave = slug + '||' + item.nombre;
+        const ref = MAPA_REFS_BACKFILL_[clave];
+        if (ref) {
+          item.ref = ref;
+          tocada = true;
+          entradasBackfilled++;
+        }
+      });
+    };
+    aplicarEnLista(obj.recommendedProducts);
+    aplicarEnLista(obj.alternativeProducts);
+    if (obj.selectorSuperficie && Array.isArray(obj.selectorSuperficie.opciones)) {
+      aplicarEnLista(obj.selectorSuperficie.opciones);
+    }
+
+    if (tocada) {
+      sheet.getRange(i + 1, colJson + 1).setValue(JSON.stringify(obj));
+      if (colFechaAct !== -1) {
+        sheet.getRange(i + 1, colFechaAct + 1).setValue(Utilities.formatDate(new Date(), zona, "yyyy-MM-dd'T'HH:mm:ss"));
+      }
+      filasTocadas++;
+    }
+  }
+
+  regenerarCacheSolucionesDesdeSheet_();
+
+  let mensaje = `${filasTocadas} guía(s) actualizadas, ${entradasBackfilled} producto(s) con referencia añadida.\n\nCaché regenerada — ya disponible en el Centro de Soluciones.`;
+  if (filasConError.length) {
+    mensaje += `\n\n⚠️ No se pudo leer el JSON de: ${filasConError.join(', ')} — revísalas a mano.`;
+  }
+  avisar_('Referencias añadidas', mensaje);
+  return { filasTocadas, entradasBackfilled, filasConError };
+}
+
 // Crea una guía nueva, o sustituye por completo el JSON de una existente
 // si llega un slug que ya existe (edición = reemplazo total del
 // documento, no un parcheo campo a campo — es JSON libre, así que no
@@ -6558,6 +6921,7 @@ const FUNCIONES_PANEL = {
   regenerar_cache:               { etiqueta: '🔄 Regenerar caché completa del buscador',        grupo: 'Imágenes',       fn: regenerarCacheCompletaManual,         confirmar: false },
   regenerar_cache_campanas:      { etiqueta: '🏪 Regenerar caché de Escaparate OM',              grupo: 'Imágenes',       fn: regenerarCacheCampanasManual,         confirmar: false },
   regenerar_cache_soluciones:    { etiqueta: '🧭 Regenerar caché del Centro de Soluciones',       grupo: 'Imágenes',       fn: regenerarCacheSolucionesManual,       confirmar: false },
+  backfill_refs_recomendados:    { etiqueta: '🏷️ Añadir referencias a productos recomendados (una vez)', grupo: 'Imágenes',  fn: backfillRefsProductosRecomendados,   confirmar: true },
   importar_sugerencias:          { etiqueta: '🔗 Importar sugerencias de relacionados',         grupo: 'Relacionados',   fn: importarSugerenciasRelacionados,      confirmar: false },
   compartir_imagenes:            { etiqueta: '🔓 Compartir imágenes Drive públicamente',        grupo: 'Imágenes',       fn: compartirImagenesDrive,               confirmar: true  },
   reevaluar_areas:               { etiqueta: '🗂️ Reevaluar áreas de todos los productos',      grupo: 'Clasificación',  fn: reevaluarAreasProductos,              confirmar: true  },
