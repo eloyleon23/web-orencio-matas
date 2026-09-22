@@ -166,8 +166,8 @@
             }
             #toolbar-buscador-pc .filtro-grupo { margin-bottom: 0; }
             #toolbar-buscador-pc label.titulo { display: none; }
-            #toolbar-buscador-pc #grupo-area-toolbar { flex: 0 0 150px; }
-            #toolbar-buscador-pc #grupo-area-toolbar .select-area {
+            #toolbar-buscador-pc #grupo-area-toolbar { flex: 0 0 150px; position: relative; }
+            #toolbar-buscador-pc #grupo-area-toolbar .area-multi-btn {
                 height: 100%;
                 background: #e2e8f0;
                 border-color: transparent;
@@ -620,15 +620,49 @@
             font-size: 0.85rem;
         }
 
-        .select-area {
+        /* Desplegable de área (multi-selección) — mismo aspecto que el
+           select de antes, pero con un panel de casillas debajo. position:
+           relative en .area-multi-wrap para anclar el panel absoluto; en
+           el toolbar de escritorio, #grupo-area-toolbar YA tiene
+           position:relative (ver arriba), así que el panel se posiciona
+           bien en los dos contextos (barra fija y aside de filtros móvil). */
+        .area-multi-wrap { position: relative; }
+        .area-multi-btn {
             width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
             padding: 10px 12px;
             border: 1px solid var(--border);
             border-radius: 8px;
             font-size: 0.9rem;
             font-family: inherit;
             background: white;
+            cursor: pointer;
+            text-align: left;
         }
+        .area-multi-btn i {
+            font-size: 0.7em;
+            color: var(--muted);
+            transition: transform .15s;
+            flex: none;
+        }
+        .area-multi-btn[aria-expanded="true"] i { transform: rotate(180deg); }
+        .area-multi-panel {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            z-index: 40;
+            min-width: 200px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px -4px rgba(15,23,42,0.18);
+            padding: 8px;
+        }
+        .area-multi-panel.abierto { display: block; }
 
         .familias-lista {
             max-height: 220px;
@@ -3097,10 +3131,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </button>
 
         <div class="filtro-grupo" id="grupo-area-toolbar">
-            <label class="titulo" for="f-area">Área</label>
-            <select id="f-area" class="select-area">
-                <option value="">Todas las áreas</option>
-            </select>
+            <label class="titulo" for="f-area-btn">Área</label>
+            <div class="area-multi-wrap">
+                <button type="button" id="f-area-btn" class="area-multi-btn" aria-haspopup="true" aria-expanded="false">
+                    <span id="f-area-btn-texto">Todas las áreas</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div class="area-multi-panel" id="f-area-panel">
+                    <div class="area-multi-lista" id="f-area-opciones"></div>
+                </div>
+            </div>
         </div>
 
         <div class="filtro-grupo collapsable" id="grupo-fabricante-taller" style="display: none;">
@@ -4643,17 +4683,33 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         aplicarFiltros();
     }
 
+    function areasSeleccionadas() {
+        return [...document.querySelectorAll('#f-area-opciones input:checked')].map(i => i.value);
+    }
+
+    function actualizarTextoBotonArea() {
+        const total = document.querySelectorAll('#f-area-opciones input').length;
+        const sel = areasSeleccionadas();
+        const btnTexto = $('f-area-btn-texto');
+        if (sel.length === 0) btnTexto.textContent = 'Ninguna área';
+        else if (sel.length === total) btnTexto.textContent = 'Todas las áreas';
+        else if (sel.length === 1) btnTexto.textContent = AREAS_NOMBRE[sel[0]] || sel[0];
+        else btnTexto.textContent = `${sel.length} áreas`;
+    }
+
     // ── Inicializar selects de área y lista de familias ──
     function inicializarFiltros() {
-        // Áreas presentes en los datos
+        // Áreas presentes en los datos — todas marcadas por defecto
+        // (petición explícita: "por defecto todas las áreas activas").
         const areasPresentes = [...new Set(TODOS.map(p => p.area).filter(Boolean))];
-        const selectArea = $('f-area');
+        const contArea = $('f-area-opciones');
         areasPresentes.sort().forEach(area => {
-            const opt = document.createElement('option');
-            opt.value = area;
-            opt.textContent = AREAS_NOMBRE[area] || area;
-            selectArea.appendChild(opt);
+            const label = document.createElement('label');
+            label.className = 'familia-item';
+            label.innerHTML = `<input type="checkbox" value="${area}" checked> ${AREAS_NOMBRE[area] || area}`;
+            contArea.appendChild(label);
         });
+        actualizarTextoBotonArea();
 
         renderFabricanteTaller();
         renderFamilias();
@@ -4733,7 +4789,33 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             contenedor.addEventListener('change', revelarCabeceraResultados);
         });
 
-        $('f-area').addEventListener('change', () => { renderFabricanteTaller(); renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros(); });
+        $('f-area-opciones').addEventListener('change', () => {
+            actualizarTextoBotonArea();
+            renderFabricanteTaller(); renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros();
+        });
+        // Desplegable de área: abre/cierra al pulsar el botón, se cierra al
+        // clicar fuera o con Escape — mismo comportamiento esperable de
+        // cualquier desplegable de este tipo. No se cierra al marcar/
+        // desmarcar una casilla (el usuario puede querer tocar varias
+        // seguidas sin que el panel se cierre en cada clic).
+        $('f-area-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const panel = $('f-area-panel');
+            const abierto = panel.classList.toggle('abierto');
+            $('f-area-btn').setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#grupo-area-toolbar')) {
+                $('f-area-panel').classList.remove('abierto');
+                $('f-area-btn').setAttribute('aria-expanded', 'false');
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                $('f-area-panel').classList.remove('abierto');
+                $('f-area-btn').setAttribute('aria-expanded', 'false');
+            }
+        });
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
@@ -5108,14 +5190,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
     function renderFamilias() {
-        const areaSel = $('f-area').value;
+        const areasSel = areasSeleccionadas();
         const cont = $('f-familias');
         cont.innerHTML = '';
 
-        let base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        let base = areasSel.length ? TODOS.filter(p => areasSel.includes(p.area)) : TODOS;
         const fabricantesSel = fabricantesTallerSeleccionados();
-        if (areaSel === 'talleres' && fabricantesSel.length) {
-            base = base.filter(p => fabricantesSel.includes(p.fabricante));
+        if (areasSel.includes('talleres') && fabricantesSel.length) {
+            base = base.filter(p => p.area !== 'talleres' || fabricantesSel.includes(p.fabricante));
         }
         const familias = [...new Set(base.map(p => p.familia).filter(Boolean))];
 
@@ -5256,7 +5338,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // de Glasurit), así que elegir fabricante acota qué familias se
     // ofrecen después, igual que familia acota subfamilia.
     function renderFabricanteTaller() {
-        const esTalleres = $('f-area').value === 'talleres';
+        const esTalleres = areasSeleccionadas().includes('talleres');
         const grupo = $('grupo-fabricante-taller');
         const cont = $('f-fabricante-taller');
 
@@ -5291,7 +5373,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // para que cada lista muestre solo lo relevante al producto concreto
     // en vez de las ~800 referencias del catálogo completo de golpe.
     function renderAtributosTaller() {
-        const esTalleres = $('f-area').value === 'talleres';
+        const areasSel = areasSeleccionadas();
+        const esTalleres = areasSel.includes('talleres');
 
         if (!esTalleres) {
             CAMPOS_ATRIBUTOS_TALLER.forEach(c => {
@@ -5330,7 +5413,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // muestran si el área seleccionada es "pinturas" y hay productos con esos
     // atributos detectables en el nombre. Conserva selecciones previas.
     function renderAtributosPintura() {
-        const esPinturas = $('f-area').value === 'pinturas';
+        const esPinturas = areasSeleccionadas().includes('pinturas');
         const grupoAcabado = $('grupo-acabado');
         const grupoFormato = $('grupo-formato');
 
@@ -5504,7 +5587,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // tanto desde "Limpiar filtros" como automáticamente cuando el usuario
     // escribe en el buscador (el texto prima sobre el resto de filtros).
     function limpiarOtrosFiltros() {
-        $('f-area').value = '';
+        document.querySelectorAll('#f-area-opciones input').forEach(i => { i.checked = true; });
+        actualizarTextoBotonArea();
         $('f-precio-min').value = '';
         $('f-precio-max').value = '';
         $('f-oferta').checked = false;
@@ -5590,7 +5674,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function aplicarFiltros() {
         const texto    = $('f-texto').value.trim();
         if (!texto) ultimaRefAutoabierta = null;
-        const area     = $('f-area').value;
+        const areasSel = areasSeleccionadas();
         const familias = familiasSeleccionadas();
         const subfamilias = subfamiliasSeleccionadas();
         const fabricantesSel = fabricantesTallerSeleccionados();
@@ -5622,7 +5706,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // nada en el caso normal.
             if (p.fecha_baja && p.fecha_baja.toString().trim()) return false;
 
-            if (area && p.area !== area) return false;
+            if (areasSel.length && !areasSel.includes(p.area)) return false;
             if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
             if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
@@ -6584,7 +6668,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // de talleres) se codifican como sus valores separados por "|".
     const CAMPOS_FILTRO_URL = [
         { tipo: 'texto',           id: 'f-texto',           param: 'q' },
-        { tipo: 'select',          id: 'f-area',            param: 'area' },
+        { tipo: 'checkbox-grupo',  contId: 'f-area-opciones', param: 'area' },
         { tipo: 'checkbox-grupo',  contId: 'f-fabricante-taller', param: 'fabricante' },
         { tipo: 'checkbox-grupo',  contId: 'f-familias',       param: 'fam' },
         { tipo: 'checkbox-grupo',  contId: 'f-subfamilias',    param: 'subfam' },
@@ -6692,6 +6776,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 if (pendientes[contId].includes(input.value)) input.checked = true;
             });
         };
+
+        // Área empieza con TODAS las casillas marcadas por defecto (a
+        // diferencia de familias/subfamilias, que empiezan sin marcar) —
+        // así que si la URL trae un subconjunto concreto, hay que
+        // desmarcarlas todas primero; si no, marcar() solo añadiría las de
+        // la URL sin quitar las demás, y acabarían quedando TODAS marcadas
+        // igual que por defecto.
+        if (pendientes['f-area-opciones']) {
+            document.querySelectorAll('#f-area-opciones input').forEach(input => { input.checked = false; });
+        }
+        marcar('f-area-opciones');
+        actualizarTextoBotonArea();
 
         renderFabricanteTaller(); // crea checkboxes de fabricante (según el área ya puesta)
         marcar('f-fabricante-taller');
@@ -8936,7 +9032,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (resultadosActuales.length === 0) return;
 
         const texto    = $('f-texto').value.trim();
-        const area     = $('f-area').value;
+        const areasSel = areasSeleccionadas();
+        const totalAreas = document.querySelectorAll('#f-area-opciones input').length;
         const familias = familiasSeleccionadas();
         const pMin     = $('f-precio-min').value;
         const pMax     = $('f-precio-max').value;
@@ -8944,7 +9041,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         let resumenLineas = [`<strong>${resultadosActuales.length}</strong> productos encontrados`];
         if (texto)    resumenLineas.push(`Búsqueda: "${escapeHtml(texto)}"`);
-        if (area)     resumenLineas.push(`Área: ${AREAS_NOMBRE[area] || area}`);
+        if (areasSel.length && areasSel.length < totalAreas) resumenLineas.push(`Área: ${areasSel.map(a => AREAS_NOMBRE[a] || a).join(', ')}`);
         if (familias.length) resumenLineas.push(`Familias: ${familias.map(escapeHtml).join(', ')}`);
         if (pMin || pMax) resumenLineas.push(`Precio: ${pMin || '0'}€ – ${pMax || '∞'}€`);
         if (soloOferta) resumenLineas.push(`Solo productos en oferta`);
@@ -8965,7 +9062,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         const texto    = $('f-texto').value.trim();
-        const area     = $('f-area').value;
+        const areasSel = areasSeleccionadas();
+        const totalAreas = document.querySelectorAll('#f-area-opciones input').length;
+        const areaTexto = (areasSel.length && areasSel.length < totalAreas) ? areasSel.join(',') : '';
         const familias = familiasSeleccionadas();
         const pMin     = $('f-precio-min').value;
         const pMax     = $('f-precio-max').value;
@@ -8974,7 +9073,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Preparar filtros y referencias para el workflow
         const filtros = {
             texto: texto,
-            area: area,
+            area: areaTexto,
             familias: familias,
             subfamilias: subfamilias,
             precio_min: pMin,
@@ -8986,7 +9085,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Preparar resumen de filtros para el email
         let resumenFiltros = '';
         if (texto) resumenFiltros += `<li>Texto: ${texto}</li>`;
-        if (area) resumenFiltros += `<li>Área: ${AREAS_NOMBRE[area] || area}</li>`;
+        if (areaTexto) resumenFiltros += `<li>Área: ${areasSel.map(a => AREAS_NOMBRE[a] || a).join(', ')}</li>`;
         if (familias.length) resumenFiltros += `<li>Familias: ${familias.join(', ')}</li>`;
         if (subfamilias.length) resumenFiltros += `<li>Subfamilias: ${subfamilias.join(', ')}</li>`;
         if (pMin || pMax) resumenFiltros += `<li>Rango de precio: ${pMin || '0'}€ - ${pMax || 'sin límite'}€</li>`;
