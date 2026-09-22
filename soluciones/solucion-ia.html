@@ -99,7 +99,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </header>
 
     <main id="solucion-ia-contenido">
-      <!-- Contenido renderizado por solucion-ia.js según ?q= -->
+      <!-- Contenido renderizado por solucion-ia.js según ?q=.
+           Esto de aquí es solo el estado INICIAL, visible entre que carga
+           el HTML y que arranca init() — que sustituye este innerHTML por
+           completo, así que no hace falta JS para quitarlo. Es un hueco
+           DISTINTO al de renderCargando() (el spinner que ya existía, con
+           mensajes rotativos, para mientras la IA genera la respuesta):
+           este de aquí cubre el momento ANTES de eso, mientras todavía se
+           está cargando el catálogo de guías del Sheet
+           (cargarSolucionesReales()) — sin esto, la página se quedaba en
+           blanco (solo cabecera y footer) durante ese primer tramo, igual
+           que pasaba en solucion.html. Mismo icono y misma animación de
+           pulso que el spinner de IA que ya había aquí. -->
+      <div class="cs-carga-pagina">
+        <img src="../assets/logos/apple-touch-icon.png" alt="" class="cs-carga-pagina__icono">
+        <p>Cargando…</p>
+      </div>
     </main>
 
     <footer class="site-footer">
