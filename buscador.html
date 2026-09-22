@@ -664,6 +664,19 @@
         }
         .area-multi-panel.abierto { display: block; }
 
+        /* Select genérico (mismo aspecto que tenía el antiguo .select-area,
+           ahora reutilizable para cualquier <select> simple de los
+           filtros — de momento solo el de ordenación). */
+        .select-basico {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: white;
+        }
+
         .familias-lista {
             max-height: 220px;
             overflow-y: auto;
@@ -3143,6 +3156,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
+        <div class="filtro-grupo">
+            <label class="titulo" for="f-orden">Ordenar por</label>
+            <select id="f-orden" class="select-basico">
+                <option value="">Relevancia (por defecto)</option>
+                <option value="fecha_desc">Fecha de alta: más reciente primero</option>
+                <option value="fecha_asc">Fecha de alta: más antiguo primero</option>
+            </select>
+        </div>
+
         <div class="filtro-grupo collapsable" id="grupo-fabricante-taller" style="display: none;">
             <label class="titulo">Fabricante</label>
             <div class="familias-lista" id="f-fabricante-taller"></div>
@@ -4819,6 +4841,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+        $('f-orden').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         
         // Mostrar bloque de gestión de imágenes si está activado en configuración
         if (window.MOSTRAR_FILTRO_IMAGENES_REVISADAS) {
@@ -5591,6 +5614,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         actualizarTextoBotonArea();
         $('f-precio-min').value = '';
         $('f-precio-max').value = '';
+        $('f-orden').value = '';
         $('f-oferta').checked = false;
         $('f-imagenes-validadas').checked = false;
         $('f-tiene-imagen').checked = false;
@@ -5772,6 +5796,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             });
         }
 
+        // Ordenación explícita elegida por el usuario ("Ordenar por") —
+        // sustituye al orden anterior (relevancia/fecha por defecto),
+        // tanto si hay texto de búsqueda activo como si no. Va antes de
+        // renderResultados() para que pinte ya en el orden elegido.
+        const orden = $('f-orden').value;
+        if (orden === 'fecha_desc') {
+            resultadosActuales.sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha));
+        } else if (orden === 'fecha_asc') {
+            resultadosActuales.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
+        }
+
         renderResultados();
         actualizarBotonMostrarResultadosMovil();
 
@@ -5870,6 +5905,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
+    // Modo de lista plana — se usa en vez de agruparPorFamilia() cuando hay
+    // una ordenación explícita elegida ("Ordenar por"): agrupar por
+    // familia/subfamilia reordenaría DENTRO de cada grupo, perdiendo el
+    // orden global por fecha que se pidió ("ordenar los resultados... de
+    // mayor a menor y viceversa" — un único listado, no una fecha
+    // distinta por cada grupo). Trocea la lista YA ordenada en grupos
+    // artificiales de tamaño fijo, sin nombre — reutiliza tal cual toda
+    // la maquinaria de paginación/scroll infinito existente (que cuenta
+    // por número de "grupos", no de productos), sin tener que tocarla.
+    // TAMANO_CHUNK=4 con FAMILIAS_POR_CARGA=3 mantiene la misma carga de
+    // ~12 productos por tanda que ya usa el modo agrupado por defecto.
+    const TAMANO_CHUNK_PLANO = 4;
+    function agruparPlano(lista) {
+        const grupos = [];
+        for (let i = 0; i < lista.length; i += TAMANO_CHUNK_PLANO) {
+            const chunk = lista.slice(i, i + TAMANO_CHUNK_PLANO);
+            grupos.push({ nombre: '', productos: chunk, subgrupos: [{ nombre: '', productos: chunk }] });
+        }
+        return grupos;
+    }
+
+    // Punto único de entrada: decide agrupado-por-familia (de siempre) o
+    // lista plana (si hay una ordenación explícita activa) — llamado
+    // tanto desde renderResultados() como desde cargarMasFamilias(), para
+    // que los dos usen siempre el mismo criterio.
+    function agruparResultados(lista) {
+        const orden = $('f-orden').value;
+        return orden ? agruparPlano(lista) : agruparPorFamilia(lista);
+    }
+
     // Contador de resultados — dos formatos: el estándar de siempre, y
     // uno propio para cuando los resultados vienen de la IA (a petición
     // de Eloy: antes se quedaba en "0 resultados" mientras se mostraban
@@ -5953,7 +6018,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         seccionIA.style.display = 'none';
         sinResultados.style.display = 'none';
 
-        const grupos = agruparPorFamilia(resultadosActuales);
+        const grupos = agruparResultados(resultadosActuales);
 
         // Calcular cuántos productos mostrar en total (paginación ~12 por carga)
         if (familiasMostradas === 0) familiasMostradas = calcularFamiliasIniciales(grupos);
@@ -5982,8 +6047,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         gruposNuevos.forEach(grupo => {
             const seccion = document.createElement('div');
             seccion.className = 'familia-seccion';
+            // Sin cabecera si el grupo no tiene nombre — es un "trozo" del
+            // modo de lista plana (ordenación explícita activa), no una
+            // familia real; mostrar un título vacío con solo el contador
+            // quedaría raro y no aporta nada.
             seccion.innerHTML = `
-                <h3 class="familia-titulo">${grupo.nombre} <span class="count">${grupo.productos.length}</span></h3>
+                ${grupo.nombre ? `<h3 class="familia-titulo">${grupo.nombre} <span class="count">${grupo.productos.length}</span></h3>` : ''}
                 <div class="subfamilias-contenedor"></div>
             `;
             const subCont = seccion.querySelector('.subfamilias-contenedor');
@@ -5991,7 +6060,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 const subSeccion = document.createElement('div');
                 subSeccion.className = 'subfamilia-seccion';
                 subSeccion.innerHTML = `
-                    <h4 class="subfamilia-titulo">${subgrupo.nombre} <span class="count">${subgrupo.productos.length}</span></h4>
+                    ${subgrupo.nombre ? `<h4 class="subfamilia-titulo">${subgrupo.nombre} <span class="count">${subgrupo.productos.length}</span></h4>` : ''}
                     <div class="grid-productos"></div>
                 `;
                 const grid = subSeccion.querySelector('.grid-productos');
@@ -6016,7 +6085,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function cargarMasFamilias() {
         if (cargandoMasFamilias) return; // evita solapes si el scroll dispara varias veces seguidas
-        const grupos = agruparPorFamilia(resultadosActuales);
+        const grupos = agruparResultados(resultadosActuales);
         if (familiasMostradas >= grupos.length) return;
         cargandoMasFamilias = true;
         try {
@@ -6675,6 +6744,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         { tipo: 'texto',           id: 'f-precio-min',      param: 'pmin' },
         { tipo: 'texto',           id: 'f-precio-max',      param: 'pmax' },
         { tipo: 'checkbox-simple', id: 'f-oferta',          param: 'oferta' },
+        { tipo: 'select',          id: 'f-orden',           param: 'orden' },
         { tipo: 'checkbox-grupo',  contId: 'f-acabado',        param: 'acabado' },
         { tipo: 'checkbox-grupo',  contId: 'f-formato',        param: 'formato' },
         { tipo: 'checkbox-grupo',  contId: 'f-talla-taller',   param: 'talla' },
