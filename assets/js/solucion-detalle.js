@@ -405,6 +405,51 @@
         </div>
       </section>
 
+      ${sol.selectorMarcaAcabado ? `
+      <!-- Selector de marca + tecnología (agua/sintético) + acabado —
+           recomienda el producto real más adecuado según lo que elija
+           el usuario, siempre contra referencias verificadas; si una
+           combinación no tiene producto real disponible, lo dice
+           claramente en vez de forzar una alternativa inventada. -->
+      <section class="cs-section no-imprimir">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-heading__eyebrow">Elige tu opción</p>
+            <h2>${sol.selectorMarcaAcabado.pregunta}</h2>
+          </div>
+          <div class="cs-calculadora cs-selector-marca">
+            <div class="cs-calculadora__campos">
+              <div class="cs-calculadora__campo">
+                <label for="cs-selector-marca">Marca</label>
+                <select id="cs-selector-marca">
+                  <option value="">Selecciona...</option>
+                  ${[...new Set(sol.selectorMarcaAcabado.opciones.map((o) => o.marca))].map((m) => `<option value="${m}">${m}</option>`).join('')}
+                </select>
+              </div>
+              <div class="cs-calculadora__campo">
+                <label for="cs-selector-tecnologia">Tecnología</label>
+                <select id="cs-selector-tecnologia">
+                  <option value="">Selecciona...</option>
+                  <option value="agua">Al agua</option>
+                  <option value="sintetico">Sintético (base disolvente)</option>
+                </select>
+              </div>
+              <div class="cs-calculadora__campo">
+                <label for="cs-selector-acabado">Acabado</label>
+                <select id="cs-selector-acabado">
+                  <option value="">Selecciona...</option>
+                  <option value="mate">Mate</option>
+                  <option value="satinado">Satinado</option>
+                  <option value="brillante">Brillante</option>
+                </select>
+              </div>
+            </div>
+            <p id="cs-selector-marca-nota" class="cs-calculadora__nota" style="display:none;"></p>
+            <div id="cs-selector-marca-resultado" class="cs-productos-grid cs-selector-resultado"></div>
+          </div>
+        </div>
+      </section>` : ''}
+
       <!-- Productos recomendados -->
       <section class="cs-section cs-section--alt">
         <div class="container">
@@ -491,6 +536,7 @@
     wireCalculadoraTemple(sol);
     wireCalculadoraCloro(sol);
     wireSelectorSuperficie(sol);
+    wireSelectorMarcaAcabado(sol);
     wireCalculadoraCantidadMultiple(sol);
   }
 
@@ -684,6 +730,61 @@
         renderTarjetasProducto(resultadoEl, [entrada]);
       });
     });
+  }
+
+  // Selector de marca + tecnología (agua/sintético) + acabado — misma
+  // idea que wireSelectorSuperficie pero con TRES criterios cruzados en
+  // vez de uno solo. sol.selectorMarcaAcabado.opciones es una lista
+  // plana, cada una con {marca, tecnologia, acabado, nombre, ref}; se
+  // busca la que coincide EXACTAMENTE con los tres selects. Si no hay
+  // ninguna (esa combinación no existe de verdad en el catálogo — no
+  // todas las marcas tienen las tres tecnologías/acabados), se dice
+  // claramente en vez de inventar una alternativa.
+  function wireSelectorMarcaAcabado(sol) {
+    if (!sol.selectorMarcaAcabado) return;
+    const selMarca = $('#cs-selector-marca');
+    const selTec = $('#cs-selector-tecnologia');
+    const selAcabado = $('#cs-selector-acabado');
+    const notaEl = $('#cs-selector-marca-nota');
+    const resultadoEl = $('#cs-selector-marca-resultado');
+    if (!selMarca || !selTec || !selAcabado || !notaEl || !resultadoEl) return;
+
+    const actualizar = () => {
+      const marca = selMarca.value, tecnologia = selTec.value, acabado = selAcabado.value;
+      if (!marca || !tecnologia || !acabado) {
+        notaEl.style.display = 'none';
+        resultadoEl.innerHTML = '';
+        return;
+      }
+
+      const opcion = sol.selectorMarcaAcabado.opciones.find(
+        (o) => o.marca === marca && o.tecnologia === tecnologia && o.acabado === acabado
+      );
+
+      if (!opcion) {
+        notaEl.textContent = `${marca} no tiene un producto de este tipo en acabado ${acabado} y tecnología ${tecnologia === 'agua' ? 'al agua' : 'sintética'} en nuestro catálogo — prueba otra combinación.`;
+        notaEl.style.display = '';
+        resultadoEl.innerHTML = '';
+        return;
+      }
+
+      notaEl.style.display = 'none';
+      resultadoEl.innerHTML = `
+        <div class="cs-producto-card cs-producto-card--cargando">
+          <div class="cs-producto-card__imagen-wrap"></div>
+          <div class="cs-producto-card__nombre">${opcion.nombre}</div>
+        </div>
+      `;
+
+      D.resolverProductoReal(opcion.nombre, opcion.ref).then((real) => {
+        const marcaAct = selMarca.value, tecAct = selTec.value, acabAct = selAcabado.value;
+        if (marcaAct !== marca || tecAct !== tecnologia || acabAct !== acabado) return; // ya ha cambiado de opción
+        const entrada = construirEntradaProducto({ nombre: opcion.nombre, categoria: 'Pinturas' }, real);
+        renderTarjetasProducto(resultadoEl, [entrada]);
+      });
+    };
+
+    [selMarca, selTec, selAcabado].forEach((sel) => sel.addEventListener('change', actualizar));
   }
 
   // Calculadora combinada "¿Cuánto necesito?": primero se elige QUÉ

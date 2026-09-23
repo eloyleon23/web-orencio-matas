@@ -2236,8 +2236,34 @@ window.SOLUCIONES_DATA = (function () {
       alternativeProducts: [
         { etiqueta: 'Acabado mate ecológico', nombre: 'BARNIZ TITAN PROTEC.LASUR ECO MATE 750 ML.INCOL.', ref: '8414800423365', precio: '18,49 €' },
         { etiqueta: 'Formato grande',      nombre: 'PROTECTOR ECO LASUR MATE 4 L.INCOLORO 3800', ref: '8414800423389', precio: '81,40 €' },
-        { etiqueta: 'Con aceite natural',  nombre: 'Lasur Aceite Mora Madera Satinado 1 L', precio: '12,32 €' },
+        { etiqueta: 'Con aceite natural',  nombre: 'LASUR ACEITE MORA MADERA SATIN.1 L.INCOLORO', ref: '8436005130053', precio: '12,32 €' },
       ],
+      // Selector de marca + tecnología + acabado — a petición explícita
+      // de Eloy: ampliar más allá de Titan (que es lo que se solía
+      // proponer) a Xyladecor y Mora, y dejar que el usuario elija
+      // agua/sintético y acabado como parte de la propia recomendación.
+      // Cada combinación verificada contra el catálogo real (y, para la
+      // tecnología agua/sintético en concreto, contra la ficha técnica
+      // real del fabricante, ya que el nombre del producto no siempre lo
+      // deja claro) — no todas las marcas tienen las tres tecnologías o
+      // los tres acabados: Titan Protec.Lasur ECO (agua) solo existe en
+      // mate, no en satinado; Xyladecor solo tiene agua en la línea
+      // Aquatech, en satinado; Mora, según lo verificado, es sintética
+      // en todos sus lasures/barnices de madera, sin línea al agua.
+      // Combinaciones sin producto real: el selector lo dice
+      // explícitamente (wireSelectorMarcaAcabado), no se inventa nada.
+      selectorMarcaAcabado: {
+        pregunta: '¿Qué marca, tecnología y acabado prefieres para tu lasur de exterior?',
+        opciones: [
+          { marca: 'Titan',      tecnologia: 'agua',      acabado: 'mate',     nombre: 'BARNIZ TITAN PROTEC.LASUR ECO MATE 750 ML.INCOL.', ref: '8414800423365' },
+          { marca: 'Titan',      tecnologia: 'sintetico', acabado: 'mate',     nombre: 'BARNIZ TITAN PROTEC.LASUR MATE 750 ML.ROBLE', ref: '8414800423600' },
+          { marca: 'Titan',      tecnologia: 'sintetico', acabado: 'satinado', nombre: 'BARNIZ TITAN PROTEC.LASUR SATIN.750 ML.INCOL.', ref: '8414800423143' },
+          { marca: 'Xyladecor',  tecnologia: 'agua',      acabado: 'satinado', nombre: 'XYLADECOR LASUR EXTRA AQUATC SATIN.750 ML.INCOL.', ref: '8429656023959' },
+          { marca: 'Xyladecor',  tecnologia: 'sintetico', acabado: 'satinado', nombre: 'XYLADECOR PROTECT.SATIN.750 ML.INCOLORO', ref: '8430078000503' },
+          { marca: 'Xyladecor',  tecnologia: 'sintetico', acabado: 'mate',     nombre: 'XYLADECOR MATE EXTRA 3EN1 750 ML.INCOLORO', ref: '8430078127118' },
+          { marca: 'Mora',       tecnologia: 'sintetico', acabado: 'satinado', nombre: 'LASUR ACEITE MORA MADERA SATIN.1 L.INCOLORO', ref: '8436005130053' },
+        ],
+      },
       relatedSolutions: ['restaurar-mueble-madera'],
       seo: {
         title: 'Cómo proteger madera de exterior | Orencio Matas',
