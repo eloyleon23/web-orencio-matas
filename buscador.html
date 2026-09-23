@@ -5910,10 +5910,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // TODAVÍA sin aplicar este filtro de fecha en sí — así refleja de
         // verdad "lo que se está viendo ahora", no el catálogo completo
         // ni un resultado ya recortado por fecha.
+        //
+        // Bug real encontrado (Eloy: el campo nunca mostraba la fecha, y
+        // el filtro no aplicaba en absoluto): Math.min(...arrayGrande) con
+        // el operador de propagación puede desbordar el límite de
+        // argumentos de una llamada a función en algunos motores JS —
+        // Safari/WebKit (el navegador real de Eloy en iPhone) tiene un
+        // límite bastante más bajo que Chrome para esto, y el catálogo
+        // completo (o cualquier resultado sin apenas filtrar) tiene miles
+        // de productos. Si eso lanzaba una excepción aquí, TODO el resto
+        // de aplicarFiltros() se cortaba en seco sin aviso — ni se
+        // precargaba la fecha, ni se llegaba nunca a aplicar el filtro de
+        // fecha ni nada de lo que viene después. Sustituido por un bucle
+        // simple, sin ningún límite de tamaño.
         if (!fechaFiltroTocado) {
-            const fechasValidas = resultadosActuales.map(p => parseFecha(p.fecha)).filter(f => f > 0);
-            if (fechasValidas.length) {
-                $('f-fecha-desde').value = formatearFechaInput(new Date(Math.min(...fechasValidas)));
+            let fechaMinima = 0;
+            for (let i = 0; i < resultadosActuales.length; i++) {
+                const f = parseFecha(resultadosActuales[i].fecha);
+                if (f > 0 && (fechaMinima === 0 || f < fechaMinima)) fechaMinima = f;
+            }
+            if (fechaMinima > 0) {
+                $('f-fecha-desde').value = formatearFechaInput(new Date(fechaMinima));
             }
             $('f-fecha-hasta').value = formatearFechaInput(new Date());
         }
