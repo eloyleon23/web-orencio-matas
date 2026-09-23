@@ -1198,6 +1198,14 @@
             left: 14px;
         }
         .producto-info { padding: 12px; }
+        .producto-area-familia {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            margin: 0 0 3px;
+        }
         .producto-nombre {
             font-size: 0.82rem;
             font-weight: 700;
@@ -6048,12 +6056,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // por número de "grupos", no de productos), sin tener que tocarla.
     // TAMANO_CHUNK=4 con FAMILIAS_POR_CARGA=3 mantiene la misma carga de
     // ~12 productos por tanda que ya usa el modo agrupado por defecto.
+    // Sin 'subgrupos': añadirGruposAlContenedor() fusiona todos los
+    // trozos sin nombre en una única rejilla persistente, así que aquí
+    // no hace falta simularlos.
     const TAMANO_CHUNK_PLANO = 4;
     function agruparPlano(lista) {
         const grupos = [];
         for (let i = 0; i < lista.length; i += TAMANO_CHUNK_PLANO) {
-            const chunk = lista.slice(i, i + TAMANO_CHUNK_PLANO);
-            grupos.push({ nombre: '', productos: chunk, subgrupos: [{ nombre: '', productos: chunk }] });
+            grupos.push({ nombre: '', productos: lista.slice(i, i + TAMANO_CHUNK_PLANO) });
         }
         return grupos;
     }
@@ -6177,14 +6187,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function añadirGruposAlContenedor(gruposNuevos) {
         const cont = $('contenedor-resultados');
         gruposNuevos.forEach(grupo => {
+            // Sin nombre = "trozo" del modo de lista plana (ordenación
+            // explícita activa) — no es una familia real. Bug real
+            // reportado por Eloy con captura: cada trozo (de 4 productos,
+            // el tamaño usado para que la paginación siga funcionando
+            // igual) creaba su PROPIO contenedor de rejilla, y como CSS
+            // grid no "fluye" de un contenedor a otro, en móvil (donde
+            // caben 3 por fila) el trozo se veía partido en un bloque de
+            // 3 + 1 huérfano, con un salto visual antes del siguiente
+            // trozo — en vez de una rejilla continua. Todos los trozos
+            // planos comparten UN ÚNICO contenedor de rejilla persistente
+            // (#grid-plano, creado una sola vez y reutilizado en las
+            // cargas siguientes por scroll), para que la rejilla fluya de
+            // verdad sin importar en cuántos trozos se haya troceado la
+            // paginación por dentro.
+            if (!grupo.nombre) {
+                let gridPlano = cont.querySelector('#grid-plano');
+                if (!gridPlano) {
+                    gridPlano = document.createElement('div');
+                    gridPlano.id = 'grid-plano';
+                    gridPlano.className = 'grid-productos';
+                    cont.appendChild(gridPlano);
+                }
+                grupo.productos.forEach(p => gridPlano.appendChild(crearTarjeta(p)));
+                return;
+            }
+
             const seccion = document.createElement('div');
             seccion.className = 'familia-seccion';
-            // Sin cabecera si el grupo no tiene nombre — es un "trozo" del
-            // modo de lista plana (ordenación explícita activa), no una
-            // familia real; mostrar un título vacío con solo el contador
-            // quedaría raro y no aporta nada.
             seccion.innerHTML = `
-                ${grupo.nombre ? `<h3 class="familia-titulo">${grupo.nombre} <span class="count">${grupo.productos.length}</span></h3>` : ''}
+                <h3 class="familia-titulo">${grupo.nombre} <span class="count">${grupo.productos.length}</span></h3>
                 <div class="subfamilias-contenedor"></div>
             `;
             const subCont = seccion.querySelector('.subfamilias-contenedor');
@@ -6263,9 +6295,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
 
+        // En modo plano (ordenación explícita activa) no hay cabecera de
+        // familia/subfamilia que dé contexto — sin ella, cada tarjeta
+        // parecía "suelta" sin indicar a qué área/familia pertenece.
+        // Etiqueta discreta solo en ese caso; en el modo agrupado de
+        // siempre sería redundante con la cabecera de sección.
+        const enModoPlano = !!$('f-orden').value;
+        const etiquetaAreaFamilia = enModoPlano
+            ? `<p class="producto-area-familia">${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</p>`
+            : '';
+
         card.innerHTML = `
             <div class="producto-img-wrap">${ofertaBadge}${logoBadge}${imgHtml}</div>
             <div class="producto-info">
+                ${etiquetaAreaFamilia}
                 <p class="producto-nombre">${escapeHtml(p.nombre)}</p>
                 <p class="producto-ref">Ref: ${escapeHtml(p.ref)}</p>
                 ${precioHtml}
