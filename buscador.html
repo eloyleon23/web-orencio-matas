@@ -3662,13 +3662,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <select id="asistente-f-area">
-                <option value="">Todas las áreas</option>
-                <option value="drogueria">Droguería</option>
-                <option value="perfumeria">Perfumería</option>
-                <option value="pinturas">Pinturas</option>
-                <option value="talleres">Talleres</option>
-            </select>
+            <div class="area-multi-wrap">
+                <button type="button" id="asistente-f-area-btn" class="area-multi-btn" aria-haspopup="true" aria-expanded="false">
+                    <span id="asistente-f-area-btn-texto">Todas las áreas</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div class="area-multi-panel" id="asistente-f-area-panel">
+                    <div class="area-multi-lista" id="asistente-f-area-opciones">
+                        <label class="familia-item"><input type="checkbox" value="drogueria" checked> Droguería</label>
+                        <label class="familia-item"><input type="checkbox" value="perfumeria" checked> Perfumería</label>
+                        <label class="familia-item"><input type="checkbox" value="pinturas" checked> Pinturas</label>
+                        <label class="familia-item"><input type="checkbox" value="talleres" checked> Talleres</label>
+                    </div>
+                </div>
+            </div>
             <select id="asistente-f-familia">
                 <option value="">Todas las familias</option>
             </select>
@@ -8587,15 +8594,28 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return null;
     }
 
+    function areasSeleccionadasAsistente() {
+        return [...document.querySelectorAll('#asistente-f-area-opciones input:checked')].map(i => i.value);
+    }
+    function actualizarTextoBotonAreaAsistente() {
+        const total = document.querySelectorAll('#asistente-f-area-opciones input').length;
+        const sel = areasSeleccionadasAsistente();
+        const btnTexto = $('asistente-f-area-btn-texto');
+        if (sel.length === 0) btnTexto.textContent = 'Ninguna área';
+        else if (sel.length === total) btnTexto.textContent = 'Todas las áreas';
+        else if (sel.length === 1) btnTexto.textContent = AREAS_NOMBRE[sel[0]] || sel[0];
+        else btnTexto.textContent = `${sel.length} áreas`;
+    }
+
     // Puebla el desplegable de familias según el área elegida en el
     // asistente (misma lógica que renderFamilias() del buscador
     // principal, pero para un <select> simple de una sola familia).
     function renderFamiliasAsistente() {
-        const areaSel = $('asistente-f-area').value;
+        const areasSel = areasSeleccionadasAsistente();
         const select = $('asistente-f-familia');
         const valorPrevio = select.value;
 
-        const base = areaSel ? TODOS.filter(p => p.area === areaSel) : TODOS;
+        const base = areasSel.length ? TODOS.filter(p => areasSel.includes(p.area)) : TODOS;
         const familias = [...new Set(base.map(p => p.familia).filter(Boolean))];
         familias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
@@ -8610,14 +8630,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function construirColaAsistente() {
         const incluirSinImagen = $('asistente-f-sin-imagen').checked;
         const incluirSinValidar = $('asistente-f-sin-validar').checked;
-        const areaFiltro = $('asistente-f-area').value;
+        const areasSelAsistente = areasSeleccionadasAsistente();
         const familiaFiltro = $('asistente-f-familia').value;
         const textoFiltro = sinAcentosAsistente($('asistente-f-texto').value.trim());
 
         colaAsistente = TODOS.filter(p => {
             if (p.fabricante) return false; // catálogos estáticos de proveedor: no gestionados aquí
             if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
-            if (areaFiltro && p.area !== areaFiltro) return false;
+            if (areasSelAsistente.length && !areasSelAsistente.includes(p.area)) return false;
             if (familiaFiltro && p.familia !== familiaFiltro) return false;
             if (textoFiltro && !sinAcentosAsistente(p.nombre).includes(textoFiltro)) return false;
 
@@ -8635,6 +8655,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     async function abrirAsistenteImagenes() {
         await cargarMapaMarcasAsistente();
+        actualizarTextoBotonAreaAsistente();
         renderFamiliasAsistente();
         construirColaAsistente();
         $('modal-asistente-imagenes-overlay').classList.add('activo');
@@ -8858,7 +8879,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // usuario TOCA algún filtro — así queda claro que hay cambios sin
     // aplicar todavía, en vez de parecer un botón siempre disponible sin
     // indicar si hace falta pulsarlo o no.
-    ['asistente-f-sin-imagen', 'asistente-f-sin-validar', 'asistente-f-area', 'asistente-f-familia'].forEach(id => {
+    ['asistente-f-sin-imagen', 'asistente-f-sin-validar', 'asistente-f-familia'].forEach(id => {
         $(id).addEventListener('change', () => { $('asistente-aplicar-filtros').disabled = false; });
     });
     $('asistente-f-texto').addEventListener('input', () => {
@@ -8871,7 +8892,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('asistente-aplicar-filtros').disabled = false;
         $('asistente-f-texto').focus();
     });
-    $('asistente-f-area').addEventListener('change', () => { renderFamiliasAsistente(); });
+    $('asistente-f-area-opciones').addEventListener('change', () => {
+        actualizarTextoBotonAreaAsistente();
+        renderFamiliasAsistente();
+        $('asistente-aplicar-filtros').disabled = false;
+    });
+    // Mismo desplegable que el área del buscador principal (abre/cierra al
+    // pulsar, se cierra al clicar fuera o con Escape).
+    $('asistente-f-area-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const panel = $('asistente-f-area-panel');
+        const abierto = panel.classList.toggle('abierto');
+        $('asistente-f-area-btn').setAttribute('aria-expanded', abierto ? 'true' : 'false');
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.asistente-filtros')) {
+            $('asistente-f-area-panel').classList.remove('abierto');
+            $('asistente-f-area-btn').setAttribute('aria-expanded', 'false');
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            $('asistente-f-area-panel').classList.remove('abierto');
+            $('asistente-f-area-btn').setAttribute('aria-expanded', 'false');
+        }
+    });
 
     // Zona de arrastrar / pegar / elegir archivo
     const dropzoneAsistente = $('asistente-dropzone');
