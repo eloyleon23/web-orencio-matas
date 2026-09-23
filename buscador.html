@@ -5975,7 +5975,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (fechaDesde || fechaHasta) {
             resultadosActuales = resultadosActuales.filter(p => {
                 const f = parseFecha(p.fecha_alta);
-                if (!f) return false; // sin fecha conocida -> no se puede evaluar el rango
+                // Sin fecha_alta conocida (producto antiguo, de antes de
+                // que existiera esa columna, o sin dato en el CRM) -> NO
+                // se excluye. Bug real encontrado: "Hasta" se precarga
+                // siempre con la fecha de hoy por defecto (aunque el
+                // usuario no haya tocado nada), así que excluir aquí
+                // hacía desaparecer de TODOS los resultados a cualquier
+                // producto sin fecha_alta, con el filtro de fecha
+                // completamente pasivo — un efecto secundario grave e
+                // invisible para el usuario. Este filtro solo debe excluir
+                // por una fecha CONOCIDA que quede fuera del rango, nunca
+                // por falta de dato.
+                if (!f) return true;
                 if (fechaDesde && f < new Date(fechaDesde + 'T00:00:00').getTime()) return false;
                 if (fechaHasta && f > new Date(fechaHasta + 'T23:59:59').getTime()) return false;
                 return true;
@@ -6056,8 +6067,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function parseFecha(str) {
         if (!str) return 0;
-        // formato dd/mm/yyyy HH:mm
-        const m = str.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+        // Formato dd/mm/yyyy HH:mm, con día/mes/hora admitidos con o sin
+        // cero a la izquierda (\d{1,2}, no \d{2}) — necesario desde que
+        // se usa también para fecha_alta: a diferencia de fecha_registro
+        // (siempre formateada internamente por Apps Script con Utilities.
+        // formatDate, así que siempre con dos dígitos), fecha_alta se
+        // importa como texto plano directamente del CRM y puede venir sin
+        // rellenar ("9/09/2026" en vez de "09/09/2026"), a veces incluso
+        // sin hora. Bug real: con el regex estricto anterior (\d{2}),
+        // esos valores no parseaban en absoluto (devolvía 0, "sin fecha
+        // conocida"), así que fecha_alta se veía como si nunca llegara,
+        // aunque el campo sí estuviera en el JSON.
+        const m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
         if (!m) return 0;
         return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0)).getTime();
     }
