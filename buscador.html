@@ -996,6 +996,22 @@
             }
         }
 
+        /* Cabecera de área ("ordenar por área") — un nivel por encima de
+           familia en la jerarquía visual, con el rojo de marca como
+           acento para diferenciarla claramente de familia/subfamilia. */
+        .area-seccion-titulo {
+            margin: 36px 0 18px;
+        }
+        .area-seccion-titulo:first-child { margin-top: 0; }
+        .area-seccion-titulo h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--red);
+            margin: 0 0 6px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--red);
+        }
+
         .familia-seccion { margin-bottom: 32px; }
         .familia-titulo {
             font-size: 1.05rem;
@@ -4069,6 +4085,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // visualmente ni un intervalo de mensajes corriendo sin motivo.
     let cancelarPeticionIAProductoEnCurso = null;
     let familiasMostradas = 0;   // cuántas familias ya se han pintado (paginación)
+    let ultimaAreaRenderizada = null; // última cabecera de área pintada (modo "ordenar por área"), para no repetirla en cada familia
     const FAMILIAS_POR_CARGA = 3; // cuántas familias se cargan cada vez (~12 productos aprox)
 
     const $ = (id) => document.getElementById(id);
@@ -5935,17 +5952,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             resultadosActuales.sort((a, b) => precioDe(a) - precioDe(b));
         } else if (orden === 'precio_desc') {
             resultadosActuales.sort((a, b) => precioDe(b) - precioDe(a));
-        } else if (orden === 'area') {
-            // Ordena por área y, dentro de cada área, por familia en
-            // orden alfabético (petición explícita) — como criterio de
-            // ordenación de una lista plana, no como agrupación visual
-            // con cabeceras (igual que fecha/precio).
-            resultadosActuales.sort((a, b) => {
-                const areaCmp = (AREAS_NOMBRE[a.area] || a.area || '').localeCompare(AREAS_NOMBRE[b.area] || b.area || '', 'es', { sensitivity: 'base' });
-                if (areaCmp !== 0) return areaCmp;
-                return (a.familia || '').localeCompare(b.familia || '', 'es', { sensitivity: 'base' });
-            });
         }
+        // 'area' no se ordena aquí — a diferencia de fecha/precio, se
+        // muestra AGRUPADA (con nombre de familia y subfamilia visibles,
+        // igual que el modo por defecto — petición explícita de Eloy: "la
+        // diferencia está en que influye el área pero no en los productos
+        // que se muestran de cada familia del área"), así que el propio
+        // agruparPorAreaFamilia() se encarga del orden al construir los
+        // grupos, no un sort plano de antemano (ver agruparResultados).
 
         renderResultados();
         actualizarBotonMostrarResultadosMovil();
@@ -6045,6 +6059,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
+    // Modo "ordenar por área" — a diferencia de fecha/precio, se muestra
+    // AGRUPADA con nombres de familia y subfamilia visibles, igual que el
+    // modo por defecto (petición explícita de Eloy: "debería mostrar el
+    // nombre de la familia y subfamilia al igual que la ordenación por
+    // defecto. La diferencia está en que influye el área pero no en los
+    // productos que se muestran de cada familia del área" — es decir, el
+    // área es el nivel de agrupación de más arriba, pero dentro de cada
+    // área la familia/subfamilia funciona exactamente igual que siempre).
+    // Reutiliza agruparPorFamilia() tal cual, una vez por área — así la
+    // lógica de familia/subfamilia (incluida la ordenación de productos
+    // dentro de cada subfamilia) es exactamente la misma, sin duplicarla.
+    // Cada grupo resultante lleva marcado de qué área es (grupo.area),
+    // para que añadirGruposAlContenedor() sepa cuándo insertar una
+    // cabecera de área nueva (ver ultimaAreaRenderizada).
+    function agruparPorAreaFamilia(lista) {
+        const porArea = {};
+        lista.forEach(p => {
+            const area = p.area || '';
+            if (!porArea[area]) porArea[area] = [];
+            porArea[area].push(p);
+        });
+        const areasOrdenadas = Object.keys(porArea).sort((a, b) =>
+            (AREAS_NOMBRE[a] || a).localeCompare(AREAS_NOMBRE[b] || b, 'es', { sensitivity: 'base' })
+        );
+
+        const grupos = [];
+        areasOrdenadas.forEach(area => {
+            agruparPorFamilia(porArea[area]).forEach(grupo => {
+                grupo.area = area;
+                grupos.push(grupo);
+            });
+        });
+        return grupos;
+    }
+
     // Modo de lista plana — se usa en vez de agruparPorFamilia() cuando hay
     // una ordenación explícita elegida ("Ordenar por"): agrupar por
     // familia/subfamilia reordenaría DENTRO de cada grupo, perdiendo el
@@ -6068,12 +6117,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return grupos;
     }
 
-    // Punto único de entrada: decide agrupado-por-familia (de siempre) o
-    // lista plana (si hay una ordenación explícita activa) — llamado
-    // tanto desde renderResultados() como desde cargarMasFamilias(), para
-    // que los dos usen siempre el mismo criterio.
+    // Punto único de entrada: decide agrupado-por-familia (de siempre),
+    // agrupado-por-área (con familia/subfamilia dentro de cada área), o
+    // lista plana (fecha/precio) — llamado tanto desde renderResultados()
+    // como desde cargarMasFamilias(), para que los dos usen siempre el
+    // mismo criterio.
     function agruparResultados(lista) {
         const orden = $('f-orden').value;
+        if (orden === 'area') return agruparPorAreaFamilia(lista);
         return orden ? agruparPlano(lista) : agruparPorFamilia(lista);
     }
 
@@ -6168,6 +6219,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Este es un resultado NUEVO (búsqueda/filtro cambiado) — aquí sí
         // se reconstruye todo desde cero, es correcto y esperado.
         cont.innerHTML = '';
+        ultimaAreaRenderizada = null;
         añadirGruposAlContenedor(grupos.slice(0, familiasMostradas));
 
         btnMas.style.display = familiasMostradas < grupos.length ? '' : 'none';
@@ -6211,6 +6263,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 }
                 grupo.productos.forEach(p => gridPlano.appendChild(crearTarjeta(p)));
                 return;
+            }
+
+            // Cabecera de área ("ordenar por área") — solo cuando el área
+            // cambia respecto al último grupo ya renderizado (no en cada
+            // familia), tanto en la carga inicial como en las siguientes
+            // por scroll (ultimaAreaRenderizada es una variable a nivel de
+            // módulo, ver su reseteo en renderResultados()).
+            if (grupo.area && grupo.area !== ultimaAreaRenderizada) {
+                const areaHeader = document.createElement('div');
+                areaHeader.className = 'area-seccion-titulo';
+                areaHeader.innerHTML = `<h2>${AREAS_NOMBRE[grupo.area] || grupo.area}</h2>`;
+                cont.appendChild(areaHeader);
+                ultimaAreaRenderizada = grupo.area;
             }
 
             const seccion = document.createElement('div');
@@ -6295,12 +6360,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
 
-        // En modo plano (ordenación explícita activa) no hay cabecera de
-        // familia/subfamilia que dé contexto — sin ella, cada tarjeta
-        // parecía "suelta" sin indicar a qué área/familia pertenece.
-        // Etiqueta discreta solo en ese caso; en el modo agrupado de
-        // siempre sería redundante con la cabecera de sección.
-        const enModoPlano = !!$('f-orden').value;
+        // En modo plano (fecha/precio) no hay cabecera de familia/subfamilia
+        // que dé contexto — sin ella, cada tarjeta parecía "suelta" sin
+        // indicar a qué área/familia pertenece. Etiqueta discreta solo ahí;
+        // en el modo agrupado de siempre, y en "ordenar por área" (que
+        // también se agrupa, con cabeceras reales de área/familia/
+        // subfamilia), sería redundante con la cabecera de sección.
+        const ordenActual = $('f-orden').value;
+        const enModoPlano = ordenActual && ordenActual !== 'area';
         const etiquetaAreaFamilia = enModoPlano
             ? `<p class="producto-area-familia">${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</p>`
             : '';
