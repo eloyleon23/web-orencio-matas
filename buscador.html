@@ -3178,9 +3178,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="filtro-grupo">
             <label class="titulo" for="f-orden">Ordenar por</label>
             <select id="f-orden" class="select-basico">
-                <option value="">Relevancia (por defecto)</option>
+                <option value="">Familia (por defecto)</option>
                 <option value="fecha_desc">Fecha de alta: más reciente primero</option>
                 <option value="fecha_asc">Fecha de alta: más antiguo primero</option>
+                <option value="precio_asc">Precio: menor a mayor</option>
+                <option value="precio_desc">Precio: mayor a menor</option>
+                <option value="area">Área (y familia dentro de cada área)</option>
             </select>
         </div>
 
@@ -5888,14 +5891,29 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         // Ordenación explícita elegida por el usuario ("Ordenar por") —
-        // sustituye al orden anterior (relevancia/fecha por defecto),
-        // tanto si hay texto de búsqueda activo como si no. Va antes de
+        // sustituye al orden anterior (familia por defecto/fecha), tanto
+        // si hay texto de búsqueda activo como si no. Va antes de
         // renderResultados() para que pinte ya en el orden elegido.
         const orden = $('f-orden').value;
+        const precioDe = p => parseFloat((p.precio_con || '0').replace(',', '.')) || 0;
         if (orden === 'fecha_desc') {
             resultadosActuales.sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha));
         } else if (orden === 'fecha_asc') {
             resultadosActuales.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
+        } else if (orden === 'precio_asc') {
+            resultadosActuales.sort((a, b) => precioDe(a) - precioDe(b));
+        } else if (orden === 'precio_desc') {
+            resultadosActuales.sort((a, b) => precioDe(b) - precioDe(a));
+        } else if (orden === 'area') {
+            // Ordena por área y, dentro de cada área, por familia en
+            // orden alfabético (petición explícita) — como criterio de
+            // ordenación de una lista plana, no como agrupación visual
+            // con cabeceras (igual que fecha/precio).
+            resultadosActuales.sort((a, b) => {
+                const areaCmp = (AREAS_NOMBRE[a.area] || a.area || '').localeCompare(AREAS_NOMBRE[b.area] || b.area || '', 'es', { sensitivity: 'base' });
+                if (areaCmp !== 0) return areaCmp;
+                return (a.familia || '').localeCompare(b.familia || '', 'es', { sensitivity: 'base' });
+            });
         }
 
         renderResultados();
