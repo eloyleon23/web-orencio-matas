@@ -1095,6 +1095,14 @@
             object-fit: contain;
             padding: 10px;
         }
+        /* Corrección de imágenes con fondo negro conocido (ver
+           REFS_FONDO_NEGRO) — mix-blend-mode: screen convierte el negro
+           puro del fondo en el color que tenga detrás (el gris claro de
+           .producto-img-wrap, igual que cualquier otra imagen), sin tocar
+           ni leer ningún píxel por código. Aclara ligeramente el resto de
+           la imagen (es como funciona este modo de fusión), pero es una
+           mejora clara frente al negro sólido. */
+        .img-fondo-corregido { mix-blend-mode: screen; }
         .producto-sin-img {
             color: #94a3b8;
             font-size: 0.75rem;
@@ -3908,6 +3916,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         talleres:   'Talleres',
     };
 
+    // Referencias con la imagen de fondo negro confirmado (Eloy, con
+    // captura de pantalla) — la foto original tiene transparencia real,
+    // pero el servicio de miniaturas de Google Drive la aplana a negro en
+    // vez de a blanco al redimensionarla. Corrección por CSS puro
+    // (mix-blend-mode, ver .img-fondo-corregido), sin tocar ni leer ni un
+    // píxel de la imagen — leer píxeles de una imagen de otro dominio
+    // (Drive) requeriría que Drive lo permita expresamente entre dominios,
+    // algo que no se puede comprobar sin acceso directo a Drive, y un
+    // fallo ahí no dejaría "sin arreglar" sino "sin cargar la imagen" para
+    // todo el catálogo — riesgo que no compensa. Lista mantenida a mano
+    // según se vayan reportando más casos, no autodetectada.
+    const REFS_FONDO_NEGRO = new Set([
+        '1011087', // HUMUS HLH-DIATGON TIERRA DE DIATOMEAS C/2 KG
+    ]);
+
     // Logo pequeño del fabricante/proveedor para productos de Talleres
     // (esquina inferior izquierda de la foto). "Besa" ya está preparado
     // aquí para cuando se integre ese catálogo — solo hace falta que sus
@@ -6216,8 +6239,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
 
         const urlImg = urlImagenProducto(p, 300);
+        const claseFondo = REFS_FONDO_NEGRO.has(p.ref) ? ' img-fondo-corregido' : '';
         const imgHtml = urlImg
-            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
+            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" class="${claseFondo.trim()}" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
             : sinImagenFabricanteHtml(p);
 
         // El badge pequeño de fabricante se muestra siempre que haya
@@ -6563,6 +6587,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-img').src = imgSrc;
         $('modal-producto-img').alt = escapeHtml(p.nombre);
         $('modal-producto-img').onerror = () => mostrarSinImagenModal(p);
+        // classList.toggle (no solo add) porque este <img> es un único
+        // elemento reutilizado entre productos distintos — sin el
+        // "false" explícito para el caso contrario, la clase se quedaría
+        // pegada de un producto afectado al siguiente que no lo esté.
+        $('modal-producto-img').classList.toggle('img-fondo-corregido', REFS_FONDO_NEGRO.has(p.ref));
 
         // El botón que envuelve la imagen solo tiene sentido si hay una
         // foto real que ampliar (con el logo/nombre genérico de "sin
@@ -8859,6 +8888,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('lightbox-imagen-img').src = url;
         $('lightbox-imagen-nombre').textContent = nombre || '';
         $('lightbox-imagen-ref').textContent = ref ? `Ref: ${ref}` : '';
+        $('lightbox-imagen-img').classList.toggle('img-fondo-corregido', REFS_FONDO_NEGRO.has(ref));
         $('lightbox-imagen-overlay').classList.add('activo');
     }
     function cerrarLightboxImagen() {
