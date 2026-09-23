@@ -1707,6 +1707,14 @@
 }
 .cs-calculadora__resultado strong { color: var(--primary-red); }
 .cs-calculadora__nota { font-size: 0.8rem; color: var(--text-muted); }
+.cs-selector-marca-aviso {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #78350f;
+  line-height: 1.5;
+}
 @media (max-width: 640px) {
   .cs-calculadora__campos { grid-template-columns: 1fr; }
 }

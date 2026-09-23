@@ -444,6 +444,16 @@
                 </select>
               </div>
             </div>
+            <p class="cs-calculadora__nota cs-selector-marca-aviso">
+              ⚠️ Si la madera ya tiene un acabado anterior, no des por hecho que el
+              producto nuevo será compatible — sobre todo si vas a cambiar de
+              tecnología (por ejemplo, aplicar algo al agua sobre un sistema
+              sintético, o al revés). Lo más seguro es probar antes en una zona
+              poco visible o, si el acabado anterior está muy deteriorado o no
+              sabes identificarlo, retirarlo hasta dejar la madera limpia. El
+              tiempo de secado y el número de manos varían según el producto y
+              la marca — consulta siempre la ficha técnica del que elijas.
+            </p>
             <p id="cs-selector-marca-nota" class="cs-calculadora__nota" style="display:none;"></p>
             <div id="cs-selector-marca-resultado" class="cs-productos-grid cs-selector-resultado"></div>
           </div>
