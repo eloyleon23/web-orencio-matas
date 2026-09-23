@@ -1111,14 +1111,6 @@
             object-fit: contain;
             padding: 10px;
         }
-        /* Corrección de imágenes con fondo negro conocido (ver
-           REFS_FONDO_NEGRO) — mix-blend-mode: screen convierte el negro
-           puro del fondo en el color que tenga detrás (el gris claro de
-           .producto-img-wrap, igual que cualquier otra imagen), sin tocar
-           ni leer ningún píxel por código. Aclara ligeramente el resto de
-           la imagen (es como funciona este modo de fusión), pero es una
-           mejora clara frente al negro sólido. */
-        .img-fondo-corregido { mix-blend-mode: screen; }
         .producto-sin-img {
             color: #94a3b8;
             font-size: 0.75rem;
@@ -3219,7 +3211,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </select>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-fabricante-taller" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-fabricante-taller" style="display: none;">
             <label class="titulo">Fabricante</label>
             <div class="familias-lista" id="f-fabricante-taller"></div>
         </div>
@@ -3229,52 +3221,52 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="familias-lista" id="f-familias"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-subfamilias" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-subfamilias" style="display: none;">
             <label class="titulo">Subfamilia</label>
             <div class="familias-lista" id="f-subfamilias"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-talla-taller" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-talla-taller" style="display: none;">
             <label class="titulo">Talla</label>
             <div class="familias-lista" id="f-talla-taller"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-grano-taller" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-grano-taller" style="display: none;">
             <label class="titulo">Grano</label>
             <div class="familias-lista" id="f-grano-taller"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-color-taller" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-color-taller" style="display: none;">
             <label class="titulo">Color</label>
             <div class="familias-lista" id="f-color-taller"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-medida-taller" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-medida-taller" style="display: none;">
             <label class="titulo">Medida</label>
             <div class="familias-lista" id="f-medida-taller"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-volumen-taller" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-volumen-taller" style="display: none;">
             <label class="titulo">Volumen</label>
             <div class="familias-lista" id="f-volumen-taller"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-micras-taller" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-micras-taller" style="display: none;">
             <label class="titulo">Micras</label>
             <div class="familias-lista" id="f-micras-taller"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-otros-taller" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-otros-taller" style="display: none;">
             <label class="titulo">Otras variantes</label>
             <div class="familias-lista" id="f-otros-taller"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-acabado" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-acabado" style="display: none;">
             <label class="titulo">Acabado</label>
             <div class="familias-lista" id="f-acabado"></div>
         </div>
 
-        <div class="filtro-grupo collapsable" id="grupo-formato" style="display: none;">
+        <div class="filtro-grupo collapsable collapsed" id="grupo-formato" style="display: none;">
             <label class="titulo">Formato / Envase</label>
             <div class="familias-lista" id="f-formato"></div>
         </div>
@@ -3940,21 +3932,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         talleres:   'Talleres',
     };
 
-    // Referencias con la imagen de fondo negro confirmado (Eloy, con
-    // captura de pantalla) — la foto original tiene transparencia real,
-    // pero el servicio de miniaturas de Google Drive la aplana a negro en
-    // vez de a blanco al redimensionarla. Corrección por CSS puro
-    // (mix-blend-mode, ver .img-fondo-corregido), sin tocar ni leer ni un
-    // píxel de la imagen — leer píxeles de una imagen de otro dominio
-    // (Drive) requeriría que Drive lo permita expresamente entre dominios,
-    // algo que no se puede comprobar sin acceso directo a Drive, y un
-    // fallo ahí no dejaría "sin arreglar" sino "sin cargar la imagen" para
-    // todo el catálogo — riesgo que no compensa. Lista mantenida a mano
-    // según se vayan reportando más casos, no autodetectada.
-    const REFS_FONDO_NEGRO = new Set([
-        '1011087', // HUMUS HLH-DIATGON TIERRA DE DIATOMEAS C/2 KG
-    ]);
-
     // Logo pequeño del fabricante/proveedor para productos de Talleres
     // (esquina inferior izquierda de la foto). "Besa" ya está preparado
     // aquí para cuando se integre ese catálogo — solo hace falta que sus
@@ -4585,6 +4562,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // Añadir productos adicionales y actualizar filtros
             TODOS = [...TODOS, ...productosTalleres, ...productosGlasurit, ...productosBesa, ...productosBaslac];
             construirIndiceSugerencias();
+            // Bug real reportado por Eloy: el filtro de Fabricante (área
+            // Talleres) aparecía vacío al entrar, y solo se rellenaba al
+            // desactivar/reactivar el área a mano. Causa de fondo: Talleres
+            // no tiene NINGÚN producto en el catálogo principal (solo en
+            // estos catálogos de proveedor, que llegan aquí, en segundo
+            // plano) — así que su propia CASILLA de área podía no existir
+            // todavía cuando se construyó #f-area-opciones por primera vez,
+            // y aplicarFiltros() por sí solo no reconstruye ni las áreas ni
+            // las listas de opciones de los demás filtros, solo refiltra
+            // con lo que ya hubiera marcado en ellos. Hace falta
+            // reconstruirlos explícitamente aquí también, con los datos ya
+            // completos — poblarOpcionesArea() conserva el estado
+            // marcado/desmarcado de las áreas que ya existieran.
+            poblarOpcionesArea();
+            renderFabricanteTaller();
+            renderFamilias();
+            renderAtributosTaller();
+            renderAtributosPintura();
             aplicarFiltros(); // Actualizar resultados con los nuevos productos
         }).catch(err => {
             console.warn('Error al cargar productos adicionales:', err);
@@ -4823,22 +4818,46 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         else btnTexto.textContent = `${sel.length} áreas`;
     }
 
+    // Puebla #f-area-opciones a partir de las áreas presentes en TODOS en
+    // este momento — reutilizable, porque TODOS cambia en dos momentos:
+    // en la carga inicial, y cuando llegan los catálogos de proveedores
+    // de Talleres en segundo plano (ver cargarProductosAdicionalesEnSegundoPlano).
+    // Talleres en concreto no tiene NINGÚN producto propio en el catálogo
+    // principal (viene solo de esos catálogos de proveedor) — así que su
+    // casilla de área no existe todavía en la primera llamada, y sin
+    // volver a poblar aquí, nunca llegaría a aparecer sin recargar.
+    // Preserva el estado marcado/desmarcado de las áreas que YA existían
+    // (para no perder una selección que el usuario hiciera justo antes de
+    // que termine esta carga en segundo plano); las áreas nuevas se
+    // marcan por defecto, igual que el resto ("todas activas por
+    // defecto").
+    function poblarOpcionesArea() {
+        const areasPresentes = [...new Set(TODOS.map(p => p.area).filter(Boolean))];
+        const contArea = $('f-area-opciones');
+        const estadoPrevio = {};
+        contArea.querySelectorAll('input').forEach(i => { estadoPrevio[i.value] = i.checked; });
+
+        contArea.innerHTML = '';
+        areasPresentes.sort().forEach(area => {
+            const label = document.createElement('label');
+            label.className = 'familia-item';
+            const checked = (area in estadoPrevio) ? estadoPrevio[area] : true;
+            label.innerHTML = `<input type="checkbox" value="${area}" ${checked ? 'checked' : ''}> ${AREAS_NOMBRE[area] || area}`;
+            contArea.appendChild(label);
+        });
+        actualizarTextoBotonArea();
+    }
+
     // ── Inicializar selects de área y lista de familias ──
     function inicializarFiltros() {
         // Áreas presentes en los datos — todas marcadas por defecto
         // (petición explícita: "por defecto todas las áreas activas").
-        const areasPresentes = [...new Set(TODOS.map(p => p.area).filter(Boolean))];
-        const contArea = $('f-area-opciones');
-        areasPresentes.sort().forEach(area => {
-            const label = document.createElement('label');
-            label.className = 'familia-item';
-            label.innerHTML = `<input type="checkbox" value="${area}" checked> ${AREAS_NOMBRE[area] || area}`;
-            contArea.appendChild(label);
-        });
-        actualizarTextoBotonArea();
+        poblarOpcionesArea();
 
         renderFabricanteTaller();
         renderFamilias();
+        renderAtributosTaller();
+        renderAtributosPintura();
         document.querySelectorAll('.filtro-grupo.collapsable .titulo').forEach(titulo => {
             titulo.addEventListener('click', function() {
                 const grupo = this.closest('.filtro-grupo');
@@ -5355,35 +5374,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Renderizar checkboxes de subfamilia según las familias seleccionadas ──
+    // Antes este filtro solo aparecía tras elegir una familia (cascada
+    // estricta). Petición explícita de Eloy: "otro filtro que habría que
+    // incluir es el de subfamilia... que las opciones se actualicen en
+    // base al resto de filtros o áreas" — ahora es un filtro más, siempre
+    // presente (plegado por defecto, ver HTML), cuyas opciones reflejan
+    // el área/familia/fabricante ya activos, igual que familia refleja el
+    // área — sin necesitar haber elegido una familia concreta primero.
     function renderSubfamilias() {
+        const areasSel = areasSeleccionadas();
         const familiasSel = familiasSeleccionadas();
+        const fabricantesSel = fabricantesTallerSeleccionados();
         const cont = $('f-subfamilias');
         const grupo = $('grupo-subfamilias');
 
         cont.innerHTML = '';
 
-        if (familiasSel.length === 0) {
+        let base = areasSel.length ? TODOS.filter(p => areasSel.includes(p.area)) : TODOS;
+        if (familiasSel.length) {
+            const familiasSelUpper = familiasSel.map(f => f.toUpperCase());
+            base = base.filter(p => p.familia && familiasSelUpper.includes(p.familia.toUpperCase()));
+        }
+        if (areasSel.includes('talleres') && fabricantesSel.length) {
+            base = base.filter(p => p.area !== 'talleres' || fabricantesSel.includes(p.fabricante));
+        }
+
+        const subfamilias = [...new Set(base.map(p => p.subfamilia).filter(Boolean))];
+        subfamilias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+        if (!subfamilias.length) {
             grupo.style.display = 'none';
             return;
         }
-
         grupo.style.display = 'block';
-
-        // Normalizar familias seleccionadas a mayúsculas para comparación consistente
-        const familiasSelUpper = familiasSel.map(f => f.toUpperCase());
-
-        // Obtener subfamilias de las familias seleccionadas
-        const subfamiliasSet = new Set();
-        TODOS.forEach(p => {
-            if (p.familia && familiasSelUpper.includes(p.familia.toUpperCase()) && p.subfamilia) {
-                subfamiliasSet.add(p.subfamilia);
-            }
-        });
-
-        const subfamilias = Array.from(subfamiliasSet);
-
-        // Ordenar subfamilias alfabéticamente
-        subfamilias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
         subfamilias.forEach(subfam => {
             const label = document.createElement('label');
@@ -6353,9 +6376,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
 
         const urlImg = urlImagenProducto(p, 300);
-        const claseFondo = REFS_FONDO_NEGRO.has(p.ref) ? ' img-fondo-corregido' : '';
         const imgHtml = urlImg
-            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" class="${claseFondo.trim()}" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
+            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
             : sinImagenFabricanteHtml(p);
 
         // El badge pequeño de fabricante se muestra siempre que haya
@@ -6714,11 +6736,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-img').src = imgSrc;
         $('modal-producto-img').alt = escapeHtml(p.nombre);
         $('modal-producto-img').onerror = () => mostrarSinImagenModal(p);
-        // classList.toggle (no solo add) porque este <img> es un único
-        // elemento reutilizado entre productos distintos — sin el
-        // "false" explícito para el caso contrario, la clase se quedaría
-        // pegada de un producto afectado al siguiente que no lo esté.
-        $('modal-producto-img').classList.toggle('img-fondo-corregido', REFS_FONDO_NEGRO.has(p.ref));
 
         // El botón que envuelve la imagen solo tiene sentido si hay una
         // foto real que ampliar (con el logo/nombre genérico de "sin
@@ -9015,7 +9032,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('lightbox-imagen-img').src = url;
         $('lightbox-imagen-nombre').textContent = nombre || '';
         $('lightbox-imagen-ref').textContent = ref ? `Ref: ${ref}` : '';
-        $('lightbox-imagen-img').classList.toggle('img-fondo-corregido', REFS_FONDO_NEGRO.has(ref));
         $('lightbox-imagen-overlay').classList.add('activo');
     }
     function cerrarLightboxImagen() {
