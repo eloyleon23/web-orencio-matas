@@ -5946,10 +5946,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // precargaba la fecha, ni se llegaba nunca a aplicar el filtro de
         // fecha ni nada de lo que viene después. Sustituido por un bucle
         // simple, sin ningún límite de tamaño.
+        // fecha_alta (NO fecha/fecha_registro) a propósito, a petición
+        // explícita de Eloy: fecha_registro se actualiza en cada
+        // modificación del producto (precio, etc.), así que un producto
+        // realmente antiguo podría "parecer reciente" solo por haberse
+        // tocado en una sincronización — fecha_alta es la fecha de alta
+        // real en el CRM, se fija una sola vez y nunca se sobrescribe
+        // después, así que el filtro y la ordenación de "fecha de alta"
+        // siguen reflejando la antigüedad real del producto aunque se
+        // haya actualizado su precio. Solo afecta a este filtro y a la
+        // ordenación explícita "Ordenar por: Fecha de alta" — el orden
+        // por defecto ("últimos añadidos/editados" cuando no hay texto de
+        // búsqueda) sigue usando fecha_registro a propósito, es un
+        // comportamiento distinto que no se ha pedido cambiar.
         if (!fechaFiltroTocado) {
             let fechaMinima = 0;
             for (let i = 0; i < resultadosActuales.length; i++) {
-                const f = parseFecha(resultadosActuales[i].fecha);
+                const f = parseFecha(resultadosActuales[i].fecha_alta);
                 if (f > 0 && (fechaMinima === 0 || f < fechaMinima)) fechaMinima = f;
             }
             if (fechaMinima > 0) {
@@ -5961,7 +5974,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const fechaHasta = $('f-fecha-hasta').value;
         if (fechaDesde || fechaHasta) {
             resultadosActuales = resultadosActuales.filter(p => {
-                const f = parseFecha(p.fecha);
+                const f = parseFecha(p.fecha_alta);
                 if (!f) return false; // sin fecha conocida -> no se puede evaluar el rango
                 if (fechaDesde && f < new Date(fechaDesde + 'T00:00:00').getTime()) return false;
                 if (fechaHasta && f > new Date(fechaHasta + 'T23:59:59').getTime()) return false;
@@ -5982,12 +5995,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // sustituye al orden anterior (familia por defecto/fecha), tanto
         // si hay texto de búsqueda activo como si no. Va antes de
         // renderResultados() para que pinte ya en el orden elegido.
+        // 'fecha_desc'/'fecha_asc' usan fecha_alta (fecha de alta real en
+        // el CRM, fija desde que se crea el producto) — mismo criterio y
+        // mismo motivo que el filtro de rango de fechas, a petición
+        // explícita de Eloy: no fecha_registro, que se actualiza en cada
+        // modificación posterior.
         const orden = $('f-orden').value;
         const precioDe = p => parseFloat((p.precio_con || '0').replace(',', '.')) || 0;
         if (orden === 'fecha_desc') {
-            resultadosActuales.sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha));
+            resultadosActuales.sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta));
         } else if (orden === 'fecha_asc') {
-            resultadosActuales.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
+            resultadosActuales.sort((a, b) => parseFecha(a.fecha_alta) - parseFecha(b.fecha_alta));
         } else if (orden === 'precio_asc') {
             resultadosActuales.sort((a, b) => precioDe(a) - precioDe(b));
         } else if (orden === 'precio_desc') {

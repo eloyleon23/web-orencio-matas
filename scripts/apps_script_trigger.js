@@ -2974,6 +2974,13 @@ function regenerarCacheCompletaDesdeSheet_() {
         precio_mayor_sin: valorCelda_(row, 'precio_mayor_sin_iva'),
         precio_mayor_con: valorCelda_(row, 'precio_mayor_con_iva'),
         fecha: valorCelda_(row, 'fecha_registro'),
+        // Fecha de alta en el CRM (columna 'fecha_alta' del Sheet, se fija
+        // una sola vez al crear el producto en el CRM y nunca se
+        // sobrescribe en sincronizaciones posteriores) — a petición
+        // explícita de Eloy, distinta de 'fecha' (fecha_registro, que SÍ
+        // se actualiza en cada modificación). Usada solo por el filtro y
+        // la ordenación de "fecha de alta" del buscador.
+        fecha_alta: valorCelda_(row, 'fecha_alta'),
         espacios: valorCelda_(row, 'espacios_a_ocupar') || '1',
         imagen_validada: valorCelda_(row, 'imagen_validada'),
         fecha_actualizacion_imagen: valorCelda_(row, 'fecha_actualizacion_imagen'),

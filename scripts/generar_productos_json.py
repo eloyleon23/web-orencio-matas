@@ -178,6 +178,13 @@ def exportar_productos_json(productos, familias, subfamilias):
             'precio_mayor_sin': precio_mayor_sin,
             'precio_mayor_con': precio_mayor_con,
             'fecha':     p.get('fecha_registro', '').strip(),
+            # Fecha de alta en el CRM (columna 'fecha_alta' del Sheet, fija
+            # desde que se crea el producto, nunca se sobrescribe en
+            # sincronizaciones posteriores) — a petición explícita de Eloy,
+            # distinta de 'fecha' (fecha_registro, que sí se actualiza en
+            # cada modificación). Usada solo por el filtro/ordenación de
+            # "fecha de alta" del buscador.
+            'fecha_alta': p.get('fecha_alta', '').strip(),
             'espacios':  p.get('espacios_a_ocupar', '1').strip() or '1',
             'imagen_validada': p.get('imagen_validada', '').strip(),
             'fecha_actualizacion_imagen': p.get('fecha_actualizacion_imagen', '').strip(),
