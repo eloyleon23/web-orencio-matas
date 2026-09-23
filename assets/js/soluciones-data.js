@@ -2390,12 +2390,11 @@ window.SOLUCIONES_DATA = (function () {
         'Aplicar una mano demasiado gruesa esperando mayor protección.',
       ],
       recommendedProducts: [
-        { nombre: 'Xylazel Barniz Parquet y Tarima Satinado', categoria: 'Pinturas', formato: '750 ml', precio: '11,00 €' },
+        { nombre: 'BARNIZ TITAN ECO SUELOS POLIUR.SATI.750 ML.INCOL', ref: '8414800422412', categoria: 'Pinturas', formato: '750 ml', precio: '17,58 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado mate',    nombre: 'Xylazel Barniz Parquet y Tarima Mate', precio: '8,85 €' },
-        { etiqueta: 'Acabado brillante', nombre: 'Xylazel Barniz Parquet y Tarima Brillante', precio: '11,00 €' },
-        { etiqueta: 'Sistema al agua/cristal', nombre: 'Barniz Titán c/Poliuretano Muebles y Parquet al Cristal', precio: '29,65 €' },
+        { etiqueta: 'Acabado brillante', nombre: 'BARNIZ TITAN ECO SUELOS POLIUR.BRILLO 750 ML.INCOL', ref: '8414800422405', precio: '17,57 €' },
+        { etiqueta: 'Versión sintética (más resistente, base disolvente)', nombre: 'BARNIZ TITAN SUELOS C/POL.SATIN.750 ML.INCOL.', ref: '8414800421699', precio: '17,40 €' },
       ],
       relatedSolutions: ['restaurar-mueble-madera', 'abrillantar-suelo-marmol'],
       seo: {
@@ -2930,12 +2929,11 @@ window.SOLUCIONES_DATA = (function () {
         'Manipular la pieza antes de que la laca haya curado del todo.',
       ],
       recommendedProducts: [
-        { nombre: 'Titantech MXB-970 Fondo Poliuretano',       categoria: 'Talleres', formato: '750 ml', precio: '12,52 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X97_0000_MXB970_LACA_POLIURETANO_BLANCA_MATE_ES.pdf?v=2023-06-27-165500' },
-        { nombre: 'Titantech MXB-960 Laca Poliuretano Satinada', categoria: 'Talleres', formato: '6 L', precio: '72,36 €', fichaTecnica: 'http://ficheros.industriastitan.es/titan/FICHAS%20TECNICAS/X96_0000_MXB960_LACA_POLIURETANO_BLANCA_SATINADA_ES.pdf?v=2023-06-27-165500' },
+        { nombre: 'TITANTECH  MXB-970 FONDO POLIURET.750 ML.BLANCO', ref: '8414800436839', categoria: 'Pinturas', formato: '750 ml', precio: '12,52 €' },
+        { nombre: 'BARNIZ LACA TITANLAK SATINADO 750 ML.', ref: '8414800041064', categoria: 'Pinturas', formato: '750 ml', precio: '11,83 €' },
       ],
       alternativeProducts: [
-        { etiqueta: 'Acabado incoloro', nombre: 'Laca Poliuretano Incolora MXB-950' },
-        { etiqueta: 'Para parqué/suelos de madera', nombre: 'Barniz Parquet al Agua MX-910' },
+        { etiqueta: 'Acabado brillante, para ebanistería', nombre: 'TITAN EBANISTERIA LACA NITRO 750 ML.BRILLANTE', ref: '8414800062663', precio: '4,19 €' },
       ],
       relatedSolutions: ['restaurar-mueble-madera', 'elegir-pistola-pintar'],
       seo: {
