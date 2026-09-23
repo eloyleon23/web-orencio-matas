@@ -470,6 +470,7 @@
         </div>
       </section>
 
+      ${sol.alternativeProducts && sol.alternativeProducts.length ? `
       <!-- Alternativas -->
       <section class="cs-section">
         <div class="container">
@@ -487,8 +488,7 @@
             `).join('')}
           </div>
         </div>
-      </section>
-
+      </section>` : ''}
       ${relacionadas.length ? `
       <!-- Soluciones relacionadas -->
       <section class="cs-section cs-section--alt">

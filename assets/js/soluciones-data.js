@@ -675,12 +675,35 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Lija de grano medio',    categoria: 'Abrasivos',  precio: '0,90 €' },
         { nombre: 'Lija de grano fino',     categoria: 'Abrasivos',  precio: '0,90 €' },
         { nombre: 'Masilla para madera', ref: '8414800101935',    categoria: 'Pinturas',  precio: '9,95 €' },
-        { nombre: 'BARNIZ TITAN ECO SATIN.750 ML.TECA', ref: '8414800422009',     categoria: 'Pinturas',  precio: '22,95 €' },
+        { nombre: 'BARNIZ TITAN ECO SATIN.750 ML.TECA', ref: '8414800422009',     categoria: 'Pinturas',  precio: '17,42 €' },
       ],
-      alternativeProducts: [
-        { etiqueta: 'Opción rápida',      nombre: 'Barniz al agua secado rápido', precio: '19,95 €' },
-        { etiqueta: 'Opción profesional', nombre: 'Sistema de tinte + barniz de poliuretano', precio: '38,95 €' },
-      ],
+      // Selector de marca + tecnología + acabado — mismo mecanismo que
+      // proteger-madera-exterior. Aquí la base es la línea GENERAL de
+      // barniz de cada marca (no la de exterior/lasur), pensada para
+      // muebles de interior: Titan ECO (agua) / Titanlux clásico
+      // (sintético), Xyladecor Lasur Extra Aquatech (agua) / Protect
+      // (sintético) — su propia ficha técnica recomienda explícitamente
+      // su uso en muebles, no solo en exterior — y Mora Barniz Tinte
+      // (sintético, solo en satinado en este catálogo). El satinado
+      // sintético de Titan solo existe en formato spray (no hay bote
+      // para brocha de ese acabado en esta marca) — se deja tal cual,
+      // con "SPRAY" visible en el propio nombre, en vez de forzarlo a
+      // un bote que no existe.
+      selectorMarcaAcabado: {
+        pregunta: '¿Qué marca, tecnología y acabado prefieres para el barniz?',
+        opciones: [
+          { marca: 'Titan',      tecnologia: 'agua',      acabado: 'brillante', nombre: 'BARNIZ TITAN ECO BRILLO 750 ML.INCOLORO', ref: '8414800421736' },
+          { marca: 'Titan',      tecnologia: 'agua',      acabado: 'mate',      nombre: 'BARNIZ TITAN ECO MATE 750 ML.INCOLORO', ref: '8414800422023' },
+          { marca: 'Titan',      tecnologia: 'agua',      acabado: 'satinado',  nombre: 'BARNIZ TITAN ECO SATIN.750 ML.INCOLORO', ref: '8414800421903' },
+          { marca: 'Titan',      tecnologia: 'sintetico', acabado: 'brillante', nombre: 'BARNIZ TITANLUX BRILLANTE 750 ML.INCOLORO', ref: '8414800421255' },
+          { marca: 'Titan',      tecnologia: 'sintetico', acabado: 'mate',      nombre: 'BARNIZ TITANLUX MATE 750 ML.SINT.INCOLORO', ref: '8414800421538' },
+          { marca: 'Titan',      tecnologia: 'sintetico', acabado: 'satinado',  nombre: 'BARNIZ TITANLUX SATIN.SPRAY 400 ML.INCOL.', ref: '8414800423808' },
+          { marca: 'Xyladecor',  tecnologia: 'agua',      acabado: 'satinado',  nombre: 'XYLADECOR LASUR EXTRA AQUATC SATIN.750 ML.INCOL.', ref: '8429656023959' },
+          { marca: 'Xyladecor',  tecnologia: 'sintetico', acabado: 'satinado',  nombre: 'XYLADECOR PROTECT.SATIN.750 ML.INCOLORO', ref: '8430078000503' },
+          { marca: 'Xyladecor',  tecnologia: 'sintetico', acabado: 'mate',      nombre: 'XYLADECOR MATE EXTRA 3EN1 750 ML.INCOLORO', ref: '8430078127118' },
+          { marca: 'Mora',       tecnologia: 'sintetico', acabado: 'satinado',  nombre: 'MORA BARNIZ TINTE SATINADO 1 L.INCOLORO', ref: '8436005135010' },
+        ],
+      },
       relatedSolutions: ['igualar-color-madera-barniz', 'eliminar-oxido-metal', 'decapar-pintura-mueble', 'lacado-profesional-muebles'],
       seo: {
         title: 'Cómo restaurar un mueble de madera | Guía — Orencio Matas',
