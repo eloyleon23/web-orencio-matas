@@ -214,6 +214,18 @@
             </div>`;
     }
 
+    // Mismo icono y estilo que el spinner principal de estas páginas
+    // (#cargando-catalogo en catalogo_*.html) — coherencia visual. Ocupa
+    // todo el ancho de la cuadrícula (grid-column: 1 / -1) en vez de una
+    // sola celda, ya que es un único indicador, no una tarjeta más.
+    function spinnerHtml_() {
+        return `
+            <div style="grid-column:1/-1;text-align:center;padding:40px 20px;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:#94a3b8;margin-bottom:12px;display:block"></i>
+                <p style="color:#64748b;font-size:0.95rem;margin:0;">Cargando productos…</p>
+            </div>`;
+    }
+
     async function cargarMuestraCatalogo(opts) {
         const { area, contenedorId, numFamilias = 5 } = opts;
         const contenedor = document.getElementById(contenedorId);
@@ -227,6 +239,13 @@
         if (contenedor._resizeHandlerCatalogo) {
             window.removeEventListener('resize', contenedor._resizeHandlerCatalogo);
         }
+
+        // La fuente en vivo (obtener_productos) tarda algo más que el
+        // antiguo data/productos.json estático — mientras se resuelve
+        // (o cae al respaldo), mostrar un spinner en vez de dejar la
+        // cuadrícula vacía y sin explicación.
+        contenedor.style.opacity = '1';
+        contenedor.innerHTML = spinnerHtml_();
 
         try {
             const todos = await cargarProductosParaMuestra_(area);
