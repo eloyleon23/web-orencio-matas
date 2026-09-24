@@ -6,17 +6,25 @@
  * primera vez en una release grande (buscador, catálogos, Exposición,
  * Centro de Soluciones, profesionales).
  *
+ * SOLO aplica en producción (IONOS) — en preproducción nunca bloquea
+ * nada, para poder validar y probar cambios sin trabas aunque el
+ * mantenimiento esté activado en producción (justo cuando más falta
+ * hace trabajar sin problemas en preproducción). Se apoya en
+ * window.OM_PREPRODUCCION (ver assets/js/entorno.js), así que
+ * entorno.js debe cargarse ANTES que este script en cada página.
+ *
  * El ajuste vive en la hoja "Configuracion" del Sheet (clave/valor,
  * mismo mecanismo ya usado para zaphiro_activo) — cambiar "si"/"no" en
  * una celda basta, cada página lo comprueba sola al cargar, sin
  * necesidad de tocar el código ni de desplegar nada.
  *
- * Uso: en cada página que deba poder ponerse en mantenimiento, declarar
- * su clave ANTES de cargar este script, junto con la ruta relativa a la
- * raíz del sitio (para el logo y el enlace "Ir al inicio" — importante:
- * una URL absoluta tipo "/index.html" se rompe en cualquier entorno que
- * no sirva desde la raíz del dominio, como GitHub Pages en preproducción,
- * que sirve desde /web-orencio-matas/):
+ * Uso: en cada página que deba poder ponerse en mantenimiento, cargar
+ * PRIMERO entorno.js, declarar la clave y la ruta relativa a la raíz
+ * del sitio (para el logo y el enlace "Ir al inicio" — importante: una
+ * URL absoluta tipo "/index.html" se rompe en cualquier entorno que no
+ * sirva desde la raíz del dominio, como GitHub Pages en preproducción,
+ * que sirve desde /web-orencio-matas/), y CARGAR ESTE SCRIPT AL FINAL:
+ *   <script src="./assets/js/entorno.js?v=..."></script>
  *   <script>
  *     window.OM_CLAVE_MANTENIMIENTO = 'buscador';
  *     window.OM_RUTA_RAIZ = './';       // o '../' desde soluciones/
@@ -38,6 +46,16 @@
 
     const clave = window.OM_CLAVE_MANTENIMIENTO;
     if (!clave) return;
+
+    // El modo mantenimiento SOLO debe aplicar en producción (IONOS) — en
+    // preproducción debe poder validarse y probarse siempre, aunque haya
+    // activado el mantenimiento en producción porque algo haya fallado
+    // ahí (que es precisamente cuando más falta hace poder trabajar en
+    // preproducción sin trabas). Reutiliza el mismo flag ya existente
+    // para distinguir el entorno (ver assets/js/entorno.js) — a
+    // petición explícita de Eloy. Requiere que entorno.js se cargue
+    // ANTES que este script en cada página.
+    if (window.OM_PREPRODUCCION) return;
 
     // './' si la página no declaró su propia ruta — así este script
     // nunca rompe aunque alguna página se añada más adelante sin ese
