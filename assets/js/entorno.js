@@ -19,4 +19,4 @@
 // Cargar este script SIEMPRE antes que el bloque de configuración de
 // cada página (el que hace window.MOSTRAR_X = window.OM_PREPRODUCCION),
 // para que la variable ya exista cuando se lea.
-window.OM_PREPRODUCCION = true;
+window.OM_PREPRODUCCION = false;
