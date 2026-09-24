@@ -6569,6 +6569,18 @@ function revisarCorreoListadoProductos() {
   try {
     const resultado = procesarListadoProductosExcel_(excel);
     enviarResumenSincronizacionCRM_(resultado);
+    // Regenerar los catálogos PDF automáticamente tras una sincronización
+    // real del CRM — a petición explícita de Eloy: los PDF, a diferencia
+    // de los datos del buscador, no son "en vivo" por sí solos, son un
+    // documento ya renderizado que se queda con los precios/imágenes
+    // antiguos hasta que alguien lo regenera. Antes esto era 100% manual
+    // (solo el botón "Generar catálogos ahora" del menú); ahora se
+    // dispara solo, una vez al día, únicamente los días que de verdad ha
+    // llegado un correo nuevo del CRM — nunca en vano. De paso recoge
+    // también cualquier imagen de producto actualizada ese mismo día
+    // desde el buscador, ya que la generación lee el estado actual
+    // completo de todos los productos, no solo lo que cambió hoy.
+    dispararWorkflow();
     return { huboCorreo: true, exito: true, resultado: resultado };
   } catch (err) {
     console.error('Error procesando el listado de productos del CRM:', err);
@@ -6746,6 +6758,7 @@ function enviarResumenSincronizacionCRM_(resultado) {
   cuerpo += `Actualizados: ${actualizados}\n`;
   cuerpo += `Saltados (ya procesados o con error previo): ${saltados}\n`;
   cuerpo += `Errores: ${errores}\n\n`;
+  cuerpo += `Se ha disparado también la regeneración automática de los catálogos PDF (tardan 1-2 minutos en aparecer en la web).\n\n`;
 
   if (productosNuevos && productosNuevos.length > 0) {
     cuerpo += `Productos nuevos dados de alta:\n`;

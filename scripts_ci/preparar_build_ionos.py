@@ -21,23 +21,31 @@ import shutil
 from pathlib import Path
 
 # Archivos/carpetas que no se publican en absoluto en esta fase — ni el
-# buscador ni el acceso a catálogos, ni nada de uso interno/desarrollo.
+# buscador, ni nada de uso interno/desarrollo. Los catálogos (PDF, ver
+# visor_catalogo.html/catalogo_*.html) SÍ se publican ya — sirven el PDF
+# directamente desde Drive (vía Apps Script), sin depender del propio
+# despliegue, así que no hace falta seguir excluyéndolos.
 EXCLUSIONES = {
     '.git', '.github', '.nojekyll',
-    'data',            # productos.json, manifiesto.json, PDFs de catálogo — no hace falta sin buscador/catálogos
     'imagenes_tool', 'email_sage', 'sage_sync', 'scripts', 'scripts_ci',
     'docs',            # documentación interna (PRD, informes...)
     'prompts',         # prompts de agentes usados en el diseño, no contenido del sitio
     'components',      # borradores .md de secciones, no las páginas reales servidas
     'design',          # design-system.md, documentación interna
-    'buscador.html', 'visor_catalogo.html',
-    'catalogo_drogueria.html', 'catalogo_perfumeria.html',
-    'catalogo_pinturas.html', 'catalogo_talleres.html',
+    'buscador.html',
     'homepage-tailwind.html',  # borrador sin enlazar desde la navegación real
     'zaphiro_config.json', 'marcas_dominios.json',
     'requirements.txt', 'CLAUDE.md',
     'generar_informe_pdf.py', 'generate_informe_pdf_v3.ps1',  # herramientas internas de informes de horas
 }
+
+# Dentro de data/ (que SÍ se publica ahora, para el respaldo estático de
+# catalogo_*.html/catalogo-preview.js) se excluye solo la subcarpeta de
+# PDFs — pesan varios MB por área y ya no hace falta servirlos desde
+# aquí, el visor/descarga van directos a Drive. El resto de data/ (los
+# JSON de productos, incluidos los 4 catálogos de proveedor de Talleres)
+# sí se necesita.
+EXCLUSIONES_DATA = {'catalogos'}
 
 # El menú "Productos" es un desplegable cuyo ÚNICO elemento del submenú
 # es "Buscador" (idéntico en las 9 páginas, solo cambia la indentación) —
@@ -72,11 +80,12 @@ def limpiar_enlace_buscador(html: str) -> str:
 
 
 def limpiar_productos_html(html: str) -> str:
-    """productos.html tiene dos piezas propias además del enlace del menú:
-    el banner promocional que enlaza al buscador, y el script que detecta
-    catálogos publicados en GitHub Releases y reconecta los botones — si
-    se deja ese script, en IONOS intentaría enlazar a páginas de catálogo
-    que no van a existir todavía, dejando botones rotos."""
+    """productos.html tiene una pieza propia además del enlace del menú:
+    el banner promocional que enlaza al buscador (que sigue excluido). El
+    script que detecta catálogos publicados en GitHub Releases y activa
+    los botones dinámicamente YA NO se quita — los catálogos dejaron de
+    excluirse, y ese script comprueba por su cuenta que el PDF exista de
+    verdad antes de activar cada botón, así que sigue siendo correcto."""
     html = limpiar_enlace_buscador(html)
 
     # Banner "Buscador de productos" — sección autocontenida completa.
@@ -88,24 +97,7 @@ def limpiar_productos_html(html: str) -> str:
         '\n', html, flags=re.DOTALL
     )
 
-    # Script de detección dinámica de catálogos (el IIFE completo que
-    # consulta la API de GitHub y reescribe los botones de cada área).
-    html = re.sub(
-        r'\s*<script>\s*/\*\*[^<]*?y actualiza los botones dinámicamente\.\s*'
-        r'\*/\s*\(function\(\) \{.*?\}\)\(\);\s*</script>\s*\n',
-        '\n', html, flags=re.DOTALL
-    )
-
     return html
-
-
-def limpiar_sitemap(xml: str) -> str:
-    """Quita del sitemap las URLs de catálogo — no tiene sentido que los
-    buscadores intenten indexar páginas que en esta fase no van a existir."""
-    return re.sub(
-        r'\s*<url>\s*<loc>https://orenciomatas\.es/catalogo_\w+\.html</loc>.*?</url>\s*\n',
-        '\n', xml, flags=re.DOTALL
-    )
 
 
 def desactivar_entorno_preproduccion(salida: Path) -> None:
@@ -172,7 +164,19 @@ def main():
             shutil.copy2(item, destino)
         copiados += 1
 
-    print(f'Copiados {copiados} elementos, excluidos {excluidos} (buscador/catálogos/uso interno).')
+    print(f'Copiados {copiados} elementos, excluidos {excluidos} (buscador/uso interno).')
+
+    # Dentro de data/ (si se copió), quitar las subcarpetas de
+    # EXCLUSIONES_DATA (los PDFs de catálogo — ver el comentario junto a
+    # su definición) — más preciso que excluir toda la carpeta data/,
+    # que ahora hace falta para el respaldo estático de los catálogos.
+    carpeta_data = salida / 'data'
+    if carpeta_data.is_dir():
+        for nombre in EXCLUSIONES_DATA:
+            subcarpeta = carpeta_data / nombre
+            if subcarpeta.exists():
+                shutil.rmtree(subcarpeta)
+                print(f'✓ data/{nombre}: quitado de la copia de salida (se sirve directo desde Drive).')
 
     # Transformar las páginas HTML restantes
     transformadas = 0
@@ -187,15 +191,6 @@ def main():
             transformadas += 1
 
     print(f'Transformadas {transformadas} páginas (enlace de Buscador quitado del menú).')
-
-    # Limpiar sitemap.xml de las URLs de catálogo que aún no existen
-    sitemap = salida / 'sitemap.xml'
-    if sitemap.exists():
-        contenido_sitemap = sitemap.read_text(encoding='utf-8')
-        nuevo_sitemap = limpiar_sitemap(contenido_sitemap)
-        if nuevo_sitemap != contenido_sitemap:
-            sitemap.write_text(nuevo_sitemap, encoding='utf-8')
-            print('✓ sitemap.xml: quitadas las URLs de catálogo que aún no existen.')
 
     # Desactivar TODA la administración (gestión de imágenes, asistente de
     # imágenes, precio mayor, actualizar/validar/buscar imagen, gestionar
@@ -242,23 +237,25 @@ def main():
     print('✓ defaultsite/index.html: redirección por meta-refresh añadida.')
 
     # Comprobación de seguridad: que no quede ninguna referencia colgante
-    # a buscador.html o a los catálogos en lo que sí se va a publicar, ni
+    # a buscador.html (sigue excluido) en lo que sí se va a publicar, ni
     # ningún desplegable de navegación vacío (el caso real que motivó
     # esta comprobación: "Productos" se quedó con la flecha y un <ul>
-    # vacío tras quitar su único elemento, "Buscador").
+    # vacío tras quitar su único elemento, "Buscador"). Los catálogos
+    # (catalogo_*.html/visor_catalogo.html) ya no se comprueban aquí —
+    # dejaron de excluirse, así que enlazarlos ya es correcto.
     referencias_sueltas = []
     for html_file in salida.rglob('*.html'):
         contenido = html_file.read_text(encoding='utf-8')
-        if 'buscador.html' in contenido or re.search(r'catalogo_\w+\.html', contenido):
+        if 'buscador.html' in contenido:
             referencias_sueltas.append(html_file.name)
         if re.search(r'<ul class="navbar__submenu">\s*</ul>', contenido):
             referencias_sueltas.append(f'{html_file.name} (desplegable de navegación vacío)')
 
     if referencias_sueltas:
-        print(f'⚠ AVISO: quedan referencias a buscador/catálogos sin limpiar en: {referencias_sueltas}')
+        print(f'⚠ AVISO: quedan referencias a buscador sin limpiar en: {referencias_sueltas}')
         print('  Revisa manualmente antes de publicar — puede haber un enlace nuevo no contemplado por este script.')
     else:
-        print('✓ Sin referencias colgantes a buscador/catálogos en el contenido a publicar.')
+        print('✓ Sin referencias colgantes a buscador en el contenido a publicar.')
 
 
 if __name__ == '__main__':

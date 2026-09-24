@@ -4,8 +4,18 @@
  * el PDF sin tener que cargarlo entero (que es justo el problema de
  * tamaño que esto sustituye).
  *
- * Reutiliza data/productos.json (ya cargado por el buscador) y la misma
- * lógica de URL de imagen que buscador.html — ver urlImagenProductoCatalogo().
+ * Igual que buscador.html/soluciones-data.js/escaparate.html: prioriza
+ * SIEMPRE la fuente en vivo de Apps Script (obtener_productos) sobre el
+ * data/productos.json estático del propio despliegue — así, si esta
+ * página llega a incluirse en una copia de IONOS, sigue reflejando
+ * precios e imágenes actualizados sin necesidad de un redespliegue. El
+ * estático solo se usa como último recurso si la fuente en vivo falla.
+ * Para el área 'talleres' se añaden además los catálogos estáticos de
+ * proveedor (Zaphiro/Besa/Glasurit/Baslac) — no tienen fuente en vivo
+ * posible, no vienen de la hoja de Productos del Sheet.
+ *
+ * Misma lógica de URL de imagen que buscador.html — ver
+ * urlImagenProductoCatalogo().
  *
  * Se cargan los productos UNA sola vez, y cada 10 segundos se elige un
  * nuevo grupo aleatorio de familias + productos y se vuelve a pintar —
@@ -19,6 +29,18 @@
     'use strict';
 
     const ROTACION_MS = 10000;
+    // Misma URL de Apps Script que usa buscador.html — fuente en vivo,
+    // siempre actualizada, sin depender de ningún despliegue.
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+    const PRODUCTOS_REMOTO_URL = APPS_SCRIPT_URL + '?accion=obtener_productos';
+    // Catálogos estáticos de proveedor — solo para el área 'talleres',
+    // no tienen fuente en vivo posible (no vienen del Sheet).
+    const CATALOGOS_PROVEEDOR_TALLERES = [
+        './data/productos_talleres.json',
+        './data/productos_glasurit.json',
+        './data/productos_besa.json',
+        './data/productos_baslac.json',
+    ];
     // Deben coincidir con el CSS real de la cuadrícula (minmax + gap) en
     // cada catalogo_*.html, para poder calcular cuántas columnas caben
     // de verdad en el ancho disponible.
@@ -41,6 +63,53 @@
         const columnas = calcularColumnas(contenedor);
         const limite = columnas * FILAS_OBJETIVO;
         return Math.min(LIMITE_MAXIMO, Math.max(LIMITE_MINIMO, limite));
+    }
+
+    // Fuente en vivo primero (siempre actualizada); si falla, cae al
+    // data/productos.json estático del propio despliegue (con el mismo
+    // cache-busting por versión que ya usaba antes). Para 'talleres', se
+    // añaden además los 4 catálogos estáticos de proveedor — estos no
+    // tienen fuente en vivo posible, así que se cargan siempre igual,
+    // independientemente de si el catálogo principal vino en vivo o del
+    // respaldo estático.
+    async function cargarProductosPrincipalesParaMuestra_() {
+        try {
+            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            if (!resp.ok) throw new Error('obtener_productos no respondió OK');
+            const datos = await resp.json();
+            const productos = datos.productos || datos;
+            if (!Array.isArray(productos) || productos.length === 0) throw new Error('respuesta en vivo vacía');
+            return productos;
+        } catch (e) {
+            console.warn('catalogo-preview: fuente en vivo no disponible, usando el respaldo estático.', e);
+            let productosUrl = './data/productos.json';
+            try {
+                const versionResp = await fetch(`./data/productos_version.json?_t=${Date.now()}`, { cache: 'no-store' });
+                if (versionResp.ok) {
+                    const version = await versionResp.json();
+                    productosUrl += `?v=${encodeURIComponent(version.timestamp || Date.now())}`;
+                }
+            } catch (e2) { /* si falla, se sigue con la URL sin versión */ }
+            const resp = await fetch(productosUrl);
+            const datos = await resp.json();
+            return datos.productos || datos;
+        }
+    }
+
+    async function cargarProductosParaMuestra_(area) {
+        const principales = await cargarProductosPrincipalesParaMuestra_();
+        if (area !== 'talleres') return principales;
+
+        // Catálogos de proveedor de Talleres — sin fuente en vivo posible,
+        // se cargan siempre del archivo estático. Si alguno falla, se
+        // sigue con los demás (mejor una muestra parcial que ninguna).
+        const proveedores = await Promise.all(
+            CATALOGOS_PROVEEDOR_TALLERES.map(url =>
+                fetch(url).then(r => r.ok ? r.json() : { productos: [] }).catch(() => ({ productos: [] }))
+            )
+        );
+        const productosProveedor = proveedores.flatMap(d => d.productos || d || []);
+        return [...principales, ...productosProveedor];
     }
 
     function urlImagenProductoCatalogo(p, tamano) {
@@ -160,20 +229,7 @@
         }
 
         try {
-            // Cache-busting igual que en buscador.html: consultar primero
-            // la versión para no servir un productos.json cacheado antiguo.
-            let productosUrl = './data/productos.json';
-            try {
-                const versionResp = await fetch(`./data/productos_version.json?_t=${Date.now()}`, { cache: 'no-store' });
-                if (versionResp.ok) {
-                    const version = await versionResp.json();
-                    productosUrl += `?v=${encodeURIComponent(version.timestamp || Date.now())}`;
-                }
-            } catch (e) { /* si falla, se sigue con la URL sin versión */ }
-
-            const resp = await fetch(productosUrl);
-            const datos = await resp.json();
-            const todos = datos.productos || datos;
+            const todos = await cargarProductosParaMuestra_(area);
 
             const candidatos = todos.filter(p =>
                 p.area === area &&
