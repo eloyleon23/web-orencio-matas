@@ -2218,14 +2218,14 @@ window.SOLUCIONES_DATA = (function () {
     'proteger-madera-exterior': {
       slug: 'proteger-madera-exterior',
       title: 'Cómo proteger madera de exterior',
-      description: 'Protege muebles de jardín, vallas o estructuras de madera expuestas a la intemperie con un lasur, que protege sin perder el aspecto natural de la madera.',
+      description: 'Protege muebles de jardín, vallas o estructuras de madera expuestas a la intemperie con un lasur, manteniendo su aspecto natural — la protección exacta frente a lluvia, sol o humedad depende del producto concreto que elijas, consulta siempre su ficha técnica.',
       category: 'madera', subcategory: 'Protección de exterior',
       problem: 'madera_exterior',
       objective: 'proteger',
       surface: 'madera',
       difficulty: 'Fácil',
       estimatedTime: '1-2 h + secado entre manos',
-      result: 'Madera de exterior protegida frente a la lluvia, el sol y los hongos, con su aspecto natural',
+      result: 'Madera de exterior con un lasur protector aplicado, conservando su aspecto natural',
       breadcrumb: ['Centro de Soluciones', 'Madera y restauración', 'Protección de exterior'],
       materials: [
         { fase: 'Preparación', familiaSugerida: 'Lijas',   items: ['Lija de grano medio'] },
@@ -2965,16 +2965,16 @@ window.SOLUCIONES_DATA = (function () {
       steps: [
         { n: 1, title: 'Aplicar el fondo de poliuretano', text: 'El fondo sella la madera y rellena el poro, dando una buena cobertura de cantos y aristas — se aplica siempre antes de la laca, nunca la laca directamente sobre madera sin fondo.', productos: ['Fondo poliuretano'] },
         { n: 2, title: 'Lijar el fondo', text: 'Una vez seco el fondo (suele ser de secado muy rápido), lija suavemente para dejar la superficie totalmente lisa antes de aplicar la laca.', productos: ['Lija fina'] },
-        { n: 3, title: 'Aplicar la laca de poliuretano', text: 'Aplica la laca con pistola en manos finas — el sistema de dos componentes necesita respetar la proporción de mezcla exacta (normalmente 2:1) y su pot life (tiempo útil de la mezcla ya activada).', productos: ['Laca de poliuretano (mate, satinada o incolora)'] },
+        { n: 3, title: 'Aplicar la laca de poliuretano', text: 'Aplica la laca con pistola en manos finas. Esta laca en concreto viene lista para usar, sin necesidad de mezclarla con ningún catalizador — si en otra ocasión trabajas con una laca de dos componentes, respeta siempre la proporción de mezcla y el pot life (tiempo útil de la mezcla ya activada) que indique su ficha técnica, no una cifra genérica.', productos: ['Laca de poliuretano (mate, satinada o incolora)'] },
         { n: 4, title: 'Dejar curar antes de manipular', text: 'Respeta el tiempo de secado antes de manipular la pieza y el de repintado si hace falta una segunda mano — manipular antes de tiempo deja marcas que ya no se corrigen sin repetir el proceso.', productos: [] },
       ],
       professionalTips: [
-        'La proporción de mezcla en los sistemas de dos componentes (fondo y laca) es crítica — no ajustarla bien no solo afecta al acabado estético, también a la dureza y resistencia final del lacado.',
+        'El fondo de poliuretano de este sistema es de dos componentes (necesita mezclarse con su catalizador) — respeta siempre la proporción exacta que indique su ficha técnica, no ajustarla bien afecta tanto al acabado como a la dureza final. La laca de acabado, en cambio, no necesita mezcla: viene lista para usar directamente.',
       ],
       commonMistakes: [
         'Aplicar la laca directamente sobre madera sin fondo previo.',
         'No lijar el fondo antes de aplicar la laca.',
-        'No respetar la proporción de mezcla exacta en los sistemas de dos componentes.',
+        'No respetar la proporción de mezcla exacta del fondo con su catalizador (consulta siempre su ficha técnica, no una proporción genérica).',
         'Manipular la pieza antes de que la laca haya curado del todo.',
       ],
       recommendedProducts: [
