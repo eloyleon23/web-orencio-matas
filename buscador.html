@@ -3894,26 +3894,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="./src/js/app.js?v=20260829"></script>
+<script src="./assets/js/entorno.js?v=20260924a"></script>
 <script>
 // ── Configuración del buscador ──
+// Todos los flags de administración de aquí abajo derivan de la única
+// variable window.OM_PREPRODUCCION (ver assets/js/entorno.js) — nunca
+// se hardcodea "true" por separado, así una sola variable central
+// activa o desactiva toda la administración a la vez, según el entorno.
 // Botón temporal para reportar imágenes incorrectas (fase de desarrollo)
-window.MOSTRAR_BOTON_REPORTAR_IMAGEN = true;
+window.MOSTRAR_BOTON_REPORTAR_IMAGEN = window.OM_PREPRODUCCION;
 // Botón para validar imágenes (fase de desarrollo)
-window.MOSTRAR_BOTON_VALIDAR_IMAGEN = true;
+window.MOSTRAR_BOTON_VALIDAR_IMAGEN = window.OM_PREPRODUCCION;
 // Botón para buscar imágenes en Bing (fase de desarrollo)
-window.MOSTRAR_BOTON_BUSCAR_IMAGEN = true;
-// Filtro para mostrar solo imágenes revisadas (fase de desarrollo)
-window.MOSTRAR_FILTRO_IMAGENES_REVISADAS = true;
+window.MOSTRAR_BOTON_BUSCAR_IMAGEN = window.OM_PREPRODUCCION;
+// Bloque completo de "Gestión de imágenes" (filtros de imagen validada/
+// sin validar/sin imagen) Y el botón "Asistente de imágenes" que vive
+// dentro de ese mismo bloque — un único flag para las dos cosas, ya que
+// el asistente solo se abre desde ese botón (ver abrirAsistenteImagenes).
+window.MOSTRAR_FILTRO_IMAGENES_REVISADAS = window.OM_PREPRODUCCION;
 // Botón para dar de baja / reactivar un producto (fase de desarrollo — se
 // restringirá al perfil administrador cuando exista esa distinción)
-window.MOSTRAR_BOTON_GESTION_BAJA = true;
+window.MOSTRAR_BOTON_GESTION_BAJA = window.OM_PREPRODUCCION;
 // Precio de venta a MAYOR (sin/con IVA) en la ficha de detalle, oculto
 // tras un botón — a petición de Eloy, 11/09/2026. INFORMACIÓN INTERNA,
-// NUNCA debe verse en producción/release: si en algún momento se prepara
-// una copia de release con el buscador incluido, este valor debe pasar
-// a false en ESA copia antes de subir nada, igual que ya se hace con el
-// resto de flags de "fase de desarrollo" de este bloque.
-window.MOSTRAR_PRECIO_MAYOR = true;
+// nunca debe verse en producción/release.
+window.MOSTRAR_PRECIO_MAYOR = window.OM_PREPRODUCCION;
+// Botón "Gestionar productos relacionados" (y su modal de búsqueda para
+// añadir/quitar) — antes visible siempre, sin flag; a petición explícita
+// de Eloy (24/09/2026) pasa a depender también de OM_PREPRODUCCION,
+// nunca debe verse ni ser accesible en producción/release.
+window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -6892,9 +6902,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('modal-producto-validar-imagen').style.display = 'none';
         }
 
-        // Botón de gestionar productos relacionados — siempre visible, no
-        // depende de ningún flag de fase de desarrollo.
-        $('modal-producto-gestionar-relacionados').onclick = () => abrirModalGestionarRelacionados(p);
+        // Botón de gestionar productos relacionados — a petición explícita
+        // de Eloy (24/09/2026), pasa a depender de MOSTRAR_GESTION_RELACIONADOS
+        // (antes visible siempre, sin flag).
+        const btnGestionarRelacionados = $('modal-producto-gestionar-relacionados');
+        if (window.MOSTRAR_GESTION_RELACIONADOS) {
+            btnGestionarRelacionados.style.display = '';
+            btnGestionarRelacionados.onclick = () => abrirModalGestionarRelacionados(p);
+        } else {
+            btnGestionarRelacionados.style.display = 'none';
+        }
 
         // Botón de dar de baja / reactivar — cambia de texto, icono y color
         // según el estado actual del producto (ver estaDeBaja más arriba).
@@ -8462,6 +8479,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function abrirModalGestionarRelacionados(p) {
+        // Red de seguridad además del botón ya oculto: aunque algo llame a
+        // esta función directamente, nunca debe abrirse fuera de preproducción.
+        if (!window.MOSTRAR_GESTION_RELACIONADOS) return;
         productoRelacionadosActual = p;
         relacionadosSeleccion = Array.isArray(p.relacionados) ? [...p.relacionados] : [];
 
@@ -8884,6 +8904,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     async function abrirAsistenteImagenes() {
+        // Red de seguridad además del botón ya oculto: aunque algo llame a
+        // esta función directamente, nunca debe abrirse fuera de preproducción.
+        if (!window.MOSTRAR_FILTRO_IMAGENES_REVISADAS) return;
         await cargarMapaMarcasAsistente();
         actualizarTextoBotonAreaAsistente();
         renderFamiliasAsistente();

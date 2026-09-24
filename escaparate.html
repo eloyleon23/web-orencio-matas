@@ -1171,6 +1171,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </div>
 
+<script src="./assets/js/entorno.js?v=20260924a"></script>
 <script>
 (function(){
   "use strict";
@@ -1179,10 +1180,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // CONFIGURACIÓN — mismo patrón que buscador.html (window.MOSTRAR_X)
   // ══════════════════════════════════════════════════════════════════
   // Controla si se muestran los dos botones de gestión (asignar
-  // productos / gestionar campañas) y sus modales. DEBE pasar a false
-  // en cualquier copia de "release" que en el futuro incluya esta
-  // página — igual que MOSTRAR_PRECIO_MAYOR en buscador.html.
-  window.MOSTRAR_GESTION_CAMPANAS = true;
+  // productos / gestionar campañas) y sus modales. Deriva de la única
+  // variable window.OM_PREPRODUCCION (ver assets/js/entorno.js) — nunca
+  // se hardcodea "true" por separado.
+  window.MOSTRAR_GESTION_CAMPANAS = window.OM_PREPRODUCCION;
 
   // Mismo Web App de Apps Script que usa buscador.html. Las acciones
   // nuevas (obtener_campanas / guardar_campana /

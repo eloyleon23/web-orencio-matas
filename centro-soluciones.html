@@ -380,14 +380,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
     </div>
 
+    <script src="./assets/js/entorno.js?v=20260924a"></script>
     <script>
       // URL del Web App de Apps Script — misma que usa buscador.html.
       // Necesaria para la búsqueda inteligente con IA del Centro de
       // Soluciones (ver buscarSolucionIA en soluciones-data.js).
       window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
-      // Mismo patrón que window.MOSTRAR_GESTION_CAMPANAS en Escaparate OM
-      // — poner a false en cualquier copia de release.
-      window.MOSTRAR_GESTION_SOLUCIONES = true;
+      // Deriva de la única variable window.OM_PREPRODUCCION (ver
+      // assets/js/entorno.js) — mismo patrón que MOSTRAR_GESTION_CAMPANAS
+      // en Escaparate OM, nunca se hardcodea "true" por separado.
+      window.MOSTRAR_GESTION_SOLUCIONES = window.OM_PREPRODUCCION;
     </script>
     <script src="./assets/js/soluciones-data.js?v=20260923b"></script>
     <script src="./assets/js/centro-soluciones.js?v=20260901c"></script>

@@ -697,6 +697,7 @@
   </div>
 </footer>
 
+<script src="./assets/js/entorno.js?v=20260924a"></script>
 <script>
 (function(){
   "use strict";
@@ -707,7 +708,7 @@
   // todas las campañas; escaparate.html se queda solo con "Asignar
   // productos" para la campaña que se esté viendo en cada momento.
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
-  window.MOSTRAR_GESTION_CAMPANAS = true; // mismo patrón que en escaparate.html — false en cualquier copia futura de release
+  window.MOSTRAR_GESTION_CAMPANAS = window.OM_PREPRODUCCION; // mismo patrón que en escaparate.html, derivado del único flag central
 
   const $ = (sel, ctx) => (ctx||document).querySelector(sel);
   const $$ = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
