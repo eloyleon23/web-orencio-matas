@@ -1660,12 +1660,12 @@ window.SOLUCIONES_DATA = (function () {
       recommendedProducts: [
         { nombre: 'POLIL COLGADOR ANTIPOLILLA DUPLO LAVANDA', ref: '5000204171259', categoria: 'Droguería', formato: 'Dúo', precio: '1,78 €' },
         { nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.LAVANDA', ref: '5000204171341',            categoria: 'Droguería', formato: '3 bloques', precio: '3,46 €' },
-        { nombre: 'Guardarropa Bonodor Nº2',                   categoria: 'Droguería', formato: '65x125 cm, 5 uds', precio: '2,66 €' },
+        { nombre: 'Guardarropa Bonodor Nº2', ref: '8410429108201', categoria: 'Droguería', formato: '65x125 cm, 5 uds', precio: '2,66 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Otro aroma',         nombre: 'POLIL COLGADOR ANTIPOLILLA 4 UDS.COLONIA', ref: '5000204171372', precio: '3,76 €' },
         { etiqueta: 'Formato económico',  nombre: 'ORION ANTIPOLILLA BOLAS BOLSA 20 UDS.LAVANDA', ref: '8411660035240', precio: '2,09 €' },
-        { etiqueta: 'Prenda individual',  nombre: 'Guardarropa Zidar Trajes 5 Bolsas 65x125 cm', precio: '0,82 €' },
+        { etiqueta: 'Prendas más cortas', nombre: 'Guardarropa Bonodor Nº1 (65x100 cm, 5 uds)', ref: '8410429108102', precio: '2,26 €' },
       ],
       relatedSolutions: ['control-plagas-cocina', 'control-roedores'],
       seo: {
@@ -3050,7 +3050,7 @@ window.SOLUCIONES_DATA = (function () {
       objective: 'reparar',
       surface: 'pared',
       difficulty: 'Media',
-      estimatedTime: '1-2 días (imprimación + 2 manos de acabado con secado entre capas)',
+      estimatedTime: '1-2 días (imprimación + 3 manos de acabado con secado entre capas)',
       result: 'Fachada con las fisuras selladas mediante un revestimiento elástico que acompaña el movimiento del muro sin volver a agrietarse',
       colorChart: { label: 'Carta de colores Titanpro para fachadas (TF2)', url: 'https://www.titanpro.es/es/colores', logo: '../assets/proveedores/LOGO-TITANPRO.png' },
       breadcrumb: ['Centro de Soluciones', 'Pintura y decoración', 'Fachadas'],
@@ -3068,7 +3068,7 @@ window.SOLUCIONES_DATA = (function () {
       steps: [
         { n: 1, title: 'Limpiar la superficie', text: 'Elimina polvo, suciedad y restos de pintura suelta o mal adherida de la zona fisurada y de su entorno.', productos: ['Limpieza de la fachada eliminando polvo y suciedad'] },
         { n: 2, title: 'Aplicar la imprimación fijadora', text: 'Aplica una imprimación super-penetrante para sellar el soporte poroso y mejorar la adherencia del revestimiento — es especialmente importante en morteros pulverulentos o poco cohesionados.', productos: ['Imprimación fijadora super-penetrante'] },
-        { n: 3, title: 'Aplicar el revestimiento antifisuras', text: 'Aplica el revestimiento elástico antifisuras en dos manos, dejando secar entre ellas. Este producto acompaña el movimiento de fisuras de hasta 2 mm sin perder su capacidad de sellado, algo que una pintura convencional no puede hacer.', productos: ['Revestimiento elástico antifisuras'] },
+        { n: 3, title: 'Aplicar el revestimiento antifisuras', text: 'Aplica el revestimiento elástico antifisuras en varias manos hasta alcanzar un espesor seco mínimo de 375 micras (normalmente 3 manos), dejando secar entre ellas — es el espesor que indica su ficha técnica para poder cubrir fisuras de hasta 2 mm sin perder su capacidad de sellado, algo que una pintura convencional no puede hacer.', productos: ['Revestimiento elástico antifisuras'] },
         { n: 4, title: 'Revisar puntos críticos', text: 'Presta atención extra a encuentros entre materiales distintos (por ejemplo, mortero con hormigón), ya que suelen ser las zonas donde antes reaparecen las fisuras si no quedan bien cubiertas.', productos: [] },
       ],
       professionalTips: [
@@ -3078,7 +3078,7 @@ window.SOLUCIONES_DATA = (function () {
       commonMistakes: [
         'Tapar una fisura con una pintura normal, sin capacidad de elongación, que se vuelve a abrir con el primer movimiento del muro.',
         'Saltarse la imprimación fijadora en soportes muy porosos o pulverulentos.',
-        'Aplicar una sola mano de revestimiento antifisuras en vez de las dos recomendadas.',
+        'Aplicar menos de las 3 manos necesarias para llegar al espesor mínimo (375 micras secas) que garantiza cubrir fisuras de hasta 2 mm.',
         'No revisar los encuentros entre materiales de distinta naturaleza, donde suelen reaparecer las fisuras.',
       ],
       recommendedProducts: [
@@ -3231,7 +3231,7 @@ window.SOLUCIONES_DATA = (function () {
       steps: [
         { n: 1, title: 'Preparar la superficie', text: 'Elimina el óxido suelto con cepillo de púas metálicas o lijado, y desengrasa bien toda la pieza — la imprimación multiadherente necesita una superficie limpia para agarrar correctamente.', productos: ['Cepillado de óxido y desengrasado'] },
         { n: 2, title: 'Aplicar la imprimación antioxidante', text: 'Aplica dos capas de imprimación multiadherente sobre el hierro desnudo para una protección óptima frente a la oxidación. Esta imprimación está pensada para adherir bien tanto sobre metal como sobre otros soportes cercanos.', productos: ['Imprimación antioxidante multiadherente'] },
-        { n: 3, title: 'Aplicar el esmalte de acabado', text: 'Aplica el esmalte de poliuretano en el acabado elegido (brillante, satinado o mate) hasta un espesor mínimo recomendado de 80 micras en 2 capas, respetando el tiempo de secado entre manos.', productos: ['Esmalte de poliuretano (brillante, satinado o mate)'] },
+        { n: 3, title: 'Aplicar el esmalte de acabado', text: 'Aplica el esmalte de poliuretano en el acabado elegido (brillante, satinado o mate) en 2 capas, dejando secar entre 18 y 24 horas antes de dar la segunda mano, según su ficha técnica.', productos: ['Esmalte de poliuretano (brillante, satinado o mate)'] },
         { n: 4, title: 'Dejar curar antes de manipular', text: 'Evita apoyar objetos o manipular la pieza en las primeras horas tras la última mano — el esmalte necesita su tiempo de curado completo para alcanzar su máxima resistencia a rayadas e impactos.', productos: [] },
       ],
       professionalTips: [
@@ -3240,7 +3240,7 @@ window.SOLUCIONES_DATA = (function () {
       commonMistakes: [
         'Pintar directamente sobre óxido suelto sin cepillar ni desengrasar antes.',
         'Aplicar una sola capa de imprimación en vez de las dos recomendadas sobre hierro desnudo.',
-        'No respetar el espesor mínimo de esmalte en 2 capas, reduciendo la durabilidad del acabado.',
+        'No respetar el tiempo de secado entre manos (18-24 horas) antes de dar la segunda capa.',
         'Manipular la pieza antes de que el esmalte haya curado del todo.',
       ],
       recommendedProducts: [
@@ -3321,7 +3321,7 @@ window.SOLUCIONES_DATA = (function () {
       objective: 'pintar',
       surface: 'metal',
       difficulty: 'Fácil',
-      estimatedTime: '1 día (2 manos, la segunda a partir de 1 hora)',
+      estimatedTime: '1 día (2 manos, la segunda entre 30 min y 4 horas después de la primera)',
       result: 'Pieza de hierro pintada y protegida directamente sobre el óxido, en un solo día y sin necesidad de imprimación',
       colorChart: null,
       breadcrumb: ['Centro de Soluciones', 'Metal', 'Pintura y protección de cerramientos metálicos'],
@@ -3338,7 +3338,7 @@ window.SOLUCIONES_DATA = (function () {
       steps: [
         { n: 1, title: 'Limpiar la superficie con un cepillo', text: 'Cepilla la pieza para quitar las partículas de óxido sueltas y la suciedad superficial. No hace falta llegar a metal blanco ni eliminar todo el óxido: este tipo de esmalte está formulado precisamente para aplicarse sobre el óxido adherido.', productos: ['Cepillado de óxido suelto'] },
         { n: 2, title: 'Aplicar la primera mano directamente', text: 'Aplica el esmalte directamente sobre el hierro y el óxido, sin imprimación previa — el producto tiene una doble función de protección y decoración en una sola capa.', productos: ['Esmalte antioxidante directo al óxido'] },
-        { n: 3, title: 'Aplicar la segunda mano', text: 'En el acabado liso, la segunda mano se puede aplicar transcurrida aproximadamente 1 hora, ya que este tipo de esmalte seca muy rápido. Esto permite terminar el trabajo en un solo día.', productos: [] },
+        { n: 3, title: 'Aplicar la segunda mano', text: 'Aplicando a brocha o rodillo, la segunda mano se puede dar entre 30 minutos y 4 horas después de la primera, ya que este tipo de esmalte seca muy rápido. Importante: si dejas pasar más de 4 horas entre manos, la ficha técnica exige esperar 5 días antes de poder aplicar la segunda — así que si no vas a terminar dentro de esa ventana, mejor esperar directamente al día siguiente.', productos: [] },
         { n: 4, title: 'Dejar curar antes de exponerlo a uso intenso', text: 'Aunque seca rápido al tacto, deja pasar unas horas más antes de un uso o manipulación intensa de la pieza, para que alcance toda su resistencia a rayadas e impactos.', productos: [] },
       ],
       professionalTips: [
@@ -3346,7 +3346,7 @@ window.SOLUCIONES_DATA = (function () {
       ],
       commonMistakes: [
         'Aplicar una imprimación antes, pensando que hace falta como en un sistema tradicional — con este tipo de esmalte no es necesaria y no aporta ninguna mejora.',
-        'Esperar 4 horas entre manos como con un esmalte convencional, perdiendo tiempo de trabajo sin necesidad.',
+        'Dejar pasar más de 4 horas entre la primera y la segunda mano sin darse cuenta — superado ese margen hay que esperar 5 días completos antes de poder repintar.',
         'Pintar sobre óxido muy suelto o escamado sin cepillar antes: el esmalte protege el óxido adherido, no sustituye a un cepillado mínimo de lo que ya se está desprendiendo.',
         'Usar esta técnica sobre superficies con grasa o aceite, que sí hay que desengrasar antes en cualquier sistema.',
       ],
