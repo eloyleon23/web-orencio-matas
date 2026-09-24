@@ -69,6 +69,8 @@ function onOpen() {
     .addSeparator()
     .addItem('🔄 Actualizar catálogo Zaphiro', 'actualizarZaphiro')
     .addSeparator()
+    .addItem('🚧 Añadir filas de modo mantenimiento a Configuracion (una vez)', 'añadirFilasMantenimientoConfiguracion')
+    .addSeparator()
     .addItem('📖 Ver guía de uso', 'abrirAyuda')
     .addToUi();
 }
@@ -2726,6 +2728,22 @@ function generarHojaSubfamilias_() {
 }
 
 
+// Lee un valor de la hoja "Configuracion" (clave/valor/descripcion) por
+// su clave — genérico, reutilizable para cualquier ajuste simple de
+// este estilo (zaphiro_activo, los mantenimiento_*, futuros que hagan
+// falta). Devuelve porDefecto si la hoja o la clave no existen todavía,
+// nunca lanza error — así una página nunca se rompe por una hoja o fila
+// que aún no se ha creado.
+function leerConfiguracion_(clave, porDefecto) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Configuracion');
+  if (!sheet) return porDefecto;
+  const datos = sheet.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if ((datos[i][0] || '').toString().trim() === clave) return datos[i][1];
+  }
+  return porDefecto;
+}
+
 function crearHojaConfiguracion() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName('Configuracion');
@@ -2737,6 +2755,11 @@ function crearHojaConfiguracion() {
     ['zaphiro_url',    'https://www.zaphirogroup.com/wp-content/uploads/2026/05/CATALOGO-ZAPHIRO-2026_web.pdf', 'URL directa al PDF del catálogo Zaphiro. Actualizar cada año.'],
     ['zaphiro_año',    '2026',                                                                         'Año del catálogo vigente'],
     ['zaphiro_activo', 'si',                                                                           'si / no — si se muestra el catálogo Zaphiro en la web'],
+    ['mantenimiento_buscador',          'no', 'si / no — pone el buscador en mantenimiento (sin necesidad de desplegar nada)'],
+    ['mantenimiento_catalogos',         'no', 'si / no — catalogo_drogueria/perfumeria/pinturas/talleres.html y visor_catalogo.html'],
+    ['mantenimiento_escaparate',        'no', 'si / no — escaparate.html y escaparate-campanas.html (Exposición)'],
+    ['mantenimiento_centro_soluciones', 'no', 'si / no — centro-soluciones.html y las guías de solucion.html'],
+    ['mantenimiento_profesionales',     'no', 'si / no — profesionales.html'],
   ];
 
   sheet.getRange(1, 1, datos.length, 3).setValues(datos);
@@ -2746,6 +2769,41 @@ function crearHojaConfiguracion() {
   sheet.setColumnWidth(2, 420);
   sheet.setColumnWidth(3, 380);
   SpreadsheetApp.getActiveSpreadsheet().toast('✓ Hoja Configuracion creada', 'Listo', 4);
+  ss.setActiveSheet(sheet);
+}
+
+// Versión SEGURA para una hoja "Configuracion" que ya existe con datos
+// reales (a diferencia de crearHojaConfiguracion(), que la borra y
+// recrea entera): añade solo las filas de mantenimiento_* que falten,
+// sin tocar zaphiro_url/zaphiro_año/zaphiro_activo ni ninguna otra fila
+// ya presente. Se puede ejecutar varias veces sin duplicar filas.
+function añadirFilasMantenimientoConfiguracion() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Configuracion');
+  if (!sheet) {
+    crearHojaConfiguracion();
+    return; // ya incluye las filas de mantenimiento en sus valores por defecto
+  }
+
+  const filasNuevas = [
+    ['mantenimiento_buscador',          'no', 'si / no — pone el buscador en mantenimiento (sin necesidad de desplegar nada)'],
+    ['mantenimiento_catalogos',         'no', 'si / no — catalogo_drogueria/perfumeria/pinturas/talleres.html y visor_catalogo.html'],
+    ['mantenimiento_escaparate',        'no', 'si / no — escaparate.html y escaparate-campanas.html (Exposición)'],
+    ['mantenimiento_centro_soluciones', 'no', 'si / no — centro-soluciones.html y las guías de solucion.html'],
+    ['mantenimiento_profesionales',     'no', 'si / no — profesionales.html'],
+  ];
+
+  const datosActuales = sheet.getDataRange().getValues();
+  const clavesExistentes = new Set(datosActuales.slice(1).map(fila => (fila[0] || '').toString().trim()));
+  const aAñadir = filasNuevas.filter(fila => !clavesExistentes.has(fila[0]));
+
+  if (aAñadir.length === 0) {
+    SpreadsheetApp.getActiveSpreadsheet().toast('Ya estaban todas las filas de mantenimiento — no se ha añadido nada.', 'Sin cambios', 4);
+    return;
+  }
+
+  sheet.getRange(sheet.getLastRow() + 1, 1, aAñadir.length, 3).setValues(aAñadir);
+  SpreadsheetApp.getActiveSpreadsheet().toast(`✓ Añadidas ${aAñadir.length} fila(s) de mantenimiento a Configuracion.`, 'Listo', 4);
   ss.setActiveSheet(sheet);
 }
 
@@ -3334,6 +3392,26 @@ function procesarSincronizarCatalogos(data) {
 function doGet(e) {
   try {
     const accion = e && e.parameter ? e.parameter.accion : null;
+
+    // NUEVO — Modo mantenimiento: comprobación en vivo, sin ningún
+    // despliegue, para poder desactivar temporalmente el acceso a
+    // buscador/catálogos/escaparate/Centro de Soluciones/profesionales
+    // si algo falla tras llevarlos a producción — a petición explícita
+    // de Eloy. Lee de la hoja "Configuracion" (clave/valor), igual que
+    // ya se hacía con zaphiro_activo — cambiar "si"/"no" en una celda
+    // basta, cada página lo comprueba solo al cargar.
+    if (accion === 'obtener_mantenimiento') {
+      const esSi = v => (v || '').toString().trim().toLowerCase() === 'si';
+      const estado = {
+        buscador:          esSi(leerConfiguracion_('mantenimiento_buscador', 'no')),
+        catalogos:         esSi(leerConfiguracion_('mantenimiento_catalogos', 'no')),
+        escaparate:        esSi(leerConfiguracion_('mantenimiento_escaparate', 'no')),
+        centro_soluciones: esSi(leerConfiguracion_('mantenimiento_centro_soluciones', 'no')),
+        profesionales:     esSi(leerConfiguracion_('mantenimiento_profesionales', 'no')),
+      };
+      return ContentService.createTextOutput(JSON.stringify(estado))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
     // NUEVO — Panel de administración: lista de botones disponibles,
     // generada automáticamente a partir de FUNCIONES_PANEL. Añadir una

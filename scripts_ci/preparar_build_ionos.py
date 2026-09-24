@@ -21,10 +21,10 @@ import shutil
 from pathlib import Path
 
 # Archivos/carpetas que no se publican en absoluto en esta fase — ni el
-# buscador, ni nada de uso interno/desarrollo. Los catálogos (PDF, ver
-# visor_catalogo.html/catalogo_*.html) SÍ se publican ya — sirven el PDF
-# directamente desde Drive (vía Apps Script), sin depender del propio
-# despliegue, así que no hace falta seguir excluyéndolos.
+# panel de administración interno, ni nada de uso interno/desarrollo. El
+# buscador (y los catálogos, la exposición, el Centro de Soluciones y
+# profesionales) ya se publican — todas priorizan la fuente en vivo y
+# tienen su administración correctamente oculta tras OM_PREPRODUCCION.
 EXCLUSIONES = {
     '.git', '.github', '.nojekyll',
     'imagenes_tool', 'email_sage', 'sage_sync', 'scripts', 'scripts_ci',
@@ -32,7 +32,7 @@ EXCLUSIONES = {
     'prompts',         # prompts de agentes usados en el diseño, no contenido del sitio
     'components',      # borradores .md de secciones, no las páginas reales servidas
     'design',          # design-system.md, documentación interna
-    'buscador.html',
+    'panel_admin.html', # panel de administración por PIN — solo accesible desde preproducción, a petición explícita de Eloy
     'homepage-tailwind.html',  # borrador sin enlazar desde la navegación real
     'zaphiro_config.json', 'marcas_dominios.json',
     'requirements.txt', 'CLAUDE.md',
@@ -46,58 +46,6 @@ EXCLUSIONES = {
 # JSON de productos, incluidos los 4 catálogos de proveedor de Talleres)
 # sí se necesita.
 EXCLUSIONES_DATA = {'catalogos'}
-
-# El menú "Productos" es un desplegable cuyo ÚNICO elemento del submenú
-# es "Buscador" (idéntico en las 9 páginas, solo cambia la indentación) —
-# si solo se quita la línea del enlace interior, queda la ESTRUCTURA del
-# desplegable (flecha + <ul> vacío), y al pasar el ratón por encima en
-# escritorio se despliega un submenú vacío. Se sustituye el bloque
-# COMPLETO por un enlace simple, sin desplegable.
-PATRON_DROPDOWN_PRODUCTOS = re.compile(
-    r'<li class="navbar__item--dropdown">\s*'
-    r'<a href="productos\.html">Productos\s*<span class="navbar__caret">[^<]*</span></a>\s*'
-    r'<ul class="navbar__submenu">\s*'
-    r'<li><a href="buscador\.html">Buscador</a></li>\s*'
-    r'</ul>\s*'
-    r'</li>',
-    re.DOTALL
-)
-
-PATRON_ENLACE_BUSCADOR = re.compile(
-    r'\s*<li><a href="buscador\.html">Buscador</a></li>\s*\n'
-)
-
-
-def limpiar_enlace_buscador(html: str) -> str:
-    # Primero el desplegable completo de "Productos" (caso principal en
-    # las 9 páginas). Si por lo que sea no coincidiera en alguna página
-    # (estructura distinta), el patrón de línea suelta de abajo actúa
-    # como red de seguridad para no dejar el enlace colgando de todos
-    # modos — aunque en ese caso podría quedar la estructura vacía del
-    # desplegable, de ahí el aviso de referencias sueltas al final.
-    html = PATRON_DROPDOWN_PRODUCTOS.sub('<li><a href="productos.html">Productos</a></li>', html)
-    return PATRON_ENLACE_BUSCADOR.sub('\n', html)
-
-
-def limpiar_productos_html(html: str) -> str:
-    """productos.html tiene una pieza propia además del enlace del menú:
-    el banner promocional que enlaza al buscador (que sigue excluido). El
-    script que detecta catálogos publicados en GitHub Releases y activa
-    los botones dinámicamente YA NO se quita — los catálogos dejaron de
-    excluirse, y ese script comprueba por su cuenta que el PDF exista de
-    verdad antes de activar cada botón, así que sigue siendo correcto."""
-    html = limpiar_enlace_buscador(html)
-
-    # Banner "Buscador de productos" — sección autocontenida completa.
-    html = re.sub(
-        r'\s*<section class="section" style="padding-top:0;">\s*'
-        r'<div class="section-inner">\s*'
-        r'<a href="buscador\.html".*?</a>\s*'
-        r'</div>\s*</section>\s*\n',
-        '\n', html, flags=re.DOTALL
-    )
-
-    return html
 
 
 def desactivar_entorno_preproduccion(salida: Path) -> None:
@@ -164,7 +112,7 @@ def main():
             shutil.copy2(item, destino)
         copiados += 1
 
-    print(f'Copiados {copiados} elementos, excluidos {excluidos} (buscador/uso interno).')
+    print(f'Copiados {copiados} elementos, excluidos {excluidos} (panel admin/uso interno).')
 
     # Dentro de data/ (si se copió), quitar las subcarpetas de
     # EXCLUSIONES_DATA (los PDFs de catálogo — ver el comentario junto a
@@ -177,20 +125,6 @@ def main():
             if subcarpeta.exists():
                 shutil.rmtree(subcarpeta)
                 print(f'✓ data/{nombre}: quitado de la copia de salida (se sirve directo desde Drive).')
-
-    # Transformar las páginas HTML restantes
-    transformadas = 0
-    for html_file in salida.glob('*.html'):
-        contenido = html_file.read_text(encoding='utf-8')
-        if html_file.name == 'productos.html':
-            nuevo = limpiar_productos_html(contenido)
-        else:
-            nuevo = limpiar_enlace_buscador(contenido)
-        if nuevo != contenido:
-            html_file.write_text(nuevo, encoding='utf-8')
-            transformadas += 1
-
-    print(f'Transformadas {transformadas} páginas (enlace de Buscador quitado del menú).')
 
     # Desactivar TODA la administración (gestión de imágenes, asistente de
     # imágenes, precio mayor, actualizar/validar/buscar imagen, gestionar
@@ -236,26 +170,23 @@ def main():
     )
     print('✓ defaultsite/index.html: redirección por meta-refresh añadida.')
 
-    # Comprobación de seguridad: que no quede ninguna referencia colgante
-    # a buscador.html (sigue excluido) en lo que sí se va a publicar, ni
-    # ningún desplegable de navegación vacío (el caso real que motivó
-    # esta comprobación: "Productos" se quedó con la flecha y un <ul>
-    # vacío tras quitar su único elemento, "Buscador"). Los catálogos
-    # (catalogo_*.html/visor_catalogo.html) ya no se comprueban aquí —
-    # dejaron de excluirse, así que enlazarlos ya es correcto.
+    # Comprobación de seguridad general: que no quede ningún desplegable
+    # de navegación vacío — históricamente pasó con "Productos" al
+    # quitar su único elemento del submenú (cuando buscador.html seguía
+    # excluido); ya no debería darse ahora que buscador.html se publica,
+    # pero se deja como red de seguridad genérica ante cualquier cambio
+    # futuro que deje un <ul> de submenú sin contenido.
     referencias_sueltas = []
     for html_file in salida.rglob('*.html'):
         contenido = html_file.read_text(encoding='utf-8')
-        if 'buscador.html' in contenido:
-            referencias_sueltas.append(html_file.name)
         if re.search(r'<ul class="navbar__submenu">\s*</ul>', contenido):
             referencias_sueltas.append(f'{html_file.name} (desplegable de navegación vacío)')
 
     if referencias_sueltas:
-        print(f'⚠ AVISO: quedan referencias a buscador sin limpiar en: {referencias_sueltas}')
-        print('  Revisa manualmente antes de publicar — puede haber un enlace nuevo no contemplado por este script.')
+        print(f'⚠ AVISO: {referencias_sueltas}')
+        print('  Revisa manualmente antes de publicar.')
     else:
-        print('✓ Sin referencias colgantes a buscador en el contenido a publicar.')
+        print('✓ Sin desplegables de navegación vacíos en el contenido a publicar.')
 
 
 if __name__ == '__main__':
