@@ -712,6 +712,17 @@
 
   const $ = (sel, ctx) => (ctx||document).querySelector(sel);
   const $$ = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
+
+  // Igual que en buscador.html y escaparate.html: se elimina el nodo del
+  // DOM por completo cuando la administración está desactivada, en vez
+  // de solo ocultarlo con CSS (revertible desde la consola del navegador).
+  if (!window.MOSTRAR_GESTION_CAMPANAS) {
+    const btn = document.getElementById('btnCampanas');
+    if (btn) btn.remove();
+    const modal = document.getElementById('modalCampanas');
+    if (modal) modal.remove();
+  }
+
   const HOY = new Date();
   const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
   function activaEn(camp, fecha){
@@ -1090,8 +1101,11 @@
   // solo <body> no bastaba (confirmado con Playwright). El evento
   // 'close' nativo cubre cualquier forma de cerrarlo (botón, Escape,
   // clic en el fondo).
-  modalCampanas.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
+  if (modalCampanas) {
+    modalCampanas.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
+  }
 
+  if (window.MOSTRAR_GESTION_CAMPANAS) {
   function renderCampaignList(){
     if(!CAMPAIGNS.length){
       $("#campaignList").innerHTML = `<p class="picker-empty">Todavía no hay ninguna campaña. Crea la primera con el formulario de abajo.</p>`;
@@ -1386,12 +1400,14 @@
     }
   });
 
-  $("#btnCampanas").addEventListener("click", ()=>{
-    limpiarFormulario();
-    renderCampaignList();
-    document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
-    modalCampanas.showModal();
-  });
+  if ($("#btnCampanas")) {
+    $("#btnCampanas").addEventListener("click", ()=>{
+      limpiarFormulario();
+      renderCampaignList();
+      document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
+      modalCampanas.showModal();
+    });
+  }
   $$('[data-close-campanas]').forEach(b=>b.addEventListener('click', ()=>modalCampanas.close()));
 
   $("#btnGuardarCampana").addEventListener("click", async ()=>{
@@ -1466,6 +1482,7 @@
       btn.disabled = false; btn.textContent = original;
     }
   });
+  }
 
   iniciar();
 })();

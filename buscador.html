@@ -3932,6 +3932,53 @@ console.log('Configuración cargada');
 console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_URL ? 'Sí' : 'No');
 
 (function() {
+    // ── Endurecer la restricción de administración: eliminar del DOM,
+    //    no solo ocultar con CSS ──
+    // Eloy, tras validar el ajuste: "cualquier persona con unos mínimos
+    // conocimientos entra en la consola del navegador, modifica el
+    // estilo display:none y vería el botón y lo podría manipular". Con
+    // razón — display:none es solo visual, el nodo (y su onclick, si el
+    // flag hubiera estado activo al momento de asignarlo) seguiría en el
+    // DOM. Aquí se ELIMINAN esos nodos por completo del documento, lo
+    // antes posible (primera línea del script principal, antes de
+    // cualquier otra inicialización) cuando el flag correspondiente esté
+    // desactivado — así no hay ningún nodo que "revelar" cambiando un
+    // estilo, habría que reconstruir a mano el HTML exacto del botón Y
+    // su modal Y volver a cablear su comportamiento. Cada función que
+    // abre uno de estos modales tiene además su propia guarda
+    // defensiva (ver abrirModalActualizarImagen, validarImagen,
+    // buscarImagen, abrirAsistenteImagenes, abrirModalGestionarRelacionados,
+    // darDeBajaProducto/reactivarProducto) por si en el futuro algo
+    // llegara a llamarlas sin pasar por un botón ya eliminado.
+    //
+    // Límite real, documentado con honestidad: esto no puede impedir que
+    // alguien con conocimientos técnicos llame directamente a la URL del
+    // Web App de Apps Script con la petición adecuada — ese endpoint
+    // acepta peticiones de cualquiera ("Cualquiera, incluso anónimos").
+    // Ningún endurecimiento posible del lado del cliente (HTML/JS que se
+    // sirve tal cual al navegador) puede cerrar ese hueco del todo; solo
+    // el propio Apps Script, verificando algo en el servidor, podría
+    // hacerlo de forma completa. Esto sube considerablemente el listón
+    // para quien solo esté toqueteando la consola sin más, que es el
+    // caso que Eloy describió.
+    function eliminarSiRestringido_(id, flagActivo) {
+        if (flagActivo) return;
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+    eliminarSiRestringido_('modal-producto-actualizar-imagen', window.MOSTRAR_BOTON_REPORTAR_IMAGEN);
+    eliminarSiRestringido_('modal-actualizar-imagen-overlay', window.MOSTRAR_BOTON_REPORTAR_IMAGEN);
+    eliminarSiRestringido_('modal-confirmar-sin-imagen-overlay', window.MOSTRAR_BOTON_REPORTAR_IMAGEN);
+    eliminarSiRestringido_('modal-producto-validar-imagen', window.MOSTRAR_BOTON_VALIDAR_IMAGEN);
+    eliminarSiRestringido_('modal-confirmar-validacion-overlay', window.MOSTRAR_BOTON_VALIDAR_IMAGEN);
+    eliminarSiRestringido_('modal-producto-buscar-imagen', window.MOSTRAR_BOTON_BUSCAR_IMAGEN);
+    eliminarSiRestringido_('grupo-gestion-imagenes', window.MOSTRAR_FILTRO_IMAGENES_REVISADAS);
+    eliminarSiRestringido_('modal-asistente-imagenes-overlay', window.MOSTRAR_FILTRO_IMAGENES_REVISADAS);
+    eliminarSiRestringido_('modal-producto-gestionar-relacionados', window.MOSTRAR_GESTION_RELACIONADOS);
+    eliminarSiRestringido_('modal-relacionados-overlay', window.MOSTRAR_GESTION_RELACIONADOS);
+    eliminarSiRestringido_('modal-producto-baja-reactivar', window.MOSTRAR_BOTON_GESTION_BAJA);
+    eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR);
+
     const REPO = 'eloyleon23/web-orencio-matas';
     const API_RELEASE = 'https://api.github.com/repos/' + REPO + '/releases/latest';
 
@@ -4427,9 +4474,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // paginación) — así cualquier imagen ya actualizada por alguien se ve
     // corregida en segundo o dos, sin depender de que este JSON estático
     // se haya regenerado y desplegado en GitHub Pages.
+    // Si la administración está desactivada (producción/IONOS), el precio
+    // mayor NUNCA debe quedar en los datos que vive en el navegador — ni
+    // siquiera detrás de un botón oculto: aunque el botón no exista, el
+    // VALOR seguiría estando en TODOS/resultadosActuales, inspeccionable
+    // por consola (p.ej. console.log(TODOS)) sin tocar el DOM para nada.
+    // Se limpia aquí, una sola vez, justo tras procesar cada tanda de
+    // datos que llega — nunca se conserva ese campo en memoria cuando
+    // MOSTRAR_PRECIO_MAYOR es false.
+    //
+    // Aviso importante (documentado también para quien retome esto): esto
+    // NO oculta el campo de la respuesta HTTP en bruto que ya ha llegado
+    // — alguien mirando la pestaña Network del navegador seguiría viendo
+    // precio_mayor_sin/precio_mayor_con en la respuesta de
+    // obtener_productos, antes de que este código llegue a borrarlo de
+    // memoria. El cierre completo de este hueco requiere que el propio
+    // Apps Script deje de incluir esos dos campos en la respuesta para
+    // peticiones que no vengan de preproducción — cambio de servidor,
+    // fuera del alcance de lo que puede arreglar el HTML/JS del cliente.
+    function limpiarPrecioMayorSiProcede_(productos) {
+        if (window.MOSTRAR_PRECIO_MAYOR) return productos;
+        productos.forEach(p => {
+            delete p.precio_mayor_sin;
+            delete p.precio_mayor_con;
+        });
+        return productos;
+    }
+
     function poblarDesdeTexto(texto) {
         const data = JSON.parse(texto);
-        TODOS = data.productos || [];
+        TODOS = limpiarPrecioMayorSiProcede_(data.productos || []);
         FAMILIAS_ORDEN = data.familias_orden || {};
         SUBFAMILIAS_ORDEN = data.subfamilias_orden || {};
         construirIndiceSugerencias();
@@ -4442,7 +4516,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // etc. recojan el cambio sin perder el resto del estado de la página.
     function reconciliarConTextoEnVivo(texto) {
         const data = JSON.parse(texto);
-        const porRef = new Map((data.productos || []).map(p => [p.ref, p]));
+        const productosEntrantes = limpiarPrecioMayorSiProcede_(data.productos || []);
+        const porRef = new Map(productosEntrantes.map(p => [p.ref, p]));
         const refsYaCargadas = new Set();
         TODOS.forEach(p => {
             if (!p.fabricante) refsYaCargadas.add(p.ref);
@@ -5763,10 +5838,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('f-fecha-hasta').value = '';
         fechaFiltroTocado = false; // vuelve a precargarse solo en el siguiente aplicarFiltros()
         $('f-oferta').checked = false;
-        $('f-imagenes-validadas').checked = false;
-        $('f-tiene-imagen').checked = false;
-        $('f-imagenes-sin-validar').checked = false;
-        $('f-productos-sin-imagen').checked = false;
+        if ($('f-imagenes-validadas')) $('f-imagenes-validadas').checked = false;
+        if ($('f-tiene-imagen')) $('f-tiene-imagen').checked = false;
+        if ($('f-imagenes-sin-validar')) $('f-imagenes-sin-validar').checked = false;
+        if ($('f-productos-sin-imagen')) $('f-productos-sin-imagen').checked = false;
         renderFabricanteTaller(); // Limpiar/ocultar fabricante
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
@@ -5852,9 +5927,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const pMin     = parseFloat($('f-precio-min').value);
         const pMax     = parseFloat($('f-precio-max').value);
         const soloOferta = $('f-oferta').checked;
-        const soloImagenesValidadas = $('f-imagenes-validadas').checked;
+        const soloImagenesValidadas = $('f-imagenes-validadas') ? $('f-imagenes-validadas').checked : false;
         const soloTieneImagen = $('f-tiene-imagen') ? $('f-tiene-imagen').checked : false;
-        const soloImagenesSinValidar = $('f-imagenes-sin-validar').checked;
+        const soloImagenesSinValidar = $('f-imagenes-sin-validar') ? $('f-imagenes-sin-validar').checked : false;
         const soloProductosSinImagen = $('f-productos-sin-imagen') ? $('f-productos-sin-imagen').checked : false;
         const acabadosSel = acabadosSeleccionados();
         const formatosSel = formatosSeleccionados();
@@ -6855,8 +6930,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         } else {
             precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         }
-        $('modal-producto-precio').innerHTML = precioHtml;
-
         // Precio de venta a MAYOR, oculto tras un botón — información
         // interna, nunca debe verse en producción/release (ver
         // window.MOSTRAR_PRECIO_MAYOR en la configuración de arriba del
@@ -6865,58 +6938,62 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // reabrir el mismo. El "con IVA" ya llega calculado desde el
         // Sheet (columna precio_mayor_con_iva) — no se calcula aquí, a
         // petición de Eloy, igual que el precio normal.
+        // El bloque entero se elimina del DOM al cargar la página si el
+        // flag está desactivado (ver eliminarSiRestringido_ al principio
+        // del script) — de ahí la comprobación de null antes de tocarlo.
         const bloquePrecioMayor = $('modal-producto-precio-mayor-bloque');
-        const btnPrecioMayor = $('modal-producto-btn-ver-precio-mayor');
-        const valoresPrecioMayor = $('modal-producto-precio-mayor-valores');
-        const precioMayorSin = p.precio_mayor_sin ? parseFloat(p.precio_mayor_sin.toString().replace(',', '.')) : 0;
-        const precioMayorCon = p.precio_mayor_con ? parseFloat(p.precio_mayor_con.toString().replace(',', '.')) : 0;
-        if (window.MOSTRAR_PRECIO_MAYOR && precioMayorSin > 0) {
-            bloquePrecioMayor.style.display = '';
-            btnPrecioMayor.style.display = '';
-            valoresPrecioMayor.style.display = 'none';
-            valoresPrecioMayor.innerHTML = '';
-            btnPrecioMayor.onclick = () => {
-                const sinTxt = precioMayorSin.toFixed(2).replace('.', ',');
-                const conTxt = precioMayorCon.toFixed(2).replace('.', ',');
-                valoresPrecioMayor.innerHTML = `<strong>${conTxt} €</strong> con IVA &nbsp;·&nbsp; ${sinTxt} € sin IVA`;
-                valoresPrecioMayor.style.display = '';
-                btnPrecioMayor.style.display = 'none';
-            };
-        } else {
-            bloquePrecioMayor.style.display = 'none';
+        if (bloquePrecioMayor) {
+            const btnPrecioMayor = $('modal-producto-btn-ver-precio-mayor');
+            const valoresPrecioMayor = $('modal-producto-precio-mayor-valores');
+            const precioMayorSin = p.precio_mayor_sin ? parseFloat(p.precio_mayor_sin.toString().replace(',', '.')) : 0;
+            const precioMayorCon = p.precio_mayor_con ? parseFloat(p.precio_mayor_con.toString().replace(',', '.')) : 0;
+            if (precioMayorSin > 0) {
+                bloquePrecioMayor.style.display = '';
+                btnPrecioMayor.style.display = '';
+                valoresPrecioMayor.style.display = 'none';
+                valoresPrecioMayor.innerHTML = '';
+                btnPrecioMayor.onclick = () => {
+                    const sinTxt = precioMayorSin.toFixed(2).replace('.', ',');
+                    const conTxt = precioMayorCon.toFixed(2).replace('.', ',');
+                    valoresPrecioMayor.innerHTML = `<strong>${conTxt} €</strong> con IVA &nbsp;·&nbsp; ${sinTxt} € sin IVA`;
+                    valoresPrecioMayor.style.display = '';
+                    btnPrecioMayor.style.display = 'none';
+                };
+            } else {
+                bloquePrecioMayor.style.display = 'none';
+            }
         }
 
-        // Mostrar botón de actualizar imagen si está activado en configuración
-        if (window.MOSTRAR_BOTON_REPORTAR_IMAGEN) {
-            $('modal-producto-actualizar-imagen').style.display = 'flex';
-            $('modal-producto-actualizar-imagen').onclick = () => abrirModalActualizarImagen(p);
-        } else {
-            $('modal-producto-actualizar-imagen').style.display = 'none';
+        // Botón de actualizar imagen — eliminado del DOM al cargar la
+        // página si el flag está desactivado (ver eliminarSiRestringido_).
+        const btnActualizarImagen = $('modal-producto-actualizar-imagen');
+        if (btnActualizarImagen) {
+            btnActualizarImagen.style.display = 'flex';
+            btnActualizarImagen.onclick = () => abrirModalActualizarImagen(p);
         }
 
-        // Mostrar botón de validar imagen si está activado en configuración
-        if (window.MOSTRAR_BOTON_VALIDAR_IMAGEN) {
-            $('modal-producto-validar-imagen').style.display = 'flex';
-            $('modal-producto-validar-imagen').onclick = () => validarImagen(p);
-        } else {
-            $('modal-producto-validar-imagen').style.display = 'none';
+        // Botón de validar imagen — mismo tratamiento.
+        const btnValidarImagen = $('modal-producto-validar-imagen');
+        if (btnValidarImagen) {
+            btnValidarImagen.style.display = 'flex';
+            btnValidarImagen.onclick = () => validarImagen(p);
         }
 
         // Botón de gestionar productos relacionados — a petición explícita
         // de Eloy (24/09/2026), pasa a depender de MOSTRAR_GESTION_RELACIONADOS
-        // (antes visible siempre, sin flag).
+        // (antes visible siempre, sin flag); eliminado del DOM si está
+        // desactivado, mismo tratamiento que el resto.
         const btnGestionarRelacionados = $('modal-producto-gestionar-relacionados');
-        if (window.MOSTRAR_GESTION_RELACIONADOS) {
+        if (btnGestionarRelacionados) {
             btnGestionarRelacionados.style.display = '';
             btnGestionarRelacionados.onclick = () => abrirModalGestionarRelacionados(p);
-        } else {
-            btnGestionarRelacionados.style.display = 'none';
         }
 
         // Botón de dar de baja / reactivar — cambia de texto, icono y color
         // según el estado actual del producto (ver estaDeBaja más arriba).
+        // Eliminado del DOM si el flag está desactivado.
         const btnBajaReactivar = $('modal-producto-baja-reactivar');
-        if (window.MOSTRAR_BOTON_GESTION_BAJA) {
+        if (btnBajaReactivar) {
             btnBajaReactivar.style.display = 'flex';
             btnBajaReactivar.disabled = false;
             btnBajaReactivar.classList.toggle('es-reactivar', estaDeBaja);
@@ -6924,16 +7001,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ? '<i class="fa-solid fa-rotate-left"></i><span>Reactivar este producto</span>'
                 : '<i class="fa-solid fa-ban"></i><span>Dar de baja este producto</span>';
             btnBajaReactivar.onclick = () => estaDeBaja ? reactivarProducto(p) : darDeBajaProducto(p);
-        } else {
-            btnBajaReactivar.style.display = 'none';
         }
 
-        // Mostrar botón de buscar imagen si está activado en configuración
-        if (window.MOSTRAR_BOTON_BUSCAR_IMAGEN) {
-            $('modal-producto-buscar-imagen').style.display = 'flex';
-            $('modal-producto-buscar-imagen').onclick = () => buscarImagen(p);
-        } else {
-            $('modal-producto-buscar-imagen').style.display = 'none';
+        // Botón de buscar imagen — mismo tratamiento.
+        const btnBuscarImagen = $('modal-producto-buscar-imagen');
+        if (btnBuscarImagen) {
+            btnBuscarImagen.style.display = 'flex';
+            btnBuscarImagen.onclick = () => buscarImagen(p);
         }
 
         // Botón de ficha técnica: solo para productos de pinturas que no sean
@@ -8021,6 +8095,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     let productoActual = null;
 
     function abrirModalActualizarImagen(p) {
+        if (!window.MOSTRAR_BOTON_REPORTAR_IMAGEN) return;
         productoActual = p;
         blobImagenComprimida = null;
         $('modal-actualizar-imagen-nombre').textContent = p.nombre + ' (Ref: ' + p.ref + ')';
@@ -8075,11 +8150,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
-    // Event listeners para la modal de actualizar imagen
-    $('modal-actualizar-imagen-cerrar').addEventListener('click', cerrarModalActualizarImagen);
-    $('modal-actualizar-imagen-overlay').addEventListener('click', (e) => {
-        if (e.target.id === 'modal-actualizar-imagen-overlay') cerrarModalActualizarImagen();
-    });
+    // Event listeners para la modal de actualizar imagen — el modal se
+    // elimina del DOM si MOSTRAR_BOTON_REPORTAR_IMAGEN está desactivado
+    // (ver eliminarSiRestringido_ al principio del script).
+    if ($('modal-actualizar-imagen-overlay')) {
+        $('modal-actualizar-imagen-cerrar').addEventListener('click', cerrarModalActualizarImagen);
+        $('modal-actualizar-imagen-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-actualizar-imagen-overlay') cerrarModalActualizarImagen();
+        });
 
     // Marcar producto sin imagen disponible — pide confirmación (sencilla,
     // no doble como en dar de baja: es una acción reversible y de menor
@@ -8150,15 +8228,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
-    // Modal de confirmación de validación
-    $('modal-confirmar-validacion-cerrar').addEventListener('click', () => {
-        $('modal-confirmar-validacion-overlay').classList.remove('activo');
-    });
-    $('modal-confirmar-validacion-overlay').addEventListener('click', (e) => {
-        if (e.target.id === 'modal-confirmar-validacion-overlay') {
+    // Modal de confirmación de validación — se elimina del DOM si
+    // MOSTRAR_BOTON_VALIDAR_IMAGEN está desactivado.
+    if ($('modal-confirmar-validacion-overlay')) {
+        $('modal-confirmar-validacion-cerrar').addEventListener('click', () => {
             $('modal-confirmar-validacion-overlay').classList.remove('activo');
-        }
-    });
+        });
+        $('modal-confirmar-validacion-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-confirmar-validacion-overlay') {
+                $('modal-confirmar-validacion-overlay').classList.remove('activo');
+            }
+        });
+    }
 
     // Modal de doble confirmación de dar de baja / reactivar producto
     $('modal-confirmar-baja-cerrar').addEventListener('click', () => {
@@ -8331,9 +8412,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         };
         reader.readAsDataURL(blobImagenComprimida);
     });
+    }
 
     // ── Validar imagen de producto ──
     function validarImagen(p) {
+        if (!window.MOSTRAR_BOTON_VALIDAR_IMAGEN) return;
         // Mostrar modal de confirmación
         $('modal-confirmar-validacion-overlay').classList.add('activo');
         $('modal-confirmar-validacion-nombre').textContent = p.nombre;
@@ -8352,6 +8435,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function buscarImagen(p) {
+        if (!window.MOSTRAR_BOTON_BUSCAR_IMAGEN) return;
         // Construir query de búsqueda para Google Images
         const query = encodeURIComponent(`${p.nombre} ${p.ref} producto`);
         const googleUrl = `https://www.google.com/search?tbm=isch&q=${query}`;
@@ -8735,7 +8819,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         buscarProductosRelacionados(texto);
     }
 
-    // Event listeners de la modal de relacionados
+    // Event listeners de la modal de relacionados — el modal se elimina
+    // del DOM si MOSTRAR_GESTION_RELACIONADOS está desactivado. Incluye
+    // el listener global de document.addEventListener('click', ...) más
+    // abajo: sin protegerlo también, se dispararía en CUALQUIER clic de
+    // toda la página (no solo dentro del modal) intentando tocar
+    // elementos ya eliminados.
+    if ($('modal-relacionados-overlay')) {
     $('modal-relacionados-cerrar').addEventListener('click', cerrarModalGestionarRelacionados);
     $('modal-relacionados-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'modal-relacionados-overlay') cerrarModalGestionarRelacionados();
@@ -8796,6 +8886,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('relacionados-buscar-input').addEventListener('keydown', (e) => {
         if (e.key === 'Escape') ocultarSugerenciasRelacionados();
     });
+    }
 
     // ══════════════════════════════════════════════════════════════════
     // Asistente de imágenes: cola de productos sin imagen/sin validar,
@@ -9072,6 +9163,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // Botón para abrir el asistente
+    if ($('modal-asistente-imagenes-overlay')) {
     $('btn-abrir-asistente-imagenes').addEventListener('click', () => {
         // En móvil, el botón vive dentro del panel de filtros deslizante
         // (z-index más alto que los modales normales) — si no se cierra
@@ -9323,6 +9415,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     });
 
     $('asistente-btn-saltar').addEventListener('click', avanzarAsistente);
+    }
 
     // ── Dar de baja / reactivar producto (doble confirmación) ──
     // Reutiliza un único modal (#modal-confirmar-baja-*) en dos pasos: el
@@ -9381,10 +9474,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function darDeBajaProducto(p) {
+        if (!window.MOSTRAR_BOTON_GESTION_BAJA) return;
         pedirConfirmacionBaja(p, 'baja', () => ejecutarAccionBajaReactivar(p, 'dar_baja_producto'));
     }
 
     function reactivarProducto(p) {
+        if (!window.MOSTRAR_BOTON_GESTION_BAJA) return;
         pedirConfirmacionBaja(p, 'reactivar', () => ejecutarAccionBajaReactivar(p, 'reactivar_producto'));
     }
 

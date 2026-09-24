@@ -390,6 +390,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // assets/js/entorno.js) — mismo patrón que MOSTRAR_GESTION_CAMPANAS
       // en Escaparate OM, nunca se hardcodea "true" por separado.
       window.MOSTRAR_GESTION_SOLUCIONES = window.OM_PREPRODUCCION;
+
+      // Igual que en buscador.html/escaparate.html/escaparate-campanas.html:
+      // se elimina el nodo del DOM por completo cuando la administración
+      // está desactivada, en vez de solo ocultarlo con CSS (revertible
+      // desde la consola del navegador). gestion-soluciones.js ya tiene su
+      // propia guarda al principio (if (!window.MOSTRAR_GESTION_SOLUCIONES)
+      // return;), así que su funcionalidad ya está bloqueada de raíz — esto
+      // es además, para que tampoco quede ni el botón ni el modal en el DOM.
+      if (!window.MOSTRAR_GESTION_SOLUCIONES) {
+        const dock = document.getElementById('cs-gestion-dock');
+        if (dock) dock.remove();
+        const modal = document.getElementById('cs-gestion-modal');
+        if (modal) modal.remove();
+      }
     </script>
     <script src="./assets/js/soluciones-data.js?v=20260923b"></script>
     <script src="./assets/js/centro-soluciones.js?v=20260901c"></script>

@@ -1197,6 +1197,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   const $ = (sel, ctx) => (ctx||document).querySelector(sel);
   const $$ = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
+
+  // Igual que en buscador.html: no basta con ocultar con CSS (display:none
+  // se puede revertir desde la consola del navegador) — se elimina el
+  // nodo del DOM por completo cuando la administración está desactivada,
+  // lo antes posible. openModalProductos() tiene además su propia guarda
+  // defensiva por si algo llegara a llamarla sin pasar por el botón ya
+  // eliminado.
+  if (!window.MOSTRAR_GESTION_CAMPANAS) {
+    const dock = document.getElementById('toolsDock');
+    if (dock) dock.remove();
+    const modalProductosEl = document.getElementById('modalProductos');
+    if (modalProductosEl) modalProductosEl.remove();
+  }
+
   // precio_con/precio_sin llegan como texto con coma decimal (p.ej. "2,15",
   // formato español del Sheet) — no como número — hay que convertir antes
   // de poder formatear u operar con ellos.
@@ -2074,6 +2088,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     toastTimer = setTimeout(()=>el.classList.remove("show"), 4200);
   }
 
+  if (window.MOSTRAR_GESTION_CAMPANAS) {
   /* ---------------- Modal A: asignar productos ---------------- */
   const modalProductos = $("#modalProductos");
   // <dialog>.showModal() NO bloquea por sí solo el scroll de la página de
@@ -2094,7 +2109,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // tecla Escape, clic en el fondo), así que basta un único listener aquí
   // para restaurar el scroll en todos los casos, sin repetirlo en cada
   // punto donde se llama .close().
-  modalProductos.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
+  if (modalProductos) {
+    modalProductos.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
+  }
   let selected = new Set();
   let sugeridosIA = [];       // refs sugeridas por la IA en la sesión actual del modal
   let destacados = {};        // ref -> {tamano(1-6), alinH, posV, descuento(%)} — solo entradas con tamano>1 o descuento>0
@@ -2299,6 +2316,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   });
 
   async function openModalProductos(campaignId){
+    if(!window.MOSTRAR_GESTION_CAMPANAS) return;
     const c = findCampaign(campaignId);
     if(!c) return;
     // El catálogo completo (para poder BUSCAR y añadir productos nuevos,
@@ -2507,7 +2525,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   /* cerrar modales */
   $$('[data-close-productos]').forEach(b=>b.addEventListener('click', ()=>modalProductos.close()));
 
-  $("#btnProductos").addEventListener("click", ()=>{ if(activeId) openModalProductos(activeId); });
+  if ($("#btnProductos")) {
+    $("#btnProductos").addEventListener("click", ()=>{ if(activeId) openModalProductos(activeId); });
+  }
+  }
 
   /* Botón "volver arriba" — mismo umbral (500px) y comportamiento que en
      Centro de Soluciones (assets/js/centro-soluciones.js). Además, se
