@@ -6930,6 +6930,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         } else {
             precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         }
+        $('modal-producto-precio').innerHTML = precioHtml;
+
         // Precio de venta a MAYOR, oculto tras un botón — información
         // interna, nunca debe verse en producción/release (ver
         // window.MOSTRAR_PRECIO_MAYOR en la configuración de arriba del
