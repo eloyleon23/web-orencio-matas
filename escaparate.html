@@ -3113,7 +3113,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // blanco, más productos normales por página). ----
       const gapX = 6, gapY = 6, baseCols = 3;
       const colW = (contentWidth - gapX*(baseCols-1)) / baseCols;
-      const cardH = 54;      // tarjeta normal (tamaño 1 o 2/3 de ancho)
+      // cardH=54 se quedaba corto con descuento: precio tachado + precio
+      // rebajado ocupan una línea más que el precio simple, y esa línea
+      // de más empujaba la referencia (Ref. XXXXX) fuera del borde
+      // inferior de la tarjeta — el aviso de Eloy. Subido a 62 (el
+      // mínimo que deja margen real en ese caso, con los tamaños de
+      // fuente actuales) en vez de recortar más el hueco de la imagen,
+      // que es justo lo que se pidió agrandar hace poco.
+      const cardH = 62;       // tarjeta normal (tamaño 1 o 2/3 de ancho)
       const cardHGrande = 78; // tamaño 4/5/6: además más alta, no solo más ancha
       const padTarjeta = 3.5;
       // Mismo cálculo usado para pedir la foto ya recortada (más abajo) y
