@@ -904,7 +904,7 @@ window.SOLUCIONES_DATA = (function () {
       objective: 'proteger',
       surface: 'suelo',
       difficulty: 'Media',
-      estimatedTime: '1 día de aplicación + 3-7 días de curado antes del tráfico',
+      estimatedTime: '1 día de aplicación + 24h antes de pisar y 3 días antes de circular con vehículos',
       result: 'Suelo protegido, con acabado uniforme resistente a aceites y desgaste',
       calculadoraCantidad: { rendimiento: 5, etiqueta: 'sistema epoxi de suelos' },
       colorChart: { label: 'Ver carta de colores TitanTech (sistema TitanColor: TT1 / RAL / NCS)', url: 'https://www.titantech.es/colores', logo: '../assets/proveedores/logo-titantech.jpg' },
@@ -2912,11 +2912,11 @@ window.SOLUCIONES_DATA = (function () {
       steps: [
         { n: 1, title: 'Aplicar la imprimación anticorrosiva', text: 'Antes de la pintura intumescente, la estructura debe llevar una imprimación anticorrosiva compatible — el espesor de esta capa debe medirse y registrarse, porque afecta al cálculo del espesor real de intumescente aplicado.', productos: ['Imprimación anticorrosiva compatible'] },
         { n: 2, title: 'Determinar el espesor necesario', text: 'El espesor de intumescente necesario depende de la resistencia al fuego exigida (R30, R60, R90...), el perfil del acero y su masividad (factor de forma) — cuanto mayor la masividad, más espesor hace falta para la misma protección.', productos: [] },
-        { n: 3, title: 'Aplicar la pintura intumescente', text: 'Aplica la pintura intumescente al agua en el espesor calculado, respetando las condiciones ambientales (temperatura entre 10-35°C, humedad por debajo del 80%) — de lo contrario pueden formarse ampollas o defectos en la película.', productos: ['Pintura intumescente al agua'] },
+        { n: 3, title: 'Aplicar la pintura intumescente', text: 'Aplica la pintura intumescente al agua en el espesor calculado, respetando las condiciones ambientales (temperatura entre 5-35°C, humedad por debajo del 80%, y siempre al menos 3°C por encima del punto de rocío) — de lo contrario pueden formarse ampollas o defectos en la película.', productos: ['Pintura intumescente al agua'] },
         { n: 4, title: 'Aplicar acabado si hace falta', text: 'En interiores secos no siempre hace falta acabado adicional; en exteriores semi-expuestos o de alta humedad, protege la intumescente con un esmalte de acabado compatible.', productos: ['Esmalte de acabado compatible (si hay exposición exterior o alta humedad)'] },
       ],
       professionalTips: [
-        'Antes de aplicar el esmalte de acabado, hay que confirmar el espesor real de intumescente aplicado midiendo la película ya totalmente seca (24-48 horas) — no basta con haber aplicado la cantidad prevista, hay que verificar que se ha quedado en el espesor final correcto.',
+        'Antes de aplicar el esmalte de acabado, hay que confirmar el espesor real de intumescente aplicado midiendo la película ya seca (unas 8 horas a 23°C y 60% de humedad relativa; más tiempo si hace más frío o más humedad) — no basta con haber aplicado la cantidad prevista, hay que verificar que se ha quedado en el espesor final correcto.',
       ],
       commonMistakes: [
         'No medir y registrar el espesor de la imprimación antes de aplicar la intumescente.',
@@ -3605,7 +3605,7 @@ window.SOLUCIONES_DATA = (function () {
         { n: 1, title: 'Cepillar la suciedad suelta', text: 'Antes de aplicar ningún producto, elimina con un cepillo la mayor cantidad posible de suciedad y polvo de la zona afectada.', productos: [] },
         { n: 2, title: 'Aplicar el fungicida y dejar actuar', text: 'Aplica el limpiador antimoho (o una solución de lejía diluida en agua) sobre toda la zona con moho y déjalo actuar al menos 1 hora. Este paso es el que de verdad MATA el hongo — pintar sin hacerlo antes no lo elimina, solo lo tapa temporalmente.', productos: ['Limpiador antimoho fungicida (o lejía diluida en agua)'] },
         { n: 3, title: 'Aclarar y dejar secar bien', text: 'Aclara la superficie con agua limpia y déjala secar por completo — al menos 6 horas, y no apliques el limpiador con la superficie a menos de 5°C. No empieces a pintar hasta que esté totalmente seca.', productos: [] },
-        { n: 4, title: 'Pintar con una pintura antimoho', text: 'Aplica dos manos de una pintura vinílica mate con conservante antimoho, respetando las condiciones de aplicación: nunca por debajo de 7°C, con humedad relativa igual o superior al 80%, ni con lluvia prevista en las próximas horas.', productos: ['Pintura vinílica mate con conservante antimoho'] },
+        { n: 4, title: 'Pintar con una pintura antimoho', text: 'Aplica dos manos de una pintura vinílica mate con conservante antimoho. No la apliques nunca con temperaturas por debajo de 7°C, con humedad relativa del 80% o superior, ni con lluvia prevista en las próximas horas — son justo las condiciones que provocan defectos en el acabado.', productos: ['Pintura vinílica mate con conservante antimoho'] },
       ],
       professionalTips: [
         'Si la pintura vieja está en mal estado (desconchada, con moho muy extendido), sanea primero toda la zona eliminando lo que no esté bien adherido antes de limpiar y pintar, igual que en cualquier otra pared en mal estado.',
