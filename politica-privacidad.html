@@ -1,6 +1,21 @@
 <!doctype html>
 <html lang="es">
   <head>
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
     <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
@@ -8,6 +23,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Política de Privacidad de Orencio Matas y Hnos, S.L." />
+    <!-- Misma solución que ya usa buscador.html para este mismo problema:
+         esta página vive tanto en GitHub Pages (main) como en IONOS
+         (release, el dominio real) — indexable en las dos, pero con
+         canonical apuntando siempre al dominio de producción, para que
+         Google atribuya el posicionamiento a orenciomatas.es y no trate
+         la copia de GitHub Pages como contenido duplicado compitiendo
+         por el mismo ranking. -->
+    <link rel="canonical" href="https://orenciomatas.es/politica-privacidad.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Orencio Matas y Hnos, S.L." />
+    <meta property="og:title" content="Política de Privacidad | Orencio Matas y Hnos, S.L." />
+    <meta property="og:description" content="Política de Privacidad de Orencio Matas y Hnos, S.L." />
+    <meta property="og:url" content="https://orenciomatas.es/politica-privacidad.html" />
+    <meta property="og:image" content="https://orenciomatas.es/assets/logos/logo-orencio.png" />
+    <meta name="twitter:card" content="summary" />
     <title>Política de Privacidad | Orencio Matas y Hnos, S.L.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,6 +60,10 @@
 </script>
 </head>
   <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
     <header class="site-header" id="inicio">
   <div class="topbar" aria-label="Información de contacto">
     <div class="container topbar__inner">
@@ -218,5 +252,6 @@
 </footer>
 
     <script src="./src/js/app.js?v=20260829"></script>
+    <script src="./src/js/analytics-consent.js?v=20260829"></script>
   </body>
 </html>

@@ -89,9 +89,28 @@
       return;
     }
 
-    document.title = (sol.seo && sol.seo.title) || (sol.title + ' | Orencio Matas y Hnos, S.L.');
+    const seoTitle = (sol.seo && sol.seo.title) || (sol.title + ' | Orencio Matas y Hnos, S.L.');
+    const seoDescription = (sol.seo && sol.seo.description) || sol.description;
+    const seoUrl = `https://orenciomatas.es/soluciones/solucion.html?slug=${encodeURIComponent(sol.slug)}`;
+
+    document.title = seoTitle;
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute('content', (sol.seo && sol.seo.description) || sol.description);
+    if (metaDesc) metaDesc.setAttribute('content', seoDescription);
+
+    // Canonical y Open Graph por guía — mismo criterio que ya usa el
+    // resto del sitio (buscador.html, escaparate.html, etc.): cada URL
+    // real e indexable (aquí, cada ?slug=) declara su propio canonical
+    // apuntando siempre al dominio de producción, para que Google trate
+    // cada solución como una página distinta con su propio contenido,
+    // no como 81 copias de la misma plantilla genérica.
+    const canonicalLink = document.getElementById('seo-canonical');
+    if (canonicalLink) canonicalLink.setAttribute('href', seoUrl);
+    const ogTitle = document.getElementById('seo-og-title');
+    if (ogTitle) ogTitle.setAttribute('content', seoTitle);
+    const ogDescription = document.getElementById('seo-og-description');
+    if (ogDescription) ogDescription.setAttribute('content', seoDescription);
+    const ogUrl = document.getElementById('seo-og-url');
+    if (ogUrl) ogUrl.setAttribute('content', seoUrl);
 
     const relacionadas = (sol.relatedSolutions || []).map((s) => D.soluciones[s]).filter(Boolean);
 
