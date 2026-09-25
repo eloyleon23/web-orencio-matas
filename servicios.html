@@ -323,9 +323,21 @@
             pointer-events: none;
         }
 
+        /* Igual que en la home (.premium-provider-card--glasurit): ocupa
+           2 huecos del grid de 4 columnas, así la fila de arriba queda en
+           3 bloques (uno ancho) y la de abajo en 4, en vez de 4 arriba y
+           3 sueltos abajo. */
+        .partner-card--glasurit {
+            grid-column: span 2;
+        }
+
         @media (max-width: 900px) {
             .partners-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .partner-card--glasurit {
+                grid-column: 1 / -1;
             }
         }
 
@@ -1062,7 +1074,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                      oficiales"). El grid de marcas de abajo no se toca. -->
                 <div class="eyebrow" style="justify-content:center;">Proveedores principales</div>
                 <div class="partners-grid" aria-label="Proveedores principales">
-                    <a class="partner-card" href="https://www.glasurit.com/es" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de Glasurit (se abre en una pestaña nueva)">
+                    <a class="partner-card partner-card--glasurit" href="https://www.glasurit.com/es" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de Glasurit (se abre en una pestaña nueva)">
                         <img src="assets/proveedores/Glaurit.png" alt="Glasurit" loading="lazy">
                     </a>
                     <a class="partner-card" href="https://www.rmpaint.com/es" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de R-M (se abre en una pestaña nueva)">
