@@ -280,6 +280,55 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
         }
 
+        /* Proveedores principales — mismo criterio visual que la sección
+           equivalente de la home (index.html, .premium-provider-card):
+           tarjetas más grandes y destacadas, con enlace real a la web
+           oficial de cada uno y efecto hover, por encima del grid normal
+           de marcas (que se deja intacto). */
+        .partners-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin: 28px 0 44px;
+        }
+
+        .partner-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 130px;
+            padding: 22px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .partner-card:hover,
+        .partner-card:focus-visible {
+            transform: translateY(-4px);
+            border-color: #93c5fd;
+            box-shadow: 0 22px 44px rgba(15, 23, 42, 0.14);
+        }
+
+        .partner-card img {
+            display: block;
+            max-width: 150px;
+            max-height: 70px;
+            width: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        @media (max-width: 900px) {
+            .partners-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @keyframes gradientEmpresa {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -1006,6 +1055,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="eyebrow">Partners</div>
                 <h2 id="marcas-title">Principales Marcas y Partners</h2>
                 <div class="installations-intro"><p style="color:#475569; font-size:18px; margin-top:16px;">Trabajamos con los fabricantes más reconocidos para garantizar la máxima calidad en cada suministro.</p></div>
+
+                <!-- Proveedores principales, con enlace a su web oficial —
+                     mismos 7 partners y mismos enlaces que en la home
+                     (index.html, sección "Gran escaparate de proveedores
+                     oficiales"). El grid de marcas de abajo no se toca. -->
+                <div class="eyebrow" style="justify-content:center;">Proveedores principales</div>
+                <div class="partners-grid" aria-label="Proveedores principales">
+                    <a class="partner-card" href="https://www.glasurit.com/es" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de Glasurit (se abre en una pestaña nueva)">
+                        <img src="assets/proveedores/Glaurit.png" alt="Glasurit" loading="lazy">
+                    </a>
+                    <a class="partner-card" href="https://www.rmpaint.com/es" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de R-M (se abre en una pestaña nueva)">
+                        <img src="assets/proveedores/R-M_Paint_Logo.jpg" alt="RM" loading="lazy">
+                    </a>
+                    <a class="partner-card" href="https://www.baslac.com/es-emea" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de Baslac (se abre en una pestaña nueva)">
+                        <img src="assets/proveedores/Logo_baslac.jpg" alt="Baslac" loading="lazy">
+                    </a>
+                    <a class="partner-card" href="https://www.bernardoecenarro.com/" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de BESA (se abre en una pestaña nueva)">
+                        <img src="assets/proveedores/BESA+-+color.webp" alt="BESA" loading="lazy">
+                    </a>
+                    <a class="partner-card" href="https://www.zaphirogroup.com/" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de Zaphiro (se abre en una pestaña nueva)">
+                        <img src="assets/proveedores/zaphiro_cover.jpg" alt="Zaphiro" loading="lazy">
+                    </a>
+                    <a class="partner-card" href="https://www.titanpro.es/es" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de Titan PRO (se abre en una pestaña nueva)">
+                        <img src="assets/proveedores/LOGO-TITANPRO.png" alt="Titan PRO" loading="lazy">
+                    </a>
+                    <a class="partner-card" href="https://www.titantech.es/" target="_blank" rel="noopener noreferrer" aria-label="Ir a la web oficial de Titan Tech (se abre en una pestaña nueva)">
+                        <img src="assets/proveedores/logo-titantech.jpg" alt="Titan Tech" loading="lazy">
+                    </a>
+                </div>
+
                 <div class="facility-carousel">
                     <div class="carousel-container marcas-grid" style="display:grid; grid-template-columns:repeat(6,1fr); gap:16px; overflow:visible; flex-wrap:wrap;">
                         <div class="subtle-paint-bg" style="padding:16px; display:flex; align-items:center; justify-content:center; min-height:70px; border-radius:8px;"><img src="assets/marcas/logo_sika.png" alt="Sika" loading="lazy" style="max-height:40px; max-width:100%; object-fit:contain;"></div>
