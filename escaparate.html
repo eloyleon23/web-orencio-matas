@@ -2939,35 +2939,54 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // dibujaba con doc.circle() como el resto de estaciones, y sin una
       // forma real se veían "burbujas marronas" en vez de hojas (el aviso
       // de Eloy, que en la propia web sí son 🍁🍂 con forma reconocible).
-      // jsPDF no tiene un plugin de paths SVG cargado, así que la silueta
-      // se hace a mano con dos curvas Bézier (doc.lines(), en el core sin
-      // depender de nada más) formando un óvalo apuntado — más simple que
-      // la hoja de arce de la web, pero ya inconfundible como hoja, no
-      // como un blob.
+      // Un primer intento con 2 curvas Bézier de contorno tampoco
+      // funcionó — las puntas salían redondeadas (control points con
+      // tangente casi horizontal en los extremos), así que seguía
+      // pareciendo "un círculo con una raya" en vez de una hoja (segundo
+      // aviso de Eloy). Ahora el contorno es un polígono muestreado con
+      // ancho = sin(π·t) a lo largo del eje — esa curva llega A CERO
+      // exactamente en las dos puntas, así que quedan afiladas de verdad,
+      // sin depender de acertar unos control points a mano. jsPDF no
+      // tiene ningún plugin de paths SVG cargado; doc.lines() con
+      // segmentos rectos (en vez de Bézier) es del core, sin depender de
+      // nada más, y con suficientes puntos se ve perfectamente curvo a
+      // este tamaño de impresión.
       function dibujarHojaOtono(cx, cy, tam, angulo, color){
         const cos = Math.cos(angulo), sin = Math.sin(angulo);
         const transformar = (lx, ly) => {
           const sx = lx * tam, sy = ly * tam;
           return { x: cx + sx*cos - sy*sin, y: cy + sx*sin + sy*cos };
         };
-        // Espacio local: punta arriba (0,-0.5), base abajo (0,0.5),
-        // vientre de la hoja a los lados (±0.34, 0).
-        const puntaSup = transformar(0, -0.5);
-        const puntaInf = transformar(0, 0.5);
-        const c1Der = transformar(0.55, -0.22), c2Der = transformar(0.55, 0.22);
-        const c1Izq = transformar(-0.55, 0.22), c2Izq = transformar(-0.55, -0.22);
+        // Espacio local: punta arriba (0,-0.5), punta abajo (0,0.5) —
+        // ancho() da el semiancho en cada punto a lo largo de ese eje,
+        // con dos lóbulos suaves además del abombado principal para que
+        // se note el contorno dentado de una hoja real, no un óvalo liso.
+        const ancho = (t) => 0.36 * Math.sin(Math.PI * t) * (1 + 0.12 * Math.sin(Math.PI * t * 4));
+        const PASOS = 14;
+        const contorno = [];
+        for(let i=0; i<=PASOS; i++){
+          const t = i / PASOS;
+          contorno.push(transformar(ancho(t), -0.5 + t));
+        }
+        for(let i=PASOS-1; i>=1; i--){
+          const t = i / PASOS;
+          contorno.push(transformar(-ancho(t), -0.5 + t));
+        }
+        const inicio = contorno[0];
+        const lineArray = [];
+        let actual = inicio;
+        for(let i=1; i<contorno.length; i++){
+          const p = contorno[i];
+          lineArray.push([p.x - actual.x, p.y - actual.y]);
+          actual = p;
+        }
         doc.setFillColor(color.r, color.g, color.b);
-        doc.lines(
-          [
-            [c1Der.x-puntaSup.x, c1Der.y-puntaSup.y, c2Der.x-puntaSup.x, c2Der.y-puntaSup.y, puntaInf.x-puntaSup.x, puntaInf.y-puntaSup.y],
-            [c1Izq.x-puntaInf.x, c1Izq.y-puntaInf.y, c2Izq.x-puntaInf.x, c2Izq.y-puntaInf.y, puntaSup.x-puntaInf.x, puntaSup.y-puntaInf.y],
-          ],
-          puntaSup.x, puntaSup.y, [1, 1], 'F', true
-        );
+        doc.lines(lineArray, inicio.x, inicio.y, [1, 1], 'F', true);
         // Nervio central + un pequeño tallo, en un tono más oscuro que el
         // relleno — mismo detalle que distingue a la hoja del icono
         // "leaf" genérico ya usado en el resto de la página.
-        const tallo = transformar(0.1, 0.62);
+        const puntaSup = transformar(0, -0.5), puntaInf = transformar(0, 0.5);
+        const tallo = transformar(0.08, 0.62);
         doc.setDrawColor(Math.round(color.r*0.55), Math.round(color.g*0.4), Math.round(color.b*0.3));
         doc.setLineWidth(Math.max(0.15, tam*0.045));
         doc.line(puntaSup.x, puntaSup.y, puntaInf.x, puntaInf.y);
