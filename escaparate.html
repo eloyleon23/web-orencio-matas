@@ -2822,7 +2822,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // tandas — más lento que pedirlas todas de golpe, pero es lo que evita
   // el 429 (que sin esto tira TODAS las fotos al icono de repuesto, el
   // bug real que reportó Eloy).
-  async function cargarImagenesEnTandas(items, tamanoTanda, esperaMs){
+  // onProgreso(completadas, total) se llama tras cada tanda — es lo que
+  // permite que el botón informe "Extrayendo imágenes… (X/Y)" en vez de
+  // un texto fijo durante los varios segundos que puede tardar esta fase
+  // (la más lenta con diferencia, por el espaciado entre tandas).
+  async function cargarImagenesEnTandas(items, onProgreso, tamanoTanda, esperaMs){
     tamanoTanda = tamanoTanda || 1;
     esperaMs = esperaMs || 550;
     const resultados = new Array(items.length);
@@ -2830,6 +2834,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const tanda = items.slice(i, i+tamanoTanda);
       const parcial = await Promise.all(tanda.map(it => cargarImagenDataURL(it.url, it.opciones)));
       parcial.forEach((r, j) => { resultados[i+j] = r; });
+      if(onProgreso) onProgreso(Math.min(i + tamanoTanda, items.length), items.length);
       if(i + tamanoTanda < items.length) await new Promise(r => setTimeout(r, esperaMs));
     }
     return resultados;
@@ -3125,8 +3130,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           });
         });
       });
-      fijarEstadoBoton('Extrayendo imágenes…');
-      const fotos = await cargarImagenesEnTandas(itemsFotos);
+      fijarEstadoBoton(`Extrayendo imágenes… (0/${itemsFotos.length})`);
+      const fotos = await cargarImagenesEnTandas(itemsFotos, (completadas, total) => {
+        fijarEstadoBoton(`Extrayendo imágenes… (${completadas}/${total})`);
+      });
       const fotoPorRef = {};
       itemsFotos.forEach((it, i) => { fotoPorRef[it.ref] = fotos[i]; });
       fijarEstadoBoton('Componiendo folleto…');
@@ -3293,7 +3300,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.text(`Ref. ${p.ref}`, x + padX, ty + 4.4);
       }
 
-      filasProductos.forEach(fila => {
+      // Fila a fila (no todo de golpe en un solo forEach síncrono) para
+      // poder informar "Componiendo folleto… (fila X/Y)" en el botón a
+      // medida que avanza — con catálogos de varias páginas, esta fase
+      // también se nota, y antes se quedaba con un único texto fijo todo
+      // el rato (justo el aviso de Eloy: "que vaya cambiando en base a lo
+      // que está ocurriendo por detrás").
+      for(let iFila = 0; iFila < filasProductos.length; iFila++){
+        const fila = filasProductos[iFila];
         const esGrande = fila.items.some(it => it.grande);
         const alturaFila = esGrande ? cardHGrande : cardH;
         if(cursorY + alturaFila > footerTopY - 2){
@@ -3307,7 +3321,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           dibujarTarjetaProducto(x, cursorY, w, alturaFila, it.ref);
         });
         cursorY += alturaFila + gapY;
-      });
+        fijarEstadoBoton(`Componiendo folleto… (fila ${iFila + 1}/${filasProductos.length})`);
+        await new Promise(requestAnimationFrame);
+      }
+
+      fijarEstadoBoton('Añadiendo cierre y pies de página…');
+      await new Promise(requestAnimationFrame);
 
       // ---- Cierre del folleto — mismo cierre que el propio escaparate
       // (c.eslogan), o una despedida genérica si la campaña no tiene
