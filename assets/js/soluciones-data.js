@@ -1200,7 +1200,7 @@ window.SOLUCIONES_DATA = (function () {
         { nombre: 'Orion Cebo Matacucarachas Gel, B/3 uds',   categoria: 'Droguería', formato: '3 uds', precio: '2,29 €' },
         { nombre: 'Zum Gel Trampa contra las Hormigas',        categoria: 'Droguería',                  precio: '1,14 €' },
         { nombre: 'Cucal Insecticida en Polvo Cuca/Hormigas',  categoria: 'Droguería', formato: '200 g', precio: '3,56 €' },
-        { nombre: 'ARRIXACA INSECT.CUCARACHICIDA 750 ML.', ref: '8410757502191',                    categoria: 'Droguería', formato: '600 ml', precio: '7,56 €' },
+        { nombre: 'ARRIXACA INSECT.CUCARACHICIDA 750 ML.', ref: '8410757502191',                    categoria: 'Droguería', formato: '750 ml', precio: '7,56 €' },
       ],
       alternativeProducts: [
         { etiqueta: 'Opción rápida (choque puntual)', nombre: 'Arrixaca Insecticida Cucarachas Spray 400 ml', precio: '2,49 €' },
@@ -1601,7 +1601,7 @@ window.SOLUCIONES_DATA = (function () {
         'Podar ramas gruesas sin sellar después el corte.',
       ],
       recommendedProducts: [
-        { nombre: 'HUMUS DE LOMBRIZ ABONO LIQUIDO 1 L.', ref: '1011076', categoria: 'Droguería', formato: '1,3 L', precio: '7,04 €' },
+        { nombre: 'HUMUS DE LOMBRIZ ABONO LIQUIDO 1 L.', ref: '1011076', categoria: 'Droguería', formato: '1 L', precio: '7,04 €' },
         { nombre: 'Gesal Insecticida Polivalente',          categoria: 'Droguería', formato: '500 ml (pistola)', precio: '4,32 €' },
         { nombre: 'Humus HLH Equisetem Fungicida',          categoria: 'Droguería', formato: '1 L', precio: '7,62 €' },
         { nombre: 'Compo Pasta Cicatrizante',               categoria: 'Droguería', formato: '250 g', precio: '8,74 €' },
@@ -2963,20 +2963,18 @@ window.SOLUCIONES_DATA = (function () {
       steps: [
         { n: 1, title: 'Preparar la madera', text: 'Lija toda la superficie para dejarla lisa y uniforme, y retira bien el polvo antes de lacar — cualquier resto quedará atrapado bajo la laca.', productos: ['Lija fina'] },
         { n: 2, title: 'Fondo o sellador (según el sistema del fabricante)', text: 'Un fondo previo mejora el anclaje y el acabado final, sobre todo en maderas muy porosas o piezas grandes trabajadas con pistola. El fondo compatible depende de la laca concreta que elijas — consulta su ficha técnica o pregunta en tienda, ahora mismo no tenemos en catálogo un fondo específico verificado para esta línea.', productos: [] },
-        { n: 3, title: 'Aplicar la laca de poliuretano', text: 'Aplica la laca con pistola en manos finas. Las dos opciones que recomendamos tienen comportamientos distintos: una es de dos componentes (necesita mezclarse con su catalizador en la proporción que indique su ficha técnica) y la otra viene lista para usar sin mezcla — comprueba cuál has elegido antes de empezar.', productos: ['Laca de poliuretano (mate o satinada)'] },
+        { n: 3, title: 'Aplicar la laca de poliuretano', text: 'Aplica la laca con pistola en manos finas. La laca satinada Titanlak que recomendamos no necesita mezcla: viene lista para usar directamente. Si en algún momento usas una laca de dos componentes de otra marca, mézclala siempre con su catalizador en la proporción exacta que indique su ficha técnica.', productos: ['Laca de poliuretano (mate o satinada)'] },
         { n: 4, title: 'Dejar curar antes de manipular', text: 'Respeta el tiempo de secado antes de manipular la pieza y el de repintado si hace falta una segunda mano — manipular antes de tiempo deja marcas que ya no se corrigen sin repetir el proceso.', productos: [] },
       ],
       professionalTips: [
-        'La laca mate de dos componentes (MXB-970) seca al tacto en unos 18 minutos y admite repintado consigo misma a partir de 1-2 horas, con un rendimiento de 8-10 m²/l — cifras de su ficha técnica oficial, no una estimación genérica; para otra laca distinta, comprueba siempre su propia ficha. La laca satinada Titanlak no necesita mezcla: viene lista para usar directamente.',
+        'La laca satinada Titanlak no necesita mezcla: viene lista para usar directamente, sin catalizador — respeta igualmente su tiempo de secado y repintado de ficha técnica.',
       ],
       commonMistakes: [
         'No lijar ni limpiar bien el polvo antes de lacar.',
-        'Si usas la laca de dos componentes: no respetar la proporción de mezcla exacta con su catalizador (consulta siempre su ficha técnica, no una proporción genérica).',
         'Dar por hecho que cualquier fondo sirve para cualquier laca sin comprobar la compatibilidad del fabricante.',
         'Manipular la pieza antes de que la laca haya curado del todo.',
       ],
       recommendedProducts: [
-        { nombre: 'MXB-970 - Laca Poliuretano Blanca Mate 750 ML.', ref: '8414800436839', categoria: 'Pinturas', formato: '750 ml', precio: '12,52 €' },
         { nombre: 'BARNIZ LACA TITANLAK SATINADO 750 ML.', ref: '8414800041064', categoria: 'Pinturas', formato: '750 ml', precio: '11,83 €' },
       ],
       alternativeProducts: [
