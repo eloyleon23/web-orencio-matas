@@ -1381,6 +1381,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(!p || !p.img) return null;
     return `https://lh3.googleusercontent.com/d/${p.img}=w${tamano}`;
   }
+  // Mismo motivo que urlImagenProductoFolleto — la foto propia del
+  // escaparate (c.imagenFondo, la que se ve nítida en .vitrina-foto) es
+  // otro Drive ID más, así que necesita la misma URL directa para el PDF.
+  function urlImagenCampanaFolleto(driveId, tamano){
+    tamano = tamano || 700;
+    if(!driveId) return null;
+    return `https://lh3.googleusercontent.com/d/${driveId}=w${tamano}`;
+  }
 
   /* ---------------- Estado ---------------- */
   let PRODUCTS = {};          // ref -> producto (de data/productos.json)
@@ -2909,8 +2917,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // EXACTO que le toca en su tarjeta (ver cajaImagenDe), así que hace
       // falta conocer antes el tamaño real de esa tarjeta (normal, ancha
       // o grande). El logo es de este mismo origen, sin límite de
-      // peticiones ni recorte que dependa del layout, así que se pide ya.
-      const logo = await cargarImagenDataURL('./assets/logos/logo-orencio.png', { tipo:'image/png' });
+      // peticiones ni recorte que dependa del layout, así que se pide ya
+      // — junto con la foto propia del escaparate (c.imagenFondo, la
+      // misma que se ve nítida en .vitrina-foto en la propia página), que
+      // solo existe si la campaña tiene una asignada.
+      const ANCHO_FOTO_CABECERA = 46, ALTO_FOTO_CABECERA = ANCHO_FOTO_CABECERA * 3/4; // mismo 4:3 que .vitrina-foto
+      const [logo, fotoCabecera] = await Promise.all([
+        cargarImagenDataURL('./assets/logos/logo-orencio.png', { tipo:'image/png' }),
+        cargarImagenDataURL(urlImagenCampanaFolleto(c.imagenFondo, 700), { recorteRatio: ANCHO_FOTO_CABECERA / ALTO_FOTO_CABECERA })
+      ]);
 
       const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
       const pageW = 210, pageH = 297, margin = 14;
@@ -3007,9 +3022,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // usando los mismos incrementos que luego se usan para colocar
       // cada línea, para que el recuadro encaje exacto con su contenido. ----
       const padInterno = 9;
+      // Con foto de escaparate, el texto deja un hueco a la derecha para
+      // ella (mismo hueco que .vitrina-foto en la propia página, donde va
+      // "en un bloque a la derecha, anclado arriba") — sin foto, ocupa
+      // todo el ancho del recuadro, como hasta ahora.
+      const huecoFoto = fotoCabecera ? ANCHO_FOTO_CABECERA + padInterno : 0;
+      const anchoTexto = contentWidth - padInterno*2 - huecoFoto;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      const tituloLineas = doc.splitTextToSize(c.nombre || 'Escaparate', contentWidth - padInterno*2);
+      const tituloLineas = doc.splitTextToSize(c.nombre || 'Escaparate', anchoTexto);
       const subtitulo = `${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}`;
       const vigencia = c.permanente ? 'Escaparate permanente' : `Del ${fmtFecha(c.fechaInicio)} al ${fmtFecha(c.fechaFin)}`;
       // Etiqueta general de descuento — misma cifra y mismo criterio que
@@ -3021,8 +3042,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const alturaSubtitulo = 8;
       const alturaVigencia = 5 + (descuentoGeneral > 0 ? 4 : 0);
       const alturaBadge = descuentoGeneral > 0 ? 8.5 : 0;
-      const alturaHeaderInfo = padInterno*2 + alturaTitulo + alturaSubtitulo + alturaVigencia + alturaBadge;
+      const alturaTextoHeader = alturaTitulo + alturaSubtitulo + alturaVigencia + alturaBadge;
+      // El recuadro es tan alto como haga falta el texto — o, si la foto
+      // es más alta que todo ese texto junto, tan alto como la foto (con
+      // su propio margen), para que nunca se salga del recuadro de color.
+      const alturaHeaderInfo = Math.max(
+        padInterno*2 + alturaTextoHeader,
+        fotoCabecera ? padInterno*2 + ALTO_FOTO_CABECERA : 0
+      );
       dibujarBloqueColor(margin, cursorY, contentWidth, alturaHeaderInfo);
+
+      if(fotoCabecera){
+        // La foto ya viene recortada (ver ANCHO_FOTO_CABECERA/
+        // ALTO_FOTO_CABECERA, más arriba) a esta proporción, con el mismo
+        // límite de recorte que las fotos de producto — así que se
+        // encaja igual, en modo "contain" (ver dibujarTarjetaProducto),
+        // por si no ha llegado a coincidir del todo.
+        const xFoto = contentRight - padInterno - ANCHO_FOTO_CABECERA;
+        const yFoto = cursorY + padInterno;
+        const escalaFoto = Math.min(ANCHO_FOTO_CABECERA / fotoCabecera.w, ALTO_FOTO_CABECERA / fotoCabecera.h);
+        const dwFoto = fotoCabecera.w * escalaFoto, dhFoto = fotoCabecera.h * escalaFoto;
+        doc.addImage(fotoCabecera.dataURL, 'JPEG', xFoto + (ANCHO_FOTO_CABECERA-dwFoto)/2, yFoto + (ALTO_FOTO_CABECERA-dhFoto)/2, dwFoto, dhFoto);
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.6);
+        doc.rect(xFoto, yFoto, ANCHO_FOTO_CABECERA, ALTO_FOTO_CABECERA);
+      }
 
       let tyHeader = cursorY + padInterno;
       doc.setFont('helvetica', 'bold');
