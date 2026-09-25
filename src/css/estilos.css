@@ -993,7 +993,17 @@ ol {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 16px 34px rgba(18, 20, 23, 0.055);
-  cursor: default;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+
+.premium-provider-card:hover,
+.premium-provider-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgba(29, 103, 201, 0.28);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 22px 44px rgba(18, 20, 23, 0.12);
 }
 
 .premium-provider-card--glasurit {
@@ -1001,6 +1011,12 @@ ol {
   min-height: 210px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92));
   box-shadow: 0 22px 48px rgba(18, 20, 23, 0.075);
+}
+
+.premium-provider-card--glasurit:hover,
+.premium-provider-card--glasurit:focus-visible {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(248, 250, 252, 1));
+  box-shadow: 0 28px 56px rgba(18, 20, 23, 0.14);
 }
 
 .premium-provider-card img {
