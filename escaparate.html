@@ -2898,7 +2898,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // relleno blanco propio, así que solo se aprecia en los huecos
       // entre ellas — igual que en la web, donde las partículas quedan
       // detrás de los bloques con fondo sólido).
-      const estacionActual = ESTACIONES[estacionParaFecha(new Date())];
+      const claveEstacionActual = estacionParaFecha(new Date());
+      const estacionActual = ESTACIONES[claveEstacionActual];
 
       // Mismo orden que ya ve el visitante en el estante (arriba/medio/
       // abajo según destacados[].posV) — el folleto refleja el mismo
@@ -2933,6 +2934,46 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const contentRight = pageW - margin;
       const contentWidth = contentRight - margin;
 
+      // Silueta de hoja (apuntando hacia arriba en su espacio local, con
+      // tallo y nervio central) para el fondo de otoño — antes se
+      // dibujaba con doc.circle() como el resto de estaciones, y sin una
+      // forma real se veían "burbujas marronas" en vez de hojas (el aviso
+      // de Eloy, que en la propia web sí son 🍁🍂 con forma reconocible).
+      // jsPDF no tiene un plugin de paths SVG cargado, así que la silueta
+      // se hace a mano con dos curvas Bézier (doc.lines(), en el core sin
+      // depender de nada más) formando un óvalo apuntado — más simple que
+      // la hoja de arce de la web, pero ya inconfundible como hoja, no
+      // como un blob.
+      function dibujarHojaOtono(cx, cy, tam, angulo, color){
+        const cos = Math.cos(angulo), sin = Math.sin(angulo);
+        const transformar = (lx, ly) => {
+          const sx = lx * tam, sy = ly * tam;
+          return { x: cx + sx*cos - sy*sin, y: cy + sx*sin + sy*cos };
+        };
+        // Espacio local: punta arriba (0,-0.5), base abajo (0,0.5),
+        // vientre de la hoja a los lados (±0.34, 0).
+        const puntaSup = transformar(0, -0.5);
+        const puntaInf = transformar(0, 0.5);
+        const c1Der = transformar(0.55, -0.22), c2Der = transformar(0.55, 0.22);
+        const c1Izq = transformar(-0.55, 0.22), c2Izq = transformar(-0.55, -0.22);
+        doc.setFillColor(color.r, color.g, color.b);
+        doc.lines(
+          [
+            [c1Der.x-puntaSup.x, c1Der.y-puntaSup.y, c2Der.x-puntaSup.x, c2Der.y-puntaSup.y, puntaInf.x-puntaSup.x, puntaInf.y-puntaSup.y],
+            [c1Izq.x-puntaInf.x, c1Izq.y-puntaInf.y, c2Izq.x-puntaInf.x, c2Izq.y-puntaInf.y, puntaSup.x-puntaInf.x, puntaSup.y-puntaInf.y],
+          ],
+          puntaSup.x, puntaSup.y, [1, 1], 'F', true
+        );
+        // Nervio central + un pequeño tallo, en un tono más oscuro que el
+        // relleno — mismo detalle que distingue a la hoja del icono
+        // "leaf" genérico ya usado en el resto de la página.
+        const tallo = transformar(0.1, 0.62);
+        doc.setDrawColor(Math.round(color.r*0.55), Math.round(color.g*0.4), Math.round(color.b*0.3));
+        doc.setLineWidth(Math.max(0.15, tam*0.045));
+        doc.line(puntaSup.x, puntaSup.y, puntaInf.x, puntaInf.y);
+        doc.line(puntaInf.x, puntaInf.y, tallo.x, tallo.y);
+      }
+
       function dibujarFondoEstacionalPagina(){
         // Formas sueltas con la paleta de la estación actual, repartidas
         // por TODA la página (no solo un margen) — es lo que pidió Eloy
@@ -2943,15 +2984,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // Opacidad vía GState — disponible en el core de jsPDF, sin
         // depender de ningún plugin adicional.
         const N = 46;
+        const esOtono = claveEstacionActual === 'otono';
         for(let i=0;i<N;i++){
           const color = hexARgbFolleto(pick(estacionActual.colores));
-          const r = 1 + Math.random()*1.9;
           const x = 4 + Math.random()*(pageW-8);
           const y = 4 + Math.random()*(pageH-8);
           doc.saveGraphicsState();
-          doc.setGState(new doc.GState({ opacity: 0.28 }));
-          doc.setFillColor(color.r, color.g, color.b);
-          doc.circle(x, y, r, 'F');
+          doc.setGState(new doc.GState({ opacity: 0.32 }));
+          if(esOtono){
+            const tam = 4 + Math.random()*3.5;
+            const angulo = Math.random() * Math.PI * 2;
+            dibujarHojaOtono(x, y, tam, angulo, color);
+          } else {
+            const r = 1 + Math.random()*1.9;
+            doc.setFillColor(color.r, color.g, color.b);
+            doc.circle(x, y, r, 'F');
+          }
           doc.restoreGraphicsState();
         }
       }
