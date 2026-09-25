@@ -2751,7 +2751,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // muy lenta no debe colgar la generación de todo el folleto — se
   // resuelve con null y esa tarjeta cae al icono de repuesto, igual que
   // ya hace la propia página con onerror="this.remove()".
-  function intentarCargarImagenDataURL(url, { timeoutMs=9000, tipo='image/jpeg', calidad=0.86 }={}){
+  // recorteRatio (ancho/alto deseado) recorta la imagen en el propio
+  // <canvas> — al estilo "cover" de CSS (rellena todo el hueco,
+  // recortando lo que sobre en el eje que no encaja) — en vez de dejar
+  // que jsPDF la encoja en modo "contain" dentro de la tarjeta. Antes se
+  // probó a hacer este recorte en el propio PDF con doc.clip(), pero esa
+  // combinación (clip + addImage) salía en blanco en pruebas reales con
+  // jsPDF 2.5.1 — recortar aquí, en el canvas, es más simple y no
+  // depende de esa función.
+  function intentarCargarImagenDataURL(url, { timeoutMs=9000, tipo='image/jpeg', calidad=0.86, recorteRatio=null }={}){
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -2761,11 +2769,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       img.onload = () => {
         clearTimeout(timer);
         try{
+          const anchoOrig = img.naturalWidth || 300, altoOrig = img.naturalHeight || 300;
+          let sx = 0, sy = 0, sw = anchoOrig, sh = altoOrig;
+          if(recorteRatio){
+            const ratioOrig = anchoOrig / altoOrig;
+            if(ratioOrig > recorteRatio){
+              sw = altoOrig * recorteRatio;
+              sx = (anchoOrig - sw) / 2;
+            } else if(ratioOrig < recorteRatio){
+              sh = anchoOrig / recorteRatio;
+              sy = (altoOrig - sh) / 2;
+            }
+          }
           const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth || 300;
-          canvas.height = img.naturalHeight || 300;
+          canvas.width = Math.round(sw);
+          canvas.height = Math.round(sh);
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
           terminar({ dataURL: canvas.toDataURL(tipo, calidad), w: canvas.width, h: canvas.height });
         } catch(err){
           terminar(null); // canvas contaminado u otro fallo — se usa el icono de repuesto
@@ -2802,15 +2822,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // tandas — más lento que pedirlas todas de golpe, pero es lo que evita
   // el 429 (que sin esto tira TODAS las fotos al icono de repuesto, el
   // bug real que reportó Eloy).
-  async function cargarImagenesEnTandas(urls, opciones, tamanoTanda, esperaMs){
+  async function cargarImagenesEnTandas(items, tamanoTanda, esperaMs){
     tamanoTanda = tamanoTanda || 1;
     esperaMs = esperaMs || 550;
-    const resultados = new Array(urls.length);
-    for(let i=0; i<urls.length; i+=tamanoTanda){
-      const tanda = urls.slice(i, i+tamanoTanda);
-      const parcial = await Promise.all(tanda.map(u => cargarImagenDataURL(u, opciones)));
+    const resultados = new Array(items.length);
+    for(let i=0; i<items.length; i+=tamanoTanda){
+      const tanda = items.slice(i, i+tamanoTanda);
+      const parcial = await Promise.all(tanda.map(it => cargarImagenDataURL(it.url, it.opciones)));
       parcial.forEach((r, j) => { resultados[i+j] = r; });
-      if(i + tamanoTanda < urls.length) await new Promise(r => setTimeout(r, esperaMs));
+      if(i + tamanoTanda < items.length) await new Promise(r => setTimeout(r, esperaMs));
     }
     return resultados;
   }
@@ -2839,19 +2859,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const cs = colorSetDe(c);
       const accent = hexARgbFolleto(cs.accent);
       const vivid = hexARgbFolleto(cs.vivid);
-      // Mismo cálculo que ya se usaba solo para el bloque de cierre (más
-      // abajo): jsPDF no tiene un atajo directo de "color + opacidad" para
+      // jsPDF no tiene un atajo directo de "color + opacidad" para
       // rellenos sólidos entre versiones, así que se mezcla a mano blanco
-      // con un porcentaje del vivid de la campaña. Aquí se reutiliza para
-      // TODA la página (fondo sutil con los colores del escaparate,
-      // pedido explícito de Eloy), con un porcentaje menor (5%) que el del
-      // bloque de cierre (8%) para que no reste legibilidad al texto de
-      // las tarjetas de producto.
-      const washPagina = { r: 255 - (255-vivid.r)*0.05, g: 255 - (255-vivid.g)*0.05, b: 255 - (255-vivid.b)*0.05 };
-      // Estilo "en base a la estación del año" (mismo criterio que
-      // pintarFondoEstacional en la propia página): unas pocas formas
-      // sueltas con la paleta de la estación actual, discretas y pegadas
-      // al margen derecho para no interferir nunca con el contenido.
+      // con un porcentaje del vivid de la campaña — mismo cálculo para
+      // los dos únicos bloques que lo usan (cabecera y cierre, "tal y
+      // como está en la web": ahí el difuminado de color SOLO vive en
+      // .vitrina y .vitrina-cierre, nunca de fondo en toda la página).
+      const washMezcla = { r: 255 - (255-vivid.r)*0.07, g: 255 - (255-vivid.g)*0.07, b: 255 - (255-vivid.b)*0.07 };
+      // El fondo estacional (mismo criterio que pintarFondoEstacional en
+      // la propia página, donde SÍ cubre todo el lienzo) — aquí sí es el
+      // fondo de TODA la página, detrás de las tarjetas (que llevan
+      // relleno blanco propio, así que solo se aprecia en los huecos
+      // entre ellas — igual que en la web, donde las partículas quedan
+      // detrás de los bloques con fondo sólido).
       const estacionActual = ESTACIONES[estacionParaFecha(new Date())];
 
       // Mismo orden que ya ve el visitante en el estante (arriba/medio/
@@ -2866,22 +2886,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         return pa - pb;
       });
 
-      // Logo (mismo origen, en paralelo, sin problema de CORS ni de
-      // límite de peticiones) + las fotos de producto por tandas
-      // pequeñas (ver cargarImagenesEnTandas) para no disparar un 429 de
-      // googleusercontent.com. Un fallo puntual en cualquier foto no
-      // debe impedir generar el resto del folleto — cargarImagenDataURL
-      // ya resuelve con null en ese caso, nunca rechaza.
-      const urlsFotos = refsOrdenados.map(ref => {
-        const p = PRODUCTS[ref];
-        return p ? urlImagenProductoFolleto(p, 400) : null;
-      });
-      const [logo, fotos] = await Promise.all([
-        cargarImagenDataURL('./assets/logos/logo-orencio.png', { tipo:'image/png' }),
-        cargarImagenesEnTandas(urlsFotos)
-      ]);
-      const fotoPorRef = {};
-      refsOrdenados.forEach((ref, i) => { fotoPorRef[ref] = fotos[i]; });
+      // Las fotos de producto se piden más abajo, una vez calculada la
+      // rejilla (ver filasProductos) — cada una se recorta al recuadro
+      // EXACTO que le toca en su tarjeta (ver cajaImagenDe), así que hace
+      // falta conocer antes el tamaño real de esa tarjeta (normal, ancha
+      // o grande). El logo es de este mismo origen, sin límite de
+      // peticiones ni recorte que dependa del layout, así que se pide ya.
+      const logo = await cargarImagenDataURL('./assets/logos/logo-orencio.png', { tipo:'image/png' });
 
       const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
       const pageW = 210, pageH = 297, margin = 14;
@@ -2889,33 +2900,42 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const contentRight = pageW - margin;
       const contentWidth = contentRight - margin;
 
-      function dibujarFondoPagina(){
-        // Fondo sutil con los colores del escaparate — toda la página,
-        // pintado ANTES que cualquier otro contenido de la página.
-        doc.setFillColor(washPagina.r, washPagina.g, washPagina.b);
-        doc.rect(0, 0, pageW, pageH, 'F');
-        // Puñado de formas sueltas con la paleta de la estación actual,
-        // pegadas al margen derecho (fuera de donde caen las tarjetas de
-        // producto) para que decoren sin estorbar nunca a la lectura.
-        // Opacidad reducida vía GState — mismo mecanismo de jsPDF que ya
-        // se usaría para un wash con alpha real, sin depender de ningún
-        // plugin adicional.
-        const franjaX = pageW - 6;
-        for(let i=0;i<10;i++){
+      function dibujarFondoEstacionalPagina(){
+        // Formas sueltas con la paleta de la estación actual, repartidas
+        // por TODA la página (no solo un margen) — es lo que pidió Eloy
+        // como "el estilo definido por estación en el fondo", igual que
+        // pintarFondoEstacional cubre todo #escaparateLienzo en la propia
+        // página. Al dibujarse antes que cualquier tarjeta (que sí llevan
+        // relleno blanco propio), solo se ven en los huecos entre ellas.
+        // Opacidad vía GState — disponible en el core de jsPDF, sin
+        // depender de ningún plugin adicional.
+        const N = 46;
+        for(let i=0;i<N;i++){
           const color = hexARgbFolleto(pick(estacionActual.colores));
-          const r = 1.1 + Math.random()*1.6;
-          const x = franjaX + (Math.random()*5-2.5);
-          const y = 20 + Math.random()*(pageH-40);
+          const r = 1 + Math.random()*1.9;
+          const x = 4 + Math.random()*(pageW-8);
+          const y = 4 + Math.random()*(pageH-8);
           doc.saveGraphicsState();
-          doc.setGState(new doc.GState({ opacity: 0.32 }));
+          doc.setGState(new doc.GState({ opacity: 0.28 }));
           doc.setFillColor(color.r, color.g, color.b);
           doc.circle(x, y, r, 'F');
           doc.restoreGraphicsState();
         }
       }
 
+      // Bloque con el difuminado de color de la campaña — mismo
+      // tratamiento (y mismos dos únicos sitios) que .vitrina/
+      // .vitrina-cierre en la propia página: cabecera informativa y
+      // cierre, nunca de fondo en el resto del folleto.
+      function dibujarBloqueColor(x, y, w, h){
+        doc.setFillColor(washMezcla.r, washMezcla.g, washMezcla.b);
+        doc.setDrawColor(vivid.r, vivid.g, vivid.b);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
+      }
+
       function dibujarCabecera(){
-        dibujarFondoPagina();
+        dibujarFondoEstacionalPagina();
         // Franja de color de la propia campaña (cs.vivid) — "el estilo y
         // color del folleto serán como el definido en el escaparate".
         doc.setFillColor(vivid.r, vivid.g, vivid.b);
@@ -2963,32 +2983,47 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       let cursorY = headerBottomY + 6;
 
       // ---- Bloque de cabecera informativa del escaparate (solo en la
-      // primera página) ----
+      // primera página), con el mismo difuminado de color que .vitrina
+      // en la propia web — la altura del bloque se calcula ANTES de
+      // dibujarlo (jsPDF no tiene "auto-height", a diferencia de un div),
+      // usando los mismos incrementos que luego se usan para colocar
+      // cada línea, para que el recuadro encaje exacto con su contenido. ----
+      const padInterno = 9;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.setTextColor(30, 33, 37);
-      const tituloLineas = doc.splitTextToSize(c.nombre || 'Escaparate', contentWidth - 4);
-      doc.text(tituloLineas, margin, cursorY + 6);
-      cursorY += 6 + tituloLineas.length * 6.4;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(110, 113, 120);
+      const tituloLineas = doc.splitTextToSize(c.nombre || 'Escaparate', contentWidth - padInterno*2);
       const subtitulo = `${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}`;
-      doc.text(subtitulo, margin, cursorY + 4);
-      cursorY += 9;
-
-      doc.setFontSize(9.5);
-      doc.setTextColor(90, 93, 100);
       const vigencia = c.permanente ? 'Escaparate permanente' : `Del ${fmtFecha(c.fechaInicio)} al ${fmtFecha(c.fechaFin)}`;
-      doc.text(`${vigencia}  ·  ${c.productos.length} producto${c.productos.length===1?'':'s'}`, margin, cursorY + 4);
-      cursorY += 10;
-
       // Etiqueta general de descuento — misma cifra y mismo criterio que
       // ya se muestra en el listado de escaparates ("Hasta un X% de
       // dto."): el mayor entre el descuento general de la campaña y
       // cualquier descuento propio de un producto.
       const descuentoGeneral = descuentoMaximoCampanaFolleto(c);
+      const alturaTitulo = tituloLineas.length * 6.4 + 4;
+      const alturaSubtitulo = 8;
+      const alturaVigencia = 5 + (descuentoGeneral > 0 ? 4 : 0);
+      const alturaBadge = descuentoGeneral > 0 ? 8.5 : 0;
+      const alturaHeaderInfo = padInterno*2 + alturaTitulo + alturaSubtitulo + alturaVigencia + alturaBadge;
+      dibujarBloqueColor(margin, cursorY, contentWidth, alturaHeaderInfo);
+
+      let tyHeader = cursorY + padInterno;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(30, 33, 37);
+      doc.text(tituloLineas, margin + padInterno, tyHeader + 6);
+      tyHeader += alturaTitulo;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(110, 113, 120);
+      doc.text(subtitulo, margin + padInterno, tyHeader + 4);
+      tyHeader += alturaSubtitulo;
+
+      doc.setFontSize(9.5);
+      doc.setTextColor(90, 93, 100);
+      doc.text(`${vigencia}  ·  ${c.productos.length} producto${c.productos.length===1?'':'s'}`, margin + padInterno, tyHeader + 4);
+      tyHeader += alturaVigencia;
+
       if(descuentoGeneral > 0){
         // Sin emoji a propósito: las fuentes base de jsPDF (Helvetica)
         // no tienen esos glifos y salían como caracteres corruptos que
@@ -3000,67 +3035,159 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.setFontSize(10.5);
         const anchoEtiqueta = doc.getTextWidth(etiqueta) + 10;
         doc.setFillColor(vivid.r, vivid.g, vivid.b);
-        doc.roundedRect(margin, cursorY, anchoEtiqueta, 8.5, 4.2, 4.2, 'F');
+        doc.roundedRect(margin + padInterno, tyHeader, anchoEtiqueta, alturaBadge, 4.2, 4.2, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.text(etiqueta, margin + 5, cursorY + 5.7);
-        cursorY += 8.5 + 6;
-      } else {
-        cursorY += 2;
+        doc.text(etiqueta, margin + padInterno + 5, tyHeader + 5.7);
+      }
+      cursorY += alturaHeaderInfo + 7;
+
+      // ---- Rejilla de productos: 3 columnas base. Los destacados
+      // ocupan más espacio que el resto, igual que en la propia página
+      // (.card[data-tam]: tamaño 2/3 más ancho, 4/5/6 más ancho Y más
+      // alto) — aquí, para poder maquetar en tandas de fila completa sin
+      // dejar huecos raros junto a una tarjeta grande, tamaño 3 y 4-6 se
+      // quedan solos en su propia fila (banner ancho), y 1/2 se reparten
+      // en filas compartidas, tan apretadas como quepan (menos hueco en
+      // blanco, más productos normales por página). ----
+      const gapX = 6, gapY = 6, baseCols = 3;
+      const colW = (contentWidth - gapX*(baseCols-1)) / baseCols;
+      const cardH = 54;      // tarjeta normal (tamaño 1 o 2/3 de ancho)
+      const cardHGrande = 78; // tamaño 4/5/6: además más alta, no solo más ancha
+      const padTarjeta = 3.5;
+      // Mismo cálculo usado para pedir la foto ya recortada (más abajo) y
+      // para colocarla en la tarjeta (dibujarTarjetaProducto) — tienen
+      // que coincidir exactamente, o el recorte no llenaría el hueco real.
+      function cajaImagenDe(anchoTarjeta, altoTarjeta){
+        return { w: anchoTarjeta - padTarjeta*2, h: Math.round(altoTarjeta * 0.58) };
       }
 
-      // ---- Rejilla de productos: 2 columnas, tantas filas/páginas como
-      // hagan falta ----
-      const gapX = 8, gapY = 6;
-      const cardW = (contentWidth - gapX) / 2;
-      const cardH = 64;
-      const colX = [margin, margin + cardW + gapX];
-      let columna = 0;
+      function especTarjeta(ref){
+        const d = destacadosMap[ref];
+        const tam = d && d.tamano > 1 ? d.tamano : 1;
+        if(tam >= 4) return { spanCols: baseCols, grande: true };
+        if(tam === 3) return { spanCols: baseCols, grande: false };
+        if(tam === 2) return { spanCols: 2, grande: false };
+        return { spanCols: 1, grande: false };
+      }
 
-      function dibujarTarjetaProducto(x, y, ref){
+      // Reparto en filas (equivalente sencillo al auto-flow de la
+      // rejilla CSS de la propia página, pero en un único sentido —
+      // hueco libre restante en la fila actual, sin "densar" hacia
+      // atrás): tamaño 3/4/5/6 siempre en fila propia a todo el ancho;
+      // 1/2 se acumulan en la fila actual mientras quepan.
+      const filasProductos = [];
+      let filaActual = { colOcupadas: 0, items: [] };
+      function cerrarFila(){
+        if(filaActual.items.length) filasProductos.push(filaActual);
+        filaActual = { colOcupadas: 0, items: [] };
+      }
+      refsOrdenados.forEach(ref => {
+        const spec = especTarjeta(ref);
+        if(spec.spanCols === baseCols){
+          cerrarFila();
+          filasProductos.push({ colOcupadas: baseCols, items: [{ ref, spanCols: baseCols, colStart: 0, grande: spec.grande }] });
+          return;
+        }
+        if(filaActual.colOcupadas + spec.spanCols > baseCols) cerrarFila();
+        filaActual.items.push({ ref, spanCols: spec.spanCols, colStart: filaActual.colOcupadas, grande: false });
+        filaActual.colOcupadas += spec.spanCols;
+      });
+      cerrarFila();
+
+      // Las fotos se piden ahora que ya se conoce el tamaño real de cada
+      // tarjeta: cada una se recorta en el propio <canvas> (recorteRatio,
+      // ver cargarImagenDataURL) al ancho/alto EXACTO de su hueco — modo
+      // "cover", igual que object-fit:cover en CSS — así la imagen llena
+      // siempre todo el hueco en vez de quedar pequeña dentro de él
+      // ("las imágenes de los productos se diferencien bien ya que ocupa
+      // mas hueco el bloque que la propia imagen", el aviso de Eloy).
+      // Se cargan por tandas espaciadas (ver cargarImagenesEnTandas) para
+      // no disparar un 429 de googleusercontent.com; un fallo puntual en
+      // cualquiera no debe impedir generar el resto del folleto.
+      const itemsFotos = [];
+      filasProductos.forEach(fila => {
+        const altoFila = fila.items.some(it => it.grande) ? cardHGrande : cardH;
+        fila.items.forEach(it => {
+          const p = PRODUCTS[it.ref];
+          const anchoCard = it.spanCols * colW + (it.spanCols - 1) * gapX;
+          const caja = cajaImagenDe(anchoCard, altoFila);
+          itemsFotos.push({
+            ref: it.ref,
+            url: p ? urlImagenProductoFolleto(p, 500) : null,
+            opciones: { recorteRatio: caja.w / caja.h }
+          });
+        });
+      });
+      const fotos = await cargarImagenesEnTandas(itemsFotos);
+      const fotoPorRef = {};
+      itemsFotos.forEach((it, i) => { fotoPorRef[it.ref] = fotos[i]; });
+
+      // La imagen ocupa la MAYOR parte de cada tarjeta a propósito —
+      // ya viene recortada (modo "cover") al hueco exacto, así que aquí
+      // solo hace falta encajarla sin más cálculo de escala/centrado.
+      function dibujarTarjetaProducto(x, y, anchoTarjeta, altoTarjeta, ref){
         const p = PRODUCTS[ref];
+        // Relleno blanco propio — necesario para que el fondo estacional
+        // de la página (dibujado antes, detrás de todo) solo se vea en
+        // los huecos ENTRE tarjetas, nunca por debajo del texto.
+        doc.setFillColor(255, 255, 255);
         doc.setDrawColor(226, 228, 232);
         doc.setLineWidth(0.25);
-        doc.roundedRect(x, y, cardW, cardH, 2.4, 2.4);
+        doc.roundedRect(x, y, anchoTarjeta, altoTarjeta, 2.4, 2.4, 'FD');
         if(!p){
           doc.setFont('helvetica', 'italic');
           doc.setFontSize(8.5);
           doc.setTextColor(150, 153, 160);
-          doc.text('Referencia no encontrada', x + cardW/2, y + cardH/2, { align:'center' });
-          doc.text(ref, x + cardW/2, y + cardH/2 + 5, { align:'center' });
+          doc.text('Referencia no encontrada', x + anchoTarjeta/2, y + altoTarjeta/2, { align:'center' });
+          doc.text(ref, x + anchoTarjeta/2, y + altoTarjeta/2 + 5, { align:'center' });
           return;
         }
         const d = destacadosMap[ref] || null;
         const descuento = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
         const tieneDescuento = descuento > 0;
         const esDestacado = !!(d && d.tamano > 1);
+        // El presupuesto vertical disponible depende de la ALTURA de la
+        // tarjeta, no de su ancho — una tarjeta ancha pero de la altura
+        // normal (tamaño 2/3) tiene el mismo hueco de texto que una
+        // normal, así que la familia y el nombre a 2 líneas solo caben
+        // en las tarjetas realmente más altas (tamaño 4/5/6).
+        const esGrande = altoTarjeta > cardH + 2;
+        const mostrarFamilia = esGrande;
+        const maxLineasNombre = esGrande ? 2 : 1;
 
-        const padX = 4;
-        const imgBoxY = y + 4, imgBoxH = 26, imgBoxW = cardW - padX*2;
-        // Marco claro del hueco de la foto, siempre visible aunque la
-        // foto no haya cargado (deja claro que ahí "falta una imagen",
-        // en vez de un hueco en blanco indistinguible del resto de la
-        // tarjeta).
-        doc.setFillColor(248, 249, 250);
-        doc.rect(x + padX, imgBoxY, imgBoxW, imgBoxH, 'F');
+        const padX = padTarjeta;
+        const imgBoxY = y + 3;
+        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta);
         const foto = fotoPorRef[ref];
         if(foto){
-          const escala = Math.min(imgBoxW / foto.w, imgBoxH / foto.h);
-          const dw = foto.w * escala, dh = foto.h * escala;
-          doc.addImage(foto.dataURL, 'JPEG', x + padX + (imgBoxW-dw)/2, imgBoxY + (imgBoxH-dh)/2, dw, dh);
+          // La foto ya viene recortada (modo "cover") a este mismo ancho
+          // y alto exactos (ver itemsFotos/cajaImagenDe, más arriba), así
+          // que solo hace falta encajarla — sin más cálculo de escala.
+          doc.addImage(foto.dataURL, 'JPEG', x + padX, imgBoxY, imgBoxW, imgBoxH);
+          // Marco fino alrededor de la foto — la separa con claridad del
+          // resto de la tarjeta, que es justo lo que faltaba ("que se
+          // diferencien bien").
+          doc.setDrawColor(220, 222, 227);
+          doc.setLineWidth(0.3);
+          doc.rect(x + padX, imgBoxY, imgBoxW, imgBoxH);
         } else {
+          // Marco claro del hueco de la foto cuando no ha cargado — deja
+          // claro que ahí "falta una imagen", en vez de un hueco en
+          // blanco indistinguible del resto de la tarjeta.
+          doc.setFillColor(248, 249, 250);
+          doc.rect(x + padX, imgBoxY, imgBoxW, imgBoxH, 'F');
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(7);
           doc.setTextColor(180, 183, 190);
-          doc.text('Sin foto disponible', x + cardW/2, imgBoxY + imgBoxH/2 + 1, { align:'center' });
+          doc.text('Sin foto disponible', x + anchoTarjeta/2, imgBoxY + imgBoxH/2 + 1, { align:'center' });
         }
 
         // Insignias superpuestas — mismo criterio que las tarjetas de la
         // propia página (card-destacado-badge / card-descuento-badge):
-        // destacado a la izquierda, descuento a la derecha, y si
-        // coinciden las dos, se apilan en vez de solaparse. Sin emoji
+        // destacado a la izquierda, descuento a la derecha. Sin emoji
         // (ver nota junto a la etiqueta general de descuento, más
         // arriba en esta misma función) — solo texto en mayúsculas.
-        let insigniaY = imgBoxY + 2;
+        const insigniaY = imgBoxY + 2;
         if(esDestacado){
           const txt = 'DESTACADO';
           doc.setFont('helvetica', 'bold');
@@ -3077,23 +3204,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           doc.setFontSize(6.6);
           const w = doc.getTextWidth(txt) + 4;
           doc.setFillColor(217, 27, 27);
-          doc.roundedRect(x + cardW - padX - 1.5 - w, insigniaY, w, 4.6, 1.6, 1.6, 'F');
+          doc.roundedRect(x + anchoTarjeta - padX - 1.5 - w, insigniaY, w, 4.6, 1.6, 1.6, 'F');
           doc.setTextColor(255,255,255);
-          doc.text(txt, x + cardW - padX - 1.5 - w/2, insigniaY + 3.2, { align:'center' });
+          doc.text(txt, x + anchoTarjeta - padX - 1.5 - w/2, insigniaY + 3.2, { align:'center' });
         }
 
-        let ty = imgBoxY + imgBoxH + 5;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6.8);
-        doc.setTextColor(150, 153, 160);
-        if(p.familia){ doc.text(String(p.familia).toUpperCase(), x + padX, ty); ty += 3.6; }
+        let ty = imgBoxY + imgBoxH + 4.5;
+        if(mostrarFamilia && p.familia){
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.8);
+          doc.setTextColor(150, 153, 160);
+          doc.text(String(p.familia).toUpperCase(), x + padX, ty);
+          ty += 3.6;
+        }
 
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.6);
+        doc.setFontSize(8.4);
         doc.setTextColor(30, 33, 37);
-        const nombreLineas = doc.splitTextToSize(p.nombre || ref, cardW - padX*2).slice(0, 2);
+        const nombreLineas = doc.splitTextToSize(p.nombre || ref, anchoTarjeta - padX*2).slice(0, maxLineasNombre);
         doc.text(nombreLineas, x + padX, ty + 3);
-        ty += 3 + nombreLineas.length * 3.6 + 1.5;
+        ty += 3 + nombreLineas.length * 3.5 + 1.3;
 
         // Precio: igual que en la propia tarjeta pública (bloquePrecio) —
         // con descuento, el precio de partida tachado y más pequeño, y
@@ -3101,7 +3231,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         if(tieneDescuento){
           const rebajado = precioConDescuento(p.precio_con, descuento);
           doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7.4);
+          doc.setFontSize(7.2);
           doc.setTextColor(170, 173, 180);
           const precioTachado = `${fmtEUR(p.precio_con)} €`;
           doc.text(precioTachado, x + padX, ty);
@@ -3109,48 +3239,60 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           doc.setDrawColor(170, 173, 180);
           doc.setLineWidth(0.25);
           doc.line(x + padX, ty - 1, x + padX + wTachado, ty - 1);
-          ty += 4.4;
+          ty += 4.2;
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10.5);
+          doc.setFontSize(10);
           doc.setTextColor(vivid.r, vivid.g, vivid.b);
           doc.text(`${fmtEUR(rebajado)} € `, x + padX, ty);
           const wReb = doc.getTextWidth(`${fmtEUR(rebajado)} € `);
           doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6.6);
+          doc.setFontSize(6.4);
           doc.setTextColor(150, 153, 160);
           doc.text('IVA inc.', x + padX + wReb, ty);
         } else {
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10.5);
+          doc.setFontSize(10);
           doc.setTextColor(30, 33, 37);
           doc.text(`${fmtEUR(p.precio_con)} € `, x + padX, ty);
           const wCon = doc.getTextWidth(`${fmtEUR(p.precio_con)} € `);
           doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6.6);
+          doc.setFontSize(6.4);
           doc.setTextColor(150, 153, 160);
           doc.text('IVA inc.', x + padX + wCon, ty);
-          ty += 4.4;
-          doc.setFontSize(7.2);
-          doc.text(`${fmtEUR(p.precio_sin)} € sin IVA`, x + padX, ty);
+          if(mostrarFamilia){
+            ty += 4.2;
+            doc.setFontSize(7);
+            doc.text(`${fmtEUR(p.precio_sin)} € sin IVA`, x + padX, ty);
+          }
         }
 
+        // La referencia sigue el flujo del precio (ty + hueco fijo) en
+        // vez de anclarse a una posición fija desde el borde inferior de
+        // la tarjeta — con esta altura de tarjeta más ajustada (menos
+        // hueco en blanco), anclarla al borde inferior podía solaparse
+        // con la línea del precio cuando el bloque de arriba ya llegaba
+        // más abajo (p. ej. con descuento).
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6.8);
+        doc.setFontSize(6.6);
         doc.setTextColor(150, 153, 160);
-        doc.text(`Ref. ${p.ref}`, x + padX, y + cardH - 3);
+        doc.text(`Ref. ${p.ref}`, x + padX, ty + 4.4);
       }
 
-      refsOrdenados.forEach((ref) => {
-        if(columna === 0 && cursorY + cardH > footerTopY - 2){
+      filasProductos.forEach(fila => {
+        const esGrande = fila.items.some(it => it.grande);
+        const alturaFila = esGrande ? cardHGrande : cardH;
+        if(cursorY + alturaFila > footerTopY - 2){
           doc.addPage();
           dibujarCabecera();
           cursorY = headerBottomY + 8;
         }
-        dibujarTarjetaProducto(colX[columna], cursorY, ref);
-        if(columna === 1){ columna = 0; cursorY += cardH + gapY; }
-        else { columna = 1; }
+        fila.items.forEach(it => {
+          const x = margin + it.colStart * (colW + gapX);
+          const w = it.spanCols * colW + (it.spanCols - 1) * gapX;
+          dibujarTarjetaProducto(x, cursorY, w, alturaFila, it.ref);
+        });
+        cursorY += alturaFila + gapY;
       });
-      if(columna === 1){ cursorY += cardH + gapY; columna = 0; } // fila a medias: dejar el cursor tras ella igualmente
 
       // ---- Cierre del folleto — mismo cierre que el propio escaparate
       // (c.eslogan), o una despedida genérica si la campaña no tiene
@@ -3163,15 +3305,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       } else {
         cursorY += 4;
       }
-      // "wash" en la página es el color de acento con muy poca opacidad
-      // (rgba); jsPDF no tiene un equivalente directo de opacidad de
-      // relleno sencillo entre versiones, así que se calcula aquí el
-      // mismo efecto a mano: blanco mezclado con un 8% del color vivid.
-      const washMezcla = { r: 255 - (255-vivid.r)*0.08, g: 255 - (255-vivid.g)*0.08, b: 255 - (255-vivid.b)*0.08 };
-      doc.setFillColor(washMezcla.r, washMezcla.g, washMezcla.b);
-      doc.setDrawColor(vivid.r, vivid.g, vivid.b);
-      doc.setLineWidth(0.6);
-      doc.roundedRect(margin, cursorY, contentWidth, cierreH, 3, 3, 'FD');
+      dibujarBloqueColor(margin, cursorY, contentWidth, cierreH);
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(11.5);
       doc.setTextColor(60, 63, 70);
