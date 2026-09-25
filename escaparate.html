@@ -2751,14 +2751,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // muy lenta no debe colgar la generación de todo el folleto — se
   // resuelve con null y esa tarjeta cae al icono de repuesto, igual que
   // ya hace la propia página con onerror="this.remove()".
-  // recorteRatio (ancho/alto deseado) recorta la imagen en el propio
-  // <canvas> — al estilo "cover" de CSS (rellena todo el hueco,
-  // recortando lo que sobre en el eje que no encaja) — en vez de dejar
-  // que jsPDF la encoja en modo "contain" dentro de la tarjeta. Antes se
-  // probó a hacer este recorte en el propio PDF con doc.clip(), pero esa
-  // combinación (clip + addImage) salía en blanco en pruebas reales con
-  // jsPDF 2.5.1 — recortar aquí, en el canvas, es más simple y no
-  // depende de esa función.
+  // recorteRatio (ancho/alto deseado) recorta LIGERAMENTE la imagen en
+  // el propio <canvas> para acercarla al hueco de su tarjeta — pero con
+  // un límite (MAX_RECORTE): recortar a saco al estilo "cover" de CSS
+  // dejaba el producto cortado y demasiado cerca en fotos con una
+  // proporción muy distinta a la tarjeta (el aviso de Eloy: "hay
+  // imágenes que salen más grandes que el espacio y no se aprecia bien
+  // el producto"). Con el límite, se recorta como mucho ese porcentaje
+  // de cada lado — lo suficiente para que las fotos "normales" (parecidas
+  // a la proporción de la tarjeta) llenen el hueco casi entero, pero sin
+  // llegar nunca a recortar el producto en las que no encajan ni de
+  // lejos; esas se dibujan luego en modo "contain" (ver
+  // dibujarTarjetaProducto), enteras y centradas, con el sobrante como
+  // márgen en vez de recortarlo.
   function intentarCargarImagenDataURL(url, { timeoutMs=9000, tipo='image/jpeg', calidad=0.86, recorteRatio=null }={}){
     return new Promise((resolve) => {
       const img = new Image();
@@ -2772,12 +2777,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           const anchoOrig = img.naturalWidth || 300, altoOrig = img.naturalHeight || 300;
           let sx = 0, sy = 0, sw = anchoOrig, sh = altoOrig;
           if(recorteRatio){
+            const MAX_RECORTE = 0.3;
             const ratioOrig = anchoOrig / altoOrig;
             if(ratioOrig > recorteRatio){
-              sw = altoOrig * recorteRatio;
+              sw = Math.max(altoOrig * recorteRatio, anchoOrig * (1 - MAX_RECORTE));
               sx = (anchoOrig - sw) / 2;
             } else if(ratioOrig < recorteRatio){
-              sh = anchoOrig / recorteRatio;
+              sh = Math.max(anchoOrig / recorteRatio, altoOrig * (1 - MAX_RECORTE));
               sy = (altoOrig - sh) / 2;
             }
           }
@@ -3182,11 +3188,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta);
         const foto = fotoPorRef[ref];
         if(foto){
-          // La foto ya viene recortada (modo "cover") a este mismo ancho
-          // y alto exactos (ver itemsFotos/cajaImagenDe, más arriba), así
-          // que solo hace falta encajarla — sin más cálculo de escala.
-          doc.addImage(foto.dataURL, 'JPEG', x + padX, imgBoxY, imgBoxW, imgBoxH);
-          // Marco fino alrededor de la foto — la separa con claridad del
+          // La foto ya viene recortada (ver itemsFotos/cajaImagenDe, más
+          // arriba) para acercarla a este ancho/alto, pero SOLO hasta un
+          // límite — con una proporción de origen muy distinta a la de la
+          // tarjeta, puede que no llegue a coincidir del todo. Por eso se
+          // encaja aquí en modo "contain" (entera, sin recortar nada más,
+          // centrada) en vez de asumir que siempre llena el hueco exacto
+          // — así el producto nunca sale cortado ni "más grande que el
+          // espacio", que era el aviso de Eloy.
+          doc.setFillColor(248, 249, 250);
+          doc.rect(x + padX, imgBoxY, imgBoxW, imgBoxH, 'F');
+          const escala = Math.min(imgBoxW / foto.w, imgBoxH / foto.h);
+          const dw = foto.w * escala, dh = foto.h * escala;
+          doc.addImage(foto.dataURL, 'JPEG', x + padX + (imgBoxW-dw)/2, imgBoxY + (imgBoxH-dh)/2, dw, dh);
+          // Marco fino alrededor del hueco — lo separa con claridad del
           // resto de la tarjeta, que es justo lo que faltaba ("que se
           // diferencien bien").
           doc.setDrawColor(220, 222, 227);
