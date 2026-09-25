@@ -2848,9 +2848,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
 
     const textoOriginalBtn = btn ? btn.innerHTML : '';
+    // Estados cortos en el propio botón mientras se genera — sin esto,
+    // con catálogos grandes (muchas fotos, varias tandas espaciadas para
+    // no disparar el 429 de googleusercontent.com) el botón se queda
+    // varios segundos con el mismo texto, y da la sensación de que se ha
+    // quedado bloqueado o ha fallado. fijarEstadoBoton() no toca
+    // "disabled" (ya se hace una sola vez aquí abajo) — solo el texto.
+    const fijarEstadoBoton = (texto) => { if(btn) btn.innerHTML = `<span>${texto}</span>`; };
     if(btn){
       btn.disabled = true;
-      btn.innerHTML = '<span>Generando folleto…</span>';
+      fijarEstadoBoton('Recopilando datos…');
     }
 
     try{
@@ -3118,9 +3125,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           });
         });
       });
+      fijarEstadoBoton('Extrayendo imágenes…');
       const fotos = await cargarImagenesEnTandas(itemsFotos);
       const fotoPorRef = {};
       itemsFotos.forEach((it, i) => { fotoPorRef[it.ref] = fotos[i]; });
+      fijarEstadoBoton('Componiendo folleto…');
+      // A partir de aquí el maquetado es una tanda larga de llamadas
+      // síncronas a jsPDF (sin ningún await de por medio) — sin ceder un
+      // frame antes, el navegador podría no llegar a pintar nunca este
+      // texto, saltando directo de "Extrayendo imágenes…" al botón ya
+      // reactivado en catálogos con muchas páginas.
+      await new Promise(requestAnimationFrame);
 
       // La imagen ocupa la MAYOR parte de cada tarjeta a propósito —
       // ya viene recortada (modo "cover") al hueco exacto, así que aquí
@@ -3326,6 +3341,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '') + '.pdf';
+      fijarEstadoBoton('Guardando PDF…');
+      await new Promise(requestAnimationFrame);
       doc.save(nombreArchivo);
     } catch(err){
       console.error('Error generando el folleto en PDF:', err);
