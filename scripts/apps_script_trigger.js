@@ -2763,11 +2763,20 @@ function escribirConfiguracion_(clave, valor, descripcion) {
   const datos = sheet.getDataRange().getValues();
   for (let i = 1; i < datos.length; i++) {
     if ((datos[i][0] || '').toString().trim() === clave) {
-      sheet.getRange(i + 1, 2).setValue(valor);
+      // setNumberFormat('@') ANTES de escribir — sin esto, Sheets
+      // auto-detecta texto con pinta de fecha (como el propio
+      // "dd/MM/yyyy HH:mm" que usa crm_sync_ultima_fecha) y lo convierte
+      // solo él en un objeto Date real de la celda, aunque se escriba
+      // con setValue(unString). Luego, al leerlo, ya no vuelve como el
+      // texto que se guardó — causaba que saliera un Date en bruto (con
+      // zona horaria y todo) en mitad del correo de aviso.
+      sheet.getRange(i + 1, 2).setNumberFormat('@').setValue(valor);
       return;
     }
   }
-  sheet.getRange(sheet.getLastRow() + 1, 1, 1, 3).setValues([[clave, valor, descripcion || '']]);
+  const filaNueva = sheet.getLastRow() + 1;
+  sheet.getRange(filaNueva, 2).setNumberFormat('@');
+  sheet.getRange(filaNueva, 1, 1, 3).setValues([[clave, valor, descripcion || '']]);
 }
 
 function crearHojaConfiguracion() {
@@ -6979,12 +6988,25 @@ function _leerEstadoAvisoSyncCRM_() {
       'A quién avisar cuando lleva tiempo sin sincronizarse el catálogo desde el CRM — uno o varios emails, separados por coma. De momento solo el de Eloy, para probar; añadir aquí el del administrador del CRM cuando se confirme que funciona.');
   }
   return {
-    ultimaFecha: leerConfiguracion_('crm_sync_ultima_fecha', ''),
-    resumen: leerConfiguracion_('crm_sync_ultimo_resumen', ''),
+    // _textoConfigCRM_: red de seguridad para celdas ya corrompidas por
+    // el bug de escribirConfiguracion_ arreglado más arriba (texto con
+    // pinta de fecha que Sheets convirtió solo él en un Date real antes
+    // de forzar formato de texto en la celda) — sin esto, ese Date en
+    // bruto se colaba tal cual (con zona horaria y todo) en el correo.
+    ultimaFecha: _textoConfigCRM_(leerConfiguracion_('crm_sync_ultima_fecha', '')),
+    resumen: _textoConfigCRM_(leerConfiguracion_('crm_sync_ultimo_resumen', '')),
     habilitado: habilitadoTexto === 'si' || habilitadoTexto === 'sí',
     emails: emailsTexto.split(/[,;]/).map(e => e.trim()).filter(Boolean),
-    ultimoAviso: leerConfiguracion_('crm_sync_ultimo_aviso', ''),
+    ultimoAviso: _textoConfigCRM_(leerConfiguracion_('crm_sync_ultimo_aviso', '')),
   };
+}
+
+function _textoConfigCRM_(valor) {
+  if (!valor) return '';
+  if (valor instanceof Date) {
+    return Utilities.formatDate(valor, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm');
+  }
+  return valor.toString();
 }
 
 // La fecha se guarda siempre como texto 'dd/MM/yyyy HH:mm'
@@ -7013,24 +7035,52 @@ function _enviarAvisoSincronizacionPendienteCRM_(estado, forzado) {
   const lineaFecha = fechaUltima
     ? 'Última sincronización: ' + estado.ultimaFecha + ' (hace ' + diasSinSincronizar + ' día' + (diasSinSincronizar === 1 ? '' : 's') + ').'
     : 'No hay ninguna sincronización registrada todavía.';
-  const cuerpo = [
-    'Hola,',
-    '',
-    forzado
-      ? 'Aviso solicitado manualmente desde el panel de administración.'
-      : 'Aviso automático: hace ' + CRM_SYNC_AVISO_DIAS + ' días o más que no se sincronizan los productos desde el CRM.',
-    '',
-    lineaFecha,
-    estado.resumen ? ('Resumen de la última sincronización: ' + estado.resumen) : '',
+  const lineaAviso = forzado
+    ? 'Aviso solicitado manualmente desde el panel de administración.'
+    : 'Aviso automático: hace ' + CRM_SYNC_AVISO_DIAS + ' días o más que no se sincronizan los productos desde el CRM.';
+
+  // Versión en texto plano — antes el propio código filtraba (por error)
+  // TODAS las líneas en blanco entre párrafos, no solo la del resumen
+  // cuando no había ninguno, y el correo salía todo apelotonado en un
+  // único bloque (el aviso de Eloy). Ahora las líneas en blanco de
+  // separación entre párrafos se mantienen siempre; lo único
+  // condicional es si aparece o no la línea del resumen.
+  const parrafosTexto = ['Hola,', '', lineaAviso, '', lineaFecha];
+  if (estado.resumen) parrafosTexto.push('Resumen de la última sincronización: ' + estado.resumen);
+  parrafosTexto.push(
     '',
     'Por favor, envía el listado en Excel de productos a actualizar, con estos campos informados para cada producto:',
     COLUMNAS_CRM_EXCEL.map(c => '  - ' + c).join('\n'),
     '',
     'Un saludo,',
-    'Orencio Matas y Hnos, S.L.',
-  ].filter(l => l !== '').join('\n');
+    'Orencio Matas y Hnos, S.L.'
+  );
+  const cuerpoTexto = parrafosTexto.join('\n');
 
-  estado.emails.forEach(email => MailApp.sendEmail(email, asunto, cuerpo));
+  // Versión en HTML — mismo contenido, con algo de estructura visual
+  // (título en rojo corporativo, recuadro para la fecha/resumen, lista
+  // real para los campos) en vez de un bloque de texto plano sin ningún
+  // respiro. Los clientes de correo que no rendericen HTML se quedan con
+  // el body de texto plano de arriba (MailApp.sendEmail manda los dos).
+  const escaparHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const cuerpoHtml = `
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#1a1a1a; max-width:560px; margin:0 auto;">
+      <h2 style="color:#d91b1b; margin:0 0 16px;">Sincronización de productos pendiente</h2>
+      <p style="margin:0 0 14px;">Hola,</p>
+      <p style="margin:0 0 14px;">${escaparHtml(lineaAviso)}</p>
+      <div style="background:#f8fafc; border-left:4px solid #d91b1b; border-radius:6px; padding:12px 16px; margin:0 0 18px;">
+        <p style="margin:0 0 6px;"><strong>${escaparHtml(lineaFecha)}</strong></p>
+        ${estado.resumen ? `<p style="margin:0; color:#374151;">Resumen de la última sincronización: ${escaparHtml(estado.resumen)}</p>` : ''}
+      </div>
+      <p style="margin:0 0 8px;">Por favor, envía el listado en Excel de productos a actualizar, con estos campos informados para cada producto:</p>
+      <ul style="margin:0 0 18px; padding-left:20px;">
+        ${COLUMNAS_CRM_EXCEL.map(c => `<li style="margin-bottom:4px;">${escaparHtml(c)}</li>`).join('')}
+      </ul>
+      <p style="margin:0;">Un saludo,<br>Orencio Matas y Hnos, S.L.</p>
+    </div>
+  `;
+
+  estado.emails.forEach(email => MailApp.sendEmail({ to: email, subject: asunto, body: cuerpoTexto, htmlBody: cuerpoHtml }));
   escribirConfiguracion_('crm_sync_ultimo_aviso', Utilities.formatDate(new Date(), zona, 'dd/MM/yyyy HH:mm'), 'Fecha del último correo de aviso de sincronización pendiente enviado');
 }
 
