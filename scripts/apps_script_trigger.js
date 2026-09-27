@@ -2744,6 +2744,32 @@ function leerConfiguracion_(clave, porDefecto) {
   return porDefecto;
 }
 
+// Complemento de leerConfiguracion_: escribe (o crea, si la clave todavía
+// no existe) una fila de la hoja "Configuracion" — mismo formato
+// clave/valor/descripcion que ya usan zaphiro_url, los mantenimiento_*,
+// etc. descripcion solo se usa al CREAR la fila (una fila ya existente
+// no se toca en su columna de descripción al actualizar el valor). Si la
+// hoja "Configuracion" todavía no existe, la crea vacía primero (con la
+// misma cabecera que crearHojaConfiguracion(), pero sin borrar nada,
+// para no chocar con esa función si ya hay datos reales en otra hoja
+// con ese nombre creada por otra vía).
+function escribirConfiguracion_(clave, valor, descripcion) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Configuracion');
+  if (!sheet) {
+    sheet = ss.insertSheet('Configuracion');
+    sheet.getRange(1, 1, 1, 3).setValues([['clave', 'valor', 'descripcion']]);
+  }
+  const datos = sheet.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if ((datos[i][0] || '').toString().trim() === clave) {
+      sheet.getRange(i + 1, 2).setValue(valor);
+      return;
+    }
+  }
+  sheet.getRange(sheet.getLastRow() + 1, 1, 1, 3).setValues([[clave, valor, descripcion || '']]);
+}
+
 function crearHojaConfiguracion() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName('Configuracion');
@@ -3638,6 +3664,22 @@ function doPost(e) {
     if (accion === 'panel_validar_pin') {
       console.log('Acción: panel_validar_pin');
       return procesarPanelValidarPin(data);
+    }
+
+    // NUEVO — Aviso de sincronización de productos pendiente desde el CRM
+    if (accion === 'panel_crm_sync_estado') {
+      console.log('Acción: panel_crm_sync_estado');
+      return procesarPanelCrmSyncEstado(data);
+    }
+
+    if (accion === 'panel_crm_sync_toggle') {
+      console.log('Acción: panel_crm_sync_toggle');
+      return procesarPanelCrmSyncToggle(data);
+    }
+
+    if (accion === 'panel_crm_sync_enviar_ahora') {
+      console.log('Acción: panel_crm_sync_enviar_ahora');
+      return procesarPanelCrmSyncEnviarAhora(data);
     }
 
     console.log('Acción no reconocida:', accion);
@@ -6589,6 +6631,14 @@ const CORREO_RESUMEN_CRM_CC = 'eloyleon23@gmail.com';
 // Envío bajo demanda del Excel de productos sin imagen (menú de la
 // Sheet) — acción manual y separada del resumen automático de arriba.
 const CORREO_RESUMEN_DESTINO = 'eloyleon23@gmail.com';
+// Cabecera exacta que debe traer el Excel del CRM — antes vivía como
+// const local dentro de procesarListadoProductosExcel_(); subida aquí
+// arriba (misma lista, sin cambiar ni un valor) para poder reutilizarla
+// también en el correo de aviso de sincronización pendiente más abajo
+// ("informará de los campos que necesita que se le envíen informados"),
+// sin mantener dos copias que puedan desincronizarse entre sí.
+const COLUMNAS_CRM_EXCEL = ['CodigoEAN', 'DescripcionArticulo', 'PrecioMayorSinIVA',
+  'PrecioPublicoSinIVA', 'IVA', 'CodigoFamilia', 'Familia', 'FechaAlta'];
 
 // Ejecutar manualmente desde el editor para (re)crear el disparador
 // periódico con la configuración actual de esta función. Si ya existe uno
@@ -6734,8 +6784,9 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
   //    TieneFoto, ActualizarPrecio, Procesado y Error son columnas de
   //    gestión propia de RegistroProductos — el CRM nunca las envía, así
   //    que NO deben formar parte de lo esperado aquí.
-  const COLUMNAS_CRM_EXCEL = ['CodigoEAN', 'DescripcionArticulo', 'PrecioMayorSinIVA',
-    'PrecioPublicoSinIVA', 'IVA', 'CodigoFamilia', 'Familia', 'FechaAlta'];
+  //    (COLUMNAS_CRM_EXCEL ahora es una const global, más arriba junto a
+  //    CORREO_CRM_REMITENTE — reutilizada también en el aviso de
+  //    sincronización pendiente.)
   const regHeaderRow = sheetReg.getRange(1, 1, 1, sheetReg.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim());
   const cabeceraExcel = datosExcel[0].map(h => h.toString().trim());
@@ -6816,6 +6867,13 @@ function enviarResumenSincronizacionCRM_(resultado) {
   const zona = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   const fecha = Utilities.formatDate(new Date(), zona, 'dd/MM/yyyy HH:mm');
 
+  // Registro en la hoja Configuracion de CADA intento real de
+  // sincronización (éxito o fallo) — es lo que permite al panel de
+  // administración (y al aviso automático de sincronización pendiente,
+  // más abajo) saber cuándo fue la última vez y con qué resultado, sin
+  // depender de rebuscar en el correo o en los registros de ejecución.
+  registrarResultadoSincronizacionCRM_(resultado, fecha);
+
   if (resultado.error) {
     MailApp.sendEmail({
       to: CORREO_RESUMEN_CRM_TO,
@@ -6860,6 +6918,223 @@ function enviarResumenSincronizacionCRM_(resultado) {
   // sigue existiendo y usándose igual en su propio envío bajo demanda
   // (menú de la Sheet, ver más abajo) — aquí simplemente ya no se llama.
   MailApp.sendEmail({ to: CORREO_RESUMEN_CRM_TO, cc: CORREO_RESUMEN_CRM_CC, subject: asunto, body: cuerpo });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// AVISO DE SINCRONIZACIÓN DE PRODUCTOS PENDIENTE (petición de Eloy)
+// ══════════════════════════════════════════════════════════════════════
+// Registra en la hoja "Configuracion" la fecha y el resumen de cada
+// sincronización real desde el correo del CRM (ver
+// registrarResultadoSincronizacionCRM_, llamada desde
+// enviarResumenSincronizacionCRM_ justo arriba), y añade un trigger
+// diario que, si hace CRM_SYNC_AVISO_DIAS días o más que no se
+// sincroniza Y el envío automático está habilitado, manda un correo
+// pidiendo al administrador del CRM el Excel actualizado.
+//
+// Claves usadas en la hoja "Configuracion" (mismo formato clave/valor/
+// descripcion que zaphiro_url, mantenimiento_*, etc. — se crean solas la
+// primera vez que se necesitan, no hace falta prepararlas a mano):
+//   crm_sync_ultima_fecha        — fecha y hora del último intento real de sincronización
+//   crm_sync_ultimo_resumen      — resultado de ese intento (nuevos/actualizados/errores, o el error)
+//   crm_sync_auto_habilitado     — si / no — si el aviso automático diario está activo
+//   crm_sync_emails_aviso        — a quién avisar, separados por coma (de momento solo
+//                                  eloyleon23@gmail.com, para probar sin arriesgar un
+//                                  correo real al administrador del CRM todavía)
+//   crm_sync_ultimo_aviso        — fecha del último correo de aviso enviado (informativo)
+//
+// CONFIGURACIÓN NECESARIA (una sola vez): ejecutar manualmente desde el
+// editor configurarTriggerAvisoSincronizacionCRM() — crea el disparador
+// diario a las 10h. Igual que con configurarTriggerRevisionCorreoProductos(),
+// para cambiar la hora más adelante basta con editar .atHour(10) aquí
+// abajo y volver a ejecutar esa función.
+
+const CRM_SYNC_AVISO_DIAS = 7;
+
+function registrarResultadoSincronizacionCRM_(resultado, fechaTexto) {
+  const resumen = resultado.error
+    ? '⚠️ Sincronización fallida — ' + resultado.error
+    : ('✓ Sincronización correcta — ' + resultado.nuevos + ' nuevos, ' + resultado.actualizados +
+       ' actualizados' + (resultado.errores ? ', ' + resultado.errores + ' con error' : ''));
+  escribirConfiguracion_('crm_sync_ultima_fecha', fechaTexto, 'Fecha y hora del último intento real de sincronización de productos desde el CRM');
+  escribirConfiguracion_('crm_sync_ultimo_resumen', resumen, 'Resultado de esa última sincronización (nuevos/actualizados/errores, o el error)');
+}
+
+// Lee el estado actual de la hoja Configuracion — usado tanto por el
+// trigger diario como por las acciones del panel (estado, activar/
+// desactivar, forzar envío).
+function _leerEstadoAvisoSyncCRM_() {
+  const habilitadoTexto = (leerConfiguracion_('crm_sync_auto_habilitado', 'no') || '').toString().trim().toLowerCase();
+  // Sentinela en vez de un valor por defecto normal: así se distingue
+  // "la clave no existe todavía en la hoja" de "existe pero está vacía",
+  // y solo en el primer caso se escribe la fila — para que
+  // crm_sync_emails_aviso aparezca de verdad en Configuracion, editable
+  // a mano ("no lo dejamos harcodeado en el código, puedo validar el
+  // proceso con mi email"), en vez de vivir solo como valor por defecto
+  // invisible en el código hasta que alguien la toque desde el panel.
+  const SIN_DEFINIR_CRM_EMAILS = '__sin_definir__';
+  let emailsTexto = (leerConfiguracion_('crm_sync_emails_aviso', SIN_DEFINIR_CRM_EMAILS) || '').toString();
+  if (emailsTexto === SIN_DEFINIR_CRM_EMAILS) {
+    emailsTexto = 'eloyleon23@gmail.com';
+    escribirConfiguracion_('crm_sync_emails_aviso', emailsTexto,
+      'A quién avisar cuando lleva tiempo sin sincronizarse el catálogo desde el CRM — uno o varios emails, separados por coma. De momento solo el de Eloy, para probar; añadir aquí el del administrador del CRM cuando se confirme que funciona.');
+  }
+  return {
+    ultimaFecha: leerConfiguracion_('crm_sync_ultima_fecha', ''),
+    resumen: leerConfiguracion_('crm_sync_ultimo_resumen', ''),
+    habilitado: habilitadoTexto === 'si' || habilitadoTexto === 'sí',
+    emails: emailsTexto.split(/[,;]/).map(e => e.trim()).filter(Boolean),
+    ultimoAviso: leerConfiguracion_('crm_sync_ultimo_aviso', ''),
+  };
+}
+
+// La fecha se guarda siempre como texto 'dd/MM/yyyy HH:mm'
+// (Utilities.formatDate, igual que el resto del proyecto) — se parsea a
+// mano en vez de con new Date(texto) porque ese formato no es el que
+// entiende el constructor de Date de forma fiable entre entornos.
+function _parsearFechaConfigCRM_(texto) {
+  if (!texto) return null;
+  if (texto instanceof Date) return texto;
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})[ T]?(\d{2})?:?(\d{2})?/.exec(String(texto));
+  if (!m) return null;
+  return new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
+}
+
+function _enviarAvisoSincronizacionPendienteCRM_(estado, forzado) {
+  if (!estado.emails.length) {
+    throw new Error('No hay ningún email en "crm_sync_emails_aviso" — no se puede enviar el aviso.');
+  }
+  const zona = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  const fechaUltima = _parsearFechaConfigCRM_(estado.ultimaFecha);
+  const diasSinSincronizar = fechaUltima
+    ? Math.floor((Date.now() - fechaUltima.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const asunto = 'Sincronización de productos pendiente — Orencio Matas y Hnos';
+  const lineaFecha = fechaUltima
+    ? 'Última sincronización: ' + estado.ultimaFecha + ' (hace ' + diasSinSincronizar + ' día' + (diasSinSincronizar === 1 ? '' : 's') + ').'
+    : 'No hay ninguna sincronización registrada todavía.';
+  const cuerpo = [
+    'Hola,',
+    '',
+    forzado
+      ? 'Aviso solicitado manualmente desde el panel de administración.'
+      : 'Aviso automático: hace ' + CRM_SYNC_AVISO_DIAS + ' días o más que no se sincronizan los productos desde el CRM.',
+    '',
+    lineaFecha,
+    estado.resumen ? ('Resumen de la última sincronización: ' + estado.resumen) : '',
+    '',
+    'Por favor, envía el listado en Excel de productos a actualizar, con estos campos informados para cada producto:',
+    COLUMNAS_CRM_EXCEL.map(c => '  - ' + c).join('\n'),
+    '',
+    'Un saludo,',
+    'Orencio Matas y Hnos, S.L.',
+  ].filter(l => l !== '').join('\n');
+
+  estado.emails.forEach(email => MailApp.sendEmail(email, asunto, cuerpo));
+  escribirConfiguracion_('crm_sync_ultimo_aviso', Utilities.formatDate(new Date(), zona, 'dd/MM/yyyy HH:mm'), 'Fecha del último correo de aviso de sincronización pendiente enviado');
+}
+
+// Ejecutar manualmente desde el editor para (re)crear el disparador
+// diario — mismo patrón que configurarTriggerRevisionCorreoProductos().
+function configurarTriggerAvisoSincronizacionCRM() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'revisarAvisoSincronizacionCRMProgramado')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger('revisarAvisoSincronizacionCRMProgramado')
+    .timeBased()
+    .everyDays(1)
+    .atHour(10)
+    .create();
+  console.log('Trigger creado: revisarAvisoSincronizacionCRMProgramado se ejecutará una vez al día, en la franja de las 10h.');
+}
+
+// Función que ejecuta el disparador diario. NUNCA envía si el envío
+// automático está deshabilitado, ni si todavía no ha pasado una semana
+// desde la última sincronización real — a diferencia del envío bajo
+// demanda desde el panel (panelCrmSyncEnviarAhora), que sí o sí envía.
+function revisarAvisoSincronizacionCRMProgramado() {
+  const estado = _leerEstadoAvisoSyncCRM_();
+  if (!estado.habilitado) {
+    console.log('Aviso de sincronización CRM: envío automático deshabilitado — no se hace nada.');
+    return;
+  }
+  const fechaUltima = _parsearFechaConfigCRM_(estado.ultimaFecha);
+  const diasSinSincronizar = fechaUltima
+    ? Math.floor((Date.now() - fechaUltima.getTime()) / (1000 * 60 * 60 * 24))
+    : Infinity; // nunca se ha sincronizado -> avisar sí o sí
+  if (diasSinSincronizar < CRM_SYNC_AVISO_DIAS) {
+    console.log('Aviso de sincronización CRM: hace ' + diasSinSincronizar + ' días de la última sincronización — todavía no toca avisar.');
+    return;
+  }
+  _enviarAvisoSincronizacionPendienteCRM_(estado, false);
+}
+
+// ── Acciones nuevas del panel de administración (protegidas por PIN,
+//    mismo patrón que procesarPanelValidarPin/procesarPanelBuscarProducto) ──
+function procesarPanelCrmSyncEstado(data) {
+  if (!verificarPin_(data.pin)) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    const estado = _leerEstadoAvisoSyncCRM_();
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      resultado: {
+        ultimaSincronizacion: estado.ultimaFecha,
+        resumen: estado.resumen,
+        habilitado: estado.habilitado,
+        emails: estado.emails,
+        ultimoAviso: estado.ultimoAviso,
+      },
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function procesarPanelCrmSyncToggle(data) {
+  if (!verificarPin_(data.pin)) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    escribirConfiguracion_('crm_sync_auto_habilitado', data.habilitar ? 'si' : 'no', 'si / no — si el aviso automático diario de sincronización pendiente está activo');
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true, resultado: { habilitado: !!data.habilitar },
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Envío bajo demanda — a propósito NO comprueba fecha ni si el envío
+// automático está habilitado (petición explícita: "esta sí o sí enviará
+// sin validar si ha pasado una semana o si está habilitado el proceso
+// automático").
+function procesarPanelCrmSyncEnviarAhora(data) {
+  if (!verificarPin_(data.pin)) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    const estado = _leerEstadoAvisoSyncCRM_();
+    _enviarAvisoSincronizacionPendienteCRM_(estado, true);
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true, resultado: { enviadoA: estado.emails },
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Prueba manual desde el editor de Apps Script (▶ Ejecutar) ───────────
+function testEnviarAvisoSincronizacionCRMForzado() {
+  procesarPanelCrmSyncEnviarAhora({ pin: PropertiesService.getScriptProperties().getProperty('PANEL_PIN') });
 }
 
 // ── Enviar Excel de productos sin imagen bajo demanda (desde el menú) ─────
