@@ -7053,7 +7053,7 @@ function _enviarAvisoSincronizacionPendienteCRM_(estado, forzado) {
     COLUMNAS_CRM_EXCEL.map(c => '  - ' + c).join('\n'),
     '',
     'Un saludo,',
-    'Orencio Matas y Hnos, S.L.'
+    'Administrador automático del portal web'
   );
   const cuerpoTexto = parrafosTexto.join('\n');
 
@@ -7076,7 +7076,7 @@ function _enviarAvisoSincronizacionPendienteCRM_(estado, forzado) {
       <ul style="margin:0 0 18px; padding-left:20px;">
         ${COLUMNAS_CRM_EXCEL.map(c => `<li style="margin-bottom:4px;">${escaparHtml(c)}</li>`).join('')}
       </ul>
-      <p style="margin:0;">Un saludo,<br>Orencio Matas y Hnos, S.L.</p>
+      <p style="margin:0;">Un saludo,<br>Administrador automático del portal web</p>
     </div>
   `;
 
