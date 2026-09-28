@@ -46,7 +46,7 @@ const GEMINI_API_KEY = 'PON_AQUI_TU_CLAVE_DE_GOOGLE_AI_STUDIO';
 // editor para que el trigger recoja la hora nueva (los días se leen en
 // cada ejecución, no hace falta recrear nada para ese cambio).
 const CRM_SYNC_AVISO_DIAS = 7;
-const CRM_SYNC_AVISO_HORA = 10;
+const CRM_SYNC_AVISO_HORA = 11;
 
 // ── Menú personalizado ─────────────────────────────────────────────────────
 function onOpen() {
