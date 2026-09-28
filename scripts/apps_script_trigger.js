@@ -37,6 +37,17 @@ const RECAPTCHA_SECRET_KEY = '6LeXpLMtAAAAABZz7xYNV4Tz6AdB-xau1BXyJywQ';
 // público como GitHub.
 const GEMINI_API_KEY = 'PON_AQUI_TU_CLAVE_DE_GOOGLE_AI_STUDIO';
 
+// Recordatorio de sincronización de productos pendiente desde el CRM (ver
+// bloque completo más abajo, junto a revisarAvisoSincronizacionCRMProgramado):
+// CRM_SYNC_AVISO_DIAS son los días sin sincronizar a partir de los que el
+// trigger diario manda el correo, y CRM_SYNC_AVISO_HORA es la hora (0-23)
+// en la que se crea ese trigger. Cambiar cualquiera de las dos aquí y
+// volver a ejecutar configurarTriggerAvisoSincronizacionCRM() desde el
+// editor para que el trigger recoja la hora nueva (los días se leen en
+// cada ejecución, no hace falta recrear nada para ese cambio).
+const CRM_SYNC_AVISO_DIAS = 7;
+const CRM_SYNC_AVISO_HORA = 10;
+
 // ── Menú personalizado ─────────────────────────────────────────────────────
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -6953,11 +6964,11 @@ function enviarResumenSincronizacionCRM_(resultado) {
 //
 // CONFIGURACIÓN NECESARIA (una sola vez): ejecutar manualmente desde el
 // editor configurarTriggerAvisoSincronizacionCRM() — crea el disparador
-// diario a las 10h. Igual que con configurarTriggerRevisionCorreoProductos(),
-// para cambiar la hora más adelante basta con editar .atHour(10) aquí
-// abajo y volver a ejecutar esa función.
-
-const CRM_SYNC_AVISO_DIAS = 7;
+// diario a la hora de CRM_SYNC_AVISO_HORA. Igual que con
+// configurarTriggerRevisionCorreoProductos(), para cambiar la hora más
+// adelante basta con editar esa constante (junto a CRM_SYNC_AVISO_DIAS,
+// al principio del script, con el resto de configuración) y volver a
+// ejecutar esa función.
 
 function registrarResultadoSincronizacionCRM_(resultado, fechaTexto) {
   const resumen = resultado.error
@@ -7094,9 +7105,9 @@ function configurarTriggerAvisoSincronizacionCRM() {
   ScriptApp.newTrigger('revisarAvisoSincronizacionCRMProgramado')
     .timeBased()
     .everyDays(1)
-    .atHour(10)
+    .atHour(CRM_SYNC_AVISO_HORA)
     .create();
-  console.log('Trigger creado: revisarAvisoSincronizacionCRMProgramado se ejecutará una vez al día, en la franja de las 10h.');
+  console.log('Trigger creado: revisarAvisoSincronizacionCRMProgramado se ejecutará una vez al día, en la franja de las ' + CRM_SYNC_AVISO_HORA + 'h.');
 }
 
 // Función que ejecuta el disparador diario. NUNCA envía si el envío
