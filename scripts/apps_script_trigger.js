@@ -7036,8 +7036,8 @@ function _enviarAvisoSincronizacionPendienteCRM_(estado, forzado) {
     ? 'Última sincronización: ' + estado.ultimaFecha + ' (hace ' + diasSinSincronizar + ' día' + (diasSinSincronizar === 1 ? '' : 's') + ').'
     : 'No hay ninguna sincronización registrada todavía.';
   const lineaAviso = forzado
-    ? 'Aviso solicitado manualmente desde el panel de administración.'
-    : 'Aviso automático: hace ' + CRM_SYNC_AVISO_DIAS + ' días o más que no se sincronizan los productos desde el CRM.';
+    ? 'Recordatorio solicitado manualmente desde el panel de administración.'
+    : 'Recordatorio automático: hace ' + CRM_SYNC_AVISO_DIAS + ' días o más que no se sincronizan los productos desde el CRM.';
 
   // Versión en texto plano — antes el propio código filtraba (por error)
   // TODAS las líneas en blanco entre párrafos, no solo la del resumen
