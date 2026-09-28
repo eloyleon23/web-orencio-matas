@@ -4904,6 +4904,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return [...document.querySelectorAll('#f-area-opciones input:checked')].map(i => i.value);
     }
 
+    // Sin ninguna casilla de área marcada, NO significa "todas las áreas"
+    // — antes se trataba así (areasSel.length ? filtrar : TODOS), pero eso
+    // hacía imposible aislar justo los productos SIN área informada (el
+    // aviso de Eloy: "si quiero evaluar los productos que puedan no tener
+    // área no me valdría"). Ahora, sin marcar nada, el filtro es
+    // "productos sin área informada" — coherente con cómo se comporta
+    // cualquier otro filtro de esta página (marcar nada = no aplicar ese
+    // filtro sería la lectura habitual, pero para área concretamente hace
+    // falta poder aislar los que la tienen vacía, así que el caso vacío
+    // pasa a tener este significado explícito en vez de "sin filtrar").
+    function tieneAreaInformada(p) {
+        return !!(p.area && p.area.toString().trim());
+    }
+    function productoCoincideConAreas(p, areasSel) {
+        return areasSel.length ? areasSel.includes(p.area) : !tieneAreaInformada(p);
+    }
+
     function actualizarTextoBotonArea() {
         const total = document.querySelectorAll('#f-area-opciones input').length;
         const sel = areasSeleccionadas();
@@ -5443,7 +5460,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cont = $('f-familias');
         cont.innerHTML = '';
 
-        let base = areasSel.length ? TODOS.filter(p => areasSel.includes(p.area)) : TODOS;
+        let base = TODOS.filter(p => productoCoincideConAreas(p, areasSel));
         const fabricantesSel = fabricantesTallerSeleccionados();
         if (areasSel.includes('talleres') && fabricantesSel.length) {
             base = base.filter(p => p.area !== 'talleres' || fabricantesSel.includes(p.fabricante));
@@ -5486,7 +5503,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         cont.innerHTML = '';
 
-        let base = areasSel.length ? TODOS.filter(p => areasSel.includes(p.area)) : TODOS;
+        let base = TODOS.filter(p => productoCoincideConAreas(p, areasSel));
         if (familiasSel.length) {
             const familiasSelUpper = familiasSel.map(f => f.toUpperCase());
             base = base.filter(p => p.familia && familiasSelUpper.includes(p.familia.toUpperCase()));
@@ -5963,7 +5980,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // nada en el caso normal.
             if (p.fecha_baja && p.fecha_baja.toString().trim()) return false;
 
-            if (areasSel.length && !areasSel.includes(p.area)) return false;
+            if (!productoCoincideConAreas(p, areasSel)) return false;
             if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
             if (familias.length && !familias.includes(p.familia)) return false;
             if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
@@ -8969,7 +8986,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const select = $('asistente-f-familia');
         const valorPrevio = select.value;
 
-        const base = areasSel.length ? TODOS.filter(p => areasSel.includes(p.area)) : TODOS;
+        const base = TODOS.filter(p => productoCoincideConAreas(p, areasSel));
         const familias = [...new Set(base.map(p => p.familia).filter(Boolean))];
         familias.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
@@ -8991,7 +9008,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         colaAsistente = TODOS.filter(p => {
             if (p.fabricante) return false; // catálogos estáticos de proveedor: no gestionados aquí
             if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
-            if (areasSelAsistente.length && !areasSelAsistente.includes(p.area)) return false;
+            if (!productoCoincideConAreas(p, areasSelAsistente)) return false;
             if (familiaFiltro && p.familia !== familiaFiltro) return false;
             if (textoFiltro && !sinAcentosAsistente(p.nombre).includes(textoFiltro)) return false;
 
