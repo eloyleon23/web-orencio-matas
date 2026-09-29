@@ -1080,9 +1080,21 @@ function guardarProducto(datos, filaExistente) {
 
   const ahora = Utilities.formatDate(new Date(), 'Europe/Madrid', 'dd/MM/yyyy HH:mm');
 
-  const fila = headers.map(h => {
+  // Al editar un producto existente, los formularios (panel_admin, el
+  // lateral de Apps Script) no envían todas las columnas de la hoja —
+  // por ejemplo, precio_mayor_sin_iva/precio_mayor_con_iva solo los
+  // rellena la sincronización con el CRM. Antes de esta corrección, esas
+  // columnas se vaciaban en cada edición al no venir en `datos`. Ahora
+  // se conserva el valor existente para cualquier columna que el
+  // formulario no incluya explícitamente en `datos`.
+  const filaAnterior = filaExistente
+    ? sheet.getRange(filaExistente, 1, 1, headers.length).getValues()[0]
+    : null;
+
+  const fila = headers.map((h, j) => {
     if (h === 'fecha_registro') return ahora;
-    const val = datos[h] !== undefined ? datos[h] : '';
+    if (datos[h] === undefined) return filaAnterior ? filaAnterior[j] : '';
+    const val = datos[h];
     if (['precio_sin_iva','precio_con_iva'].includes(h) && val !== '')
       return val.toString().replace('.', ',');
     return val;
