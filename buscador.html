@@ -106,6 +106,19 @@
         }
         .btn-volver:hover { color: white; }
 
+        /* Por defecto, un hijo directo de un grid tiene min-width:auto
+           — no se encoge por debajo del ancho de su propio contenido.
+           Sin esto, una fila con scroll horizontal interno (como
+           .mas-buscados__lista, ver más abajo) empuja esta sección
+           entera (y con ella TODO el grid, incluida la página en
+           móvil) más ancha que la pantalla, en vez de hacer scroll
+           solo dentro de sí misma — el propio overflow-x:auto de la
+           fila no sirve de nada si el contenedor nunca se deja encoger.
+           Bug real detectado por Eloy: "en la vista responsive móvil
+           se rompe la estética que ya tenía el buscador" al añadir el
+           carrusel de Novedades. */
+        .layout > section { min-width: 0; }
+
         .layout {
             /* Antes max-width fijo de 1180px: en pantallas grandes (portátiles
                anchos, monitores 1440p/4K) dejaba mucho margen sin usar a los
@@ -563,7 +576,7 @@
         .sugerencia-item strong { font-weight: 700; }
 
         /* Fase 2 de analítica de búsquedas — "Más buscados esta semana" */
-        .mas-buscados { margin: 0 0 16px; }
+        .mas-buscados { margin: 0 0 16px; min-width: 0; }
         .mas-buscados__titulo { font-size: 0.9rem; font-weight: 700; color: var(--dark); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
         .mas-buscados__lista {
             display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;
