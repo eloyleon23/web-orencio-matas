@@ -896,7 +896,16 @@
     const mockAlternativos = sol.alternativeProducts || [];
     const todosMock = mockRecomendados.concat(mockAlternativos);
 
-    Promise.all(todosMock.map((p) => D.resolverProductoReal(p.nombre, p.ref)))
+    // Precarga en UNA sola petición todas las referencias ya conocidas de
+    // la guía (?refs=...), antes de resolver cada producto por separado —
+    // si no se hiciera así, los N resolverProductoReal() de abajo
+    // dispararían N peticiones en paralelo para las mismas referencias en
+    // vez de una sola. Ver cargarProductosPorRefs en soluciones-data.js
+    // para el porqué completo (antes se descargaba el catálogo entero,
+    // varios MB, solo para resolver un puñado de productos).
+    const refsConocidas = todosMock.map((p) => p.ref).filter(Boolean);
+    (refsConocidas.length ? D.cargarProductosPorRefs(refsConocidas) : Promise.resolve([]))
+      .then(() => Promise.all(todosMock.map((p) => D.resolverProductoReal(p.nombre, p.ref))))
       .then((resueltos) => {
         const refsUsadas = new Set();
         const sinDuplicar = resueltos.map((real) => {
