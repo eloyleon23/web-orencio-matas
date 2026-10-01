@@ -3939,6 +3939,17 @@ window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
 
+// Analítica de búsquedas (Fase 1 del documento técnico, ver
+// supabase/schema.sql) — proyecto Supabase propio, totalmente
+// independiente del Apps Script de arriba, para no compartir cuota ni
+// latencia con el catálogo. La clave es la "anon" pública de Supabase,
+// restringida por Row Level Security a solo-inserción (ver schema.sql)
+// — es segura de exponer aquí, igual que ya lo es la URL de arriba.
+// Mientras no se rellenen (proyecto aún no creado), registrarEvento_()
+// no hace nada: el buscador funciona exactamente igual que hoy.
+window.SUPABASE_URL = '';
+window.SUPABASE_ANON_KEY = '';
+
 console.log('Configuración cargada');
 console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_URL ? 'Sí' : 'No');
 
@@ -5454,6 +5465,82 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
     }
 
+    // ── Analítica de búsquedas (Fase 1) ─────────────────────────────────
+    // Ver el documento técnico (enlace junto a SUPABASE_URL más arriba)
+    // para el diseño completo. Tres reglas que no deben romperse nunca
+    // al tocar esto:
+    //   1. Nunca bloquea ni ralentiza la búsqueda — "fire-and-forget",
+    //      sin await y sin que su fallo afecte a nada más.
+    //   2. Nunca guarda PII — solo lo descrito en el esquema (sección 11
+    //      del documento): ni IP, ni user-agent completo, ni nombre/email.
+    //   3. event_type es texto libre a propósito — añadir un tipo nuevo
+    //      no exige tocar este archivo ni la tabla.
+    function idSesionAnalitica_() {
+        const CLAVE = 'omAnaliticaSesionId';
+        try {
+            let id = localStorage.getItem(CLAVE);
+            if (!id) {
+                id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+                localStorage.setItem(CLAVE, id);
+            }
+            return id;
+        } catch (e) {
+            // Sin localStorage (navegación privada, cuota agotada...): un id
+            // por carga de página es un respaldo razonable — sigue
+            // permitiendo contar "sesiones únicas" aunque no persista entre
+            // visitas de la misma persona.
+            return 'sin-persistencia-' + Date.now().toString(36);
+        }
+    }
+
+    function tipoDispositivoAnalitica_() {
+        const ua = (navigator.userAgent || '').toLowerCase();
+        if (/ipad|tablet/.test(ua)) return 'tablet';
+        if (/mobi|iphone|android/.test(ua)) return 'mobile';
+        return 'desktop';
+    }
+
+    // Envía un evento a Supabase sin esperar respuesta ni condicionar
+    // nada a que llegue o no — si SUPABASE_URL/SUPABASE_ANON_KEY no
+    // están configuradas todavía, o la petición falla, simplemente no
+    // pasa nada (ver registro `.catch(() => {})`).
+    function registrarEventoBusqueda_(eventType, datos) {
+        const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+        if (!url || !key) return;
+        const fila = Object.assign({
+            event_type: eventType,
+            session_id: idSesionAnalitica_(),
+            device_type: tipoDispositivoAnalitica_(),
+            source_page: 'buscador',
+        }, datos);
+        try {
+            fetch(url.replace(/\/$/, '') + '/rest/v1/search_events', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': key,
+                    'Authorization': 'Bearer ' + key,
+                    'Prefer': 'return=minimal', // no hace falta la fila de vuelta — una respuesta más pequeña y rápida
+                },
+                body: JSON.stringify(fila),
+                keepalive: true, // sobrevive aunque el usuario navegue a otra página justo después de buscar
+            }).catch(() => {}); // un evento perdido es aceptable (sección 3 del documento); nunca debe generar un error visible
+        } catch (e) {
+            // Entornos sin fetch/keepalive (muy residual) — nunca debe
+            // romper la búsqueda por esto.
+        }
+    }
+
+    // Debounce propio para el REGISTRO (distinto del debounce que ya
+    // aplica aplicarFiltros() a la escritura en pantalla): aplicarFiltros()
+    // también se llama sin debounce desde otros filtros (checkboxes de
+    // área, selects...), y sin esto cada cambio de filtro encadenado
+    // generaría un evento por separado. 600ms de pausa real desde el
+    // último cambio = "la persona ha terminado de ajustar su búsqueda".
+    const registrarBusquedaInstantaneaEnDiferido_ = debounce((datos) => {
+        registrarEventoBusqueda_('SEARCH_COMPLETED', Object.assign({ search_mode: 'instant' }, datos));
+    }, 600);
+
     // ── Renderizar checkboxes de familia según el área seleccionado ──
     function renderFamilias() {
         const areasSel = areasSeleccionadas();
@@ -6146,6 +6233,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         renderResultados();
         actualizarBotonMostrarResultadosMovil();
 
+        // Solo se registra como "búsqueda" cuando hay texto de verdad —
+        // navegar solo con filtros (sin escribir nada) se deja para una
+        // fase posterior (FILTER_APPLIED, ver sección 7 del documento),
+        // para no mezclar ambas señales en la Fase 1.
+        if (texto) {
+            registrarBusquedaInstantaneaEnDiferido_({
+                query_raw: texto,
+                query_normalized: normalizar(texto),
+                area_filter: areasSel.join(',') || null,
+                family_filter: familias.join(',') || null,
+                price_min: isNaN(pMin) ? null : pMin,
+                price_max: isNaN(pMax) ? null : pMax,
+                sort_by: orden || null,
+                result_count: resultadosActuales.length,
+            });
+        }
+
         // Si la búsqueda es por código de producto (tecleado a mano o vía
         // escáner de códigos de barras) y da un único resultado, nos
         // ahorramos el clic extra: desplazamos el scroll hasta la tarjeta
@@ -6768,6 +6872,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) return;
 
+        // Analítica (Fase 1): aquí sí hay latencia real (la llamada a
+        // Gemini), a diferencia de la búsqueda instantánea — por eso esta
+        // ruta registra SUBMITTED al empezar y COMPLETED al terminar, con
+        // duration_ms real, en vez de un único evento.
+        const inicioIAMs = Date.now();
+        registrarEventoBusqueda_('SEARCH_SUBMITTED', {
+            search_mode: 'ai', gemini_used: true,
+            query_raw: texto, query_normalized: normalizar(texto),
+        });
+        function registrarResultadoIA_(resultCount) {
+            registrarEventoBusqueda_('SEARCH_COMPLETED', {
+                search_mode: 'ai', gemini_used: true,
+                query_raw: texto, query_normalized: normalizar(texto),
+                result_count: resultCount, duration_ms: Date.now() - inicioIAMs,
+            });
+        }
+
         let canceladoPorUsuario = false;
         const controlador = new AbortController();
         const limiteSeguridad = setTimeout(() => controlador.abort(), LIMITE_SEGURIDAD_ESPERA_MS);
@@ -6812,11 +6933,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                   mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
                   mensajeIA.style.display = '';
                   if (esOtraVez) { seccionIA.style.display = ''; } // se deja ver lo anterior debajo del aviso
+                  registrarResultadoIA_(0);
                   return;
               }
               if (data.fueraDeAlcance) {
                   mensajeIA.textContent = '⚠️ ' + (data.mensaje || 'Este asistente solo puede ayudarte a buscar productos de droguería, perfumería, pintura, limpieza del hogar y talleres/carrocerías.');
                   mensajeIA.style.display = '';
+                  registrarResultadoIA_(0);
                   return;
               }
               // Excluye siempre los productos ya mostrados en el/los
@@ -6845,6 +6968,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                       : 'La IA tampoco ha encontrado productos concretos para esta búsqueda.';
                   mensajeIA.style.display = '';
                   if (esOtraVez) { seccionIA.style.display = ''; btnOtraVez.style.display = 'none'; } // no tiene sentido seguir ofreciendo "otra vez" si ya no hay más
+                  registrarResultadoIA_(0);
                   return;
               }
               // Éxito de verdad: se recuerda para qué texto son válidos
@@ -6861,6 +6985,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               mensajeIA.style.display = 'none';
               $('sin-resultados').style.display = 'none';
               seccionIA.style.display = '';
+              registrarResultadoIA_(productos.length);
           })
           .catch(err => {
               if ($('f-texto').value.trim() !== texto) return;
@@ -6869,11 +6994,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                   mensajeIA.textContent = 'Búsqueda cancelada. Puedes intentarlo de nuevo cuando quieras.';
                   mensajeIA.style.display = '';
                   if (esOtraVez) seccionIA.style.display = '';
+                  registrarEventoBusqueda_('SEARCH_COMPLETED', {
+                      search_mode: 'ai', gemini_used: true, query_raw: texto, query_normalized: normalizar(texto),
+                      duration_ms: Date.now() - inicioIAMs, ended_in_action: 'cancelled_by_user',
+                  });
                   return;
               }
               console.error('Error en preguntarIAProducto (se continúa sin sugerencia de IA):', err);
               mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
               mensajeIA.style.display = '';
+              registrarResultadoIA_(0);
               if (esOtraVez) seccionIA.style.display = '';
           });
     }
