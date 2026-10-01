@@ -3391,6 +3391,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div id="mas-buscados-lista" class="mas-buscados__lista"></div>
         </div>
 
+        <!-- Fase 3: "Novedades" — a diferencia del módulo de arriba, este
+             es puramente de CATÁLOGO (fecha_alta real en el CRM), sin
+             tocar Supabase para nada: no depende de que haya tráfico ni
+             de ninguna vista agregada. -->
+        <div id="novedades" class="mas-buscados" style="display:none;">
+            <p class="mas-buscados__titulo"><i class="fa-solid fa-sparkles" style="color:var(--yellow);"></i> Novedades</p>
+            <div id="novedades-lista" class="mas-buscados__lista"></div>
+        </div>
+
         <div id="cargando-inicial" class="cargando-inicial">
             <i id="icono-cargando" class="fa-solid fa-spinner"></i>
             <p>Cargando catálogo de productos…</p>
@@ -4767,6 +4776,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     cargarProductosPrincipales();
     cargarMasBuscados_(); // en paralelo, no bloquea nada del catálogo
+    cargarNovedades_();   // igual: en paralelo, no bloquea nada del catálogo
 
     // ══════════════════════════════════════════════
     // ── Detección de productos.json actualizado en el servidor ──
@@ -5624,6 +5634,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               $('mas-buscados').style.display = '';
           })
           .catch(() => {}); // sin este módulo, el buscador sigue funcionando exactamente igual
+    }
+
+    // ── Fase 3: módulo "🆕 Novedades" ────────────────────────────────────
+    // Puramente de catálogo (fecha_alta real en el CRM, ver sección 8 del
+    // documento técnico) — a propósito NO pretende ordenar por interés
+    // real (eso exigiría saber qué productos concretos resultaron de
+    // cada búsqueda, dato que todavía no se registra — ver
+    // search_event_products en el documento). Cuando exista ese dato,
+    // este módulo podrá refinarse; hasta entonces, "más recientes" sin
+    // más es honesto con lo que sabemos hoy.
+    const MAX_TARJETAS_NOVEDADES = 10;
+    function cargarNovedades_() {
+        esperarCatalogoListo_(8000).then(() => {
+            if (!TODOS.length) return;
+            const productos = TODOS
+                .filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
+                .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta))
+                .slice(0, MAX_TARJETAS_NOVEDADES);
+            if (!productos.length) return;
+            const cont = $('novedades-lista');
+            cont.innerHTML = '';
+            productos.forEach(p => cont.appendChild(crearTarjeta(p)));
+            $('novedades').style.display = '';
+        });
     }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
