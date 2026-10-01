@@ -5487,6 +5487,50 @@ window.SOLUCIONES_DATA = (function () {
     return catalogoRealCachePromise;
   }
 
+  // Resolución LIGERA por referencia — a petición de Eloy: "tardan
+  // bastante en cargar los productos recomendados o que necesitan para
+  // la solución y en algún caso no me cargan" en el Centro de
+  // Soluciones. Causa real: cada página de solución esperaba a
+  // cargarCatalogoReal() (el catálogo ENTERO, varios MB) solo para
+  // resolver un puñado de referencias conocidas (recommendedProducts/
+  // alternativeProducts). El propio backend de Apps Script ya soporta
+  // desde hace tiempo un filtro `?refs=REF1,REF2,...` (añadido para este
+  // mismo problema en Escaparate OM — ver obtener_productos en
+  // apps_script_trigger.js) que devuelve solo esas referencias, de
+  // varios MB a unos pocos KB — pero el Centro de Soluciones nunca lo
+  // usaba. Esta función sí lo usa, con caché por referencia (para no
+  // repetir peticiones ya resueltas) y un timeout explícito (a
+  // diferencia de cargarCatalogoReal(), que no tenía ninguno y podía
+  // dejar la página esperando indefinidamente si Apps Script tardaba
+  // mucho en responder sin llegar a fallar del todo).
+  const TIMEOUT_PRODUCTOS_POR_REFS_MS = 8000;
+  const catalogoPorRefCache = {}; // ref -> producto, ya resuelto
+
+  function cargarProductosPorRefs(refs) {
+    const refsUnicas = Array.from(new Set((refs || []).filter(Boolean)));
+    const faltantes = refsUnicas.filter((r) => !catalogoPorRefCache[r]);
+    if (!faltantes.length) {
+      return Promise.resolve(refsUnicas.map((r) => catalogoPorRefCache[r]).filter(Boolean));
+    }
+
+    const url = PRODUCTOS_REMOTO_URL + '&refs=' + encodeURIComponent(faltantes.join(','));
+    const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), TIMEOUT_PRODUCTOS_POR_REFS_MS) : null;
+
+    return fetch(url, controller ? { signal: controller.signal } : {})
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('respuesta no OK'))))
+      .then((d) => {
+        (d.productos || []).forEach((p) => { catalogoPorRefCache[p.ref] = p; });
+        return refsUnicas.map((r) => catalogoPorRefCache[r]).filter(Boolean);
+      })
+      // Si falla o se agota el tiempo (Apps Script caído/lento, sin
+      // conexión...), se devuelve vacío sin más — quien llama a esta
+      // función ya sabe caer al catálogo completo como respaldo
+      // (resolverProductoReal) o a los datos mock (solucion-detalle.js).
+      .catch(() => [])
+      .finally(() => { if (timeoutId) clearTimeout(timeoutId); });
+  }
+
   function normalizarTexto(t) {
     return (t || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
@@ -5867,40 +5911,54 @@ window.SOLUCIONES_DATA = (function () {
   // todavía no tengan refs guardadas.
   function resolverProductoReal(nombreMock, refConocida) {
     const nombreNorm = normalizarTexto(nombreMock);
-    return cargarCatalogoReal().then((productos) => {
-      if (refConocida) {
-        const porRef = productos.find((p) => p.ref === refConocida);
-        if (porRef) return porRef;
-      }
 
-      // 1) Coincidencia exacta (varias soluciones ya usan el nombre real
-      //    tal cual, copiado directamente del catálogo al redactarlas).
-      const exacto = productos.find((p) => normalizarTexto(p.nombre) === nombreNorm);
-      if (exacto) return exacto;
+    // Camino rápido: si ya se sabe la referencia exacta, se resuelve
+    // contra el endpoint filtrado (?refs=...), sin descargar el
+    // catálogo completo. Si no la encuentra ahí (referencia mal escrita,
+    // producto dado de baja...) o no hay refConocida, se cae al
+    // catálogo completo de siempre, exactamente igual que antes.
+    const porRefLigero = refConocida
+      ? cargarProductosPorRefs([refConocida]).then((lista) => lista[0] || null)
+      : Promise.resolve(null);
 
-      // 2) El nombre real contiene el nombre mock completo, o viceversa
-      //    (p. ej. mock "Alex Abrillantador Terrazo/Mármol" vs real
-      //    "ALEX ABRILLANTADOR 1.500 ML.TERRAZO/MARMOL").
-      const porInclusion = productos.find((p) => {
-        const pn = normalizarTexto(p.nombre);
-        return pn.includes(nombreNorm) || nombreNorm.includes(pn);
+    return porRefLigero.then((porRefRapido) => {
+      if (porRefRapido) return porRefRapido;
+
+      return cargarCatalogoReal().then((productos) => {
+        if (refConocida) {
+          const porRef = productos.find((p) => p.ref === refConocida);
+          if (porRef) return porRef;
+        }
+
+        // 1) Coincidencia exacta (varias soluciones ya usan el nombre real
+        //    tal cual, copiado directamente del catálogo al redactarlas).
+        const exacto = productos.find((p) => normalizarTexto(p.nombre) === nombreNorm);
+        if (exacto) return exacto;
+
+        // 2) El nombre real contiene el nombre mock completo, o viceversa
+        //    (p. ej. mock "Alex Abrillantador Terrazo/Mármol" vs real
+        //    "ALEX ABRILLANTADOR 1.500 ML.TERRAZO/MARMOL").
+        const porInclusion = productos.find((p) => {
+          const pn = normalizarTexto(p.nombre);
+          return pn.includes(nombreNorm) || nombreNorm.includes(pn);
+        });
+        if (porInclusion) return porInclusion;
+
+        // 3) Ranking por palabras significativas compartidas — solo se
+        //    acepta con un mínimo de 2 palabras coincidentes, para no
+        //    mostrar como "real" un producto que en verdad no tiene
+        //    relación clara con lo que pedía la guía.
+        const palabras = palabrasSignificativas(nombreMock);
+        if (palabras.length < 2) return null;
+        let mejor = null;
+        let mejorPuntuacion = 0;
+        productos.forEach((p) => {
+          const pn = normalizarTexto(p.nombre || '');
+          const puntuacion = palabras.filter((w) => contienePalabra(conAbreviaturasExpandidas(pn), w)).length;
+          if (puntuacion > mejorPuntuacion) { mejorPuntuacion = puntuacion; mejor = p; }
+        });
+        return mejorPuntuacion >= 2 ? mejor : null;
       });
-      if (porInclusion) return porInclusion;
-
-      // 3) Ranking por palabras significativas compartidas — solo se
-      //    acepta con un mínimo de 2 palabras coincidentes, para no
-      //    mostrar como "real" un producto que en verdad no tiene
-      //    relación clara con lo que pedía la guía.
-      const palabras = palabrasSignificativas(nombreMock);
-      if (palabras.length < 2) return null;
-      let mejor = null;
-      let mejorPuntuacion = 0;
-      productos.forEach((p) => {
-        const pn = normalizarTexto(p.nombre || '');
-        const puntuacion = palabras.filter((w) => contienePalabra(conAbreviaturasExpandidas(pn), w)).length;
-        if (puntuacion > mejorPuntuacion) { mejorPuntuacion = puntuacion; mejor = p; }
-      });
-      return mejorPuntuacion >= 2 ? mejor : null;
     });
   }
 
@@ -6113,6 +6171,6 @@ window.SOLUCIONES_DATA = (function () {
     get soluciones() { return soluciones; },
     cargarSolucionesReales,
     encontrarSolucionPorDiagnostico, diagnosticarPorTexto,
-    normalizarTexto, cargarCatalogoReal, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo, buscarCandidatosProductosParaIA, buscarProductosPorCoincidenciaFuerte, obtenerFichaTecnicaProducto,
+    normalizarTexto, cargarCatalogoReal, cargarProductosPorRefs, buscarProductosEnCatalogo, buscarSolucionesPorTexto, buscarSolucionesCombinado, buscarFichaTecnicaPorTexto, resolverProductoReal, buscarSolucionIA, obtenerTaxonomiaCatalogo, buscarCandidatosProductosParaIA, buscarProductosPorCoincidenciaFuerte, obtenerFichaTecnicaProducto,
   };
 })();
