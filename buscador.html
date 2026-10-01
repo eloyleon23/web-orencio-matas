@@ -562,6 +562,16 @@
         .sugerencia-item i { color: var(--muted); font-size: 0.85rem; flex-shrink: 0; }
         .sugerencia-item strong { font-weight: 700; }
 
+        /* Fase 2 de analítica de búsquedas — "Más buscados esta semana" */
+        .mas-buscados { margin: 0 0 16px; }
+        .mas-buscados__titulo { font-size: 0.9rem; font-weight: 700; color: var(--dark); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+        .mas-buscados__lista { display: flex; flex-wrap: wrap; gap: 8px; }
+        .mas-buscados__chip {
+            border: 1px solid var(--border); background: #fff; border-radius: 20px;
+            padding: 6px 14px; font-size: 0.85rem; color: var(--dark); cursor: pointer;
+        }
+        .mas-buscados__chip:hover { background: var(--light); }
+
 
         .btn-escanear-codigo.disponible { display: flex; }
         /* En escritorio (PC) el escáner no procede — solo tiene sentido con
@@ -3373,6 +3383,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </div>
 
+        <!-- Fase 2 de analítica de búsquedas: términos más buscados en los
+             últimos 7 días (ver supabase/02_fase2_vistas_agregadas.sql).
+             Oculto por defecto — solo se muestra si hay datos reales que
+             cumplan el volumen mínimo; nunca "cajón vacío". -->
+        <div id="mas-buscados" class="mas-buscados" style="display:none;">
+            <p class="mas-buscados__titulo"><i class="fa-solid fa-fire" style="color:var(--yellow);"></i> Más buscados esta semana</p>
+            <div id="mas-buscados-lista" class="mas-buscados__lista"></div>
+        </div>
+
         <div id="cargando-inicial" class="cargando-inicial">
             <i id="icono-cargando" class="fa-solid fa-spinner"></i>
             <p>Cargando catálogo de productos…</p>
@@ -4748,6 +4767,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     cargarProductosPrincipales();
+    cargarMasBuscados_(); // en paralelo, no bloquea nada del catálogo
 
     // ══════════════════════════════════════════════
     // ── Detección de productos.json actualizado en el servidor ──
@@ -5540,6 +5560,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const registrarBusquedaInstantaneaEnDiferido_ = debounce((datos) => {
         registrarEventoBusqueda_('SEARCH_COMPLETED', Object.assign({ search_mode: 'instant' }, datos));
     }, 600);
+
+    // ── Fase 2: módulo "🔥 Más buscados esta semana" ────────────────────
+    // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
+    // ver supabase/02_fase2_vistas_agregadas.sql) — nunca la tabla de
+    // eventos en crudo. Si no hay Supabase configurado, falla la
+    // petición, o todavía no hay suficiente volumen real (la vista
+    // aplica un mínimo de sesiones únicas), la sección se queda oculta
+    // sin más: nunca se muestra un cajón vacío.
+    function cargarMasBuscados_() {
+        const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+        if (!url || !key) return;
+        fetch(url.replace(/\/$/, '') + '/rest/v1/mv_terminos_mas_buscados_7d?select=query_normalized,sesiones_unicas&order=sesiones_unicas.desc&limit=8', {
+            headers: { 'apikey': key, 'Authorization': 'Bearer ' + key },
+        })
+          .then(r => r.ok ? r.json() : [])
+          .then(terminos => {
+              if (!Array.isArray(terminos) || !terminos.length) return;
+              const cont = $('mas-buscados-lista');
+              cont.innerHTML = '';
+              terminos.forEach(t => {
+                  const chip = document.createElement('button');
+                  chip.type = 'button';
+                  chip.className = 'mas-buscados__chip';
+                  chip.textContent = t.query_normalized;
+                  chip.onclick = () => {
+                      $('f-texto').value = t.query_normalized;
+                      aplicarFiltros();
+                      $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  };
+                  cont.appendChild(chip);
+              });
+              $('mas-buscados').style.display = '';
+          })
+          .catch(() => {}); // sin este módulo, el buscador sigue funcionando exactamente igual
+    }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
     function renderFamilias() {
