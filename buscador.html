@@ -7128,8 +7128,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Abrir modal con detalle del producto ──
+    // Fase 4: PRODUCT_VIEWED. De-duplicado simple (mismo ref en los
+    // últimos 5s no se vuelve a registrar) — evita ruido si el modal se
+    // reabre varias veces seguidas (doble clic, navegación atrás/adelante).
+    let ultimaRefVistaAnalitica_ = null, ultimaVistaAnaliticaMs_ = 0;
+    function registrarProductoVisto_(p) {
+        const ahora = Date.now();
+        if (p.ref === ultimaRefVistaAnalitica_ && (ahora - ultimaVistaAnaliticaMs_) < 5000) return;
+        ultimaRefVistaAnalitica_ = p.ref;
+        ultimaVistaAnaliticaMs_ = ahora;
+        registrarEventoBusqueda_('PRODUCT_VIEWED', { product_ref: p.ref });
+    }
+
     function abrirModalProducto(p, opciones) {
         opciones = opciones || {};
+        registrarProductoVisto_(p);
         const imgSrc = urlImagenProducto(p, 800) || '';
         const tieneImagen = !!imgSrc;
 
