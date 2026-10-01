@@ -4728,6 +4728,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             renderAtributosTaller();
             renderAtributosPintura();
             aplicarFiltros(); // Actualizar resultados con los nuevos productos
+            actualizarModulosDescubrimiento_(); // TODOS ha cambiado (nuevos catálogos de proveedor) — ver el porqué junto a su definición
         }).catch(err => {
             console.warn('Error al cargar productos adicionales:', err);
             // No mostramos error al usuario ya que los productos principales ya funcionan
@@ -4784,12 +4785,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 '<i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo cargar el catálogo de productos. Inténtalo de nuevo más tarde.</p>';
             return;
         }
+        // Aquí, y no antes: en este punto TODOS ya refleja la reconciliación
+        // con la fuente en vivo (paso 2 de arriba) cuando la ha habido, no
+        // solo el primer pintado instantáneo del JSON estático — ver el
+        // porqué completo junto a actualizarModulosDescubrimiento_().
+        actualizarModulosDescubrimiento_();
         cargarProductosAdicionalesEnSegundoPlano();
     }
 
     cargarProductosPrincipales();
-    cargarMasBuscados_(); // en paralelo, no bloquea nada del catálogo
-    cargarNovedades_();   // igual: en paralelo, no bloquea nada del catálogo
 
     // ══════════════════════════════════════════════
     // ── Detección de productos.json actualizado en el servidor ──
@@ -4844,6 +4848,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // no se veía reflejada en la lista hasta el siguiente cambio
             // de filtro o el sondeo periódico (hasta 5 minutos después).
             aplicarFiltros();
+            actualizarModulosDescubrimiento_();
         } catch (e) {
             // Si falla, no pasa nada: el próximo sondeo periódico lo comprobará igual
         }
@@ -4904,6 +4909,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const texto = await resp.text();
             const data = JSON.parse(texto);
             recargarProductosPreservandoFiltros(data);
+            actualizarModulosDescubrimiento_();
             hashConocido = hashPendiente || await calcularHash(texto);
             hashPendiente = null;
             avisoDescartado = false;
@@ -5583,7 +5589,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         registrarEventoBusqueda_('SEARCH_COMPLETED', Object.assign({ search_mode: 'instant' }, datos));
     }, 600);
 
-    // ── Fase 2: módulo "🔥 Más buscados esta semana" ────────────────────
+    // ── Fase 2/3: módulos de descubrimiento ("🔥 Más buscados esta
+    // semana" y "🆕 Novedades") ─────────────────────────────────────────
+    // Bug real reportado por Eloy: tras actualizar la imagen de un
+    // producto, el cambio se veía en el grid normal pero NO en estos
+    // carruseles. Causa real: se llamaban una ÚNICA vez, nada más
+    // entrar en la página, esperando solo a que TODOS tuviera ALGÚN
+    // dato (TODOS.length > 0) — eso se cumple ya con el primer pintado
+    // INSTANTÁNEO desde el JSON estático (rápido pero potencialmente
+    // desactualizado), antes de que termine la reconciliación con la
+    // fuente EN VIVO de Apps Script (que es la que de verdad trae una
+    // imagen recién actualizada) — ver cargarProductosPrincipales().
+    // Una vez construidas las tarjetas con ese primer TODOS, nunca se
+    // volvían a reconstruir, así que esa imagen desactualizada se
+    // quedaba fija aunque el resto del buscador ya tuviera la buena.
+    //
+    // Arreglo: en vez de adivinar cuándo "ya hay algo" en TODOS, estos
+    // módulos se recalculan en los MISMOS puntos exactos donde el
+    // propio código ya sabe que el catálogo acaba de cambiar de verdad
+    // (y por eso ya llama a aplicarFiltros() para refrescar el grid
+    // normal) — ver actualizarModulosDescubrimiento_() y sus llamadas:
+    // tras la reconciliación inicial, tras cargar catálogos adicionales
+    // en segundo plano, tras re-sincronizar tras una acción propia, y
+    // tras aceptar el banner de "hay una versión más reciente".
+    function actualizarModulosDescubrimiento_() {
+        cargarNovedades_();
+        cargarMasBuscados_();
+    }
+
     // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
     // ver supabase/02_fase2_vistas_agregadas.sql) — nunca la tabla de
     // eventos en crudo. La vista da TÉRMINOS (es lo único que hoy se
@@ -5595,9 +5628,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // coincideReferencia()), así que el resultado es exactamente el
     // mismo producto que esa búsqueda real habría mostrado, nunca una
     // suposición aparte. Si no hay Supabase configurado, falla la
-    // petición, el catálogo tarda en llegar, o ningún término resuelve
-    // ya a un producto real (p. ej. se dio de baja), la sección se
-    // queda oculta sin más: nunca un hueco vacío.
+    // petición, el catálogo todavía no ha llegado, o ningún término
+    // resuelve ya a un producto real (p. ej. se dio de baja), la
+    // sección se queda oculta sin más: nunca un hueco vacío.
+    //
+    // Los términos se piden a Supabase UNA sola vez (no cambian de un
+    // refresco de catálogo al siguiente) y se cachean — cada llamada
+    // posterior de actualizarModulosDescubrimiento_() solo vuelve a
+    // RESOLVER esos mismos términos contra el TODOS más reciente, sin
+    // repetir la petición de red.
     function productosQueCoincidenConTexto_(texto) {
         const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
         if (esBusquedaNumerica(texto)) {
@@ -5611,45 +5650,43 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const MAX_TARJETAS_MAS_BUSCADOS = 10;
     const MAX_PRODUCTOS_POR_TERMINO = 2; // para que un único término muy genérico no acapare toda la fila
 
-    function esperarCatalogoListo_(maxEsperaMs) {
-        return new Promise(resolve => {
-            const inicio = Date.now();
-            (function intentar() {
-                if (TODOS.length > 0 || Date.now() - inicio > maxEsperaMs) return resolve();
-                setTimeout(intentar, 200);
-            })();
-        });
+    function renderMasBuscados_(terminos) {
+        if (!TODOS.length || !terminos.length) return;
+        const refsUsadas = new Set();
+        const productos = [];
+        for (const t of terminos) {
+            if (productos.length >= MAX_TARJETAS_MAS_BUSCADOS) break;
+            const coincidencias = productosQueCoincidenConTexto_(t.query_normalized)
+                .filter(p => !refsUsadas.has(p.ref))
+                .slice(0, MAX_PRODUCTOS_POR_TERMINO);
+            coincidencias.forEach(p => { refsUsadas.add(p.ref); productos.push(p); });
+        }
+        if (!productos.length) return;
+        const cont = $('mas-buscados-lista');
+        cont.innerHTML = '';
+        productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
+        $('mas-buscados').style.display = '';
     }
 
+    let terminosMasBuscadosCache_ = null; // null = aún no pedidos; [] = pedidos, sin datos suficientes
     function cargarMasBuscados_() {
+        if (!TODOS.length) return;
+        if (terminosMasBuscadosCache_) { renderMasBuscados_(terminosMasBuscadosCache_); return; }
+
         const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
         if (!url || !key) return;
-        const peticionTerminos = fetch(url.replace(/\/$/, '') + '/rest/v1/mv_terminos_mas_buscados_7d?select=query_normalized,sesiones_unicas&order=sesiones_unicas.desc&limit=20', {
+        fetch(url.replace(/\/$/, '') + '/rest/v1/mv_terminos_mas_buscados_7d?select=query_normalized,sesiones_unicas&order=sesiones_unicas.desc&limit=20', {
             headers: { 'apikey': key, 'Authorization': 'Bearer ' + key },
-        }).then(r => r.ok ? r.json() : []).catch(() => []);
-
-        Promise.all([peticionTerminos, esperarCatalogoListo_(8000)])
-          .then(([terminos]) => {
-              if (!Array.isArray(terminos) || !terminos.length || !TODOS.length) return;
-              const refsUsadas = new Set();
-              const productos = [];
-              for (const t of terminos) {
-                  if (productos.length >= MAX_TARJETAS_MAS_BUSCADOS) break;
-                  const coincidencias = productosQueCoincidenConTexto_(t.query_normalized)
-                      .filter(p => !refsUsadas.has(p.ref))
-                      .slice(0, MAX_PRODUCTOS_POR_TERMINO);
-                  coincidencias.forEach(p => { refsUsadas.add(p.ref); productos.push(p); });
-              }
-              if (!productos.length) return;
-              const cont = $('mas-buscados-lista');
-              cont.innerHTML = '';
-              productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
-              $('mas-buscados').style.display = '';
+        })
+          .then(r => r.ok ? r.json() : [])
+          .then(terminos => {
+              terminosMasBuscadosCache_ = Array.isArray(terminos) ? terminos : [];
+              renderMasBuscados_(terminosMasBuscadosCache_);
           })
           .catch(() => {}); // sin este módulo, el buscador sigue funcionando exactamente igual
     }
 
-    // ── Fase 3: módulo "🆕 Novedades" ────────────────────────────────────
+    // ── Módulo "🆕 Novedades" ────────────────────────────────────────────
     // Puramente de catálogo (fecha_alta real en el CRM, ver sección 8 del
     // documento técnico) — a propósito NO pretende ordenar por interés
     // real (eso exigiría saber qué productos concretos resultaron de
@@ -5659,18 +5696,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // más es honesto con lo que sabemos hoy.
     const MAX_TARJETAS_NOVEDADES = 10;
     function cargarNovedades_() {
-        esperarCatalogoListo_(8000).then(() => {
-            if (!TODOS.length) return;
-            const productos = TODOS
-                .filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
-                .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta))
-                .slice(0, MAX_TARJETAS_NOVEDADES);
-            if (!productos.length) return;
-            const cont = $('novedades-lista');
-            cont.innerHTML = '';
-            productos.forEach(p => cont.appendChild(crearTarjeta(p)));
-            $('novedades').style.display = '';
-        });
+        if (!TODOS.length) return;
+        const productos = TODOS
+            .filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
+            .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta))
+            .slice(0, MAX_TARJETAS_NOVEDADES);
+        if (!productos.length) return;
+        const cont = $('novedades-lista');
+        cont.innerHTML = '';
+        productos.forEach(p => cont.appendChild(crearTarjeta(p)));
+        $('novedades').style.display = '';
     }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
