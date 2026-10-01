@@ -565,12 +565,11 @@
         /* Fase 2 de analítica de búsquedas — "Más buscados esta semana" */
         .mas-buscados { margin: 0 0 16px; }
         .mas-buscados__titulo { font-size: 0.9rem; font-weight: 700; color: var(--dark); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
-        .mas-buscados__lista { display: flex; flex-wrap: wrap; gap: 8px; }
-        .mas-buscados__chip {
-            border: 1px solid var(--border); background: #fff; border-radius: 20px;
-            padding: 6px 14px; font-size: 0.85rem; color: var(--dark); cursor: pointer;
+        .mas-buscados__lista {
+            display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;
+            scroll-snap-type: x proximity;
         }
-        .mas-buscados__chip:hover { background: var(--light); }
+        .mas-buscados__lista > .producto-card { flex: 0 0 150px; scroll-snap-align: start; }
 
 
         .btn-escanear-codigo.disponible { display: flex; }
@@ -5564,33 +5563,64 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Fase 2: módulo "🔥 Más buscados esta semana" ────────────────────
     // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
     // ver supabase/02_fase2_vistas_agregadas.sql) — nunca la tabla de
-    // eventos en crudo. Si no hay Supabase configurado, falla la
-    // petición, o todavía no hay suficiente volumen real (la vista
-    // aplica un mínimo de sesiones únicas), la sección se queda oculta
-    // sin más: nunca se muestra un cajón vacío.
+    // eventos en crudo. La vista da TÉRMINOS (es lo único que hoy se
+    // registra con rigor, ver el propio SQL), pero a petición de Eloy
+    // ("veo más interesante para el usuario ver esos productos y no un
+    // criterio de búsqueda") cada término se resuelve aquí mismo, en el
+    // cliente, contra el catálogo YA cargado en memoria — con el mismo
+    // motor de coincidencia que usa la búsqueda normal (coincide() /
+    // coincideReferencia()), así que el resultado es exactamente el
+    // mismo producto que esa búsqueda real habría mostrado, nunca una
+    // suposición aparte. Si no hay Supabase configurado, falla la
+    // petición, el catálogo tarda en llegar, o ningún término resuelve
+    // ya a un producto real (p. ej. se dio de baja), la sección se
+    // queda oculta sin más: nunca un hueco vacío.
+    function productosQueCoincidenConTexto_(texto) {
+        const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        if (esBusquedaNumerica(texto)) {
+            return activos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto));
+        }
+        return activos.filter(p =>
+            coincide(p.nombre, texto) || coincide(p.ref, texto) ||
+            coincide(p.familia, texto) || coincide(p.subfamilia, texto));
+    }
+
+    const MAX_TARJETAS_MAS_BUSCADOS = 10;
+    const MAX_PRODUCTOS_POR_TERMINO = 2; // para que un único término muy genérico no acapare toda la fila
+
+    function esperarCatalogoListo_(maxEsperaMs) {
+        return new Promise(resolve => {
+            const inicio = Date.now();
+            (function intentar() {
+                if (TODOS.length > 0 || Date.now() - inicio > maxEsperaMs) return resolve();
+                setTimeout(intentar, 200);
+            })();
+        });
+    }
+
     function cargarMasBuscados_() {
         const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
         if (!url || !key) return;
-        fetch(url.replace(/\/$/, '') + '/rest/v1/mv_terminos_mas_buscados_7d?select=query_normalized,sesiones_unicas&order=sesiones_unicas.desc&limit=8', {
+        const peticionTerminos = fetch(url.replace(/\/$/, '') + '/rest/v1/mv_terminos_mas_buscados_7d?select=query_normalized,sesiones_unicas&order=sesiones_unicas.desc&limit=20', {
             headers: { 'apikey': key, 'Authorization': 'Bearer ' + key },
-        })
-          .then(r => r.ok ? r.json() : [])
-          .then(terminos => {
-              if (!Array.isArray(terminos) || !terminos.length) return;
+        }).then(r => r.ok ? r.json() : []).catch(() => []);
+
+        Promise.all([peticionTerminos, esperarCatalogoListo_(8000)])
+          .then(([terminos]) => {
+              if (!Array.isArray(terminos) || !terminos.length || !TODOS.length) return;
+              const refsUsadas = new Set();
+              const productos = [];
+              for (const t of terminos) {
+                  if (productos.length >= MAX_TARJETAS_MAS_BUSCADOS) break;
+                  const coincidencias = productosQueCoincidenConTexto_(t.query_normalized)
+                      .filter(p => !refsUsadas.has(p.ref))
+                      .slice(0, MAX_PRODUCTOS_POR_TERMINO);
+                  coincidencias.forEach(p => { refsUsadas.add(p.ref); productos.push(p); });
+              }
+              if (!productos.length) return;
               const cont = $('mas-buscados-lista');
               cont.innerHTML = '';
-              terminos.forEach(t => {
-                  const chip = document.createElement('button');
-                  chip.type = 'button';
-                  chip.className = 'mas-buscados__chip';
-                  chip.textContent = t.query_normalized;
-                  chip.onclick = () => {
-                      $('f-texto').value = t.query_normalized;
-                      aplicarFiltros();
-                      $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  };
-                  cont.appendChild(chip);
-              });
+              productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
               $('mas-buscados').style.display = '';
           })
           .catch(() => {}); // sin este módulo, el buscador sigue funcionando exactamente igual
