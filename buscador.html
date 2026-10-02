@@ -662,6 +662,9 @@
         .categorias-carrusel {
             display: flex; gap: 14px; overflow-x: auto; padding-bottom: 4px;
             scroll-snap-type: x proximity;
+            /* A petición de Eloy: un poco más de aire antes del grid de
+               resultados que viene justo debajo. */
+            margin: 0 0 24px;
         }
         .categoria-bloque {
             flex: 0 0 225px;
@@ -671,6 +674,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            cursor: pointer;
         }
         .categoria-bloque--rojo { background: linear-gradient(135deg, var(--red), #8c1010); color: #fff; }
         .categoria-bloque--verde { background: linear-gradient(135deg, var(--green), #1c4a22); color: #fff; }
@@ -702,6 +706,15 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+        }
+        /* Logo genérico de respaldo (sin foto propia): más pequeño y
+           difuminado, nunca a tamaño completo — a tamaño completo, en una
+           celda tan pequeña, se veía "ampliado"/mal (bug real reportado
+           por Eloy). */
+        .categoria-bloque__item-generico {
+            max-width: 55% !important;
+            max-height: 55% !important;
+            opacity: 0.55;
         }
         .categoria-bloque__item:hover { filter: brightness(0.96); }
 
@@ -6061,7 +6074,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // llega a mostrarse, así que una categoría "de prueba" sin productos
     // reales simplemente no aparece, sin romper nada.
     const PRODUCTOS_POR_BLOQUE_CATEGORIA = 4;
-    const MAX_BLOQUES_CATEGORIAS = 10;
+    const MAX_BLOQUES_CATEGORIAS = 20;
 
     function estacionActual_() {
         const mes = new Date().getMonth(); // 0=enero … 11=diciembre
@@ -6074,46 +6087,90 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return normalizar([p.nombre, p.familia, p.subfamilia, p.fabricante].filter(Boolean).join(' '));
     }
 
+    // "terminoBusqueda": texto que se escribe en el buscador al clicar el
+    // bloque entero (ver aplicarFiltroCategoria_) — reutiliza el motor de
+    // búsqueda normal (coincide()/normalizar()) en vez de inventar un
+    // mecanismo de filtrado nuevo, igual que ya hacen los chips de "Marcas
+    // más buscadas". No tiene por qué ser idéntico a "match" (que puede
+    // combinar varias palabras con AND/OR): solo el término más
+    // representativo de la categoría.
     const DEFINICION_BLOQUES_CATEGORIAS_ = [
-        { id: 'detergentes',    titulo: 'Detergentes en polvo y líquidos',   match: t => t.includes('detergente') },
-        { id: 'ceys',           titulo: 'Productos Ceys',                    match: t => t.includes('ceys') },
-        { id: 'werku',          titulo: 'Productos Werku',                   match: t => t.includes('werku') },
-        { id: 'titan-eco',      titulo: 'Pintura Titán Ecológica',           match: t => t.includes('titan') && t.includes('eco') },
-        { id: 'titanpro',       titulo: 'Pintura TitanPro',                  match: t => t.includes('titanpro') || t.includes('titan pro') },
-        { id: 'posidon',        titulo: 'Colonias Poseidón',                 match: t => t.includes('posidon') || t.includes('poseidon') },
-        { id: 'aire-sevilla',   titulo: 'Colonias Aire de Sevilla',          match: t => t.includes('aire de sevilla') },
-        { id: 'radiadores',     titulo: 'Para calentar este invierno',       match: t => t.includes('radiador') || t.includes('calefactor') || t.includes('estufa'), estacion: 'frio' },
-        { id: 'insectos',       titulo: 'Contra los insectos del verano',    match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('antipolillas'), estacion: 'calor' },
-        { id: 'piscinas',       titulo: 'Todo para tu piscina',              match: t => t.includes('piscina'), estacion: 'calor' },
-        { id: 'esmaltes',       titulo: 'Esmaltes para pintar',              match: t => t.includes('esmalte') },
-        { id: 'barnices',       titulo: 'Barnices y protectores de madera',  match: t => t.includes('barniz') },
-        { id: 'imprimaciones',  titulo: 'Imprimaciones y selladores',        match: t => t.includes('imprimacion') || t.includes('imp.') },
-        { id: 'colonias',       titulo: 'Colonias y perfumería',             match: t => t.includes('colonia') || t.includes('perfume') },
-        { id: 'limpieza-hogar', titulo: 'Limpieza del hogar',                match: t => t.includes('limpiahogar') || t.includes('limpiador') || t.includes('lejia') || t.includes('friegasuelos') },
+        { id: 'detergentes',      titulo: 'Detergentes en polvo y líquidos',   match: t => t.includes('detergente'), terminoBusqueda: 'detergente' },
+        { id: 'lavavajillas',     titulo: 'Lavavajillas',                      match: t => t.includes('lavavajillas'), terminoBusqueda: 'lavavajillas' },
+        { id: 'ceys',             titulo: 'Productos Ceys',                    match: t => t.includes('ceys'), terminoBusqueda: 'ceys' },
+        { id: 'werku',            titulo: 'Productos Werku',                   match: t => t.includes('werku'), terminoBusqueda: 'werku' },
+        { id: 'titan-eco',        titulo: 'Pintura Titán Ecológica',           match: t => t.includes('titan') && t.includes('eco'), terminoBusqueda: 'titan eco' },
+        { id: 'titanpro',         titulo: 'Pintura TitanPro',                  match: t => t.includes('titanpro') || t.includes('titan pro'), terminoBusqueda: 'titanpro' },
+        { id: 'posidon',          titulo: 'Colonias Poseidón',                 match: t => t.includes('posidon') || t.includes('poseidon'), terminoBusqueda: 'posidon' },
+        { id: 'aire-sevilla',     titulo: 'Colonias Aire de Sevilla',          match: t => t.includes('aire de sevilla'), terminoBusqueda: 'aire de sevilla' },
+        { id: 'radiadores',       titulo: 'Para calentar este invierno',       match: t => t.includes('radiador') || t.includes('calefactor') || t.includes('estufa'), estacion: 'frio', terminoBusqueda: 'radiador' },
+        { id: 'insectos',         titulo: 'Contra los insectos del verano',    match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('antipolillas'), estacion: 'calor', terminoBusqueda: 'insecticida' },
+        { id: 'piscinas',         titulo: 'Todo para tu piscina',              match: t => t.includes('piscina'), estacion: 'calor', terminoBusqueda: 'piscina' },
+        { id: 'esmaltes',         titulo: 'Esmaltes para pintar',              match: t => t.includes('esmalte'), terminoBusqueda: 'esmalte' },
+        { id: 'barnices',         titulo: 'Barnices y protectores de madera',  match: t => t.includes('barniz'), terminoBusqueda: 'barniz' },
+        { id: 'imprimaciones',    titulo: 'Imprimaciones y selladores',        match: t => t.includes('imprimacion') || t.includes('imp.'), terminoBusqueda: 'imprimacion' },
+        { id: 'colonias',         titulo: 'Colonias y perfumería',             match: t => t.includes('colonia') || t.includes('perfume'), terminoBusqueda: 'colonia' },
+        { id: 'limpieza-hogar',   titulo: 'Limpieza del hogar',                match: t => t.includes('limpiahogar') || t.includes('limpiador') || t.includes('lejia') || t.includes('friegasuelos'), terminoBusqueda: 'limpiador' },
+        { id: 'desatascadores',   titulo: 'Desatascadores',                    match: t => t.includes('desatascador') || t.includes('desatasca'), terminoBusqueda: 'desatascador' },
+        { id: 'ambientadores',    titulo: 'Ambientadores',                     match: t => t.includes('ambientador'), terminoBusqueda: 'ambientador' },
+        { id: 'papel-higienico',  titulo: 'Papel higiénico',                   match: t => t.includes('papel higienico') || t.includes('higienico'), terminoBusqueda: 'papel higienico' },
+        { id: 'cepillos-fregonas', titulo: 'Cepillos y fregonas',              match: t => t.includes('fregona') || t.includes('cepillo'), terminoBusqueda: 'fregona' },
     ];
 
     // Tarjeta pequeña (solo imagen, sin nombre/precio) para la rejilla 2x2
-    // de un bloque de categoría — a diferencia de crearTarjeta() (tarjeta
-    // completa de Novedades/Más buscados), aquí el bloque entero ya lleva
-    // el título, así que cada celda es solo la imagen; clicar abre el
-    // modal del producto igual que cualquier otra tarjeta del buscador.
+    // de un bloque de categoría. A diferencia de crearTarjeta()
+    // (tarjeta completa de Novedades/Más buscados) o de
+    // sinImagenFabricanteHtml() (pensada para tarjetas grandes, con el
+    // nombre del producto superpuesto): aquí la celda es MUY pequeña
+    // ("solo la imagen, en pequeño", a petición de Eloy), así que ese
+    // nombre superpuesto a 4 líneas quedaba amontonado encima del logo y
+    // se veía "ampliado"/mal — el fallback sin imagen propia se reduce
+    // aquí a solo el logo, sin texto.
     function crearItemBloqueCategoria_(p) {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'categoria-bloque__item';
         item.dataset.ref = p.ref;
         item.setAttribute('aria-label', p.nombre);
-        item.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
+        item.addEventListener('click', (e) => {
+            // Evita que el click también dispare el filtro del bloque
+            // entero (ver crearBloqueCategoria_) — abrir el producto y
+            // filtrar por categoría son dos acciones distintas.
+            e.stopPropagation();
+            abrirModalProducto(p, { pushHistorial: true });
+        });
         const urlImg = urlImagenProducto(p, 150);
+        const logoFallback = (p.area === 'talleres' && p.fabricante && LOGOS_FABRICANTE[p.fabricante])
+            ? LOGOS_FABRICANTE[p.fabricante]
+            : LOGO_EMPRESA;
         item.innerHTML = urlImg
-            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
-            : sinImagenFabricanteHtml(p);
+            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.src='${logoFallback}'; this.onerror=null;">`
+            : `<img src="${logoFallback}" alt="${escapeHtml(p.nombre)}" loading="lazy" class="categoria-bloque__item-generico">`;
         return item;
+    }
+
+    // Clic en el bloque (fuera de una imagen concreta): aplica el término
+    // representativo de la categoría como si se hubiera escrito a mano en
+    // el buscador — mismo mecanismo que los chips de "Marcas más
+    // buscadas" (reutiliza aplicarFiltros(), no un filtrado aparte).
+    function aplicarFiltroCategoria_(def) {
+        $('f-texto').value = def.terminoBusqueda;
+        actualizarIconosBuscador();
+        resetPaginacion();
+        aplicarFiltros();
+        $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function crearBloqueCategoria_(def, productos, color) {
         const bloque = document.createElement('div');
         bloque.className = `categoria-bloque categoria-bloque--${color}`;
+        bloque.setAttribute('role', 'button');
+        bloque.setAttribute('tabindex', '0');
+        bloque.setAttribute('aria-label', `Ver todos los productos de ${def.titulo}`);
+        bloque.addEventListener('click', () => aplicarFiltroCategoria_(def));
+        bloque.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aplicarFiltroCategoria_(def); }
+        });
         const titulo = document.createElement('p');
         titulo.className = 'categoria-bloque__titulo';
         titulo.textContent = def.titulo;
@@ -6124,6 +6181,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         bloque.appendChild(grid);
         return bloque;
     }
+
+    // Bloques actualmente en pantalla, con su propia reserva de candidatos
+    // (puede haber muchos más de 4) — ver rotarBloquesCategorias_().
+    let bloquesCategoriasActivos_ = [];
 
     function cargarBloquesCategorias_() {
         if (!TODOS.length) {
@@ -6136,24 +6197,44 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const vigentes = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
         const cont = $('categorias-descubrimiento');
         cont.innerHTML = '';
+        bloquesCategoriasActivos_ = [];
         let n = 0;
         for (const def of DEFINICION_BLOQUES_CATEGORIAS_) {
             if (n >= MAX_BLOQUES_CATEGORIAS) break;
             if (def.estacion && def.estacion !== estacion) continue;
             const candidatos = vigentes.filter(p => def.match(textoBuscableProducto_(p)));
             if (candidatos.length < PRODUCTOS_POR_BLOQUE_CATEGORIA) continue;
-            // Muestra aleatoria: a petición de Eloy, los 4 productos de
-            // cada bloque van cambiando (se reeligen cada vez que el
-            // catálogo se recalcula de verdad, mismos puntos que el resto
-            // de módulos — ver actualizarModulosDescubrimiento_()).
+            // Muestra aleatoria inicial — ver rotarBloquesCategorias_()
+            // para el cambio automático cada 5s.
             const muestra = [...candidatos].sort(() => Math.random() - 0.5).slice(0, PRODUCTOS_POR_BLOQUE_CATEGORIA);
             const color = colores[n % colores.length];
-            cont.appendChild(crearBloqueCategoria_(def, muestra, color));
+            const bloque = crearBloqueCategoria_(def, muestra, color);
+            cont.appendChild(bloque);
+            bloquesCategoriasActivos_.push({ candidatos, grid: bloque.querySelector('.categoria-bloque__grid') });
             n++;
         }
         modulosDescubrimientoConContenido_.categorias = n > 0;
         actualizarVisibilidadModulosDescubrimiento_();
     }
+
+    // A petición de Eloy ("quiero que los productos dentro del bloque
+    // vayan rotando cada 5 segundos"): cada bloque reemplaza su muestra de
+    // 4 por otra aleatoria de su propia reserva de candidatos (puede haber
+    // muchos más de 4 productos reales por categoría). Un único intervalo
+    // para todos los bloques, arrancado una sola vez; no hace nada si los
+    // bloques están ocultos (filtros activos) o si un bloque no tiene más
+    // candidatos que los 4 ya mostrados (nada que rotar).
+    const INTERVALO_ROTACION_CATEGORIAS_MS = 5000;
+    function rotarBloquesCategorias_() {
+        if (!modulosDescubrimientoConContenido_.categorias || hayFiltroActivo_()) return;
+        bloquesCategoriasActivos_.forEach(({ candidatos, grid }) => {
+            if (candidatos.length <= PRODUCTOS_POR_BLOQUE_CATEGORIA) return;
+            const muestra = [...candidatos].sort(() => Math.random() - 0.5).slice(0, PRODUCTOS_POR_BLOQUE_CATEGORIA);
+            grid.innerHTML = '';
+            muestra.forEach(p => grid.appendChild(crearItemBloqueCategoria_(p)));
+        });
+    }
+    setInterval(rotarBloquesCategorias_, INTERVALO_ROTACION_CATEGORIAS_MS);
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
     function renderFamilias() {
