@@ -5589,6 +5589,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         registrarEventoBusqueda_('SEARCH_COMPLETED', Object.assign({ search_mode: 'instant' }, datos));
     }, 600);
 
+    // ── FILTER_APPLIED ───────────────────────────────────────────────────
+    // aplicarFiltros() se llama constantemente por motivos que NO son una
+    // interacción real del usuario con un filtro: la carga inicial del
+    // catálogo, la reconciliación con la fuente en vivo, la carga de
+    // catálogos adicionales en segundo plano, etc. (ver
+    // actualizarModulosDescubrimiento_ más abajo para el mismo problema ya
+    // resuelto con los carruseles). Registrar un evento en CADA una de
+    // esas llamadas automáticas contaminaría los datos con ruido — por
+    // eso este evento se aplazó explícitamente en la Fase 1.
+    //
+    // Para distinguir con fiabilidad "el usuario tocó un filtro" de "el
+    // código ha vuelto a llamar a aplicarFiltros() por su cuenta", se
+    // marca la MARCA DE TIEMPO del último input/change real del usuario
+    // en cualquier parte de la página (escucha delegada en document, fase
+    // de captura) y solo se registra FILTER_APPLIED si aplicarFiltros()
+    // se ejecuta dentro de una ventana corta desde esa interacción. Una
+    // llamada automática (sin ningún evento de usuario de por medio)
+    // nunca cae dentro de esa ventana — en la carga inicial, por ejemplo,
+    // la marca de tiempo sigue en 0 y la diferencia es enorme.
+    let ultimaInteraccionFiltroMs_ = 0;
+    document.addEventListener('input', () => { ultimaInteraccionFiltroMs_ = Date.now(); }, true);
+    document.addEventListener('change', () => { ultimaInteraccionFiltroMs_ = Date.now(); }, true);
+    const VENTANA_INTERACCION_FILTRO_MS = 2000;
+
+    const registrarFiltroAplicadoEnDiferido_ = debounce((datos) => {
+        registrarEventoBusqueda_('FILTER_APPLIED', datos);
+    }, 600);
+
     // ── Fase 2/3: módulos de descubrimiento ("🔥 Más buscados esta
     // semana" y "🆕 Novedades") ─────────────────────────────────────────
     // Bug real reportado por Eloy: tras actualizar la imagen de un
@@ -6400,14 +6428,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         renderResultados();
         actualizarBotonMostrarResultadosMovil();
 
-        // Solo se registra como "búsqueda" cuando hay texto de verdad —
-        // navegar solo con filtros (sin escribir nada) se deja para una
-        // fase posterior (FILTER_APPLIED, ver sección 7 del documento),
-        // para no mezclar ambas señales en la Fase 1.
+        // Con texto: SEARCH_COMPLETED (búsqueda real). Sin texto, pero con
+        // una interacción reciente de verdad con algún filtro (no una
+        // llamada automática): FILTER_APPLIED — ver su porqué completo
+        // junto a la definición de ultimaInteraccionFiltroMs_.
         if (texto) {
             registrarBusquedaInstantaneaEnDiferido_({
                 query_raw: texto,
                 query_normalized: normalizar(texto),
+                area_filter: areasSel.join(',') || null,
+                family_filter: familias.join(',') || null,
+                price_min: isNaN(pMin) ? null : pMin,
+                price_max: isNaN(pMax) ? null : pMax,
+                sort_by: orden || null,
+                result_count: resultadosActuales.length,
+            });
+        } else if (Date.now() - ultimaInteraccionFiltroMs_ < VENTANA_INTERACCION_FILTRO_MS) {
+            registrarFiltroAplicadoEnDiferido_({
                 area_filter: areasSel.join(',') || null,
                 family_filter: familias.join(',') || null,
                 price_min: isNaN(pMin) ? null : pMin,
