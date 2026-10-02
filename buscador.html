@@ -5966,6 +5966,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function renderFamilias() {
         const areasSel = areasSeleccionadas();
         const cont = $('f-familias');
+        // Bug real reportado por Eloy: marcar una familia y esperar unos
+        // segundos la limpiaba sola, sin tocar nada. Causa: esta función se
+        // vuelve a llamar automáticamente poco después de cargar la página
+        // (ver cargarProductosAdicionalesEnSegundoPlano, al llegar los
+        // catálogos de Talleres/Glasurit/Besa/Baslac) para incluir las
+        // familias nuevas que traen esos catálogos — pero al reconstruir el
+        // listado desde cero no conservaba qué casillas estaban marcadas
+        // (a diferencia de poblarOpcionesArea() o renderAtributosPintura(),
+        // que sí lo hacen). Se aplica el mismo mecanismo aquí.
+        const marcadasPrevias = new Set(familiasSeleccionadas());
         cont.innerHTML = '';
 
         let base = TODOS.filter(p => productoCoincideConAreas(p, areasSel));
@@ -5980,12 +5990,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         familias.forEach(fam => {
             const label = document.createElement('label');
             label.className = 'familia-item';
-            label.innerHTML = `<input type="checkbox" value="${fam.replace(/"/g,'&quot;')}"> ${fam}`;
-            label.querySelector('input').addEventListener('change', () => { 
-                resetPaginacion(); 
+            const checked = marcadasPrevias.has(fam);
+            label.innerHTML = `<input type="checkbox" value="${fam.replace(/"/g,'&quot;')}" ${checked ? 'checked' : ''}> ${fam}`;
+            label.querySelector('input').addEventListener('change', () => {
+                resetPaginacion();
                 renderSubfamilias(); // Actualizar subfamilias cuando cambia la familia
                 renderAtributosTaller(); // Actualizar tambien la cascada de talla/variante
-                aplicarFiltros(); 
+                aplicarFiltros();
             });
             cont.appendChild(label);
         });
@@ -6009,6 +6020,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cont = $('f-subfamilias');
         const grupo = $('grupo-subfamilias');
 
+        // Conserva las marcadas al reconstruir (mismo motivo que renderFamilias).
+        const marcadasPrevias = new Set(subfamiliasSeleccionadas());
         cont.innerHTML = '';
 
         let base = TODOS.filter(p => productoCoincideConAreas(p, areasSel));
@@ -6032,7 +6045,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         subfamilias.forEach(subfam => {
             const label = document.createElement('label');
             label.className = 'familia-item';
-            label.innerHTML = `<input type="checkbox" value="${subfam.replace(/"/g,'&quot;')}"> ${subfam}`;
+            const checked = marcadasPrevias.has(subfam);
+            label.innerHTML = `<input type="checkbox" value="${subfam.replace(/"/g,'&quot;')}" ${checked ? 'checked' : ''}> ${subfam}`;
             label.querySelector('input').addEventListener('change', () => {
                 resetPaginacion();
                 renderAtributosTaller(); // Actualizar la cascada de talla/variante
@@ -6094,12 +6108,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             cont.innerHTML = '';
             return;
         }
+        // Conserva los marcados al reconstruir (mismo motivo que renderFamilias):
+        // esta función repinta talla/grano/color/medida/volumen/micras/otros
+        // cada vez que cambia cualquier filtro por encima en la cascada,
+        // incluida la carga automática de catálogos en segundo plano.
+        const marcadosPrevios = new Set([...cont.querySelectorAll('input:checked')].map(i => i.value));
         valores.sort(comparar);
         cont.innerHTML = '';
         valores.forEach(v => {
             const label = document.createElement('label');
             label.className = 'familia-item';
-            label.innerHTML = `<input type="checkbox" value="${v.replace(/"/g, '&quot;')}"> ${v}`;
+            const checked = marcadosPrevios.has(v);
+            label.innerHTML = `<input type="checkbox" value="${v.replace(/"/g, '&quot;')}" ${checked ? 'checked' : ''}> ${v}`;
             label.querySelector('input').addEventListener('change', () => {
                 resetPaginacion();
                 aplicarFiltros();
@@ -6129,11 +6149,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const fabricantes = [...new Set(TODOS.filter(p => p.area === 'talleres').map(p => p.fabricante).filter(Boolean))];
         fabricantes.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
+        // Conserva los marcados al reconstruir (mismo motivo que renderFamilias).
+        const marcadosPrevios = new Set(fabricantesTallerSeleccionados());
         cont.innerHTML = '';
         fabricantes.forEach(fab => {
             const label = document.createElement('label');
             label.className = 'familia-item';
-            label.innerHTML = `<input type="checkbox" value="${fab.replace(/"/g, '&quot;')}"> ${fab}`;
+            const checked = marcadosPrevios.has(fab);
+            label.innerHTML = `<input type="checkbox" value="${fab.replace(/"/g, '&quot;')}" ${checked ? 'checked' : ''}> ${fab}`;
             label.querySelector('input').addEventListener('change', () => {
                 resetPaginacion();
                 renderFamilias(); // Actualizar familia/subfamilia según el fabricante elegido
