@@ -6406,19 +6406,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if ($('f-tiene-imagen')) $('f-tiene-imagen').checked = false;
         if ($('f-imagenes-sin-validar')) $('f-imagenes-sin-validar').checked = false;
         if ($('f-productos-sin-imagen')) $('f-productos-sin-imagen').checked = false;
-        // Bug real reportado por Eloy: renderAtributosPintura() CONSERVA a
-        // propósito la selección de acabado/formato al recalcular sus
-        // opciones (correcto cuando cambia otro filtro: p. ej. si ya
-        // habías marcado "5 Kg" y cambias de familia, no tiene sentido
-        // perder esa elección) — pero "Limpiar filtros" la llama sin vaciar
-        // antes esos checkboxes, así que conservaba justo lo que debía
-        // borrar (ej.: filtrar "i-12", marcar Formato "5 Kg", limpiar
-        // filtros, y "5 Kg" seguía aplicado). Se vacían aquí explícitamente
-        // ANTES de llamar a renderAtributosPintura(), solo en esta ruta de
-        // reseteo completo — el resto de usos de esa función (cambiar área,
-        // familia...) no pasan por aquí y siguen conservando la selección
-        // como siempre.
-        document.querySelectorAll('#f-acabado input, #f-formato input').forEach(i => { i.checked = false; });
+        // Bug real reportado por Eloy: renderAtributosPintura(),
+        // renderFamilias(), renderSubfamilias(), renderFabricanteTaller() y
+        // pintarCheckboxesAtributo() CONSERVAN a propósito la selección al
+        // recalcular sus opciones (correcto cuando cambia OTRO filtro: p.
+        // ej. si ya habías marcado "5 Kg" y cambias de familia, o marcas una
+        // familia y el catálogo de Talleres termina de cargar en segundo
+        // plano, no tiene sentido perder esa elección) — pero "Limpiar
+        // filtros" las llama sin vaciar antes esos checkboxes, así que
+        // conservaban justo lo que debía borrar (ej.: marcar una familia y
+        // pulsar "Limpiar filtros" no la deseleccionaba). Se vacían aquí
+        // explícitamente ANTES de llamar a esas funciones, solo en esta ruta
+        // de reseteo completo — el resto de usos de esas funciones (cambiar
+        // área, familia...) no pasan por aquí y siguen conservando la
+        // selección como siempre.
+        document.querySelectorAll([
+            '#f-acabado input', '#f-formato input',
+            '#f-familias input', '#f-subfamilias input', '#f-fabricante-taller input',
+            '#f-talla-taller input', '#f-grano-taller input', '#f-color-taller input',
+            '#f-medida-taller input', '#f-volumen-taller input', '#f-micras-taller input', '#f-otros-taller input',
+        ].join(', ')).forEach(i => { i.checked = false; });
         renderFabricanteTaller(); // Limpiar/ocultar fabricante
         renderFamilias();
         renderSubfamilias(); // Limpiar subfamilias
