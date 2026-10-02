@@ -308,6 +308,28 @@
             border-color: var(--dark);
         }
 
+        /* Fila superior del panel móvil: "Limpiar filtros" (izquierda,
+           solo con algún filtro aplicado) + botón de cerrar (derecha). */
+        .filtros-extra-cabecera {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .btn-limpiar-arriba {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: var(--red);
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 6px 4px;
+        }
+        .btn-limpiar-arriba.visible { display: inline-flex; }
+
         /* Misma precaución de orden que el botón de abrir: la regla base
            debe ir ANTES de la media query que la activa. */
         .btn-cerrar-filtros-movil {
@@ -470,11 +492,16 @@
                 transform: translateX(0);
             }
 
-            .btn-cerrar-filtros-movil {
-                display: block;
+            .filtros-extra-cabecera {
                 position: sticky;
                 top: 0;
-                margin: -18px -20px 12px auto;
+                margin: -18px -20px 12px;
+                padding: 6px 14px 6px 20px;
+                background: white;
+                z-index: 1;
+            }
+            .btn-cerrar-filtros-movil {
+                display: block;
                 padding: 10px 14px;
             }
 
@@ -3234,9 +3261,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="espaciador-buscador-movil"></div>
 
         <div id="filtros-extra">
-        <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+        <div id="filtros-extra-cabecera" class="filtros-extra-cabecera">
+            <!-- A petición de Eloy: con el panel abierto, si hay algún filtro
+                 aplicado aparece aquí "Limpiar filtros" para no tener que
+                 bajar a buscarlo — mismo nivel y alineado a la izquierda del
+                 botón de cerrar (ver hayFiltroActivo_() / su toggle en
+                 actualizarVisibilidadModulosDescubrimiento_()). -->
+            <button type="button" id="btn-limpiar-arriba" class="btn-limpiar-arriba">
+                <i class="fa-solid fa-rotate-left"></i> Limpiar filtros
+            </button>
+            <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
 
         <div class="filtro-grupo" id="grupo-area-toolbar">
             <label class="titulo" for="f-area-btn">Área</label>
@@ -5186,6 +5223,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
+        $('btn-limpiar-arriba').addEventListener('click', limpiarFiltros);
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
@@ -5721,6 +5759,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
+        // ...y para "Limpiar filtros" arriba del todo del panel (visible
+        // con el panel abierto), para no tener que bajar a buscarlo.
+        $('btn-limpiar-arriba').classList.toggle('visible', oculto);
     }
 
     // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
