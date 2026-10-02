@@ -5232,7 +5232,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
-        $('btn-limpiar-arriba').addEventListener('click', limpiarFiltros);
+        $('btn-limpiar-arriba').addEventListener('click', () => {
+            // Bug real reportado por Eloy: al tocar "Filtros", el panel se
+            // desliza desde la derecha y "Limpiar filtros" aparece a los
+            // pocos milisegundos muy cerca de donde estaba el dedo — un
+            // segundo toque rápido e impaciente (algo habitual mientras el
+            // panel todavía se está abriendo) podía acabar limpiando los
+            // filtros sin que el usuario llegara a ver ni pulsar a propósito
+            // el botón. Se ignora cualquier toque en los primeros 400ms
+            // tras abrir el panel (ver abrirFiltrosMovil/panelAbiertoEnMs_).
+            if (Date.now() - panelAbiertoEnMs_ < 400) return;
+            limpiarFiltros();
+        });
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
@@ -6405,7 +6416,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Panel de filtros como modal deslizante en móvil ──
+    let panelAbiertoEnMs_ = 0; // ver el porqué junto al click de btn-limpiar-arriba
     function abrirFiltrosMovil() {
+        panelAbiertoEnMs_ = Date.now();
         const filtrosExtra = $('filtros-extra');
         const backdrop = $('filtros-backdrop');
 
