@@ -290,6 +290,18 @@
             justify-content: center;
         }
         .btn-abrir-filtros-movil:active { background: #e2e8f0; }
+        /* A petición de Eloy: con el panel CERRADO, si hay algún filtro
+           aplicado el botón se pinta en rojo corporativo — así el usuario
+           sabe de un vistazo que lo que ve ya está filtrado, sin tener que
+           abrir el panel para comprobarlo (ver hayFiltroActivo_() y su
+           llamada en actualizarVisibilidadModulosDescubrimiento_()). Esta
+           regla va ANTES que ".activo" (panel abierto) para que, si
+           coinciden ambas clases, gane el aspecto de "panel abierto". */
+        .btn-abrir-filtros-movil.tiene-filtro-activo {
+            background: var(--red);
+            color: white;
+            border-color: var(--red);
+        }
         .btn-abrir-filtros-movil.activo {
             background: var(--dark);
             color: white;
@@ -5706,6 +5718,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('mas-buscados').style.display = (modulosDescubrimientoConContenido_.masBuscados && !oculto) ? '' : 'none';
         $('novedades').style.display = (modulosDescubrimientoConContenido_.novedades && !oculto) ? '' : 'none';
         $('marcas-buscadas').style.display = (modulosDescubrimientoConContenido_.marcas && !oculto) ? '' : 'none';
+        // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
+        // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
+        $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
     }
 
     // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
