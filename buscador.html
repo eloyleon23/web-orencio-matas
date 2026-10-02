@@ -3496,6 +3496,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div id="marcas-buscadas-lista" class="marcas-buscadas__lista"></div>
         </div>
 
+        <!-- Prototipo "Seguir comprando X" (estilo Amazon): bloques de
+             categoría/marca/temporada, puramente de CATÁLOGO (igual que
+             Novedades) — ver cargarBloquesCategorias_(). Se generan por
+             JS, no hay un número fijo de bloques en el HTML: cada uno usa
+             la misma estructura .mas-buscados ya existente. -->
+        <div id="categorias-descubrimiento" style="display:none;"></div>
+
         <div id="cargando-inicial" class="cargando-inicial">
             <i id="icono-cargando" class="fa-solid fa-spinner"></i>
             <p>Cargando catálogo de productos…</p>
@@ -5735,6 +5742,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cargarNovedades_();
         cargarMasBuscados_();
         cargarMarcasMasBuscadas_();
+        cargarBloquesCategorias_();
     }
 
     // A petición de Eloy: con filtros/búsqueda activos, estos módulos solo
@@ -5751,7 +5759,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // esperar a ninguna petición de red, y borrar el texto (o cualquier
     // otro filtro) los vuelve a mostrar igual de rápido, siempre que
     // sigan teniendo contenido.
-    const modulosDescubrimientoConContenido_ = { masBuscados: false, novedades: false, marcas: false };
+    const modulosDescubrimientoConContenido_ = { masBuscados: false, novedades: false, marcas: false, categorias: false };
 
     function hayFiltroActivo_() {
         if ($('f-texto').value.trim()) return true;
@@ -5778,6 +5786,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('mas-buscados').style.display = (modulosDescubrimientoConContenido_.masBuscados && !oculto) ? '' : 'none';
         $('novedades').style.display = (modulosDescubrimientoConContenido_.novedades && !oculto) ? '' : 'none';
         $('marcas-buscadas').style.display = (modulosDescubrimientoConContenido_.marcas && !oculto) ? '' : 'none';
+        $('categorias-descubrimiento').style.display = (modulosDescubrimientoConContenido_.categorias && !oculto) ? '' : 'none';
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
@@ -5968,6 +5977,101 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cont.innerHTML = '';
         productos.forEach(p => cont.appendChild(crearTarjeta(p)));
         modulosDescubrimientoConContenido_.novedades = true;
+        actualizarVisibilidadModulosDescubrimiento_();
+    }
+
+    // ── Prototipo: bloques de categoría relacionada ("Seguir comprando
+    // X", estilo Amazon) ──────────────────────────────────────────────
+    // A petición de Eloy: dinamizar más el buscador con bloques de 4
+    // productos agrupados por marca/familia/temporada, por debajo de
+    // Novedades y el resto de módulos basados en interacción. Puramente
+    // de CATÁLOGO (igual que Novedades): nunca toca Supabase, así que
+    // aparece desde el primer momento sin depender de tráfico real.
+    //
+    // Cada entrada define un título, un icono y una función match(texto)
+    // que se evalúa contra el nombre+familia+subfamilia+fabricante del
+    // producto ya normalizado (sin acentos, en minúsculas). Un bloque
+    // solo se muestra si hay al menos PRODUCTOS_POR_BLOQUE_CATEGORIA
+    // productos reales que coincidan — nunca un bloque vacío o a medias.
+    // "estacion" (si está presente) limita el bloque a esa época del año
+    // (ver estacionActual_) — p. ej. radiadores solo en frío, piscinas
+    // solo en calor.
+    //
+    // Es un PROTOTIPO: la lista de categorías de abajo es un punto de
+    // partida de ejemplo (igual que los que dio Eloy), fácil de ampliar
+    // o ajustar según lo que de verdad tenga suficiente stock en el
+    // catálogo — ninguna categoría sin al menos 4 coincidencias reales
+    // llega a mostrarse, así que una categoría "de prueba" sin productos
+    // reales simplemente no aparece, sin romper nada.
+    const PRODUCTOS_POR_BLOQUE_CATEGORIA = 4;
+    const MAX_BLOQUES_CATEGORIAS = 10;
+
+    function estacionActual_() {
+        const mes = new Date().getMonth(); // 0=enero … 11=diciembre
+        if ([10, 11, 0, 1].includes(mes)) return 'frio';   // nov-feb
+        if ([4, 5, 6, 7, 8].includes(mes)) return 'calor'; // may-sep
+        return null; // mar/abr, oct: temporada "neutra", sin bloques estacionales
+    }
+
+    function textoBuscableProducto_(p) {
+        return normalizar([p.nombre, p.familia, p.subfamilia, p.fabricante].filter(Boolean).join(' '));
+    }
+
+    const DEFINICION_BLOQUES_CATEGORIAS_ = [
+        { id: 'detergentes',    titulo: 'Detergentes en polvo y líquidos',   icono: 'fa-pump-soap',        match: t => t.includes('detergente') },
+        { id: 'ceys',           titulo: 'Productos Ceys',                    icono: 'fa-industry',         match: t => t.includes('ceys') },
+        { id: 'werku',          titulo: 'Productos Werku',                   icono: 'fa-toolbox',          match: t => t.includes('werku') },
+        { id: 'titan-eco',      titulo: 'Pintura Titán Ecológica',           icono: 'fa-leaf',             match: t => t.includes('titan') && t.includes('eco') },
+        { id: 'titanpro',       titulo: 'Pintura TitanPro',                  icono: 'fa-paint-roller',     match: t => t.includes('titanpro') || t.includes('titan pro') },
+        { id: 'posidon',        titulo: 'Colonias Poseidón',                 icono: 'fa-droplet',          match: t => t.includes('posidon') || t.includes('poseidon') },
+        { id: 'aire-sevilla',   titulo: 'Colonias Aire de Sevilla',          icono: 'fa-wind',             match: t => t.includes('aire de sevilla') },
+        { id: 'radiadores',     titulo: 'Para calentar este invierno',       icono: 'fa-temperature-high', match: t => t.includes('radiador') || t.includes('calefactor') || t.includes('estufa'), estacion: 'frio' },
+        { id: 'insectos',       titulo: 'Contra los insectos del verano',    icono: 'fa-bug',              match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('antipolillas'), estacion: 'calor' },
+        { id: 'piscinas',       titulo: 'Todo para tu piscina',              icono: 'fa-water',            match: t => t.includes('piscina'), estacion: 'calor' },
+        { id: 'esmaltes',       titulo: 'Esmaltes para pintar',              icono: 'fa-paint-roller',     match: t => t.includes('esmalte') },
+        { id: 'barnices',       titulo: 'Barnices y protectores de madera',  icono: 'fa-tree',             match: t => t.includes('barniz') },
+        { id: 'imprimaciones',  titulo: 'Imprimaciones y selladores',        icono: 'fa-layer-group',      match: t => t.includes('imprimacion') || t.includes('imp.') },
+        { id: 'colonias',       titulo: 'Colonias y perfumería',             icono: 'fa-spray-can-sparkles', match: t => t.includes('colonia') || t.includes('perfume') },
+        { id: 'limpieza-hogar', titulo: 'Limpieza del hogar',                icono: 'fa-broom',            match: t => t.includes('limpiahogar') || t.includes('limpiador') || t.includes('lejia') || t.includes('friegasuelos') },
+    ];
+
+    function cargarBloquesCategorias_() {
+        if (!TODOS.length) {
+            modulosDescubrimientoConContenido_.categorias = false;
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
+        const estacion = estacionActual_();
+        const colores = ['rojo', 'verde', 'amarillo'];
+        const vigentes = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        const cont = $('categorias-descubrimiento');
+        cont.innerHTML = '';
+        let n = 0;
+        for (const def of DEFINICION_BLOQUES_CATEGORIAS_) {
+            if (n >= MAX_BLOQUES_CATEGORIAS) break;
+            if (def.estacion && def.estacion !== estacion) continue;
+            const candidatos = vigentes.filter(p => def.match(textoBuscableProducto_(p)));
+            if (candidatos.length < PRODUCTOS_POR_BLOQUE_CATEGORIA) continue;
+            // Muestra aleatoria: a petición de Eloy, los 4 productos de
+            // cada bloque van cambiando (se reeligen cada vez que el
+            // catálogo se recalcula de verdad, mismos puntos que el resto
+            // de módulos — ver actualizarModulosDescubrimiento_()).
+            const muestra = [...candidatos].sort(() => Math.random() - 0.5).slice(0, PRODUCTOS_POR_BLOQUE_CATEGORIA);
+            const color = colores[n % colores.length];
+            const bloque = document.createElement('div');
+            bloque.className = 'mas-buscados';
+            const titulo = document.createElement('p');
+            titulo.className = 'mas-buscados__titulo';
+            titulo.innerHTML = `<span class="mas-buscados__icono mas-buscados__icono--${color}"><i class="fa-solid ${def.icono}"></i></span> ${escapeHtml(def.titulo)}`;
+            const lista = document.createElement('div');
+            lista.className = 'mas-buscados__lista';
+            muestra.forEach(p => lista.appendChild(crearTarjeta(p)));
+            bloque.appendChild(titulo);
+            bloque.appendChild(lista);
+            cont.appendChild(bloque);
+            n++;
+        }
+        modulosDescubrimientoConContenido_.categorias = n > 0;
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
