@@ -4392,11 +4392,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function seleccionarSugerencia(texto) {
+        // A petición de Eloy: el texto ya no limpia el resto de filtros
+        // (ver el mismo cambio en el listener 'input' de f-texto) — una
+        // sugerencia se combina con lo que ya hubiera aplicado, igual que
+        // si se hubiera escrito a mano.
         $('f-texto').value = texto;
         revelarCabeceraResultados();
         ocultarSugerencias();
         actualizarIconosBuscador();
-        if (texto.trim()) limpiarOtrosFiltros();
         resetPaginacion();
         aplicarFiltros();
     }
@@ -5120,11 +5123,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         // Listeners
         $('f-texto').addEventListener('input', debounce(() => {
-            // El texto de búsqueda prima sobre el resto de filtros: si el
-            // usuario escribe algo, se limpian los demás automáticamente.
-            if ($('f-texto').value.trim()) {
-                limpiarOtrosFiltros();
-            }
+            // A petición de Eloy: antes, escribir algo en el buscador
+            // limpiaba automáticamente el resto de filtros (Área, Familia,
+            // Acabado...) a los 300ms — el usuario lo percibía como "se
+            // limpia solo" sin haber tocado nada más, porque el efecto
+            // llegaba con ese pequeño retraso del debounce. Ahora el texto
+            // se combina con el resto de filtros ya aplicados, como
+            // cualquier otro filtro más, en vez de sustituirlos.
             resetPaginacion();
             aplicarFiltros();
         }, 300));
