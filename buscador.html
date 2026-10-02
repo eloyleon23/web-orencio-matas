@@ -583,6 +583,12 @@
             scroll-snap-type: x proximity;
         }
         .mas-buscados__lista > .producto-card { flex: 0 0 150px; scroll-snap-align: start; }
+        .marcas-buscadas__lista { display: flex; flex-wrap: wrap; gap: 8px; }
+        .marcas-buscadas__chip {
+            border: 1px solid var(--border); background: #fff; border-radius: 20px;
+            padding: 6px 14px; font-size: 0.85rem; font-weight: 600; color: var(--dark); cursor: pointer;
+        }
+        .marcas-buscadas__chip:hover { background: var(--light); }
 
 
         .btn-escanear-codigo.disponible { display: flex; }
@@ -3413,6 +3419,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div id="novedades-lista" class="mas-buscados__lista"></div>
         </div>
 
+        <!-- "Marcas más buscadas": la marca se detecta por el nombre del
+             producto (ver renderMarcasMasBuscadas_) — nunca se añade al
+             catálogo público. -->
+        <div id="marcas-buscadas" class="mas-buscados" style="display:none;">
+            <p class="mas-buscados__titulo"><i class="fa-solid fa-trophy" style="color:var(--yellow);"></i> Marcas más buscadas</p>
+            <div id="marcas-buscadas-lista" class="marcas-buscadas__lista"></div>
+        </div>
+
         <div id="cargando-inicial" class="cargando-inicial">
             <i id="icono-cargando" class="fa-solid fa-spinner"></i>
             <p>Cargando catálogo de productos…</p>
@@ -5643,6 +5657,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function actualizarModulosDescubrimiento_() {
         cargarNovedades_();
         cargarMasBuscados_();
+        cargarMarcasMasBuscadas_();
     }
 
     // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
@@ -5696,22 +5711,89 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('mas-buscados').style.display = '';
     }
 
+    // Petición compartida: "más buscados" y "marcas más buscadas" parten
+    // de los MISMOS términos (ver el porqué de "por término, no por
+    // producto" arriba) — se piden a Supabase una sola vez entre ambos
+    // módulos y se cachean, nunca una petición por módulo.
     let terminosMasBuscadosCache_ = null; // null = aún no pedidos; [] = pedidos, sin datos suficientes
-    function cargarMasBuscados_() {
-        if (!TODOS.length) return;
-        if (terminosMasBuscadosCache_) { renderMasBuscados_(terminosMasBuscadosCache_); return; }
-
+    function obtenerTerminosMasBuscados_() {
+        if (terminosMasBuscadosCache_) return Promise.resolve(terminosMasBuscadosCache_);
         const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
-        if (!url || !key) return;
-        fetch(url.replace(/\/$/, '') + '/rest/v1/mv_terminos_mas_buscados_7d?select=query_normalized,sesiones_unicas&order=sesiones_unicas.desc&limit=20', {
+        if (!url || !key) return Promise.resolve([]);
+        return fetch(url.replace(/\/$/, '') + '/rest/v1/mv_terminos_mas_buscados_7d?select=query_normalized,sesiones_unicas&order=sesiones_unicas.desc&limit=20', {
             headers: { 'apikey': key, 'Authorization': 'Bearer ' + key },
         })
           .then(r => r.ok ? r.json() : [])
-          .then(terminos => {
-              terminosMasBuscadosCache_ = Array.isArray(terminos) ? terminos : [];
-              renderMasBuscados_(terminosMasBuscadosCache_);
-          })
-          .catch(() => {}); // sin este módulo, el buscador sigue funcionando exactamente igual
+          .then(terminos => { terminosMasBuscadosCache_ = Array.isArray(terminos) ? terminos : []; return terminosMasBuscadosCache_; })
+          .catch(() => []); // sin esto, los módulos siguen sin mostrarse — el buscador sigue funcionando igual
+    }
+
+    function cargarMasBuscados_() {
+        if (!TODOS.length) return;
+        obtenerTerminosMasBuscados_().then(renderMasBuscados_);
+    }
+
+    // ── Módulo "🏆 Marcas más buscadas" ──────────────────────────────────
+    // A petición de Eloy: la marca no está en el catálogo público (solo
+    // vive en la hoja interna) y, explícitamente, NO se quiere tocar esa
+    // pieza (ni el Sheet ni la exportación de Apps Script) solo para
+    // esto. En vez de eso, se reutiliza el mapa de marcas que YA existe y
+    // YA se mantiene en el repositorio para el asistente de imágenes
+    // (imagenes_tool/marcas_dominios.json + detectarMarcaAsistente(),
+    // más abajo) — detecta la marca a partir del NOMBRE del producto, con
+    // una lista curada a mano de unas 65 marcas conocidas. Cero
+    // mantenimiento nuevo: es la misma lista que ya se actualiza cuando
+    // aparece una marca nueva para el buscador de imágenes; si una marca
+    // no está en esa lista, sencillamente no cuenta aquí (nunca se
+    // inventa una marca que no se puede identificar con confianza).
+    //
+    // Por cada término ya resuelto a productos reales (misma función que
+    // "más buscados"), se detecta la marca de cada producto distinto que
+    // coincide y se suman las sesiones únicas del término a esa marca —
+    // un término cuenta como mucho una vez por marca, para que un
+    // término con 50 SKUs de la misma marca no la infle de más.
+    const MAX_MARCAS_MAS_BUSCADAS = 8;
+    function renderMarcasMasBuscadas_(terminos) {
+        if (!TODOS.length || !terminos.length) return;
+        const sesionesPorMarca = new Map();
+        terminos.forEach(t => {
+            const marcasDeEsteTermino = new Set();
+            productosQueCoincidenConTexto_(t.query_normalized).forEach(p => {
+                const marca = detectarMarcaAsistente(p.nombre);
+                if (marca) marcasDeEsteTermino.add(marca);
+            });
+            marcasDeEsteTermino.forEach(marca => {
+                sesionesPorMarca.set(marca, (sesionesPorMarca.get(marca) || 0) + (t.sesiones_unicas || 0));
+            });
+        });
+        if (!sesionesPorMarca.size) return;
+
+        const marcasOrdenadas = [...sesionesPorMarca.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, MAX_MARCAS_MAS_BUSCADAS)
+            .map(([marca]) => marca);
+
+        const cont = $('marcas-buscadas-lista');
+        cont.innerHTML = '';
+        marcasOrdenadas.forEach(marca => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'marcas-buscadas__chip';
+            chip.textContent = marca;
+            chip.onclick = () => {
+                $('f-texto').value = marca;
+                aplicarFiltros();
+                $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+            cont.appendChild(chip);
+        });
+        $('marcas-buscadas').style.display = '';
+    }
+
+    function cargarMarcasMasBuscadas_() {
+        if (!TODOS.length) return;
+        Promise.all([obtenerTerminosMasBuscados_(), cargarMapaMarcasAsistente()])
+          .then(([terminos]) => renderMarcasMasBuscadas_(terminos));
     }
 
     // ── Módulo "🆕 Novedades" ────────────────────────────────────────────

@@ -87,6 +87,38 @@ def desactivar_entorno_preproduccion(salida: Path) -> None:
     print('✓ assets/js/entorno.js: administración desactivada para esta copia (OM_PREPRODUCCION = false).')
 
 
+def publicar_marcas_dominios(origen: Path, salida: Path) -> None:
+    """Copia SOLO imagenes_tool/marcas_dominios.json a la misma ruta
+    relativa en la copia de salida, aunque el resto de imagenes_tool/
+    (herramientas internas en Python, no contenido del sitio) se quede
+    excluido.
+
+    Por qué: ese archivo es la lista de marcas conocidas (nombre del
+    producto -> marca) que ya mantiene el asistente de imágenes interno
+    — a petición de Eloy, el módulo público "Marcas más buscadas" del
+    buscador la reutiliza para detectar la marca de cada producto SIN
+    tener que añadir ningún campo nuevo al catálogo (ni al Sheet ni a la
+    exportación de Apps Script). Para que ese módulo funcione igual en
+    IONOS que en preproducción, este único archivo tiene que llegar
+    también a la copia de salida, con la MISMA ruta relativa
+    (imagenes_tool/marcas_dominios.json) que ya usa buscador.html —
+    así no hace falta ningún cambio en el HTML/JS según el entorno.
+
+    No falla el build si el archivo no existe todavía: el módulo de
+    marcas, en ese caso, simplemente no muestra nada (ver
+    cargarMapaMarcasAsistente en buscador.html), igual que si Supabase
+    no estuviera configurado — no es una pieza crítica del sitio.
+    """
+    origen_json = origen / 'imagenes_tool' / 'marcas_dominios.json'
+    if not origen_json.exists():
+        print('⚠ imagenes_tool/marcas_dominios.json no existe — se omite (el módulo de marcas no mostrará nada).')
+        return
+    destino_dir = salida / 'imagenes_tool'
+    destino_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(origen_json, destino_dir / 'marcas_dominios.json')
+    print('✓ imagenes_tool/marcas_dominios.json: publicado (el resto de imagenes_tool/ sigue excluido).')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--origen', default='.', help='Raíz del repositorio')
@@ -113,6 +145,8 @@ def main():
         copiados += 1
 
     print(f'Copiados {copiados} elementos, excluidos {excluidos} (panel admin/uso interno).')
+
+    publicar_marcas_dominios(origen, salida)
 
     # Dentro de data/ (si se copió), quitar las subcarpetas de
     # EXCLUSIONES_DATA (los PDFs de catálogo — ver el comentario junto a
