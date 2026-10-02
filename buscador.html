@@ -6745,6 +6745,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         resetPaginacion();
         ocultarCabeceraResultados();
         aplicarFiltros();
+        // A petición de Eloy: tras limpiar filtros, cerrar también el panel
+        // (en móvil) para que el usuario vuelva de inmediato al buscador y
+        // vea los productos, los bloques de categoría y Novedades, en vez
+        // de quedarse mirando el panel de filtros ya vacío. En escritorio
+        // (sin panel modal) esta llamada no tiene efecto visible.
+        cerrarFiltrosMovil();
     }
 
     // ── Panel de filtros como modal deslizante en móvil ──
