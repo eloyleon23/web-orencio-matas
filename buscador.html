@@ -5660,6 +5660,49 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cargarMarcasMasBuscadas_();
     }
 
+    // A petición de Eloy: con filtros/búsqueda activos, estos módulos solo
+    // ocupan espacio y obligan a hacer scroll de más (grave sobre todo en
+    // móvil) sin aportar nada a lo que se está buscando — deben verse
+    // SOLO con los filtros limpios, igual en escritorio que en móvil.
+    //
+    // Se separa a propósito el CONTENIDO (¿hay datos que mostrar? — se
+    // decide una sola vez, cuando el catálogo cambia de verdad, ver
+    // actualizarModulosDescubrimiento_) de la VISIBILIDAD (¿se debe ver
+    // AHORA mismo, según el estado actual de los filtros? — se recalcula
+    // en cada aplicarFiltros(), sin volver a pedir ni recalcular nada).
+    // Así, escribir en el buscador oculta los módulos al instante sin
+    // esperar a ninguna petición de red, y borrar el texto (o cualquier
+    // otro filtro) los vuelve a mostrar igual de rápido, siempre que
+    // sigan teniendo contenido.
+    const modulosDescubrimientoConContenido_ = { masBuscados: false, novedades: false, marcas: false };
+
+    function hayFiltroActivo_() {
+        if ($('f-texto').value.trim()) return true;
+        const totalAreas = document.querySelectorAll('#f-area-opciones input').length;
+        if (areasSeleccionadas().length !== totalAreas) return true; // incluye "ninguna marcada"
+        if (familiasSeleccionadas().length || subfamiliasSeleccionadas().length) return true;
+        if (fabricantesTallerSeleccionados().length) return true;
+        if ($('f-precio-min').value || $('f-precio-max').value) return true;
+        if ($('f-oferta').checked) return true;
+        if ($('f-imagenes-validadas') && $('f-imagenes-validadas').checked) return true;
+        if ($('f-tiene-imagen') && $('f-tiene-imagen').checked) return true;
+        if ($('f-imagenes-sin-validar') && $('f-imagenes-sin-validar').checked) return true;
+        if ($('f-productos-sin-imagen') && $('f-productos-sin-imagen').checked) return true;
+        if (acabadosSeleccionados().length || formatosSeleccionados().length) return true;
+        if (['f-talla-taller', 'f-grano-taller', 'f-color-taller', 'f-medida-taller', 'f-volumen-taller', 'f-micras-taller', 'f-otros-taller']
+            .some(id => valoresSeleccionadosTaller(id).length)) return true;
+        if ($('f-orden').value) return true;
+        if (fechaFiltroTocado) return true; // auto-precargada no cuenta; solo si el usuario la tocó de verdad
+        return false;
+    }
+
+    function actualizarVisibilidadModulosDescubrimiento_() {
+        const oculto = hayFiltroActivo_();
+        $('mas-buscados').style.display = (modulosDescubrimientoConContenido_.masBuscados && !oculto) ? '' : 'none';
+        $('novedades').style.display = (modulosDescubrimientoConContenido_.novedades && !oculto) ? '' : 'none';
+        $('marcas-buscadas').style.display = (modulosDescubrimientoConContenido_.marcas && !oculto) ? '' : 'none';
+    }
+
     // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
     // ver supabase/02_fase2_vistas_agregadas.sql) — nunca la tabla de
     // eventos en crudo. La vista da TÉRMINOS (es lo único que hoy se
@@ -5694,7 +5737,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const MAX_PRODUCTOS_POR_TERMINO = 2; // para que un único término muy genérico no acapare toda la fila
 
     function renderMasBuscados_(terminos) {
-        if (!TODOS.length || !terminos.length) return;
+        if (!TODOS.length || !terminos.length) {
+            modulosDescubrimientoConContenido_.masBuscados = false;
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
         const refsUsadas = new Set();
         const productos = [];
         for (const t of terminos) {
@@ -5704,11 +5751,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 .slice(0, MAX_PRODUCTOS_POR_TERMINO);
             coincidencias.forEach(p => { refsUsadas.add(p.ref); productos.push(p); });
         }
-        if (!productos.length) return;
+        if (!productos.length) {
+            modulosDescubrimientoConContenido_.masBuscados = false;
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
         const cont = $('mas-buscados-lista');
         cont.innerHTML = '';
         productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
-        $('mas-buscados').style.display = '';
+        modulosDescubrimientoConContenido_.masBuscados = true;
+        actualizarVisibilidadModulosDescubrimiento_();
     }
 
     // Petición compartida: "más buscados" y "marcas más buscadas" parten
@@ -5754,7 +5806,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // término con 50 SKUs de la misma marca no la infle de más.
     const MAX_MARCAS_MAS_BUSCADAS = 8;
     function renderMarcasMasBuscadas_(terminos) {
-        if (!TODOS.length || !terminos.length) return;
+        if (!TODOS.length || !terminos.length) {
+            modulosDescubrimientoConContenido_.marcas = false;
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
         const sesionesPorMarca = new Map();
         terminos.forEach(t => {
             const marcasDeEsteTermino = new Set();
@@ -5766,7 +5822,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 sesionesPorMarca.set(marca, (sesionesPorMarca.get(marca) || 0) + (t.sesiones_unicas || 0));
             });
         });
-        if (!sesionesPorMarca.size) return;
+        if (!sesionesPorMarca.size) {
+            modulosDescubrimientoConContenido_.marcas = false;
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
 
         const marcasOrdenadas = [...sesionesPorMarca.entries()]
             .sort((a, b) => b[1] - a[1])
@@ -5787,7 +5847,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             };
             cont.appendChild(chip);
         });
-        $('marcas-buscadas').style.display = '';
+        modulosDescubrimientoConContenido_.marcas = true;
+        actualizarVisibilidadModulosDescubrimiento_();
     }
 
     function cargarMarcasMasBuscadas_() {
@@ -5806,16 +5867,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // más es honesto con lo que sabemos hoy.
     const MAX_TARJETAS_NOVEDADES = 10;
     function cargarNovedades_() {
-        if (!TODOS.length) return;
+        if (!TODOS.length) {
+            modulosDescubrimientoConContenido_.novedades = false;
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
         const productos = TODOS
             .filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
             .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta))
             .slice(0, MAX_TARJETAS_NOVEDADES);
-        if (!productos.length) return;
+        if (!productos.length) {
+            modulosDescubrimientoConContenido_.novedades = false;
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
         const cont = $('novedades-lista');
         cont.innerHTML = '';
         productos.forEach(p => cont.appendChild(crearTarjeta(p)));
-        $('novedades').style.display = '';
+        modulosDescubrimientoConContenido_.novedades = true;
+        actualizarVisibilidadModulosDescubrimiento_();
     }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
@@ -6522,6 +6592,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         renderResultados();
         actualizarBotonMostrarResultadosMovil();
+        actualizarVisibilidadModulosDescubrimiento_(); // ver su porqué junto a su definición: solo con filtros limpios
 
         // Con texto: SEARCH_COMPLETED (búsqueda real). Sin texto, pero con
         // una interacción reciente de verdad con algún filtro (no una
