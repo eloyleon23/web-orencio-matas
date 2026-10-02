@@ -577,7 +577,21 @@
 
         /* Fase 2 de analítica de búsquedas — "Más buscados esta semana" */
         .mas-buscados { margin: 0 0 16px; min-width: 0; }
-        .mas-buscados__titulo { font-size: 0.9rem; font-weight: 700; color: var(--dark); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+        /* A petición de Eloy: el título quedaba más pequeño que el de
+           "Familia" (1.05rem/800 en .familia-titulo) y el icono pasaba
+           desapercibido — se sube el tamaño por encima de ese y el icono
+           se resalta dentro de una insignia circular con los colores
+           corporativos del logo (--red/--green/--yellow, ya definidos en
+           :root), una distinta por bloque para diferenciarlos de un
+           vistazo. */
+        .mas-buscados__titulo { font-size: 1.1rem; font-weight: 800; color: var(--dark); margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
+        .mas-buscados__icono {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;
+        }
+        .mas-buscados__icono--rojo    { background: rgba(211,47,47,.12);  color: var(--red); }
+        .mas-buscados__icono--verde   { background: rgba(56,142,60,.12);  color: var(--green); }
+        .mas-buscados__icono--amarillo { background: rgba(251,192,45,.2); color: #9a6b00; }
         .mas-buscados__lista {
             display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;
             scroll-snap-type: x proximity;
@@ -3406,7 +3420,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              Oculto por defecto — solo se muestra si hay datos reales que
              cumplan el volumen mínimo; nunca "cajón vacío". -->
         <div id="mas-buscados" class="mas-buscados" style="display:none;">
-            <p class="mas-buscados__titulo"><i class="fa-solid fa-fire" style="color:var(--yellow);"></i> Más buscados esta semana</p>
+            <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--rojo"><i class="fa-solid fa-fire"></i></span> Más buscados esta semana</p>
             <div id="mas-buscados-lista" class="mas-buscados__lista"></div>
         </div>
 
@@ -3415,7 +3429,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              tocar Supabase para nada: no depende de que haya tráfico ni
              de ninguna vista agregada. -->
         <div id="novedades" class="mas-buscados" style="display:none;">
-            <p class="mas-buscados__titulo"><i class="fa-solid fa-sparkles" style="color:var(--yellow);"></i> Novedades</p>
+            <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--verde"><i class="fa-solid fa-sparkles"></i></span> Novedades</p>
             <div id="novedades-lista" class="mas-buscados__lista"></div>
         </div>
 
@@ -3423,7 +3437,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              producto (ver renderMarcasMasBuscadas_) — nunca se añade al
              catálogo público. -->
         <div id="marcas-buscadas" class="mas-buscados" style="display:none;">
-            <p class="mas-buscados__titulo"><i class="fa-solid fa-trophy" style="color:var(--yellow);"></i> Marcas más buscadas</p>
+            <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--amarillo"><i class="fa-solid fa-trophy"></i></span> Marcas más buscadas</p>
             <div id="marcas-buscadas-lista" class="marcas-buscadas__lista"></div>
         </div>
 
