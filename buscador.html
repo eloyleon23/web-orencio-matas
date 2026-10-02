@@ -317,7 +317,16 @@
             gap: 8px;
         }
         .btn-limpiar-arriba {
-            display: none;
+            /* Siempre "display:flex" (nunca display:none): así reserva su
+               hueco aunque esté invisible — con display:none, al no haber
+               filtro, el botón de cerrar era el ÚNICO hijo del flex y
+               "justify-content:space-between" lo mandaba al extremo
+               IZQUIERDO en vez de mantenerlo a la derecha. Con
+               visibility+opacity el layout no cambia nunca, solo el
+               aspecto. */
+            display: inline-flex;
+            visibility: hidden;
+            opacity: 0;
             align-items: center;
             gap: 6px;
             background: none;
@@ -328,7 +337,7 @@
             cursor: pointer;
             padding: 6px 4px;
         }
-        .btn-limpiar-arriba.visible { display: inline-flex; }
+        .btn-limpiar-arriba.visible { visibility: visible; opacity: 1; }
 
         /* Misma precaución de orden que el botón de abrir: la regla base
            debe ir ANTES de la media query que la activa. */
@@ -6427,6 +6436,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // icono del botón se invierte para indicar que el panel está abierto
         ocultarCabeceraBuscador();
         $('btn-abrir-filtros-movil').classList.add('activo');
+
+        // Por si acaso ("Limpiar filtros" se veía con un filtro aplicado,
+        // pero no al cerrar y reabrir el panel): se refresca aquí también,
+        // no solo al cambiar un filtro, así SIEMPRE refleja el estado real
+        // en cuanto se abre el panel.
+        actualizarVisibilidadModulosDescubrimiento_();
     }
 
     function cerrarFiltrosMovil() {
