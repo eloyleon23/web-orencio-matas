@@ -3733,7 +3733,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <label><input type="checkbox" id="asistente-f-sin-imagen" checked> Sin imagen</label>
             <label><input type="checkbox" id="asistente-f-sin-validar" checked> Sin validar</label>
             <div class="asistente-texto-wrapper">
-                <input type="text" id="asistente-f-texto" placeholder="Buscar por nombre (ej. DELFIN)...">
+                <input type="text" id="asistente-f-texto" placeholder="Buscar por nombre o referencia (ej. DELFIN, 8410104022)...">
                 <button type="button" id="asistente-f-texto-limpiar" title="Borrar búsqueda" style="display:none;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -9320,7 +9320,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
             if (!productoCoincideConAreas(p, areasSelAsistente)) return false;
             if (familiaFiltro && p.familia !== familiaFiltro) return false;
-            if (textoFiltro && !sinAcentosAsistente(p.nombre).includes(textoFiltro)) return false;
+            // A petición de Eloy: además de por nombre, permitir buscar
+            // directamente por referencia (coincidencia por inclusión,
+            // igual que el nombre — no hace falta escribirla completa).
+            if (textoFiltro) {
+                const coincideNombre = sinAcentosAsistente(p.nombre).includes(textoFiltro);
+                const coincideRef = sinAcentosAsistente(p.ref || '').includes(textoFiltro);
+                if (!coincideNombre && !coincideRef) return false;
+            }
 
             const sinImagen = !p.img;
             const sinValidar = !!p.img && !p.imagen_validada;
