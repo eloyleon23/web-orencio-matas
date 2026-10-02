@@ -178,13 +178,6 @@
                 padding: 8px;
                 border-radius: 10px;
                 box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
-                transition: transform 0.25s ease;
-            }
-            /* Mismo mecanismo de ocultar/mostrar en scroll que ya existe en
-               móvil (ver #grupo-buscador-principal.oculto-por-scroll) —
-               aplicado aquí al toolbar completo (ver actualizarVisibilidadBotonSubir). */
-            #toolbar-buscador-pc.oculto-por-scroll {
-                transform: translateY(-130%);
             }
             #toolbar-buscador-pc .filtro-grupo { margin-bottom: 0; }
             #toolbar-buscador-pc label.titulo { display: none; }
@@ -395,11 +388,14 @@
                 margin-bottom: 0;
                 /* Fijo de verdad (no sticky) justo debajo de la cabecera
                    principal del sitio (navbar) — así queda garantizado que
-                   se ve siempre, sin depender de contenedores con scroll
-                   propio ni de recalculos de "sticky" en el navegador. El
-                   valor de "top" se calcula por JS según la altura real
-                   del navbar (ver ajustarPosicionBuscadorFijo). Al salir
-                   del flujo normal, el hueco lo cubre #espaciador-buscador-movil. */
+                   se ve SIEMPRE, sin esconderse al bajar en el scroll (a
+                   petición de Eloy: obligaba a subir/bajar para cambiar el
+                   criterio de búsqueda), sin depender de contenedores con
+                   scroll propio ni de recalculos de "sticky" en el
+                   navegador. El valor de "top" se calcula por JS según la
+                   altura real del navbar (ver ajustarPosicionBuscadorFijo).
+                   Al salir del flujo normal, el hueco lo cubre
+                   #espaciador-buscador-movil. */
                 position: fixed;
                 left: 0;
                 right: 0;
@@ -408,13 +404,6 @@
                 background: #fff;
                 padding: 8px 20px;
                 box-shadow: 0 2px 10px rgba(0,0,0,.06);
-                transition: transform 0.25s ease;
-            }
-            /* Se oculta deslizándose hacia arriba al bajar en el scroll;
-               reaparece en cuanto se sube, sin importar en qué punto de la
-               página se esté (ver actualizarVisibilidadBotonSubir). */
-            #grupo-buscador-principal.oculto-por-scroll {
-                transform: translateY(-120%);
             }
             #grupo-buscador-principal label.titulo { display: none; }
 
@@ -4710,7 +4699,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         aplicarFiltros();
         $('cargando-inicial').style.display = 'none';
         $('contenedor-resultados').style.display = '';
-        productosCargados = true; // Activar ocultar cabecera solo cuando hay productos cargados
         iniciarComprobacionActualizaciones();
         aplicarFiltrosDesdeURL();
         abrirProductoDesdeURL();
@@ -10392,37 +10380,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     window.addEventListener('resize', debounce(moverBuscadorSegunViewport, 150));
     moverBuscadorSegunViewport();
 
-    let ultimoScrollY = window.scrollY;
-    let productosCargados = false; // Controlar si hay productos cargados para evitar ocultar cabecera durante carga
-    
+    // A petición de Eloy: la barra de búsqueda (#grupo-buscador-principal en
+    // móvil, #toolbar-buscador-pc en escritorio) antes se ocultaba al bajar
+    // en el scroll, igual que la cabecera "Buscador de Productos" — pero eso
+    // obligaba a subir/bajar para poder cambiar el criterio de búsqueda. Se
+    // queda siempre visible (fija en móvil, sticky en escritorio); solo la
+    // cabecera oscura (ver ocultarCabeceraBuscador, al enfocar el buscador)
+    // sigue colapsándose como antes.
     function actualizarVisibilidadBotonSubir() {
         const scrollActual = window.scrollY;
         const visible = scrollActual > 400;
         btnSubirArriba.classList.toggle('visible', visible);
         if (scrollActual <= 0) mostrarCabeceraBuscador();
-
-        // Ocultar la barra de búsqueda al bajar, mostrarla al subir —
-        // independientemente de en qué punto de la página se esté. En
-        // móvil actúa sobre #grupo-buscador-principal (fixed); en
-        // escritorio sobre #toolbar-buscador-pc (sticky), que incluye
-        // también el filtro de Área al vivir dentro del mismo bloque.
-        const esAnchoMovil = window.innerWidth <= 768;
-        const esAnchoPC = window.innerWidth >= 881;
-        // Solo ocultar cabecera si hay productos cargados (evitar efecto raro con spinner)
-        if ((esAnchoMovil || esAnchoPC) && productosCargados) {
-            const elemento = esAnchoMovil ? $('grupo-buscador-principal') : $('toolbar-buscador-pc');
-            const delta = scrollActual - ultimoScrollY;
-            // El umbral (6px) evita reaccionar a vibraciones mínimas del
-            // dedo/rueda, pero la referencia se actualiza SIEMPRE — si solo
-            // se actualizara al superar el umbral, con gestos de scroll
-            // pequeños y sucesivos la referencia se queda obsoleta y la
-            // detección de dirección deja de reaccionar.
-            if (elemento && Math.abs(delta) > 6) {
-                elemento.classList.toggle('oculto-por-scroll', delta > 0 && scrollActual > 40);
-            }
-            ultimoScrollY = scrollActual;
-        }
-
         scrollTicking = false;
     }
     window.addEventListener('scroll', () => {
