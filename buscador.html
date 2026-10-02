@@ -507,8 +507,12 @@
             .filtros-extra-cabecera {
                 position: sticky;
                 top: 0;
-                margin: -18px -20px 12px;
-                padding: 6px 14px 6px 20px;
+                /* Margen inferior más generoso (antes 12px): en algunos
+                   motores (Safari/iOS, reportado por Eloy) el hueco se
+                   quedaba justo y llegaba a solaparse ligeramente con el
+                   título "ÁREA" de justo debajo. */
+                margin: -18px -20px 26px;
+                padding: 6px 14px 10px 20px;
                 background: white;
                 z-index: 1;
             }
