@@ -4776,6 +4776,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 poblarDesdeTexto(texto);
                 mostrarResultadosPorPrimeraVez();
                 primerPintadoHecho = true;
+                // Igual que el grid principal: pintado instantáneo con el
+                // JSON estático, sin esperar a la reconciliación en vivo de
+                // más abajo (que puede tardar varios segundos contra Apps
+                // Script) — si esa reconciliación cambia algo, se vuelve a
+                // llamar más abajo para corregirlo.
+                actualizarModulosDescubrimiento_();
             }
         } catch (e) {
             console.warn('No se pudo cargar el JSON estático de productos:', e);
@@ -4797,10 +4803,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     if (primerPintadoHecho) {
                         reconciliarConTextoEnVivo(texto);
                         aplicarFiltros();
+                        actualizarModulosDescubrimiento_(); // corrige los módulos si la reconciliación cambió algo (p.ej. una imagen)
                     } else {
                         poblarDesdeTexto(texto);
                         mostrarResultadosPorPrimeraVez();
                         primerPintadoHecho = true;
+                        actualizarModulosDescubrimiento_();
                     }
                 }
             }
@@ -4813,11 +4821,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 '<i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo cargar el catálogo de productos. Inténtalo de nuevo más tarde.</p>';
             return;
         }
-        // Aquí, y no antes: en este punto TODOS ya refleja la reconciliación
-        // con la fuente en vivo (paso 2 de arriba) cuando la ha habido, no
-        // solo el primer pintado instantáneo del JSON estático — ver el
-        // porqué completo junto a actualizarModulosDescubrimiento_().
-        actualizarModulosDescubrimiento_();
         cargarProductosAdicionalesEnSegundoPlano();
     }
 
