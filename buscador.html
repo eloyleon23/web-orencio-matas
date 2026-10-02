@@ -649,6 +649,61 @@
         }
         .marcas-buscadas__chip:hover { background: var(--light); }
 
+        /* Prototipo "Seguir comprando X" (estilo Amazon, ver captura de
+           Eloy): a diferencia de Novedades/Más buscados (un título y una
+           fila de tarjetas completas), aquí CADA categoría es un bloque de
+           color propio y autocontenido — título dentro del bloque + una
+           rejilla 2x2 de solo imagen (sin nombre/precio, "en pequeño") — y
+           son los BLOQUES los que se deslizan en carrusel horizontal, no
+           los productos sueltos dentro de uno. Ancho fijo (225px = 1.5x
+           los 150px que ya usan las tarjetas de Novedades/Más buscados en
+           este mismo archivo), para que se vea "producto y medio" del
+           grid normal, igual que pidió Eloy. */
+        .categorias-carrusel {
+            display: flex; gap: 14px; overflow-x: auto; padding-bottom: 4px;
+            scroll-snap-type: x proximity;
+        }
+        .categoria-bloque {
+            flex: 0 0 225px;
+            scroll-snap-align: start;
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .categoria-bloque--rojo { background: linear-gradient(135deg, var(--red), #8c1010); color: #fff; }
+        .categoria-bloque--verde { background: linear-gradient(135deg, var(--green), #1c4a22); color: #fff; }
+        .categoria-bloque--amarillo { background: linear-gradient(135deg, var(--yellow), #c99a00); color: var(--dark); }
+        .categoria-bloque__titulo {
+            margin: 0;
+            font-weight: 800;
+            font-size: 1rem;
+            line-height: 1.25;
+        }
+        .categoria-bloque__grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .categoria-bloque__item {
+            background: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 6px;
+            cursor: pointer;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .categoria-bloque__item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .categoria-bloque__item:hover { filter: brightness(0.96); }
 
         .btn-escanear-codigo.disponible { display: flex; }
         /* En escritorio (PC) el escáner no procede — solo tiene sentido con
@@ -3496,12 +3551,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div id="marcas-buscadas-lista" class="marcas-buscadas__lista"></div>
         </div>
 
-        <!-- Prototipo "Seguir comprando X" (estilo Amazon): bloques de
-             categoría/marca/temporada, puramente de CATÁLOGO (igual que
-             Novedades) — ver cargarBloquesCategorias_(). Se generan por
-             JS, no hay un número fijo de bloques en el HTML: cada uno usa
-             la misma estructura .mas-buscados ya existente. -->
-        <div id="categorias-descubrimiento" style="display:none;"></div>
+        <!-- Prototipo "Seguir comprando X" (estilo Amazon, a petición de
+             Eloy): bloques de categoría/marca/temporada, puramente de
+             CATÁLOGO (igual que Novedades) — ver cargarBloquesCategorias_().
+             Cada bloque es una tarjeta de color con una rejilla 2x2 de solo
+             imagen; son los BLOQUES los que se deslizan en carrusel
+             horizontal (ver .categorias-carrusel). Se generan por JS, no
+             hay un número fijo en el HTML. -->
+        <div id="categorias-descubrimiento" class="categorias-carrusel" style="display:none;"></div>
 
         <div id="cargando-inicial" class="cargando-inicial">
             <i id="icono-cargando" class="fa-solid fa-spinner"></i>
@@ -6018,22 +6075,55 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     const DEFINICION_BLOQUES_CATEGORIAS_ = [
-        { id: 'detergentes',    titulo: 'Detergentes en polvo y líquidos',   icono: 'fa-pump-soap',        match: t => t.includes('detergente') },
-        { id: 'ceys',           titulo: 'Productos Ceys',                    icono: 'fa-industry',         match: t => t.includes('ceys') },
-        { id: 'werku',          titulo: 'Productos Werku',                   icono: 'fa-toolbox',          match: t => t.includes('werku') },
-        { id: 'titan-eco',      titulo: 'Pintura Titán Ecológica',           icono: 'fa-leaf',             match: t => t.includes('titan') && t.includes('eco') },
-        { id: 'titanpro',       titulo: 'Pintura TitanPro',                  icono: 'fa-paint-roller',     match: t => t.includes('titanpro') || t.includes('titan pro') },
-        { id: 'posidon',        titulo: 'Colonias Poseidón',                 icono: 'fa-droplet',          match: t => t.includes('posidon') || t.includes('poseidon') },
-        { id: 'aire-sevilla',   titulo: 'Colonias Aire de Sevilla',          icono: 'fa-wind',             match: t => t.includes('aire de sevilla') },
-        { id: 'radiadores',     titulo: 'Para calentar este invierno',       icono: 'fa-temperature-high', match: t => t.includes('radiador') || t.includes('calefactor') || t.includes('estufa'), estacion: 'frio' },
-        { id: 'insectos',       titulo: 'Contra los insectos del verano',    icono: 'fa-bug',              match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('antipolillas'), estacion: 'calor' },
-        { id: 'piscinas',       titulo: 'Todo para tu piscina',              icono: 'fa-water',            match: t => t.includes('piscina'), estacion: 'calor' },
-        { id: 'esmaltes',       titulo: 'Esmaltes para pintar',              icono: 'fa-paint-roller',     match: t => t.includes('esmalte') },
-        { id: 'barnices',       titulo: 'Barnices y protectores de madera',  icono: 'fa-tree',             match: t => t.includes('barniz') },
-        { id: 'imprimaciones',  titulo: 'Imprimaciones y selladores',        icono: 'fa-layer-group',      match: t => t.includes('imprimacion') || t.includes('imp.') },
-        { id: 'colonias',       titulo: 'Colonias y perfumería',             icono: 'fa-spray-can-sparkles', match: t => t.includes('colonia') || t.includes('perfume') },
-        { id: 'limpieza-hogar', titulo: 'Limpieza del hogar',                icono: 'fa-broom',            match: t => t.includes('limpiahogar') || t.includes('limpiador') || t.includes('lejia') || t.includes('friegasuelos') },
+        { id: 'detergentes',    titulo: 'Detergentes en polvo y líquidos',   match: t => t.includes('detergente') },
+        { id: 'ceys',           titulo: 'Productos Ceys',                    match: t => t.includes('ceys') },
+        { id: 'werku',          titulo: 'Productos Werku',                   match: t => t.includes('werku') },
+        { id: 'titan-eco',      titulo: 'Pintura Titán Ecológica',           match: t => t.includes('titan') && t.includes('eco') },
+        { id: 'titanpro',       titulo: 'Pintura TitanPro',                  match: t => t.includes('titanpro') || t.includes('titan pro') },
+        { id: 'posidon',        titulo: 'Colonias Poseidón',                 match: t => t.includes('posidon') || t.includes('poseidon') },
+        { id: 'aire-sevilla',   titulo: 'Colonias Aire de Sevilla',          match: t => t.includes('aire de sevilla') },
+        { id: 'radiadores',     titulo: 'Para calentar este invierno',       match: t => t.includes('radiador') || t.includes('calefactor') || t.includes('estufa'), estacion: 'frio' },
+        { id: 'insectos',       titulo: 'Contra los insectos del verano',    match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('antipolillas'), estacion: 'calor' },
+        { id: 'piscinas',       titulo: 'Todo para tu piscina',              match: t => t.includes('piscina'), estacion: 'calor' },
+        { id: 'esmaltes',       titulo: 'Esmaltes para pintar',              match: t => t.includes('esmalte') },
+        { id: 'barnices',       titulo: 'Barnices y protectores de madera',  match: t => t.includes('barniz') },
+        { id: 'imprimaciones',  titulo: 'Imprimaciones y selladores',        match: t => t.includes('imprimacion') || t.includes('imp.') },
+        { id: 'colonias',       titulo: 'Colonias y perfumería',             match: t => t.includes('colonia') || t.includes('perfume') },
+        { id: 'limpieza-hogar', titulo: 'Limpieza del hogar',                match: t => t.includes('limpiahogar') || t.includes('limpiador') || t.includes('lejia') || t.includes('friegasuelos') },
     ];
+
+    // Tarjeta pequeña (solo imagen, sin nombre/precio) para la rejilla 2x2
+    // de un bloque de categoría — a diferencia de crearTarjeta() (tarjeta
+    // completa de Novedades/Más buscados), aquí el bloque entero ya lleva
+    // el título, así que cada celda es solo la imagen; clicar abre el
+    // modal del producto igual que cualquier otra tarjeta del buscador.
+    function crearItemBloqueCategoria_(p) {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'categoria-bloque__item';
+        item.dataset.ref = p.ref;
+        item.setAttribute('aria-label', p.nombre);
+        item.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
+        const urlImg = urlImagenProducto(p, 150);
+        item.innerHTML = urlImg
+            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
+            : sinImagenFabricanteHtml(p);
+        return item;
+    }
+
+    function crearBloqueCategoria_(def, productos, color) {
+        const bloque = document.createElement('div');
+        bloque.className = `categoria-bloque categoria-bloque--${color}`;
+        const titulo = document.createElement('p');
+        titulo.className = 'categoria-bloque__titulo';
+        titulo.textContent = def.titulo;
+        const grid = document.createElement('div');
+        grid.className = 'categoria-bloque__grid';
+        productos.forEach(p => grid.appendChild(crearItemBloqueCategoria_(p)));
+        bloque.appendChild(titulo);
+        bloque.appendChild(grid);
+        return bloque;
+    }
 
     function cargarBloquesCategorias_() {
         if (!TODOS.length) {
@@ -6058,17 +6148,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // de módulos — ver actualizarModulosDescubrimiento_()).
             const muestra = [...candidatos].sort(() => Math.random() - 0.5).slice(0, PRODUCTOS_POR_BLOQUE_CATEGORIA);
             const color = colores[n % colores.length];
-            const bloque = document.createElement('div');
-            bloque.className = 'mas-buscados';
-            const titulo = document.createElement('p');
-            titulo.className = 'mas-buscados__titulo';
-            titulo.innerHTML = `<span class="mas-buscados__icono mas-buscados__icono--${color}"><i class="fa-solid ${def.icono}"></i></span> ${escapeHtml(def.titulo)}`;
-            const lista = document.createElement('div');
-            lista.className = 'mas-buscados__lista';
-            muestra.forEach(p => lista.appendChild(crearTarjeta(p)));
-            bloque.appendChild(titulo);
-            bloque.appendChild(lista);
-            cont.appendChild(bloque);
+            cont.appendChild(crearBloqueCategoria_(def, muestra, color));
             n++;
         }
         modulosDescubrimientoConContenido_.categorias = n > 0;
