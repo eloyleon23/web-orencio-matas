@@ -309,24 +309,20 @@
         }
 
         /* Fila superior del panel móvil: "Limpiar filtros" (izquierda,
-           solo con algún filtro aplicado) + botón de cerrar (derecha). */
+           solo con algún filtro aplicado) + botón de cerrar (derecha). El
+           botón de cerrar lleva su propio "margin-left:auto" para quedar
+           siempre pegado a la derecha, exista o no "Limpiar filtros" en el
+           DOM visible — así no depende de "justify-content:space-between"
+           ni de reservar hueco con un elemento invisible (eso último, en
+           Safari/iOS, llegó a comerse parte del texto de "ÁREA" justo
+           debajo, ver bug real reportado por Eloy). */
         .filtros-extra-cabecera {
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 8px;
         }
         .btn-limpiar-arriba {
-            /* Siempre "display:flex" (nunca display:none): así reserva su
-               hueco aunque esté invisible — con display:none, al no haber
-               filtro, el botón de cerrar era el ÚNICO hijo del flex y
-               "justify-content:space-between" lo mandaba al extremo
-               IZQUIERDO en vez de mantenerlo a la derecha. Con
-               visibility+opacity el layout no cambia nunca, solo el
-               aspecto. */
-            display: inline-flex;
-            visibility: hidden;
-            opacity: 0;
+            display: none;
             align-items: center;
             gap: 6px;
             background: none;
@@ -336,8 +332,15 @@
             font-size: 0.85rem;
             cursor: pointer;
             padding: 6px 4px;
+            /* Ver abrirFiltrosMovil(): no es realmente clicable hasta que
+               el panel termina de abrirse — evita el "ghost click" de
+               Safari/iOS que puede disparar un click retrasado sobre lo
+               que haya ahora mismo bajo el dedo, en vez de sobre "Filtros"
+               (el botón que se tocó de verdad). */
+            pointer-events: none;
         }
-        .btn-limpiar-arriba.visible { visibility: visible; opacity: 1; }
+        .btn-limpiar-arriba.visible { display: inline-flex; }
+        .btn-limpiar-arriba.visible.clicable { pointer-events: auto; }
 
         /* Misma precaución de orden que el botón de abrir: la regla base
            debe ir ANTES de la media query que la activa. */
@@ -511,6 +514,7 @@
             }
             .btn-cerrar-filtros-movil {
                 display: block;
+                margin-left: auto;
                 padding: 10px 14px;
             }
 
@@ -5232,18 +5236,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
-        $('btn-limpiar-arriba').addEventListener('click', () => {
-            // Bug real reportado por Eloy: al tocar "Filtros", el panel se
-            // desliza desde la derecha y "Limpiar filtros" aparece a los
-            // pocos milisegundos muy cerca de donde estaba el dedo — un
-            // segundo toque rápido e impaciente (algo habitual mientras el
-            // panel todavía se está abriendo) podía acabar limpiando los
-            // filtros sin que el usuario llegara a ver ni pulsar a propósito
-            // el botón. Se ignora cualquier toque en los primeros 400ms
-            // tras abrir el panel (ver abrirFiltrosMovil/panelAbiertoEnMs_).
-            if (Date.now() - panelAbiertoEnMs_ < 400) return;
-            limpiarFiltros();
-        });
+        $('btn-limpiar-arriba').addEventListener('click', limpiarFiltros);
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
@@ -6416,9 +6409,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Panel de filtros como modal deslizante en móvil ──
-    let panelAbiertoEnMs_ = 0; // ver el porqué junto al click de btn-limpiar-arriba
     function abrirFiltrosMovil() {
-        panelAbiertoEnMs_ = Date.now();
         const filtrosExtra = $('filtros-extra');
         const backdrop = $('filtros-backdrop');
 
@@ -6455,6 +6446,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // no solo al cambiar un filtro, así SIEMPRE refleja el estado real
         // en cuanto se abre el panel.
         actualizarVisibilidadModulosDescubrimiento_();
+
+        // Bug real reportado por Eloy (un único toque normal en "Filtros",
+        // reproducido en iPhone/Chrome): Safari/iOS puede disparar un
+        // "click" sintético con retraso, dirigido a lo que haya AHORA
+        // MISMO bajo el dedo — y justo ahí, a los pocos ms, aparece
+        // "Limpiar filtros". El resultado: ese toque único en "Filtros"
+        // acababa también limpiando los filtros. Se evita de raíz: el
+        // botón no es clicable (pointer-events:none, ver su CSS) hasta
+        // que el panel termina de deslizarse del todo.
+        $('btn-limpiar-arriba').classList.remove('clicable');
+        setTimeout(() => $('btn-limpiar-arriba').classList.add('clicable'), 380);
     }
 
     function cerrarFiltrosMovil() {
@@ -6463,6 +6465,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         document.body.style.overflow = '';
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-abrir-filtros-movil').classList.remove('activo');
+        $('btn-limpiar-arriba').classList.remove('clicable');
     }
 
     // Botón "Filtros": si el panel ya está abierto, lo cierra; si está
