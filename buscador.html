@@ -684,8 +684,20 @@
             font-weight: 800;
             font-size: 1rem;
             line-height: 1.25;
+            /* A petición de Eloy: la rejilla de 4 productos debe quedar
+               alineada entre bloques, con la misma altura en todos —
+               título de una sola palabra ("Lavavajillas") y título de dos
+               líneas ("Detergentes en polvo y líquidos") empezaban la
+               rejilla a distinta altura. Reservando siempre el alto de 2
+               líneas (quede el título corto o largo), la rejilla arranca
+               en el mismo punto en cualquier bloque. */
+            min-height: 2.5em;
         }
         .categoria-bloque__grid {
+            /* Empuja la rejilla al fondo del bloque si sobra espacio (el
+               bloque ya iguala su altura a la del más alto de la fila,
+               comportamiento por defecto de flex). */
+            margin-top: auto;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
@@ -6115,7 +6127,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         { id: 'ambientadores',    titulo: 'Ambientadores',                     match: t => t.includes('ambientador'), terminoBusqueda: 'ambientador' },
         { id: 'papel-higienico',  titulo: 'Papel higiénico',                   match: t => t.includes('papel higienico') || t.includes('higienico'), terminoBusqueda: 'papel higienico' },
         { id: 'cepillos-fregonas', titulo: 'Cepillos y fregonas',              match: t => t.includes('fregona') || t.includes('cepillo'), terminoBusqueda: 'fregona' },
+        { id: 'bella-aurora',     titulo: 'Productos Bella Aurora',            match: t => t.includes('bella aurora'), terminoBusqueda: 'bella aurora' },
+        { id: 'insecticidas',     titulo: 'Insecticidas',                      match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('cucaracha') || t.includes('hormiga'), terminoBusqueda: 'insecticida' },
+        { id: 'fregasuelos',      titulo: 'Fregasuelos',                       match: t => t.includes('friegasuelos') || t.includes('fregasuelos'), terminoBusqueda: 'fregasuelos' },
+        { id: 'asevi',            titulo: 'Productos Asevi',                   match: t => t.includes('asevi'), terminoBusqueda: 'asevi' },
+        { id: 'baixens',          titulo: 'Productos Baixens',                 match: t => t.includes('baixens'), terminoBusqueda: 'baixens' },
+        { id: 'geles',            titulo: 'Geles de baño',                     match: t => t.includes('gel de bano') || t.includes('gel ducha') || t.includes('gel baño'), terminoBusqueda: 'gel de baño' },
+        { id: 'campus',           titulo: 'Productos Campus',                  match: t => t.includes('campus'), terminoBusqueda: 'campus' },
+        { id: 'montana',          titulo: 'Montana Colors',                    match: t => t.includes('montana'), terminoBusqueda: 'montana' },
     ];
+
+    // A petición de Eloy ("cada vez que el usuario acceda a la web quiero
+    // que los bloques cambien de orden"): se baraja una vez, al cargar el
+    // script (es decir, una vez por visita/recarga de página) — no en
+    // cada refresco del catálogo dentro de la MISMA visita, para que los
+    // bloques no salten de sitio mientras el usuario ya está mirándolos.
+    function barajar_(array) {
+        const copia = [...array];
+        for (let i = copia.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copia[i], copia[j]] = [copia[j], copia[i]];
+        }
+        return copia;
+    }
+    const ORDEN_BLOQUES_CATEGORIAS_ = barajar_(DEFINICION_BLOQUES_CATEGORIAS_);
 
     // Tarjeta pequeña (solo imagen, sin nombre/precio) para la rejilla 2x2
     // de un bloque de categoría. A diferencia de crearTarjeta()
@@ -6199,7 +6234,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cont.innerHTML = '';
         bloquesCategoriasActivos_ = [];
         let n = 0;
-        for (const def of DEFINICION_BLOQUES_CATEGORIAS_) {
+        for (const def of ORDEN_BLOQUES_CATEGORIAS_) {
             if (n >= MAX_BLOQUES_CATEGORIAS) break;
             if (def.estacion && def.estacion !== estacion) continue;
             const candidatos = vigentes.filter(p => def.match(textoBuscableProducto_(p)));
