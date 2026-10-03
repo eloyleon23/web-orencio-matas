@@ -10844,14 +10844,32 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const espaciador = $('espaciador-buscador-movil');
         const navbar = document.querySelector('.navbar-wrapper');
         if (!grupoBuscador || !navbar) return;
+        const alturaNavbar = navbar.getBoundingClientRect().height;
         if (window.innerWidth > 768) {
-            grupoBuscador.style.top = ''; // en escritorio no aplica
+            grupoBuscador.style.top = ''; // en escritorio no es fixed, no aplica
             if (espaciador) espaciador.style.height = '';
+            // A petición de Eloy: la barra de búsqueda (sticky a partir de
+            // 769px, ver #toolbar-buscador-pc y .filtros) quedaba un poco
+            // escondida bajo la cabecera del sitio al hacer scroll — el
+            // "top" estaba fijado a 90px a mano en el CSS, un valor que no
+            // coincidía con la altura REAL de esa cabecera (109px en
+            // producción, y puede variar si cambia el menú). Se calcula
+            // aquí con la altura real, igual que ya se hacía en móvil.
+            const top = Math.ceil(alturaNavbar) + 'px';
+            const toolbarPc = $('toolbar-buscador-pc');
+            const filtrosAside = document.querySelector('.filtros');
+            if (toolbarPc) toolbarPc.style.top = top;
+            if (filtrosAside) filtrosAside.style.top = top;
             return;
         }
-        const alturaNavbar = navbar.getBoundingClientRect().height;
         grupoBuscador.style.top = alturaNavbar + 'px';
         if (espaciador) espaciador.style.height = grupoBuscador.getBoundingClientRect().height + 'px';
+        // Limpia el "top" de escritorio por si se redimensiona desde una
+        // pantalla ancha a una estrecha sin recargar la página.
+        const toolbarPc = $('toolbar-buscador-pc');
+        const filtrosAside = document.querySelector('.filtros');
+        if (toolbarPc) toolbarPc.style.top = '';
+        if (filtrosAside) filtrosAside.style.top = '';
     }
     window.addEventListener('resize', debounce(ajustarPosicionBuscadorFijo, 200));
     ajustarPosicionBuscadorFijo();
