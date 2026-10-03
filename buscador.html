@@ -713,6 +713,15 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            /* Rotación automática (ver rotarUnItemDeBloque_): fundido
+               sutil sobre el mismo botón al cambiar de producto, en vez
+               de vaciar y rellenar de golpe (eso dejaba un hueco en
+               blanco perceptible, bug real reportado por Eloy). */
+            transition: opacity 0.22s ease, transform 0.22s ease;
+        }
+        .categoria-bloque__item--transicion {
+            opacity: 0;
+            transform: scale(0.92);
         }
         .categoria-bloque__item img {
             max-width: 100%;
@@ -6161,19 +6170,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // nombre superpuesto a 4 líneas quedaba amontonado encima del logo y
     // se veía "ampliado"/mal — el fallback sin imagen propia se reduce
     // aquí a solo el logo, sin texto.
-    function crearItemBloqueCategoria_(p) {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'categoria-bloque__item';
+    // Separado en dos partes (rellenar contenido / crear el botón) para
+    // poder RELLENAR un item ya existente durante la rotación automática
+    // (ver rotarUnItemDeBloque_) sin quitarlo del DOM ni recrear su
+    // listener — así nunca hay un hueco en blanco ni "parpadeo", solo un
+    // fundido sobre el mismo elemento.
+    function rellenarItemBloqueCategoria_(item, p) {
         item.dataset.ref = p.ref;
         item.setAttribute('aria-label', p.nombre);
-        item.addEventListener('click', (e) => {
-            // Evita que el click también dispare el filtro del bloque
-            // entero (ver crearBloqueCategoria_) — abrir el producto y
-            // filtrar por categoría son dos acciones distintas.
-            e.stopPropagation();
-            abrirModalProducto(p, { pushHistorial: true });
-        });
+        item._producto = p;
         const urlImg = urlImagenProducto(p, 150);
         const logoFallback = (p.area === 'talleres' && p.fabricante && LOGOS_FABRICANTE[p.fabricante])
             ? LOGOS_FABRICANTE[p.fabricante]
@@ -6181,6 +6186,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         item.innerHTML = urlImg
             ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.src='${logoFallback}'; this.onerror=null;">`
             : `<img src="${logoFallback}" alt="${escapeHtml(p.nombre)}" loading="lazy" class="categoria-bloque__item-generico">`;
+    }
+
+    function crearItemBloqueCategoria_(p) {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'categoria-bloque__item';
+        item.addEventListener('click', (e) => {
+            // Evita que el click también dispare el filtro del bloque
+            // entero (ver crearBloqueCategoria_) — abrir el producto y
+            // filtrar por categoría son dos acciones distintas. Se lee
+            // item._producto (no "p" cerrado por closure) porque la
+            // rotación automática puede haber cambiado qué producto
+            // muestra este mismo botón desde que se creó.
+            e.stopPropagation();
+            abrirModalProducto(item._producto, { pushHistorial: true });
+        });
+        rellenarItemBloqueCategoria_(item, p);
         return item;
     }
 
@@ -6218,10 +6240,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // Bloques actualmente en pantalla, con su propia reserva de candidatos
-    // (puede haber muchos más de 4) — ver rotarBloquesCategorias_().
+    // (puede haber muchos más de 4) — ver iniciarRotacionBloque_().
     let bloquesCategoriasActivos_ = [];
+    // Temporizadores de rotación en curso — se limpian en cada recarga del
+    // catálogo para no ir acumulando timers huérfanos sobre bloques que ya
+    // no existen (cargarBloquesCategorias_ puede llamarse varias veces a
+    // lo largo de la sesión).
+    let timersRotacionCategorias_ = [];
 
     function cargarBloquesCategorias_() {
+        timersRotacionCategorias_.forEach(clearTimeout);
+        timersRotacionCategorias_ = [];
         if (!TODOS.length) {
             modulosDescubrimientoConContenido_.categorias = false;
             actualizarVisibilidadModulosDescubrimiento_();
@@ -6239,37 +6268,68 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (def.estacion && def.estacion !== estacion) continue;
             const candidatos = vigentes.filter(p => def.match(textoBuscableProducto_(p)));
             if (candidatos.length < PRODUCTOS_POR_BLOQUE_CATEGORIA) continue;
-            // Muestra aleatoria inicial — ver rotarBloquesCategorias_()
-            // para el cambio automático cada 5s.
+            // Muestra aleatoria inicial — ver iniciarRotacionBloque_() para
+            // el cambio automático posterior.
             const muestra = [...candidatos].sort(() => Math.random() - 0.5).slice(0, PRODUCTOS_POR_BLOQUE_CATEGORIA);
             const color = colores[n % colores.length];
             const bloque = crearBloqueCategoria_(def, muestra, color);
             cont.appendChild(bloque);
-            bloquesCategoriasActivos_.push({ candidatos, grid: bloque.querySelector('.categoria-bloque__grid') });
+            const entrada = { candidatos, grid: bloque.querySelector('.categoria-bloque__grid') };
+            bloquesCategoriasActivos_.push(entrada);
+            iniciarRotacionBloque_(entrada);
             n++;
         }
         modulosDescubrimientoConContenido_.categorias = n > 0;
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
-    // A petición de Eloy ("quiero que los productos dentro del bloque
-    // vayan rotando cada 5 segundos"): cada bloque reemplaza su muestra de
-    // 4 por otra aleatoria de su propia reserva de candidatos (puede haber
-    // muchos más de 4 productos reales por categoría). Un único intervalo
-    // para todos los bloques, arrancado una sola vez; no hace nada si los
-    // bloques están ocultos (filtros activos) o si un bloque no tiene más
-    // candidatos que los 4 ya mostrados (nada que rotar).
+    // A petición de Eloy: el cambio de productos se notaba demasiado —
+    // vaciar la rejilla entera dejaba los 4 huecos en blanco "unas
+    // milésimas" antes de que llegaran las imágenes nuevas, y los
+    // bloques cambiaban todos a la vez. Ahora:
+    //  1) cada bloque tiene su PROPIO temporizador, con una fase inicial
+    //     aleatoria (0-5s) y un periodo ligeramente variable (5-7s) para
+    //     que nunca lleguen a sincronizarse entre sí — "barrido", no
+    //     parpadeo simultáneo de todo el carrusel;
+    //  2) cada vez solo se sustituye UN producto del bloque (no los 4),
+    //     y siempre por uno que no estuviera ya mostrado en él;
+    //  3) el reemplazo es un fundido sobre el MISMO botón (nunca se quita
+    //     del DOM ni se vacía la rejilla), así nunca hay hueco en blanco.
     const INTERVALO_ROTACION_CATEGORIAS_MS = 5000;
-    function rotarBloquesCategorias_() {
-        if (!modulosDescubrimientoConContenido_.categorias || hayFiltroActivo_()) return;
-        bloquesCategoriasActivos_.forEach(({ candidatos, grid }) => {
-            if (candidatos.length <= PRODUCTOS_POR_BLOQUE_CATEGORIA) return;
-            const muestra = [...candidatos].sort(() => Math.random() - 0.5).slice(0, PRODUCTOS_POR_BLOQUE_CATEGORIA);
-            grid.innerHTML = '';
-            muestra.forEach(p => grid.appendChild(crearItemBloqueCategoria_(p)));
-        });
+    const DURACION_FUNDIDO_ROTACION_MS = 220;
+
+    function rotarUnItemDeBloque_(entrada) {
+        const { candidatos, grid } = entrada;
+        if (modulosDescubrimientoConContenido_.categorias && !hayFiltroActivo_() && candidatos.length > PRODUCTOS_POR_BLOQUE_CATEGORIA) {
+            const items = [...grid.children];
+            const refsActuales = new Set(items.map(el => el.dataset.ref));
+            const disponibles = candidatos.filter(p => !refsActuales.has(String(p.ref)));
+            if (disponibles.length && items.length) {
+                const nuevo = disponibles[Math.floor(Math.random() * disponibles.length)];
+                const item = items[Math.floor(Math.random() * items.length)];
+                item.classList.add('categoria-bloque__item--transicion');
+                setTimeout(() => {
+                    rellenarItemBloqueCategoria_(item, nuevo);
+                    requestAnimationFrame(() => item.classList.remove('categoria-bloque__item--transicion'));
+                }, DURACION_FUNDIDO_ROTACION_MS);
+            }
+        }
+        programarSiguienteRotacion_(entrada);
     }
-    setInterval(rotarBloquesCategorias_, INTERVALO_ROTACION_CATEGORIAS_MS);
+
+    function programarSiguienteRotacion_(entrada, esperaInicial) {
+        // 5-7s: variación a propósito para que la fase de cada bloque
+        // "flote" en vez de volver a alinearse con las demás.
+        const espera = esperaInicial ?? (INTERVALO_ROTACION_CATEGORIAS_MS + Math.random() * 2000);
+        const id = setTimeout(() => rotarUnItemDeBloque_(entrada), espera);
+        timersRotacionCategorias_.push(id);
+    }
+
+    function iniciarRotacionBloque_(entrada) {
+        // Fase inicial aleatoria (0-5s): evita que todos los bloques
+        // recién cargados hagan su primer cambio a la vez.
+        programarSiguienteRotacion_(entrada, Math.random() * INTERVALO_ROTACION_CATEGORIAS_MS);
+    }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
     function renderFamilias() {
