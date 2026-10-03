@@ -10126,7 +10126,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
 
             const sinImagen = !p.img;
-            const sinValidar = !!p.img && !p.imagen_validada;
+            // Igual que el filtro "sin validar" del buscador principal
+            // (ver aplicarFiltros, soloImagenesSinValidar): una imagen
+            // recién subida desde este mismo asistente ya cuenta como
+            // validada aunque el backend no marque imagen_validada
+            // explícitamente, para que no vuelva a aparecer como
+            // pendiente tras recargar la página.
+            const sinValidar = !!p.img && !p.imagen_validada && !p.fecha_actualizacion_imagen;
 
             if (incluirSinImagen && incluirSinValidar) return sinImagen || sinValidar;
             if (incluirSinImagen) return sinImagen;
@@ -10243,7 +10249,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('asistente-producto-familia').textContent = p.familia || '—';
 
         // Imagen actual (caso "sin validar": ya tiene foto, solo falta confirmarla)
-        const tieneImagenSinValidar = !!p.img && !p.imagen_validada;
+        const tieneImagenSinValidar = !!p.img && !p.imagen_validada && !p.fecha_actualizacion_imagen;
         $('asistente-imagen-actual').style.display = tieneImagenSinValidar ? 'flex' : 'none';
         if (tieneImagenSinValidar) {
             $('asistente-imagen-actual-img').src = urlImagenProducto(p, 100) || '';
