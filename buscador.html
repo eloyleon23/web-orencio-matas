@@ -6115,35 +6115,46 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // más buscadas". No tiene por qué ser idéntico a "match" (que puede
     // combinar varias palabras con AND/OR): solo el término más
     // representativo de la categoría.
+    // "area": si está presente, restringe el bloque SOLO a productos de esa
+    // área (p. ej. "pinturas", "perfumeria") — a petición de Eloy, para que
+    // no se cuelen productos de otras áreas que compartan alguna palabra
+    // del nombre por casualidad (p. ej. un "esmalte de uñas" de perfumería
+    // colándose en el bloque de esmaltes de pintura). Se aplica TANTO al
+    // elegir qué productos puede mostrar el bloque (cargarBloquesCategorias_)
+    // COMO al clicar el bloque entero para filtrar (aplicarFiltroCategoria_,
+    // que además de escribir el término marca esa única área). Se deja sin
+    // "area" en los casos realmente ambiguos (una marca que podría vender
+    // en más de un área de este catálogo) para no excluir por error
+    // productos legítimos solo por una suposición equivocada.
     const DEFINICION_BLOQUES_CATEGORIAS_ = [
-        { id: 'detergentes',      titulo: 'Detergentes en polvo y líquidos',   match: t => t.includes('detergente'), terminoBusqueda: 'detergente' },
-        { id: 'lavavajillas',     titulo: 'Lavavajillas',                      match: t => t.includes('lavavajillas'), terminoBusqueda: 'lavavajillas' },
+        { id: 'detergentes',      titulo: 'Detergentes en polvo y líquidos',   match: t => t.includes('detergente'), terminoBusqueda: 'detergente', area: 'drogueria' },
+        { id: 'lavavajillas',     titulo: 'Lavavajillas',                      match: t => t.includes('lavavajillas'), terminoBusqueda: 'lavavajillas', area: 'drogueria' },
         { id: 'ceys',             titulo: 'Productos Ceys',                    match: t => t.includes('ceys'), terminoBusqueda: 'ceys' },
-        { id: 'werku',            titulo: 'Productos Werku',                   match: t => t.includes('werku'), terminoBusqueda: 'werku' },
-        { id: 'titan-eco',        titulo: 'Pintura Titán Ecológica',           match: t => t.includes('titan') && t.includes('eco'), terminoBusqueda: 'titan eco' },
-        { id: 'titanpro',         titulo: 'Pintura TitanPro',                  match: t => t.includes('titanpro') || t.includes('titan pro'), terminoBusqueda: 'titanpro' },
-        { id: 'posidon',          titulo: 'Colonias Poseidón',                 match: t => t.includes('posidon') || t.includes('poseidon'), terminoBusqueda: 'posidon' },
-        { id: 'aire-sevilla',     titulo: 'Colonias Aire de Sevilla',          match: t => t.includes('aire de sevilla'), terminoBusqueda: 'aire de sevilla' },
-        { id: 'radiadores',       titulo: 'Para calentar este invierno',       match: t => t.includes('radiador') || t.includes('calefactor') || t.includes('estufa'), estacion: 'frio', terminoBusqueda: 'radiador' },
-        { id: 'insectos',         titulo: 'Contra los insectos del verano',    match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('antipolillas'), estacion: 'calor', terminoBusqueda: 'insecticida' },
-        { id: 'piscinas',         titulo: 'Todo para tu piscina',              match: t => t.includes('piscina'), estacion: 'calor', terminoBusqueda: 'piscina' },
-        { id: 'esmaltes',         titulo: 'Esmaltes para pintar',              match: t => t.includes('esmalte'), terminoBusqueda: 'esmalte' },
-        { id: 'barnices',         titulo: 'Barnices y protectores de madera',  match: t => t.includes('barniz'), terminoBusqueda: 'barniz' },
-        { id: 'imprimaciones',    titulo: 'Imprimaciones y selladores',        match: t => t.includes('imprimacion') || t.includes('imp.'), terminoBusqueda: 'imprimacion' },
-        { id: 'colonias',         titulo: 'Colonias y perfumería',             match: t => t.includes('colonia') || t.includes('perfume'), terminoBusqueda: 'colonia' },
-        { id: 'limpieza-hogar',   titulo: 'Limpieza del hogar',                match: t => t.includes('limpiahogar') || t.includes('limpiador') || t.includes('lejia') || t.includes('friegasuelos'), terminoBusqueda: 'limpiador' },
-        { id: 'desatascadores',   titulo: 'Desatascadores',                    match: t => t.includes('desatascador') || t.includes('desatasca'), terminoBusqueda: 'desatascador' },
-        { id: 'ambientadores',    titulo: 'Ambientadores',                     match: t => t.includes('ambientador'), terminoBusqueda: 'ambientador' },
-        { id: 'papel-higienico',  titulo: 'Papel higiénico',                   match: t => t.includes('papel higienico') || t.includes('higienico'), terminoBusqueda: 'papel higienico' },
-        { id: 'cepillos-fregonas', titulo: 'Cepillos y fregonas',              match: t => t.includes('fregona') || t.includes('cepillo'), terminoBusqueda: 'fregona' },
-        { id: 'bella-aurora',     titulo: 'Productos Bella Aurora',            match: t => t.includes('bella aurora'), terminoBusqueda: 'bella aurora' },
-        { id: 'insecticidas',     titulo: 'Insecticidas',                      match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('cucaracha') || t.includes('hormiga'), terminoBusqueda: 'insecticida' },
-        { id: 'fregasuelos',      titulo: 'Fregasuelos',                       match: t => t.includes('friegasuelos') || t.includes('fregasuelos'), terminoBusqueda: 'fregasuelos' },
-        { id: 'asevi',            titulo: 'Productos Asevi',                   match: t => t.includes('asevi'), terminoBusqueda: 'asevi' },
-        { id: 'baixens',          titulo: 'Productos Baixens',                 match: t => t.includes('baixens'), terminoBusqueda: 'baixens' },
-        { id: 'geles',            titulo: 'Geles de baño',                     match: t => t.includes('gel de bano') || t.includes('gel ducha') || t.includes('gel baño'), terminoBusqueda: 'gel de baño' },
+        { id: 'werku',            titulo: 'Productos Werku',                   match: t => t.includes('werku'), terminoBusqueda: 'werku', area: 'talleres' },
+        { id: 'titan-eco',        titulo: 'Pintura Titán Ecológica',           match: t => t.includes('titan') && t.includes('eco'), terminoBusqueda: 'titan eco', area: 'pinturas' },
+        { id: 'titanpro',         titulo: 'Pintura TitanPro',                  match: t => t.includes('titanpro') || t.includes('titan pro'), terminoBusqueda: 'titanpro', area: 'pinturas' },
+        { id: 'posidon',          titulo: 'Colonias Poseidón',                 match: t => t.includes('posidon') || t.includes('poseidon'), terminoBusqueda: 'posidon', area: 'perfumeria' },
+        { id: 'aire-sevilla',     titulo: 'Colonias Aire de Sevilla',          match: t => t.includes('aire de sevilla'), terminoBusqueda: 'aire de sevilla', area: 'perfumeria' },
+        { id: 'radiadores',       titulo: 'Para calentar este invierno',       match: t => t.includes('radiador') || t.includes('calefactor') || t.includes('estufa'), estacion: 'frio', terminoBusqueda: 'radiador', area: 'drogueria' },
+        { id: 'insectos',         titulo: 'Contra los insectos del verano',    match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('antipolillas'), estacion: 'calor', terminoBusqueda: 'insecticida', area: 'drogueria' },
+        { id: 'piscinas',         titulo: 'Todo para tu piscina',              match: t => t.includes('piscina'), estacion: 'calor', terminoBusqueda: 'piscina', area: 'drogueria' },
+        { id: 'esmaltes',         titulo: 'Esmaltes para pintar',              match: t => t.includes('esmalte'), terminoBusqueda: 'esmalte', area: 'pinturas' },
+        { id: 'barnices',         titulo: 'Barnices y protectores de madera',  match: t => t.includes('barniz'), terminoBusqueda: 'barniz', area: 'pinturas' },
+        { id: 'imprimaciones',    titulo: 'Imprimaciones y selladores',        match: t => t.includes('imprimacion') || t.includes('imp.'), terminoBusqueda: 'imprimacion', area: 'pinturas' },
+        { id: 'colonias',         titulo: 'Colonias y perfumería',             match: t => t.includes('colonia') || t.includes('perfume'), terminoBusqueda: 'colonia', area: 'perfumeria' },
+        { id: 'limpieza-hogar',   titulo: 'Limpieza del hogar',                match: t => t.includes('limpiahogar') || t.includes('limpiador') || t.includes('lejia') || t.includes('friegasuelos'), terminoBusqueda: 'limpiador', area: 'drogueria' },
+        { id: 'desatascadores',   titulo: 'Desatascadores',                    match: t => t.includes('desatascador') || t.includes('desatasca'), terminoBusqueda: 'desatascador', area: 'drogueria' },
+        { id: 'ambientadores',    titulo: 'Ambientadores',                     match: t => t.includes('ambientador'), terminoBusqueda: 'ambientador', area: 'drogueria' },
+        { id: 'papel-higienico',  titulo: 'Papel higiénico',                   match: t => t.includes('papel higienico') || t.includes('higienico'), terminoBusqueda: 'papel higienico', area: 'drogueria' },
+        { id: 'cepillos-fregonas', titulo: 'Cepillos y fregonas',              match: t => t.includes('fregona') || t.includes('cepillo'), terminoBusqueda: 'fregona', area: 'drogueria' },
+        { id: 'bella-aurora',     titulo: 'Productos Bella Aurora',            match: t => t.includes('bella aurora'), terminoBusqueda: 'bella aurora', area: 'perfumeria' },
+        { id: 'insecticidas',     titulo: 'Insecticidas',                      match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('cucaracha') || t.includes('hormiga'), terminoBusqueda: 'insecticida', area: 'drogueria' },
+        { id: 'fregasuelos',      titulo: 'Fregasuelos',                       match: t => t.includes('friegasuelos') || t.includes('fregasuelos'), terminoBusqueda: 'fregasuelos', area: 'drogueria' },
+        { id: 'asevi',            titulo: 'Productos Asevi',                   match: t => t.includes('asevi'), terminoBusqueda: 'asevi', area: 'drogueria' },
+        { id: 'baixens',          titulo: 'Productos Baixens',                 match: t => t.includes('baixens'), terminoBusqueda: 'baixens', area: 'drogueria' },
+        { id: 'geles',            titulo: 'Geles de baño',                     match: t => t.includes('gel de bano') || t.includes('gel ducha') || t.includes('gel baño'), terminoBusqueda: 'gel de baño', area: 'perfumeria' },
         { id: 'campus',           titulo: 'Productos Campus',                  match: t => t.includes('campus'), terminoBusqueda: 'campus' },
-        { id: 'montana',          titulo: 'Montana Colors',                    match: t => t.includes('montana'), terminoBusqueda: 'montana' },
+        { id: 'montana',          titulo: 'Montana Colors',                    match: t => t.includes('montana'), terminoBusqueda: 'montana', area: 'pinturas' },
     ];
 
     // A petición de Eloy ("cada vez que el usuario acceda a la web quiero
@@ -6209,10 +6220,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Clic en el bloque (fuera de una imagen concreta): aplica el término
     // representativo de la categoría como si se hubiera escrito a mano en
     // el buscador — mismo mecanismo que los chips de "Marcas más
-    // buscadas" (reutiliza aplicarFiltros(), no un filtrado aparte).
+    // buscadas" (reutiliza aplicarFiltros(), no un filtrado aparte). Si la
+    // categoría tiene área propia (ver DEFINICION_BLOQUES_CATEGORIAS_),
+    // también se marca SOLO esa área, para que el filtrado resultante sea
+    // igual de restrictivo que el que ya aplica el propio bloque al
+    // elegir qué productos mostrar.
     function aplicarFiltroCategoria_(def) {
         $('f-texto').value = def.terminoBusqueda;
         actualizarIconosBuscador();
+        if (def.area) {
+            document.querySelectorAll('#f-area-opciones input').forEach(i => { i.checked = (i.value === def.area); });
+            actualizarTextoBotonArea();
+        }
         resetPaginacion();
         aplicarFiltros();
         $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -6266,7 +6285,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         for (const def of ORDEN_BLOQUES_CATEGORIAS_) {
             if (n >= MAX_BLOQUES_CATEGORIAS) break;
             if (def.estacion && def.estacion !== estacion) continue;
-            const candidatos = vigentes.filter(p => def.match(textoBuscableProducto_(p)));
+            const candidatos = vigentes.filter(p => (!def.area || p.area === def.area) && def.match(textoBuscableProducto_(p)));
             if (candidatos.length < PRODUCTOS_POR_BLOQUE_CATEGORIA) continue;
             // Muestra aleatoria inicial — ver iniciarRotacionBloque_() para
             // el cambio automático posterior.
