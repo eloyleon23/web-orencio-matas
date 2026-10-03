@@ -872,6 +872,23 @@
             padding: 8px;
         }
         .area-multi-panel.abierto { display: block; }
+        .area-multi-acciones {
+            display: flex;
+            gap: 10px;
+            padding: 0 4px 6px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .area-multi-accion {
+            background: none;
+            border: none;
+            padding: 2px 0;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--blue);
+            cursor: pointer;
+        }
+        .area-multi-accion:hover { text-decoration: underline; }
 
         /* Select genérico (mismo aspecto que tenía el antiguo .select-area,
            ahora reutilizable para cualquier <select> simple de los
@@ -3411,6 +3428,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-chevron-down"></i>
                 </button>
                 <div class="area-multi-panel" id="f-area-panel">
+                    <div class="area-multi-acciones">
+                        <button type="button" class="area-multi-accion" data-accion="todas">Marcar todas</button>
+                        <button type="button" class="area-multi-accion" data-accion="ninguna">Desmarcar todas</button>
+                    </div>
                     <div class="area-multi-lista" id="f-area-opciones"></div>
                 </div>
             </div>
@@ -3947,6 +3968,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-chevron-down"></i>
                 </button>
                 <div class="area-multi-panel" id="asistente-f-area-panel">
+                    <div class="area-multi-acciones">
+                        <button type="button" class="area-multi-accion" data-accion="todas">Marcar todas</button>
+                        <button type="button" class="area-multi-accion" data-accion="ninguna">Desmarcar todas</button>
+                    </div>
                     <div class="area-multi-lista" id="asistente-f-area-opciones">
                         <label class="familia-item"><input type="checkbox" value="drogueria" checked> Droguería</label>
                         <label class="familia-item"><input type="checkbox" value="perfumeria" checked> Perfumería</label>
@@ -5211,6 +5236,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // que termine esta carga en segundo plano); las áreas nuevas se
     // marcan por defecto, igual que el resto ("todas activas por
     // defecto").
+    // Efectos que deben dispararse siempre que cambie la selección de
+    // áreas del buscador principal, ya sea al marcar/desmarcar una casilla
+    // suelta (evento 'change' nativo) o al usar los botones "Marcar
+    // todas"/"Desmarcar todas" (que cambian `checked` por JS y por tanto
+    // no disparan 'change' por sí solos).
+    function aplicarCambioAreas_() {
+        actualizarTextoBotonArea();
+        renderFabricanteTaller(); renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros();
+    }
+
     function poblarOpcionesArea() {
         const areasPresentes = [...new Set(TODOS.map(p => p.area).filter(Boolean))];
         const contArea = $('f-area-opciones');
@@ -5316,9 +5351,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             contenedor.addEventListener('change', revelarCabeceraResultados);
         });
 
-        $('f-area-opciones').addEventListener('change', () => {
-            actualizarTextoBotonArea();
-            renderFabricanteTaller(); renderFamilias(); renderAtributosPintura(); renderAtributosTaller(); resetPaginacion(); aplicarFiltros();
+        $('f-area-opciones').addEventListener('change', aplicarCambioAreas_);
+        // Botones "Marcar todas" / "Desmarcar todas" del desplegable de
+        // área: marcan/desmarcan todas las casillas a la vez y disparan
+        // los mismos efectos que marcar/desmarcar una a una (no se puede
+        // simplemente dejar que el 'change' nativo lo haga porque cambiar
+        // `checked` por JS no dispara 'change').
+        document.querySelectorAll('#f-area-panel .area-multi-accion').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const marcar = btn.dataset.accion === 'todas';
+                document.querySelectorAll('#f-area-opciones input').forEach(i => { i.checked = marcar; });
+                aplicarCambioAreas_();
+            });
         });
         // Desplegable de área: abre/cierra al pulsar el botón, se cierra al
         // clicar fuera o con Escape — mismo comportamiento esperable de
@@ -10025,6 +10069,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function areasSeleccionadasAsistente() {
         return [...document.querySelectorAll('#asistente-f-area-opciones input:checked')].map(i => i.value);
     }
+    function aplicarCambioAreasAsistente_() {
+        actualizarTextoBotonAreaAsistente();
+        renderFamiliasAsistente();
+        $('asistente-aplicar-filtros').disabled = false;
+    }
     function actualizarTextoBotonAreaAsistente() {
         const total = document.querySelectorAll('#asistente-f-area-opciones input').length;
         const sel = areasSeleccionadasAsistente();
@@ -10331,10 +10380,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('asistente-aplicar-filtros').disabled = false;
         $('asistente-f-texto').focus();
     });
-    $('asistente-f-area-opciones').addEventListener('change', () => {
-        actualizarTextoBotonAreaAsistente();
-        renderFamiliasAsistente();
-        $('asistente-aplicar-filtros').disabled = false;
+    $('asistente-f-area-opciones').addEventListener('change', aplicarCambioAreasAsistente_);
+    document.querySelectorAll('#asistente-f-area-panel .area-multi-accion').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const marcar = btn.dataset.accion === 'todas';
+            document.querySelectorAll('#asistente-f-area-opciones input').forEach(i => { i.checked = marcar; });
+            aplicarCambioAreasAsistente_();
+        });
     });
     // Mismo desplegable que el área del buscador principal (abre/cierra al
     // pulsar, se cierra al clicar fuera o con Escape).
