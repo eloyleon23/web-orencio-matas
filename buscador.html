@@ -4433,7 +4433,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
                 </h3>
                 <div class="modal-lista-compra-resumen">
-                    <span class="modal-lista-compra-contador" id="modal-lista-compra-contador">0 / 20 productos</span>
+                    <span class="modal-lista-compra-contador" id="modal-lista-compra-contador">0 / 24 productos</span>
                     <div class="modal-lista-compra-totales">
                         <span>Total sin IVA: <strong id="modal-lista-compra-total-sin">0,00 €</strong></span>
                         <span>Total con IVA: <strong id="modal-lista-compra-total-con">0,00 €</strong></span>
@@ -7994,7 +7994,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ══════════════════════════════════════════════════════════════════
     const LISTA_COMPRA_CLAVE_ = 'omListaCompra';
     const LISTA_COMPRA_VERSION_ = 2; // v2: añade "creado" (fecha de creación, para la validez de 15 días)
-    const LISTA_COMPRA_MAX_ = 20;
+    const LISTA_COMPRA_MAX_ = 24;
     const LISTA_COMPRA_VALIDEZ_DIAS_ = 15;
     const LISTA_COMPRA_VALIDEZ_MS_ = LISTA_COMPRA_VALIDEZ_DIAS_ * 24 * 60 * 60 * 1000;
     // Días desde la creación en los que se avisa al usuario (una sola vez
@@ -8433,7 +8433,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
         if (listaCompraCantidad_() >= LISTA_COMPRA_MAX_) {
-            texto.textContent = 'Lista completa (20/20)';
+            texto.textContent = `Lista completa (${LISTA_COMPRA_MAX_}/${LISTA_COMPRA_MAX_})`;
             btn.classList.add('limite');
             return;
         }
