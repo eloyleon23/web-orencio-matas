@@ -734,6 +734,8 @@
             position: sticky; top: 0; z-index: 15; background: white;
             border-bottom: 1px solid var(--border);
             padding: 16px 56px 16px 20px; border-radius: 16px 16px 0 0;
+        }
+        .modal-lista-compra-cabecera-fila {
             display: flex; align-items: center; justify-content: space-between;
             gap: 12px; flex-wrap: wrap;
         }
@@ -743,6 +745,12 @@
         .modal-lista-compra-resumen strong { color: var(--dark); }
         .modal-lista-compra-contador { background: var(--light); padding: 4px 12px; border-radius: 20px; font-weight: 700; color: var(--dark); white-space: nowrap; }
         .modal-lista-compra-totales { display: flex; gap: 14px; flex-wrap: wrap; }
+        .modal-lista-compra-validez {
+            margin: 8px 0 0; font-size: 0.78rem; color: var(--muted);
+            display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+        }
+        .modal-lista-compra-validez i { color: var(--yellow); }
+        .modal-lista-compra-validez strong { color: var(--dark); }
         .modal-lista-compra-cuerpo { padding: 20px; }
         .modal-lista-compra-acciones {
             position: sticky; bottom: 0; z-index: 15; background: white;
@@ -802,7 +810,8 @@
         .modal-producto-lista-btn.limite { background: var(--light); color: var(--muted); cursor: not-allowed; }
 
         @media (max-width: 768px) {
-            .modal-lista-compra-cabecera { padding: 12px 48px 12px 14px; flex-direction: column; align-items: flex-start; }
+            .modal-lista-compra-cabecera { padding: 12px 48px 12px 14px; }
+            .modal-lista-compra-cabecera-fila { flex-direction: column; align-items: flex-start; }
             .modal-lista-compra-resumen { font-size: 0.8rem; gap: 10px; width: 100%; justify-content: space-between; }
             .modal-lista-compra-cuerpo { padding: 14px; }
             .modal-lista-compra-acciones { padding: 10px 14px; }
@@ -4394,16 +4403,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </div>
         <div class="modal-lista-compra-cabecera">
-            <h3 class="modal-lista-compra-titulo" id="modal-lista-compra-titulo-texto">
-                <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
-            </h3>
-            <div class="modal-lista-compra-resumen">
-                <span class="modal-lista-compra-contador" id="modal-lista-compra-contador">0 / 20 productos</span>
-                <div class="modal-lista-compra-totales">
-                    <span>Total sin IVA: <strong id="modal-lista-compra-total-sin">0,00 €</strong></span>
-                    <span>Total con IVA: <strong id="modal-lista-compra-total-con">0,00 €</strong></span>
+            <div class="modal-lista-compra-cabecera-fila">
+                <h3 class="modal-lista-compra-titulo" id="modal-lista-compra-titulo-texto">
+                    <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
+                </h3>
+                <div class="modal-lista-compra-resumen">
+                    <span class="modal-lista-compra-contador" id="modal-lista-compra-contador">0 / 20 productos</span>
+                    <div class="modal-lista-compra-totales">
+                        <span>Total sin IVA: <strong id="modal-lista-compra-total-sin">0,00 €</strong></span>
+                        <span>Total con IVA: <strong id="modal-lista-compra-total-con">0,00 €</strong></span>
+                    </div>
                 </div>
             </div>
+            <!-- Validez de 15 días (ver listaCompraValidarCaducidadYActivos_):
+                 fecha de creación y fecha a partir de la cual la lista se
+                 elimina automáticamente. -->
+            <p class="modal-lista-compra-validez" id="modal-lista-compra-validez"></p>
         </div>
         <div class="modal-lista-compra-cuerpo">
             <div id="lista-compra-vacia" class="lista-compra-vacia" style="display:none;">
@@ -5238,6 +5253,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             renderAtributosPintura();
             aplicarFiltros(); // Actualizar resultados con los nuevos productos
             actualizarModulosDescubrimiento_(); // TODOS ha cambiado (nuevos catálogos de proveedor) — ver el porqué junto a su definición
+            // TODOS ya está completo (catálogo principal + proveedores de
+            // Talleres): ahora sí se puede comprobar con seguridad que los
+            // productos de la lista de la compra sigan activos, sin falsos
+            // positivos sobre productos de Talleres que todavía no habían
+            // llegado al entrar (ver listaCompraValidarCaducidadYActivos_).
+            listaCompraValidarCaducidadYActivos_();
+            listaCompraActualizarUI_();
         }).catch(err => {
             console.warn('Error al cargar productos adicionales:', err);
             // No mostramos error al usuario ya que los productos principales ya funcionan
@@ -7946,8 +7968,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // sin mantener copias de estado por separado.
     // ══════════════════════════════════════════════════════════════════
     const LISTA_COMPRA_CLAVE_ = 'omListaCompra';
-    const LISTA_COMPRA_VERSION_ = 1;
+    const LISTA_COMPRA_VERSION_ = 2; // v2: añade "creado" (fecha de creación, para la validez de 15 días)
     const LISTA_COMPRA_MAX_ = 20;
+    const LISTA_COMPRA_VALIDEZ_DIAS_ = 15;
+    const LISTA_COMPRA_VALIDEZ_MS_ = LISTA_COMPRA_VALIDEZ_DIAS_ * 24 * 60 * 60 * 1000;
     // Campos que de verdad hacen falta para pintar un producto guardado
     // sin depender del catálogo — ni más (no hay que guardar fichas
     // técnicas, descripciones largas, etc.) ni menos.
@@ -7983,15 +8007,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const crudo = localStorage.getItem(LISTA_COMPRA_CLAVE_);
             if (!crudo) return null;
             const data = JSON.parse(crudo);
-            if (!data || typeof data !== 'object' || data.version !== LISTA_COMPRA_VERSION_ || !Array.isArray(data.productos)) {
-                // Versión antigua/desconocida o estructura corrupta: se
-                // ignora sin más (no se intenta migrar de momento, solo
-                // hay una versión) — la web sigue funcionando con "sin
-                // lista todavía" en vez de romperse.
-                return null;
-            }
+            if (!data || typeof data !== 'object' || !Array.isArray(data.productos)) return null;
+            // v1 (antes de la validez de 15 días) no tenía "creado" — no se
+            // descarta la lista por eso, se migra dándole la validez
+            // completa a partir de ahora, en vez de tratarla como ya
+            // caducada o perder los productos que el usuario ya tenía
+            // guardados. Cualquier otra versión desconocida (posterior) sí
+            // se descarta, no se intenta adivinar su formato.
+            if (data.version !== 1 && data.version !== LISTA_COMPRA_VERSION_) return null;
+            const creado = (typeof data.creado === 'number' && data.creado > 0) ? data.creado : Date.now();
             const productos = data.productos.map(listaCompraSanear_).filter(Boolean).slice(0, LISTA_COMPRA_MAX_);
-            return { version: LISTA_COMPRA_VERSION_, productos };
+            return { version: LISTA_COMPRA_VERSION_, creado, productos };
         } catch (e) {
             return null;
         }
@@ -8021,8 +8047,57 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraTiene_(ref) { return listaCompraProductos_().some(p => p.ref === ref); }
 
     function listaCompraCrear_() {
-        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, productos: [] };
+        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), productos: [] };
         listaCompraPersistir_();
+    }
+
+    // ── Validez de 15 días ────────────────────────────────────────────
+    function listaCompraFechaCaducidad_() {
+        return listaCompraState_ ? listaCompraState_.creado + LISTA_COMPRA_VALIDEZ_MS_ : null;
+    }
+    function listaCompraCaducada_() {
+        const caduca = listaCompraFechaCaducidad_();
+        return caduca !== null && Date.now() >= caduca;
+    }
+
+    // Se llama al entrar al buscador (antes de pintar nada de la lista) y
+    // cada vez que se abre la modal de gestión — comprueba las dos cosas
+    // que pueden invalidar una lista con el paso del tiempo: que no haya
+    // caducado (15 días) y que sus productos sigan existiendo en el
+    // catálogo activo (ni dados de baja ni eliminados). TODOS ya excluye
+    // en origen los productos dados de baja (ver reconciliarConTextoEnVivo),
+    // así que "seguir en TODOS" equivale a "seguir activo".
+    function listaCompraValidarCaducidadYActivos_(opciones) {
+        if (!listaCompraState_) return;
+        opciones = opciones || {};
+
+        if (listaCompraCaducada_()) {
+            listaCompraEliminarTodo_();
+            cerrarModalListaCompra_();
+            mostrarToast(`Tu lista de la compra caducó (${LISTA_COMPRA_VALIDEZ_DIAS_} días desde su creación) y se ha eliminado automáticamente.`, 'error');
+            listaCompraActualizarUI_();
+            return;
+        }
+
+        // La comprobación de productos activos necesita TODOS ya completo
+        // (incluidos los catálogos de proveedor de Talleres, que llegan en
+        // segundo plano) para no dar falsos positivos justo al entrar —
+        // se puede posponer con soloExpiracion mientras tanto.
+        if (opciones.soloExpiracion || !TODOS.length) return;
+
+        const refsActivas = new Set(TODOS.map(p => p.ref));
+        const antes = listaCompraState_.productos.length;
+        listaCompraState_.productos = listaCompraState_.productos.filter(p => refsActivas.has(p.ref));
+        const eliminados = antes - listaCompraState_.productos.length;
+        if (eliminados > 0) {
+            listaCompraPersistir_();
+            mostrarToast(
+                eliminados === 1
+                    ? 'Un producto se ha quitado de tu lista porque ya no está disponible (dado de baja o eliminado del catálogo).'
+                    : `${eliminados} productos se han quitado de tu lista porque ya no están disponibles (dados de baja o eliminados del catálogo).`,
+                'error'
+            );
+        }
     }
 
     // Devuelve 'ok' | 'duplicado' | 'limite' — el llamador decide el
@@ -8216,6 +8291,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const totales = listaCompraTotales_();
         $('modal-lista-compra-total-sin').textContent = listaCompraFormatoEuros_(totales.sinIva);
         $('modal-lista-compra-total-con').textContent = listaCompraFormatoEuros_(totales.conIva);
+        $('modal-lista-compra-validez').innerHTML = listaCompraState_
+            ? `<i class="fa-solid fa-calendar-days"></i> Creada el <strong>${listaCompraFechaFormateada_(listaCompraState_.creado)}</strong> · Válida hasta el <strong>${listaCompraFechaFormateada_(listaCompraFechaCaducidad_())}</strong> (${LISTA_COMPRA_VALIDEZ_DIAS_} días)`
+            : '';
 
         const grid = $('lista-compra-grid');
         const vacia = $('lista-compra-vacia');
@@ -8240,6 +8318,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function abrirModalListaCompra_() {
         if (!listaCompraExiste_()) return;
+        listaCompraValidarCaducidadYActivos_();
+        if (!listaCompraExiste_()) return; // puede haber caducado en la comprobación anterior
         renderModalListaCompra_();
         $('modal-lista-compra-overlay').classList.add('activo');
     }
@@ -8294,7 +8374,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         mostrarToast(yaExistia
             ? `${escapeHtml(p.nombre)} se ha añadido a tu lista de la compra`
-            : `Lista creada y ${escapeHtml(p.nombre)} añadido`);
+            : `Lista creada y ${escapeHtml(p.nombre)} añadido. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
         listaCompraActualizarUI_();
     }
 
@@ -8309,11 +8389,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         horario: 'Lunes a Viernes: 9:00–14:00 y 16:30–19:30 · Sábados: 9:00–14:00 · Domingos: cerrado',
     };
 
-    function listaCompraFechaFormateada_() {
-        const hoy = new Date();
-        const dd = String(hoy.getDate()).padStart(2, '0');
-        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-        return `${dd}/${mm}/${hoy.getFullYear()}`;
+    function listaCompraFechaFormateada_(marcaTiempo) {
+        const fecha = marcaTiempo != null ? new Date(marcaTiempo) : new Date();
+        const dd = String(fecha.getDate()).padStart(2, '0');
+        const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+        return `${dd}/${mm}/${fecha.getFullYear()}`;
     }
 
     async function exportarListaCompraPDF_() {
@@ -8468,11 +8548,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Wiring de toda la funcionalidad ────────────────────────────────
     function inicializarListaCompra_() {
         listaCompraState_ = listaCompraCargarDeStorage_();
+        // Si venía de una versión anterior del esquema (v1, sin "creado"),
+        // listaCompraCargarDeStorage_ ya la migró EN MEMORIA asignándole
+        // "creado = ahora" — hay que persistirla de inmediato para que esa
+        // fecha quede fija. Sin este guardado, cada recarga volvería a
+        // asignar "ahora" al releer el v1 original (nunca sobrescrito), y
+        // la lista no caducaría jamás.
+        listaCompraPersistir_();
+        // Solo caducidad aquí (TODOS, con los catálogos de proveedor, aún
+        // no está completo — ver el porqué junto a listaCompraValidarCaducidadYActivos_).
+        listaCompraValidarCaducidadYActivos_({ soloExpiracion: true });
         listaCompraActualizarUI_();
 
         $('btn-crear-lista-compra').addEventListener('click', () => {
             listaCompraCrear_();
-            mostrarToast('Lista de la compra creada');
+            mostrarToast(`Lista de la compra creada. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
             listaCompraActualizarUI_();
         });
 
