@@ -795,9 +795,14 @@
 
         /* Botón "Añadir a la lista" en la ficha de producto — justo
            debajo del precio, posición alta y visible (a petición
-           explícita: no escondido al final de la ficha). */
+           explícita: no escondido al final de la ficha). Envuelto junto
+           al selector de unidades (ver .lista-compra-unidades) en una
+           fila flex: el botón ocupa el espacio disponible y el selector
+           solo aparece, a su lado, cuando el producto ya está en la
+           lista. */
+        .modal-producto-lista-fila { display: flex; align-items: stretch; gap: 8px; margin: 10px 0 4px; }
         .modal-producto-lista-btn {
-            width: 100%; margin: 10px 0 4px; padding: 12px 16px;
+            flex: 1; min-width: 0; margin: 0; padding: 12px 16px;
             background: linear-gradient(135deg, var(--red), #9a1f1f);
             color: #fff; border: none; border-radius: 8px;
             font-size: 0.92rem; font-weight: 700; cursor: pointer;
@@ -808,6 +813,40 @@
         .modal-producto-lista-btn:active { transform: translateY(1px); }
         .modal-producto-lista-btn.incluido { background: var(--light); color: var(--green); border: 1px solid var(--green); }
         .modal-producto-lista-btn.limite { background: var(--light); color: var(--muted); cursor: not-allowed; }
+
+        /* Selector de unidades (1-10) junto al botón — visible solo
+           mientras el producto está en la lista (ver
+           actualizarBotonListaCompraEnModalProducto_). */
+        .lista-compra-unidades {
+            display: flex; align-items: center; flex-shrink: 0;
+            border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+        }
+        .lista-compra-unidades-btn {
+            width: 34px; height: 100%; border: none; background: var(--light);
+            font-size: 1.05rem; font-weight: 700; color: var(--dark); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .lista-compra-unidades-btn:hover:not(:disabled) { background: #e2e8f0; }
+        .lista-compra-unidades-btn:disabled { opacity: .4; cursor: not-allowed; }
+        .lista-compra-unidades-input {
+            width: 38px; border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+            text-align: center; font-size: 0.9rem; font-weight: 700; color: var(--dark);
+            -moz-appearance: textfield;
+        }
+        .lista-compra-unidades-input::-webkit-outer-spin-button,
+        .lista-compra-unidades-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* Círculo con las unidades, esquina superior izquierda — visible
+           tanto en el carrusel del bloque como en el grid de la modal
+           (ver crearTarjetaListaCompraBloque_ / crearTarjetaListaCompraModal_). */
+        .lista-compra-badge-unidades {
+            position: absolute; top: 6px; left: 6px; z-index: 5;
+            min-width: 22px; height: 22px; padding: 0 4px; border-radius: 11px;
+            background: var(--red); color: #fff;
+            font-size: 0.72rem; font-weight: 800; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
 
         @media (max-width: 768px) {
             .modal-lista-compra-cabecera { padding: 12px 48px 12px 14px; }
@@ -3958,9 +3997,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                      texto/estado (crear+añadir, añadir, ya incluido,
                      límite alcanzado) se recalcula cada vez que se abre
                      la ficha y cada vez que cambia la lista. -->
-                <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
-                    <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
-                </button>
+                <div class="modal-producto-lista-fila">
+                    <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
+                        <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
+                    </button>
+                    <!-- Selector de unidades (1-10), solo visible mientras
+                         el producto ya está en la lista — ver
+                         actualizarBotonListaCompraEnModalProducto_. -->
+                    <div class="lista-compra-unidades" id="modal-producto-lista-unidades" style="display:none;">
+                        <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-menos" aria-label="Quitar una unidad">−</button>
+                        <input type="number" class="lista-compra-unidades-input" id="modal-producto-lista-unidades-input" min="1" max="10" step="1" value="1" aria-label="Unidades">
+                        <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-mas" aria-label="Añadir una unidad">+</button>
+                    </div>
+                </div>
                 <div class="modal-producto-detalles">
                     <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
                     <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
@@ -7995,6 +8044,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const LISTA_COMPRA_CLAVE_ = 'omListaCompra';
     const LISTA_COMPRA_VERSION_ = 2; // v2: añade "creado" (fecha de creación, para la validez de 15 días)
     const LISTA_COMPRA_MAX_ = 24;
+    const LISTA_COMPRA_UNIDADES_MAX_ = 10;
     const LISTA_COMPRA_VALIDEZ_DIAS_ = 15;
     const LISTA_COMPRA_VALIDEZ_MS_ = LISTA_COMPRA_VALIDEZ_DIAS_ * 24 * 60 * 60 * 1000;
     // Días desde la creación en los que se avisa al usuario (una sola vez
@@ -8028,6 +8078,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         limpio.subfamilia = p.subfamilia ? String(p.subfamilia) : '';
         limpio.img = p.img ? String(p.img) : '';
         limpio.fabricante = p.fabricante ? String(p.fabricante) : '';
+        // Unidades (1-10, por defecto 1) — campo añadido después de la
+        // estructura original; cualquier valor ausente, no numérico o
+        // fuera de rango se sanea a un entero válido en vez de romper
+        // los cálculos de totales.
+        const unidadesNum = parseInt(p.unidades, 10);
+        limpio.unidades = Number.isFinite(unidadesNum)
+            ? Math.min(LISTA_COMPRA_UNIDADES_MAX_, Math.max(1, unidadesNum))
+            : 1;
         return limpio;
     }
 
@@ -8081,6 +8139,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraProductos_() { return listaCompraState_ ? listaCompraState_.productos : []; }
     function listaCompraCantidad_() { return listaCompraProductos_().length; }
     function listaCompraTiene_(ref) { return listaCompraProductos_().some(p => p.ref === ref); }
+    function listaCompraProductoPorRef_(ref) { return listaCompraProductos_().find(p => p.ref === ref) || null; }
 
     function listaCompraCrear_() {
         listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [] };
@@ -8186,6 +8245,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         listaCompraPersistir_();
     }
 
+    // Devuelve las unidades ya aplicadas (clamp 1-10) o null si el
+    // producto no está en la lista.
+    function listaCompraActualizarUnidades_(ref, unidades) {
+        if (!listaCompraState_) return null;
+        const p = listaCompraState_.productos.find(x => x.ref === ref);
+        if (!p) return null;
+        const num = parseInt(unidades, 10);
+        p.unidades = Number.isFinite(num) ? Math.min(LISTA_COMPRA_UNIDADES_MAX_, Math.max(1, num)) : 1;
+        listaCompraPersistir_();
+        return p.unidades;
+    }
+
     function listaCompraVaciar_() {
         if (!listaCompraState_) return;
         listaCompraState_.productos = [];
@@ -8240,8 +8311,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         let sinIva = 0, conIva = 0;
         listaCompraProductos_().forEach(p => {
             if (!p.mostrar_precio) return; // "consultar precio": no se puede sumar un importe que no se muestra
-            conIva += listaCompraACentimos_(p.precio_con);
-            sinIva += listaCompraACentimos_(p.precio_sin || p.precio_con);
+            const unidades = p.unidades || 1;
+            conIva += listaCompraACentimos_(p.precio_con) * unidades;
+            sinIva += listaCompraACentimos_(p.precio_sin || p.precio_con) * unidades;
         });
         return { sinIva, iva: conIva - sinIva, conIva };
     }
@@ -8251,11 +8323,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // pero el click abre la MODAL DE LA LISTA (no el detalle del
     // producto), igual que ya distingue crearItemBloqueCategoria_ entre
     // clicar un producto suelto o el bloque entero.
+    // Círculo con las unidades, reutilizado en ambas tarjetas de la lista
+    // (bloque y modal) — nunca en crearTarjeta()/otros carruseles, las
+    // unidades solo existen en el contexto de la lista de la compra.
+    function crearBadgeUnidadesListaCompra_(p) {
+        const badge = document.createElement('span');
+        badge.className = 'lista-compra-badge-unidades';
+        badge.textContent = String(p.unidades || 1);
+        badge.setAttribute('aria-label', `${p.unidades || 1} unidad${(p.unidades || 1) === 1 ? '' : 'es'}`);
+        return badge;
+    }
+
     function crearTarjetaListaCompraBloque_(p) {
         const card = document.createElement('div');
         card.className = 'producto-card';
         card.dataset.ref = p.ref;
         card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: false });
+        card.appendChild(crearBadgeUnidadesListaCompra_(p));
         return card;
     }
 
@@ -8270,6 +8354,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         card.className = 'producto-card lista-compra-tarjeta';
         card.dataset.ref = p.ref;
         card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: false });
+        card.appendChild(crearBadgeUnidadesListaCompra_(p));
 
         const papelera = document.createElement('button');
         papelera.type = 'button';
@@ -8421,13 +8506,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function actualizarBotonListaCompraEnModalProducto_() {
         const btn = $('modal-producto-lista-btn');
         const texto = $('modal-producto-lista-btn-texto');
+        const unidadesWrap = $('modal-producto-lista-unidades');
         if (!productoModalActual_) return;
         btn.classList.remove('incluido', 'limite');
+
+        const enLista = listaCompraExiste_() ? listaCompraProductoPorRef_(productoModalActual_.ref) : null;
+        unidadesWrap.style.display = enLista ? '' : 'none';
+        if (enLista) {
+            $('modal-producto-lista-unidades-input').value = enLista.unidades || 1;
+            actualizarBotonesUnidades_(enLista.unidades || 1);
+        }
+
         if (!listaCompraExiste_()) {
             texto.textContent = 'Crear lista de compra y añadir producto';
             return;
         }
-        if (listaCompraTiene_(productoModalActual_.ref)) {
+        if (enLista) {
             texto.textContent = 'Producto incluido en la lista';
             btn.classList.add('incluido');
             return;
@@ -8438,6 +8532,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
         texto.textContent = 'Añadir a la lista de la compra';
+    }
+
+    // Deshabilita "−" en 1 y "+" en el máximo, para que el límite se vea
+    // (no solo se aplique) sin depender únicamente del color.
+    function actualizarBotonesUnidades_(unidades) {
+        $('modal-producto-lista-unidades-menos').disabled = unidades <= 1;
+        $('modal-producto-lista-unidades-mas').disabled = unidades >= LISTA_COMPRA_UNIDADES_MAX_;
     }
 
     function alPulsarBotonListaCompraProducto_() {
@@ -8456,6 +8557,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         mostrarToast(yaExistia
             ? `${escapeHtml(p.nombre)} se ha añadido a tu lista de la compra`
             : `Lista creada y ${escapeHtml(p.nombre)} añadido. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
+        listaCompraActualizarUI_();
+    }
+
+    // Selector de unidades (1-10) de la ficha de producto — "+"/"−" y
+    // escribir directamente en el campo, ambos acaban en el mismo sitio
+    // (listaCompraActualizarUnidades_, que ya aplica el límite).
+    function alCambiarUnidadesProducto_(delta) {
+        if (!productoModalActual_) return;
+        const actual = listaCompraProductoPorRef_(productoModalActual_.ref);
+        if (!actual) return;
+        aplicarNuevasUnidadesProducto_((actual.unidades || 1) + delta);
+    }
+    function alEscribirUnidadesProducto_() {
+        if (!productoModalActual_) return;
+        aplicarNuevasUnidadesProducto_($('modal-producto-lista-unidades-input').value);
+    }
+    function aplicarNuevasUnidadesProducto_(valor) {
+        const aplicado = listaCompraActualizarUnidades_(productoModalActual_.ref, valor);
+        if (aplicado == null) return;
+        $('modal-producto-lista-unidades-input').value = aplicado;
+        actualizarBotonesUnidades_(aplicado);
         listaCompraActualizarUI_();
     }
 
@@ -8536,6 +8658,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             p.ref,
             AREAS_NOMBRE[p.area] || p.area || '—',
             p.familia || '—',
+            String(p.unidades || 1),
             p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(listaCompraACentimos_(p.precio_sin)) : '—',
             p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con) - listaCompraACentimos_(p.precio_sin || p.precio_con)) : '—',
             p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
@@ -8544,19 +8667,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.autoTable({
             startY: 120,
             margin: { bottom: 50 },
-            head: [['Producto', 'Referencia', 'Área', 'Familia', 'Sin IVA', 'IVA', 'Con IVA']],
+            head: [['Producto', 'Referencia', 'Área', 'Familia', 'Uds.', 'Sin IVA', 'IVA', 'Con IVA']],
             body: filas,
             styles: { fontSize: 8, cellPadding: 5 },
             headStyles: { fillColor: [211, 47, 47], textColor: 255 },
             // Familia más estrecha y con elipsis ("...") si no cabe, en
             // vez de partir el texto en varias líneas — y ancho fijo en
-            // las columnas de precio para que el importe y el "€" quepan
-            // siempre en la misma línea.
+            // las columnas de precio/unidades para que no se partan en
+            // dos líneas.
             columnStyles: {
                 3: { cellWidth: 65, overflow: 'ellipsize' },
-                4: { cellWidth: 55 },
-                5: { cellWidth: 50 },
-                6: { cellWidth: 55 },
+                4: { cellWidth: 28, halign: 'center' },
+                5: { cellWidth: 55 },
+                6: { cellWidth: 50 },
+                7: { cellWidth: 55 },
             },
             didDrawPage: dibujarPie,
         });
@@ -8635,7 +8759,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             'Lista de la compra — Orencio Matas y Hnos',
             `${productos.length} / ${LISTA_COMPRA_MAX_} productos`,
             '',
-            ...productos.map(p => `• ${p.nombre} (Ref: ${p.ref})${p.mostrar_precio && p.precio_con ? ' — ' + listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con)) : ''}`),
+            ...productos.map(p => `• ${p.nombre} (Ref: ${p.ref}) x${p.unidades || 1}${p.mostrar_precio && p.precio_con ? ' — ' + listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con)) : ''}`),
             '',
             `Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`,
             `Total con IVA: ${listaCompraFormatoEuros_(totales.conIva)}`,
@@ -8770,6 +8894,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-lista-compra-correo').addEventListener('click', compartirListaCompraCorreo_);
 
         $('modal-producto-lista-btn').addEventListener('click', alPulsarBotonListaCompraProducto_);
+        $('modal-producto-lista-unidades-menos').addEventListener('click', () => alCambiarUnidadesProducto_(-1));
+        $('modal-producto-lista-unidades-mas').addEventListener('click', () => alCambiarUnidadesProducto_(1));
+        $('modal-producto-lista-unidades-input').addEventListener('change', alEscribirUnidadesProducto_);
 
         // Aviso de validez (5/10/14 días) — informativo, se puede cerrar
         // de varias formas, igual que el resto de modales del sitio.
