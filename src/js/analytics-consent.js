@@ -151,7 +151,15 @@
   const initCookieConsent = () => {
     injectStyles();
     const banner = buildBanner();
-    const savedConsent = localStorage.getItem(STORAGE_KEY);
+    // Sin localStorage disponible (cuota agotada, navegación privada
+    // estricta...) no debe romper el resto de la página: se trata igual
+    // que "sin consentimiento guardado todavía" (se vuelve a preguntar).
+    let savedConsent = null;
+    try {
+      savedConsent = localStorage.getItem(STORAGE_KEY);
+    } catch (e) {
+      savedConsent = null;
+    }
 
     if (savedConsent === ACCEPTED) {
       pushEvent('cookies_aceptadas');
@@ -177,12 +185,12 @@
       const choice = button.getAttribute('data-cookie-consent');
 
       if (choice === 'accept') {
-        localStorage.setItem(STORAGE_KEY, ACCEPTED);
+        try { localStorage.setItem(STORAGE_KEY, ACCEPTED); } catch (e) { /* sin persistencia, se preguntará de nuevo en la próxima visita */ }
         pushEvent('cookies_aceptadas');
       }
 
       if (choice === 'reject') {
-        localStorage.setItem(STORAGE_KEY, REJECTED);
+        try { localStorage.setItem(STORAGE_KEY, REJECTED); } catch (e) { /* sin persistencia, se preguntará de nuevo en la próxima visita */ }
       }
 
       hideBanner(banner);
