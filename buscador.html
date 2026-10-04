@@ -6824,6 +6824,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function revelarCabeceraResultados() {
         const cabecera = $('resultados-header');
         if (cabecera) cabecera.classList.remove('resultados-header--sin-interaccion');
+        ocultarDisclaimerPrecios();
     }
 
     function ocultarCabeceraResultados() {
@@ -6895,6 +6896,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         limpiarOtrosFiltros();
         resetPaginacion();
         ocultarCabeceraResultados();
+        mostrarDisclaimerPrecios();
         aplicarFiltros();
         // A petición de Eloy: tras limpiar filtros, cerrar también el panel
         // (en móvil) para que el usuario vuelva de inmediato al buscador y
@@ -7982,6 +7984,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function abrirModalProducto(p, opciones) {
         opciones = opciones || {};
         registrarProductoVisto_(p);
+        ocultarDisclaimerPrecios();
         const imgSrc = urlImagenProducto(p, 800) || '';
         const tieneImagen = !!imgSrc;
 
