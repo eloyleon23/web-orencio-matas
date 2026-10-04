@@ -3931,16 +3931,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
                 <p class="modal-producto-descripcion" id="modal-producto-descripcion" style="display:none;"></p>
                 <div class="modal-producto-precio" id="modal-producto-precio"></div>
-                <!-- Lista de la compra: botón en posición alta y visible
-                     (no al final de la ficha), justo bajo el precio — ver
-                     actualizarBotonListaCompraEnModalProducto_ en el
-                     módulo ShoppingList* del JavaScript principal. Su
-                     texto/estado (crear+añadir, añadir, ya incluido,
-                     límite alcanzado) se recalcula cada vez que se abre
-                     la ficha y cada vez que cambia la lista. -->
-                <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
-                    <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
-                </button>
                 <!-- Precio de venta a MAYOR — información interna, nunca
                      visible para el público (ver window.MOSTRAR_PRECIO_MAYOR
                      en la configuración del buscador, más abajo en este
@@ -3951,6 +3941,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </button>
                     <div id="modal-producto-precio-mayor-valores" class="modal-producto-precio-mayor-valores" style="display:none;"></div>
                 </div>
+                <!-- Lista de la compra: botón en posición alta y visible
+                     (no al final de la ficha) — debajo del precio y del
+                     bloque de precio mayor (si existe), nunca solapado con
+                     él. Ver actualizarBotonListaCompraEnModalProducto_ en
+                     el módulo ShoppingList* del JavaScript principal. Su
+                     texto/estado (crear+añadir, añadir, ya incluido,
+                     límite alcanzado) se recalcula cada vez que se abre
+                     la ficha y cada vez que cambia la lista. -->
+                <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
+                    <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
+                </button>
                 <div class="modal-producto-detalles">
                     <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
                     <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
