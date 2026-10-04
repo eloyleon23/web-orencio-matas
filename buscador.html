@@ -8523,6 +8523,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.text(`Generado el ${listaCompraFechaFormateada_()}`, 40, 102);
         doc.text(LISTA_COMPRA_EMPRESA_.nombre, doc.internal.pageSize.getWidth() - 40, 85, { align: 'right' });
 
+        // Espacio NO separable entre el importe y el símbolo "€" — sin
+        // esto, autoTable podía partir la línea justo ahí y dejar el "€"
+        // solo al principio de la siguiente, con poco ancho de columna.
+        const formatoEurosPdf_ = (centimos) => listaCompraFormatoEuros_(centimos).replace(' ', ' ');
+
         // Sin columna de Subfamilia a petición explícita — el orden
         // interno (área > familia > subfamilia > producto) no cambia,
         // solo deja de mostrarse esa columna en la tabla.
@@ -8531,9 +8536,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             p.ref,
             AREAS_NOMBRE[p.area] || p.area || '—',
             p.familia || '—',
-            p.mostrar_precio && p.precio_sin ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_sin)) : '—',
-            p.mostrar_precio && p.precio_con ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con) - listaCompraACentimos_(p.precio_sin || p.precio_con)) : '—',
-            p.mostrar_precio && p.precio_con ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
+            p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(listaCompraACentimos_(p.precio_sin)) : '—',
+            p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con) - listaCompraACentimos_(p.precio_sin || p.precio_con)) : '—',
+            p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
         ]);
 
         doc.autoTable({
@@ -8543,6 +8548,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             body: filas,
             styles: { fontSize: 8, cellPadding: 5 },
             headStyles: { fillColor: [211, 47, 47], textColor: 255 },
+            // Familia más estrecha y con elipsis ("...") si no cabe, en
+            // vez de partir el texto en varias líneas — y ancho fijo en
+            // las columnas de precio para que el importe y el "€" quepan
+            // siempre en la misma línea.
+            columnStyles: {
+                3: { cellWidth: 65, overflow: 'ellipsize' },
+                4: { cellWidth: 55 },
+                5: { cellWidth: 50 },
+                6: { cellWidth: 55 },
+            },
             didDrawPage: dibujarPie,
         });
 
