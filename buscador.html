@@ -8182,14 +8182,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return card;
     }
 
-    // ── Tarjeta de la modal de gestión: mismo aspecto habitual +
-    // jerarquía área/familia/subfamilia + papelera para quitarla de la
-    // lista sin recargar nada.
+    // ── Tarjeta de la modal de gestión: mismo aspecto habitual, solo con
+    // nombre/referencia/precio (sin/con IVA) — a petición explícita, sin
+    // la jerarquía área/familia/subfamilia aquí (el orden interno de la
+    // lista sigue siendo área > familia > subfamilia > producto, ver
+    // listaCompraOrdenada_, solo deja de mostrarse en la tarjeta) — más
+    // papelera para quitarla de la lista sin recargar nada.
     function crearTarjetaListaCompraModal_(p) {
         const card = document.createElement('div');
         card.className = 'producto-card lista-compra-tarjeta';
         card.dataset.ref = p.ref;
-        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: true, mostrarSubfamilia: true });
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: false });
 
         const papelera = document.createElement('button');
         papelera.type = 'button';
@@ -8396,13 +8399,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return `${dd}/${mm}/${fecha.getFullYear()}`;
     }
 
-    async function exportarListaCompraPDF_() {
-        if (typeof window.jspdf === 'undefined') {
-            mostrarToast('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.', 'error');
-            return;
-        }
+    // Construye el documento PDF (sin guardarlo ni descargarlo) para que
+    // tanto "Exportar a PDF" como "Compartir por WhatsApp/correo" (que
+    // ahora comparten el propio PDF, no solo texto) generen exactamente
+    // el mismo documento sin duplicar esta lógica. Devuelve null si jsPDF
+    // no ha podido cargarse o la lista está vacía.
+    async function construirDocumentoPdfListaCompra_() {
+        if (typeof window.jspdf === 'undefined') return null;
         const productos = listaCompraOrdenada_();
-        if (!productos.length) return;
+        if (!productos.length) return null;
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -8419,10 +8424,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         // Cabecera: logo + título + fecha. El logo es opcional (si por lo
         // que sea no se puede cargar la imagen, el PDF se genera igual
-        // sin romperse, solo sin logo).
+        // sin romperse, solo sin logo) y se dibuja respetando su
+        // proporción real (ver cargarImagenComoDataURL_) para que no
+        // salga "aplastado" con un ancho/alto fijos que no coincidan con
+        // los del archivo real.
         try {
-            const logoDataUrl = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
-            if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', 40, 30, 90, 30);
+            const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+            if (logo) {
+                const altoLogo = 32;
+                const anchoLogo = altoLogo * (logo.width / logo.height);
+                doc.addImage(logo.dataUrl, 'PNG', 40, 28, anchoLogo, altoLogo);
+            }
         } catch (e) { /* sin logo, no es crítico */ }
 
         doc.setFontSize(16);
@@ -8433,12 +8445,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.text(`Generado el ${listaCompraFechaFormateada_()}`, 40, 102);
         doc.text(LISTA_COMPRA_EMPRESA_.nombre, doc.internal.pageSize.getWidth() - 40, 85, { align: 'right' });
 
+        // Sin columna de Subfamilia a petición explícita — el orden
+        // interno (área > familia > subfamilia > producto) no cambia,
+        // solo deja de mostrarse esa columna en la tabla.
         const filas = productos.map(p => [
             p.nombre,
             p.ref,
             AREAS_NOMBRE[p.area] || p.area || '—',
             p.familia || '—',
-            p.subfamilia || '—',
             p.mostrar_precio && p.precio_sin ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_sin)) : '—',
             p.mostrar_precio && p.precio_con ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con) - listaCompraACentimos_(p.precio_sin || p.precio_con)) : '—',
             p.mostrar_precio && p.precio_con ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
@@ -8447,7 +8461,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.autoTable({
             startY: 120,
             margin: { bottom: 50 },
-            head: [['Producto', 'Referencia', 'Área', 'Familia', 'Subfamilia', 'Sin IVA', 'IVA', 'Con IVA']],
+            head: [['Producto', 'Referencia', 'Área', 'Familia', 'Sin IVA', 'IVA', 'Con IVA']],
             body: filas,
             styles: { fontSize: 8, cellPadding: 5 },
             headStyles: { fillColor: [211, 47, 47], textColor: 255 },
@@ -8474,9 +8488,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // página — se redibuja aquí por si acaso para la página actual.
         dibujarPie({ pageNumber: doc.internal.getNumberOfPages() });
 
-        doc.save(`lista-de-la-compra-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`);
+        return doc;
     }
 
+    function listaCompraNombreArchivoPdf_() {
+        return `lista-de-la-compra-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
+    }
+
+    async function exportarListaCompraPDF_() {
+        const doc = await construirDocumentoPdfListaCompra_();
+        if (!doc) {
+            mostrarToast('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+            return;
+        }
+        doc.save(listaCompraNombreArchivoPdf_());
+    }
+
+    // Devuelve el PDF ya generado como File (para adjuntarlo vía Web
+    // Share API) o null si no se ha podido generar.
+    async function generarArchivoPdfListaCompra_() {
+        const doc = await construirDocumentoPdfListaCompra_();
+        if (!doc) return null;
+        const blob = doc.output('blob');
+        return new File([blob], listaCompraNombreArchivoPdf_(), { type: 'application/pdf' });
+    }
+
+    // Devuelve { dataUrl, width, height } (dimensiones REALES del archivo,
+    // en píxeles) para poder dibujar el logo en el PDF respetando su
+    // proporción en vez de forzar un ancho/alto fijos que lo "aplasten".
     function cargarImagenComoDataURL_(url) {
         return new Promise((resolve) => {
             const img = new Image();
@@ -8487,7 +8526,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     canvas.width = img.naturalWidth;
                     canvas.height = img.naturalHeight;
                     canvas.getContext('2d').drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
+                    resolve({ dataUrl: canvas.toDataURL('image/png'), width: img.naturalWidth, height: img.naturalHeight });
                 } catch (e) { resolve(null); }
             };
             img.onerror = () => resolve(null);
@@ -8511,37 +8550,48 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return lineas.join('\n');
     }
 
-    async function compartirListaCompraWhatsapp_() {
-        const texto = listaCompraTextoCompartir_();
-        if (navigator.share) {
-            try {
-                await navigator.share({ title: 'Lista de la compra', text: texto });
-                return;
-            } catch (e) {
-                if (e && e.name === 'AbortError') return;
-            }
+    // Intenta compartir el PDF ya generado (no solo texto) vía Web Share
+    // API — a petición explícita: "quiero que sea directamente el pdf
+    // también lo que comparta, uno una lista de texto plano". Devuelve
+    // true si se ha compartido (o el usuario ha cancelado el diálogo
+    // nativo: en ambos casos no hay que hacer nada más) y false si el
+    // dispositivo no admite compartir archivos, para que el llamador haga
+    // su propio fallback de texto.
+    async function intentarCompartirPdfListaCompra_() {
+        if (!navigator.canShare) return false;
+        const file = await generarArchivoPdfListaCompra_();
+        if (!file || !navigator.canShare({ files: [file] })) return false;
+        try {
+            await navigator.share({
+                files: [file],
+                title: 'Lista de la compra',
+                text: `Lista de la compra — ${listaCompraCantidad_()} / ${LISTA_COMPRA_MAX_} productos`,
+            });
+            return true;
+        } catch (e) {
+            return !!(e && e.name === 'AbortError'); // cancelado a propósito: no es un fallo, no se hace fallback
         }
-        // Sin Web Share API (o si falla): wa.me funciona igual en móvil
-        // (abre la app si está instalada) y en escritorio (abre WhatsApp
-        // Web) — nunca se asume que WhatsApp está instalado, es el propio
-        // enlace el que decide cómo abrirse.
+    }
+
+    async function compartirListaCompraWhatsapp_() {
+        if (await intentarCompartirPdfListaCompra_()) return;
+        // Sin soporte para compartir archivos (desktop, navegadores sin
+        // Web Share API...): no se puede adjuntar el PDF a un enlace
+        // wa.me, así que se comparte un resumen en texto y se puede
+        // exportar el PDF aparte con el botón de al lado. wa.me funciona
+        // igual en móvil (abre la app si está instalada) y en escritorio
+        // (abre WhatsApp Web) — nunca se asume que WhatsApp está instalado.
+        const texto = listaCompraTextoCompartir_();
         window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
     }
 
     async function compartirListaCompraCorreo_() {
+        if (await intentarCompartirPdfListaCompra_()) return;
+        // mailto: no admite adjuntar archivos — se avisa y se deja a mano
+        // exportarlo con el botón de al lado, como contempla el encargo.
         const texto = listaCompraTextoCompartir_();
-        if (navigator.share) {
-            try {
-                await navigator.share({ title: 'Lista de la compra', text: texto });
-                return;
-            } catch (e) {
-                if (e && e.name === 'AbortError') return;
-            }
-        }
         const asunto = encodeURIComponent('Lista de la compra — Orencio Matas y Hnos');
         window.location.href = `mailto:?subject=${asunto}&body=${encodeURIComponent(texto)}`;
-        // mailto: no admite adjuntar el PDF — se avisa y se deja a mano
-        // exportarlo con el botón de al lado, como contempla el encargo.
         mostrarToast('Se ha abierto tu programa de correo. Si quieres adjuntar también el PDF, expórtalo con el botón de al lado.');
     }
 
