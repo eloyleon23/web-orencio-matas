@@ -4392,6 +4392,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Aviso de validez de la lista de la compra (a los 5/10/14 días desde
+     su creación) — puramente informativo, no destructivo, mismo patrón
+     visual que el resto de modales. Se muestra como máximo una vez por
+     hito (ver listaCompraComprobarAvisoValidez_). -->
+<div class="modal-overlay" id="modal-aviso-validez-lista-compra-overlay" style="z-index: 2300;">
+    <div class="modal-producto-box" id="modal-aviso-validez-lista-compra-box" style="max-width: 420px;">
+        <button class="modal-producto-cerrar" id="aviso-validez-lista-compra-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div style="text-align:center; padding: 8px 4px 20px;">
+            <i class="fa-solid fa-cart-shopping" style="font-size: 2rem; color: var(--red); margin-bottom: 12px;"></i>
+            <h3 style="margin:0 0 10px;font-size:1.05rem;color:#1f2937;">¿Sigues con tu lista de la compra?</h3>
+            <p id="aviso-validez-lista-compra-mensaje" style="margin: 0; color: #4b5563; font-size: 0.9rem; line-height: 1.5;"></p>
+        </div>
+        <div style="display:flex; gap:10px; padding: 0 4px 4px;">
+            <button id="aviso-validez-lista-compra-ahora-no" style="flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
+                Ahora no
+            </button>
+            <button id="aviso-validez-lista-compra-ver" style="flex: 1; padding: 12px; background: linear-gradient(135deg, var(--red), #9a1f1f); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                Ver mi lista
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal de gestión de la lista de la compra — mismo sistema de modales
      que el resto de la web (.modal-overlay + botón de cierre sticky),
      ver módulo ShoppingList* en el JavaScript principal. -->
@@ -7972,6 +7997,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const LISTA_COMPRA_MAX_ = 20;
     const LISTA_COMPRA_VALIDEZ_DIAS_ = 15;
     const LISTA_COMPRA_VALIDEZ_MS_ = LISTA_COMPRA_VALIDEZ_DIAS_ * 24 * 60 * 60 * 1000;
+    // Días desde la creación en los que se avisa al usuario (una sola vez
+    // cada uno) para que no se le olvide la lista — ver
+    // listaCompraComprobarAvisoValidez_.
+    const LISTA_COMPRA_HITOS_AVISO_DIAS_ = [5, 10, 14];
     // Campos que de verdad hacen falta para pintar un producto guardado
     // sin depender del catálogo — ni más (no hay que guardar fichas
     // técnicas, descripciones largas, etc.) ni menos.
@@ -8016,8 +8045,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // se descarta, no se intenta adivinar su formato.
             if (data.version !== 1 && data.version !== LISTA_COMPRA_VERSION_) return null;
             const creado = (typeof data.creado === 'number' && data.creado > 0) ? data.creado : Date.now();
+            // Campo añadido después de la v2 original (avisos de validez a
+            // los 5/10/14 días) — se sanea aparte en vez de forzar otro
+            // bump de versión: un array vacío por defecto es un valor
+            // perfectamente válido y no hace falta migrar nada.
+            const avisosMostrados = Array.isArray(data.avisosMostrados)
+                ? data.avisosMostrados.filter(h => LISTA_COMPRA_HITOS_AVISO_DIAS_.includes(h))
+                : [];
             const productos = data.productos.map(listaCompraSanear_).filter(Boolean).slice(0, LISTA_COMPRA_MAX_);
-            return { version: LISTA_COMPRA_VERSION_, creado, productos };
+            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos };
         } catch (e) {
             return null;
         }
@@ -8047,7 +8083,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraTiene_(ref) { return listaCompraProductos_().some(p => p.ref === ref); }
 
     function listaCompraCrear_() {
-        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), productos: [] };
+        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [] };
         listaCompraPersistir_();
     }
 
@@ -8100,6 +8136,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
     }
 
+    // ── Avisos de validez a los 5/10/14 días ──────────────────────────
+    function listaCompraDiasTranscurridos_() {
+        if (!listaCompraState_) return 0;
+        return Math.floor((Date.now() - listaCompraState_.creado) / (24 * 60 * 60 * 1000));
+    }
+
+    // Se llama al entrar al buscador, después de comprobar la caducidad
+    // (una lista ya caducada no debe sugerir "continuar" con ella). Si se
+    // han alcanzado varios hitos a la vez (el usuario no ha abierto la
+    // web en varios días), solo se muestra UNA modal, la del hito más
+    // reciente — los anteriores ya no aportan nada y se marcan como
+    // vistos igualmente para no mostrarlos después por separado.
+    function listaCompraComprobarAvisoValidez_() {
+        if (!listaCompraState_) return;
+        const dias = listaCompraDiasTranscurridos_();
+        const avisos = listaCompraState_.avisosMostrados || (listaCompraState_.avisosMostrados = []);
+        const pendientes = LISTA_COMPRA_HITOS_AVISO_DIAS_.filter(h => dias >= h && !avisos.includes(h));
+        if (!pendientes.length) return;
+        const hito = Math.max(...pendientes);
+        LISTA_COMPRA_HITOS_AVISO_DIAS_.forEach(h => { if (h <= hito && !avisos.includes(h)) avisos.push(h); });
+        listaCompraPersistir_();
+        mostrarAvisoValidezListaCompra_(dias);
+    }
+
+    function mostrarAvisoValidezListaCompra_(diasTranscurridos) {
+        const diasRestantes = Math.max(0, LISTA_COMPRA_VALIDEZ_DIAS_ - diasTranscurridos);
+        $('aviso-validez-lista-compra-mensaje').innerHTML =
+            `Han pasado <strong>${diasTranscurridos} días</strong> desde que creaste tu lista de la compra. ` +
+            `Es válida hasta el <strong>${listaCompraFechaFormateada_(listaCompraFechaCaducidad_())}</strong> ` +
+            `(${diasRestantes === 1 ? 'queda 1 día' : `quedan ${diasRestantes} días`}) — después se eliminará automáticamente.`;
+        $('modal-aviso-validez-lista-compra-overlay').classList.add('activo');
+    }
+
     // Devuelve 'ok' | 'duplicado' | 'limite' — el llamador decide el
     // mensaje exacto según el contexto (bloque, ficha de producto...).
     function listaCompraAnadir_(p) {
@@ -8120,6 +8189,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraVaciar_() {
         if (!listaCompraState_) return;
         listaCompraState_.productos = [];
+        // A petición explícita: vaciar la lista reinicia su validez de 15
+        // días a partir de HOY (el día del vaciado), como si se acabara de
+        // crear — y por tanto también sus avisos de validez a los
+        // 5/10/14 días, que de lo contrario quedarían marcados como ya
+        // vistos para unos días que ya no se corresponden con la nueva
+        // fecha de creación.
+        listaCompraState_.creado = Date.now();
+        listaCompraState_.avisosMostrados = [];
         listaCompraPersistir_();
     }
 
@@ -8238,6 +8315,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             bloque.setAttribute('aria-haspopup', 'dialog');
             bloque.setAttribute('aria-label', 'Abrir lista de la compra');
             bloque.innerHTML = `
+                <span class="categoria-bloque__lupa" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <div class="bloque-lista-compra__cabecera">
                     <p class="bloque-lista-compra__titulo"><i class="fa-solid fa-cart-shopping"></i> Lista de la compra</p>
                     <span class="bloque-lista-compra__contador" id="lista-compra-contador-bloque"></span>
@@ -8609,6 +8687,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // no está completo — ver el porqué junto a listaCompraValidarCaducidadYActivos_).
         listaCompraValidarCaducidadYActivos_({ soloExpiracion: true });
         listaCompraActualizarUI_();
+        // Pequeño retraso para no competir con el banner de cookies ni con
+        // el resto de la carga inicial de la página — el aviso de validez
+        // no es urgente, puede esperar un instante a que todo se asiente.
+        setTimeout(listaCompraComprobarAvisoValidez_, 1200);
 
         $('btn-crear-lista-compra').addEventListener('click', () => {
             listaCompraCrear_();
@@ -8673,6 +8755,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-lista-compra-correo').addEventListener('click', compartirListaCompraCorreo_);
 
         $('modal-producto-lista-btn').addEventListener('click', alPulsarBotonListaCompraProducto_);
+
+        // Aviso de validez (5/10/14 días) — informativo, se puede cerrar
+        // de varias formas, igual que el resto de modales del sitio.
+        const cerrarAvisoValidez = () => $('modal-aviso-validez-lista-compra-overlay').classList.remove('activo');
+        $('aviso-validez-lista-compra-cerrar').addEventListener('click', cerrarAvisoValidez);
+        $('aviso-validez-lista-compra-ahora-no').addEventListener('click', cerrarAvisoValidez);
+        $('modal-aviso-validez-lista-compra-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-aviso-validez-lista-compra-overlay') cerrarAvisoValidez();
+        });
+        $('aviso-validez-lista-compra-ver').addEventListener('click', () => {
+            cerrarAvisoValidez();
+            abrirModalListaCompra_();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('modal-aviso-validez-lista-compra-overlay').classList.contains('activo')) cerrarAvisoValidez();
+        });
     }
 
     // ── Búsqueda inteligente de producto con IA (red de seguridad) ──
