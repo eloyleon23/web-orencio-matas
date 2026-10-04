@@ -647,6 +647,167 @@
             border: 1px solid var(--border); background: #fff; border-radius: 20px;
             padding: 6px 14px; font-size: 0.85rem; font-weight: 600; color: var(--dark); cursor: pointer;
         }
+
+        /* ── Lista de la compra ──────────────────────────────────────────
+           Botón para crear la lista (visible solo si no existe ninguna
+           todavía) — mismo lenguaje visual que .btn-asistente-imagenes,
+           con los colores corporativos del logo en vez del morado. */
+        .btn-crear-lista-compra {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; margin: 4px 0 16px; padding: 12px 16px;
+            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            color: #fff; border: none; border-radius: 10px;
+            font-size: 0.95rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(211,47,47,0.3);
+            transition: filter 0.15s, transform 0.1s, box-shadow 0.15s;
+        }
+        .btn-crear-lista-compra:hover { filter: brightness(1.08); box-shadow: 0 5px 16px rgba(211,47,47,0.4); }
+        .btn-crear-lista-compra:active { transform: translateY(1px); }
+
+        /* Bloque de la lista ya creada: mismo contenedor "una fila con
+           scroll horizontal" que .mas-buscados__lista, pero con fondo
+           propio en degradado + efecto de ola animada basado en los
+           colores corporativos del logo (--red/--yellow/--green/--blue,
+           ya definidos en :root). Degradado grande (400% del tamaño) que
+           se desplaza muy despacio con background-position — mismo
+           resultado visual que una "ola de color" sin animar ninguna
+           propiedad costosa (solo background-position, ligero para el
+           navegador) y sin tocar JS en cada frame. */
+        .bloque-lista-compra {
+            position: relative; overflow: hidden;
+            margin: 0 0 16px; padding: 18px 20px; border-radius: 14px;
+            cursor: pointer; border: none; text-align: left; width: 100%;
+            background: linear-gradient(120deg, var(--red), #b91c1c, var(--blue), #0d3f73, var(--red));
+            background-size: 400% 400%;
+            animation: listaCompraOla_ 18s ease-in-out infinite;
+            box-shadow: 0 8px 24px -8px rgba(15,23,42,0.35);
+        }
+        @keyframes listaCompraOla_ {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bloque-lista-compra { animation: none; background-position: 30% 50%; }
+        }
+        .bloque-lista-compra__cabecera {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .bloque-lista-compra__titulo {
+            margin: 0; font-size: 1.1rem; font-weight: 800; color: #fff;
+            display: flex; align-items: center; gap: 10px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        }
+        .bloque-lista-compra__titulo i { font-size: 1.05rem; }
+        .bloque-lista-compra__contador {
+            background: rgba(255,255,255,0.22); color: #fff;
+            padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;
+            flex-shrink: 0;
+        }
+        .bloque-lista-compra__carrusel {
+            display: flex; gap: 10px; overflow-x: auto; padding-bottom: 2px;
+            scroll-snap-type: x proximity;
+        }
+        .bloque-lista-compra__carrusel > .producto-card {
+            flex: 0 0 130px; scroll-snap-align: start; cursor: pointer;
+            background: rgba(255,255,255,0.95);
+        }
+        .bloque-lista-compra:focus-visible {
+            outline: 3px solid #fff; outline-offset: 2px;
+        }
+        @media (max-width: 768px) {
+            .bloque-lista-compra { padding: 14px 14px; }
+            .bloque-lista-compra__titulo { font-size: 1rem; }
+            .bloque-lista-compra__carrusel > .producto-card { flex: 0 0 110px; }
+        }
+
+        /* Modal de gestión — mismas constantes que .modal-producto-box
+           (16px, misma sombra), pero más ancha para el grid de productos. */
+        .modal-lista-compra-box {
+            background: white; border-radius: 16px;
+            max-width: 1100px; width: 92%; max-height: 88vh;
+            overflow-y: auto; position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        .modal-lista-compra-cabecera {
+            position: sticky; top: 0; z-index: 15; background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 16px 56px 16px 20px; border-radius: 16px 16px 0 0;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; flex-wrap: wrap;
+        }
+        .modal-lista-compra-titulo { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--dark); display: flex; align-items: center; gap: 10px; }
+        .modal-lista-compra-titulo i { color: var(--red); }
+        .modal-lista-compra-resumen { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+        .modal-lista-compra-resumen strong { color: var(--dark); }
+        .modal-lista-compra-contador { background: var(--light); padding: 4px 12px; border-radius: 20px; font-weight: 700; color: var(--dark); white-space: nowrap; }
+        .modal-lista-compra-totales { display: flex; gap: 14px; flex-wrap: wrap; }
+        .modal-lista-compra-cuerpo { padding: 20px; }
+        .modal-lista-compra-acciones {
+            position: sticky; bottom: 0; z-index: 15; background: white;
+            border-top: 1px solid var(--border); padding: 14px 20px;
+            display: flex; gap: 10px; flex-wrap: wrap; border-radius: 0 0 16px 16px;
+        }
+        .modal-lista-compra-acciones button {
+            flex: 1 1 150px; padding: 11px 14px; border: none; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: filter .15s, transform .1s;
+        }
+        .modal-lista-compra-acciones button:active { transform: translateY(1px); }
+        .modal-lista-compra-acciones button:hover { filter: brightness(1.06); }
+        .btn-lista-compra-pdf { background: #fef3c7; color: #92400e; }
+        .btn-lista-compra-whatsapp { background: #25D366; color: #fff; }
+        .btn-lista-compra-correo { background: var(--blue); color: #fff; }
+        .btn-lista-compra-vaciar { background: var(--light); color: var(--muted); }
+        .btn-lista-compra-eliminar { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+        .lista-compra-vacia { text-align: center; padding: 40px 20px; color: var(--muted); }
+        .lista-compra-vacia i { font-size: 2.6rem; color: var(--red); margin-bottom: 14px; display: block; }
+        .lista-compra-vacia h4 { margin: 0 0 8px; color: var(--dark); font-size: 1.1rem; }
+        .lista-compra-vacia p { margin: 0 0 6px; font-size: 0.9rem; }
+        .lista-compra-vacia ul { text-align: left; max-width: 420px; margin: 16px auto; padding: 0; list-style: none; font-size: 0.88rem; }
+        .lista-compra-vacia ul li { padding: 6px 0 6px 26px; position: relative; }
+        .lista-compra-vacia ul li i { position: absolute; left: 0; top: 8px; font-size: 0.9rem; color: var(--green); }
+        .lista-compra-vacia .btn-preguntar-ia-producto { margin-top: 10px; }
+
+        /* Tarjeta dentro de la modal: misma .producto-card de siempre +
+           papelera superpuesta en la esquina superior derecha. */
+        .lista-compra-tarjeta { position: relative; cursor: pointer; }
+        .lista-compra-papelera {
+            position: absolute; top: 6px; right: 6px; z-index: 5;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(255,255,255,0.92); border: 1px solid var(--border);
+            color: #b91c1c; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.85rem;
+            transition: background .15s, color .15s;
+        }
+        .lista-compra-papelera:hover { background: #b91c1c; color: #fff; }
+
+        /* Botón "Añadir a la lista" en la ficha de producto — justo
+           debajo del precio, posición alta y visible (a petición
+           explícita: no escondido al final de la ficha). */
+        .modal-producto-lista-btn {
+            width: 100%; margin: 10px 0 4px; padding: 12px 16px;
+            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            color: #fff; border: none; border-radius: 8px;
+            font-size: 0.92rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: filter .15s, transform .1s;
+        }
+        .modal-producto-lista-btn:hover { filter: brightness(1.08); }
+        .modal-producto-lista-btn:active { transform: translateY(1px); }
+        .modal-producto-lista-btn.incluido { background: var(--light); color: var(--green); border: 1px solid var(--green); }
+        .modal-producto-lista-btn.limite { background: var(--light); color: var(--muted); cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+            .modal-lista-compra-cabecera { padding: 12px 48px 12px 14px; flex-direction: column; align-items: flex-start; }
+            .modal-lista-compra-resumen { font-size: 0.8rem; gap: 10px; width: 100%; justify-content: space-between; }
+            .modal-lista-compra-cuerpo { padding: 14px; }
+            .modal-lista-compra-acciones { padding: 10px 14px; }
+            .modal-lista-compra-acciones button { flex: 1 1 calc(50% - 5px); }
+        }
         .marcas-buscadas__chip:hover { background: var(--light); }
 
         /* Prototipo "Seguir comprando X" (estilo Amazon, ver captura de
@@ -3602,6 +3763,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </div>
 
+        <!-- Lista de la compra: con un filtro/búsqueda activa, el bloque
+             (una vez creado) se traslada aquí, justo debajo de la barra
+             del buscador, para que siga accesible sea cual sea el
+             resultado mostrado — ver actualizarPosicionBloqueListaCompra_
+             en el módulo de la lista de la compra, más abajo. -->
+        <div id="ancla-lista-compra-arriba"></div>
+
         <!-- Fase 2 de analítica de búsquedas: términos más buscados en los
              últimos 7 días (ver supabase/02_fase2_vistas_agregadas.sql).
              Oculto por defecto — solo se muestra si hay datos reales que
@@ -3636,6 +3804,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              horizontal (ver .categorias-carrusel). Se generan por JS, no
              hay un número fijo en el HTML. -->
         <div id="categorias-descubrimiento" class="categorias-carrusel" style="display:none;"></div>
+
+        <!-- Lista de la compra (ver módulo ShoppingList* más abajo en el
+             bloque de JavaScript principal): sin filtro/búsqueda activa,
+             el bloque de la lista ya creada aparece aquí, debajo de los demás bloques.
+             Si todavía no existe ninguna lista, se muestra en su lugar el
+             botón para crearla. -->
+        <button type="button" id="btn-crear-lista-compra" class="btn-crear-lista-compra" style="display:none;">
+            <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
+        </button>
+        <div id="ancla-lista-compra-abajo"></div>
 
         <div id="cargando-inicial" class="cargando-inicial">
             <i id="icono-cargando" class="fa-solid fa-spinner"></i>
@@ -3753,6 +3931,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
                 <p class="modal-producto-descripcion" id="modal-producto-descripcion" style="display:none;"></p>
                 <div class="modal-producto-precio" id="modal-producto-precio"></div>
+                <!-- Lista de la compra: botón en posición alta y visible
+                     (no al final de la ficha), justo bajo el precio — ver
+                     actualizarBotonListaCompraEnModalProducto_ en el
+                     módulo ShoppingList* del JavaScript principal. Su
+                     texto/estado (crear+añadir, añadir, ya incluido,
+                     límite alcanzado) se recalcula cada vez que se abre
+                     la ficha y cada vez que cambia la lista. -->
+                <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
+                    <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
+                </button>
                 <!-- Precio de venta a MAYOR — información interna, nunca
                      visible para el público (ver window.MOSTRAR_PRECIO_MAYOR
                      en la configuración del buscador, más abajo en este
@@ -4169,7 +4357,96 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Confirmación genérica para las dos acciones destructivas de la lista
+     de la compra ("Vaciar la lista" / "Eliminar la lista") — mismo
+     patrón que modal-confirmar-baja-overlay, reutilizado una sola vez
+     con título/mensaje configurables en vez de duplicar el markup. -->
+<div class="modal-overlay" id="modal-confirmar-lista-compra-overlay" style="z-index: 2300;">
+    <div class="modal-producto-box" id="modal-confirmar-lista-compra-box" style="max-width: 400px;">
+        <button class="modal-producto-cerrar" id="modal-confirmar-lista-compra-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div style="text-align:center; padding: 8px 4px 20px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; color: #dc2626; margin-bottom: 12px;"></i>
+            <h3 id="modal-confirmar-lista-compra-titulo" style="margin:0 0 10px;font-size:1.05rem;color:#1f2937;"></h3>
+            <p id="modal-confirmar-lista-compra-mensaje" style="margin: 0; color: #4b5563; font-size: 0.9rem;"></p>
+        </div>
+        <div style="display:flex; gap:10px; padding: 0 4px 4px;">
+            <button id="modal-confirmar-lista-compra-cancelar" style="flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
+                Cancelar
+            </button>
+            <button id="modal-confirmar-lista-compra-confirmar" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                Continuar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de gestión de la lista de la compra — mismo sistema de modales
+     que el resto de la web (.modal-overlay + botón de cierre sticky),
+     ver módulo ShoppingList* en el JavaScript principal. -->
+<div class="modal-overlay" id="modal-lista-compra-overlay">
+    <div class="modal-lista-compra-box" id="modal-lista-compra-box" role="dialog" aria-modal="true" aria-labelledby="modal-lista-compra-titulo-texto">
+        <div class="modal-producto-cerrar-sticky">
+            <button class="modal-producto-cerrar" id="modal-lista-compra-cerrar" aria-label="Cerrar lista de la compra">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-lista-compra-cabecera">
+            <h3 class="modal-lista-compra-titulo" id="modal-lista-compra-titulo-texto">
+                <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
+            </h3>
+            <div class="modal-lista-compra-resumen">
+                <span class="modal-lista-compra-contador" id="modal-lista-compra-contador">0 / 20 productos</span>
+                <div class="modal-lista-compra-totales">
+                    <span>Total sin IVA: <strong id="modal-lista-compra-total-sin">0,00 €</strong></span>
+                    <span>Total con IVA: <strong id="modal-lista-compra-total-con">0,00 €</strong></span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-lista-compra-cuerpo">
+            <div id="lista-compra-vacia" class="lista-compra-vacia" style="display:none;">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <h4>Tu lista de la compra está vacía</h4>
+                <p>Guarda aquí los productos que te interesen para consultarlos más adelante, sin compromiso de compra.</p>
+                <ul>
+                    <li><i class="fa-solid fa-magnifying-glass"></i> Busca cualquier producto en el buscador y ábrelo.</li>
+                    <li><i class="fa-solid fa-plus"></i> Pulsa "Añadir a la lista de la compra" en su ficha.</li>
+                    <li><i class="fa-solid fa-floppy-disk"></i> Se guarda automáticamente en este navegador: seguirá aquí aunque cierres y vuelvas más tarde.</li>
+                    <li><i class="fa-solid fa-share-nodes"></i> Cuando la tengas lista, expórtala a PDF o compártela por WhatsApp o correo.</li>
+                </ul>
+            </div>
+            <div id="lista-compra-grid" class="grid-productos"></div>
+        </div>
+        <div class="modal-lista-compra-acciones" id="modal-lista-compra-acciones">
+            <button type="button" id="btn-lista-compra-pdf" class="btn-lista-compra-pdf">
+                <i class="fa-solid fa-file-pdf"></i> Exportar a PDF
+            </button>
+            <button type="button" id="btn-lista-compra-whatsapp" class="btn-lista-compra-whatsapp">
+                <i class="fa-brands fa-whatsapp"></i> Compartir por WhatsApp
+            </button>
+            <button type="button" id="btn-lista-compra-correo" class="btn-lista-compra-correo">
+                <i class="fa-solid fa-envelope"></i> Compartir por correo
+            </button>
+            <button type="button" id="btn-lista-compra-vaciar" class="btn-lista-compra-vaciar">
+                <i class="fa-solid fa-broom"></i> Vaciar la lista
+            </button>
+            <button type="button" id="btn-lista-compra-eliminar" class="btn-lista-compra-eliminar">
+                <i class="fa-solid fa-trash"></i> Eliminar la lista
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<!-- Lista de la compra: exportación a PDF — único cliente de jsPDF/
+     autoTable en el sitio, no existía ya ninguna solución de PDF en el
+     cliente. Mismo patrón de carga que el resto de librerías de
+     terceros (cdnjs). Si falla la carga (red, bloqueador...), el botón
+     "Exportar a PDF" lo detecta y avisa con el mismo sistema de toasts,
+     sin romper el resto de la funcionalidad. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="./src/js/app.js?v=20260829"></script>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'buscador'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
@@ -4910,6 +5187,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function mostrarResultadosPorPrimeraVez() {
         inicializarFiltros();
+        inicializarListaCompra_();
         aplicarFiltros();
         $('cargando-inicial').style.display = 'none';
         $('contenedor-resultados').style.display = '';
@@ -5950,6 +6228,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // ...y para "Limpiar filtros" arriba del todo del panel (visible
         // con el panel abierto), para no tener que bajar a buscarlo.
         $('btn-limpiar-arriba').classList.toggle('visible', oculto);
+        // Lista de la compra: con filtro activo se traslada justo debajo
+        // de la barra del buscador; sin filtro, vuelve a su posición
+        // habitual debajo de los demás bloques — ver su definición en el
+        // módulo ShoppingList* más abajo.
+        actualizarPosicionBloqueListaCompra_(oculto);
     }
 
     // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
@@ -7584,13 +7867,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Crear tarjeta de producto (mismo criterio visual que el catálogo PDF) ──
-    function crearTarjeta(p) {
-        const card = document.createElement('div');
-        card.className = 'producto-card';
-        card.style.cursor = 'pointer';
-        card.dataset.ref = p.ref;
-        card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
-
+    // Extraído de crearTarjeta() para poder reutilizar exactamente el
+    // mismo contenido visual (imagen, badges, precio) en otros contextos
+    // que necesitan su propio listener de click — ver crearTarjetaListaCompra_
+    // en el módulo de "Lista de la compra".
+    function construirContenidoTarjeta_(p, opciones) {
+        opciones = opciones || {};
         const urlImg = urlImagenProducto(p, 300);
         const imgHtml = urlImg
             ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
@@ -7615,19 +7897,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
 
-        // En modo plano (fecha/precio) no hay cabecera de familia/subfamilia
-        // que dé contexto — sin ella, cada tarjeta parecía "suelta" sin
-        // indicar a qué área/familia pertenece. Etiqueta discreta solo ahí;
-        // en el modo agrupado de siempre, y en "ordenar por área" (que
-        // también se agrupa, con cabeceras reales de área/familia/
-        // subfamilia), sería redundante con la cabecera de sección.
-        const ordenActual = $('f-orden').value;
-        const enModoPlano = ordenActual && ordenActual !== 'area';
-        const etiquetaAreaFamilia = enModoPlano
-            ? `<p class="producto-area-familia">${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</p>`
+        const etiquetaAreaFamilia = opciones.mostrarAreaFamilia
+            ? `<p class="producto-area-familia">${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}${(opciones.mostrarSubfamilia && p.subfamilia) ? ' · ' + escapeHtml(p.subfamilia) : ''}</p>`
             : '';
 
-        card.innerHTML = `
+        return `
             <div class="producto-img-wrap">${ofertaBadge}${logoBadge}${imgHtml}</div>
             <div class="producto-info">
                 ${etiquetaAreaFamilia}
@@ -7636,7 +7910,628 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ${precioHtml}
             </div>
         `;
+    }
+
+    function crearTarjeta(p) {
+        const card = document.createElement('div');
+        card.className = 'producto-card';
+        card.style.cursor = 'pointer';
+        card.dataset.ref = p.ref;
+        card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
+
+        // En modo plano (fecha/precio) no hay cabecera de familia/subfamilia
+        // que dé contexto — sin ella, cada tarjeta parecía "suelta" sin
+        // indicar a qué área/familia pertenece. Etiqueta discreta solo ahí;
+        // en el modo agrupado de siempre, y en "ordenar por área" (que
+        // también se agrupa, con cabeceras reales de área/familia/
+        // subfamilia), sería redundante con la cabecera de sección.
+        const ordenActual = $('f-orden').value;
+        const enModoPlano = ordenActual && ordenActual !== 'area';
+
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano });
         return card;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── LISTA DE LA COMPRA ──────────────────────────────────────────────
+    // Funcionalidad 100% cliente (sin Apps Script, sin backend): el
+    // usuario guarda productos de interés en este navegador para
+    // consultarlos más adelante. NO es un carrito de compra (no hay
+    // stock, cantidades, pedidos ni pago) — ver especificación completa.
+    // Única fuente de verdad: listaCompraState_ (null = no existe
+    // ninguna lista todavía). Cualquier mutación pasa siempre por
+    // listaCompraPersistir_() y termina en listaCompraActualizarUI_(),
+    // que sincroniza las tres vistas (bloque, modal, botón del producto)
+    // sin mantener copias de estado por separado.
+    // ══════════════════════════════════════════════════════════════════
+    const LISTA_COMPRA_CLAVE_ = 'omListaCompra';
+    const LISTA_COMPRA_VERSION_ = 1;
+    const LISTA_COMPRA_MAX_ = 20;
+    // Campos que de verdad hacen falta para pintar un producto guardado
+    // sin depender del catálogo — ni más (no hay que guardar fichas
+    // técnicas, descripciones largas, etc.) ni menos.
+    const LISTA_COMPRA_CAMPOS_ = ['ref', 'nombre', 'precio_sin', 'precio_con', 'mostrar_precio', 'area', 'familia', 'subfamilia', 'img', 'fabricante'];
+
+    let listaCompraState_ = null;          // { version, productos: [...] } | null si no existe lista
+    let listaCompraPersistenciaOk_ = true; // false tras el primer fallo real de localStorage (cuota, navegación privada...)
+    let productoModalActual_ = null;       // producto mostrado actualmente en el modal de detalle, para el botón "Añadir a la lista"
+
+    // Nunca se confía en lo que haya en localStorage tal cual: products
+    // con forma inesperada (versión antigua, campo que ya no existe,
+    // tipo incorrecto) se descartan en vez de romper el resto de la
+    // página — ver sección "Seguridad y robustez" del encargo.
+    function listaCompraSanear_(p) {
+        if (!p || typeof p !== 'object' || !p.ref) return null;
+        const limpio = {};
+        LISTA_COMPRA_CAMPOS_.forEach(c => { limpio[c] = p[c]; });
+        limpio.ref = String(p.ref);
+        limpio.nombre = p.nombre ? String(p.nombre) : '(sin nombre)';
+        limpio.precio_sin = p.precio_sin != null ? String(p.precio_sin) : '';
+        limpio.precio_con = p.precio_con != null ? String(p.precio_con) : '';
+        limpio.mostrar_precio = !!p.mostrar_precio;
+        limpio.area = p.area ? String(p.area) : '';
+        limpio.familia = p.familia ? String(p.familia) : '';
+        limpio.subfamilia = p.subfamilia ? String(p.subfamilia) : '';
+        limpio.img = p.img ? String(p.img) : '';
+        limpio.fabricante = p.fabricante ? String(p.fabricante) : '';
+        return limpio;
+    }
+
+    function listaCompraCargarDeStorage_() {
+        try {
+            const crudo = localStorage.getItem(LISTA_COMPRA_CLAVE_);
+            if (!crudo) return null;
+            const data = JSON.parse(crudo);
+            if (!data || typeof data !== 'object' || data.version !== LISTA_COMPRA_VERSION_ || !Array.isArray(data.productos)) {
+                // Versión antigua/desconocida o estructura corrupta: se
+                // ignora sin más (no se intenta migrar de momento, solo
+                // hay una versión) — la web sigue funcionando con "sin
+                // lista todavía" en vez de romperse.
+                return null;
+            }
+            const productos = data.productos.map(listaCompraSanear_).filter(Boolean).slice(0, LISTA_COMPRA_MAX_);
+            return { version: LISTA_COMPRA_VERSION_, productos };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function listaCompraPersistir_() {
+        if (!listaCompraState_) return;
+        try {
+            localStorage.setItem(LISTA_COMPRA_CLAVE_, JSON.stringify(listaCompraState_));
+            listaCompraPersistenciaOk_ = true;
+        } catch (e) {
+            // Sin localStorage disponible (cuota agotada, navegación
+            // privada en algunos navegadores...): la lista sigue
+            // funcionando en memoria durante esta sesión (listaCompraState_
+            // ya está actualizado), solo se avisa una vez de que no
+            // persistirá — nunca un error fatal.
+            if (listaCompraPersistenciaOk_) {
+                mostrarToast('No se ha podido guardar la lista en este navegador. Seguirá disponible solo durante esta sesión.', 'error');
+            }
+            listaCompraPersistenciaOk_ = false;
+        }
+    }
+
+    function listaCompraExiste_() { return !!listaCompraState_; }
+    function listaCompraProductos_() { return listaCompraState_ ? listaCompraState_.productos : []; }
+    function listaCompraCantidad_() { return listaCompraProductos_().length; }
+    function listaCompraTiene_(ref) { return listaCompraProductos_().some(p => p.ref === ref); }
+
+    function listaCompraCrear_() {
+        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, productos: [] };
+        listaCompraPersistir_();
+    }
+
+    // Devuelve 'ok' | 'duplicado' | 'limite' — el llamador decide el
+    // mensaje exacto según el contexto (bloque, ficha de producto...).
+    function listaCompraAnadir_(p) {
+        if (!listaCompraState_) listaCompraCrear_();
+        if (listaCompraTiene_(p.ref)) return 'duplicado';
+        if (listaCompraState_.productos.length >= LISTA_COMPRA_MAX_) return 'limite';
+        listaCompraState_.productos.push(listaCompraSanear_(p));
+        listaCompraPersistir_();
+        return 'ok';
+    }
+
+    function listaCompraEliminarProducto_(ref) {
+        if (!listaCompraState_) return;
+        listaCompraState_.productos = listaCompraState_.productos.filter(p => p.ref !== ref);
+        listaCompraPersistir_();
+    }
+
+    function listaCompraVaciar_() {
+        if (!listaCompraState_) return;
+        listaCompraState_.productos = [];
+        listaCompraPersistir_();
+    }
+
+    function listaCompraEliminarTodo_() {
+        listaCompraState_ = null;
+        try { localStorage.removeItem(LISTA_COMPRA_CLAVE_); } catch (e) { /* nada que limpiar si no hay storage */ }
+    }
+
+    // Orden determinista: área > familia > subfamilia > nombre — se
+    // recalcula cada vez que se pinta en vez de guardarse ya ordenada,
+    // así cualquier cambio de datos (p.ej. una familia renombrada) se
+    // refleja solo con volver a pintar.
+    function listaCompraOrdenada_() {
+        const clave = p => [
+            AREAS_NOMBRE[p.area] || p.area || '',
+            p.familia || '',
+            p.subfamilia || '',
+            p.nombre || '',
+        ];
+        return [...listaCompraProductos_()].sort((a, b) => {
+            const ca = clave(a), cb = clave(b);
+            for (let i = 0; i < ca.length; i++) {
+                const cmp = ca[i].localeCompare(cb[i], 'es', { sensitivity: 'base' });
+                if (cmp) return cmp;
+            }
+            return 0;
+        });
+    }
+
+    // Todos los importes en céntimos enteros mientras se calcula, para
+    // evitar los problemas de precisión decimal habituales en JS — solo
+    // se vuelve a formato "XX,XX €" al mostrarlo.
+    function listaCompraACentimos_(valor) {
+        const n = parseFloat((valor || '0').toString().replace(',', '.'));
+        return isFinite(n) ? Math.round(n * 100) : 0;
+    }
+    function listaCompraFormatoEuros_(centimos) {
+        return (centimos / 100).toFixed(2).replace('.', ',') + ' €';
+    }
+    function listaCompraTotales_() {
+        let sinIva = 0, conIva = 0;
+        listaCompraProductos_().forEach(p => {
+            if (!p.mostrar_precio) return; // "consultar precio": no se puede sumar un importe que no se muestra
+            conIva += listaCompraACentimos_(p.precio_con);
+            sinIva += listaCompraACentimos_(p.precio_sin || p.precio_con);
+        });
+        return { sinIva, iva: conIva - sinIva, conIva };
+    }
+
+    // ── Tarjeta del carrusel del bloque (mini, igual aspecto que el
+    // resto de carruseles) — reutiliza el mismo contenido que crearTarjeta
+    // pero el click abre la MODAL DE LA LISTA (no el detalle del
+    // producto), igual que ya distingue crearItemBloqueCategoria_ entre
+    // clicar un producto suelto o el bloque entero.
+    function crearTarjetaListaCompraBloque_(p) {
+        const card = document.createElement('div');
+        card.className = 'producto-card';
+        card.dataset.ref = p.ref;
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: false });
+        return card;
+    }
+
+    // ── Tarjeta de la modal de gestión: mismo aspecto habitual +
+    // jerarquía área/familia/subfamilia + papelera para quitarla de la
+    // lista sin recargar nada.
+    function crearTarjetaListaCompraModal_(p) {
+        const card = document.createElement('div');
+        card.className = 'producto-card lista-compra-tarjeta';
+        card.dataset.ref = p.ref;
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: true, mostrarSubfamilia: true });
+
+        const papelera = document.createElement('button');
+        papelera.type = 'button';
+        papelera.className = 'lista-compra-papelera';
+        papelera.setAttribute('aria-label', `Quitar ${p.nombre} de la lista de la compra`);
+        papelera.title = 'Quitar de la lista';
+        papelera.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        papelera.addEventListener('click', (e) => {
+            e.stopPropagation();
+            listaCompraEliminarProducto_(p.ref);
+            mostrarToast(`${escapeHtml(p.nombre)} se ha quitado de la lista`);
+            listaCompraActualizarUI_();
+        });
+        card.appendChild(papelera);
+
+        card.addEventListener('click', () => {
+            $('modal-lista-compra-overlay').classList.remove('activo');
+            abrirModalProducto(p, { pushHistorial: true });
+        });
+        return card;
+    }
+
+    // ── Bloque del carrusel (debajo de los demás bloques / junto al
+    // buscador según haya filtro activo — ver actualizarPosicionBloqueListaCompra_).
+    function renderBloqueListaCompra_() {
+        const btnCrear = $('btn-crear-lista-compra');
+        let bloque = $('bloque-lista-compra');
+
+        if (!listaCompraExiste_()) {
+            btnCrear.style.display = '';
+            if (bloque) bloque.style.display = 'none';
+            return;
+        }
+        btnCrear.style.display = 'none';
+
+        if (!bloque) {
+            bloque = document.createElement('div');
+            bloque.id = 'bloque-lista-compra';
+            bloque.className = 'bloque-lista-compra';
+            bloque.type = 'button';
+            bloque.setAttribute('role', 'button');
+            bloque.setAttribute('tabindex', '0');
+            bloque.setAttribute('aria-haspopup', 'dialog');
+            bloque.setAttribute('aria-label', 'Abrir lista de la compra');
+            bloque.innerHTML = `
+                <div class="bloque-lista-compra__cabecera">
+                    <p class="bloque-lista-compra__titulo"><i class="fa-solid fa-cart-shopping"></i> Lista de la compra</p>
+                    <span class="bloque-lista-compra__contador" id="lista-compra-contador-bloque"></span>
+                </div>
+                <div class="bloque-lista-compra__carrusel" id="lista-compra-carrusel"></div>
+            `;
+            bloque.addEventListener('click', () => abrirModalListaCompra_());
+            bloque.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModalListaCompra_(); }
+            });
+            // Se inserta junto al ancla inferior; actualizarPosicionBloqueListaCompra_
+            // lo moverá de inmediato si hace falta (p.ej. si ya hay un
+            // filtro activo cuando se crea la lista).
+            $('ancla-lista-compra-abajo').after(bloque);
+        }
+        bloque.style.display = '';
+
+        const cantidad = listaCompraCantidad_();
+        $('lista-compra-contador-bloque').textContent = `${cantidad} / ${LISTA_COMPRA_MAX_}`;
+
+        const carrusel = $('lista-compra-carrusel');
+        carrusel.innerHTML = '';
+        listaCompraOrdenada_().forEach(p => {
+            const card = crearTarjetaListaCompraBloque_(p);
+            card.addEventListener('click', (e) => { e.stopPropagation(); abrirModalListaCompra_(); });
+            carrusel.appendChild(card);
+        });
+    }
+
+    // Traslada el bloque (si existe) entre las dos anclas según haya
+    // filtro/búsqueda activo — mismo criterio que el resto de módulos de
+    // descubrimiento (hayFiltroActivo_), pero esta sí debe seguir visible
+    // con filtro activo, solo que en otra posición.
+    function actualizarPosicionBloqueListaCompra_(filtroActivo) {
+        const bloque = $('bloque-lista-compra');
+        if (!bloque) return;
+        const ancla = filtroActivo ? $('ancla-lista-compra-arriba') : $('ancla-lista-compra-abajo');
+        if (ancla && bloque.previousElementSibling !== ancla) {
+            ancla.after(bloque);
+        }
+    }
+
+    function listaCompraActualizarUI_() {
+        renderBloqueListaCompra_();
+        actualizarPosicionBloqueListaCompra_(hayFiltroActivo_());
+        if ($('modal-lista-compra-overlay').classList.contains('activo')) renderModalListaCompra_();
+        actualizarBotonListaCompraEnModalProducto_();
+    }
+
+    // ── Modal de gestión ─────────────────────────────────────────────
+    function renderModalListaCompra_() {
+        const cantidad = listaCompraCantidad_();
+        $('modal-lista-compra-contador').textContent = `${cantidad} / ${LISTA_COMPRA_MAX_} productos`;
+        const totales = listaCompraTotales_();
+        $('modal-lista-compra-total-sin').textContent = listaCompraFormatoEuros_(totales.sinIva);
+        $('modal-lista-compra-total-con').textContent = listaCompraFormatoEuros_(totales.conIva);
+
+        const grid = $('lista-compra-grid');
+        const vacia = $('lista-compra-vacia');
+        const acciones = $('modal-lista-compra-acciones');
+        if (cantidad === 0) {
+            grid.style.display = 'none';
+            vacia.style.display = '';
+            // "Vaciar"/exportar/compartir no tienen sentido sin productos
+            // — se ocultan en vez de dejarlos ahí sin hacer nada al
+            // pulsarlos. "Eliminar la lista" se mantiene, es la forma de
+            // deshacerse de una lista vacía que ya no se quiere.
+            ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-vaciar'].forEach(id => $(id).style.display = 'none');
+            return;
+        }
+        grid.style.display = '';
+        vacia.style.display = 'none';
+        ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-vaciar'].forEach(id => $(id).style.display = '');
+
+        grid.innerHTML = '';
+        listaCompraOrdenada_().forEach(p => grid.appendChild(crearTarjetaListaCompraModal_(p)));
+    }
+
+    function abrirModalListaCompra_() {
+        if (!listaCompraExiste_()) return;
+        renderModalListaCompra_();
+        $('modal-lista-compra-overlay').classList.add('activo');
+    }
+    function cerrarModalListaCompra_() {
+        $('modal-lista-compra-overlay').classList.remove('activo');
+    }
+
+    // ── Confirmación genérica (Vaciar / Eliminar lista) ───────────────
+    let listaCompraConfirmarAccion_ = null;
+    function pedirConfirmacionListaCompra_(titulo, mensaje, accion) {
+        $('modal-confirmar-lista-compra-titulo').textContent = titulo;
+        $('modal-confirmar-lista-compra-mensaje').textContent = mensaje;
+        listaCompraConfirmarAccion_ = accion;
+        $('modal-confirmar-lista-compra-overlay').classList.add('activo');
+    }
+
+    // ── Botón "Añadir a la lista" en la ficha de producto ─────────────
+    function actualizarBotonListaCompraEnModalProducto_() {
+        const btn = $('modal-producto-lista-btn');
+        const texto = $('modal-producto-lista-btn-texto');
+        if (!productoModalActual_) return;
+        btn.classList.remove('incluido', 'limite');
+        if (!listaCompraExiste_()) {
+            texto.textContent = 'Crear lista de compra y añadir producto';
+            return;
+        }
+        if (listaCompraTiene_(productoModalActual_.ref)) {
+            texto.textContent = 'Producto incluido en la lista';
+            btn.classList.add('incluido');
+            return;
+        }
+        if (listaCompraCantidad_() >= LISTA_COMPRA_MAX_) {
+            texto.textContent = 'Lista completa (20/20)';
+            btn.classList.add('limite');
+            return;
+        }
+        texto.textContent = 'Añadir a la lista de la compra';
+    }
+
+    function alPulsarBotonListaCompraProducto_() {
+        if (!productoModalActual_) return;
+        const p = productoModalActual_;
+        const yaExistia = listaCompraExiste_();
+        const resultado = listaCompraAnadir_(p);
+        if (resultado === 'duplicado') {
+            mostrarToast('Este producto ya está en tu lista de la compra.');
+            return;
+        }
+        if (resultado === 'limite') {
+            mostrarToast(`Tu lista ya tiene ${LISTA_COMPRA_MAX_} productos, el máximo permitido. Quita alguno antes de añadir otro.`, 'error');
+            return;
+        }
+        mostrarToast(yaExistia
+            ? `${escapeHtml(p.nombre)} se ha añadido a tu lista de la compra`
+            : `Lista creada y ${escapeHtml(p.nombre)} añadido`);
+        listaCompraActualizarUI_();
+    }
+
+    // ── Exportar a PDF ─────────────────────────────────────────────────
+    // Datos corporativos reales (dirección/horario ya publicados en
+    // index.html) — no se inventan ni se duplican en otro sitio, se
+    // reutilizan tal cual aquí.
+    const LISTA_COMPRA_EMPRESA_ = {
+        nombre: 'Orencio Matas y Hnos, S.L.',
+        logo: './assets/logos/logo-orencio.png',
+        direccion: 'Av. Alfred Nobel, 2 · 13005 Ciudad Real',
+        horario: 'Lunes a Viernes: 9:00–14:00 y 16:30–19:30 · Sábados: 9:00–14:00 · Domingos: cerrado',
+    };
+
+    function listaCompraFechaFormateada_() {
+        const hoy = new Date();
+        const dd = String(hoy.getDate()).padStart(2, '0');
+        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        return `${dd}/${mm}/${hoy.getFullYear()}`;
+    }
+
+    async function exportarListaCompraPDF_() {
+        if (typeof window.jspdf === 'undefined') {
+            mostrarToast('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+            return;
+        }
+        const productos = listaCompraOrdenada_();
+        if (!productos.length) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+        const pieTexto = `${LISTA_COMPRA_EMPRESA_.direccion}  ·  ${LISTA_COMPRA_EMPRESA_.horario}`;
+
+        const dibujarPie = (datos) => {
+            const alturaPagina = doc.internal.pageSize.getHeight();
+            const anchoPagina = doc.internal.pageSize.getWidth();
+            doc.setFontSize(7.5);
+            doc.setTextColor(120);
+            doc.text(pieTexto, anchoPagina / 2, alturaPagina - 18, { align: 'center', maxWidth: anchoPagina - 60 });
+            doc.text(`Página ${datos.pageNumber}`, anchoPagina - 40, alturaPagina - 18);
+        };
+
+        // Cabecera: logo + título + fecha. El logo es opcional (si por lo
+        // que sea no se puede cargar la imagen, el PDF se genera igual
+        // sin romperse, solo sin logo).
+        try {
+            const logoDataUrl = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+            if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', 40, 30, 90, 30);
+        } catch (e) { /* sin logo, no es crítico */ }
+
+        doc.setFontSize(16);
+        doc.setTextColor(30);
+        doc.text('Lista de la compra', 40, 85);
+        doc.setFontSize(9.5);
+        doc.setTextColor(100);
+        doc.text(`Generado el ${listaCompraFechaFormateada_()}`, 40, 102);
+        doc.text(LISTA_COMPRA_EMPRESA_.nombre, doc.internal.pageSize.getWidth() - 40, 85, { align: 'right' });
+
+        const filas = productos.map(p => [
+            p.nombre,
+            p.ref,
+            AREAS_NOMBRE[p.area] || p.area || '—',
+            p.familia || '—',
+            p.subfamilia || '—',
+            p.mostrar_precio && p.precio_sin ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_sin)) : '—',
+            p.mostrar_precio && p.precio_con ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con) - listaCompraACentimos_(p.precio_sin || p.precio_con)) : '—',
+            p.mostrar_precio && p.precio_con ? listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
+        ]);
+
+        doc.autoTable({
+            startY: 120,
+            margin: { bottom: 50 },
+            head: [['Producto', 'Referencia', 'Área', 'Familia', 'Subfamilia', 'Sin IVA', 'IVA', 'Con IVA']],
+            body: filas,
+            styles: { fontSize: 8, cellPadding: 5 },
+            headStyles: { fillColor: [211, 47, 47], textColor: 255 },
+            didDrawPage: dibujarPie,
+        });
+
+        const totales = listaCompraTotales_();
+        let y = doc.lastAutoTable.finalY + 24;
+        const anchoPagina = doc.internal.pageSize.getWidth();
+        const alturaPagina = doc.internal.pageSize.getHeight();
+        if (y > alturaPagina - 110) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+
+        doc.setFontSize(10);
+        doc.setTextColor(60);
+        doc.text(`Total productos: ${productos.length}`, 40, y);
+        doc.text(`Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`, 40, y + 16);
+        doc.text(`IVA: ${listaCompraFormatoEuros_(totales.iva)}`, 40, y + 32);
+        doc.setFontSize(13);
+        doc.setTextColor(211, 47, 47);
+        doc.text(`Total con IVA: ${listaCompraFormatoEuros_(totales.conIva)}`, 40, y + 54);
+
+        // El pie no se dibuja solo en didDrawPage de autoTable si al
+        // final se añaden más líneas tras la tabla sin pasar por otra
+        // página — se redibuja aquí por si acaso para la página actual.
+        dibujarPie({ pageNumber: doc.internal.getNumberOfPages() });
+
+        doc.save(`lista-de-la-compra-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`);
+    }
+
+    function cargarImagenComoDataURL_(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                } catch (e) { resolve(null); }
+            };
+            img.onerror = () => resolve(null);
+            img.src = url;
+        });
+    }
+
+    // ── Compartir (WhatsApp / correo) ──────────────────────────────────
+    function listaCompraTextoCompartir_() {
+        const productos = listaCompraOrdenada_();
+        const totales = listaCompraTotales_();
+        const lineas = [
+            'Lista de la compra — Orencio Matas y Hnos',
+            `${productos.length} / ${LISTA_COMPRA_MAX_} productos`,
+            '',
+            ...productos.map(p => `• ${p.nombre} (Ref: ${p.ref})${p.mostrar_precio && p.precio_con ? ' — ' + listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con)) : ''}`),
+            '',
+            `Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`,
+            `Total con IVA: ${listaCompraFormatoEuros_(totales.conIva)}`,
+        ];
+        return lineas.join('\n');
+    }
+
+    async function compartirListaCompraWhatsapp_() {
+        const texto = listaCompraTextoCompartir_();
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Lista de la compra', text: texto });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+        // Sin Web Share API (o si falla): wa.me funciona igual en móvil
+        // (abre la app si está instalada) y en escritorio (abre WhatsApp
+        // Web) — nunca se asume que WhatsApp está instalado, es el propio
+        // enlace el que decide cómo abrirse.
+        window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+    }
+
+    async function compartirListaCompraCorreo_() {
+        const texto = listaCompraTextoCompartir_();
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Lista de la compra', text: texto });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+        const asunto = encodeURIComponent('Lista de la compra — Orencio Matas y Hnos');
+        window.location.href = `mailto:?subject=${asunto}&body=${encodeURIComponent(texto)}`;
+        // mailto: no admite adjuntar el PDF — se avisa y se deja a mano
+        // exportarlo con el botón de al lado, como contempla el encargo.
+        mostrarToast('Se ha abierto tu programa de correo. Si quieres adjuntar también el PDF, expórtalo con el botón de al lado.');
+    }
+
+    // ── Wiring de toda la funcionalidad ────────────────────────────────
+    function inicializarListaCompra_() {
+        listaCompraState_ = listaCompraCargarDeStorage_();
+        listaCompraActualizarUI_();
+
+        $('btn-crear-lista-compra').addEventListener('click', () => {
+            listaCompraCrear_();
+            mostrarToast('Lista de la compra creada');
+            listaCompraActualizarUI_();
+        });
+
+        $('modal-lista-compra-cerrar').addEventListener('click', cerrarModalListaCompra_);
+        $('modal-lista-compra-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-lista-compra-overlay') cerrarModalListaCompra_();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('modal-lista-compra-overlay').classList.contains('activo')) cerrarModalListaCompra_();
+        });
+
+        $('btn-lista-compra-vaciar').addEventListener('click', () => {
+            pedirConfirmacionListaCompra_(
+                '¿Vaciar la lista?',
+                'Se eliminarán todos los productos, pero la lista seguirá creada para que puedas volver a añadir.',
+                () => {
+                    listaCompraVaciar_();
+                    mostrarToast('Lista vaciada');
+                    listaCompraActualizarUI_();
+                }
+            );
+        });
+        $('btn-lista-compra-eliminar').addEventListener('click', () => {
+            pedirConfirmacionListaCompra_(
+                '¿Eliminar la lista?',
+                'Se eliminará por completo la lista y todos sus productos. Podrás crear una nueva lista cuando quieras.',
+                () => {
+                    listaCompraEliminarTodo_();
+                    cerrarModalListaCompra_();
+                    mostrarToast('Lista eliminada');
+                    listaCompraActualizarUI_();
+                }
+            );
+        });
+        $('modal-confirmar-lista-compra-cancelar').addEventListener('click', () => {
+            $('modal-confirmar-lista-compra-overlay').classList.remove('activo');
+            listaCompraConfirmarAccion_ = null;
+        });
+        $('modal-confirmar-lista-compra-cerrar').addEventListener('click', () => {
+            $('modal-confirmar-lista-compra-overlay').classList.remove('activo');
+            listaCompraConfirmarAccion_ = null;
+        });
+        $('modal-confirmar-lista-compra-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-confirmar-lista-compra-overlay') {
+                $('modal-confirmar-lista-compra-overlay').classList.remove('activo');
+                listaCompraConfirmarAccion_ = null;
+            }
+        });
+        $('modal-confirmar-lista-compra-confirmar').addEventListener('click', () => {
+            $('modal-confirmar-lista-compra-overlay').classList.remove('activo');
+            const accion = listaCompraConfirmarAccion_;
+            listaCompraConfirmarAccion_ = null;
+            if (accion) accion();
+        });
+
+        $('btn-lista-compra-pdf').addEventListener('click', exportarListaCompraPDF_);
+        $('btn-lista-compra-whatsapp').addEventListener('click', compartirListaCompraWhatsapp_);
+        $('btn-lista-compra-correo').addEventListener('click', compartirListaCompraCorreo_);
+
+        $('modal-producto-lista-btn').addEventListener('click', alPulsarBotonListaCompraProducto_);
     }
 
     // ── Búsqueda inteligente de producto con IA (red de seguridad) ──
@@ -7985,6 +8880,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         opciones = opciones || {};
         registrarProductoVisto_(p);
         ocultarDisclaimerPrecios();
+        productoModalActual_ = p;
+        actualizarBotonListaCompraEnModalProducto_();
         const imgSrc = urlImagenProducto(p, 800) || '';
         const tieneImagen = !!imgSrc;
 
