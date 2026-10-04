@@ -8653,34 +8653,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Sin columna de Subfamilia a petición explícita — el orden
         // interno (área > familia > subfamilia > producto) no cambia,
         // solo deja de mostrarse esa columna en la tabla.
-        const filas = productos.map(p => [
-            p.nombre,
-            p.ref,
-            AREAS_NOMBRE[p.area] || p.area || '—',
-            p.familia || '—',
-            String(p.unidades || 1),
-            p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(listaCompraACentimos_(p.precio_sin)) : '—',
-            p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con) - listaCompraACentimos_(p.precio_sin || p.precio_con)) : '—',
-            p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
-        ]);
+        // Sin columna de Área a petición explícita (y Familia más
+        // estrecha para dejar sitio a las columnas de importes) — el
+        // orden interno (área > familia > subfamilia > producto) no
+        // cambia, solo deja de mostrarse esa columna en la tabla.
+        const filas = productos.map(p => {
+            const unidades = p.unidades || 1;
+            const subtotalSin = listaCompraACentimos_(p.precio_sin || p.precio_con) * unidades;
+            return [
+                p.nombre,
+                p.ref,
+                p.familia || '—',
+                String(unidades),
+                p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(listaCompraACentimos_(p.precio_sin)) : '—',
+                p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
+                p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(subtotalSin) : '—',
+            ];
+        });
 
         doc.autoTable({
             startY: 120,
             margin: { bottom: 50 },
-            head: [['Producto', 'Referencia', 'Área', 'Familia', 'Uds.', 'Sin IVA', 'IVA', 'Con IVA']],
+            head: [['Producto', 'Referencia', 'Familia', 'Uds.', 'P. unit. sin IVA', 'P. unit. con IVA', 'Subtotal sin IVA']],
             body: filas,
             styles: { fontSize: 8, cellPadding: 5 },
             headStyles: { fillColor: [211, 47, 47], textColor: 255 },
             // Familia más estrecha y con elipsis ("...") si no cabe, en
             // vez de partir el texto en varias líneas — y ancho fijo en
-            // las columnas de precio/unidades para que no se partan en
+            // las columnas de unidades/importes para que no se partan en
             // dos líneas.
             columnStyles: {
-                3: { cellWidth: 65, overflow: 'ellipsize' },
-                4: { cellWidth: 28, halign: 'center' },
-                5: { cellWidth: 55 },
-                6: { cellWidth: 50 },
-                7: { cellWidth: 55 },
+                2: { cellWidth: 55, overflow: 'ellipsize' },
+                3: { cellWidth: 32, halign: 'center' },
+                4: { cellWidth: 60 },
+                5: { cellWidth: 60 },
+                6: { cellWidth: 65 },
             },
             didDrawPage: dibujarPie,
         });
