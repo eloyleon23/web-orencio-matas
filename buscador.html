@@ -4760,6 +4760,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     let SUBFAMILIAS_ORDEN = {}; // {familia: {subfamilia: orden}}
     let resultadosActuales = []; // tras aplicar filtros
 
+    // Refs exactas a las que restringir el resultado cuando el filtro
+    // activo viene de un chip de "Marcas más buscadas" (ver
+    // aplicarFiltroMarca_) — null en cualquier otro caso. Necesario
+    // porque el texto libre (coincide(), simple inclusión de subcadena)
+    // podía dar falsos positivos con productos que solo contuvieran esas
+    // letras en el nombre sin ser realmente de esa marca; aquí se usa en
+    // cambio la misma detección exacta (detectarMarcaAsistente) con la
+    // que ya se construyó el propio chip, así el filtrado resultante es
+    // consistente con lo que el chip decía representar. Se reinicia en
+    // cualquier otro punto que toque f-texto a mano (ver cada uno).
+    let refsMarcaActiva_ = null;
+
     // ── Filtro de fecha de alta ──────────────────────────────────────────
     // false mientras el usuario no haya tocado a mano ninguno de los dos
     // campos: en ese estado, aplicarFiltros() recalcula el rango cada vez
@@ -4931,6 +4943,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // (ver el mismo cambio en el listener 'input' de f-texto) — una
         // sugerencia se combina con lo que ya hubiera aplicado, igual que
         // si se hubiera escrito a mano.
+        refsMarcaActiva_ = null; // texto escrito a mano: vuelve a la búsqueda libre normal
         $('f-texto').value = texto;
         revelarCabeceraResultados();
         ocultarSugerencias();
@@ -5675,6 +5688,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
 
         // Listeners
+        // Escribir a mano (tecla a tecla, sin esperar al debounce de
+        // abajo) vuelve a la búsqueda libre normal — ver refsMarcaActiva_.
+        $('f-texto').addEventListener('input', () => { refsMarcaActiva_ = null; });
         $('f-texto').addEventListener('input', debounce(() => {
             // A petición de Eloy: antes, escribir algo en el buscador
             // limpiaba automáticamente el resto de filtros (Área, Familia,
@@ -5933,6 +5949,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function codigoDetectado(valor) {
         escanerActivo = false;
+        refsMarcaActiva_ = null;
         $('scanner-estado').textContent = '✓ Código detectado: ' + valor;
         $('f-texto').value = valor;
         revelarCabeceraResultados();
@@ -6055,6 +6072,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Aplica el resultado de una decodificación exitosa (usado tanto por
     // ZBar-WASM como por el respaldo de ZXing/html5-qrcode).
     function aplicarResultadoEscaneoFoto(texto) {
+        refsMarcaActiva_ = null;
         $('f-texto').value = texto;
         revelarCabeceraResultados();
         actualizarIconosBuscador();
@@ -6510,22 +6528,28 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     : `<span class="marcas-buscadas__chip-foto"></span>`;
                 chip.innerHTML = `${fotoHtml}<span>${escapeHtml(marca)}</span>`;
             }
-            chip.onclick = () => aplicarFiltroMarca_(marca, areaUnica, familiaUnica);
+            const refsMarca = productosMarca.map(p => p.ref);
+            chip.onclick = () => aplicarFiltroMarca_(marca, areaUnica, familiaUnica, refsMarca);
             cont.appendChild(chip);
         });
         modulosDescubrimientoConContenido_.marcas = true;
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
-    // Clic en un chip de "Marcas más buscadas": busca por el nombre de la
-    // marca y, cuando todos sus productos pertenecen a una única área (y,
-    // si procede, también una única familia), restringe el filtro a ella
-    // — mismo motivo que ya se aplicó a los bloques "Seguir comprando"
-    // (evitar que se cuelen productos de otra área que coincidan por
-    // nombre). Si la marca tiene productos en varias áreas o familias
-    // distintas, se deja sin restringir esa parte para no ocultar
-    // resultados válidos.
-    function aplicarFiltroMarca_(marca, area, familia) {
+    // Clic en un chip de "Marcas más buscadas": restringe el resultado a
+    // las refs EXACTAS ya detectadas como de esa marca (mismo cálculo con
+    // el que se construyó el propio chip, ver refsMarcaActiva_) — no basta
+    // con escribir el nombre en el buscador, porque su texto libre hace
+    // una simple inclusión de subcadena (ver coincide()) y podía dar
+    // falsos positivos con productos que solo contuvieran esas letras en
+    // el nombre sin ser realmente de esa marca. El texto se sigue
+    // escribiendo igualmente (para que se vea qué se está filtrando y
+    // como contexto para "sin resultados"/compartir), y cuando todos los
+    // productos de la marca pertenecen a una única área (y, si procede,
+    // también una única familia) también se marcan — mismo motivo que ya
+    // se aplicó a los bloques "Seguir comprando".
+    function aplicarFiltroMarca_(marca, area, familia, refs) {
+        refsMarcaActiva_ = new Set(refs);
         $('f-texto').value = marca;
         actualizarIconosBuscador();
         if (area) {
@@ -6741,6 +6765,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // igual de restrictivo que el que ya aplica el propio bloque al
     // elegir qué productos mostrar.
     function aplicarFiltroCategoria_(def) {
+        refsMarcaActiva_ = null;
         $('f-texto').value = def.terminoBusqueda;
         actualizarIconosBuscador();
         if (def.area) {
@@ -7337,6 +7362,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function limpiarFiltros() {
+        refsMarcaActiva_ = null;
         $('f-texto').value = '';
         actualizarIconosBuscador();
         ocultarSugerencias();
@@ -7463,6 +7489,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // regeneración completa de la caché), nunca debería excluir
             // nada en el caso normal.
             if (p.fecha_baja && p.fecha_baja.toString().trim()) return false;
+
+            // Filtro por marca exacta (chip de "Marcas más buscadas") —
+            // ver refsMarcaActiva_.
+            if (refsMarcaActiva_ && !refsMarcaActiva_.has(p.ref)) return false;
 
             if (!productoCoincideConAreas(p, areasSel)) return false;
             if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
