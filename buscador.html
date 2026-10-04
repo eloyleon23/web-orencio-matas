@@ -637,6 +637,7 @@
         .mas-buscados__icono--rojo    { background: rgba(211,47,47,.12);  color: var(--red); }
         .mas-buscados__icono--verde   { background: rgba(56,142,60,.12);  color: var(--green); }
         .mas-buscados__icono--amarillo { background: rgba(251,192,45,.2); color: #9a6b00; }
+        .mas-buscados__icono--azul    { background: rgba(25,118,210,.12); color: var(--blue); }
         .mas-buscados__lista {
             display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;
             scroll-snap-type: x proximity;
@@ -644,8 +645,21 @@
         .mas-buscados__lista > .producto-card { flex: 0 0 150px; scroll-snap-align: start; }
         .marcas-buscadas__lista { display: flex; flex-wrap: wrap; gap: 8px; }
         .marcas-buscadas__chip {
+            display: flex; align-items: center; gap: 8px;
             border: 1px solid var(--border); background: #fff; border-radius: 20px;
-            padding: 6px 14px; font-size: 0.85rem; font-weight: 600; color: var(--dark); cursor: pointer;
+            padding: 5px 14px 5px 5px; font-size: 0.85rem; font-weight: 600; color: var(--dark); cursor: pointer;
+            transition: box-shadow .15s;
+        }
+        .marcas-buscadas__chip:hover { box-shadow: 0 4px 10px -2px rgba(15,23,42,.18); }
+        /* Si hay logo real de la marca (ver LOGOS_FABRICANTE), el chip es
+           solo el logo, sin nombre — "en miniatura" tal cual pidió Eloy.
+           Si no hay logo, se mantiene el nombre junto a una foto de un
+           producto real de esa marca a modo de miniatura. */
+        .marcas-buscadas__chip--solo-logo { padding: 6px 16px; }
+        .marcas-buscadas__chip-logo { height: 26px; max-width: 64px; object-fit: contain; }
+        .marcas-buscadas__chip-foto {
+            width: 26px; height: 26px; object-fit: cover; border-radius: 50%;
+            background: var(--light); flex-shrink: 0;
         }
 
         /* ── Lista de la compra ──────────────────────────────────────────
@@ -3850,8 +3864,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              Cada bloque es una tarjeta de color con una rejilla 2x2 de solo
              imagen; son los BLOQUES los que se deslizan en carrusel
              horizontal (ver .categorias-carrusel). Se generan por JS, no
-             hay un número fijo en el HTML. -->
-        <div id="categorias-descubrimiento" class="categorias-carrusel" style="display:none;"></div>
+             hay un número fijo en el HTML. Título propio con icono (igual
+             que el resto de subsecciones) para que se note que es otro
+             bloque distinto del grid principal de resultados. -->
+        <div id="categorias-descubrimiento-seccion" class="mas-buscados" style="display:none;">
+            <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--azul"><i class="fa-solid fa-layer-group"></i></span> Seguir comprando</p>
+            <div id="categorias-descubrimiento" class="categorias-carrusel"></div>
+        </div>
 
         <!-- Lista de la compra (ver módulo ShoppingList* más abajo en el
              bloque de JavaScript principal): sin filtro/búsqueda activa,
@@ -6318,7 +6337,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('mas-buscados').style.display = (modulosDescubrimientoConContenido_.masBuscados && !oculto) ? '' : 'none';
         $('novedades').style.display = (modulosDescubrimientoConContenido_.novedades && !oculto) ? '' : 'none';
         $('marcas-buscadas').style.display = (modulosDescubrimientoConContenido_.marcas && !oculto) ? '' : 'none';
-        $('categorias-descubrimiento').style.display = (modulosDescubrimientoConContenido_.categorias && !oculto) ? '' : 'none';
+        $('categorias-descubrimiento-seccion').style.display = (modulosDescubrimientoConContenido_.categorias && !oculto) ? '' : 'none';
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
@@ -6465,19 +6484,67 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cont = $('marcas-buscadas-lista');
         cont.innerHTML = '';
         marcasOrdenadas.forEach(marca => {
+            // Productos reales de esta marca — de aquí salen tanto la
+            // miniatura (logo del fabricante si existe, si no la foto de
+            // uno de sus productos) como el área/familia a aplicar al
+            // filtrar, para no mezclar resultados de otras áreas que
+            // coincidan por casualidad con el mismo nombre de marca.
+            const productosMarca = TODOS.filter(p => detectarMarcaAsistente(p.nombre) === marca);
+            const areas = new Set(productosMarca.map(p => p.area).filter(Boolean));
+            const familias = new Set(productosMarca.map(p => p.familia).filter(Boolean));
+            const areaUnica = areas.size === 1 ? [...areas][0] : null;
+            const familiaUnica = familias.size === 1 ? [...familias][0] : null;
+
+            const logoFabricante = LOGOS_FABRICANTE[marca];
+            const productoConFoto = productosMarca.find(p => urlImagenProducto(p, 80));
+
             const chip = document.createElement('button');
             chip.type = 'button';
-            chip.className = 'marcas-buscadas__chip';
-            chip.textContent = marca;
-            chip.onclick = () => {
-                $('f-texto').value = marca;
-                aplicarFiltros();
-                $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            };
+            chip.className = 'marcas-buscadas__chip' + (logoFabricante ? ' marcas-buscadas__chip--solo-logo' : '');
+            chip.setAttribute('aria-label', `Filtrar por ${marca}`);
+            if (logoFabricante) {
+                chip.innerHTML = `<img class="marcas-buscadas__chip-logo" src="${logoFabricante}" alt="${escapeHtml(marca)}">`;
+            } else {
+                const fotoHtml = productoConFoto
+                    ? `<img class="marcas-buscadas__chip-foto" src="${urlImagenProducto(productoConFoto, 80)}" alt="" loading="lazy">`
+                    : `<span class="marcas-buscadas__chip-foto"></span>`;
+                chip.innerHTML = `${fotoHtml}<span>${escapeHtml(marca)}</span>`;
+            }
+            chip.onclick = () => aplicarFiltroMarca_(marca, areaUnica, familiaUnica);
             cont.appendChild(chip);
         });
         modulosDescubrimientoConContenido_.marcas = true;
         actualizarVisibilidadModulosDescubrimiento_();
+    }
+
+    // Clic en un chip de "Marcas más buscadas": busca por el nombre de la
+    // marca y, cuando todos sus productos pertenecen a una única área (y,
+    // si procede, también una única familia), restringe el filtro a ella
+    // — mismo motivo que ya se aplicó a los bloques "Seguir comprando"
+    // (evitar que se cuelen productos de otra área que coincidan por
+    // nombre). Si la marca tiene productos en varias áreas o familias
+    // distintas, se deja sin restringir esa parte para no ocultar
+    // resultados válidos.
+    function aplicarFiltroMarca_(marca, area, familia) {
+        $('f-texto').value = marca;
+        actualizarIconosBuscador();
+        if (area) {
+            document.querySelectorAll('#f-area-opciones input').forEach(i => { i.checked = (i.value === area); });
+            aplicarCambioAreas_(); // recalcula familia/fabricante/atributos para la nueva área y ya aplica filtros
+            if (familia) {
+                const checkboxFamilia = [...document.querySelectorAll('#f-familias input')].find(i => i.value === familia);
+                if (checkboxFamilia) {
+                    checkboxFamilia.checked = true;
+                    renderSubfamilias();
+                    renderAtributosTaller();
+                    aplicarFiltros();
+                }
+            }
+        } else {
+            resetPaginacion();
+            aplicarFiltros();
+        }
+        $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function cargarMarcasMasBuscadas_() {
