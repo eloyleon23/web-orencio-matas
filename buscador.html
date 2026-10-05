@@ -661,6 +661,22 @@
             width: 26px; height: 26px; object-fit: cover; border-radius: 50%;
             background: var(--light); flex-shrink: 0;
         }
+        /* Más aire alrededor de esta subsección en concreto (no del resto
+           de bloques, que comparten .mas-buscados) — a petición de Eloy. */
+        #marcas-buscadas { margin: 28px 0 32px; }
+        /* En escritorio los chips se veían pequeños comparados con el
+           resto de bloques — más protagonismo: más padding, texto y
+           miniatura más grandes, más separación entre ellos. En móvil
+           (donde ya se veían bien) se deja el tamaño original. */
+        @media (min-width: 881px) {
+            .marcas-buscadas__lista { gap: 14px; }
+            .marcas-buscadas__chip {
+                gap: 10px; padding: 8px 20px 8px 8px; font-size: 1rem; border-radius: 26px;
+            }
+            .marcas-buscadas__chip--solo-logo { padding: 10px 24px; }
+            .marcas-buscadas__chip-logo { height: 34px; max-width: 86px; }
+            .marcas-buscadas__chip-foto { width: 34px; height: 34px; }
+        }
 
         /* ── Lista de la compra ──────────────────────────────────────────
            Botón para crear la lista (visible solo si no existe ninguna
