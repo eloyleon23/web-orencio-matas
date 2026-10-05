@@ -334,6 +334,12 @@
             padding: 6px 4px;
         }
         .btn-limpiar-arriba.visible { display: inline-flex; }
+        /* En escritorio (en móvil ya tiene su propio espaciado, ver
+           .filtros-extra-cabecera dentro del media query de abajo) se
+           veía pegado al filtro de "Área" justo debajo — un poco de aire. */
+        @media (min-width: 881px) {
+            .btn-limpiar-arriba.visible { margin-bottom: 14px; }
+        }
 
         /* Misma precaución de orden que el botón de abrir: la regla base
            debe ir ANTES de la media query que la activa. */
