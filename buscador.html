@@ -332,15 +332,8 @@
             font-size: 0.85rem;
             cursor: pointer;
             padding: 6px 4px;
-            /* Ver abrirFiltrosMovil(): no es realmente clicable hasta que
-               el panel termina de abrirse — evita el "ghost click" de
-               Safari/iOS que puede disparar un click retrasado sobre lo
-               que haya ahora mismo bajo el dedo, en vez de sobre "Filtros"
-               (el botón que se tocó de verdad). */
-            pointer-events: none;
         }
         .btn-limpiar-arriba.visible { display: inline-flex; }
-        .btn-limpiar-arriba.visible.clicable { pointer-events: auto; }
 
         /* Misma precaución de orden que el botón de abrir: la regla base
            debe ir ANTES de la media query que la activa. */
@@ -392,6 +385,20 @@
             .filtro-grupo.collapsable .familias-lista {
                 max-height: 120px;
             }
+
+            /* Protección anti "ghost click" (ver abrirFiltrosMovil()): solo
+               tiene sentido en móvil, donde el panel de filtros es un cajón
+               deslizante que se abre al tocar "Filtros" — Safari/iOS podía
+               disparar un click sintético retrasado sobre este botón justo
+               al abrirse, limpiando los filtros sin que el usuario lo
+               tocara de verdad. En escritorio el panel es estático (nunca
+               se "abre"), así que esta restricción no debe aplicarse ahí:
+               dejarla en la regla base dejaba el botón visible pero
+               permanentemente inerte, sin que ningún click lo activara
+               jamás (bug real reportado por Eloy: "el botón de limpiar
+               filtros nuevo en la vista web no funciona"). */
+            .btn-limpiar-arriba { pointer-events: none; }
+            .btn-limpiar-arriba.clicable { pointer-events: auto; }
 
             /* Ocultar directamente el bloque de título "Buscador de
                Productos" en móvil — así el buscador queda pegado a la
