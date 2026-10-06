@@ -43,6 +43,122 @@
     return TODAS.find((s) => s.slug === slug) || null;
   }
 
+  // ── Candidatas de IA (consultas repetidas) ──────────────────────────
+  // A petición de Eloy: cerrar el círculo "la IA detecta un hueco -> se
+  // convierte en guía permanente" (sección 13 del documento de
+  // analítica). Lee las vistas de Fase 4/5 (mismo proyecto Supabase, MISMA
+  // clave "anon" de solo lectura sobre agregados — ver
+  // supabase/04_fase4_vistas_centro_soluciones.sql y
+  // supabase/05_fase5_candidatas_ia_json.sql) y ofrece un borrador
+  // PREllenado, nunca un guardado automático: el admin siempre revisa y
+  // completa (categoría, productos reales con ref...) antes de pulsar
+  // "Guardar guía", exactamente el mismo botón y la misma validación que
+  // ya existían.
+  function supabaseGet_(ruta) {
+    const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+    if (!url || !key) return Promise.resolve([]);
+    return fetch(url.replace(/\/$/, '') + '/rest/v1/' + ruta, {
+      headers: { apikey: key, Authorization: 'Bearer ' + key },
+    }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+  }
+
+  function slugificar_(texto) {
+    const base = (texto || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return base || 'nueva-solucion';
+  }
+
+  // Construye un borrador de guía a partir del JSON que generó la IA
+  // (campos: titulo, respuesta, pasos[], dificultad, tiempo, resultado,
+  // terminos[], familias[] — ver buscarSolucionIA en soluciones-data.js)
+  // en el MISMO formato que usan las guías escritas a mano (slug, title,
+  // description, category...). Deliberadamente deja category/
+  // subcategory/problem/objective/surface/recommendedProducts vacíos
+  // cuando no hay una pista fiable — mejor en blanco y que el admin lo
+  // rellene a sabiendas, que adivinar algo que podría ser incorrecto.
+  function construirBorradorDesdeJsonIA_(query, json) {
+    const pasos = Array.isArray(json.pasos) ? json.pasos : [];
+    return {
+      slug: slugificar_(query),
+      title: json.titulo || `Cómo resolver: ${query}`,
+      description: json.respuesta || '',
+      category: '', subcategory: '',
+      problem: '', objective: '', surface: '',
+      difficulty: json.dificultad || 'Media',
+      estimatedTime: json.tiempo || '',
+      result: json.resultado || '',
+      breadcrumb: ['Centro de Soluciones', json.titulo || query],
+      materials: [],
+      steps: pasos.map((p, i) => ({ n: i + 1, title: p.titulo || `Paso ${i + 1}`, text: p.texto || '', productos: [] })),
+      professionalTips: [],
+      commonMistakes: [],
+      recommendedProducts: [],
+      alternativeProducts: [],
+      relatedSolutions: [],
+      seo: {
+        title: (json.titulo || query) + ' | Guía — Orencio Matas',
+        description: json.respuesta || '',
+      },
+    };
+  }
+
+  function usarCandidataComoBorrador_(query, json) {
+    if (!window.confirm(`Esto reemplaza lo que haya ahora mismo en el editor con un borrador para "${query}". ¿Continuar?`)) return;
+    limpiarEditor();
+    const borrador = construirBorradorDesdeJsonIA_(query, json);
+    $('#cs-gestion-slug').value = borrador.slug;
+    $('#cs-gestion-json').value = JSON.stringify(borrador, null, 2);
+    mostrarMsg('Borrador cargado desde una consulta repetida a la IA — revisa categoría, pasos y añade productos reales (con "ref") antes de guardar.', false);
+  }
+
+  function renderCandidatasIA_(candidatas) {
+    const cont = $('#cs-gestion-candidatas-lista');
+    if (!cont) return;
+    if (!candidatas.length) {
+      cont.innerHTML = '<p class="cs-gestion-lista-vacio">Sin candidatas todavía (hace falta más tráfico real, o volver a ejecutar el refresco de las vistas).</p>';
+      return;
+    }
+    cont.innerHTML = candidatas.map((c, i) => `
+      <div class="cs-gestion-candidata-item">
+        <div class="cs-gestion-candidata-texto">
+          <span class="cs-gestion-candidata-query">${c.query_normalized}</span>
+          <span class="cs-gestion-candidata-meta">${c.sesiones_unicas} sesiones distintas · ${c.total_consultas} consultas</span>
+        </div>
+        <button type="button" class="cs-gestion-candidata-usar" data-idx="${i}">Usar como borrador</button>
+      </div>
+    `).join('');
+    cont.querySelectorAll('[data-idx]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const c = candidatas[Number(btn.dataset.idx)];
+        if (c && c.ai_generated_json) usarCandidataComoBorrador_(c.query_normalized, c.ai_generated_json);
+      });
+    });
+  }
+
+  function cargarCandidatasIA() {
+    const cont = $('#cs-gestion-candidatas-lista');
+    if (cont) cont.innerHTML = '<p class="cs-gestion-lista-vacio">Cargando…</p>';
+    Promise.all([
+      supabaseGet_('mv_cs_ia_consultas_repetidas_30d?select=query_normalized,total_consultas,sesiones_unicas,veces_generada_dinamicamente&order=sesiones_unicas.desc&limit=30'),
+      supabaseGet_('mv_cs_ia_candidatas_json_30d?select=query_normalized,ai_generated_json'),
+    ]).then(([repetidas, jsons]) => {
+      const jsonPorConsulta = new Map((jsons || []).map((j) => [j.query_normalized, j.ai_generated_json]));
+      // Solo las que de verdad generaron una respuesta dinámica (sin
+      // guía existente) Y de las que todavía se conserva una muestra de
+      // JSON — las que solo encajaron con una guía ya existente no
+      // necesitan convertirse en nada nuevo.
+      const candidatas = (repetidas || [])
+        .filter((r) => r.veces_generada_dinamicamente > 0 && jsonPorConsulta.has(r.query_normalized))
+        .map((r) => Object.assign({ ai_generated_json: jsonPorConsulta.get(r.query_normalized) }, r));
+      renderCandidatasIA_(candidatas);
+    }).catch(() => {
+      if (cont) cont.innerHTML = '<p class="cs-gestion-lista-vacio">Error al cargar las candidatas.</p>';
+    });
+  }
+
   function renderLista(filtro) {
     const cont = $('#cs-gestion-lista');
     const texto = (filtro || '').trim().toLowerCase();
@@ -104,6 +220,7 @@
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
     $('#cs-gestion-lista').innerHTML = '<p class="cs-gestion-lista-vacio">Cargando…</p>';
+    cargarCandidatasIA();
     try {
       await cargarTodas();
       limpiarEditor();
