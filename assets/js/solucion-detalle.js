@@ -1,6 +1,21 @@
 (function () {
   const D = window.SOLUCIONES_DATA;
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
+  // Ver assets/js/centro-soluciones-analytics.js — misma capa central que
+  // usa centro-soluciones.js, con un no-op de respaldo si el script no
+  // llegara a cargarse por algún motivo.
+  const Analitica = window.CentroSolucionesAnalytics || {
+    trackSolutionSearch() {}, trackSolutionSelected() { return null; },
+    trackAiSolutionGenerated() { return null; }, trackProductsPresented() {},
+    trackProductViewed() {}, trackProductSelected() {},
+    trackMoreProductsRequested() {}, trackAlternativeProductSelected() {},
+    trackFeedback() {}, nuevoInteractionId() { return null; },
+  };
+  // Generado una vez por carga de página — agrupa todos los eventos de
+  // productos (mostrados/vistos/elegidos) de ESTA visualización de la
+  // solución. Se asigna de verdad en render(), nada más confirmar que la
+  // solución existe (ver más abajo).
+  let interactionIdActual = null;
 
   // Fallback del logo de una carta de colores si la imagen no carga —
   // como función global en vez de JS inline dentro del atributo onerror:
@@ -88,6 +103,13 @@
         </div>`;
       return;
     }
+
+    // `origen`: de dónde venía el enlace que trajo hasta aquí ('hero' |
+    // 'ai' | 'problema' | 'popular' | 'area' | 'wizard' — ver urlSolucion
+    // en centro-soluciones.js) — null si se llegó por otra vía (enlace
+    // directo, buscador de Google, compartido...).
+    const origen = params.get('origen') || null;
+    interactionIdActual = Analitica.trackSolutionSelected(sol.slug, sol.title, origen);
 
     const seoTitle = (sol.seo && sol.seo.title) || (sol.title + ' | Orencio Matas y Hnos, S.L.');
     const seoDescription = (sol.seo && sol.seo.description) || sol.description;
@@ -940,8 +962,9 @@
     `).join('');
 
     const listaFinal = sol.recommendedProducts.map((mock, i) => construirEntradaProducto(mock, resueltos[i]));
-    renderTarjetasProducto(cont, listaFinal);
+    renderTarjetasProducto(cont, listaFinal, 'structured');
     actualizarBarraExportar(sol, listaFinal);
+    Analitica.trackProductsPresented(sol.slug, interactionIdActual, listaFinal, 'structured');
   }
 
   // ── "También puedes utilizar" (alternativeProducts) — a petición de
@@ -961,6 +984,7 @@
     const listaFinal = sol.alternativeProducts.map((mock, i) =>
       construirEntradaProducto({ ...mock, categoria: mock.etiqueta }, resueltos[i]));
     renderTarjetasAlternativas(cont, listaFinal);
+    Analitica.trackProductsPresented(sol.slug, interactionIdActual, listaFinal, 'alternative');
   }
 
   function renderTarjetasAlternativas(cont, lista) {
@@ -973,7 +997,7 @@
     `).join('');
 
     cont.querySelectorAll('.cs-alternativa-card').forEach((btn, i) => {
-      btn.addEventListener('click', () => abrirModalProducto(lista[i]));
+      btn.addEventListener('click', () => abrirModalProducto(lista[i], 'alternative'));
     });
   }
 
@@ -1041,7 +1065,7 @@
     return imgId ? `https://drive.google.com/thumbnail?id=${imgId}&sz=w300` : null;
   }
 
-  function renderTarjetasProducto(cont, lista) {
+  function renderTarjetasProducto(cont, lista, tipo) {
     cont.innerHTML = lista.map((p, i) => {
       const urlImg = urlImagenProductoReal(p.img);
       return `
@@ -1061,14 +1085,21 @@
     }).join('');
 
     cont.querySelectorAll('.cs-producto-card').forEach((btn, i) => {
-      btn.addEventListener('click', () => abrirModalProducto(lista[i]));
+      btn.addEventListener('click', () => abrirModalProducto(lista[i], tipo || 'structured'));
     });
   }
 
   // ── Modal de detalle de producto (vista rápida, sin salir de la página) ──
-  function abrirModalProducto(p) {
+  // Recuerda el producto y tipo (structured/alternative) del modal
+  // abierto actualmente — lo usa el click de "Ver en el buscador" de
+  // más abajo para registrar CS_PRODUCT_SELECTED con los mismos datos.
+  let productoModalActual = null;
+  function abrirModalProducto(p, tipo) {
     const overlay = $('#modal-producto-overlay');
     if (!overlay) return;
+
+    productoModalActual = { producto: p, tipo: tipo || 'structured' };
+    if (p.ref) Analitica.trackProductViewed(null, interactionIdActual, { ref: p.ref, nombre: p.nombre }, productoModalActual.tipo);
 
     const urlImg = urlImagenProductoReal(p.img);
     const img = $('#modal-producto-img');
@@ -1178,6 +1209,21 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') cerrarModalProducto();
     });
+
+    // Delegado (en vez de enganchar un listener cada vez que se abre el
+    // modal, lo que iría acumulando listeners duplicados) — el usuario
+    // sigue adelante con ESTE producto, la señal de "selección" más
+    // fuerte de las tres (presented/viewed/selected, sección 18 del
+    // documento de analítica). Nunca usa preventDefault: la navegación
+    // real al buscador sigue funcionando exactamente igual.
+    const btnBuscador = $('#modal-producto-verbuscador');
+    if (btnBuscador) {
+      btnBuscador.addEventListener('click', () => {
+        if (!productoModalActual || !productoModalActual.producto.ref) return;
+        const { producto, tipo } = productoModalActual;
+        Analitica.trackProductSelected(null, interactionIdActual, { ref: producto.ref, nombre: producto.nombre }, tipo);
+      });
+    }
   }
 
   function actualizarBarraExportar(sol, listaProductos) {

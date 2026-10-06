@@ -405,6 +405,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // Necesaria para la búsqueda inteligente con IA del Centro de
       // Soluciones (ver buscarSolucionIA en soluciones-data.js).
       window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+
+      // Analítica del Centro de Soluciones — MISMO proyecto y MISMA clave
+      // "anon" (solo-inserción, ver RLS en supabase/schema.sql) que ya usa
+      // buscador.html para search_events; no es una integración nueva, es
+      // la misma tabla ampliada (ver supabase/03_fase3_centro_soluciones.sql
+      // y assets/js/centro-soluciones-analytics.js). Mientras no se
+      // rellenen estas dos variables, la analítica simplemente no hace
+      // nada — el Centro de Soluciones funciona exactamente igual.
+      window.SUPABASE_URL = 'https://ptuwaqfrphmsmaadedta.supabase.co';
+      window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXdhcWZycGhtc21hYWRlZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NzYwOTEsImV4cCI6MjEwNjQ1MjA5MX0.-NgRcVCBe0JGIt7FqGGAXhtgQicsoM2rGsePGdATA1k';
       // Deriva de la única variable window.OM_PREPRODUCCION (ver
       // assets/js/entorno.js) — mismo patrón que MOSTRAR_GESTION_CAMPANAS
       // en Escaparate OM, nunca se hardcodea "true" por separado.
@@ -425,6 +435,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       }
     </script>
     <script src="./assets/js/soluciones-data.js?v=20261001a"></script>
+    <script src="./assets/js/centro-soluciones-analytics.js?v=20261006a"></script>
     <script src="./assets/js/centro-soluciones.js?v=20260901c"></script>
     <script src="./assets/js/gestion-soluciones.js?v=20260916a"></script>
     <script src="./src/js/app.js?v=20260829"></script>
