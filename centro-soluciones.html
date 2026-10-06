@@ -357,6 +357,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <div class="cs-gestion-cuerpo">
           <div class="cs-gestion-lista-col">
+            <!-- A petición de Eloy: cerrar el círculo "la IA detecta un
+                 hueco -> se convierte en guía permanente" (sección 13 del
+                 documento de analítica) — consultas que se repiten en
+                 varias sesiones vía IA (ver assets/js/centro-soluciones-
+                 analytics.js y supabase/04_fase4.../05_fase5...sql),
+                 con un botón para prellenar el editor de la derecha con
+                 un borrador a partir del JSON real que generó la IA la
+                 última vez. SIEMPRE hay que revisar/completar el
+                 borrador (categoría, productos reales...) antes de
+                 guardar — nunca se guarda solo, ver mostrarCandidatasIA. -->
+            <details class="cs-gestion-candidatas">
+              <summary>🤖 Candidatas de IA (consultas repetidas)</summary>
+              <p class="cs-gestion-candidatas-ayuda">Consultas que varias sesiones distintas han llevado a una solución generada por IA (sin guía propia) en los últimos 30 días. Úsalas como punto de partida — revisa siempre categoría, pasos y productos reales antes de guardar.</p>
+              <div class="cs-gestion-candidatas-lista" id="cs-gestion-candidatas-lista">
+                <p class="cs-gestion-lista-vacio">Cargando…</p>
+              </div>
+            </details>
             <input type="text" id="cs-gestion-buscar" class="cs-gestion-input" placeholder="Buscar por slug o título…">
             <button type="button" class="cs-gestion-nueva-btn" id="cs-gestion-nueva">+ Nueva guía</button>
             <div class="cs-gestion-lista" id="cs-gestion-lista">
