@@ -19,6 +19,16 @@
 (function () {
   const D = window.SOLUCIONES_DATA;
   const cont = document.getElementById('solucion-ia-contenido');
+  // Ver assets/js/centro-soluciones-analytics.js — misma capa central que
+  // usa centro-soluciones.js, con un no-op de respaldo si el script no
+  // llegara a cargarse por algún motivo.
+  const Analitica = window.CentroSolucionesAnalytics || {
+    trackSolutionSearch() {}, trackSolutionSelected() { return null; },
+    trackAiSolutionGenerated() { return null; }, trackProductsPresented() {},
+    trackProductViewed() {}, trackProductSelected() {},
+    trackMoreProductsRequested() {}, trackAlternativeProductSelected() {},
+    trackFeedback() {}, nuevoInteractionId() { return null; },
+  };
   const NOMBRES_AREA = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
 
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -65,11 +75,17 @@
     });
   }
 
-  function renderTarjetaProducto(p) {
+  // `contexto` (opcional): { interactionId, recommendationType, originalRefs }
+  // — se vuelca en data-* para el click delegado de wireTrackingProductos()
+  // (ver más abajo), que registra CS_PRODUCT_SELECTED o, cuando el lote es
+  // de "otra vez" (recommendationType='ai_alternative'),
+  // CS_ALTERNATIVE_PRODUCT_SELECTED con los refs originales.
+  function renderTarjetaProducto(p, contexto) {
     const precioReal = p.mostrar_precio && p.precio_con;
     const precio = precioReal ? `${p.precio_con} €` : 'Consultar precio y disponibilidad';
     const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
+    const ctx = contexto || {};
     // A petición de Eloy: "que la IA además busque fichas técnicas de
     // los productos principales... sobre todo pintura, herramientas
     // como Werku o cualquier producto delicado". Nunca se inventa una
@@ -87,7 +103,10 @@
     // navegue también al buscador).
     return `
       <div class="cs-producto-card-wrap" data-ref="${escaparHtml(p.ref)}">
-        <a class="cs-producto-card" href="../buscador.html?ref=${encodeURIComponent(p.ref)}">
+        <a class="cs-producto-card" href="../buscador.html?ref=${encodeURIComponent(p.ref)}"
+           data-cs-ref="${encodeURIComponent(p.ref)}" data-cs-nombre="${encodeURIComponent(p.nombre || '')}"
+           data-cs-interaction-id="${ctx.interactionId || ''}" data-cs-recommendation-type="${ctx.recommendationType || ''}"
+           data-cs-original-refs="${ctx.originalRefs ? encodeURIComponent(JSON.stringify(ctx.originalRefs)) : ''}">
           <div class="cs-producto-card__imagen-wrap">
             ${p.img
               ? `<img class="cs-producto-card__imagen" src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${escaparHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
@@ -226,7 +245,7 @@
     `;
   }
 
-  function wireFeedback() {
+  function wireFeedback(interactionId) {
     const botones = document.querySelectorAll('.cs-ia-feedback__btn');
     const mensaje = $('#cs-ia-feedback-mensaje');
     botones.forEach((btn) => {
@@ -239,6 +258,9 @@
             : 'Gracias por avisarnos — prueba con el buscador completo o llámanos y te ayudamos directamente.';
           mensaje.style.display = 'block';
         }
+        // Reutiliza el widget 👍/👎 que ya existía — nunca se crea una
+        // segunda experiencia de feedback, solo se le añade el registro.
+        Analitica.trackFeedback(null, interactionId, btn.dataset.util === 'si' ? 'positive' : 'negative', null);
       }, { once: true });
     });
   }
@@ -270,7 +292,14 @@
     }
   }
 
-  function renderSolucionIA(consulta, datos) {
+  function renderSolucionIA(consulta, datos, interactionIdGeneracion) {
+    // Si no viene de una generación en vivo (p. ej. se abrió desde la
+    // caché del Centro de Soluciones), se genera uno aquí — sirve para
+    // encadenar entre sí los eventos de ESTA visualización (productos,
+    // feedback, más productos...) aunque no se pueda enlazar con el
+    // evento CS_AI_SOLUTION_GENERATED original (que ya se registró en
+    // centro-soluciones.js).
+    const interactionId = interactionIdGeneracion || Analitica.nuevoInteractionId();
     const titulo = datos.titulo || `Solución para: ${consulta}`;
     // A petición de Eloy: consultas de tipo "ficha técnica de X" ahora
     // usan grounding real con Google Search (ver el porqué completo en
@@ -387,7 +416,7 @@
       </section>
     `;
 
-    wireFeedback();
+    wireFeedback(interactionId);
     wireAcciones(titulo);
     wireProductosQuitar();
 
@@ -456,8 +485,19 @@
           return;
         }
 
+        // Refs ya mostradas ANTES de este lote — son las que se
+        // "sustituyen" si el usuario acaba eligiendo uno de los nuevos
+        // (solo tiene sentido cuando este lote es el de "otra vez").
+        const refsAntesDeEsteLote = refsProductosExcluidos.slice();
         refsProductosExcluidos = refsProductosExcluidos.concat(productos.map((p) => p.ref));
-        grid.innerHTML += productos.slice(0, 8).map(renderTarjetaProducto).join('');
+        const nuevosEnCrudo = productos.slice(0, 8);
+        const ctxProductos = {
+          interactionId,
+          recommendationType: esOtraVez ? 'ai_alternative' : 'ai',
+          originalRefs: esOtraVez ? refsAntesDeEsteLote : null,
+        };
+        grid.innerHTML += nuevosEnCrudo.map((p) => renderTarjetaProducto(p, ctxProductos)).join('');
+        Analitica.trackProductsPresented(null, interactionId, nuevosEnCrudo, ctxProductos.recommendationType);
         wireProductosQuitar();
         renderAvisoOtraVez();
         barraOtraVez.style.display = '';
@@ -491,6 +531,7 @@
       btn.addEventListener('click', () => {
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) return;
+        Analitica.trackMoreProductsRequested(null, interactionId, refsProductosExcluidos.slice());
         $('#cs-ia-productos-otra-vez-bar').style.display = 'none';
         const cargando = $('#cs-ia-productos-cargando');
         cargando.innerHTML = `
@@ -575,7 +616,12 @@
       if (guardado) { cache = JSON.parse(guardado); sessionStorage.removeItem(`cs_ia_${consulta}`); }
     } catch (e) { /* almacenamiento no disponible, no es crítico */ }
 
-    if (cache) { renderSolucionIA(consulta, cache); return; }
+    // Esta página se abrió ya con la respuesta guardada por el Centro de
+    // Soluciones (modal/botón "Ver la solución completa") — esa llamada
+    // a la IA ya se registró allí (ver centro-soluciones.js), así que
+    // aquí NO se vuelve a registrar CS_AI_SOLUTION_GENERATED (evitar
+    // duplicados, sección 18 del documento de analítica).
+    if (cache) { renderSolucionIA(consulta, cache, null); return; }
 
     renderCargando();
     const { signal, finalizar, fueCancelado } = iniciarEsperaIA();
@@ -584,17 +630,55 @@
       if (datos.errorTecnico && fueCancelado()) { renderCancelado(consulta); return; }
       if (datos.errorTecnico) { renderErrorTecnico(consulta); return; }
       if (datos.fueraDeAlcance) { renderFueraDeAlcance(datos.mensaje); return; }
+
+      // Única llamada en vivo a buscarSolucionIA() de esta página — se
+      // registra aquí, independientemente del resultado (incluido "no
+      // se ha encontrado nada", el caso más valioso para detectar
+      // necesidades que todavía no cubrimos).
+      const interactionId = Analitica.trackAiSolutionGenerated(consulta, {
+        solucion: datos.solucion ? datos.solucion.slug : null, tipoConsulta: datos.tipoConsulta,
+        titulo: datos.titulo, respuesta: datos.respuesta, pasos: datos.pasos,
+        dificultad: datos.dificultad, tiempo: datos.tiempo, resultado: datos.resultado,
+        terminos: datos.terminos, familias: datos.familias, fuentes: datos.fuentes,
+      });
+
       if (datos.solucion) {
-        window.location.href = `solucion.html?slug=${encodeURIComponent(datos.solucion.slug)}`;
+        window.location.href = `solucion.html?slug=${encodeURIComponent(datos.solucion.slug)}&origen=ai`;
         return;
       }
       if (!datos.titulo && !datos.respuesta && !(datos.pasos && datos.pasos.length)) {
         renderNoEncontrado(consulta);
         return;
       }
-      renderSolucionIA(consulta, datos);
+      renderSolucionIA(consulta, datos, interactionId);
     });
   }
+
+  // Click delegado ÚNICO para las tarjetas de producto de esta página —
+  // mismo patrón que wireTrackingProductos() en centro-soluciones.js.
+  // Nunca usa preventDefault: la navegación real al buscador sigue
+  // funcionando exactamente igual, esto solo observa qué se eligió.
+  // Cuando el lote es "otra vez" (recommendationType='ai_alternative'),
+  // se registra como sustitución (CS_ALTERNATIVE_PRODUCT_SELECTED) en vez
+  // de una simple selección, con los refs que se venían mostrando antes.
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-cs-ref]');
+    if (!a) return;
+    const ref = decodeURIComponent(a.dataset.csRef || '');
+    if (!ref) return;
+    const interactionId = a.dataset.csInteractionId || null;
+    const recommendationType = a.dataset.csRecommendationType || null;
+    const nombre = decodeURIComponent(a.dataset.csNombre || '');
+    if (recommendationType === 'ai_alternative') {
+      let originalRefs = null;
+      try { originalRefs = a.dataset.csOriginalRefs ? JSON.parse(decodeURIComponent(a.dataset.csOriginalRefs)) : null; } catch (err) { originalRefs = null; }
+      const grid = $('#cs-ia-productos-grid');
+      const posicion = grid ? Array.from(grid.querySelectorAll('a[data-cs-ref]')).indexOf(a) : null;
+      Analitica.trackAlternativeProductSelected(null, interactionId, originalRefs, { ref, nombre }, posicion);
+      return;
+    }
+    Analitica.trackProductSelected(null, interactionId, { ref, nombre }, recommendationType);
+  });
 
   document.addEventListener('DOMContentLoaded', () => {
     D.cargarSolucionesReales().then(init);

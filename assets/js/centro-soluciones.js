@@ -24,8 +24,27 @@
   // hace falta, no se ha bloqueado ni ralentizado nada más.
   if (D && D.cargarCatalogoReal) D.cargarCatalogoReal().catch(() => {});
 
-  function urlSolucion(slug) {
-    return `soluciones/solucion.html?slug=${encodeURIComponent(slug)}`;
+  // Capa de analítica (ver assets/js/centro-soluciones-analytics.js) —
+  // puede no estar cargada (p. ej. si algún día se quita el script) o no
+  // tener Supabase configurado; CS siempre usa un objeto no-op en ese
+  // caso para no tener que comprobar "if (window.CentroSolucionesAnalytics)"
+  // en cada punto de instrumentación.
+  const Analitica = window.CentroSolucionesAnalytics || {
+    trackSolutionSearch() {}, trackSolutionSelected() { return null; },
+    trackAiSolutionGenerated() { return null; }, trackProductsPresented() {},
+    trackProductViewed() {}, trackProductSelected() {},
+    trackMoreProductsRequested() {}, trackAlternativeProductSelected() {},
+    trackFeedback() {}, nuevoInteractionId() { return null; },
+  };
+
+  // `origen`: de dónde viene este enlace a una solución ('hero' | 'ai' |
+  // 'problema' | 'popular' | 'area' | 'wizard') — se lleva en la propia
+  // URL (?origen=) para que solucion-detalle.js pueda registrar
+  // CS_SOLUTION_SELECTED con el origen real sin tener que enganchar un
+  // listener de click a cada enlace (muchos se repintan constantemente).
+  function urlSolucion(slug, origen) {
+    const base = `soluciones/solucion.html?slug=${encodeURIComponent(slug)}`;
+    return origen ? `${base}&origen=${encodeURIComponent(origen)}` : base;
   }
 
   function badgeDificultad(dificultad) {
@@ -134,7 +153,14 @@
       // automática"). Si no hay nada que mostrar todavía (ni resultados ni
       // opción de IA), se deja oculto en vez de mostrar un hueco vacío.
       mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta, false, mostrarOpcionIA);
-      if (mostrarOpcionIA) wireBotonPedirIA(texto);
+      if (mostrarOpcionIA) {
+        wireBotonPedirIA(texto);
+        // Se registra solo cuando la búsqueda ya se considera "asentada"
+        // (pausa larga o confirmación explícita) — igual que el 600ms de
+        // buscador.html, para no generar un evento por cada tecla
+        // mientras la persona todavía está escribiendo.
+        Analitica.trackSolutionSearch(texto, 'hero', encontradas.length + (fichaDirecta ? 1 : 0));
+      }
       return hayResultadosLocales;
     }
 
@@ -262,6 +288,17 @@
           return;
         }
 
+        // Se ha obtenido una respuesta real de la IA (ni error técnico ni
+        // fuera de alcance) — se registra SIEMPRE, incluso cuando no haya
+        // encontrado nada: ese caso es precisamente el más valioso para
+        // detectar necesidades que todavía no cubrimos (sección 13 del
+        // documento de analítica). El JSON completo se conserva tal cual
+        // se usó para decidir qué mostrar — nunca solo el texto final.
+        const interactionIdIA = Analitica.trackAiSolutionGenerated(texto, {
+          solucion: solucion ? solucion.slug : null, tipoConsulta, titulo, respuesta, pasos,
+          dificultad, tiempo, resultado, terminos, familias, fuentes,
+        });
+
         if (solucion) {
           mostrarResultadosBusquedaHero([solucion], texto, null, true);
           return;
@@ -317,10 +354,11 @@
             </div>
           ` : `<p class="cs-hero__buscador-contador"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> No tenemos una guía específica para "${texto}", pero estos productos pueden ayudarte:</p>`;
 
+          const ctxProductosIA = { interactionId: interactionIdIA, recommendationType: 'ai' };
           const bloqueProductos = productos.length ? `
             <p class="cs-hero__buscador-contador" style="margin-top:14px;">Productos que podrían servirte:</p>
             <div class="cs-productos-grid" style="margin-top:12px;">
-              ${productos.slice(0, 6).map((p) => renderTarjetaProductoCatalogo(p)).join('')}
+              ${productos.slice(0, 6).map((p) => renderTarjetaProductoCatalogo(p, ctxProductosIA)).join('')}
             </div>
           ` : '';
           resultados.innerHTML = `
@@ -329,6 +367,7 @@
             <button type="button" class="cs-hero__buscador-chip" id="cs-hero-ver-completa" style="margin-top:14px;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> Ver la solución completa, paso a paso →</button>
           `;
           resultados.style.display = 'block';
+          Analitica.trackProductsPresented(null, interactionIdIA, productos.slice(0, 6), 'ai');
 
           // A petición de Eloy: este botón también tiene que avisar con
           // el mismo modal — antes era un enlace normal que saltaba
@@ -402,8 +441,17 @@
           `;
           return;
         }
+        // Respuesta real de la IA (ni error técnico ni fuera de alcance)
+        // — se registra aquí, en el ÚNICO sitio donde esta llamada
+        // concreta a buscarSolucionIA() se resuelve, para no duplicarlo
+        // otra vez en solucion-ia.html cuando lea el resultado desde la
+        // caché de sessionStorage (ver init() en solucion-ia.js).
+        Analitica.trackAiSolutionGenerated(texto, {
+          solucion: solucion ? solucion.slug : null, tipoConsulta, titulo, respuesta, pasos,
+          dificultad, tiempo, resultado, terminos, familias, fuentes,
+        });
         if (solucion) {
-          window.location.href = urlSolucion(solucion.slug);
+          window.location.href = urlSolucion(solucion.slug, 'ai');
           return;
         }
         if (titulo || respuesta || (pasos && pasos.length) || (terminos && terminos.length)) {
@@ -567,7 +615,7 @@
           ${encontradas.map((s) => {
             const area = D.areas.find((a) => a.id === s.category);
             const emoji = area ? area.emoji : '🛠️';
-            return `<a class="cs-hero__buscador-chip" href="${urlSolucion(s.slug)}"><span aria-hidden="true">${emoji}</span> ${s.title}</a>`;
+            return `<a class="cs-hero__buscador-chip" href="${urlSolucion(s.slug, 'hero')}"><span aria-hidden="true">${emoji}</span> ${s.title}</a>`;
           }).join('')}
         </div>
         ${botonIA}
@@ -737,6 +785,7 @@
 
     function mostrarDiagnosticoSimulado(problemaLabel, slug, textoOriginal, todasLasSoluciones) {
       if (!resultado) return;
+      Analitica.trackSolutionSearch(textoOriginal, 'problema', (todasLasSoluciones && todasLasSoluciones.length) || (slug ? 1 : 0));
 
       // Lista de soluciones a mostrar: si el diagnóstico por texto libre
       // encontró varias guías que encajan (p. ej. buscar "moho" a secas
@@ -760,7 +809,7 @@
               return `
                 <div class="cs-diagnostico-resultado__item">
                   <p>${varias ? `<strong>${s.problemaDetectado}</strong><br>` : ''}Te recomendamos seguir la solución <strong>"${sol.title}"</strong> — incluye el diagnóstico completo, los pasos a seguir y los productos que necesitas.</p>
-                  <a class="btn-primary" href="${urlSolucion(s.solutionSlug)}">Ver la solución completa</a>
+                  <a class="btn-primary" href="${urlSolucion(s.solutionSlug, 'problema')}">Ver la solución completa</a>
                 </div>
               `;
             }).join('')}
@@ -791,14 +840,17 @@
           `;
           return;
         }
+        const interactionIdProblema = Analitica.nuevoInteractionId();
+        const ctxProductosProblema = { interactionId: interactionIdProblema, recommendationType: 'catalog_fallback_problema' };
         resultado.innerHTML = `
           <p class="cs-diagnostico-resultado__titulo">🔍 No tenemos una guía completa, pero sí productos que pueden ayudarte</p>
           <p>Hemos buscado "<strong>${textoOriginal}</strong>" directamente en nuestro catálogo:</p>
           <div class="cs-productos-grid" style="margin-top:16px;">
-            ${productos.map((p) => renderTarjetaProductoCatalogo(p)).join('')}
+            ${productos.map((p) => renderTarjetaProductoCatalogo(p, ctxProductosProblema)).join('')}
           </div>
           <a class="btn-primary" href="${urlBuscador}" style="margin-top:18px;">Ver todos los resultados en el buscador</a>
         `;
+        Analitica.trackProductsPresented(null, interactionIdProblema, productos, 'catalog_fallback_problema');
       });
     }
   }
@@ -810,13 +862,20 @@
   // solo queda el renderizado, específico de esta página.
   const NOMBRES_AREA = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
 
-  function renderTarjetaProductoCatalogo(p) {
+  // `contexto` (opcional): { interactionId, recommendationType } — se
+  // vuelca en data-* para que el click delegado de wireTrackingProductos()
+  // pueda registrar CS_PRODUCT_SELECTED sin tener que enganchar un
+  // listener distinto en cada punto donde se pinta una tarjeta.
+  function renderTarjetaProductoCatalogo(p, contexto) {
     const precioReal = p.mostrar_precio && p.precio_con;
     const precio = precioReal ? `${p.precio_con} €` : 'Consultar precio y disponibilidad';
     const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
+    const ctx = contexto || {};
     return `
-      <a class="cs-producto-card" href="buscador.html?ref=${encodeURIComponent(p.ref)}">
+      <a class="cs-producto-card" href="buscador.html?ref=${encodeURIComponent(p.ref)}"
+         data-cs-ref="${encodeURIComponent(p.ref)}" data-cs-nombre="${encodeURIComponent(p.nombre || '')}"
+         data-cs-interaction-id="${ctx.interactionId || ''}" data-cs-recommendation-type="${ctx.recommendationType || ''}">
         <div class="cs-producto-card__imagen-wrap">
           ${p.img
             ? `<img class="cs-producto-card__imagen" src="https://drive.google.com/thumbnail?id=${p.img}&sz=w300" alt="${p.nombre}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;cs-producto-card__imagen-fallback&quot;>📦</span>'">`
@@ -830,13 +889,35 @@
     `;
   }
 
+  // Click delegado ÚNICO para toda la página — cualquier tarjeta pintada
+  // por renderTarjetaProductoCatalogo() con sus data-cs-* ya trae lo
+  // necesario para registrar CS_PRODUCT_SELECTED, sin tener que volver a
+  // enganchar un listener cada vez que se repinta una rejilla de
+  // productos (sección 18 del documento: evitar duplicar/perder eventos
+  // por re-render). Nunca usa preventDefault — la navegación real al
+  // buscador sigue funcionando exactamente igual, esto solo observa.
+  function wireTrackingProductos() {
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-cs-ref]');
+      if (!a) return;
+      const ref = decodeURIComponent(a.dataset.csRef || '');
+      if (!ref) return;
+      Analitica.trackProductSelected(
+        null,
+        a.dataset.csInteractionId || null,
+        { ref, nombre: decodeURIComponent(a.dataset.csNombre || '') },
+        a.dataset.csRecommendationType || null,
+      );
+    });
+  }
+
 
   // ── Soluciones destacadas ────────────────────────────────────────────────
   function renderSolucionesDestacadas() {
     const cont = $('#cs-solucionesdestacadas');
     if (!cont) return;
     cont.innerHTML = D.solucionesDestacadas.map((s) => `
-      <a class="cs-solucion-card" href="${urlSolucion(s.slug)}">
+      <a class="cs-solucion-card" href="${urlSolucion(s.slug, 'popular')}">
         <div class="cs-solucion-card__media">${s.emoji}</div>
         <div class="cs-solucion-card__body">
           <div class="cs-solucion-card__title">${s.title}</div>
@@ -1080,7 +1161,7 @@
           <div class="cs-area-list">
             ${ejemplos.map((ej) => {
               if (ej.solutionSlug) {
-                return `<a href="${urlSolucion(ej.solutionSlug)}">${resaltarCoincidencia(ej.title, consulta)}</a>`;
+                return `<a href="${urlSolucion(ej.solutionSlug, 'area')}">${resaltarCoincidencia(ej.title, consulta)}</a>`;
               }
               // Ejemplos sin guía preparada: redirigir al buscador con el título
               // como criterio de búsqueda y el área correspondiente filtrada.
@@ -1260,6 +1341,7 @@
       `;
 
       if (textoAproximado) {
+        Analitica.trackSolutionSearch(textoAproximado, 'wizard', 0);
         D.buscarProductosEnCatalogo(textoAproximado).then((productos) => {
           const textoEl = $('#cs-wizard-sinmatch-texto', cont);
           const contProductos = $('#cs-wizard-sinmatch-productos', cont);
@@ -1269,11 +1351,14 @@
             return;
           }
           textoEl.innerHTML = `No tenemos una guía completa para "${textoAproximado}", pero sí productos de nuestro catálogo que podrían servirte:`;
+          const interactionIdWizard = Analitica.nuevoInteractionId();
+          const ctxProductosWizard = { interactionId: interactionIdWizard, recommendationType: 'catalog_fallback_wizard' };
           contProductos.innerHTML = `
             <div class="cs-productos-grid" style="margin-bottom:20px;">
-              ${productos.slice(0, 4).map((p) => renderTarjetaProductoCatalogo(p)).join('')}
+              ${productos.slice(0, 4).map((p) => renderTarjetaProductoCatalogo(p, ctxProductosWizard)).join('')}
             </div>
           `;
+          Analitica.trackProductsPresented(null, interactionIdWizard, productos.slice(0, 4), 'catalog_fallback_wizard');
         });
       }
 
@@ -1296,7 +1381,7 @@
         </div>
         <div class="cs-wizard__nav">
           <button type="button" class="cs-wizard__back" id="cs-wizard-atras">← Volver a cambiar respuestas</button>
-          <a class="btn-primary" href="${urlSolucion(slug)}">Ver la solución completa</a>
+          <a class="btn-primary" href="${urlSolucion(slug, 'wizard')}">Ver la solución completa</a>
         </div>
       `;
     }
@@ -1390,6 +1475,7 @@
     wireWizardOpenClose();
     wireScrollAnclas();
     wireBotonSubir();
+    wireTrackingProductos();
 
     D.cargarSolucionesReales().then(() => {
       renderProblemas();
