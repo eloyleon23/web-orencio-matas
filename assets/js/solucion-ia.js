@@ -31,6 +31,53 @@
   };
   const NOMBRES_AREA = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
 
+  // Identidad estable de la solución actual para la modal de feedback
+  // proactiva (ver assets/js/solucion-feedback.js) — a diferencia de las
+  // guías escritas a mano (que tienen slug), una solución dinámica solo
+  // tiene la consulta normalizada como identidad razonable entre
+  // visitas. Se asignan al renderizar la solución (ver renderSolucionIA)
+  // y los lee el listener de clic delegado de más abajo y
+  // comprobarRegresoTrasProducto_.
+  let idFeedbackActualIA_ = null;
+  let interactionIdActualIA_ = null;
+
+  // Único sitio que registra un voto de feedback para esta página — lo
+  // usan tanto el widget de siempre (👍/👎 de abajo) como la modal
+  // proactiva (al exportar/compartir, al volver al centro, o al volver
+  // de ver un producto), para no duplicar la lógica de "marcar como
+  // votado y actualizar el mensaje" en cada sitio.
+  function registrarVotoFeedbackIA_(feedback) {
+    Analitica.trackFeedback(null, interactionIdActualIA_, feedback, null);
+    if (idFeedbackActualIA_ && window.SolucionFeedbackModal) window.SolucionFeedbackModal.marcarVotado(idFeedbackActualIA_);
+    document.querySelectorAll('.cs-ia-feedback__btn').forEach((b) => { b.disabled = true; });
+    const mensaje = $('#cs-ia-feedback-mensaje');
+    if (mensaje) {
+      mensaje.textContent = feedback === 'positive'
+        ? '¡Gracias! Nos alegra haberte ayudado.'
+        : 'Gracias por avisarnos — prueba con el buscador completo o llámanos y te ayudamos directamente.';
+      mensaje.style.display = 'block';
+    }
+  }
+
+  // "Abrir un producto" en esta página NAVEGA fuera al instante (no hay
+  // modal de producto como en las guías escritas a mano, ver
+  // solucion-detalle.js) — así que no hay un momento de "cerró el
+  // producto y sigue aquí". Se marca la intención justo antes de salir
+  // (ver el listener de clic delegado más abajo) y se comprueba aquí, al
+  // volver — por recarga normal (render de nuevo) o por "atrás" del
+  // navegador restaurando la página desde bfcache (evento 'pageshow',
+  // mismo patrón ya usado en centro-soluciones.js para el modal de IA).
+  function comprobarRegresoTrasProducto_() {
+    if (!idFeedbackActualIA_ || !window.SolucionFeedbackModal) return;
+    const clave = 'cs_feedback_producto_pendiente_' + idFeedbackActualIA_;
+    let pendiente = false;
+    try { pendiente = localStorage.getItem(clave) === '1'; } catch (e) { pendiente = false; }
+    if (!pendiente) return;
+    try { localStorage.removeItem(clave); } catch (e) { /* no crítico */ }
+    window.SolucionFeedbackModal.notificarInteraccion(idFeedbackActualIA_, registrarVotoFeedbackIA_);
+  }
+  window.addEventListener('pageshow', comprobarRegresoTrasProducto_);
+
   function $(sel, root) { return (root || document).querySelector(sel); }
 
   function escaparHtml(t) {
@@ -245,30 +292,39 @@
     `;
   }
 
-  function wireFeedback(interactionId) {
+  function wireFeedback() {
     const botones = document.querySelectorAll('.cs-ia-feedback__btn');
     const mensaje = $('#cs-ia-feedback-mensaje');
+    const SFM = window.SolucionFeedbackModal;
+    if (SFM && idFeedbackActualIA_ && SFM.yaVotado(idFeedbackActualIA_)) {
+      botones.forEach((b) => { b.disabled = true; });
+      if (mensaje) { mensaje.textContent = 'Ya has valorado esta solución — ¡gracias!'; mensaje.style.display = 'block'; }
+      return;
+    }
     botones.forEach((btn) => {
       btn.addEventListener('click', () => {
-        botones.forEach((b) => { b.disabled = true; b.classList.remove('is-selected'); });
         btn.classList.add('is-selected');
-        if (mensaje) {
-          mensaje.textContent = btn.dataset.util === 'si'
-            ? '¡Gracias! Nos alegra haberte ayudado.'
-            : 'Gracias por avisarnos — prueba con el buscador completo o llámanos y te ayudamos directamente.';
-          mensaje.style.display = 'block';
-        }
         // Reutiliza el widget 👍/👎 que ya existía — nunca se crea una
-        // segunda experiencia de feedback, solo se le añade el registro.
-        Analitica.trackFeedback(null, interactionId, btn.dataset.util === 'si' ? 'positive' : 'negative', null);
+        // segunda experiencia de feedback, solo se le añade el registro
+        // (ver registrarVotoFeedbackIA_, compartida con la modal).
+        registrarVotoFeedbackIA_(btn.dataset.util === 'si' ? 'positive' : 'negative');
       }, { once: true });
     });
   }
 
   function wireAcciones(titulo) {
     const urlPagina = window.location.href;
+    const SFM = window.SolucionFeedbackModal;
+
     const btnPdf = $('#cs-exportar-pdf');
-    if (btnPdf) btnPdf.addEventListener('click', () => window.print());
+    if (btnPdf) {
+      btnPdf.addEventListener('click', () => {
+        window.print();
+        // No navega fuera de la página — momento válido para ofrecer la
+        // modal de feedback sin más (ver notificarInteraccion).
+        if (SFM && idFeedbackActualIA_) SFM.notificarInteraccion(idFeedbackActualIA_, registrarVotoFeedbackIA_);
+      });
+    }
 
     const btnCompartir = $('#cs-compartir-solucion');
     if (btnCompartir) {
@@ -280,14 +336,33 @@
             .then(() => mostrarToast('✓ Enlace copiado al portapapeles'))
             .catch(() => mostrarToast('No se pudo copiar el enlace'));
         }
+        if (SFM && idFeedbackActualIA_) SFM.notificarInteraccion(idFeedbackActualIA_, registrarVotoFeedbackIA_);
       });
     }
 
     const btnWhatsapp = $('#cs-exportar-whatsapp');
     if (btnWhatsapp) {
       btnWhatsapp.addEventListener('click', () => {
+        // Este botón SÍ navega fuera de la página — a diferencia de los
+        // dos de arriba, hay que ofrecer la modal ANTES de irse (mismo
+        // patrón que "Volver al Centro de Soluciones").
         const mensaje = `He encontrado esta solución en Orencio Matas: ${titulo}\n\n${urlPagina}`;
-        window.location.href = 'https://wa.me/?text=' + encodeURIComponent(mensaje);
+        const destino = 'https://wa.me/?text=' + encodeURIComponent(mensaje);
+        if (SFM && idFeedbackActualIA_ && !SFM.yaVotado(idFeedbackActualIA_)) {
+          SFM.ofrecerAntesDeSalir(idFeedbackActualIA_, registrarVotoFeedbackIA_, () => { window.location.href = destino; });
+        } else {
+          window.location.href = destino;
+        }
+      });
+    }
+
+    const linkVolver = $('#cs-volver-centro');
+    if (linkVolver) {
+      linkVolver.addEventListener('click', (e) => {
+        if (!SFM || !idFeedbackActualIA_ || SFM.yaVotado(idFeedbackActualIA_)) return;
+        e.preventDefault();
+        const destino = linkVolver.href;
+        SFM.ofrecerAntesDeSalir(idFeedbackActualIA_, registrarVotoFeedbackIA_, () => { window.location.href = destino; });
       });
     }
   }
@@ -300,6 +375,8 @@
     // evento CS_AI_SOLUTION_GENERATED original (que ya se registró en
     // centro-soluciones.js).
     const interactionId = interactionIdGeneracion || Analitica.nuevoInteractionId();
+    interactionIdActualIA_ = interactionId;
+    idFeedbackActualIA_ = 'ia:' + (D.normalizarTexto ? D.normalizarTexto(consulta) : consulta);
     const titulo = datos.titulo || `Solución para: ${consulta}`;
     // A petición de Eloy: consultas de tipo "ficha técnica de X" ahora
     // usan grounding real con Google Search (ver el porqué completo en
@@ -411,13 +488,14 @@
             </div>
             <p id="cs-ia-feedback-mensaje" style="margin-top:10px;color:var(--text-gray);display:none;"></p>
           </div>
-          <p style="margin-top:24px;"><a href="../centro-soluciones.html">← Volver al Centro de Soluciones</a></p>
+          <p style="margin-top:24px;"><a id="cs-volver-centro" href="../centro-soluciones.html">← Volver al Centro de Soluciones</a></p>
         </div>
       </section>
     `;
 
-    wireFeedback(interactionId);
+    wireFeedback();
     wireAcciones(titulo);
+    comprobarRegresoTrasProducto_();
     wireProductosQuitar();
 
     // Productos reales — misma lógica que en la búsqueda del hero
@@ -669,6 +747,13 @@
     const interactionId = a.dataset.csInteractionId || null;
     const recommendationType = a.dataset.csRecommendationType || null;
     const nombre = decodeURIComponent(a.dataset.csNombre || '');
+    // Marca la intención de "abrió un producto" ANTES de que el clic
+    // navegue fuera — se comprueba al volver (ver
+    // comprobarRegresoTrasProducto_). Nunca si ya votó: no hace falta
+    // seguir marcando nada una vez que ya dio su feedback.
+    if (idFeedbackActualIA_ && window.SolucionFeedbackModal && !window.SolucionFeedbackModal.yaVotado(idFeedbackActualIA_)) {
+      try { localStorage.setItem('cs_feedback_producto_pendiente_' + idFeedbackActualIA_, '1'); } catch (err) { /* no crítico */ }
+    }
     if (recommendationType === 'ai_alternative') {
       let originalRefs = null;
       try { originalRefs = a.dataset.csOriginalRefs ? JSON.parse(decodeURIComponent(a.dataset.csOriginalRefs)) : null; } catch (err) { originalRefs = null; }

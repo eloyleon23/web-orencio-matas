@@ -16,6 +16,57 @@
   // solución. Se asigna de verdad en render(), nada más confirmar que la
   // solución existe (ver más abajo).
   let interactionIdActual = null;
+  let slugActual = null;
+  // true mientras haya habido al menos un producto abierto (modal) sin
+  // que todavía se haya "consumido" como disparador de la modal de
+  // feedback — ver abrirModalProducto/cerrarModalProducto y
+  // ofrecerModalFeedback_.
+  let huboProductoAbiertoSinOfrecer_ = false;
+
+  // ── Feedback — widget de siempre + modal proactiva ──────────────────
+  // A petición de Eloy: forzar un poco más el feedback de lo que lo hace
+  // el widget pasivo de abajo (que hasta ahora solo existía en las
+  // soluciones generadas por IA, nunca en estas guías escritas a mano).
+  // Ver assets/js/solucion-feedback.js para las reglas completas (nunca
+  // se repite si ya votó, nunca más de una vez por visita salvo al
+  // intentar salir, siempre se puede cerrar sin votar).
+  function actualizarWidgetFeedbackVotado_(mensajeTexto) {
+    document.querySelectorAll('#cs-feedback-solucion .cs-ia-feedback__btn').forEach((b) => { b.disabled = true; });
+    const mensaje = $('#cs-feedback-solucion-mensaje');
+    if (mensaje) { mensaje.textContent = mensajeTexto; mensaje.style.display = 'block'; }
+  }
+
+  function registrarVotoFeedback_(feedback) {
+    Analitica.trackFeedback(slugActual, interactionIdActual, feedback, null);
+    if (window.SolucionFeedbackModal && slugActual) window.SolucionFeedbackModal.marcarVotado('guia:' + slugActual);
+    actualizarWidgetFeedbackVotado_(feedback === 'positive'
+      ? '¡Gracias! Nos alegra haberte ayudado.'
+      : 'Gracias por avisarnos — prueba con el buscador completo o llámanos y te ayudamos directamente.');
+  }
+
+  function wireFeedbackSolucion_() {
+    if (!slugActual) return;
+    const id = 'guia:' + slugActual;
+    if (window.SolucionFeedbackModal && window.SolucionFeedbackModal.yaVotado(id)) {
+      actualizarWidgetFeedbackVotado_('Ya has valorado esta solución — ¡gracias!');
+      return;
+    }
+    document.querySelectorAll('#cs-feedback-solucion .cs-ia-feedback__btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        btn.classList.add('is-selected');
+        registrarVotoFeedback_(btn.dataset.util === 'si' ? 'positive' : 'negative');
+      }, { once: true });
+    });
+  }
+
+  // Momentos en los que interpretamos que el usuario ya ha terminado de
+  // analizar la solución — ver abrirModalProducto/cerrarModalProducto,
+  // wireExportarLista y el enlace "Volver al Centro de Soluciones" más
+  // abajo para dónde se llama a esto.
+  function ofrecerModalFeedback_() {
+    if (!slugActual || !window.SolucionFeedbackModal) return;
+    window.SolucionFeedbackModal.notificarInteraccion('guia:' + slugActual, registrarVotoFeedback_);
+  }
 
   // Fallback del logo de una carta de colores si la imagen no carga —
   // como función global en vez de JS inline dentro del atributo onerror:
@@ -109,6 +160,7 @@
     // en centro-soluciones.js) — null si se llegó por otra vía (enlace
     // directo, buscador de Google, compartido...).
     const origen = params.get('origen') || null;
+    slugActual = sol.slug;
     interactionIdActual = Analitica.trackSolutionSelected(sol.slug, sol.title, origen);
 
     const seoTitle = (sol.seo && sol.seo.title) || (sol.title + ' | Orencio Matas y Hnos, S.L.');
@@ -562,9 +614,22 @@
         </div>
       </section>` : ''}
 
+      <section class="cs-section no-imprimir">
+        <div class="container" style="max-width:600px;">
+          <div class="cs-ia-feedback" id="cs-feedback-solucion">
+            <p style="font-weight:700;margin-bottom:10px;">¿Te ha servido esta solución?</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button type="button" class="cs-ia-feedback__btn" data-util="si">👍 Sí, me ha servido</button>
+              <button type="button" class="cs-ia-feedback__btn" data-util="no">👎 No era lo que buscaba</button>
+            </div>
+            <p id="cs-feedback-solucion-mensaje" style="margin-top:10px;color:var(--text-gray);display:none;"></p>
+          </div>
+        </div>
+      </section>
+
       <section class="cs-section no-imprimir" style="text-align:center;">
         <div class="container">
-          <a class="btn-secondary" href="../centro-soluciones.html">← Volver al Centro de Soluciones</a>
+          <a class="btn-secondary" id="cs-volver-centro" href="../centro-soluciones.html">← Volver al Centro de Soluciones</a>
         </div>
       </section>
 
@@ -589,6 +654,25 @@
     wireSelectorSuperficie(sol);
     wireSelectorMarcaAcabado(sol);
     wireCalculadoraCantidadMultiple(sol);
+    wireFeedbackSolucion_();
+    wireVolverCentroConFeedback_();
+  }
+
+  // "Volver al Centro de Soluciones" — a petición de Eloy, última
+  // oportunidad de pedir feedback antes de irse, si todavía no lo ha
+  // dado. Si ya votó (o la modal no está disponible), navega al
+  // instante, sin ningún retraso ni aviso de por medio.
+  function wireVolverCentroConFeedback_() {
+    const link = $('#cs-volver-centro');
+    if (!link) return;
+    link.addEventListener('click', (e) => {
+      if (!slugActual || !window.SolucionFeedbackModal || window.SolucionFeedbackModal.yaVotado('guia:' + slugActual)) return;
+      e.preventDefault();
+      const destino = link.href;
+      window.SolucionFeedbackModal.ofrecerAntesDeSalir('guia:' + slugActual, registrarVotoFeedback_, () => {
+        window.location.href = destino;
+      });
+    });
   }
 
   function wireCalculadoraCantidad(sol) {
@@ -1100,6 +1184,7 @@
 
     productoModalActual = { producto: p, tipo: tipo || 'structured' };
     if (p.ref) Analitica.trackProductViewed(null, interactionIdActual, { ref: p.ref, nombre: p.nombre }, productoModalActual.tipo);
+    huboProductoAbiertoSinOfrecer_ = true;
 
     const urlImg = urlImagenProductoReal(p.img);
     const img = $('#modal-producto-img');
@@ -1195,6 +1280,13 @@
     if (!overlay) return;
     overlay.classList.remove('activo');
     document.body.style.overflow = '';
+    // Momento "terminó de mirar un producto" — solo si de verdad llegó a
+    // abrir uno (nunca al cerrar un modal que ya estaba cerrado, p. ej.
+    // por el listener de Escape global).
+    if (huboProductoAbiertoSinOfrecer_) {
+      huboProductoAbiertoSinOfrecer_ = false;
+      ofrecerModalFeedback_();
+    }
   }
 
   function wireModalProducto() {
@@ -1307,6 +1399,9 @@
         // renderiza la página tal cual, no hace falta descargar y
         // convertir cada imagen a datos embebidos.
         window.print();
+        // No navega fuera de la página — momento válido para ofrecer la
+        // modal de feedback sin más (ver ofrecerModalFeedback_).
+        ofrecerModalFeedback_();
       });
     }
 
@@ -1324,15 +1419,27 @@
             .then(() => mostrarToast('✓ Enlace copiado al portapapeles'))
             .catch(() => mostrarToast('No se pudo copiar el enlace'));
         }
+        ofrecerModalFeedback_();
       });
     }
 
     const btnWhatsapp = $('#cs-exportar-whatsapp');
     if (btnWhatsapp) {
       btnWhatsapp.addEventListener('click', () => {
-        // Navegar en la misma pestaña, no abrir una nueva — con window.open
-        // se quedaba una pestaña en blanco tras el salto a la app de WhatsApp.
-        window.location.href = 'https://wa.me/?text=' + encodeURIComponent(mensajeWhatsapp);
+        // Este botón SÍ navega fuera de la página — a diferencia de los
+        // dos de arriba, hay que ofrecer la modal ANTES de irse (mismo
+        // patrón que "Volver al Centro de Soluciones"), no después.
+        const destino = 'https://wa.me/?text=' + encodeURIComponent(mensajeWhatsapp);
+        if (slugActual && window.SolucionFeedbackModal && !window.SolucionFeedbackModal.yaVotado('guia:' + slugActual)) {
+          window.SolucionFeedbackModal.ofrecerAntesDeSalir('guia:' + slugActual, registrarVotoFeedback_, () => {
+            // Navegar en la misma pestaña, no abrir una nueva — con
+            // window.open se quedaba una pestaña en blanco tras el
+            // salto a la app de WhatsApp.
+            window.location.href = destino;
+          });
+        } else {
+          window.location.href = destino;
+        }
       });
     }
 
