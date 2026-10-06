@@ -62,10 +62,103 @@
     }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
   }
 
+  // ── Evitar candidatas duplicadas o que no tienen sentido ─────────────
+  // A petición expresa de Eloy: "que esto no llene el Centro de
+  // Soluciones con muchas soluciones parecidas, sino que las que se
+  // añadan tengan sentido". Dos problemas reales que esto soluciona:
+  // (1) la misma necesidad escrita de formas distintas ("quitar pintura
+  // de aluminio", "cómo quitar pintura aluminio", "decapar aluminio")
+  // aparecía como 2-3 candidatas SUELTAS y débiles en vez de una sola
+  // con todas sus sesiones sumadas — aquí se agrupan por palabras clave
+  // compartidas (sin necesidad de clustering semántico con IA, sección
+  // 13 del documento: "no es necesario implementarlo ahora, pero la
+  // estructura debe permitir hacerlo"); (2) una candidata podía solaparse
+  // de hecho con una guía YA EXISTENTE (p. ej. la IA generó una
+  // respuesta dinámica para un caso que en realidad ya cubre otra guía
+  // con otras palabras) — se avisa de eso ANTES de ofrecer crear una
+  // guía nueva, y se ofrece abrir la existente en su lugar.
+  const PALABRAS_VACIAS_ES = new Set([
+    'de', 'la', 'el', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'o', 'en', 'para',
+    'por', 'con', 'sin', 'del', 'al', 'a', 'que', 'como', 'cómo', 'es', 'son', 'su', 'sus',
+    'mi', 'tu', 'se', 'lo', 'le', 'les', 'muy', 'más', 'esta', 'este', 'esa', 'ese',
+  ]);
+
+  function normalizarPalabra_(p) {
+    return p.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  // Palabras "con peso" de un texto — las de 4+ letras, sin vacías de
+  // relleno, recortadas a sus primeros 4 caracteres ("raíz" aproximada,
+  // sin diccionario ni librería de stemming real: suficiente para que
+  // "metal" y "metálicas", o "pintura" y "pintar", cuenten como la
+  // misma palabra clave — bug real detectado en pruebas: sin este
+  // recorte, "óxido de verjas metálicas" NO se reconocía como parecido a
+  // una guía de "óxido del metal" porque "metal" y "metálicas" son
+  // cadenas distintas). Deliberadamente simple (sin IA ni librerías
+  // nuevas): basta para detectar que dos frases hablan de lo mismo con
+  // palabras parecidas, que es todo lo que hace falta aquí.
+  function palabrasClave_(texto) {
+    return new Set(
+      (texto || '')
+        .split(/[^a-zA-ZÀ-ÿ0-9]+/)
+        .map(normalizarPalabra_)
+        .filter((p) => p.length >= 4 && !PALABRAS_VACIAS_ES.has(p))
+        .map((p) => p.slice(0, 4)),
+    );
+  }
+
+  function interseccion_(a, b) {
+    let n = 0;
+    a.forEach((x) => { if (b.has(x)) n++; });
+    return n;
+  }
+
+  // Agrupa candidatas cuyas consultas comparten 2+ palabras clave — así
+  // "quitar pintura aluminio" y "cómo quitar pintura de aluminio" se
+  // convierten en UNA sola candidata (sesiones sumadas), no en dos
+  // débiles por separado.
+  function agruparCandidatasPorPalabrasClave_(candidatas) {
+    const grupos = [];
+    candidatas.forEach((c) => {
+      const claves = palabrasClave_(c.query_normalized);
+      let grupo = grupos.find((g) => interseccion_(g.claves, claves) >= 2);
+      if (!grupo) {
+        grupo = { claves: new Set(), items: [], sesiones_unicas: 0, total_consultas: 0 };
+        grupos.push(grupo);
+      }
+      claves.forEach((k) => grupo.claves.add(k));
+      grupo.items.push(c);
+      grupo.sesiones_unicas += c.sesiones_unicas;
+      grupo.total_consultas += c.total_consultas;
+    });
+    // Dentro de cada grupo, la variante con más sesiones representa al
+    // grupo (texto más "típico" de lo que se está preguntando).
+    grupos.forEach((g) => {
+      g.items.sort((a, b) => b.sesiones_unicas - a.sesiones_unicas);
+      g.representante = g.items[0];
+    });
+    return grupos;
+  }
+
+  // ¿Alguna guía YA EXISTENTE (activa) habla de lo mismo que este grupo
+  // de consultas? Compara contra título + categoría + subcategoría +
+  // breadcrumb de cada guía — mismo criterio de "2+ palabras clave
+  // compartidas" que el agrupado de arriba.
+  function buscarGuiaParecida_(grupo) {
+    let mejor = null, mejorPuntuacion = 0;
+    TODAS.forEach((s) => {
+      if (s.activa === false) return; // una guía desactivada no cuenta como "ya cubierto"
+      const clavesGuia = palabrasClave_([s.title, s.category, s.subcategory, (s.breadcrumb || []).join(' ')].join(' '));
+      const puntuacion = interseccion_(grupo.claves, clavesGuia);
+      if (puntuacion > mejorPuntuacion) { mejorPuntuacion = puntuacion; mejor = s; }
+    });
+    return mejorPuntuacion >= 2 ? mejor : null;
+  }
+
   function slugificar_(texto) {
     const base = (texto || '')
       .toLowerCase()
-      .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita acentos
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
     return base || 'nueva-solucion';
@@ -114,28 +207,66 @@
     mostrarMsg('Borrador cargado desde una consulta repetida a la IA — revisa categoría, pasos y añade productos reales (con "ref") antes de guardar.', false);
   }
 
-  function renderCandidatasIA_(candidatas) {
+  function renderCandidatasIA_(grupos) {
     const cont = $('#cs-gestion-candidatas-lista');
     if (!cont) return;
-    if (!candidatas.length) {
+    if (!grupos.length) {
       cont.innerHTML = '<p class="cs-gestion-lista-vacio">Sin candidatas todavía (hace falta más tráfico real, o volver a ejecutar el refresco de las vistas).</p>';
       return;
     }
-    cont.innerHTML = candidatas.map((c, i) => `
-      <div class="cs-gestion-candidata-item">
-        <div class="cs-gestion-candidata-texto">
-          <span class="cs-gestion-candidata-query">${c.query_normalized}</span>
-          <span class="cs-gestion-candidata-meta">${c.sesiones_unicas} sesiones distintas · ${c.total_consultas} consultas</span>
+    // Las candidatas que de verdad son nuevas van primero — las que ya
+    // tienen una guía parecida se ven, pero no invitan a duplicar.
+    const ordenados = grupos.slice().sort((a, b) => {
+      if (!!a.guiaParecida !== !!b.guiaParecida) return a.guiaParecida ? 1 : -1;
+      return b.sesiones_unicas - a.sesiones_unicas;
+    });
+    cont.innerHTML = ordenados.map((g, i) => {
+      const variantes = g.items.length > 1
+        ? `<span class="cs-gestion-candidata-variantes">También: ${g.items.slice(1).map((it) => `"${it.query_normalized}"`).join(', ')}</span>`
+        : '';
+      if (g.guiaParecida) {
+        return `
+          <div class="cs-gestion-candidata-item cs-gestion-candidata-item--parecida">
+            <div class="cs-gestion-candidata-texto">
+              <span class="cs-gestion-candidata-query">${g.representante.query_normalized}</span>
+              <span class="cs-gestion-candidata-meta">${g.sesiones_unicas} sesiones distintas · ${g.total_consultas} consultas</span>
+              ${variantes}
+              <span class="cs-gestion-candidata-aviso">⚠️ Ya existe una guía parecida: «${g.guiaParecida.title}» — probablemente no haga falta otra, revisa esa primero.</span>
+            </div>
+            <button type="button" class="cs-gestion-candidata-usar cs-gestion-candidata-usar--secundario" data-idx="${i}" data-accion="revisar">Revisar guía existente</button>
+          </div>
+        `;
+      }
+      return `
+        <div class="cs-gestion-candidata-item">
+          <div class="cs-gestion-candidata-texto">
+            <span class="cs-gestion-candidata-query">${g.representante.query_normalized}</span>
+            <span class="cs-gestion-candidata-meta">${g.sesiones_unicas} sesiones distintas · ${g.total_consultas} consultas</span>
+            ${variantes}
+          </div>
+          <button type="button" class="cs-gestion-candidata-usar" data-idx="${i}" data-accion="borrador">Usar como borrador</button>
         </div>
-        <button type="button" class="cs-gestion-candidata-usar" data-idx="${i}">Usar como borrador</button>
-      </div>
-    `).join('');
+      `;
+    }).join('');
     cont.querySelectorAll('[data-idx]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const c = candidatas[Number(btn.dataset.idx)];
-        if (c && c.ai_generated_json) usarCandidataComoBorrador_(c.query_normalized, c.ai_generated_json);
+        const g = ordenados[Number(btn.dataset.idx)];
+        if (!g) return;
+        if (btn.dataset.accion === 'revisar' && g.guiaParecida) {
+          cerrarCandidatasIA_();
+          cargarEnEditor(g.guiaParecida.slug);
+          return;
+        }
+        if (g.representante && g.representante.ai_generated_json) {
+          usarCandidataComoBorrador_(g.representante.query_normalized, g.representante.ai_generated_json);
+        }
       });
     });
+  }
+
+  function cerrarCandidatasIA_() {
+    const detalles = document.querySelector('.cs-gestion-candidatas');
+    if (detalles) detalles.open = false;
   }
 
   function cargarCandidatasIA() {
@@ -153,7 +284,12 @@
       const candidatas = (repetidas || [])
         .filter((r) => r.veces_generada_dinamicamente > 0 && jsonPorConsulta.has(r.query_normalized))
         .map((r) => Object.assign({ ai_generated_json: jsonPorConsulta.get(r.query_normalized) }, r));
-      renderCandidatasIA_(candidatas);
+      // Agrupa variantes de la misma necesidad y comprueba, para cada
+      // grupo, si ya existe una guía parecida — ver el porqué completo
+      // junto a agruparCandidatasPorPalabrasClave_/buscarGuiaParecida_.
+      const grupos = agruparCandidatasPorPalabrasClave_(candidatas);
+      grupos.forEach((g) => { g.guiaParecida = buscarGuiaParecida_(g); });
+      renderCandidatasIA_(grupos);
     }).catch(() => {
       if (cont) cont.innerHTML = '<p class="cs-gestion-lista-vacio">Error al cargar las candidatas.</p>';
     });
@@ -220,13 +356,17 @@
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
     $('#cs-gestion-lista').innerHTML = '<p class="cs-gestion-lista-vacio">Cargando…</p>';
-    cargarCandidatasIA();
+    const cont = $('#cs-gestion-candidatas-lista');
+    if (cont) cont.innerHTML = '<p class="cs-gestion-lista-vacio">Cargando…</p>';
     try {
       await cargarTodas();
       limpiarEditor();
     } catch (err) {
       $('#cs-gestion-lista').innerHTML = `<p class="cs-gestion-lista-vacio">No se ha podido cargar: ${err.message}</p>`;
     }
+    // Después de tener TODAS las guías (para poder comparar y avisar si
+    // una candidata ya tiene una guía parecida) — ver cargarCandidatasIA.
+    cargarCandidatasIA();
   }
   function cerrarModal() {
     $('#cs-gestion-modal').classList.remove('is-open');
