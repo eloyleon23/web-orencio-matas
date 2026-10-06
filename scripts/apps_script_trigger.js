@@ -5847,19 +5847,36 @@ function procesarBuscarSolucionIA(data) {
         'Ya se ha comprobado que NINGUNA de nuestras guías escritas a mano encaja con esta consulta, así que hay que generar una orientación propia.\n\n' +
         'Estas son TODAS las categorías reales de nuestro catálogo de productos (formato "área > familia" — y solo estas, no existen otras):\n' + listadoTaxonomia + '\n' +
         bloqueCandidatos + '\n' +
-        'IMPORTANTE — no alucines: tu respuesta debe estar ANCLADA a lo que existe de verdad en nuestro catálogo (las categorías y candidatos de arriba), nunca a un procedimiento genérico que recuerdes de tu conocimiento general aunque "suene relacionado". Si la consulta menciona un producto, marca o código concreto y no tienes ninguna pista real de qué es exactamente, sé prudente y genérico en tu RESPUESTA/PASOS en vez de inventar un uso o procedimiento específico que podría no tener nada que ver.\n\n' +
+        // A petición de Eloy: "la solución por IA debería buscar también
+        // en las fichas técnicas y páginas de productos de la marca que
+        // trabajamos para dar unos productos más adecuados posibles" —
+        // se activa aquí la misma herramienta de búsqueda real en la web
+        // (Grounding con Google Search, ver conBusquedaWeb en
+        // llamarGemini_) que ya se usaba solo para el caso PRODUCTO. El
+        // objetivo NO es que la respuesta nombre marcas (eso sigue
+        // prohibido más abajo, para no dar la sensación de recomendar un
+        // producto muy concreto sin que el cliente lo haya pedido), sino
+        // que TERMINOS/FAMILIAS salgan más afinados: una búsqueda real en
+        // fichas técnicas y páginas de producto de las marcas que de
+        // verdad vendemos (ver candidatos reales arriba, p. ej.
+        // TitanTech/TitanPro, Werku, AkzoNobel) ayuda a elegir el TIPO de
+        // producto correcto para el caso concreto en vez de depender solo
+        // del conocimiento general del modelo.
+        'Tienes acceso a búsqueda real en la web — antes de responder, puedes usarla para consultar fichas técnicas y páginas de producto de las marcas que trabajamos (las que veas en los candidatos reales de arriba, p. ej. TitanTech/TitanPro, Werku, AkzoNobel) y confirmar qué TIPO de producto es el más adecuado para este caso concreto. No es obligatorio buscar si el caso ya es obvio con las categorías de arriba.\n\n' +
+        'IMPORTANTE — no alucines: tu respuesta debe estar ANCLADA a lo que existe de verdad en nuestro catálogo (las categorías y candidatos de arriba) y, si has buscado, a lo que de verdad dicen esas fichas técnicas/páginas de producto — nunca a un procedimiento genérico que recuerdes de tu conocimiento general aunque "suene relacionado". Si la consulta menciona un producto, marca o código concreto y no tienes ninguna pista real de qué es exactamente, sé prudente y genérico en tu RESPUESTA/PASOS en vez de inventar un uso o procedimiento específico que podría no tener nada que ver.\n\n' +
         'Recuerda: la consulta EXACTA del cliente, a la que debe responder TODO lo que generes a continuación, es:\n"' + consulta + '"\n\n' +
         'Responde EXACTAMENTE con estas líneas, sin nada más:\n' +
         'TITULO: título corto (4-8 palabras) tipo "Cómo limpiar una barrica de madera por dentro", para encabezar una página dedicada a esta consulta.\n' +
         'RESPUESTA: explicación breve y práctica en 1-3 frases de cómo abordar el problema, a modo de introducción antes de los pasos. NUNCA menciones una marca ni un producto concreto, solo el TIPO genérico (p.ej. "un desinfectante neutro") — los productos reales se buscan aparte.\n' +
         'PASOS: de 3 a 4 pasos concretos y breves, cada uno "Título corto: descripción de una frase corta", separados entre sí por " || " (dos barras verticales con espacios). NUNCA nombres marcas ni productos concretos, solo el tipo genérico.\n' +
-        'TERMINOS: 3 a 6 palabras clave en español separadas por comas, de los TIPOS de producto que ayudarían con esta consulta. Sé específico y evita palabras sueltas muy genéricas que puedan confundirse con otra cosa — usa siempre 2 palabras juntas que aclaren el sentido en vez de una sola ambigua. Ejemplos reales de este error a evitar: para "aire acondicionado" usa "desengrasante equipos" o "limpiador de rejillas", NUNCA la palabra suelta "aire" (aparece también en perfumes y colonias); para "limpiar un baño" usa "cepillo de baño" o "cepillo sanitario", NUNCA la palabra suelta "cepillo" (aparece también en cepillos de dientes y de peinar). Si hay candidatos reales de arriba que encajan, usa términos que los describan bien. Si de verdad no hay ningún producto remotamente relacionado, deja vacío.\n' +
+        'TERMINOS: 3 a 6 palabras clave en español separadas por comas, de los TIPOS de producto que ayudarían con esta consulta. Sé específico y evita palabras sueltas muy genéricas que puedan confundirse con otra cosa — usa siempre 2 palabras juntas que aclaren el sentido en vez de una sola ambigua. Ejemplos reales de este error a evitar: para "aire acondicionado" usa "desengrasante equipos" o "limpiador de rejillas", NUNCA la palabra suelta "aire" (aparece también en perfumes y colonias); para "limpiar un baño" usa "cepillo de baño" o "cepillo sanitario", NUNCA la palabra suelta "cepillo" (aparece también en cepillos de dientes y de peinar). Si hay candidatos reales de arriba que encajan, usa términos que los describan bien; si has buscado en fichas técnicas/páginas de producto reales, usa lo que hayas confirmado ahí para precisar aún más el término. Si de verdad no hay ningún producto remotamente relacionado, deja vacío.\n' +
         'FAMILIAS: 1 a 3 categorías copiadas EXACTAMENTE de la lista de categorías reales de arriba (formato "área > familia") que de verdad contendrían el tipo de producto que ayudaría. Esto es MUY IMPORTANTE para no mezclar productos de categorías equivocadas — si hay candidatos reales de arriba, usa la categoría "área > familia" que aparece junto a ellos. Intenta dar SIEMPRE al menos 1 categoría cuando exista algo remotamente relacionado, y déjalo vacío solo si de verdad ninguna categoría real encaja.';
 
-    // maxOutputTokens más alto para el caso PRODUCTO: la respuesta con
-    // búsqueda real puede necesitar más espacio (varias especificaciones
-    // técnicas encontradas, no solo un par de frases).
-    const r2 = llamarGemini_(prompt2, tipoConsulta === 'PRODUCTO' ? 700 : 500, tipoConsulta === 'PRODUCTO');
+    // maxOutputTokens más alto cuando hay búsqueda real activada (caso
+    // PRODUCTO siempre, y ahora también GUIA): la respuesta puede
+    // necesitar más espacio para digerir lo encontrado en la búsqueda,
+    // no solo un par de frases.
+    const r2 = llamarGemini_(prompt2, tipoConsulta === 'PRODUCTO' ? 700 : 500, true);
     if (!r2.ok) return respuestaError(r2.errorHttp, r2.respuestaCruda, prompt2);
 
     let tituloIA = '';
@@ -5934,10 +5951,12 @@ function procesarBuscarSolucionIA(data) {
       resultado: resultadoIA,
       terminos: terminos,
       familias: familiasValidas,
-      // Solo tienen contenido cuando tipoConsulta='PRODUCTO' (única rama
-      // con Grounding/Search activado) — fuentes citadas y el widget de
-      // atribución que Google exige mostrar tal cual, sin modificar, ver
-      // el comentario completo junto a llamarGemini_.
+      // Con contenido cuando Gemini ha usado de verdad el Grounding con
+      // Google Search (tanto en tipoConsulta='PRODUCTO' como ahora en la
+      // solución dinámica 'GUIA', ver el prompt de arriba) — fuentes
+      // citadas y el widget de atribución que Google exige mostrar tal
+      // cual, sin modificar, ver el comentario completo junto a
+      // llamarGemini_.
       fuentes: r2.fuentes || [],
       searchEntryPointHtml: r2.searchEntryPointHtml || '',
       // Campo TEMPORAL de depuración — quitar una vez resuelto el

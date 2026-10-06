@@ -84,12 +84,29 @@
       resultados.innerHTML = '';
     }
 
-    function ejecutarBusqueda(esConfirmacion) {
+    // A petición de Eloy: la búsqueda con IA NUNCA debe saltar sola. Antes,
+    // si tras una pausa larga no había ningún resultado curado, se lanzaba
+    // automáticamente la consulta a la IA (abriendo el modal) sin que el
+    // cliente lo pidiera. Ahora `ejecutarBusqueda` solo RENDERIZA lo que
+    // haya encontrado el motor de palabras clave (aunque sea nada) más la
+    // opción de preguntar a la IA — nunca dispara la llamada a la IA por sí
+    // misma. Devuelve `hayResultadosLocales` para que quien llama pueda
+    // decidir si, en el caso de pulsar Intro/lupa con CERO resultados
+    // locales (la opción de IA sería la única "opción" disponible), lanza
+    // directamente la búsqueda por IA — ver wiring de Enter/lupa más abajo.
+    //
+    // `mostrarOpcionIA` controla únicamente si se añade ya el botón/aviso
+    // de "preguntar a la IA" a lo que se muestra: con cada tecla (filtro
+    // en vivo, barato) se renderizan los resultados curados tal cual se
+    // van encontrando pero SIN esa opción todavía; la opción aparece sola
+    // cuando el usuario hace una pausa más larga sin teclear (o confirma
+    // con Intro/lupa) — así decide él cuándo "ha terminado de escribir".
+    function ejecutarBusqueda(mostrarOpcionIA) {
       const texto = input.value.trim();
       if (!texto) {
         resultados.style.display = 'none';
         resultados.innerHTML = '';
-        return;
+        return false;
       }
 
       // Detecta consultas de ficha técnica ("ficha técnica p60", "ficha
@@ -106,72 +123,27 @@
       // literal en título/descripción/productos — antes solo se usaba
       // esta segunda, mucho más limitada. Ver buscarSolucionesCombinado
       // en soluciones-data.js para el porqué completo.
-      //
-      // El diagnóstico CURADO se guarda aparte del combinado a
-      // propósito: la coincidencia literal es bastante más ruidosa (p.
-      // ej. "limpieza interior de una barrica de madera" encuentra 32
-      // guías por solapar palabras sueltas como "limpieza"/"madera" con
-      // media web, sin que ninguna trate de verdad ese caso concreto) —
-      // si se usara solo "¿ha encontrado algo el combinado?" para
-      // decidir si merece la pena llamar a la IA automáticamente, casi
-      // nunca se llegaría a llamar, aunque ese "algo" fuera ruido sin
-      // relación real con lo que pedía el cliente.
-      const curadas = D.diagnosticarPorTexto(texto).todasLasSoluciones.length;
       const encontradas = D.buscarSolucionesCombinado(texto).slice(0, 12);
+      const hayResultadosLocales = !!(fichaDirecta || encontradas.length);
 
-      if (fichaDirecta || curadas) {
-        // Aun con coincidencia curada, esta puede ser floja para
-        // consultas raras (p. ej. "limpieza interior de una barrica de
-        // madera" encuentra 1 resultado curado, probablemente por
-        // solape incidental, no porque exista de verdad una guía sobre
-        // barricas) — se deja siempre visible un botón para pedir
-        // también la ayuda de la IA bajo demanda (nunca automático
-        // aquí, para no gastar en cada búsqueda que ya tiene un
-        // resultado razonable), tal como pidió Eloy para casos así.
-        mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta);
-        wireBotonPedirIA(texto);
-        return;
-      }
-
-      // A petición de Eloy: "conforme te pones a escribir salta la
-      // modal de la IA" — si esto viene del filtro en vivo mientras se
-      // teclea (no una confirmación explícita del usuario), no se hace
-      // nada más todavía. Es muy normal que un texto a medio escribir
-      // no coincida con nada curado, y abrir el modal en ese instante
-      // interrumpe al usuario mientras sigue pensando/escribiendo. Solo
-      // se intenta con la IA cuando el usuario confirma de verdad (ver
-      // wiring de Enter/lupa/pausa larga más abajo).
-      if (!esConfirmacion) {
-        resultados.style.display = 'none';
-        resultados.innerHTML = '';
-        return;
-      }
-
-      // Ni el diagnóstico ni el título/descripción/productos de ninguna
-      // guía encajan, ni hay ficha técnica reconocible. Antes esto caía
-      // directo a la búsqueda en el catálogo de productos con el texto
-      // TAL CUAL lo escribió el cliente, y si no había nada, redirigía al
-      // buscador general — pero si aquí ya no hay nada, en el buscador
-      // tampoco lo habrá, y ese enlace daba sensación de que algo
-      // funcionaba mal (Eloy). Ahora: se le da una oportunidad a la
-      // búsqueda inteligente con IA cuando el usuario confirma su
-      // búsqueda — no añade coste a las búsquedas que el motor de
-      // palabras clave ya resuelve razonablemente bien.
-      //
-      // El progreso de la espera ahora se muestra en el modal
-      // compartido (ver abrirModalEsperaIA), no aquí — se deja
-      // `resultados` oculto mientras tanto, para no duplicar el mensaje
-      // de "preguntando a la IA" debajo del propio modal.
-      ejecutarBusquedaIA(texto);
+      // Progreso de la búsqueda: los resultados locales (ficha + guías) se
+      // muestran tal cual se van encontrando, y la opción de IA se añade o
+      // no según `mostrarOpcionIA` — nunca se dispara aquí la llamada a la
+      // IA, solo se ofrece el botón para pedirla (petición expresa de
+      // Eloy: "que sea si el usuario quiere y no que salte de manera
+      // automática"). Si no hay nada que mostrar todavía (ni resultados ni
+      // opción de IA), se deja oculto en vez de mostrar un hueco vacío.
+      mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta, false, mostrarOpcionIA);
+      if (mostrarOpcionIA) wireBotonPedirIA(texto);
+      return hayResultadosLocales;
     }
 
-    // Ejecuta la búsqueda inteligente con IA de forma AUTOMÁTICA (sin
-    // que el cliente tenga que pedirlo) y escribe el resultado
-    // directamente en `resultados` — único caso donde esto ocurre sin
-    // acción explícita: cuando ni el diagnóstico curado ni la
-    // coincidencia literal han encontrado NADA. El caso del botón
-    // "pedir ayuda a la IA" (cuando sí hay algo, pero puede ser flojo)
-    // usa un modal aparte — ver pedirAyudaIAModal más abajo.
+    // Ejecuta la búsqueda inteligente con IA y escribe el resultado
+    // directamente en `resultados` — se llama SOLO por acción explícita
+    // del usuario: al pulsar el botón "preguntar a la IA" (wireBotonPedirIA
+    // más abajo), o desde confirmarBusqueda() cuando Intro/lupa confirman
+    // una búsqueda sin ningún resultado local (la opción de IA era la
+    // única disponible). Nunca se dispara sola por un simple debounce.
     // ── Espera con mensajes progresivos para las llamadas a la IA ──
     // A petición de Eloy (mismo patrón ya aplicado y aprobado en
     // buscador.html): cortar a los 15s se quedaba corto en pruebas
@@ -544,7 +516,20 @@
       boton.addEventListener('click', () => pedirAyudaIAModal(texto));
     }
 
-    function mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta, esSugerenciaIA) {
+    // `mostrarOpcionIA`: a petición de Eloy, "siempre debe haber opción de
+    // IA en cada búsqueda" — pero esa opción no se añade sola nada más
+    // teclear (ver temporizadorIAAutomatica más abajo), solo cuando quien
+    // llama decide que ya toca ofrecerla (pausa larga, Intro o lupa). Si
+    // no hay NADA que mostrar todavía (ni resultados locales ni opción de
+    // IA), se oculta el bloque en vez de dejar un hueco vacío — eso es lo
+    // que hace posible que los resultados "vayan apareciendo conforme se
+    // van encontrando" sin mostrar nada a medio camino.
+    function mostrarResultadosBusquedaHero(encontradas, texto, fichaDirecta, esSugerenciaIA, mostrarOpcionIA) {
+      if (!encontradas.length && !fichaDirecta && !mostrarOpcionIA) {
+        resultados.style.display = 'none';
+        resultados.innerHTML = '';
+        return;
+      }
       const bloqueFicha = fichaDirecta ? `
         <div class="cs-hero__ficha-directa">
           <span aria-hidden="true">📋</span>
@@ -554,6 +539,7 @@
           </div>
         </div>
       ` : '';
+      const hayLocal = !!(fichaDirecta || encontradas.length);
       // Cuando el resultado viene de la búsqueda inteligente con IA (ver
       // buscarSolucionIA) en vez del motor de palabras clave habitual, se
       // avisa de forma transparente — mismo criterio de honestidad que ya
@@ -563,7 +549,17 @@
         ? `<p class="cs-hero__buscador-contador"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> Sugerido por IA para "${texto}" — no es una coincidencia exacta de palabras, pero puede ser lo que buscas:</p>`
         : (encontradas.length
           ? `<p class="cs-hero__buscador-contador">${encontradas.length} ${encontradas.length === 1 ? 'solución encontrada' : 'soluciones encontradas'} para "${texto}"</p>`
-          : (fichaDirecta ? `<p class="cs-hero__buscador-contador">No hay una guía específica para "${texto}", pero sí la ficha técnica del producto:</p>` : ''));
+          : (fichaDirecta
+            ? `<p class="cs-hero__buscador-contador">No hay una guía específica para "${texto}", pero sí la ficha técnica del producto:</p>`
+            : (mostrarOpcionIA ? `<p class="cs-hero__buscador-contador">No hemos encontrado ninguna guía para "${texto}" entre nuestras soluciones.</p>` : '')));
+      // Botón "pedir ayuda a la IA" — siempre que `mostrarOpcionIA` sea
+      // true, haya o no resultados locales (petición expresa de Eloy:
+      // "siempre debe haber opción de IA en cada búsqueda"). El texto
+      // cambia según si ya hay algo que la IA podría mejorar/sustituir, o
+      // si es la única opción disponible.
+      const botonIA = (!esSugerenciaIA && mostrarOpcionIA) ? `
+        <button type="button" class="cs-hero__pedir-ia" id="cs-hero-pedir-ia"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> ${hayLocal ? '¿No es esto lo que buscabas? Pregunta a nuestra IA' : 'Buscar la solución con nuestra IA'}</button>
+      ` : '';
       resultados.innerHTML = `
         ${bloqueFicha}
         ${contador}
@@ -574,9 +570,7 @@
             return `<a class="cs-hero__buscador-chip" href="${urlSolucion(s.slug)}"><span aria-hidden="true">${emoji}</span> ${s.title}</a>`;
           }).join('')}
         </div>
-        ${esSugerenciaIA ? '' : `
-          <button type="button" class="cs-hero__pedir-ia" id="cs-hero-pedir-ia"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> ¿No es esto lo que buscabas? Pregunta a nuestra IA</button>
-        `}
+        ${botonIA}
       `;
       resultados.style.display = 'block';
     }
@@ -589,21 +583,34 @@
     // ruidoso, casi cualquier solución tendría alguna coincidencia).
     const MIN_CARACTERES_BUSQUEDA_VIVA = 2;
     const RETRASO_BUSQUEDA_VIVA_MS = 250;
-    // A petición de Eloy: "conforme te pones a escribir salta la modal
-    // de la IA" — el filtro curado (barato, solo palabras clave) se
-    // sigue actualizando con cada tecla tras un respiro corto (250ms),
-    // pero la llamada automática a la IA (que ahora abre un modal, más
-    // intrusivo que el simple texto de antes) NO debe dispararse solo
-    // porque en un instante intermedio de la escritura no haya nada
-    // curado todavía — eso pasa constantemente mientras se teclea
-    // letra a letra. La IA automática solo se dispara en dos casos: (a)
-    // el usuario confirma explícitamente con Enter/lupa, o (b) ha
-    // pasado una pausa bastante más larga sin teclear nada (ver
-    // RETRASO_IA_AUTOMATICA_MS), señal de que probablemente ha
-    // terminado de escribir su búsqueda.
+    // A petición de Eloy: el filtro curado (barato, solo palabras clave)
+    // se sigue actualizando con cada tecla tras un respiro corto (250ms),
+    // mostrando los resultados tal cual se van encontrando. La OPCIÓN de
+    // preguntar a la IA (ya no la llamada en sí, solo el botón/aviso) no
+    // debe aparecer en ese instante intermedio de la escritura — eso pasa
+    // constantemente mientras se teclea letra a letra y sería ruidoso.
+    // Esa opción aparece sola cuando el usuario hace una pausa bastante
+    // más larga sin teclear nada (ver RETRASO_IA_AUTOMATICA_MS), señal de
+    // que probablemente ha terminado de escribir, o cuando confirma
+    // explícitamente con Intro o la lupa — nunca dispara ella sola la
+    // llamada a la IA, solo la ofrece: "que sea si el usuario quiere y no
+    // que salte de manera automática".
     const RETRASO_IA_AUTOMATICA_MS = 1400;
     let temporizadorBusqueda = null;
     let temporizadorIAAutomatica = null;
+
+    // Confirmación explícita del usuario (Intro o lupa): muestra ya los
+    // resultados locales + la opción de IA, y si no hay NINGÚN resultado
+    // local (la opción de IA sería la única "opción" disponible), lanza
+    // directamente la búsqueda por IA sin necesidad de un segundo clic —
+    // petición expresa de Eloy: "cuando solo haya una solución que será
+    // la de IA, si no el usuario pulsa intro en el teclado lanzará la
+    // solución por IA".
+    function confirmarBusqueda() {
+      const texto = input.value.trim();
+      const hayResultadosLocales = ejecutarBusqueda(true);
+      if (texto && !hayResultadosLocales) ejecutarBusquedaIA(texto);
+    }
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -621,7 +628,7 @@
         if (e.isComposing) return;
         clearTimeout(temporizadorBusqueda);
         clearTimeout(temporizadorIAAutomatica);
-        setTimeout(() => ejecutarBusqueda(true), 0);
+        setTimeout(confirmarBusqueda, 0);
       }
     });
     input.addEventListener('input', () => {
@@ -633,17 +640,18 @@
         resultados.innerHTML = '';
         return;
       }
-      // Filtro curado en vivo — NUNCA dispara la IA automáticamente
-      // (esConfirmacion=false), solo actualiza resultados por palabras
-      // clave, que es barato e instantáneo.
+      // Filtro curado en vivo — nunca muestra todavía la opción de IA
+      // (mostrarOpcionIA=false), solo actualiza los resultados locales por
+      // palabras clave conforme se van encontrando, que es barato e
+      // instantáneo.
       temporizadorBusqueda = setTimeout(() => ejecutarBusqueda(false), RETRASO_BUSQUEDA_VIVA_MS);
-      // Si tras una pausa bastante más larga el usuario sigue sin haber
-      // tecleado nada más, SÍ se considera una confirmación implícita —
-      // ahí es donde puede llegar a abrirse el modal de la IA si no hay
-      // nada curado.
+      // Tras una pausa bastante más larga sin teclear nada más, se
+      // considera que el usuario probablemente ha terminado de escribir —
+      // ahí es donde se AÑADE la opción de preguntar a la IA (nunca se
+      // lanza ella sola).
       temporizadorIAAutomatica = setTimeout(() => ejecutarBusqueda(true), RETRASO_IA_AUTOMATICA_MS);
     });
-    if (btnLupa) btnLupa.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); clearTimeout(temporizadorIAAutomatica); ejecutarBusqueda(true); });
+    if (btnLupa) btnLupa.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); clearTimeout(temporizadorIAAutomatica); confirmarBusqueda(); });
     if (btnLimpiar) btnLimpiar.addEventListener('click', () => { clearTimeout(temporizadorBusqueda); clearTimeout(temporizadorIAAutomatica); limpiar(); });
   }
 
