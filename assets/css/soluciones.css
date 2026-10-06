@@ -964,6 +964,26 @@
   .cs-btn-subir { right: 14px; bottom: 14px; width: 44px; height: 44px; font-size: 1.15rem; }
 }
 
+/* En centro-soluciones.html (solo preproducción, ver MOSTRAR_GESTION_
+   SOLUCIONES), el dock "Gestionar soluciones" (.cs-gestion-dock, ver
+   más abajo) ocupa la misma esquina inferior derecha que este botón
+   — se solapaban, sobre todo en móvil donde hay menos ancho para
+   separarlos visualmente. Mismo criterio ya aplicado para el mismo
+   problema en escaparate.html (su dock de gestión también vive a la
+   derecha): mover "volver arriba" a la IZQUIERDA en vez de tocar el
+   dock. El selector `~` solo aplica cuando #cs-gestion-dock existe de
+   verdad en la página Y no está oculto (en producción se elimina del
+   DOM por completo, así que esto no la afecta ni a ella ni a las
+   demás páginas que reutilizan .cs-btn-subir, como soluciones/
+   solucion.html, que no tienen ningún dock en esa esquina). */
+#cs-gestion-dock:not([hidden]) ~ .cs-btn-subir {
+  left: 20px;
+  right: auto;
+}
+@media (max-width: 640px) {
+  #cs-gestion-dock:not([hidden]) ~ .cs-btn-subir { left: 14px; right: auto; }
+}
+
 /* ── Buscador rápido dentro de "Explora soluciones" ───────────────────── */
 .cs-areas-buscador {
   position: relative;
