@@ -250,7 +250,18 @@
   // — aquí SÍ ha habido un problema real (Gemini caído/saturado, sin
   // conexión...), así que el mensaje anima a reintentarlo en vez de
   // dar a entender que no existe ninguna solución para el problema.
-  function renderErrorTecnico(consulta) {
+  function renderErrorTecnico(consulta, cuotaAgotada) {
+    if (cuotaAgotada) {
+      if (window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
+      cont.innerHTML = `
+        <div class="container" style="padding:60px 20px;text-align:center;max-width:600px;margin:0 auto;">
+          <h1 style="font-family:var(--font-heading);font-size:1.8rem;margin-bottom:12px;">Asistente de IA no disponible</h1>
+          <p style="color:var(--text-gray);margin-bottom:20px;">El asistente de IA no está disponible en este momento para "<strong>${escaparHtml(consulta)}</strong>". Vuelve a intentarlo más tarde.</p>
+          <p style="margin-top:16px;"><a href="../centro-soluciones.html">← Volver al Centro de Soluciones</a></p>
+        </div>
+      `;
+      return;
+    }
     cont.innerHTML = `
       <div class="container" style="padding:60px 20px;text-align:center;max-width:600px;margin:0 auto;">
         <h1 style="font-family:var(--font-heading);font-size:1.8rem;margin-bottom:12px;">Ha habido un problema técnico</h1>
@@ -589,11 +600,18 @@
     // vez de un botón suelto. A petición de Eloy: colocado ENCIMA de
     // los resultados (como en el buscador), no debajo.
     function renderAvisoOtraVez() {
+      // No se ofrece el botón "otra vez" si sabemos que no hay cuota de
+      // IA disponible — a petición de Eloy, prefiere no dar la opción a
+      // que falle (ver window.IADisponibilidad).
+      const iaDisponible = !window.IADisponibilidad || window.IADisponibilidad.estaDisponible();
+      const botonOtraVez = iaDisponible
+        ? `<button type="button" class="cs-hero__pedir-ia" id="cs-ia-productos-otra-vez">No es lo que buscaba, prueba otra vez</button>`
+        : '';
       $('#cs-ia-productos-otra-vez-bar').innerHTML = `
         <div class="cs-ia-productos-aviso">
           <img src="../assets/logos/apple-touch-icon.png" alt="" class="cs-icono-ia">
           <span><strong>Sugerido por IA</strong> a partir de tu búsqueda — puede contener errores, comprueba bien que es el producto que buscas.</span>
-          <button type="button" class="cs-hero__pedir-ia" id="cs-ia-productos-otra-vez">No es lo que buscaba, prueba otra vez</button>
+          ${botonOtraVez}
         </div>
       `;
     }
@@ -609,6 +627,12 @@
       btn.addEventListener('click', () => {
         const url = window.GOOGLE_APPS_SCRIPT_URL;
         if (!url) return;
+        if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+          const barraOtraVez = $('#cs-ia-productos-otra-vez-bar');
+          barraOtraVez.innerHTML = `<p class="cs-ia-productos-aviso-nota">El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.</p>`;
+          barraOtraVez.style.display = '';
+          return;
+        }
         Analitica.trackMoreProductsRequested(null, interactionId, refsProductosExcluidos.slice());
         $('#cs-ia-productos-otra-vez-bar').style.display = 'none';
         const cargando = $('#cs-ia-productos-cargando');
@@ -625,9 +649,12 @@
           .then((res) => res.json())
           .then((data) => {
             cargando.style.display = 'none';
+            if (data && data.cuotaAgotada && window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
             if (!data || !data.success || data.fueraDeAlcance || !data.terminos || !data.terminos.length) {
               const barraOtraVez = $('#cs-ia-productos-otra-vez-bar');
-              barraOtraVez.innerHTML = `<p class="cs-ia-productos-aviso-nota">La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.</p>`;
+              barraOtraVez.innerHTML = (data && data.cuotaAgotada)
+                ? `<p class="cs-ia-productos-aviso-nota">El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.</p>`
+                : `<p class="cs-ia-productos-aviso-nota">La IA no ha encontrado ninguna alternativa distinta a lo ya mostrado.</p>`;
               barraOtraVez.style.display = '';
               return;
             }
@@ -701,12 +728,20 @@
     // duplicados, sección 18 del documento de analítica).
     if (cache) { renderSolucionIA(consulta, cache, null); return; }
 
+    // Comprobación de cuota ANTES de lanzar la petición — a petición de
+    // Eloy, prefiere no dar la opción de buscar con IA cuando no hay
+    // cuota a que falle (ver window.IADisponibilidad).
+    if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+      renderErrorTecnico(consulta, true);
+      return;
+    }
+
     renderCargando();
     const { signal, finalizar, fueCancelado } = iniciarEsperaIA();
     D.buscarSolucionIA(consulta, signal).then((datos) => {
       finalizar();
       if (datos.errorTecnico && fueCancelado()) { renderCancelado(consulta); return; }
-      if (datos.errorTecnico) { renderErrorTecnico(consulta); return; }
+      if (datos.errorTecnico) { renderErrorTecnico(consulta, datos.cuotaAgotada); return; }
       if (datos.fueraDeAlcance) { renderFueraDeAlcance(datos.mensaje); return; }
 
       // Única llamada en vivo a buscarSolucionIA() de esta página — se
