@@ -11817,7 +11817,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('asistente-f-area-btn').setAttribute('aria-expanded', abierto ? 'true' : 'false');
     });
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.asistente-filtros')) {
+        // Bug real reportado por Eloy: comprobaba '.asistente-filtros'
+        // (TODA la barra de filtros del asistente), así que clicar en
+        // cualquier otro filtro de esa misma barra (el buscador de texto,
+        // "Sin validar", la familia...) no cerraba este desplegable —
+        // solo clicar fuera de toda la barra lo hacía. Igual que el
+        // desplegable de área del buscador principal (que sí comprueba
+        // únicamente su propio contenedor, '#grupo-area-toolbar'), se
+        // acota aquí a '.area-multi-wrap': solo permanece abierto si el
+        // clic fue dentro del propio botón/panel del selector de área.
+        if (!e.target.closest('.area-multi-wrap')) {
             $('asistente-f-area-panel').classList.remove('abierto');
             $('asistente-f-area-btn').setAttribute('aria-expanded', 'false');
         }
