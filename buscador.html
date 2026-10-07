@@ -708,43 +708,32 @@
         .btn-crear-lista-compra:active { transform: translateY(1px); }
 
         /* Bloque de la lista ya creada: mismo contenedor "una fila con
-           scroll horizontal" que .mas-buscados__lista, pero con fondo
-           propio en degradado + efecto de ola animada basado en los
-           colores corporativos del logo (--red/--yellow/--green/--blue,
-           ya definidos en :root). Degradado grande (400% del tamaño) que
-           se desplaza muy despacio con background-position — mismo
-           resultado visual que una "ola de color" sin animar ninguna
-           propiedad costosa (solo background-position, ligero para el
-           navegador) y sin tocar JS en cada frame. */
+           scroll horizontal" que .mas-buscados__lista. A petición de Eloy:
+           mismos colores corporativos del logo (--red/--blue) que antes,
+           pero en una versión más apagada/mate — un tinte suave en vez del
+           degradado animado saturado de antes — para que siga destacando
+           sin resultar tan llamativo que rompa el estilo general de la
+           página. Se mantiene un degradado muy sutil entre los dos tonos
+           (casi plano) y se retira la animación de "ola", que ya no tiene
+           sentido sobre un fondo tan apagado.*/
         .bloque-lista-compra {
             position: relative; overflow: hidden;
             margin: 0 0 16px; padding: 18px 20px; border-radius: 14px;
-            cursor: pointer; border: none; text-align: left; width: 100%;
-            background: linear-gradient(120deg, var(--red), #b91c1c, var(--blue), #0d3f73, var(--red));
-            background-size: 400% 400%;
-            animation: listaCompraOla_ 18s ease-in-out infinite;
-            box-shadow: 0 8px 24px -8px rgba(15,23,42,0.35);
-        }
-        @keyframes listaCompraOla_ {
-            0%   { background-position: 0% 50%; }
-            50%  { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .bloque-lista-compra { animation: none; background-position: 30% 50%; }
+            cursor: pointer; border: 1px solid rgba(211,47,47,0.18); text-align: left; width: 100%;
+            background: linear-gradient(120deg, #fbebea, #eaf1fa);
+            box-shadow: 0 4px 14px -6px rgba(15,23,42,0.18);
         }
         .bloque-lista-compra__cabecera {
             display: flex; align-items: center; justify-content: space-between; gap: 10px;
             margin-bottom: 12px; flex-wrap: wrap;
         }
         .bloque-lista-compra__titulo {
-            margin: 0; font-size: 1.1rem; font-weight: 800; color: #fff;
+            margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--dark);
             display: flex; align-items: center; gap: 10px;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.25);
         }
-        .bloque-lista-compra__titulo i { font-size: 1.05rem; }
+        .bloque-lista-compra__titulo i { font-size: 1.05rem; color: var(--red); }
         .bloque-lista-compra__contador {
-            background: rgba(255,255,255,0.22); color: #fff;
+            background: rgba(211,47,47,0.12); color: #9a2626;
             padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;
             flex-shrink: 0;
         }
@@ -757,7 +746,7 @@
             background: rgba(255,255,255,0.95);
         }
         .bloque-lista-compra:focus-visible {
-            outline: 3px solid #fff; outline-offset: 2px;
+            outline: 3px solid var(--red); outline-offset: 2px;
         }
         @media (max-width: 768px) {
             .bloque-lista-compra { padding: 14px 14px; }
@@ -929,10 +918,19 @@
             gap: 10px;
             cursor: pointer;
         }
-        .categoria-bloque--rojo { background: linear-gradient(135deg, var(--red), #8c1010); color: #fff; }
-        .categoria-bloque--verde { background: linear-gradient(135deg, var(--green), #1c4a22); color: #fff; }
-        .categoria-bloque--amarillo { background: linear-gradient(135deg, var(--yellow), #c99a00); color: var(--dark); }
-        .categoria-bloque--azul { background: linear-gradient(135deg, var(--blue), #0d4e8c); color: #fff; }
+        /* A petición de Eloy: mismos colores corporativos de siempre, pero
+           en una versión más apagada/mate (tinte suave + borde del color,
+           texto oscuro) en vez del degradado saturado de antes — sigue
+           distinguiéndose cada categoría por color, pero sin romper el
+           tono general, más discreto, del resto de la página. */
+        .categoria-bloque--rojo { background: #fbebea; border: 1px solid rgba(211,47,47,0.22); color: var(--dark); }
+        .categoria-bloque--verde { background: #eaf3ea; border: 1px solid rgba(56,142,60,0.22); color: var(--dark); }
+        .categoria-bloque--amarillo { background: #fdf6e3; border: 1px solid rgba(251,192,45,0.35); color: var(--dark); }
+        .categoria-bloque--azul { background: #e9f1fa; border: 1px solid rgba(25,118,210,0.22); color: var(--dark); }
+        .categoria-bloque--rojo .categoria-bloque__titulo { color: #9a2626; }
+        .categoria-bloque--verde .categoria-bloque__titulo { color: #2d6b31; }
+        .categoria-bloque--amarillo .categoria-bloque__titulo { color: #8a6a09; }
+        .categoria-bloque--azul .categoria-bloque__titulo { color: #14579e; }
         /* A petición de Eloy: lupa en la esquina superior derecha, para que
            se entienda de un vistazo que todo el bloque se puede clicar y
            lleva a ver esos productos filtrados (mismo gesto que clicar el
@@ -946,7 +944,8 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(0, 0, 0, 0.06);
+            color: inherit;
             display: flex;
             align-items: center;
             justify-content: center;
