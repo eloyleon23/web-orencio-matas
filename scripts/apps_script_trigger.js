@@ -37,6 +37,45 @@ const RECAPTCHA_SECRET_KEY = '6LeXpLMtAAAAABZz7xYNV4Tz6AdB-xau1BXyJywQ';
 // público como GitHub.
 const GEMINI_API_KEY = 'PON_AQUI_TU_CLAVE_DE_GOOGLE_AI_STUDIO';
 
+// ── Circuito de cuota de la IA (Gemini) ─────────────────────────────────
+// A petición expresa de Eloy, tras un caso real de "ha habido un problema
+// técnico" frecuente al probar la IA del Centro de Soluciones (resultó
+// ser un 429/RESOURCE_EXHAUSTED de Gemini — cuota agotada): "prefiero no
+// dar la opción cuando no hay cuota que darla y que falle". En vez de
+// intentar calcular la cuota real restante (la API de Gemini no expone
+// eso de forma fiable para el nivel gratuito), se usa un circuito simple:
+// en cuanto UNA llamada real a Gemini devuelve 429, se marca "sin cuota"
+// durante un tiempo de enfriamiento — tiempo suficiente para no seguir
+// bombardeando una cuota ya agotada ni ofreciendo la IA sabiendo que
+// fallará, pero corto para no dejarla desactivada más de lo necesario si
+// la cuota en realidad se restablece antes (p. ej. un límite por minuto).
+// marcarCuotaIAAgotada_() la llama SIEMPRE llamarGemini_() cuando ve un
+// 429 — cubre así, de un solo sitio, los cuatro usos de Gemini del
+// proyecto (soluciones, productos, complementarios, campañas).
+const COOLDOWN_CUOTA_IA_MS = 10 * 60 * 1000; // 10 minutos
+const CLAVE_CUOTA_IA_AGOTADA_HASTA = 'CUOTA_IA_AGOTADA_HASTA';
+
+function marcarCuotaIAAgotada_() {
+  try {
+    PropertiesService.getScriptProperties().setProperty(CLAVE_CUOTA_IA_AGOTADA_HASTA, String(Date.now() + COOLDOWN_CUOTA_IA_MS));
+    console.error('Cuota de IA marcada como agotada durante ' + (COOLDOWN_CUOTA_IA_MS / 60000) + ' minutos.');
+  } catch (e) {
+    console.error('No se pudo marcar la cuota de IA como agotada:', e);
+  }
+}
+
+// Fallar ABIERTO (true) si PropertiesService no responde — mejor ofrecer
+// la IA y que en el peor caso falle una vez, que dejarla desactivada por
+// un problema ajeno a la cuota real.
+function cuotaIADisponible_() {
+  try {
+    const hasta = Number(PropertiesService.getScriptProperties().getProperty(CLAVE_CUOTA_IA_AGOTADA_HASTA) || 0);
+    return Date.now() >= hasta;
+  } catch (e) {
+    return true;
+  }
+}
+
 // Recordatorio de sincronización de productos pendiente desde el CRM (ver
 // bloque completo más abajo, junto a revisarAvisoSincronizacionCRMProgramado):
 // CRM_SYNC_AVISO_DIAS son los días sin sincronizar a partir de los que el
@@ -3531,6 +3570,17 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // A petición de Eloy: "prefiero no dar la opción [de buscar con IA]
+    // cuando no hay cuota que darla y que falle" — comprobación RÁPIDA
+    // (solo lee PropertiesService, nunca llama a Gemini) que el buscador
+    // y el Centro de Soluciones consultan antes de ofrecer cualquier
+    // botón de IA. Ver el circuito completo (marcarCuotaIAAgotada_/
+    // cuotaIADisponible_) junto a GEMINI_API_KEY, arriba del todo.
+    if (accion === 'estado_ia') {
+      return ContentService.createTextOutput(JSON.stringify({ disponible: cuotaIADisponible_() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     // Devuelve, por área, el ID de Drive del PDF (si ya existe) y los
     // datos de páginas/productos — null para un área si el catálogo
     // todavía no se ha generado nunca, para que la web pueda seguir
@@ -5607,6 +5657,7 @@ function llamarGemini_(prompt, maxOutputTokens, conBusquedaWeb) {
 
   if (codigo !== 200) {
     console.error('Error de Gemini (HTTP):', codigo, resp.getContentText());
+    if (codigo === 429) marcarCuotaIAAgotada_();
     return { ok: false, errorHttp: codigo, respuestaCruda: resp.getContentText(), texto: '', fuentes: [], searchEntryPointHtml: '' };
   }
 
@@ -5692,6 +5743,18 @@ function procesarBuscarSolucionIA(data) {
     }
     if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
       throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
+    }
+    // Defensa adicional en el servidor (el cliente ya comprueba
+    // estado_ia antes de ofrecer el botón, pero puede estar desfasado si
+    // la cuota se agotó en los últimos segundos) — ver el circuito junto
+    // a GEMINI_API_KEY arriba del todo. cuotaAgotada:true es la señal
+    // que el cliente usa para desactivar la IA sin esperar a la próxima
+    // comprobación periódica.
+    if (!cuotaIADisponible_()) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false, errorTecnico: true, cuotaAgotada: true, fueraDeAlcance: false, mensaje: '', slug: null, titulo: '', respuesta: '',
+        pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [],
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     const respuestaVacia = {
@@ -6008,6 +6071,13 @@ function procesarBuscarProductoIA(data) {
     if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
       throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
     }
+    // Ver el porqué completo junto a GEMINI_API_KEY y
+    // procesarBuscarSolucionIA — misma defensa adicional en el servidor.
+    if (!cuotaIADisponible_()) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false, errorTecnico: true, cuotaAgotada: true, fueraDeAlcance: false, mensaje: '', terminos: [], familias: [],
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     const listadoTaxonomia = taxonomia.length ? taxonomia.join('\n') : '(sin categorías disponibles)';
     const bloquePrevios = terminosPrevios.length
@@ -6140,6 +6210,12 @@ function procesarSugerirComplementariosIA(data) {
     if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
       throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
     }
+    // Ver el porqué completo junto a GEMINI_API_KEY y
+    // procesarBuscarSolucionIA — misma defensa adicional en el servidor.
+    if (!cuotaIADisponible_()) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, errorTecnico: true, cuotaAgotada: true, sugerencias: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
     // "Subfamilia" en el catálogo real muchas veces vale literalmente
     // "General" (sin ningún matiz útil, ver por ejemplo toda la familia
@@ -6247,6 +6323,14 @@ function procesarSugerirCategoriasCampanaIA(data) {
     }
     if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
       throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
+    }
+    // Ver el porqué completo junto a GEMINI_API_KEY y
+    // procesarBuscarSolucionIA — misma defensa adicional en el servidor
+    // (protege la MISMA cuota compartida, aunque Escaparate OM no
+    // comprueba estado_ia desde su propia interfaz).
+    if (!cuotaIADisponible_()) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, cuotaAgotada: true, error: 'Cuota de IA agotada temporalmente — vuelve a intentarlo en unos minutos.' }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     const descripcionAreas = areas.length

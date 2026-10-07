@@ -6085,7 +6085,7 @@ window.SOLUCIONES_DATA = (function () {
     // a petición de Eloy: en el segundo caso hay que decirle al
     // usuario que lo intente de nuevo, no darle a entender que
     // simplemente no existe ninguna solución para su problema.
-    const vacio = { solucion: null, errorTecnico: false, fueraDeAlcance: false, mensaje: '', tipoConsulta: 'GUIA', titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [], fuentes: [], searchEntryPointHtml: '' };
+    const vacio = { solucion: null, errorTecnico: false, cuotaAgotada: false, fueraDeAlcance: false, mensaje: '', tipoConsulta: 'GUIA', titulo: '', respuesta: '', pasos: [], dificultad: '', tiempo: '', resultado: '', terminos: [], familias: [], fuentes: [], searchEntryPointHtml: '' };
     if (!url || !texto || !texto.trim()) return Promise.resolve(vacio);
 
     const catalogo = Object.keys(soluciones).map((slug) => ({
@@ -6122,7 +6122,8 @@ window.SOLUCIONES_DATA = (function () {
       .then((res) => res.json())
       .then((data) => {
         if (!data) return { ...vacio, errorTecnico: true };
-        if (!data.success) return { ...vacio, errorTecnico: !!data.errorTecnico };
+        if (data.cuotaAgotada && window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
+        if (!data.success) return { ...vacio, errorTecnico: !!data.errorTecnico, cuotaAgotada: !!data.cuotaAgotada };
         if (data.fueraDeAlcance) {
           return { ...vacio, fueraDeAlcance: true, mensaje: data.mensaje || '' };
         }

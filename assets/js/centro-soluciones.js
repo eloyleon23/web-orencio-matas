@@ -242,8 +242,17 @@
     }
 
     function ejecutarBusquedaIA(texto) {
+      // Comprobación de cuota ANTES de abrir el modal y lanzar la
+      // petición — a petición de Eloy, prefiere no dar la opción de
+      // buscar con IA cuando no hay cuota a que falle (ver
+      // window.IADisponibilidad).
+      if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+        resultados.innerHTML = `<p class="cs-hero__buscador-aviso"><span aria-hidden="true">⚠️</span> El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.</p>`;
+        resultados.style.display = 'block';
+        return;
+      }
       const { signal, finalizar, fueCancelado } = abrirModalEsperaIA();
-      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }) => {
+      D.buscarSolucionIA(texto, signal).then(({ solucion, errorTecnico, cuotaAgotada, fueraDeAlcance, mensaje, tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }) => {
         finalizar();
         cerrarModalIA();
         if (input.value.trim() !== texto) return; // el texto cambió mientras la petición estaba en vuelo
@@ -265,7 +274,12 @@
         // reintentarlo en vez de dar la sensación de un callejón sin
         // salida.
         if (errorTecnico) {
-          resultados.innerHTML = `
+          if (cuotaAgotada && window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
+          resultados.innerHTML = cuotaAgotada ? `
+            <p class="cs-hero__buscador-aviso">
+              <span aria-hidden="true">⚠️</span> El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.
+            </p>
+          ` : `
             <p class="cs-hero__buscador-aviso">
               <span aria-hidden="true">🔄</span> Ha habido un problema al consultar con nuestro asistente — no es que no exista una solución, es un fallo puntual. Vuelve a intentarlo en unos segundos, o cuéntanoslo en <a href="#cs-problema">¿Tienes un problema?</a>.
             </p>
@@ -400,6 +414,18 @@
       const contenido = $('#cs-ia-modal-contenido');
       if (!overlay || !contenido) return;
 
+      // Comprobación de cuota ANTES de abrir el modal — a petición de
+      // Eloy, prefiere no dar la opción de buscar con IA cuando no hay
+      // cuota a que falle (ver window.IADisponibilidad).
+      if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+        contenido.innerHTML = `
+          <p class="cs-ia-modal-spinner" aria-hidden="true">⚠️</p>
+          <p class="cs-ia-modal-texto">El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.</p>
+        `;
+        overlay.style.display = 'flex';
+        return;
+      }
+
       const { signal, finalizar, fueCancelado } = abrirModalEsperaIA();
 
       // forzarDinamica=true a propósito: este botón existe justo para
@@ -410,13 +436,21 @@
       // del que intentaba salir. Con el flag, se salta directamente a
       // la solución 100% generada por IA con productos reales del
       // catálogo (petición explícita de Eloy).
-      D.buscarSolucionIA(texto, signal, true).then(({ solucion, errorTecnico, fueraDeAlcance, mensaje, tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }) => {
+      D.buscarSolucionIA(texto, signal, true).then(({ solucion, errorTecnico, cuotaAgotada, fueraDeAlcance, mensaje, tipoConsulta, titulo, respuesta, pasos, dificultad, tiempo, resultado, terminos, familias, fuentes, searchEntryPointHtml }) => {
         finalizar();
 
         if (errorTecnico && fueCancelado()) {
           contenido.innerHTML = `
             <p class="cs-ia-modal-spinner" aria-hidden="true">🤔</p>
             <p class="cs-ia-modal-texto">Búsqueda cancelada. Puedes intentarlo de nuevo cuando quieras.</p>
+          `;
+          return;
+        }
+        if (errorTecnico && cuotaAgotada) {
+          if (window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
+          contenido.innerHTML = `
+            <p class="cs-ia-modal-spinner" aria-hidden="true">⚠️</p>
+            <p class="cs-ia-modal-texto">El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.</p>
           `;
           return;
         }
@@ -605,7 +639,11 @@
       // "siempre debe haber opción de IA en cada búsqueda"). El texto
       // cambia según si ya hay algo que la IA podría mejorar/sustituir, o
       // si es la única opción disponible.
-      const botonIA = (!esSugerenciaIA && mostrarOpcionIA) ? `
+      // No se ofrece el botón si sabemos que no hay cuota de IA
+      // disponible — a petición de Eloy, prefiere no dar la opción a que
+      // falle (ver window.IADisponibilidad).
+      const iaDisponible = !window.IADisponibilidad || window.IADisponibilidad.estaDisponible();
+      const botonIA = (!esSugerenciaIA && mostrarOpcionIA && iaDisponible) ? `
         <button type="button" class="cs-hero__pedir-ia" id="cs-hero-pedir-ia"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="cs-icono-ia"> ${hayLocal ? '¿No es esto lo que buscabas? Pregunta a nuestra IA' : 'Buscar la solución con nuestra IA'}</button>
       ` : '';
       resultados.innerHTML = `

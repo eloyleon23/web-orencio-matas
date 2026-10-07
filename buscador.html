@@ -4589,6 +4589,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'buscador'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
 <script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<script src="./assets/js/ia-disponibilidad.js?v=20261007a"></script>
 <script>
 // ── Configuración del buscador ──
 // Todos los flags de administración de aquí abajo derivan de la única
@@ -7956,7 +7957,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const btnIA = $('btn-preguntar-ia-producto');
             const mensajeIA = $('ia-producto-mensaje');
             if (btnIA) {
-                btnIA.style.display = textoActual ? '' : 'none';
+                // No se ofrece el botón si sabemos que no hay cuota de IA
+                // disponible — a petición de Eloy, prefiere no dar la
+                // opción a que falle (ver window.IADisponibilidad).
+                const iaDisponible = !window.IADisponibilidad || window.IADisponibilidad.estaDisponible();
+                btnIA.style.display = (textoActual && iaDisponible) ? '' : 'none';
                 btnIA.disabled = false;
                 btnIA.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA';
             }
@@ -9213,6 +9218,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const mensajeIA = $('ia-producto-mensaje');
         const seccionIA = $('ia-producto-seccion');
         const resultadosIA = $('ia-producto-resultados');
+
+        // Comprobación de cuota ANTES de lanzar la petición — a petición
+        // de Eloy, prefiere no dar la opción de buscar con IA cuando no
+        // hay cuota a que falle (ver window.IADisponibilidad).
+        if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+            if (esOtraVez) btnOtraVez.style.display = 'none'; else btn.style.display = 'none';
+            mensajeIA.textContent = '⚠️ El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.';
+            mensajeIA.style.display = '';
+            if (esOtraVez) seccionIA.style.display = '';
+            return;
+        }
         // Modal compartido — mismo patrón que el Centro de Soluciones
         // (#cs-ia-modal-overlay), a petición de Eloy: "que el mensaje de
         // animación se muestre en una ventana modal en lugar de un
@@ -9299,7 +9315,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               finalizarEspera();
 
               if (!data || !data.success) {
-                  mensajeIA.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
+                  if (data && data.cuotaAgotada) {
+                      if (window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
+                      if (esOtraVez) btnOtraVez.style.display = 'none'; else btn.style.display = 'none';
+                  }
+                  mensajeIA.textContent = (data && data.cuotaAgotada)
+                      ? '⚠️ El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.'
+                      : '⚠️ Ha habido un problema al consultar con nuestro asistente — no es que no exista el producto, es un fallo puntual. Vuelve a intentarlo en unos segundos.';
                   mensajeIA.style.display = '';
                   if (esOtraVez) { seccionIA.style.display = ''; } // se deja ver lo anterior debajo del aviso
                   registrarResultadoIA_(0);
@@ -10349,6 +10371,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const huecoDisponible = MAX_COMPLEMENTARIOS_TOTAL - refsComplementariosMostrados.length;
         if (huecoDisponible <= 0) { btn.style.display = 'none'; return; }
 
+        if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+            btn.style.display = 'none';
+            mensaje.textContent = '⚠️ El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.';
+            mensaje.style.display = '';
+            return;
+        }
+
         // A petición de Eloy: "se siguen incluyendo en sugeridos por IA
         // algunos productos con la misma referencia que alguno que ya
         // está en relacionados". Causa real: refsComplementariosMostrados
@@ -10397,8 +10426,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               btn.disabled = false;
 
               if (!data || !data.success) {
-                  btn.innerHTML = textoBotonComplementariosIA();
-                  mensaje.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente. Vuelve a intentarlo en unos segundos.';
+                  if (data && data.cuotaAgotada) {
+                      if (window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
+                      btn.style.display = 'none';
+                      mensaje.textContent = '⚠️ El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.';
+                  } else {
+                      btn.innerHTML = textoBotonComplementariosIA();
+                      mensaje.textContent = '⚠️ Ha habido un problema al consultar con nuestro asistente. Vuelve a intentarlo en unos segundos.';
+                  }
                   mensaje.style.display = '';
                   return;
               }
@@ -10561,7 +10596,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // todavía no había nada, o como opción "ver más" para comparar
         // si ya había relacionados/reglas fijas) — salvo que ya se haya
         // alcanzado el máximo de complementarios a mostrar.
-        if (refsComplementariosMostrados.length < MAX_COMPLEMENTARIOS_TOTAL) {
+        // No se ofrece el botón si sabemos que no hay cuota de IA
+        // disponible — a petición de Eloy, prefiere no dar la opción a
+        // que falle (ver window.IADisponibilidad).
+        const iaDisponible = !window.IADisponibilidad || window.IADisponibilidad.estaDisponible();
+        if (iaDisponible && refsComplementariosMostrados.length < MAX_COMPLEMENTARIOS_TOTAL) {
             btnIA.style.display = '';
             btnIA.innerHTML = textoBotonComplementariosIA();
             btnIA.onclick = () => pedirComplementariosIA(p);
