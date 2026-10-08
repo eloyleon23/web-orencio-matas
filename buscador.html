@@ -6621,8 +6621,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
+        // A petición de Eloy: el área de talleres se excluye SOLO de este
+        // carrusel de Novedades (no afecta a ningún otro módulo ni
+        // filtro — talleres se sigue viendo/filtrando igual en el resto
+        // del buscador).
         const productos = TODOS
-            .filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
+            .filter(p => p.area !== 'talleres' && !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
             .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta))
             .slice(0, MAX_TARJETAS_NOVEDADES);
         if (!productos.length) {
