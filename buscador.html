@@ -2637,6 +2637,14 @@
             color: var(--red);
             display: none;
         }
+        /* Aviso (no bloqueante) de dominio no reconocido — distinto del
+           error real (URL mal formada / no https), que sí bloquea. */
+        .modal-editar-ficha-error.es-advertencia {
+            color: #92400e;
+            background: #fef3c7;
+            padding: 8px 10px;
+            border-radius: 6px;
+        }
         .modal-editar-ficha-nota {
             margin: 10px 0 0;
             font-size: 0.78rem;
@@ -4282,8 +4290,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <p id="modal-editar-ficha-error" class="modal-editar-ficha-error"></p>
         <p class="modal-editar-ficha-nota">
             <i class="fa-solid fa-circle-info"></i>
-            Debe ser un enlace https de un dominio asociado a la marca del producto
-            (deja el campo vacío y guarda para quitar el enlace actual).
+            Debe ser un enlace https. Si el dominio no se reconoce como propio de la marca
+            del producto, se pedirá confirmar antes de guardar (deja el campo vacío y
+            guarda para quitar el enlace actual).
         </p>
         <div class="modal-editar-ficha-acciones">
             <button type="button" id="modal-editar-ficha-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
@@ -10270,36 +10279,57 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return '';
     }
 
-    // Devuelve { valido: true } o { valido: false, error: '...' }.
+    // A petición de Eloy, tras ver que el validador bloqueaba URLs reales
+    // (fichas técnicas alojadas en CDNs, webs de distribuidor, u otros
+    // dominios legítimos que no contienen el nombre de la marca): se
+    // reorienta de "bloqueo" a "aviso con confirmación". Lo único que
+    // sigue bloqueando de verdad es que la URL esté bien formada y sea
+    // https — eso sí es un requisito de seguridad razonable. Que el
+    // dominio no coincida con la marca ya NO impide guardar, solo avisa
+    // y pide confirmar explícitamente ("Guardar de todas formas"),
+    // porque no hay forma fiable de saber automáticamente si un dominio
+    // cualquiera es o no la web oficial de una marca — la detección por
+    // nombre de marca/dominios conocidos ayuda a decidir cuándo avisar,
+    // nunca a bloquear.
+    //
+    // Devuelve { ok: true } (dominio reconocido o sin nada que avisar),
+    // { ok: true, advertencia: '...' } (URL válida pero dominio no
+    // reconocido — pide confirmación) o { ok: false, error: '...' }
+    // (URL mal formada o no https — esto sí bloquea).
     function validarUrlFichaTecnica_(url, p) {
         let parsed;
         try {
             parsed = new URL(url);
         } catch (e) {
-            return { valido: false, error: 'La URL no es válida.' };
+            return { ok: false, error: 'La URL no es válida.' };
         }
         if (parsed.protocol !== 'https:') {
-            return { valido: false, error: 'La URL debe empezar por https:// (enlace seguro).' };
+            return { ok: false, error: 'La URL debe empezar por https:// (enlace seguro).' };
         }
         const host = parsed.hostname.toLowerCase();
         const marca = extraerMarcaProducto_(p.nombre, p.familia);
-        if (!marca) {
-            return { valido: false, error: 'No se ha podido determinar la marca de este producto para validar el dominio.' };
+        if (marca) {
+            const dominiosConocidos = DOMINIOS_FICHA_TECNICA_FABRICANTE_[marca] || [];
+            const coincideConocido = dominiosConocidos.some(d => host === d || host.endsWith('.' + d));
+            if (coincideConocido) return { ok: true };
+
+            const marcaNormalizada = marca.toLowerCase();
+            if (marcaNormalizada.length >= 3 && host.includes(marcaNormalizada)) return { ok: true };
         }
-        const dominiosConocidos = DOMINIOS_FICHA_TECNICA_FABRICANTE_[marca] || [];
-        const coincideConocido = dominiosConocidos.some(d => host === d || host.endsWith('.' + d));
-        if (coincideConocido) return { valido: true };
-
-        const marcaNormalizada = marca.toLowerCase();
-        if (marcaNormalizada.length >= 3 && host.includes(marcaNormalizada)) return { valido: true };
-
         return {
-            valido: false,
-            error: `El dominio "${host}" no parece asociado a la marca "${marca}" de este producto. Verifica el enlace.`,
+            ok: true,
+            advertencia: marca
+                ? `El dominio "${host}" no parece asociado a la marca "${marca}" de este producto. Verifica que el enlace sea correcto antes de guardar.`
+                : `No se ha podido verificar automáticamente el dominio "${host}" contra ninguna marca conocida. Verifica que el enlace sea correcto antes de guardar.`,
         };
     }
 
     let productoEditarFichaActual = null;
+    // URL para la que ya se mostró el aviso y el usuario confirmó
+    // "Guardar de todas formas" — se limpia en cuanto se edita el campo
+    // o se abre la modal de nuevo, para que cualquier cambio de URL
+    // vuelva a pedir confirmación.
+    let urlFichaConfirmada_ = null;
 
     function abrirModalEditarFichaTecnica(p) {
         // Red de seguridad además del botón ya eliminado del DOM en
@@ -10307,10 +10337,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // nunca debe abrirse fuera de preproducción.
         if (!window.MOSTRAR_EDITAR_FICHA_TECNICA) return;
         productoEditarFichaActual = p;
-        $('modal-editar-ficha-nombre').textContent = p.nombre;
+        urlFichaConfirmada_ = null;
         $('modal-editar-ficha-input').value = p.ficha_url || '';
+        $('modal-editar-ficha-nombre').textContent = p.nombre;
         $('modal-editar-ficha-input').classList.remove('es-invalida');
         $('modal-editar-ficha-error').style.display = 'none';
+        $('modal-editar-ficha-error').classList.remove('es-advertencia');
+        $('modal-editar-ficha-guardar').textContent = 'Guardar';
         $('modal-editar-ficha-overlay').classList.add('activo');
         setTimeout(() => $('modal-editar-ficha-input').focus(), 50);
     }
@@ -10318,6 +10351,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalEditarFichaTecnica() {
         $('modal-editar-ficha-overlay').classList.remove('activo');
         productoEditarFichaActual = null;
+        urlFichaConfirmada_ = null;
     }
 
     function ejecutarGuardarFichaTecnica() {
@@ -10326,25 +10360,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         const input = $('modal-editar-ficha-input');
         const errorEl = $('modal-editar-ficha-error');
+        const btn = $('modal-editar-ficha-guardar');
         const url = input.value.trim();
 
         // Campo vacío: se permite guardar para QUITAR un enlace ya
-        // informado, sin pasar por la validación de dominio (no hay nada
-        // que validar en una cadena vacía).
+        // informado, sin pasar por ninguna validación (no hay nada que
+        // validar en una cadena vacía).
         if (url) {
             const validacion = validarUrlFichaTecnica_(url, p);
-            if (!validacion.valido) {
+            if (!validacion.ok) {
                 input.classList.add('es-invalida');
+                errorEl.classList.remove('es-advertencia');
                 errorEl.textContent = validacion.error;
                 errorEl.style.display = 'block';
+                return;
+            }
+            if (validacion.advertencia && urlFichaConfirmada_ !== url) {
+                // Primera vez que se intenta guardar ESTA url: se muestra
+                // el aviso y se espera una segunda pulsación explícita en
+                // vez de guardar ya mismo.
+                urlFichaConfirmada_ = url;
+                input.classList.remove('es-invalida');
+                errorEl.classList.add('es-advertencia');
+                errorEl.textContent = validacion.advertencia;
+                errorEl.style.display = 'block';
+                btn.textContent = 'Guardar de todas formas';
                 return;
             }
         }
         input.classList.remove('es-invalida');
         errorEl.style.display = 'none';
+        errorEl.classList.remove('es-advertencia');
 
-        const btn = $('modal-editar-ficha-guardar');
-        const estadoOriginal = btn.textContent;
+        const estadoOriginal = 'Guardar';
         btn.disabled = true;
         btn.textContent = 'Guardando...';
 
@@ -11891,6 +11939,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('modal-editar-ficha-guardar').addEventListener('click', ejecutarGuardarFichaTecnica);
     $('modal-editar-ficha-input').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); ejecutarGuardarFichaTecnica(); }
+    });
+    // Si el usuario edita la URL después de ver el aviso de dominio no
+    // reconocido, se exige volver a confirmar — el aviso ya mostrado no
+    // debe seguir "gastado" para una URL distinta.
+    $('modal-editar-ficha-input').addEventListener('input', () => {
+        urlFichaConfirmada_ = null;
+        $('modal-editar-ficha-error').style.display = 'none';
+        $('modal-editar-ficha-error').classList.remove('es-advertencia');
+        $('modal-editar-ficha-input').classList.remove('es-invalida');
+        $('modal-editar-ficha-guardar').textContent = 'Guardar';
     });
     }
 
