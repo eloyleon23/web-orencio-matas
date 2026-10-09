@@ -1581,6 +1581,36 @@
         #novedades-lista.mas-buscados__lista > .producto-card.producto-card--transicion {
             opacity: 0;
         }
+
+        /* Tooltip con el nombre completo del producto al pasar el ratón
+           por encima de una tarjeta (ver mostrarTooltipProductoConRetraso_
+           más abajo) — a petición de Eloy, con un pequeño retraso para no
+           ser molesto, nunca inmediato. position:fixed y añadido a <body>
+           (no dentro de la tarjeta): .producto-card tiene overflow:hidden
+           para recortar la imagen con las esquinas redondeadas, así que
+           un tooltip anclado DENTRO de la tarjeta quedaría recortado. */
+        .tooltip-producto-nombre {
+            position: fixed;
+            z-index: 9000;
+            background: rgba(15,23,42,0.95);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            line-height: 1.35;
+            max-width: 260px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity .12s ease, transform .12s ease;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+        }
+        .tooltip-producto-nombre.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         .producto-img-wrap {
             aspect-ratio: 1;
             background: #f1f5f9;
@@ -8404,6 +8434,92 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             </div>
         `;
     }
+
+    // ── Tooltip con el nombre completo del producto (con retraso) ──
+    // A petición de Eloy: al pasar el ratón por encima de una tarjeta de
+    // producto, mostrar su nombre completo (en la tarjeta puede quedar
+    // cortado a 2 líneas, ver .producto-nombre) tras un pequeño retraso,
+    // para que no resulte molesto mientras se navega rápido entre
+    // tarjetas. Un único listener delegado en document (en vez de uno
+    // por tarjeta) funciona para CUALQUIER tarjeta de producto de toda
+    // la página — grid principal, Novedades, Más buscados, lista de la
+    // compra... — presente ya o añadida más tarde, sin tener que
+    // engancharlo a mano en cada sitio donde se crea una. El texto se
+    // lee directamente de .producto-nombre ya renderizado (el nombre
+    // completo siempre está en el DOM; el recorte a 2 líneas es solo
+    // visual, vía -webkit-line-clamp), así que funciona igual para
+    // cualquier tarjeta sin depender de tener a mano el objeto producto.
+    const TOOLTIP_PRODUCTO_RETRASO_MS = 600;
+    let tooltipProductoEl_ = null;
+    let tooltipProductoTimer_ = null;
+    let tarjetaTooltipActual_ = null;
+
+    function obtenerTooltipProductoEl_() {
+        if (!tooltipProductoEl_) {
+            tooltipProductoEl_ = document.createElement('div');
+            tooltipProductoEl_.className = 'tooltip-producto-nombre';
+            document.body.appendChild(tooltipProductoEl_);
+        }
+        return tooltipProductoEl_;
+    }
+
+    // Mantiene el tooltip dentro de la ventana visible, con un pequeño
+    // margen respecto al cursor para no quedar tapado por el propio
+    // puntero.
+    function posicionarTooltipProducto_(x, y) {
+        const el = obtenerTooltipProductoEl_();
+        const margen = 14;
+        el.style.left = '0px';
+        el.style.top = '0px';
+        const ancho = el.offsetWidth;
+        const alto = el.offsetHeight;
+        let left = x + margen;
+        let top = y + margen;
+        if (left + ancho > window.innerWidth - 8) left = x - ancho - margen;
+        if (top + alto > window.innerHeight - 8) top = y - alto - margen;
+        el.style.left = Math.max(8, left) + 'px';
+        el.style.top = Math.max(8, top) + 'px';
+    }
+
+    function ocultarTooltipProducto_() {
+        clearTimeout(tooltipProductoTimer_);
+        if (tooltipProductoEl_) tooltipProductoEl_.classList.remove('visible');
+    }
+
+    function mostrarTooltipProductoConRetraso_(nombre, x, y) {
+        clearTimeout(tooltipProductoTimer_);
+        tooltipProductoTimer_ = setTimeout(() => {
+            const el = obtenerTooltipProductoEl_();
+            el.textContent = nombre;
+            posicionarTooltipProducto_(x, y);
+            el.classList.add('visible');
+        }, TOOLTIP_PRODUCTO_RETRASO_MS);
+    }
+
+    document.addEventListener('mouseover', (e) => {
+        const card = e.target.closest('.producto-card');
+        if (card === tarjetaTooltipActual_) return; // seguimos sobre la misma tarjeta, nada que hacer
+        tarjetaTooltipActual_ = card;
+        ocultarTooltipProducto_();
+        if (!card) return;
+        const nombreEl = card.querySelector('.producto-nombre');
+        if (!nombreEl) return;
+        mostrarTooltipProductoConRetraso_(nombreEl.textContent, e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        // Sigue al cursor mientras el tooltip esté (o vaya a estar)
+        // visible sobre la tarjeta actual — comprobar tarjetaTooltipActual_
+        // evita trabajo de más cuando el ratón no está sobre ninguna.
+        if (tarjetaTooltipActual_) posicionarTooltipProducto_(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (tarjetaTooltipActual_ && !tarjetaTooltipActual_.contains(e.relatedTarget)) {
+            tarjetaTooltipActual_ = null;
+            ocultarTooltipProducto_();
+        }
+    });
 
     function crearTarjeta(p) {
         const card = document.createElement('div');
