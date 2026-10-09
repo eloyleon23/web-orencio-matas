@@ -4125,70 +4125,21 @@ function procesarActualizarRelacionados(data) {
 }
 
 // ── Validación de URL de ficha técnica ──────────────────────────────────────
-// Usada tanto aquí (defensa del lado del servidor, por si alguien llama a
-// esta acción directamente sin pasar por el botón ya eliminado del DOM en
-// producción) como, de forma duplicada a propósito, en buscador.html (para
-// dar feedback inmediato en la propia modal antes de llegar a enviar nada) —
-// misma lógica en ambos sitios, porque son dos runtimes completamente
-// separados sin forma de compartir un módulo.
+// Defensa del lado del servidor, por si alguien llama a esta acción
+// directamente sin pasar por el botón ya eliminado del DOM en producción.
 //
-// A petición de Eloy: "validar contra el producto para prevenir que se
-// añada una url fraudulenta o que no esté asociada al producto o marca".
-// No existe una base de datos de "dominio oficial por marca" para las
-// miles de referencias del catálogo, así que la validación real que se
-// puede hacer aquí es una comprobación razonable, no una garantía
-// absoluta: (1) la URL debe ser https y bien formada, (2) su dominio debe
-// relacionarse de alguna forma reconocible con la marca/nombre del
-// producto — bien porque está en la lista de dominios ya conocidos y
-// verificados a mano de los fabricantes que ya aparecen en este proyecto
-// (Titán/AkzoNobel, Werku, Glasurit...), bien porque el propio dominio
-// contiene el nombre de la marca derivada del producto. Esto bloquea el
-// caso más dañino (pegar aquí una URL de un sitio cualquiera sin relación
-// con el producto) sin necesitar mantener una base de datos de dominios
-// por cada una de las marcas del catálogo.
-var DOMINIOS_FICHA_TECNICA_FABRICANTE_ = {
-  'TITAN': ['titanpro.es', 'titanlux.es', 'titancolor.es', 'industriastitan.es', 'akzonobel.com'],
-  'TITANTECH': ['industriastitan.es', 'titanpro.es', 'akzonobel.com'],
-  'TITANLUX': ['titanlux.es', 'akzonobel.com'],
-  'TITANLAK': ['titanlux.es', 'industriastitan.es', 'akzonobel.com'],
-  'AKZONOBEL': ['akzonobel.com', 'industriastitan.es'],
-  'WERKU': ['werku.com'],
-  'GLASURIT': ['glasurit.com'],
-  'ASTRALPOOL': ['astralpool.com', 'fluidra.com'],
-  'ASTRAPOOL': ['astralpool.com', 'fluidra.com'],
-  'ASTRAL': ['astralpool.com', 'fluidra.com'],
-};
-
-// Palabras demasiado genéricas para servir de "marca" al validar un
-// dominio — aparecen en muchísimos nombres de producto sin identificar
-// ningún fabricante concreto, así que se descartan como primera palabra
-// candidata y se prueba con la siguiente.
-var PALABRAS_GENERICAS_MARCA_ = ['EL', 'LA', 'LOS', 'LAS', 'UN', 'UNA', 'DE', 'PARA', 'CON', 'SIN', 'PACK', 'SET', 'KIT'];
-
-function quitarAcentosMay_(s) {
-  return (s || '').toString().toUpperCase()
-    .replace(/[ÁÀÄÂ]/g, 'A').replace(/[ÉÈËÊ]/g, 'E').replace(/[ÍÌÏÎ]/g, 'I')
-    .replace(/[ÓÒÖÔ]/g, 'O').replace(/[ÚÙÜÛ]/g, 'U').replace(/Ñ/g, 'N');
-}
-
-// Mejor estimación de la "marca" del producto a partir de los datos que
-// ya tenemos en el Sheet: la familia/tipología si menciona una marca
-// conocida (mismo criterio que ya usa buscador.html para Titán/
-// AkzoNobel), o si no, la primera palabra con sentido del nombre.
-function extraerMarcaProducto_(nombre, familia) {
-  const familiaMay = quitarAcentosMay_(familia);
-  for (const marca of Object.keys(DOMINIOS_FICHA_TECNICA_FABRICANTE_)) {
-    if (familiaMay.indexOf(marca) !== -1) return marca;
-  }
-  const palabras = quitarAcentosMay_(nombre).split(/[^A-Z0-9]+/).filter(Boolean);
-  for (const palabra of palabras) {
-    if (palabra.length >= 3 && PALABRAS_GENERICAS_MARCA_.indexOf(palabra) === -1) return palabra;
-  }
-  return '';
-}
-
-// Devuelve { valido: true } o { valido: false, error: '...' }.
-function validarUrlFichaTecnica_(url, nombre, familia) {
+// A petición de Eloy, tras comprobar que la validación de dominio/marca
+// (versión anterior) bloqueaba URLs reales (fichas técnicas alojadas en
+// CDNs, webs de distribuidor u otros dominios legítimos que no contienen
+// el nombre de la marca): se reorienta de "bloqueo" a "aviso con
+// confirmación", y ese aviso solo tiene sentido en una interfaz
+// interactiva — ver validarUrlFichaTecnica_ en buscador.html, que es
+// donde se avisa y se pide confirmar "Guardar de todas formas". Aquí, en
+// el servidor, solo se bloquea lo que de verdad es un requisito de
+// seguridad objetivo: que la URL esté bien formada y sea https. El
+// servidor confía en que el aviso de marca/dominio ya se mostró (o no
+// aplicaba) en el cliente antes de llegar hasta aquí.
+function validarUrlFichaTecnica_(url) {
   var parsed;
   try {
     parsed = new URL(url);
@@ -4198,26 +4149,7 @@ function validarUrlFichaTecnica_(url, nombre, familia) {
   if (parsed.protocol !== 'https:') {
     return { valido: false, error: 'La URL debe empezar por https:// (enlace seguro).' };
   }
-  const host = parsed.hostname.toLowerCase();
-  const marca = extraerMarcaProducto_(nombre, familia);
-  if (!marca) {
-    return { valido: false, error: 'No se ha podido determinar la marca de este producto para validar el dominio.' };
-  }
-  const dominiosConocidos = DOMINIOS_FICHA_TECNICA_FABRICANTE_[marca] || [];
-  const coincideConocido = dominiosConocidos.some(d => host === d || host.endsWith('.' + d));
-  if (coincideConocido) return { valido: true };
-
-  // Marca sin lista de dominios verificados a mano: heurística genérica,
-  // el dominio debe contener el nombre de la marca (p.ej. "WERKU" dentro
-  // de "werku.com" o "tienda.werku.es").
-  const marcaNormalizada = marca.toLowerCase();
-  if (marcaNormalizada.length >= 3 && host.indexOf(marcaNormalizada) !== -1) return { valido: true };
-
-  return {
-    valido: false,
-    error: `El dominio "${host}" no parece asociado a la marca "${marca}" de este producto. ` +
-      'Verifica el enlace o copia la URL directamente desde la página oficial del fabricante.',
-  };
+  return { valido: true };
 }
 
 // ── Procesar actualización de la ficha técnica de un producto ──────────────
@@ -4267,15 +4199,10 @@ function procesarActualizarFichaUrl(data) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    const nombre = prodData[prodRowIdx][PROD['nombre']] ? prodData[prodRowIdx][PROD['nombre']].toString() : '';
-    const familia = PROD['tipologia'] !== undefined && prodData[prodRowIdx][PROD['tipologia']]
-      ? prodData[prodRowIdx][PROD['tipologia']].toString() : '';
-
     // Permite BORRAR la URL guardada (dejar el campo vacío) sin pasar por
-    // la validación de dominio — solo se valida cuando se informa una URL
-    // nueva.
+    // la validación — solo se valida cuando se informa una URL nueva.
     if (url) {
-      const validacion = validarUrlFichaTecnica_(url, nombre, familia);
+      const validacion = validarUrlFichaTecnica_(url);
       if (!validacion.valido) {
         return ContentService.createTextOutput(JSON.stringify({ success: false, error: validacion.error }))
           .setMimeType(ContentService.MimeType.JSON);
