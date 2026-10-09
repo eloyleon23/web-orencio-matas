@@ -1114,8 +1114,17 @@ function buscarImagenEnDrive(referencia) {
 // ── Guardar producto (nuevo o actualización) ───────────────────────────────
 function guardarProducto(datos, filaExistente) {
   const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Productos');
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+  let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
     .map(h => h.toString().trim().toLowerCase().replace(/ /g,'_'));
+
+  // La columna "ficha_url" (enlace a la ficha técnica del fabricante, ver
+  // procesarActualizarFichaUrl) puede no existir todavía si nunca se ha
+  // guardado una desde ningún formulario — se crea sobre la marcha, igual
+  // que el resto de columnas que se añaden bajo demanda en este proyecto.
+  if (datos['ficha_url'] !== undefined && headers.indexOf('ficha_url') === -1) {
+    sheet.getRange(1, headers.length + 1).setValue('ficha_url');
+    headers = headers.concat(['ficha_url']);
+  }
 
   const ahora = Utilities.formatDate(new Date(), 'Europe/Madrid', 'dd/MM/yyyy HH:mm');
 
@@ -1293,6 +1302,14 @@ function mostrarFormularioProducto() {
     </div>
   </div>
 
+  <div class="seccion">Ficha técnica</div>
+
+  <div class="field">
+    <label>URL de la ficha técnica del fabricante</label>
+    <input id="ficha_url" type="url" placeholder="https://www.ejemplo.com/ficha-tecnica.pdf">
+    <p class="hint">Si se informa, tiene prioridad sobre la ficha técnica calculada automáticamente (deja vacío para quitar el enlace).</p>
+  </div>
+
   <div class="seccion" id="seccion-imagen">Imagen <span id="badge-img" style="display:none" class="badge badge-img"></span></div>
 
   <div class="field" id="campo-imagen">
@@ -1409,6 +1426,7 @@ function mostrarFormularioProducto() {
       set('incluir_en_catalogo', p.incluir_en_catalogo || 'si');
       set('oferta',              p.oferta || 'no');
       set('espacios_a_ocupar',   p.espacios_a_ocupar || '1');
+      set('ficha_url',           p.ficha_url);
       // Área (select)
       const sel = document.getElementById('area');
       if (p.area) sel.value = p.area;
@@ -1420,7 +1438,7 @@ function mostrarFormularioProducto() {
     function resetFormulario() {
       _filaExistente = null;
       _imagenBloqueada = false;
-      ['nombre','marca','tipologia','precio_sin_iva','precio_con_iva','imagen_drive_id'].forEach(id => {
+      ['nombre','marca','tipologia','precio_sin_iva','precio_con_iva','ficha_url','imagen_drive_id'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.value = ''; el.disabled = false; }
       });
@@ -1461,6 +1479,7 @@ function mostrarFormularioProducto() {
         incluir_en_catalogo: document.getElementById('incluir_en_catalogo').value,
         oferta:              document.getElementById('oferta').value,
         espacios_a_ocupar:   document.getElementById('espacios_a_ocupar').value,
+        ficha_url:           document.getElementById('ficha_url').value.trim(),
         imagen_drive_id:     imgVal,
       };
 
