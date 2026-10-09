@@ -1531,7 +1531,24 @@ textarea.form-input {
   .topbar {
     display: none;
   }
+}
 
+/* A petición de Eloy: en un portátil de 15" (viewports típicos
+   1280-1440px), la cabecera de escritorio (logo + 10 enlaces + botón
+   CONTACTAR, todo en una sola fila dentro del contenedor de 1200px)
+   sencillamente no cabe — el menú desborda el contenido de la página
+   (bug real medido: el menú necesita ~1177px solo para los enlaces,
+   más logo y botón, muy por encima de los ~1160px disponibles dentro
+   del contenedor). El breakpoint para pasar al menú de hamburguesa
+   estaba en 900px, pensado para tablet/móvil, dejando justo ese rango
+   de portátiles (900-1500px) con el menú de escritorio desbordado. Se
+   sube a 1540px (con margen sobre el umbral real medido, ~1500px) para
+   cubrir con holgura los anchos de portátil habituales; monitores de
+   escritorio más anchos siguen viendo el menú horizontal de siempre.
+   Bloque separado del resto de reglas de @media (max-width: 900px) de
+   arriba (que sí deben seguir cambiando en tablet/móvil, no en
+   portátil) — solo el navbar necesita este breakpoint más alto. */
+@media (max-width: 1540px) {
   .navbar__inner {
     min-height: 72px;
   }

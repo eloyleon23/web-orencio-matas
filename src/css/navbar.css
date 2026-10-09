@@ -233,7 +233,19 @@
 .navbar__toggle.is-active span:nth-child(2) { opacity: 0; }
 .navbar__toggle.is-active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-@media (max-width: 900px) {
+/* A petición de Eloy: en un portátil de 15" (viewports típicos
+   1280-1440px), la cabecera de escritorio (logo + 10 enlaces + botón
+   CONTACTAR, todo en una sola fila dentro del contenedor de 1200px)
+   sencillamente no cabe — el menú desborda el contenido de la página
+   (bug real medido: el menú necesita ~1177px solo para los enlaces,
+   más logo y botón, muy por encima de los ~1160px disponibles dentro
+   del contenedor). El breakpoint para pasar al menú de hamburguesa
+   estaba en 900px, pensado para tablet/móvil, dejando justo ese rango
+   de portátiles (900-1500px) con el menú de escritorio desbordado. Se
+   sube a 1540px (con margen sobre el umbral real medido, ~1500px) para
+   cubrir con holgura los anchos de portátil habituales; monitores de
+   escritorio más anchos siguen viendo el menú horizontal de siempre. */
+@media (max-width: 1540px) {
   .navbar__inner { min-height: 72px; }
   .navbar__toggle { display: inline-flex; }
 
@@ -334,7 +346,7 @@
   transform: translateY(0);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1540px) {
   .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
     position: static;
     transform: none;
