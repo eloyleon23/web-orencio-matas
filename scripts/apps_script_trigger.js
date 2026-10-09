@@ -4155,9 +4155,14 @@ function procesarActualizarRelacionados(data) {
 // interactiva — ver validarUrlFichaTecnica_ en buscador.html, que es
 // donde se avisa y se pide confirmar "Guardar de todas formas". Aquí, en
 // el servidor, solo se bloquea lo que de verdad es un requisito de
-// seguridad objetivo: que la URL esté bien formada y sea https. El
-// servidor confía en que el aviso de marca/dominio ya se mostró (o no
-// aplicaba) en el cliente antes de llegar hasta aquí.
+// seguridad objetivo: que la URL esté bien formada. El servidor confía
+// en que el aviso de marca/dominio ya se mostró (o no aplicaba) en el
+// cliente antes de llegar hasta aquí.
+//
+// A petición de Eloy, tras comprobar que exigir https:// también
+// bloqueaba URLs reales (muchas fichas técnicas en PDF siguen
+// sirviéndose por http:// sin más): se quita esa exigencia — se admite
+// también http://, igual que ya hace buscador.html.
 //
 // Bug real detectado tras desplegar: Apps Script (runtime V8) NO
 // implementa el objeto global `URL` que sí existe en cualquier
@@ -4165,14 +4170,14 @@ function procesarActualizarRelacionados(data) {
 // valor, así que esta función rechazaba con "La URL no es válida"
 // absolutamente siempre, incluso tras confirmar el aviso en el cliente
 // con una URL perfectamente correcta. Se valida por patrón en su lugar
-// (https:// + un host con al menos un punto, formado por etiquetas DNS
-// válidas, y opcionalmente puerto/ruta/query), sin depender de ninguna
-// clase que Apps Script no soporte.
-var PATRON_URL_HTTPS_ = /^https:\/\/[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?::\d{1,5})?(?:\/\S*)?$/i;
+// (http:// o https:// + un host con al menos un punto, formado por
+// etiquetas DNS válidas, y opcionalmente puerto/ruta/query), sin
+// depender de ninguna clase que Apps Script no soporte.
+var PATRON_URL_FICHA_TECNICA_ = /^https?:\/\/[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?::\d{1,5})?(?:\/\S*)?$/i;
 
 function validarUrlFichaTecnica_(url) {
-  if (typeof url !== 'string' || !PATRON_URL_HTTPS_.test(url)) {
-    return { valido: false, error: 'La URL debe ser un enlace https:// bien formado (ej. https://www.ejemplo.com/ficha.pdf).' };
+  if (typeof url !== 'string' || !PATRON_URL_FICHA_TECNICA_.test(url)) {
+    return { valido: false, error: 'La URL debe ser un enlace http:// o https:// bien formado (ej. https://www.ejemplo.com/ficha.pdf).' };
   }
   return { valido: true };
 }
