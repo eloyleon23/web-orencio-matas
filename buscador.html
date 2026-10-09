@@ -1571,6 +1571,16 @@
             box-shadow: 0 8px 20px -4px rgba(15,23,42,0.12);
             transform: translateY(-2px);
         }
+        /* Rotación automática de Novedades (ver rotarTarjetaNovedad_):
+           fundido sutil sobre la MISMA tarjeta al cambiar de producto, en
+           vez de quitarla del DOM y recrearla — igual que ya se hace para
+           los bloques "Seguir comprando" (categoria-bloque__item). */
+        #novedades-lista.mas-buscados__lista > .producto-card {
+            transition: opacity 0.25s ease, box-shadow .15s, transform .15s;
+        }
+        #novedades-lista.mas-buscados__lista > .producto-card.producto-card--transicion {
+            opacity: 0;
+        }
         .producto-img-wrap {
             aspect-ratio: 1;
             background: #f1f5f9;
@@ -6765,7 +6775,84 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // usada para el orden de los bloques "Seguir comprando", solo que
     // aquí decide además QUÉ productos entran, no solo su orden.
     const POOL_NOVEDADES_ROTACION = 80;
+
+    // A petición de Eloy, tras ver que el cambio solo se notaba entre una
+    // visita y otra: además de variar QUÉ 10 productos entran en cada
+    // visita (arriba), cada tarjeta ya visible rota de forma aleatoria E
+    // INDEPENDIENTE mientras se sigue mirando la página — mismo mecanismo
+    // ya usado y aprobado para los bloques "Seguir comprando"
+    // (rotarUnItemDeBloque_ más abajo): cada tarjeta tiene su PROPIO
+    // temporizador con fase inicial aleatoria, así nunca cambian todas a
+    // la vez ("barrido", no parpadeo simultáneo), y el cambio es un
+    // fundido sutil sobre la MISMA tarjeta (nunca se quita del DOM ni dejar
+    // un hueco en blanco). El pool de candidatos (últimos
+    // POOL_NOVEDADES_ROTACION productos) es el mismo que decide la
+    // selección inicial.
+    const INTERVALO_ROTACION_NOVEDADES_MS = 6000;
+    const DURACION_FUNDIDO_NOVEDADES_MS = 250;
+    let poolNovedadesActivo_ = [];
+    let timersRotacionNovedades_ = [];
+    // Refs ya "reservadas" por una rotación en curso (elegidas pero
+    // todavía no pintadas en el DOM, a la espera del fundido) — sin
+    // esto, dos tarjetas que rotan casi a la vez podían LEER el mismo
+    // conjunto de refs todavía-no-actualizado y, por pura coincidencia,
+    // elegir el mismo producto nuevo para las dos, mostrando un
+    // duplicado unas fracciones de segundo (bug real detectado).
+    let refsNovedadesReservadas_ = new Set();
+
+    // Igual que crearTarjeta(), pero el click lee el producto desde
+    // card._producto (no de un "p" cerrado por closure) — la rotación
+    // automática puede haber cambiado qué producto muestra esta misma
+    // tarjeta desde que se creó, y el closure original quedaría obsoleto.
+    function crearTarjetaNovedad_(p) {
+        const card = document.createElement('div');
+        card.className = 'producto-card';
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => abrirModalProducto(card._producto, { pushHistorial: true }));
+        rellenarTarjetaNovedad_(card, p);
+        return card;
+    }
+
+    function rellenarTarjetaNovedad_(card, p) {
+        card.dataset.ref = p.ref;
+        card._producto = p;
+        const ordenActual = $('f-orden').value;
+        const enModoPlano = ordenActual && ordenActual !== 'area';
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano });
+    }
+
+    function rotarTarjetaNovedad_(card) {
+        if (modulosDescubrimientoConContenido_.novedades && !hayFiltroActivo_() && poolNovedadesActivo_.length > MAX_TARJETAS_NOVEDADES) {
+            const refsActuales = new Set([...$('novedades-lista').children].map(el => el.dataset.ref));
+            refsNovedadesReservadas_.forEach(ref => refsActuales.add(ref));
+            const disponibles = poolNovedadesActivo_.filter(p => !refsActuales.has(String(p.ref)));
+            if (disponibles.length) {
+                const nuevo = disponibles[Math.floor(Math.random() * disponibles.length)];
+                const nuevaRef = String(nuevo.ref);
+                refsNovedadesReservadas_.add(nuevaRef); // reservado YA, antes del fundido — evita duplicados entre rotaciones casi simultáneas
+                card.classList.add('producto-card--transicion');
+                setTimeout(() => {
+                    rellenarTarjetaNovedad_(card, nuevo);
+                    refsNovedadesReservadas_.delete(nuevaRef);
+                    requestAnimationFrame(() => card.classList.remove('producto-card--transicion'));
+                }, DURACION_FUNDIDO_NOVEDADES_MS);
+            }
+        }
+        programarSiguienteRotacionNovedad_(card);
+    }
+
+    function programarSiguienteRotacionNovedad_(card, esperaInicial) {
+        // 6-8s: variación a propósito para que la fase de cada tarjeta
+        // "flote" en vez de volver a alinearse con las demás.
+        const espera = esperaInicial ?? (INTERVALO_ROTACION_NOVEDADES_MS + Math.random() * 2000);
+        const id = setTimeout(() => rotarTarjetaNovedad_(card), espera);
+        timersRotacionNovedades_.push(id);
+    }
+
     function cargarNovedades_() {
+        timersRotacionNovedades_.forEach(clearTimeout);
+        timersRotacionNovedades_ = [];
+        refsNovedadesReservadas_.clear();
         if (!TODOS.length) {
             modulosDescubrimientoConContenido_.novedades = false;
             actualizarVisibilidadModulosDescubrimiento_();
@@ -6779,6 +6866,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .filter(p => p.area !== 'talleres' && !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
             .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta))
             .slice(0, POOL_NOVEDADES_ROTACION);
+        poolNovedadesActivo_ = pool;
         const productos = barajar_(pool).slice(0, MAX_TARJETAS_NOVEDADES);
         if (!productos.length) {
             modulosDescubrimientoConContenido_.novedades = false;
@@ -6787,7 +6875,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         const cont = $('novedades-lista');
         cont.innerHTML = '';
-        productos.forEach(p => cont.appendChild(crearTarjeta(p)));
+        productos.forEach(p => {
+            const card = crearTarjetaNovedad_(p);
+            cont.appendChild(card);
+            // Fase inicial aleatoria (0-6s): evita que todas las tarjetas
+            // recién cargadas hagan su primer cambio a la vez.
+            programarSiguienteRotacionNovedad_(card, Math.random() * INTERVALO_ROTACION_NOVEDADES_MS);
+        });
         modulosDescubrimientoConContenido_.novedades = true;
         actualizarVisibilidadModulosDescubrimiento_();
     }
