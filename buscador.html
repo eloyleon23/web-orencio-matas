@@ -8449,6 +8449,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // completo siempre está en el DOM; el recorte a 2 líneas es solo
     // visual, vía -webkit-line-clamp), así que funciona igual para
     // cualquier tarjeta sin depender de tener a mano el objeto producto.
+    //
+    // Los bloques "Seguir comprando X" usan tiles distintos
+    // (.categoria-bloque__item, ver crearItemBloqueCategoria_/
+    // rellenarItemBloqueCategoria_ más abajo): solo imagen, sin ningún
+    // texto de nombre en el DOM — ahí el nombre se lee del producto que
+    // cada tile guarda en item._producto (se actualiza en cada rotación
+    // automática, así que esto nunca muestra un nombre obsoleto).
+    const SELECTOR_TARJETAS_CON_TOOLTIP_ = '.producto-card, .categoria-bloque__item';
     const TOOLTIP_PRODUCTO_RETRASO_MS = 600;
     let tooltipProductoEl_ = null;
     let tooltipProductoTimer_ = null;
@@ -8486,6 +8494,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (tooltipProductoEl_) tooltipProductoEl_.classList.remove('visible');
     }
 
+    // Nombre a mostrar en el tooltip para un elemento dado, sea una
+    // .producto-card (lee el texto ya renderizado) o un tile de
+    // "Seguir comprando" (.categoria-bloque__item, lee item._producto —
+    // no tiene ningún nombre en el DOM, solo la imagen).
+    function obtenerNombreParaTooltip_(el) {
+        if (el.classList.contains('categoria-bloque__item')) {
+            return el._producto ? el._producto.nombre : null;
+        }
+        const nombreEl = el.querySelector('.producto-nombre');
+        return nombreEl ? nombreEl.textContent : null;
+    }
+
     function mostrarTooltipProductoConRetraso_(nombre, x, y) {
         clearTimeout(tooltipProductoTimer_);
         tooltipProductoTimer_ = setTimeout(() => {
@@ -8497,14 +8517,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     document.addEventListener('mouseover', (e) => {
-        const card = e.target.closest('.producto-card');
+        const card = e.target.closest(SELECTOR_TARJETAS_CON_TOOLTIP_);
         if (card === tarjetaTooltipActual_) return; // seguimos sobre la misma tarjeta, nada que hacer
         tarjetaTooltipActual_ = card;
         ocultarTooltipProducto_();
         if (!card) return;
-        const nombreEl = card.querySelector('.producto-nombre');
-        if (!nombreEl) return;
-        mostrarTooltipProductoConRetraso_(nombreEl.textContent, e.clientX, e.clientY);
+        const nombre = obtenerNombreParaTooltip_(card);
+        if (!nombre) return;
+        mostrarTooltipProductoConRetraso_(nombre, e.clientX, e.clientY);
     });
 
     document.addEventListener('mousemove', (e) => {
