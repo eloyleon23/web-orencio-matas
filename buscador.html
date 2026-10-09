@@ -4320,9 +4320,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <p id="modal-editar-ficha-error" class="modal-editar-ficha-error"></p>
         <p class="modal-editar-ficha-nota">
             <i class="fa-solid fa-circle-info"></i>
-            Debe ser un enlace https. Si el dominio no se reconoce como propio de la marca
-            del producto, se pedirá confirmar antes de guardar (deja el campo vacío y
-            guarda para quitar el enlace actual).
+            Debe ser un enlace http:// o https:// válido. Si el dominio no se reconoce como
+            propio de la marca del producto, se pedirá confirmar antes de guardar (deja el
+            campo vacío y guarda para quitar el enlace actual).
         </p>
         <div class="modal-editar-ficha-acciones">
             <button type="button" id="modal-editar-ficha-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
@@ -10429,20 +10429,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // A petición de Eloy, tras ver que el validador bloqueaba URLs reales
     // (fichas técnicas alojadas en CDNs, webs de distribuidor, u otros
     // dominios legítimos que no contienen el nombre de la marca): se
-    // reorienta de "bloqueo" a "aviso con confirmación". Lo único que
-    // sigue bloqueando de verdad es que la URL esté bien formada y sea
-    // https — eso sí es un requisito de seguridad razonable. Que el
-    // dominio no coincida con la marca ya NO impide guardar, solo avisa
-    // y pide confirmar explícitamente ("Guardar de todas formas"),
-    // porque no hay forma fiable de saber automáticamente si un dominio
-    // cualquiera es o no la web oficial de una marca — la detección por
-    // nombre de marca/dominios conocidos ayuda a decidir cuándo avisar,
-    // nunca a bloquear.
+    // reorienta de "bloqueo" a "aviso con confirmación". Que el dominio
+    // no coincida con la marca ya NO impide guardar, solo avisa y pide
+    // confirmar explícitamente ("Guardar de todas formas"), porque no
+    // hay forma fiable de saber automáticamente si un dominio cualquiera
+    // es o no la web oficial de una marca — la detección por nombre de
+    // marca/dominios conocidos ayuda a decidir cuándo avisar, nunca a
+    // bloquear.
+    //
+    // A petición de Eloy, tras ver que exigir https:// también bloqueaba
+    // URLs reales (muchas fichas técnicas en PDF siguen sirviéndose por
+    // http:// sin más): se quita esa exigencia. Lo único que sigue
+    // bloqueando de verdad es que la URL esté bien formada y use un
+    // esquema http/https — eso descarta errores de tecleo y esquemas
+    // sin sentido aquí (javascript:, ftp://...), sin descartar fichas
+    // reales solo por no ser https.
     //
     // Devuelve { ok: true } (dominio reconocido o sin nada que avisar),
     // { ok: true, advertencia: '...' } (URL válida pero dominio no
     // reconocido — pide confirmación) o { ok: false, error: '...' }
-    // (URL mal formada o no https — esto sí bloquea).
+    // (URL mal formada o con un esquema que no es http/https — esto sí
+    // bloquea).
     function validarUrlFichaTecnica_(url, p) {
         let parsed;
         try {
@@ -10450,8 +10457,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         } catch (e) {
             return { ok: false, error: 'La URL no es válida.' };
         }
-        if (parsed.protocol !== 'https:') {
-            return { ok: false, error: 'La URL debe empezar por https:// (enlace seguro).' };
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+            return { ok: false, error: 'La URL debe empezar por http:// o https://.' };
         }
         const host = parsed.hostname.toLowerCase();
         const marca = extraerMarcaProducto_(p.nombre, p.familia);
