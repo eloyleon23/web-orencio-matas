@@ -6788,7 +6788,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // un hueco en blanco). El pool de candidatos (últimos
     // POOL_NOVEDADES_ROTACION productos) es el mismo que decide la
     // selección inicial.
-    const INTERVALO_ROTACION_NOVEDADES_MS = 6000;
+    // A petición de Eloy, tras ver la primera versión en vivo: 6s por
+    // tarjeta iba "muy rápido, no da tiempo ni a ver el producto" — se
+    // sube considerablemente a 25s (25-30s con el margen aleatorio de
+    // más abajo), un ritmo mucho más pausado.
+    const INTERVALO_ROTACION_NOVEDADES_MS = 25000;
+    const ESPERA_MINIMA_NOVEDADES_MS = 8000;
     const DURACION_FUNDIDO_NOVEDADES_MS = 250;
     let poolNovedadesActivo_ = [];
     let timersRotacionNovedades_ = [];
@@ -6842,9 +6847,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function programarSiguienteRotacionNovedad_(card, esperaInicial) {
-        // 6-8s: variación a propósito para que la fase de cada tarjeta
+        // 25-30s: variación a propósito para que la fase de cada tarjeta
         // "flote" en vez de volver a alinearse con las demás.
-        const espera = esperaInicial ?? (INTERVALO_ROTACION_NOVEDADES_MS + Math.random() * 2000);
+        const espera = esperaInicial ?? (INTERVALO_ROTACION_NOVEDADES_MS + Math.random() * 5000);
         const id = setTimeout(() => rotarTarjetaNovedad_(card), espera);
         timersRotacionNovedades_.push(id);
     }
@@ -6878,9 +6883,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         productos.forEach(p => {
             const card = crearTarjetaNovedad_(p);
             cont.appendChild(card);
-            // Fase inicial aleatoria (0-6s): evita que todas las tarjetas
-            // recién cargadas hagan su primer cambio a la vez.
-            programarSiguienteRotacionNovedad_(card, Math.random() * INTERVALO_ROTACION_NOVEDADES_MS);
+            // Fase inicial aleatoria entre ESPERA_MINIMA_NOVEDADES_MS y
+            // INTERVALO_ROTACION_NOVEDADES_MS: evita tanto que todas las
+            // tarjetas cambien a la vez como que una tarjeta con mala
+            // suerte cambie casi recién cargada la página (a petición de
+            // Eloy: "no da tiempo ni a ver el producto").
+            programarSiguienteRotacionNovedad_(card, ESPERA_MINIMA_NOVEDADES_MS + Math.random() * (INTERVALO_ROTACION_NOVEDADES_MS - ESPERA_MINIMA_NOVEDADES_MS));
         });
         modulosDescubrimientoConContenido_.novedades = true;
         actualizarVisibilidadModulosDescubrimiento_();
