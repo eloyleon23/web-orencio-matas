@@ -4139,15 +4139,21 @@ function procesarActualizarRelacionados(data) {
 // seguridad objetivo: que la URL esté bien formada y sea https. El
 // servidor confía en que el aviso de marca/dominio ya se mostró (o no
 // aplicaba) en el cliente antes de llegar hasta aquí.
+//
+// Bug real detectado tras desplegar: Apps Script (runtime V8) NO
+// implementa el objeto global `URL` que sí existe en cualquier
+// navegador — `new URL(url)` lanzaba aquí una excepción para CUALQUIER
+// valor, así que esta función rechazaba con "La URL no es válida"
+// absolutamente siempre, incluso tras confirmar el aviso en el cliente
+// con una URL perfectamente correcta. Se valida por patrón en su lugar
+// (https:// + un host con al menos un punto, formado por etiquetas DNS
+// válidas, y opcionalmente puerto/ruta/query), sin depender de ninguna
+// clase que Apps Script no soporte.
+var PATRON_URL_HTTPS_ = /^https:\/\/[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?::\d{1,5})?(?:\/\S*)?$/i;
+
 function validarUrlFichaTecnica_(url) {
-  var parsed;
-  try {
-    parsed = new URL(url);
-  } catch (e) {
-    return { valido: false, error: 'La URL no es válida.' };
-  }
-  if (parsed.protocol !== 'https:') {
-    return { valido: false, error: 'La URL debe empezar por https:// (enlace seguro).' };
+  if (typeof url !== 'string' || !PATRON_URL_HTTPS_.test(url)) {
+    return { valido: false, error: 'La URL debe ser un enlace https:// bien formado (ej. https://www.ejemplo.com/ficha.pdf).' };
   }
   return { valido: true };
 }
