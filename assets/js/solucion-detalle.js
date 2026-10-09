@@ -1141,7 +1141,12 @@
       precioCon: real.mostrar_precio ? precioConFormateado : null,
       precioSin: real.mostrar_precio ? precioSinFormateado : null,
       mostrarPrecio: !!real.mostrar_precio,
-      fichaTecnica: mock.fichaTecnica || null,
+      // A petición de Eloy: si el producto REAL del catálogo tiene su
+      // propio enlace a ficha técnica editado (campo ficha_url, ver
+      // procesarActualizarFichaUrl en Apps Script), ese enlace manda
+      // siempre sobre el de los datos de ejemplo de la guía (mock) —
+      // mismo criterio que ya aplica buscador.html.
+      fichaTecnica: real.ficha_url || mock.fichaTecnica || null,
     };
   }
 

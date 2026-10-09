@@ -163,6 +163,15 @@ def exportar_productos_json(productos, familias, subfamilias):
         # forma de quitarlo desde la propia herramienta.
         relacionados_gestionado = es_si(p.get('relacionados_gestionado', ''))
 
+        # Enlace directo a la ficha técnica del fabricante — columna
+        # "ficha_url" del Sheet (ver procesarActualizarFichaUrl en
+        # apps_script_trigger.js, que es quien la rellena desde el botón
+        # "Editar ficha técnica" del buscador, solo en preproducción).
+        # Cuando está informado tiene prioridad sobre cualquier ficha
+        # técnica calculada/adivinada, tanto en buscador.html como en el
+        # Centro de Soluciones.
+        ficha_url = p.get('ficha_url', '').strip()
+
         exportados.append({
             'ref':       ref,
             'nombre':    p.get('nombre', '').strip(),
@@ -190,6 +199,7 @@ def exportar_productos_json(productos, familias, subfamilias):
             'fecha_actualizacion_imagen': p.get('fecha_actualizacion_imagen', '').strip(),
             'relacionados': relacionados,
             'relacionados_gestionado': relacionados_gestionado,
+            'ficha_url': ficha_url,
         })
 
     payload = {

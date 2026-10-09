@@ -3108,6 +3108,17 @@ function regenerarCacheCompletaDesdeSheet_() {
       // arriba para el porqué.
       const relacionadosGestionado = esSi_(valorCelda_(row, 'relacionados_gestionado'));
 
+      // Enlace directo a la ficha técnica del fabricante — columna
+      // "ficha_url" del Sheet, editable a mano o desde el botón "Editar
+      // ficha técnica" del detalle del producto en buscador.html (solo
+      // en preproducción, ver procesarActualizarFichaUrl más abajo).
+      // Cuando está informado, SIEMPRE tiene prioridad sobre cualquier
+      // ficha técnica calculada/adivinada (búsqueda de Google, Werku por
+      // patrón...) — tanto en buscador.html como en el Centro de
+      // Soluciones (ver configurarBotonFichaTecnica en buscador.html y
+      // obtenerFichaTecnicaProducto en soluciones-data.js).
+      const fichaUrl = valorCelda_(row, 'ficha_url');
+
       exportados.push({
         ref: ref,
         nombre: valorCelda_(row, 'nombre'),
@@ -3141,6 +3152,7 @@ function regenerarCacheCompletaDesdeSheet_() {
         fecha_actualizacion_imagen: valorCelda_(row, 'fecha_actualizacion_imagen'),
         relacionados: relacionados,
         relacionados_gestionado: relacionadosGestionado,
+        ficha_url: fichaUrl,
       });
     });
   }
@@ -3641,6 +3653,11 @@ function doPost(e) {
       return procesarActualizarRelacionados(data);
     }
 
+    if (accion === 'actualizar_ficha_url') {
+      console.log('Acción: actualizar_ficha_url');
+      return procesarActualizarFichaUrl(data);
+    }
+
     // NUEVO — Escaparate OM
     if (accion === 'guardar_campana') {
       console.log('Acción: guardar_campana');
@@ -4102,6 +4119,188 @@ function procesarActualizarRelacionados(data) {
 
   } catch (err) {
     console.error('Error al procesar actualización de relacionados:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Validación de URL de ficha técnica ──────────────────────────────────────
+// Usada tanto aquí (defensa del lado del servidor, por si alguien llama a
+// esta acción directamente sin pasar por el botón ya eliminado del DOM en
+// producción) como, de forma duplicada a propósito, en buscador.html (para
+// dar feedback inmediato en la propia modal antes de llegar a enviar nada) —
+// misma lógica en ambos sitios, porque son dos runtimes completamente
+// separados sin forma de compartir un módulo.
+//
+// A petición de Eloy: "validar contra el producto para prevenir que se
+// añada una url fraudulenta o que no esté asociada al producto o marca".
+// No existe una base de datos de "dominio oficial por marca" para las
+// miles de referencias del catálogo, así que la validación real que se
+// puede hacer aquí es una comprobación razonable, no una garantía
+// absoluta: (1) la URL debe ser https y bien formada, (2) su dominio debe
+// relacionarse de alguna forma reconocible con la marca/nombre del
+// producto — bien porque está en la lista de dominios ya conocidos y
+// verificados a mano de los fabricantes que ya aparecen en este proyecto
+// (Titán/AkzoNobel, Werku, Glasurit...), bien porque el propio dominio
+// contiene el nombre de la marca derivada del producto. Esto bloquea el
+// caso más dañino (pegar aquí una URL de un sitio cualquiera sin relación
+// con el producto) sin necesitar mantener una base de datos de dominios
+// por cada una de las marcas del catálogo.
+var DOMINIOS_FICHA_TECNICA_FABRICANTE_ = {
+  'TITAN': ['titanpro.es', 'titanlux.es', 'titancolor.es', 'industriastitan.es', 'akzonobel.com'],
+  'TITANTECH': ['industriastitan.es', 'titanpro.es', 'akzonobel.com'],
+  'TITANLUX': ['titanlux.es', 'akzonobel.com'],
+  'TITANLAK': ['titanlux.es', 'industriastitan.es', 'akzonobel.com'],
+  'AKZONOBEL': ['akzonobel.com', 'industriastitan.es'],
+  'WERKU': ['werku.com'],
+  'GLASURIT': ['glasurit.com'],
+  'ASTRALPOOL': ['astralpool.com', 'fluidra.com'],
+  'ASTRAPOOL': ['astralpool.com', 'fluidra.com'],
+  'ASTRAL': ['astralpool.com', 'fluidra.com'],
+};
+
+// Palabras demasiado genéricas para servir de "marca" al validar un
+// dominio — aparecen en muchísimos nombres de producto sin identificar
+// ningún fabricante concreto, así que se descartan como primera palabra
+// candidata y se prueba con la siguiente.
+var PALABRAS_GENERICAS_MARCA_ = ['EL', 'LA', 'LOS', 'LAS', 'UN', 'UNA', 'DE', 'PARA', 'CON', 'SIN', 'PACK', 'SET', 'KIT'];
+
+function quitarAcentosMay_(s) {
+  return (s || '').toString().toUpperCase()
+    .replace(/[ÁÀÄÂ]/g, 'A').replace(/[ÉÈËÊ]/g, 'E').replace(/[ÍÌÏÎ]/g, 'I')
+    .replace(/[ÓÒÖÔ]/g, 'O').replace(/[ÚÙÜÛ]/g, 'U').replace(/Ñ/g, 'N');
+}
+
+// Mejor estimación de la "marca" del producto a partir de los datos que
+// ya tenemos en el Sheet: la familia/tipología si menciona una marca
+// conocida (mismo criterio que ya usa buscador.html para Titán/
+// AkzoNobel), o si no, la primera palabra con sentido del nombre.
+function extraerMarcaProducto_(nombre, familia) {
+  const familiaMay = quitarAcentosMay_(familia);
+  for (const marca of Object.keys(DOMINIOS_FICHA_TECNICA_FABRICANTE_)) {
+    if (familiaMay.indexOf(marca) !== -1) return marca;
+  }
+  const palabras = quitarAcentosMay_(nombre).split(/[^A-Z0-9]+/).filter(Boolean);
+  for (const palabra of palabras) {
+    if (palabra.length >= 3 && PALABRAS_GENERICAS_MARCA_.indexOf(palabra) === -1) return palabra;
+  }
+  return '';
+}
+
+// Devuelve { valido: true } o { valido: false, error: '...' }.
+function validarUrlFichaTecnica_(url, nombre, familia) {
+  var parsed;
+  try {
+    parsed = new URL(url);
+  } catch (e) {
+    return { valido: false, error: 'La URL no es válida.' };
+  }
+  if (parsed.protocol !== 'https:') {
+    return { valido: false, error: 'La URL debe empezar por https:// (enlace seguro).' };
+  }
+  const host = parsed.hostname.toLowerCase();
+  const marca = extraerMarcaProducto_(nombre, familia);
+  if (!marca) {
+    return { valido: false, error: 'No se ha podido determinar la marca de este producto para validar el dominio.' };
+  }
+  const dominiosConocidos = DOMINIOS_FICHA_TECNICA_FABRICANTE_[marca] || [];
+  const coincideConocido = dominiosConocidos.some(d => host === d || host.endsWith('.' + d));
+  if (coincideConocido) return { valido: true };
+
+  // Marca sin lista de dominios verificados a mano: heurística genérica,
+  // el dominio debe contener el nombre de la marca (p.ej. "WERKU" dentro
+  // de "werku.com" o "tienda.werku.es").
+  const marcaNormalizada = marca.toLowerCase();
+  if (marcaNormalizada.length >= 3 && host.indexOf(marcaNormalizada) !== -1) return { valido: true };
+
+  return {
+    valido: false,
+    error: `El dominio "${host}" no parece asociado a la marca "${marca}" de este producto. ` +
+      'Verifica el enlace o copia la URL directamente desde la página oficial del fabricante.',
+  };
+}
+
+// ── Procesar actualización de la ficha técnica de un producto ──────────────
+// Mismo mecanismo que procesarActualizarRelacionados (columna del Sheet +
+// parcheo instantáneo de la caché de productos.json) — a petición de Eloy:
+// botón "Editar ficha técnica" en el detalle del producto, SOLO visible en
+// preproducción (ver window.MOSTRAR_EDITAR_FICHA_TECNICA en buscador.html),
+// que guarda un enlace directo a la ficha técnica real del fabricante. Si
+// está informado, este enlace tiene SIEMPRE prioridad sobre cualquier ficha
+// técnica calculada/adivinada, tanto en buscador.html como en el Centro de
+// Soluciones.
+function procesarActualizarFichaUrl(data) {
+  try {
+    console.log('procesarActualizarFichaUrl iniciado');
+    console.log('data:', data);
+
+    const referencia = (data.referencia || '').toString().trim();
+    const url = (data.url || '').toString().trim();
+
+    if (!referencia) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta la referencia del producto' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const nombre = prodData[prodRowIdx][PROD['nombre']] ? prodData[prodRowIdx][PROD['nombre']].toString() : '';
+    const familia = PROD['tipologia'] !== undefined && prodData[prodRowIdx][PROD['tipologia']]
+      ? prodData[prodRowIdx][PROD['tipologia']].toString() : '';
+
+    // Permite BORRAR la URL guardada (dejar el campo vacío) sin pasar por
+    // la validación de dominio — solo se valida cuando se informa una URL
+    // nueva.
+    if (url) {
+      const validacion = validarUrlFichaTecnica_(url, nombre, familia);
+      if (!validacion.valido) {
+        return ContentService.createTextOutput(JSON.stringify({ success: false, error: validacion.error }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+    let colFichaUrl = PROD['ficha_url'];
+    if (colFichaUrl === undefined) {
+      colFichaUrl = prodHeaders.length;
+      sheetProd.getRange(1, colFichaUrl + 1).setValue('ficha_url');
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    sheetProd.getRange(prodRowNum, colFichaUrl + 1).setValue(url);
+    console.log('ficha_url actualizada:', url || '(vacía)');
+
+    // Vista rápida: parchear productos.json al instante.
+    actualizarProductoEnCache_(referencia, { ficha_url: url });
+
+    console.log('procesarActualizarFichaUrl completado exitosamente');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Ficha técnica actualizada correctamente', ficha_url: url }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al procesar actualización de ficha técnica:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }

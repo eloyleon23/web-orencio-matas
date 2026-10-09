@@ -2575,6 +2575,82 @@
             background: #008F5B;
         }
 
+        /* Botón "Editar ficha técnica" — solo preproducción (ver
+           window.MOSTRAR_EDITAR_FICHA_TECNICA). Icono compacto, no se
+           estira como los otros dos botones de la fila. */
+        .modal-producto-fila-fichas .modal-producto-editar-ficha {
+            flex: 0 0 auto;
+            background: var(--light);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 8px 11px;
+        }
+        .modal-producto-editar-ficha:hover { background: #eef2f7; filter: none; }
+
+        /* Modal "Editar ficha técnica" — reutiliza .modal-overlay/
+           .modal-producto-box/.modal-producto-cerrar ya existentes para el
+           fondo, la caja y el botón de cerrar; aquí solo lo específico de
+           su contenido. */
+        .modal-editar-ficha-box { max-width: 480px; padding: 22px; }
+        .modal-editar-ficha-titulo {
+            margin: 0 0 6px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--dark);
+        }
+        .modal-editar-ficha-nombre {
+            margin: 0 0 16px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .modal-editar-ficha-campo label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .modal-editar-ficha-campo input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-family: inherit;
+        }
+        .modal-editar-ficha-campo input.es-invalida {
+            border-color: var(--red);
+        }
+        .modal-editar-ficha-error {
+            margin: 8px 0 0;
+            font-size: 0.82rem;
+            color: var(--red);
+            display: none;
+        }
+        .modal-editar-ficha-nota {
+            margin: 10px 0 0;
+            font-size: 0.78rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .modal-editar-ficha-acciones {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .modal-editar-ficha-acciones button {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+        }
+        .modal-editar-ficha-cancelar { background: var(--light); color: var(--dark); border: 1px solid var(--border) !important; }
+        .modal-editar-ficha-guardar { background: var(--blue); color: #fff; }
+        .modal-editar-ficha-guardar:disabled { opacity: 0.6; cursor: default; }
+
         /* Calculadora de rendimiento (solo pinturas) */
         .btn-abrir-calculadora {
             margin-top: 10px;
@@ -4074,6 +4150,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <i class="fa-solid fa-palette"></i>
                         Ver carta de colores
                     </a>
+                    <!-- Solo preproducción (ver window.MOSTRAR_EDITAR_FICHA_TECNICA) -->
+                    <button type="button" id="modal-producto-editar-ficha-tecnica" class="modal-producto-ficha modal-producto-editar-ficha" title="Editar ficha técnica" style="display:none;">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
                 </div>
 
                 <!-- Calculadora de rendimiento (solo pinturas) -->
@@ -4097,6 +4177,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </label>
                     </div>
                     <div class="calculadora-resultado" id="calculadora-resultado"></div>
+                </div>
+
+                <!-- Calculadora de volumen de piscina (solo productos de
+                     "Productos piscinas") — a petición de Eloy, mismo
+                     estilo que la calculadora de pintura de arriba. -->
+                <button type="button" id="btn-abrir-calculadora-piscina" class="btn-abrir-calculadora" style="display:none;">
+                    <i class="fa-solid fa-calculator"></i>
+                    Calculadora
+                </button>
+                <div id="panel-calculadora-piscina" class="panel-calculadora" style="display:none;">
+                    <p class="calculadora-intro">
+                        Calcula los metros cúbicos de agua de tu piscina para saber la
+                        cantidad de producto a aplicar — consulta siempre la dosis
+                        recomendada por m³ en el envase de este producto.
+                    </p>
+                    <div class="calculadora-campos">
+                        <label>
+                            Largo (m)
+                            <input type="number" id="calc-piscina-largo" min="0" step="0.1" placeholder="Ej: 8">
+                        </label>
+                        <label>
+                            Ancho (m)
+                            <input type="number" id="calc-piscina-ancho" min="0" step="0.1" placeholder="Ej: 4">
+                        </label>
+                        <label>
+                            Prof. media (m)
+                            <input type="number" id="calc-piscina-profundidad" min="0" step="0.1" placeholder="Ej: 1,5">
+                        </label>
+                    </div>
+                    <div class="calculadora-resultado" id="calculadora-resultado-piscina"></div>
                 </div>
 
                 <!-- Productos complementarios (solo pinturas) -->
@@ -4143,6 +4253,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <span>Dar de baja este producto</span>
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal "Editar ficha técnica" — solo preproducción -->
+<div class="modal-overlay" id="modal-editar-ficha-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box">
+        <button class="modal-producto-cerrar" id="modal-editar-ficha-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-file-lines"></i> Editar ficha técnica</h3>
+        <p id="modal-editar-ficha-nombre" class="modal-editar-ficha-nombre"></p>
+        <div class="modal-editar-ficha-campo">
+            <label for="modal-editar-ficha-input">URL de la ficha técnica del fabricante</label>
+            <input type="url" id="modal-editar-ficha-input" placeholder="https://www.ejemplo.com/ficha-tecnica.pdf" autocomplete="off">
+        </div>
+        <p id="modal-editar-ficha-error" class="modal-editar-ficha-error"></p>
+        <p class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-circle-info"></i>
+            Debe ser un enlace https de un dominio asociado a la marca del producto
+            (deja el campo vacío y guarda para quitar el enlace actual).
+        </p>
+        <div class="modal-editar-ficha-acciones">
+            <button type="button" id="modal-editar-ficha-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
+            <button type="button" id="modal-editar-ficha-guardar" class="modal-editar-ficha-guardar">Guardar</button>
         </div>
     </div>
 </div>
@@ -4618,6 +4753,10 @@ window.MOSTRAR_PRECIO_MAYOR = window.OM_PREPRODUCCION;
 // de Eloy (24/09/2026) pasa a depender también de OM_PREPRODUCCION,
 // nunca debe verse ni ser accesible en producción/release.
 window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
+// Botón "Editar ficha técnica" (y su modal) del detalle del producto —
+// a petición de Eloy, nunca debe verse ni ser accesible en producción/
+// release, solo en preproducción.
+window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -4683,6 +4822,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-relacionados-overlay', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-producto-baja-reactivar', window.MOSTRAR_BOTON_GESTION_BAJA);
     eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR);
+    eliminarSiRestringido_('modal-producto-editar-ficha-tecnica', window.MOSTRAR_EDITAR_FICHA_TECNICA);
+    eliminarSiRestringido_('modal-editar-ficha-overlay', window.MOSTRAR_EDITAR_FICHA_TECNICA);
 
     const REPO = 'eloyleon23/web-orencio-matas';
     const API_RELEASE = 'https://api.github.com/repos/' + REPO + '/releases/latest';
@@ -6615,6 +6756,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // este módulo podrá refinarse; hasta entonces, "más recientes" sin
     // más es honesto con lo que sabemos hoy.
     const MAX_TARJETAS_NOVEDADES = 10;
+    // A petición de Eloy: que Novedades sea dinámico, no siempre lo mismo
+    // — en vez de mostrar siempre los MAX_TARJETAS_NOVEDADES más
+    // recientes a secas, se toma un "pool" más amplio (los últimos
+    // POOL_NOVEDADES_ROTACION, entre 50 y 100 como pidió) y de ahí se
+    // elige un subconjunto aleatorio distinto, en orden distinto, cada
+    // vez que alguien entra — misma función barajar_() (Fisher-Yates) ya
+    // usada para el orden de los bloques "Seguir comprando", solo que
+    // aquí decide además QUÉ productos entran, no solo su orden.
+    const POOL_NOVEDADES_ROTACION = 80;
     function cargarNovedades_() {
         if (!TODOS.length) {
             modulosDescubrimientoConContenido_.novedades = false;
@@ -6625,10 +6775,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // carrusel de Novedades (no afecta a ningún otro módulo ni
         // filtro — talleres se sigue viendo/filtrando igual en el resto
         // del buscador).
-        const productos = TODOS
+        const pool = TODOS
             .filter(p => p.area !== 'talleres' && !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
             .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta))
-            .slice(0, MAX_TARJETAS_NOVEDADES);
+            .slice(0, POOL_NOVEDADES_ROTACION);
+        const productos = barajar_(pool).slice(0, MAX_TARJETAS_NOVEDADES);
         if (!productos.length) {
             modulosDescubrimientoConContenido_.novedades = false;
             actualizarVisibilidadModulosDescubrimiento_();
@@ -9586,14 +9737,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // están publicadas las fichas técnicas y de seguridad.
         configurarBotonFichaTecnica(p);
         configurarBotonCartaColores(p);
+        configurarEditarFichaTecnica(p);
         // Oculta también la fila que las envuelve cuando ninguno de los dos
-        // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas)
+        // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas) —
+        // salvo en preproducción, que la deja visible siempre que esté el
+        // botón de editar, para poder AÑADIR una ficha técnica a un
+        // producto que todavía no tenga ninguna.
         document.querySelector('.modal-producto-fila-fichas').style.display =
-            (productoTieneFichaTecnica(p) || productoEsPintura(p)) ? 'flex' : 'none';
+            (productoTieneFichaTecnica(p) || productoEsPintura(p) || window.MOSTRAR_EDITAR_FICHA_TECNICA) ? 'flex' : 'none';
 
         // Calculadora de rendimiento y productos complementarios: solo para
         // productos que sean realmente pintura (no herramientas, disolventes...)
         configurarCalculadoraRendimiento(p);
+        configurarCalculadoraPiscina(p);
         configurarComplementarios(p);
 
         // Botón compartir: genera un enlace que abre el buscador directamente
@@ -9971,6 +10127,170 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.style.display = 'inline-flex';
     }
 
+    // ── Editar ficha técnica (solo preproducción) ──────────────────────
+    // A petición de Eloy: botón para asociar manualmente un enlace real a
+    // la ficha técnica del fabricante de un producto concreto, que a
+    // partir de ahí tiene prioridad sobre el enlace calculado/adivinado
+    // (búsqueda de Google, Werku por patrón...) — ver configurarBotonFichaTecnica
+    // arriba, que ya comprueba p.ficha_url primero. Se guarda en Apps
+    // Script (acción actualizar_ficha_url), que escribe en la columna
+    // "ficha_url" del Sheet y parchea productos.json al instante — mismo
+    // mecanismo que "Gestionar productos relacionados".
+    //
+    // Misma validación de dominio que en el servidor (ver
+    // validarUrlFichaTecnica_ en apps_script_trigger.js) duplicada aquí
+    // para dar feedback inmediato en la propia modal, sin esperar a la
+    // respuesta del servidor — ambos runtimes son completamente
+    // independientes, no hay forma de compartir el código entre ellos.
+    const DOMINIOS_FICHA_TECNICA_FABRICANTE_ = {
+        'TITAN': ['titanpro.es', 'titanlux.es', 'titancolor.es', 'industriastitan.es', 'akzonobel.com'],
+        'TITANTECH': ['industriastitan.es', 'titanpro.es', 'akzonobel.com'],
+        'TITANLUX': ['titanlux.es', 'akzonobel.com'],
+        'TITANLAK': ['titanlux.es', 'industriastitan.es', 'akzonobel.com'],
+        'AKZONOBEL': ['akzonobel.com', 'industriastitan.es'],
+        'WERKU': ['werku.com'],
+        'GLASURIT': ['glasurit.com'],
+        'ASTRALPOOL': ['astralpool.com', 'fluidra.com'],
+        'ASTRAPOOL': ['astralpool.com', 'fluidra.com'],
+        'ASTRAL': ['astralpool.com', 'fluidra.com'],
+    };
+    const PALABRAS_GENERICAS_MARCA_ = ['EL', 'LA', 'LOS', 'LAS', 'UN', 'UNA', 'DE', 'PARA', 'CON', 'SIN', 'PACK', 'SET', 'KIT'];
+
+    function extraerMarcaProducto_(nombre, familia) {
+        const familiaMay = quitarAcentosMay(familia || '');
+        for (const marca of Object.keys(DOMINIOS_FICHA_TECNICA_FABRICANTE_)) {
+            if (familiaMay.includes(marca)) return marca;
+        }
+        const palabras = quitarAcentosMay(nombre || '').split(/[^A-Z0-9]+/).filter(Boolean);
+        for (const palabra of palabras) {
+            if (palabra.length >= 3 && !PALABRAS_GENERICAS_MARCA_.includes(palabra)) return palabra;
+        }
+        return '';
+    }
+
+    // Devuelve { valido: true } o { valido: false, error: '...' }.
+    function validarUrlFichaTecnica_(url, p) {
+        let parsed;
+        try {
+            parsed = new URL(url);
+        } catch (e) {
+            return { valido: false, error: 'La URL no es válida.' };
+        }
+        if (parsed.protocol !== 'https:') {
+            return { valido: false, error: 'La URL debe empezar por https:// (enlace seguro).' };
+        }
+        const host = parsed.hostname.toLowerCase();
+        const marca = extraerMarcaProducto_(p.nombre, p.familia);
+        if (!marca) {
+            return { valido: false, error: 'No se ha podido determinar la marca de este producto para validar el dominio.' };
+        }
+        const dominiosConocidos = DOMINIOS_FICHA_TECNICA_FABRICANTE_[marca] || [];
+        const coincideConocido = dominiosConocidos.some(d => host === d || host.endsWith('.' + d));
+        if (coincideConocido) return { valido: true };
+
+        const marcaNormalizada = marca.toLowerCase();
+        if (marcaNormalizada.length >= 3 && host.includes(marcaNormalizada)) return { valido: true };
+
+        return {
+            valido: false,
+            error: `El dominio "${host}" no parece asociado a la marca "${marca}" de este producto. Verifica el enlace.`,
+        };
+    }
+
+    let productoEditarFichaActual = null;
+
+    function abrirModalEditarFichaTecnica(p) {
+        // Red de seguridad además del botón ya eliminado del DOM en
+        // producción: aunque algo llame a esta función directamente,
+        // nunca debe abrirse fuera de preproducción.
+        if (!window.MOSTRAR_EDITAR_FICHA_TECNICA) return;
+        productoEditarFichaActual = p;
+        $('modal-editar-ficha-nombre').textContent = p.nombre;
+        $('modal-editar-ficha-input').value = p.ficha_url || '';
+        $('modal-editar-ficha-input').classList.remove('es-invalida');
+        $('modal-editar-ficha-error').style.display = 'none';
+        $('modal-editar-ficha-overlay').classList.add('activo');
+        setTimeout(() => $('modal-editar-ficha-input').focus(), 50);
+    }
+
+    function cerrarModalEditarFichaTecnica() {
+        $('modal-editar-ficha-overlay').classList.remove('activo');
+        productoEditarFichaActual = null;
+    }
+
+    function ejecutarGuardarFichaTecnica() {
+        const p = productoEditarFichaActual;
+        if (!p) return;
+
+        const input = $('modal-editar-ficha-input');
+        const errorEl = $('modal-editar-ficha-error');
+        const url = input.value.trim();
+
+        // Campo vacío: se permite guardar para QUITAR un enlace ya
+        // informado, sin pasar por la validación de dominio (no hay nada
+        // que validar en una cadena vacía).
+        if (url) {
+            const validacion = validarUrlFichaTecnica_(url, p);
+            if (!validacion.valido) {
+                input.classList.add('es-invalida');
+                errorEl.textContent = validacion.error;
+                errorEl.style.display = 'block';
+                return;
+            }
+        }
+        input.classList.remove('es-invalida');
+        errorEl.style.display = 'none';
+
+        const btn = $('modal-editar-ficha-guardar');
+        const estadoOriginal = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            btn.disabled = false;
+            btn.textContent = estadoOriginal;
+            return;
+        }
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ accion: 'actualizar_ficha_url', referencia: p.ref, url: url }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+
+            // Reflejar el cambio al instante en la propia sesión, sin
+            // esperar a la siguiente carga de productos.json.
+            p.ficha_url = url;
+            configurarBotonFichaTecnica(p);
+            document.querySelector('.modal-producto-fila-fichas').style.display =
+                (productoTieneFichaTecnica(p) || productoEsPintura(p) || window.MOSTRAR_EDITAR_FICHA_TECNICA) ? 'flex' : 'none';
+
+            mostrarToast('✓ Ficha técnica actualizada correctamente.');
+            cerrarModalEditarFichaTecnica();
+        })
+        .catch(err => {
+            console.error('Error al actualizar ficha técnica:', err);
+            errorEl.textContent = err.message || 'Error al guardar. Verifica la conexión y los logs.';
+            errorEl.style.display = 'block';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = estadoOriginal;
+        });
+    }
+
+    function configurarEditarFichaTecnica(p) {
+        const boton = $('modal-producto-editar-ficha-tecnica');
+        if (!boton) return; // eliminado del DOM en producción
+        boton.style.display = 'inline-flex';
+        boton.onclick = () => abrirModalEditarFichaTecnica(p);
+    }
+
     // Familias del área "pinturas" que NO son pintura en sí (herramientas,
     // pegamentos, químicos, lijas, disolventes) — nunca tienen carta de
     // colores, aunque pertenezcan al área.
@@ -10045,6 +10365,57 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('calc-superficie').oninput = calcular;
         $('calc-manos').oninput = calcular;
         $('calculadora-resultado').innerHTML = '';
+    }
+
+    // ── Calculadora de volumen de piscina ──
+    // A petición de Eloy: para productos de la familia "Productos
+    // piscinas" (área droguería), un botón "Calculadora" con el mismo
+    // estilo que la de rendimiento de pintura de arriba, que calcula los
+    // metros cúbicos de agua (largo × ancho × profundidad media) para
+    // facilitar cuánto producto aplicar. A propósito NO se inventa aquí
+    // una dosis en gramos/mililitros por m³: la dosificación varía
+    // mucho según el producto (cloro choque, cloro lento, floculante,
+    // pH+/pH-, alguicida...) y dar una cifra equivocada en un producto
+    // químico es un riesgo real, a diferencia del rendimiento orientativo
+    // de pintura — se calculan los m³ y se remite siempre al envase para
+    // la dosis exacta, igual que ya se avisa en la calculadora de pintura
+    // para el rendimiento.
+    function productoEsPiscina(p) {
+        return p.area === 'drogueria' && quitarAcentosMay(p.familia) === 'PRODUCTOS PISCINAS';
+    }
+
+    function configurarCalculadoraPiscina(p) {
+        const boton = $('btn-abrir-calculadora-piscina');
+        const panel = $('panel-calculadora-piscina');
+        panel.style.display = 'none'; // siempre arranca cerrada al abrir un producto
+
+        if (!productoEsPiscina(p)) {
+            boton.style.display = 'none';
+            return;
+        }
+        boton.style.display = 'flex';
+
+        const calcular = () => {
+            const largo = parseFloat($('calc-piscina-largo').value);
+            const ancho = parseFloat($('calc-piscina-ancho').value);
+            const profundidad = parseFloat($('calc-piscina-profundidad').value);
+            const resultado = $('calculadora-resultado-piscina');
+            if (!largo || largo <= 0 || !ancho || ancho <= 0 || !profundidad || profundidad <= 0) {
+                resultado.innerHTML = '';
+                return;
+            }
+            const metrosCubicos = largo * ancho * profundidad;
+            resultado.innerHTML = `Tu piscina tiene aproximadamente <strong>${metrosCubicos.toFixed(1)} m³</strong> de agua ` +
+                `(${largo} × ${ancho} × ${profundidad} m) — consulta en el envase de este producto la dosis recomendada por m³.`;
+        };
+
+        boton.onclick = () => {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        };
+        $('calc-piscina-largo').oninput = calcular;
+        $('calc-piscina-ancho').oninput = calcular;
+        $('calc-piscina-profundidad').oninput = calcular;
+        $('calculadora-resultado-piscina').innerHTML = '';
     }
 
     // ── Productos complementarios ──
@@ -11404,6 +11775,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('relacionados-buscar-limpiar').style.display = 'block';
         ocultarSugerenciasRelacionados();
         buscarProductosRelacionados(texto);
+    }
+
+    // Event listeners de la modal "Editar ficha técnica" — el modal se
+    // elimina del DOM si MOSTRAR_EDITAR_FICHA_TECNICA está desactivado
+    // (producción), igual que el resto de modales de administración.
+    if ($('modal-editar-ficha-overlay')) {
+    $('modal-editar-ficha-cerrar').addEventListener('click', cerrarModalEditarFichaTecnica);
+    $('modal-editar-ficha-cancelar').addEventListener('click', cerrarModalEditarFichaTecnica);
+    $('modal-editar-ficha-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-editar-ficha-overlay') cerrarModalEditarFichaTecnica();
+    });
+    $('modal-editar-ficha-guardar').addEventListener('click', ejecutarGuardarFichaTecnica);
+    $('modal-editar-ficha-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); ejecutarGuardarFichaTecnica(); }
+    });
     }
 
     // Event listeners de la modal de relacionados — el modal se elimina
