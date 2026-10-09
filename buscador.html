@@ -7154,7 +7154,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         for (const def of ORDEN_BLOQUES_CATEGORIAS_) {
             if (n >= MAX_BLOQUES_CATEGORIAS) break;
             if (def.estacion && def.estacion !== estacion) continue;
-            const candidatos = vigentes.filter(p => (!def.area || p.area === def.area) && def.match(textoBuscableProducto_(p)));
+            const candidatosConDuplicados = vigentes.filter(p => (!def.area || p.area === def.area) && def.match(textoBuscableProducto_(p)));
+            // Bug real reportado por Eloy: el mismo producto apareciendo
+            // repetido dos veces dentro de un mismo bloque. Causa: si
+            // TODOS llega a contener una entrada duplicada del mismo
+            // producto (p. ej. tras una reconciliación con la fuente en
+            // vivo), "candidatos" arrastraba esa duplicidad y la muestra
+            // aleatoria de abajo podía escoger ambas copias para el mismo
+            // bloque. Se deduplica por referencia aquí, una sola vez,
+            // antes de construir la muestra inicial — de paso, también
+            // deja limpio el pool que usa la rotación automática
+            // (rotarUnItemDeBloque_) durante el resto de la sesión.
+            const candidatos = Array.from(new Map(candidatosConDuplicados.map(p => [String(p.ref), p])).values());
             if (candidatos.length < PRODUCTOS_POR_BLOQUE_CATEGORIA) continue;
             // Muestra aleatoria inicial — ver iniciarRotacionBloque_() para
             // el cambio automático posterior.
