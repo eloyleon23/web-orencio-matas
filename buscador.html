@@ -9381,6 +9381,33 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // no es urgente, puede esperar un instante a que todo se asiente.
         setTimeout(listaCompraComprobarAvisoValidez_, 1200);
 
+        // Bug real reportado por Eloy: con una lista creada varios días
+        // atrás, el aviso de validez nunca llegaba a aparecer. Causa: esta
+        // comprobación solo se lanzaba UNA vez, ligada a la ejecución
+        // inicial del script (el setTimeout de arriba) — si ese preciso
+        // instante no coincide con el día exacto en que se alcanza un
+        // hito (5/10/14 días), nunca se vuelve a comprobar durante el
+        // resto de esa sesión, por mucho que la pestaña siga abierta
+        // horas o días (pestaña fija/siempre abierta, restaurada desde el
+        // historial reciente del navegador sin recargar el script, etc.).
+        // Se añade una re-comprobación cada vez que la pestaña vuelve a
+        // estar visible — barata y sin efecto si no hay ningún hito
+        // pendiente (listaCompraComprobarAvisoValidez_ ya no hace nada en
+        // ese caso), pero cubre exactamente el caso real: el usuario abre
+        // o vuelve a esta pestaña en CUALQUIER momento después de que se
+        // haya cumplido un hito, no solo en el instante exacto de la
+        // carga inicial.
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') listaCompraComprobarAvisoValidez_();
+        });
+        // Restauraciones desde la caché de retroceso/avance del navegador
+        // (bfcache) no vuelven a ejecutar el script de la página —
+        // "visibilitychange" tampoco se dispara en ese caso en algunos
+        // navegadores — así que se cubre también aquí explícitamente.
+        window.addEventListener('pageshow', (e) => {
+            if (e.persisted) listaCompraComprobarAvisoValidez_();
+        });
+
         $('btn-crear-lista-compra').addEventListener('click', () => {
             listaCompraCrear_();
             mostrarToast(`Lista de la compra creada. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
