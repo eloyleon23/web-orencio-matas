@@ -8744,22 +8744,49 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return Math.floor((Date.now() - listaCompraState_.creado) / (24 * 60 * 60 * 1000));
     }
 
-    // Se llama al entrar al buscador, después de comprobar la caducidad
-    // (una lista ya caducada no debe sugerir "continuar" con ella). Si se
-    // han alcanzado varios hitos a la vez (el usuario no ha abierto la
-    // web en varios días), solo se muestra UNA modal, la del hito más
-    // reciente — los anteriores ya no aportan nada y se marcan como
-    // vistos igualmente para no mostrarlos después por separado.
+    // Hito actualmente mostrado en la modal (o null si no hay ninguna
+    // abierta ahora mismo) — a petición de Eloy: el objetivo de este
+    // aviso no es solo que llegue a mostrarse una vez, sino que el
+    // usuario tenga que confirmar explícitamente ("Ver mi lista", ver
+    // más abajo) que sigue con ella — mientras no lo haga, debe seguir
+    // apareciendo (recargue la página, cambie de pestaña y vuelva,
+    // etc.) hasta que la lista caduque. Por eso YA NO se marca el hito
+    // como "visto" en cuanto se muestra (como antes) — solo al
+    // aceptarlo explícitamente, ver listaCompraAceptarAvisoValidez_.
+    let avisoValidezHitoPendiente_ = null;
+
+    // Se llama al entrar al buscador, en cada cambio de visibilidad de la
+    // pestaña y al restaurar desde el historial (ver inicializarListaCompra_)
+    // — después de comprobar la caducidad (una lista ya caducada no debe
+    // sugerir "continuar" con ella). Si se han alcanzado varios hitos a la
+    // vez (el usuario no ha abierto la web en varios días), se muestra
+    // solo la del hito más reciente — los anteriores ya no aportan nada y
+    // se dan por aceptados junto con él en cuanto el usuario acepte.
     function listaCompraComprobarAvisoValidez_() {
         if (!listaCompraState_) return;
+        // Ya hay una modal abierta (p. ej. dos comprobaciones casi
+        // seguidas) — no hay nada que recalcular ni reabrir.
+        if ($('modal-aviso-validez-lista-compra-overlay').classList.contains('activo')) return;
         const dias = listaCompraDiasTranscurridos_();
         const avisos = listaCompraState_.avisosMostrados || (listaCompraState_.avisosMostrados = []);
         const pendientes = LISTA_COMPRA_HITOS_AVISO_DIAS_.filter(h => dias >= h && !avisos.includes(h));
         if (!pendientes.length) return;
-        const hito = Math.max(...pendientes);
-        LISTA_COMPRA_HITOS_AVISO_DIAS_.forEach(h => { if (h <= hito && !avisos.includes(h)) avisos.push(h); });
-        listaCompraPersistir_();
+        avisoValidezHitoPendiente_ = Math.max(...pendientes);
         mostrarAvisoValidezListaCompra_(dias);
+    }
+
+    // Único punto que marca un hito como aceptado de verdad — se llama
+    // SOLO desde la acción "Ver mi lista" (ver wiring más abajo), nunca
+    // al cerrar con la X, "Ahora no", clic fuera o Escape: esas formas de
+    // cerrar son un aplazamiento, no una aceptación, así que el aviso
+    // debe volver a aparecer en la próxima comprobación.
+    function listaCompraAceptarAvisoValidez_() {
+        if (!listaCompraState_ || avisoValidezHitoPendiente_ == null) return;
+        const avisos = listaCompraState_.avisosMostrados || (listaCompraState_.avisosMostrados = []);
+        const hito = avisoValidezHitoPendiente_;
+        LISTA_COMPRA_HITOS_AVISO_DIAS_.forEach(h => { if (h <= hito && !avisos.includes(h)) avisos.push(h); });
+        avisoValidezHitoPendiente_ = null;
+        listaCompraPersistir_();
     }
 
     function mostrarAvisoValidezListaCompra_(diasTranscurridos) {
@@ -9475,8 +9502,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-lista-unidades-mas').addEventListener('click', () => alCambiarUnidadesProducto_(1));
         $('modal-producto-lista-unidades-input').addEventListener('change', alEscribirUnidadesProducto_);
 
-        // Aviso de validez (5/10/14 días) — informativo, se puede cerrar
-        // de varias formas, igual que el resto de modales del sitio.
+        // Aviso de validez (5/10/14 días) — a petición de Eloy, cerrarlo
+        // con la X, "Ahora no", clic fuera o Escape es un APLAZAMIENTO,
+        // no una aceptación: el hito sigue pendiente y el aviso volverá a
+        // aparecer en la próxima comprobación (recarga, cambio de
+        // pestaña...). Solo "Ver mi lista" cuenta como aceptación — el
+        // usuario ha confirmado que sigue con ella — y es la única
+        // acción que marca el hito como aceptado de verdad (ver
+        // listaCompraAceptarAvisoValidez_).
         const cerrarAvisoValidez = () => $('modal-aviso-validez-lista-compra-overlay').classList.remove('activo');
         $('aviso-validez-lista-compra-cerrar').addEventListener('click', cerrarAvisoValidez);
         $('aviso-validez-lista-compra-ahora-no').addEventListener('click', cerrarAvisoValidez);
@@ -9484,6 +9517,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (e.target.id === 'modal-aviso-validez-lista-compra-overlay') cerrarAvisoValidez();
         });
         $('aviso-validez-lista-compra-ver').addEventListener('click', () => {
+            listaCompraAceptarAvisoValidez_();
             cerrarAvisoValidez();
             abrirModalListaCompra_();
         });
