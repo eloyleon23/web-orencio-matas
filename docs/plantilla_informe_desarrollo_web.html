@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<!--
+  PLANTILLA BASE — Informe de Desarrollo Web (ORENCIO MATAS Y HERMANOS, S.L.)
+  ============================================================================
+  Úsala como punto de partida para el informe de cada fase nueva. Sustituye
+  los textos entre [CORCHETES] y repite los bloques de sección/lista que
+  hagan falta — el CSS ya soporta cualquier número de secciones y listas.
+
+  CÓMO GENERAR EL PDF (mismo método usado en las Fases 3 y 4):
+  Con Node + Playwright/Chromium ya instalados en el proyecto, renderiza así
+  (ajusta las rutas a tu entorno):
+
+    const { chromium } = require('playwright');
+    const path = require('path');
+    (async () => {
+      const browser = await chromium.launch();
+      const page = await browser.newPage();
+      await page.goto('file://' + path.resolve('informe_desarrollo_web_fase_N.html'), { waitUntil: 'load' });
+
+      const headerTemplate = `
+        <div style="width:100%; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; padding:0 24px; color:#1a1a1a;">
+          <div style="background:#1a1a1a; color:#fff; padding:8px 14px; display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-weight:bold; font-size:8.5pt;">ORENCIO MATAS Y HERMANOS, S.L.</div>
+              <div>Informe de Desarrollo Web - Confidencial</div>
+            </div>
+            <div style="text-align:right;">Informe de Desarrollo Web - Confidencial</div>
+          </div>
+          <div style="background:#1a1a1a; color:#ccc; padding:4px 14px;">Av. Alfred Nobel, 2 - 13005 Ciudad Real - 926 221 217 - correo@orenciomatas.es</div>
+          <div style="height:4px; background:#d91b1b;"></div>
+        </div>`;
+
+      const footerTemplate = `
+        <div style="width:100%; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; padding:0 24px; color:#555; display:flex; justify-content:space-between; border-top:1px solid #ddd; padding-top:4px;">
+          <span>Av. Alfred Nobel, 2 - 13005 Ciudad Real - 926 221 217 - correo@orenciomatas.es</span>
+          <span>Pág. <span class="pageNumber"></span></span>
+        </div>`;
+
+      await page.pdf({
+        path: 'informe_desarrollo_web_fase_N.pdf',
+        format: 'A4',
+        printBackground: true,
+        displayHeaderFooter: true,
+        headerTemplate,
+        footerTemplate,
+        margin: { top: '38mm', bottom: '16mm', left: '14mm', right: '14mm' },
+      });
+      await browser.close();
+    })();
+
+  El header/footer del PDF se generan con las opciones headerTemplate/
+  footerTemplate de page.pdf() — NO forman parte de este HTML (el body de
+  abajo es solo el contenido de las páginas). Los colores de marca ya están
+  anotados: negro #1a1a1a para cabecera/pie/barras de sección, rojo
+  corporativo #d91b1b para la línea de acento y la cabecera de la tabla de
+  horas.
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Informe de Desarrollo Web — [TÍTULO DE LA FASE]</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+  .titulo-bloque {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 28px 30px;
+    margin: 6px 0 20px;
+  }
+  .titulo-bloque h1 {
+    font-size: 21pt;
+    margin: 0 0 6px;
+    letter-spacing: 0.5px;
+  }
+  .titulo-bloque h2 {
+    font-size: 12.5pt;
+    font-weight: normal;
+    margin: 0 0 10px;
+  }
+  .titulo-bloque .empresa {
+    font-size: 11pt;
+    font-weight: bold;
+    margin: 0;
+  }
+  .intro {
+    font-style: italic;
+    margin: 0 0 4px;
+  }
+  .fecha-generacion {
+    margin: 0 0 20px;
+  }
+  h2.seccion {
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 11pt;
+    padding: 8px 12px;
+    margin: 22px 0 12px;
+  }
+  h3.subseccion {
+    font-size: 10.5pt;
+    font-weight: bold;
+    margin: 14px 0 6px;
+  }
+  p { margin: 0 0 10px; }
+  ul.lista {
+    margin: 0 0 10px;
+    padding: 0;
+    list-style: none;
+  }
+  ul.lista li {
+    position: relative;
+    padding-left: 16px;
+    margin-bottom: 6px;
+  }
+  ul.lista li::before {
+    content: "-";
+    position: absolute;
+    left: 0;
+  }
+  table.horas {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 14px;
+  }
+  table.horas th {
+    background: #d91b1b;
+    color: #fff;
+    text-align: left;
+    padding: 7px 10px;
+    font-size: 10pt;
+  }
+  table.horas td {
+    padding: 6px 10px;
+    font-size: 10pt;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  table.horas tr:nth-child(even) td {
+    background: #f2f2f2;
+  }
+  table.horas tr.total td {
+    font-weight: bold;
+    background: #e5e5e5;
+    border-top: 2px solid #1a1a1a;
+  }
+  .pie-final {
+    margin-top: 24px;
+  }
+  .pie-final p {
+    margin: 2px 0;
+    font-weight: bold;
+  }
+  .pie-final p.direccion {
+    font-weight: normal;
+  }
+</style>
+</head>
+<body>
+
+<div class="titulo-bloque">
+  <h1>INFORME DE DESARROLLO WEB</h1>
+  <h2>FASE [N] — [SUBTÍTULO: los dos o tres hitos principales de esta fase]</h2>
+  <p class="empresa">ORENCIO MATAS Y HERMANOS, S.L.</p>
+</div>
+
+<p class="intro">Continuación del informe de desarrollo Fase [N-1], cerrado el [DD/MM/AAAA]. Este informe cubre el trabajo realizado desde entonces en el repositorio web-orencio-matas: [resumen de 2-3 líneas de los hitos principales de la fase].</p>
+<p class="fecha-generacion">Fecha de generación: [DD/MM/AAAA]</p>
+
+<h2 class="seccion">1. LISTADO GENERAL DE TRABAJOS REALIZADOS — FASE [N]</h2>
+<ul class="lista">
+  <li>[Hito principal 1 — una frase resumen con el detalle justo para entenderlo sin leer el resto del informe.]</li>
+  <li>[Hito principal 2.]</li>
+  <li>[... añade tantos puntos como hitos tenga la fase — el listado general de Fase 4 tenía 13.]</li>
+</ul>
+
+<h2 class="seccion">2. [NOMBRE DE LA SECCIÓN TEMÁTICA]</h2>
+<p>[Párrafo explicativo de la sección, si el tema no necesita subapartados.]</p>
+
+<h3 class="subseccion">2.1 [Subapartado]</h3>
+<ul class="lista">
+  <li>[Punto de detalle.]</li>
+  <li>[Punto de detalle.]</li>
+</ul>
+
+<!--
+  Repite bloques "h2.seccion" (con o sin "h3.subseccion" y "ul.lista" o "p"
+  dentro) tantas veces como áreas temáticas tenga la fase. En Fase 3 y
+  Fase 4 el orden fue: Buscador, Gestión de imágenes, (actualización
+  automatizada), Centro de Soluciones, catálogos/escaparate, panel de
+  administración, despliegue, SEO — pero el orden y las secciones deben
+  adaptarse a lo que de verdad se haya trabajado en cada fase.
+-->
+
+<h2 class="seccion">N. DESGLOSE DE HORAS — FASE [N]</h2>
+<table class="horas">
+  <tr><th>Épica / Tarea</th><th>Horas</th></tr>
+  <tr><td>[Épica 1]</td><td>[X] h</td></tr>
+  <tr><td>[Épica 2]</td><td>[X] h</td></tr>
+  <tr class="total"><td>TOTAL</td><td>[SUMA] h</td></tr>
+</table>
+
+<h2 class="seccion">N+1. OBSERVACIONES Y ESTADO ACTUAL</h2>
+<ul class="lista">
+  <li>[Estado de cada frente abierto: qué está operativo, qué sigue en curso, qué queda pendiente.]</li>
+</ul>
+
+<div class="pie-final">
+  <p>ORENCIO MATAS Y HERMANOS, S.L.</p>
+  <p class="direccion">Av. Alfred Nobel, 2 · 13005 Ciudad Real · 926 221 217 · correo@orenciomatas.es</p>
+</div>
+
+</body>
+</html>
