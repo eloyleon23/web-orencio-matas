@@ -7760,58 +7760,84 @@ function sincronizarImagenesOneDrive_(data) {
   }
 
   // ── Generar lote(s) en zip directamente desde los blobs de Drive ─────
+  // Apps Script rechaza crear un archivo a partir de un blob que supere
+  // ~50MB — por eso cada lote se corta también por tamaño acumulado en
+  // bytes, no solo por el nº de imágenes configurado: si hay muchas
+  // imágenes grandes, un mismo "lote" de 300 puede terminar dividido en
+  // varios zips más pequeños automáticamente.
+  const MAX_BYTES_POR_ZIP = 40 * 1024 * 1024; // margen de seguridad bajo el límite real de Apps Script
+
   const enlaces = [];
   const fallos = [];
   const sincronizadosOk = [];
   let lotesGenerados = 0;
   let detenidoPorTiempo = false;
+  let idxCandidato = 0;
 
-  for (let inicio = 0; inicio < candidatos.length && lotesGenerados < maxLotes; inicio += TAMANO_LOTE) {
+  while (idxCandidato < candidatos.length && lotesGenerados < maxLotes) {
     // Comprobar el margen de tiempo ANTES de empezar un lote nuevo —
     // nunca a mitad de uno — así cada lote que se empieza siempre
     // llega a cerrarse, marcarse y poder incluirse en el correo.
     if (Date.now() - INICIO_EJECUCION > MAX_MS) { detenidoPorTiempo = true; break; }
 
-    const grupo = candidatos.slice(inicio, inicio + TAMANO_LOTE);
     const blobsZip = [];
-    const refsEnZip = [];
+    const candidatosEnZip = [];
+    let bytesAcumulados = 0;
 
-    grupo.forEach(c => {
+    while (idxCandidato < candidatos.length && blobsZip.length < TAMANO_LOTE) {
+      const c = candidatos[idxCandidato];
       try {
         const file = DriveApp.getFileById(c.imagenId);
+        const tamanoImagen = file.getSize();
+        // Si ya hay algo en el zip y meter esta imagen lo pasaría del
+        // límite de tamaño, se cierra el lote AQUÍ (sin avanzar
+        // idxCandidato) — esta imagen se procesará en el siguiente lote.
+        if (blobsZip.length > 0 && bytesAcumulados + tamanoImagen > MAX_BYTES_POR_ZIP) break;
+
         const extension = (file.getName().match(/\.[^.]+$/) || [''])[0];
         const blobRenombrado = file.getBlob().copyBlob().setName(
           'imagenes_productos/' + c.referencia + '/' + c.referencia + extension
         );
         blobsZip.push(blobRenombrado);
-        refsEnZip.push(c.referencia);
+        candidatosEnZip.push(c);
+        bytesAcumulados += tamanoImagen;
       } catch (err) {
         fallos.push({ referencia: c.referencia, motivo: err.message });
       }
-    });
+      idxCandidato++;
+    }
 
-    if (blobsZip.length === 0) continue; // todo el lote falló, no generar zip vacío
+    if (blobsZip.length === 0) continue; // todo este tramo falló, no generar zip vacío
 
-    lotesGenerados++;
-    const nombreZip = 'imagenes_onedrive_lote_' + lotesGenerados + '_' +
+    const nombreZip = 'imagenes_onedrive_lote_' + (lotesGenerados + 1) + '_' +
       Utilities.formatDate(new Date(), tz, 'yyyyMMdd_HHmmss') + '.zip';
-    const zipBlob = Utilities.zip(blobsZip, nombreZip);
-    const zipFile = DriveApp.createFile(zipBlob);
-    zipFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    enlaces.push({ nombre: nombreZip, url: zipFile.getUrl(), imagenes: blobsZip.length });
 
-    // Marcar la fecha en Productos INMEDIATAMENTE tras cerrar este lote
-    // (no al final de toda la función) — si la ejecución se corta justo
-    // después, este lote ya queda registrado como hecho y no se repite
-    // en la próxima ejecución.
-    const ahoraLoteTexto = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm:ss');
-    grupo.forEach(c => {
-      if (refsEnZip.indexOf(c.referencia) !== -1) {
+    try {
+      const zipBlob = Utilities.zip(blobsZip, nombreZip);
+      const zipFile = DriveApp.createFile(zipBlob);
+      zipFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      enlaces.push({ nombre: nombreZip, url: zipFile.getUrl(), imagenes: blobsZip.length });
+      lotesGenerados++;
+
+      // Marcar la fecha en Productos INMEDIATAMENTE tras cerrar este lote
+      // (no al final de toda la función) — si la ejecución se corta justo
+      // después, este lote ya queda registrado como hecho y no se repite
+      // en la próxima ejecución.
+      const ahoraLoteTexto = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm:ss');
+      candidatosEnZip.forEach(c => {
         sheetProd.getRange(c.filaNum, colSync + 1).setNumberFormat('@').setValue(ahoraLoteTexto);
         sincronizadosOk.push(c);
-      }
-    });
-    SpreadsheetApp.flush();
+      });
+      SpreadsheetApp.flush();
+    } catch (err) {
+      // No se pudo generar o compartir el zip de este tramo (p. ej.
+      // sigue superando el límite de tamaño pese al recorte, o un fallo
+      // puntual de Drive): se registran estas referencias como fallo —
+      // NO se marcan como sincronizadas, así se reintentan solas en la
+      // próxima ejecución — y se continúa con el resto en vez de perder
+      // toda la ejecución sin dejar rastro.
+      candidatosEnZip.forEach(c => fallos.push({ referencia: c.referencia, motivo: 'No se pudo generar el zip: ' + err.message }));
+    }
   }
 
   // ── Metadatos en Configuracion, sin tocar nada más de esa hoja ───────
