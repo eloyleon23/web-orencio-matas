@@ -7607,6 +7607,226 @@ function verificarPin_(pin) {
   return (pin || '').toString().trim() === pinCorrecto.toString().trim();
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// COPIA DE IMÁGENES VALIDADAS PARA ONEDRIVE (administrador del CRM)
+// ══════════════════════════════════════════════════════════════════════
+//
+// Genera, solo para productos con imagen validada (columna
+// imagen_validada rellena), uno o varios .zip descargables — cada zip
+// contiene, por producto, un directorio con el nombre de su referencia
+// y dentro una copia de su imagen; todos esos directorios van dentro de
+// un único directorio ("imagenes_productos/") que los recoge a todos.
+// El administrador del CRM descarga esos zips y copia su contenido a
+// OneDrive, origen real de las imágenes que consumen los comerciales.
+//
+// Sin coste de espacio en Drive: las imágenes se leen directamente de
+// la carpeta ya existente (DRIVE_IMAGENES_ID) y se comprimen en
+// memoria con Utilities.zip() renombrando cada blob con su ruta de
+// carpeta deseada — no se crea ninguna carpeta ni copia suelta
+// temporal en Drive. Lo único que queda al terminar es el/los .zip
+// final(es), que es precisamente el entregable con el enlace de
+// descarga (ANYONE_WITH_LINK / VIEW).
+//
+// Incremental: la fecha de la última ejecución se guarda en la hoja
+// "Configuracion" (onedrive_sync_ultima_fecha). Si está vacía, se
+// reprocesan TODAS las imágenes validadas; si no, solo las de
+// productos cuya imagen_validada sea POSTERIOR a esa fecha. Esa fecha
+// solo avanza cuando no queda ningún candidato sin procesar (así una
+// ejecución limitada en modo evaluación no "quema" lo pendiente).
+//
+// Lotes: el nº máximo de imágenes por zip/enlace es configurable desde
+// Configuracion (onedrive_sync_lote_imagenes) — si hay más imágenes
+// candidatas que ese tamaño, se generan varios zips/enlaces, y se
+// envían TODOS juntos en un único correo a onedrive_sync_emails (lista
+// separada por comas, por defecto solo eloyleon23@gmail.com).
+//
+// Modo evaluación: data.limiteImagenes y data.limiteLotes (pasados
+// solo en la propia llamada desde el panel, NO guardados en
+// Configuracion) permiten probar el proceso con un nº acotado de
+// imágenes/enlaces antes de lanzarlo al completo. Si no se indican, se
+// procesa todo lo procesable.
+//
+// Por producto incluido se anota en Productos la columna "sincronizado
+// one drive" (creada a demanda, igual que ficha_url) con la fecha de
+// generación — no se toca ninguna otra columna ni fila existente.
+
+// Convierte "dd/MM/yyyy HH:mm:ss" (o solo "dd/MM/yyyy") — el formato
+// que ya usa este proyecto para columnas como imagen_validada — a un
+// Date real para poder comparar fechas. Devuelve null si el texto no
+// encaja con ese formato; nunca lanza error.
+function parsearFechaHoraEs_(texto) {
+  const txt = (texto || '').toString().trim();
+  if (!txt) return null;
+  const m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+  if (!m) return null;
+  const fecha = new Date(
+    parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10),
+    parseInt(m[4] || '0', 10), parseInt(m[5] || '0', 10), parseInt(m[6] || '0', 10)
+  );
+  return isNaN(fecha.getTime()) ? null : fecha;
+}
+
+function sincronizarImagenesOneDrive_(data) {
+  data = data || {};
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProd = ss.getSheetByName('Productos');
+  if (!sheetProd) throw new Error('No existe la hoja "Productos".');
+
+  let headers = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+  const PROD = {};
+  headers.forEach((h, i) => { PROD[h] = i; });
+
+  ['referencia', 'imagen_drive_id', 'imagen_validada'].forEach(c => {
+    if (PROD[c] === undefined) throw new Error('Falta la columna "' + c + '" en Productos.');
+  });
+
+  // Columna "sincronizado one drive" a demanda — no toca nada más.
+  let colSync = PROD['sincronizado_one_drive'];
+  if (colSync === undefined) {
+    colSync = headers.length;
+    sheetProd.getRange(1, colSync + 1).setValue('sincronizado one drive');
+    PROD['sincronizado_one_drive'] = colSync;
+  }
+
+  const tz = ss.getSpreadsheetTimeZone();
+  const ultimaFechaTexto = (leerConfiguracion_('onedrive_sync_ultima_fecha', '') || '').toString().trim();
+  const ultimaFecha = ultimaFechaTexto ? parsearFechaHoraEs_(ultimaFechaTexto) : null;
+
+  const loteConfigurado = parseInt(leerConfiguracion_('onedrive_sync_lote_imagenes', '300'), 10);
+  const TAMANO_LOTE = (loteConfigurado > 0 ? loteConfigurado : 300);
+
+  // Límites de modo evaluación — solo de esta llamada, no de configuración.
+  const limiteImagenes = parseInt(data.limiteImagenes, 10);
+  const limiteLotes    = parseInt(data.limiteLotes, 10);
+  const maxImagenes = (!isNaN(limiteImagenes) && limiteImagenes > 0) ? limiteImagenes : Infinity;
+  const maxLotes     = (!isNaN(limiteLotes) && limiteLotes > 0) ? limiteLotes : Infinity;
+
+  const lastRow = sheetProd.getLastRow();
+  if (lastRow < 2) return { imagenes: 0, lotes: 0, fallos: 0, enviados: 0, motivo: 'Sin productos.' };
+
+  const filas = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
+
+  const candidatos = [];
+  for (let i = 0; i < filas.length && candidatos.length < maxImagenes; i++) {
+    const row = filas[i];
+    const referencia  = (row[PROD['referencia']] || '').toString().trim();
+    const imagenId     = (row[PROD['imagen_drive_id']] || '').toString().trim();
+    const validadaTxt  = (row[PROD['imagen_validada']] || '').toString().trim();
+    if (!referencia || !imagenId || imagenId === 'NO_TIENE_FOTO' || !validadaTxt) continue;
+
+    const fechaValidada = parsearFechaHoraEs_(validadaTxt);
+    if (ultimaFecha && fechaValidada && fechaValidada <= ultimaFecha) continue; // ya sincronizada antes
+
+    candidatos.push({ referencia: referencia, imagenId: imagenId, filaNum: i + 2 });
+  }
+
+  if (candidatos.length === 0) {
+    return { imagenes: 0, lotes: 0, fallos: 0, enviados: 0, motivo: 'No hay imágenes nuevas que sincronizar.' };
+  }
+
+  // ── Generar lote(s) en zip directamente desde los blobs de Drive ─────
+  const enlaces = [];
+  const fallos = [];
+  const sincronizadosOk = [];
+  let lotesGenerados = 0;
+
+  for (let inicio = 0; inicio < candidatos.length && lotesGenerados < maxLotes; inicio += TAMANO_LOTE) {
+    const grupo = candidatos.slice(inicio, inicio + TAMANO_LOTE);
+    const blobsZip = [];
+    const refsEnZip = [];
+
+    grupo.forEach(c => {
+      try {
+        const file = DriveApp.getFileById(c.imagenId);
+        const extension = (file.getName().match(/\.[^.]+$/) || [''])[0];
+        const blobRenombrado = file.getBlob().copyBlob().setName(
+          'imagenes_productos/' + c.referencia + '/' + c.referencia + extension
+        );
+        blobsZip.push(blobRenombrado);
+        refsEnZip.push(c.referencia);
+      } catch (err) {
+        fallos.push({ referencia: c.referencia, motivo: err.message });
+      }
+    });
+
+    if (blobsZip.length === 0) continue; // todo el lote falló, no generar zip vacío
+
+    lotesGenerados++;
+    const nombreZip = 'imagenes_onedrive_lote_' + lotesGenerados + '_' +
+      Utilities.formatDate(new Date(), tz, 'yyyyMMdd_HHmmss') + '.zip';
+    const zipBlob = Utilities.zip(blobsZip, nombreZip);
+    const zipFile = DriveApp.createFile(zipBlob);
+    zipFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    enlaces.push({ nombre: nombreZip, url: zipFile.getUrl(), imagenes: blobsZip.length });
+
+    grupo.forEach(c => {
+      if (refsEnZip.indexOf(c.referencia) !== -1) sincronizadosOk.push(c);
+    });
+  }
+
+  // ── Anotar fecha de sincronización en Productos (solo lo incluido) ───
+  const ahoraTexto = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm:ss');
+  sincronizadosOk.forEach(c => {
+    sheetProd.getRange(c.filaNum, colSync + 1).setValue(ahoraTexto);
+  });
+
+  // ── Metadatos en Configuracion, sin tocar nada más de esa hoja ───────
+  const quedanPendientes = candidatos.length > sincronizadosOk.length;
+  if (!quedanPendientes) {
+    escribirConfiguracion_('onedrive_sync_ultima_fecha', ahoraTexto,
+      'Fecha de la última generación de copia de imágenes para OneDrive (CRM). Vacío = la próxima ejecución reprocesa TODAS las imágenes validadas.');
+  }
+  escribirConfiguracion_('onedrive_sync_ultimo_resumen',
+    sincronizadosOk.length + ' imágenes en ' + lotesGenerados + ' lote(s), ' + fallos.length + ' fallo(s) — ' + ahoraTexto,
+    'Resumen de la última generación de copia de imágenes para OneDrive.');
+  escribirConfiguracion_('onedrive_sync_ultimos_fallos',
+    fallos.length ? fallos.map(f => f.referencia + ': ' + f.motivo).join(' | ') : '',
+    'Referencias cuya imagen no se pudo incluir en la última generación para OneDrive.');
+
+  if (!(leerConfiguracion_('onedrive_sync_lote_imagenes', '') || '').toString().trim()) {
+    escribirConfiguracion_('onedrive_sync_lote_imagenes', TAMANO_LOTE.toString(),
+      'Nº máximo de imágenes por cada zip/enlace generado para OneDrive (si hay más, se generan varios enlaces en el mismo correo).');
+  }
+  const emailsConfigurados = (leerConfiguracion_('onedrive_sync_emails', '') || '').toString().trim();
+  if (!emailsConfigurados) {
+    escribirConfiguracion_('onedrive_sync_emails', 'eloyleon23@gmail.com',
+      'Lista de correos (separados por coma) a los que se envía el aviso con los enlaces de descarga para OneDrive.');
+  }
+
+  // ── Correo único con todos los enlaces juntos ─────────────────────────
+  const destinatarios = (emailsConfigurados || 'eloyleon23@gmail.com')
+    .split(',').map(e => e.trim()).filter(Boolean).join(',');
+
+  let enviados = 0;
+  if (enlaces.length > 0 && destinatarios) {
+    const cuerpoLineas = enlaces.map((e, idx) =>
+      (idx + 1) + '. ' + e.nombre + ' (' + e.imagenes + ' imágenes): ' + e.url
+    );
+    let cuerpo = 'Copia de imágenes de productos validados para OneDrive.\n\n' +
+      sincronizadosOk.length + ' imágenes incluidas en ' + enlaces.length + ' enlace(s):\n\n' +
+      cuerpoLineas.join('\n');
+    if (fallos.length) {
+      cuerpo += '\n\n⚠️ ' + fallos.length + ' imagen(es) no se pudieron incluir:\n' +
+        fallos.map(f => '- ' + f.referencia + ': ' + f.motivo).join('\n');
+    }
+    MailApp.sendEmail({
+      to: destinatarios,
+      subject: '📁 Copia de imágenes para OneDrive (' + sincronizadosOk.length + ' imágenes, ' + enlaces.length + ' enlace(s))',
+      body: cuerpo,
+    });
+    enviados = 1;
+  }
+
+  return {
+    imagenes: sincronizadosOk.length,
+    lotes: enlaces.length,
+    fallos: fallos.length,
+    enviados: enviados,
+    enlaces: enlaces.map(e => e.url),
+  };
+}
+
 // ── Mapa único de funciones expuestas en el panel ─────────────────────
 // Para añadir una función nueva del menú al panel en el futuro, basta
 // con añadir una línea aquí (clave, etiqueta con emoji, grupo para
@@ -7635,6 +7855,7 @@ const FUNCIONES_PANEL = {
   mover_imagenes_nuevas:         { etiqueta: '📦 Mover imágenes nuevas a carpeta principal',    grupo: 'Imágenes',       fn: moverImagenesNuevasACarpetaPrincipal, confirmar: true  },
   dar_baja_fecha_alta:           { etiqueta: '🚫 Dar de baja por fecha de alta',                grupo: 'Sincronización', fn: panelDarBajaPorFechaAlta,             confirmar: true  },
   reactivar_fecha_alta:          { etiqueta: '✅ Reactivar por fecha de alta',                   grupo: 'Sincronización', fn: panelReactivarPorFechaAlta,           confirmar: true  },
+  sincronizar_imagenes_onedrive: { etiqueta: '📁 Generar copia de imágenes para OneDrive',       grupo: 'Imágenes',       fn: sincronizarImagenesOneDrive_,         confirmar: true  },
 };
 
 // ── Ejecutar una función del panel por su clave ───────────────────────
