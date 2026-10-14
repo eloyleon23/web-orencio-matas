@@ -7654,8 +7654,22 @@ function verificarPin_(pin) {
 // que ya usa este proyecto para columnas como imagen_validada — a un
 // Date real para poder comparar fechas. Devuelve null si el texto no
 // encaja con ese formato; nunca lanza error.
-function parsearFechaHoraEs_(texto) {
-  const txt = (texto || '').toString().trim();
+// Acepta tanto el texto "dd/MM/yyyy HH:mm:ss" que este proyecto escribe
+// en columnas como imagen_validada, como un objeto Date real — porque
+// Google Sheets, si la celda no se fuerza antes a formato de texto
+// ('@'), autodetecta un valor con pinta de fecha y lo guarda como fecha
+// de verdad en vez de como el texto que se escribió (mismo motivo por
+// el que escribirConfiguracion_ fuerza '@' antes de escribir). Al leer
+// esa celda luego, Sheets devuelve un objeto Date, no el string
+// original — así que cualquier columna de este estilo (propia o ya
+// existente, escrita en otro sitio sin ese cuidado) hay que poder
+// interpretarla en los dos formatos para no romper comparaciones de
+// fecha como la de aquí abajo.
+function parsearFechaHoraEs_(valor) {
+  if (valor instanceof Date) {
+    return isNaN(valor.getTime()) ? null : valor;
+  }
+  const txt = (valor || '').toString().trim();
   if (!txt) return null;
   const m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
   if (!m) return null;
@@ -7727,14 +7741,15 @@ function sincronizarImagenesOneDrive_(data) {
   const candidatos = [];
   for (let i = 0; i < filas.length && candidatos.length < maxImagenes; i++) {
     const row = filas[i];
-    const referencia    = (row[PROD['referencia']] || '').toString().trim();
-    const imagenId       = (row[PROD['imagen_drive_id']] || '').toString().trim();
-    const validadaTxt    = (row[PROD['imagen_validada']] || '').toString().trim();
-    const sincronizadoTxt = (row[colSync] || '').toString().trim();
+    const referencia     = (row[PROD['referencia']] || '').toString().trim();
+    const imagenId        = (row[PROD['imagen_drive_id']] || '').toString().trim();
+    const validadaValor    = row[PROD['imagen_validada']]; // puede ser texto o, si Sheets la autoconvirtió, un Date
+    const sincronizadoValor = row[colSync];
+    const validadaTxt    = (validadaValor || '').toString().trim();
     if (!referencia || !imagenId || imagenId === 'NO_TIENE_FOTO' || !validadaTxt) continue;
 
-    const fechaValidada     = parsearFechaHoraEs_(validadaTxt);
-    const fechaSincronizado = sincronizadoTxt ? parsearFechaHoraEs_(sincronizadoTxt) : null;
+    const fechaValidada     = parsearFechaHoraEs_(validadaValor);
+    const fechaSincronizado = sincronizadoValor ? parsearFechaHoraEs_(sincronizadoValor) : null;
     if (fechaSincronizado && fechaValidada && fechaValidada <= fechaSincronizado) continue; // ya sincronizada, sin cambios desde entonces
 
     candidatos.push({ referencia: referencia, imagenId: imagenId, filaNum: i + 2 });
@@ -7792,7 +7807,7 @@ function sincronizarImagenesOneDrive_(data) {
     const ahoraLoteTexto = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm:ss');
     grupo.forEach(c => {
       if (refsEnZip.indexOf(c.referencia) !== -1) {
-        sheetProd.getRange(c.filaNum, colSync + 1).setValue(ahoraLoteTexto);
+        sheetProd.getRange(c.filaNum, colSync + 1).setNumberFormat('@').setValue(ahoraLoteTexto);
         sincronizadosOk.push(c);
       }
     });
