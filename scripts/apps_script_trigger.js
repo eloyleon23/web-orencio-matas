@@ -7668,6 +7668,17 @@ function parsearFechaHoraEs_(texto) {
 
 function sincronizarImagenesOneDrive_(data) {
   data = data || {};
+  const INICIO_EJECUCION = Date.now();
+  // Apps Script mata la ejecución de un Web App a los 6 minutos — se
+  // deja un margen de seguridad amplio para no arriesgarse a que el
+  // propio Google corte el script a mitad de un lote (lo que perdería
+  // el zip ya creado en Drive sin que nadie llegue a recibirlo). Si no
+  // da tiempo a procesar todo, el proceso se detiene de forma limpia y
+  // deja claro en el resultado cuántas imágenes quedan pendientes —
+  // basta con volver a lanzarlo para continuar, sin repetir ni perder
+  // nada de lo ya hecho (ver más abajo cómo se decide qué falta).
+  const MAX_MS = 4 * 60 * 1000;
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetProd = ss.getSheetByName('Productos');
   if (!sheetProd) throw new Error('No existe la hoja "Productos".');
@@ -7690,8 +7701,6 @@ function sincronizarImagenesOneDrive_(data) {
   }
 
   const tz = ss.getSpreadsheetTimeZone();
-  const ultimaFechaTexto = (leerConfiguracion_('onedrive_sync_ultima_fecha', '') || '').toString().trim();
-  const ultimaFecha = ultimaFechaTexto ? parsearFechaHoraEs_(ultimaFechaTexto) : null;
 
   const loteConfigurado = parseInt(leerConfiguracion_('onedrive_sync_lote_imagenes', '300'), 10);
   const TAMANO_LOTE = (loteConfigurado > 0 ? loteConfigurado : 300);
@@ -7703,26 +7712,36 @@ function sincronizarImagenesOneDrive_(data) {
   const maxLotes     = (!isNaN(limiteLotes) && limiteLotes > 0) ? limiteLotes : Infinity;
 
   const lastRow = sheetProd.getLastRow();
-  if (lastRow < 2) return { imagenes: 0, lotes: 0, fallos: 0, enviados: 0, motivo: 'Sin productos.' };
+  if (lastRow < 2) return { imagenes: 0, lotes: 0, fallos: 0, pendientes: 0, enviados: 0, motivo: 'Sin productos.' };
 
   const filas = sheetProd.getRange(2, 1, lastRow - 1, sheetProd.getLastColumn()).getValues();
 
+  // Candidato = su imagen está validada y, o nunca se sincronizó, o se
+  // volvió a validar DESPUÉS de la última vez que se sincronizó. Al
+  // comparar contra la propia columna "sincronizado one drive" de cada
+  // fila (en vez de una única fecha de corte global), el proceso es
+  // reanudable sin esfuerzo: una ejecución que se detiene por el límite
+  // de tiempo antes de llegar a todas las filas no hace que la próxima
+  // ejecución repita las que ya quedaron marcadas, ni que se "pierdan"
+  // las que aún faltan.
   const candidatos = [];
   for (let i = 0; i < filas.length && candidatos.length < maxImagenes; i++) {
     const row = filas[i];
-    const referencia  = (row[PROD['referencia']] || '').toString().trim();
-    const imagenId     = (row[PROD['imagen_drive_id']] || '').toString().trim();
-    const validadaTxt  = (row[PROD['imagen_validada']] || '').toString().trim();
+    const referencia    = (row[PROD['referencia']] || '').toString().trim();
+    const imagenId       = (row[PROD['imagen_drive_id']] || '').toString().trim();
+    const validadaTxt    = (row[PROD['imagen_validada']] || '').toString().trim();
+    const sincronizadoTxt = (row[colSync] || '').toString().trim();
     if (!referencia || !imagenId || imagenId === 'NO_TIENE_FOTO' || !validadaTxt) continue;
 
-    const fechaValidada = parsearFechaHoraEs_(validadaTxt);
-    if (ultimaFecha && fechaValidada && fechaValidada <= ultimaFecha) continue; // ya sincronizada antes
+    const fechaValidada     = parsearFechaHoraEs_(validadaTxt);
+    const fechaSincronizado = sincronizadoTxt ? parsearFechaHoraEs_(sincronizadoTxt) : null;
+    if (fechaSincronizado && fechaValidada && fechaValidada <= fechaSincronizado) continue; // ya sincronizada, sin cambios desde entonces
 
     candidatos.push({ referencia: referencia, imagenId: imagenId, filaNum: i + 2 });
   }
 
   if (candidatos.length === 0) {
-    return { imagenes: 0, lotes: 0, fallos: 0, enviados: 0, motivo: 'No hay imágenes nuevas que sincronizar.' };
+    return { imagenes: 0, lotes: 0, fallos: 0, pendientes: 0, enviados: 0, motivo: 'No hay imágenes nuevas que sincronizar.' };
   }
 
   // ── Generar lote(s) en zip directamente desde los blobs de Drive ─────
@@ -7730,8 +7749,14 @@ function sincronizarImagenesOneDrive_(data) {
   const fallos = [];
   const sincronizadosOk = [];
   let lotesGenerados = 0;
+  let detenidoPorTiempo = false;
 
   for (let inicio = 0; inicio < candidatos.length && lotesGenerados < maxLotes; inicio += TAMANO_LOTE) {
+    // Comprobar el margen de tiempo ANTES de empezar un lote nuevo —
+    // nunca a mitad de uno — así cada lote que se empieza siempre
+    // llega a cerrarse, marcarse y poder incluirse en el correo.
+    if (Date.now() - INICIO_EJECUCION > MAX_MS) { detenidoPorTiempo = true; break; }
+
     const grupo = candidatos.slice(inicio, inicio + TAMANO_LOTE);
     const blobsZip = [];
     const refsEnZip = [];
@@ -7760,25 +7785,29 @@ function sincronizarImagenesOneDrive_(data) {
     zipFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     enlaces.push({ nombre: nombreZip, url: zipFile.getUrl(), imagenes: blobsZip.length });
 
+    // Marcar la fecha en Productos INMEDIATAMENTE tras cerrar este lote
+    // (no al final de toda la función) — si la ejecución se corta justo
+    // después, este lote ya queda registrado como hecho y no se repite
+    // en la próxima ejecución.
+    const ahoraLoteTexto = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm:ss');
     grupo.forEach(c => {
-      if (refsEnZip.indexOf(c.referencia) !== -1) sincronizadosOk.push(c);
+      if (refsEnZip.indexOf(c.referencia) !== -1) {
+        sheetProd.getRange(c.filaNum, colSync + 1).setValue(ahoraLoteTexto);
+        sincronizadosOk.push(c);
+      }
     });
+    SpreadsheetApp.flush();
   }
-
-  // ── Anotar fecha de sincronización en Productos (solo lo incluido) ───
-  const ahoraTexto = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm:ss');
-  sincronizadosOk.forEach(c => {
-    sheetProd.getRange(c.filaNum, colSync + 1).setValue(ahoraTexto);
-  });
 
   // ── Metadatos en Configuracion, sin tocar nada más de esa hoja ───────
-  const quedanPendientes = candidatos.length > sincronizadosOk.length;
-  if (!quedanPendientes) {
+  const ahoraTexto = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm:ss');
+  const pendientes = candidatos.length - sincronizadosOk.length;
+  if (pendientes === 0) {
     escribirConfiguracion_('onedrive_sync_ultima_fecha', ahoraTexto,
-      'Fecha de la última generación de copia de imágenes para OneDrive (CRM). Vacío = la próxima ejecución reprocesa TODAS las imágenes validadas.');
+      'Fecha de la última vez que se completó sin dejar nada pendiente la generación de copia de imágenes para OneDrive (CRM). Informativo — el proceso decide qué procesar mirando la columna "sincronizado one drive" de Productos, no esta fecha.');
   }
   escribirConfiguracion_('onedrive_sync_ultimo_resumen',
-    sincronizadosOk.length + ' imágenes en ' + lotesGenerados + ' lote(s), ' + fallos.length + ' fallo(s) — ' + ahoraTexto,
+    sincronizadosOk.length + ' imágenes en ' + lotesGenerados + ' lote(s), ' + fallos.length + ' fallo(s), ' + pendientes + ' pendiente(s) — ' + ahoraTexto,
     'Resumen de la última generación de copia de imágenes para OneDrive.');
   escribirConfiguracion_('onedrive_sync_ultimos_fallos',
     fallos.length ? fallos.map(f => f.referencia + ': ' + f.motivo).join(' | ') : '',
@@ -7794,7 +7823,10 @@ function sincronizarImagenesOneDrive_(data) {
       'Lista de correos (separados por coma) a los que se envía el aviso con los enlaces de descarga para OneDrive.');
   }
 
-  // ── Correo único con todos los enlaces juntos ─────────────────────────
+  // ── Correo único con todos los enlaces generados EN ESTA EJECUCIÓN ───
+  // (si el proceso se detiene por el límite de tiempo con varias
+  // tandas pendientes, cada relanzamiento manda su propio correo con
+  // los enlaces que haya conseguido cerrar en esa tanda).
   const destinatarios = (emailsConfigurados || 'eloyleon23@gmail.com')
     .split(',').map(e => e.trim()).filter(Boolean).join(',');
 
@@ -7810,6 +7842,11 @@ function sincronizarImagenesOneDrive_(data) {
       cuerpo += '\n\n⚠️ ' + fallos.length + ' imagen(es) no se pudieron incluir:\n' +
         fallos.map(f => '- ' + f.referencia + ': ' + f.motivo).join('\n');
     }
+    if (pendientes > 0) {
+      cuerpo += '\n\n⏳ Quedan ' + pendientes + ' imagen(es) más por procesar' +
+        (detenidoPorTiempo ? ' (se ha alcanzado el límite de tiempo de esta ejecución)' : '') +
+        ' — vuelve a lanzar el proceso desde el panel para continuar.';
+    }
     MailApp.sendEmail({
       to: destinatarios,
       subject: '📁 Copia de imágenes para OneDrive (' + sincronizadosOk.length + ' imágenes, ' + enlaces.length + ' enlace(s))',
@@ -7822,8 +7859,12 @@ function sincronizarImagenesOneDrive_(data) {
     imagenes: sincronizadosOk.length,
     lotes: enlaces.length,
     fallos: fallos.length,
+    pendientes: pendientes,
     enviados: enviados,
     enlaces: enlaces.map(e => e.url),
+    motivo: detenidoPorTiempo
+      ? 'Límite de tiempo de ejecución alcanzado — quedan ' + pendientes + ' imagen(es) pendientes. Vuelve a lanzar el proceso para continuar.'
+      : undefined,
   };
 }
 
