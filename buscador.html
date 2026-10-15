@@ -795,14 +795,13 @@
         #btn-gestionar-destacados.visible { display: inline-flex; }
         #btn-gestionar-destacados:hover { background: var(--blue); }
         #btn-gestionar-destacados.oculto-por-modal { display: none !important; }
+        /* A petición de Eloy: en móvil debe verse igual que el botón
+           "Gestionar soluciones" del Centro de Soluciones (.cs-gestion-dock-btn,
+           ver assets/css/soluciones.css) — siempre la píldora completa con
+           icono + texto, nunca un círculo negro sin etiquetar. Solo se
+           reposiciona un poco para dejar sitio al resto de la UI móvil. */
         @media (max-width: 640px) {
-            #btn-gestionar-destacados {
-                right: 14px; bottom: 58px;
-                padding: 8px 10px; font-size: 0;
-                width: 36px; height: 36px; border-radius: 50%;
-                justify-content: center;
-            }
-            #btn-gestionar-destacados .btn-gestionar-destacados__texto { display: none; }
+            #btn-gestionar-destacados { right: 14px; bottom: 58px; }
         }
 
         /* ── Modal "Gestionar destacados" ─────────────────────────────── */
