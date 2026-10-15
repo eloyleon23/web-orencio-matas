@@ -3592,6 +3592,22 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Sección "Destacados" del buscador — misma caché en Drive que
+    // obtener_campanas (ver regenerarCacheDestacadosDesdeSheet_), con la
+    // configuración global (activo/fecha fin) leída al vuelo desde
+    // Configuracion, ya que esa lectura es barata y así un cambio del
+    // interruptor se refleja sin esperar a que algo regenere la caché.
+    if (accion === 'obtener_destacados') {
+      const cacheDestacados = leerCacheDestacados_();
+      const activo = (leerConfiguracion_('destacados_activo', 'no') || '').toString().trim().toLowerCase() === 'si';
+      const fechaFin = (leerConfiguracion_('destacados_fecha_fin', '') || '').toString().trim();
+      return ContentService.createTextOutput(JSON.stringify({
+        activo: activo,
+        fechaFin: fechaFin,
+        productos: cacheDestacados.productos || [],
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // Centro de Soluciones — guías curadas, lee de la caché en Drive
     // (ver regenerarCacheSolucionesDesdeSheet_ más arriba). Mismo motivo
     // que obtener_campanas: sirve datos ya preparados, sin depender de
@@ -3691,6 +3707,28 @@ function doPost(e) {
     if (accion === 'eliminar_campana') {
       console.log('Acción: eliminar_campana');
       return procesarEliminarCampana(data);
+    }
+
+    // NUEVO — Sección "Destacados" del buscador. A diferencia de
+    // Campañas (sin ningún control de acceso hoy), estas tres acciones
+    // SÍ se protegen con el mismo PIN que ya usa el panel de
+    // administración (verificarPin_) — se gestionan desde un botón
+    // flotante en el propio buscador público, así que una escritura sin
+    // autenticar expondría el precio/promoción de cualquier producto a
+    // cualquier visitante.
+    if (accion === 'guardar_config_destacados') {
+      console.log('Acción: guardar_config_destacados');
+      return procesarGuardarConfigDestacados(data);
+    }
+
+    if (accion === 'guardar_destacado') {
+      console.log('Acción: guardar_destacado');
+      return procesarGuardarDestacado(data);
+    }
+
+    if (accion === 'eliminar_destacado') {
+      console.log('Acción: eliminar_destacado');
+      return procesarEliminarDestacado(data);
     }
 
     if (accion === 'sugerir_categorias_campana_ia') {
@@ -5406,6 +5444,337 @@ function procesarEliminarCampana(data) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarEliminarCampana:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SECCIÓN "DESTACADOS" DEL BUSCADOR (ofertas/oportunidades/liquidación)
+// ══════════════════════════════════════════════════════════════════════
+//
+// Misma arquitectura que Campañas/Escaparate (hoja propia + caché JSON en
+// Drive para que obtener_destacados sirva datos ya preparados en
+// cualquier hosting, sin tocar el Sheet en cada visita) — ver el bloque
+// de Campañas más arriba para el precedente que se ha clonado aquí.
+//
+// Decisión documentada: esta hoja "Destacados" SOLO guarda la
+// configuración específica de cada promoción por producto (referencia +
+// campos de promoción) — nunca nombre/imagen/precio/área/familia, que ya
+// viven en Productos y se resuelven en el propio buscador.html contra el
+// catálogo ya cargado (misma referencia como identificador estable, igual
+// que el resto del proyecto). La configuración GLOBAL de la sección
+// (activo/fecha fin) NO vive en esta hoja, sino como dos claves más en la
+// hoja "Configuracion" ya existente (destacados_activo, destacados_fecha_
+// fin) — es exactamente el mismo mecanismo clave/valor que ya usan
+// mantenimiento_*, crm_sync_*, onedrive_sync_*, etc., así que no hacía
+// falta inventar un segundo sitio para un simple interruptor con fecha.
+
+const CABECERAS_DESTACADOS_ = ['referencia', 'activo', 'tipo_destacado', 'descuento_porcentaje', 'precio_alternativo', 'texto_promocion', 'fecha_fin', 'orden', 'ultima_actualizacion'];
+const TIPOS_DESTACADO_VALIDOS_ = ['oferta', 'oportunidad', 'liquidacion'];
+
+function obtenerHojaDestacados_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Destacados');
+  if (!sheet) {
+    sheet = ss.insertSheet('Destacados');
+    sheet.getRange(1, 1, 1, CABECERAS_DESTACADOS_.length).setValues([CABECERAS_DESTACADOS_]);
+    sheet.setFrozenRows(1);
+    return sheet;
+  }
+  // Mismo patrón de migración ligera que obtenerHojaCampanas_: si la hoja
+  // ya existía de antes de añadir alguna columna nueva, se añade al final
+  // sin tocar ninguna fila existente.
+  const cabecerasActuales = sheet.getLastColumn() > 0
+    ? sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => h.toString().toLowerCase().trim().replace(/\s+/g, '_'))
+    : [];
+  const faltantes = CABECERAS_DESTACADOS_.filter(h => cabecerasActuales.indexOf(h) === -1);
+  if (faltantes.length) {
+    sheet.getRange(1, sheet.getLastColumn() + 1, 1, faltantes.length).setValues([faltantes]);
+    console.log('Hoja Destacados: columnas añadidas por migración automática:', JSON.stringify(faltantes));
+  }
+  return sheet;
+}
+
+// Sheet → array de objetos. Incluye TODOS los productos configurados
+// (activos, inactivos y caducados) — el filtrado de qué se muestra de
+// verdad en el buscador se hace en el cliente (obtener_destacados sirve
+// el listado completo tal cual para que el modal de gestión también
+// pueda administrar lo que esté temporalmente oculto).
+function leerDestacados_() {
+  const sheet = obtenerHojaDestacados_();
+  const datos = sheet.getDataRange().getValues();
+  if (datos.length < 2) return [];
+  const COL = mapaCabeceras_(datos[0]);
+
+  const destacados = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    const referencia = (fila[COL['referencia']] || '').toString().trim();
+    if (!referencia) continue; // fila en blanco
+    const descuentoNum = parseFloat((fila[COL['descuento_porcentaje']] || '').toString().replace(',', '.'));
+    const precioAltNum = parseFloat((fila[COL['precio_alternativo']] || '').toString().replace(',', '.'));
+    destacados.push({
+      referencia: referencia,
+      activo: (fila[COL['activo']] || '').toString().trim().toLowerCase() !== 'no',
+      tipoDestacado: (fila[COL['tipo_destacado']] || '').toString().trim().toLowerCase(),
+      descuentoPorcentaje: (isFinite(descuentoNum) && descuentoNum > 0) ? descuentoNum : null,
+      precioAlternativo: (isFinite(precioAltNum) && precioAltNum >= 0) ? precioAltNum : null,
+      textoPromocion: (fila[COL['texto_promocion']] || '').toString().trim().slice(0, 10),
+      fechaFin: formatearFechaISO_(fila[COL['fecha_fin']]) || (fila[COL['fecha_fin']] || '').toString().trim(),
+      orden: parseInt(fila[COL['orden']], 10) || 0,
+      ultimaActualizacion: (fila[COL['ultima_actualizacion']] || '').toString(),
+      _filaNum: i + 1,
+    });
+  }
+  return destacados;
+}
+
+// ── Caché en Drive (mismo patrón que Campañas) ────────────────────────
+const NOMBRE_ARCHIVO_DESTACADOS_CACHE = 'destacados_cache.json';
+
+function obtenerArchivoDestacadosCache_() {
+  const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_DESTACADOS_CACHE);
+  if (archivos.hasNext()) {
+    return archivos.next();
+  }
+  const blobVacio = Utilities.newBlob('{"productos":[]}', 'application/json', NOMBRE_ARCHIVO_DESTACADOS_CACHE);
+  const archivo = DriveApp.createFile(blobVacio);
+  archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  console.log('Archivo de caché de destacados creado en Drive:', archivo.getId());
+  return archivo;
+}
+
+function leerCacheDestacados_() {
+  try {
+    const archivo = obtenerArchivoDestacadosCache_();
+    const contenido = archivo.getBlob().getDataAsString('UTF-8');
+    return JSON.parse(contenido);
+  } catch (e) {
+    console.error('leerCacheDestacados_: error leyendo la caché, devolviendo estructura vacía:', e);
+    return { productos: [] };
+  }
+}
+
+function guardarCacheDestacados_(datos) {
+  const archivo = obtenerArchivoDestacadosCache_();
+  archivo.setContent(JSON.stringify(datos));
+}
+
+function regenerarCacheDestacadosDesdeSheet_() {
+  const destacados = leerDestacados_().map(d => {
+    // No se expone _filaNum (detalle interno de implementación) en la
+    // caché pública que consume el buscador.
+    const copia = Object.assign({}, d);
+    delete copia._filaNum;
+    return copia;
+  });
+  const payload = {
+    generado: new Date().toISOString(),
+    total: destacados.length,
+    productos: destacados,
+  };
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.tryLock(15000);
+    guardarCacheDestacados_(payload);
+  } finally {
+    lock.releaseLock();
+  }
+  console.log(`regenerarCacheDestacadosDesdeSheet_: ${destacados.length} destacados regenerados y guardados en la caché de Drive.`);
+  return payload;
+}
+
+// ── Validación y guardado ──────────────────────────────────────────────
+
+// Valida y normaliza los campos de un destacado — compartido entre crear
+// y actualizar. Lanza Error con un mensaje apto para mostrar al usuario
+// si algo no es válido; nunca escribe nada por su cuenta.
+function validarCamposDestacado_(data) {
+  const referencia = (data.referencia || '').toString().trim();
+  if (!referencia) throw new Error('Falta la referencia del producto.');
+
+  const sheetProd = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Productos');
+  if (!sheetProd) throw new Error('No existe la hoja "Productos".');
+  const headersProd = sheetProd.getRange(1, 1, 1, sheetProd.getLastColumn()).getValues()[0]
+    .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+  const colRefProd = headersProd.indexOf('referencia');
+  if (colRefProd === -1) throw new Error('La hoja "Productos" no tiene columna "referencia".');
+  const refsProd = sheetProd.getRange(2, colRefProd + 1, Math.max(sheetProd.getLastRow() - 1, 0), 1).getValues()
+    .map(r => (r[0] || '').toString().trim());
+  if (refsProd.indexOf(referencia) === -1) {
+    throw new Error('No existe ningún producto con la referencia "' + referencia + '" en el catálogo.');
+  }
+
+  const tipoDestacado = (data.tipoDestacado || '').toString().trim().toLowerCase();
+  if (tipoDestacado && TIPOS_DESTACADO_VALIDOS_.indexOf(tipoDestacado) === -1) {
+    throw new Error('Tipo de destacado no válido: debe ser oferta, oportunidad o liquidacion (o vacío).');
+  }
+
+  let descuentoPorcentaje = '';
+  if (data.descuentoPorcentaje !== undefined && data.descuentoPorcentaje !== null && data.descuentoPorcentaje !== '') {
+    const n = parseFloat((data.descuentoPorcentaje || '').toString().replace(',', '.'));
+    if (!isFinite(n) || n < 0 || n > 100) throw new Error('El descuento debe ser un número entre 0 y 100.');
+    descuentoPorcentaje = n;
+  }
+
+  let precioAlternativo = '';
+  if (data.precioAlternativo !== undefined && data.precioAlternativo !== null && data.precioAlternativo !== '') {
+    const n = parseFloat((data.precioAlternativo || '').toString().replace(',', '.'));
+    if (!isFinite(n) || n < 0) throw new Error('El precio alternativo debe ser un número mayor o igual que 0.');
+    precioAlternativo = n;
+  }
+
+  const textoPromocion = (data.textoPromocion || '').toString().trim().slice(0, 10);
+
+  let fechaFin = (data.fechaFin || '').toString().trim();
+  if (fechaFin && !parsearFechaHoraEs_(fechaFin) && isNaN(new Date(fechaFin).getTime())) {
+    throw new Error('La fecha límite del producto no es una fecha válida.');
+  }
+
+  const orden = (data.orden !== undefined && data.orden !== null && data.orden !== '')
+    ? (parseInt(data.orden, 10) || 0) : 0;
+
+  return {
+    referencia: referencia,
+    activo: data.activo !== false,
+    tipoDestacado: tipoDestacado,
+    descuentoPorcentaje: descuentoPorcentaje,
+    precioAlternativo: precioAlternativo,
+    textoPromocion: textoPromocion,
+    fechaFin: fechaFin,
+    orden: orden,
+  };
+}
+
+// Crea o actualiza (por referencia, sin duplicados) un producto
+// destacado. Protegido por PIN: esta acción se dispara desde un botón
+// flotante en el propio buscador público, no desde una página de
+// administración interna — sin este control, cualquier visitante podría
+// reescribir precios y promociones de cualquier producto.
+function procesarGuardarDestacado(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    console.log('procesarGuardarDestacado iniciado:', data);
+
+    const campos = validarCamposDestacado_(data);
+    const sheet = obtenerHojaDestacados_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    const ahoraTexto = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+
+    let filaIdx = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['referencia']] || '').toString().trim() === campos.referencia) { filaIdx = i; break; }
+    }
+
+    const escribirFecha = (rango, valorTexto) => rango.setNumberFormat('@').setValue(valorTexto);
+
+    if (filaIdx === -1) {
+      const filaNum = sheet.getLastRow() + 1;
+      sheet.getRange(filaNum, COL['referencia'] + 1).setValue(campos.referencia);
+      sheet.getRange(filaNum, COL['activo'] + 1).setValue(campos.activo ? 'si' : 'no');
+      sheet.getRange(filaNum, COL['tipo_destacado'] + 1).setValue(campos.tipoDestacado);
+      sheet.getRange(filaNum, COL['descuento_porcentaje'] + 1).setValue(campos.descuentoPorcentaje);
+      sheet.getRange(filaNum, COL['precio_alternativo'] + 1).setValue(campos.precioAlternativo);
+      sheet.getRange(filaNum, COL['texto_promocion'] + 1).setValue(campos.textoPromocion);
+      escribirFecha(sheet.getRange(filaNum, COL['fecha_fin'] + 1), campos.fechaFin);
+      sheet.getRange(filaNum, COL['orden'] + 1).setValue(campos.orden || filaNum);
+      escribirFecha(sheet.getRange(filaNum, COL['ultima_actualizacion'] + 1), ahoraTexto);
+      console.log('Destacado creado:', campos.referencia);
+    } else {
+      const filaNum = filaIdx + 1;
+      sheet.getRange(filaNum, COL['activo'] + 1).setValue(campos.activo ? 'si' : 'no');
+      sheet.getRange(filaNum, COL['tipo_destacado'] + 1).setValue(campos.tipoDestacado);
+      sheet.getRange(filaNum, COL['descuento_porcentaje'] + 1).setValue(campos.descuentoPorcentaje);
+      sheet.getRange(filaNum, COL['precio_alternativo'] + 1).setValue(campos.precioAlternativo);
+      sheet.getRange(filaNum, COL['texto_promocion'] + 1).setValue(campos.textoPromocion);
+      escribirFecha(sheet.getRange(filaNum, COL['fecha_fin'] + 1), campos.fechaFin);
+      if (campos.orden) sheet.getRange(filaNum, COL['orden'] + 1).setValue(campos.orden);
+      escribirFecha(sheet.getRange(filaNum, COL['ultima_actualizacion'] + 1), ahoraTexto);
+      console.log('Destacado actualizado:', campos.referencia);
+    }
+
+    regenerarCacheDestacadosDesdeSheet_();
+    return ContentService.createTextOutput(JSON.stringify({ success: true, referencia: campos.referencia }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarGuardarDestacado:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Retira un producto de Destacados (nunca toca el catálogo de Productos).
+function procesarEliminarDestacado(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    console.log('procesarEliminarDestacado iniciado:', data);
+
+    const referencia = (data.referencia || '').toString().trim();
+    if (!referencia) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta la referencia del producto.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const sheet = obtenerHojaDestacados_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['referencia']] || '').toString().trim() === referencia) {
+        sheet.deleteRow(i + 1);
+        console.log('Destacado eliminado:', referencia);
+        regenerarCacheDestacadosDesdeSheet_();
+        return ContentService.createTextOutput(JSON.stringify({ success: true }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Ese producto no está en Destacados.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarEliminarDestacado:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Configuración global de la sección — interruptor + fecha límite,
+// guardadas como dos claves más en la hoja "Configuracion" existente
+// (igual patrón que mantenimiento_*/crm_sync_*/onedrive_sync_*), sin
+// afectar a ningún otro campo, fila o columna de esa hoja.
+function procesarGuardarConfigDestacados(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    console.log('procesarGuardarConfigDestacados iniciado:', data);
+
+    const activo = data.activo === true;
+    let fechaFin = (data.fechaFin || '').toString().trim();
+    if (fechaFin && isNaN(new Date(fechaFin).getTime()) && !parsearFechaHoraEs_(fechaFin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'La fecha límite de la sección no es válida.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    escribirConfiguracion_('destacados_activo', activo ? 'si' : 'no',
+      'si / no — si se muestra la sección "Destacados" en el buscador.');
+    escribirConfiguracion_('destacados_fecha_fin', fechaFin,
+      'Fecha y hora límite (opcional) hasta la que se muestra la sección "Destacados". Vacío = sin fecha límite, solo manda el interruptor destacados_activo.');
+    escribirConfiguracion_('destacados_ultima_actualizacion',
+      Utilities.formatDate(new Date(), SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm:ss'),
+      'Fecha de la última vez que se cambió la configuración general de "Destacados".');
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, activo: activo, fechaFin: fechaFin }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarGuardarConfigDestacados:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }

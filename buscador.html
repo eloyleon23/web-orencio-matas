@@ -691,6 +691,153 @@
             .marcas-buscadas__chip-foto { width: 34px; height: 34px; }
         }
 
+        /* ── Sección "Destacados" (ofertas/oportunidad/liquidación) ──────
+           A petición de Eloy: jerarquía visual claramente por encima de
+           los módulos .mas-buscados (Más buscados/Novedades/Marcas/
+           Seguir comprando) — franja de acento con los colores
+           corporativos (azul→rojo) arriba del todo, título más grande, y
+           tarjetas más anchas con la etiqueta de tipo de promoción y el
+           precio rebajado con más protagonismo. Deliberadamente no se
+           usan los 4 colores de marca a la vez en el mismo elemento
+           (spec: "sin usar todos los colores indiscriminadamente") — la
+           franja usa azul/rojo, y cada chip de tipo usa UN color propio
+           (ver .destacado-chip--*). */
+        #destacados.seccion-destacados {
+            margin: 0 0 22px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(25,118,210,.07), rgba(211,47,47,.05));
+            border: 1px solid rgba(25,118,210,.18);
+            padding: 16px 16px 14px;
+            position: relative;
+            overflow: hidden;
+        }
+        #destacados.seccion-destacados::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--blue), var(--red));
+        }
+        .seccion-destacados__titulo {
+            font-size: 1.3rem; font-weight: 800; color: var(--dark);
+            margin: 4px 0 12px; display: flex; align-items: center; gap: 10px;
+        }
+        .seccion-destacados__icono {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 38px; height: 38px; border-radius: 50%; font-size: 1.15rem; flex-shrink: 0;
+            background: var(--dark); color: var(--yellow);
+        }
+        .seccion-destacados__lista {
+            display: flex; gap: 14px; overflow-x: auto; padding-bottom: 4px;
+            scroll-snap-type: x proximity;
+        }
+        .seccion-destacados__lista > .producto-card {
+            flex: 0 0 180px; scroll-snap-align: start;
+            border: 1px solid rgba(25,118,210,.25);
+            box-shadow: 0 4px 14px -4px rgba(15,23,42,.18);
+        }
+        @media (min-width: 881px) {
+            .seccion-destacados__lista > .producto-card { flex-basis: 200px; }
+        }
+        .destacado-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: .3px; padding: 3px 8px; border-radius: 6px; color: #fff;
+            position: absolute; top: 8px; left: 8px; z-index: 2;
+        }
+        .destacado-chip--oferta       { background: var(--green); }
+        .destacado-chip--oportunidad  { background: var(--blue); }
+        .destacado-chip--liquidacion  { background: var(--red); }
+        .destacado-promo-texto {
+            display: inline-block; background: var(--yellow); color: #4a3800;
+            font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;
+            margin-top: 4px;
+        }
+        .destacado-precio-descuento {
+            display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+        }
+        .destacado-precio-original { color: var(--muted); text-decoration: line-through; font-size: 0.85rem; }
+        .destacado-precio-promo { color: var(--red); font-weight: 800; font-size: 1.15rem; }
+        .destacado-precio-pct {
+            background: var(--red); color: #fff; font-size: 0.7rem; font-weight: 800;
+            padding: 2px 6px; border-radius: 5px;
+        }
+
+        /* ── Botón flotante "Gestionar destacados" (solo preproducción) ── */
+        #btn-gestionar-destacados {
+            position: fixed; right: 22px; bottom: 78px; z-index: 3999;
+            display: none; align-items: center; gap: 8px;
+            padding: 10px 16px; border: none; border-radius: 24px;
+            background: var(--dark); color: #fff; font-size: 0.85rem; font-weight: 700;
+            cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25);
+        }
+        #btn-gestionar-destacados.visible { display: inline-flex; }
+        #btn-gestionar-destacados:hover { background: var(--blue); }
+        #btn-gestionar-destacados.oculto-por-modal { display: none !important; }
+        @media (max-width: 640px) {
+            #btn-gestionar-destacados {
+                right: 14px; bottom: 58px;
+                padding: 8px 10px; font-size: 0;
+                width: 36px; height: 36px; border-radius: 50%;
+                justify-content: center;
+            }
+            #btn-gestionar-destacados .btn-gestionar-destacados__texto { display: none; }
+        }
+
+        /* ── Modal "Gestionar destacados" ─────────────────────────────── */
+        .modal-destacados-box { max-width: 760px; max-height: 88vh; overflow-y: auto; padding: 28px; }
+        .modal-destacados-box h3 { margin: 0 0 14px; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+        .modal-destacados-box h4 { margin: 18px 0 8px; font-size: 0.95rem; font-weight: 800; color: var(--dark); }
+        .destacados-vista-pin { max-width: 340px; margin: 0 auto; text-align: center; }
+        .destacados-vista-pin input[type="password"] {
+            width: 100%; font-size: 1.1rem; text-align: center; letter-spacing: 3px;
+            padding: 10px; border: 2px solid var(--border); border-radius: 8px; margin: 10px 0;
+        }
+        .destacados-pin-recordar { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--muted); justify-content: center; margin-bottom: 10px; }
+        .destacados-pin-error { color: var(--red); font-size: 0.82rem; min-height: 18px; }
+        .destacados-btn-primario, .destacados-btn-secundario {
+            border: none; border-radius: 8px; padding: 9px 18px; font-size: 0.88rem;
+            font-weight: 700; cursor: pointer;
+        }
+        .destacados-btn-primario { background: var(--red); color: #fff; }
+        .destacados-btn-secundario { background: var(--light); color: var(--muted); }
+        .destacados-hint { font-size: 0.78rem; color: var(--muted); margin: 4px 0 10px; }
+        .destacados-config-global label, .destacados-editor label {
+            display: block; font-size: 0.85rem; font-weight: 600; color: var(--dark); margin: 10px 0 4px;
+        }
+        .destacados-config-global input[type="checkbox"], .destacados-editor input[type="checkbox"] { margin-right: 6px; }
+        .destacados-config-global input[type="datetime-local"], .destacados-editor input, .destacados-editor select {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem;
+        }
+        .destacados-config-estado { margin-left: 10px; font-size: 0.82rem; color: var(--green); }
+        .destacados-listado-lista { display: flex; flex-direction: column; gap: 8px; }
+        .destacados-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+            border: 1px solid var(--border); border-radius: 10px; background: #fff;
+        }
+        .destacados-item img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: var(--light); }
+        .destacados-item-info { flex: 1; min-width: 0; }
+        .destacados-item-info .nombre { font-weight: 700; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .destacados-item-info .detalle { font-size: 0.76rem; color: var(--muted); }
+        .destacados-item.destacados-item--inactivo { opacity: 0.55; }
+        .destacados-item-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+        .destacados-item-acciones button {
+            border: none; background: var(--light); border-radius: 6px; width: 30px; height: 30px; cursor: pointer;
+        }
+        .destacados-buscador-controles { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .destacados-buscador-controles input[type="text"] { flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+        .destacados-buscador-controles select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+        .destacados-buscar-resultados { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .destacados-buscar-item {
+            display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer;
+        }
+        .destacados-buscar-item:hover { background: var(--light); }
+        .destacados-buscar-item img { width: 32px; height: 32px; object-fit: cover; border-radius: 5px; background: var(--light); }
+        .destacados-buscar-item .nombre { font-size: 0.82rem; font-weight: 600; flex: 1; }
+        .destacados-buscar-item .ya-incluido { font-size: 0.72rem; color: var(--green); font-weight: 700; }
+        .destacados-editor { border-top: 1px solid var(--border); margin-top: 18px; padding-top: 14px; }
+        .destacados-editor-producto-nombre { font-weight: 700; margin-bottom: 4px; }
+        .destacados-editor-error { color: var(--red); font-size: 0.82rem; min-height: 18px; }
+        .destacados-editor-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+
         /* ── Lista de la compra ──────────────────────────────────────────
            Botón para crear la lista (visible solo si no existe ninguna
            todavía) — mismo lenguaje visual que .btn-asistente-imagenes,
@@ -3686,6 +3833,15 @@
 <button id="btn-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
     <i class="fa-solid fa-arrow-up"></i>
 </button>
+<!-- Botón flotante de gestión de Destacados — gestión real protegida por
+     PIN (ver verificarPin_ en Apps Script); el propio botón solo se
+     muestra en preproducción (ver window.MOSTRAR_GESTION_DESTACADOS más
+     abajo), igual que el resto de herramientas de administración de esta
+     página, aunque la SECCIÓN "Destacados" en sí la ve cualquier
+     visitante, en cualquier entorno. -->
+<button id="btn-gestionar-destacados" title="Gestionar destacados" aria-label="Gestionar destacados">
+    <i class="fa-solid fa-fire"></i> <span class="btn-gestionar-destacados__texto">Gestionar destacados</span>
+</button>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -3983,6 +4139,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              resultado mostrado — ver actualizarPosicionBloqueListaCompra_
              en el módulo de la lista de la compra, más abajo. -->
         <div id="ancla-lista-compra-arriba"></div>
+
+        <!-- "Destacados": ofertas/oportunidad/liquidación gestionadas a
+             mano desde el botón flotante "Gestionar destacados" (PIN).
+             Va ANTES que el resto de módulos de descubrimiento, a
+             propósito (más jerarquía visual) — ver cargarDestacados_()
+             y actualizarVisibilidadModulosDescubrimiento_(). Oculto por
+             defecto: solo se muestra si la sección está activa, vigente,
+             y tiene al menos un producto vigente que mostrar. -->
+        <div id="destacados" class="seccion-destacados" style="display:none;">
+            <p class="seccion-destacados__titulo"><span class="seccion-destacados__icono"><i class="fa-solid fa-fire"></i></span> Destacados</p>
+            <div id="destacados-lista" class="seccion-destacados__lista"></div>
+        </div>
 
         <!-- Fase 2 de analítica de búsquedas: términos más buscados en los
              últimos 7 días (ver supabase/02_fase2_vistas_agregadas.sql).
@@ -4759,6 +4927,84 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Modal "Gestionar destacados" — solo preproducción (ver
+     window.MOSTRAR_GESTION_DESTACADOS). Protegido por el mismo PIN de
+     administración que panel_admin.html (verificarPin_ en Apps Script):
+     primero una vista de PIN, luego la configuración global + listado +
+     buscador para añadir productos. -->
+<div class="modal-overlay" id="modal-destacados-overlay">
+    <div class="modal-producto-box modal-destacados-box" role="dialog" aria-modal="true" aria-labelledby="destacados-modal-titulo">
+        <button class="modal-producto-cerrar" id="modal-destacados-cerrar" aria-label="Cerrar gestión de destacados">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 id="destacados-modal-titulo"><i class="fa-solid fa-fire"></i> Gestionar destacados</h3>
+
+        <div id="destacados-vista-pin" class="destacados-vista-pin">
+            <p>Introduce el PIN de administración para gestionar la sección de Destacados.</p>
+            <input type="password" id="destacados-pin-input" inputmode="numeric" autocomplete="off" placeholder="PIN">
+            <label class="destacados-pin-recordar"><input type="checkbox" id="destacados-pin-recordar"> Recordar en este dispositivo</label>
+            <p id="destacados-pin-error" class="destacados-pin-error"></p>
+            <button type="button" id="destacados-pin-entrar" class="destacados-btn-primario">Entrar</button>
+        </div>
+
+        <div id="destacados-vista-principal" style="display:none;">
+            <section class="destacados-config-global">
+                <h4>Configuración general</h4>
+                <label><input type="checkbox" id="destacados-config-activo"> Mostrar la sección "Destacados" en el buscador</label>
+                <label for="destacados-config-fecha-fin">Fecha y hora límite de la sección (opcional)</label>
+                <input type="datetime-local" id="destacados-config-fecha-fin">
+                <p class="destacados-hint">Si el interruptor está desmarcado, la sección no se muestra aunque la fecha no haya vencido. Sin fecha, permanece activa mientras el interruptor siga marcado.</p>
+                <button type="button" id="destacados-config-guardar" class="destacados-btn-primario">Guardar configuración</button>
+                <span id="destacados-config-estado" class="destacados-config-estado"></span>
+            </section>
+
+            <section class="destacados-listado">
+                <h4>Productos destacados (<span id="destacados-listado-total">0</span>)</h4>
+                <div id="destacados-listado-lista" class="destacados-listado-lista"></div>
+            </section>
+
+            <section class="destacados-buscador">
+                <h4>Añadir producto</h4>
+                <div class="destacados-buscador-controles">
+                    <input type="text" id="destacados-buscar-texto" placeholder="Buscar por nombre o referencia...">
+                    <select id="destacados-buscar-area"><option value="">Todas las áreas</option></select>
+                    <select id="destacados-buscar-familia"><option value="">Todas las familias</option></select>
+                </div>
+                <div id="destacados-buscar-resultados" class="destacados-buscar-resultados"></div>
+            </section>
+
+            <div id="destacados-editor" class="destacados-editor" style="display:none;">
+                <h4 id="destacados-editor-titulo">Editar destacado</h4>
+                <p id="destacados-editor-producto-nombre" class="destacados-editor-producto-nombre"></p>
+                <label><input type="checkbox" id="destacados-editor-activo" checked> Activo</label>
+                <label for="destacados-editor-tipo">Tipo de destacado</label>
+                <select id="destacados-editor-tipo">
+                    <option value="">(sin etiqueta)</option>
+                    <option value="oferta">Oferta</option>
+                    <option value="oportunidad">Oportunidad</option>
+                    <option value="liquidacion">Liquidación</option>
+                </select>
+                <label for="destacados-editor-descuento">Descuento (%)</label>
+                <input type="number" id="destacados-editor-descuento" min="0" max="100" step="0.1" placeholder="Ej: 15">
+                <label for="destacados-editor-precio-alt">Precio alternativo (€)</label>
+                <input type="number" id="destacados-editor-precio-alt" min="0" step="0.01" placeholder="Ej: 9.95">
+                <label for="destacados-editor-texto-promo">Promoción adicional (máx. 10 caracteres)</label>
+                <input type="text" id="destacados-editor-texto-promo" maxlength="10" placeholder="2x1, 3x2, 5+1...">
+                <p class="destacados-hint">Ejemplos: 2x1, 3x2, 4x3, 5+1. Déjalo vacío si no aplica.</p>
+                <label for="destacados-editor-fecha-fin">Fecha y hora límite de este producto (opcional)</label>
+                <input type="datetime-local" id="destacados-editor-fecha-fin">
+                <label for="destacados-editor-orden">Orden de aparición</label>
+                <input type="number" id="destacados-editor-orden" min="1" step="1">
+                <p id="destacados-editor-error" class="destacados-editor-error"></p>
+                <div class="destacados-editor-acciones">
+                    <button type="button" id="destacados-editor-cancelar" class="destacados-btn-secundario">Cancelar</button>
+                    <button type="button" id="destacados-editor-guardar" class="destacados-btn-primario">Guardar producto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <!-- Lista de la compra: exportación a PDF — único cliente de jsPDF/
      autoTable en el sitio, no existía ya ninguna solución de PDF en el
@@ -4806,6 +5052,7 @@ window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 // a petición de Eloy, nunca debe verse ni ser accesible en producción/
 // release, solo en preproducción.
 window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
+window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -4873,6 +5120,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR);
     eliminarSiRestringido_('modal-producto-editar-ficha-tecnica', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     eliminarSiRestringido_('modal-editar-ficha-overlay', window.MOSTRAR_EDITAR_FICHA_TECNICA);
+    if (window.MOSTRAR_GESTION_DESTACADOS) {
+        const btnGD = document.getElementById('btn-gestionar-destacados');
+        if (btnGD) btnGD.classList.add('visible');
+    } else {
+        eliminarSiRestringido_('btn-gestionar-destacados', window.MOSTRAR_GESTION_DESTACADOS);
+        eliminarSiRestringido_('modal-destacados-overlay', window.MOSTRAR_GESTION_DESTACADOS);
+    }
 
     const REPO = 'eloyleon23/web-orencio-matas';
     const API_RELEASE = 'https://api.github.com/repos/' + REPO + '/releases/latest';
@@ -6527,6 +6781,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // en segundo plano, tras re-sincronizar tras una acción propia, y
     // tras aceptar el banner de "hay una versión más reciente".
     function actualizarModulosDescubrimiento_() {
+        cargarDestacados_();
         cargarNovedades_();
         cargarMasBuscados_();
         cargarMarcasMasBuscadas_();
@@ -6547,7 +6802,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // esperar a ninguna petición de red, y borrar el texto (o cualquier
     // otro filtro) los vuelve a mostrar igual de rápido, siempre que
     // sigan teniendo contenido.
-    const modulosDescubrimientoConContenido_ = { masBuscados: false, novedades: false, marcas: false, categorias: false };
+    const modulosDescubrimientoConContenido_ = { destacados: false, masBuscados: false, novedades: false, marcas: false, categorias: false };
 
     function hayFiltroActivo_() {
         if ($('f-texto').value.trim()) return true;
@@ -6571,6 +6826,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function actualizarVisibilidadModulosDescubrimiento_() {
         const oculto = hayFiltroActivo_();
+        if ($('destacados')) $('destacados').style.display = (modulosDescubrimientoConContenido_.destacados && !oculto) ? '' : 'none';
         $('mas-buscados').style.display = (modulosDescubrimientoConContenido_.masBuscados && !oculto) ? '' : 'none';
         $('novedades').style.display = (modulosDescubrimientoConContenido_.novedades && !oculto) ? '' : 'none';
         $('marcas-buscadas').style.display = (modulosDescubrimientoConContenido_.marcas && !oculto) ? '' : 'none';
@@ -6616,6 +6872,369 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return activos.filter(p =>
             coincide(p.nombre, texto) || coincide(p.ref, texto) ||
             coincide(p.familia, texto) || coincide(p.subfamilia, texto));
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // SECCIÓN "DESTACADOS" (ofertas/oportunidad/liquidación)
+    // ══════════════════════════════════════════════════════════════════
+    // Puramente de CATÁLOGO + hoja "Destacados" (ver obtener_destacados
+    // en Apps Script) — sin depender de Supabase. La gestión (añadir/
+    // editar/retirar productos, activar/desactivar la sección) está
+    // protegida por el mismo PIN que panel_admin.html (verificarPin_ en
+    // el servidor); el botón que la abre solo existe en preproducción
+    // (ver window.MOSTRAR_GESTION_DESTACADOS más arriba), pero la
+    // SECCIÓN en sí se carga y se muestra en cualquier entorno.
+
+    let destacadosDatos_ = { activo: false, fechaFin: '', productos: [] };
+    let destacadosPin_ = '';
+    let destacadosCambiosSinGuardar_ = false;
+    let destacadosProductoEnEdicion_ = null; // referencia del producto que se está editando, o null si es nuevo
+
+    function destacadosFechaVigente_(fechaTexto) {
+        if (!fechaTexto) return true; // sin fecha = vigente indefinidamente
+        const fecha = new Date(fechaTexto);
+        if (isNaN(fecha.getTime())) return true; // fecha ilegible: no bloquear por un dato corrupto
+        return fecha.getTime() > Date.now();
+    }
+
+    async function cargarDestacados_() {
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_destacados');
+            const datos = await resp.json();
+            destacadosDatos_ = {
+                activo: !!datos.activo,
+                fechaFin: datos.fechaFin || '',
+                productos: Array.isArray(datos.productos) ? datos.productos : [],
+            };
+        } catch (e) {
+            console.error('cargarDestacados_: error cargando la sección Destacados', e);
+            destacadosDatos_ = { activo: false, fechaFin: '', productos: [] };
+        }
+        renderDestacados_();
+        if ($('destacados-vista-principal') && $('destacados-vista-principal').style.display !== 'none') {
+            destacadosRenderizarListadoGestion_();
+        }
+    }
+
+    function destacadosProductosVigentes_() {
+        if (!destacadosDatos_.activo || !destacadosFechaVigente_(destacadosDatos_.fechaFin)) return [];
+        return destacadosDatos_.productos
+            .filter(d => d.activo && destacadosFechaVigente_(d.fechaFin))
+            .map(d => ({ producto: TODOS.find(x => String(x.ref) === String(d.referencia)), destacado: d }))
+            .filter(x => !!x.producto)
+            .sort((a, b) => (a.destacado.orden || 0) - (b.destacado.orden || 0));
+    }
+
+    function renderDestacados_() {
+        if (!$('destacados-lista')) return; // defensivo: HTML aún no montado
+        const visibles = destacadosProductosVigentes_();
+        const cont = $('destacados-lista');
+        cont.innerHTML = '';
+        if (!visibles.length) {
+            modulosDescubrimientoConContenido_.destacados = false;
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
+        visibles.forEach(({ producto, destacado }) => cont.appendChild(crearTarjetaDestacado_(producto, destacado)));
+        modulosDescubrimientoConContenido_.destacados = true;
+        actualizarVisibilidadModulosDescubrimiento_();
+    }
+
+    // ── Gestión: PIN ───────────────────────────────────────────────────
+    function destacadosGuardarPinLocal_(pin, recordar) {
+        if (recordar) { try { localStorage.setItem('omDestacadosPin', pin); } catch (e) {} }
+    }
+
+    async function destacadosValidarPinYArrancar_(pin) {
+        $('destacados-pin-error').textContent = '';
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ accion: 'panel_validar_pin', pin: pin }),
+            });
+            const d = await resp.json();
+            if (d.success) {
+                destacadosPin_ = pin;
+                $('destacados-vista-pin').style.display = 'none';
+                $('destacados-vista-principal').style.display = '';
+                destacadosRenderizarConfigGlobal_();
+                destacadosRenderizarListadoGestion_();
+                destacadosPoblarSelectoresAreaFamilia_();
+            } else {
+                $('destacados-pin-error').textContent = 'PIN incorrecto.';
+                try { localStorage.removeItem('omDestacadosPin'); } catch (e) {}
+            }
+        } catch (e) {
+            $('destacados-pin-error').textContent = 'Error de conexión.';
+        }
+    }
+
+    // ── Gestión: configuración global ──────────────────────────────────
+    function destacadosRenderizarConfigGlobal_() {
+        $('destacados-config-activo').checked = !!destacadosDatos_.activo;
+        $('destacados-config-fecha-fin').value = destacadosDatos_.fechaFin
+            ? destacadosDatos_.fechaFin.slice(0, 16) : '';
+    }
+
+    async function destacadosGuardarConfigGlobal_() {
+        const btn = $('destacados-config-guardar');
+        const estado = $('destacados-config-estado');
+        btn.disabled = true;
+        estado.textContent = 'Guardando...';
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    accion: 'guardar_config_destacados',
+                    pin: destacadosPin_,
+                    activo: $('destacados-config-activo').checked,
+                    fechaFin: $('destacados-config-fecha-fin').value || '',
+                }),
+            });
+            const d = await resp.json();
+            if (d.success) {
+                estado.textContent = '✓ Guardado';
+                await cargarDestacados_();
+            } else {
+                estado.textContent = 'Error: ' + (d.error || 'desconocido');
+            }
+        } catch (e) {
+            estado.textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            setTimeout(() => { estado.textContent = ''; }, 4000);
+        }
+    }
+
+    // ── Gestión: listado de productos configurados ─────────────────────
+    function destacadosRenderizarListadoGestion_() {
+        const cont = $('destacados-listado-lista');
+        if (!cont) return;
+        const lista = destacadosDatos_.productos.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+        $('destacados-listado-total').textContent = lista.length;
+        cont.innerHTML = '';
+        if (!lista.length) {
+            cont.innerHTML = '<p class="destacados-hint">Todavía no hay ningún producto destacado.</p>';
+            return;
+        }
+        const etiquetas = { oferta: 'Oferta', oportunidad: 'Oportunidad', liquidacion: 'Liquidación' };
+        lista.forEach(d => {
+            const p = TODOS.find(x => String(x.ref) === String(d.referencia));
+            const item = document.createElement('div');
+            item.className = 'destacados-item' + (!d.activo ? ' destacados-item--inactivo' : '');
+            const urlImg = p ? urlImagenProducto(p, 80) : '';
+            const detalles = [];
+            if (d.tipoDestacado && etiquetas[d.tipoDestacado]) detalles.push(etiquetas[d.tipoDestacado]);
+            if (d.descuentoPorcentaje) detalles.push('-' + d.descuentoPorcentaje + '%');
+            if (d.precioAlternativo !== null && d.precioAlternativo !== undefined && d.precioAlternativo !== '') detalles.push(d.precioAlternativo + ' €');
+            if (d.textoPromocion) detalles.push(d.textoPromocion);
+            if (d.fechaFin) detalles.push('hasta ' + d.fechaFin.slice(0, 16).replace('T', ' '));
+            if (!destacadosFechaVigente_(d.fechaFin)) detalles.push('CADUCADO');
+            item.innerHTML = `
+                ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:44px;height:44px;border-radius:6px;background:var(--light);flex-shrink:0;"></div>'}
+                <div class="destacados-item-info">
+                    <div class="nombre">${escapeHtml(p ? p.nombre : d.referencia)}</div>
+                    <div class="detalle">Ref: ${escapeHtml(d.referencia)}${p ? ' · ' + escapeHtml(AREAS_NOMBRE[p.area] || p.area || '') + (p.familia ? ' · ' + escapeHtml(p.familia) : '') : ''}${detalles.length ? ' · ' + detalles.map(escapeHtml).join(' · ') : ''}</div>
+                </div>
+                <div class="destacados-item-acciones">
+                    <button type="button" title="Editar" data-accion="editar"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" title="Retirar de destacados" data-accion="retirar"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            item.querySelector('[data-accion="editar"]').addEventListener('click', () => destacadosAbrirEditor_(d.referencia));
+            item.querySelector('[data-accion="retirar"]').addEventListener('click', () => destacadosRetirarProducto_(d.referencia, p));
+            cont.appendChild(item);
+        });
+    }
+
+    async function destacadosRetirarProducto_(referencia, producto) {
+        const nombre = producto ? producto.nombre : referencia;
+        if (!window.confirm(`¿Retirar "${nombre}" de Destacados? El producto seguirá existiendo normalmente en el catálogo.`)) return;
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ accion: 'eliminar_destacado', pin: destacadosPin_, referencia: referencia }),
+            });
+            const d = await resp.json();
+            if (!d.success) { alert('No se pudo retirar: ' + (d.error || 'error desconocido')); return; }
+            await cargarDestacados_();
+        } catch (e) {
+            alert('Error de conexión al retirar el producto.');
+        }
+    }
+
+    // ── Gestión: buscador de productos para añadir ──────────────────────
+    function destacadosPoblarSelectoresAreaFamilia_() {
+        const selArea = $('destacados-buscar-area');
+        const areasPresentes = Array.from(new Set(TODOS.map(p => p.area).filter(Boolean))).sort();
+        selArea.innerHTML = '<option value="">Todas las áreas</option>' +
+            areasPresentes.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(AREAS_NOMBRE[a] || a)}</option>`).join('');
+    }
+
+    function destacadosActualizarSelectorFamilias_() {
+        const area = $('destacados-buscar-area').value;
+        const selFamilia = $('destacados-buscar-familia');
+        const base = area ? TODOS.filter(p => p.area === area) : TODOS;
+        const familias = Array.from(new Set(base.map(p => p.familia).filter(Boolean))).sort();
+        selFamilia.innerHTML = '<option value="">Todas las familias</option>' +
+            familias.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    }
+
+    function destacadosBuscarYRenderizar_() {
+        const texto = ($('destacados-buscar-texto').value || '').trim().toLowerCase();
+        const area = $('destacados-buscar-area').value;
+        const familia = $('destacados-buscar-familia').value;
+        const cont = $('destacados-buscar-resultados');
+        if (!texto && !area && !familia) { cont.innerHTML = ''; return; }
+        const refsYaIncluidas = new Set(destacadosDatos_.productos.map(d => d.referencia));
+        let resultados = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        if (area) resultados = resultados.filter(p => p.area === area);
+        if (familia) resultados = resultados.filter(p => p.familia === familia);
+        if (texto) resultados = resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto) || coincideReferencia(p.ref, texto));
+        resultados = resultados.slice(0, 40);
+        if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
+        cont.innerHTML = '';
+        resultados.forEach(p => {
+            const yaIncluido = refsYaIncluidas.has(p.ref);
+            const urlImg = urlImagenProducto(p, 60);
+            const fila = document.createElement('div');
+            fila.className = 'destacados-buscar-item';
+            fila.innerHTML = `
+                ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
+                <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)} · ${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
+                ${yaIncluido ? '<span class="ya-incluido">Ya incluido</span>' : ''}
+            `;
+            fila.addEventListener('click', () => destacadosAbrirEditor_(p.ref));
+            cont.appendChild(fila);
+        });
+    }
+
+    // ── Gestión: editor de un producto destacado (crear o editar) ───────
+    function destacadosAbrirEditor_(referencia) {
+        const p = TODOS.find(x => String(x.ref) === String(referencia));
+        if (!p) { alert('Producto no encontrado en el catálogo.'); return; }
+        const existente = destacadosDatos_.productos.find(d => d.referencia === referencia);
+        destacadosProductoEnEdicion_ = referencia;
+        destacadosCambiosSinGuardar_ = false;
+
+        $('destacados-editor-titulo').textContent = existente ? 'Editar destacado' : 'Añadir destacado';
+        $('destacados-editor-producto-nombre').textContent = `${p.nombre} (Ref: ${p.ref})`;
+        $('destacados-editor-activo').checked = existente ? !!existente.activo : true;
+        $('destacados-editor-tipo').value = existente ? (existente.tipoDestacado || '') : '';
+        $('destacados-editor-descuento').value = existente && existente.descuentoPorcentaje ? existente.descuentoPorcentaje : '';
+        $('destacados-editor-precio-alt').value = existente && existente.precioAlternativo !== null && existente.precioAlternativo !== undefined ? existente.precioAlternativo : '';
+        $('destacados-editor-texto-promo').value = existente ? (existente.textoPromocion || '') : '';
+        $('destacados-editor-fecha-fin').value = existente && existente.fechaFin ? existente.fechaFin.slice(0, 16) : '';
+        $('destacados-editor-orden').value = existente ? (existente.orden || '') : (destacadosDatos_.productos.length + 1);
+        $('destacados-editor-error').textContent = '';
+        $('destacados-editor').style.display = '';
+        $('destacados-editor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Marca "hay cambios sin guardar" en cuanto se toca cualquier campo
+        // del editor, para poder avisar si se intenta cerrar el modal entero.
+        Array.from($('destacados-editor').querySelectorAll('input, select')).forEach(el => {
+            el.oninput = () => { destacadosCambiosSinGuardar_ = true; };
+        });
+    }
+
+    function destacadosCerrarEditor_() {
+        destacadosProductoEnEdicion_ = null;
+        destacadosCambiosSinGuardar_ = false;
+        $('destacados-editor').style.display = 'none';
+    }
+
+    async function destacadosGuardarProductoEditor_() {
+        const error = $('destacados-editor-error');
+        error.textContent = '';
+        const descuento = $('destacados-editor-descuento').value;
+        const precioAlt = $('destacados-editor-precio-alt').value;
+        if (descuento !== '' && (isNaN(parseFloat(descuento)) || parseFloat(descuento) < 0 || parseFloat(descuento) > 100)) {
+            error.textContent = 'El descuento debe estar entre 0 y 100.'; return;
+        }
+        if (precioAlt !== '' && (isNaN(parseFloat(precioAlt)) || parseFloat(precioAlt) < 0)) {
+            error.textContent = 'El precio alternativo debe ser mayor o igual que 0.'; return;
+        }
+        const payload = {
+            accion: 'guardar_destacado',
+            pin: destacadosPin_,
+            referencia: destacadosProductoEnEdicion_,
+            activo: $('destacados-editor-activo').checked,
+            tipoDestacado: $('destacados-editor-tipo').value,
+            descuentoPorcentaje: descuento,
+            precioAlternativo: precioAlt,
+            textoPromocion: $('destacados-editor-texto-promo').value,
+            fechaFin: $('destacados-editor-fecha-fin').value,
+            orden: $('destacados-editor-orden').value,
+        };
+        const btn = $('destacados-editor-guardar');
+        btn.disabled = true;
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+            });
+            const d = await resp.json();
+            if (!d.success) { error.textContent = d.error || 'No se pudo guardar.'; return; }
+            destacadosCambiosSinGuardar_ = false;
+            destacadosCerrarEditor_();
+            await cargarDestacados_();
+            destacadosBuscarYRenderizar_();
+        } catch (e) {
+            error.textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // ── Apertura/cierre del modal completo ──────────────────────────────
+    function abrirModalDestacados_() {
+        $('modal-destacados-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+        const pinGuardado = (() => { try { return localStorage.getItem('omDestacadosPin'); } catch (e) { return null; } })();
+        if (pinGuardado) {
+            destacadosValidarPinYArrancar_(pinGuardado);
+        } else {
+            $('destacados-vista-pin').style.display = '';
+            $('destacados-vista-principal').style.display = 'none';
+        }
+    }
+
+    function cerrarModalDestacados_() {
+        if (destacadosCambiosSinGuardar_) {
+            if (!window.confirm('Tienes cambios sin guardar en el producto que estabas editando. ¿Cerrar de todas formas y descartarlos?')) return;
+        }
+        destacadosCerrarEditor_();
+        $('modal-destacados-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    if ($('btn-gestionar-destacados')) {
+        $('btn-gestionar-destacados').addEventListener('click', abrirModalDestacados_);
+        $('destacados-pin-entrar').addEventListener('click', () => {
+            const pin = $('destacados-pin-input').value.trim();
+            destacadosGuardarPinLocal_(pin, $('destacados-pin-recordar').checked);
+            destacadosValidarPinYArrancar_(pin);
+        });
+        $('destacados-pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('destacados-pin-entrar').click(); });
+        $('destacados-config-guardar').addEventListener('click', destacadosGuardarConfigGlobal_);
+        $('destacados-buscar-texto').addEventListener('input', destacadosBuscarYRenderizar_);
+        $('destacados-buscar-area').addEventListener('change', () => { destacadosActualizarSelectorFamilias_(); destacadosBuscarYRenderizar_(); });
+        $('destacados-buscar-familia').addEventListener('change', destacadosBuscarYRenderizar_);
+        $('destacados-editor-cancelar').addEventListener('click', () => {
+            if (destacadosCambiosSinGuardar_ && !window.confirm('¿Descartar los cambios de este producto?')) return;
+            destacadosCerrarEditor_();
+        });
+        $('destacados-editor-guardar').addEventListener('click', destacadosGuardarProductoEditor_);
+        $('destacados-editor-texto-promo').addEventListener('input', function () { this.value = this.value.slice(0, 10); });
+        $('modal-destacados-cerrar').addEventListener('click', cerrarModalDestacados_);
+        $('modal-destacados-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-destacados-overlay') cerrarModalDestacados_(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('modal-destacados-overlay').classList.contains('activo')) cerrarModalDestacados_();
+        });
     }
 
     const MAX_TARJETAS_MAS_BUSCADOS = 10;
@@ -8405,8 +9024,49 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // mismo contenido visual (imagen, badges, precio) en otros contextos
     // que necesitan su propio listener de click — ver crearTarjetaListaCompra_
     // en el módulo de "Lista de la compra".
+    // Etiqueta de tipo de destacado (Oferta/Oportunidad/Liquidación) — un
+    // único color de marca por tipo, nunca los tres a la vez en la misma
+    // tarjeta. Sin tipo reconocido, no se muestra ninguna etiqueta (no se
+    // inventa una por defecto).
+    function etiquetaDestacadoHtml_(tipo) {
+        const mapa = {
+            oferta:      ['Oferta', 'destacado-chip--oferta'],
+            oportunidad: ['Oportunidad', 'destacado-chip--oportunidad'],
+            liquidacion: ['Liquidación', 'destacado-chip--liquidacion'],
+        };
+        const entrada = mapa[tipo];
+        return entrada ? `<span class="destacado-chip ${entrada[1]}">${entrada[0]}</span>` : '';
+    }
+
+    // Resuelve el precio de un producto destacado a partir del precio
+    // original REAL del catálogo (nunca se inventa ni se calcula un
+    // descuento ficticio si falta el precio original). Si llegan los dos
+    // campos (precioAlternativo y descuentoPorcentaje), el precio
+    // alternativo manda como precio promocional definitivo — el
+    // porcentaje solo se muestra si es coherente con los precios reales.
+    // Nunca se presenta como "rebaja" un precio promocional igual o
+    // superior al original.
+    function calcularPrecioDestacado_(p, d) {
+        if (!p.mostrar_precio || !p.precio_con) return { original: null, promo: null, pct: null };
+        const original = parseFloat(p.precio_con.toString().replace(',', '.'));
+        if (!isFinite(original) || original <= 0) return { original: null, promo: null, pct: null };
+
+        let promo = null;
+        if (d.precioAlternativo !== null && d.precioAlternativo !== undefined && d.precioAlternativo !== '') {
+            const alt = parseFloat(d.precioAlternativo);
+            if (isFinite(alt) && alt >= 0 && alt < original) promo = alt;
+        } else if (d.descuentoPorcentaje !== null && d.descuentoPorcentaje !== undefined && d.descuentoPorcentaje !== '') {
+            const pct = parseFloat(d.descuentoPorcentaje);
+            if (isFinite(pct) && pct > 0 && pct <= 100) promo = original * (1 - pct / 100);
+        }
+        if (promo === null) return { original: original, promo: null, pct: null };
+        const pctMostrado = Math.round((1 - promo / original) * 100);
+        return { original: original, promo: promo, pct: pctMostrado > 0 ? pctMostrado : null };
+    }
+
     function construirContenidoTarjeta_(p, opciones) {
         opciones = opciones || {};
+        const d = opciones.destacado || null;
         const urlImg = urlImagenProducto(p, 300);
         const imgHtml = urlImg
             ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
@@ -8419,7 +9079,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // disponible en absoluto.
         const logoBadge = urlImg ? logoFabricanteHtml(p) : '';
 
-        const ofertaBadge = p.oferta ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
+        const ofertaBadge = (!d && p.oferta) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
+        const destacadoChip = d ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
 
         let precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         if (p.mostrar_precio) {
@@ -8430,18 +9091,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 if (sin) precioHtml += `<div class="producto-precio-sin">${sin} € sin IVA</div>`;
             }
         }
+        let promoTextoHtml = '';
+        if (d) {
+            const precioDestacado = calcularPrecioDestacado_(p, d);
+            if (precioDestacado.original !== null) {
+                if (precioDestacado.promo !== null) {
+                    const originalTxt = precioDestacado.original.toFixed(2).replace('.', ',');
+                    const promoTxt = precioDestacado.promo.toFixed(2).replace('.', ',');
+                    precioHtml = `<div class="destacado-precio-descuento">` +
+                        `<span class="destacado-precio-original">${originalTxt} €</span>` +
+                        `<span class="destacado-precio-promo">${promoTxt} €</span>` +
+                        (precioDestacado.pct ? `<span class="destacado-precio-pct">-${precioDestacado.pct}%</span>` : '') +
+                        `</div>`;
+                } else {
+                    precioHtml = `<div class="producto-precio-con">${precioDestacado.original.toFixed(2).replace('.', ',')} €</div>`;
+                }
+            }
+            if (d.textoPromocion) {
+                promoTextoHtml = `<span class="destacado-promo-texto">${escapeHtml(d.textoPromocion)}</span>`;
+            }
+        }
 
         const etiquetaAreaFamilia = opciones.mostrarAreaFamilia
             ? `<p class="producto-area-familia">${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}${(opciones.mostrarSubfamilia && p.subfamilia) ? ' · ' + escapeHtml(p.subfamilia) : ''}</p>`
             : '';
 
         return `
-            <div class="producto-img-wrap">${ofertaBadge}${logoBadge}${imgHtml}</div>
+            <div class="producto-img-wrap">${ofertaBadge}${destacadoChip}${logoBadge}${imgHtml}</div>
             <div class="producto-info">
                 ${etiquetaAreaFamilia}
                 <p class="producto-nombre">${escapeHtml(p.nombre)}</p>
                 <p class="producto-ref">Ref: ${escapeHtml(p.ref)}</p>
                 ${precioHtml}
+                ${promoTextoHtml}
             </div>
         `;
     }
@@ -8569,6 +9251,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const enModoPlano = ordenActual && ordenActual !== 'area';
 
         card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano });
+        return card;
+    }
+
+    // Misma tarjeta base que crearTarjeta(), con la decoración de
+    // promoción (chip, precio rebajado, texto de promoción) — ver
+    // construirContenidoTarjeta_(p, { destacado }).
+    function crearTarjetaDestacado_(p, d) {
+        const card = document.createElement('div');
+        card.className = 'producto-card producto-card--destacado';
+        card.style.cursor = 'pointer';
+        card.style.position = 'relative';
+        card.dataset.ref = p.ref;
+        card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
+        card.innerHTML = construirContenidoTarjeta_(p, { destacado: d });
         return card;
     }
 
