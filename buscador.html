@@ -6894,7 +6894,50 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // esperar a ninguna petición de red, y borrar el texto (o cualquier
     // otro filtro) los vuelve a mostrar igual de rápido, siempre que
     // sigan teniendo contenido.
-    const modulosDescubrimientoConContenido_ = { destacados: 'cargando', masBuscados: 'cargando', novedades: 'cargando', marcas: 'cargando', categorias: 'cargando' };
+    // A petición de Eloy: si una sección está desactivada (p. ej. se
+    // apagó manualmente "Destacados", o nunca hay datos reales para
+    // Novedades/Más buscados/Marcas/Seguir comprando), el skeleton de
+    // carga aparecía igualmente un instante y desaparecía enseguida al
+    // confirmarse que no hay contenido — "parpadeo" molesto en cada
+    // visita, no solo la primera vez. Se recuerda en localStorage el
+    // último estado real conocido de cada módulo (nunca 'cargando', que
+    // no aporta nada de cara a la próxima visita) y se usa como estado
+    // INICIAL: si la última vez estaba vacío/desactivado, se arranca
+    // directamente oculto (sin mostrar el skeleton) en vez de con
+    // 'cargando'; si tenía contenido, se mantiene el skeleton mientras
+    // se confirma que lo sigue teniendo (para no reintroducir el "aparece
+    // de repente" que este mismo mecanismo vino a arreglar). Solo afecta
+    // al primer instante de cada carga de página — en cuanto el módulo
+    // correspondiente resuelve de verdad (cargarDestacados_, etc.), su
+    // estado se recalcula igual que siempre, cache o no.
+    const MODULOS_DESCUBRIMIENTO_CACHE_CLAVE_ = 'omModulosDescubrimientoEstado';
+
+    function leerCacheEstadoModulosDescubrimiento_() {
+        try {
+            const datos = JSON.parse(localStorage.getItem(MODULOS_DESCUBRIMIENTO_CACHE_CLAVE_));
+            return (datos && typeof datos === 'object') ? datos : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function guardarCacheEstadoModulosDescubrimiento_() {
+        try {
+            const porGuardar = {};
+            for (const clave in modulosDescubrimientoConContenido_) {
+                const estado = modulosDescubrimientoConContenido_[clave];
+                if (estado !== 'cargando') porGuardar[clave] = estado;
+            }
+            localStorage.setItem(MODULOS_DESCUBRIMIENTO_CACHE_CLAVE_, JSON.stringify(porGuardar));
+        } catch (e) { /* localStorage no disponible (privado/bloqueado) — sin cache, sin más */ }
+    }
+
+    const modulosDescubrimientoCacheInicial_ = leerCacheEstadoModulosDescubrimiento_();
+    const modulosDescubrimientoConContenido_ = {};
+    ['destacados', 'masBuscados', 'novedades', 'marcas', 'categorias'].forEach(clave => {
+        const cacheado = modulosDescubrimientoCacheInicial_[clave];
+        modulosDescubrimientoConContenido_[clave] = (cacheado === 'vacio' || cacheado === 'con-contenido') ? cacheado : 'cargando';
+    });
 
     function hayFiltroActivo_() {
         if ($('f-texto').value.trim()) return true;
@@ -6942,7 +6985,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // habitual debajo de los demás bloques — ver su definición en el
         // módulo ShoppingList* más abajo.
         actualizarPosicionBloqueListaCompra_(oculto);
+        guardarCacheEstadoModulosDescubrimiento_();
     }
+
+    // Aplica de inmediato el estado cacheado de la visita anterior (si lo
+    // hay) ANTES de esperar a ninguna petición — así, cuando ya se sabía
+    // que un módulo estaba vacío/desactivado, arranca oculto desde ya en
+    // vez de enseñar el skeleton un instante para ocultarlo enseguida.
+    actualizarVisibilidadModulosDescubrimiento_();
 
     // Lee la vista agregada ya calculada (mv_terminos_mas_buscados_7d,
     // ver supabase/02_fase2_vistas_agregadas.sql) — nunca la tabla de
@@ -9396,7 +9446,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }, TOOLTIP_PRODUCTO_RETRASO_MS);
     }
 
+    // A petición de Eloy: en móvil el tooltip no aporta (no hay cursor que
+    // "pase por encima" de verdad — el mouseover lo dispara el propio toque)
+    // y en la práctica molesta más que ayuda. Se deja solo en vista de
+    // escritorio, reutilizando el mismo criterio de esMovil() que ya usa
+    // el resto del buscador para distinguir ambas vistas.
     document.addEventListener('mouseover', (e) => {
+        if (esMovil()) return;
         const card = e.target.closest(SELECTOR_TARJETAS_CON_TOOLTIP_);
         if (card === tarjetaTooltipActual_) return; // seguimos sobre la misma tarjeta, nada que hacer
         tarjetaTooltipActual_ = card;
@@ -9408,6 +9464,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     });
 
     document.addEventListener('mousemove', (e) => {
+        if (esMovil()) return;
         // Sigue al cursor mientras el tooltip esté (o vaya a estar)
         // visible sobre la tarjeta actual — comprobar tarjetaTooltipActual_
         // evita trabajo de más cuando el ratón no está sobre ninguna.
