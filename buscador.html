@@ -703,6 +703,13 @@
            franja usa azul/rojo, y cada chip de tipo usa UN color propio
            (ver .destacado-chip--*). */
         #destacados.seccion-destacados {
+            /* A petición de Eloy: el bloque no debe quedarse siempre con el
+               ancho completo de la columna de resultados cuando hay pocos
+               productos (se veía como una franja medio vacía) — se ajusta
+               al contenido (width: fit-content) y solo llega hasta el
+               máximo disponible (max-width: 100%) cuando hace falta. */
+            width: fit-content;
+            max-width: 100%;
             margin: 0 0 22px;
             border-radius: 16px;
             background: linear-gradient(135deg, rgba(25,118,210,.07), rgba(211,47,47,.05));
@@ -725,8 +732,10 @@
             width: 38px; height: 38px; border-radius: 50%; font-size: 1.15rem; flex-shrink: 0;
             background: var(--dark); color: var(--yellow);
         }
+        /* Móvil: una sola fila con scroll horizontal (gesto táctil natural
+           de deslizar), igual que el resto de módulos de descubrimiento. */
         .seccion-destacados__lista {
-            display: flex; gap: 14px; overflow-x: auto; padding-bottom: 4px;
+            display: flex; gap: 14px; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px;
             scroll-snap-type: x proximity;
         }
         .seccion-destacados__lista > .producto-card {
@@ -736,6 +745,20 @@
         }
         @media (min-width: 881px) {
             .seccion-destacados__lista > .producto-card { flex-basis: 200px; }
+            /* Escritorio: en vez de una única fila horizontal (que obliga a
+               hacer scroll para ver el segundo producto aunque sobre
+               espacio a los lados), las tarjetas se van colocando en
+               filas hasta llenar el ancho disponible; solo cuando hay
+               tantas filas que no caben verticalmente aparece scroll
+               (vertical) — así el bloque crece con el contenido en vez de
+               tener siempre el ancho fijo de la columna de resultados. */
+            .seccion-destacados__lista {
+                flex-wrap: wrap;
+                overflow-x: hidden;
+                overflow-y: auto;
+                max-height: 500px;
+                scroll-snap-type: y proximity;
+            }
         }
         .destacado-chip {
             display: inline-flex; align-items: center; gap: 4px;
@@ -844,6 +867,40 @@
         .destacados-editor-producto-nombre { font-weight: 700; margin-bottom: 4px; }
         .destacados-editor-error { color: var(--red); font-size: 0.82rem; min-height: 18px; }
         .destacados-editor-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+
+        /* ── Vista previa de producto (modal pequeño, dentro de la gestión
+           de Destacados) ────────────────────────────────────────────────
+           A petición de Eloy: el botón "Ver producto" ya no abre una
+           pestaña nueva (recargar toda la página era poco eficiente) sino
+           este modal ligero, por encima del propio modal de gestión —
+           reutiliza construirContenidoTarjeta_() para no duplicar nada de
+           la lógica de precio/chip de destacado, solo a mayor tamaño. */
+        .modal-destacados-preview-box { max-width: 420px; padding: 24px; }
+        .destacados-preview-contenido { position: relative; }
+        .destacados-preview-contenido .producto-img-wrap { height: 260px; }
+        .destacados-preview-contenido .producto-nombre { font-size: 1rem; }
+
+        /* ── Placeholders de carga ("skeleton") ──────────────────────────
+           A petición de Eloy: evitar que los bloques de descubrimiento
+           (Destacados, Más buscados, Novedades, Marcas, Seguir comprando)
+           aparezcan "de repente" al terminar de cargar — mientras se
+           determina si hay contenido, se muestra este hueco con efecto de
+           carga, para que el usuario vea que algo va a aparecer ahí. */
+        @keyframes om-skeleton-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .om-skeleton {
+            background: linear-gradient(100deg, var(--light) 28%, #e4e4e4 50%, var(--light) 72%);
+            background-size: 200% 100%;
+            animation: om-skeleton-shimmer 1.5s ease-in-out infinite;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .om-skeleton--tarjeta { width: 180px; height: 230px; }
+        @media (min-width: 881px) { .om-skeleton--tarjeta { width: 200px; } }
+        .om-skeleton--chip { width: 96px; height: 34px; border-radius: 20px; }
+        .om-skeleton--bloque { width: 225px; height: 150px; }
 
         /* ── Lista de la compra ──────────────────────────────────────────
            Botón para crear la lista (visible solo si no existe ninguna
@@ -4154,35 +4211,47 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              y actualizarVisibilidadModulosDescubrimiento_(). Oculto por
              defecto: solo se muestra si la sección está activa, vigente,
              y tiene al menos un producto vigente que mostrar. -->
-        <div id="destacados" class="seccion-destacados" style="display:none;">
+        <!-- Visibles desde la primera pintura con un hueco "skeleton" (ver
+             .om-skeleton) en vez de display:none — así nunca aparecen de
+             repente al terminar de cargar; actualizarVisibilidadModulosDescubrimiento_()
+             los oculta solo si se determina que no hay contenido real. -->
+        <div id="destacados" class="seccion-destacados">
             <p class="seccion-destacados__titulo"><span class="seccion-destacados__icono"><i class="fa-solid fa-fire"></i></span> Destacados</p>
-            <div id="destacados-lista" class="seccion-destacados__lista"></div>
+            <div id="destacados-lista" class="seccion-destacados__lista">
+                <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+            </div>
         </div>
 
         <!-- Fase 2 de analítica de búsquedas: términos más buscados en los
              últimos 7 días (ver supabase/02_fase2_vistas_agregadas.sql).
-             Oculto por defecto — solo se muestra si hay datos reales que
-             cumplan el volumen mínimo; nunca "cajón vacío". -->
-        <div id="mas-buscados" class="mas-buscados" style="display:none;">
+             Solo se muestra con contenido real que cumpla el volumen
+             mínimo; nunca "cajón vacío" (ver nota de skeleton arriba). -->
+        <div id="mas-buscados" class="mas-buscados">
             <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--rojo"><i class="fa-solid fa-arrow-trend-up"></i></span> Más buscados esta semana</p>
-            <div id="mas-buscados-lista" class="mas-buscados__lista"></div>
+            <div id="mas-buscados-lista" class="mas-buscados__lista">
+                <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+            </div>
         </div>
 
         <!-- Fase 3: "Novedades" — a diferencia del módulo de arriba, este
              es puramente de CATÁLOGO (fecha_alta real en el CRM), sin
              tocar Supabase para nada: no depende de que haya tráfico ni
              de ninguna vista agregada. -->
-        <div id="novedades" class="mas-buscados" style="display:none;">
+        <div id="novedades" class="mas-buscados">
             <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--verde"><i class="fa-solid fa-box-open"></i></span> Novedades</p>
-            <div id="novedades-lista" class="mas-buscados__lista"></div>
+            <div id="novedades-lista" class="mas-buscados__lista">
+                <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+            </div>
         </div>
 
         <!-- "Marcas más buscadas": la marca se detecta por el nombre del
              producto (ver renderMarcasMasBuscadas_) — nunca se añade al
              catálogo público. -->
-        <div id="marcas-buscadas" class="mas-buscados" style="display:none;">
+        <div id="marcas-buscadas" class="mas-buscados">
             <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--amarillo"><i class="fa-solid fa-trademark"></i></span> Marcas más buscadas</p>
-            <div id="marcas-buscadas-lista" class="marcas-buscadas__lista"></div>
+            <div id="marcas-buscadas-lista" class="marcas-buscadas__lista">
+                <div class="om-skeleton om-skeleton--chip"></div><div class="om-skeleton om-skeleton--chip"></div><div class="om-skeleton om-skeleton--chip"></div><div class="om-skeleton om-skeleton--chip"></div>
+            </div>
         </div>
 
         <!-- Prototipo "Seguir comprando X" (estilo Amazon, a petición de
@@ -4194,9 +4263,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              hay un número fijo en el HTML. Título propio con icono (igual
              que el resto de subsecciones) para que se note que es otro
              bloque distinto del grid principal de resultados. -->
-        <div id="categorias-descubrimiento-seccion" class="mas-buscados" style="display:none;">
+        <div id="categorias-descubrimiento-seccion" class="mas-buscados">
             <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--azul"><i class="fa-solid fa-layer-group"></i></span> Seguir comprando</p>
-            <div id="categorias-descubrimiento" class="categorias-carrusel"></div>
+            <div id="categorias-descubrimiento" class="categorias-carrusel">
+                <div class="om-skeleton om-skeleton--bloque"></div><div class="om-skeleton om-skeleton--bloque"></div><div class="om-skeleton om-skeleton--bloque"></div>
+            </div>
         </div>
 
         <!-- Lista de la compra (ver módulo ShoppingList* más abajo en el
@@ -4300,6 +4371,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <div class="modal-producto-content">
             <div class="modal-producto-imagen">
+                <span id="modal-producto-destacado-chip" class="destacado-chip" style="display:none;"></span>
                 <button type="button" class="modal-producto-imagen-ampliar" id="modal-producto-imagen-ampliar" aria-label="Ampliar imagen">
                     <img id="modal-producto-img" src="" alt="" loading="lazy">
                     <span class="modal-producto-imagen-ampliar-icono"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
@@ -5012,6 +5084,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Vista previa rápida de un producto desde la gestión de Destacados —
+     ver destacadosVerProducto_(). z-index por encima de modal-destacados-
+     overlay (1000) para que se vea aunque se abra con ese modal también
+     activo debajo. -->
+<div class="modal-overlay" id="destacados-preview-overlay" style="z-index: 5100;">
+    <div class="modal-producto-box modal-destacados-preview-box" role="dialog" aria-modal="true">
+        <button class="modal-producto-cerrar" id="destacados-preview-cerrar" aria-label="Cerrar vista previa">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div id="destacados-preview-contenido" class="producto-card destacados-preview-contenido"></div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <!-- Lista de la compra: exportación a PDF — único cliente de jsPDF/
      autoTable en el sitio, no existía ya ninguna solución de PDF en el
@@ -5133,6 +5218,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     } else {
         eliminarSiRestringido_('btn-gestionar-destacados', window.MOSTRAR_GESTION_DESTACADOS);
         eliminarSiRestringido_('modal-destacados-overlay', window.MOSTRAR_GESTION_DESTACADOS);
+        eliminarSiRestringido_('destacados-preview-overlay', window.MOSTRAR_GESTION_DESTACADOS);
     }
 
     const REPO = 'eloyleon23/web-orencio-matas';
@@ -6809,7 +6895,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // esperar a ninguna petición de red, y borrar el texto (o cualquier
     // otro filtro) los vuelve a mostrar igual de rápido, siempre que
     // sigan teniendo contenido.
-    const modulosDescubrimientoConContenido_ = { destacados: false, masBuscados: false, novedades: false, marcas: false, categorias: false };
+    const modulosDescubrimientoConContenido_ = { destacados: 'cargando', masBuscados: 'cargando', novedades: 'cargando', marcas: 'cargando', categorias: 'cargando' };
 
     function hayFiltroActivo_() {
         if ($('f-texto').value.trim()) return true;
@@ -6831,13 +6917,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return false;
     }
 
+    // modulosDescubrimientoConContenido_.* puede valer 'cargando' (aún no
+    // se sabe si habrá contenido — se muestra el hueco con el efecto de
+    // carga ya presente en el HTML), 'con-contenido' (hay datos reales) o
+    // 'vacio' (no hay nada que mostrar). Solo 'vacio' oculta la sección;
+    // tanto 'cargando' como 'con-contenido' la dejan visible, para que el
+    // bloque nunca "aparezca de repente" — ya está ahí con su skeleton
+    // desde la primera pintura de la página.
     function actualizarVisibilidadModulosDescubrimiento_() {
         const oculto = hayFiltroActivo_();
-        if ($('destacados')) $('destacados').style.display = (modulosDescubrimientoConContenido_.destacados && !oculto) ? '' : 'none';
-        $('mas-buscados').style.display = (modulosDescubrimientoConContenido_.masBuscados && !oculto) ? '' : 'none';
-        $('novedades').style.display = (modulosDescubrimientoConContenido_.novedades && !oculto) ? '' : 'none';
-        $('marcas-buscadas').style.display = (modulosDescubrimientoConContenido_.marcas && !oculto) ? '' : 'none';
-        $('categorias-descubrimiento-seccion').style.display = (modulosDescubrimientoConContenido_.categorias && !oculto) ? '' : 'none';
+        const visible_ = (estado) => estado !== 'vacio' && !oculto;
+        if ($('destacados')) $('destacados').style.display = visible_(modulosDescubrimientoConContenido_.destacados) ? '' : 'none';
+        $('mas-buscados').style.display = visible_(modulosDescubrimientoConContenido_.masBuscados) ? '' : 'none';
+        $('novedades').style.display = visible_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
+        $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
+        $('categorias-descubrimiento-seccion').style.display = visible_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
@@ -6954,18 +7048,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             .sort((a, b) => (a.destacado.orden || 0) - (b.destacado.orden || 0));
     }
 
+    // A petición de Eloy: la ficha de detalle de un producto (abrirModalProducto)
+    // debe mostrar el mismo precio rebajado y la misma etiqueta que ya se ve
+    // en la tarjeta de la sección Destacados, cuando ese producto está
+    // destacado y vigente — mismas condiciones que destacadosProductosVigentes_
+    // (activo globalmente, vigente globalmente, activo y vigente el producto),
+    // solo que resuelto para UNA referencia en vez de para toda la lista.
+    function destacadosVigentePara_(ref) {
+        if (!destacadosDatos_.activo || !destacadosFechaVigente_(destacadosDatos_.fechaFin)) return null;
+        const d = destacadosDatos_.productos.find(x => String(x.referencia) === String(ref) && x.activo && destacadosFechaVigente_(x.fechaFin));
+        return d || null;
+    }
+
     function renderDestacados_() {
         if (!$('destacados-lista')) return; // defensivo: HTML aún no montado
         const visibles = destacadosProductosVigentes_();
         const cont = $('destacados-lista');
         cont.innerHTML = '';
         if (!visibles.length) {
-            modulosDescubrimientoConContenido_.destacados = false;
+            modulosDescubrimientoConContenido_.destacados = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
         visibles.forEach(({ producto, destacado }) => cont.appendChild(crearTarjetaDestacado_(producto, destacado)));
-        modulosDescubrimientoConContenido_.destacados = true;
+        modulosDescubrimientoConContenido_.destacados = 'con-contenido';
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -7073,22 +7179,29 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     <button type="button" title="Retirar de destacados" data-accion="retirar"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
-            item.querySelector('[data-accion="ver"]').addEventListener('click', () => destacadosAbrirProductoNuevaVentana_(d.referencia));
+            item.querySelector('[data-accion="ver"]').addEventListener('click', () => destacadosVerProducto_(d.referencia, d));
             item.querySelector('[data-accion="editar"]').addEventListener('click', () => destacadosAbrirEditor_(d.referencia));
-            item.querySelector('[data-accion="retirar"]').addEventListener('click', () => destacadosRetirarProducto_(d.referencia, p));
+            item.querySelector('[data-accion="retirar"]').addEventListener('click', (e) => destacadosRetirarProducto_(d.referencia, p, e.currentTarget));
             cont.appendChild(item);
         });
     }
 
-    async function destacadosRetirarProducto_(referencia, producto) {
+    async function destacadosRetirarProducto_(referencia, producto, btn) {
         const nombre = producto ? producto.nombre : referencia;
         if (!window.confirm(`¿Retirar "${nombre}" de Destacados? El producto seguirá existiendo normalmente en el catálogo.`)) return;
+        const iconoOriginal = btn ? btn.innerHTML : null;
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
         try {
             const d = await destacadosFetchPost_({ accion: 'eliminar_destacado', pin: destacadosPin_, referencia: referencia });
             if (!d.success) { alert('No se pudo retirar: ' + (d.error || 'error desconocido')); return; }
             await cargarDestacados_();
         } catch (e) {
             alert('Error de conexión al retirar el producto.');
+        } finally {
+            // El listado se vuelve a pintar entero en cargarDestacados_() si
+            // tuvo éxito (el botón ya no existe) — este reset solo importa
+            // en el camino de error, donde el mismo botón sigue en el DOM.
+            if (btn && document.body.contains(btn)) { btn.disabled = false; btn.innerHTML = iconoOriginal; }
         }
     }
 
@@ -7132,26 +7245,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
                 <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)} · ${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
                 ${yaIncluido ? '<span class="ya-incluido">Ya incluido</span>' : ''}
-                <button type="button" class="destacados-ver-producto" title="Ver producto en otra pestaña"><i class="fa-solid fa-up-right-from-square"></i> Ver</button>
+                <button type="button" class="destacados-ver-producto" title="Ver producto en detalle"><i class="fa-solid fa-eye"></i> Ver</button>
             `;
             fila.querySelector('.destacados-ver-producto').addEventListener('click', (e) => {
                 e.stopPropagation();
-                destacadosAbrirProductoNuevaVentana_(p.ref);
+                destacadosVerProducto_(p.ref);
             });
             fila.addEventListener('click', () => destacadosAbrirEditor_(p.ref));
             cont.appendChild(fila);
         });
     }
 
-    // Abre la ficha del producto en una pestaña/ventana nueva (sin perder
-    // el modal de gestión), reutilizando el mismo enlace compartible
-    // ?ref= que ya usa el buscador para los productos (ver
-    // abrirProductoDesdeURL / opciones.pushHistorial en abrirModalProducto).
-    function destacadosAbrirProductoNuevaVentana_(ref) {
-        const url = new URL(window.location.href);
-        url.search = '';
-        url.searchParams.set('ref', ref);
-        window.open(url.toString(), '_blank', 'noopener');
+    // Vista previa rápida de un producto sin salir de la gestión de
+    // Destacados: a petición de Eloy, en vez de abrir una pestaña nueva
+    // (recargaba toda la página, poco eficiente) se muestra un modal
+    // pequeño por encima del propio modal de gestión. Reutiliza
+    // construirContenidoTarjeta_() para no duplicar la lógica de
+    // imagen/precio/chip — con "destacado" (d) solo cuando se llama desde
+    // el listado de productos ya guardados, para ver también cómo
+    // quedaría su precio rebajado y su etiqueta.
+    function destacadosVerProducto_(ref, destacado) {
+        const p = TODOS.find(x => String(x.ref) === String(ref));
+        if (!p) return;
+        $('destacados-preview-contenido').innerHTML = construirContenidoTarjeta_(p, { destacado: destacado || null, mostrarAreaFamilia: true });
+        $('destacados-preview-overlay').classList.add('activo');
+    }
+
+    function destacadosCerrarPreview_() {
+        $('destacados-preview-overlay').classList.remove('activo');
     }
 
     // ── Gestión: editor de un producto destacado (crear o editar) ───────
@@ -7292,7 +7413,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-destacados-cerrar').addEventListener('click', cerrarModalDestacados_);
         $('modal-destacados-overlay').addEventListener('click', (e) => { if (e.target.id === 'modal-destacados-overlay') cerrarModalDestacados_(); });
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && $('modal-destacados-overlay').classList.contains('activo')) cerrarModalDestacados_();
+            // Si la vista previa de producto está abierta por encima, Escape
+            // la cierra a ELLA (ver su propio listener más abajo) y no debe
+            // cerrar también la gestión de destacados que queda debajo.
+            if (e.key === 'Escape' && $('modal-destacados-overlay').classList.contains('activo') && !$('destacados-preview-overlay').classList.contains('activo')) cerrarModalDestacados_();
+        });
+        $('destacados-preview-cerrar').addEventListener('click', destacadosCerrarPreview_);
+        $('destacados-preview-overlay').addEventListener('click', (e) => { if (e.target.id === 'destacados-preview-overlay') destacadosCerrarPreview_(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('destacados-preview-overlay').classList.contains('activo')) destacadosCerrarPreview_();
         });
     }
 
@@ -7301,7 +7430,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function renderMasBuscados_(terminos) {
         if (!TODOS.length || !terminos.length) {
-            modulosDescubrimientoConContenido_.masBuscados = false;
+            modulosDescubrimientoConContenido_.masBuscados = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
@@ -7315,14 +7444,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             coincidencias.forEach(p => { refsUsadas.add(p.ref); productos.push(p); });
         }
         if (!productos.length) {
-            modulosDescubrimientoConContenido_.masBuscados = false;
+            modulosDescubrimientoConContenido_.masBuscados = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
         const cont = $('mas-buscados-lista');
         cont.innerHTML = '';
         productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
-        modulosDescubrimientoConContenido_.masBuscados = true;
+        modulosDescubrimientoConContenido_.masBuscados = 'con-contenido';
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -7370,7 +7499,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const MAX_MARCAS_MAS_BUSCADAS = 8;
     function renderMarcasMasBuscadas_(terminos) {
         if (!TODOS.length || !terminos.length) {
-            modulosDescubrimientoConContenido_.marcas = false;
+            modulosDescubrimientoConContenido_.marcas = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
@@ -7386,7 +7515,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             });
         });
         if (!sesionesPorMarca.size) {
-            modulosDescubrimientoConContenido_.marcas = false;
+            modulosDescubrimientoConContenido_.marcas = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
@@ -7429,7 +7558,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             chip.onclick = () => aplicarFiltroMarca_(marca, areaUnica, familiaUnica, refsMarca);
             cont.appendChild(chip);
         });
-        modulosDescubrimientoConContenido_.marcas = true;
+        modulosDescubrimientoConContenido_.marcas = 'con-contenido';
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -7576,7 +7705,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         timersRotacionNovedades_ = [];
         refsNovedadesReservadas_.clear();
         if (!TODOS.length) {
-            modulosDescubrimientoConContenido_.novedades = false;
+            modulosDescubrimientoConContenido_.novedades = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
@@ -7591,7 +7720,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         poolNovedadesActivo_ = pool;
         const productos = barajar_(pool).slice(0, MAX_TARJETAS_NOVEDADES);
         if (!productos.length) {
-            modulosDescubrimientoConContenido_.novedades = false;
+            modulosDescubrimientoConContenido_.novedades = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
@@ -7607,7 +7736,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // Eloy: "no da tiempo ni a ver el producto").
             programarSiguienteRotacionNovedad_(card, ESPERA_MINIMA_NOVEDADES_MS + Math.random() * (INTERVALO_ROTACION_NOVEDADES_MS - ESPERA_MINIMA_NOVEDADES_MS));
         });
-        modulosDescubrimientoConContenido_.novedades = true;
+        modulosDescubrimientoConContenido_.novedades = 'con-contenido';
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -7818,7 +7947,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         timersRotacionCategorias_.forEach(clearTimeout);
         timersRotacionCategorias_ = [];
         if (!TODOS.length) {
-            modulosDescubrimientoConContenido_.categorias = false;
+            modulosDescubrimientoConContenido_.categorias = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
@@ -7856,7 +7985,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             iniciarRotacionBloque_(entrada);
             n++;
         }
-        modulosDescubrimientoConContenido_.categorias = n > 0;
+        modulosDescubrimientoConContenido_.categorias = n > 0 ? 'con-contenido' : 'vacio';
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -10722,6 +10851,47 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         } else {
             precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
+        }
+
+        // A petición de Eloy: si el producto está en Destacados (activo y
+        // vigente), la ficha de detalle debe mostrar el mismo precio
+        // rebajado y la misma etiqueta que ya se ve en su tarjeta — misma
+        // lógica que construirContenidoTarjeta_, sin duplicarla.
+        const destacadoModal = destacadosVigentePara_(p.ref);
+        const chipDestacadoModal = $('modal-producto-destacado-chip');
+        if (destacadoModal) {
+            // Reutiliza etiquetaDestacadoHtml_ para la clase/texto del chip,
+            // pero sin sustituir el elemento (outerHTML lo destruiría y
+            // perdería su id, necesario en la próxima apertura del modal).
+            const tmpChip = document.createElement('div');
+            tmpChip.innerHTML = etiquetaDestacadoHtml_(destacadoModal.tipoDestacado);
+            const chipGenerado = tmpChip.firstElementChild;
+            if (chipGenerado) {
+                chipDestacadoModal.className = chipGenerado.className;
+                chipDestacadoModal.textContent = chipGenerado.textContent;
+                chipDestacadoModal.style.display = '';
+            } else {
+                chipDestacadoModal.style.display = 'none';
+            }
+            const precioDestacadoModal = calcularPrecioDestacado_(p, destacadoModal);
+            if (precioDestacadoModal.original !== null) {
+                if (precioDestacadoModal.promo !== null) {
+                    const originalTxt = precioDestacadoModal.original.toFixed(2).replace('.', ',');
+                    const promoTxt = precioDestacadoModal.promo.toFixed(2).replace('.', ',');
+                    precioHtml = `<div class="destacado-precio-descuento">` +
+                        `<span class="destacado-precio-original">${originalTxt} €</span>` +
+                        `<span class="destacado-precio-promo">${promoTxt} €</span>` +
+                        (precioDestacadoModal.pct ? `<span class="destacado-precio-pct">-${precioDestacadoModal.pct}%</span>` : '') +
+                        `</div>`;
+                } else {
+                    precioHtml = `<div class="modal-producto-precio-con">${precioDestacadoModal.original.toFixed(2).replace('.', ',')} €</div>`;
+                }
+            }
+            if (destacadoModal.textoPromocion) {
+                precioHtml += `<span class="destacado-promo-texto">${escapeHtml(destacadoModal.textoPromocion)}</span>`;
+            }
+        } else {
+            chipDestacadoModal.style.display = 'none';
         }
         $('modal-producto-precio').innerHTML = precioHtml;
 
