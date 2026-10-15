@@ -833,6 +833,13 @@
         .destacados-buscar-item img { width: 32px; height: 32px; object-fit: cover; border-radius: 5px; background: var(--light); }
         .destacados-buscar-item .nombre { font-size: 0.82rem; font-weight: 600; flex: 1; }
         .destacados-buscar-item .ya-incluido { font-size: 0.72rem; color: var(--green); font-weight: 700; }
+        .destacados-ver-producto {
+            flex-shrink: 0; border: 1px solid var(--border); background: #fff; border-radius: 6px;
+            padding: 4px 9px; font-size: 0.74rem; font-weight: 600; color: var(--blue); cursor: pointer;
+        }
+        .destacados-ver-producto:hover { background: var(--light); }
+        .destacados-precio-actual { font-weight: 400; color: var(--muted); font-size: 0.78rem; }
+        .destacados-item-acciones button[data-accion="ver"] { color: var(--blue); }
         .destacados-editor { border-top: 1px solid var(--border); margin-top: 18px; padding-top: 14px; }
         .destacados-editor-producto-nombre { font-weight: 700; margin-bottom: 4px; }
         .destacados-editor-error { color: var(--red); font-size: 0.82rem; min-height: 18px; }
@@ -4986,7 +4993,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </select>
                 <label for="destacados-editor-descuento">Descuento (%)</label>
                 <input type="number" id="destacados-editor-descuento" min="0" max="100" step="0.1" placeholder="Ej: 15">
-                <label for="destacados-editor-precio-alt">Precio alternativo (€)</label>
+                <label for="destacados-editor-precio-alt">Precio alternativo (€) <span id="destacados-editor-precio-actual" class="destacados-precio-actual"></span></label>
                 <input type="number" id="destacados-editor-precio-alt" min="0" step="0.01" placeholder="Ej: 9.95">
                 <label for="destacados-editor-texto-promo">Promoción adicional (máx. 10 caracteres)</label>
                 <input type="text" id="destacados-editor-texto-promo" maxlength="10" placeholder="2x1, 3x2, 5+1...">
@@ -6897,6 +6904,28 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return fecha.getTime() > Date.now();
     }
 
+    // POST compartido para todas las acciones de escritura de Destacados,
+    // con un único reintento automático: si Apps Script redirige el POST
+    // (algo habitual justo tras un redeploy) y el navegador lo reenvía
+    // como GET, la petición acaba ejecutando doGet en vez de doPost — y
+    // la respuesta de doGet, al no reconocer la acción, viene SIN la
+    // propiedad "success" (a diferencia de cualquier respuesta real de
+    // doPost, que siempre la lleva). Detectar justo esa huella y
+    // reintentar una vez evita que ese fallo transitorio obligue a
+    // repetir el guardado a mano.
+    async function destacadosFetchPost_(payload) {
+        for (let intento = 0; intento < 2; intento++) {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+            });
+            const d = await resp.json();
+            if (d.success !== undefined || intento === 1) return d;
+            console.warn('destacadosFetchPost_: respuesta sin "success" (posible redirección a doGet) — reintentando...', d);
+        }
+    }
+
     async function cargarDestacados_() {
         try {
             const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_destacados');
@@ -6947,13 +6976,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     async function destacadosValidarPinYArrancar_(pin) {
         $('destacados-pin-error').textContent = '';
+        const btn = $('destacados-pin-entrar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Comprobando...';
         try {
-            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ accion: 'panel_validar_pin', pin: pin }),
-            });
-            const d = await resp.json();
+            const d = await destacadosFetchPost_({ accion: 'panel_validar_pin', pin: pin });
             if (d.success) {
                 destacadosPin_ = pin;
                 $('destacados-vista-pin').style.display = 'none';
@@ -6967,6 +6995,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         } catch (e) {
             $('destacados-pin-error').textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
         }
     }
 
@@ -6980,20 +7011,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     async function destacadosGuardarConfigGlobal_() {
         const btn = $('destacados-config-guardar');
         const estado = $('destacados-config-estado');
+        const textoOriginal = btn.innerHTML;
         btn.disabled = true;
-        estado.textContent = 'Guardando...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        estado.textContent = '';
         try {
-            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({
-                    accion: 'guardar_config_destacados',
-                    pin: destacadosPin_,
-                    activo: $('destacados-config-activo').checked,
-                    fechaFin: $('destacados-config-fecha-fin').value || '',
-                }),
+            const d = await destacadosFetchPost_({
+                accion: 'guardar_config_destacados',
+                pin: destacadosPin_,
+                activo: $('destacados-config-activo').checked,
+                fechaFin: $('destacados-config-fecha-fin').value || '',
             });
-            const d = await resp.json();
             if (d.success) {
                 estado.textContent = '✓ Guardado';
                 await cargarDestacados_();
@@ -7004,6 +7032,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             estado.textContent = 'Error de conexión.';
         } finally {
             btn.disabled = false;
+            btn.innerHTML = textoOriginal;
             setTimeout(() => { estado.textContent = ''; }, 4000);
         }
     }
@@ -7039,10 +7068,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     <div class="detalle">Ref: ${escapeHtml(d.referencia)}${p ? ' · ' + escapeHtml(AREAS_NOMBRE[p.area] || p.area || '') + (p.familia ? ' · ' + escapeHtml(p.familia) : '') : ''}${detalles.length ? ' · ' + detalles.map(escapeHtml).join(' · ') : ''}</div>
                 </div>
                 <div class="destacados-item-acciones">
+                    <button type="button" title="Ver producto" data-accion="ver"><i class="fa-solid fa-up-right-from-square"></i></button>
                     <button type="button" title="Editar" data-accion="editar"><i class="fa-solid fa-pen"></i></button>
                     <button type="button" title="Retirar de destacados" data-accion="retirar"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
+            item.querySelector('[data-accion="ver"]').addEventListener('click', () => destacadosAbrirProductoNuevaVentana_(d.referencia));
             item.querySelector('[data-accion="editar"]').addEventListener('click', () => destacadosAbrirEditor_(d.referencia));
             item.querySelector('[data-accion="retirar"]').addEventListener('click', () => destacadosRetirarProducto_(d.referencia, p));
             cont.appendChild(item);
@@ -7053,12 +7084,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const nombre = producto ? producto.nombre : referencia;
         if (!window.confirm(`¿Retirar "${nombre}" de Destacados? El producto seguirá existiendo normalmente en el catálogo.`)) return;
         try {
-            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ accion: 'eliminar_destacado', pin: destacadosPin_, referencia: referencia }),
-            });
-            const d = await resp.json();
+            const d = await destacadosFetchPost_({ accion: 'eliminar_destacado', pin: destacadosPin_, referencia: referencia });
             if (!d.success) { alert('No se pudo retirar: ' + (d.error || 'error desconocido')); return; }
             await cargarDestacados_();
         } catch (e) {
@@ -7106,10 +7132,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
                 <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)} · ${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
                 ${yaIncluido ? '<span class="ya-incluido">Ya incluido</span>' : ''}
+                <button type="button" class="destacados-ver-producto" title="Ver producto en otra pestaña"><i class="fa-solid fa-up-right-from-square"></i> Ver</button>
             `;
+            fila.querySelector('.destacados-ver-producto').addEventListener('click', (e) => {
+                e.stopPropagation();
+                destacadosAbrirProductoNuevaVentana_(p.ref);
+            });
             fila.addEventListener('click', () => destacadosAbrirEditor_(p.ref));
             cont.appendChild(fila);
         });
+    }
+
+    // Abre la ficha del producto en una pestaña/ventana nueva (sin perder
+    // el modal de gestión), reutilizando el mismo enlace compartible
+    // ?ref= que ya usa el buscador para los productos (ver
+    // abrirProductoDesdeURL / opciones.pushHistorial en abrirModalProducto).
+    function destacadosAbrirProductoNuevaVentana_(ref) {
+        const url = new URL(window.location.href);
+        url.search = '';
+        url.searchParams.set('ref', ref);
+        window.open(url.toString(), '_blank', 'noopener');
     }
 
     // ── Gestión: editor de un producto destacado (crear o editar) ───────
@@ -7122,6 +7164,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         $('destacados-editor-titulo').textContent = existente ? 'Editar destacado' : 'Añadir destacado';
         $('destacados-editor-producto-nombre').textContent = `${p.nombre} (Ref: ${p.ref})`;
+        $('destacados-editor-precio-actual').textContent = (p.mostrar_precio && p.precio_con) ? `— precio actual en catálogo: ${p.precio_con} €` : '— sin precio público en catálogo';
         $('destacados-editor-activo').checked = existente ? !!existente.activo : true;
         $('destacados-editor-tipo').value = existente ? (existente.tipoDestacado || '') : '';
         $('destacados-editor-descuento').value = existente && existente.descuentoPorcentaje ? existente.descuentoPorcentaje : '';
@@ -7157,6 +7200,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (precioAlt !== '' && (isNaN(parseFloat(precioAlt)) || parseFloat(precioAlt) < 0)) {
             error.textContent = 'El precio alternativo debe ser mayor o igual que 0.'; return;
         }
+        // Aviso (no bloqueante): si el precio alternativo no es inferior al
+        // precio actual del catálogo, el producto se guardará igualmente,
+        // pero NO se mostrará como rebaja en la sección — mejor avisarlo
+        // aquí que dejar que parezca "no funciona" en el buscador.
+        if (precioAlt !== '') {
+            const productoActual = TODOS.find(x => String(x.ref) === String(destacadosProductoEnEdicion_));
+            if (productoActual && productoActual.mostrar_precio && productoActual.precio_con) {
+                const original = parseFloat(productoActual.precio_con.toString().replace(',', '.'));
+                if (isFinite(original) && parseFloat(precioAlt) >= original) {
+                    const continuar = window.confirm(
+                        `El precio alternativo (${precioAlt} €) no es inferior al precio actual en el catálogo (${original.toFixed(2).replace('.', ',')} €).\n\n` +
+                        `Se guardará, pero en la sección "Destacados" NO se mostrará como rebaja (no se tacha el precio ni se muestra descuento) — solo se vería el precio normal.\n\n` +
+                        `¿Continuar de todas formas?`
+                    );
+                    if (!continuar) return;
+                }
+            }
+        }
         const payload = {
             accion: 'guardar_destacado',
             pin: destacadosPin_,
@@ -7170,14 +7231,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             orden: $('destacados-editor-orden').value,
         };
         const btn = $('destacados-editor-guardar');
+        const textoOriginal = btn.innerHTML;
         btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
         try {
-            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload),
-            });
-            const d = await resp.json();
+            const d = await destacadosFetchPost_(payload);
             if (!d.success) { error.textContent = d.error || 'No se pudo guardar.'; return; }
             destacadosCambiosSinGuardar_ = false;
             destacadosCerrarEditor_();
@@ -7187,6 +7245,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             error.textContent = 'Error de conexión.';
         } finally {
             btn.disabled = false;
+            btn.innerHTML = textoOriginal;
         }
     }
 
