@@ -5038,6 +5038,10 @@ function backfillRefsProductosRecomendados() {
 // hay "campos sueltos" que actualizar por separado).
 function procesarGuardarSolucion(data) {
   try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     const slug = (data.slug || '').toString().trim();
     if (!slug) throw new Error('Falta el slug de la guía.');
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) {
@@ -5094,6 +5098,10 @@ function procesarGuardarSolucion(data) {
 
 function procesarEliminarSolucion(data) {
   try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     const slug = (data.slug || '').toString().trim();
     if (!slug) throw new Error('Falta el slug de la guía.');
 
@@ -5125,6 +5133,10 @@ function procesarEliminarSolucion(data) {
 // productos" pueda guardar sin reenviar el resto del formulario.
 function procesarGuardarCampana(data) {
   try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     console.log('procesarGuardarCampana iniciado:', data);
 
     const nombre = (data.nombre || '').toString().trim();
@@ -5279,6 +5291,10 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
 
 function procesarActualizarProductosCampana(data) {
   try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     console.log('procesarActualizarProductosCampana iniciado:', data);
 
     const id = (data.id || '').toString().trim();
@@ -5335,6 +5351,10 @@ function obtenerCarpetaImagenesCampanas_() {
 // archivos huérfanos cada vez que se cambia la imagen.
 function procesarActualizarImagenCampana(data) {
   try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     console.log('procesarActualizarImagenCampana iniciado, campaña:', data && data.id);
     const id = (data.id || '').toString().trim();
     const archivo = data.archivo;
@@ -5386,6 +5406,10 @@ function procesarActualizarImagenCampana(data) {
 
 function procesarEliminarImagenCampana(data) {
   try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     const id = (data.id || '').toString().trim();
     if (!id) throw new Error('Falta el id de la campaña.');
 
@@ -5421,6 +5445,10 @@ function procesarEliminarImagenCampana(data) {
 
 function procesarEliminarCampana(data) {
   try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     console.log('procesarEliminarCampana iniciado:', data);
 
     const id = (data.id || '').toString().trim();

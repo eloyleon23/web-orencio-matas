@@ -552,6 +552,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <button class="modal-close" data-close-campanas><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="modal-body">
+    <!-- Acceso con PIN — mismo patrón que "Gestionar destacados" en
+         buscador.html: se pide el PIN antes de ver/tocar nada de la
+         gestión de verdad, y se puede recordar en este dispositivo. -->
+    <div id="campanasVistaPin" style="max-width:340px; margin:0 auto; text-align:center;">
+      <p>Introduce el PIN de administración para gestionar los escaparates.</p>
+      <input type="password" id="campanasPinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" style="width:100%; font-size:1.1rem; text-align:center; letter-spacing:3px; padding:10px; border:2px solid var(--ink-faint, #ccc); border-radius:8px; margin:10px 0;">
+      <label class="checkbox-label" style="justify-content:center;"><input type="checkbox" id="campanasPinRecordar"> Recordar en este dispositivo</label>
+      <p id="campanasPinError" class="form-msg error" style="display:block; min-height:18px;"></p>
+      <button type="button" id="campanasPinEntrar" class="btn primary">Entrar</button>
+    </div>
+    <div id="campanasVistaPrincipal" style="display:none;">
     <div id="campaignList"><span class="picker-empty">Cargando escaparates…</span></div>
 
     <div class="new-campaign">
@@ -643,8 +654,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <p class="form-msg" id="formMsg"></p>
     </div>
+    </div>
   </div>
-  <div class="modal-foot">
+  <div class="modal-foot" id="campanasModalFoot" style="display:none;">
     <span class="selected-count">Pincha en la tarjeta del escaparate, ya en la página, para asignarle productos</span>
     <button class="btn primary" id="btnGuardarCampana">Guardar escaparate</button>
   </div>
@@ -924,6 +936,45 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     el.innerHTML = particulas;
   }
 
+  /* ---------------- Acceso con PIN a la gestión de escaparates ----------------
+     Mismo patrón que "Gestionar destacados" en buscador.html: la gestión
+     de escaparates no tenía NINGÚN control de acceso hasta ahora, pese a
+     ser una acción tan global como Destacados — se añade el mismo PIN
+     compartido (panel_validar_pin / PANEL_PIN en Apps Script). */
+  let campanasPin_ = '';
+  function campanasGuardarPinLocal_(pin, recordar) {
+    if (recordar) { try { localStorage.setItem('omCampanasPin', pin); } catch (e) {} }
+  }
+  async function campanasValidarPinYArrancar_(pin) {
+    const error = $("#campanasPinError");
+    const btn = $("#campanasPinEntrar");
+    error.textContent = '';
+    const textoOriginal = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Comprobando…';
+    try {
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'panel_validar_pin', pin: pin }),
+      });
+      const d = await resp.json();
+      if (d.success) {
+        campanasPin_ = pin;
+        $("#campanasVistaPin").style.display = 'none';
+        $("#campanasVistaPrincipal").style.display = '';
+        $("#campanasModalFoot").style.display = '';
+        limpiarFormulario();
+        renderCampaignList();
+      } else {
+        error.textContent = 'PIN incorrecto.';
+        try { localStorage.removeItem('omCampanasPin'); } catch (e) {}
+      }
+    } catch (e) {
+      error.textContent = 'Error de conexión.';
+    } finally {
+      btn.disabled = false; btn.textContent = textoOriginal;
+    }
+  }
+
   /* ---------------- Tarjetas de campaña ---------------- */
   let CAMPAIGNS = []; // TODAS las campañas (activas e inactivas) — la gestión (Modal B) necesita ver también las inactivas para poder reactivarlas
   function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
@@ -1166,7 +1217,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         try{
           const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
             method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-            body: JSON.stringify({ accion:'eliminar_campana', id:c.id })
+            body: JSON.stringify({ accion:'eliminar_campana', id:c.id, pin: campanasPin_ })
           });
           const data = await resp.json();
           if(!data.success) throw new Error(data.error || 'Error desconocido');
@@ -1322,7 +1373,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
         body: JSON.stringify({
-          accion:'actualizar_imagen_campana', id,
+          accion:'actualizar_imagen_campana', id, pin: campanasPin_,
           archivo: { nombre:file.name || 'imagen-pegada.png', tipo:file.type, datos: base64 },
         }),
       });
@@ -1399,7 +1450,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     try{
       const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({ accion:'eliminar_imagen_campana', id }),
+        body: JSON.stringify({ accion:'eliminar_imagen_campana', id, pin: campanasPin_ }),
       });
       const data = await resp.json();
       if(!data.success) throw new Error(data.error || 'Error desconocido');
@@ -1417,12 +1468,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   if ($("#btnCampanas")) {
     $("#btnCampanas").addEventListener("click", ()=>{
-      limpiarFormulario();
-      renderCampaignList();
       document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
       modalCampanas.showModal();
+      const pinGuardado = (() => { try { return localStorage.getItem('omCampanasPin'); } catch (e) { return null; } })();
+      if (pinGuardado) {
+        campanasValidarPinYArrancar_(pinGuardado);
+      } else {
+        $("#campanasVistaPin").style.display = '';
+        $("#campanasVistaPrincipal").style.display = 'none';
+        $("#campanasModalFoot").style.display = 'none';
+      }
     });
   }
+  $("#campanasPinEntrar").addEventListener("click", () => {
+    const pin = $("#campanasPinInput").value.trim();
+    campanasGuardarPinLocal_(pin, $("#campanasPinRecordar").checked);
+    campanasValidarPinYArrancar_(pin);
+  });
+  $("#campanasPinInput").addEventListener("keydown", (e) => { if (e.key === 'Enter') $("#campanasPinEntrar").click(); });
   $$('[data-close-campanas]').forEach(b=>b.addEventListener('click', ()=>modalCampanas.close()));
 
   $("#btnGuardarCampana").addEventListener("click", async ()=>{
@@ -1447,6 +1510,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     try{
       const payload = {
         accion:'guardar_campana',
+        pin: campanasPin_,
         id: $("#ncId").value || undefined,
         nombre, fechaInicio, fechaFin, permanente,
         tipo: $("#ncTipo").value,

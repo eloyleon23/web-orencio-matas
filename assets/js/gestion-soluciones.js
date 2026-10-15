@@ -350,11 +350,60 @@
     el.classList.toggle('is-ok', !esError && !!texto);
   }
 
+  // Acceso con PIN — mismo patrón que "Gestionar destacados" en
+  // buscador.html: antes esta gestión no tenía ningún control de acceso,
+  // pese a ser una acción tan global como Destacados. Mismo PIN
+  // compartido que el resto de paneles (panel_validar_pin / PANEL_PIN en
+  // Apps Script). La carga de guías/candidatas se aplaza a DESPUÉS de
+  // validar el PIN — ver cargarYMostrarGestion_.
+  let solucionesPin_ = '';
+  function solucionesGuardarPinLocal_(pin, recordar) {
+    if (recordar) { try { localStorage.setItem('omSolucionesPin', pin); } catch (e) {} }
+  }
+
   async function abrirModal() {
     const overlay = $('#cs-gestion-modal');
     overlay.classList.add('is-open');
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+    const pinGuardado = (() => { try { return localStorage.getItem('omSolucionesPin'); } catch (e) { return null; } })();
+    if (pinGuardado) {
+      solucionesValidarPinYArrancar_(pinGuardado);
+    } else {
+      $('#cs-gestion-vista-pin').style.display = '';
+      $('#cs-gestion-vista-principal').style.display = 'none';
+    }
+  }
+
+  async function solucionesValidarPinYArrancar_(pin) {
+    const error = $('#cs-gestion-pin-error');
+    const btn = $('#cs-gestion-pin-entrar');
+    error.textContent = '';
+    const textoOriginal = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Comprobando…';
+    try {
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'panel_validar_pin', pin: pin }),
+      });
+      const d = await resp.json();
+      if (d.success) {
+        solucionesPin_ = pin;
+        $('#cs-gestion-vista-pin').style.display = 'none';
+        $('#cs-gestion-vista-principal').style.display = 'contents';
+        await cargarYMostrarGestion_();
+      } else {
+        error.textContent = 'PIN incorrecto.';
+        try { localStorage.removeItem('omSolucionesPin'); } catch (e) {}
+      }
+    } catch (e) {
+      error.textContent = 'Error de conexión.';
+    } finally {
+      btn.disabled = false; btn.textContent = textoOriginal;
+    }
+  }
+
+  async function cargarYMostrarGestion_() {
     $('#cs-gestion-lista').innerHTML = '<p class="cs-gestion-lista-vacio">Cargando…</p>';
     const cont = $('#cs-gestion-candidatas-lista');
     if (cont) cont.innerHTML = '<p class="cs-gestion-lista-vacio">Cargando…</p>';
@@ -403,7 +452,7 @@
     try {
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'guardar_solucion', slug: slugInput, datos, activa }),
+        body: JSON.stringify({ accion: 'guardar_solucion', pin: solucionesPin_, slug: slugInput, datos, activa }),
       });
       const data = await resp.json();
       if (!data.success) throw new Error(data.error || 'Error desconocido');
@@ -427,7 +476,7 @@
     try {
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'eliminar_solucion', slug: slugSeleccionado }),
+        body: JSON.stringify({ accion: 'eliminar_solucion', pin: solucionesPin_, slug: slugSeleccionado }),
       });
       const data = await resp.json();
       if (!data.success) throw new Error(data.error || 'Error desconocido');
@@ -467,5 +516,16 @@
     if (guardarBtn) guardarBtn.addEventListener('click', guardar);
     const eliminarBtn = $('#cs-gestion-eliminar');
     if (eliminarBtn) eliminarBtn.addEventListener('click', eliminar);
+
+    const pinEntrar = $('#cs-gestion-pin-entrar');
+    const pinInput = $('#cs-gestion-pin-input');
+    if (pinEntrar && pinInput) {
+      pinEntrar.addEventListener('click', () => {
+        const pin = pinInput.value.trim();
+        solucionesGuardarPinLocal_(pin, $('#cs-gestion-pin-recordar').checked);
+        solucionesValidarPinYArrancar_(pin);
+      });
+      pinInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') pinEntrar.click(); });
+    }
   });
 })();

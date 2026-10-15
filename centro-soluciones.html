@@ -356,6 +356,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </button>
         </div>
         <div class="cs-gestion-cuerpo">
+          <!-- Acceso con PIN — mismo patrón que "Gestionar destacados" en
+               buscador.html: antes esta gestión no tenía ningún control de
+               acceso. Mismo PIN compartido que el resto de paneles
+               (panel_validar_pin / PANEL_PIN en Apps Script). -->
+          <div id="cs-gestion-vista-pin" style="grid-column: 1 / -1; max-width:340px; margin:40px auto; text-align:center;">
+            <p>Introduce el PIN de administración para gestionar las guías.</p>
+            <input type="password" id="cs-gestion-pin-input" class="cs-gestion-input" inputmode="numeric" autocomplete="off" placeholder="PIN" style="text-align:center; letter-spacing:3px;">
+            <label class="cs-gestion-checkbox" style="justify-content:center; margin:10px 0;"><input type="checkbox" id="cs-gestion-pin-recordar"> Recordar en este dispositivo</label>
+            <p id="cs-gestion-pin-error" class="cs-gestion-msg" style="color:#C81E1E;"></p>
+            <button type="button" id="cs-gestion-pin-entrar" class="cs-gestion-btn cs-gestion-btn--primario">Entrar</button>
+          </div>
+          <div id="cs-gestion-vista-principal" style="display:none;">
           <div class="cs-gestion-lista-col">
             <!-- A petición de Eloy: cerrar el círculo "la IA detecta un
                  hueco -> se convierte en guía permanente" (sección 13 del
@@ -409,6 +421,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <button type="button" class="cs-gestion-btn cs-gestion-btn--peligro" id="cs-gestion-eliminar" disabled>Eliminar esta guía</button>
               <button type="button" class="cs-gestion-btn cs-gestion-btn--primario" id="cs-gestion-guardar">Guardar guía</button>
             </div>
+          </div>
           </div>
         </div>
       </div>
