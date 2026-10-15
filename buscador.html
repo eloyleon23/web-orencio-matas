@@ -9446,7 +9446,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }, TOOLTIP_PRODUCTO_RETRASO_MS);
     }
 
+    // A petición de Eloy: en móvil el tooltip no aporta (no hay cursor que
+    // "pase por encima" de verdad — el mouseover lo dispara el propio toque)
+    // y en la práctica molesta más que ayuda. Se deja solo en vista de
+    // escritorio, reutilizando el mismo criterio de esMovil() que ya usa
+    // el resto del buscador para distinguir ambas vistas.
     document.addEventListener('mouseover', (e) => {
+        if (esMovil()) return;
         const card = e.target.closest(SELECTOR_TARJETAS_CON_TOOLTIP_);
         if (card === tarjetaTooltipActual_) return; // seguimos sobre la misma tarjeta, nada que hacer
         tarjetaTooltipActual_ = card;
@@ -9458,6 +9464,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     });
 
     document.addEventListener('mousemove', (e) => {
+        if (esMovil()) return;
         // Sigue al cursor mientras el tooltip esté (o vaya a estar)
         // visible sobre la tarjeta actual — comprobar tarjetaTooltipActual_
         // evita trabajo de más cuando el ratón no está sobre ninguna.
