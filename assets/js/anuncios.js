@@ -418,7 +418,7 @@
     actualizarSelectorFamilia_();
     $('an-url-externa').value = '';
     $('an-dropzone').classList.remove('con-archivo');
-    $('an-dropzone').innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Haz clic para elegir un archivo (PDF, JPG, PNG o WebP — máx. <span id="an-tamano-max-mb">20</span> MB)`;
+    $('an-dropzone').innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Arrastra un archivo aquí, pégalo (Ctrl+V) o haz clic para elegir (PDF, JPG, PNG o WebP — máx. <span id="an-tamano-max-mb">20</span> MB)`;
     $('an-archivo-input').value = '';
     $('an-archivo-estado').textContent = '';
     $('an-miniatura-preview').classList.remove('visible');
@@ -544,6 +544,19 @@
 
   const ANUNCIOS_TAMANO_MAX_MB_ = 20;
   const ANUNCIOS_EXTENSIONES_VALIDAS_ = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+  // MIME equivalentes, para filtrar lo que trae el portapapeles — un
+  // archivo pegado no tiene "nombre" propio, así que aquí se identifica
+  // por tipo MIME en vez de por extensión.
+  const ANUNCIOS_MIME_PERMITIDOS_ = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+  const ANUNCIOS_MIME_A_EXTENSION_ = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+  // Un Blob leído del portapapeles no tiene nombre de archivo (hace
+  // falta uno para que manejarArchivoSeleccionado_ pueda deducir la
+  // extensión, igual que con un File normal elegido a mano).
+  function blobAFile_(blob, mime) {
+    const extension = ANUNCIOS_MIME_A_EXTENSION_[mime] || 'bin';
+    return new File([blob], 'portapapeles.' + extension, { type: mime });
+  }
 
   async function manejarArchivoSeleccionado_(file) {
     const estado = $('an-archivo-estado');
@@ -750,6 +763,49 @@
     $('an-tab-url').addEventListener('click', () => cambiarTab_('url'));
     $('an-dropzone').addEventListener('click', () => $('an-archivo-input').click());
     $('an-archivo-input').addEventListener('change', (e) => { if (e.target.files[0]) manejarArchivoSeleccionado_(e.target.files[0]); });
+
+    // Arrastrar y soltar — mismo mecanismo ya usado en el resto del
+    // proyecto (Asistente de imágenes, imagen de campaña).
+    $('an-dropzone').addEventListener('dragover', (e) => { e.preventDefault(); $('an-dropzone').classList.add('arrastrando'); });
+    $('an-dropzone').addEventListener('dragleave', () => $('an-dropzone').classList.remove('arrastrando'));
+    $('an-dropzone').addEventListener('drop', (e) => {
+      e.preventDefault();
+      $('an-dropzone').classList.remove('arrastrando');
+      const file = e.dataTransfer.files[0];
+      if (file) manejarArchivoSeleccionado_(file);
+    });
+
+    // Pegar desde el portapapeles — dos vías, mismo patrón ya usado para
+    // las imágenes de producto en buscador.html: un botón con la
+    // Clipboard API moderna (gesto explícito, funciona también en
+    // móvil) y, además, Ctrl+V en cualquier parte mientras el gestor
+    // esté abierto en la pestaña de "Subir archivo".
+    $('an-pegar-portapapeles').addEventListener('click', async () => {
+      try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const clipboardItem of clipboardItems) {
+          const tipo = clipboardItem.types.find((t) => ANUNCIOS_MIME_PERMITIDOS_.indexOf(t) !== -1);
+          if (tipo) {
+            const blob = await clipboardItem.getType(tipo);
+            manejarArchivoSeleccionado_(blobAFile_(blob, tipo));
+            return;
+          }
+        }
+        toast('No hay ninguna imagen o PDF compatible en el portapapeles.', true);
+      } catch (e) {
+        console.error('Error al leer del portapapeles:', e);
+        toast(e.name === 'NotAllowedError' ? 'Permiso denegado para leer el portapapeles.' : 'No se pudo pegar desde el portapapeles. Copia el archivo e inténtalo de nuevo.', true);
+      }
+    });
+    document.addEventListener('paste', (e) => {
+      if (!$('an-modal-overlay').classList.contains('activo')) return;
+      if (!$('an-form').classList.contains('activo')) return;
+      if ($('an-tab-url').classList.contains('activo')) return; // en la pestaña de URL, un Ctrl+V normal debe pegar texto
+      const item = Array.from(e.clipboardData?.items || []).find((i) => ANUNCIOS_MIME_PERMITIDOS_.indexOf(i.type) !== -1);
+      if (!item) return;
+      e.preventDefault();
+      manejarArchivoSeleccionado_(item.getAsFile());
+    });
 
     $('an-titulo').addEventListener('input', actualizarContadores_);
     $('an-descripcion').addEventListener('input', actualizarContadores_);
