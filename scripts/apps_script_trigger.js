@@ -5559,17 +5559,28 @@ const ANUNCIOS_TIPOS_PERMITIDOS_ = {
   webp: { mime: 'image/webp', firma: [0x52, 0x49, 0x46, 0x46] },           // RIFF (+ 'WEBP' en el byte 8, comprobado aparte)
 };
 
+// Utilities.base64Decode() de Apps Script devuelve un array de bytes CON
+// SIGNO (-128..127, convención de Java) — cualquier byte real >= 0x80 (128)
+// llega aquí como negativo (p. ej. el primer byte de un PNG, 0x89 = 137,
+// llega como -119). Comparar directamente contra las firmas en hexadecimal
+// sin este ajuste falla para PNG y JPEG (cuyas firmas usan bytes >= 0x80),
+// aunque el archivo sea perfectamente válido — bug real detectado en
+// pruebas: un PNG genuino se rechazaba con "el contenido no coincide con
+// su extensión". WebP/PDF no lo sufrían porque sus firmas solo usan bytes
+// < 0x80, por eso no se detectó con esos formatos.
+function byteSinSigno_(byte) { return byte < 0 ? byte + 256 : byte; }
+
 function verificarTipoArchivoAnuncio_(bytesDecodificados, nombreArchivo) {
   const extension = (nombreArchivo || '').split('.').pop().toLowerCase();
   const definicion = ANUNCIOS_TIPOS_PERMITIDOS_[extension];
   if (!definicion) return { ok: false, error: 'Formato de archivo no permitido. Formatos admitidos: PDF, JPG, PNG, WebP.' };
-  const firmaOk = definicion.firma.every((byte, i) => bytesDecodificados[i] === byte);
+  const firmaOk = definicion.firma.every((byte, i) => byteSinSigno_(bytesDecodificados[i]) === byte);
   if (!firmaOk) return { ok: false, error: 'El contenido del archivo no coincide con su extensión (' + extension + ').' };
   if (extension === 'webp') {
     // Bytes 8-11 deben ser 'WEBP' (0x57 0x45 0x42 0x50) — justo después
     // de los 4 bytes de tamaño de RIFF, que sí varían por archivo.
     const firmaWebp = [0x57, 0x45, 0x42, 0x50];
-    const okWebp = firmaWebp.every((byte, i) => bytesDecodificados[8 + i] === byte);
+    const okWebp = firmaWebp.every((byte, i) => byteSinSigno_(bytesDecodificados[8 + i]) === byte);
     if (!okWebp) return { ok: false, error: 'El contenido del archivo no coincide con su extensión (webp).' };
   }
   return { ok: true, extension: extension, mime: definicion.mime };
