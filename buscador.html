@@ -5110,6 +5110,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'buscador'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
 <script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<!-- Antes de la configuración de abajo (window.MOSTRAR_PRECIO_MAYOR,
+     etc.): esta página necesita saber si hay una sesión profesional
+     activa ANTES de decidir qué mostrar, así que perfil-profesional.js
+     tiene que cargarse aquí, no al final del body. -->
+<script src="./assets/js/perfil-profesional.js?v=20260829a"></script>
 <script src="./assets/js/ia-disponibilidad.js?v=20261007a"></script>
 <script>
 // ── Configuración del buscador ──
@@ -5209,7 +5214,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-producto-gestionar-relacionados', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-relacionados-overlay', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-producto-baja-reactivar', window.MOSTRAR_BOTON_GESTION_BAJA);
-    eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR);
+    // Visible si el flag interno de desarrollo está activo (ver más
+    // arriba, MOSTRAR_PRECIO_MAYOR) O si hay una sesión profesional real
+    // y validada por Apps Script (window.PerfilProfesional) — a
+    // diferencia del flag de desarrollo, esta sí debe funcionar también
+    // en producción/IONOS para clientes profesionales autorizados.
+    window.OM_SESION_PROFESIONAL_ACTIVA = !!(window.PerfilProfesional && window.PerfilProfesional.sesionActiva());
+    eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR || window.OM_SESION_PROFESIONAL_ACTIVA);
     eliminarSiRestringido_('modal-producto-editar-ficha-tecnica', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     eliminarSiRestringido_('modal-editar-ficha-overlay', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
@@ -5640,7 +5651,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Actions, sin despliegue de por medio para esto — y la misma URL
     // sirve sin cambios sea cual sea el hosting de esta página.
     const PRODUCTOS_URL = './data/productos.json';
-    const PRODUCTOS_REMOTO_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+    const PRODUCTOS_REMOTO_URL_BASE = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+    // Si hay una sesión profesional activa, se reenvía su PIN en cada
+    // petición — es Apps Script quien vuelve a validarlo y decide si
+    // incluir o no precio_mayor_sin/con en la respuesta (ver
+    // verificarPinProfesional_ en scripts/apps_script_trigger.js); este
+    // archivo nunca decide eso por su cuenta.
+    function PRODUCTOS_REMOTO_URL_() {
+        const pin = window.PerfilProfesional && window.PerfilProfesional.pinActual();
+        return pin ? `${PRODUCTOS_REMOTO_URL_BASE}&pin=${encodeURIComponent(pin)}` : PRODUCTOS_REMOTO_URL_BASE;
+    }
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
     const PRODUCTOS_BESA_URL = './data/productos_besa.json';
@@ -5751,7 +5771,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // peticiones que no vengan de preproducción — cambio de servidor,
     // fuera del alcance de lo que puede arreglar el HTML/JS del cliente.
     function limpiarPrecioMayorSiProcede_(productos) {
-        if (window.MOSTRAR_PRECIO_MAYOR) return productos;
+        if (window.MOSTRAR_PRECIO_MAYOR || window.OM_SESION_PROFESIONAL_ACTIVA) return productos;
         productos.forEach(p => {
             delete p.precio_mayor_sin;
             delete p.precio_mayor_con;
@@ -5969,7 +5989,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         //    despliegue. Si el primer pintado ha fallado, esta pasa a
         //    ser directamente la fuente principal.
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
             if (resp.ok) {
                 const texto = await resp.text();
                 const hash = await calcularHash(texto);
@@ -6044,7 +6064,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // inmediato en el paso 2 de cargarProductosPrincipales().
     async function resincronizarVersionConocida() {
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
             if (!resp.ok) return;
             const texto = await resp.text();
             hashConocido = await calcularHash(texto);
@@ -6068,7 +6088,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
             if (!resp.ok) return;
             const texto = await resp.text();
             const hash = await calcularHash(texto);
@@ -6110,7 +6130,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.disabled = true;
         boton.textContent = 'Actualizando...';
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
             if (!resp.ok) throw new Error('respuesta no OK');
             const texto = await resp.text();
             const data = JSON.parse(texto);

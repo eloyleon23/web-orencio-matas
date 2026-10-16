@@ -271,6 +271,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="cs-hero__ctas">
               <a class="btn-primary" href="centro-soluciones.html">Encuentra tu solución</a>
               <a class="btn-secondary" href="index.html#contacto">Necesito asesoramiento</a>
+              <a class="btn-secondary" href="acceso-profesional.html">
+                <i class="fa-solid fa-lock" aria-hidden="true" style="margin-right:8px;"></i>Accede como profesional
+              </a>
             </div>
           </div>
         </div>
@@ -522,6 +525,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <script src="./assets/js/entorno.js?v=20260924a"></script>
     <script>window.OM_CLAVE_MANTENIMIENTO = 'profesionales'; window.OM_RUTA_RAIZ = './';</script>
     <script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+    <!-- Esta es la página pública INFORMATIVA "Profesionales" (distinta
+         del perfil profesional con PIN, ver acceso-profesional.html) —
+         está en la lista de páginas excluidas del contexto profesional,
+         así que este script redirige a quien ya tenga una sesión
+         profesional activa, en vez de dejar ver aquí una mezcla de
+         ambos contextos. -->
+    <script src="./assets/js/perfil-profesional.js?v=20260829a"></script>
     <script src="./src/js/app.js?v=20260829"></script>
     <script src="./src/js/analytics-consent.js?v=20260829"></script>
   </body>
