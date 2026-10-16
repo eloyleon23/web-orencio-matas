@@ -3617,6 +3617,17 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Anuncios y recursos — misma caché en Drive que el resto (ver
+    // regenerarCacheAnunciosDesdeSheet_). Devuelve TODOS los anuncios
+    // (visibles/ocultos, vigentes/caducados): la página pública filtra
+    // por visible+vigente al pintar, igual que ya hacen Campañas/
+    // Destacados/Soluciones — así el gestor (que sí necesita ver los
+    // ocultos/caducados para poder reactivarlos) usa la misma fuente.
+    if (accion === 'obtener_anuncios') {
+      return ContentService.createTextOutput(JSON.stringify(leerCacheAnuncios_()))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     // A petición de Eloy: "prefiero no dar la opción [de buscar con IA]
     // cuando no hay cuota que darla y que falle" — comprobación RÁPIDA
     // (solo lee PropertiesService, nunca llama a Gemini) que el buscador
@@ -3779,6 +3790,22 @@ function doPost(e) {
     if (accion === 'eliminar_solucion') {
       console.log('Acción: eliminar_solucion');
       return procesarEliminarSolucion(data);
+    }
+
+    // NUEVO — Anuncios y recursos
+    if (accion === 'guardar_anuncio') {
+      console.log('Acción: guardar_anuncio');
+      return procesarGuardarAnuncio(data);
+    }
+
+    if (accion === 'actualizar_archivo_anuncio') {
+      console.log('Acción: actualizar_archivo_anuncio');
+      return procesarActualizarArchivoAnuncio(data);
+    }
+
+    if (accion === 'eliminar_anuncio') {
+      console.log('Acción: eliminar_anuncio');
+      return procesarEliminarAnuncio(data);
     }
 
     if (accion === 'buscar_producto_ia') {
@@ -5475,6 +5502,574 @@ function procesarEliminarCampana(data) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ANUNCIOS Y RECURSOS (manuales, catálogos, folletos, anuncios...)
+// ══════════════════════════════════════════════════════════════════════
+// Misma arquitectura que Campañas/Destacados/Soluciones: hoja propia
+// ("Anuncios") + caché JSON en Drive, regenerada de forma SÍNCRONA tras
+// cada escritura, para que la misma URL de Apps Script sirva datos ya
+// preparados en cualquier hosting (GitHub Pages o IONOS) sin redesplegar
+// nada — ver el bloque de Campañas más arriba para el precedente clonado.
+//
+// La hoja guarda METADATOS únicamente — nunca el archivo en sí (petición
+// explícita de Eloy: "no guardar binarios en Sheets"). El archivo
+// original y, cuando aplica, su miniatura viven en Drive, en la carpeta
+// "Orencio Matas - Anuncios y Recursos" (ver obtenerCarpetaAnuncios_),
+// identificados por su Drive file ID (nunca por nombre — un nombre
+// repetido o cambiado no debe poder desenlazar el archivo del registro).
+const CABECERAS_ANUNCIOS_ = [
+  'id_anuncio', 'titulo', 'descripcion', 'tipologia', 'tipologia_personalizada',
+  'area', 'familia', 'producto_ref', 'visible', 'permanente',
+  'fecha_creacion', 'fecha_actualizacion', 'fecha_caducidad',
+  'tipo_recurso', 'nombre_archivo', 'mime_type', 'tamano_bytes',
+  'drive_file_id', 'url_externa', 'drive_thumbnail_id', 'estado',
+];
+
+const ANUNCIOS_TIPOLOGIAS_VALIDAS_ = ['manual', 'catalogo', 'folleto', 'anuncio', 'personalizado'];
+
+// Límite de tamaño de archivo — único punto de verdad, para poder
+// cambiarlo sin tocar más que esta línea (petición explícita de Eloy:
+// "el límite debe poder modificarse mediante una configuración
+// centralizada"). 20 MB de margen: muy por debajo del techo real de
+// Apps Script para un blob (~50MB, ver MAX_BYTES_POR_ZIP más arriba).
+const ANUNCIOS_TAMANO_MAX_BYTES_ = 20 * 1024 * 1024;
+
+// Ninguna vigencia temporal puede superar este plazo desde el momento en
+// que se fija/amplía (ni al crear, ni al ampliar después) — petición
+// explícita de Eloy. Se calcula SIEMPRE desde "ahora" (el momento del
+// guardado), nunca desde la fecha de creación original del recurso, para
+// que ampliar un recurso antiguo no quede limitado a una fecha ya
+// pasada — esta es la regla documentada que pedía la especificación.
+const ANUNCIOS_VIGENCIA_MAX_DIAS_ = 365;
+
+// Extensión → { mime, firma de cabecera (magic bytes) } — la firma se
+// comprueba contra los primeros bytes DECODIFICADOS del archivo, no
+// contra lo que diga el nombre o el MIME declarado por el navegador
+// (petición explícita de Eloy: "no confíes únicamente en el nombre o en
+// el tipo MIME declarado"). webp es un caso especial: RIFF....WEBP, con
+// 4 bytes de tamaño en medio que varían por archivo, así que se
+// comprueba en dos tramos (ver verificarTipoArchivoAnuncio_).
+const ANUNCIOS_TIPOS_PERMITIDOS_ = {
+  pdf:  { mime: 'application/pdf', firma: [0x25, 0x50, 0x44, 0x46] },      // %PDF
+  jpg:  { mime: 'image/jpeg', firma: [0xFF, 0xD8, 0xFF] },
+  jpeg: { mime: 'image/jpeg', firma: [0xFF, 0xD8, 0xFF] },
+  png:  { mime: 'image/png', firma: [0x89, 0x50, 0x4E, 0x47] },
+  webp: { mime: 'image/webp', firma: [0x52, 0x49, 0x46, 0x46] },           // RIFF (+ 'WEBP' en el byte 8, comprobado aparte)
+};
+
+function verificarTipoArchivoAnuncio_(bytesDecodificados, nombreArchivo) {
+  const extension = (nombreArchivo || '').split('.').pop().toLowerCase();
+  const definicion = ANUNCIOS_TIPOS_PERMITIDOS_[extension];
+  if (!definicion) return { ok: false, error: 'Formato de archivo no permitido. Formatos admitidos: PDF, JPG, PNG, WebP.' };
+  const firmaOk = definicion.firma.every((byte, i) => bytesDecodificados[i] === byte);
+  if (!firmaOk) return { ok: false, error: 'El contenido del archivo no coincide con su extensión (' + extension + ').' };
+  if (extension === 'webp') {
+    // Bytes 8-11 deben ser 'WEBP' (0x57 0x45 0x42 0x50) — justo después
+    // de los 4 bytes de tamaño de RIFF, que sí varían por archivo.
+    const firmaWebp = [0x57, 0x45, 0x42, 0x50];
+    const okWebp = firmaWebp.every((byte, i) => bytesDecodificados[8 + i] === byte);
+    if (!okWebp) return { ok: false, error: 'El contenido del archivo no coincide con su extensión (webp).' };
+  }
+  return { ok: true, extension: extension, mime: definicion.mime };
+}
+
+function obtenerHojaAnuncios_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Anuncios');
+  if (!sheet) {
+    sheet = ss.insertSheet('Anuncios');
+    sheet.getRange(1, 1, 1, CABECERAS_ANUNCIOS_.length).setValues([CABECERAS_ANUNCIOS_]);
+    sheet.setFrozenRows(1);
+    return sheet;
+  }
+  // Migración ligera de columnas — mismo patrón que obtenerHojaCampanas_:
+  // si la hoja ya existía de antes de añadir un campo nuevo, se añade al
+  // final sin tocar ninguna fila existente.
+  const cabecerasActuales = sheet.getLastColumn() > 0
+    ? sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => h.toString().toLowerCase().trim().replace(/\s+/g, '_'))
+    : [];
+  const faltantes = CABECERAS_ANUNCIOS_.filter(h => cabecerasActuales.indexOf(h) === -1);
+  if (faltantes.length) {
+    sheet.getRange(1, sheet.getLastColumn() + 1, 1, faltantes.length).setValues([faltantes]);
+    console.log('Hoja Anuncios: columnas añadidas por migración automática:', JSON.stringify(faltantes));
+  }
+  return sheet;
+}
+
+// Carpeta de Drive para los archivos de Anuncios y recursos, con dos
+// subcarpetas (originales / miniaturas) — mismo criterio que
+// obtenerCarpetaImagenesCampanas_, dentro del mismo Drive ya usado por
+// el resto del proyecto (DRIVE_IMAGENES_ID) para no depender de una
+// carpeta nueva suelta sin relación con el resto.
+function obtenerCarpetaAnuncios_() {
+  const padre = DriveApp.getFolderById(DRIVE_IMAGENES_ID);
+  const iter = padre.getFoldersByName('Orencio Matas - Anuncios y Recursos');
+  if (iter.hasNext()) return iter.next();
+  return padre.createFolder('Orencio Matas - Anuncios y Recursos');
+}
+function obtenerSubcarpetaAnuncios_(nombre) {
+  const base = obtenerCarpetaAnuncios_();
+  const iter = base.getFoldersByName(nombre);
+  if (iter.hasNext()) return iter.next();
+  return base.createFolder(nombre);
+}
+function obtenerCarpetaAnunciosOriginales_() { return obtenerSubcarpetaAnuncios_('Originales'); }
+function obtenerCarpetaAnunciosMiniaturas_() { return obtenerSubcarpetaAnuncios_('Miniaturas'); }
+
+// Vigente = o bien permanente, o bien su fecha de caducidad (interpretada
+// en Europe/Madrid) todavía no ha pasado. Una fecha vacía/ilegible en un
+// recurso NO permanente se trata como caducada — no al revés — porque un
+// recurso temporal sin fecha válida es justo el caso que no debe quedar
+// publicado indefinidamente por error.
+function anuncioFechaVigente_(fechaCaducidadISO, permanente) {
+  if (permanente) return true;
+  if (!fechaCaducidadISO) return false;
+  const fecha = new Date(fechaCaducidadISO);
+  if (isNaN(fecha.getTime())) return false;
+  return fecha.getTime() > Date.now();
+}
+
+function leerAnuncios_() {
+  const sheet = obtenerHojaAnuncios_();
+  const datos = sheet.getDataRange().getValues();
+  if (datos.length < 2) return [];
+  const COL = mapaCabeceras_(datos[0]);
+  const anuncios = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    const id = (fila[COL['id_anuncio']] || '').toString().trim();
+    if (!id) continue; // fila en blanco
+    const permanente = (fila[COL['permanente']] || '').toString().trim().toLowerCase() === 'si';
+    const fechaCaducidad = (fila[COL['fecha_caducidad']] || '').toString().trim();
+    anuncios.push({
+      id: id,
+      titulo: (fila[COL['titulo']] || '').toString(),
+      descripcion: (fila[COL['descripcion']] || '').toString(),
+      tipologia: (fila[COL['tipologia']] || 'anuncio').toString(),
+      tipologiaPersonalizada: (fila[COL['tipologia_personalizada']] || '').toString().trim(),
+      area: (fila[COL['area']] || '').toString().trim(),
+      familia: (fila[COL['familia']] || '').toString().trim(),
+      productoRef: (fila[COL['producto_ref']] || '').toString().trim(),
+      // Solo un 'no' explícito lo oculta — igual criterio que 'activa'
+      // en Campañas: una fila antigua sin este campo se trata como visible.
+      visible: (fila[COL['visible']] || '').toString().trim().toLowerCase() !== 'no',
+      permanente: permanente,
+      fechaCreacion: (fila[COL['fecha_creacion']] || '').toString(),
+      fechaActualizacion: (fila[COL['fecha_actualizacion']] || '').toString(),
+      fechaCaducidad: fechaCaducidad,
+      vigente: anuncioFechaVigente_(fechaCaducidad, permanente),
+      tipoRecurso: (fila[COL['tipo_recurso']] || 'archivo').toString(),
+      nombreArchivo: (fila[COL['nombre_archivo']] || '').toString(),
+      mimeType: (fila[COL['mime_type']] || '').toString(),
+      tamanoBytes: parseInt(fila[COL['tamano_bytes']], 10) || 0,
+      driveFileId: (fila[COL['drive_file_id']] || '').toString().trim(),
+      urlExterna: (fila[COL['url_externa']] || '').toString().trim(),
+      driveThumbnailId: (fila[COL['drive_thumbnail_id']] || '').toString().trim(),
+      estado: (fila[COL['estado']] || 'activo').toString(),
+    });
+  }
+  return anuncios;
+}
+
+// ── Caché de Anuncios en Drive ──────────────────────────────────────────
+const NOMBRE_ARCHIVO_ANUNCIOS_CACHE = 'anuncios_cache.json';
+
+function obtenerArchivoAnunciosCache_() {
+  const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_ANUNCIOS_CACHE);
+  if (archivos.hasNext()) return archivos.next();
+  const blobVacio = Utilities.newBlob('{"anuncios":[]}', 'application/json', NOMBRE_ARCHIVO_ANUNCIOS_CACHE);
+  const archivo = DriveApp.createFile(blobVacio);
+  archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  console.log('Archivo de caché de anuncios creado en Drive:', archivo.getId());
+  return archivo;
+}
+
+function leerCacheAnuncios_() {
+  try {
+    const archivo = obtenerArchivoAnunciosCache_();
+    return JSON.parse(archivo.getBlob().getDataAsString('UTF-8'));
+  } catch (e) {
+    console.error('leerCacheAnuncios_: error leyendo la caché, devolviendo estructura vacía:', e);
+    return { anuncios: [] };
+  }
+}
+
+function guardarCacheAnuncios_(datos) {
+  obtenerArchivoAnunciosCache_().setContent(JSON.stringify(datos));
+}
+
+function regenerarCacheAnunciosDesdeSheet_() {
+  const anuncios = leerAnuncios_();
+  const payload = { generado: new Date().toISOString(), total: anuncios.length, anuncios: anuncios };
+  const lock = LockService.getScriptLock();
+  try {
+    lock.tryLock(15000);
+    guardarCacheAnuncios_(payload);
+  } finally {
+    lock.releaseLock();
+  }
+  console.log(`regenerarCacheAnunciosDesdeSheet_: ${anuncios.length} anuncios regenerados y guardados en la caché de Drive.`);
+  return payload;
+}
+
+// Valida y normaliza los campos comunes del formulario — compartido entre
+// crear y editar, para no duplicar las mismas reglas dos veces.
+function validarCamposAnuncio_(data) {
+  const titulo = (data.titulo || '').toString().trim().slice(0, 100);
+  if (!titulo) throw new Error('El título es obligatorio.');
+
+  const descripcion = (data.descripcion || '').toString().trim().slice(0, 500);
+
+  const tipologia = (data.tipologia || '').toString().trim().toLowerCase();
+  if (ANUNCIOS_TIPOLOGIAS_VALIDAS_.indexOf(tipologia) === -1) {
+    throw new Error('Tipología no válida.');
+  }
+  // Normaliza el nombre de la tipología personalizada (espacios, may/min)
+  // para que "Guía rápida" y "guía   rápida" no generen dos entradas
+  // distintas en los selectores — petición explícita de Eloy ("evitar
+  // duplicados innecesarios y normalizar los nombres").
+  let tipologiaPersonalizada = '';
+  if (tipologia === 'personalizado') {
+    tipologiaPersonalizada = (data.tipologiaPersonalizada || '').toString().trim().replace(/\s+/g, ' ').slice(0, 60);
+    if (!tipologiaPersonalizada) throw new Error('Indica el nombre de la tipología personalizada.');
+  }
+
+  const area = (data.area || '').toString().trim();
+  if (!area) throw new Error('El área es obligatoria.');
+  const familia = (data.familia || '').toString().trim();
+  const productoRef = (data.productoRef || '').toString().trim();
+
+  const visible = data.visible !== false; // por defecto true, salvo 'false' explícito
+  const permanente = data.permanente === true;
+
+  let fechaCaducidad = '';
+  if (!permanente) {
+    const fechaRaw = (data.fechaCaducidad || '').toString().trim();
+    if (!fechaRaw) throw new Error('La fecha de caducidad es obligatoria salvo que la publicación sea permanente.');
+    const fecha = new Date(fechaRaw);
+    if (isNaN(fecha.getTime())) throw new Error('La fecha de caducidad no es válida.');
+    const limiteMaximo = new Date(Date.now() + ANUNCIOS_VIGENCIA_MAX_DIAS_ * 24 * 60 * 60 * 1000);
+    if (fecha.getTime() > limiteMaximo.getTime()) {
+      throw new Error('La vigencia no puede superar un año desde hoy — fecha límite efectiva: ' +
+        Utilities.formatDate(limiteMaximo, 'Europe/Madrid', 'dd/MM/yyyy HH:mm'));
+    }
+    fechaCaducidad = fecha.toISOString();
+  }
+
+  return { titulo, descripcion, tipologia, tipologiaPersonalizada, area, familia, productoRef, visible, permanente, fechaCaducidad };
+}
+
+function procesarGuardarAnuncio(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    console.log('procesarGuardarAnuncio iniciado:', data);
+
+    const campos = validarCamposAnuncio_(data);
+    const sheet = obtenerHojaAnuncios_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    const ahoraISO = new Date().toISOString();
+
+    const idExistente = (data.id || '').toString().trim();
+    let filaIdx = -1;
+    if (idExistente) {
+      for (let i = 1; i < datos.length; i++) {
+        if ((datos[i][COL['id_anuncio']] || '').toString().trim() === idExistente) { filaIdx = i; break; }
+      }
+    }
+
+    if (filaIdx === -1) {
+      const id = 'anuncio-' + new Date().getTime();
+      const fila = new Array(CABECERAS_ANUNCIOS_.length).fill('');
+      fila[COL['id_anuncio']] = id;
+      fila[COL['titulo']] = campos.titulo;
+      fila[COL['descripcion']] = campos.descripcion;
+      fila[COL['tipologia']] = campos.tipologia;
+      fila[COL['tipologia_personalizada']] = campos.tipologiaPersonalizada;
+      fila[COL['area']] = campos.area;
+      fila[COL['familia']] = campos.familia;
+      fila[COL['producto_ref']] = campos.productoRef;
+      fila[COL['visible']] = campos.visible ? 'si' : 'no';
+      fila[COL['permanente']] = campos.permanente ? 'si' : 'no';
+      fila[COL['fecha_creacion']] = ahoraISO;
+      fila[COL['fecha_actualizacion']] = ahoraISO;
+      fila[COL['fecha_caducidad']] = campos.fechaCaducidad;
+      fila[COL['tipo_recurso']] = 'archivo'; // se completa al subir el archivo/URL — ver procesarActualizarArchivoAnuncio
+      fila[COL['estado']] = 'activo';
+      sheet.getRange(sheet.getLastRow() + 1, 1, 1, CABECERAS_ANUNCIOS_.length).setValues([fila]);
+      console.log('Anuncio creado:', id);
+      regenerarCacheAnunciosDesdeSheet_();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, id: id }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Edición: las fechas de creación y los datos del archivo/miniatura
+    // NUNCA se tocan aquí — solo metadatos. Sustituir el archivo tiene su
+    // propia acción (procesarActualizarArchivoAnuncio) a propósito, para
+    // que editar el título de un recurso nunca reinicie su archivo ni su
+    // fecha de creación original (petición explícita de Eloy).
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['titulo'] + 1).setValue(campos.titulo);
+    sheet.getRange(filaNum, COL['descripcion'] + 1).setValue(campos.descripcion);
+    sheet.getRange(filaNum, COL['tipologia'] + 1).setValue(campos.tipologia);
+    sheet.getRange(filaNum, COL['tipologia_personalizada'] + 1).setValue(campos.tipologiaPersonalizada);
+    sheet.getRange(filaNum, COL['area'] + 1).setValue(campos.area);
+    sheet.getRange(filaNum, COL['familia'] + 1).setValue(campos.familia);
+    sheet.getRange(filaNum, COL['producto_ref'] + 1).setValue(campos.productoRef);
+    sheet.getRange(filaNum, COL['visible'] + 1).setValue(campos.visible ? 'si' : 'no');
+    sheet.getRange(filaNum, COL['permanente'] + 1).setValue(campos.permanente ? 'si' : 'no');
+    sheet.getRange(filaNum, COL['fecha_caducidad'] + 1).setValue(campos.fechaCaducidad);
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
+    console.log('Anuncio actualizado:', idExistente);
+    regenerarCacheAnunciosDesdeSheet_();
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, id: idExistente }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarGuardarAnuncio:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Sube/reemplaza el archivo (o la URL externa) de un recurso ya creado,
+// y opcionalmente su miniatura. Igual que con la imagen de campaña: si
+// ya había un archivo/miniatura anterior, se envía a la papelera DESPUÉS
+// de confirmar que el nuevo se ha subido y el registro se ha actualizado
+// con éxito — nunca antes (petición explícita de Eloy: "no elimines el
+// archivo anterior antes de confirmar que la sustitución se ha realizado
+// correctamente").
+function procesarActualizarArchivoAnuncio(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const id = (data.id || '').toString().trim();
+    if (!id) throw new Error('Falta el id del anuncio.');
+    const tipoRecurso = data.tipoRecurso === 'url' ? 'url' : 'archivo';
+
+    const sheet = obtenerHojaAnuncios_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    let filaIdx = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id_anuncio']] || '').toString().trim() === id) { filaIdx = i; break; }
+    }
+    if (filaIdx === -1) throw new Error('Anuncio no encontrado.');
+
+    const anteriorFileId = (datos[filaIdx][COL['drive_file_id']] || '').toString().trim();
+    const anteriorThumbId = (datos[filaIdx][COL['drive_thumbnail_id']] || '').toString().trim();
+
+    let nuevoFileId = '';
+    let nombreArchivo = '';
+    let mimeType = '';
+    let tamanoBytes = 0;
+    let urlExterna = '';
+
+    if (tipoRecurso === 'archivo') {
+      const archivo = data.archivo;
+      if (!archivo || !archivo.datos) throw new Error('Falta el archivo a subir.');
+      const decoded = Utilities.base64Decode(archivo.datos);
+      if (decoded.length > ANUNCIOS_TAMANO_MAX_BYTES_) {
+        throw new Error('El archivo supera el tamaño máximo permitido (' + Math.round(ANUNCIOS_TAMANO_MAX_BYTES_ / (1024 * 1024)) + ' MB).');
+      }
+      const verificacion = verificarTipoArchivoAnuncio_(decoded, archivo.nombre || '');
+      if (!verificacion.ok) throw new Error(verificacion.error);
+
+      const blob = Utilities.newBlob(decoded, verificacion.mime, id + '.' + verificacion.extension);
+      const driveFile = obtenerCarpetaAnunciosOriginales_().createFile(blob);
+      try { driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
+      catch (sharingError) { console.log('No se pudo compartir el archivo del anuncio públicamente:', sharingError.message); }
+
+      nuevoFileId = driveFile.getId();
+      nombreArchivo = (archivo.nombre || blob.getName()).toString().slice(0, 150);
+      mimeType = verificacion.mime;
+      tamanoBytes = decoded.length;
+    } else {
+      urlExterna = (data.urlExterna || '').toString().trim();
+      if (!urlExterna) throw new Error('Falta la URL externa.');
+      try {
+        const protocolo = urlExterna.split(':')[0].toLowerCase();
+        if (protocolo !== 'http' && protocolo !== 'https') throw new Error('bad protocol');
+        new URL(urlExterna); // lanza si la URL no es válida
+      } catch (e) {
+        throw new Error('La URL introducida no es válida — debe empezar por http:// o https://.');
+      }
+      nombreArchivo = urlExterna.slice(0, 150);
+    }
+
+    // Miniatura opcional (siempre imagen): obligatoria en la práctica
+    // para PDFs (generada con pdf.js EN EL NAVEGADOR, ver gestión de
+    // anuncios en anuncios.html — nunca en el servidor, Apps Script no
+    // puede renderizar un PDF), opcional como portada personalizada para
+    // imágenes/URLs.
+    let nuevoThumbId = '';
+    if (data.archivoMiniatura && data.archivoMiniatura.datos) {
+      const decodedThumb = Utilities.base64Decode(data.archivoMiniatura.datos);
+      if (decodedThumb.length > ANUNCIOS_TAMANO_MAX_BYTES_) {
+        throw new Error('La miniatura supera el tamaño máximo permitido.');
+      }
+      const verifThumb = verificarTipoArchivoAnuncio_(decodedThumb, data.archivoMiniatura.nombre || 'miniatura.png');
+      if (!verifThumb.ok || verifThumb.mime.indexOf('image/') !== 0) {
+        throw new Error('La miniatura debe ser una imagen válida (JPG, PNG o WebP).');
+      }
+      const blobThumb = Utilities.newBlob(decodedThumb, verifThumb.mime, id + '-miniatura.' + verifThumb.extension);
+      const driveThumb = obtenerCarpetaAnunciosMiniaturas_().createFile(blobThumb);
+      try { driveThumb.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
+      catch (sharingError) { console.log('No se pudo compartir la miniatura públicamente:', sharingError.message); }
+      nuevoThumbId = driveThumb.getId();
+    }
+
+    // Archivo y registro ya confirmados — AHORA sí se actualiza la hoja
+    // y, solo después de que la escritura haya funcionado, se envían a
+    // la papelera el archivo y la miniatura anteriores (si los había y
+        // si de verdad se ha sustituido algo de ese tipo).
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['tipo_recurso'] + 1).setValue(tipoRecurso);
+    sheet.getRange(filaNum, COL['nombre_archivo'] + 1).setValue(nombreArchivo);
+    sheet.getRange(filaNum, COL['mime_type'] + 1).setValue(mimeType);
+    sheet.getRange(filaNum, COL['tamano_bytes'] + 1).setValue(tamanoBytes);
+    sheet.getRange(filaNum, COL['drive_file_id'] + 1).setValue(nuevoFileId);
+    sheet.getRange(filaNum, COL['url_externa'] + 1).setValue(urlExterna);
+    if (nuevoThumbId) sheet.getRange(filaNum, COL['drive_thumbnail_id'] + 1).setValue(nuevoThumbId);
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
+
+    if (tipoRecurso === 'archivo' && anteriorFileId) {
+      try { DriveApp.getFileById(anteriorFileId).setTrashed(true); }
+      catch (e) { console.log('No se pudo enviar a la papelera el archivo anterior (puede que ya no exista):', e.message); }
+    }
+    if (nuevoThumbId && anteriorThumbId) {
+      try { DriveApp.getFileById(anteriorThumbId).setTrashed(true); }
+      catch (e) { console.log('No se pudo enviar a la papelera la miniatura anterior (puede que ya no exista):', e.message); }
+    }
+
+    console.log('Archivo de anuncio actualizado:', id, '→', nuevoFileId || urlExterna);
+    regenerarCacheAnunciosDesdeSheet_();
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, driveFileId: nuevoFileId, driveThumbnailId: nuevoThumbId || anteriorThumbId }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarActualizarArchivoAnuncio:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function procesarEliminarAnuncio(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const id = (data.id || '').toString().trim();
+    if (!id) throw new Error('Falta el id del anuncio.');
+
+    const sheet = obtenerHojaAnuncios_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id_anuncio']] || '').toString().trim() === id) {
+        const fileId = (datos[i][COL['drive_file_id']] || '').toString().trim();
+        const thumbId = (datos[i][COL['drive_thumbnail_id']] || '').toString().trim();
+        let avisoParcial = '';
+        if (fileId) {
+          try { DriveApp.getFileById(fileId).setTrashed(true); }
+          catch (e) { avisoParcial += 'No se pudo eliminar el archivo de Drive (' + e.message + '). '; }
+        }
+        if (thumbId) {
+          try { DriveApp.getFileById(thumbId).setTrashed(true); }
+          catch (e) { avisoParcial += 'No se pudo eliminar la miniatura de Drive (' + e.message + '). '; }
+        }
+        sheet.deleteRow(i + 1);
+        console.log('Anuncio eliminado:', id, avisoParcial || '(sin incidencias)');
+        regenerarCacheAnunciosDesdeSheet_();
+        // Si algo del borrado en Drive falló, se informa igualmente del
+        // éxito del borrado lógico del registro, pero SIN decir que todo
+        // se ha completado íntegramente (petición explícita de Eloy).
+        return ContentService.createTextOutput(JSON.stringify({ success: true, avisoParcial: avisoParcial || null }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Anuncio no encontrado.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarEliminarAnuncio:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Caducidad: limpieza física (nivel 2) ─────────────────────────────────
+// El nivel 1 (no mostrar un recurso vencido) ya lo resuelve
+// anuncioFechaVigente_/leerAnuncios_ en cada lectura — esto es lo
+// complementario: borrar DE VERDAD el archivo, la miniatura y el
+// registro de los recursos temporales vencidos, sin depender de que
+// nadie visite la web. Idempotente a propósito: puede volver a
+// ejecutarse sin re-procesar ni romper nada (cada fila vencida se
+// elimina una sola vez; las demás ni se tocan).
+function limpiarAnunciosCaducados_() {
+  const sheet = obtenerHojaAnuncios_();
+  const datos = sheet.getDataRange().getValues();
+  if (datos.length < 2) return { revisados: 0, eliminados: 0, errores: [] };
+  const COL = mapaCabeceras_(datos[0]);
+
+  const filasAEliminar = []; // de abajo a arriba, para que borrar no desplace los índices pendientes
+  const errores = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    const id = (fila[COL['id_anuncio']] || '').toString().trim();
+    if (!id) continue;
+    const permanente = (fila[COL['permanente']] || '').toString().trim().toLowerCase() === 'si';
+    if (permanente) continue; // los permanentes nunca caducan solos
+    const fechaCaducidad = (fila[COL['fecha_caducidad']] || '').toString().trim();
+    if (anuncioFechaVigente_(fechaCaducidad, false)) continue; // sigue vigente (o su vigencia se amplió correctamente)
+
+    const fileId = (fila[COL['drive_file_id']] || '').toString().trim();
+    const thumbId = (fila[COL['drive_thumbnail_id']] || '').toString().trim();
+    if (fileId) {
+      try { DriveApp.getFileById(fileId).setTrashed(true); }
+      catch (e) { errores.push('Anuncio ' + id + ': no se pudo eliminar el archivo — ' + e.message); }
+    }
+    if (thumbId) {
+      try { DriveApp.getFileById(thumbId).setTrashed(true); }
+      catch (e) { errores.push('Anuncio ' + id + ': no se pudo eliminar la miniatura — ' + e.message); }
+    }
+    filasAEliminar.push(i + 1);
+  }
+
+  filasAEliminar.sort((a, b) => b - a).forEach(filaNum => sheet.deleteRow(filaNum));
+
+  if (filasAEliminar.length) regenerarCacheAnunciosDesdeSheet_();
+
+  const resultado = { revisados: datos.length - 1, eliminados: filasAEliminar.length, errores: errores };
+  console.log('limpiarAnunciosCaducados_:', JSON.stringify(resultado));
+  return resultado;
+}
+
+// Ejecutar MANUALMENTE desde el editor de Apps Script, una sola vez, para
+// (re)crear el disparador diario — mismo patrón ya usado en este proyecto
+// (ver configurarTriggerAvisoSincronizacionCRM más abajo).
+function configurarTriggerLimpiezaAnuncios() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'limpiarAnunciosCaducadosProgramado')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger('limpiarAnunciosCaducadosProgramado')
+    .timeBased()
+    .everyDays(1)
+    .atHour(4)
+    .create();
+  console.log('Trigger creado: limpiarAnunciosCaducadosProgramado se ejecutará una vez al día, de madrugada.');
+}
+
+function limpiarAnunciosCaducadosProgramado() {
+  limpiarAnunciosCaducados_();
 }
 
 // ══════════════════════════════════════════════════════════════════════
