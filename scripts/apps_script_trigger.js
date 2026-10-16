@@ -118,6 +118,7 @@ function onOpen() {
     .addItem('📦 Mover imágenes nuevas a carpeta principal', 'moverImagenesNuevasACarpetaPrincipal')
     .addSeparator()
     .addItem('🔄 Actualizar catálogo Zaphiro', 'actualizarZaphiro')
+    .addItem('🔄 Generar catálogos al por mayor ahora', 'generarCatalogosMayorAhora')
     .addSeparator()
     .addItem('🚧 Añadir filas de modo mantenimiento a Configuracion (una vez)', 'añadirFilasMantenimientoConfiguracion')
     .addSeparator()
@@ -160,6 +161,40 @@ function dispararWorkflow() {
 }
 
 function generarAhora() { dispararWorkflow(); }
+
+// Igual que dispararWorkflow(), pero para el catálogo AL POR MAYOR
+// (ver bloque "CATÁLOGOS PDF AL POR MAYOR" más abajo) — es un proceso
+// totalmente independiente del catálogo normal: genera sus propios PDFs
+// (con el precio de mayor y el aviso "PRECIO AL POR MAYOR"), con sus
+// propios nombres de archivo, sin sustituir ni tocar los catálogos
+// normales en ningún momento.
+function dispararWorkflowCatalogosMayor_() {
+  const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`;
+  const payload = JSON.stringify({
+    event_type: 'generar_catalogos_mayor',
+    client_payload: { triggered_by: 'google_sheets', timestamp: new Date().toISOString() }
+  });
+  const options = {
+    method: 'post', contentType: 'application/json',
+    headers: {
+      'Authorization': `Bearer ${GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    payload: payload, muteHttpExceptions: true
+  };
+  const resp = UrlFetchApp.fetch(url, options);
+  if (resp.getResponseCode() === 204) {
+    SpreadsheetApp.getActiveSpreadsheet()
+      .toast('Los catálogos al por mayor se están generando. En 1-2 minutos estarán disponibles.', '✓ Generación iniciada', 6);
+  } else {
+    SpreadsheetApp.getActiveSpreadsheet()
+      .toast('Error al conectar con GitHub. Revisa el token.', '⚠ Error', 5);
+    console.error(resp.getContentText());
+  }
+}
+
+function generarCatalogosMayorAhora() { dispararWorkflowCatalogosMayor_(); }
 
 // ── SINCRONIZACIÓN RegistroProductos → Productos ───────────────────────────
 function sincronizarRegistroProductos() {
@@ -3516,6 +3551,105 @@ function procesarSincronizarCatalogos(data) {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// CATÁLOGOS PDF AL POR MAYOR — mismo mecanismo que el bloque anterior,
+// pero totalmente independiente: archivos, manifiesto y acciones propias,
+// para que ambos catálogos (normal y al por mayor) convivan en Drive sin
+// pisarse y se puedan gestionar y regenerar por separado. Pensado para
+// enlazarse más adelante desde la vista de cliente profesional, cuando
+// exista — de momento solo se generan y se guardan en Drive.
+// ══════════════════════════════════════════════════════════════════════
+
+const NOMBRES_ARCHIVOS_CATALOGO_MAYOR = {
+  drogueria:  'catalogo_drogueria_mayor.pdf',
+  perfumeria: 'catalogo_perfumeria_mayor.pdf',
+  pinturas:   'catalogo_pinturas_mayor.pdf',
+  talleres:   'catalogo_talleres_mayor.pdf',
+};
+
+const NOMBRE_ARCHIVO_MANIFIESTO_CATALOGOS_MAYOR = 'manifiesto_catalogos_mayor.json';
+
+function obtenerArchivoCatalogoMayor_(area) {
+  const nombre = NOMBRES_ARCHIVOS_CATALOGO_MAYOR[area];
+  if (!nombre) return null;
+  const archivos = DriveApp.getFilesByName(nombre);
+  return archivos.hasNext() ? archivos.next() : null;
+}
+
+function leerManifiestoCatalogosMayor_() {
+  try {
+    const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_MANIFIESTO_CATALOGOS_MAYOR);
+    if (!archivos.hasNext()) return {};
+    return JSON.parse(archivos.next().getBlob().getDataAsString('UTF-8'));
+  } catch (e) {
+    console.error('leerManifiestoCatalogosMayor_: error leyendo, devolviendo vacío:', e);
+    return {};
+  }
+}
+
+function guardarManifiestoCatalogosMayor_(datos) {
+  const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_MANIFIESTO_CATALOGOS_MAYOR);
+  if (archivos.hasNext()) {
+    const archivo = archivos.next();
+    Drive.Files.update({}, archivo.getId(), Utilities.newBlob(JSON.stringify(datos), 'application/json'));
+  } else {
+    const blob = Utilities.newBlob(JSON.stringify(datos), 'application/json', NOMBRE_ARCHIVO_MANIFIESTO_CATALOGOS_MAYOR);
+    const nuevo = DriveApp.createFile(blob);
+    nuevo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  }
+}
+
+function sincronizarCatalogoPdfDesdeUrlMayor_(area, url) {
+  const nombre = NOMBRES_ARCHIVOS_CATALOGO_MAYOR[area];
+  if (!nombre) throw new Error('Área de catálogo (mayor) no reconocida: ' + area);
+
+  const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  if (resp.getResponseCode() !== 200) {
+    throw new Error(`No se pudo descargar el PDF (mayor) de ${area} (código ${resp.getResponseCode()})`);
+  }
+  const blob = resp.getBlob().setName(nombre);
+
+  const existente = obtenerArchivoCatalogoMayor_(area);
+  if (existente) {
+    Drive.Files.update({}, existente.getId(), blob);
+  } else {
+    const nuevo = DriveApp.createFile(blob);
+    nuevo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  }
+}
+
+// doPost: recibe { catalogos: { area: { url, paginas, productos }, ... } }
+// — misma forma que procesarSincronizarCatalogos, pero escribe en los
+// archivos/manifiesto "_mayor" en vez de en los normales.
+function procesarSincronizarCatalogosMayor(data) {
+  try {
+    const catalogos = data.catalogos || {};
+    const resultados = {};
+    const manifiesto = { generado: new Date().toISOString(), catalogos: {} };
+
+    Object.keys(catalogos).forEach(area => {
+      const info = catalogos[area];
+      try {
+        sincronizarCatalogoPdfDesdeUrlMayor_(area, info.url);
+        manifiesto.catalogos[area] = { paginas: info.paginas || null, productos: info.productos || null };
+        resultados[area] = 'ok';
+      } catch (err) {
+        console.error(`Error sincronizando catálogo (mayor) ${area}:`, err);
+        resultados[area] = 'error: ' + err.message;
+      }
+    });
+
+    guardarManifiestoCatalogosMayor_(manifiesto);
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, resultados: resultados }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarSincronizarCatalogosMayor:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 // ── Web App: peticiones GET (servir la caché de productos al buscador) ────
 function doGet(e) {
   try {
@@ -3648,6 +3782,26 @@ function doGet(e) {
       const resultado = {};
       Object.keys(NOMBRES_ARCHIVOS_CATALOGO).forEach(area => {
         const archivo = obtenerArchivoCatalogo_(area);
+        if (!archivo) { resultado[area] = null; return; }
+        const info = (manifiesto.catalogos && manifiesto.catalogos[area]) || {};
+        resultado[area] = {
+          id: archivo.getId(),
+          paginas: info.paginas || null,
+          productos: info.productos || null,
+          actualizado: manifiesto.generado || null,
+        };
+      });
+      return ContentService.createTextOutput(JSON.stringify(resultado))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Igual que "obtener_catalogos" pero para los catálogos al por mayor
+    // — pensado para el futuro perfil de cliente profesional.
+    if (accion === 'obtener_catalogos_mayor') {
+      const manifiesto = leerManifiestoCatalogosMayor_();
+      const resultado = {};
+      Object.keys(NOMBRES_ARCHIVOS_CATALOGO_MAYOR).forEach(area => {
+        const archivo = obtenerArchivoCatalogoMayor_(area);
         if (!archivo) { resultado[area] = null; return; }
         const info = (manifiesto.catalogos && manifiesto.catalogos[area]) || {};
         resultado[area] = {
@@ -3826,6 +3980,11 @@ function doPost(e) {
     if (accion === 'sincronizar_catalogos') {
       console.log('Acción: sincronizar_catalogos');
       return procesarSincronizarCatalogos(data);
+    }
+
+    if (accion === 'sincronizar_catalogos_mayor') {
+      console.log('Acción: sincronizar_catalogos_mayor');
+      return procesarSincronizarCatalogosMayor(data);
     }
 
     // NUEVO — Panel de administración (protegidas por PIN)
@@ -8004,6 +8163,12 @@ function revisarCorreoListadoProductos() {
     // desde el buscador, ya que la generación lee el estado actual
     // completo de todos los productos, no solo lo que cambió hoy.
     dispararWorkflow();
+    // Igual para el catálogo al por mayor — proceso totalmente
+    // independiente del anterior (archivos y manifiesto propios, ver
+    // bloque "CATÁLOGOS PDF AL POR MAYOR"), pero que debe regenerarse en
+    // los mismos momentos: cada vez que de verdad ha llegado un listado
+    // nuevo del CRM con precios/productos actualizados.
+    dispararWorkflowCatalogosMayor_();
     return { huboCorreo: true, exito: true, resultado: resultado };
   } catch (err) {
     console.error('Error procesando el listado de productos del CRM:', err);
@@ -8922,6 +9087,7 @@ function sincronizarImagenesOneDrive_(data) {
 // aparece solo en el móvil — no hace falta tocar el HTML para nada.
 const FUNCIONES_PANEL = {
   generar_catalogos:             { etiqueta: '🔄 Generar catálogos ahora',                    grupo: 'Catálogos',      fn: generarAhora,                         confirmar: false },
+  generar_catalogos_mayor:       { etiqueta: '🔄 Generar catálogos al por mayor ahora',       grupo: 'Catálogos',      fn: generarCatalogosMayorAhora,           confirmar: false },
   actualizar_zaphiro:            { etiqueta: '🔄 Actualizar catálogo Zaphiro',                 grupo: 'Catálogos',      fn: actualizarZaphiro,                    confirmar: false },
   sincronizar_registro:          { etiqueta: '📥 Sincronizar RegistroProductos → Productos',   grupo: 'Sincronización', fn: sincronizarRegistroProductos,         confirmar: true  },
   revisar_correo_crm:            { etiqueta: '📧 Revisar correo de listado CRM ahora',         grupo: 'Sincronización', fn: revisarCorreoListadoProductosManual,  confirmar: false },
