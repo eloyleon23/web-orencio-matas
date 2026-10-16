@@ -104,7 +104,7 @@ function paAnRenderListado() {
     btn.addEventListener("click", function () { paAnAbrirEditor(btn.getAttribute("data-pa-an-editar")); });
   });
   Array.prototype.forEach.call(cont.querySelectorAll("[data-pa-an-eliminar]"), function (btn) {
-    btn.addEventListener("click", function () { paAnEliminar(btn.getAttribute("data-pa-an-eliminar")); });
+    btn.addEventListener("click", function () { paAnEliminar(btn.getAttribute("data-pa-an-eliminar"), btn); });
   });
 }
 
@@ -276,6 +276,17 @@ function paAnManejarArchivo(file) {
   });
 }
 
+// Spinner compartido por los botones de Anuncios que llaman al backend —
+// reutiliza el mismo .spinner CSS (ver @keyframes girar) ya definido en
+// este archivo para las acciones del menú, en vez de depender de
+// Font Awesome (no está cargado en panel_admin.html).
+function paAnMostrarSpinnerBoton(btn, textoCargando) {
+  var original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "<span class=\"spinner\" style=\"display:inline-block;vertical-align:middle;margin-right:6px;\"></span>" + (textoCargando || "");
+  return function () { btn.disabled = false; btn.innerHTML = original; };
+}
+
 function paAnGuardar() {
   var error = document.getElementById("pa-an-form-error");
   var ok = document.getElementById("pa-an-form-ok");
@@ -299,7 +310,7 @@ function paAnGuardar() {
   if (tab === "archivo" && !paAnuncioEnEdicion && !paAnArchivoSeleccionado) { error.textContent = "Selecciona un archivo o cambia a URL externa."; return; }
   if (tab === "url" && !document.getElementById("pa-an-url-externa").value.trim()) { error.textContent = "Introduce la URL externa."; return; }
 
-  btn.disabled = true; btn.textContent = "Guardando...";
+  var paAnRestaurarBoton = paAnMostrarSpinnerBoton(btn, "Guardando...");
   fetch(URL_BASE, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
     .then(function (r) { return r.json(); })
     .then(function (d) {
@@ -325,21 +336,24 @@ function paAnGuardar() {
       paAnCerrarFormulario();
     })
     .catch(function (e) { if (e.message !== "validacion") error.textContent = "Error de conexión: " + e.message; })
-    .finally(function () { btn.disabled = false; btn.textContent = "Guardar"; });
+    .finally(function () { paAnRestaurarBoton(); });
 }
 
-function paAnEliminar(id) {
+function paAnEliminar(id, btn) {
   var a = paAnuncios.filter(function (x) { return x.id === id; })[0];
   if (!a) return;
   if (!confirm("¿Eliminar «" + a.titulo + "»? Esta acción no se puede deshacer.")) return;
+  var paAnRestaurarBotonEliminar = btn ? paAnMostrarSpinnerBoton(btn, btn.textContent.trim() ? "Eliminando..." : "") : null;
   fetch(URL_BASE, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ accion: "eliminar_anuncio", pin: PIN, id: id }) })
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (!d.success) { alert("No se pudo eliminar: " + (d.error || "")); return; }
       if (d.avisoParcial) alert(d.avisoParcial);
+      paAnCerrarFormulario();
       cargarAnunciosPanel();
     })
-    .catch(function () { alert("Error de conexión al eliminar."); });
+    .catch(function () { alert("Error de conexión al eliminar."); })
+    .finally(function () { if (paAnRestaurarBotonEliminar && document.body.contains(btn)) paAnRestaurarBotonEliminar(); });
 }
 
 document.getElementById("pa-an-buscar").addEventListener("input", paAnRenderListado);
@@ -350,7 +364,7 @@ document.getElementById("pa-an-filtro-vigencia").addEventListener("change", paAn
 document.getElementById("pa-an-nuevo").addEventListener("click", paAnAbrirNuevo);
 document.getElementById("pa-an-cancelar").addEventListener("click", paAnCerrarFormulario);
 document.getElementById("pa-an-guardar").addEventListener("click", paAnGuardar);
-document.getElementById("pa-an-eliminar").addEventListener("click", function () { if (paAnuncioEnEdicion) paAnEliminar(paAnuncioEnEdicion); });
+document.getElementById("pa-an-eliminar").addEventListener("click", function (e) { if (paAnuncioEnEdicion) paAnEliminar(paAnuncioEnEdicion, e.currentTarget); });
 document.getElementById("pa-an-tab-archivo").addEventListener("click", function () { paAnCambiarTab("archivo"); });
 document.getElementById("pa-an-tab-url").addEventListener("click", function () { paAnCambiarTab("url"); });
 document.getElementById("pa-an-archivo-input").addEventListener("change", function (e) { if (e.target.files[0]) paAnManejarArchivo(e.target.files[0]); });
