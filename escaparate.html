@@ -967,6 +967,326 @@
         .modal-producto-content{ grid-template-columns:1fr; }
         .modal-producto-imagen{ min-height:220px; }
       }
+
+      /* ======================================================================
+         MODO PRESENTACIÓN — escaparate a pantalla completa para un monitor
+         de tienda. Fondo oscuro a propósito (a diferencia del resto de la
+         página, deliberadamente clara — ver nota más arriba): aquí el
+         objetivo es un efecto llamativo tipo "cartelería digital", donde el
+         producto en sí (foto + nombre + precio) tiene que ser lo único que
+         realmente destaque. Usa los mismos --accent/--accent-vivid que ya
+         pinta render() según el color de la campaña activa, así el ambiente
+         cambia de tono con cada escaparate sin tener que definir nada aquí
+         por campaña.
+         ====================================================================== */
+      .presentacion-overlay{
+        position:fixed; inset:0; z-index:9999;
+        background:#06070a; color:#fff;
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        overflow:hidden;
+      }
+      /* En :fullscreen real, el navegador ya pone el elemento a tamaño de
+         pantalla — esto es solo refuerzo para el caso sin Fullscreen API
+         (algunos Safari/iOS), donde el overlay sigue cubriendo todo vía
+         position:fixed de arriba. */
+      .presentacion-overlay:fullscreen{ width:100vw; height:100vh; }
+
+      /* Ambiente de fondo — mismo tipo de efecto que ya usa el hero de la
+         portada (.hero / @keyframes gradientPaint en src/css/estilos.css):
+         un degradado diagonal con varias paradas de color, mucho más
+         ancho que la pantalla (background-size 480%) y animado
+         DESPLAZANDO su posición (no solo escalando/difuminando como en
+         la versión anterior) — así el degradado en sí se mueve, nunca
+         queda fijo (petición explícita de Eloy). Construido ÚNICAMENTE a
+         partir de los colores de la campaña activa (--accent/--accent-2/
+         --accent-vivid/--accent-vivid-2, los mismos que ya fija render()
+         según el colorSet elegido en el escaparate, incluido el
+         personalizado) — nunca un color ajeno a esa paleta, solo que
+         aquí viajan en diagonal igual que en la portada. Encima, un
+         segundo plano fijo con un par de focos de luz radiales y una
+         rejilla muy sutil — igual que el ::before del hero — para dar
+         profundidad sin restarle protagonismo al degradado en sí. */
+      .presentacion-ambiente{
+        position:absolute; inset:0; z-index:0; pointer-events:none;
+        background:linear-gradient(-45deg,
+          #05060a 0%,
+          color-mix(in srgb, var(--accent) 82%, #05060a) 20%,
+          color-mix(in srgb, var(--accent-vivid) 82%, #05060a) 40%,
+          color-mix(in srgb, var(--accent-2) 82%, #05060a) 60%,
+          color-mix(in srgb, var(--accent-vivid-2) 82%, #05060a) 80%,
+          #05060a 100%);
+        background-size:480% 480%;
+        animation: presentacionGradientePaint 18s ease-in-out infinite;
+      }
+      .presentacion-ambiente::after{
+        content:""; position:absolute; inset:0;
+        background:
+          radial-gradient(circle at 78% 18%, rgba(255,255,255,.16), transparent 30%),
+          radial-gradient(circle at 16% 78%, rgba(255,255,255,.12), transparent 30%),
+          linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px),
+          linear-gradient(0deg, rgba(255,255,255,.04) 1px, transparent 1px);
+        background-size:auto, auto, 56px 56px, 56px 56px;
+      }
+      @keyframes presentacionGradientePaint{
+        0%{ background-position:0% 50%; }
+        20%{ background-position:28% 48%; }
+        40%{ background-position:56% 54%; }
+        60%{ background-position:78% 46%; }
+        80%{ background-position:100% 52%; }
+        100%{ background-position:0% 50%; }
+      }
+      /* Barrido de brillo bajo el título — puramente decorativo, en
+         degradado de los dos colores vivos de la campaña, reforzando el
+         efecto llamativo sin introducir ningún color nuevo. */
+      .presentacion-cabecera::after{
+        content:""; display:block; margin:10px auto 0; height:3px; width:120px; border-radius:3px;
+        background:linear-gradient(90deg, var(--accent-vivid), var(--accent-vivid-2), var(--accent-vivid));
+        background-size:200% 100%;
+        animation: presentacionBarridoTitulo 5s linear infinite;
+      }
+      @keyframes presentacionBarridoTitulo{
+        from{ background-position:0% 0; } to{ background-position:200% 0; }
+      }
+
+      .presentacion-salir{
+        position:absolute; top:18px; right:18px; z-index:20;
+        width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,.28);
+        background:rgba(255,255,255,.08); color:#fff; backdrop-filter:blur(6px);
+        display:flex; align-items:center; justify-content:center; cursor:pointer;
+        opacity:.55; transition:opacity .2s, background .2s, transform .2s;
+      }
+      .presentacion-salir:hover{ opacity:1; background:rgba(255,255,255,.18); transform:scale(1.06); }
+
+      .presentacion-cabecera{
+        position:relative; z-index:5; text-align:center;
+        padding-top:clamp(20px, 4vh, 44px); flex:none;
+      }
+      .presentacion-eyebrow{
+        display:block; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.55);
+      }
+      .presentacion-titulo{
+        margin-top:6px; font-size:clamp(20px, 3vw, 34px); font-weight:800;
+        color:#fff; text-shadow:0 2px 20px rgba(0,0,0,.35);
+      }
+
+      .presentacion-stage{
+        position:relative; z-index:5; flex:1 1 auto; width:100%;
+        display:flex; align-items:center; justify-content:center; gap:clamp(20px, 4vw, 64px);
+        padding:clamp(16px, 3vh, 40px) clamp(24px, 6vw, 90px);
+        flex-wrap:wrap;
+      }
+      /* Cross-fade entre ciclos: se quita el contenido mientras
+         ".presentacion-stage--saliendo" está puesta (ver JS), y al
+         volver a pintarlo se añade ".presentacion-stage--entrando" un
+         instante — con prefers-reduced-motion, la regla global de arriba
+         (*{animation-duration:.001ms!important}) ya neutraliza esto solo. */
+      .presentacion-stage--saliendo .presentacion-card{
+        opacity:0; transform:scale(.94) translateY(10px);
+        transition:opacity .3s ease, transform .3s ease;
+      }
+      .presentacion-stage--entrando .presentacion-card{
+        animation: presentacionEntrada .9s cubic-bezier(.16,1,.3,1) both;
+      }
+      @keyframes presentacionEntrada{
+        from{ opacity:0; transform:scale(.92) translateY(26px); }
+        to{ opacity:1; transform:scale(1) translateY(0); }
+      }
+
+      /* Tarjeta de producto — un único producto en pantalla a la vez
+         (petición explícita de Eloy: antes alternaba entre uno y dos,
+         ahora siempre uno solo, también porque dos a la vez era lo que
+         se veía mal en un móvil en horizontal). Foto a la DERECHA y
+         detalle (nombre, precio...) a la IZQUIERDA, en fila — row-reverse
+         en vez de reordenar el HTML: la tarjeta siempre pinta primero la
+         foto y luego el detalle en el DOM (ver tarjetaPresentacionHTML),
+         y row-reverse invierte el orden VISUAL sin tocar el marcado.
+         Alterna de lado en cada ciclo (petición explícita de Eloy): la
+         clase ".presentacion-card--imagen-izquierda" (añadida por JS,
+         ver pintarCicloPresentacion) cambia a "row" normal, dejando la
+         foto a la izquierda y el detalle a la derecha. En vertical (ver
+         media query de orientación más abajo) pasa a columna, foto
+         arriba y detalle debajo, sea cual sea esta clase.
+         El halo de color (box-shadow difuminado con --accent-vivid) ata
+         visualmente la tarjeta al color elegido de la campaña, reforzando
+         el efecto llamativo sin salirse de esa paleta. */
+      .presentacion-card{
+        position:relative;
+        /* Sin backdrop-filter a propósito: estaba puesto sobre el fondo
+           animado (.presentacion-ambiente, que ahora desplaza su
+           posición sin parar) y el navegador tiene que volver a
+           difuminarlo en cada fotograma — eso es justo lo que se veía
+           como "un efecto raro en el degradado" detrás de la tarjeta
+           (parpadeo/deformación del blur mientras el fondo se mueve).
+           Un fondo semitransparente algo más opaco, sin desenfoque,
+           consigue el mismo aspecto de "cristal" sin ese problema. */
+        background:rgba(8,9,13,.55); border:1px solid rgba(255,255,255,.16);
+        border-radius:28px;
+        display:flex; flex-direction:row-reverse; align-items:center; text-align:left;
+        width:min(88vw, 1480px); max-width:94vw;
+        height:min(78vh, 760px); max-height:90vh;
+        padding:clamp(16px, 2.4vw, 44px);
+        gap:clamp(20px, 4vw, 72px);
+        box-shadow:0 30px 80px rgba(0,0,0,.45), 0 0 70px -10px color-mix(in srgb, var(--accent-vivid) 55%, transparent);
+      }
+      .presentacion-card--imagen-izquierda{
+        flex-direction:row; text-align:right;
+      }
+      .presentacion-card--imagen-izquierda .presentacion-card-detalle{
+        align-items:flex-end; text-align:right;
+      }
+      .presentacion-card--imagen-izquierda .presentacion-card-precio{ align-items:flex-end; }
+      .presentacion-card-img{
+        position:relative; flex:1.15 1 0; width:auto; height:100%; min-width:0; min-height:0;
+        border-radius:18px; background:rgba(255,255,255,.92);
+        display:flex; align-items:center; justify-content:center; overflow:hidden;
+      }
+      .presentacion-card-img img{ width:100%; height:100%; object-fit:contain; padding:10px; }
+      .presentacion-card-img .presentacion-card-icono{ display:none; width:34%; height:34%; color:var(--accent); }
+      .presentacion-card-img .presentacion-card-icono svg{ width:100%; height:100%; }
+      /* Sin foto (img ausente) o foto rota (onerror, ver JS): se cae al
+         mismo icono de respaldo por familia que ya usa productCard(). */
+      .presentacion-card-img:not(:has(img)) .presentacion-card-icono,
+      .presentacion-card-img.sin-imagen .presentacion-card-icono{ display:flex; }
+      .presentacion-card-img.sin-imagen img{ display:none; }
+
+      .presentacion-card-detalle{
+        flex:1 1 0; min-width:0;
+        display:flex; flex-direction:column; align-items:flex-start; text-align:left;
+      }
+      .presentacion-card-fam{
+        font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+        color:rgba(255,255,255,.6); font-weight:600;
+      }
+      .presentacion-card-nombre{
+        margin:10px 0 18px; font-size:clamp(22px, 3.6vw, 46px); line-height:1.15;
+        font-weight:800; color:#fff;
+      }
+      .presentacion-card-precio{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+      .presentacion-card-precio .precio{
+        font-size:clamp(26px, 4.2vw, 54px); font-weight:800;
+        /* Mezclado con blanco (nunca el color de campaña puro): el
+           colorSet "rojo_negro" usa un --accent-vivid-2 casi negro
+           (#1A1A1A, pensado para texto sobre el fondo CLARO del resto
+           de la web) — puesto tal cual aquí, sobre el fondo oscuro del
+           modo presentación, el precio quedaba prácticamente invisible.
+           Mezclarlo con blanco garantiza que se lea bien sea cual sea
+           la paleta elegida, conservando igualmente su tono. */
+        color:color-mix(in srgb, var(--accent-vivid-2, #4ade80) 55%, #fff 45%);
+      }
+      .presentacion-card-precio .precio .iva{
+        font-size:13px; font-weight:600; margin-left:6px; color:rgba(255,255,255,.55); vertical-align:middle;
+      }
+      .presentacion-card-precio .precio-siniva{ font-size:14px; color:rgba(255,255,255,.55); }
+
+      /* Fichas pequeñas de contexto — foto del escaparate y logo de la
+         empresa, discretas en las esquinas inferiores (petición
+         explícita: "incluir en pequeño la imagen que representa al
+         escaparate y el logo nuestro de la empresa"). Sin fondo ni tarjeta
+         blanca detrás de ninguna de las dos (petición explícita: "que no
+         tenga fondo") — solo una sombra suave (drop-shadow sobre la
+         propia imagen, no box-shadow sobre un contenedor) para que sean
+         legibles igualmente sobre cualquier color de campaña, sin la
+         tarjeta blanca de antes. El logo es el de solo marca (sin el
+         nombre de la empresa en el propio archivo), también a petición
+         explícita. */
+      .presentacion-chip{
+        position:absolute; z-index:10; bottom:28px;
+        display:flex; align-items:center; gap:12px;
+      }
+      .presentacion-chip-escaparate{ left:28px; }
+      .presentacion-chip-logo{ right:28px; }
+      /* Tamaño "de escritorio" — a propósito bastante más grande que
+         antes (petición explícita: "quedan muy pequeños en las
+         esquinas"); se reduce de nuevo para pantallas estrechas/verticales
+         más abajo, donde ese tamaño sí sería excesivo. */
+      .presentacion-chip-escaparate img{
+        width:92px; height:92px; border-radius:14px; object-fit:cover; flex:none;
+        filter:drop-shadow(0 8px 20px rgba(0,0,0,.55));
+      }
+      .presentacion-chip-escaparate span{
+        font-size:15px; font-weight:700; color:#fff; max-width:220px;
+        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+        text-shadow:0 2px 8px rgba(0,0,0,.65);
+      }
+      .presentacion-chip-logo img{
+        height:68px; width:auto; display:block;
+        filter:drop-shadow(0 8px 20px rgba(0,0,0,.55));
+      }
+
+      /* IMPORTANTE: la decisión entre fila (foto+detalle lado a lado) y
+         columna (foto arriba, detalle debajo) depende SOLO de la
+         orientación, nunca del ancho en píxeles. Bug real reportado dos
+         veces: primero un monitor/tablet en vertical con ancho grande
+         (ej. 1080px) se quedaba con el layout de fila por superar un
+         "max-width" — y al arreglar eso añadiendo "max-width:860px" como
+         condición alternativa, un MÓVIL EN HORIZONTAL (ancho típico
+         700-900px, por debajo de ese umbral) pasó a activar por error el
+         mismo layout de columna pensado para vertical, pese a estar en
+         horizontal ("cuando giro la pantalla del móvil en horizontal
+         sigo sin verlo bien"). La única señal fiable de verdad es
+         "orientation:portrait" — un ancho pequeño por sí solo YA NO
+         decide nada aquí. */
+      @media (orientation:portrait){
+        /* La clase que alterna el lado en horizontal no tiene sentido en
+           vertical (la foto siempre va arriba) — se anula aquí con la
+           misma especificidad que le daría la clase, para que nunca
+           gane sobre esta columna centrada. */
+        .presentacion-card, .presentacion-card--imagen-izquierda{
+          flex-direction:column; text-align:center;
+          width:min(90vw, 480px); max-width:94vw; height:auto; max-height:85vh;
+        }
+        .presentacion-card-img{ flex:none; width:100%; height:min(44vh, 380px); }
+        .presentacion-card-detalle, .presentacion-card--imagen-izquierda .presentacion-card-detalle{
+          align-items:center; text-align:center; margin-top:14px;
+        }
+        .presentacion-card-precio, .presentacion-card--imagen-izquierda .presentacion-card-precio{ align-items:center; }
+      }
+      /* Ajustes de tamaño para pantallas estrechas en general (gap más
+         pequeño, ocultar el nombre de la campaña en la ficha del
+         escaparate si no cabe) — esto sí puede depender del ancho, no
+         decide entre fila/columna, solo aligera espacio. */
+      @media (max-width:860px){
+        .presentacion-stage{ gap:18px; }
+        .presentacion-chip-escaparate span{ display:none; }
+        /* El tamaño "de escritorio" de las fichas (ver arriba) es
+           demasiado para un móvil — se vuelve a un tamaño más discreto. */
+        .presentacion-chip{ bottom:16px; gap:8px; }
+        .presentacion-chip-escaparate{ left:16px; }
+        .presentacion-chip-logo{ right:16px; }
+        .presentacion-chip-escaparate img{ width:46px; height:46px; border-radius:10px; }
+        .presentacion-chip-logo img{ height:34px; }
+      }
+      /* Móvil en HORIZONTAL (pantalla baja, típico 320-430px de alto) —
+         la cabecera y la tarjeta se compactan para que quepa todo sin
+         recortes ni scroll, que era justo el otro síntoma reportado
+         ("los bloques de productos no se ven bien"). */
+      @media (max-height:520px) and (orientation:landscape){
+        .presentacion-cabecera{ padding-top:8px; }
+        .presentacion-eyebrow{ display:none; }
+        .presentacion-titulo{ font-size:15px; margin-top:0; }
+        .presentacion-cabecera::after{ margin-top:4px; height:2px; width:70px; }
+        .presentacion-stage{ padding:8px clamp(16px, 5vw, 60px); gap:16px; }
+        .presentacion-card{ height:min(88vh, 760px); padding:12px; gap:16px; border-radius:18px; }
+        .presentacion-card-nombre{ font-size:clamp(14px, 2.6vw, 20px); margin:4px 0 6px; }
+        .presentacion-card-fam{ font-size:11px; }
+        .presentacion-card-precio .precio{ font-size:clamp(16px, 3.4vw, 24px); }
+        .presentacion-card-precio .precio-siniva{ font-size:11px; }
+        .presentacion-chip{ bottom:8px; }
+        .presentacion-chip-escaparate img{ width:34px; height:34px; }
+        .presentacion-chip-logo img{ height:24px; }
+      }
+      /* Aviso suave para quien abra el modo presentación en vertical —
+         pensado para un monitor en horizontal, pero no se bloquea nada,
+         solo se sugiere girar el dispositivo. */
+      .presentacion-giro-aviso{ display:none; }
+      @media (orientation:portrait){
+        .presentacion-giro-aviso{
+          display:flex; position:absolute; top:14px; left:50%; transform:translateX(-50%);
+          z-index:15; align-items:center; gap:7px; font-size:12px; color:rgba(255,255,255,.75);
+          background:rgba(255,255,255,.1); border-radius:999px; padding:6px 12px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1031,6 +1351,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button type="button" class="btn ghost btn-icono-accion" id="btnCompartirEscaparate" aria-label="Compartir este escaparate" title="Compartir" disabled>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-3.9M8.6 13.4l6.8 3.9"/></svg>
         </button>
+        <button type="button" class="btn ghost btn-icono-accion" id="btnModoPresentacion" aria-label="Ver este escaparate en modo presentación, a pantalla completa" title="Modo presentación" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 011-1h4M15 4h4a1 1 0 011 1v4M20 15v4a1 1 0 01-1 1h-4M9 20H5a1 1 0 01-1-1v-4"/></svg>
+        </button>
         <button type="button" class="btn primary btn-folleto" id="btnDescargarFolleto" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
           <span>Descargar folleto</span>
@@ -1061,6 +1384,39 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
   </div>
 </main>
+
+<!-- Modo presentación: escaparate en pantalla completa para un monitor
+     de tienda — ver bloque JS "Modo presentación" para la lógica y el
+     bloque CSS ".presentacion-*" para el aspecto. Oculto por defecto;
+     solo se muestra mientras el usuario no salga (botón ✕, Esc, o
+     saliendo de pantalla completa por cualquier otra vía). -->
+<div class="presentacion-overlay" id="presentacionOverlay" hidden>
+  <div class="presentacion-ambiente" id="presentacionAmbiente" aria-hidden="true"></div>
+
+  <button type="button" class="presentacion-salir" id="presentacionSalir" aria-label="Salir del modo presentación" title="Salir (Esc)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+
+  <span class="presentacion-giro-aviso">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
+    Pensado para monitor en horizontal
+  </span>
+
+  <div class="presentacion-cabecera">
+    <span class="presentacion-eyebrow">Escaparate Orencio Matas</span>
+    <h2 class="presentacion-titulo" id="presentacionTituloCampana"></h2>
+  </div>
+
+  <div class="presentacion-stage" id="presentacionStage"></div>
+
+  <div class="presentacion-chip presentacion-chip-escaparate" id="presentacionChipEscaparate" hidden>
+    <img id="presentacionChipEscaparateImg" src="" alt="">
+    <span id="presentacionChipEscaparateNombre"></span>
+  </div>
+  <div class="presentacion-chip presentacion-chip-logo">
+    <img src="./assets/logos/logo_transparente.png" alt="Orencio Matas y Hnos, S.L.">
+  </div>
+</div>
 
 <footer class="site-footer">
   <div class="container site-footer__grid">
@@ -1873,6 +2229,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // mientras no haya terminado de cargar el contenido del escaparate") —
     // solo se habilitan aquí, una vez se sabe que hay campaña y productos.
     if($("#btnCompartirEscaparate")) $("#btnCompartirEscaparate").disabled = false;
+    if($("#btnModoPresentacion")) $("#btnModoPresentacion").disabled = false;
     if($("#btnDescargarFolleto")) $("#btnDescargarFolleto").disabled = false;
     render();
   }
@@ -2786,6 +3143,221 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
   }
 
+  /* ---------------- Modo presentación ---------------- */
+  // Escaparate a pantalla completa, pensado para dejarse encendido en un
+  // monitor de la tienda: los productos de la campaña activa se van
+  // alternando solos, en ciclos con una duración algo variable (para que
+  // no se note mecánico), SIEMPRE de uno en uno (petición explícita de
+  // Eloy: mostrar dos a la vez es justo lo que no se veía bien en un
+  // móvil en horizontal). Permanece activo hasta que el usuario sale
+  // explícitamente (botón ✕, Esc, o saliendo de pantalla completa por
+  // cualquier otra vía del sistema).
+  let presentacionActiva = false;
+  let presentacionTimerId = null;
+  let presentacionUltimoUnico = null; // evita repetir el mismo producto dos ciclos seguidos
+
+  function poolProductosPresentacion(){
+    const c = activeId ? findCampaign(activeId) : null;
+    if(!c) return [];
+    // Mismo conjunto de referencias que ya se ve en el estante de la
+    // página — solo las que de verdad tienen datos de producto cargados.
+    return c.productos.filter(ref => PRODUCTS[ref]);
+  }
+
+  function elegirProductosPresentacion(pool){
+    if(!pool.length) return [];
+    const barajados = pool.slice().sort(() => Math.random() - 0.5);
+    let elegido = barajados[0];
+    // Evita repetir el mismo producto dos ciclos seguidos cuando hay más
+    // de uno disponible para elegir.
+    if(pool.length > 1 && elegido === presentacionUltimoUnico){
+      elegido = barajados.find(ref => ref !== presentacionUltimoUnico) || elegido;
+    }
+    presentacionUltimoUnico = elegido;
+    return [elegido];
+  }
+
+  // Alterna en qué lado va la foto de un ciclo a otro (petición
+  // explícita de Eloy) — true = foto a la izquierda, detalle a la
+  // derecha; false (valor inicial) = foto a la derecha, detalle a la
+  // izquierda, el orden de siempre. Se usa una clase CSS en vez de
+  // tocar el marcado — ver ".presentacion-card--imagen-izquierda".
+  let presentacionImagenIzquierda = false;
+
+  function tarjetaPresentacionHTML(ref, imagenIzquierda){
+    const p = PRODUCTS[ref];
+    if(!p) return '';
+    const imgUrl = urlImagenProducto(p, 1100);
+    return `
+      <div class="presentacion-card${imagenIzquierda ? ' presentacion-card--imagen-izquierda' : ''}">
+        <div class="presentacion-card-img">
+          ${imgUrl ? `<img src="${imgUrl}" alt="" onerror="this.parentElement.classList.add('sin-imagen')">` : ''}
+          <span class="presentacion-card-icono">${iconFor(p)}</span>
+        </div>
+        <div class="presentacion-card-detalle">
+          <span class="presentacion-card-fam">${p.familia || ''}</span>
+          <h3 class="presentacion-card-nombre">${p.nombre || ''}</h3>
+          <div class="presentacion-card-precio">
+            <span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
+            <span class="precio-siniva">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function pintarCicloPresentacion(){
+    const stage = $("#presentacionStage");
+    if(!stage) return;
+    const pool = poolProductosPresentacion();
+    if(!pool.length) return;
+    const elegidos = elegirProductosPresentacion(pool);
+    presentacionImagenIzquierda = !presentacionImagenIzquierda;
+    // Cross-fade: se marca "saliendo" (el CSS atenúa la tarjeta actual),
+    // y solo cuando esa transición ha terminado se sustituye el
+    // contenido y se dispara la animación de entrada.
+    stage.classList.add('presentacion-stage--saliendo');
+    setTimeout(() => {
+      if(!presentacionActiva) return; // se salió del modo presentación durante la espera
+      stage.innerHTML = elegidos.map(ref => tarjetaPresentacionHTML(ref, presentacionImagenIzquierda)).join('');
+      stage.classList.remove('presentacion-stage--saliendo');
+      void stage.offsetWidth; // fuerza reflow para poder re-disparar la animación
+      stage.classList.add('presentacion-stage--entrando');
+      setTimeout(() => stage.classList.remove('presentacion-stage--entrando'), 950);
+    }, 320);
+  }
+
+  function programarSiguienteCicloPresentacion(){
+    // Duración algo variable (6-9s) para que el ritmo de cambio no se
+    // note mecánico/repetitivo en una pantalla que va a estar encendida
+    // horas en la tienda.
+    const espera = 6000 + Math.random() * 3000;
+    presentacionTimerId = setTimeout(() => {
+      pintarCicloPresentacion();
+      programarSiguienteCicloPresentacion();
+    }, espera);
+  }
+
+  async function entrarEnModoPresentacion(){
+    const c = activeId ? findCampaign(activeId) : null;
+    if(!c) return;
+    const pool = poolProductosPresentacion();
+    if(!pool.length){
+      toast('Este escaparate todavía no tiene productos para mostrar en modo presentación.', true);
+      return;
+    }
+    const overlay = $("#presentacionOverlay");
+    if(!overlay) return;
+
+    $("#presentacionTituloCampana").textContent = c.nombre || '';
+
+    const chip = $("#presentacionChipEscaparate");
+    const urlFoto = urlImagenCampana(c.imagenFondo, 300);
+    if(urlFoto){
+      $("#presentacionChipEscaparateImg").src = urlFoto;
+      $("#presentacionChipEscaparateNombre").textContent = c.nombre || '';
+      chip.hidden = false;
+    } else {
+      chip.hidden = true;
+    }
+
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    presentacionActiva = true;
+    presentacionUltimoUnico = null;
+    // pintarCicloPresentacion() invierte este valor ANTES de usarlo (para
+    // poder reutilizar la misma función en cada ciclo) — se deja en
+    // "true" aquí para que el primer ciclo, tras esa inversión, empiece
+    // siempre con la foto a la derecha (el orden de siempre).
+    presentacionImagenIzquierda = true;
+    pintarCicloPresentacion();
+    programarSiguienteCicloPresentacion();
+
+    // Pantalla completa real, sin cabecera ni pie del navegador — con
+    // los prefijos de proveedor que todavía hacen falta en algunos
+    // navegadores (Safari de escritorio/iPadOS sigue exponiendo solo
+    // "webkitRequestFullscreen", no el método estándar). Si pedirla
+    // sobre el propio overlay fallara por el motivo que sea, se
+    // reintenta sobre <html> (documentElement) — en algunos navegadores
+    // un elemento recién mostrado (display/hidden cambiado en el mismo
+    // tick) puede rechazar la petición, pero el documento completo casi
+    // siempre la acepta igual, y el resultado visual es el mismo (todo
+    // lo demás ya queda detrás del overlay, que cubre el 100% de la
+    // pantalla). En Safari/iOS para iPhone (no iPad) no existe Fullscreen
+    // API para elementos normales — ahí no hay nada que pedir, y se seguirá
+    // viendo la propia interfaz de Safari; para ocultarla del todo en
+    // esos dispositivos hace falta añadir la página a pantalla de inicio
+    // ("Compartir" → "Añadir a pantalla de inicio"), que abre en modo
+    // standalone sin ninguna barra de Safari.
+    const elementoFullscreen = overlay;
+    const pedirFullscreenDe = (el) => (
+      el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen
+    );
+    try{
+      const pedir = pedirFullscreenDe(elementoFullscreen);
+      if(pedir) await pedir.call(elementoFullscreen);
+      else throw new Error('Fullscreen API no disponible');
+    } catch(err){
+      try{
+        const pedirDoc = pedirFullscreenDe(document.documentElement);
+        if(pedirDoc) await pedirDoc.call(document.documentElement);
+      } catch(err2){
+        // Ninguna de las dos vías disponible (ej. Safari/iPhone) — se
+        // continúa igual en el overlay normal, que cubre toda la
+        // ventana del navegador aunque no su barra de direcciones.
+      }
+    }
+
+    // Monitor de tienda en horizontal (petición explícita) — mejor
+    // esfuerzo: solo algunos navegadores permiten bloquear la
+    // orientación desde una pestaña normal (fuera de una PWA instalada),
+    // así que un fallo aquí es silencioso y no afecta a nada más; el
+    // CSS en modo presentación ya se adapta igualmente a vertical si
+    // esto no está disponible o el usuario gira la pantalla después.
+    try{
+      if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+    } catch(err){
+      // No soportado fuera de una PWA instalada, o denegado — no pasa nada.
+    }
+  }
+
+  function salirDeModoPresentacion(){
+    if(!presentacionActiva) return;
+    presentacionActiva = false;
+    clearTimeout(presentacionTimerId);
+    const overlay = $("#presentacionOverlay");
+    if(overlay) overlay.hidden = true;
+    document.body.style.overflow = '';
+    const elementoActual = document.fullscreenElement || document.webkitFullscreenElement;
+    if(elementoActual){
+      const salir = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+      if(salir) salir.call(document).catch(() => {});
+    }
+    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(err){}
+  }
+
+  function wireBotonModoPresentacion(){
+    const btn = $("#btnModoPresentacion");
+    if(btn) btn.addEventListener('click', entrarEnModoPresentacion);
+    const btnSalir = $("#presentacionSalir");
+    if(btnSalir) btnSalir.addEventListener('click', salirDeModoPresentacion);
+    // Cubre tanto el botón ✕ propio como salir de pantalla completa por
+    // cualquier otra vía del sistema (Esc nativo, gesto, F11...) — en
+    // cualquiera de esos casos el navegador dispara "fullscreenchange"
+    // ("webkitfullscreenchange" en Safari algo más antiguo).
+    const alCambiarFullscreen = () => {
+      if(!(document.fullscreenElement || document.webkitFullscreenElement) && presentacionActiva) salirDeModoPresentacion();
+    };
+    document.addEventListener('fullscreenchange', alCambiarFullscreen);
+    document.addEventListener('webkitfullscreenchange', alCambiarFullscreen);
+    // Respaldo para cuando no hubo Fullscreen API real de por medio (el
+    // evento anterior no se dispara en ese caso): Esc sigue cerrando el
+    // overlay igualmente. salirDeModoPresentacion() ya es segura de
+    // llamar dos veces (no hace nada si ya no está activo).
+    document.addEventListener('keydown', (ev) => {
+      if(ev.key === 'Escape' && presentacionActiva) salirDeModoPresentacion();
+    });
+  }
+
   // Igual que descuentoMaximoCampana() en escaparate-campanas.html (esa
   // página no se carga aquí, así que se repite la misma lógica): el
   // MAYOR entre el descuento general de la campaña y cualquier
@@ -3588,6 +4160,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   wireBotonCompartir();
+  wireBotonModoPresentacion();
   wireBotonFolleto();
 
   // Expuesto en window a propósito: útil para depuración manual desde la
