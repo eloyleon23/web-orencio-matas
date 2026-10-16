@@ -991,17 +991,42 @@
          position:fixed de arriba. */
       .presentacion-overlay:fullscreen{ width:100vw; height:100vh; }
 
+      /* Ambiente de fondo — a propósito mucho más presente que un simple
+         detalle de esquina (petición explícita: "que tengan un efecto
+         llamativo"), pero siempre construido ÚNICAMENTE a partir de los
+         colores de la campaña activa (--accent/--accent-2/--accent-vivid/
+         --accent-vivid-2, los mismos que ya fija render() según el
+         colorSet elegido en el escaparate, incluido el personalizado) —
+         nunca un color ajeno a esa paleta. Dos capas: una base con los
+         colores "planos" en diagonal, y encima varios focos más vivos
+         (--accent-vivid/-2) que van derivando de posición y de
+         intensidad muy lentamente, para un efecto vivo pero profesional
+         (nada de parpadeos ni colores que no sean los de la campaña). */
       .presentacion-ambiente{
-        position:absolute; inset:-10%; z-index:0; pointer-events:none;
+        position:absolute; inset:-15%; z-index:0; pointer-events:none;
         background:
-          radial-gradient(42% 38% at 18% 20%, color-mix(in srgb, var(--accent-vivid) 55%, transparent), transparent 68%),
-          radial-gradient(48% 44% at 85% 82%, color-mix(in srgb, var(--accent-2) 48%, transparent), transparent 70%),
-          #06070a;
-        animation: presentacionAmbienteDeriva 22s ease-in-out infinite alternate;
+          radial-gradient(38% 44% at 20% 24%, color-mix(in srgb, var(--accent-vivid) 72%, transparent), transparent 68%),
+          radial-gradient(42% 46% at 82% 20%, color-mix(in srgb, var(--accent-vivid-2) 60%, transparent), transparent 70%),
+          radial-gradient(50% 50% at 50% 100%, color-mix(in srgb, var(--accent-2) 55%, transparent), transparent 72%),
+          linear-gradient(135deg, color-mix(in srgb, var(--accent) 30%, #05060a), color-mix(in srgb, var(--accent-2) 26%, #05060a) 60%, #05060a);
+        animation: presentacionAmbienteDeriva 20s ease-in-out infinite alternate;
       }
       @keyframes presentacionAmbienteDeriva{
-        from{ transform:scale(1) translate(0,0); }
-        to{ transform:scale(1.12) translate(-2%, 2%); }
+        0%{ transform:scale(1) translate(0,0); filter:brightness(1); }
+        50%{ transform:scale(1.14) translate(-3%, 2%); filter:brightness(1.18); }
+        100%{ transform:scale(1.06) translate(2%, -2%); filter:brightness(1); }
+      }
+      /* Barrido de brillo bajo el título — puramente decorativo, en
+         degradado de los dos colores vivos de la campaña, reforzando el
+         efecto llamativo sin introducir ningún color nuevo. */
+      .presentacion-cabecera::after{
+        content:""; display:block; margin:10px auto 0; height:3px; width:120px; border-radius:3px;
+        background:linear-gradient(90deg, var(--accent-vivid), var(--accent-vivid-2), var(--accent-vivid));
+        background-size:200% 100%;
+        animation: presentacionBarridoTitulo 5s linear infinite;
+      }
+      @keyframes presentacionBarridoTitulo{
+        from{ background-position:0% 0; } to{ background-position:200% 0; }
       }
 
       .presentacion-salir{
@@ -1049,29 +1074,34 @@
         to{ opacity:1; transform:scale(1) translateY(0); }
       }
 
+      /* Tarjeta de producto — dos variantes de layout según cuántas haya
+         en pantalla a la vez (ver JS, elegirProductosPresentacion):
+           - UNA sola (".presentacion-card:only-child"): foto y detalle
+             por separado, foto a la DERECHA y el detalle (nombre,
+             precio...) a la IZQUIERDA — petición explícita de Eloy.
+           - DOS a la vez: detalle DEBAJO de la foto (layout por
+             defecto, columna), con la foto ocupando el máximo espacio
+             posible dentro de la tarjeta — también petición explícita
+             ("muy importante que la imagen ocupe lo más que se pueda").
+         El halo de color (box-shadow difuminado con --accent-vivid) ata
+         visualmente la tarjeta al color elegido de la campaña, reforzando
+         el efecto llamativo sin salirse de esa paleta. */
       .presentacion-card{
-        background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14);
+        position:relative;
+        background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16);
         border-radius:28px; backdrop-filter:blur(10px);
-        padding:clamp(20px, 2.6vw, 36px) clamp(24px, 3vw, 44px) clamp(26px, 3vw, 40px);
+        padding:clamp(14px, 1.8vw, 24px);
         display:flex; flex-direction:column; align-items:center; text-align:center;
-        width:min(44vw, 560px); max-width:92vw;
-        box-shadow:0 30px 80px rgba(0,0,0,.45);
-      }
-      /* Cuando solo hay UNA tarjeta en pantalla (ver JS), se deja más
-         grande — mismo diseño, más espacio para que la foto y el precio
-         "se vean perfectamente con todos los detalles" (petición
-         explícita de Eloy). */
-      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card{
-        width:min(52vw, 760px);
+        width:min(42vw, 620px); max-width:46vw;
+        height:min(74vh, 720px);
+        box-shadow:0 30px 80px rgba(0,0,0,.45), 0 0 70px -10px color-mix(in srgb, var(--accent-vivid) 55%, transparent);
       }
       .presentacion-card-img{
-        position:relative; width:100%; aspect-ratio:1/1;
-        max-height:clamp(220px, 42vh, 460px);
-        border-radius:18px; background:rgba(255,255,255,.9);
+        position:relative; width:100%; flex:1 1 auto; min-height:0;
+        border-radius:18px; background:rgba(255,255,255,.92);
         display:flex; align-items:center; justify-content:center; overflow:hidden;
-        margin-bottom:clamp(16px, 2vh, 26px);
       }
-      .presentacion-card-img img{ width:100%; height:100%; object-fit:contain; padding:14px; }
+      .presentacion-card-img img{ width:100%; height:100%; object-fit:contain; padding:10px; }
       .presentacion-card-img .presentacion-card-icono{ display:none; width:34%; height:34%; color:var(--accent); }
       .presentacion-card-img .presentacion-card-icono svg{ width:100%; height:100%; }
       /* Sin foto (img ausente) o foto rota (onerror, ver JS): se cae al
@@ -1080,23 +1110,54 @@
       .presentacion-card-img.sin-imagen .presentacion-card-icono{ display:flex; }
       .presentacion-card-img.sin-imagen img{ display:none; }
 
+      .presentacion-card-detalle{
+        flex:none; width:100%; margin-top:clamp(10px, 1.6vh, 18px);
+      }
       .presentacion-card-fam{
         font-size:13px; letter-spacing:.06em; text-transform:uppercase;
         color:rgba(255,255,255,.6); font-weight:600;
       }
       .presentacion-card-nombre{
-        margin:8px 0 14px; font-size:clamp(20px, 2.6vw, 32px); line-height:1.15;
+        margin:6px 0 10px; font-size:clamp(18px, 2.2vw, 28px); line-height:1.15;
         font-weight:800; color:#fff;
       }
       .presentacion-card-precio{ display:flex; flex-direction:column; align-items:center; gap:2px; }
       .presentacion-card-precio .precio{
-        font-size:clamp(24px, 3.4vw, 40px); font-weight:800;
+        font-size:clamp(22px, 2.8vw, 36px); font-weight:800;
         color:var(--accent-vivid-2, #4ade80);
       }
       .presentacion-card-precio .precio .iva{
         font-size:13px; font-weight:600; margin-left:6px; color:rgba(255,255,255,.55); vertical-align:middle;
       }
       .presentacion-card-precio .precio-siniva{ font-size:14px; color:rgba(255,255,255,.55); }
+
+      /* Variante de UN solo producto: foto a la derecha, detalle a la
+         izquierda (fila en vez de columna). row-reverse en vez de
+         reordenar el HTML: la tarjeta siempre pinta primero la foto y
+         luego el detalle en el DOM (ver tarjetaPresentacionHTML), y
+         row-reverse se encarga de invertir el orden VISUAL sin tocar el
+         marcado — el último hijo del DOM (detalle) pasa a dibujarse
+         primero, es decir, a la izquierda. */
+      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card{
+        flex-direction:row-reverse; align-items:center; text-align:left;
+        width:min(88vw, 1480px); max-width:94vw;
+        height:min(76vh, 760px);
+        padding:clamp(22px, 2.6vw, 44px);
+        gap:clamp(28px, 4vw, 72px);
+      }
+      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-img{
+        flex:1.15 1 0; width:auto; height:100%;
+      }
+      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-detalle{
+        flex:1 1 0; margin-top:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left;
+      }
+      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-nombre{
+        font-size:clamp(26px, 3.6vw, 46px); margin:10px 0 18px;
+      }
+      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-precio{ align-items:flex-start; }
+      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-precio .precio{
+        font-size:clamp(30px, 4.2vw, 54px);
+      }
 
       /* Fichas pequeñas de contexto — foto del escaparate y logo de la
          empresa, discretas en las esquinas inferiores (petición
@@ -1124,7 +1185,16 @@
 
       @media (max-width:860px){
         .presentacion-stage{ gap:18px; }
-        .presentacion-card, .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card{ width:min(86vw, 480px); }
+        .presentacion-card{ width:min(86vw, 480px); height:min(60vh, 560px); }
+        /* En pantallas estrechas la variante "un solo producto" vuelve a
+           columna (foto arriba, detalle debajo) — fila solo tiene
+           sentido con el ancho de sobra de un monitor en horizontal. */
+        .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card{
+          flex-direction:column; text-align:center; width:min(90vw, 480px); height:auto; max-height:none;
+        }
+        .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-img{ flex:none; width:100%; height:min(44vh, 380px); }
+        .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-detalle{ align-items:center; text-align:center; margin-top:14px; }
+        .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-precio{ align-items:center; }
         .presentacion-chip-escaparate span{ display:none; }
       }
       /* Aviso suave para quien abra el modo presentación en móvil en
@@ -3040,11 +3110,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           ${imgUrl ? `<img src="${imgUrl}" alt="" onerror="this.parentElement.classList.add('sin-imagen')">` : ''}
           <span class="presentacion-card-icono">${iconFor(p)}</span>
         </div>
-        <span class="presentacion-card-fam">${p.familia || ''}</span>
-        <h3 class="presentacion-card-nombre">${p.nombre || ''}</h3>
-        <div class="presentacion-card-precio">
-          <span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
-          <span class="precio-siniva">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>
+        <div class="presentacion-card-detalle">
+          <span class="presentacion-card-fam">${p.familia || ''}</span>
+          <h3 class="presentacion-card-nombre">${p.nombre || ''}</h3>
+          <div class="presentacion-card-precio">
+            <span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
+            <span class="precio-siniva">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>
+          </div>
         </div>
       </div>`;
   }
