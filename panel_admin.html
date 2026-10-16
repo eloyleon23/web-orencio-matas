@@ -8,7 +8,7 @@ var paAnunciosCatalogo = [];
 var paAnuncioEnEdicion = null;
 var paAnArchivoSeleccionado = null;
 var paAnMiniaturaGenerada = null;
-var paAnAreaNombres = { drogueria: "Droguería", perfumeria: "Perfumería", pinturas: "Pinturas", talleres: "Talleres" };
+var paAnAreaNombres = { drogueria: "Droguería", perfumeria: "Perfumería", pinturas: "Pinturas", talleres: "Talleres", general: "General" };
 var paAnTipologiasFijas = ["manual", "catalogo", "folleto", "anuncio"];
 
 function paAnEtiquetaTipologia(a) {
@@ -54,16 +54,21 @@ function paAnPoblarFiltros() {
 function paAnPoblarAreaFamilia() {
   var selArea = document.getElementById("pa-an-area");
   var areas = Array.from(new Set(paAnunciosCatalogo.map(function (p) { return p.area; }).filter(Boolean)));
-  if (!areas.length) areas = Object.keys(paAnAreaNombres);
-  selArea.innerHTML = "<option value=\"\">Selecciona...</option>" + areas.map(function (a) { return "<option value=\"" + a + "\">" + (paAnAreaNombres[a] || a) + "</option>"; }).join("");
+  if (!areas.length) areas = ["drogueria", "perfumeria", "pinturas", "talleres"];
+  // "General" primero y por defecto — a petición de Eloy, un recurso no
+  // debe verse obligado a encajar en un área real.
+  selArea.innerHTML = "<option value=\"general\">General (sin área concreta)</option>" + areas.map(function (a) { return "<option value=\"" + a + "\">" + (paAnAreaNombres[a] || a) + "</option>"; }).join("");
   selArea.onchange = paAnActualizarFamilia;
   paAnActualizarFamilia();
 }
 function paAnActualizarFamilia() {
   var area = document.getElementById("pa-an-area").value;
+  var selFamilia = document.getElementById("pa-an-familia");
+  if (area === "general") { selFamilia.innerHTML = "<option value=\"\">Sin familia</option>"; selFamilia.disabled = true; return; }
+  selFamilia.disabled = false;
   var base = area ? paAnunciosCatalogo.filter(function (p) { return p.area === area; }) : paAnunciosCatalogo;
   var familias = Array.from(new Set(base.map(function (p) { return p.familia; }).filter(Boolean))).sort();
-  document.getElementById("pa-an-familia").innerHTML = "<option value=\"\">Sin familia</option>" + familias.map(function (f) { return "<option value=\"" + f + "\">" + f + "</option>"; }).join("");
+  selFamilia.innerHTML = "<option value=\"\">Sin familia</option>" + familias.map(function (f) { return "<option value=\"" + f + "\">" + f + "</option>"; }).join("");
 }
 
 function paAnRenderListado() {

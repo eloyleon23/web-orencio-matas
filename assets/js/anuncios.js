@@ -20,9 +20,12 @@
   // Mismas 4 áreas reales del catálogo (ver AREAS_NOMBRE en buscador.html)
   // — nunca inventadas, duplicadas aquí porque este proyecto no comparte
   // constantes entre páginas.
-  const AREA_NOMBRES_ = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
-  const AREA_ICONOS_ = { drogueria: 'fa-pump-soap', perfumeria: 'fa-spray-can-sparkles', pinturas: 'fa-paint-roller', talleres: 'fa-car-side' };
-  const AREA_COLORES_ = { drogueria: 'azul', perfumeria: 'amarillo', pinturas: 'rojo', talleres: 'verde' };
+  // "general" es un área especial (no viene del catálogo): recursos que
+  // no encajan en ninguna área real — a petición de Eloy, para no
+  // obligar a elegir una que no le corresponde.
+  const AREA_NOMBRES_ = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres', general: 'General' };
+  const AREA_ICONOS_ = { drogueria: 'fa-pump-soap', perfumeria: 'fa-spray-can-sparkles', pinturas: 'fa-paint-roller', talleres: 'fa-car-side', general: 'fa-layer-group' };
+  const AREA_COLORES_ = { drogueria: 'azul', perfumeria: 'amarillo', pinturas: 'rojo', talleres: 'verde', general: 'negro' };
   function nombreArea_(area) { return AREA_NOMBRES_[area] || area || 'Otros'; }
   function iconoArea_(area) { return AREA_ICONOS_[area] || 'fa-folder'; }
   function colorArea_(area) { return AREA_COLORES_[area] || 'negro'; }
@@ -178,7 +181,7 @@
 
     // Orden de áreas estable: las 4 reales conocidas primero (en el
     // orden habitual del resto del sitio), cualquier otra al final.
-    const ordenConocido = ['drogueria', 'perfumeria', 'pinturas', 'talleres'];
+    const ordenConocido = ['drogueria', 'perfumeria', 'pinturas', 'talleres', 'general'];
     const claves = Array.from(porArea.keys()).sort((a, b) => {
       const ia = ordenConocido.indexOf(a), ib = ordenConocido.indexOf(b);
       if (ia !== -1 && ib !== -1) return ia - ib;
@@ -307,8 +310,10 @@
   function poblarSelectoresAreaFamilia_() {
     const selArea = $('an-area');
     const areasPresentes = Array.from(new Set(TODOS_PRODUCTOS_.map(p => p.area).filter(Boolean)));
-    const areasFinal = areasPresentes.length ? areasPresentes : Object.keys(AREA_NOMBRES_);
-    selArea.innerHTML = '<option value="">Selecciona un área</option>' +
+    const areasFinal = areasPresentes.length ? areasPresentes : ['drogueria', 'perfumeria', 'pinturas', 'talleres'];
+    // "General" va primero y es el valor por defecto — a petición de
+    // Eloy, un recurso no debe verse obligado a encajar en un área real.
+    selArea.innerHTML = '<option value="general">General (sin área concreta)</option>' +
       areasFinal.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(nombreArea_(a))}</option>`).join('');
     selArea.addEventListener('change', actualizarSelectorFamilia_);
     actualizarSelectorFamilia_();
@@ -316,6 +321,12 @@
   function actualizarSelectorFamilia_() {
     const area = $('an-area').value;
     const selFamilia = $('an-familia');
+    if (area === 'general') {
+      selFamilia.innerHTML = '<option value="">Sin familia</option>';
+      selFamilia.disabled = true;
+      return;
+    }
+    selFamilia.disabled = false;
     const base = area ? TODOS_PRODUCTOS_.filter(p => p.area === area) : TODOS_PRODUCTOS_;
     const familias = Array.from(new Set(base.map(p => p.familia).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
     const actual = selFamilia.value;
@@ -403,7 +414,7 @@
     $('an-tipologia').value = 'manual';
     $('an-tipologia-personalizada').value = '';
     $('an-tipologia-personalizada-wrap').style.display = 'none';
-    $('an-area').value = '';
+    $('an-area').value = 'general';
     actualizarSelectorFamilia_();
     $('an-url-externa').value = '';
     $('an-dropzone').classList.remove('con-archivo');

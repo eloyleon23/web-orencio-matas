@@ -5736,9 +5736,11 @@ function validarCamposAnuncio_(data) {
     if (!tipologiaPersonalizada) throw new Error('Indica el nombre de la tipología personalizada.');
   }
 
-  const area = (data.area || '').toString().trim();
-  if (!area) throw new Error('El área es obligatoria.');
-  const familia = (data.familia || '').toString().trim();
+  // A petición de Eloy: además de las áreas reales del catálogo, cabe un
+  // recurso que no encaje en ninguna — se guarda bajo el área especial
+  // "general" en vez de obligar a elegir una real que no le corresponde.
+  const area = (data.area || '').toString().trim() || 'general';
+  const familia = area === 'general' ? '' : (data.familia || '').toString().trim();
   const productoRef = (data.productoRef || '').toString().trim();
 
   const visible = data.visible !== false; // por defecto true, salvo 'false' explícito
