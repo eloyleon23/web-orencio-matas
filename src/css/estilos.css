@@ -224,6 +224,18 @@ ol {
   min-height: 82px;
 }
 
+/* A petición de Eloy: con "Anuncios/Recursos" sumado al resto de
+   enlaces, el menú de escritorio necesita más aire del que da el
+   contenedor general de 1200px (pensado para el contenido del cuerpo de
+   la página, no para la barra de navegación) — en monitores anchos
+   sobraba hueco visible a los lados de la cabecera mientras el propio
+   menú iba apretado. Solo ensancha LA BARRA DE NAVEGACIÓN (selector más
+   específico que .container a secas, para no afectar al ancho del
+   resto del contenido de ninguna página). */
+.navbar .container {
+  width: min(100% - 40px, 1440px);
+}
+
 .navbar__logo {
   display: inline-flex;
   align-items: center;
