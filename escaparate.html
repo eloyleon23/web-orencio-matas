@@ -1074,15 +1074,16 @@
         to{ opacity:1; transform:scale(1) translateY(0); }
       }
 
-      /* Tarjeta de producto — dos variantes de layout según cuántas haya
-         en pantalla a la vez (ver JS, elegirProductosPresentacion):
-           - UNA sola (".presentacion-card:only-child"): foto y detalle
-             por separado, foto a la DERECHA y el detalle (nombre,
-             precio...) a la IZQUIERDA — petición explícita de Eloy.
-           - DOS a la vez: detalle DEBAJO de la foto (layout por
-             defecto, columna), con la foto ocupando el máximo espacio
-             posible dentro de la tarjeta — también petición explícita
-             ("muy importante que la imagen ocupe lo más que se pueda").
+      /* Tarjeta de producto — un único producto en pantalla a la vez
+         (petición explícita de Eloy: antes alternaba entre uno y dos,
+         ahora siempre uno solo, también porque dos a la vez era lo que
+         se veía mal en un móvil en horizontal). Foto a la DERECHA y
+         detalle (nombre, precio...) a la IZQUIERDA, en fila — row-reverse
+         en vez de reordenar el HTML: la tarjeta siempre pinta primero la
+         foto y luego el detalle en el DOM (ver tarjetaPresentacionHTML),
+         y row-reverse invierte el orden VISUAL sin tocar el marcado. En
+         vertical (ver media query de orientación más abajo) pasa a
+         columna, foto arriba y detalle debajo.
          El halo de color (box-shadow difuminado con --accent-vivid) ata
          visualmente la tarjeta al color elegido de la campaña, reforzando
          el efecto llamativo sin salirse de esa paleta. */
@@ -1090,14 +1091,15 @@
         position:relative;
         background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16);
         border-radius:28px; backdrop-filter:blur(10px);
-        padding:clamp(14px, 1.8vw, 24px);
-        display:flex; flex-direction:column; align-items:center; text-align:center;
-        width:min(42vw, 620px); max-width:46vw;
-        height:min(74vh, 720px);
+        display:flex; flex-direction:row-reverse; align-items:center; text-align:left;
+        width:min(88vw, 1480px); max-width:94vw;
+        height:min(78vh, 760px); max-height:90vh;
+        padding:clamp(16px, 2.4vw, 44px);
+        gap:clamp(20px, 4vw, 72px);
         box-shadow:0 30px 80px rgba(0,0,0,.45), 0 0 70px -10px color-mix(in srgb, var(--accent-vivid) 55%, transparent);
       }
       .presentacion-card-img{
-        position:relative; width:100%; flex:1 1 auto; min-height:0;
+        position:relative; flex:1.15 1 0; width:auto; height:100%; min-width:0; min-height:0;
         border-radius:18px; background:rgba(255,255,255,.92);
         display:flex; align-items:center; justify-content:center; overflow:hidden;
       }
@@ -1111,107 +1113,117 @@
       .presentacion-card-img.sin-imagen img{ display:none; }
 
       .presentacion-card-detalle{
-        flex:none; width:100%; margin-top:clamp(10px, 1.6vh, 18px);
+        flex:1 1 0; min-width:0;
+        display:flex; flex-direction:column; align-items:flex-start; text-align:left;
       }
       .presentacion-card-fam{
         font-size:13px; letter-spacing:.06em; text-transform:uppercase;
         color:rgba(255,255,255,.6); font-weight:600;
       }
       .presentacion-card-nombre{
-        margin:6px 0 10px; font-size:clamp(18px, 2.2vw, 28px); line-height:1.15;
+        margin:10px 0 18px; font-size:clamp(22px, 3.6vw, 46px); line-height:1.15;
         font-weight:800; color:#fff;
       }
-      .presentacion-card-precio{ display:flex; flex-direction:column; align-items:center; gap:2px; }
+      .presentacion-card-precio{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
       .presentacion-card-precio .precio{
-        font-size:clamp(22px, 2.8vw, 36px); font-weight:800;
-        color:var(--accent-vivid-2, #4ade80);
+        font-size:clamp(26px, 4.2vw, 54px); font-weight:800;
+        /* Mezclado con blanco (nunca el color de campaña puro): el
+           colorSet "rojo_negro" usa un --accent-vivid-2 casi negro
+           (#1A1A1A, pensado para texto sobre el fondo CLARO del resto
+           de la web) — puesto tal cual aquí, sobre el fondo oscuro del
+           modo presentación, el precio quedaba prácticamente invisible.
+           Mezclarlo con blanco garantiza que se lea bien sea cual sea
+           la paleta elegida, conservando igualmente su tono. */
+        color:color-mix(in srgb, var(--accent-vivid-2, #4ade80) 55%, #fff 45%);
       }
       .presentacion-card-precio .precio .iva{
         font-size:13px; font-weight:600; margin-left:6px; color:rgba(255,255,255,.55); vertical-align:middle;
       }
       .presentacion-card-precio .precio-siniva{ font-size:14px; color:rgba(255,255,255,.55); }
 
-      /* Variante de UN solo producto: foto a la derecha, detalle a la
-         izquierda (fila en vez de columna). row-reverse en vez de
-         reordenar el HTML: la tarjeta siempre pinta primero la foto y
-         luego el detalle en el DOM (ver tarjetaPresentacionHTML), y
-         row-reverse se encarga de invertir el orden VISUAL sin tocar el
-         marcado — el último hijo del DOM (detalle) pasa a dibujarse
-         primero, es decir, a la izquierda. */
-      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card{
-        flex-direction:row-reverse; align-items:center; text-align:left;
-        width:min(88vw, 1480px); max-width:94vw;
-        height:min(76vh, 760px);
-        padding:clamp(22px, 2.6vw, 44px);
-        gap:clamp(28px, 4vw, 72px);
-      }
-      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-img{
-        flex:1.15 1 0; width:auto; height:100%;
-      }
-      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-detalle{
-        flex:1 1 0; margin-top:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left;
-      }
-      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-nombre{
-        font-size:clamp(26px, 3.6vw, 46px); margin:10px 0 18px;
-      }
-      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-precio{ align-items:flex-start; }
-      .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-precio .precio{
-        font-size:clamp(30px, 4.2vw, 54px);
-      }
-
       /* Fichas pequeñas de contexto — foto del escaparate y logo de la
          empresa, discretas en las esquinas inferiores (petición
          explícita: "incluir en pequeño la imagen que representa al
-         escaparate y el logo nuestro de la empresa"). Fondo blanco fijo
-         (nunca transparente) a propósito: así se leen igual de bien sea
-         cual sea el color de campaña activo de fondo. */
+         escaparate y el logo nuestro de la empresa"). Sin fondo ni tarjeta
+         blanca detrás de ninguna de las dos (petición explícita: "que no
+         tenga fondo") — solo una sombra suave (drop-shadow sobre la
+         propia imagen, no box-shadow sobre un contenedor) para que sean
+         legibles igualmente sobre cualquier color de campaña, sin la
+         tarjeta blanca de antes. El logo es el de solo marca (sin el
+         nombre de la empresa en el propio archivo), también a petición
+         explícita. */
       .presentacion-chip{
         position:absolute; z-index:10; bottom:20px;
-        background:rgba(255,255,255,.95); border-radius:14px;
-        box-shadow:0 10px 30px rgba(0,0,0,.35);
         display:flex; align-items:center; gap:9px;
-        padding:8px 14px 8px 8px;
       }
       .presentacion-chip-escaparate{ left:20px; }
-      .presentacion-chip-logo{ right:20px; padding:10px 16px; }
+      .presentacion-chip-logo{ right:20px; }
       .presentacion-chip-escaparate img{
-        width:46px; height:46px; border-radius:9px; object-fit:cover; flex:none;
+        width:50px; height:50px; border-radius:10px; object-fit:cover; flex:none;
+        filter:drop-shadow(0 6px 16px rgba(0,0,0,.55));
       }
       .presentacion-chip-escaparate span{
-        font-size:12.5px; font-weight:700; color:#1a1a1a; max-width:150px;
+        font-size:12.5px; font-weight:700; color:#fff; max-width:150px;
         overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+        text-shadow:0 2px 8px rgba(0,0,0,.65);
       }
-      .presentacion-chip-logo img{ height:22px; width:auto; display:block; }
+      .presentacion-chip-logo img{
+        height:36px; width:auto; display:block;
+        filter:drop-shadow(0 6px 16px rgba(0,0,0,.55));
+      }
 
-      /* Este breakpoint decidía antes SOLO por ancho en px
-         (max-width:860px) — un monitor o tablet en VERTICAL puede
-         perfectamente tener más de 860px de ancho (ej. 1080px) y aun así
-         necesitar el layout compacto en columna, porque lo que importa
-         aquí es la orientación, no el número de píxeles. Bug real
-         reportado: "no se ajusta a la pantalla en base a si está en
-         horizontal o vertical". Ahora se dispara por CUALQUIERA de los
-         dos motivos: pantalla estrecha (el caso típico de un móvil) O
-         orientación vertical (el caso de un monitor/tablet en vertical,
-         sea cual sea su resolución). */
-      @media (max-width:860px), (orientation:portrait){
-        .presentacion-stage{ gap:18px; }
-        .presentacion-card{ width:min(86vw, 480px); height:min(60vh, 560px); }
-        /* En vertical la variante "un solo producto" vuelve a columna
-           (foto arriba, detalle debajo) — fila solo tiene sentido con el
-           ancho de sobra de una pantalla en horizontal. */
-        .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card{
-          flex-direction:column; text-align:center; width:min(90vw, 480px); height:auto; max-height:none;
+      /* IMPORTANTE: la decisión entre fila (foto+detalle lado a lado) y
+         columna (foto arriba, detalle debajo) depende SOLO de la
+         orientación, nunca del ancho en píxeles. Bug real reportado dos
+         veces: primero un monitor/tablet en vertical con ancho grande
+         (ej. 1080px) se quedaba con el layout de fila por superar un
+         "max-width" — y al arreglar eso añadiendo "max-width:860px" como
+         condición alternativa, un MÓVIL EN HORIZONTAL (ancho típico
+         700-900px, por debajo de ese umbral) pasó a activar por error el
+         mismo layout de columna pensado para vertical, pese a estar en
+         horizontal ("cuando giro la pantalla del móvil en horizontal
+         sigo sin verlo bien"). La única señal fiable de verdad es
+         "orientation:portrait" — un ancho pequeño por sí solo YA NO
+         decide nada aquí. */
+      @media (orientation:portrait){
+        .presentacion-card{
+          flex-direction:column; text-align:center;
+          width:min(90vw, 480px); max-width:94vw; height:auto; max-height:85vh;
         }
-        .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-img{ flex:none; width:100%; height:min(44vh, 380px); }
-        .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-detalle{ align-items:center; text-align:center; margin-top:14px; }
-        .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-precio{ align-items:center; }
+        .presentacion-card-img{ flex:none; width:100%; height:min(44vh, 380px); }
+        .presentacion-card-detalle{ align-items:center; text-align:center; margin-top:14px; }
+        .presentacion-card-precio{ align-items:center; }
+      }
+      /* Ajustes de tamaño para pantallas estrechas en general (gap más
+         pequeño, ocultar el nombre de la campaña en la ficha del
+         escaparate si no cabe) — esto sí puede depender del ancho, no
+         decide entre fila/columna, solo aligera espacio. */
+      @media (max-width:860px){
+        .presentacion-stage{ gap:18px; }
         .presentacion-chip-escaparate span{ display:none; }
+      }
+      /* Móvil en HORIZONTAL (pantalla baja, típico 320-430px de alto) —
+         la cabecera y la tarjeta se compactan para que quepa todo sin
+         recortes ni scroll, que era justo el otro síntoma reportado
+         ("los bloques de productos no se ven bien"). */
+      @media (max-height:520px) and (orientation:landscape){
+        .presentacion-cabecera{ padding-top:8px; }
+        .presentacion-eyebrow{ display:none; }
+        .presentacion-titulo{ font-size:15px; margin-top:0; }
+        .presentacion-cabecera::after{ margin-top:4px; height:2px; width:70px; }
+        .presentacion-stage{ padding:8px clamp(16px, 5vw, 60px); gap:16px; }
+        .presentacion-card{ height:min(88vh, 760px); padding:12px; gap:16px; border-radius:18px; }
+        .presentacion-card-nombre{ font-size:clamp(14px, 2.6vw, 20px); margin:4px 0 6px; }
+        .presentacion-card-fam{ font-size:11px; }
+        .presentacion-card-precio .precio{ font-size:clamp(16px, 3.4vw, 24px); }
+        .presentacion-card-precio .precio-siniva{ font-size:11px; }
+        .presentacion-chip{ bottom:8px; }
+        .presentacion-chip-escaparate img{ width:34px; height:34px; }
+        .presentacion-chip-logo img{ height:24px; }
       }
       /* Aviso suave para quien abra el modo presentación en vertical —
          pensado para un monitor en horizontal, pero no se bloquea nada,
-         solo se sugiere girar el dispositivo. Ya no depende del ancho:
-         con pantallas grandes en vertical (tablet/monitor) también tiene
-         sentido avisar. */
+         solo se sugiere girar el dispositivo. */
       .presentacion-giro-aviso{ display:none; }
       @media (orientation:portrait){
         .presentacion-giro-aviso{
@@ -1347,7 +1359,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <span id="presentacionChipEscaparateNombre"></span>
   </div>
   <div class="presentacion-chip presentacion-chip-logo">
-    <img src="./assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L.">
+    <img src="./assets/logos/logo_transparente.png" alt="Orencio Matas y Hnos, S.L.">
   </div>
 </div>
 
@@ -3080,13 +3092,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // Escaparate a pantalla completa, pensado para dejarse encendido en un
   // monitor de la tienda: los productos de la campaña activa se van
   // alternando solos, en ciclos con una duración algo variable (para que
-  // no se note mecánico) y mostrando uno o dos productos a la vez al
-  // azar ("para dar dinamismo", petición explícita de Eloy). Permanece
-  // activo hasta que el usuario sale explícitamente (botón ✕, Esc, o
-  // saliendo de pantalla completa por cualquier otra vía del sistema).
+  // no se note mecánico), SIEMPRE de uno en uno (petición explícita de
+  // Eloy: mostrar dos a la vez es justo lo que no se veía bien en un
+  // móvil en horizontal). Permanece activo hasta que el usuario sale
+  // explícitamente (botón ✕, Esc, o saliendo de pantalla completa por
+  // cualquier otra vía del sistema).
   let presentacionActiva = false;
   let presentacionTimerId = null;
-  let presentacionUltimoUnico = null; // evita repetir el mismo único producto dos ciclos seguidos
+  let presentacionUltimoUnico = null; // evita repetir el mismo producto dos ciclos seguidos
 
   function poolProductosPresentacion(){
     const c = activeId ? findCampaign(activeId) : null;
@@ -3099,17 +3112,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   function elegirProductosPresentacion(pool){
     if(!pool.length) return [];
     const barajados = pool.slice().sort(() => Math.random() - 0.5);
-    // ~38% de las veces, si hay al menos 2 productos disponibles, se
-    // muestran dos a la vez; el resto, solo uno — con dos siempre más
-    // grande cuando está solo, para que se vea con todo detalle.
-    const dos = pool.length > 1 && Math.random() < 0.38;
-    let elegidos = dos ? barajados.slice(0, 2) : barajados.slice(0, 1);
-    if(!dos && pool.length > 1 && elegidos[0] === presentacionUltimoUnico){
-      const alternativa = barajados.find(ref => ref !== presentacionUltimoUnico);
-      if(alternativa) elegidos = [alternativa];
+    let elegido = barajados[0];
+    // Evita repetir el mismo producto dos ciclos seguidos cuando hay más
+    // de uno disponible para elegir.
+    if(pool.length > 1 && elegido === presentacionUltimoUnico){
+      elegido = barajados.find(ref => ref !== presentacionUltimoUnico) || elegido;
     }
-    if(!dos) presentacionUltimoUnico = elegidos[0];
-    return elegidos;
+    presentacionUltimoUnico = elegido;
+    return [elegido];
   }
 
   function tarjetaPresentacionHTML(ref){
