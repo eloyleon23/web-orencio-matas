@@ -1,6 +1,21 @@
 <!doctype html>
 <html lang="es">
   <head>
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
     <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
@@ -8,22 +23,49 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Aviso Legal de Orencio Matas y Hnos, S.L." />
+    <!-- Misma solución que ya usa buscador.html para este mismo problema:
+         esta página vive tanto en GitHub Pages (main) como en IONOS
+         (release, el dominio real) — indexable en las dos, pero con
+         canonical apuntando siempre al dominio de producción, para que
+         Google atribuya el posicionamiento a orenciomatas.es y no trate
+         la copia de GitHub Pages como contenido duplicado compitiendo
+         por el mismo ranking. -->
+    <link rel="canonical" href="https://orenciomatas.es/aviso-legal.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Orencio Matas y Hnos, S.L." />
+    <meta property="og:title" content="Aviso Legal | Orencio Matas y Hnos, S.L." />
+    <meta property="og:description" content="Aviso Legal de Orencio Matas y Hnos, S.L." />
+    <meta property="og:url" content="https://orenciomatas.es/aviso-legal.html" />
+    <meta property="og:image" content="https://orenciomatas.es/assets/logos/og-banner-1200x630.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <title>Aviso Legal | Orencio Matas y Hnos, S.L.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./src/css/estilos.css" />
+    <link rel="stylesheet" href="./src/css/estilos.css?v=20260829" />
   <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-HMM85HSJ4Y');
+  // Ver nota en el bloque de Google Tag Manager: solo en el dominio
+  // oficial orenciomatas.es.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    var _gtagScript = document.createElement('script');
+    _gtagScript.async = true;
+    _gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y';
+    document.head.appendChild(_gtagScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HMM85HSJ4Y');
+  }
 </script>
 </head>
   <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
     <header class="site-header" id="inicio">
   <div class="topbar" aria-label="Información de contacto">
     <div class="container topbar__inner">
@@ -56,8 +98,26 @@
           <li><a href="index.html#inicio">Inicio</a></li>
           <li><a href="empresa.html">Empresa</a></li>
         <li><a href="historia.html">Historia</a></li>
-          <li><a href="productos.html">Productos</a></li>
-          <li><a href="servicios.html">Servicios</a></li>
+          <li class="navbar__item--dropdown">
+            <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
+            <ul class="navbar__submenu">
+            <li><a href="buscador.html">Buscador</a></li>
+            <li class="navbar__item--dropdown">
+              <a href="productos.html">Ver catálogos <span class="navbar__caret">&#9662;</span></a>
+              <ul class="navbar__submenu">
+                <li><a href="catalogo_drogueria.html">Droguería</a></li>
+                <li><a href="catalogo_perfumeria.html">Perfumería</a></li>
+                <li><a href="catalogo_pinturas.html">Pinturas</a></li>
+                <li><a href="catalogo_talleres.html">Talleres</a></li>
+              </ul>
+            </li>
+          </ul>
+          </li>
+          <li><a href="escaparate-campanas.html">Exposición</a></li>
+              <li><a href="servicios.html">Servicios</a></li>
+            <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+            <li><a href="anuncios.html">Anuncios/Recursos</a></li>
+              <li><a href="profesionales.html">Profesionales</a></li>
           <li><a href="actualidad.html">Actualidad</a></li>
           <li><a href="index.html#contacto">Contacto</a></li>
         </ul>
@@ -201,6 +261,10 @@
         <li><a href="empresa.html">Empresa</a></li>
         <li><a href="historia.html">Historia</a></li>
         <li><a href="productos.html">Productos</a></li>
+            <li><a href="escaparate-campanas.html">Exposición</a></li>
+            <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+            <li><a href="anuncios.html">Anuncios/Recursos</a></li>
+              <li><a href="profesionales.html">Profesionales</a></li>
         <li><a href="index.html#profesionales">Profesionales</a></li>
         <li><a href="index.html#marcas">Marcas</a></li>
         <li><a href="index.html#contacto">Contacto</a></li>
@@ -242,6 +306,7 @@
   </div>
 </footer>
 
-    <script src="./src/js/app.js"></script>
+    <script src="./src/js/app.js?v=20260829"></script>
+    <script src="./src/js/analytics-consent.js?v=20260829"></script>
   </body>
 </html>

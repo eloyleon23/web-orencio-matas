@@ -1,0 +1,25 @@
+{
+  "generado": "2026-10-08T05:53:44.061939Z",
+  "catalogos": {
+    "drogueria": {
+      "archivo": "catalogo_drogueria.pdf",
+      "paginas": 138,
+      "productos": 1964
+    },
+    "perfumeria": {
+      "archivo": "catalogo_perfumeria.pdf",
+      "paginas": 98,
+      "productos": 1382
+    },
+    "pinturas": {
+      "archivo": "catalogo_pinturas.pdf",
+      "paginas": 160,
+      "productos": 2359
+    },
+    "talleres": {
+      "archivo": "catalogo_talleres.pdf",
+      "paginas": 54,
+      "productos": 767
+    }
+  }
+}

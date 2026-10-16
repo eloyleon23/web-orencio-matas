@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Catálogos de talleres profesionales de Orencio Matas y Hnos, S.L.">
+    <title>Catálogo Talleres | Orencio Matas y Hnos, S.L.</title>
+    <link rel="canonical" href="https://orenciomatas.es/catalogo_talleres.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Orencio Matas y Hnos, S.L." />
+    <meta property="og:title" content="Catálogo Talleres | Orencio Matas y Hnos, S.L." />
+    <meta property="og:description" content="Catálogos de talleres profesionales de Orencio Matas y Hnos, S.L." />
+    <meta property="og:url" content="https://orenciomatas.es/catalogo_talleres.html" />
+    <meta property="og:image" content="https://orenciomatas.es/assets/logos/og-banner-1200x630.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --red: #D32F2F;
+            --blue: #1976D2;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            overflow-x: clip;
+        }
+
+        body {
+            margin: 0;
+            color: var(--dark);
+            background: var(--light);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+        }
+
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--light);
+            color: var(--dark);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back-home:hover {
+            background: var(--border);
+            transform: translateX(-3px);
+        }
+
+        .btn-back-home i {
+            color: var(--red);
+        }
+
+        .catalog-container {
+            padding: 80px 20px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .catalog-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .catalog-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin: 0 0 8px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .catalog-header p {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .catalog-viewer {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .catalog-viewer iframe {
+            width: 100%;
+            height: 800px;
+            border: none;
+            display: block;
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .catalog-disclaimer {
+            background: #fff7ed;
+            border-left: 4px solid var(--yellow);
+            padding: 16px 20px;
+            margin-top: 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .catalog-disclaimer strong {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .mobile-pdf-link {
+            display: none;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .btn-mobile-pdf {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--red);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-mobile-pdf:hover {
+            background: #c62828;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+        }
+
+        .catalog-actions {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--blue);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-download:hover {
+            background: #1565c0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+        }
+
+        #btn-ver-buscador:hover {
+            color: #fff !important;
+        }
+
+        @media (max-width: 768px) {
+            .catalog-container {
+                padding: 70px 16px 30px;
+            }
+
+            .catalog-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .mobile-pdf-link {
+                display: block;
+            }
+
+            .catalog-viewer {
+                height: 60vh;
+                min-height: 400px;
+            }
+
+            .catalog-viewer iframe {
+                height: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="./src/css/navbar.css?v=20260829" />
+<!-- Google tag (gtag.js) -->
+<script>
+  // Ver nota en el bloque de Google Tag Manager: solo en el dominio
+  // oficial orenciomatas.es.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    var _gtagScript = document.createElement('script');
+    _gtagScript.async = true;
+    _gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y';
+    document.head.appendChild(_gtagScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HMM85HSJ4Y');
+  }
+</script>
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<header class="main-header">
+    <a href="productos.html" class="btn-back-home">
+        <i class="fa-solid fa-arrow-left"></i> Volver a Productos
+    </a>
+</header>
+
+<main style="padding-top: 80px;">
+    <div style="max-width:1100px; margin:0 auto; padding: 24px 20px;">
+
+        <!-- ── CATÁLOGO INTERNO ORENCIO MATAS ────────────────────────── -->
+        <section style="margin-bottom: 48px;">
+            <div style="margin-bottom:20px;">
+                <p style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#d91b1b;margin:0 0 4px">
+                    Suministros para talleres
+                </p>
+                <h1 style="font-size:1.8rem;font-weight:800;margin:0 0 8px;color:#1e293b;">
+                    Catálogo Talleres Orencio Matas
+                </h1>
+                <p style="color:#64748b;margin:0;">
+                    Productos de suministro profesional para talleres gestionados directamente por Orencio Matas y Hermanos.
+                </p>
+            </div>
+
+            <div id="cargando-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:#94a3b8;margin-bottom:12px;display:block"></i>
+                <p style="color:#64748b;">Cargando el catálogo…</p>
+            </div>
+
+            <div id="no-catalogo-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
+                <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
+                <p style="color:#64748b;">El catálogo interno está siendo preparado.<br>
+                <a href="index.html#contacto" style="color:#d91b1b;font-weight:600;">Solicitar información</a></p>
+            </div>
+
+            <div id="preview-interno" style="display:none">
+                <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border:1px solid #e2e8f0;text-align:center;">
+
+                    <div style="display:flex;gap:32px;justify-content:center;align-items:baseline;flex-wrap:wrap;margin-bottom:20px;">
+                        <div>
+                            <div style="font-size:1.8rem;font-weight:800;color:#d91b1b;" id="info-paginas-interno">—</div>
+                            <div style="font-size:0.85rem;color:#64748b;">páginas</div>
+                        </div>
+                        <div>
+                            <div style="font-size:1.8rem;font-weight:800;color:#d91b1b;" id="info-productos-interno">—</div>
+                            <div style="font-size:0.85rem;color:#64748b;">productos</div>
+                        </div>
+                        <div>
+                            <div style="font-size:1.05rem;font-weight:700;color:#1e293b;" id="info-fecha-interno">—</div>
+                            <div style="font-size:0.85rem;color:#64748b;">actualizado</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:28px;">
+                        <a id="btn-ver-completo-interno" href="#" class="btn-download"
+                           style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;background:var(--dark);">
+                            <i class="fa-solid fa-book-open"></i> Ver Catálogo Completo
+                        </a>
+                        <a id="btn-descargar-interno" href="#" target="_blank" rel="noopener" class="btn-download"
+                           style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;">
+                            <i class="fa-solid fa-download"></i> Descargar (PDF)
+                        </a>
+                    </div>
+
+                    <p style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin:0 0 14px;">Una muestra de lo que encontrarás</p>
+                    <div id="catalogo-preview-grid-interno" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;text-align:left;margin-bottom:20px;"></div>
+
+                    <a id="btn-ver-buscador" href="./buscador.html?area=talleres" class="btn-download"
+                       style="display:inline-flex;align-items:center;gap:10px;font-size:0.95rem;padding:12px 24px;background:transparent;color:var(--blue, #1976d2);border:2px solid var(--blue, #1976d2);">
+                        <i class="fa-solid fa-magnifying-glass"></i> Ver en el buscador de productos
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <hr style="border:none;border-top:2px solid #e2e8f0;margin:0 0 48px;">
+
+        <!-- ── CATÁLOGO ZAPHIRO ──────────────────────────────────────── -->
+        <section>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:200px;">
+                    <p style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#d91b1b;margin:0 0 4px">
+                        Proveedor principal · Grupo Zaphiro
+                    </p>
+                    <h2 id="titulo-zaphiro" style="font-size:1.8rem;font-weight:800;margin:0 0 8px;color:#1e293b;">
+                        Catálogo Zaphiro
+                    </h2>
+                    <p style="color:#64748b;margin:0;">
+                        Catálogo oficial de productos Zaphiro para talleres de chapa y pintura. Actualizado automáticamente con la versión más reciente publicada por el proveedor.
+                    </p>
+                </div>
+                <a href="https://www.zaphirogroup.com/lineas-de-productos/" target="_blank" rel="noopener"
+                   style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:#f1f5f9;border-radius:8px;font-size:0.85rem;font-weight:600;color:#1e293b;text-decoration:none;white-space:nowrap;border:1px solid #e2e8f0;">
+                    <i class="fa-solid fa-external-link-alt"></i> Web Zaphiro
+                </a>
+            </div>
+
+            <div id="preview-zaphiro" style="display:none">
+                <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border:1px solid #e2e8f0;text-align:center;">
+                    <p style="color:#64748b;margin:0 0 24px;">
+                        Este catálogo es propiedad de Grupo Zaphiro y es un archivo externo — no podemos garantizar
+                        una vista previa embebida fiable dentro de esta página. El botón de abajo lo abre directamente
+                        en la web de Zaphiro.
+                    </p>
+                    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+                        <a id="btn-ver-completo-zaphiro" href="#" target="_blank" rel="noopener" class="btn-download"
+                           style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;background:var(--dark);">
+                            <i class="fa-solid fa-book-open"></i> Ver Catálogo Completo
+                        </a>
+                        <a id="btn-descargar-zaphiro" href="#" target="_blank" rel="noopener" class="btn-download"
+                           style="display:inline-flex;align-items:center;gap:10px;font-size:1.05rem;padding:14px 28px;">
+                            <i class="fa-solid fa-download"></i> Descargar (PDF)
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div id="cargando-zaphiro" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:#94a3b8;margin-bottom:12px;display:block"></i>
+                <p style="color:#64748b;">Cargando el catálogo Zaphiro…</p>
+            </div>
+            <div id="no-catalogo-zaphiro" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
+                <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
+                <p style="color:#64748b;">No se ha podido cargar el catálogo Zaphiro.<br>
+                <a href="https://www.zaphirogroup.com/lineas-de-productos/" target="_blank" rel="noopener" style="color:#d91b1b;font-weight:600;">Ver en web de Zaphiro</a></p>
+            </div>
+            <div class="catalog-disclaimer" style="margin-top:12px;">
+                <strong>Nota:</strong> Este catálogo es propiedad de Grupo Zaphiro y se muestra como referencia para nuestros clientes. Actualizado automáticamente con la última versión disponible.
+            </div>
+        </section>
+
+    </div>
+</main>
+
+
+
+<link rel="stylesheet" href="./src/css/navbar.css?v=20260829" />
+<script src="./src/js/navbar-secondary.js"></script>
+<script>
+(function() {
+    const REPO = 'eloyleon23/web-orencio-matas';
+
+    // ── Catálogo interno: ya no depende de ningún despliegue (ni
+    // GitHub Pages ni IONOS) — se consulta directamente en Drive vía el
+    // mismo Web App de Apps Script que ya usa el buscador. Ver notas en
+    // scripts/apps_script_trigger.js. ──
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+
+    fetch(`${APPS_SCRIPT_URL}?accion=obtener_catalogos`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(datos => {
+            const info = datos['talleres'];
+            if (!info || !info.id) { showNoInterno(); return; }
+
+            const urlDescarga = `https://drive.google.com/uc?export=download&id=${info.id}`;
+
+            document.getElementById('btn-ver-completo-interno').href = './visor_catalogo.html?area=talleres';
+            document.getElementById('btn-descargar-interno').href = urlDescarga;
+            document.getElementById('cargando-interno').style.display = 'none';
+            document.getElementById('preview-interno').style.display = '';
+            if (window.cargarMuestraCatalogo) {
+                cargarMuestraCatalogo({ area: 'talleres', contenedorId: 'catalogo-preview-grid-interno' });
+            }
+
+            document.getElementById('info-paginas-interno').textContent   = info.paginas || '—';
+            document.getElementById('info-productos-interno').textContent = info.productos || '—';
+            if (info.actualizado) {
+                const fecha = new Date(info.actualizado);
+                document.getElementById('info-fecha-interno').textContent =
+                    fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
+        })
+        .catch(showNoInterno);
+
+    function showNoInterno() {
+        document.getElementById('cargando-interno').style.display = 'none';
+        document.getElementById('no-catalogo-interno').style.display = '';
+    }
+
+    // ── Catálogo Zaphiro desde API GitHub ──
+    // Ya NO se intenta incrustar vía iframe/Google Docs Viewer: al ser
+    // un PDF externo bastante grande (43 páginas con muchas fotos),
+    // podía superar el límite de tamaño de Google Docs Viewer — y en
+    // ese caso de fallo, el iframe a veces terminaba cargando el PDF en
+    // bruto como último recurso, que si el servidor de Zaphiro fuerza
+    // descarga (común en adjuntos de WordPress), acababa disparando una
+    // descarga inesperada de todo la página. Con enlaces directos
+    // (clic explícito del usuario, sin iframe de por medio) se evita
+    // ese problema por completo.
+    const ZAPHIRO_API = `https://api.github.com/repos/${REPO}/contents/zaphiro_config.json`;
+    fetch(ZAPHIRO_API, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data || !data.content) { showNoZaphiro(); return; }
+            const cfg = JSON.parse(new TextDecoder('utf-8').decode(Uint8Array.from(atob(data.content.replace(/\\n/g,'')), c => c.charCodeAt(0))));
+            if (!cfg || !cfg.url) { showNoZaphiro(); return; }
+            const url = cfg.url;
+            document.getElementById('btn-ver-completo-zaphiro').href = url;
+            document.getElementById('btn-descargar-zaphiro').href = url;
+            if (cfg.titulo) document.getElementById('titulo-zaphiro').textContent = cfg.titulo;
+            document.getElementById('cargando-zaphiro').style.display = 'none';
+            document.getElementById('preview-zaphiro').style.display = '';
+        })
+        .catch(showNoZaphiro);
+
+    function showNoZaphiro() {
+        document.getElementById('cargando-zaphiro').style.display = 'none';
+        document.getElementById('no-catalogo-zaphiro').style.display = '';
+    }
+})();
+</script>
+<script src="./assets/js/entorno.js?v=20260924a"></script>
+<script>window.OM_CLAVE_MANTENIMIENTO = 'catalogos'; window.OM_RUTA_RAIZ = './';</script>
+<script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<script src="./src/js/catalogo-preview.js"></script>
+<script src="./src/js/origen-profesionales.js?v=20260829d"></script>
+<script src="./src/js/analytics-consent.js?v=20260829"></script>
+</body>
+</html>

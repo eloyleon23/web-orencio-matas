@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Ver catálogo | Orencio Matas y Hnos, S.L.</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; }
+        .visor-header {
+            height: 56px;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            gap: 12px;
+        }
+        .visor-header a, .visor-header span {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .visor-header a:hover { color: #cbd5e1; }
+        .visor-titulo { flex: 1; text-align: center; opacity: 0.85; font-weight: 500 !important; }
+        .visor-frame-wrap { height: calc(100% - 56px); }
+        .visor-frame-wrap iframe { width: 100%; height: 100%; border: none; }
+        .visor-estado {
+            height: calc(100% - 56px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            color: #64748b;
+            text-align: center;
+            padding: 20px;
+        }
+        .visor-estado i { font-size: 2.5rem; }
+    </style>
+<!-- Google tag (gtag.js) -->
+<script>
+  // Ver nota en el bloque de Google Tag Manager: solo en el dominio
+  // oficial orenciomatas.es.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    var _gtagScript = document.createElement('script');
+    _gtagScript.async = true;
+    _gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y';
+    document.head.appendChild(_gtagScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HMM85HSJ4Y');
+  }
+</script>
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<header class="visor-header">
+    <a id="btn-volver" href="productos.html"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    <span class="visor-titulo" id="visor-titulo">Cargando catálogo…</span>
+    <a id="btn-descargar-visor" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i> Descargar</a>
+</header>
+
+<div class="visor-frame-wrap" id="visor-frame-wrap" style="display:none">
+    <iframe id="visor-iframe" src=""></iframe>
+</div>
+
+<div class="visor-estado" id="visor-cargando">
+    <i class="fa-solid fa-spinner fa-spin"></i>
+    <p>Cargando catálogo…</p>
+</div>
+
+<div class="visor-estado" id="visor-error" style="display:none">
+    <i class="fa-solid fa-clock"></i>
+    <p>El catálogo está siendo preparado.<br>Mientras tanto puedes contactar con nosotros.</p>
+</div>
+
+<script>
+(function () {
+    const AREAS = {
+        drogueria:  { pdf: 'catalogo_drogueria.pdf',  titulo: 'Catálogo de Droguería Profesional' },
+        perfumeria: { pdf: 'catalogo_perfumeria.pdf', titulo: 'Catálogo de Perfumería y Cosmética' },
+        pinturas:   { pdf: 'catalogo_pinturas.pdf',   titulo: 'Catálogo de Pinturas, Barnices y Material Profesional' },
+        talleres:   { pdf: 'catalogo_talleres.pdf',   titulo: 'Catálogo Talleres Orencio Matas' },
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const area = params.get('area');
+    const cfg = AREAS[area];
+
+    if (!cfg) {
+        mostrarError();
+        return;
+    }
+
+    document.getElementById('visor-titulo').textContent = cfg.titulo;
+
+    // "Volver" debe regresar a la vista de muestra del área (de donde
+    // vino el usuario), no saltarse ese paso yendo directo a
+    // productos.html — así el usuario decide él mismo si quiere seguir
+    // retrocediendo desde ahí.
+    document.getElementById('btn-volver').href = `catalogo_${area}.html`;
+
+    // Los PDFs ya no se sirven desde el repositorio (data/catalogos/) ni
+    // desde GitHub Releases (que fuerza descarga con
+    // 'Content-Disposition: attachment' en la propia URL firmada, sin
+    // poder quitarlo desde el cliente) — se consultan directamente en
+    // Drive, vía el mismo Web App de Apps Script que ya usa el
+    // buscador. Sin depender de ningún despliegue, ni en GitHub Pages
+    // ni en IONOS: en cuanto Apps Script sincroniza un PDF nuevo tras
+    // cada generación, está disponible aquí al instante.
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+
+    fetch(`${APPS_SCRIPT_URL}?accion=obtener_catalogos`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(datos => {
+            const info = datos[area];
+            if (!info || !info.id) { mostrarError(); return; }
+
+            // Drive sirve PDFs con vista previa embebible nativa
+            // (/preview) — se ve inline en el iframe sin forzar descarga,
+            // igual que antes con el archivo servido desde el propio
+            // sitio. La descarga real usa la URL directa de descarga.
+            const urlVista = `https://drive.google.com/file/d/${info.id}/preview`;
+            const urlDescarga = `https://drive.google.com/uc?export=download&id=${info.id}`;
+
+            const btnDescargar = document.getElementById('btn-descargar-visor');
+            btnDescargar.href = urlDescarga;
+
+            document.getElementById('visor-iframe').src = urlVista;
+            document.getElementById('visor-cargando').style.display = 'none';
+            document.getElementById('visor-frame-wrap').style.display = '';
+            document.getElementById('visor-iframe').addEventListener('error', mostrarError);
+        })
+        .catch(mostrarError);
+
+    function mostrarError() {
+        document.getElementById('visor-cargando').style.display = 'none';
+        document.getElementById('visor-error').style.display = '';
+    }
+})();
+</script>
+
+<script src="./assets/js/entorno.js?v=20260924a"></script>
+<script>window.OM_CLAVE_MANTENIMIENTO = 'catalogos'; window.OM_RUTA_RAIZ = './';</script>
+<script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<script src="./src/js/analytics-consent.js?v=20260829"></script>
+<script src="./src/js/origen-profesionales.js?v=20260829d"></script>
+</body>
+</html>

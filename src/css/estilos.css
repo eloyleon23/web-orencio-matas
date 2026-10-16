@@ -224,6 +224,18 @@ ol {
   min-height: 82px;
 }
 
+/* A petición de Eloy: con "Anuncios/Recursos" sumado al resto de
+   enlaces, el menú de escritorio necesita más aire del que da el
+   contenedor general de 1200px (pensado para el contenido del cuerpo de
+   la página, no para la barra de navegación) — en monitores anchos
+   sobraba hueco visible a los lados de la cabecera mientras el propio
+   menú iba apretado. Solo ensancha LA BARRA DE NAVEGACIÓN (selector más
+   específico que .container a secas, para no afectar al ancho del
+   resto del contenido de ninguna página). */
+.navbar .container {
+  width: min(100% - 40px, 1440px);
+}
+
 .navbar__logo {
   display: inline-flex;
   align-items: center;
@@ -333,6 +345,20 @@ ol {
 }
 
 .navbar__submenu a::after { display: none; }
+
+/* Sub-submenú (Ver catálogos > áreas) */
+.navbar__item--dropdown .navbar__item--dropdown { position: relative; }
+.navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+  top: -8px;
+  left: calc(100% + 4px);
+  min-width: 160px;
+}
+.navbar__item--dropdown .navbar__item--dropdown:hover .navbar__submenu,
+.navbar__item--dropdown .navbar__item--dropdown:focus-within .navbar__submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
 
 .btn-primary {
   display: inline-flex;
@@ -979,7 +1005,17 @@ ol {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 16px 34px rgba(18, 20, 23, 0.055);
-  cursor: default;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+
+.premium-provider-card:hover,
+.premium-provider-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgba(29, 103, 201, 0.28);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 22px 44px rgba(18, 20, 23, 0.12);
 }
 
 .premium-provider-card--glasurit {
@@ -987,6 +1023,12 @@ ol {
   min-height: 210px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92));
   box-shadow: 0 22px 48px rgba(18, 20, 23, 0.075);
+}
+
+.premium-provider-card--glasurit:hover,
+.premium-provider-card--glasurit:focus-visible {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(248, 250, 252, 1));
+  box-shadow: 0 28px 56px rgba(18, 20, 23, 0.14);
 }
 
 .premium-provider-card img {
@@ -1501,7 +1543,24 @@ textarea.form-input {
   .topbar {
     display: none;
   }
+}
 
+/* A petición de Eloy: en un portátil de 15" (viewports típicos
+   1280-1440px), la cabecera de escritorio (logo + 10 enlaces + botón
+   CONTACTAR, todo en una sola fila dentro del contenedor de 1200px)
+   sencillamente no cabe — el menú desborda el contenido de la página
+   (bug real medido: el menú necesita ~1177px solo para los enlaces,
+   más logo y botón, muy por encima de los ~1160px disponibles dentro
+   del contenedor). El breakpoint para pasar al menú de hamburguesa
+   estaba en 900px, pensado para tablet/móvil, dejando justo ese rango
+   de portátiles (900-1500px) con el menú de escritorio desbordado. Se
+   sube a 1540px (con margen sobre el umbral real medido, ~1500px) para
+   cubrir con holgura los anchos de portátil habituales; monitores de
+   escritorio más anchos siguen viendo el menú horizontal de siempre.
+   Bloque separado del resto de reglas de @media (max-width: 900px) de
+   arriba (que sí deben seguir cambiando en tablet/móvil, no en
+   portátil) — solo el navbar necesita este breakpoint más alto. */
+@media (max-width: 1540px) {
   .navbar__inner {
     min-height: 72px;
   }
@@ -1526,6 +1585,16 @@ textarea.form-input {
     visibility: hidden;
     transform: translateY(-8px);
     transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    /* Con "Profesionales" sumado al resto de enlaces (y el submenú de
+       Productos, que en móvil se muestra siempre en línea, no plegado),
+       el contenido del menú puede superar la altura de pantallas bajas
+       o en horizontal — sin límite de altura ni scroll propio, las
+       últimas opciones (p. ej. Actualidad/Contacto) quedaban recortadas
+       fuera de la pantalla y no había forma de llegar a ellas. */
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navbar__nav.is-open {
@@ -1543,7 +1612,7 @@ textarea.form-input {
 
   .navbar__menu a {
     display: flex;
-    padding: 13px 0;
+    padding: 10px 0;
     border-bottom: 1px solid rgba(15, 17, 21, 0.08);
   }
 
@@ -1556,18 +1625,29 @@ textarea.form-input {
   }
 
   /* En móvil el submenú no depende de hover (no funciona con el dedo):
-     se muestra siempre, sangrado bajo "Productos", en vez de ocultarse. */
+     cuando el menú móvil está realmente abierto (.navbar__nav.is-open),
+     se muestra siempre en línea, sangrado bajo "Productos", en vez de
+     ocultarse/mostrarse con :hover. Importante: esta visibilidad forzada
+     se aplica SOLO dentro de .is-open — forzarla de forma incondicional
+     (como estaba antes) dejaba los enlaces del submenú invisibles pero
+     clicables ("fantasma") flotando sobre el contenido de la página
+     incluso con el menú cerrado, interceptando toques dirigidos a
+     botones de más abajo (bug real reportado por el usuario, no un
+     problema de caché). Con el menú cerrado, el submenú hereda
+     visibility:hidden de su padre con normalidad. */
   .navbar__caret { display: none; }
   .navbar__submenu {
     position: static;
-    opacity: 1;
-    visibility: visible;
     transform: none;
     box-shadow: none;
     border: none;
     padding: 0;
     margin-top: 4px;
     background: transparent;
+  }
+  .navbar__nav.is-open .navbar__submenu {
+    opacity: 1;
+    visibility: visible;
   }
   .navbar__submenu li { padding: 0 0 0 18px; }
   .navbar__submenu a {
@@ -1576,6 +1656,20 @@ textarea.form-input {
     color: var(--text-dark) !important;
     opacity: 0.75;
     border-bottom: 1px solid rgba(15, 17, 21, 0.08) !important;
+  }
+  .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin-top: 4px;
+    background: transparent;
+    margin-left: 18px;
+  }
+  .navbar__nav.is-open .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+    opacity: 1;
+    visibility: visible;
   }
 }
 

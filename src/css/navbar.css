@@ -1,4 +1,12 @@
-/* Navbar unificado - solo clases del header */
+/* Navbar unificado - solo clases del header.
+   Debe mantenerse SIEMPRE equivalente, selector a selector, al bloque
+   de navbar de src/css/estilos.css — este archivo existe porque
+   empresa/historia/productos/buscador/servicios/actualidad.html no
+   cargan estilos.css (tienen su propio sistema de estilos embebido
+   para el resto del contenido de cada página, con su propia fuente
+   Montserrat), pero el HEADER debe verse y comportarse IDÉNTICO en
+   todas las páginas del sitio. Cualquier cambio en el navbar de
+   estilos.css debe replicarse aquí también. */
 :root {
   --primary-black: #1a1a1a;
   --primary-red: #d91b1b;
@@ -52,7 +60,8 @@
 
 .navbar__logo-image {
   width: auto;
-  max-height: 52px;
+  max-height: 60px; /* igual que estilos.css — medía 52px aquí, dando
+    una cabecera algo más baja/apretada que en el resto de páginas. */
   object-fit: contain;
 }
 
@@ -73,29 +82,31 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.94rem !important;
+  /* Estas páginas cargan su propia fuente (Montserrat) para el resto
+     del contenido — se fuerza Inter aquí para que el navbar se vea
+     igual que en el resto del sitio, en vez de heredar esa fuente. */
+  font-family: 'Inter', sans-serif;
+  font-size: 0.94rem;
   font-weight: 700;
   color: var(--text-dark);
 }
 
-.navbar__menu li {
-  font-size: 0.94rem !important;
-  line-height: normal !important;
-}
-
-.navbar__menu a {
-  font-size: 0.94rem !important;
-}
-
-.navbar__menu a {
+.navbar__menu > li > a {
   position: relative;
   display: inline-flex;
   padding: 30px 0;
   text-decoration: none;
   color: inherit;
   transition: color 0.2s ease;
-  white-space: nowrap;
+  /* Permite que "Centro de Soluciones" (el ítem más largo) se parta en
+     dos líneas igual que en el resto del sitio, en vez de quedarse en
+     una sola línea mucho más ancha y desbordar el menú. Alineado a la
+     izquierda (valor por defecto, "start") a propósito: es como se ve
+     en el resto de páginas — un "text-align:center" añadido aquí en un
+     arreglo anterior creaba justo la inconsistencia contraria a la que
+     pretendía corregir (esta página con el texto centrado, el resto
+     con el texto a la izquierda). */
+  white-space: normal;
 }
 
 .navbar__menu a::after {
@@ -161,6 +172,11 @@
   font-size: 0.88rem !important;
   display: block !important;
   white-space: nowrap;
+  /* Hereda text-align:center del primer nivel si no se corrige aquí —
+     con "Ver catálogos" llevando el icono ▾ (que desplaza su texto) y
+     "Buscador" sin icono (quedando centrado de verdad), el centrado
+     heredado los dejaba visualmente descolocados entre sí. */
+  text-align: left !important;
 }
 
 .navbar__submenu a::after { display: none; }
@@ -176,15 +192,19 @@
   color: var(--primary-white);
   background: var(--primary-red);
   border-bottom: 4px solid var(--primary-yellow);
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.84rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-decoration: none;
-  transition: transform 0.2s ease, background 0.2s ease;
+  box-shadow: 0 14px 30px rgba(217, 27, 27, 0.28);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.navbar__cta:hover { transform: translateY(-2px); }
+.navbar__cta:hover {
+  background: color-mix(in srgb, var(--primary-red) 86%, #000000);
+  transform: translateY(-2px);
+}
 
 .navbar__toggle {
   display: none;
@@ -213,7 +233,19 @@
 .navbar__toggle.is-active span:nth-child(2) { opacity: 0; }
 .navbar__toggle.is-active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-@media (max-width: 900px) {
+/* A petición de Eloy: en un portátil de 15" (viewports típicos
+   1280-1440px), la cabecera de escritorio (logo + 10 enlaces + botón
+   CONTACTAR, todo en una sola fila dentro del contenedor de 1200px)
+   sencillamente no cabe — el menú desborda el contenido de la página
+   (bug real medido: el menú necesita ~1177px solo para los enlaces,
+   más logo y botón, muy por encima de los ~1160px disponibles dentro
+   del contenedor). El breakpoint para pasar al menú de hamburguesa
+   estaba en 900px, pensado para tablet/móvil, dejando justo ese rango
+   de portátiles (900-1500px) con el menú de escritorio desbordado. Se
+   sube a 1540px (con margen sobre el umbral real medido, ~1500px) para
+   cubrir con holgura los anchos de portátil habituales; monitores de
+   escritorio más anchos siguen viendo el menú horizontal de siempre. */
+@media (max-width: 1540px) {
   .navbar__inner { min-height: 72px; }
   .navbar__toggle { display: inline-flex; }
 
@@ -233,6 +265,10 @@
     visibility: hidden;
     transform: translateY(-8px);
     transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navbar__nav.is-open {
@@ -248,28 +284,36 @@
     font-size: 1rem;
   }
 
-  .navbar__menu a {
+  .navbar__menu > li > a {
     display: flex;
-    padding: 13px 0;
+    padding: 10px 0;
     border-bottom: 1px solid rgba(15, 17, 21, 0.08);
+    text-align: left;
   }
 
   .navbar__menu a::after { display: none; }
   .navbar__cta { width: 100%; }
 
   /* En móvil el submenú no depende de hover (no funciona con el dedo):
-     se muestra siempre, sangrado bajo "Productos", en vez de ocultarse. */
+     cuando el menú móvil está realmente abierto (.navbar__nav.is-open),
+     se muestra siempre en línea, sangrado bajo "Productos", en vez de
+     ocultarse/mostrarse con :hover. Importante: esta visibilidad forzada
+     se aplica SOLO dentro de .is-open — forzarla de forma incondicional
+     deja los enlaces del submenú invisibles pero clicables ("fantasma")
+     flotando justo debajo del header incluso con el menú cerrado. */
   .navbar__caret { display: none; }
   .navbar__submenu {
     position: static;
-    opacity: 1;
-    visibility: visible;
     transform: none;
     box-shadow: none;
     border: none;
     padding: 0;
     margin-top: 4px;
     background: transparent;
+  }
+  .navbar__nav.is-open .navbar__submenu {
+    opacity: 1;
+    visibility: visible;
   }
   .navbar__submenu li { padding: 0 0 0 18px; }
   .navbar__submenu a {
@@ -285,5 +329,36 @@
   .navbar__inner {
     width: 100%;
     padding: 0 20px;
+  }
+}
+
+/* Sub-submenú (Ver catálogos > áreas) */
+.navbar__item--dropdown .navbar__item--dropdown { position: relative; }
+.navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+  top: -8px;
+  left: calc(100% + 4px);
+  min-width: 160px;
+}
+.navbar__item--dropdown .navbar__item--dropdown:hover .navbar__submenu,
+.navbar__item--dropdown .navbar__item--dropdown:focus-within .navbar__submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+@media (max-width: 1540px) {
+  .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin-top: 4px;
+    background: transparent;
+    margin-left: 18px;
+  }
+  .navbar__nav.is-open .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
+    opacity: 1;
+    visibility: visible;
   }
 }

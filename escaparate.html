@@ -1,0 +1,3605 @@
+<!doctype html>
+<html lang="es">
+  <head>
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Escaparate OM — productos destacados de temporada y campañas comerciales de Orencio Matas y Hnos, S.L." />
+    <!-- Misma solución que ya usa buscador.html para este mismo problema:
+         esta página vive tanto en GitHub Pages (main) como en IONOS
+         (release, el dominio real) — indexable en las dos, pero con
+         canonical apuntando siempre al dominio de producción, para que
+         Google atribuya el posicionamiento a orenciomatas.es y no trate
+         la copia de GitHub Pages como contenido duplicado compitiendo
+         por el mismo ranking. -->
+    <link rel="canonical" href="https://orenciomatas.es/escaparate.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Orencio Matas y Hnos, S.L." />
+    <meta property="og:title" content="Escaparate | Orencio Matas y Hnos, S.L." />
+    <meta property="og:description" content="Escaparate OM — productos destacados de temporada y campañas comerciales de Orencio Matas y Hnos, S.L." />
+    <meta property="og:url" content="https://orenciomatas.es/escaparate.html" />
+    <meta property="og:image" content="https://orenciomatas.es/assets/logos/og-banner-1200x630.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Escaparate | Orencio Matas y Hnos, S.L.</title>
+    <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/css/estilos.css?v=20260829" />
+    <!-- Google tag (gtag.js) -->
+    <script>
+  // Ver nota en el bloque de Google Tag Manager: solo en el dominio
+  // oficial orenciomatas.es.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    var _gtagScript = document.createElement('script');
+    _gtagScript.async = true;
+    _gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y';
+    document.head.appendChild(_gtagScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HMM85HSJ4Y');
+  }
+    </script>
+
+    <style>
+      :root{
+        --paper:#F5F6F8;
+        --paper-raised:#FFFFFF;
+        --glass:#FAFAFC;
+        --ink:#0F1115;
+        --ink-soft:#4A4E58;
+        --ink-faint:#80838C;
+        --line:#E1E3E8;
+        --line-strong:#C7CBD3;
+        --shadow-soft: 0 10px 30px rgba(15,17,21,.08);
+        --shadow-strong: 0 20px 50px rgba(15,17,21,.22);
+
+        --accent:#005689;
+        --accent-2:#006E37;
+        --accent-vivid:#006DAE;
+        --accent-vivid-2:#008743;
+        --wash: rgba(0,109,174,0.08);
+        /* Fijo, NUNCA sobrescrita por JS (a diferencia de --accent/
+           --accent-2, que sí cambian con el color de cada campaña) —
+           todo lo "de IA" del sitio usa este mismo verde siempre, para
+           que nunca dependa de qué color haya elegido una campaña en
+           concreto (ver .btn.ia para el porqué). */
+        --ia-color: #0E7A55;
+
+        --radius-s: 6px;
+        --radius-m: 10px;
+        --radius-l: 16px;
+        --maxw: 1180px;
+      }
+      /* En monitores grandes, 1180px deja mucho margen sin usar a los
+         lados (queja real de Eloy con capturas de pantalla) — se amplía
+         progresivamente el ancho útil de la página sin tocar los límites
+         de longitud de línea del texto (h1/p.sub siguen topados en "ch",
+         así que el texto no se vuelve ilegible, solo hay más sitio para
+         el panel estacional, el rail y los estantes de producto). */
+      @media (min-width:1440px){ :root{ --maxw:1320px; } }
+      @media (min-width:1800px){ :root{ --maxw:1520px; } }
+
+      /* Nota: esta página NO ofrece variante oscura a propósito — el
+         fondo debe ser siempre claro, igual que el resto del sitio
+         (solo la cabecera y el pie de página usan fondo oscuro). */
+
+      *{box-sizing:border-box;}
+      /* Cualquier selector de autor que fije display en un elemento
+         (p.ej. .spinner-line{display:flex}, o .dock-btn{display:...})
+         gana siempre al atributo [hidden] nativo del navegador, que es
+         solo otra regla de usuario-agente — así que el.hidden=true en JS
+         puede dejar de tener efecto visual en cuanto ese elemento ya
+         tenga un display propio puesto por CSS de autor en cualquier
+         otro sitio (mismo bug de fondo detectado y corregido en
+         escaparate-campanas.html: "Cargando…" no se ocultaba nunca pese
+         a hidden=true). Regla añadida aquí también de forma preventiva,
+         por si algún elemento de esta página cae en el mismo caso.
+         Ver también el comentario junto a "dialog[open]" más abajo —
+         mismo tipo de problema, con el atributo open en vez de hidden. */
+      [hidden]{ display:none !important; }
+      html{-webkit-text-size-adjust:100%; max-width:100%;}
+      /* overflow-x:hidden (no "clip") como red de seguridad: los "tags"
+         rotados del rail de campañas (ver .tag más abajo, usan
+         transform:rotate()) amplían su caja pintada más allá de su caja
+         de layout, y los navegadores cuentan esa caja pintada para el
+         scroll horizontal de la página — sin esto, un tag rotado cerca
+         del borde derecho puede añadir desplazamiento horizontal en
+         móvil aunque el layout "sobre el papel" quepa perfectamente.
+         "clip" es más nuevo que "hidden" y puede no soportarse en
+         versiones de Safari/iOS algo antiguas — con "clip" sin aplicar
+         (valor inválido, ignorado) el problema volvía a notarse en
+         móvil (reportado por Eloy: "efecto raro... como si se
+         desplazase el contenido"), así que se usa "hidden" a propósito,
+         universalmente soportado. */
+      html, body{ overflow-x:hidden; width:100%; }
+      body{
+        margin:0;
+        background:var(--paper);
+        color:var(--ink);
+        font-family:'Inter', ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing:antialiased;
+      }
+      .wrap{
+        padding-inline:20px;
+        padding-block:0 64px;
+      }
+      @media (prefers-reduced-motion: reduce){
+        *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+      }
+
+      a{color:inherit;}
+      button{font-family:inherit;}
+      .wrap{max-width:var(--maxw); margin-inline:auto;}
+
+      h1,h2,h3{font-family:'Montserrat', ui-sans-serif, system-ui, sans-serif; font-weight:800; margin:0; text-wrap:balance;}
+
+      .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
+      .tabular{font-variant-numeric:tabular-nums;}
+
+      .eyebrow{
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size:11.5px;
+        letter-spacing:.14em;
+        text-transform:uppercase;
+        color:var(--ink-faint);
+      }
+
+      /* ---------- Lienzo del escaparate (fondo estacional único) ----------
+         A petición de Eloy: el efecto de partículas (hojas, copos...) ya
+         no vive dentro de cada bloque por separado — es UN solo fondo
+         continuo detrás de la cabecera, los productos (visible en los
+         huecos entre tarjetas) y el bloque de cierre, todo junto, como
+         si fuera el propio escaparate. Las tarjetas de producto siguen
+         siendo opacas (no tiene sentido que un producto "se difumine"),
+         pero la cabecera y el bloque de cierre pasan a fondo translúcido
+         con backdrop-filter: así el texto queda siempre nítido y legible
+         SIN necesidad de difuminar las hojas en sí (que ahora se ven
+         nítidas, tal y como pidió Eloy) — el desenfoque solo se aplica a
+         lo que se ve A TRAVÉS de la tarjeta, no a las hojas mismas. */
+      .escaparate-lienzo{ position:relative; }
+      .fondo-estacional{
+        position:absolute; inset:0; z-index:0;
+        overflow:hidden;
+        pointer-events:none;
+      }
+      .fondo-estacional .particula{
+        position:absolute; top:0; left:0;
+        animation:flotarParticula var(--dur,9s) linear infinite;
+        will-change:transform, top, opacity;
+      }
+      .fondo-estacional .particula svg{ display:block; width:var(--tam,16px); height:var(--tam,16px); }
+      @keyframes flotarParticula{
+        0%{ top:calc(50% - (var(--dir,1) * 65%)); transform:translateX(0) rotate(0deg); opacity:0; }
+        12%{ opacity:var(--op,.7); }
+        88%{ opacity:var(--op,.7); }
+        100%{ top:calc(50% + (var(--dir,1) * 65%)); transform:translateX(var(--drift,0px)) rotate(var(--rot,180deg)); opacity:0; }
+      }
+
+      /* ---------- Vitrina (hero) ---------- */
+      .vitrina{
+        max-width:var(--maxw); margin:26px auto 0;
+        position:relative; z-index:1;
+        /* Difuminado MUY sutil con los colores de la campaña activa
+           (--wash ya es una versión de baja opacidad del color
+           principal; el secundario se aclara al vuelo con color-mix,
+           ya que no hay una versión "wash" pensada para él) sobre una
+           base blanca translúcida — el texto sigue leyéndose igual de
+           bien, y aun así cada campaña se nota "suya" por el color. */
+        background:
+          linear-gradient(135deg, var(--wash), transparent 60%),
+          linear-gradient(315deg, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 55%),
+          rgba(255,255,255,.6);
+        backdrop-filter:blur(11px); -webkit-backdrop-filter:blur(11px);
+        border:1px solid var(--line);
+        border-radius:var(--radius-l);
+        padding:40px clamp(20px,4vw,52px) 34px;
+        overflow:hidden;
+        transition:background 420ms ease, border-color 420ms ease;
+        min-height:220px;
+      }
+      .vitrina::before{
+        content:"";
+        position:absolute; left:0; right:0; top:50%;
+        height:1px; background:var(--line);
+        opacity:.7;
+      }
+      .vitrina-content{
+        position:relative; z-index:1;
+      }
+      /* Foto de campaña: NÍTIDA (sin difuminar), en un bloque a la
+         derecha, anclado arriba (no estirado a toda la altura de la
+         vitrina), solo en escritorio (900px+) — nunca en móvil. */
+      .vitrina-foto{
+        display:none;
+        flex:0 0 clamp(170px, 24%, 260px);
+        aspect-ratio:4/3;
+        border-radius:var(--radius-m); overflow:hidden; border:1px solid var(--line);
+        position:relative; z-index:1;
+      }
+      .vitrina-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
+      @media (min-width:900px){
+        .vitrina.tiene-imagen{ display:flex; align-items:flex-start; gap:clamp(20px,3vw,36px); }
+        .vitrina.tiene-imagen .vitrina-content{ flex:1 1 auto; min-width:0; }
+        .vitrina.tiene-imagen .vitrina-foto{ display:block; }
+      }
+
+      /* ---------- Bloque de cierre (tras los productos) ----------
+         La mitad de alto que la cabecera, mismo tratamiento de fondo
+         (difuminado sutil con los colores de la campaña activa) — el
+         fondo estacional único ya está detrás, a nivel de
+         .escaparate-lienzo, este bloque no pinta sus propias partículas.
+         Frase corta opcional a modo de cierre; sin frase, el bloque se
+         ve igual, solo sin texto. */
+      .vitrina-cierre{
+        max-width:var(--maxw); margin:32px auto 40px;
+        position:relative; z-index:1; overflow:hidden;
+        border:1px solid var(--line); border-radius:var(--radius-l);
+        background:
+          linear-gradient(135deg, var(--wash), transparent 60%),
+          linear-gradient(315deg, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 55%),
+          rgba(255,255,255,.6);
+        backdrop-filter:blur(11px); -webkit-backdrop-filter:blur(11px);
+        min-height:110px; /* la mitad aprox. de los 220px de .vitrina */
+        display:flex; align-items:center; justify-content:center;
+        padding:26px clamp(20px,4vw,52px);
+        text-align:center;
+      }
+      .vitrina-cierre-frase{
+        position:relative; z-index:1; margin:0;
+        font-style:italic; font-weight:600; color:var(--ink);
+        font-size:clamp(15px, 2.2vw, 20px); max-width:60ch;
+      }
+
+      .vitrina-top{
+        position:relative; z-index:1;
+        display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px;
+        margin-bottom:18px;
+      }
+      .badge{
+        display:inline-flex; align-items:center; gap:6px;
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11px; letter-spacing:.06em;
+        text-transform:uppercase; padding:5px 10px 5px 8px; border-radius:99px;
+        border:1px solid var(--line-strong); color:var(--ink-soft);
+      }
+      .badge svg{width:13px; height:13px;}
+      .badge.manual{ color:var(--accent); border-color:var(--accent); background:var(--wash); }
+      .badge.ia{ color:var(--ia-color); border-color:var(--ia-color); }
+      .badge.tipo{ color:var(--ink-faint); }
+
+      .escaparate-titulo{ max-width:var(--maxw); margin:22px auto 0; padding:0 2px; }
+      .escaparate-titulo h1{
+        font-size:clamp(22px, 3.4vw, 32px);
+        line-height:1.1; color:var(--ink); margin:0;
+      }
+      .escaparate-titulo-con-volver{ display:flex; flex-direction:column; gap:12px; }
+
+      /* Fila del título + acciones (compartir / descargar folleto) —
+         a la derecha del h1 en escritorio, debajo y a ancho completo en
+         móvil (petición explícita: "tanto en web como en responsive
+         móvil"). Prueba de concepto: si no se mantiene, esta fila y los
+         dos botones son lo único que hay que revertir aquí. */
+      .escaparate-titulo-fila{
+        display:flex; align-items:center; justify-content:space-between;
+        gap:14px; flex-wrap:wrap;
+      }
+      .escaparate-titulo-fila h1{ flex:1 1 auto; min-width:220px; }
+      .escaparate-acciones{ display:flex; align-items:center; gap:10px; flex:none; }
+      .btn.btn-icono-accion{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:42px; height:42px; padding:0; flex:none;
+      }
+      /* El selector es ".btn.btn-icono-accion" (no ".btn-icono-accion" a
+         secas) a propósito: con la misma especificidad que ".btn" (que
+         define padding:10px 18px más abajo en este mismo bloque), gana el
+         que aparece después en el CSS — y ".btn" iba después, así que su
+         padding pisaba el padding:0 de este botón, dejaba solo ~6px de
+         hueco interno en un botón de 42px y comprimía el SVG a ~4px de
+         ancho: el icono de compartir quedaba casi invisible, exactamente
+         el aviso de Eloy. Añadir ".btn" aquí sube la especificidad y
+         asegura que este padding:0 gane siempre, sin depender del orden. */
+      .btn-icono-accion svg{ width:18px; height:18px; flex:none; }
+      .btn-icono-accion:disabled{ opacity:.45; cursor:not-allowed; }
+      .btn-folleto{ display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
+      .btn-folleto svg{ width:16px; height:16px; flex:none; }
+      .btn-folleto:disabled{ opacity:.6; cursor:progress; }
+      @media (max-width:600px){
+        .escaparate-titulo-fila{ flex-direction:column; align-items:flex-start; }
+        .escaparate-acciones{ width:100%; justify-content:flex-end; }
+        .btn-folleto span{ display:inline; }
+      }
+      .volver-campanas{
+        display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
+        font-size:13px; font-weight:600; color:var(--ink-soft);
+        text-decoration:none; padding:6px 4px; margin-left:-4px;
+        transition:color 140ms ease, transform 140ms ease;
+      }
+      .volver-campanas svg{ width:16px; height:16px; transition:translate 140ms ease; }
+      .volver-campanas:hover{ color:var(--accent); }
+      .volver-campanas:hover svg{ translate:-2px 0; }
+
+      .vitrina h2{
+        position:relative; z-index:1;
+        font-size:clamp(28px, 5vw, 50px);
+        line-height:1.05; font-weight:800;
+        max-width:18ch;
+      }
+      .vitrina .accent-word{ color:var(--accent); font-style:italic; font-weight:600; }
+
+      .vitrina p.sub{
+        position:relative; z-index:1;
+        margin:14px 0 0; max-width:56ch;
+        color:var(--ink-soft); font-size:16.5px; line-height:1.55;
+      }
+
+      .vitrina-meta{
+        position:relative; z-index:1;
+        display:flex; flex-wrap:wrap; gap:22px;
+        margin-top:24px; padding-top:20px; border-top:1px dashed var(--line-strong);
+      }
+      .vitrina-meta .item{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-soft);}
+      .vitrina-meta svg{width:16px; height:16px; color:var(--accent); flex:none;}
+
+      .overlap-note{
+        position:relative; z-index:1;
+        margin-top:18px; padding:12px 14px;
+        background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s);
+        font-size:13px; color:var(--ink-soft); display:none; gap:8px;
+      }
+      .overlap-note.show{display:flex;}
+      .overlap-note svg{width:16px; height:16px; flex:none; margin-top:2px; color:var(--accent-2);}
+      .overlap-note b{color:var(--ink);}
+
+      .vitrina-empty{ position:relative; z-index:1; text-align:left; }
+      .vitrina-empty h2{ font-size:clamp(24px,4vw,34px); max-width:22ch; }
+      .vitrina-empty p{ color:var(--ink-soft); margin-top:10px; max-width:56ch; font-size:15.5px; line-height:1.55; }
+      .vitrina-empty .btn{ margin-top:18px; }
+
+      .vitrina-error{
+        position:relative; z-index:1; display:flex; gap:10px; align-items:flex-start;
+        background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s);
+        padding:14px 16px; font-size:13.5px; color:var(--ink-soft); margin-top:6px;
+      }
+      .vitrina-error svg{ width:17px; height:17px; flex:none; color:#C81E1E; margin-top:1px; }
+      .vitrina-error code{ background:var(--glass); padding:1px 5px; border-radius:4px; font-size:12px; }
+
+      /* ---------- Estantes de producto ---------- */
+      .shelf-section{ max-width:var(--maxw); margin:44px auto 0; position:relative; z-index:1; }
+      .shelf-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:18px; }
+      .shelf-head h2{ font-size:21px; font-weight:800; }
+      .shelf-head .count{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:var(--ink-faint); }
+
+      .shelf{
+        display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
+        grid-auto-rows:minmax(272px, auto);
+        /* dense: rellena huecos con productos normales que vengan más
+           adelante en el orden, en vez de dejarlos en blanco cuando un
+           producto destacado ocupa varias columnas/filas — sin esto,
+           productos normales podían "heredar" la altura de una fila
+           compartida con un destacado y quedar con muchísimo aire vacío
+           (queja real de Eloy con captura de pantalla real). */
+        grid-auto-flow:dense;
+        gap:16px;
+      }
+      .card{
+        position:relative; cursor:pointer;
+        background:var(--paper-raised); border:1px solid var(--line);
+        border-radius:var(--radius-m); padding:14px 14px 16px;
+        display:flex; flex-direction:column; gap:10px;
+        transition:transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      }
+      .card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-soft); border-color:var(--line-strong); }
+      .card:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+      /* ---------- Productos destacados (tamaño 2-6, ver Modal A) ----------
+         "tamaño" se traduce en cuántas columnas/filas de la rejilla ocupa
+         el bloque (más área = más protagonismo, como un producto puesto
+         al frente en un escaparate real). El bloque SIEMPRE ocupa el
+         100% de las columnas/filas que le tocan (alineado a ras con el
+         resto de tarjetas, sin margen de aire alrededor).
+         A propósito, los tamaños 2 y 3 son SOLO más anchos (1 fila) y no
+         más altos — un bloque que ocupa varias filas es mucho más
+         propenso a dejar huecos junto a sus vecinos con
+         grid-auto-flow:dense (hacen falta piezas de relleno del tamaño
+         exacto para no dejar agujeros), así que el "salto a varias
+         filas" se reserva solo para los tamaños 4-6, más grandes y
+         menos numerosos en una campaña típica.
+         "posV" reordena el propio array de productos en JS antes de
+         pintar (ver render()), no con CSS order — mezclar "order" con
+         grid-auto-flow:dense daba huecos raros y bloques que no
+         encajaban bien con sus vecinos (feedback real de Eloy con
+         captura). "alinH" de momento NO tiene efecto visual: anclar un
+         bloque al borde derecho de su fila mientras otros usan la
+         colocación automática normal creaba el mismo problema de huecos
+         — se guarda el valor por si se retoma más adelante con un
+         enfoque distinto, pero todos los destacados usan hoy la misma
+         colocación automática + dense, sea cual sea su alinH. */
+      /* Color FIJO (no var(--accent-2)) — mismo bug que ya se corrigió en
+         .btn.ia/.badge.ia: --accent-2 cambia con el color de cada
+         campaña, y con una campaña de colorSet "personalizado" con
+         secundario claro, el texto blanco sobre ese mismo fondo quedaba
+         casi invisible (reportado real: "se ha quedado con letra en
+         blanco con fondo en blanco... tiene que tener el mismo estilo
+         que en todos los escaparates" — exactamente lo que pide un color
+         fijo en vez de uno que varía por campaña). */
+      .card-destacado-badge{
+        position:absolute; top:10px; right:10px; z-index:2;
+        display:inline-flex; align-items:center; gap:4px;
+        background:#A66A00; color:#fff; font-size:10px; font-weight:700;
+        text-transform:uppercase; letter-spacing:.04em; padding:4px 9px; border-radius:99px;
+      }
+      .card-destacado-badge svg{ width:10px; height:10px; }
+      /* Lado opuesto al de "Destacado" (izquierda en vez de derecha) para
+         que ambos chips puedan convivir en la misma tarjeta sin pisarse
+         si un producto está destacado Y tiene descuento a la vez. Rojo
+         de marca (#D91B1B), fijo y no ligado al color de la campaña —
+         mismo motivo que el resto de chips de este proyecto: con un
+         color personalizado de campaña muy claro, un chip con ese mismo
+         color de fondo podría quedar ilegible. */
+      .card-descuento-badge{
+        position:absolute; top:10px; left:10px; z-index:2;
+        display:inline-flex; align-items:center; gap:4px;
+        background:#D91B1B; color:#fff; font-size:10px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.03em; padding:4px 9px; border-radius:99px;
+      }
+      .card[data-tam="2"]{ grid-column:span 2; }
+      .card[data-tam="3"]{ grid-column:span 3; }
+      .card[data-tam="4"]{ grid-column:span 2; grid-row:span 2; }
+      .card[data-tam="5"]{ grid-column:span 3; grid-row:span 2; }
+      .card[data-tam="6"]{ grid-column:span 4; grid-row:span 2; }
+      /* La foto tiene que ser lo primero en aprovechar el bloque más
+         grande — antes se quedaba con su tamaño normal (aspect-ratio fijo)
+         y todo el hueco extra de un bloque más alto se iba en espacio en
+         blanco antes de "Ver ficha". Ahora crece (flex:1) para ocupar
+         siempre el hueco vertical que sobre dentro del bloque. */
+      .card[data-tam] .icon-tile{ flex:1 1 auto; aspect-ratio:auto; min-height:140px; }
+      .card[data-tam="3"] .nombre, .card[data-tam="4"] .nombre{ font-size:17px; }
+      .card[data-tam="5"] .nombre, .card[data-tam="6"] .nombre{ font-size:21px; }
+      .card[data-tam="3"] .precio, .card[data-tam="4"] .precio{ font-size:19px; }
+      .card[data-tam="5"] .precio, .card[data-tam="6"] .precio{ font-size:23px; }
+      @media (max-width:820px){
+        .card[data-tam="6"]{ grid-column:span 3; }
+      }
+      @media (max-width:600px){
+        .card[data-tam]{ grid-column:span 2; grid-row:span 1; }
+        .card[data-tam] .nombre{ font-size:14px; }
+        .card[data-tam] .precio{ font-size:16px; }
+        .card[data-tam] .icon-tile{ min-height:100px; }
+      }
+      @media (max-width:420px){
+        .card[data-tam]{ grid-column:span 1; }
+      }
+
+      .card .icon-tile{
+        aspect-ratio:1.5/1; border-radius:var(--radius-s);
+        display:flex; align-items:center; justify-content:center;
+        position:relative; overflow:hidden;
+        background:
+          radial-gradient(120% 140% at 20% 0%, var(--wash), transparent 60%),
+          var(--paper);
+        border:1px solid var(--line);
+      }
+      .card .icon-tile svg{ width:36px; height:36px; color:var(--accent-vivid); }
+      .card .icon-tile img{
+        position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
+        padding:8px; background:var(--paper-raised);
+      }
+
+      .card .fam{
+        font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint);
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      }
+      /* Antes: min-height con texto libre -> nombres largos del catálogo
+         real (sin espacios en tokens tipo "L+PRENSA+MANIL") podían
+         desbordar la caja, y el nº de líneas variaba de una tarjeta a
+         otra, descolocando "Ver ficha" más abajo. Ahora: SIEMPRE 2
+         líneas exactas (recorta con "…" si no cabe) + overflow-wrap para
+         que ninguna palabra suelta desborde el ancho de la tarjeta. */
+      .card .nombre{
+        font-size:14px; line-height:1.32; font-weight:600;
+        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+        overflow:hidden; overflow-wrap:break-word; word-break:break-word;
+      }
+      .card .precio{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:500; font-size:16px; }
+      .card .precio .iva{ font-size:10px; color:var(--ink-faint); font-weight:400; margin-left:4px;}
+      /* Column en vez del space-between por defecto de .ref-line: el
+         bloque de precio ahora siempre tiene al menos 2 líneas (con IVA
+         + sin IVA, petición explícita de Eloy), y 3 si además hay
+         descuento (+ el precio ya rebajado) — se apilan en vez de
+         ponerse a los lados. */
+      .ref-line-precio{ flex-direction:column; align-items:flex-start; gap:1px; }
+      .precio-tachado{
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size:12px; color:var(--ink-faint); text-decoration:line-through;
+      }
+      .precio-rebajado{ color:#D91B1B; }
+      /* Precio sin IVA — siempre del precio ORIGINAL (con o sin
+         descuento aplicado encima), nunca del precio ya rebajado: ese
+         se queda con un único número a propósito, para no duplicar la
+         misma información dos veces en la misma tarjeta. Viene ya
+         calculado del propio catálogo (p.precio_sin), no se recalcula
+         aquí a partir del % de IVA. */
+      .precio-siniva{ font-size:11px; color:var(--ink-faint); }
+      .precio-siniva-tachado{ text-decoration:line-through; }
+
+      .barcode{ height:20px; align-self:flex-start; min-width:74px; opacity:.85; }
+      .ref-line{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      .ref-line .ref{ font-size:10px; color:var(--ink-faint); }
+
+      .card .go{
+        /* margin-top:auto ancla siempre "Ver ficha" al final de la
+           tarjeta, aunque el resto del contenido ocupe menos alto que
+           el de sus vecinas en la misma fila (que se estiran todas a la
+           altura de la más alta) — así el texto queda a la misma altura
+           en todas las tarjetas de una fila, en vez de "flotar" más
+           arriba en las que tienen menos texto. */
+        margin-top:auto; display:inline-flex; align-items:center; gap:5px;
+        font-size:12.5px; font-weight:600; color:var(--accent); text-decoration:none;
+        border-top:1px solid var(--line); padding-top:10px;
+      }
+      .card .go svg{ width:13px; height:13px; transition:translate 140ms ease; }
+      .card .go:hover svg{ translate:2px 0; }
+
+      .shelf-ia{ background:var(--glass); border:1px solid var(--line); border-radius:var(--radius-l); padding:22px clamp(16px,3vw,30px); margin-top:14px; }
+      .shelf-ia .shelf-head h2{ display:flex; align-items:center; gap:8px; }
+      .shelf-ia .shelf-head h2 svg{ width:18px; height:18px; color:var(--accent-2); }
+      .card.ia-card .icon-tile svg{ color:var(--accent-vivid-2); }
+      .card.ia-card{ border-style:dashed; }
+
+      .empty-shelf{ color:var(--ink-faint); font-size:13.5px; padding:18px 0; }
+
+      .tools-dock{
+        position:fixed; right:18px; bottom:18px; z-index:40;
+        display:flex; flex-direction:column; gap:10px; align-items:flex-end;
+      }
+      .tools-dock .hint{
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:10px; letter-spacing:.04em;
+        color:var(--ink-faint); background:var(--paper-raised); border:1px solid var(--line);
+        padding:4px 9px; border-radius:99px;
+      }
+      .dock-btn{
+        display:flex; align-items:center; gap:9px;
+        background:var(--ink); color:var(--paper);
+        border:none; border-radius:99px; padding:12px 18px 12px 14px;
+        font-size:13.5px; font-weight:600; cursor:pointer;
+        box-shadow:var(--shadow-strong);
+        transition:transform 140ms ease, background 140ms ease;
+      }
+      .dock-btn svg{ width:17px; height:17px; }
+      .dock-btn:hover{ transform:translateY(-2px); }
+      .dock-btn.secondary{ background:var(--paper-raised); color:var(--ink); border:1px solid var(--line-strong); }
+
+      /* ---------- Modales ---------- */
+      /* display:flex + overflow:hidden en el propio <dialog>, con
+         .modal-head/.modal-foot con flex:none (tamaño fijo, nunca
+         encogen) y .modal-body como único elemento con flex:1+overflow-y
+         — así la cabecera y el pie quedan SIEMPRE fijos y solo el cuerpo
+         hace scroll, sea cual sea su altura real. Antes .modal-body
+         calculaba su max-height restando un margen fijo de 150px
+         (calc(86dvh - 150px)) asumiendo esa altura para cabecera+pie —
+         cuando el título ocupaba dos líneas en móvil (pantalla
+         estrecha) esa cuenta se quedaba corta, el conjunto se salía del
+         dialog, y el propio <dialog> (que por defecto también puede
+         hacer scroll) terminaba desplazando TODO junto, cabecera
+         incluida, dejando el botón de guardar inalcanzable (reportado
+         por Eloy: "se oculta la cabecera con el botón de cerrar" al
+         desplazar, y "se oculta el guardar" en el mismo modal y también
+         en el de gestionar productos). El min-height:0 en .modal-body es
+         imprescindible para que un hijo flex pueda encogerse por debajo
+         de su contenido y active su propio scroll — sin él, Safari/iOS
+         en particular ignora el overflow-y y vuelve a fallar igual.
+         IMPORTANTE — bug real introducido por ese mismo arreglo: display:
+         flex se aplicaba en el selector "dialog" a secas, sin condición
+         de [open]. El navegador oculta un <dialog> cerrado con su propia
+         regla "dialog:not([open]){display:none}", pero esa regla vive en
+         la hoja de estilos del USUARIO-AGENTE, y CUALQUIER regla de
+         autor (la mía) sin más, sin importar su especificidad, gana
+         siempre a una regla de usuario-agente — así que "dialog{display:
+         flex}" ganaba SIEMPRE, con el modal abierto o cerrado, y
+         cerrarlo (quitar el atributo open) dejaba de tener ningún efecto
+         visual: el modal se quedaba ahí, ya sin backdrop ni
+         centrado (eso sí depende de [open] nativamente), flotando
+         "detrás" del contenido de la página (reportado real: "se queda
+         detrás del contenido", "se sigue quedando abierta siempre").
+         Arreglado escopando display/overflow a "dialog[open]" — así, sin
+         el atributo open, ninguna regla de autor toca display y manda de
+         nuevo la regla nativa del navegador. Confirmado con Playwright
+         antes y después: display computado pasaba de "none" (nativo,
+         correcto) a "flex" (con el bug) incluso ya cerrado; con el
+         arreglo vuelve a "none" tras cerrar. */
+      dialog{
+        border:none; border-radius:var(--radius-l); padding:0;
+        width:min(680px, 92vw); max-height:86vh; max-height:86dvh;
+        background:var(--paper-raised); color:var(--ink);
+        box-shadow:var(--shadow-strong);
+      }
+      dialog[open]{
+        display:flex; flex-direction:column; overflow:hidden;
+      }
+      dialog::backdrop{ background:rgba(15,17,21,.45); backdrop-filter:blur(2px); }
+      .modal-head{
+        flex:none;
+        display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+        padding:22px 24px 16px; border-bottom:1px solid var(--line);
+      }
+      .modal-head h3{ font-size:19px; font-weight:800; }
+      .modal-head .modal-sub{ font-size:12.5px; color:var(--ink-faint); margin-top:4px; }
+      .modal-close{
+        background:none; border:1px solid var(--line-strong); border-radius:50%;
+        width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+        cursor:pointer; color:var(--ink-soft); flex:none;
+      }
+      .modal-close svg{ width:14px; height:14px; }
+      .modal-body{
+        flex:1 1 auto; min-height:0; overflow-y:auto;
+        padding:18px 24px;
+      }
+      .modal-foot{
+        flex:none;
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+        padding:14px 24px 20px; border-top:1px solid var(--line);
+      }
+
+      .field{ display:flex; flex-direction:column; gap:6px; }
+      .field label{ font-size:12px; font-weight:600; color:var(--ink-soft); }
+      .field input, .field select{
+        font-family:inherit; font-size:14px; padding:9px 11px;
+        border:1px solid var(--line-strong); border-radius:var(--radius-s);
+        background:var(--paper); color:var(--ink);
+      }
+      .field input:focus, .field select:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+      .filters-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+      .filters-row .field{ flex:1; min-width:150px; }
+
+      .picker-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+      .pick-card{
+        border:1.5px solid var(--line); border-radius:var(--radius-s); padding:10px;
+        cursor:pointer; display:flex; flex-direction:column; gap:6px; text-align:left;
+        background:var(--paper); position:relative;
+      }
+      .pick-card .pick-img{
+        aspect-ratio:1.6/1; border-radius:5px; overflow:hidden; position:relative;
+        background:var(--paper-raised); border:1px solid var(--line);
+        display:flex; align-items:center; justify-content:center;
+      }
+      .pick-card .pick-img svg{ width:22px; height:22px; color:var(--ink-faint); opacity:.6; }
+      .pick-card .pick-img img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:4px; }
+      .pick-card .fam{ font-size:9.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
+      .pick-card .nombre{
+        font-size:12.5px; font-weight:600; line-height:1.3;
+        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+        overflow:hidden; overflow-wrap:break-word; word-break:break-word;
+      }
+      .pick-card .precio{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
+      .pick-card .check{
+        position:absolute; top:8px; right:8px; width:19px; height:19px; border-radius:5px;
+        border:1.5px solid var(--line-strong); background:var(--paper-raised);
+        display:flex; align-items:center; justify-content:center; z-index:1;
+      }
+      .pick-card .check svg{ width:12px; height:12px; opacity:0; color:#fff; }
+      .pick-card.selected{ border-color:var(--accent); background:var(--wash); }
+      .pick-card.selected .check{ background:var(--accent); border-color:var(--accent); }
+      .pick-card.selected .check svg{ opacity:1; }
+      .pick-card.ia-pick{ border-style:dashed; }
+      .picker-empty{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
+      .picker-section-label{
+        grid-column:1/-1; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+        font-size:12px; color:var(--ink-soft); margin:2px 0 -2px;
+      }
+      .picker-section-label svg{ width:14px; height:14px; color:var(--accent-2); flex:none; }
+      .picker-section-label b{ color:var(--ink); }
+
+      .ia-suggest-row{
+        display:flex; flex-direction:column; gap:10px;
+        margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--line-strong);
+      }
+      .ia-suggest-controls{
+        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+      }
+      /* Color FIJO para todo lo "de IA" (no var(--accent-2)) — ese
+         acento cambia con el color de cada campaña, y en una campaña con
+         colorSet "personalizado" el usuario puede elegir un secundario
+         muy claro (p.ej. amarillo pálido): con texto/borde en ese mismo
+         color sobre fondo blanco, el botón "Sugerir productos con IA"
+         quedaba casi ilegible (reportado real: "no se ve por el estilo
+         que tiene" — comprobado y confirmado con Playwright antes de
+         corregirlo). La identidad de "esto es IA" no tiene por qué
+         depender del color de la campaña en curso, así que se fija un
+         verde con contraste garantizado sobre blanco, igual siempre
+         (--ia-color, definida en :root). */
+      .btn.ia{
+        display:inline-flex; align-items:center; gap:7px; flex:none;
+        background:var(--paper-raised); border:1px solid var(--ia-color); color:var(--ia-color);
+      }
+      .btn.ia svg{ width:15px; height:15px; }
+      .btn.ia:disabled{ opacity:.55; cursor:not-allowed; }
+      /* Campo opcional para afinar la sugerencia con un criterio propio,
+         además de lo que ya se manda siempre (nombre, fechas, áreas) —
+         petición explícita: "el botón de la IA debería aceptar... algún
+         criterio de búsqueda". */
+      .ia-suggest-criterio{
+        flex:1 1 220px; min-width:200px;
+        font-family:inherit; font-size:13px; padding:9px 13px;
+        border:1px solid var(--line-strong); border-radius:99px;
+        background:var(--paper); color:var(--ink);
+      }
+      .ia-suggest-criterio:focus{ outline:2px solid var(--ia-color); outline-offset:1px; }
+      .ia-suggest-hint{ font-size:12px; color:var(--ink-faint); }
+      .ia-suggest-hint.error{ color:#C81E1E; }
+
+      /* ---------- Productos ya asignados a la campaña (editar/quitar) ----------
+         Antes, para quitar un producto ya asignado había que "adivinar" su
+         nombre y buscarlo de nuevo entre miles de productos — casi
+         imposible en la práctica. Esta sección lista SIEMPRE lo que ya
+         está en la campaña, sea cual sea el filtro de búsqueda activo. */
+      .selected-section{
+        margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--line-strong);
+      }
+      .selected-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+      .selected-head-title{ font-size:13px; font-weight:600; color:var(--ink-soft); }
+      .selected-head-title b{ color:var(--ink); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .link-btn{
+        background:none; border:none; padding:0; font-size:12.5px; font-weight:600;
+        color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:2px;
+      }
+      .link-btn:disabled{ opacity:.4; cursor:not-allowed; text-decoration:none; }
+      .selected-chips{ display:flex; flex-direction:column; gap:6px; max-height:320px; overflow-y:auto; padding:2px; }
+      .selected-chips:empty::after{
+        content:"Todavía no hay productos en esta campaña — búscalos abajo o usa \"Sugerir con IA\".";
+        color:var(--ink-faint); font-size:12.5px;
+      }
+      .chip-producto{
+        display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+        border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:6px 8px;
+        background:var(--paper);
+      }
+      .chip-producto .chip-img{
+        width:32px; height:32px; border-radius:6px; overflow:hidden; flex:none;
+        background:var(--paper-raised); border:1px solid var(--line);
+        display:flex; align-items:center; justify-content:center;
+      }
+      .chip-producto .chip-img svg{ width:15px; height:15px; color:var(--ink-faint); opacity:.6; }
+      .chip-producto .chip-img img{ width:100%; height:100%; object-fit:cover; }
+      .chip-producto .chip-nombre{
+        font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        flex:1 1 140px; min-width:100px;
+      }
+      .chip-producto .chip-quitar{
+        flex:none; width:22px; height:22px; border-radius:50%; border:none; padding:0;
+        background:var(--line); display:flex; align-items:center; justify-content:center;
+        cursor:pointer; color:var(--ink-soft); transition:background 140ms ease, color 140ms ease;
+      }
+      .chip-producto .chip-quitar:hover{ background:#C81E1E; color:#fff; }
+      .chip-producto .chip-quitar svg{ width:10px; height:10px; }
+
+      /* ---------- Destacar producto (tamaño/alineación/posición) ----------
+         <details>/<summary> nativo: no hace falta JS para abrir/cerrar,
+         accesible por teclado, y no necesita cálculos de posición de un
+         popover propio. */
+      .destacar{ flex:1 1 100%; order:5; margin-top:2px; }
+      .destacar summary{
+        list-style:none; cursor:pointer; font-size:11.5px; color:var(--ink-faint);
+        display:inline-flex; align-items:center; gap:4px; padding:2px 0;
+      }
+      .destacar summary::-webkit-details-marker{ display:none; }
+      .destacar summary svg{ width:11px; height:11px; color:var(--accent-2); }
+      .destacar summary.activo{ color:var(--accent-2); font-weight:600; }
+      .destacar summary::after{ content:"▾"; font-size:9px; margin-left:2px; }
+      .destacar[open] summary::after{ content:"▴"; }
+      .destacar-panel{
+        display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding:10px;
+        background:var(--paper-raised); border:1px dashed var(--line-strong); border-radius:var(--radius-s);
+      }
+      .destacar-panel label{
+        display:flex; flex-direction:column; gap:4px; font-size:10.5px; color:var(--ink-soft);
+        text-transform:uppercase; letter-spacing:.04em; font-weight:600;
+      }
+      .destacar-panel select{
+        font-family:inherit; font-size:12.5px; text-transform:none; letter-spacing:normal; font-weight:500;
+        padding:5px 7px; border:1px solid var(--line-strong); border-radius:5px; background:var(--paper); color:var(--ink);
+      }
+      .destacar-panel select:disabled{ opacity:.5; }
+
+      .selected-count{ font-size:13px; color:var(--ink-soft); }
+      .selected-count b{ color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+      .btn{
+        font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
+        border-radius:99px; padding:10px 18px; border:1px solid transparent;
+      }
+      /* background FIJO (no var(--accent)) — mismo riesgo que ya se
+         corrigió en .btn.ia/.badge.ia/.card-destacado-badge: --accent
+         cambia con el color de cada campaña, y con un primario
+         personalizado claro este botón (usa para "Guardar productos",
+         entre otros) podía volverse igual de ilegible. */
+      .btn.primary{ background:var(--primary-red, #d91b1b); color:#fff; }
+      .btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
+      .btn.ghost{ background:none; border-color:var(--line-strong); color:var(--ink-soft); }
+      .btn.danger-ghost{ background:none; border:1px solid #C81E1E; color:#C81E1E; }
+      .btn.small{ padding:6px 13px; font-size:12.5px; }
+
+      /* Barra de "Añadir todos estos" — solo visible con un filtro
+         activo (texto o familia) y al menos un resultado pendiente de
+         añadir. Petición explícita de Eloy: "si una búsqueda recupera
+         todos los que interesan, no tener que meterlos de uno en uno". */
+      .picker-toolbar{
+        display:flex; align-items:center; justify-content:space-between; gap:10px;
+        margin:2px 0 10px; font-size:12.5px; color:var(--ink-faint);
+      }
+
+      /* ---------- Botón "volver arriba" ----------
+         Mismo umbral (500px de scroll) y comportamiento que ya usa
+         Centro de Soluciones (.cs-btn-subir en assets/css/soluciones.css)
+         — duplicado aquí porque esta página no carga ese CSS/JS.
+         A la IZQUIERDA a propósito: el dock de gestión (Asignar
+         productos) ya ocupa la esquina inferior
+         derecha (.tools-dock, right:18px;bottom:18px).
+         Causa real de que "siguiera sin verse" en móvil pese a lo
+         anterior: el banner de cookies del sitio (.cookie-consent-banner
+         en src/js/analytics-consent.js) es position:fixed, ocupa TODO el
+         ancho (left:16px;right:16px;bottom:16px) y usa z-index:9999 —
+         muy por encima del 400 de este botón, así que en cualquier visita
+         donde el banner todavía esté visible (típico en una carga nueva,
+         justo el caso más habitual al probar), lo tapaba por completo,
+         sin importar en qué esquina inferior estuviera. Se sube el
+         z-index por encima de 9999 y, además, se reposiciona más arriba
+         mientras el banner esté visible (ver
+         ajustarPosicionBotonVolverArriba en el JS), para no quedar
+         superpuesto sobre su propio texto/botones. */
+      .btn-volver-arriba{
+        position:fixed; left:20px; bottom:20px; z-index:10000;
+        width:48px; height:48px; border:none; border-radius:50%;
+        background:var(--primary-red, #d91b1b); color:#fff;
+        font-size:1.3rem; font-weight:900; cursor:pointer;
+        box-shadow:0 10px 26px rgba(217,27,27,.35);
+        opacity:0; transform:translateY(12px); pointer-events:none;
+        transition:opacity .25s ease, transform .25s ease, background .2s ease, bottom .2s ease;
+      }
+      .btn-volver-arriba.is-visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
+      .btn-volver-arriba:hover{ background:color-mix(in srgb, var(--primary-red, #d91b1b) 86%, #000); }
+      @media (max-width:640px){
+        .btn-volver-arriba{ left:14px; bottom:14px; width:44px; height:44px; font-size:1.15rem; }
+      }
+
+      /* Toast */
+      .toast{
+        position:fixed; left:50%; bottom:26px; translate:-50% 0;
+        background:var(--ink); color:var(--paper);
+        padding:12px 18px; border-radius:99px; font-size:13.5px;
+        display:flex; align-items:center; gap:9px;
+        opacity:0; pointer-events:none; transition:opacity 220ms ease, transform 220ms ease;
+        transform:translate(-50%, 8px);
+        z-index:80; max-width:90vw;
+        box-shadow:var(--shadow-strong);
+      }
+      .toast.show{ opacity:1; transform:translate(-50%,0); }
+      .toast svg{ width:15px; height:15px; color:#F1B300; flex:none; }
+      .toast.error svg{ color:#FF6B6B; }
+
+      footer.note{
+        max-width:var(--maxw); margin:56px auto 0; padding-top:22px; border-top:1px solid var(--line);
+        font-size:12.5px; color:var(--ink-faint); line-height:1.6;
+      }
+
+      .spinner-line{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:13.5px; position:relative; z-index:1; max-width:var(--maxw); margin:26px auto 0; padding:0 2px; }
+      .spinner-dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 1.1s ease-in-out infinite; }
+      @keyframes pulse{ 0%,100%{opacity:.25;} 50%{opacity:1;} }
+
+      /* ---------- Modal de detalle de producto (estante público) ----------
+         Mismo modal (estructura y clases) que ya usan buscador.html y
+         Centro de Soluciones — variables de color propias de esta página
+         en vez de las de soluciones.css. z-index por encima del banner
+         de cookies (9999) — mismo motivo ya aplicado a otros modales de
+         este proyecto: sin esto, en una visita nueva sin consentimiento
+         guardado, el banner puede tapar el modal. */
+      .modal-overlay{
+        display:none; position:fixed; inset:0; background:rgba(15,17,21,.6);
+        z-index:10000; align-items:center; justify-content:center; padding:20px;
+      }
+      .modal-overlay.activo{ display:flex; }
+      .modal-producto-box{
+        background:var(--paper-raised); border-radius:var(--radius-l);
+        max-width:900px; width:90%; max-height:85vh; overflow-y:auto;
+        position:relative; box-shadow:var(--shadow-strong);
+      }
+      .modal-producto-cerrar-sticky{ position:sticky; top:0; height:0; overflow:visible; z-index:20; }
+      .modal-producto-cerrar{
+        position:absolute; top:12px; right:12px; width:36px; height:36px; border-radius:50%;
+        background:var(--paper); border:none; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+        font-size:1.2rem; color:var(--ink-faint); z-index:10;
+        transition:background 0.2s, color 0.2s;
+      }
+      .modal-producto-cerrar:hover{ background:#D91B1B; color:#fff; }
+      .modal-producto-content{ display:grid; grid-template-columns:1fr 1fr; gap:0; }
+      .modal-producto-imagen{
+        position:relative; background:var(--paper);
+        display:flex; align-items:center; justify-content:center;
+        min-height:300px; padding:20px;
+      }
+      .modal-producto-imagen img{ max-width:100%; max-height:400px; object-fit:contain; border-radius:var(--radius-s); }
+      .modal-producto-sin-imagen{ font-size:4rem; opacity:.35; }
+      .modal-producto-info{ padding:30px; display:flex; flex-direction:column; min-width:0; }
+      .modal-producto-info h3{ font-size:1.5rem; color:var(--ink); margin:0 0 8px; line-height:1.3; overflow-wrap:break-word; }
+      .modal-producto-ref{ color:var(--ink-faint); font-size:0.9rem; margin:0 0 16px; }
+      .modal-producto-precio{ margin-bottom:20px; }
+      /* Rojo fijo (no var(--accent)) — mismo motivo que el resto de
+         elementos de precio/descuento de esta página: no debe depender
+         del color de la campaña en curso. */
+      .modal-producto-precio-con{ font-size:1.8rem; font-weight:700; color:#D91B1B; }
+      .modal-producto-precio-sin{ font-size:0.9rem; color:var(--ink-faint); margin-top:4px; }
+      .modal-producto-detalles p{ margin:8px 0; color:var(--ink-soft); font-size:0.95rem; }
+      .modal-producto-detalles strong{ color:var(--ink); }
+      .modal-producto-disclaimer{
+        margin-top:auto; padding-top:20px; border-top:1px solid var(--line);
+        font-size:0.85rem; color:var(--ink-faint); display:flex; align-items:center; gap:8px;
+      }
+      .modal-producto-ficha{
+        margin-top:12px; padding:8px 14px; background:#006DAE; color:#fff;
+        border:none; border-radius:var(--radius-s); font-size:0.82rem; font-weight:600; cursor:pointer;
+        display:inline-flex; align-items:center; justify-content:center; gap:7px;
+        text-decoration:none; transition:filter 0.15s; width:fit-content;
+      }
+      .modal-producto-ficha:hover{ filter:brightness(1.08); }
+      .modal-producto-ficha:active{ filter:brightness(.95); }
+      @media (max-width:640px){
+        .modal-producto-content{ grid-template-columns:1fr; }
+        .modal-producto-imagen{ min-height:220px; }
+      }
+    </style>
+  </head>
+  <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<header class="site-header" id="inicio">
+  <div class="navbar" data-navbar>
+    <div class="container navbar__inner">
+      <a class="navbar__logo" href="index.html" aria-label="Ir al inicio">
+        <img class="navbar__logo-image" src="./assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
+      </a>
+      <button class="navbar__toggle" type="button" aria-label="Abrir menú de navegación" aria-controls="main-navigation" aria-expanded="false" data-menu-toggle>
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="navbar__nav" id="main-navigation" aria-label="Navegación principal" data-mobile-menu>
+        <ul class="navbar__menu">
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="empresa.html">Empresa</a></li>
+          <li><a href="historia.html">Historia</a></li>
+          <li class="navbar__item--dropdown">
+            <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
+            <ul class="navbar__submenu">
+              <li><a href="buscador.html">Buscador</a></li>
+              <li class="navbar__item--dropdown">
+                <a href="productos.html">Ver catálogos <span class="navbar__caret">&#9662;</span></a>
+                <ul class="navbar__submenu">
+                  <li><a href="catalogo_drogueria.html">Droguería</a></li>
+                  <li><a href="catalogo_perfumeria.html">Perfumería</a></li>
+                  <li><a href="catalogo_pinturas.html">Pinturas</a></li>
+                  <li><a href="catalogo_talleres.html">Talleres</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="escaparate-campanas.html">Exposición</a></li>
+              <li><a href="servicios.html">Servicios</a></li>
+          <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+          <li><a href="anuncios.html">Anuncios/Recursos</a></li>
+          <li><a href="profesionales.html">Profesionales</a></li>
+          <li><a href="actualidad.html">Actualidad</a></li>
+          <li><a href="index.html#contacto">Contacto</a></li>
+        </ul>
+        <a class="btn-primary navbar__cta" href="index.html#contacto">CONTACTAR</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="escaparate-titulo escaparate-titulo-con-volver">
+    <a class="volver-campanas" href="./escaparate-campanas.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg>
+      Volver al listado de escaparates
+    </a>
+    <div class="escaparate-titulo-fila">
+      <h1>Acércate a nuestro escaparate</h1>
+      <div class="escaparate-acciones">
+        <button type="button" class="btn ghost btn-icono-accion" id="btnCompartirEscaparate" aria-label="Compartir este escaparate" title="Compartir" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-3.9M8.6 13.4l6.8 3.9"/></svg>
+        </button>
+        <button type="button" class="btn primary btn-folleto" id="btnDescargarFolleto" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
+          <span>Descargar folleto</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="escaparate-lienzo" id="escaparateLienzo">
+    <div class="fondo-estacional" id="fondoEstacional" aria-hidden="true"></div>
+
+    <section class="vitrina" id="vitrina">
+      <div class="spinner-line" id="cargando">
+        <span class="spinner-dot"></span> Cargando el escaparate…
+      </div>
+    </section>
+
+    <section class="shelf-section" id="shelfSection" hidden>
+      <div class="shelf-head">
+        <h2 id="shelfTitle">Productos de la campaña</h2>
+        <span class="count" id="shelfCount"></span>
+      </div>
+      <div class="shelf" id="shelf"></div>
+    </section>
+
+    <section class="vitrina-cierre" id="vitrinaCierre" hidden>
+      <p class="vitrina-cierre-frase" id="vitrinaCierreFrase"></p>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div class="site-footer__brand">
+      <a href="index.html" aria-label="Ir al inicio">
+        <img src="./assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="190" height="64" />
+      </a>
+      <p>Más de 100 años ofreciendo soluciones profesionales en droguería, perfumería, pinturas y suministros para automoción.</p>
+      <div class="site-footer__social" aria-label="Redes sociales">
+        <a href="https://www.instagram.com/orenciomatas/" aria-label="Instagram">◎</a>
+      </div>
+    </div>
+    <nav class="site-footer__column" aria-label="Navegación del footer">
+      <h2>Navegación</h2>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="empresa.html">Empresa</a></li>
+        <li><a href="historia.html">Historia</a></li>
+        <li><a href="productos.html">Productos</a></li>
+            <li><a href="escaparate-campanas.html">Exposición</a></li>
+        <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+        <li><a href="anuncios.html">Anuncios/Recursos</a></li>
+        <li><a href="profesionales.html">Profesionales</a></li>
+        <li><a href="servicios.html">Servicios</a></li>
+        <li><a href="actualidad.html">Actualidad</a></li>
+        <li><a href="index.html#contacto">Contacto</a></li>
+      </ul>
+    </nav>
+    <nav class="site-footer__column" aria-label="Servicios del footer">
+      <h2>Servicios</h2>
+      <ul>
+        <li><a href="productos.html">Droguería profesional</a></li>
+        <li><a href="productos.html">Pinturas carrocería</a></li>
+        <li><a href="productos.html">Perfumería</a></li>
+        <li><a href="productos.html">Suministros taller</a></li>
+        <li><a href="servicios.html">Distribución</a></li>
+      </ul>
+    </nav>
+    <div class="site-footer__column site-footer__contact">
+      <h2>Contacto rápido</h2>
+      <address>
+        <span>Av. Alfred Nobel, 2<br />13005 Ciudad Real</span>
+        <a href="tel:+34926221217">926 221 217</a>
+        <a href="mailto:correo@orenciomatas.es">correo@orenciomatas.es</a>
+      </address>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <div class="container site-footer__bottom-inner">
+      <p>© <span class="current-year">2026</span> Orencio Matas y Hnos, S.L. Todos los derechos reservados.</p>
+      <nav aria-label="Enlaces legales">
+        <a href="politica-privacidad.html">Política de Privacidad</a>
+        <a href="aviso-legal.html">Aviso Legal</a>
+        <a href="politica-cookies.html">Cookies</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<!-- IMPORTANTE: tiene que ir ANTES del <script> principal (más abajo).
+     Bug real encontrado: vivía justo después del cierre de ese <script>,
+     así que en el momento en que el script se ejecutaba (síncrono, según
+     el HTML se va parseando) el botón todavía no existía en el DOM —
+     $("#btnVolverArriba") devolvía null y wireBotonVolverArriba() salía
+     en silencio sin enganchar ni el scroll ni el clic. El botón SÍ se
+     veía en el HTML final, pero nunca reaccionaba a nada — coincide
+     exactamente con "sigo sin ver el botón" (nunca llegaba a mostrarse
+     porque su opacidad de partida es 0 hasta que el scroll lo active). -->
+<button type="button" id="btnVolverArriba" class="btn-volver-arriba" aria-label="Volver arriba">↑</button>
+
+<div class="tools-dock" id="toolsDock" hidden>
+  <span class="hint">visible sólo en preproducción</span>
+  <button class="dock-btn" id="btnProductos" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+    Asignar productos
+  </button>
+</div>
+
+<!-- Modal A: asignar productos -->
+<dialog id="modalProductos">
+  <div class="modal-head">
+    <div>
+      <h3>Asignar productos a la campaña</h3>
+      <div class="modal-sub">Editando: <b id="modalProdCampana" style="color:var(--accent)"></b></div>
+    </div>
+    <button class="modal-close" data-close-productos><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="modal-body">
+    <!-- Acceso con PIN — mismo patrón que "Gestionar destacados" en
+         buscador.html: antes esta gestión no tenía ningún control de
+         acceso. Mismo PIN compartido que el resto de paneles
+         (panel_validar_pin / PANEL_PIN en Apps Script). -->
+    <div id="productosVistaPin" style="max-width:340px; margin:0 auto; text-align:center;">
+      <p>Introduce el PIN de administración para asignar productos.</p>
+      <input type="password" id="productosPinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" style="width:100%; font-size:1.1rem; text-align:center; letter-spacing:3px; padding:10px; border:2px solid var(--ink-faint, #ccc); border-radius:8px; margin:10px 0;">
+      <label style="display:flex; align-items:center; justify-content:center; gap:6px; font-size:0.82rem; color:var(--ink-soft, #666); margin-bottom:10px;"><input type="checkbox" id="productosPinRecordar"> Recordar en este dispositivo</label>
+      <p id="productosPinError" style="color:#C81E1E; font-size:12.5px; min-height:18px;"></p>
+      <button type="button" id="productosPinEntrar" class="btn primary">Entrar</button>
+    </div>
+    <div id="productosVistaPrincipal" style="display:none;">
+    <div class="ia-suggest-row">
+      <div class="ia-suggest-controls">
+        <button class="btn ia" id="btnSugerirIA" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
+          Sugerir productos con IA
+        </button>
+        <input type="text" id="iaCriterioAdicional" class="ia-suggest-criterio" maxlength="200" placeholder="Criterio adicional opcional (p. ej. &quot;más orientado a exteriores&quot;)">
+      </div>
+      <span class="ia-suggest-hint" id="iaSuggestHint">Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.</span>
+    </div>
+    <div class="selected-section">
+      <div class="selected-head">
+        <span class="selected-head-title">Productos en esta campaña (<b id="selectedHeadCount">0</b>)</span>
+        <button type="button" class="link-btn" id="btnQuitarTodos">Quitar todos</button>
+      </div>
+      <div class="selected-chips" id="selectedChips"></div>
+    </div>
+    <div class="filters-row">
+      <div class="field">
+        <label for="fFamilia">Familia</label>
+        <select id="fFamilia"><option value="">Todas las familias</option></select>
+      </div>
+      <div class="field">
+        <label for="fBusca">Buscar por nombre o referencia</label>
+        <input id="fBusca" type="text" placeholder="p. ej. limpiador, radiador, 84221...">
+      </div>
+    </div>
+    <div class="picker-toolbar" id="pickerToolbar" hidden>
+      <span id="pickerResumen"></span>
+      <button type="button" class="btn ghost small" id="btnAnadirTodos">Añadir todos estos</button>
+    </div>
+    <div class="picker-grid" id="pickerGrid"></div>
+    </div>
+  </div>
+  <div class="modal-foot" id="productosModalFoot" style="display:none;">
+    <span class="selected-count"><b id="selCount">0</b> seleccionados</span>
+    <div style="display:flex; gap:10px;">
+      <button class="btn ghost" data-close-productos>Cancelar</button>
+      <button class="btn primary" id="btnConfirmAdd">Guardar productos</button>
+    </div>
+  </div>
+</dialog>
+
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span id="toastMsg"></span></div>
+
+<!-- Modal de detalle de producto (público, en el estante) — mismo modal
+     que ya usan buscador.html y Centro de Soluciones (misma estructura
+     y clases modal-producto-*, con las variables de color propias de
+     esta página), sin las partes de administración del modal real que
+     requieren el backend de Apps Script (actualizar/validar imagen, dar
+     de baja, gestionar relacionados) — no aplican en esta vista de solo
+     lectura. -->
+<div class="modal-overlay" id="modal-producto-overlay">
+  <div class="modal-producto-box" id="modal-producto-box">
+    <div class="modal-producto-cerrar-sticky">
+      <button class="modal-producto-cerrar" id="modal-producto-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-producto-content">
+      <div class="modal-producto-imagen">
+        <img id="modal-producto-img" src="" alt="" loading="lazy">
+        <div id="modal-producto-sin-imagen" class="modal-producto-sin-imagen" style="display:none;">📦</div>
+      </div>
+      <div class="modal-producto-info">
+        <h3 id="modal-producto-nombre"></h3>
+        <p class="modal-producto-ref" id="modal-producto-ref"></p>
+        <div class="modal-producto-precio" id="modal-producto-precio"></div>
+        <div class="modal-producto-detalles">
+          <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
+          <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
+        </div>
+        <p class="modal-producto-disclaimer">
+          ⓘ Los precios pueden variar y el producto está sujeto a disponibilidad; la imagen puede no coincidir exactamente con el producto real.
+        </p>
+        <a id="modal-producto-verbuscador" class="modal-producto-ficha" href="#" target="_blank" rel="noopener">📄 Ver ficha completa en el buscador</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>window.OM_CLAVE_MANTENIMIENTO = 'escaparate'; window.OM_RUTA_RAIZ = './';</script>
+<script src="./assets/js/entorno.js?v=20260924a"></script>
+<script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ══════════════════════════════════════════════════════════════════
+  // CONFIGURACIÓN — mismo patrón que buscador.html (window.MOSTRAR_X)
+  // ══════════════════════════════════════════════════════════════════
+  // Controla si se muestran los dos botones de gestión (asignar
+  // productos / gestionar campañas) y sus modales. Deriva de la única
+  // variable window.OM_PREPRODUCCION (ver assets/js/entorno.js) — nunca
+  // se hardcodea "true" por separado.
+  window.MOSTRAR_GESTION_CAMPANAS = window.OM_PREPRODUCCION;
+
+  // Mismo Web App de Apps Script que usa buscador.html. Las acciones
+  // nuevas (obtener_campanas / guardar_campana /
+  // actualizar_productos_campana / eliminar_campana) sólo funcionarán
+  // en cuanto esa parte de scripts/apps_script_trigger.js se haya
+  // copiado al editor real de Apps Script y desplegado como nueva
+  // versión de ESTA MISMA implementación (ver nota al pie del chat).
+  window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+
+  const PRODUCTOS_URL = './data/productos.json';
+
+  const $ = (sel, ctx) => (ctx||document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
+
+  // Igual que en buscador.html: no basta con ocultar con CSS (display:none
+  // se puede revertir desde la consola del navegador) — se elimina el
+  // nodo del DOM por completo cuando la administración está desactivada,
+  // lo antes posible. openModalProductos() tiene además su propia guarda
+  // defensiva por si algo llegara a llamarla sin pasar por el botón ya
+  // eliminado.
+  if (!window.MOSTRAR_GESTION_CAMPANAS) {
+    const dock = document.getElementById('toolsDock');
+    if (dock) dock.remove();
+    const modalProductosEl = document.getElementById('modalProductos');
+    if (modalProductosEl) modalProductosEl.remove();
+  }
+
+  // precio_con/precio_sin llegan como texto con coma decimal (p.ej. "2,15",
+  // formato español del Sheet) — no como número — hay que convertir antes
+  // de poder formatear u operar con ellos.
+  const precioNum = v => parseFloat((v==null?'':v.toString()).replace(',', '.')) || 0;
+  const fmtEUR = n => precioNum(n).toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
+
+  /* ---------------- Paleta de marca (src/css/estilos.css, tokens reales) ---------------- */
+  // negro #1a1a1a · rojo #d91b1b · amarillo #f1b300 · verde #008743 · azul #006dae
+  // "accent"/"accent2": versiones algo más oscuras para que el texto sobre
+  // fondo claro tenga contraste suficiente. "vivid"/"vivid2": los tokens
+  // exactos de la web, para iconos y fondos (ahí el contraste no es problema).
+  const COLOR_SETS = {
+    ambar_verde: {accent:"#8A6400", accent2:"#006E37", vivid:"#F1B300", vivid2:"#008743", wash:"rgba(241,179,0,0.12)"},
+    rojo_verde:  {accent:"#B81717", accent2:"#006E37", vivid:"#D91B1B", vivid2:"#008743", wash:"rgba(217,27,27,0.10)"},
+    verde_ambar: {accent:"#006E37", accent2:"#8A6400", vivid:"#008743", vivid2:"#F1B300", wash:"rgba(0,135,67,0.10)"},
+    azul_ambar:  {accent:"#005689", accent2:"#8A6400", vivid:"#006DAE", vivid2:"#F1B300", wash:"rgba(0,109,174,0.10)"},
+    rojo_negro:  {accent:"#B81717", accent2:"#1A1A1A", vivid:"#D91B1B", vivid2:"#1A1A1A", wash:"rgba(217,27,27,0.09)"}
+  };
+  function hexARgba(hex, alpha){
+    const m = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex || '');
+    if(!m) return `rgba(217,27,27,${alpha})`;
+    const r = parseInt(m[1],16), g = parseInt(m[2],16), b = parseInt(m[3],16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  // Recibe la campaña completa (no solo el id de colorSet) porque
+  // "personalizado" necesita también sus dos colores propios guardados
+  // en la campaña. El principal/secundario personalizados se usan tal
+  // cual, tanto para "accent" (texto) como para "vivid" (iconos/fondos)
+  // — a diferencia de los sets predefinidos no hay una versión ya
+  // oscurecida para contraste; si el usuario elige un color muy claro,
+  // el contraste del texto puede resentirse un poco.
+  function colorSetDe(c){
+    if(c && c.colorSet === 'personalizado'){
+      const HEX_VALIDO = /^#[0-9a-fA-F]{6}$/;
+      const p1 = HEX_VALIDO.test(c.colorPersonalizado1) ? c.colorPersonalizado1 : '#D91B1B';
+      const p2 = HEX_VALIDO.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : '#008743';
+      return { accent:p1, accent2:p2, vivid:p1, vivid2:p2, wash:hexARgba(p1, 0.10) };
+    }
+    return COLOR_SETS[c && c.colorSet] || COLOR_SETS.rojo_verde;
+  }
+
+  /* ---------------- Iconos de línea (un único estilo) ---------------- */
+  const ICONS = {
+    perfume: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8h8M22 8v5.5c0 1-1.6 1.7-3 2.8-2.3 1.8-4 4-4 8.2v13c0 2 1.5 3.5 3.5 3.5h11c2 0 3.5-1.5 3.5-3.5v-13c0-4.2-1.7-6.4-4-8.2-1.4-1.1-3-1.8-3-2.8V8"/><path d="M18 27h12M20 32h8"/></svg>',
+    radiator: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="12" width="34" height="24" rx="2"/><path d="M13 12v24M19 12v24M25 12v24M31 12v24M37 12v24"/><path d="M11 40h4M33 40h4"/></svg>',
+    mosquito: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="24" rx="5" ry="8"/><path d="M24 16V9M18 12l-5-4M30 12l5-4M18 30l-9 4M30 30l9 4M18 24H8M30 24h10"/></svg>',
+    leaf: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 34C10 20 22 9 38 9c1 16-10 28-24 26-3-.4-5-1.4-6-1z"/><path d="M13 35c6-10 13-16 22-21"/></svg>',
+    pool: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 6 3 3-3 6-3 3 3 6 3M6 28c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 6 3 3-3 6-3 3 3 6 3M6 36c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 6 3 3-3 6-3 3 3 6 3"/></svg>',
+    spray: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 18h10l3-4h5M18 18v22a2 2 0 002 2h8a2 2 0 002-2V18M18 18l-2-4M14 24h2M13 29h2M14 34h2"/></svg>',
+    paint: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6h14v10l4 4v6H10v-6l4-4z"/><path d="M18 26v9c0 4 3 7 6 7s6-3 6-7v-9"/></svg>',
+    glove: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 22V9a3 3 0 016 0v9M22 18V7a3 3 0 016 0v11M28 18V9a3 3 0 016 0v13M34 22v-4a3 3 0 016 0v14c0 7-5 12-12 12h-4c-6 0-10-3-12-8l-4-9a2.6 2.6 0 014-3l4 4"/></svg>',
+    wrench: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M31 10a8 8 0 00-10.9 9L8 31.1 12.9 36l12-12.1A8 8 0 0035 13l-6 6-5-5z"/></svg>',
+    tag: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M25 6h11a2 2 0 012 2v11a2 2 0 01-.6 1.4L20.4 38.4a2 2 0 01-2.8 0l-8-8a2 2 0 010-2.8L27.6 9.6A2 2 0 0125 6z"/><circle cx="32" cy="15" r="2.4"/></svg>',
+    bottle: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 6h10M20 6v6.5c0 1-1.2 1.6-2.3 2.6C15.8 17 14 19.6 14 24v13a3 3 0 003 3h14a3 3 0 003-3V24c0-4.4-1.8-7-3.7-8.9-1.1-1-2.3-1.6-2.3-2.6V6"/></svg>',
+    sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>'
+  };
+
+  function iconFor(p){
+    const n = (p.nombre||"").toLowerCase(), f = (p.familia||"").toLowerCase(), a = (p.area||"").toLowerCase();
+    if(n.includes("piscina")) return ICONS.pool;
+    if(f.includes("colonia") || f.includes("perfum")) return ICONS.perfume;
+    if(n.includes("radiador")) return ICONS.radiator;
+    if(n.includes("mosquit") || f.includes("antiparasitario")) return ICONS.mosquito;
+    if(f.includes("insecticida") || f.includes("jardin") || f.includes("camping")) return ICONS.leaf;
+    if(f.includes("guantes")) return ICONS.glove;
+    if(f.includes("pintura") || f.includes("barniz") || f.includes("brochas") || f.includes("esmalte")) return ICONS.paint;
+    if(a === "talleres") return ICONS.wrench;
+    if(f.includes("limpia") || f.includes("ambientador") || f.includes("deterg")) return ICONS.spray;
+    if(a === "perfumeria") return ICONS.perfume;
+    if(a === "pinturas") return ICONS.paint;
+    return ICONS.bottle;
+  }
+
+  function barcodeSVG(ref){
+    let bars = "", x = 2;
+    for(const d of (ref||"")){
+      const w = 1 + (parseInt(d,10)||0) % 3;
+      bars += `<rect x="${x}" y="1" width="${w}" height="18" fill="var(--ink)"/>`;
+      x += w + 1.6;
+    }
+    return `<svg class="barcode" viewBox="0 0 ${x+2} 20" preserveAspectRatio="none" style="background:var(--paper-raised); border-radius:2px;">${bars}</svg>`;
+  }
+
+  function urlImagenProducto(p, tamano){
+    tamano = tamano || 300;
+    if(!p.img) return null;
+    return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
+  }
+  function urlImagenCampana(driveId, tamano){
+    tamano = tamano || 900;
+    if(!driveId) return null;
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w${tamano}`;
+  }
+  // Solo para el folleto en PDF (cargarImagenDataURL + <canvas>, ver más
+  // abajo): drive.google.com/thumbnail es un REDIRECT 302 hacia
+  // lh3.googleusercontent.com, y esa respuesta de redirección en sí misma
+  // no lleva cabecera Access-Control-Allow-Origin (confirmado con curl) —
+  // aunque el destino final sí la lleve, el <img crossOrigin="anonymous">
+  // ve el salto intermedio sin CORS y el canvas queda "contaminado" en
+  // silencio, así que toDataURL() fallaba (capturado por el catch de
+  // cargarImagenDataURL) y todas las fotos del folleto caían al icono de
+  // repuesto — el bug real que reportó Eloy ("las fotos de los productos
+  // no aparecen"). Pidiendo directamente la URL final de
+  // googleusercontent.com se evita el salto de redirección por completo.
+  // Los <img> normales de la propia página (urlImagenProducto/
+  // urlImagenCampana de arriba) se dejan tal cual — no necesitan
+  // crossOrigin ahí, así que nunca tuvieron este problema.
+  function urlImagenProductoFolleto(p, tamano){
+    tamano = tamano || 400;
+    if(!p || !p.img) return null;
+    return `https://lh3.googleusercontent.com/d/${p.img}=w${tamano}`;
+  }
+  // Mismo motivo que urlImagenProductoFolleto — la foto propia del
+  // escaparate (c.imagenFondo, la que se ve nítida en .vitrina-foto) es
+  // otro Drive ID más, así que necesita la misma URL directa para el PDF.
+  function urlImagenCampanaFolleto(driveId, tamano){
+    tamano = tamano || 700;
+    if(!driveId) return null;
+    return `https://lh3.googleusercontent.com/d/${driveId}=w${tamano}`;
+  }
+
+  /* ---------------- Estado ---------------- */
+  let PRODUCTS = {};          // ref -> producto (de data/productos.json)
+  let PRODUCTS_LIST = [];     // array plano, para el picker
+  let CAMPAIGNS = [];         // de Apps Script (obtener_campanas)
+  let productosOK = false;
+  let campanasOK = false;
+  let activeId = null;
+  const HOY = new Date();
+
+  /* ---------------- Caché de campañas entre páginas (sessionStorage) ----
+     Mismo mecanismo y mismas claves que en escaparate-campanas.html (ver
+     los comentarios completos allí) — duplicado a propósito, este
+     proyecto no comparte JS entre páginas. Al entrar aquí desde una
+     tarjeta de esa lista (o al volver a ella), se reutiliza lo que ya se
+     había pedido, sin otra petición de red. Se invalida si la página se
+     ha recargado o si no se ha llegado navegando desde la otra página de
+     Escaparate OM (primera entrada al flujo en esta pestaña). */
+  const CACHE_CAMPANAS_KEY = 'om_escaparate_campanas_sesion_v1';
+
+  function paginaFueRecargada(){
+    try{
+      const entradas = performance.getEntriesByType('navigation');
+      return entradas.length > 0 && entradas[0].type === 'reload';
+    }catch(err){
+      return false;
+    }
+  }
+  function vieneDeOtraPaginaDeEscaparates(){
+    try{
+      if(!document.referrer) return false;
+      const ref = new URL(document.referrer);
+      if(ref.origin !== location.origin) return false;
+      return /\/escaparate(-campanas)?\.html$/.test(ref.pathname);
+    }catch(err){
+      return false;
+    }
+  }
+  function leerCacheCampanasSesion(){
+    if(paginaFueRecargada() || !vieneDeOtraPaginaDeEscaparates()) return null;
+    try{
+      const guardado = sessionStorage.getItem(CACHE_CAMPANAS_KEY);
+      if(!guardado) return null;
+      const datos = JSON.parse(guardado);
+      return Array.isArray(datos.campanas) ? datos.campanas : null;
+    }catch(err){
+      return null;
+    }
+  }
+  function guardarCacheCampanasSesion(campanas){
+    try{
+      sessionStorage.setItem(CACHE_CAMPANAS_KEY, JSON.stringify({ campanas }));
+    }catch(err){
+      // sessionStorage lleno o deshabilitado — no pasa nada, simplemente
+      // no se podrá reutilizar en la siguiente navegación.
+    }
+  }
+
+  function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
+  function activaEn(camp, fecha){
+    if(camp.permanente) return true;
+    if(!camp.fechaInicio || !camp.fechaFin) return false;
+    return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
+  }
+  function campanaDeHoy(){
+    const activas = CAMPAIGNS.filter(c=>activaEn(c, HOY));
+    const manual = activas.find(c=>c.origen==="manual");
+    return manual || activas[0] || null;
+  }
+  function solapaConManual(camp){
+    if(!camp || camp.origen!=="ia") return null;
+    return CAMPAIGNS.find(o => o.origen==="manual" && o.id!==camp.id &&
+      new Date(o.fechaInicio+"T00:00:00") <= new Date(camp.fechaFin+"T23:59:59") &&
+      new Date(o.fechaFin+"T23:59:59") >= new Date(camp.fechaInicio+"T00:00:00"));
+  }
+
+  /* ---------------- Panel visual estacional (vitrina) ----------------
+     Puramente decorativo, pensado para llenar el hueco vacío del lado
+     derecho de la vitrina en pantallas grandes y dar vida de "escaparate
+     real". La estación se calcula a partir de la FECHA DE INICIO de la
+     campaña (no del día de hoy) — así una campaña de verano programada
+     en julio se ve "de verano" se mire cuando se mire, en vez de
+     depender de qué día es hoy realmente. En el estado vacío (sin
+     campañas todavía) no hay fecha de campaña de la que partir, así que
+     ahí sí se usa HOY. */
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  const ESTACIONES = {
+    // Tamaño y opacidad de las tres estaciones de abajo (invierno,
+    // primavera, verano) subidos para igualar la presencia visual de
+    // otoño — comparando las cuatro una junto a otra, Eloy confirmó que
+    // "la única que veo que se aprecia algo es otoño, del resto apenas
+    // he apreciado algo". Antes: tam 14-26px, opacidad 0.30-0.55 (frente
+    // a los 30-52px / 0.4-0.7 de otoño, mucho más grande y opaco). Ahora
+    // más cerca de esos valores, sin ser idénticos — cada estación
+    // conserva su propio tamaño de forma (los copos/pétalos/burbujas son
+    // formas más simples que la hoja de otoño, así que no necesitan
+    // llegar exactamente igual de grandes para leerse bien).
+    invierno: {
+      fondo: 'linear-gradient(160deg, #EAF2FA, #DCEBF7 55%, #CFE3F2)',
+      colores: ['#8FB8DD','#A9C9E6','#6FA3D1'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M2 12h20M6 4l1 3-3 1M18 4l-1 3 3 1M6 20l1-3-3-1M18 20l-1-3 3-1"/></svg>`,
+      dir: 1, tam: [26,40], dur: [7,13], n: 14, op: [0.42,0.68],
+    },
+    primavera: {
+      fondo: 'linear-gradient(160deg, #F1FBEF, #E3F6E0 55%, #D3F0D6)',
+      colores: ['#6FBE6B','#8FD98A','#F3B6C7'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="${c}"><path d="M12 2c4 3 6 6 6 10a6 6 0 01-12 0c0-4 2-7 6-10z"/></svg>`,
+      dir: 1, tam: [24,38], dur: [8,14], n: 14, op: [0.42,0.68],
+    },
+    verano: {
+      fondo: 'linear-gradient(160deg, #E7F6FB, #D3EEF7 55%, #BFE4F2)',
+      colores: ['#4FB6DA','#7FCBE6','#3A9FC4'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="9.3" cy="8.8" r="1.7" fill="${c}" stroke="none" opacity=".55"/></svg>`,
+      dir: -1, tam: [22,34], dur: [6,11], n: 14, op: [0.42,0.68],
+    },
+    // Dos siluetas mezcladas al azar por partícula: la hoja genérica de
+    // antes (óvalo apuntado + nervio central) y una de arce — Eloy pidió
+    // literalmente "🍁", así que el diseño de referencia final fue ese
+    // emoji, no una forma inventada: 5 lóbulos REDONDEADOS (no puntas
+    // afiladas — los intentos angulosos anteriores se leían como una
+    // estrella/shuriken, por muy anchos que se hicieran) más un TALLO
+    // curvo visible en la base, que es justo la seña de identidad que
+    // faltaba en todos los intentos previos (solo tenían una línea recta
+    // de nervio, sin nada que se pareciera a un tallo real). viewBox más
+    // alto (110 en vez de 100) para dejarle sitio al tallo sin recortarlo.
+    // Comprobado a tamaño pequeño (hasta ~36px) y con rotación aleatoria,
+    // mezclada junto a la hoja genérica, antes de subir.
+    // Más grandes que el resto de estaciones a propósito (nítidas, sin
+    // difuminar, necesitan tamaño real para leerse bien).
+    otono: {
+      fondo: 'linear-gradient(160deg, #FBF0DF, #F5DFB6 55%, #EAC48D)',
+      colores: ['#C97A34','#B5541F','#D9A441','#A8632A'],
+      forma: (c) => Math.random() < 0.45
+        ? `<svg viewBox="0 0 100 110" fill="${c}"><path d="M50,8 C58,18 60,26 58,32 C66,26 76,24 85,26 C78,34 74,40 74,46 C82,48 90,54 95,62 C85,62 76,64 70,68 C74,76 76,84 74,92 C66,86 60,82 55,80 C56,88 56,96 54,104 L50,96 L46,104 C44,96 44,88 45,80 C40,82 34,86 26,92 C24,84 26,76 30,68 C24,64 15,62 5,62 C10,54 18,48 26,46 C26,40 22,34 15,26 C24,24 34,26 42,32 C40,26 42,18 50,8 Z"/><path d="M50,80 C50,55 50,35 50,15" stroke="rgba(70,40,10,.4)" stroke-width="2" fill="none"/><path d="M48,104 C40,108 30,106 22,98" stroke="#7A5230" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`
+        : `<svg viewBox="0 0 100 100" fill="${c}"><path d="M50,6 C74,18 88,42 82,64 C77,86 64,96 50,99 C36,96 23,86 18,64 C12,42 26,18 50,6 Z"/><path d="M50,14 C50,40 50,70 50,92" stroke="rgba(70,40,10,.45)" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M50,35 L34,28 M50,35 L66,28 M50,55 L30,50 M50,55 L70,50 M50,75 L34,72 M50,75 L66,72" stroke="rgba(70,40,10,.3)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
+      dir: 1, tam: [30,52], dur: [7,12], n: 12, op: [0.4,0.7],
+    },
+  };
+
+  function estacionParaFecha(fecha){
+    const mes = fecha.getMonth(); // 0=enero … 11=diciembre
+    if(mes===11 || mes===0 || mes===1) return 'invierno';
+    if(mes>=2 && mes<=4) return 'primavera';
+    if(mes>=5 && mes<=7) return 'verano';
+    return 'otono'; // 8,9,10
+  }
+
+  // Un único fondo para todo el lienzo (cabecera + productos + cierre),
+  // en vez de una instancia de partículas por bloque — la altura real
+  // varía mucho según cuántos productos tenga la campaña, así que tanto
+  // la cantidad de partículas como su velocidad de caída se recalibran
+  // según la altura real medida, para que la densidad y el ritmo se
+  // vean naturales tanto con pocos productos como con muchos.
+  function pintarFondoEstacional(fechaRef){
+    const el = $("#fondoEstacional");
+    const lienzo = $("#escaparateLienzo");
+    if(!el || !lienzo) return;
+    const est = ESTACIONES[estacionParaFecha(fechaRef)];
+    // Solo las partículas — sin degradado de color de fondo (petición de
+    // Eloy: "quítale el color del fondo, solo quiero las hojas").
+    const ALTURA_REFERENCIA = 800; // altura con la que se calibraron los rangos dur/n de ESTACIONES
+    const altura = lienzo.offsetHeight || ALTURA_REFERENCIA;
+    const escala = Math.max(1, altura / ALTURA_REFERENCIA);
+    const N = Math.round((est.n || 16) * escala);
+    const opRango = est.op || [0.4, 0.8];
+    let particulas = '';
+    for(let i=0;i<N;i++){
+      const color = pick(est.colores);
+      const tam = est.tam[0] + Math.random()*(est.tam[1]-est.tam[0]);
+      const dur = (est.dur[0] + Math.random()*(est.dur[1]-est.dur[0])) * escala;
+      const delay = -(Math.random()*dur); // negativo: ya "en vuelo" desde el primer pintado, en vez de que nazcan todas a la vez arriba
+      const x = 2 + Math.random()*94;
+      const drift = Math.round(Math.random()*44-22);
+      const rot = Math.round(Math.random()*300+60);
+      const op = (opRango[0] + Math.random()*(opRango[1]-opRango[0])).toFixed(2);
+      particulas += `<span class="particula" style="left:${x.toFixed(1)}%; animation-delay:${delay.toFixed(1)}s; --dur:${dur.toFixed(1)}s; --drift:${drift}px; --rot:${rot}deg; --dir:${est.dir}; --op:${op}; --tam:${tam.toFixed(0)}px;">${est.forma(color)}</span>`;
+    }
+    el.innerHTML = particulas;
+  }
+
+  /* ---------------- Carga de datos ---------------- */
+  // Misma caché en vivo de Apps Script que ya usan buscador.html y
+  // Centro de Soluciones (ver PRODUCTOS_REMOTO_URL / cargarCatalogoReal
+  // en soluciones-data.js) — se actualiza de forma SÍNCRONA en el propio
+  // Apps Script justo tras subir/validar una imagen o regenerar la
+  // caché desde el menú, así que es la única fuente que refleja esos
+  // cambios al instante para cualquier visitante.
+  //
+  // Causa real de "hay fotos que no se han actualizado... a pesar de
+  // haber regenerado la caché de imágenes": escaparate.html leía
+  // EXCLUSIVAMENTE data/productos.json, el JSON estático del repo — y
+  // "regenerar caché" desde el menú de Apps Script
+  // (regenerarCacheCompletaManual) solo actualiza la caché en vivo de
+  // Drive que usan el buscador y Centro de Soluciones, NUNCA el archivo
+  // estático del repo (ese depende de un workflow de GitHub Actions
+  // totalmente aparte, disparado solo al actualizar una imagen
+  // individual desde el buscador — no al regenerar la caché completa).
+  // Así que una imagen recién puesta al día podía no verse nunca aquí,
+  // por mucho que se regenerase la caché, hasta que ese otro workflow
+  // se disparase por su cuenta. Mismo arreglo que ya se aplicó en
+  // Centro de Soluciones para este mismo problema.
+  const PRODUCTOS_REMOTO_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+
+  function asignarProductos(lista){
+    PRODUCTS_LIST = lista || [];
+    PRODUCTS = {};
+    PRODUCTS_LIST.forEach(p => { PRODUCTS[p.ref] = p; });
+  }
+
+  // Caché de sesión sobre la fuente EN VIVO — mismo mecanismo y mismas
+  // reglas de invalidación que ya usa cargarCacheCampanasSesion() más
+  // abajo (reutiliza sus mismos helpers paginaFueRecargada/
+  // vieneDeOtraPaginaDeEscaparates). Antes esta fuente se pedía entera
+  // en CADA visita a un escaparate, sin ninguna reutilización — "tarda
+  // mucho en cargar" (reportado real por Eloy) al navegar entre varios
+  // escaparates seguidos, ya que el catálogo completo se volvía a
+  // descargar cada vez pese a no haber cambiado. Con esto, dentro de la
+  // misma sesión de navegación (sin recargar, sin salir del flujo) el
+  // catálogo se pide como mucho una vez — una recarga (F5) o una
+  // entrada nueva a la pestaña siempre vuelven a pedirlo fresco, así
+  // que nunca se pierde la frescura real que motivó quitar la caché del
+  // archivo estático.
+  const CACHE_PRODUCTOS_REMOTO_KEY = 'om_escaparate_productos_remoto_sesion_v1';
+  function leerCacheProductosRemotoSesion(){
+    if(paginaFueRecargada() || !vieneDeOtraPaginaDeEscaparates()) return null;
+    try{
+      const guardado = sessionStorage.getItem(CACHE_PRODUCTOS_REMOTO_KEY);
+      if(!guardado) return null;
+      const lista = JSON.parse(guardado);
+      return Array.isArray(lista) && lista.length ? lista : null;
+    }catch(err){
+      return null;
+    }
+  }
+  function guardarCacheProductosRemotoSesion(lista){
+    try{
+      sessionStorage.setItem(CACHE_PRODUCTOS_REMOTO_KEY, JSON.stringify(lista));
+    }catch(err){
+      // sessionStorage lleno (el catálogo completo puede pesar varios MB)
+      // o deshabilitado — no pasa nada, simplemente no se podrá
+      // reutilizar en la siguiente navegación.
+    }
+  }
+
+  async function cargarProductosDeCampana(refs){
+    // Petición DIRIGIDA — solo los productos que de verdad hacen falta
+    // para pintar el estante público (los de la campaña activa, 10-30
+    // normalmente), no el catálogo entero (miles de productos, varios
+    // MB). Causa real de "tarda bastante en cargar" (reportado real por
+    // Eloy, incluso ya con la caché de sesión puesta): la PRIMERA visita
+    // de cada sesión (o tras recargar) seguía pidiendo el catálogo
+    // completo solo para acabar usando un puñado de productos de él. El
+    // catálogo completo sigue existiendo — se carga aparte, de forma
+    // perezosa, solo si se abre "Asignar productos" (ver
+    // cargarCatalogoCompleto) — la búsqueda de ahí sí necesita verlo
+    // entero para poder encontrar productos nuevos que añadir.
+    if(!refs || !refs.length){
+      asignarProductos([]);
+      return;
+    }
+    try{
+      const url = PRODUCTOS_REMOTO_URL + '&refs=' + encodeURIComponent(refs.join(','));
+      const resp = await fetch(url);
+      if(resp.ok){
+        const datos = await resp.json();
+        const lista = (datos.productos || []).filter(p => !p.fecha_baja);
+        if(lista.length){
+          asignarProductos(lista);
+          return;
+        }
+      }
+    } catch(err){
+      // Apps Script caído/con cuota agotada/CORS — se sigue con el
+      // respaldo de abajo.
+    }
+
+    // Respaldo — solo si Apps Script no responde: el JSON estático
+    // completo del propio despliegue, filtrado en el cliente a los refs
+    // pedidos (el archivo estático no admite filtrar en el servidor, es
+    // un archivo plano de GitHub Pages) — más lento que la vía normal,
+    // pero es un camino de emergencia poco frecuente, no el habitual.
+    const resp = await fetch(PRODUCTOS_URL + '?_ts=' + Date.now(), { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const datos = await resp.json();
+    const refsSet = new Set(refs);
+    asignarProductos((datos.productos || []).filter(p => refsSet.has(p.ref)));
+  }
+
+  // Catálogo COMPLETO — a diferencia de cargarProductosDeCampana(), este
+  // sí trae el catálogo entero. Se usa solo desde "Asignar productos"
+  // (openModalProductos), que necesita poder buscar entre TODOS los
+  // productos para añadir alguno nuevo a la campaña — no tiene sentido
+  // pagar ese coste en cada visita pública si nueve de cada diez
+  // visitantes nunca van a abrir ese modal. catalogoCompletoCargado
+  // evita repetir la carga si se abre el modal varias veces en la misma
+  // sesión de la página.
+  let catalogoCompletoCargado = false;
+  async function cargarCatalogoCompleto(){
+    if(catalogoCompletoCargado) return;
+
+    const cacheados = leerCacheProductosRemotoSesion();
+    if(cacheados){
+      asignarProductos(cacheados);
+      catalogoCompletoCargado = true;
+      return;
+    }
+
+    try{
+      const resp = await fetch(PRODUCTOS_REMOTO_URL);
+      if(resp.ok){
+        const datos = await resp.json();
+        const lista = (datos.productos || []).filter(p => !p.fecha_baja);
+        if(lista.length){
+          asignarProductos(lista);
+          guardarCacheProductosRemotoSesion(lista);
+          catalogoCompletoCargado = true;
+          return;
+        }
+      }
+    } catch(err){
+      // sigue al respaldo de abajo
+    }
+
+    const CACHE_KEY = 'om_escaparate_productos_cache_v1';
+    const CACHE_VERSION_KEY = 'om_escaparate_productos_version_v1';
+    try{
+      const versionResp = await fetch('./data/productos_version.json?_ts=' + Date.now(), { cache:'no-store' });
+      if(versionResp.ok){
+        const versionDatos = await versionResp.json();
+        const versionActual = versionDatos.version;
+        const versionCacheada = sessionStorage.getItem(CACHE_VERSION_KEY);
+        const textoCacheado = versionActual && sessionStorage.getItem(CACHE_KEY);
+        if(versionActual && versionActual === versionCacheada && textoCacheado){
+          asignarProductos(JSON.parse(textoCacheado).productos);
+          catalogoCompletoCargado = true;
+          return;
+        }
+      }
+    } catch(err){
+      // sigue con la carga completa de siempre, sin caché
+    }
+
+    const resp = await fetch(PRODUCTOS_URL + '?_ts=' + Date.now(), { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const datos = await resp.json();
+    asignarProductos(datos.productos);
+    try{
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(datos));
+      if(datos.generado) sessionStorage.setItem(CACHE_VERSION_KEY, datos.generado);
+    } catch(err){
+      // sessionStorage lleno o no disponible — no reutilizable la
+      // próxima vez, pero no bloquea nada ahora.
+    }
+    catalogoCompletoCargado = true;
+  }
+
+  async function cargarCampanas(forzar){
+    // Ruta más rápida todavía que la caché en Drive: si ya tenemos las
+    // campañas de una navegación reciente dentro del mismo flujo (p.ej.
+    // se acaba de entrar aquí desde una tarjeta de
+    // escaparate-campanas.html), reutilizarlas sin pedir nada.
+    if(!forzar){
+      const cacheadas = leerCacheCampanasSesion();
+      if(cacheadas){
+        CAMPAIGNS = cacheadas;
+        return;
+      }
+    }
+
+    // Llama directamente a la acción obtener_campanas del Web App de
+    // Apps Script — ahora lee de una caché en Drive que el propio Apps
+    // Script mantiene al día (regenerada de forma síncrona tras cada
+    // cambio real: crear/editar/eliminar una campaña, o tocar sus
+    // productos/imagen), no de la hoja de cálculo en directo como antes.
+    // Es lo bastante rápida para ser la única fuente, sin necesitar
+    // ningún archivo intermedio en git: la misma URL funciona igual de
+    // bien esté esta página en GitHub Pages o en IONOS, sin depender de
+    // ningún despliegue para reflejar un cambio — mismo patrón que ya
+    // usan buscador.html y Centro de Soluciones para los productos
+    // (decisión explícita de Eloy: main es solo mantenimiento, todo el
+    // tráfico real vive en release, y los cambios desde main deben
+    // verse ahí sin redesplegar nada).
+    //
+    // "_ts" en la URL: para que cada llamada sea una URL distinta y no
+    // pueda quedar cacheada en el borde de Google para peticiones GET
+    // idénticas (además de cualquier caché del propio navegador, que
+    // 'no-store' ya evita).
+    // Timeout explícito con AbortController: si el fetch se queda
+    // colgado sin resolver nunca (no solo si falla rápido), Promise.
+    // allSettled esperaría indefinidamente a que esta promesa se asiente
+    // — nunca se marcaría como rejected, así que la carga nunca
+    // terminaría.
+    const url = window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now();
+    const controller = new AbortController();
+    const avisoTimeout = setTimeout(() => controller.abort(), 12000);
+    let resp;
+    try{
+      resp = await fetch(url, { cache:'no-store', signal: controller.signal });
+    } catch(err){
+      if(err.name === 'AbortError') throw new Error('La respuesta ha tardado demasiado (más de 12 segundos) y se ha cancelado.');
+      throw err;
+    } finally {
+      clearTimeout(avisoTimeout);
+    }
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const datos = await resp.json();
+    if(datos.error) throw new Error(datos.error);
+    CAMPAIGNS = datos.campanas || [];
+    guardarCacheCampanasSesion(CAMPAIGNS);
+  }
+
+  async function iniciar(){
+    wireModalProductoPublico();
+
+    // Campañas primero — hace falta saber los refs de la campaña activa
+    // ANTES de poder pedir solo esos productos en vez del catálogo
+    // completo (ver cargarProductosDeCampana). El propio dataset de
+    // campañas es pequeño (unas pocas decenas como mucho), así que
+    // secuenciar esto en vez de pedirlo en paralelo con productos no
+    // cuesta nada perceptible.
+    try{
+      await cargarCampanas();
+      campanasOK = true;
+    } catch(err){
+      campanasOK = false;
+      console.error('Error cargando campañas:', err);
+    }
+
+    if($("#btnProductos")) $("#btnProductos").disabled = !campanasOK;
+
+    if(!campanasOK){
+      mostrarErrorVitrina('No se ha podido conectar con la gestión de campañas. Lo más probable es que todavía no se haya desplegado la nueva versión de Apps Script (acción <code>obtener_campanas</code>) — revisa la nota al pie de esta página.', true);
+      return;
+    }
+
+    // Deep-link desde escaparate-campanas.html (?campana=ID): si viene
+    // con un id de campaña válido, se usa esa en vez de "la de hoy" —
+    // así se puede entrar directo a la campaña que se pinchó en la
+    // página de campañas, no siempre a la que tocaría hoy.
+    const idPorURL = new URLSearchParams(location.search).get('campana');
+    if(idPorURL && findCampaign(idPorURL)){
+      activeId = idPorURL;
+    } else {
+      activeId = campanaDeHoy() ? campanaDeHoy().id : (CAMPAIGNS[0] ? CAMPAIGNS[0].id : null);
+    }
+
+    const campanaActiva = activeId ? findCampaign(activeId) : null;
+    try{
+      await cargarProductosDeCampana(campanaActiva ? campanaActiva.productos : []);
+      productosOK = true;
+    } catch(err){
+      productosOK = false;
+      console.error('Error cargando productos:', err);
+    }
+
+    if(!productosOK){
+      mostrarErrorVitrina('No se han podido cargar los productos del catálogo.');
+      return;
+    }
+
+    if(window.MOSTRAR_GESTION_CAMPANAS){
+      $("#toolsDock").hidden = false;
+    }
+    // Los botones de compartir/folleto salen deshabilitados en el HTML a
+    // propósito (petición de Eloy: "los botones no deben estar disponibles
+    // mientras no haya terminado de cargar el contenido del escaparate") —
+    // solo se habilitan aquí, una vez se sabe que hay campaña y productos.
+    if($("#btnCompartirEscaparate")) $("#btnCompartirEscaparate").disabled = false;
+    if($("#btnDescargarFolleto")) $("#btnDescargarFolleto").disabled = false;
+    render();
+  }
+
+  function mostrarErrorVitrina(msg, mostrarDockIgual){
+    $("#vitrina").innerHTML = `
+      <div class="vitrina-empty">
+        <h2>Escaparate OM</h2>
+        <div class="vitrina-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 16.5h.01M10.3 3.9L2.7 17.5A1.8 1.8 0 004.3 20h15.4a1.8 1.8 0 001.6-2.5L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg>
+          <span>${msg}</span>
+        </div>
+      </div>`;
+    if(mostrarDockIgual && window.MOSTRAR_GESTION_CAMPANAS){
+      $("#toolsDock").hidden = false;
+      $("#btnProductos").disabled = true;
+    }
+  }
+
+  /* ---------------- Render ---------------- */
+  // Precio final tras aplicar un descuento (%) — redondeado a 2
+  // decimales, como cualquier precio en EUR. Se calcula aquí, en el
+  // cliente, a partir del precio real del catálogo — nunca se guarda un
+  // "precio ya rebajado" en ningún sitio, así que si el precio base
+  // cambia en el Sheet, el descuento se sigue aplicando correctamente
+  // sin tener que tocar nada de Escaparate OM.
+  // Bug real detectado por Eloy: con un precio real de "10,48€" y un
+  // 10% de descuento, el resultado mostrado era "0,00 €". Causa:
+  // Number("10,48") da NaN (el catálogo guarda los precios como texto
+  // con COMA decimal, no punto — "10,48", no "10.48"), y NaN||0 se
+  // convierte silenciosamente en 0 sin ningún error visible. precioNum()
+  // ya existe en este archivo precisamente para esto (sustituye la coma
+  // por un punto antes de convertir) — bastaba con usarla aquí también
+  // en vez de Number() a secas.
+  function precioConDescuento(precioOriginal, porcentaje){
+    const p = precioNum(precioOriginal);
+    const pct = Number(porcentaje) || 0;
+    return Math.round(p * (1 - pct/100) * 100) / 100;
+  }
+
+  function productCard(ref, {ia=false, destacado=null, descuento=0}={}){
+    const p = PRODUCTS[ref];
+    if(!p) return `<article class="card"><span class="fam">Referencia no encontrada</span><span class="nombre mono">${ref}</span></article>`;
+    const imgUrl = urlImagenProducto(p, 300);
+    const buscadorURL = `./buscador.html?ref=${encodeURIComponent(ref)}`;
+    const tam = destacado && destacado.tamano > 1 ? destacado.tamano : 1;
+    const atributoTam = tam > 1 ? ` data-tam="${tam}" data-alin="${destacado.alinH || 'centro'}"` : '';
+    const tieneDescuento = Number(descuento) > 0;
+    const precioRebajado = tieneDescuento ? precioConDescuento(p.precio_con, descuento) : null;
+    // p.precio_sin ya viene calculado del propio catálogo (no se
+    // recalcula aquí a partir del IVA — el % de IVA puede variar según
+    // la familia del producto, así que es más fiable confiar en el
+    // valor que ya trae el Sheet que rehacer la cuenta en el cliente).
+    // Petición explícita de Eloy: el precio ORIGINAL (con o sin
+    // descuento) debe indicar también su importe sin IVA; el precio YA
+    // rebajado, en cambio, se queda con un único número — sin su propio
+    // desglose sin IVA, para no duplicar esa información dos veces.
+    const precioSinIVA = `<span class="precio-siniva">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>`;
+    // Bloque de precio: con descuento, el precio real (con su sin IVA
+    // debajo, más pequeño y tachado también) se ve tachado y más
+    // pequeño, y justo debajo el precio ya rebajado en el tamaño
+    // normal — al revés de lo habitual (precio grande primero) a
+    // propósito, para que lo primero que llame la atención sea el precio
+    // final a pagar, no el de partida.
+    const bloquePrecio = tieneDescuento
+      ? `<span class="precio-tachado">${fmtEUR(p.precio_con)}&nbsp;€</span>
+         <span class="precio-siniva precio-siniva-tachado">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>
+         <span class="precio precio-rebajado">${fmtEUR(precioRebajado)}&nbsp;€<span class="iva">IVA inc.</span></span>`
+      : `<span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
+         ${precioSinIVA}`;
+    return `
+      <article class="card ${ia?'ia-card':''}" data-ref="${p.ref}" data-descuento="${tieneDescuento?descuento:0}" role="button" tabindex="0" aria-label="Ver detalle de ${p.nombre||p.ref}"${atributoTam}>
+        ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
+        ${tieneDescuento ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
+        <div class="icon-tile">
+          ${iconFor(p)}
+          ${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+        </div>
+        <span class="fam">${p.familia||''}</span>
+        <span class="nombre">${p.nombre||''}</span>
+        <div class="ref-line ref-line-precio">
+          ${bloquePrecio}
+        </div>
+        <div class="ref-line">
+          ${barcodeSVG(p.ref)}
+          <span class="ref mono">${p.ref}</span>
+        </div>
+        <span class="go">
+          Ver detalle
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </article>`;
+  }
+
+  // ---------- Modal de detalle de producto (estante público) ----------
+  // Mismo patrón que abrirModalProducto()/cerrarModalProducto() de
+  // solucion-detalle.js (Centro de Soluciones) — puerto fiel, con las
+  // variables de color propias de esta página. Petición explícita de
+  // Eloy: "poder visualizar el producto con más detalle clicando... y
+  // que se vea en una modal igual que en el centro de soluciones".
+  function abrirModalProductoPublico(ref, descuento){
+    const p = PRODUCTS[ref];
+    if(!p) return;
+    const overlay = $("#modal-producto-overlay");
+    if(!overlay) return;
+
+    const urlImg = urlImagenProducto(p, 600);
+    const img = $("#modal-producto-img");
+    const sinImagen = $("#modal-producto-sin-imagen");
+    if(urlImg){
+      img.src = urlImg; img.alt = p.nombre || '';
+      img.style.display = 'block';
+      img.onerror = () => { img.style.display = 'none'; sinImagen.style.display = 'flex'; };
+      sinImagen.style.display = 'none';
+    } else {
+      img.style.display = 'none';
+      sinImagen.style.display = 'flex';
+    }
+
+    $("#modal-producto-nombre").textContent = p.nombre || '';
+    $("#modal-producto-ref").textContent = p.ref ? `Ref: ${p.ref}` : '';
+
+    // Mismo tratamiento de precio que la propia tarjeta del estante
+    // (precio tachado + sin IVA tachado + precio rebajado si hay
+    // descuento efectivo; si no, precio + sin IVA) — el descuento ya
+    // viene calculado desde fuera (data-descuento de la tarjeta
+    // pulsada), no se recalcula aquí.
+    const tieneDescuento = Number(descuento) > 0;
+    let precioHtml;
+    if(tieneDescuento){
+      const precioRebajado = precioConDescuento(p.precio_con, descuento);
+      precioHtml = `<div class="modal-producto-precio-con precio-tachado" style="font-size:1rem;">${fmtEUR(p.precio_con)} €</div>
+        <div class="modal-producto-precio-sin precio-siniva-tachado">${fmtEUR(p.precio_sin)} € sin IVA</div>
+        <div class="modal-producto-precio-con" style="margin-top:6px;">${fmtEUR(precioRebajado)} € <span style="font-size:0.9rem; font-weight:400;">IVA inc.</span></div>`;
+    } else {
+      precioHtml = `<div class="modal-producto-precio-con">${fmtEUR(p.precio_con)} € <span style="font-size:0.9rem; font-weight:400;">IVA inc.</span></div>
+        <div class="modal-producto-precio-sin">${fmtEUR(p.precio_sin)} € sin IVA</div>`;
+    }
+    $("#modal-producto-precio").innerHTML = precioHtml;
+
+    $("#modal-producto-familia").textContent = p.familia || '—';
+    $("#modal-producto-area").textContent = p.area || '—';
+
+    const btnBuscador = $("#modal-producto-verbuscador");
+    btnBuscador.href = `./buscador.html?ref=${encodeURIComponent(p.ref)}`;
+
+    overlay.classList.add('activo');
+    document.body.style.overflow = 'hidden';
+  }
+  function cerrarModalProductoPublico(){
+    const overlay = $("#modal-producto-overlay");
+    if(!overlay) return;
+    overlay.classList.remove('activo');
+    document.body.style.overflow = '';
+  }
+  function wireModalProductoPublico(){
+    const overlay = $("#modal-producto-overlay");
+    if(overlay) overlay.addEventListener('click', (ev)=>{ if(ev.target===overlay) cerrarModalProductoPublico(); });
+    const btnCerrar = $("#modal-producto-cerrar");
+    if(btnCerrar) btnCerrar.addEventListener('click', cerrarModalProductoPublico);
+    document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape') cerrarModalProductoPublico(); });
+    // Delegado en #shelf (no en cada tarjeta individualmente): las
+    // tarjetas se reconstruyen por completo en cada render(), así que
+    // enganchar el listener en el contenedor fijo evita tener que
+    // re-engancharlo cada vez. Activa también con teclado (Enter/
+    // Espacio) al ser role="button" — accesible sin ratón.
+    const shelf = $("#shelf");
+    if(shelf){
+      shelf.addEventListener('click', (ev)=>{
+        const card = ev.target.closest('.card[data-ref]');
+        if(card) abrirModalProductoPublico(card.dataset.ref, card.dataset.descuento);
+      });
+      shelf.addEventListener('keydown', (ev)=>{
+        if(ev.key!=='Enter' && ev.key!==' ') return;
+        const card = ev.target.closest('.card[data-ref]');
+        if(!card) return;
+        ev.preventDefault();
+        abrirModalProductoPublico(card.dataset.ref, card.dataset.descuento);
+      });
+    }
+  }
+
+  // Muestra UNA sola campaña (la del parámetro ?campana=ID si viene en
+  // la URL, si no la que esté activa hoy) — la selección/navegación
+  // entre campañas ahora vive en escaparate-campanas.html, que enlaza
+  // aquí con ese parámetro; esta página ya no tiene selector propio.
+  function render(){
+    if(!CAMPAIGNS.length){
+      $("#vitrina").innerHTML = `
+        <div class="vitrina-content">
+          <div class="vitrina-empty">
+            <span class="badge tipo">SIN CAMPAÑAS TODAVÍA</span>
+            <h2 style="margin-top:14px">Este escaparate está listo, pero vacío</h2>
+            <p>Usa "Gestionar escaparates" en <a href="./escaparate-campanas.html" style="color:inherit; text-decoration:underline;">escaparate-campanas.html</a> para crear el primero — de temporada o comercial — y luego asígnale productos reales del catálogo.</p>
+          </div>
+        </div>`;
+      $("#vitrina").classList.remove('tiene-imagen');
+      $("#shelfSection").hidden = true;
+      $("#vitrinaCierre").hidden = true;
+      pintarFondoEstacional(HOY); // al final, tras ocultar/vaciar todo lo demás, para medir la altura ya definitiva del lienzo
+      return;
+    }
+
+    if(!activeId || !findCampaign(activeId)) activeId = CAMPAIGNS[0].id;
+    const c = findCampaign(activeId);
+    const cs = colorSetDe(c);
+    const root = document.documentElement;
+    root.style.setProperty('--accent', cs.accent);
+    root.style.setProperty('--accent-2', cs.accent2);
+    root.style.setProperty('--accent-vivid', cs.vivid);
+    root.style.setProperty('--accent-vivid-2', cs.vivid2);
+    root.style.setProperty('--wash', cs.wash);
+
+    const hoyActiva = activaEn(c, HOY);
+    $("#vitrina").innerHTML = `
+      <div class="vitrina-content">
+        <div class="vitrina-top">
+          <span class="badge ${c.origen}">${c.origen==="manual" ? ICONS.tag : ICONS.sparkle} ${c.origen==="manual" ? "Campaña manual" : "Generada por IA"}</span>
+          <span class="badge tipo">${c.tipo==="temporada" ? "Temporada" : "Comercial"}</span>
+          ${hoyActiva ? `<span class="badge" style="color:#1a7a4c;border-color:#1a7a4c;background:rgba(26,122,76,.09)">● activa hoy</span>` : `<span class="badge">fuera de fecha hoy</span>`}
+        </div>
+        <h2>${c.nombre}</h2>
+        <p class="sub">${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}.</p>
+        <div class="vitrina-meta">
+          <span class="item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+            <span>${c.permanente ? 'Permanente' : `${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}`}</span>
+          </span>
+          <span class="item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M4 8h16M9 12a3 3 0 006 0"/></svg>
+            <span>${c.productos.length} producto${c.productos.length===1?'':'s'} destacados</span>
+          </span>
+        </div>
+        <div class="overlap-note" id="overlapNote"></div>
+      </div>
+      <div class="vitrina-foto" id="vitrinaFoto" hidden></div>
+    `;
+    $("#vitrina").classList.toggle('tiene-imagen', !!c.imagenFondo);
+    pintarFotoCampana(c.imagenFondo);
+
+    const solapa = solapaConManual(c);
+    if(solapa){
+      const note = $("#overlapNote");
+      note.classList.add("show");
+      note.innerHTML = `${ICONS.sparkle.replace('sparkle','')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent-2)"><path d="M12 9v4M12 16.5h.01M10.3 3.9L2.7 17.5A1.8 1.8 0 004.3 20h15.4a1.8 1.8 0 001.6-2.5L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg><span>Esta campaña de IA solapa con <b>«${solapa.nombre}»</b> (manual, ${fmtFecha(solapa.fechaInicio)}–${fmtFecha(solapa.fechaFin)}). En producción la manual manda mientras dure.</span>`;
+    }
+
+    $("#shelfSection").hidden = false;
+    $("#shelfTitle").textContent = `Productos de «${c.nombre}»`;
+    $("#shelfCount").textContent = `${c.productos.length} ref.`;
+    const destacadosMap = {};
+    (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{ if(d && d.ref) destacadosMap[d.ref] = d; });
+    // "posV" reordena aquí el array antes de pintar (arriba primero,
+    // abajo al final, medio conserva su orden relativo) — con
+    // Array.prototype.sort estable (garantizado desde ES2019) los
+    // empates entre productos con el mismo posV mantienen su orden
+    // original. Se hace así, en vez de con CSS "order", porque mezclar
+    // "order" con grid-auto-flow:dense daba huecos raros y bloques que
+    // no encajaban bien con sus vecinos (feedback real de Eloy).
+    const PESO_POSICION_ = { arriba: -1, medio: 0, abajo: 1 };
+    const productosOrdenados = c.productos.slice().sort((a, b) => {
+      const pa = PESO_POSICION_[(destacadosMap[a] || {}).posV] || 0;
+      const pb = PESO_POSICION_[(destacadosMap[b] || {}).posV] || 0;
+      return pa - pb;
+    });
+    $("#shelf").innerHTML = productosOrdenados.length
+      ? productosOrdenados.map(r=>{
+          const d = destacadosMap[r] || null;
+          // El descuento del producto (si lo tiene) manda como preferente
+          // sobre el general de la campaña — petición explícita: "si un
+          // producto también lo tiene añadido aplicará el indicado en el
+          // producto como preferente".
+          const descuentoEfectivo = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
+          return productCard(r, { destacado: d, descuento: descuentoEfectivo });
+        }).join("")
+      : `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
+
+    // Bloque de cierre, con la frase opcional definida en el formulario de
+    // campaña. Sin frase, se ve igual el bloque, solo que sin texto
+    // encima ("se verá sólo el bloque de cierre").
+    $("#vitrinaCierre").hidden = false;
+    $("#vitrinaCierreFrase").textContent = c.eslogan || '';
+    $("#vitrinaCierreFrase").hidden = !c.eslogan;
+
+    // Estación según el INICIO de la campaña, no el día de hoy — así una
+    // campaña de verano programada en julio se ve "de verano" se mire
+    // cuando se mire. Excepción: un escaparate PERMANENTE siempre usa
+    // HOY — no tiene un "inicio" real que represente nada (y si lo
+    // tuviera guardado de antes de marcarlo como permanente, mostrar esa
+    // fecha vieja congelaría la estación para siempre en vez de ir
+    // cambiando con el año, que es lo esperable para algo permanente).
+    // Se pinta AL FINAL, después de que shelf/cierre ya estén en el DOM,
+    // para medir la altura real y definitiva del lienzo completo (ver
+    // pintarFondoEstacional).
+    const fechaRefEstacion = (!c.permanente && c.fechaInicio) ? new Date(c.fechaInicio+"T00:00:00") : HOY;
+    pintarFondoEstacional(fechaRefEstacion);
+  }
+
+  // Foto de campaña: aparte del fondo estacional, nítida (nunca
+  // difuminada), en su propio bloque — ver .vitrina-foto en el CSS.
+  function pintarFotoCampana(driveId){
+    const bloque = $("#vitrinaFoto");
+    if(!bloque) return;
+    const url = urlImagenCampana(driveId, 900);
+    if(!url){ bloque.hidden = true; bloque.innerHTML = ''; return; }
+    bloque.hidden = false;
+    bloque.innerHTML = `<img src="${url}" alt="">`;
+  }
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer;
+  function toast(msg, isError){
+    const el = $("#toast");
+    $("#toastMsg").textContent = msg;
+    el.classList.toggle('error', !!isError);
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>el.classList.remove("show"), 4200);
+  }
+
+  if (window.MOSTRAR_GESTION_CAMPANAS) {
+  /* ---------------- Modal A: asignar productos ---------------- */
+  const modalProductos = $("#modalProductos");
+  // <dialog>.showModal() NO bloquea por sí solo el scroll de la página de
+  // fondo en todos los navegadores — se pudo comprobar en vivo que,
+  // aunque el modal se queda fijo y centrado (comportamiento nativo
+  // correcto), el fondo seguía desplazándose por detrás con la rueda del
+  // ratón/gesto táctil, dejando el pie de página (oscuro) asomando y
+  // solapado con la parte de abajo del modal (reportado real: "se ha
+  // quedado abierta y solapada al footer" — confirmado además con una
+  // captura real vía Playwright antes de corregirlo, haciendo scroll con
+  // el modal abierto). Se bloquea el overflow tanto de <html> como de
+  // <body>: el primer intento solo tocaba <body> y no bastaba, porque en
+  // este sitio el contenedor que de verdad hace scroll es <html> (tiene
+  // overflow-y:auto por defecto; <body> no es el que scrollea aquí) —
+  // confirmado también con Playwright, comprobando que scrollY seguía
+  // cambiando pese a poner overflow:hidden solo en <body>. El evento
+  // 'close' nativo del <dialog> cubre cualquier forma de cerrarlo (botón,
+  // tecla Escape, clic en el fondo), así que basta un único listener aquí
+  // para restaurar el scroll en todos los casos, sin repetirlo en cada
+  // punto donde se llama .close().
+  if (modalProductos) {
+    modalProductos.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
+  }
+  let selected = new Set();
+  let sugeridosIA = [];       // refs sugeridas por la IA en la sesión actual del modal
+  let destacados = {};        // ref -> {tamano(1-6), alinH, posV, descuento(%)} — solo entradas con tamano>1 o descuento>0
+  const HINT_IA_DEFECTO = 'Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.';
+  const ETIQUETAS_ALINEACION = { izquierda:'Izda.', centro:'Centro', derecha:'Dcha.' };
+  const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
+  function destacadoActual(ref){
+    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0 };
+  }
+
+  function familiasDisponibles(){
+    return Array.from(new Set(PRODUCTS_LIST.map(p=>p.familia).filter(Boolean))).sort();
+  }
+  function fillFamiliaSelect(){
+    const sel = $("#fFamilia");
+    sel.innerHTML = `<option value="">Todas las familias</option>` +
+      familiasDisponibles().map(f=>`<option value="${f}">${f}</option>`).join("");
+  }
+
+  function pickCardHTML(p, esIA){
+    const imgUrl = urlImagenProducto(p, 200);
+    return `
+      <button type="button" class="pick-card ${selected.has(p.ref)?'selected':''} ${esIA?'ia-pick':''}" data-ref="${p.ref}">
+        <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+        <span class="pick-img">
+          ${iconFor(p)}
+          ${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+        </span>
+        <span class="fam">${p.familia||''}</span>
+        <span class="nombre">${p.nombre}</span>
+        <span class="precio">${fmtEUR(p.precio_con)} €</span>
+      </button>`;
+  }
+  function attachPickCardHandlers(){
+    $$(".pick-card", $("#pickerGrid")).forEach(card=>{
+      card.addEventListener("click", ()=>{
+        const ref = card.dataset.ref;
+        if(selected.has(ref)) selected.delete(ref); else selected.add(ref);
+        card.classList.toggle("selected");
+        updateSelCount();
+        renderSeleccionados();
+      });
+    });
+  }
+
+  let itemsPickerActual = []; // últimos resultados filtrados mostrados (para "Añadir todos estos")
+  function renderPicker(){
+    const fam = $("#fFamilia").value;
+    const q = $("#fBusca").value.trim().toLowerCase();
+    const toolbar = $("#pickerToolbar");
+    if(!q && !fam){
+      toolbar.hidden = true;
+      // Sin búsqueda activa: si hay sugerencias de IA pendientes de
+      // revisión para esta campaña, se muestran en vez del mensaje
+      // vacío — el usuario puede quitarlas (clic) o buscar más abajo
+      // para añadir manualmente, sin perder lo ya sugerido.
+      if(sugeridosIA.length){
+        const items = sugeridosIA.map(ref=>PRODUCTS[ref]).filter(Boolean);
+        $("#pickerGrid").innerHTML =
+          `<div class="picker-section-label">${ICONS.sparkle}<b>${items.length} sugerido${items.length===1?'':'s'} por IA</b> para esta campaña — quita los que no encajen o busca abajo para añadir más.</div>` +
+          items.map(p=>pickCardHTML(p, true)).join("");
+        attachPickCardHandlers();
+        return;
+      }
+      $("#pickerGrid").innerHTML = `<p class="picker-empty">Escribe algo, elige una familia, o usa "Sugerir productos con IA" para empezar a buscar entre los ${PRODUCTS_LIST.length.toLocaleString('es-ES')} productos del catálogo.</p>`;
+      return;
+    }
+    const items = PRODUCTS_LIST.filter(p=>{
+      if(fam && p.familia!==fam) return false;
+      if(q && !((p.nombre||'').toLowerCase().includes(q) || (p.ref||'').includes(q))) return false;
+      return true;
+    }).slice(0, 120);
+    itemsPickerActual = items;
+    // Botón "Añadir todos estos" — petición explícita de Eloy: "si una
+    // búsqueda recupera todos los que interesan, no tener que meterlos
+    // de uno en uno". Solo se muestra si hay algo que añadir de verdad
+    // (al menos un resultado que todavía no esté ya seleccionado) — no
+    // tiene sentido ofrecerlo con la lista vacía o si ya están todos
+    // añadidos.
+    const pendientes = items.filter(p=>!selected.has(p.ref));
+    if(items.length && pendientes.length){
+      toolbar.hidden = false;
+      $("#pickerResumen").textContent = `${items.length} resultado${items.length===1?'':'s'}${items.length>=120?' (mostrando los primeros 120)':''}`;
+      $("#btnAnadirTodos").textContent = pendientes.length===items.length ? `Añadir los ${items.length}` : `Añadir ${pendientes.length} pendiente${pendientes.length===1?'':'s'}`;
+    } else {
+      toolbar.hidden = true;
+    }
+    $("#pickerGrid").innerHTML = items.map(p=>pickCardHTML(p, false)).join("") || `<p class="picker-empty">Sin resultados para este filtro.</p>`;
+    attachPickCardHandlers();
+  }
+  $("#btnAnadirTodos").addEventListener("click", ()=>{
+    itemsPickerActual.forEach(p=>selected.add(p.ref));
+    updateSelCount();
+    renderSeleccionados();
+    renderPicker(); // refresca el propio picker (marca como ya-añadidos, actualiza/oculta la barra)
+  });
+  function updateSelCount(){ $("#selCount").textContent = selected.size; }
+
+  // Lista SIEMPRE visible de lo que ya está en la campaña (independiente
+  // del filtro de búsqueda activo) — antes, para quitar un producto ya
+  // asignado había que volver a encontrarlo entre miles de productos.
+  function renderSeleccionados(){
+    const cont = $("#selectedChips");
+    const refs = Array.from(selected);
+    $("#selectedHeadCount").textContent = refs.length;
+    $("#btnQuitarTodos").disabled = !refs.length;
+    cont.innerHTML = refs.map(ref=>{
+      const p = PRODUCTS[ref];
+      const nombre = (p ? p.nombre : ref).replace(/"/g,'&quot;');
+      const imgUrl = p ? urlImagenProducto(p, 80) : null;
+      const d = destacadoActual(ref);
+      const esDestacado = d.tamano > 1;
+      const tieneDescuento = Number(d.descuento) > 0;
+      const partesResumen = [];
+      if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
+      if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
+      const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento…';
+      return `<div class="chip-producto">
+        <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
+        <span class="chip-nombre" title="${nombre}">${nombre}</span>
+        <details class="destacar" ${(esDestacado||tieneDescuento)?'open':''}>
+          <summary class="${(esDestacado||tieneDescuento)?'activo':''}">${resumen}</summary>
+          <div class="destacar-panel">
+            <label>Tamaño
+              <select data-campo="tamano" data-ref="${ref}">
+                ${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n===d.tamano?'selected':''}>${n===1?'1 (normal)':n}</option>`).join('')}
+              </select>
+            </label>
+            <label>Alineación
+              <select data-campo="alinH" data-ref="${ref}" ${!esDestacado?'disabled':''}>
+                <option value="izquierda" ${d.alinH==='izquierda'?'selected':''}>Izquierda</option>
+                <option value="centro" ${d.alinH==='centro'?'selected':''}>Centro</option>
+                <option value="derecha" ${d.alinH==='derecha'?'selected':''}>Derecha</option>
+              </select>
+            </label>
+            <label>Posición
+              <select data-campo="posV" data-ref="${ref}" ${!esDestacado?'disabled':''}>
+                <option value="arriba" ${d.posV==='arriba'?'selected':''}>Arriba</option>
+                <option value="medio" ${d.posV==='medio'?'selected':''}>Medio</option>
+                <option value="abajo" ${d.posV==='abajo'?'selected':''}>Abajo</option>
+              </select>
+            </label>
+            <label>Descuento (%)
+              <input type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15" data-campo="descuento" data-ref="${ref}" value="${tieneDescuento ? d.descuento : ''}">
+            </label>
+          </div>
+        </details>
+        <button type="button" class="chip-quitar" data-quitar="${ref}" title="Quitar de la campaña" aria-label="Quitar ${nombre}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>`;
+    }).join("");
+    $$("[data-quitar]", cont).forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const ref = btn.dataset.quitar;
+        selected.delete(ref);
+        sugeridosIA = sugeridosIA.filter(r=>r!==ref);
+        delete destacados[ref];
+        updateSelCount();
+        renderSeleccionados();
+        renderPicker(); // por si el mismo producto se ve también en la búsqueda/sugerencias, para desmarcarlo ahí también
+      });
+    });
+    $$("[data-campo]", cont).forEach(campo=>{
+      // 'change' para los dos tipos de campo (antes solo <select>, ahora
+      // también el <input type="number"> de descuento) — no 'input': con
+      // 'input' el resumen se recalcularía en cada tecla, y como
+      // renderSeleccionados() reconstruye todo el HTML de la lista, el
+      // campo de descuento perdería el foco a la primera cifra escrita.
+      // 'change' solo dispara al salir del campo (o pulsar Enter), que es
+      // justo cuando SÍ hace falta refrescar el resumen.
+      campo.addEventListener("change", ()=>{
+        const ref = campo.dataset.ref;
+        const nombreCampo = campo.dataset.campo;
+        const actual = Object.assign({}, destacadoActual(ref));
+        if(nombreCampo === 'tamano') actual.tamano = parseInt(campo.value, 10);
+        else if(nombreCampo === 'descuento'){
+          const n = parseFloat(campo.value);
+          actual.descuento = (isFinite(n) && n > 0) ? Math.min(Math.round(n), 95) : 0;
+        }
+        else actual[nombreCampo] = campo.value;
+        // Antes se borraba la entrada entera en cuanto tamano<=1 — correcto
+        // cuando "destacados" solo servía para tamaño/posición, pero ahora
+        // también hace falta guardar un descuento propio aunque el
+        // producto no esté agrandado. Solo se borra si de verdad no
+        // aporta nada (ni tamaño destacado ni descuento).
+        if(actual.tamano <= 1 && !actual.descuento) delete destacados[ref];
+        else destacados[ref] = actual;
+        renderSeleccionados(); // refresca el resumen del <summary> (y habilita/deshabilita alineación/posición)
+      });
+    });
+  }
+  $("#btnQuitarTodos").addEventListener("click", ()=>{
+    if(!selected.size) return;
+    if(!confirm(`¿Quitar los ${selected.size} productos de esta campaña? El cambio no se guarda hasta que pulses "Guardar productos".`)) return;
+    selected.clear();
+    sugeridosIA = [];
+    destacados = {};
+    updateSelCount();
+    renderSeleccionados();
+    renderPicker();
+  });
+
+  // Acceso con PIN — mismo patrón que "Gestionar destacados" en
+  // buscador.html: antes esta gestión no tenía ningún control de acceso.
+  // La carga del catálogo y la preparación del picker (antes al
+  // principio de openModalProductos) se aplazan a DESPUÉS de validar el
+  // PIN — ver productosCargarCampanaYMostrar_ — así no se le hace
+  // esperar al catálogo a quien todavía ni ha entrado el PIN.
+  let productosPin_ = '';
+  function productosGuardarPinLocal_(pin, recordar) {
+    if (recordar) { try { localStorage.setItem('omProductosPin', pin); } catch (e) {} }
+  }
+
+  async function openModalProductos(campaignId){
+    if(!window.MOSTRAR_GESTION_CAMPANAS) return;
+    const c = findCampaign(campaignId);
+    if(!c) return;
+    modalProductos.dataset.campaignId = campaignId;
+    document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
+    modalProductos.showModal();
+    const pinGuardado = (() => { try { return localStorage.getItem('omProductosPin'); } catch (e) { return null; } })();
+    if (pinGuardado) {
+      productosValidarPinYArrancar_(pinGuardado, campaignId);
+    } else {
+      $("#productosVistaPin").style.display = '';
+      $("#productosVistaPrincipal").style.display = 'none';
+      $("#productosModalFoot").style.display = 'none';
+    }
+  }
+
+  async function productosValidarPinYArrancar_(pin, campaignId) {
+    const error = $("#productosPinError");
+    const btn = $("#productosPinEntrar");
+    error.textContent = '';
+    const textoOriginal = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Comprobando…';
+    try {
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'panel_validar_pin', pin: pin }),
+      });
+      const d = await resp.json();
+      if (d.success) {
+        productosPin_ = pin;
+        $("#productosVistaPin").style.display = 'none';
+        $("#productosVistaPrincipal").style.display = '';
+        $("#productosModalFoot").style.display = '';
+        await productosCargarCampanaYMostrar_(campaignId);
+      } else {
+        error.textContent = 'PIN incorrecto.';
+        try { localStorage.removeItem('omProductosPin'); } catch (e) {}
+      }
+    } catch (e) {
+      error.textContent = 'Error de conexión.';
+    } finally {
+      btn.disabled = false; btn.textContent = textoOriginal;
+    }
+  }
+
+  // El catálogo completo (para poder BUSCAR y añadir productos nuevos,
+  // no solo ver los ya asignados) se carga aquí, de forma perezosa — ver
+  // cargarCatalogoCompleto(). Los productos YA asignados a esta campaña
+  // se ven al instante de todas formas (ya están en PRODUCTS desde la
+  // carga dirigida de la vitrina pública), así que solo afecta a poder
+  // buscar más, no a lo que ya se ve nada más abrir.
+  async function productosCargarCampanaYMostrar_(campaignId){
+    const c = findCampaign(campaignId);
+    if(!c) return;
+    const btn = $("#btnProductos");
+    const textoOriginal = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Cargando catálogo…'; }
+    try{
+      await cargarCatalogoCompleto();
+    } catch(err){
+      if(btn){ btn.disabled = false; btn.textContent = textoOriginal; }
+      toast('No se ha podido cargar el catálogo completo: ' + err.message, true);
+      return;
+    }
+    if(btn){ btn.disabled = false; btn.textContent = textoOriginal; }
+
+    // A partir de aquí, todo síncrono — pero envuelto en try/catch de
+    // todas formas: al ser esta función async, cualquier excepción sin
+    // capturar aquí dentro se convierte en un rechazo de promesa SIN
+    // CAPTURAR (nunca llega a window.onerror), silencioso para el
+    // usuario real y, en Node/jsdom, capaz de tirar abajo el proceso
+    // entero en vez de solo registrar el fallo — encontrado de verdad
+    // al probar esta función tras convertirla en async.
+    try{
+      selected = new Set(c.productos);
+      sugeridosIA = [];
+      destacados = {};
+      (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{
+        if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0 };
+      });
+      updateSelCount();
+      renderSeleccionados();
+      $("#modalProdCampana").textContent = c.nombre;
+      fillFamiliaSelect();
+      $("#fBusca").value = "";
+      $("#fFamilia").value = "";
+      $("#iaCriterioAdicional").value = "";
+      $("#iaSuggestHint").classList.remove('error');
+      $("#iaSuggestHint").textContent = HINT_IA_DEFECTO;
+      renderPicker();
+    } catch(err){
+      console.error('Error abriendo el modal de productos:', err);
+      toast('No se ha podido abrir el modal de productos: ' + err.message, true);
+    }
+  }
+  $("#fFamilia").addEventListener("change", renderPicker);
+  $("#fBusca").addEventListener("input", renderPicker);
+
+  /* ---------------- Sugerir productos con IA (Modal A) ----------------
+     La IA NUNCA ve el catálogo ni propone nombres de producto exactos —
+     solo propone categorías/términos de búsqueda en español a partir del
+     título, fechas y áreas de la campaña. La búsqueda de productos reales
+     que coinciden con esos términos se hace aquí, en el propio navegador,
+     contra PRODUCTS_LIST (ya cargado). Así es imposible que aparezca un
+     producto que no exista de verdad en el catálogo — el mismo principio
+     de "nunca confiar a ciegas en la IA" que ya se aplica en complementarios
+     y en el Centro de Soluciones, aquí llevado al extremo de no darle a la
+     IA ninguna oportunidad de nombrar un producto concreto. */
+  function quitarAcentos(s){
+    return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function palabrasSignificativas(s){
+    return quitarAcentos(s).toLowerCase().split(/[^a-z0-9]+/i).filter(w=>w.length>=3);
+  }
+  function productoCoincideConTermino(p, palabrasTermino){
+    const texto = quitarAcentos([p.nombre, p.familia, p.subfamilia].filter(Boolean).join(' ')).toLowerCase();
+    const coincidencias = palabrasTermino.filter(w=>texto.includes(w));
+    const minimo = palabrasTermino.length <= 2 ? palabrasTermino.length : palabrasTermino.length - 1;
+    return coincidencias.length >= Math.max(1, minimo);
+  }
+  function buscarProductosPorTermino(termino, areasCampana, limite){
+    const palabras = palabrasSignificativas(termino);
+    if(!palabras.length) return [];
+    let pool = PRODUCTS_LIST;
+    if(Array.isArray(areasCampana) && areasCampana.length){
+      const areasNorm = areasCampana.map(a=>quitarAcentos(a).toLowerCase().trim());
+      pool = pool.filter(p=>areasNorm.includes(quitarAcentos(p.area||'').toLowerCase().trim()));
+    }
+    return pool.filter(p=>productoCoincideConTermino(p, palabras)).slice(0, limite || 4);
+  }
+
+  async function sugerirProductosIA(){
+    const campaignId = modalProductos.dataset.campaignId;
+    const c = findCampaign(campaignId);
+    if(!c) return;
+    const btn = $("#btnSugerirIA");
+    const hint = $("#iaSuggestHint");
+    const criterioAdicional = $("#iaCriterioAdicional").value.trim();
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `${ICONS.sparkle} Pensando ideas…`;
+    hint.classList.remove('error');
+    hint.textContent = 'Consultando la IA y buscando después en el catálogo real — puede tardar unos segundos.';
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          accion: 'sugerir_categorias_campana_ia',
+          nombre: c.nombre, tipo: c.tipo, fechaInicio: c.fechaInicio, fechaFin: c.fechaFin, areas: c.areas,
+          criterioAdicional,
+        }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'La IA no ha podido generar sugerencias.');
+      const terminos = data.terminos || [];
+      if(!terminos.length) throw new Error('La IA no ha propuesto ninguna categoría para esta campaña.');
+
+      const encontrados = new Map(); // ref -> producto real
+      terminos.forEach(t=>{
+        buscarProductosPorTermino(t, c.areas).forEach(p=>{
+          if(!encontrados.has(p.ref)) encontrados.set(p.ref, p);
+        });
+      });
+      // El criterio adicional se busca TAMBIÉN literal contra el
+      // catálogo, sin pasar por la IA y sin capar a 4 resultados. Bug
+      // real reportado por Eloy: "poseidon", "aire de sevilla" (marcas
+      // concretas) no encontraban nada — porque el prompt le pide a la
+      // IA explícitamente que NUNCA use marcas o nombres de producto
+      // exactos como término (con razón: no los conoce de verdad y
+      // podría inventarlos), así que un criterio que ES una marca
+      // concreta nunca llegaba a buscarse de verdad, por mucho que el
+      // encargado lo escribiera tal cual. Esta búsqueda literal es
+      // aparte y no sustituye a las categorías de la IA, se suman.
+      if(criterioAdicional){
+        buscarProductosPorTermino(criterioAdicional, c.areas, 50).forEach(p=>{
+          if(!encontrados.has(p.ref)) encontrados.set(p.ref, p);
+        });
+      }
+
+      const resumenTerminos = terminos.slice(0,4).join(', ') + (terminos.length>4 ? '…' : '');
+      if(!encontrados.size){
+        hint.classList.add('error');
+        hint.textContent = `La IA propuso ${terminos.length} categorías (${resumenTerminos}), pero ninguna encontró productos reales en el catálogo${c.areas && c.areas.length ? ' dentro de ' + c.areas.join(', ') : ''}. Prueba a buscar manualmente.`;
+        return;
+      }
+
+      sugeridosIA = Array.from(encontrados.keys());
+      sugeridosIA.forEach(ref=>selected.add(ref));
+      updateSelCount();
+      renderSeleccionados();
+      $("#fBusca").value = '';
+      $("#fFamilia").value = '';
+      renderPicker();
+      hint.classList.remove('error');
+      hint.textContent = `${encontrados.size} producto${encontrados.size===1?'':'s'} sugeridos a partir de ${terminos.length} categorías de IA (${resumenTerminos})${criterioAdicional ? `, con el criterio "${criterioAdicional}"` : ''}. Quita los que no encajen o sigue buscando para añadir más.`;
+    } catch(err){
+      hint.classList.add('error');
+      hint.textContent = 'No se pudo sugerir con IA: ' + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  }
+  $("#btnSugerirIA").addEventListener("click", sugerirProductosIA);
+
+  $("#btnConfirmAdd").addEventListener("click", async ()=>{
+    const campaignId = modalProductos.dataset.campaignId;
+    const btn = $("#btnConfirmAdd");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    const productosArr = Array.from(selected);
+    // Antes se excluía cualquier producto con tamano<=1 — correcto
+    // cuando esto solo guardaba tamaño/alineación/posición, pero ahora
+    // también hace falta una entrada para un producto con descuento
+    // propio aunque no esté agrandado (mismo criterio ya aplicado en
+    // sanearDestacados_ del backend, que es quien decide de verdad qué
+    // se guarda — esto es solo para no mandar de más).
+    const destacadosArr = productosArr
+      .filter(ref => destacados[ref] && (destacados[ref].tamano > 1 || Number(destacados[ref].descuento) > 0))
+      .map(ref => ({
+        ref, tamano: destacados[ref].tamano, alinH: destacados[ref].alinH, posV: destacados[ref].posV,
+        descuento: Number(destacados[ref].descuento) || 0,
+      }));
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones del proyecto
+        body: JSON.stringify({ accion:'actualizar_productos_campana', id:campaignId, pin: productosPin_, productos:productosArr, destacados:destacadosArr }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      const c = findCampaign(campaignId);
+      if(c){ c.productos = productosArr; c.destacados = data.destacados || destacadosArr; }
+      // Sincroniza la caché de sesión con este mismo cambio local — así
+      // si el usuario vuelve al listado o entra en otro escaparate, no
+      // ve el número de productos de antes de este guardado.
+      guardarCacheCampanasSesion(CAMPAIGNS);
+      modalProductos.close();
+      render();
+      toast(`Productos guardados en «${c ? c.nombre : campaignId}».`);
+    } catch(err){
+      toast('No se pudo guardar: ' + err.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  /* cerrar modales */
+  $$('[data-close-productos]').forEach(b=>b.addEventListener('click', ()=>modalProductos.close()));
+
+  if ($("#btnProductos")) {
+    $("#btnProductos").addEventListener("click", ()=>{ if(activeId) openModalProductos(activeId); });
+  }
+  $("#productosPinEntrar").addEventListener("click", () => {
+    const pin = $("#productosPinInput").value.trim();
+    productosGuardarPinLocal_(pin, $("#productosPinRecordar").checked);
+    productosValidarPinYArrancar_(pin, modalProductos.dataset.campaignId);
+  });
+  $("#productosPinInput").addEventListener("keydown", (e) => { if (e.key === 'Enter') $("#productosPinEntrar").click(); });
+  }
+
+  /* Botón "volver arriba" — mismo umbral (500px) y comportamiento que en
+     Centro de Soluciones (assets/js/centro-soluciones.js). Además, se
+     reposiciona por encima del banner de cookies mientras esté visible
+     (ver el comentario junto a .btn-volver-arriba en el CSS — el banner
+     ocupa todo el ancho inferior con z-index 9999, así que sin esto
+     quedaría tapado en cualquier visita nueva). */
+  (function wireBotonVolverArriba(){
+    const btn = $("#btnVolverArriba");
+    if(!btn) return;
+    function ajustarPosicionBotonVolverArriba(){
+      const banner = document.querySelector('.cookie-consent-banner');
+      const bannerVisible = banner && banner.classList.contains('is-visible');
+      btn.style.bottom = bannerVisible ? '180px' : '';
+    }
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('is-visible', window.scrollY > 500);
+      ajustarPosicionBotonVolverArriba();
+    });
+    ajustarPosicionBotonVolverArriba(); // por si el banner ya está visible antes del primer scroll
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+
+  // ══════════════════════════════════════════════════════════════════
+  // COMPARTIR Y DESCARGAR FOLLETO EN PDF — PRUEBA DE CONCEPTO
+  // ══════════════════════════════════════════════════════════════════
+  // Petición explícita de Eloy: dos botones junto al título ("Acércate
+  // a nuestro escaparate") — compartir el enlace del escaparate activo,
+  // y descargar un folleto en PDF con sus productos. Es intencionadamente
+  // una prueba de concepto aislada en este bloque: si no convence, todo
+  // lo necesario para quitarla está aquí y en el HTML/CSS de arriba
+  // marcado con el mismo comentario.
+  //
+  // Decisión de arquitectura clave: el PDF se genera ENTERAMENTE en el
+  // navegador (jsPDF cargado por CDN bajo demanda, solo cuando se pulsa
+  // el botón — nunca en la carga de la página), sin tocar Apps Script
+  // ni añadir un workflow nuevo. Los datos (campaña + catálogo) ya están
+  // en memoria (CAMPAIGNS/PRODUCTS, cargados por iniciar()); las fotos
+  // de producto se leen directamente de Drive con la misma URL que ya
+  // usa la propia página (urlImagenProducto) — confirmado que
+  // *.googleusercontent.com (destino final del redirect de
+  // drive.google.com/thumbnail) responde con
+  // "access-control-allow-origin: *", así que se pueden dibujar en un
+  // <canvas> y convertir a base64 para el PDF sin problema de CORS.
+
+  function urlCompartirEscaparate(){
+    // Siempre con ?campana=<id> explícito, aunque se haya entrado sin
+    // parámetro (mostrando "la de hoy") — así quien reciba el enlace ve
+    // SIEMPRE esta campaña en concreto, no la que toque el día que lo
+    // abra.
+    const u = new URL(location.href);
+    if(activeId) u.searchParams.set('campana', activeId);
+    return u.toString();
+  }
+
+  function wireBotonCompartir(){
+    const btn = $("#btnCompartirEscaparate");
+    if(!btn) return;
+    btn.addEventListener('click', async () => {
+      const c = activeId ? findCampaign(activeId) : null;
+      const url = urlCompartirEscaparate();
+      const titulo = c ? `Escaparate «${c.nombre}» — Orencio Matas y Hnos` : 'Escaparate — Orencio Matas y Hnos';
+      // navigator.share (móvil, y ya también Chrome/Edge de escritorio):
+      // hoja nativa de compartir del sistema. Si el usuario la cierra
+      // sin elegir nada, rechaza con AbortError — no es un error real,
+      // no se avisa de nada.
+      if(navigator.share){
+        try{
+          await navigator.share({ title: titulo, url });
+        } catch(err){
+          if(err && err.name !== 'AbortError') toast('No se ha podido abrir el panel de compartir.', true);
+        }
+        return;
+      }
+      // Escritorio sin Web Share API: copiar al portapapeles es el
+      // equivalente más útil de "compartir" (igual que ya hace el botón
+      // "Compartir" del modal de producto en el buscador/Centro de
+      // Soluciones).
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        try{
+          await navigator.clipboard.writeText(url);
+          toast('Enlace del escaparate copiado al portapapeles');
+        } catch(err){
+          toast('No se ha podido copiar el enlace.', true);
+        }
+      } else {
+        toast('No se ha podido copiar el enlace.', true);
+      }
+    });
+  }
+
+  // Igual que descuentoMaximoCampana() en escaparate-campanas.html (esa
+  // página no se carga aquí, así que se repite la misma lógica): el
+  // MAYOR entre el descuento general de la campaña y cualquier
+  // descuento propio de un producto — es el número que ya se usa en el
+  // listado de escaparates como "Hasta un X% de dto.", así que el
+  // folleto informa exactamente lo mismo a nivel general.
+  function descuentoMaximoCampanaFolleto(c){
+    const propios = (c.destacados || []).map(d => Number(d.descuento) || 0);
+    return Math.max(Number(c.descuento) || 0, ...propios, 0);
+  }
+
+  function hexARgbFolleto(hex){
+    const m = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex || '');
+    if(!m) return { r:217, g:27, b:27 };
+    return { r:parseInt(m[1],16), g:parseInt(m[2],16), b:parseInt(m[3],16) };
+  }
+
+  // Carga jsPDF solo la primera vez que hace falta (clic en "Descargar
+  // folleto") — nunca en la carga normal de la página, para no añadir
+  // peso a todo el mundo que solo viene a ver el escaparate. Versión
+  // UMD desde cdnjs (mismo proveedor de CDN que ya usa Font Awesome en
+  // otras páginas del sitio).
+  let promesaJsPDF = null;
+  function cargarLibreriaPDF(){
+    if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+    if(promesaJsPDF) return promesaJsPDF;
+    promesaJsPDF = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.crossOrigin = 'anonymous';
+      s.onload = () => (window.jspdf && window.jspdf.jsPDF) ? resolve() : reject(new Error('jsPDF no se ha inicializado tras cargar el script.'));
+      s.onerror = () => reject(new Error('No se ha podido cargar la librería de PDF (¿sin conexión, o CDN bloqueado?).'));
+      document.head.appendChild(s);
+    });
+    return promesaJsPDF;
+  }
+
+  // Convierte una imagen (misma URL que ya usa la propia página) en un
+  // dataURL a través de un <canvas> — es el paso que exige jsPDF
+  // (addImage no acepta una URL directamente). crossOrigin="anonymous"
+  // + que el recurso final responda con Access-Control-Allow-Origin
+  // (confirmado en *.googleusercontent.com) es lo que evita que el
+  // canvas quede "contaminado" (tainted) y toDataURL() lance una
+  // excepción de seguridad. Con timeout propio: una sola foto rota o
+  // muy lenta no debe colgar la generación de todo el folleto — se
+  // resuelve con null y esa tarjeta cae al icono de repuesto, igual que
+  // ya hace la propia página con onerror="this.remove()".
+  // recorteRatio (ancho/alto deseado) recorta LIGERAMENTE la imagen en
+  // el propio <canvas> para acercarla al hueco de su tarjeta — pero con
+  // un límite (MAX_RECORTE): recortar a saco al estilo "cover" de CSS
+  // dejaba el producto cortado y demasiado cerca en fotos con una
+  // proporción muy distinta a la tarjeta (el aviso de Eloy: "hay
+  // imágenes que salen más grandes que el espacio y no se aprecia bien
+  // el producto"). Con el límite, se recorta como mucho ese porcentaje
+  // de cada lado — lo suficiente para que las fotos "normales" (parecidas
+  // a la proporción de la tarjeta) llenen el hueco casi entero, pero sin
+  // llegar nunca a recortar el producto en las que no encajan ni de
+  // lejos; esas se dibujan luego en modo "contain" (ver
+  // dibujarTarjetaProducto), enteras y centradas, con el sobrante como
+  // márgen en vez de recortarlo.
+  function intentarCargarImagenDataURL(url, { timeoutMs=9000, tipo='image/jpeg', calidad=0.86, recorteRatio=null }={}){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      let resuelto = false;
+      const terminar = (valor) => { if(!resuelto){ resuelto = true; resolve(valor); } };
+      const timer = setTimeout(() => terminar(null), timeoutMs);
+      img.onload = () => {
+        clearTimeout(timer);
+        try{
+          const anchoOrig = img.naturalWidth || 300, altoOrig = img.naturalHeight || 300;
+          let sx = 0, sy = 0, sw = anchoOrig, sh = altoOrig;
+          if(recorteRatio){
+            const MAX_RECORTE = 0.3;
+            const ratioOrig = anchoOrig / altoOrig;
+            if(ratioOrig > recorteRatio){
+              sw = Math.max(altoOrig * recorteRatio, anchoOrig * (1 - MAX_RECORTE));
+              sx = (anchoOrig - sw) / 2;
+            } else if(ratioOrig < recorteRatio){
+              sh = Math.max(anchoOrig / recorteRatio, altoOrig * (1 - MAX_RECORTE));
+              sy = (altoOrig - sh) / 2;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(sw);
+          canvas.height = Math.round(sh);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+          terminar({ dataURL: canvas.toDataURL(tipo, calidad), w: canvas.width, h: canvas.height });
+        } catch(err){
+          terminar(null); // canvas contaminado u otro fallo — se usa el icono de repuesto
+        }
+      };
+      img.onerror = () => { clearTimeout(timer); terminar(null); };
+      img.src = url;
+    });
+  }
+  // Un solo reintento con espera antes de rendirse — el fallo real y
+  // repetible visto en pruebas con muchas fotos seguidas no era un
+  // problema de CORS (ya resuelto, ver urlImagenProductoFolleto) sino
+  // respuestas 429 (Too Many Requests) puntuales de googleusercontent.com
+  // ante ráfagas de peticiones a este endpoint público sin autenticar.
+  // Con el espaciado de cargarImagenesEnTandas ya no debería disparase en
+  // uso normal, pero este reintento es la red de seguridad para cuando sí
+  // ocurra — sin él, una única foto rebotada por un 429 pasajero se
+  // perdía para siempre en el folleto.
+  async function cargarImagenDataURL(url, opciones){
+    if(!url) return null;
+    const primero = await intentarCargarImagenDataURL(url, opciones);
+    if(primero) return primero;
+    await new Promise(r => setTimeout(r, 1200));
+    return intentarCargarImagenDataURL(url, opciones);
+  }
+
+  // Pedir TODAS las fotos del folleto a la vez (Promise.all sin más) fue
+  // justo lo que provocó respuestas 429 (Too Many Requests) de
+  // googleusercontent.com en pruebas reales con más de un puñado de
+  // productos: la URL directa que arregla el CORS del redirect (ver
+  // urlImagenProductoFolleto, más arriba) tolera perfectamente una
+  // petición aislada, pero no una ráfaga de muchas simultáneas desde el
+  // mismo navegador. Se piden por tandas pequeñas con una pausa entre
+  // tandas — más lento que pedirlas todas de golpe, pero es lo que evita
+  // el 429 (que sin esto tira TODAS las fotos al icono de repuesto, el
+  // bug real que reportó Eloy).
+  // onProgreso(completadas, total) se llama tras cada tanda — es lo que
+  // permite que el botón informe "Extrayendo imágenes… (X/Y)" en vez de
+  // un texto fijo durante los varios segundos que puede tardar esta fase
+  // (la más lenta con diferencia, por el espaciado entre tandas).
+  async function cargarImagenesEnTandas(items, onProgreso, tamanoTanda, esperaMs){
+    tamanoTanda = tamanoTanda || 1;
+    esperaMs = esperaMs || 550;
+    const resultados = new Array(items.length);
+    for(let i=0; i<items.length; i+=tamanoTanda){
+      const tanda = items.slice(i, i+tamanoTanda);
+      const parcial = await Promise.all(tanda.map(it => cargarImagenDataURL(it.url, it.opciones)));
+      parcial.forEach((r, j) => { resultados[i+j] = r; });
+      if(onProgreso) onProgreso(Math.min(i + tamanoTanda, items.length), items.length);
+      if(i + tamanoTanda < items.length) await new Promise(r => setTimeout(r, esperaMs));
+    }
+    return resultados;
+  }
+
+  async function generarFolletoEscaparate(){
+    const btn = $("#btnDescargarFolleto");
+    const c = activeId ? findCampaign(activeId) : null;
+    if(!c || !productosOK){
+      toast('Todavía no se ha podido cargar el escaparate — espera un momento y vuelve a intentarlo.', true);
+      return;
+    }
+    if(!c.productos || !c.productos.length){
+      toast('Este escaparate no tiene productos todavía — no hay nada que poner en el folleto.', true);
+      return;
+    }
+
+    const textoOriginalBtn = btn ? btn.innerHTML : '';
+    // Estados cortos en el propio botón mientras se genera — sin esto,
+    // con catálogos grandes (muchas fotos, varias tandas espaciadas para
+    // no disparar el 429 de googleusercontent.com) el botón se queda
+    // varios segundos con el mismo texto, y da la sensación de que se ha
+    // quedado bloqueado o ha fallado. fijarEstadoBoton() no toca
+    // "disabled" (ya se hace una sola vez aquí abajo) — solo el texto.
+    const fijarEstadoBoton = (texto) => { if(btn) btn.innerHTML = `<span>${texto}</span>`; };
+    if(btn){
+      btn.disabled = true;
+      fijarEstadoBoton('Recopilando datos…');
+    }
+
+    try{
+      await cargarLibreriaPDF();
+      const { jsPDF } = window.jspdf;
+      const cs = colorSetDe(c);
+      const accent = hexARgbFolleto(cs.accent);
+      const vivid = hexARgbFolleto(cs.vivid);
+      // jsPDF no tiene un atajo directo de "color + opacidad" para
+      // rellenos sólidos entre versiones, así que se mezcla a mano blanco
+      // con un porcentaje del vivid de la campaña — mismo cálculo para
+      // los dos únicos bloques que lo usan (cabecera y cierre, "tal y
+      // como está en la web": ahí el difuminado de color SOLO vive en
+      // .vitrina y .vitrina-cierre, nunca de fondo en toda la página).
+      const washMezcla = { r: 255 - (255-vivid.r)*0.07, g: 255 - (255-vivid.g)*0.07, b: 255 - (255-vivid.b)*0.07 };
+      // El fondo estacional (mismo criterio que pintarFondoEstacional en
+      // la propia página, donde SÍ cubre todo el lienzo) — aquí sí es el
+      // fondo de TODA la página, detrás de las tarjetas (que llevan
+      // relleno blanco propio, así que solo se aprecia en los huecos
+      // entre ellas — igual que en la web, donde las partículas quedan
+      // detrás de los bloques con fondo sólido).
+      const claveEstacionActual = estacionParaFecha(new Date());
+      const estacionActual = ESTACIONES[claveEstacionActual];
+
+      // Mismo orden que ya ve el visitante en el estante (arriba/medio/
+      // abajo según destacados[].posV) — el folleto refleja el mismo
+      // escaparate, no un orden distinto inventado para el PDF.
+      const destacadosMap = {};
+      (Array.isArray(c.destacados) ? c.destacados : []).forEach(d => { if(d && d.ref) destacadosMap[d.ref] = d; });
+      const PESO_POSICION = { arriba:-1, medio:0, abajo:1 };
+      const refsOrdenados = c.productos.slice().sort((a,b) => {
+        const pa = PESO_POSICION[(destacadosMap[a]||{}).posV] || 0;
+        const pb = PESO_POSICION[(destacadosMap[b]||{}).posV] || 0;
+        return pa - pb;
+      });
+
+      // Las fotos de producto se piden más abajo, una vez calculada la
+      // rejilla (ver filasProductos) — cada una se recorta al recuadro
+      // EXACTO que le toca en su tarjeta (ver cajaImagenDe), así que hace
+      // falta conocer antes el tamaño real de esa tarjeta (normal, ancha
+      // o grande). El logo es de este mismo origen, sin límite de
+      // peticiones ni recorte que dependa del layout, así que se pide ya
+      // — junto con la foto propia del escaparate (c.imagenFondo, la
+      // misma que se ve nítida en .vitrina-foto en la propia página), que
+      // solo existe si la campaña tiene una asignada.
+      const ANCHO_FOTO_CABECERA = 46, ALTO_FOTO_CABECERA = ANCHO_FOTO_CABECERA * 3/4; // mismo 4:3 que .vitrina-foto
+      const [logo, fotoCabecera] = await Promise.all([
+        cargarImagenDataURL('./assets/logos/logo-orencio.png', { tipo:'image/png' }),
+        cargarImagenDataURL(urlImagenCampanaFolleto(c.imagenFondo, 700), { recorteRatio: ANCHO_FOTO_CABECERA / ALTO_FOTO_CABECERA })
+      ]);
+
+      const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
+      const pageW = 210, pageH = 297, margin = 14;
+      const headerBottomY = 34, footerTopY = 272;
+      const contentRight = pageW - margin;
+      const contentWidth = contentRight - margin;
+
+      // Silueta de hoja (apuntando hacia arriba en su espacio local, con
+      // tallo y nervio central) para el fondo de otoño — antes se
+      // dibujaba con doc.circle() como el resto de estaciones, y sin una
+      // forma real se veían "burbujas marronas" en vez de hojas (el aviso
+      // de Eloy, que en la propia web sí son 🍁🍂 con forma reconocible).
+      // Un primer intento con 2 curvas Bézier de contorno tampoco
+      // funcionó — las puntas salían redondeadas (control points con
+      // tangente casi horizontal en los extremos), así que seguía
+      // pareciendo "un círculo con una raya" en vez de una hoja (segundo
+      // aviso de Eloy). Ahora el contorno es un polígono muestreado con
+      // ancho = sin(π·t) a lo largo del eje — esa curva llega A CERO
+      // exactamente en las dos puntas, así que quedan afiladas de verdad,
+      // sin depender de acertar unos control points a mano. jsPDF no
+      // tiene ningún plugin de paths SVG cargado; doc.lines() con
+      // segmentos rectos (en vez de Bézier) es del core, sin depender de
+      // nada más, y con suficientes puntos se ve perfectamente curvo a
+      // este tamaño de impresión.
+      function dibujarHojaOtono(cx, cy, tam, angulo, color){
+        const cos = Math.cos(angulo), sin = Math.sin(angulo);
+        const transformar = (lx, ly) => {
+          const sx = lx * tam, sy = ly * tam;
+          return { x: cx + sx*cos - sy*sin, y: cy + sx*sin + sy*cos };
+        };
+        // Espacio local: punta arriba (0,-0.5), punta abajo (0,0.5) —
+        // ancho() da el semiancho en cada punto a lo largo de ese eje,
+        // con dos lóbulos suaves además del abombado principal para que
+        // se note el contorno dentado de una hoja real, no un óvalo liso.
+        const ancho = (t) => 0.36 * Math.sin(Math.PI * t) * (1 + 0.12 * Math.sin(Math.PI * t * 4));
+        const PASOS = 14;
+        const contorno = [];
+        for(let i=0; i<=PASOS; i++){
+          const t = i / PASOS;
+          contorno.push(transformar(ancho(t), -0.5 + t));
+        }
+        for(let i=PASOS-1; i>=1; i--){
+          const t = i / PASOS;
+          contorno.push(transformar(-ancho(t), -0.5 + t));
+        }
+        const inicio = contorno[0];
+        const lineArray = [];
+        let actual = inicio;
+        for(let i=1; i<contorno.length; i++){
+          const p = contorno[i];
+          lineArray.push([p.x - actual.x, p.y - actual.y]);
+          actual = p;
+        }
+        doc.setFillColor(color.r, color.g, color.b);
+        doc.lines(lineArray, inicio.x, inicio.y, [1, 1], 'F', true);
+        // Nervio central + un pequeño tallo, en un tono más oscuro que el
+        // relleno — mismo detalle que distingue a la hoja del icono
+        // "leaf" genérico ya usado en el resto de la página.
+        const puntaSup = transformar(0, -0.5), puntaInf = transformar(0, 0.5);
+        const tallo = transformar(0.08, 0.62);
+        doc.setDrawColor(Math.round(color.r*0.55), Math.round(color.g*0.4), Math.round(color.b*0.3));
+        doc.setLineWidth(Math.max(0.15, tam*0.045));
+        doc.line(puntaSup.x, puntaSup.y, puntaInf.x, puntaInf.y);
+        doc.line(puntaInf.x, puntaInf.y, tallo.x, tallo.y);
+      }
+
+      function dibujarFondoEstacionalPagina(){
+        // Formas sueltas con la paleta de la estación actual, repartidas
+        // por TODA la página (no solo un margen) — es lo que pidió Eloy
+        // como "el estilo definido por estación en el fondo", igual que
+        // pintarFondoEstacional cubre todo #escaparateLienzo en la propia
+        // página. Al dibujarse antes que cualquier tarjeta (que sí llevan
+        // relleno blanco propio), solo se ven en los huecos entre ellas.
+        // Opacidad vía GState — disponible en el core de jsPDF, sin
+        // depender de ningún plugin adicional.
+        const N = 46;
+        const esOtono = claveEstacionActual === 'otono';
+        for(let i=0;i<N;i++){
+          const color = hexARgbFolleto(pick(estacionActual.colores));
+          const x = 4 + Math.random()*(pageW-8);
+          const y = 4 + Math.random()*(pageH-8);
+          doc.saveGraphicsState();
+          doc.setGState(new doc.GState({ opacity: 0.32 }));
+          if(esOtono){
+            const tam = 4 + Math.random()*3.5;
+            const angulo = Math.random() * Math.PI * 2;
+            dibujarHojaOtono(x, y, tam, angulo, color);
+          } else {
+            const r = 1 + Math.random()*1.9;
+            doc.setFillColor(color.r, color.g, color.b);
+            doc.circle(x, y, r, 'F');
+          }
+          doc.restoreGraphicsState();
+        }
+      }
+
+      // Bloque con el difuminado de color de la campaña — mismo
+      // tratamiento (y mismos dos únicos sitios) que .vitrina/
+      // .vitrina-cierre en la propia página: cabecera informativa y
+      // cierre, nunca de fondo en el resto del folleto.
+      function dibujarBloqueColor(x, y, w, h){
+        doc.setFillColor(washMezcla.r, washMezcla.g, washMezcla.b);
+        doc.setDrawColor(vivid.r, vivid.g, vivid.b);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
+      }
+
+      function dibujarCabecera(){
+        dibujarFondoEstacionalPagina();
+        // Franja de color de la propia campaña (cs.vivid) — "el estilo y
+        // color del folleto serán como el definido en el escaparate".
+        doc.setFillColor(vivid.r, vivid.g, vivid.b);
+        doc.rect(0, 0, pageW, 3.2, 'F');
+        if(logo){
+          const logoH = 12, logoW = logoH * (logo.w / logo.h);
+          doc.addImage(logo.dataURL, 'PNG', margin, 9, logoW, logoH);
+        }
+        doc.setTextColor(30, 33, 37);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.text('FOLLETO DE ESCAPARATE', contentRight, 13, { align:'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(120, 123, 130);
+        doc.text('orenciomatas.es', contentRight, 18, { align:'right' });
+        doc.setDrawColor(226, 228, 232);
+        doc.setLineWidth(0.3);
+        doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
+      }
+
+      function dibujarPie(numPagina, totalPaginas){
+        doc.setDrawColor(226, 228, 232);
+        doc.setLineWidth(0.3);
+        doc.line(margin, footerTopY, contentRight, footerTopY);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(30, 33, 37);
+        doc.text('Orencio Matas y Hnos, S.L.', margin, footerTopY + 6);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.6);
+        doc.setTextColor(110, 113, 120);
+        doc.text('Av. Alfred Nobel, 2 · 13005 Ciudad Real · 926 221 217', margin, footerTopY + 10.5);
+        doc.text('Lunes a Viernes 9:00–14:00 y 16:30–19:30 · Sábados 9:00–14:00 · Domingos cerrado', margin, footerTopY + 14.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(accent.r, accent.g, accent.b);
+        doc.textWithLink('orenciomatas.es', contentRight, footerTopY + 10.5, { url:'https://orenciomatas.es/', align:'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.6);
+        doc.setTextColor(150, 153, 160);
+        doc.text(`Página ${numPagina} de ${totalPaginas}`, contentRight, footerTopY + 14.5, { align:'right' });
+      }
+
+      dibujarCabecera();
+      let cursorY = headerBottomY + 6;
+
+      // ---- Bloque de cabecera informativa del escaparate (solo en la
+      // primera página), con el mismo difuminado de color que .vitrina
+      // en la propia web — la altura del bloque se calcula ANTES de
+      // dibujarlo (jsPDF no tiene "auto-height", a diferencia de un div),
+      // usando los mismos incrementos que luego se usan para colocar
+      // cada línea, para que el recuadro encaje exacto con su contenido. ----
+      const padInterno = 9;
+      // Con foto de escaparate, el texto deja un hueco a la derecha para
+      // ella (mismo hueco que .vitrina-foto en la propia página, donde va
+      // "en un bloque a la derecha, anclado arriba") — sin foto, ocupa
+      // todo el ancho del recuadro, como hasta ahora.
+      const huecoFoto = fotoCabecera ? ANCHO_FOTO_CABECERA + padInterno : 0;
+      const anchoTexto = contentWidth - padInterno*2 - huecoFoto;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      const tituloLineas = doc.splitTextToSize(c.nombre || 'Escaparate', anchoTexto);
+      const subtitulo = `${c.tipo==='comercial' ? 'Campaña comercial' : 'Campaña de temporada'} · ${c.areas && c.areas.length ? c.areas.join(', ') : 'todas las áreas'}`;
+      const vigencia = c.permanente ? 'Escaparate permanente' : `Del ${fmtFecha(c.fechaInicio)} al ${fmtFecha(c.fechaFin)}`;
+      // Etiqueta general de descuento — misma cifra y mismo criterio que
+      // ya se muestra en el listado de escaparates ("Hasta un X% de
+      // dto."): el mayor entre el descuento general de la campaña y
+      // cualquier descuento propio de un producto.
+      const descuentoGeneral = descuentoMaximoCampanaFolleto(c);
+      const alturaTitulo = tituloLineas.length * 6.4 + 4;
+      const alturaSubtitulo = 8;
+      const alturaVigencia = 5 + (descuentoGeneral > 0 ? 4 : 0);
+      const alturaBadge = descuentoGeneral > 0 ? 8.5 : 0;
+      const alturaTextoHeader = alturaTitulo + alturaSubtitulo + alturaVigencia + alturaBadge;
+      // El recuadro es tan alto como haga falta el texto — o, si la foto
+      // es más alta que todo ese texto junto, tan alto como la foto (con
+      // su propio margen), para que nunca se salga del recuadro de color.
+      const alturaHeaderInfo = Math.max(
+        padInterno*2 + alturaTextoHeader,
+        fotoCabecera ? padInterno*2 + ALTO_FOTO_CABECERA : 0
+      );
+      dibujarBloqueColor(margin, cursorY, contentWidth, alturaHeaderInfo);
+
+      if(fotoCabecera){
+        // La foto ya viene recortada (ver ANCHO_FOTO_CABECERA/
+        // ALTO_FOTO_CABECERA, más arriba) a esta proporción, con el mismo
+        // límite de recorte que las fotos de producto — así que se
+        // encaja igual, en modo "contain" (ver dibujarTarjetaProducto),
+        // por si no ha llegado a coincidir del todo.
+        const xFoto = contentRight - padInterno - ANCHO_FOTO_CABECERA;
+        const yFoto = cursorY + padInterno;
+        const escalaFoto = Math.min(ANCHO_FOTO_CABECERA / fotoCabecera.w, ALTO_FOTO_CABECERA / fotoCabecera.h);
+        const dwFoto = fotoCabecera.w * escalaFoto, dhFoto = fotoCabecera.h * escalaFoto;
+        doc.addImage(fotoCabecera.dataURL, 'JPEG', xFoto + (ANCHO_FOTO_CABECERA-dwFoto)/2, yFoto + (ALTO_FOTO_CABECERA-dhFoto)/2, dwFoto, dhFoto);
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.6);
+        doc.rect(xFoto, yFoto, ANCHO_FOTO_CABECERA, ALTO_FOTO_CABECERA);
+      }
+
+      let tyHeader = cursorY + padInterno;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(30, 33, 37);
+      doc.text(tituloLineas, margin + padInterno, tyHeader + 6);
+      tyHeader += alturaTitulo;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(110, 113, 120);
+      doc.text(subtitulo, margin + padInterno, tyHeader + 4);
+      tyHeader += alturaSubtitulo;
+
+      doc.setFontSize(9.5);
+      doc.setTextColor(90, 93, 100);
+      doc.text(`${vigencia}  ·  ${c.productos.length} producto${c.productos.length===1?'':'s'}`, margin + padInterno, tyHeader + 4);
+      tyHeader += alturaVigencia;
+
+      if(descuentoGeneral > 0){
+        // Sin emoji a propósito: las fuentes base de jsPDF (Helvetica)
+        // no tienen esos glifos y salían como caracteres corruptos que
+        // además descuadraban el ancho calculado con getTextWidth() — a
+        // diferencia del HTML de la propia página, donde el navegador sí
+        // los renderiza bien.
+        const etiqueta = `Hasta un ${descuentoGeneral}% de descuento`;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        const anchoEtiqueta = doc.getTextWidth(etiqueta) + 10;
+        doc.setFillColor(vivid.r, vivid.g, vivid.b);
+        doc.roundedRect(margin + padInterno, tyHeader, anchoEtiqueta, alturaBadge, 4.2, 4.2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.text(etiqueta, margin + padInterno + 5, tyHeader + 5.7);
+      }
+      cursorY += alturaHeaderInfo + 7;
+
+      // ---- Rejilla de productos: 3 columnas base. Los destacados
+      // ocupan más espacio que el resto, igual que en la propia página
+      // (.card[data-tam]: tamaño 2/3 más ancho, 4/5/6 más ancho Y más
+      // alto) — aquí, para poder maquetar en tandas de fila completa sin
+      // dejar huecos raros junto a una tarjeta grande, tamaño 3 y 4-6 se
+      // quedan solos en su propia fila (banner ancho), y 1/2 se reparten
+      // en filas compartidas, tan apretadas como quepan (menos hueco en
+      // blanco, más productos normales por página). ----
+      const gapX = 6, gapY = 6, baseCols = 3;
+      const colW = (contentWidth - gapX*(baseCols-1)) / baseCols;
+      // cardH=54 se quedaba corto con descuento: precio tachado + precio
+      // rebajado ocupan una línea más que el precio simple, y esa línea
+      // de más empujaba la referencia (Ref. XXXXX) fuera del borde
+      // inferior de la tarjeta — el aviso de Eloy. Subido a 62 (el
+      // mínimo que deja margen real en ese caso, con los tamaños de
+      // fuente actuales) en vez de recortar más el hueco de la imagen,
+      // que es justo lo que se pidió agrandar hace poco.
+      const cardH = 62;       // tarjeta normal (tamaño 1 o 2/3 de ancho)
+      const cardHGrande = 78; // tamaño 4/5/6: además más alta, no solo más ancha
+      const padTarjeta = 3.5;
+      // Mismo cálculo usado para pedir la foto ya recortada (más abajo) y
+      // para colocarla en la tarjeta (dibujarTarjetaProducto) — tienen
+      // que coincidir exactamente, o el recorte no llenaría el hueco real.
+      function cajaImagenDe(anchoTarjeta, altoTarjeta){
+        return { w: anchoTarjeta - padTarjeta*2, h: Math.round(altoTarjeta * 0.58) };
+      }
+
+      function especTarjeta(ref){
+        const d = destacadosMap[ref];
+        const tam = d && d.tamano > 1 ? d.tamano : 1;
+        if(tam >= 4) return { spanCols: baseCols, grande: true };
+        if(tam === 3) return { spanCols: baseCols, grande: false };
+        if(tam === 2) return { spanCols: 2, grande: false };
+        return { spanCols: 1, grande: false };
+      }
+
+      // Reparto en filas (equivalente sencillo al auto-flow de la
+      // rejilla CSS de la propia página, pero en un único sentido —
+      // hueco libre restante en la fila actual, sin "densar" hacia
+      // atrás): tamaño 3/4/5/6 siempre en fila propia a todo el ancho;
+      // 1/2 se acumulan en la fila actual mientras quepan.
+      const filasProductos = [];
+      let filaActual = { colOcupadas: 0, items: [] };
+      function cerrarFila(){
+        if(filaActual.items.length) filasProductos.push(filaActual);
+        filaActual = { colOcupadas: 0, items: [] };
+      }
+      refsOrdenados.forEach(ref => {
+        const spec = especTarjeta(ref);
+        if(spec.spanCols === baseCols){
+          cerrarFila();
+          filasProductos.push({ colOcupadas: baseCols, items: [{ ref, spanCols: baseCols, colStart: 0, grande: spec.grande }] });
+          return;
+        }
+        if(filaActual.colOcupadas + spec.spanCols > baseCols) cerrarFila();
+        filaActual.items.push({ ref, spanCols: spec.spanCols, colStart: filaActual.colOcupadas, grande: false });
+        filaActual.colOcupadas += spec.spanCols;
+      });
+      cerrarFila();
+
+      // Las fotos se piden ahora que ya se conoce el tamaño real de cada
+      // tarjeta: cada una se recorta en el propio <canvas> (recorteRatio,
+      // ver cargarImagenDataURL) al ancho/alto EXACTO de su hueco — modo
+      // "cover", igual que object-fit:cover en CSS — así la imagen llena
+      // siempre todo el hueco en vez de quedar pequeña dentro de él
+      // ("las imágenes de los productos se diferencien bien ya que ocupa
+      // mas hueco el bloque que la propia imagen", el aviso de Eloy).
+      // Se cargan por tandas espaciadas (ver cargarImagenesEnTandas) para
+      // no disparar un 429 de googleusercontent.com; un fallo puntual en
+      // cualquiera no debe impedir generar el resto del folleto.
+      const itemsFotos = [];
+      filasProductos.forEach(fila => {
+        const altoFila = fila.items.some(it => it.grande) ? cardHGrande : cardH;
+        fila.items.forEach(it => {
+          const p = PRODUCTS[it.ref];
+          const anchoCard = it.spanCols * colW + (it.spanCols - 1) * gapX;
+          const caja = cajaImagenDe(anchoCard, altoFila);
+          itemsFotos.push({
+            ref: it.ref,
+            url: p ? urlImagenProductoFolleto(p, 500) : null,
+            opciones: { recorteRatio: caja.w / caja.h }
+          });
+        });
+      });
+      fijarEstadoBoton(`Extrayendo imágenes… (0/${itemsFotos.length})`);
+      const fotos = await cargarImagenesEnTandas(itemsFotos, (completadas, total) => {
+        fijarEstadoBoton(`Extrayendo imágenes… (${completadas}/${total})`);
+      });
+      const fotoPorRef = {};
+      itemsFotos.forEach((it, i) => { fotoPorRef[it.ref] = fotos[i]; });
+      fijarEstadoBoton('Componiendo folleto…');
+      // A partir de aquí el maquetado es una tanda larga de llamadas
+      // síncronas a jsPDF (sin ningún await de por medio) — sin ceder un
+      // frame antes, el navegador podría no llegar a pintar nunca este
+      // texto, saltando directo de "Extrayendo imágenes…" al botón ya
+      // reactivado en catálogos con muchas páginas.
+      await new Promise(requestAnimationFrame);
+
+      // La imagen ocupa la MAYOR parte de cada tarjeta a propósito —
+      // ya viene recortada (modo "cover") al hueco exacto, así que aquí
+      // solo hace falta encajarla sin más cálculo de escala/centrado.
+      function dibujarTarjetaProducto(x, y, anchoTarjeta, altoTarjeta, ref){
+        const p = PRODUCTS[ref];
+        // Relleno blanco propio — necesario para que el fondo estacional
+        // de la página (dibujado antes, detrás de todo) solo se vea en
+        // los huecos ENTRE tarjetas, nunca por debajo del texto.
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 228, 232);
+        doc.setLineWidth(0.25);
+        doc.roundedRect(x, y, anchoTarjeta, altoTarjeta, 2.4, 2.4, 'FD');
+        if(!p){
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(8.5);
+          doc.setTextColor(150, 153, 160);
+          doc.text('Referencia no encontrada', x + anchoTarjeta/2, y + altoTarjeta/2, { align:'center' });
+          doc.text(ref, x + anchoTarjeta/2, y + altoTarjeta/2 + 5, { align:'center' });
+          return;
+        }
+        const d = destacadosMap[ref] || null;
+        const descuento = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
+        const tieneDescuento = descuento > 0;
+        const esDestacado = !!(d && d.tamano > 1);
+        // El presupuesto vertical disponible depende de la ALTURA de la
+        // tarjeta, no de su ancho — una tarjeta ancha pero de la altura
+        // normal (tamaño 2/3) tiene el mismo hueco de texto que una
+        // normal, así que la familia y el nombre a 2 líneas solo caben
+        // en las tarjetas realmente más altas (tamaño 4/5/6).
+        const esGrande = altoTarjeta > cardH + 2;
+        const mostrarFamilia = esGrande;
+        const maxLineasNombre = esGrande ? 2 : 1;
+
+        const padX = padTarjeta;
+        const imgBoxY = y + 3;
+        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta);
+        const foto = fotoPorRef[ref];
+        if(foto){
+          // La foto ya viene recortada (ver itemsFotos/cajaImagenDe, más
+          // arriba) para acercarla a este ancho/alto, pero SOLO hasta un
+          // límite — con una proporción de origen muy distinta a la de la
+          // tarjeta, puede que no llegue a coincidir del todo. Por eso se
+          // encaja aquí en modo "contain" (entera, sin recortar nada más,
+          // centrada) en vez de asumir que siempre llena el hueco exacto
+          // — así el producto nunca sale cortado ni "más grande que el
+          // espacio", que era el aviso de Eloy.
+          doc.setFillColor(248, 249, 250);
+          doc.rect(x + padX, imgBoxY, imgBoxW, imgBoxH, 'F');
+          const escala = Math.min(imgBoxW / foto.w, imgBoxH / foto.h);
+          const dw = foto.w * escala, dh = foto.h * escala;
+          doc.addImage(foto.dataURL, 'JPEG', x + padX + (imgBoxW-dw)/2, imgBoxY + (imgBoxH-dh)/2, dw, dh);
+          // Marco fino alrededor del hueco — lo separa con claridad del
+          // resto de la tarjeta, que es justo lo que faltaba ("que se
+          // diferencien bien").
+          doc.setDrawColor(220, 222, 227);
+          doc.setLineWidth(0.3);
+          doc.rect(x + padX, imgBoxY, imgBoxW, imgBoxH);
+        } else {
+          // Marco claro del hueco de la foto cuando no ha cargado — deja
+          // claro que ahí "falta una imagen", en vez de un hueco en
+          // blanco indistinguible del resto de la tarjeta.
+          doc.setFillColor(248, 249, 250);
+          doc.rect(x + padX, imgBoxY, imgBoxW, imgBoxH, 'F');
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          doc.setTextColor(180, 183, 190);
+          doc.text('Sin foto disponible', x + anchoTarjeta/2, imgBoxY + imgBoxH/2 + 1, { align:'center' });
+        }
+
+        // Insignias superpuestas — mismo criterio que las tarjetas de la
+        // propia página (card-destacado-badge / card-descuento-badge):
+        // destacado a la izquierda, descuento a la derecha. Sin emoji
+        // (ver nota junto a la etiqueta general de descuento, más
+        // arriba en esta misma función) — solo texto en mayúsculas.
+        const insigniaY = imgBoxY + 2;
+        if(esDestacado){
+          const txt = 'DESTACADO';
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.6);
+          const w = doc.getTextWidth(txt) + 4;
+          doc.setFillColor(vivid.r, vivid.g, vivid.b);
+          doc.roundedRect(x + padX + 1.5, insigniaY, w, 4.6, 1.6, 1.6, 'F');
+          doc.setTextColor(255,255,255);
+          doc.text(txt, x + padX + 1.5 + w/2, insigniaY + 3.2, { align:'center' });
+        }
+        if(tieneDescuento){
+          const txt = `-${descuento}%`;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.6);
+          const w = doc.getTextWidth(txt) + 4;
+          doc.setFillColor(217, 27, 27);
+          doc.roundedRect(x + anchoTarjeta - padX - 1.5 - w, insigniaY, w, 4.6, 1.6, 1.6, 'F');
+          doc.setTextColor(255,255,255);
+          doc.text(txt, x + anchoTarjeta - padX - 1.5 - w/2, insigniaY + 3.2, { align:'center' });
+        }
+
+        let ty = imgBoxY + imgBoxH + 4.5;
+        if(mostrarFamilia && p.familia){
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.8);
+          doc.setTextColor(150, 153, 160);
+          doc.text(String(p.familia).toUpperCase(), x + padX, ty);
+          ty += 3.6;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.4);
+        doc.setTextColor(30, 33, 37);
+        const nombreLineas = doc.splitTextToSize(p.nombre || ref, anchoTarjeta - padX*2).slice(0, maxLineasNombre);
+        doc.text(nombreLineas, x + padX, ty + 3);
+        ty += 3 + nombreLineas.length * 3.5 + 1.3;
+
+        // Precio: igual que en la propia tarjeta pública (bloquePrecio) —
+        // con descuento, el precio de partida tachado y más pequeño, y
+        // debajo el ya rebajado en tamaño normal.
+        if(tieneDescuento){
+          const rebajado = precioConDescuento(p.precio_con, descuento);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.2);
+          doc.setTextColor(170, 173, 180);
+          const precioTachado = `${fmtEUR(p.precio_con)} €`;
+          doc.text(precioTachado, x + padX, ty);
+          const wTachado = doc.getTextWidth(precioTachado);
+          doc.setDrawColor(170, 173, 180);
+          doc.setLineWidth(0.25);
+          doc.line(x + padX, ty - 1, x + padX + wTachado, ty - 1);
+          ty += 4.2;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(vivid.r, vivid.g, vivid.b);
+          doc.text(`${fmtEUR(rebajado)} € `, x + padX, ty);
+          const wReb = doc.getTextWidth(`${fmtEUR(rebajado)} € `);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.4);
+          doc.setTextColor(150, 153, 160);
+          doc.text('IVA inc.', x + padX + wReb, ty);
+        } else {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(30, 33, 37);
+          doc.text(`${fmtEUR(p.precio_con)} € `, x + padX, ty);
+          const wCon = doc.getTextWidth(`${fmtEUR(p.precio_con)} € `);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.4);
+          doc.setTextColor(150, 153, 160);
+          doc.text('IVA inc.', x + padX + wCon, ty);
+          if(mostrarFamilia){
+            ty += 4.2;
+            doc.setFontSize(7);
+            doc.text(`${fmtEUR(p.precio_sin)} € sin IVA`, x + padX, ty);
+          }
+        }
+
+        // La referencia sigue el flujo del precio (ty + hueco fijo) en
+        // vez de anclarse a una posición fija desde el borde inferior de
+        // la tarjeta — con esta altura de tarjeta más ajustada (menos
+        // hueco en blanco), anclarla al borde inferior podía solaparse
+        // con la línea del precio cuando el bloque de arriba ya llegaba
+        // más abajo (p. ej. con descuento).
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.6);
+        doc.setTextColor(150, 153, 160);
+        doc.text(`Ref. ${p.ref}`, x + padX, ty + 4.4);
+      }
+
+      // Fila a fila (no todo de golpe en un solo forEach síncrono) para
+      // poder informar "Componiendo folleto… (fila X/Y)" en el botón a
+      // medida que avanza — con catálogos de varias páginas, esta fase
+      // también se nota, y antes se quedaba con un único texto fijo todo
+      // el rato (justo el aviso de Eloy: "que vaya cambiando en base a lo
+      // que está ocurriendo por detrás").
+      for(let iFila = 0; iFila < filasProductos.length; iFila++){
+        const fila = filasProductos[iFila];
+        const esGrande = fila.items.some(it => it.grande);
+        const alturaFila = esGrande ? cardHGrande : cardH;
+        if(cursorY + alturaFila > footerTopY - 2){
+          doc.addPage();
+          dibujarCabecera();
+          cursorY = headerBottomY + 8;
+        }
+        fila.items.forEach(it => {
+          const x = margin + it.colStart * (colW + gapX);
+          const w = it.spanCols * colW + (it.spanCols - 1) * gapX;
+          dibujarTarjetaProducto(x, cursorY, w, alturaFila, it.ref);
+        });
+        cursorY += alturaFila + gapY;
+        fijarEstadoBoton(`Componiendo folleto… (fila ${iFila + 1}/${filasProductos.length})`);
+        await new Promise(requestAnimationFrame);
+      }
+
+      fijarEstadoBoton('Añadiendo cierre y pies de página…');
+      await new Promise(requestAnimationFrame);
+
+      // ---- Cierre del folleto — mismo cierre que el propio escaparate
+      // (c.eslogan), o una despedida genérica si la campaña no tiene
+      // frase de cierre definida ----
+      const cierreH = 26;
+      if(cursorY + cierreH > footerTopY - 2){
+        doc.addPage();
+        dibujarCabecera();
+        cursorY = headerBottomY + 10;
+      } else {
+        cursorY += 4;
+      }
+      dibujarBloqueColor(margin, cursorY, contentWidth, cierreH);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(11.5);
+      doc.setTextColor(60, 63, 70);
+      const fraseCierre = (c.eslogan && c.eslogan.trim()) || '¡Te esperamos en Orencio Matas y Hnos!';
+      const cierreLineas = doc.splitTextToSize(`"${fraseCierre}"`, contentWidth - 16);
+      doc.text(cierreLineas, pageW/2, cursorY + cierreH/2 - (cierreLineas.length-1)*2.2, { align:'center' });
+
+      // ---- Pie de página, en un segundo paso ya con el total real de
+      // páginas (no se conoce hasta haber maquetado todo el contenido) ----
+      const totalPaginas = doc.getNumberOfPages();
+      for(let i = 1; i <= totalPaginas; i++){
+        doc.setPage(i);
+        dibujarPie(i, totalPaginas);
+      }
+
+      const nombreArchivo = 'folleto-' + (c.nombre || 'escaparate')
+        .toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') + '.pdf';
+      fijarEstadoBoton('Guardando PDF…');
+      await new Promise(requestAnimationFrame);
+      doc.save(nombreArchivo);
+    } catch(err){
+      console.error('Error generando el folleto en PDF:', err);
+      toast('No se ha podido generar el folleto. Inténtalo de nuevo en unos segundos.', true);
+    } finally {
+      if(btn){
+        btn.disabled = false;
+        btn.innerHTML = textoOriginalBtn;
+      }
+    }
+  }
+
+  function wireBotonFolleto(){
+    const btn = $("#btnDescargarFolleto");
+    if(!btn) return;
+    btn.addEventListener('click', generarFolletoEscaparate);
+  }
+
+  wireBotonCompartir();
+  wireBotonFolleto();
+
+  // Expuesto en window a propósito: útil para depuración manual desde la
+  // consola del navegador (ej. forzar un repintado tras tocar algo a
+  // mano) y para las pruebas automatizadas de este archivo.
+  window.render = render;
+
+  iniciar();
+})();
+</script>
+    <script src="./src/js/app.js?v=20260829"></script>
+    <script src="./src/js/analytics-consent.js?v=20260829"></script>
+  </body>
+</html>
+

@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="es">
+  <head>
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Escaparates de temporada de Orencio Matas y Hnos, S.L. — descubre los escaparates de temporada y comerciales del momento." />
+    <!-- Misma solución que ya usa buscador.html para este mismo problema:
+         esta página vive tanto en GitHub Pages (main) como en IONOS
+         (release, el dominio real) — indexable en las dos, pero con
+         canonical apuntando siempre al dominio de producción, para que
+         Google atribuya el posicionamiento a orenciomatas.es y no trate
+         la copia de GitHub Pages como contenido duplicado compitiendo
+         por el mismo ranking. -->
+    <link rel="canonical" href="https://orenciomatas.es/escaparate-campanas.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Orencio Matas y Hnos, S.L." />
+    <meta property="og:title" content="Escaparates | Orencio Matas y Hnos, S.L." />
+    <meta property="og:description" content="Escaparates de temporada de Orencio Matas y Hnos, S.L. — descubre los escaparates de temporada y comerciales del momento." />
+    <meta property="og:url" content="https://orenciomatas.es/escaparate-campanas.html" />
+    <meta property="og:image" content="https://orenciomatas.es/assets/logos/og-banner-1200x630.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Escaparates | Orencio Matas y Hnos, S.L.</title>
+    <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/logos/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/css/estilos.css?v=20260829" />
+    <!-- Google tag (gtag.js) -->
+    <script>
+  // Ver nota en el bloque de Google Tag Manager: solo en el dominio
+  // oficial orenciomatas.es.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    var _gtagScript = document.createElement('script');
+    _gtagScript.async = true;
+    _gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y';
+    document.head.appendChild(_gtagScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HMM85HSJ4Y');
+  }
+    </script>
+
+    <style>
+      :root{
+        --paper:#F5F6F8;
+        --paper-raised:#FFFFFF;
+        --ink:#0F1115;
+        --ink-soft:#4A4E58;
+        --ink-faint:#80838C;
+        --line:#E1E3E8;
+        --line-strong:#C7CBD3;
+        --shadow-soft: 0 10px 30px rgba(15,17,21,.08);
+        --shadow-strong: 0 20px 50px rgba(15,17,21,.22);
+        --radius-s: 6px;
+        --radius-m: 10px;
+        --radius-l: 16px;
+        --maxw: 1180px;
+      }
+      @media (min-width:1440px){ :root{ --maxw:1320px; } }
+      @media (min-width:1800px){ :root{ --maxw:1520px; } }
+
+      *{box-sizing:border-box;}
+      html{-webkit-text-size-adjust:100%; max-width:100%;}
+      html, body{ overflow-x:hidden; width:100%; }
+      /* Mismo problema de fondo que con "dialog" (ver comentario junto a
+         esa regla): cualquier selector de autor que fije display en un
+         elemento (aquí, .spinner-line{display:flex}) gana siempre al
+         atributo [hidden] nativo del navegador, que es solo otra regla
+         de usuario-agente — así que poner el.hidden=true en JS dejaba de
+         tener ningún efecto visual en cuanto el elemento tenía ya un
+         display propio puesto por CSS de autor (reportado real:
+         "Cargando escaparates…" no se quitaba nunca, aunque hidden ya
+         estuviera en true — confirmado con Playwright: hidden=true pero
+         display computado seguía en flex). Con esta regla, [hidden]
+         vuelve a ganar siempre, sea cual sea el display que tenga
+         asignado ese elemento en cualquier otro sitio. */
+      [hidden]{ display:none !important; }
+      body{
+        margin:0; background:var(--paper); color:var(--ink);
+        font-family:'Inter', ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing:antialiased;
+      }
+      h1,h2,h3{font-family:'Montserrat', ui-sans-serif, system-ui, sans-serif; font-weight:800; margin:0; text-wrap:balance;}
+      .wrap{max-width:var(--maxw); margin-inline:auto; padding-inline:20px;}
+
+      /* ---------- Fondo estacional (idéntico al de escaparate.html, ver
+         ese archivo para el porqué de cada decisión — duplicado a
+         propósito, este proyecto no comparte JS/CSS entre páginas) ---------- */
+      /* min-height a propósito: mientras #campanasGrid está vacío (justo
+         durante la carga, antes de que lleguen las tarjetas), un grid
+         sin elementos no aporta ninguna altura por sí solo — sin esto,
+         la página se quedaba con solo la línea de "Cargando
+         escaparates…" entre el título y el footer, dando sensación de
+         todo apelmazado sin espacio (reportado real por Eloy). Con la
+         altura mínima, el lienzo (y su fondo estacional animado) siempre
+         ocupan un espacio razonable, cargue lo que cargue dentro. */
+      .escaparate-lienzo{ position:relative; min-height:50vh; }
+      .fondo-estacional{ position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+      .fondo-estacional .particula{
+        position:absolute; top:0; left:0;
+        animation:flotarParticula var(--dur,9s) linear infinite;
+        will-change:transform, top, opacity;
+      }
+      .fondo-estacional .particula svg{ display:block; width:var(--tam,16px); height:var(--tam,16px); }
+      @keyframes flotarParticula{
+        0%{ top:calc(50% - (var(--dir,1) * 65%)); transform:translateX(0) rotate(0deg); opacity:0; }
+        12%{ opacity:var(--op,.7); }
+        88%{ opacity:var(--op,.7); }
+        100%{ top:calc(50% + (var(--dir,1) * 65%)); transform:translateX(var(--drift,0px)) rotate(var(--rot,180deg)); opacity:0; }
+      }
+      @media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; animation-iteration-count:1 !important;} }
+
+      .campanas-titulo{ max-width:var(--maxw); margin:30px auto 0; padding:0 2px; position:relative; z-index:1; }
+      .campanas-titulo h1{ font-size:clamp(26px, 4.4vw, 40px); line-height:1.08; color:var(--ink); }
+      .campanas-titulo p{ margin:10px 0 0; color:var(--ink-soft); font-size:15.5px; max-width:60ch; }
+
+      /* ---------- Insignia de invitación ----------
+         Antes anunciaba la próxima estación — a Eloy no le convenció
+         ("no me gusta la chip de 'Se acerca el invierno'") y pidió una
+         frase de invitación fija en su lugar. Se queda el mismo formato
+         llamativo (brillo pulsante) pero con los colores de marca en vez
+         de un color por estación, ya que ya no depende de ninguna. */
+      .escaparates-invitacion{
+        display:inline-flex; align-items:center; gap:9px;
+        padding:9px 18px 9px 14px; border-radius:99px;
+        font-size:13px; font-weight:700; color:#fff;
+        align-self:flex-start; margin-top:14px;
+        background:linear-gradient(135deg, var(--primary-red,#d91b1b), var(--primary-yellow,#f1b300));
+        animation:pulsoInvitacion 2.8s ease-in-out infinite;
+      }
+      .escaparates-invitacion-icono{ width:18px; height:18px; display:flex; flex:none; }
+      .escaparates-invitacion-icono svg{ width:100%; height:100%; }
+      @keyframes pulsoInvitacion{
+        0%,100%{ transform:scale(1); box-shadow:0 6px 16px rgba(0,0,0,.12); }
+        50%{ transform:scale(1.045); box-shadow:0 10px 26px rgba(0,0,0,.2); }
+      }
+
+      .spinner-line{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:13.5px; position:relative; z-index:1; max-width:var(--maxw); margin:30px auto 0; padding:0 2px; }
+      .spinner-dot{ width:8px; height:8px; border-radius:50%; background:var(--ink-faint); animation:pulso 1.1s ease-in-out infinite; }
+      @keyframes pulso{ 0%,100%{opacity:.3;} 50%{opacity:1;} }
+
+      /* grid-column:1/-1 es la parte importante: este bloque se inserta
+         dentro de #campanasGrid (que es display:grid con columnas
+         auto-fill), así que sin esto se comporta como UN elemento de
+         grid más — ocupa solo el ancho de la primera columna (270-400px
+         según el viewport) y dEja el resto de la fila en blanco, en vez
+         de centrarse con el max-width/margin:auto que tendría como
+         bloque normal (reportado real: "aparece pegado a la izquierda
+         dejando en blanco el resto de la página"). Con el span a todas
+         las columnas, max-width + margin:auto sí vuelven a centrar el
+         bloque como se espera. */
+      .campanas-vacio, .campanas-error{
+        grid-column:1/-1;
+        max-width:var(--maxw); margin:26px auto 0; position:relative; z-index:1;
+        background:rgba(255,255,255,.7); border:1px solid var(--line); border-radius:var(--radius-l);
+        padding:40px clamp(20px,4vw,52px); text-align:left;
+      }
+      .campanas-vacio h2, .campanas-error h2{ font-size:clamp(22px,3.6vw,30px); max-width:24ch; }
+      .campanas-vacio p, .campanas-error p{ color:var(--ink-soft); margin-top:10px; max-width:56ch; font-size:15px; line-height:1.55; }
+
+      /* ---------- Rejilla de tarjetas ----------
+         A propósito, la tarjeta en sí se queda en la paleta neutra del
+         sitio (fondo blanco translúcido, bordes/tipografía estándar) —
+         el color de cada campaña se usa solo como acento (franja
+         superior + detalles), nunca como fondo dominante, para que la
+         página sea "vistosa" sin salirse de la línea del logo (petición
+         explícita de Eloy). */
+      /* minmax subido de 270px a 360px — con --maxw en su valor máximo
+         (1520px, pantallas ≥1800px), 270px dejaba caber 5 tarjetas por
+         fila (reportado real por Eloy, con foto): demasiado estrechas y
+         apretadas. Con 360px caben como mucho 4 en el ancho máximo, y 3
+         en el resto de anchos — "al menos tres por fila", tal como se
+         pidió, sin llegar a los 5 de antes. */
+      .campanas-grid{
+        display:grid; grid-template-columns:repeat(auto-fill, minmax(360px,1fr));
+        gap:22px; max-width:var(--maxw); margin:28px auto 60px; position:relative; z-index:1;
+      }
+      .campana-card{
+        display:flex; flex-direction:column; gap:12px;
+        background:rgba(255,255,255,.72);
+        backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+        border:1px solid var(--line); border-top:5px solid var(--tarjeta-color, var(--line-strong));
+        border-radius:var(--radius-l); padding:24px 22px;
+        text-decoration:none; color:inherit;
+        transition:transform 180ms ease, box-shadow 180ms ease;
+        position:relative; overflow:hidden;
+      }
+      .campana-card::before{
+        content:""; position:absolute; inset:0; z-index:-1;
+        background:linear-gradient(160deg, var(--tarjeta-wash, transparent), transparent 60%);
+      }
+      .campana-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-strong); }
+      .campana-card:focus-visible{ outline:2px solid var(--tarjeta-color, var(--ink)); outline-offset:3px; }
+      .campana-card-top{ display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+      .campana-card-badge{
+        font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:10.5px;
+        text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint);
+        border:1px solid var(--line-strong); border-radius:99px; padding:3px 9px;
+      }
+      .campana-card-badge.hoy{ color:#1a7a4c; border-color:#1a7a4c; background:rgba(26,122,76,.09); }
+      /* Chips de área — fila propia, separada de .campana-card-top
+         (tipo/activa hoy), justo como se pidió. Colores fijos definidos
+         en JS (AREA_INFO), no aquí, porque dependen del área concreta de
+         cada chip, no de una clase CSS compartida. */
+      .campana-card-areas{ display:flex; flex-wrap:wrap; gap:6px; }
+      .campana-card-area-chip{
+        font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+        border-radius:99px; padding:3px 10px;
+      }
+      /* Color FIJO (no var(--tarjeta-color)) — mismo motivo que ya se
+         aplicó a .btn.ia y .card-destacado-badge: si dependiera del
+         color de cada campaña, con una campaña de color personalizado
+         claro este chip podría quedar igual de ilegible. El rojo de
+         marca (#D91B1B) es "llamativo" a propósito (petición explícita)
+         y ya es uno de los colores del logo. */
+      .campana-card-descuento{
+        display:inline-flex; align-items:center; gap:5px;
+        background:#D91B1B; color:#fff; font-size:11.5px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.03em; padding:5px 11px; border-radius:99px;
+        width:fit-content;
+      }
+      /* min-height a propósito: sin esto, un título de una sola línea
+         ("TITANPRO") deja todo lo que viene después (fecha, imagen,
+         frase, enlace) más arriba que en una tarjeta con título de dos
+         líneas ("Limpieza de otoño, orden en mente") — con varias
+         tarjetas en la misma fila, el resultado se ve desalineado entre
+         sí (reportado real por Eloy, con foto: "no queda alineado...
+         queda raro"). Con la altura mínima reservada para 2 líneas
+         siempre, da igual cuánto ocupe el texto real: lo de debajo
+         siempre empieza en la misma posición en toda la fila. Cálculo:
+         font-size 21px × line-height 1.18 × 2 líneas ≈ 50px. */
+      .campana-card h2{ font-size:21px; line-height:1.18; margin-top:2px; min-height:calc(21px * 1.18 * 2); }
+      .campana-card-fechas{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-faint); }
+      .campana-card-fechas svg{ width:14px; height:14px; flex:none; color:var(--tarjeta-color, var(--ink-faint)); }
+      .campana-card-eslogan{ font-size:13.5px; color:var(--ink-soft); font-style:italic; margin:2px 0 0; flex:1; line-height:1.5; }
+      .campana-card-cta{
+        display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700;
+        color:var(--tarjeta-color, var(--ink)); margin-top:6px;
+      }
+      .campana-card-cta svg{ width:14px; height:14px; transition:translate 140ms ease; }
+      .campana-card:hover .campana-card-cta svg{ translate:3px 0; }
+      /* Miniatura de la imagen del escaparate, solo si tiene una asignada
+         — petición explícita de Eloy: "solo se vea en la vista web de
+         pc". Se oculta a partir de 900px, el mismo punto de corte que ya
+         usa el resto del sitio para el menú móvil, por coherencia.
+         Antes era un cuadrado pequeño flotando en la esquina superior
+         derecha (position:absolute) — a petición de Eloy ("prefiero que
+         ocupe más y quede entre las fechas y las frases de eslogan"),
+         ahora es un bloque ancho en el flujo normal de la tarjeta,
+         colocado en el HTML entre .campana-card-fechas y
+         .campana-card-eslogan. */
+      .campana-card-thumb{
+        width:100%; aspect-ratio:16/9; border-radius:10px; overflow:hidden; margin-top:2px;
+      }
+      .campana-card-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+      @media (max-width:900px){
+        .campana-card-thumb{ display:none; }
+      }
+
+      /* ---------- Botón "Gestionar campañas" junto al título ----------
+         Antes vivía en escaparate.html (dock flotante); la creación y
+         edición de campañas se ha movido aquí, que es donde tiene más
+         sentido (la vista general de todas las campañas), dejando
+         escaparate.html solo para ver el detalle de una en concreto. */
+      .campanas-titulo-fila{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+      .btn{
+        font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
+        border-radius:99px; padding:10px 18px; border:1px solid transparent;
+      }
+      .btn.primary{ background:var(--primary-red, #d91b1b); color:#fff; }
+      .btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
+      .btn.ghost{ background:none; border-color:var(--line-strong); color:var(--ink-soft); }
+      .btn.danger-ghost{ background:none; border:1px solid #C81E1E; color:#C81E1E; }
+      .btn-gestionar{ display:inline-flex; align-items:center; gap:7px; flex:none; }
+      .btn-gestionar svg{ width:15px; height:15px; }
+
+      /* ---------- Modales (dialog) ----------
+         display:flex + overflow:hidden en el propio <dialog>, con
+         .modal-head/.modal-foot con flex:none y .modal-body como único
+         elemento con flex:1+overflow-y — cabecera y pie quedan SIEMPRE
+         fijos y solo el cuerpo hace scroll. Antes .modal-body calculaba
+         su max-height restando un margen fijo (150px) asumido para
+         cabecera+pie — en móvil, con el título en dos líneas, esa cuenta
+         se quedaba corta y el propio <dialog> terminaba desplazando TODO
+         junto, cabecera incluida, dejando el botón de guardar
+         inalcanzable (reportado real: "se oculta la cabecera con el
+         botón de cerrar" al desplazar, y "se oculta el guardar"). El
+         min-height:0 en .modal-body es imprescindible para que un hijo
+         flex pueda encogerse por debajo de su contenido y active su
+         propio scroll — sin él, Safari/iOS en particular ignora el
+         overflow-y y vuelve a fallar igual.
+         IMPORTANTE — bug real introducido por ese mismo arreglo: display:
+         flex se aplicaba en "dialog" a secas, sin condición de [open].
+         Una regla de autor (la mía), sin importar su especificidad, gana
+         SIEMPRE a la regla nativa "dialog:not([open]){display:none}" del
+         navegador (que vive en la hoja de estilos de usuario-agente) —
+         así que el modal nunca volvía a ocultarse al cerrarlo, se
+         quedaba flotando sin backdrop "detrás" del contenido de la
+         página (reportado real: "se queda detrás del contenido", "se
+         sigue quedando abierta siempre"). Arreglado escopando display/
+         overflow a "dialog[open]" — sin el atributo open, ninguna regla
+         de autor toca display y manda de nuevo la regla nativa.
+         Confirmado con Playwright: display computado pasaba a "flex" ya
+         cerrado (bug); con el arreglo vuelve a "none". */
+      dialog{
+        border:none; border-radius:var(--radius-l); padding:0;
+        width:min(680px, 92vw); max-height:86vh; max-height:86dvh;
+        background:var(--paper-raised); color:var(--ink);
+        box-shadow:var(--shadow-strong);
+      }
+      dialog[open]{
+        display:flex; flex-direction:column; overflow:hidden;
+      }
+      dialog::backdrop{ background:rgba(15,17,21,.45); backdrop-filter:blur(2px); }
+      .modal-head{
+        flex:none;
+        display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+        padding:22px 24px 16px; border-bottom:1px solid var(--line);
+      }
+      .modal-head h3{ font-size:19px; font-weight:800; }
+      .modal-head .modal-sub{ font-size:12.5px; color:var(--ink-faint); margin-top:4px; }
+      .modal-close{
+        background:none; border:1px solid var(--line-strong); border-radius:50%;
+        width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+        cursor:pointer; color:var(--ink-soft); flex:none;
+      }
+      .modal-close svg{ width:14px; height:14px; }
+      .modal-body{
+        flex:1 1 auto; min-height:0; overflow-y:auto;
+        padding:18px 24px;
+      }
+      .modal-foot{
+        flex:none;
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+        padding:14px 24px 20px; border-top:1px solid var(--line);
+      }
+
+      .field{ display:flex; flex-direction:column; gap:6px; }
+      .field label{ font-size:12px; font-weight:600; color:var(--ink-soft); }
+      .field input, .field select{
+        font-family:inherit; font-size:14px; padding:9px 11px;
+        border:1px solid var(--line-strong); border-radius:var(--radius-s);
+        background:var(--paper); color:var(--ink);
+      }
+      .field input:focus, .field select:focus{ outline:2px solid var(--tarjeta-color, var(--ink)); outline-offset:1px; }
+
+      .picker-empty{ color:var(--ink-faint); font-size:13px; padding:10px 2px; }
+      .selected-count{ font-size:13px; color:var(--ink-soft); }
+
+      .campaign-row{
+        display:flex; align-items:center; gap:12px; padding:12px 0;
+        border-bottom:1px solid var(--line);
+      }
+      .campaign-row:last-child{ border-bottom:none; }
+      .campaign-row .swatch{ width:8px; height:34px; border-radius:4px; flex:none; }
+      .campaign-row .info{ flex:1; min-width:0; cursor:pointer; }
+      .campaign-row .info .name{ font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .campaign-row .info .dates{ font-size:12px; color:var(--ink-faint); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-top:2px; }
+      .campaign-row .row-actions{ display:flex; gap:6px; flex:none; }
+      .icon-btn{
+        width:30px; height:30px; border-radius:50%; border:1px solid var(--line-strong);
+        background:var(--paper); color:var(--ink-soft); display:flex; align-items:center; justify-content:center;
+        cursor:pointer;
+      }
+      .icon-btn svg{ width:14px; height:14px; }
+      .icon-btn:hover{ border-color:var(--ink); color:var(--ink); }
+      .icon-btn.danger:hover{ border-color:#C81E1E; color:#C81E1E; }
+      .mini-badge{
+        font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        padding:2px 7px; border-radius:99px; border:1px solid currentColor;
+      }
+      .mini-badge.live{ color:#1a7a4c; border-color:#1a7a4c; background:rgba(26,122,76,.09); }
+
+      .new-campaign{ margin-top:22px; padding-top:18px; border-top:1px dashed var(--line-strong); }
+      .new-campaign h4{ font-family:'Montserrat',sans-serif; font-size:15px; font-weight:800; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+      .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .grid-2 .span2{ grid-column:1 / -1; }
+      @media (max-width:480px){ .grid-2{ grid-template-columns:1fr; } }
+      .chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+      .chip{
+        font-size:12px; padding:6px 12px; border-radius:99px; border:1px solid var(--line-strong);
+        cursor:pointer; color:var(--ink-soft); background:var(--paper);
+      }
+      .chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+      .form-msg{ font-size:12.5px; margin-top:10px; display:none; }
+      .form-msg.show{ display:block; }
+      .form-msg.error{ color:#C81E1E; }
+      .form-msg.ok{ color:#1a7a4c; }
+
+      .campana-img-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+      .campana-img-preview{
+        width:88px; height:88px; border-radius:var(--radius-s); flex:none;
+        border:1px dashed var(--line-strong); background:var(--paper);
+        display:flex; align-items:center; justify-content:center; overflow:hidden;
+        transition:border-color 120ms ease, background 120ms ease;
+      }
+      /* Retroalimentación visual mientras se arrastra un archivo encima
+         — misma zona donde ya se ve la vista previa o "Sin imagen". */
+      .campana-img-preview.is-dragover{
+        border-color:var(--ink); border-style:solid; background:var(--line);
+      }
+      .campana-img-preview img{ width:100%; height:100%; object-fit:cover; }
+      .campana-img-vacio{ font-size:10.5px; color:var(--ink-faint); text-align:center; padding:0 8px; }
+      .campana-img-acciones{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+      .campana-img-acciones .btn{ padding:8px 14px; font-size:12.5px; }
+      .campana-img-acciones .btn:disabled{ opacity:.45; cursor:not-allowed; }
+      .campana-img-hint{ font-size:11.5px; color:var(--ink-faint); flex-basis:100%; }
+
+      .color-personalizado-row{ display:flex; gap:18px; flex-wrap:wrap; }
+      .color-swatch-label{
+        display:flex; align-items:center; gap:8px;
+        font-size:12.5px; font-weight:600; color:var(--ink-soft);
+      }
+      .color-swatch-label input[type="color"]{
+        width:38px; height:32px; padding:2px; border:1px solid var(--line-strong);
+        border-radius:6px; background:var(--paper); cursor:pointer;
+      }
+
+      .checkbox-label{
+        display:flex; align-items:flex-start; gap:9px;
+        font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer;
+      }
+      .checkbox-label input[type="checkbox"]{
+        width:17px; height:17px; margin-top:1px; accent-color:var(--primary-red, #d91b1b); cursor:pointer; flex:none;
+      }
+      .field-hint{ font-size:12px; color:var(--ink-faint); margin:6px 0 0 26px; }
+
+      /* Toast */
+      .toast{
+        position:fixed; left:50%; bottom:26px; translate:-50% 0;
+        background:var(--ink); color:var(--paper);
+        padding:12px 18px; border-radius:99px; font-size:13.5px;
+        display:flex; align-items:center; gap:9px;
+        opacity:0; pointer-events:none; transition:opacity 220ms ease, transform 220ms ease;
+        transform:translate(-50%, 8px);
+        z-index:80; max-width:90vw;
+        box-shadow:var(--shadow-strong);
+      }
+      .toast.show{ opacity:1; transform:translate(-50%,0); }
+      .toast svg{ width:15px; height:15px; color:#F1B300; flex:none; }
+      .toast.error svg{ color:#FF6B6B; }
+    </style>
+  </head>
+  <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<header class="site-header" id="inicio">
+  <div class="navbar" data-navbar>
+    <div class="container navbar__inner">
+      <a class="navbar__logo" href="index.html" aria-label="Ir al inicio">
+        <img class="navbar__logo-image" src="./assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
+      </a>
+      <button class="navbar__toggle" type="button" aria-label="Abrir menú de navegación" aria-controls="main-navigation" aria-expanded="false" data-menu-toggle>
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="navbar__nav" id="main-navigation" aria-label="Navegación principal" data-mobile-menu>
+        <ul class="navbar__menu">
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="empresa.html">Empresa</a></li>
+          <li><a href="historia.html">Historia</a></li>
+          <li class="navbar__item--dropdown">
+            <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
+            <ul class="navbar__submenu">
+              <li><a href="buscador.html">Buscador</a></li>
+              <li class="navbar__item--dropdown">
+                <a href="productos.html">Ver catálogos <span class="navbar__caret">&#9662;</span></a>
+                <ul class="navbar__submenu">
+                  <li><a href="catalogo_drogueria.html">Droguería</a></li>
+                  <li><a href="catalogo_perfumeria.html">Perfumería</a></li>
+                  <li><a href="catalogo_pinturas.html">Pinturas</a></li>
+                  <li><a href="catalogo_talleres.html">Talleres</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><a href="escaparate-campanas.html">Exposición</a></li>
+              <li><a href="servicios.html">Servicios</a></li>
+          <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+          <li><a href="anuncios.html">Anuncios/Recursos</a></li>
+          <li><a href="profesionales.html">Profesionales</a></li>
+          <li><a href="actualidad.html">Actualidad</a></li>
+          <li><a href="index.html#contacto">Contacto</a></li>
+        </ul>
+        <a class="btn-primary navbar__cta" href="index.html#contacto">CONTACTAR</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="campanas-titulo">
+    <div class="campanas-titulo-fila">
+      <div>
+        <h1>Nuestros escaparates</h1>
+        <p>Un vistazo rápido a nuestros escaparates de temporada — pincha en cualquiera para ver sus productos.</p>
+        <div class="escaparates-invitacion">
+          <span class="escaparates-invitacion-icono">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M4 8h16M9 12a3 3 0 006 0"/></svg>
+          </span>
+          <span>Visita nuestros escaparates de temporada</span>
+        </div>
+      </div>
+      <button type="button" class="btn primary btn-gestionar" id="btnCampanas" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h2M8 17h5"/></svg>
+        Gestionar escaparates
+      </button>
+    </div>
+  </div>
+
+  <div class="escaparate-lienzo" id="escaparateLienzo">
+    <div class="fondo-estacional" id="fondoEstacional" aria-hidden="true"></div>
+
+    <div class="spinner-line" id="cargando">
+      <span class="spinner-dot"></span> Cargando escaparates…
+    </div>
+
+    <div class="campanas-grid" id="campanasGrid"></div>
+  </div>
+</main>
+
+<!-- Modal: gestionar escaparates (crear / editar / eliminar / activar) -->
+<dialog id="modalCampanas">
+  <div class="modal-head">
+    <div>
+      <h3>Escaparates de temporada</h3>
+      <div class="modal-sub">Manuales e IA conviven; si coinciden en fechas, gana siempre la manual.</div>
+    </div>
+    <button class="modal-close" data-close-campanas><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="modal-body">
+    <!-- Acceso con PIN — mismo patrón que "Gestionar destacados" en
+         buscador.html: se pide el PIN antes de ver/tocar nada de la
+         gestión de verdad, y se puede recordar en este dispositivo. -->
+    <div id="campanasVistaPin" style="max-width:340px; margin:0 auto; text-align:center;">
+      <p>Introduce el PIN de administración para gestionar los escaparates.</p>
+      <input type="password" id="campanasPinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" style="width:100%; font-size:1.1rem; text-align:center; letter-spacing:3px; padding:10px; border:2px solid var(--ink-faint, #ccc); border-radius:8px; margin:10px 0;">
+      <label class="checkbox-label" style="justify-content:center;"><input type="checkbox" id="campanasPinRecordar"> Recordar en este dispositivo</label>
+      <p id="campanasPinError" class="form-msg error" style="display:block; min-height:18px;"></p>
+      <button type="button" id="campanasPinEntrar" class="btn primary">Entrar</button>
+    </div>
+    <div id="campanasVistaPrincipal" style="display:none;">
+    <div id="campaignList"><span class="picker-empty">Cargando escaparates…</span></div>
+
+    <div class="new-campaign">
+      <h4><span id="formTitulo">+ Nuevo escaparate manual</span> <button class="btn ghost" id="btnCancelarEdicion" style="display:none; padding:4px 12px; font-size:12px;">Cancelar edición</button></h4>
+      <input type="hidden" id="ncId" value="">
+      <div class="grid-2">
+        <div class="field span2">
+          <label for="ncNombre">Nombre del escaparate</label>
+          <input id="ncNombre" type="text" placeholder="p. ej. Vuelta al cole, Rebajas de enero...">
+        </div>
+        <div class="field">
+          <label for="ncTipo">Tipo</label>
+          <select id="ncTipo">
+            <option value="temporada">Temporada</option>
+            <option value="comercial">Comercial (liquidación, evento...)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ncColor">Acento de color</label>
+          <select id="ncColor">
+            <option value="ambar_verde">Ámbar y verde</option>
+            <option value="rojo_verde">Rojo y verde</option>
+            <option value="verde_ambar">Verde y ámbar</option>
+            <option value="azul_ambar">Azul y ámbar</option>
+            <option value="rojo_negro">Rojo y negro</option>
+            <option value="personalizado">Personalizado…</option>
+          </select>
+        </div>
+        <div class="field span2" id="ncColorPersonalizadoRow" style="display:none">
+          <label>Colores personalizados</label>
+          <div class="color-personalizado-row">
+            <label class="color-swatch-label">Principal <input type="color" id="ncColorP1" value="#D91B1B"></label>
+            <label class="color-swatch-label">Secundario <input type="color" id="ncColorP2" value="#008743"></label>
+          </div>
+        </div>
+        <div class="field span2">
+          <label class="checkbox-label">
+            <input id="ncPermanente" type="checkbox">
+            Escaparate permanente — ignora las fechas, se mantiene activo mientras "Escaparate activo" esté marcado
+          </label>
+        </div>
+        <div class="field">
+          <label for="ncInicio">Fecha de inicio</label>
+          <input id="ncInicio" type="date">
+        </div>
+        <div class="field">
+          <label for="ncFin">Fecha de fin</label>
+          <input id="ncFin" type="date">
+        </div>
+        <div class="field span2">
+          <label class="checkbox-label">
+            <input id="ncActiva" type="checkbox" checked>
+            Escaparate activo — visible en esta página, independientemente de las fechas
+          </label>
+          <p class="field-hint">Desmárcalo para preparar un escaparate con antelación sin que se vea todavía, o para retirarlo sin borrarlo. Con esto marcado y las fechas en el futuro, sirve como avance de lo que viene.</p>
+        </div>
+        <div class="field span2">
+          <label>Áreas a las que aplica (ninguna marcada = todas)</label>
+          <div class="chip-row" id="ncAreas">
+            <span class="chip" data-area="drogueria">Droguería</span>
+            <span class="chip" data-area="perfumeria">Perfumería</span>
+            <span class="chip" data-area="pinturas">Pinturas</span>
+            <span class="chip" data-area="talleres">Talleres y carrocerías</span>
+          </div>
+        </div>
+        <div class="field span2">
+          <label for="ncEslogan">Frase de cierre (opcional) — se ve en un bloque pequeño debajo de los productos</label>
+          <input id="ncEslogan" type="text" maxlength="200" placeholder="p. ej. Todo lo que necesitas para un otoño impecable.">
+        </div>
+        <div class="field">
+          <label for="ncDescuento">Descuento general del escaparate (%, opcional)</label>
+          <input id="ncDescuento" type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15">
+          <p class="field-hint">Se aplica a todos los productos del escaparate. Si además le pones un descuento propio a un producto concreto (desde "Asignar productos"), ese manda sobre este.</p>
+        </div>
+        <div class="field span2">
+          <label>Imagen de fondo (opcional) — se ve en la vitrina del escaparate</label>
+          <div class="campana-img-row">
+            <div class="campana-img-preview" id="campanaImgPreview">
+              <span class="campana-img-vacio">Sin imagen</span>
+            </div>
+            <div class="campana-img-acciones">
+              <input type="file" id="campanaImgInput" accept="image/*" style="display:none">
+              <button type="button" class="btn ghost" id="btnSubirImagenCampana" disabled>Subir imagen</button>
+              <button type="button" class="btn ghost danger-ghost" id="btnQuitarImagenCampana" style="display:none">Quitar imagen</button>
+              <span class="campana-img-hint" id="campanaImgHint">Guarda primero la campaña (nombre y fechas) para poder subir una imagen — luego también puedes arrastrarla sobre el recuadro o pegarla con Ctrl+V.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="form-msg" id="formMsg"></p>
+    </div>
+    </div>
+  </div>
+  <div class="modal-foot" id="campanasModalFoot" style="display:none;">
+    <span class="selected-count">Pincha en la tarjeta del escaparate, ya en la página, para asignarle productos</span>
+    <button class="btn primary" id="btnGuardarCampana">Guardar escaparate</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span id="toastMsg"></span></div>
+
+<footer class="site-footer">
+
+  <div class="container site-footer__grid">
+    <div class="site-footer__brand">
+      <a href="index.html" aria-label="Ir al inicio">
+        <img src="./assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="190" height="64" />
+      </a>
+      <p>Más de 100 años ofreciendo soluciones profesionales en droguería, perfumería, pinturas y suministros para automoción.</p>
+      <div class="site-footer__social" aria-label="Redes sociales">
+        <a href="https://www.instagram.com/orenciomatas/" aria-label="Instagram">◎</a>
+      </div>
+    </div>
+    <nav class="site-footer__column" aria-label="Navegación del footer">
+      <h2>Navegación</h2>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="empresa.html">Empresa</a></li>
+        <li><a href="historia.html">Historia</a></li>
+        <li><a href="productos.html">Productos</a></li>
+            <li><a href="escaparate-campanas.html">Exposición</a></li>
+        <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+        <li><a href="anuncios.html">Anuncios/Recursos</a></li>
+        <li><a href="profesionales.html">Profesionales</a></li>
+        <li><a href="servicios.html">Servicios</a></li>
+        <li><a href="actualidad.html">Actualidad</a></li>
+        <li><a href="index.html#contacto">Contacto</a></li>
+      </ul>
+    </nav>
+    <nav class="site-footer__column" aria-label="Servicios del footer">
+      <h2>Servicios</h2>
+      <ul>
+        <li><a href="productos.html">Droguería profesional</a></li>
+        <li><a href="productos.html">Pinturas carrocería</a></li>
+        <li><a href="productos.html">Perfumería</a></li>
+        <li><a href="productos.html">Suministros taller</a></li>
+        <li><a href="servicios.html">Distribución</a></li>
+      </ul>
+    </nav>
+    <div class="site-footer__column site-footer__contact">
+      <h2>Contacto rápido</h2>
+      <address>
+        <span>Av. Alfred Nobel, 2<br />13005 Ciudad Real</span>
+        <a href="tel:+34926221217">926 221 217</a>
+        <a href="mailto:correo@orenciomatas.es">correo@orenciomatas.es</a>
+      </address>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <div class="container site-footer__bottom-inner">
+      <p>© <span class="current-year">2026</span> Orencio Matas y Hnos, S.L. Todos los derechos reservados.</p>
+      <nav aria-label="Enlaces legales">
+        <a href="politica-privacidad.html">Política de Privacidad</a>
+        <a href="aviso-legal.html">Aviso Legal</a>
+        <a href="politica-cookies.html">Cookies</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<script>window.OM_CLAVE_MANTENIMIENTO = 'escaparate'; window.OM_RUTA_RAIZ = './';</script>
+<script src="./assets/js/entorno.js?v=20260924a"></script>
+<script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<script>
+(function(){
+  "use strict";
+
+  // Mismo Web App que escaparate.html. La creación/edición/borrado de
+  // campañas ("Gestionar campañas") vive AQUÍ ahora — antes estaba en
+  // escaparate.html, pero tiene más sentido en la vista general de
+  // todas las campañas; escaparate.html se queda solo con "Asignar
+  // productos" para la campaña que se esté viendo en cada momento.
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
+  window.MOSTRAR_GESTION_CAMPANAS = window.OM_PREPRODUCCION; // mismo patrón que en escaparate.html, derivado del único flag central
+
+  const $ = (sel, ctx) => (ctx||document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
+
+  // Igual que en buscador.html y escaparate.html: se elimina el nodo del
+  // DOM por completo cuando la administración está desactivada, en vez
+  // de solo ocultarlo con CSS (revertible desde la consola del navegador).
+  if (!window.MOSTRAR_GESTION_CAMPANAS) {
+    const btn = document.getElementById('btnCampanas');
+    if (btn) btn.remove();
+    const modal = document.getElementById('modalCampanas');
+    if (modal) modal.remove();
+  }
+
+  const HOY = new Date();
+  const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
+  function activaEn(camp, fecha){
+    // Permanente ignora fechas por completo — solo depende de "activa",
+    // que ya se comprueba aparte (filtro de la lista pública). Petición
+    // explícita: "pasará a estar permanente mientras esté el checkbox
+    // Escaparate activo marcado".
+    if(camp.permanente) return true;
+    if(!camp.fechaInicio || !camp.fechaFin) return false;
+    return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
+  }
+
+  /* ---------------- Caché de campañas entre páginas (sessionStorage) ----
+     Aunque obtener_campanas ya es rápida (caché en Drive, no Sheet en
+     directo), sigue siendo una petición de red — al entrar en un
+     escaparate desde esta lista, o al volver de un escaparate a esta
+     lista, no hace falta pedirlo de nuevo si ya lo teníamos. sessionStorage
+     es justo lo que hace falta aquí: compartido entre escaparate.html y
+     esta página SOLO dentro de la misma pestaña (no entre pestañas ni
+     entre visitas futuras), que es exactamente el alcance pedido.
+
+     Se invalida (se ignora la caché y se vuelve a pedir) en dos casos,
+     tal cual se pidió:
+     - Si la página se ha RECARGADO (F5 / botón de recargar) — se detecta
+       con la Navigation Timing API.
+     - Si NO se ha llegado aquí navegando desde la otra página de
+       Escaparate OM — es decir, la primera vez que se entra en el flujo
+       en esta pestaña (desde el menú, un enlace externo, una pestaña
+       nueva…), no desde "volver" o desde una tarjeta.
+     Se sigue usando cuando: se entra a un escaparate desde una tarjeta
+     de esta lista, o se vuelve de un escaparate a esta lista con el
+     enlace "Volver al listado" o el botón atrás del navegador.
+
+     Además, cualquier cambio real (crear/editar/eliminar un escaparate,
+     o tocar su imagen) actualiza esta misma caché al momento (ver cada
+     manejador más abajo, con cargarCampanas(true) o guardarCacheCampanasSesion()
+     directamente) — así el propio flujo de gestión nunca enseña datos
+     obsoletos a quien lo está usando, sin necesidad de "salir" de nada. */
+  const CACHE_CAMPANAS_KEY = 'om_escaparate_campanas_sesion_v1';
+
+  function paginaFueRecargada(){
+    try{
+      const entradas = performance.getEntriesByType('navigation');
+      return entradas.length > 0 && entradas[0].type === 'reload';
+    }catch(err){
+      return false; // API no disponible: mejor no invalidar de más
+    }
+  }
+  function vieneDeOtraPaginaDeEscaparates(){
+    try{
+      if(!document.referrer) return false;
+      const ref = new URL(document.referrer);
+      if(ref.origin !== location.origin) return false;
+      return /\/escaparate(-campanas)?\.html$/.test(ref.pathname);
+    }catch(err){
+      return false;
+    }
+  }
+  function leerCacheCampanasSesion(){
+    if(paginaFueRecargada() || !vieneDeOtraPaginaDeEscaparates()) return null;
+    try{
+      const guardado = sessionStorage.getItem(CACHE_CAMPANAS_KEY);
+      if(!guardado) return null;
+      const datos = JSON.parse(guardado);
+      return Array.isArray(datos.campanas) ? datos.campanas : null;
+    }catch(err){
+      return null;
+    }
+  }
+  function guardarCacheCampanasSesion(campanas){
+    try{
+      sessionStorage.setItem(CACHE_CAMPANAS_KEY, JSON.stringify({ campanas }));
+    }catch(err){
+      // sessionStorage lleno o deshabilitado (modo incógnito estricto,
+      // etc.) — no pasa nada, simplemente no se podrá reutilizar en la
+      // siguiente navegación.
+    }
+  }
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer;
+  function toast(msg, isError){
+    const el = $("#toast");
+    $("#toastMsg").textContent = msg;
+    el.classList.toggle('error', !!isError);
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>el.classList.remove("show"), 4200);
+  }
+
+  /* ---------------- Paleta de marca — mismos tokens que escaparate.html ---------------- */
+  const COLOR_SETS = {
+    ambar_verde: {accent:"#8A6400", accent2:"#006E37", vivid:"#F1B300", vivid2:"#008743", wash:"rgba(241,179,0,0.12)"},
+    rojo_verde:  {accent:"#B81717", accent2:"#006E37", vivid:"#D91B1B", vivid2:"#008743", wash:"rgba(217,27,27,0.10)"},
+    verde_ambar: {accent:"#006E37", accent2:"#8A6400", vivid:"#008743", vivid2:"#F1B300", wash:"rgba(0,135,67,0.10)"},
+    azul_ambar:  {accent:"#005689", accent2:"#8A6400", vivid:"#006DAE", vivid2:"#F1B300", wash:"rgba(0,109,174,0.10)"},
+    rojo_negro:  {accent:"#B81717", accent2:"#1A1A1A", vivid:"#D91B1B", vivid2:"#1A1A1A", wash:"rgba(217,27,27,0.09)"},
+  };
+  function hexARgba(hex, alpha){
+    const m = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex || '');
+    if(!m) return `rgba(217,27,27,${alpha})`;
+    const r = parseInt(m[1],16), g = parseInt(m[2],16), b = parseInt(m[3],16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  function colorSetDe(c){
+    if(c && c.colorSet === 'personalizado'){
+      const HEX_VALIDO = /^#[0-9a-fA-F]{6}$/;
+      const p1 = HEX_VALIDO.test(c.colorPersonalizado1) ? c.colorPersonalizado1 : '#D91B1B';
+      const p2 = HEX_VALIDO.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : '#008743';
+      return { accent:p1, accent2:p2, vivid:p1, vivid2:p2, wash:hexARgba(p1, 0.10) };
+    }
+    return COLOR_SETS[c && c.colorSet] || COLOR_SETS.rojo_verde;
+  }
+  function urlImagenCampana(driveId, tamano){
+    tamano = tamano || 900;
+    if(!driveId) return null;
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w${tamano}`;
+  }
+
+  /* ---------------- Fondo estacional (idéntico a escaparate.html) ----------------
+     Tamaño/opacidad de invierno, primavera y verano subidos para igualar
+     la presencia visual de otoño — ver el comentario completo junto a
+     ESTACIONES en escaparate.html (confirmado por Eloy comparando las
+     cuatro estaciones una junto a otra: "la única que veo que se aprecia
+     algo es otoño"). */
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  const ESTACIONES = {
+    invierno: {
+      colores: ['#8FB8DD','#A9C9E6','#6FA3D1'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M2 12h20M6 4l1 3-3 1M18 4l-1 3 3 1M6 20l1-3-3-1M18 20l-1-3 3-1"/></svg>`,
+      dir: 1, tam: [26,40], dur: [7,13], n: 14, op: [0.42,0.68],
+    },
+    primavera: {
+      colores: ['#6FBE6B','#8FD98A','#F3B6C7'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="${c}"><path d="M12 2c4 3 6 6 6 10a6 6 0 01-12 0c0-4 2-7 6-10z"/></svg>`,
+      dir: 1, tam: [24,38], dur: [8,14], n: 14, op: [0.42,0.68],
+    },
+    verano: {
+      colores: ['#4FB6DA','#7FCBE6','#3A9FC4'],
+      forma: (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="9.3" cy="8.8" r="1.7" fill="${c}" stroke="none" opacity=".55"/></svg>`,
+      dir: -1, tam: [22,34], dur: [6,11], n: 14, op: [0.42,0.68],
+    },
+    otono: {
+      colores: ['#C97A34','#B5541F','#D9A441','#A8632A'],
+      forma: (c) => Math.random() < 0.45
+        ? `<svg viewBox="0 0 100 110" fill="${c}"><path d="M50,8 C58,18 60,26 58,32 C66,26 76,24 85,26 C78,34 74,40 74,46 C82,48 90,54 95,62 C85,62 76,64 70,68 C74,76 76,84 74,92 C66,86 60,82 55,80 C56,88 56,96 54,104 L50,96 L46,104 C44,96 44,88 45,80 C40,82 34,86 26,92 C24,84 26,76 30,68 C24,64 15,62 5,62 C10,54 18,48 26,46 C26,40 22,34 15,26 C24,24 34,26 42,32 C40,26 42,18 50,8 Z"/><path d="M50,80 C50,55 50,35 50,15" stroke="rgba(70,40,10,.4)" stroke-width="2" fill="none"/><path d="M48,104 C40,108 30,106 22,98" stroke="#7A5230" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`
+        : `<svg viewBox="0 0 100 100" fill="${c}"><path d="M50,6 C74,18 88,42 82,64 C77,86 64,96 50,99 C36,96 23,86 18,64 C12,42 26,18 50,6 Z"/><path d="M50,14 C50,40 50,70 50,92" stroke="rgba(70,40,10,.45)" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M50,35 L34,28 M50,35 L66,28 M50,55 L30,50 M50,55 L70,50 M50,75 L34,72 M50,75 L66,72" stroke="rgba(70,40,10,.3)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
+      dir: 1, tam: [30,52], dur: [7,12], n: 12, op: [0.4,0.7],
+    },
+  };
+  function estacionParaFecha(fecha){
+    const mes = fecha.getMonth();
+    if(mes===11 || mes===0 || mes===1) return 'invierno';
+    if(mes>=2 && mes<=4) return 'primavera';
+    if(mes>=5 && mes<=7) return 'verano';
+    return 'otono';
+  }
+
+  // Esta página no está ligada a un escaparate concreto (muestra varios
+  // a la vez), así que la estación se calcula siempre a partir de HOY,
+  // no de la fecha de ningún escaparate en particular.
+  function pintarFondoEstacional(){
+    const el = $("#fondoEstacional");
+    const lienzo = $("#escaparateLienzo");
+    if(!el || !lienzo) return;
+    const est = ESTACIONES[estacionParaFecha(HOY)];
+    const ALTURA_REFERENCIA = 800;
+    const altura = lienzo.offsetHeight || ALTURA_REFERENCIA;
+    const escala = Math.max(1, altura / ALTURA_REFERENCIA);
+    const N = Math.round((est.n || 14) * escala);
+    const opRango = est.op || [0.4, 0.8];
+    let particulas = '';
+    for(let i=0;i<N;i++){
+      const color = pick(est.colores);
+      const tam = est.tam[0] + Math.random()*(est.tam[1]-est.tam[0]);
+      const dur = (est.dur[0] + Math.random()*(est.dur[1]-est.dur[0])) * escala;
+      const delay = -(Math.random()*dur);
+      const x = 2 + Math.random()*94;
+      const drift = Math.round(Math.random()*44-22);
+      const rot = Math.round(Math.random()*300+60);
+      const op = (opRango[0] + Math.random()*(opRango[1]-opRango[0])).toFixed(2);
+      particulas += `<span class="particula" style="left:${x.toFixed(1)}%; animation-delay:${delay.toFixed(1)}s; --dur:${dur.toFixed(1)}s; --drift:${drift}px; --rot:${rot}deg; --dir:${est.dir}; --op:${op}; --tam:${tam.toFixed(0)}px;">${est.forma(color)}</span>`;
+    }
+    el.innerHTML = particulas;
+  }
+
+  /* ---------------- Acceso con PIN a la gestión de escaparates ----------------
+     Mismo patrón que "Gestionar destacados" en buscador.html: la gestión
+     de escaparates no tenía NINGÚN control de acceso hasta ahora, pese a
+     ser una acción tan global como Destacados — se añade el mismo PIN
+     compartido (panel_validar_pin / PANEL_PIN en Apps Script). */
+  let campanasPin_ = '';
+  function campanasGuardarPinLocal_(pin, recordar) {
+    if (recordar) { try { localStorage.setItem('omCampanasPin', pin); } catch (e) {} }
+  }
+  async function campanasValidarPinYArrancar_(pin) {
+    const error = $("#campanasPinError");
+    const btn = $("#campanasPinEntrar");
+    error.textContent = '';
+    const textoOriginal = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Comprobando…';
+    try {
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'panel_validar_pin', pin: pin }),
+      });
+      const d = await resp.json();
+      if (d.success) {
+        campanasPin_ = pin;
+        $("#campanasVistaPin").style.display = 'none';
+        $("#campanasVistaPrincipal").style.display = '';
+        $("#campanasModalFoot").style.display = '';
+        limpiarFormulario();
+        renderCampaignList();
+      } else {
+        error.textContent = 'PIN incorrecto.';
+        try { localStorage.removeItem('omCampanasPin'); } catch (e) {}
+      }
+    } catch (e) {
+      error.textContent = 'Error de conexión.';
+    } finally {
+      btn.disabled = false; btn.textContent = textoOriginal;
+    }
+  }
+
+  /* ---------------- Tarjetas de campaña ---------------- */
+  let CAMPAIGNS = []; // TODAS las campañas (activas e inactivas) — la gestión (Modal B) necesita ver también las inactivas para poder reactivarlas
+  function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
+
+  // Chip de área — petición explícita de Eloy: "aparte" de los chips de
+  // tipo/activa, con un color FIJO por área (uno de los del logo de la
+  // empresa), para que dos escaparates de la misma área compartan
+  // siempre el mismo color aunque tengan colorSet de campaña distinto.
+  // Por eso estos colores NO usan var(--tarjeta-color) — es justo lo
+  // contrario de lo que representa esta chip (la campaña puede cambiar
+  // de color, el área no). Los 4 colores son los mismos 4 del logo
+  // (rojo, ámbar, verde, azul) — encajan 1 a 1 con las 4 áreas reales
+  // del catálogo. Texto oscuro solo en la de ámbar: blanco sobre ese
+  // amarillo concreto queda con poco contraste (mismo motivo por el que
+  // ya se evitó depender de colores de campaña en otros chips de este
+  // proyecto — aquí el problema es justo el color en sí, no que varíe).
+  const AREA_INFO = {
+    drogueria: { etiqueta: 'Droguería', fondo: '#D91B1B', texto: '#fff' },
+    perfumeria: { etiqueta: 'Perfumería', fondo: '#F1B300', texto: '#3D2E00' },
+    pinturas: { etiqueta: 'Pinturas', fondo: '#008743', texto: '#fff' },
+    talleres: { etiqueta: 'Talleres', fondo: '#006DAE', texto: '#fff' },
+  };
+  function areasChipsHTML(c){
+    const areas = Array.isArray(c.areas) ? c.areas.filter(a => AREA_INFO[a]) : [];
+    // Sin áreas concretas = aplica a todas — no hay una única área que
+    // destacar con su color propio, así que no se pinta ningún chip.
+    if(!areas.length) return '';
+    return `<div class="campana-card-areas">${areas.map(a => {
+      const info = AREA_INFO[a];
+      return `<span class="campana-card-area-chip" style="background:${info.fondo}; color:${info.texto};">${info.etiqueta}</span>`;
+    }).join('')}</div>`;
+  }
+
+  // "Hasta un ##% de dto.": el MÁXIMO entre el descuento general de la
+  // campaña y cualquier descuento propio de un producto concreto (que
+  // puede ser más alto que el general, ya que el propio es preferente
+  // — ver el campo "descuento" en destacados[]). Así el chip del
+  // listado siempre refleja el mejor descuento real disponible en ese
+  // escaparate, no solo el general, aunque solo UN producto lo tenga.
+  function descuentoMaximoCampana(c){
+    const propios = (c.destacados || []).map(d => Number(d.descuento) || 0);
+    return Math.max(Number(c.descuento) || 0, ...propios, 0);
+  }
+
+  function campanaCardHTML(c){
+    const cs = colorSetDe(c);
+    const hoyActiva = activaEn(c, HOY);
+    const eslogan = (c.eslogan || '').trim();
+    // sz=500 (no el sz=200 de antes): la miniatura ya no es un cuadrado
+    // pequeño en una esquina, ahora ocupa todo el ancho de la tarjeta
+    // (ver .campana-card-thumb) — con 200px se vería borrosa al
+    // estirarla. Sigue siendo menor que el w900 de la vitrina grande de
+    // escaparate.html, que no hace falta aquí.
+    const imgUrl = urlImagenCampana(c.imagenFondo, 500);
+    const descuentoMax = descuentoMaximoCampana(c);
+    return `
+      <a class="campana-card" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" style="--tarjeta-color:${cs.vivid}; --tarjeta-wash:${cs.wash};">
+        <div class="campana-card-top">
+          <span class="campana-card-badge">${c.tipo==='comercial' ? 'Comercial' : 'Temporada'}</span>
+          ${hoyActiva ? '<span class="campana-card-badge hoy">● activa hoy</span>' : ''}
+        </div>
+        ${areasChipsHTML(c)}
+        <h2>${c.nombre}</h2>
+        <span class="campana-card-fechas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+          ${c.permanente ? 'Permanente' : `${fmtFecha(c.fechaInicio)} — ${fmtFecha(c.fechaFin)}`}
+        </span>
+        ${descuentoMax > 0 ? `<span class="campana-card-descuento">🏷️ Hasta un ${descuentoMax}% de dto.</span>` : ''}
+        ${imgUrl ? `<div class="campana-card-thumb"><img src="${imgUrl}" alt="" loading="lazy"></div>` : ''}
+        ${eslogan ? `<p class="campana-card-eslogan">"${eslogan}"</p>` : '<span style="flex:1"></span>'}
+        <span class="campana-card-cta">
+          Ver escaparate
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </a>`;
+  }
+
+  // Separada de la carga inicial para poder llamarse de nuevo tras
+  // crear/editar/borrar/(des)activar una campaña desde el Modal B, sin
+  // tener que recargar toda la página. SIEMPRE deja el contenido DENTRO
+  // de #campanasGrid (nunca reemplaza el propio elemento con outerHTML),
+  // así el id se conserva entre repintados.
+  function renderCards(){
+    const activas = CAMPAIGNS.filter(c => c.activa !== false)
+      .slice()
+      .sort((a,b) => new Date(a.fechaInicio+"T00:00:00") - new Date(b.fechaInicio+"T00:00:00"));
+    const grid = $("#campanasGrid");
+    if(!activas.length){
+      grid.innerHTML = `
+        <div class="campanas-vacio">
+          <h2>Todavía no hay escaparates activos para mostrar aquí</h2>
+          <p>Marca alguno como "activo" desde "Gestionar escaparates" — no hace falta que sus fechas hayan empezado, sirve para dar un adelanto de lo que viene.</p>
+        </div>`;
+    } else {
+      grid.innerHTML = activas.map(campanaCardHTML).join("");
+    }
+    pintarFondoEstacional(); // se repinta con el contenido definitivo ya en el DOM, para medir la altura real
+  }
+
+  async function cargarCampanas(forzar){
+    // Ruta más rápida todavía que la caché en Drive: si ya tenemos las
+    // campañas de una navegación reciente dentro del mismo flujo (ver
+    // helpers de sessionStorage más arriba), reutilizarlas sin pedir
+    // nada — ni siquiera la petición rápida a Apps Script. "forzar" se
+    // usa justo después de un cambio real (crear/editar/eliminar/
+    // imagen), para saltarse la caché a propósito y traer lo que el
+    // servidor acaba de confirmar.
+    if(!forzar){
+      const cacheadas = leerCacheCampanasSesion();
+      if(cacheadas){
+        CAMPAIGNS = cacheadas;
+        return;
+      }
+    }
+
+    // Llama directamente a la acción obtener_campanas del Web App de
+    // Apps Script — ahora lee de una caché en Drive que el propio Apps
+    // Script mantiene al día (regenerada de forma síncrona tras cada
+    // cambio real: crear/editar/eliminar una campaña, o tocar sus
+    // productos/imagen), no de la hoja de cálculo en directo como antes.
+    // Es lo bastante rápida para ser la única fuente, sin necesitar
+    // ningún archivo intermedio en git: la misma URL funciona igual de
+    // bien esté esta página en GitHub Pages o en IONOS, sin depender de
+    // ningún despliegue para reflejar un cambio — mismo patrón que ya
+    // usan buscador.html y Centro de Soluciones para los productos
+    // (decisión explícita de Eloy: main es solo mantenimiento, todo el
+    // tráfico real vive en release, y los cambios desde main deben
+    // verse ahí sin redesplegar nada).
+    //
+    // Timeout defensivo con AbortController: si el fetch se queda
+    // colgado sin resolver nunca (no solo si falla rápido), nada más lo
+    // detectaría — ni el catch ni el finally de iniciar() llegarían a
+    // ejecutarse nunca por sí solos.
+    const controller = new AbortController();
+    const avisoTimeout = setTimeout(() => controller.abort(), 12000);
+    try{
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas&_ts=' + Date.now(), { cache:'no-store', signal: controller.signal });
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const datos = await resp.json();
+      if(datos.error) throw new Error(datos.error);
+      CAMPAIGNS = datos.campanas || [];
+      guardarCacheCampanasSesion(CAMPAIGNS);
+    } catch(err){
+      if(err.name === 'AbortError') throw new Error('La respuesta ha tardado demasiado (más de 12 segundos) y se ha cancelado.');
+      throw err;
+    } finally {
+      clearTimeout(avisoTimeout);
+    }
+  }
+
+  async function iniciar(){
+    // Todo el cuerpo va en un try/finally: pase lo que pase (incluido un
+    // error inesperado que no fuera simplemente "no se pudo conectar"),
+    // el spinner de carga SIEMPRE se oculta al final — antes, si algo
+    // fallaba fuera del try/catch interno (p.ej. al medir el lienzo la
+    // primera vez, antes de que hubiera nada dentro), "Cargando
+    // campañas…" se quedaba para siempre sin que se viera ningún error
+    // (reportado real: "se queda el 'Cargando campañas' todo el tiempo").
+    try{
+      pintarFondoEstacional();
+      try{
+        await cargarCampanas();
+      } catch(err){
+        $("#campanasGrid").innerHTML = `
+          <div class="campanas-error">
+            <h2>No se han podido cargar los escaparates</h2>
+            <p>${err.message} — puede que todavía no se haya desplegado la nueva versión de Apps Script (acción <code>obtener_campanas</code>), o que la columna "activa" aún no exista en la hoja Campañas (se crea sola en el primer guardado tras desplegar).</p>
+          </div>`;
+        return;
+      }
+      renderCards();
+      if(window.MOSTRAR_GESTION_CAMPANAS){
+        $("#btnCampanas").hidden = false;
+      }
+    } finally {
+      $("#cargando").hidden = true;
+      pintarFondoEstacional();
+    }
+  }
+
+  /* ---------------- Modal: gestionar campañas ---------------- */
+  const modalCampanas = $("#modalCampanas");
+  // Ver el comentario equivalente en escaparate.html (modalProductos):
+  // <dialog>.showModal() no bloquea por sí solo el scroll de la página
+  // de fondo en todos los navegadores — sin esto, el fondo seguía
+  // desplazándose por detrás con el modal abierto, dejando el pie de
+  // página oscuro asomando y solapado (reportado real: "se ha quedado
+  // abierta y solapada al footer"). Se bloquea el overflow de <html> Y
+  // de <body> — aquí el que de verdad hace scroll es <html>, bloquear
+  // solo <body> no bastaba (confirmado con Playwright). El evento
+  // 'close' nativo cubre cualquier forma de cerrarlo (botón, Escape,
+  // clic en el fondo).
+  if (modalCampanas) {
+    modalCampanas.addEventListener('close', () => { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; });
+  }
+
+  if (window.MOSTRAR_GESTION_CAMPANAS) {
+  function renderCampaignList(){
+    if(!CAMPAIGNS.length){
+      $("#campaignList").innerHTML = `<p class="picker-empty">Todavía no hay ninguna campaña. Crea la primera con el formulario de abajo.</p>`;
+      return;
+    }
+    // A diferencia de la rejilla pública (solo activas), aquí se listan
+    // TODAS — así se puede encontrar y reactivar una que estuviera
+    // desactivada.
+    $("#campaignList").innerHTML = CAMPAIGNS.map(c=>{
+      const cs = colorSetDe(c);
+      const live = activaEn(c, HOY);
+      return `<div class="campaign-row">
+        <span class="swatch" style="background:linear-gradient(135deg, ${cs.vivid} 50%, ${cs.vivid2} 50%)"></span>
+        <div class="info" data-edit="${c.id}">
+          <div class="name">${c.nombre}
+            <span class="mini-badge" style="color:${c.origen==='manual'?cs.accent:cs.accent2}">${c.origen==='manual'?'Manual':'IA'}</span>
+            <span class="mini-badge" style="color:var(--ink-faint)">${c.tipo==='temporada'?'Temporada':'Comercial'}</span>
+            ${live?'<span class="mini-badge live">activa hoy</span>':''}
+            ${c.activa===false?'<span class="mini-badge" style="color:#C81E1E;border-color:#C81E1E">desactivada</span>':''}
+          </div>
+          <div class="dates">${c.permanente ? 'Permanente' : `${fmtFecha(c.fechaInicio)} – ${fmtFecha(c.fechaFin)}`} · ${c.productos.length} productos</div>
+        </div>
+        <div class="row-actions">
+          <a class="icon-btn" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" title="Ver / asignar productos" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </a>
+          <button class="icon-btn danger" data-eliminar="${c.id}" title="Eliminar escaparate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v13a1 1 0 001 1h6a1 1 0 001-1V7"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }).join("");
+
+    $$("[data-edit]", $("#campaignList")).forEach(el=>{
+      el.addEventListener("click", ()=>cargarFormularioEdicion(el.dataset.edit));
+    });
+    $$("[data-eliminar]", $("#campaignList")).forEach(el=>{
+      el.addEventListener("click", async (ev)=>{
+        ev.stopPropagation();
+        const c = findCampaign(el.dataset.eliminar);
+        if(!c) return;
+        if(!confirm(`¿Eliminar el escaparate «${c.nombre}»? Esta acción no se puede deshacer.`)) return;
+        try{
+          const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+            body: JSON.stringify({ accion:'eliminar_campana', id:c.id, pin: campanasPin_ })
+          });
+          const data = await resp.json();
+          if(!data.success) throw new Error(data.error || 'Error desconocido');
+          CAMPAIGNS = CAMPAIGNS.filter(x=>x.id!==c.id);
+          // Sincroniza la caché de sesión con este mismo cambio local —
+          // el parcheo aquí es trivial (quitar uno por id) y ya se sabe
+          // confirmado por el servidor, así que no hace falta una nueva
+          // petición de red solo para refrescar la caché.
+          guardarCacheCampanasSesion(CAMPAIGNS);
+          renderCampaignList();
+          renderCards();
+          toast(`Escaparate «${c.nombre}» eliminado.`);
+        }catch(err){ toast('No se pudo eliminar: ' + err.message, true); }
+      });
+    });
+  }
+
+  let areasSel = new Set();
+  function pintarAreas(){
+    $$("#ncAreas .chip").forEach(chip=>{
+      chip.classList.toggle('on', areasSel.has(chip.dataset.area));
+    });
+  }
+  $$("#ncAreas .chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      const a = chip.dataset.area;
+      if(areasSel.has(a)) areasSel.delete(a); else areasSel.add(a);
+      pintarAreas();
+    });
+  });
+
+  function pintarImagenCampanaForm(id, imagenId){
+    const preview = $("#campanaImgPreview");
+    const btnSubir = $("#btnSubirImagenCampana");
+    const btnQuitar = $("#btnQuitarImagenCampana");
+    const hint = $("#campanaImgHint");
+    if(!id){
+      preview.innerHTML = '<span class="campana-img-vacio">Sin imagen</span>';
+      btnSubir.disabled = true;
+      btnQuitar.style.display = 'none';
+      hint.textContent = 'Guarda primero el escaparate (nombre y fechas) para poder subir una imagen.';
+      return;
+    }
+    btnSubir.disabled = false;
+    const url = urlImagenCampana(imagenId, 300);
+    preview.innerHTML = url ? `<img src="${url}" alt="">` : '<span class="campana-img-vacio">Sin imagen</span>';
+    btnQuitar.style.display = imagenId ? 'inline-block' : 'none';
+    hint.textContent = imagenId ? '' : 'Se verá en la vitrina del escaparate, junto con la animación de la estación. También puedes arrastrarla sobre el recuadro o pegarla con Ctrl+V.';
+  }
+
+  function actualizarVisibilidadColorPersonalizado(){
+    $("#ncColorPersonalizadoRow").style.display = $("#ncColor").value === 'personalizado' ? 'block' : 'none';
+  }
+  $("#ncColor").addEventListener("change", actualizarVisibilidadColorPersonalizado);
+
+  // Al marcar "permanente", las fechas dejan de tener sentido (un
+  // escaparate permanente no depende de ningún rango) — se deshabilitan
+  // en vez de ocultarse, para que quien lo desmarque después recupere
+  // las fechas que hubiera puesto antes, sin tener que volver a
+  // escribirlas.
+  function actualizarCamposFechaSegunPermanente(){
+    const permanente = $("#ncPermanente").checked;
+    $("#ncInicio").disabled = permanente;
+    $("#ncFin").disabled = permanente;
+  }
+  $("#ncPermanente").addEventListener("change", actualizarCamposFechaSegunPermanente);
+
+  function limpiarFormulario(){
+    $("#ncId").value = "";
+    $("#ncNombre").value = "";
+    $("#ncTipo").value = "temporada";
+    $("#ncColor").value = "rojo_verde";
+    $("#ncColorP1").value = "#D91B1B";
+    $("#ncColorP2").value = "#008743";
+    $("#ncInicio").value = "";
+    $("#ncFin").value = "";
+    $("#ncPermanente").checked = false;
+    actualizarCamposFechaSegunPermanente();
+    $("#ncEslogan").value = "";
+    $("#ncDescuento").value = "";
+    $("#ncActiva").checked = true;
+    areasSel = new Set();
+    pintarAreas();
+    $("#formTitulo").textContent = "+ Nuevo escaparate manual";
+    $("#btnCancelarEdicion").style.display = "none";
+    $("#btnGuardarCampana").textContent = "Guardar escaparate";
+    $("#formMsg").className = "form-msg";
+    pintarImagenCampanaForm(null, null);
+    actualizarVisibilidadColorPersonalizado();
+  }
+  function cargarFormularioEdicion(id){
+    const c = findCampaign(id);
+    if(!c) return;
+    $("#ncId").value = c.id;
+    $("#ncNombre").value = c.nombre;
+    $("#ncTipo").value = c.tipo;
+    $("#ncColor").value = c.colorSet;
+    $("#ncColorP1").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado1) ? c.colorPersonalizado1 : "#D91B1B";
+    $("#ncColorP2").value = /^#[0-9a-fA-F]{6}$/.test(c.colorPersonalizado2) ? c.colorPersonalizado2 : "#008743";
+    $("#ncInicio").value = c.fechaInicio;
+    $("#ncFin").value = c.fechaFin;
+    $("#ncPermanente").checked = c.permanente === true;
+    actualizarCamposFechaSegunPermanente();
+    $("#ncEslogan").value = c.eslogan || "";
+    $("#ncDescuento").value = c.descuento || "";
+    $("#ncActiva").checked = c.activa !== false;
+    areasSel = new Set(c.areas || []);
+    pintarAreas();
+    $("#formTitulo").textContent = `Editando «${c.nombre}»`;
+    $("#btnCancelarEdicion").style.display = "inline-block";
+    $("#btnGuardarCampana").textContent = "Guardar cambios";
+    $("#formMsg").className = "form-msg";
+    pintarImagenCampanaForm(c.id, c.imagenFondo);
+    actualizarVisibilidadColorPersonalizado();
+    $("#ncNombre").focus();
+  }
+  $("#btnCancelarEdicion").addEventListener("click", limpiarFormulario);
+
+  // Función compartida por las tres vías de subir una imagen (elegir
+  // archivo, arrastrar y soltar, pegar desde el portapapeles) — antes
+  // esta lógica solo vivía dentro del "change" del <input type="file">,
+  // así que aunque el botón ya avisaba de "guarda primero" con el
+  // texto de ayuda de abajo, no había ningún aviso equivalente para
+  // quien intentara arrastrar o pegar una imagen directamente sobre un
+  // escaparate todavía sin guardar — sencillamente no pasaba nada
+  // visible. Ahora las tres vías comparten el mismo aviso explícito
+  // (toast), no solo un texto de ayuda que se puede pasar por alto.
+  async function subirImagenCampana(file){
+    const id = $("#ncId").value;
+    if(!id){
+      toast('Guarda primero el escaparate (nombre y fechas) para poder añadir una imagen.', true);
+      return;
+    }
+    if(!file || !file.type || !file.type.startsWith('image/')){
+      toast('Elige un archivo de imagen.', true);
+      return;
+    }
+    const LIMITE_MB = 5;
+    if(file.size > LIMITE_MB*1024*1024){
+      toast(`La imagen pesa demasiado (máximo ${LIMITE_MB} MB).`, true);
+      return;
+    }
+    const btnSubir = $("#btnSubirImagenCampana");
+    const original = btnSubir.textContent;
+    btnSubir.disabled = true; btnSubir.textContent = 'Subiendo…';
+    try{
+      const base64 = await new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+        reader.readAsDataURL(file);
+      });
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          accion:'actualizar_imagen_campana', id, pin: campanasPin_,
+          archivo: { nombre:file.name || 'imagen-pegada.png', tipo:file.type, datos: base64 },
+        }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      const c = findCampaign(id);
+      if(c) c.imagenFondo = data.imagenFondo;
+      guardarCacheCampanasSesion(CAMPAIGNS);
+      pintarImagenCampanaForm(id, data.imagenFondo);
+      toast('Imagen de escaparate actualizada.');
+    } catch(err){
+      toast('No se pudo subir la imagen: ' + err.message, true);
+    } finally {
+      btnSubir.disabled = !id; btnSubir.textContent = original;
+    }
+  }
+
+  $("#btnSubirImagenCampana").addEventListener("click", ()=>{
+    if(!$("#ncId").value){
+      toast('Guarda primero el escaparate (nombre y fechas) para poder añadir una imagen.', true);
+      return;
+    }
+    $("#campanaImgInput").click();
+  });
+  $("#campanaImgInput").addEventListener("change", (ev)=>{
+    const file = ev.target.files[0];
+    ev.target.value = '';
+    if(file) subirImagenCampana(file);
+  });
+
+  // Arrastrar y soltar sobre el recuadro de vista previa — misma zona
+  // donde ya se ve "Sin imagen" o la imagen actual.
+  const zonaImagenCampana = $("#campanaImgPreview");
+  ['dragenter','dragover'].forEach(evento => {
+    zonaImagenCampana.addEventListener(evento, (ev)=>{
+      ev.preventDefault();
+      zonaImagenCampana.classList.add('is-dragover');
+    });
+  });
+  ['dragleave','drop'].forEach(evento => {
+    zonaImagenCampana.addEventListener(evento, (ev)=>{
+      ev.preventDefault();
+      zonaImagenCampana.classList.remove('is-dragover');
+    });
+  });
+  zonaImagenCampana.addEventListener('drop', (ev)=>{
+    const file = ev.dataTransfer.files && ev.dataTransfer.files[0];
+    if(file) subirImagenCampana(file);
+  });
+
+  // Pegar desde el portapapeles (Ctrl+V / Cmd+V) — escucha en todo el
+  // documento en vez de solo en la zona de la imagen, porque una imagen
+  // copiada no se puede "hacer foco" en un <div> antes de pegar como sí
+  // se hace con un campo de texto; así funciona con solo tener el modal
+  // de gestión abierto. Se ignora si el modal no está abierto, para no
+  // interceptar un pegado normal de texto en cualquier otra parte del
+  // sitio.
+  document.addEventListener('paste', (ev)=>{
+    const modal = $("#modalCampanas");
+    if(!modal || !modal.open) return;
+    const item = Array.from(ev.clipboardData?.items || []).find(i => i.type.startsWith('image/'));
+    if(!item) return;
+    ev.preventDefault();
+    subirImagenCampana(item.getAsFile());
+  });
+
+  $("#btnQuitarImagenCampana").addEventListener("click", async ()=>{
+    const id = $("#ncId").value;
+    if(!id) return;
+    if(!confirm('¿Quitar la imagen de fondo de este escaparate?')) return;
+    const btn = $("#btnQuitarImagenCampana");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Quitando…';
+    try{
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ accion:'eliminar_imagen_campana', id, pin: campanasPin_ }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      const c = findCampaign(id);
+      if(c) c.imagenFondo = '';
+      guardarCacheCampanasSesion(CAMPAIGNS);
+      pintarImagenCampanaForm(id, '');
+      toast('Imagen de escaparate eliminada.');
+    } catch(err){
+      toast('No se pudo quitar la imagen: ' + err.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  if ($("#btnCampanas")) {
+    $("#btnCampanas").addEventListener("click", ()=>{
+      document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
+      modalCampanas.showModal();
+      const pinGuardado = (() => { try { return localStorage.getItem('omCampanasPin'); } catch (e) { return null; } })();
+      if (pinGuardado) {
+        campanasValidarPinYArrancar_(pinGuardado);
+      } else {
+        $("#campanasVistaPin").style.display = '';
+        $("#campanasVistaPrincipal").style.display = 'none';
+        $("#campanasModalFoot").style.display = 'none';
+      }
+    });
+  }
+  $("#campanasPinEntrar").addEventListener("click", () => {
+    const pin = $("#campanasPinInput").value.trim();
+    campanasGuardarPinLocal_(pin, $("#campanasPinRecordar").checked);
+    campanasValidarPinYArrancar_(pin);
+  });
+  $("#campanasPinInput").addEventListener("keydown", (e) => { if (e.key === 'Enter') $("#campanasPinEntrar").click(); });
+  $$('[data-close-campanas]').forEach(b=>b.addEventListener('click', ()=>modalCampanas.close()));
+
+  $("#btnGuardarCampana").addEventListener("click", async ()=>{
+    const msg = $("#formMsg");
+    const nombre = $("#ncNombre").value.trim();
+    const permanente = $("#ncPermanente").checked;
+    const fechaInicio = $("#ncInicio").value;
+    const fechaFin = $("#ncFin").value;
+    if(!nombre || (!permanente && (!fechaInicio || !fechaFin))){
+      msg.textContent = permanente ? "Rellena al menos el nombre." : "Rellena al menos el nombre y las dos fechas.";
+      msg.className = "form-msg show error";
+      return;
+    }
+    if(!permanente && fechaFin < fechaInicio){
+      msg.textContent = "La fecha de fin no puede ser anterior a la de inicio.";
+      msg.className = "form-msg show error";
+      return;
+    }
+    const btn = $("#btnGuardarCampana");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = "Guardando…";
+    try{
+      const payload = {
+        accion:'guardar_campana',
+        pin: campanasPin_,
+        id: $("#ncId").value || undefined,
+        nombre, fechaInicio, fechaFin, permanente,
+        tipo: $("#ncTipo").value,
+        colorSet: $("#ncColor").value,
+        colorPersonalizado1: $("#ncColorP1").value,
+        colorPersonalizado2: $("#ncColorP2").value,
+        areas: Array.from(areasSel),
+        eslogan: $("#ncEslogan").value.trim(),
+        descuento: $("#ncDescuento").value,
+        activa: $("#ncActiva").checked,
+      };
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+
+      const esNueva = !payload.id;
+      // Vuelve a pedir las campañas, FORZANDO que se salte la caché de
+      // sesión (ver cargarCampanas) — procesarGuardarCampana() regenera
+      // la caché de Drive de forma SÍNCRONA antes de devolver éxito (ver
+      // regenerarCacheCampanasDesdeSheet_ en Apps Script), así que en el
+      // momento en que esta respuesta llega, obtener_campanas ya
+      // devolvería el dato fresco. Sin el forzado, cargarCampanas()
+      // reutilizaría la caché de sesión (todavía con el dato de ANTES de
+      // este guardado) y el cambio no se vería hasta recargar o salir del
+      // flujo — justo lo que se pidió evitar ("si se edita un escaparate
+      // o se añade uno nuevo... refrescamos").
+      await cargarCampanas(true);
+      renderCampaignList();
+      renderCards();
+      // Aquí ya no se salta a "Asignar productos" (esa gestión vive en
+      // escaparate.html, otra página) — se guarda y se sigue en el
+      // propio modal, con un aviso de qué hacer a continuación.
+      toast(esNueva
+        ? `Escaparate «${nombre}» creado. Pincha en su tarjeta para asignarle productos.`
+        : `Escaparate «${nombre}» actualizado.`);
+      if(esNueva){
+        cargarFormularioEdicion(data.id);
+      } else {
+        limpiarFormulario();
+      }
+    } catch(err){
+      msg.textContent = "No se pudo guardar: " + err.message;
+      msg.className = "form-msg show error";
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+  }
+
+  iniciar();
+})();
+</script>
+    <script src="./src/js/app.js?v=20260829"></script>
+    <script src="./src/js/analytics-consent.js?v=20260829"></script>
+  </body>
+</html>
