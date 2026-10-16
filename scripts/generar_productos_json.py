@@ -137,15 +137,18 @@ def exportar_productos_json(productos, familias, subfamilias):
 
         precio_sin = p.get('precio_sin_iva', '').strip()
         precio_con = p.get('precio_con_iva', '').strip()
-        # Precio de venta a MAYOR sin/con IVA (a petición de Eloy,
-        # 11/09/2026) — se exportan directamente desde el Sheet, YA
-        # CALCULADOS ahí en la sincronización (igual que precio_sin/
-        # precio_con del precio normal), no al vuelo en el cliente. De
-        # momento solo se muestran ocultos tras un botón en la ficha de
-        # detalle del buscador (funcionalidad que debe quedar SIEMPRE
-        # fuera de release/IONOS).
-        precio_mayor_sin = p.get('precio_mayor_sin_iva', '').strip()
-        precio_mayor_con = p.get('precio_mayor_con_iva', '').strip()
+        # Precio de venta a MAYOR: deliberadamente NO se exporta a este
+        # JSON (commiteado al repo público, servido tal cual por GitHub
+        # Pages e IONOS) — a diferencia de precio_sin/precio_con, este es
+        # exclusivo del perfil profesional (ver assets/js/perfil-
+        # profesional.js y la auditoría de seguridad del perfil
+        # profesional). Antes sí se incluía aquí y el navegador lo
+        # borraba de memoria por su cuenta si no tocaba mostrarlo
+        # (buscador.html, limpiarPrecioMayorSiProcede_), pero eso dejaba
+        # el precio de mayor visible en la respuesta de red en bruto de
+        # este mismo archivo para cualquiera. Ahora solo viaja desde la
+        # acción en vivo "obtener_productos" de Apps Script, y solo
+        # cuando la petición lleva un PIN profesional válido.
 
         # Productos relacionados / compra conjunta: columna "relacionados"
         # del Sheet, lista de referencias separadas por comas. Editable
@@ -184,8 +187,6 @@ def exportar_productos_json(productos, familias, subfamilias):
             'precio_sin': precio_sin,
             'precio_con': precio_con,
             'iva':       p.get('iva', '').strip(),
-            'precio_mayor_sin': precio_mayor_sin,
-            'precio_mayor_con': precio_mayor_con,
             'fecha':     p.get('fecha_registro', '').strip(),
             # Fecha de alta en el CRM (columna 'fecha_alta' del Sheet, fija
             # desde que se crea el producto, nunca se sobrescribe en

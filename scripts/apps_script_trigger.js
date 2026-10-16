@@ -3691,6 +3691,25 @@ function doGet(e) {
 
     if (accion === 'obtener_productos') {
       const datos = leerCacheProductos_();
+      // Precio al por mayor: SOLO viaja en la respuesta si esta petición
+      // trae un PIN profesional válido (?pin=...) — a diferencia de antes,
+      // donde precio_mayor_sin/con salían siempre y el navegador los
+      // borraba de memoria por su cuenta (ver el aviso en buscador.html,
+      // limpiarPrecioMayorSiProcede_): eso dejaba el precio mayorista
+      // visible igualmente en la respuesta de red en bruto para
+      // cualquiera, autorizado o no. Ahora el propio servidor decide qué
+      // incluir, que es donde tiene que decidirse de verdad.
+      const pinProfesionalOk = verificarPinProfesional_(e.parameter && e.parameter.pin);
+      const quitarPrecioMayor_ = (lista) => {
+        if (pinProfesionalOk) return lista;
+        return lista.map(p => {
+          if (p.precio_mayor_sin === undefined && p.precio_mayor_con === undefined) return p;
+          const copia = Object.assign({}, p);
+          delete copia.precio_mayor_sin;
+          delete copia.precio_mayor_con;
+          return copia;
+        });
+      };
       // Filtro opcional por referencias (?refs=REF1,REF2,...) — para
       // cuando solo hace falta un puñado concreto de productos, no el
       // catálogo entero (miles de productos, varios MB). Usado por
@@ -3706,11 +3725,11 @@ function doGet(e) {
       const refsParam = (e.parameter && e.parameter.refs || '').toString().trim();
       if (refsParam) {
         const refsSet = new Set(refsParam.split(',').map(r => r.trim()).filter(Boolean));
-        const filtrados = (datos.productos || []).filter(p => refsSet.has(p.ref));
+        const filtrados = quitarPrecioMayor_((datos.productos || []).filter(p => refsSet.has(p.ref)));
         return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, { productos: filtrados })))
           .setMimeType(ContentService.MimeType.JSON);
       }
-      return ContentService.createTextOutput(JSON.stringify(datos))
+      return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, { productos: quitarPrecioMayor_(datos.productos || []) })))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -3796,8 +3815,15 @@ function doGet(e) {
     }
 
     // Igual que "obtener_catalogos" pero para los catálogos al por mayor
-    // — pensado para el futuro perfil de cliente profesional.
+    // — exige el PIN profesional (?pin=...): a diferencia de los
+    // catálogos normales (públicos a propósito), estos contienen precios
+    // de mayor y no deben entregarse a quien no se haya identificado como
+    // profesional.
     if (accion === 'obtener_catalogos_mayor') {
+      if (!verificarPinProfesional_(e.parameter && e.parameter.pin)) {
+        return ContentService.createTextOutput(JSON.stringify({ error: 'PIN profesional requerido o incorrecto.' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
       const manifiesto = leerManifiestoCatalogosMayor_();
       const resultado = {};
       Object.keys(NOMBRES_ARCHIVOS_CATALOGO_MAYOR).forEach(area => {
@@ -4006,6 +4032,11 @@ function doPost(e) {
     if (accion === 'panel_validar_pin') {
       console.log('Acción: panel_validar_pin');
       return procesarPanelValidarPin(data);
+    }
+
+    if (accion === 'validar_pin_profesional') {
+      console.log('Acción: validar_pin_profesional');
+      return procesarValidarPinProfesional(data);
     }
 
     // NUEVO — Aviso de sincronización de productos pendiente desde el CRM
@@ -8777,6 +8808,23 @@ function verificarPin_(pin) {
   return (pin || '').toString().trim() === pinCorrecto.toString().trim();
 }
 
+// ── PIN del perfil profesional (web pública) ──────────────────────────
+// Deliberadamente una Script Property DISTINTA de PANEL_PIN: este PIN lo
+// teclea cualquier cliente profesional en la web pública (acceso de
+// solo lectura a precios/catálogos de mayor), mientras que PANEL_PIN
+// protege la gestión interna (escribir productos, campañas, etc.) desde
+// panel_admin.html y el resto de paneles — compartir el mismo valor
+// expondría el PIN de gestión a cualquiera que lo probara en la web
+// pública. Configurar en el editor de Apps Script → Configuración del
+// proyecto → Propiedades del script → añadir "PIN_PROFESIONAL" (valor
+// de ejemplo citado por Eloy: 13005). Sin configurar, el acceso
+// profesional queda bloqueado por seguridad, igual que el panel.
+function verificarPinProfesional_(pin) {
+  const pinCorrecto = PropertiesService.getScriptProperties().getProperty('PIN_PROFESIONAL');
+  if (!pinCorrecto) return false;
+  return (pin || '').toString().trim() === pinCorrecto.toString().trim();
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // COPIA DE IMÁGENES VALIDADAS PARA ONEDRIVE (administrador del CRM)
 // ══════════════════════════════════════════════════════════════════════
@@ -9169,6 +9217,15 @@ function procesarPanelGuardarProducto(data) {
 //    pantalla de acceso, antes de intentar cualquier acción real) ─────
 function procesarPanelValidarPin(data) {
   const ok = verificarPin_(data.pin);
+  return ContentService.createTextOutput(JSON.stringify({ success: ok }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Validación del PIN del perfil profesional — mismo patrón que
+// procesarPanelValidarPin pero contra PIN_PROFESIONAL (ver
+// verificarPinProfesional_), nunca PANEL_PIN.
+function procesarValidarPinProfesional(data) {
+  const ok = verificarPinProfesional_(data.pin);
   return ContentService.createTextOutput(JSON.stringify({ success: ok }))
     .setMimeType(ContentService.MimeType.JSON);
 }
