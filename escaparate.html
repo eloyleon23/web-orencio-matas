@@ -1112,8 +1112,16 @@
          el efecto llamativo sin salirse de esa paleta. */
       .presentacion-card{
         position:relative;
-        background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16);
-        border-radius:28px; backdrop-filter:blur(10px);
+        /* Sin backdrop-filter a propósito: estaba puesto sobre el fondo
+           animado (.presentacion-ambiente, que ahora desplaza su
+           posición sin parar) y el navegador tiene que volver a
+           difuminarlo en cada fotograma — eso es justo lo que se veía
+           como "un efecto raro en el degradado" detrás de la tarjeta
+           (parpadeo/deformación del blur mientras el fondo se mueve).
+           Un fondo semitransparente algo más opaco, sin desenfoque,
+           consigue el mismo aspecto de "cristal" sin ese problema. */
+        background:rgba(8,9,13,.55); border:1px solid rgba(255,255,255,.16);
+        border-radius:28px;
         display:flex; flex-direction:row-reverse; align-items:center; text-align:left;
         width:min(88vw, 1480px); max-width:94vw;
         height:min(78vh, 760px); max-height:90vh;
