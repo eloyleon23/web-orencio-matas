@@ -1183,12 +1183,22 @@
       }
       .presentacion-chip-logo img{ height:22px; width:auto; display:block; }
 
-      @media (max-width:860px){
+      /* Este breakpoint decidía antes SOLO por ancho en px
+         (max-width:860px) — un monitor o tablet en VERTICAL puede
+         perfectamente tener más de 860px de ancho (ej. 1080px) y aun así
+         necesitar el layout compacto en columna, porque lo que importa
+         aquí es la orientación, no el número de píxeles. Bug real
+         reportado: "no se ajusta a la pantalla en base a si está en
+         horizontal o vertical". Ahora se dispara por CUALQUIERA de los
+         dos motivos: pantalla estrecha (el caso típico de un móvil) O
+         orientación vertical (el caso de un monitor/tablet en vertical,
+         sea cual sea su resolución). */
+      @media (max-width:860px), (orientation:portrait){
         .presentacion-stage{ gap:18px; }
         .presentacion-card{ width:min(86vw, 480px); height:min(60vh, 560px); }
-        /* En pantallas estrechas la variante "un solo producto" vuelve a
-           columna (foto arriba, detalle debajo) — fila solo tiene
-           sentido con el ancho de sobra de un monitor en horizontal. */
+        /* En vertical la variante "un solo producto" vuelve a columna
+           (foto arriba, detalle debajo) — fila solo tiene sentido con el
+           ancho de sobra de una pantalla en horizontal. */
         .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card{
           flex-direction:column; text-align:center; width:min(90vw, 480px); height:auto; max-height:none;
         }
@@ -1197,11 +1207,13 @@
         .presentacion-stage:has(.presentacion-card:only-child) .presentacion-card-precio{ align-items:center; }
         .presentacion-chip-escaparate span{ display:none; }
       }
-      /* Aviso suave para quien abra el modo presentación en móvil en
-         vertical — pensado para un monitor en horizontal, pero no se
-         bloquea nada, solo se sugiere girar el dispositivo. */
+      /* Aviso suave para quien abra el modo presentación en vertical —
+         pensado para un monitor en horizontal, pero no se bloquea nada,
+         solo se sugiere girar el dispositivo. Ya no depende del ancho:
+         con pantallas grandes en vertical (tablet/monitor) también tiene
+         sentido avisar. */
       .presentacion-giro-aviso{ display:none; }
-      @media (max-width:700px) and (orientation:portrait){
+      @media (orientation:portrait){
         .presentacion-giro-aviso{
           display:flex; position:absolute; top:14px; left:50%; transform:translateX(-50%);
           z-index:15; align-items:center; gap:7px; font-size:12px; color:rgba(255,255,255,.75);
@@ -3182,15 +3194,51 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     pintarCicloPresentacion();
     programarSiguienteCicloPresentacion();
 
-    // Pantalla completa real cuando el navegador la soporta (Chrome/Edge/
-    // Firefox de escritorio, Android) — en algún Safari/iOS sin Fullscreen
-    // API general, el overlay ya cubre toda la pantalla igualmente vía
-    // position:fixed, solo que sin ocultar la barra del sistema.
+    // Pantalla completa real, sin cabecera ni pie del navegador — con
+    // los prefijos de proveedor que todavía hacen falta en algunos
+    // navegadores (Safari de escritorio/iPadOS sigue exponiendo solo
+    // "webkitRequestFullscreen", no el método estándar). Si pedirla
+    // sobre el propio overlay fallara por el motivo que sea, se
+    // reintenta sobre <html> (documentElement) — en algunos navegadores
+    // un elemento recién mostrado (display/hidden cambiado en el mismo
+    // tick) puede rechazar la petición, pero el documento completo casi
+    // siempre la acepta igual, y el resultado visual es el mismo (todo
+    // lo demás ya queda detrás del overlay, que cubre el 100% de la
+    // pantalla). En Safari/iOS para iPhone (no iPad) no existe Fullscreen
+    // API para elementos normales — ahí no hay nada que pedir, y se seguirá
+    // viendo la propia interfaz de Safari; para ocultarla del todo en
+    // esos dispositivos hace falta añadir la página a pantalla de inicio
+    // ("Compartir" → "Añadir a pantalla de inicio"), que abre en modo
+    // standalone sin ninguna barra de Safari.
+    const elementoFullscreen = overlay;
+    const pedirFullscreenDe = (el) => (
+      el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen
+    );
     try{
-      const pedirFullscreen = overlay.requestFullscreen || overlay.webkitRequestFullscreen;
-      if(pedirFullscreen) await pedirFullscreen.call(overlay);
+      const pedir = pedirFullscreenDe(elementoFullscreen);
+      if(pedir) await pedir.call(elementoFullscreen);
+      else throw new Error('Fullscreen API no disponible');
     } catch(err){
-      // Denegado o no soportado — se continúa igual en el overlay normal.
+      try{
+        const pedirDoc = pedirFullscreenDe(document.documentElement);
+        if(pedirDoc) await pedirDoc.call(document.documentElement);
+      } catch(err2){
+        // Ninguna de las dos vías disponible (ej. Safari/iPhone) — se
+        // continúa igual en el overlay normal, que cubre toda la
+        // ventana del navegador aunque no su barra de direcciones.
+      }
+    }
+
+    // Monitor de tienda en horizontal (petición explícita) — mejor
+    // esfuerzo: solo algunos navegadores permiten bloquear la
+    // orientación desde una pestaña normal (fuera de una PWA instalada),
+    // así que un fallo aquí es silencioso y no afecta a nada más; el
+    // CSS en modo presentación ya se adapta igualmente a vertical si
+    // esto no está disponible o el usuario gira la pantalla después.
+    try{
+      if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+    } catch(err){
+      // No soportado fuera de una PWA instalada, o denegado — no pasa nada.
     }
   }
 
@@ -3201,7 +3249,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const overlay = $("#presentacionOverlay");
     if(overlay) overlay.hidden = true;
     document.body.style.overflow = '';
-    if(document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    const elementoActual = document.fullscreenElement || document.webkitFullscreenElement;
+    if(elementoActual){
+      const salir = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+      if(salir) salir.call(document).catch(() => {});
+    }
+    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(err){}
   }
 
   function wireBotonModoPresentacion(){
@@ -3211,10 +3264,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(btnSalir) btnSalir.addEventListener('click', salirDeModoPresentacion);
     // Cubre tanto el botón ✕ propio como salir de pantalla completa por
     // cualquier otra vía del sistema (Esc nativo, gesto, F11...) — en
-    // cualquiera de esos casos el navegador dispara "fullscreenchange".
-    document.addEventListener('fullscreenchange', () => {
-      if(!document.fullscreenElement && presentacionActiva) salirDeModoPresentacion();
-    });
+    // cualquiera de esos casos el navegador dispara "fullscreenchange"
+    // ("webkitfullscreenchange" en Safari algo más antiguo).
+    const alCambiarFullscreen = () => {
+      if(!(document.fullscreenElement || document.webkitFullscreenElement) && presentacionActiva) salirDeModoPresentacion();
+    };
+    document.addEventListener('fullscreenchange', alCambiarFullscreen);
+    document.addEventListener('webkitfullscreenchange', alCambiarFullscreen);
     // Respaldo para cuando no hubo Fullscreen API real de por medio (el
     // evento anterior no se dispara en ese caso): Esc sigue cerrando el
     // overlay igualmente. salirDeModoPresentacion() ya es segura de
