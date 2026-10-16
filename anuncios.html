@@ -231,9 +231,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             <div id="an-panel-archivo" class="an-tab-panel activo">
               <div id="an-dropzone" class="an-dropzone">
-                <i class="fa-solid fa-cloud-arrow-up"></i> Haz clic para elegir un archivo (PDF, JPG, PNG o WebP — máx. <span id="an-tamano-max-mb">20</span> MB)
+                <i class="fa-solid fa-cloud-arrow-up"></i> Arrastra un archivo aquí, pégalo (Ctrl+V) o haz clic para elegir (PDF, JPG, PNG o WebP — máx. <span id="an-tamano-max-mb">20</span> MB)
               </div>
               <input type="file" id="an-archivo-input" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;">
+              <button type="button" id="an-pegar-portapapeles" class="an-btn-pegar">
+                <i class="fa-solid fa-paste"></i> Pegar desde el portapapeles
+              </button>
               <img id="an-miniatura-preview" class="an-miniatura-preview" alt="Miniatura generada">
               <p id="an-archivo-estado" class="an-hint"></p>
             </div>

@@ -265,12 +265,27 @@
     if (recordar) { try { localStorage.setItem('omAnunciosPin', pin); } catch (e) {} }
   }
 
+  // Spinner compartido por todos los botones que disparan una petición al
+  // backend — mismo patrón ya usado en "Gestionar destacados" de
+  // buscador.html: icono animado + disabled mientras está en curso,
+  // restaurado al terminar (éxito o error). Devuelve la función de
+  // restauración, para poder llamarla también desde fuera de un
+  // try/finally cuando el propio botón pueda haber desaparecido del DOM
+  // (p. ej. tras recargar el listado).
+  function mostrarSpinnerBoton_(btn, textoCargando) {
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = textoCargando
+      ? `<i class="fa-solid fa-spinner fa-spin"></i> ${textoCargando}`
+      : '<i class="fa-solid fa-spinner fa-spin"></i>';
+    return () => { btn.disabled = false; btn.innerHTML = original; };
+  }
+
   async function anunciosValidarPinYArrancar_(pin) {
     const error = $('an-pin-error');
     const btn = $('an-pin-entrar');
     error.textContent = '';
-    const textoOriginal = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Comprobando…';
+    const restaurarBoton = mostrarSpinnerBoton_(btn, 'Comprobando…');
     try {
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -291,7 +306,7 @@
     } catch (e) {
       error.textContent = 'Error de conexión.';
     } finally {
-      btn.disabled = false; btn.textContent = textoOriginal;
+      restaurarBoton();
     }
   }
 
@@ -396,7 +411,7 @@
     }).join('');
 
     cont.querySelectorAll('[data-accion="editar"]').forEach(btn => btn.addEventListener('click', () => abrirEditor_(btn.closest('.an-item').dataset.id)));
-    cont.querySelectorAll('[data-accion="eliminar"]').forEach(btn => btn.addEventListener('click', () => eliminarAnuncio_(btn.closest('.an-item').dataset.id)));
+    cont.querySelectorAll('[data-accion="eliminar"]').forEach(btn => btn.addEventListener('click', (e) => eliminarAnuncio_(btn.closest('.an-item').dataset.id, e.currentTarget)));
   }
 
   function limpiarFormulario_() {
@@ -418,7 +433,7 @@
     actualizarSelectorFamilia_();
     $('an-url-externa').value = '';
     $('an-dropzone').classList.remove('con-archivo');
-    $('an-dropzone').innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Haz clic para elegir un archivo (PDF, JPG, PNG o WebP — máx. <span id="an-tamano-max-mb">20</span> MB)`;
+    $('an-dropzone').innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Arrastra un archivo aquí, pégalo (Ctrl+V) o haz clic para elegir (PDF, JPG, PNG o WebP — máx. <span id="an-tamano-max-mb">20</span> MB)`;
     $('an-archivo-input').value = '';
     $('an-archivo-estado').textContent = '';
     $('an-miniatura-preview').classList.remove('visible');
@@ -544,6 +559,19 @@
 
   const ANUNCIOS_TAMANO_MAX_MB_ = 20;
   const ANUNCIOS_EXTENSIONES_VALIDAS_ = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+  // MIME equivalentes, para filtrar lo que trae el portapapeles — un
+  // archivo pegado no tiene "nombre" propio, así que aquí se identifica
+  // por tipo MIME en vez de por extensión.
+  const ANUNCIOS_MIME_PERMITIDOS_ = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+  const ANUNCIOS_MIME_A_EXTENSION_ = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+  // Un Blob leído del portapapeles no tiene nombre de archivo (hace
+  // falta uno para que manejarArchivoSeleccionado_ pueda deducir la
+  // extensión, igual que con un File normal elegido a mano).
+  function blobAFile_(blob, mime) {
+    const extension = ANUNCIOS_MIME_A_EXTENSION_[mime] || 'bin';
+    return new File([blob], 'portapapeles.' + extension, { type: mime });
+  }
 
   async function manejarArchivoSeleccionado_(file) {
     const estado = $('an-archivo-estado');
@@ -605,7 +633,6 @@
     const ok = $('an-form-ok');
     error.textContent = ''; ok.textContent = '';
     const btn = $('an-guardar');
-    const textoOriginal = btn.textContent;
 
     const tab = $('an-tab-url').classList.contains('activo') ? 'url' : 'archivo';
     const tipologia = $('an-tipologia').value;
@@ -635,7 +662,7 @@
       return;
     }
 
-    btn.disabled = true; btn.textContent = 'Guardando…';
+    const restaurarBoton = mostrarSpinnerBoton_(btn, 'Guardando…');
     try {
       const d = await anunciosFetchPost_(payload);
       if (!d.success) { error.textContent = d.error || 'No se pudo guardar.'; return; }
@@ -662,22 +689,31 @@
     } catch (e) {
       error.textContent = 'Error de conexión: ' + e.message;
     } finally {
-      btn.disabled = false; btn.textContent = textoOriginal;
+      restaurarBoton();
     }
   }
 
-  async function eliminarAnuncio_(id) {
+  async function eliminarAnuncio_(id, btn) {
     const a = encontrarAnuncio_(id);
     if (!a) return;
     if (!window.confirm(`¿Eliminar «${a.titulo}»? Esta acción no se puede deshacer y borra también su archivo de Drive.`)) return;
+    // El botón de la papelera del listado es solo icono (sin texto que
+    // mantener); el de "Eliminar" del formulario sí lleva etiqueta.
+    const restaurarBoton = btn ? mostrarSpinnerBoton_(btn, btn.textContent.trim() ? 'Eliminando…' : '') : null;
     try {
       const d = await anunciosFetchPost_({ accion: 'eliminar_anuncio', pin: anunciosPin_, id: id });
       if (!d.success) { toast('No se pudo eliminar: ' + (d.error || ''), true); return; }
       if (d.avisoParcial) toast(d.avisoParcial, true);
+      cerrarFormulario_(); // por si se eliminaba el recurso que se estaba editando
       await cargarAnuncios_();
       toast('Recurso eliminado.');
     } catch (e) {
       toast('Error de conexión al eliminar.', true);
+    } finally {
+      // El botón del listado ya no existe tras recargarAnuncios_() en el
+      // caso de éxito (el listado se repinta entero) — solo hace falta
+      // restaurarlo de verdad en el camino de error, donde sigue en el DOM.
+      if (restaurarBoton && document.body.contains(btn)) restaurarBoton();
     }
   }
 
@@ -743,13 +779,56 @@
 
     $('an-nuevo').addEventListener('click', abrirFormularioNuevo_);
     $('an-cancelar').addEventListener('click', cerrarFormulario_);
-    $('an-eliminar').addEventListener('click', () => { if (anuncioEnEdicion_) eliminarAnuncio_(anuncioEnEdicion_); });
+    $('an-eliminar').addEventListener('click', (e) => { if (anuncioEnEdicion_) eliminarAnuncio_(anuncioEnEdicion_, e.currentTarget); });
     $('an-guardar').addEventListener('click', guardarAnuncio_);
 
     $('an-tab-archivo').addEventListener('click', () => cambiarTab_('archivo'));
     $('an-tab-url').addEventListener('click', () => cambiarTab_('url'));
     $('an-dropzone').addEventListener('click', () => $('an-archivo-input').click());
     $('an-archivo-input').addEventListener('change', (e) => { if (e.target.files[0]) manejarArchivoSeleccionado_(e.target.files[0]); });
+
+    // Arrastrar y soltar — mismo mecanismo ya usado en el resto del
+    // proyecto (Asistente de imágenes, imagen de campaña).
+    $('an-dropzone').addEventListener('dragover', (e) => { e.preventDefault(); $('an-dropzone').classList.add('arrastrando'); });
+    $('an-dropzone').addEventListener('dragleave', () => $('an-dropzone').classList.remove('arrastrando'));
+    $('an-dropzone').addEventListener('drop', (e) => {
+      e.preventDefault();
+      $('an-dropzone').classList.remove('arrastrando');
+      const file = e.dataTransfer.files[0];
+      if (file) manejarArchivoSeleccionado_(file);
+    });
+
+    // Pegar desde el portapapeles — dos vías, mismo patrón ya usado para
+    // las imágenes de producto en buscador.html: un botón con la
+    // Clipboard API moderna (gesto explícito, funciona también en
+    // móvil) y, además, Ctrl+V en cualquier parte mientras el gestor
+    // esté abierto en la pestaña de "Subir archivo".
+    $('an-pegar-portapapeles').addEventListener('click', async () => {
+      try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const clipboardItem of clipboardItems) {
+          const tipo = clipboardItem.types.find((t) => ANUNCIOS_MIME_PERMITIDOS_.indexOf(t) !== -1);
+          if (tipo) {
+            const blob = await clipboardItem.getType(tipo);
+            manejarArchivoSeleccionado_(blobAFile_(blob, tipo));
+            return;
+          }
+        }
+        toast('No hay ninguna imagen o PDF compatible en el portapapeles.', true);
+      } catch (e) {
+        console.error('Error al leer del portapapeles:', e);
+        toast(e.name === 'NotAllowedError' ? 'Permiso denegado para leer el portapapeles.' : 'No se pudo pegar desde el portapapeles. Copia el archivo e inténtalo de nuevo.', true);
+      }
+    });
+    document.addEventListener('paste', (e) => {
+      if (!$('an-modal-overlay').classList.contains('activo')) return;
+      if (!$('an-form').classList.contains('activo')) return;
+      if ($('an-tab-url').classList.contains('activo')) return; // en la pestaña de URL, un Ctrl+V normal debe pegar texto
+      const item = Array.from(e.clipboardData?.items || []).find((i) => ANUNCIOS_MIME_PERMITIDOS_.indexOf(i.type) !== -1);
+      if (!item) return;
+      e.preventDefault();
+      manejarArchivoSeleccionado_(item.getAsFile());
+    });
 
     $('an-titulo').addEventListener('input', actualizarContadores_);
     $('an-descripcion').addEventListener('input', actualizarContadores_);
