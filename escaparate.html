@@ -3216,19 +3216,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // A petición explícita de Eloy: el modo presentación ya no muestra el
   // precio — se sustituye por área + familia, con el mismo protagonismo
   // visual que tenía el precio (misma clase .presentacion-card-precio,
-  // solo cambia su contenido).
-  const AREAS_NOMBRE_PRESENTACION = {
-    drogueria:  'Droguería',
-    perfumeria: 'Perfumería',
-    pinturas:   'Pinturas',
-    talleres:   'Talleres',
-  };
+  // solo cambia su contenido). A petición explícita de Eloy, el área no
+  // convencía ahí — se sustituye por la subfamilia (la familia ya se ve
+  // en la etiqueta de arriba, .presentacion-card-fam).
 
   function tarjetaPresentacionHTML(ref, imagenIzquierda){
     const p = PRODUCTS[ref];
     if(!p) return '';
     const imgUrl = urlImagenProducto(p, 1100);
-    const areaTexto = AREAS_NOMBRE_PRESENTACION[p.area] || p.area || '';
     return `
       <div class="presentacion-card${imagenIzquierda ? ' presentacion-card--imagen-izquierda' : ''}">
         <div class="presentacion-card-img">
@@ -3239,7 +3234,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <span class="presentacion-card-fam">${p.familia || ''}</span>
           <h3 class="presentacion-card-nombre">${p.nombre || ''}</h3>
           <div class="presentacion-card-precio">
-            ${areaTexto ? `<span class="precio">${areaTexto}</span>` : ''}
+            ${p.subfamilia ? `<span class="precio">${p.subfamilia}</span>` : ''}
             ${p.familia ? `<span class="precio-siniva">${p.familia}</span>` : ''}
           </div>
         </div>
