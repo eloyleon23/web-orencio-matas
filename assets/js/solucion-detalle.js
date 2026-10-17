@@ -1123,10 +1123,20 @@
       const num = parseFloat(valor.toString().replace(',', '.'));
       return isNaN(num) ? valor : num.toFixed(2).replace('.', ',');
     };
-    const precioConFormateado = real.precio_con ? formatearPrecio_(real.precio_con) : real.precio_con;
-    const precioSinFormateado = real.precio_sin ? formatearPrecio_(real.precio_sin) : real.precio_sin;
+    // Perfil profesional: precio al por mayor siempre, en vez del PVP —
+    // mismo criterio que buscador.html (precioAMostrar_). No depende de
+    // mostrar_precio (ese flag solo gobierna el PVP público).
+    const esProfesional = window.PerfilProfesional && window.PerfilProfesional.sesionActiva();
+    const tieneMayor = esProfesional && real.precio_mayor_con;
+    const precioConFormateado = tieneMayor
+      ? formatearPrecio_(real.precio_mayor_con)
+      : (real.precio_con ? formatearPrecio_(real.precio_con) : real.precio_con);
+    const precioSinFormateado = tieneMayor
+      ? (real.precio_mayor_sin ? formatearPrecio_(real.precio_mayor_sin) : null)
+      : (real.precio_sin ? formatearPrecio_(real.precio_sin) : real.precio_sin);
 
-    const precioReal = real.mostrar_precio && precioConFormateado ? `${precioConFormateado} €` : 'Consultar precio y disponibilidad';
+    const mostrarPrecioFinal = tieneMayor || !!real.mostrar_precio;
+    const precioReal = mostrarPrecioFinal && precioConFormateado ? `${precioConFormateado} €` : 'Consultar precio y disponibilidad';
     return {
       nombre: real.nombre || mock.nombre,
       categoria: mock.categoria,
@@ -1138,9 +1148,9 @@
       familia: real.familia || mock.categoria,
       area: NOMBRES_AREA[real.area] || real.area || null,
       descripcion: real.descripcion || null,
-      precioCon: real.mostrar_precio ? precioConFormateado : null,
-      precioSin: real.mostrar_precio ? precioSinFormateado : null,
-      mostrarPrecio: !!real.mostrar_precio,
+      precioCon: mostrarPrecioFinal ? precioConFormateado : null,
+      precioSin: mostrarPrecioFinal ? precioSinFormateado : null,
+      mostrarPrecio: mostrarPrecioFinal,
       // A petición de Eloy: si el producto REAL del catálogo tiene su
       // propio enlace a ficha técnica editado (campo ficha_url, ver
       // procesarActualizarFichaUrl en Apps Script), ese enlace manda
