@@ -9827,16 +9827,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.setFontSize(19);
             doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
             doc.text(`${precioInfo.con.toFixed(2).replace('.', ',')} €`, x + pad, ty);
-            ty += 5.5;
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(7);
-            const txtMayor = 'PRECIO PROFESIONAL (MAYOR)';
-            const twMayor = doc.getTextWidth(txtMayor) + 5;
-            doc.setFillColor(26, 26, 26);
-            doc.roundedRect(x + pad, ty, twMayor, 5.4, 1.4, 1.4, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.text(txtMayor, x + pad + twMayor / 2, ty + 3.7, { align: 'center' });
-            ty += 10;
+            ty += 5;
+            // Discreto a propósito (a petición explícita de Eloy: "de
+            // manera más sutil") — sin fondo ni mayúsculas, como una nota
+            // al pie del precio, no como una etiqueta que compita con él.
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7.2);
+            doc.setTextColor(150, 153, 160);
+            doc.text('Precio profesional (al por mayor)', x + pad, ty);
+            ty += 7;
         } else {
             const dCalc = calcularPrecioDestacado_(p, d);
             if (dCalc.original === null) {
