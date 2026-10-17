@@ -36,10 +36,14 @@
 
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
   const CLAVE_SESION = 'om_perfil_profesional_v1';
-  // Sin "recordar": sesión de pestaña/navegador (sessionStorage, se
-  // pierde al cerrar el navegador) con un tope de 8h por si se deja
-  // abierta una pestaña mucho tiempo. Con "recordar": hasta 30 días en
-  // localStorage — nunca el PIN "para siempre", siempre con caducidad.
+  // Siempre en localStorage (nunca sessionStorage) — a petición
+  // explícita de Eloy: "si se cierra el navegador y se vuelve a acceder
+  // se debe cargar la vista profesional" mientras no se haya cerrado la
+  // sesión expresamente con "Salir". sessionStorage no servía para eso:
+  // se pierde al cerrar el navegador aunque no hubiera expirado. La
+  // única diferencia que mantiene la casilla "recordar" es la duración:
+  // sin ella, 8h (una sesión de un día de trabajo); con ella, 30 días.
+  // Nunca el PIN "para siempre" — siempre con caducidad.
   const DURACION_SESION_MS = 1000 * 60 * 60 * 8;
   const DURACION_RECORDAR_MS = 1000 * 60 * 60 * 24 * 30;
   const PAGINA_INICIO_PROFESIONAL = 'acceso-profesional.html';
@@ -55,22 +59,18 @@
   }
 
   function leerSesion_() {
-    const fuentes = [
-      { storage: tryStorage_('localStorage'), recordada: true },
-      { storage: tryStorage_('sessionStorage'), recordada: false },
-    ];
-    for (const { storage } of fuentes) {
-      if (!storage) continue;
-      try {
-        const bruto = storage.getItem(CLAVE_SESION);
-        if (!bruto) continue;
-        const datos = JSON.parse(bruto);
-        if (!datos || !datos.pin || !datos.expira) { storage.removeItem(CLAVE_SESION); continue; }
-        if (Date.now() > datos.expira) { storage.removeItem(CLAVE_SESION); continue; }
-        return datos;
-      } catch (err) { /* almacenamiento corrupto o inaccesible — se ignora */ }
+    const storage = tryStorage_('localStorage');
+    if (!storage) return null;
+    try {
+      const bruto = storage.getItem(CLAVE_SESION);
+      if (!bruto) return null;
+      const datos = JSON.parse(bruto);
+      if (!datos || !datos.pin || !datos.expira) { storage.removeItem(CLAVE_SESION); return null; }
+      if (Date.now() > datos.expira) { storage.removeItem(CLAVE_SESION); return null; }
+      return datos;
+    } catch (err) {
+      return null; // almacenamiento corrupto o inaccesible
     }
-    return null;
   }
 
   function tryStorage_(nombre) {
@@ -89,21 +89,12 @@
     const expira = Date.now() + (recordar ? DURACION_RECORDAR_MS : DURACION_SESION_MS);
     const payload = JSON.stringify({ pin: pin, expira: expira });
     const local = tryStorage_('localStorage');
-    const sesion = tryStorage_('sessionStorage');
-    if (recordar) {
-      if (local) local.setItem(CLAVE_SESION, payload);
-      if (sesion) sesion.removeItem(CLAVE_SESION);
-    } else {
-      if (sesion) sesion.setItem(CLAVE_SESION, payload);
-      if (local) local.removeItem(CLAVE_SESION);
-    }
+    if (local) local.setItem(CLAVE_SESION, payload);
   }
 
   function cerrarSesion_() {
     const local = tryStorage_('localStorage');
-    const sesion = tryStorage_('sessionStorage');
     if (local) local.removeItem(CLAVE_SESION);
-    if (sesion) sesion.removeItem(CLAVE_SESION);
   }
 
   async function validarPin_(pin) {

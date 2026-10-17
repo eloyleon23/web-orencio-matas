@@ -994,6 +994,21 @@
         .modal-lista-compra-validez i { color: var(--yellow); }
         .modal-lista-compra-validez strong { color: var(--dark); }
         .modal-lista-compra-cuerpo { padding: 20px; }
+        .lista-compra-notas { margin-top: 18px; }
+        .lista-compra-notas label {
+            display: flex; align-items: center; gap: 6px; font-size: 0.85rem;
+            font-weight: 700; color: var(--dark); margin-bottom: 6px;
+        }
+        .lista-compra-notas label i { color: var(--red); }
+        .lista-compra-notas-input {
+            width: 100%; box-sizing: border-box; resize: vertical; min-height: 60px;
+            padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+            font-family: inherit; font-size: 0.9rem; color: var(--dark);
+        }
+        .lista-compra-notas-input:focus { outline: 2px solid var(--red); outline-offset: 1px; }
+        .lista-compra-notas-contador {
+            display: block; margin-top: 4px; font-size: 0.75rem; color: var(--muted); text-align: right;
+        }
         .modal-lista-compra-acciones {
             position: sticky; bottom: 0; z-index: 15; background: white;
             border-top: 1px solid var(--border); padding: 14px 20px;
@@ -1054,9 +1069,8 @@
         .modal-producto-lista-btn:hover { filter: brightness(1.08); }
         .modal-producto-lista-btn:active { transform: translateY(1px); }
         .modal-producto-lista-btn.incluido { background: var(--light); color: var(--green); border: 1px solid var(--green); }
-        .modal-producto-lista-btn.limite { background: var(--light); color: var(--muted); cursor: not-allowed; }
 
-        /* Selector de unidades (1-10) junto al botón — visible solo
+        /* Selector de unidades (mínimo 1, sin máximo) junto al botón — visible solo
            mientras el producto está en la lista (ver
            actualizarBotonListaCompraEnModalProducto_). */
         .lista-compra-unidades {
@@ -4419,12 +4433,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
                         <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
                     </button>
-                    <!-- Selector de unidades (1-10), solo visible mientras
+                    <!-- Selector de unidades (mínimo 1, sin máximo), solo visible mientras
                          el producto ya está en la lista — ver
                          actualizarBotonListaCompraEnModalProducto_. -->
                     <div class="lista-compra-unidades" id="modal-producto-lista-unidades" style="display:none;">
                         <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-menos" aria-label="Quitar una unidad">−</button>
-                        <input type="number" class="lista-compra-unidades-input" id="modal-producto-lista-unidades-input" min="1" max="10" step="1" value="1" aria-label="Unidades">
+                        <input type="number" class="lista-compra-unidades-input" id="modal-producto-lista-unidades-input" min="1" step="1" value="1" aria-label="Unidades">
                         <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-mas" aria-label="Añadir una unidad">+</button>
                     </div>
                 </div>
@@ -4985,6 +4999,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </ul>
             </div>
             <div id="lista-compra-grid" class="grid-productos"></div>
+            <div class="lista-compra-notas" id="lista-compra-notas-wrap">
+                <label for="lista-compra-notas-input">
+                    <i class="fa-solid fa-note-sticky"></i> Observaciones para el pedido (opcional)
+                </label>
+                <textarea id="lista-compra-notas-input" class="lista-compra-notas-input" maxlength="500" rows="3"
+                    placeholder="Horario preferido de recogida, alguna indicación sobre el pedido…"></textarea>
+                <span class="lista-compra-notas-contador" id="lista-compra-notas-contador">0 / 500</span>
+            </div>
         </div>
         <div class="modal-lista-compra-acciones" id="modal-lista-compra-acciones">
             <button type="button" id="btn-lista-compra-pdf" class="btn-lista-compra-pdf">
@@ -9594,9 +9616,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ══════════════════════════════════════════════════════════════════
     const LISTA_COMPRA_CLAVE_ = 'omListaCompra';
     const LISTA_COMPRA_VERSION_ = 2; // v2: añade "creado" (fecha de creación, para la validez de 15 días)
-    const LISTA_COMPRA_MAX_ = 24;
-    const LISTA_COMPRA_UNIDADES_MAX_ = 10;
     const LISTA_COMPRA_VALIDEZ_DIAS_ = 15;
+    const LISTA_COMPRA_NOTAS_MAX_ = 500;
     const LISTA_COMPRA_VALIDEZ_MS_ = LISTA_COMPRA_VALIDEZ_DIAS_ * 24 * 60 * 60 * 1000;
     // Días desde la creación en los que se avisa al usuario (una sola vez
     // cada uno) para que no se le olvide la lista — ver
@@ -9636,14 +9657,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         limpio.subfamilia = p.subfamilia ? String(p.subfamilia) : '';
         limpio.img = p.img ? String(p.img) : '';
         limpio.fabricante = p.fabricante ? String(p.fabricante) : '';
-        // Unidades (1-10, por defecto 1) — campo añadido después de la
-        // estructura original; cualquier valor ausente, no numérico o
-        // fuera de rango se sanea a un entero válido en vez de romper
-        // los cálculos de totales.
+        // Unidades (mínimo 1, sin máximo — a petición explícita de Eloy)
+        // — campo añadido después de la estructura original; cualquier
+        // valor ausente, no numérico o no positivo se sanea a un entero
+        // válido en vez de romper los cálculos de totales.
         const unidadesNum = parseInt(p.unidades, 10);
-        limpio.unidades = Number.isFinite(unidadesNum)
-            ? Math.min(LISTA_COMPRA_UNIDADES_MAX_, Math.max(1, unidadesNum))
-            : 1;
+        limpio.unidades = Number.isFinite(unidadesNum) ? Math.max(1, unidadesNum) : 1;
         return limpio;
     }
 
@@ -9668,8 +9687,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const avisosMostrados = Array.isArray(data.avisosMostrados)
                 ? data.avisosMostrados.filter(h => LISTA_COMPRA_HITOS_AVISO_DIAS_.includes(h))
                 : [];
-            const productos = data.productos.map(listaCompraSanear_).filter(Boolean).slice(0, LISTA_COMPRA_MAX_);
-            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos };
+            // Igual que avisosMostrados: campo añadido después de la v2
+            // original, se sanea aparte sin forzar otro bump de versión.
+            const notas = typeof data.notas === 'string' ? data.notas.slice(0, LISTA_COMPRA_NOTAS_MAX_) : '';
+            const productos = data.productos.map(listaCompraSanear_).filter(Boolean);
+            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos, notas };
         } catch (e) {
             return null;
         }
@@ -9700,7 +9722,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraProductoPorRef_(ref) { return listaCompraProductos_().find(p => p.ref === ref) || null; }
 
     function listaCompraCrear_() {
-        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [] };
+        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [], notas: '' };
+        listaCompraPersistir_();
+    }
+
+    // Texto libre del cliente (observaciones, horario preferido de
+    // recogida, etc.) — a petición explícita de Eloy. Se trunca aquí
+    // también, no solo con el maxlength del textarea, por si llegara a
+    // cambiarse el valor sin pasar por el campo (consola, futuras
+    // integraciones).
+    function listaCompraNotas_() { return listaCompraState_ ? (listaCompraState_.notas || '') : ''; }
+    function listaCompraActualizarNotas_(texto) {
+        if (!listaCompraState_) return;
+        listaCompraState_.notas = (texto || '').toString().slice(0, LISTA_COMPRA_NOTAS_MAX_);
         listaCompraPersistir_();
     }
 
@@ -9813,12 +9847,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-aviso-validez-lista-compra-overlay').classList.add('activo');
     }
 
-    // Devuelve 'ok' | 'duplicado' | 'limite' — el llamador decide el
-    // mensaje exacto según el contexto (bloque, ficha de producto...).
+    // Devuelve 'ok' | 'duplicado' — el llamador decide el mensaje exacto
+    // según el contexto (bloque, ficha de producto...). Sin límite de
+    // productos (a petición explícita de Eloy).
     function listaCompraAnadir_(p) {
         if (!listaCompraState_) listaCompraCrear_();
         if (listaCompraTiene_(p.ref)) return 'duplicado';
-        if (listaCompraState_.productos.length >= LISTA_COMPRA_MAX_) return 'limite';
         listaCompraState_.productos.push(listaCompraSanear_(p));
         listaCompraPersistir_();
         return 'ok';
@@ -9830,14 +9864,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         listaCompraPersistir_();
     }
 
-    // Devuelve las unidades ya aplicadas (clamp 1-10) o null si el
-    // producto no está en la lista.
+    // Devuelve las unidades ya aplicadas (mínimo 1, sin máximo) o null si
+    // el producto no está en la lista.
     function listaCompraActualizarUnidades_(ref, unidades) {
         if (!listaCompraState_) return null;
         const p = listaCompraState_.productos.find(x => x.ref === ref);
         if (!p) return null;
         const num = parseInt(unidades, 10);
-        p.unidades = Number.isFinite(num) ? Math.min(LISTA_COMPRA_UNIDADES_MAX_, Math.max(1, num)) : 1;
+        p.unidades = Number.isFinite(num) ? Math.max(1, num) : 1;
         listaCompraPersistir_();
         return p.unidades;
     }
@@ -9850,9 +9884,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // crear — y por tanto también sus avisos de validez a los
         // 5/10/14 días, que de lo contrario quedarían marcados como ya
         // vistos para unos días que ya no se corresponden con la nueva
-        // fecha de creación.
+        // fecha de creación. Las notas también se reinician: son
+        // observaciones sobre ESTA lista, no tendría sentido conservarlas
+        // para una lista vaciada y empezada de nuevo.
         listaCompraState_.creado = Date.now();
         listaCompraState_.avisosMostrados = [];
+        listaCompraState_.notas = '';
         listaCompraPersistir_();
     }
 
@@ -10005,7 +10042,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         bloque.style.display = '';
 
         const cantidad = listaCompraCantidad_();
-        $('lista-compra-contador-bloque').textContent = `${cantidad} / ${LISTA_COMPRA_MAX_}`;
+        $('lista-compra-contador-bloque').textContent = String(cantidad);
 
         const carrusel = $('lista-compra-carrusel');
         carrusel.innerHTML = '';
@@ -10039,7 +10076,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Modal de gestión ─────────────────────────────────────────────
     function renderModalListaCompra_() {
         const cantidad = listaCompraCantidad_();
-        $('modal-lista-compra-contador').textContent = `${cantidad} / ${LISTA_COMPRA_MAX_} productos`;
+        $('modal-lista-compra-contador').textContent = `${cantidad} producto${cantidad === 1 ? '' : 's'}`;
         const totales = listaCompraTotales_();
         $('modal-lista-compra-total-sin').textContent = listaCompraFormatoEuros_(totales.sinIva);
         $('modal-lista-compra-total-con').textContent = listaCompraFormatoEuros_(totales.conIva);
@@ -10050,9 +10087,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const grid = $('lista-compra-grid');
         const vacia = $('lista-compra-vacia');
         const acciones = $('modal-lista-compra-acciones');
+        const notasWrap = $('lista-compra-notas-wrap');
         if (cantidad === 0) {
             grid.style.display = 'none';
             vacia.style.display = '';
+            notasWrap.style.display = 'none';
             // "Vaciar"/exportar/compartir no tienen sentido sin productos
             // — se ocultan en vez de dejarlos ahí sin hacer nada al
             // pulsarlos. "Eliminar la lista" se mantiene, es la forma de
@@ -10062,10 +10101,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         grid.style.display = '';
         vacia.style.display = 'none';
+        notasWrap.style.display = '';
         ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-vaciar'].forEach(id => $(id).style.display = '');
 
         grid.innerHTML = '';
         listaCompraOrdenada_().forEach(p => grid.appendChild(crearTarjetaListaCompraModal_(p)));
+
+        // Solo se repinta el valor si el campo no tiene el foco — este
+        // render también se dispara al añadir/quitar un producto mientras
+        // el usuario podría estar escribiendo observaciones; sin esta
+        // comprobación, cada cambio en la lista le movería el cursor o le
+        // "comería" lo que estuviera a medio escribir.
+        const notasInput = $('lista-compra-notas-input');
+        if (document.activeElement !== notasInput) {
+            notasInput.value = listaCompraNotas_();
+        }
+        $('lista-compra-notas-contador').textContent = `${notasInput.value.length} / ${LISTA_COMPRA_NOTAS_MAX_}`;
     }
 
     function abrirModalListaCompra_() {
@@ -10094,7 +10145,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const texto = $('modal-producto-lista-btn-texto');
         const unidadesWrap = $('modal-producto-lista-unidades');
         if (!productoModalActual_) return;
-        btn.classList.remove('incluido', 'limite');
+        btn.classList.remove('incluido');
 
         const enLista = listaCompraExiste_() ? listaCompraProductoPorRef_(productoModalActual_.ref) : null;
         unidadesWrap.style.display = enLista ? '' : 'none';
@@ -10112,19 +10163,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             btn.classList.add('incluido');
             return;
         }
-        if (listaCompraCantidad_() >= LISTA_COMPRA_MAX_) {
-            texto.textContent = `Lista completa (${LISTA_COMPRA_MAX_}/${LISTA_COMPRA_MAX_})`;
-            btn.classList.add('limite');
-            return;
-        }
         texto.textContent = 'Añadir a la lista de la compra';
     }
 
-    // Deshabilita "−" en 1 y "+" en el máximo, para que el límite se vea
-    // (no solo se aplique) sin depender únicamente del color.
+    // Deshabilita "−" en 1 — sin máximo, "+" nunca se deshabilita (a
+    // petición explícita de Eloy).
     function actualizarBotonesUnidades_(unidades) {
         $('modal-producto-lista-unidades-menos').disabled = unidades <= 1;
-        $('modal-producto-lista-unidades-mas').disabled = unidades >= LISTA_COMPRA_UNIDADES_MAX_;
+        $('modal-producto-lista-unidades-mas').disabled = false;
     }
 
     function alPulsarBotonListaCompraProducto_() {
@@ -10136,17 +10182,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             mostrarToast('Este producto ya está en tu lista de la compra.');
             return;
         }
-        if (resultado === 'limite') {
-            mostrarToast(`Tu lista ya tiene ${LISTA_COMPRA_MAX_} productos, el máximo permitido. Quita alguno antes de añadir otro.`, 'error');
-            return;
-        }
         mostrarToast(yaExistia
             ? `${escapeHtml(p.nombre)} se ha añadido a tu lista de la compra`
             : `Lista creada y ${escapeHtml(p.nombre)} añadido. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
         listaCompraActualizarUI_();
     }
 
-    // Selector de unidades (1-10) de la ficha de producto — "+"/"−" y
+    // Selector de unidades (mínimo 1, sin máximo) de la ficha de producto — "+"/"−" y
     // escribir directamente en el campo, ambos acaban en el mismo sitio
     // (listaCompraActualizarUnidades_, que ya aplica el límite).
     function alCambiarUnidadesProducto_(delta) {
@@ -10294,6 +10336,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.setFontSize(13);
         doc.setTextColor(211, 47, 47);
         doc.text(`Total con IVA: ${listaCompraFormatoEuros_(totales.conIva)}`, 40, y + 54);
+        y += 54;
+
+        // Observaciones del cliente (opcional, hasta 500 caracteres) — a
+        // petición explícita de Eloy. Se envuelve con splitTextToSize en
+        // vez de dejar que autoTable/jsPDF corten el texto solos, y se
+        // comprueba el espacio restante línea a línea para añadir página
+        // si hiciera falta (puede ocupar varias líneas con el máximo de
+        // caracteres permitido).
+        const notas = listaCompraNotas_();
+        if (notas) {
+            y += 24;
+            if (y > alturaPagina - 80) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+            doc.setFontSize(10);
+            doc.setTextColor(60);
+            doc.text('Observaciones:', 40, y);
+            y += 14;
+            doc.setFontSize(9.5);
+            doc.setTextColor(80);
+            const lineasNotas = doc.splitTextToSize(notas, anchoPagina - 80);
+            lineasNotas.forEach((linea) => {
+                if (y > alturaPagina - 50) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+                doc.text(linea, 40, y);
+                y += 13;
+            });
+        }
 
         // El pie no se dibuja solo en didDrawPage de autoTable si al
         // final se añaden más líneas tras la tabla sin pasar por otra
@@ -10352,7 +10419,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const totales = listaCompraTotales_();
         const lineas = [
             'Lista de la compra — Orencio Matas y Hnos',
-            `${productos.length} / ${LISTA_COMPRA_MAX_} productos`,
+            `${productos.length} producto${productos.length === 1 ? '' : 's'}`,
             '',
             ...productos.map(p => {
                 const precio = precioAMostrar_(p);
@@ -10362,6 +10429,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             `Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`,
             `Total con IVA: ${listaCompraFormatoEuros_(totales.conIva)}`,
         ];
+        const notas = listaCompraNotas_();
+        if (notas) {
+            lineas.push('', 'Observaciones:', notas);
+        }
         return lineas.join('\n');
     }
 
@@ -10380,7 +10451,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             await navigator.share({
                 files: [file],
                 title: 'Lista de la compra',
-                text: `Lista de la compra — ${listaCompraCantidad_()} / ${LISTA_COMPRA_MAX_} productos`,
+                text: `Lista de la compra — ${listaCompraCantidad_()} producto${listaCompraCantidad_() === 1 ? '' : 's'}`,
             });
             return true;
         } catch (e) {
@@ -10469,6 +10540,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && $('modal-lista-compra-overlay').classList.contains('activo')) cerrarModalListaCompra_();
         });
+
+        // Se guarda en cada pulsación (debounced) — nunca hace falta un
+        // botón "guardar" aparte, igual que el resto de la lista.
+        $('lista-compra-notas-input').addEventListener('input', debounce(() => {
+            const input = $('lista-compra-notas-input');
+            listaCompraActualizarNotas_(input.value);
+            $('lista-compra-notas-contador').textContent = `${listaCompraNotas_().length} / ${LISTA_COMPRA_NOTAS_MAX_}`;
+        }, 300));
 
         $('btn-lista-compra-vaciar').addEventListener('click', () => {
             pedirConfirmacionListaCompra_(

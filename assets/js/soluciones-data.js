@@ -5453,7 +5453,16 @@ window.SOLUCIONES_DATA = (function () {
   // MB y excede la cuota típica por origen); simplemente se vuelve a
   // pedir en cada visita de página, igual que ya hacía antes con el JSON
   // estático.
-  const PRODUCTOS_REMOTO_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+  const PRODUCTOS_REMOTO_URL_BASE = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+  // Igual que buscador.html/escaparate.html (ver PRODUCTOS_REMOTO_URL_
+  // ahí): con sesión profesional activa se reenvía el PIN, y es Apps
+  // Script quien decide si incluir precio_mayor_sin/con — a petición
+  // explícita de Eloy, el Centro de Soluciones también debe reflejar el
+  // precio mayor para un profesional.
+  function PRODUCTOS_REMOTO_URL() {
+    const pin = window.PerfilProfesional && window.PerfilProfesional.pinActual();
+    return pin ? `${PRODUCTOS_REMOTO_URL_BASE}&pin=${encodeURIComponent(pin)}` : PRODUCTOS_REMOTO_URL_BASE;
+  }
 
   let catalogoRealCache = null;
   let catalogoRealCachePromise = null;
@@ -5464,7 +5473,7 @@ window.SOLUCIONES_DATA = (function () {
     // 1) Fuente de verdad: la caché en vivo de Apps Script — así una
     //    imagen recién actualizada desde el buscador (por cualquier
     //    persona) se ve aquí sin depender de ningún despliegue.
-    catalogoRealCachePromise = fetch(PRODUCTOS_REMOTO_URL)
+    catalogoRealCachePromise = fetch(PRODUCTOS_REMOTO_URL())
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('respuesta no OK'))))
       .then((d) => {
         catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja);
@@ -5513,7 +5522,7 @@ window.SOLUCIONES_DATA = (function () {
       return Promise.resolve(refsUnicas.map((r) => catalogoPorRefCache[r]).filter(Boolean));
     }
 
-    const url = PRODUCTOS_REMOTO_URL + '&refs=' + encodeURIComponent(faltantes.join(','));
+    const url = PRODUCTOS_REMOTO_URL() + '&refs=' + encodeURIComponent(faltantes.join(','));
     const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     const timeoutId = controller ? setTimeout(() => controller.abort(), TIMEOUT_PRODUCTOS_POR_REFS_MS) : null;
 

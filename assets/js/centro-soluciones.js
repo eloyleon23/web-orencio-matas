@@ -905,8 +905,12 @@
   // pueda registrar CS_PRODUCT_SELECTED sin tener que enganchar un
   // listener distinto en cada punto donde se pinta una tarjeta.
   function renderTarjetaProductoCatalogo(p, contexto) {
-    const precioReal = p.mostrar_precio && p.precio_con;
-    const precio = precioReal ? `${p.precio_con} €` : 'Consultar precio y disponibilidad';
+    // Perfil profesional: precio al por mayor siempre, en vez del PVP —
+    // mismo criterio que buscador.html/solucion-detalle.js.
+    const esProfesional = window.PerfilProfesional && window.PerfilProfesional.sesionActiva();
+    const tieneMayor = esProfesional && p.precio_mayor_con;
+    const precioReal = tieneMayor || (p.mostrar_precio && p.precio_con);
+    const precio = precioReal ? `${tieneMayor ? p.precio_mayor_con : p.precio_con} €` : 'Consultar precio y disponibilidad';
     const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     const ctx = contexto || {};
