@@ -3988,6 +3988,10 @@ function doPost(e) {
       return procesarMarcarSinImagen(data);
     }
 
+    if (accion === 'solicitar_codigo_profesional') {
+      return procesarSolicitarCodigoProfesional(data);
+    }
+
     if (accion === 'enviar_contacto') {
       console.log('Acción: enviar_contacto');
       return procesarEnviarContacto(data);
@@ -6913,6 +6917,75 @@ function procesarEnviarContacto(data) {
     }
   } catch (err) {
     console.error('Error en procesarEnviarContacto:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Solicitud de código de acceso profesional (botón "¿No tienes código de
+// acceso? Solicítalo" en acceso-profesional.html). A diferencia del
+// formulario de contacto general, aquí el correo va siempre a la misma
+// dirección de contacto principal de la web (correo@orenciomatas.es) —
+// quien gestiona el alta de profesionales es siempre el mismo equipo,
+// no depende del área que indique el solicitante (el área solo se
+// informa dentro del cuerpo del correo, a título orientativo).
+function procesarSolicitarCodigoProfesional(data) {
+  try {
+    const nombre = data.nombre;
+    const email = data.email;
+    const cuerpoHtml = data.cuerpoHtml;
+    const honeypot = (data.honeypot || '').toString().trim();
+    const tokenRecaptcha = (data.tokenRecaptcha || '').toString().trim();
+
+    if (honeypot) {
+      console.log('Solicitud de código profesional: honeypot relleno, descartado como spam silenciosamente');
+      return ContentService.createTextOutput(JSON.stringify({ success: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (!nombre || !email || !cuerpoHtml) {
+      throw new Error('Faltan datos requeridos: nombre, email o cuerpoHtml');
+    }
+
+    if (!tokenRecaptcha || !verificarRecaptcha_(tokenRecaptcha)) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: 'No se ha podido verificar que no eres un robot. Por favor, vuelve a marcar la casilla de reCAPTCHA e inténtalo de nuevo.',
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const payload = {
+      sender: { name: nombre, email: 'correo@orenciomatas.es' },
+      to: [{ email: 'correo@orenciomatas.es', name: 'Orencio Matas y Hnos' }],
+      replyTo: { email: email, name: nombre },
+      subject: 'Solicitud de código de acceso profesional — Orencio Matas y Hermanos',
+      htmlContent: cuerpoHtml,
+    };
+
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'api-key': BREVO_API_KEY },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    };
+
+    const resp = UrlFetchApp.fetch('https://api.brevo.com/v3/smtp/email', options);
+    const codigo = resp.getResponseCode();
+
+    if (codigo === 200 || codigo === 201) {
+      console.log('Correo de solicitud de código profesional enviado correctamente vía Brevo');
+      return ContentService.createTextOutput(JSON.stringify({ success: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else {
+      console.error('Error de Brevo al enviar la solicitud de código profesional:', codigo, resp.getContentText());
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: 'No se pudo enviar el correo (Brevo respondió ' + codigo + ')',
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    console.error('Error en procesarSolicitarCodigoProfesional:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
