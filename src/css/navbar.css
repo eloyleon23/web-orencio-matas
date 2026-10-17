@@ -24,6 +24,23 @@
   margin-inline: auto;
 }
 
+/* Replica exacta de ".navbar .container" en src/css/estilos.css (aquí
+   ".navbar-wrapper .container", porque este archivo usa esa clase para
+   el wrapper del header) — sin
+   esto, las páginas que cargan ESTE archivo (empresa/historia/
+   productos/buscador/servicios/actualidad/catalogo_talleres) se quedan
+   con el ancho de navbar antiguo (1200px, el de ".container" genérico
+   de arriba) mientras el resto del sitio ya usa 1440px, y la cabecera
+   "salta" de ancho — y por tanto de posición, ya que sigue centrada
+   pero dentro de un hueco distinto — al navegar de una página a otra.
+   Bug real reportado por Eloy: "si pinchas en Empresa... desplaza todo
+   el menú hacia la derecha". Mismo criterio que el comentario de
+   arriba de este archivo: cualquier cambio en el navbar de estilos.css
+   debe replicarse aquí también. */
+.navbar-wrapper .container {
+  width: min(100% - 40px, 1440px);
+}
+
 @media (max-width: 767px) {
   .container {
     width: min(100% - 32px, var(--container-max-width));
