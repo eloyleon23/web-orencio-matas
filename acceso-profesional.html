@@ -234,7 +234,7 @@
               </label>
               <label style="display:block;margin-bottom:14px;">
                 <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Nombre comercial / Empresa</span>
-                <input class="form-input" type="text" id="ap-sol-empresa" autocomplete="organization" placeholder="Nombre de tu empresa (opcional)" />
+                <input class="form-input" type="text" id="ap-sol-empresa" autocomplete="organization" placeholder="Nombre de tu empresa" required />
               </label>
               <label style="display:block;margin-bottom:14px;">
                 <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Email</span>
@@ -246,7 +246,7 @@
               </label>
               <label style="display:block;margin-bottom:16px;">
                 <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Área profesional</span>
-                <select class="form-input" id="ap-sol-area">
+                <select class="form-input" id="ap-sol-area" required>
                   <option value="general" selected>Droguería, Perfumería y Pinturas</option>
                   <option value="talleres">Talleres y Carrocerías</option>
                 </select>
@@ -397,7 +397,7 @@
           return;
         }
 
-        if (!nombre || !email || !telefono) {
+        if (!nombre || !empresa || !email || !telefono) {
           mostrarEstadoSolicitud('Por favor, rellena todos los campos obligatorios.', '#c0392b', '#fdf0ef');
           return;
         }
@@ -429,7 +429,7 @@
           '<hr style="border:none;border-top:1px solid #e0e0e0;margin:0 0 16px;" />' +
           '<table width="100%" cellpadding="0" cellspacing="0">' +
           '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;width:100px;">Nombre</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombre + '</td></tr>' +
-          (empresa ? '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Empresa</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + empresa + '</td></tr>' : '') +
+          '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Empresa</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + empresa + '</td></tr>' +
           '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Email</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + email + '</td></tr>' +
           '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Teléfono</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + telefono + '</td></tr>' +
           '<tr><td style="padding:8px 0;color:#888;font-size:11px;">Área</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombreArea + '</td></tr>' +
