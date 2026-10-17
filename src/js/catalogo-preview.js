@@ -32,7 +32,16 @@
     // Misma URL de Apps Script que usa buscador.html — fuente en vivo,
     // siempre actualizada, sin depender de ningún despliegue.
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
-    const PRODUCTOS_REMOTO_URL = APPS_SCRIPT_URL + '?accion=obtener_productos';
+    const PRODUCTOS_REMOTO_URL_BASE = APPS_SCRIPT_URL + '?accion=obtener_productos';
+    // Igual que buscador.html (ver PRODUCTOS_REMOTO_URL_ ahí): con sesión
+    // profesional activa se reenvía el PIN, y es Apps Script quien decide
+    // si incluir precio_mayor_sin/con en la respuesta — a petición
+    // explícita de Eloy, la propia muestra del catálogo debe reflejar el
+    // precio mayor para un profesional, no solo el PDF completo.
+    function productosRemotoUrl_() {
+        const pin = window.PerfilProfesional && window.PerfilProfesional.pinActual();
+        return pin ? `${PRODUCTOS_REMOTO_URL_BASE}&pin=${encodeURIComponent(pin)}` : PRODUCTOS_REMOTO_URL_BASE;
+    }
     // Catálogos estáticos de proveedor — solo para el área 'talleres',
     // no tienen fuente en vivo posible (no vienen del Sheet).
     const CATALOGOS_PROVEEDOR_TALLERES = [
@@ -74,7 +83,7 @@
     // respaldo estático.
     async function cargarProductosPrincipalesParaMuestra_() {
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(productosRemotoUrl_(), { cache: 'no-store' });
             if (!resp.ok) throw new Error('obtener_productos no respondió OK');
             const datos = await resp.json();
             const productos = datos.productos || datos;
@@ -132,7 +141,13 @@
         return d.innerHTML;
     }
 
+    // Perfil profesional: precio al por mayor siempre, nunca el PVP — ver
+    // el mismo criterio en buscador.html (precioAMostrar_).
     function formatearPrecio(p) {
+        const esProfesional = window.PerfilProfesional && window.PerfilProfesional.sesionActiva();
+        if (esProfesional && p.precio_mayor_con) {
+            return `${p.precio_mayor_con} € <span style="font-weight:400;font-size:0.75em;color:#94a3b8;">IVA incl.</span>`;
+        }
         if (!p.mostrar_precio || !p.precio_con) return '';
         return `${p.precio_con} € <span style="font-weight:400;font-size:0.75em;color:#94a3b8;">IVA incl.</span>`;
     }
