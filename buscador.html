@@ -723,10 +723,26 @@
             position: absolute; top: 0; left: 0; right: 0; height: 4px;
             background: linear-gradient(90deg, var(--blue), var(--red));
         }
+        .seccion-destacados__cabecera {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 10px;
+        }
         .seccion-destacados__titulo {
             font-size: 1.3rem; font-weight: 800; color: var(--dark);
             margin: 4px 0 12px; display: flex; align-items: center; gap: 10px;
         }
+        .seccion-destacados__acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .btn-destacados-accion {
+            padding: 8px 13px; border: none; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; gap: 7px; white-space: nowrap;
+            transition: filter .15s, transform .1s;
+        }
+        .btn-destacados-accion:active { transform: translateY(1px); }
+        .btn-destacados-accion:hover { filter: brightness(1.06); }
+        .btn-destacados-accion:disabled { opacity: .7; cursor: default; }
+        .btn-destacados-pdf { background: #fef3c7; color: #92400e; }
+        .btn-destacados-compartir { background: var(--blue); color: #fff; }
         .seccion-destacados__icono {
             display: inline-flex; align-items: center; justify-content: center;
             width: 38px; height: 38px; border-radius: 50%; font-size: 1.15rem; flex-shrink: 0;
@@ -4230,7 +4246,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              repente al terminar de cargar; actualizarVisibilidadModulosDescubrimiento_()
              los oculta solo si se determina que no hay contenido real. -->
         <div id="destacados" class="seccion-destacados">
-            <p class="seccion-destacados__titulo"><span class="seccion-destacados__icono"><i class="fa-solid fa-fire"></i></span> Destacados</p>
+            <div class="seccion-destacados__cabecera">
+                <p class="seccion-destacados__titulo"><span class="seccion-destacados__icono"><i class="fa-solid fa-fire"></i></span> Destacados</p>
+                <!-- Folleto en PDF (generado en el propio navegador, nunca en
+                     el servidor) — mismo documento para "Descargar" y
+                     "Compartir", con el precio según el perfil (normal o
+                     profesional) de quien lo genera. Ver inicializarFolletoDestacados_. -->
+                <div class="seccion-destacados__acciones">
+                    <button type="button" id="btn-destacados-pdf" class="btn-destacados-accion btn-destacados-pdf">
+                        <i class="fa-solid fa-file-pdf"></i> <span>Descargar folleto</span>
+                    </button>
+                    <button type="button" id="btn-destacados-compartir" class="btn-destacados-accion btn-destacados-compartir">
+                        <i class="fa-solid fa-share-nodes"></i> <span>Compartir</span>
+                    </button>
+                </div>
+            </div>
             <div id="destacados-lista" class="seccion-destacados__lista">
                 <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
             </div>
@@ -5933,6 +5963,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function mostrarResultadosPorPrimeraVez() {
         inicializarFiltros();
         inicializarListaCompra_();
+        inicializarFolletoDestacados_();
         aplicarFiltros();
         $('cargando-inicial').style.display = 'none';
         $('contenedor-resultados').style.display = '';
@@ -9603,6 +9634,423 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ══════════════════════════════════════════════════════════════════
+    // ── FOLLETO PDF DE DESTACADOS ───────────────────────────────────────
+    // Generado en el propio navegador con jsPDF (nunca en el servidor) —
+    // mismo enfoque que el folleto de escaparate.html y el PDF de la
+    // lista de la compra, a petición explícita de Eloy. Pensado como un
+    // documento comercial: cabecera con el logo, una tarjeta por producto
+    // (imagen, chip del tipo de destacado, precio original/con descuento/
+    // porcentaje, promoción adicional, fecha límite) en el MISMO orden en
+    // que ya se ven en la propia sección, y pie con los datos de contacto
+    // en cada página. Con sesión profesional activa, cada producto
+    // muestra su precio al por mayor en vez del PVP y sin los descuentos
+    // de campaña (que son sobre el PVP público) — mismo criterio que ya
+    // aplica construirContenidoTarjeta_ vía precioAMostrar_. "Descargar"
+    // y "Compartir" generan exactamente el mismo documento.
+    // ══════════════════════════════════════════════════════════════════
+
+    // Misma técnica que urlImagenProductoFolleto en escaparate.html (ver
+    // su comentario): drive.google.com/thumbnail es un redirect 302 sin
+    // cabecera CORS en el salto intermedio — el <img crossOrigin> ve ese
+    // salto sin CORS y el canvas queda contaminado, así que toDataURL()
+    // falla en silencio y la foto se pierde. Pidiendo directamente la URL
+    // final de googleusercontent.com se evita el salto por completo. Los
+    // productos de catálogos de proveedor (fabricante, imagen local) no
+    // tienen ese problema — se devuelven tal cual, mismo origen.
+    function urlImagenProductoFolletoDestacados_(p, tamano) {
+        tamano = tamano || 400;
+        if (!p || !p.img) return null;
+        if (p.fabricante) return `./assets/imagenes_talleres/${p.img}`;
+        return `https://lh3.googleusercontent.com/d/${p.img}=w${tamano}`;
+    }
+
+    // Reintento con espera — no por CORS (ya resuelto arriba) sino por
+    // posibles 429 (Too Many Requests) puntuales de googleusercontent.com
+    // ante varias peticiones seguidas sin autenticar, igual que ya le
+    // pasó a escaparate.html con catálogos grandes.
+    function cargarImagenFolletoDestacados_(url, timeoutMs) {
+        return new Promise((resolve) => {
+            if (!url) { resolve(null); return; }
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            let resuelto = false;
+            const terminar = (valor) => { if (!resuelto) { resuelto = true; resolve(valor); } };
+            const timer = setTimeout(() => terminar(null), timeoutMs || 9000);
+            img.onload = () => {
+                clearTimeout(timer);
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || 300;
+                    canvas.height = img.naturalHeight || 300;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    terminar({ dataUrl: canvas.toDataURL('image/jpeg', 0.86), width: canvas.width, height: canvas.height });
+                } catch (e) { terminar(null); } // canvas contaminado u otro fallo — la tarjeta cae al hueco "sin imagen"
+            };
+            img.onerror = () => { clearTimeout(timer); terminar(null); };
+            img.src = url;
+        });
+    }
+    async function cargarImagenFolletoDestacadosConReintento_(url) {
+        if (!url) return null;
+        const primero = await cargarImagenFolletoDestacados_(url);
+        if (primero) return primero;
+        await new Promise(r => setTimeout(r, 1200));
+        return cargarImagenFolletoDestacados_(url);
+    }
+
+    // Tandas espaciadas — mismo motivo que cargarImagenesEnTandas en
+    // escaparate.html. onProgreso(completadas, total, msRestantesEstimados)
+    // se llama tras cada tanda con una estimación del tiempo que falta a
+    // partir de la media real de lo ya cargado — es la fase con
+    // diferencia más lenta, así que es donde tiene sentido mostrar el
+    // tiempo restante en el botón.
+    async function cargarImagenesFolletoDestacadosEnTandas_(items, onProgreso) {
+        const TAMANO_TANDA = 2, ESPERA_MS = 550;
+        const resultados = new Array(items.length);
+        const inicio = Date.now();
+        for (let i = 0; i < items.length; i += TAMANO_TANDA) {
+            const tanda = items.slice(i, i + TAMANO_TANDA);
+            const parcial = await Promise.all(tanda.map(it => cargarImagenFolletoDestacadosConReintento_(it.url)));
+            parcial.forEach((r, j) => { resultados[i + j] = r; });
+            const completadas = Math.min(i + TAMANO_TANDA, items.length);
+            if (onProgreso) {
+                const transcurridoMs = Date.now() - inicio;
+                const msPorItem = transcurridoMs / completadas;
+                const restantesMs = msPorItem * (items.length - completadas);
+                onProgreso(completadas, items.length, restantesMs);
+            }
+            if (i + TAMANO_TANDA < items.length) await new Promise(r => setTimeout(r, ESPERA_MS));
+        }
+        return resultados;
+    }
+
+    const DESTACADOS_PDF_COLOR_ACCENT_ = { r: 211, g: 47, b: 47 }; // rojo de marca
+
+    // Una tarjeta del folleto — mismo contenido que se ve en pantalla
+    // (chip, precio con/sin descuento y su porcentaje, promoción
+    // adicional), más la fecha límite del producto (no se muestra en la
+    // propia tarjeta en pantalla, solo aquí, a petición explícita) y,
+    // para el perfil profesional, el precio al por mayor con una
+    // etiqueta que lo distingue claramente del PVP.
+    function dibujarTarjetaDestacadoPdf_(doc, x, y, w, h, foto, p, d) {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 228, 232);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(x, y, w, h, 2.5, 2.5, 'FD');
+
+        const pad = 4;
+        const imgBoxH = 38;
+        if (foto) {
+            const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
+            const dw = foto.width * escala, dh = foto.height * escala;
+            doc.addImage(foto.dataUrl, 'JPEG', x + (w - dw) / 2, y + pad + (imgBoxH - dh) / 2, dw, dh);
+        } else {
+            doc.setFillColor(248, 249, 250);
+            doc.rect(x + pad, y + pad, w - pad * 2, imgBoxH, 'F');
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7.5);
+            doc.setTextColor(170, 173, 180);
+            doc.text('Sin imagen', x + w / 2, y + pad + imgBoxH / 2, { align: 'center' });
+        }
+
+        const precioInfo = precioAMostrar_(p);
+        const esMayor = !!(precioInfo && precioInfo.esMayor);
+
+        // Chip del tipo de destacado, sobre la imagen — nunca con precio
+        // mayor (es una promoción sobre el PVP público, no aplica).
+        if (d.tipoDestacado && !esMayor) {
+            const mapaChip = {
+                oferta: ['OFERTA', [0, 135, 67]],
+                oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
+                liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
+            };
+            const entrada = mapaChip[d.tipoDestacado];
+            if (entrada) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.4);
+                const txt = entrada[0];
+                const tw = doc.getTextWidth(txt) + 4;
+                doc.setFillColor(entrada[1][0], entrada[1][1], entrada[1][2]);
+                doc.roundedRect(x + pad + 1, y + pad + 1, tw, 4.4, 1.4, 1.4, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.text(txt, x + pad + 1 + tw / 2, y + pad + 1 + 3.1, { align: 'center' });
+            }
+        }
+
+        let ty = y + pad + imgBoxH + 5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.6);
+        doc.setTextColor(30, 33, 37);
+        const nombreLineas = doc.splitTextToSize(p.nombre || p.ref, w - pad * 2).slice(0, 2);
+        doc.text(nombreLineas, x + pad, ty);
+        ty += nombreLineas.length * 3.6 + 1.8;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.6);
+        doc.setTextColor(140, 143, 150);
+        doc.text(`Ref: ${p.ref}`, x + pad, ty);
+        ty += 5;
+
+        if (esMayor) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.text(`${precioInfo.con.toFixed(2).replace('.', ',')} €`, x + pad, ty);
+            ty += 4;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(6.2);
+            const txtMayor = 'PRECIO PROFESIONAL (MAYOR)';
+            const twMayor = doc.getTextWidth(txtMayor) + 4;
+            doc.setFillColor(26, 26, 26);
+            doc.roundedRect(x + pad, ty, twMayor, 4.2, 1.2, 1.2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(txtMayor, x + pad + twMayor / 2, ty + 2.9, { align: 'center' });
+            ty += 8.2;
+        } else {
+            const dCalc = calcularPrecioDestacado_(p, d);
+            if (dCalc.original === null) {
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(7.5);
+                doc.setTextColor(150, 153, 160);
+                doc.text('Consultar precio y disponibilidad', x + pad, ty);
+                ty += 6;
+            } else if (dCalc.promo !== null) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                doc.setTextColor(170, 173, 180);
+                const origTxt = `${dCalc.original.toFixed(2).replace('.', ',')} €`;
+                doc.text(origTxt, x + pad, ty);
+                const wOrig = doc.getTextWidth(origTxt);
+                doc.setDrawColor(170, 173, 180);
+                doc.setLineWidth(0.25);
+                doc.line(x + pad, ty - 1, x + pad + wOrig, ty - 1);
+                ty += 4.8;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+                const promoTxt = `${dCalc.promo.toFixed(2).replace('.', ',')} €`;
+                doc.text(promoTxt, x + pad, ty);
+                if (dCalc.pct) {
+                    const wPromo = doc.getTextWidth(promoTxt);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(6.6);
+                    const pctTxt = `-${dCalc.pct}%`;
+                    const wPct = doc.getTextWidth(pctTxt) + 3.4;
+                    doc.setFillColor(217, 27, 27);
+                    doc.roundedRect(x + pad + wPromo + 2, ty - 3.4, wPct, 4.4, 1.2, 1.2, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(pctTxt, x + pad + wPromo + 2 + wPct / 2, ty - 0.6, { align: 'center' });
+                }
+                ty += 4.6;
+            } else {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(30, 33, 37);
+                doc.text(`${dCalc.original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
+                ty += 6;
+            }
+        }
+
+        if (!esMayor && d.textoPromocion) {
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(6.8);
+            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            const promoLineas = doc.splitTextToSize(d.textoPromocion, w - pad * 2).slice(0, 2);
+            doc.text(promoLineas, x + pad, ty);
+        }
+
+        // Fecha límite — posición fija al pie de la tarjeta (no depende
+        // de cuánto haya ocupado el resto del contenido arriba).
+        if (d.fechaFin) {
+            const fecha = new Date(d.fechaFin);
+            if (!isNaN(fecha.getTime())) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6.4);
+                doc.setTextColor(150, 153, 160);
+                const fechaTxt = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+                doc.text(`Válido hasta el ${fechaTxt}`, x + pad, y + h - 3);
+            }
+        }
+    }
+
+    // Construye el documento (sin guardarlo ni compartirlo) para que
+    // "Descargar" y "Compartir" generen exactamente el mismo PDF sin
+    // duplicar esta lógica — mismo patrón que construirDocumentoPdfListaCompra_.
+    // onProgreso(completadas, total, msRestantes), si se pasa, se reenvía
+    // tal cual desde cargarImagenesFolletoDestacadosEnTandas_.
+    async function construirDocumentoPdfDestacados_(onProgreso) {
+        if (typeof window.jspdf === 'undefined') return null;
+        const visibles = destacadosProductosVigentes_();
+        if (!visibles.length) return null;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const pageW = 210, margin = 14;
+        const headerBottomY = 30, footerTopY = 272;
+        const contentRight = pageW - margin;
+        const contentWidth = contentRight - margin;
+        const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+
+        const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+
+        function dibujarCabecera() {
+            doc.setFillColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.rect(0, 0, pageW, 3, 'F');
+            if (logo) {
+                const logoH = 11, logoW = logoH * (logo.width / logo.height);
+                doc.addImage(logo.dataUrl, 'PNG', margin, 8, logoW, logoH);
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text('PRODUCTOS DESTACADOS', contentRight, 12, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(120, 123, 130);
+            doc.text(
+                esProfesionalFolleto ? 'Precios profesionales (al por mayor) · ' + LISTA_COMPRA_EMPRESA_.web : LISTA_COMPRA_EMPRESA_.web,
+                contentRight, 17, { align: 'right' }
+            );
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
+        }
+
+        function dibujarPie(numPagina, totalPaginas) {
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, footerTopY, contentRight, footerTopY);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text(LISTA_COMPRA_EMPRESA_.nombre, margin, footerTopY + 6);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(110, 113, 120);
+            doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
+            doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(150, 153, 160);
+            doc.text(`Página ${numPagina} de ${totalPaginas}`, contentRight, footerTopY + 14.5, { align: 'right' });
+        }
+
+        // Fotos — por tandas espaciadas, mismo motivo que escaparate.html
+        // (evitar un 429 de googleusercontent.com).
+        const itemsFotos = visibles.map(({ producto }) => ({ url: urlImagenProductoFolletoDestacados_(producto) }));
+        const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
+
+        const colGap = 8, rowGap = 6;
+        const colW = (contentWidth - colGap) / 2;
+        const cardH = 84;
+        const filasPorPagina = Math.max(1, Math.floor((footerTopY - headerBottomY - 6 + rowGap) / (cardH + rowGap)));
+        const porPagina = filasPorPagina * 2;
+
+        visibles.forEach(({ producto, destacado }, i) => {
+            const indiceEnPagina = i % porPagina;
+            if (indiceEnPagina === 0) {
+                if (i > 0) doc.addPage();
+                dibujarCabecera();
+            }
+            const fila = Math.floor(indiceEnPagina / 2);
+            const col = indiceEnPagina % 2;
+            const x = margin + col * (colW + colGap);
+            const y = headerBottomY + 6 + fila * (cardH + rowGap);
+            dibujarTarjetaDestacadoPdf_(doc, x, y, colW, cardH, fotos[i], producto, destacado);
+        });
+
+        const totalPaginas = doc.internal.getNumberOfPages();
+        for (let pag = 1; pag <= totalPaginas; pag++) {
+            doc.setPage(pag);
+            dibujarPie(pag, totalPaginas);
+        }
+
+        return doc;
+    }
+
+    function destacadosNombreArchivoPdf_() {
+        return `destacados-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
+    }
+
+    // Deshabilita ambos botones y los pone en modo spinner mientras se
+    // genera el PDF (es el mismo documento para los dos, no tiene
+    // sentido lanzar dos generaciones a la vez) — con una estimación del
+    // tiempo que falta durante la fase de carga de imágenes, con
+    // diferencia la más lenta.
+    let destacadosFolletoGenerando_ = false;
+    async function destacadosEjecutarAccionFolleto_(accion) {
+        if (destacadosFolletoGenerando_) return;
+        if (!destacadosProductosVigentes_().length) {
+            mostrarToast('No hay productos destacados para generar el folleto.', 'error');
+            return;
+        }
+        destacadosFolletoGenerando_ = true;
+        const btnPdf = $('btn-destacados-pdf'), btnCompartir = $('btn-destacados-compartir');
+        const textoPdfOriginal = btnPdf.innerHTML, textoCompartirOriginal = btnCompartir.innerHTML;
+        const fijarEstado = (texto) => {
+            const html = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`;
+            btnPdf.innerHTML = html;
+            btnCompartir.innerHTML = html;
+        };
+        btnPdf.disabled = true;
+        btnCompartir.disabled = true;
+        fijarEstado('Preparando…');
+        try {
+            const doc = await construirDocumentoPdfDestacados_((completadas, total, restantesMs) => {
+                fijarEstado(completadas < total
+                    ? `Generando… (${completadas}/${total}, ~${Math.max(1, Math.round(restantesMs / 1000))}s)`
+                    : 'Componiendo folleto…');
+            });
+            if (!doc) {
+                mostrarToast('No se ha podido generar el folleto. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+                return;
+            }
+            await accion(doc);
+        } catch (e) {
+            console.error('Error generando el folleto de destacados:', e);
+            mostrarToast('No se ha podido generar el folleto. Inténtalo de nuevo.', 'error');
+        } finally {
+            destacadosFolletoGenerando_ = false;
+            btnPdf.disabled = false;
+            btnPdf.innerHTML = textoPdfOriginal;
+            btnCompartir.disabled = false;
+            btnCompartir.innerHTML = textoCompartirOriginal;
+        }
+    }
+
+    function destacadosDescargarPdf_() {
+        return destacadosEjecutarAccionFolleto_(async (doc) => {
+            doc.save(destacadosNombreArchivoPdf_());
+        });
+    }
+
+    function destacadosCompartirPdf_() {
+        return destacadosEjecutarAccionFolleto_(async (doc) => {
+            const blob = doc.output('blob');
+            const file = new File([blob], destacadosNombreArchivoPdf_(), { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: 'Productos destacados', text: 'Productos destacados — Orencio Matas y Hnos' });
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return; // cancelado a propósito, no es un fallo
+                    // sigue al fallback de descarga de abajo
+                }
+            }
+            doc.save(destacadosNombreArchivoPdf_());
+            mostrarToast('Tu navegador no permite compartir archivos directamente — se ha descargado el PDF, puedes adjuntarlo a mano.');
+        });
+    }
+
+    function inicializarFolletoDestacados_() {
+        $('btn-destacados-pdf').addEventListener('click', destacadosDescargarPdf_);
+        $('btn-destacados-compartir').addEventListener('click', destacadosCompartirPdf_);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
     // ── LISTA DE LA COMPRA ──────────────────────────────────────────────
     // Funcionalidad 100% cliente (sin Apps Script, sin backend): el
     // usuario guarda productos de interés en este navegador para
@@ -10218,6 +10666,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         logo: './assets/logos/logo-orencio.png',
         direccion: 'Av. Alfred Nobel, 2 · 13005 Ciudad Real',
         horario: 'Lunes a Viernes: 9:00–14:00 y 16:30–19:30 · Sábados: 9:00–14:00 · Domingos: cerrado',
+        // Solo lo usa, de momento, el folleto de Destacados (ver más abajo)
+        // — la lista de la compra no lleva web en su pie, así que se deja
+        // aparte en vez de forzarla también ahí.
+        web: 'orenciomatas.es',
     };
 
     function listaCompraFechaFormateada_(marcaTiempo) {
