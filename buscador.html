@@ -9989,13 +9989,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return `destacados-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
     }
 
-    // Deshabilita ambos botones y los pone en modo spinner mientras se
-    // genera el PDF (es el mismo documento para los dos, no tiene
-    // sentido lanzar dos generaciones a la vez) — con una estimación del
-    // tiempo que falta durante la fase de carga de imágenes, con
-    // diferencia la más lenta.
+    // Deshabilita los dos botones (es el mismo documento para los dos, no
+    // tiene sentido lanzar dos generaciones a la vez) pero el spinner y el
+    // progreso (con la estimación del tiempo restante) solo se muestran en
+    // el botón que se ha pulsado de verdad — el otro se queda deshabilitado
+    // con su texto normal, no en modo "generando" como si también se
+    // hubiera pulsado. Bug real reportado: los dos parecían activarse a la
+    // vez al pulsar cualquiera de los dos.
     let destacadosFolletoGenerando_ = false;
-    async function destacadosEjecutarAccionFolleto_(accion) {
+    async function destacadosEjecutarAccionFolleto_(btnPulsado, accion) {
         if (destacadosFolletoGenerando_) return;
         if (!destacadosProductosVigentes_().length) {
             mostrarToast('No hay productos destacados para generar el folleto.', 'error');
@@ -10003,11 +10005,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         destacadosFolletoGenerando_ = true;
         const btnPdf = $('btn-destacados-pdf'), btnCompartir = $('btn-destacados-compartir');
-        const textoPdfOriginal = btnPdf.innerHTML, textoCompartirOriginal = btnCompartir.innerHTML;
+        const textoPulsadoOriginal = btnPulsado.innerHTML;
         const fijarEstado = (texto) => {
-            const html = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`;
-            btnPdf.innerHTML = html;
-            btnCompartir.innerHTML = html;
+            btnPulsado.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`;
         };
         btnPdf.disabled = true;
         btnCompartir.disabled = true;
@@ -10028,21 +10028,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             mostrarToast('No se ha podido generar el folleto. Inténtalo de nuevo.', 'error');
         } finally {
             destacadosFolletoGenerando_ = false;
+            btnPulsado.innerHTML = textoPulsadoOriginal;
             btnPdf.disabled = false;
-            btnPdf.innerHTML = textoPdfOriginal;
             btnCompartir.disabled = false;
-            btnCompartir.innerHTML = textoCompartirOriginal;
         }
     }
 
     function destacadosDescargarPdf_() {
-        return destacadosEjecutarAccionFolleto_(async (doc) => {
+        return destacadosEjecutarAccionFolleto_($('btn-destacados-pdf'), async (doc) => {
             doc.save(destacadosNombreArchivoPdf_());
         });
     }
 
     function destacadosCompartirPdf_() {
-        return destacadosEjecutarAccionFolleto_(async (doc) => {
+        return destacadosEjecutarAccionFolleto_($('btn-destacados-compartir'), async (doc) => {
             const blob = doc.output('blob');
             const file = new File([blob], destacadosNombreArchivoPdf_(), { type: 'application/pdf' });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
