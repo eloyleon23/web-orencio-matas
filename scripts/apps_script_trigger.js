@@ -279,8 +279,9 @@ function sincronizarRegistroProductos() {
   if (lastRow < 2) { avisar_('Aviso', 'RegistroProductos no tiene datos. Pega primero el contenido del Excel.'); return { error: 'RegistroProductos sin datos' }; }
 
   const regData = sheetReg.getRange(2, 1, lastRow - 1, regHeaderRow.length).getValues();
-  let nuevos = 0, actualizados = 0, saltados = 0, errores = 0;
+  let nuevos = 0, actualizados = 0, saltados = 0, errores = 0, reactivados = 0;
   const productosNuevos = [];
+  const productosReactivados = [];
   const productosConError = [];
   const hoy = new Date();
 
@@ -357,6 +358,20 @@ function sincronizarRegistroProductos() {
             cambios = true;
           }
         }
+        // Reactivación automática: si el producto llega en el listado del
+        // CRM (sigue en curso o se ha vuelto a comprar) pero en la hoja
+        // seguía marcado como de baja (fecha_baja informada), se reactiva
+        // vaciando esa columna — a petición explícita de Eloy. Mismo
+        // criterio que ya usa procesarReactivarProducto: fecha_baja vacía
+        // es "activo", informada es "de baja" (ver también el filtro de
+        // generar_productos_json.py).
+        if (PROD['fecha_baja'] !== undefined && prodRow[PROD['fecha_baja']] && prodRow[PROD['fecha_baja']].toString().trim() !== '') {
+          prodRow[PROD['fecha_baja']] = '';
+          cambios = true;
+          reactivados++;
+          productosReactivados.push({ ean: ean, nombre: desc });
+        }
+
         if (cambios && PROD['fecha_registro'] !== undefined) prodRow[PROD['fecha_registro']] = hoy;
 
         actualizados++;
@@ -418,11 +433,11 @@ function sincronizarRegistroProductos() {
 
   SpreadsheetApp.flush();
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Saltados: ${saltados} | Errores: ${errores}`,
+    `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Reactivados: ${reactivados} | Saltados: ${saltados} | Errores: ${errores}`,
     '📥 Sincronización completada', 8
   );
 
-  return { nuevos, actualizados, saltados, errores, productosNuevos, productosConError };
+  return { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError };
 }
 
 // ── ACTUALIZAR PRECIOS DE PRODUCTOS ───────────────────────────────────────────
@@ -8230,7 +8245,7 @@ function revisarCorreoListadoProductosManual() {
 
   const r = resultado.resultado;
   avisar_('Sincronización completada',
-    `Nuevos: ${r.nuevos} | Actualizados: ${r.actualizados} | Saltados: ${r.saltados} | Errores: ${r.errores}\n\n` +
+    `Nuevos: ${r.nuevos} | Actualizados: ${r.actualizados} | Reactivados: ${r.reactivados || 0} | Saltados: ${r.saltados} | Errores: ${r.errores}\n\n` +
     'Resumen completo enviado a ' + CORREO_RESUMEN_CRM_TO + ' (copia a ' + CORREO_RESUMEN_CRM_CC + ').');
   return { huboCorreo: true, exito: true, ...r };
 }
@@ -8377,12 +8392,13 @@ function enviarResumenSincronizacionCRM_(resultado) {
     return;
   }
 
-  const { nuevos, actualizados, saltados, errores, productosNuevos, productosConError, totalRegistrados } = resultado;
+  const { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError, totalRegistrados } = resultado;
 
   let cuerpo = `Resumen de la sincronización automática de productos (${fecha})\n\n`;
   cuerpo += `Productos leídos del Excel: ${totalRegistrados}\n`;
   cuerpo += `Nuevos: ${nuevos}\n`;
   cuerpo += `Actualizados: ${actualizados}\n`;
+  cuerpo += `Reactivados (estaban de baja y han vuelto a aparecer en el listado): ${reactivados || 0}\n`;
   cuerpo += `Saltados (ya procesados o con error previo): ${saltados}\n`;
   cuerpo += `Errores: ${errores}\n\n`;
   cuerpo += `Se ha disparado también la regeneración automática de los catálogos PDF (tardan 1-2 minutos en aparecer en la web).\n\n`;
@@ -8390,6 +8406,12 @@ function enviarResumenSincronizacionCRM_(resultado) {
   if (productosNuevos && productosNuevos.length > 0) {
     cuerpo += `Productos nuevos dados de alta:\n`;
     productosNuevos.forEach(p => { cuerpo += `  - ${p.ean} — ${p.nombre}\n`; });
+    cuerpo += '\n';
+  }
+
+  if (productosReactivados && productosReactivados.length > 0) {
+    cuerpo += `Productos reactivados (estaban de baja):\n`;
+    productosReactivados.forEach(p => { cuerpo += `  - ${p.ean} — ${p.nombre}\n`; });
     cuerpo += '\n';
   }
 
