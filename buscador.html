@@ -7384,7 +7384,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         let resultados = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
         if (area) resultados = resultados.filter(p => p.area === area);
         if (familia) resultados = resultados.filter(p => p.familia === familia);
-        if (texto) resultados = resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto) || coincideReferencia(p.ref, texto));
+        // Igual que productosQueCoincidenConTexto_() y el buscador
+        // principal: una búsqueda predominantemente numérica (referencia)
+        // usa SOLO coincidencia estricta de referencia (coincideReferencia),
+        // nunca la fuzzy coincide(p.ref, texto) — esa fuzzy está pensada
+        // para nombres de producto y, aplicada a referencias, hacía que
+        // una referencia como "60" "encontrara" por coincidencia parcial
+        // referencias totalmente distintas que ni siquiera la contienen
+        // de verdad, devolviendo productos de más.
+        if (texto) {
+            resultados = esBusquedaNumerica(texto)
+                ? resultados.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+        }
         resultados = resultados.slice(0, 40);
         if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
         cont.innerHTML = '';
