@@ -5214,13 +5214,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-producto-gestionar-relacionados', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-relacionados-overlay', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-producto-baja-reactivar', window.MOSTRAR_BOTON_GESTION_BAJA);
-    // Visible si el flag interno de desarrollo está activo (ver más
-    // arriba, MOSTRAR_PRECIO_MAYOR) O si hay una sesión profesional real
-    // y validada por Apps Script (window.PerfilProfesional) — a
-    // diferencia del flag de desarrollo, esta sí debe funcionar también
-    // en producción/IONOS para clientes profesionales autorizados.
+    // Este botón es solo la herramienta interna de previsualización del
+    // precio mayor para el perfil normal en preproducción (MOSTRAR_PRECIO_
+    // MAYOR, nunca en producción/release) — el perfil profesional YA ve el
+    // precio mayor siempre y directamente (ver precioAMostrar_), así que
+    // nunca necesita este botón, ni en preproducción ni en producción.
     window.OM_SESION_PROFESIONAL_ACTIVA = !!(window.PerfilProfesional && window.PerfilProfesional.sesionActiva());
-    eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR || window.OM_SESION_PROFESIONAL_ACTIVA);
+    eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR && !window.OM_SESION_PROFESIONAL_ACTIVA);
     eliminarSiRestringido_('modal-producto-editar-ficha-tecnica', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     eliminarSiRestringido_('modal-editar-ficha-overlay', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
@@ -5657,9 +5657,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // incluir o no precio_mayor_sin/con en la respuesta (ver
     // verificarPinProfesional_ en scripts/apps_script_trigger.js); este
     // archivo nunca decide eso por su cuenta.
+    //
+    // Sin PIN, en preproducción únicamente (MOSTRAR_PRECIO_MAYOR, nunca en
+    // producción/release — ver la configuración de arriba del archivo) se
+    // manda además "&preprod=1": es la vista previa interna del precio
+    // mayor para el perfil normal, detrás del botón "Ver precio mayor" de
+    // la ficha de detalle, a petición explícita de Eloy. Aviso de
+    // seguridad asumido conscientemente para este caso: a diferencia del
+    // PIN (validado contra una Script Property), este parámetro es un
+    // valor fijo visible en el código fuente de este archivo — cualquiera
+    // que lo conozca podría añadirlo a mano a una petición directa al Web
+    // App y obtener el precio mayor sin PIN. Igual que el resto de flags
+    // MOSTRAR_* de este archivo, nunca viaja desde la build de IONOS
+    // (preparar_build_ionos.py fuerza OM_PREPRODUCCION a false ahí).
     function PRODUCTOS_REMOTO_URL_() {
         const pin = window.PerfilProfesional && window.PerfilProfesional.pinActual();
-        return pin ? `${PRODUCTOS_REMOTO_URL_BASE}&pin=${encodeURIComponent(pin)}` : PRODUCTOS_REMOTO_URL_BASE;
+        if (pin) return `${PRODUCTOS_REMOTO_URL_BASE}&pin=${encodeURIComponent(pin)}`;
+        if (window.MOSTRAR_PRECIO_MAYOR) return `${PRODUCTOS_REMOTO_URL_BASE}&preprod=1`;
+        return PRODUCTOS_REMOTO_URL_BASE;
     }
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
@@ -9322,6 +9337,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return { original: original, promo: promo, pct: pctMostrado > 0 ? pctMostrado : null };
     }
 
+    // Precio a usar en TODA la web para un producto — rejillas, ficha de
+    // detalle, lista de la compra, PDF y texto para compartir, todos pasan
+    // por aquí en vez de leer precio_con/precio_sin cada uno por su lado.
+    // A petición explícita de Eloy: el perfil profesional (sesión validada
+    // por PIN, ver window.OM_SESION_PROFESIONAL_ACTIVA) ve SIEMPRE el
+    // precio al por mayor, nunca el de venta al público, y sin botón ni
+    // paso intermedio — sustituye al precio normal en cualquier sitio
+    // donde se muestre, incluidas ofertas/destacados (que son una
+    // promoción sobre el PVP público, no aplica al mayorista). Fuera del
+    // perfil profesional no cambia nada: sigue el PVP de siempre.
+    function precioAMostrar_(p) {
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && p && p.precio_mayor_con) {
+            const con = parseFloat(p.precio_mayor_con.toString().replace(',', '.'));
+            if (isFinite(con) && con > 0) {
+                const sinRaw = p.precio_mayor_sin;
+                const sin = sinRaw ? parseFloat(sinRaw.toString().replace(',', '.')) : null;
+                return { con, sin: (isFinite(sin) && sin > 0) ? sin : null, esMayor: true };
+            }
+        }
+        if (p && p.mostrar_precio && p.precio_con) {
+            const con = parseFloat(p.precio_con.toString().replace(',', '.'));
+            if (isFinite(con) && con > 0) {
+                const sinRaw = p.precio_sin;
+                const sin = sinRaw ? parseFloat(sinRaw.toString().replace(',', '.')) : null;
+                return { con, sin: (isFinite(sin) && sin > 0) ? sin : null, esMayor: false };
+            }
+        }
+        return null;
+    }
+
     function construirContenidoTarjeta_(p, opciones) {
         opciones = opciones || {};
         const d = opciones.destacado || null;
@@ -9337,20 +9382,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // disponible en absoluto.
         const logoBadge = urlImg ? logoFabricanteHtml(p) : '';
 
-        const ofertaBadge = (!d && p.oferta) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
-        const destacadoChip = d ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
+        // Con precio al por mayor (perfil profesional), las ofertas/
+        // destacados del público (promoción sobre el PVP) no aplican — el
+        // mayorista tiene su propio precio fijo, ver precioAMostrar_.
+        const precioMayor_ = precioAMostrar_(p);
+        const esMayor_ = !!(precioMayor_ && precioMayor_.esMayor);
+
+        const ofertaBadge = (!d && p.oferta && !esMayor_) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
+        const destacadoChip = (d && !esMayor_) ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
 
         let precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
-        if (p.mostrar_precio) {
-            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2).replace('.', ',') : null;
-            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2).replace('.', ',') : null;
-            if (con) {
-                precioHtml = `<div class="producto-precio-con">${con} €</div>`;
-                if (sin) precioHtml += `<div class="producto-precio-sin">${sin} € sin IVA</div>`;
-            }
+        if (precioMayor_) {
+            precioHtml = `<div class="producto-precio-con">${precioMayor_.con.toFixed(2).replace('.', ',')} €</div>`;
+            if (precioMayor_.sin) precioHtml += `<div class="producto-precio-sin">${precioMayor_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         }
         let promoTextoHtml = '';
-        if (d) {
+        if (d && !esMayor_) {
             const precioDestacado = calcularPrecioDestacado_(p, d);
             if (precioDestacado.original !== null) {
                 if (precioDestacado.promo !== null) {
@@ -9558,7 +9605,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Campos que de verdad hacen falta para pintar un producto guardado
     // sin depender del catálogo — ni más (no hay que guardar fichas
     // técnicas, descripciones largas, etc.) ni menos.
-    const LISTA_COMPRA_CAMPOS_ = ['ref', 'nombre', 'precio_sin', 'precio_con', 'mostrar_precio', 'area', 'familia', 'subfamilia', 'img', 'fabricante'];
+    // precio_mayor_sin/con viajan también aquí (aunque el perfil normal
+    // nunca los recibe del servidor, ver limpiarPrecioMayorSiProcede_) para
+    // que un profesional que añade un producto a la lista siga viendo su
+    // precio mayor en la propia lista, el PDF y el texto para compartir —
+    // ver precioAMostrar_.
+    const LISTA_COMPRA_CAMPOS_ = ['ref', 'nombre', 'precio_sin', 'precio_con', 'precio_mayor_sin', 'precio_mayor_con', 'mostrar_precio', 'area', 'familia', 'subfamilia', 'img', 'fabricante'];
 
     let listaCompraState_ = null;          // { version, productos: [...] } | null si no existe lista
     let listaCompraPersistenciaOk_ = true; // false tras el primer fallo real de localStorage (cuota, navegación privada...)
@@ -9576,6 +9628,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         limpio.nombre = p.nombre ? String(p.nombre) : '(sin nombre)';
         limpio.precio_sin = p.precio_sin != null ? String(p.precio_sin) : '';
         limpio.precio_con = p.precio_con != null ? String(p.precio_con) : '';
+        limpio.precio_mayor_sin = p.precio_mayor_sin != null ? String(p.precio_mayor_sin) : '';
+        limpio.precio_mayor_con = p.precio_mayor_con != null ? String(p.precio_mayor_con) : '';
         limpio.mostrar_precio = !!p.mostrar_precio;
         limpio.area = p.area ? String(p.area) : '';
         limpio.familia = p.familia ? String(p.familia) : '';
@@ -9841,10 +9895,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraTotales_() {
         let sinIva = 0, conIva = 0;
         listaCompraProductos_().forEach(p => {
-            if (!p.mostrar_precio) return; // "consultar precio": no se puede sumar un importe que no se muestra
+            const precio = precioAMostrar_(p);
+            if (!precio) return; // "consultar precio": no se puede sumar un importe que no se muestra
             const unidades = p.unidades || 1;
-            conIva += listaCompraACentimos_(p.precio_con) * unidades;
-            sinIva += listaCompraACentimos_(p.precio_sin || p.precio_con) * unidades;
+            conIva += Math.round(precio.con * 100) * unidades;
+            sinIva += Math.round((precio.sin || precio.con) * 100) * unidades;
         });
         return { sinIva, iva: conIva - sinIva, conIva };
     }
@@ -10190,15 +10245,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // cambia, solo deja de mostrarse esa columna en la tabla.
         const filas = productos.map(p => {
             const unidades = p.unidades || 1;
-            const subtotalSin = listaCompraACentimos_(p.precio_sin || p.precio_con) * unidades;
+            const precio = precioAMostrar_(p);
+            const sinCentimos = precio ? Math.round((precio.sin || precio.con) * 100) : 0;
+            const subtotalSin = sinCentimos * unidades;
             return [
                 p.nombre,
                 p.ref,
                 p.familia || '—',
                 String(unidades),
-                p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(listaCompraACentimos_(p.precio_sin)) : '—',
-                p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
-                p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(subtotalSin) : '—',
+                precio && precio.sin ? formatoEurosPdf_(Math.round(precio.sin * 100)) : '—',
+                precio ? formatoEurosPdf_(Math.round(precio.con * 100)) : 'Consultar',
+                precio ? formatoEurosPdf_(subtotalSin) : '—',
             ];
         });
 
@@ -10297,7 +10354,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             'Lista de la compra — Orencio Matas y Hnos',
             `${productos.length} / ${LISTA_COMPRA_MAX_} productos`,
             '',
-            ...productos.map(p => `• ${p.nombre} (Ref: ${p.ref}) x${p.unidades || 1}${p.mostrar_precio && p.precio_con ? ' — ' + listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con)) : ''}`),
+            ...productos.map(p => {
+                const precio = precioAMostrar_(p);
+                return `• ${p.nombre} (Ref: ${p.ref}) x${p.unidades || 1}${precio ? ' — ' + listaCompraFormatoEuros_(Math.round(precio.con * 100)) : ''}`;
+            }),
             '',
             `Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`,
             `Total con IVA: ${listaCompraFormatoEuros_(totales.conIva)}`,
@@ -10918,14 +10978,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             logoFabricante.style.display = 'none';
         }
 
+        // Perfil profesional: precio al por mayor siempre, nunca el PVP ni
+        // las ofertas públicas — ver precioAMostrar_/construirContenidoTarjeta_.
+        const precioMayorModal_ = precioAMostrar_(p);
+        const esMayorModal_ = !!(precioMayorModal_ && precioMayorModal_.esMayor);
+
         let precioHtml = '';
-        if (p.mostrar_precio) {
-            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2).replace('.', ',') : null;
-            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2).replace('.', ',') : null;
-            if (con) {
-                precioHtml = `<div class="modal-producto-precio-con">${con} €</div>`;
-                if (sin) precioHtml += `<div class="modal-producto-precio-sin">${sin} € sin IVA</div>`;
-            }
+        if (precioMayorModal_) {
+            precioHtml = `<div class="modal-producto-precio-con">${precioMayorModal_.con.toFixed(2).replace('.', ',')} €</div>`;
+            if (precioMayorModal_.sin) precioHtml += `<div class="modal-producto-precio-sin">${precioMayorModal_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         } else {
             precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         }
@@ -10933,8 +10994,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // A petición de Eloy: si el producto está en Destacados (activo y
         // vigente), la ficha de detalle debe mostrar el mismo precio
         // rebajado y la misma etiqueta que ya se ve en su tarjeta — misma
-        // lógica que construirContenidoTarjeta_, sin duplicarla.
-        const destacadoModal = destacadosVigentePara_(p.ref);
+        // lógica que construirContenidoTarjeta_, sin duplicarla. No aplica
+        // con precio al por mayor (promoción solo sobre el PVP público).
+        const destacadoModal = esMayorModal_ ? null : destacadosVigentePara_(p.ref);
         const chipDestacadoModal = $('modal-producto-destacado-chip');
         if (destacadoModal) {
             // Reutiliza etiquetaDestacadoHtml_ para la clase/texto del chip,
