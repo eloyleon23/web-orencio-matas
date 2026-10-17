@@ -9814,13 +9814,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.setTextColor(30, 33, 37);
         const nombreLineas = doc.splitTextToSize(p.nombre || p.ref, w - pad * 2).slice(0, 2);
         doc.text(nombreLineas, x + pad, ty);
-        ty += nombreLineas.length * 4.2 + 2;
+        ty += nombreLineas.length * 4.2 + 1.5;
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.2);
         doc.setTextColor(140, 143, 150);
         doc.text(`Ref: ${p.ref}`, x + pad, ty);
-        ty += 6.5;
+        ty += 5.5;
 
         if (esMayor) {
             doc.setFont('helvetica', 'bold');
@@ -9854,7 +9854,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 doc.setDrawColor(170, 173, 180);
                 doc.setLineWidth(0.3);
                 doc.line(x + pad, ty - 1.2, x + pad + wOrig, ty - 1.2);
-                ty += 7.5;
+                ty += 7;
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(19);
                 doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
@@ -9871,40 +9871,69 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     doc.setTextColor(255, 255, 255);
                     doc.text(pctTxt, x + pad + wPromo + 3 + wPct / 2, ty - 1.1, { align: 'center' });
                 }
-                ty += 5.5;
+                ty += 5;
             } else {
+                // Precio sin descuento: mismo rojo de marca que el resto de
+                // precios de la tarjeta — a petición explícita de Eloy, "en
+                // color más resaltado que solo en negro".
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(19);
-                doc.setTextColor(30, 33, 37);
+                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
                 doc.text(`${dCalc.original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
                 ty += 7;
             }
         }
 
-        // Promoción adicional (p.ej. "2x1", "Últimas unidades") — banner de
-        // color propio a todo el ancho de la tarjeta, no una línea de
-        // texto pequeña: es justo lo que pidió Eloy que se viera bien.
+        // Promoción adicional (p.ej. "2x1", "Últimas unidades") — chip con
+        // sombra, mismo tratamiento que el chip del tipo de destacado y a
+        // la misma escala que el precio, en vez del banner a todo lo ancho
+        // de antes ("no me gusta así como si fuera un botón"; "que
+        // resalte tanto o más que el precio en modo chip"). Hasta 2 líneas
+        // dentro del propio chip (antes se recortaba en silencio a la
+        // primera línea sin más, cortando el texto a medias).
         if (!esMayor && d.textoPromocion) {
-            const bannerH = 7.5;
-            doc.setFillColor(241, 179, 0); // amarillo de marca — nunca se usa ya para precio ni chip, así resalta sin confundirse con ellos
-            doc.rect(x + pad, ty, w - pad * 2, bannerH, 'F');
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(8);
+            doc.setFontSize(10);
+            const maxTextW = w - pad * 2 - 10;
+            const todasLasLineas = doc.splitTextToSize(d.textoPromocion.toUpperCase(), maxTextW);
+            const lineasPromo = todasLasLineas.slice(0, 2);
+            if (todasLasLineas.length > 2) {
+                let ultima = lineasPromo[1];
+                while (doc.getTextWidth(ultima + '…') > maxTextW && ultima.length > 1) ultima = ultima.slice(0, -1);
+                lineasPromo[1] = ultima + '…';
+            }
+            const lineH = 4.2;
+            const thPromo = lineasPromo.length * lineH + 3.2;
+            const twPromo = Math.max(...lineasPromo.map(l => doc.getTextWidth(l))) + 9;
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(x + pad + 0.6, ty + 0.6, twPromo, thPromo, 2.2, 2.2, 'F');
+            doc.setFillColor(241, 179, 0); // amarillo de marca — nunca se usa ya para precio ni chip de tipo, así resalta sin confundirse con ellos
+            doc.roundedRect(x + pad, ty, twPromo, thPromo, 2.2, 2.2, 'F');
             doc.setTextColor(26, 26, 26);
-            const promoLineas = doc.splitTextToSize(d.textoPromocion.toUpperCase(), w - pad * 2 - 4).slice(0, 1);
-            doc.text(promoLineas, x + pad + (w - pad * 2) / 2, ty + bannerH / 2 + 1.1, { align: 'center' });
+            lineasPromo.forEach((linea, i) => {
+                doc.text(linea, x + pad + twPromo / 2, ty + 3.3 + i * lineH, { align: 'center' });
+            });
+            ty += thPromo + 2.5;
         }
 
-        // Fecha límite — posición fija al pie de la tarjeta (no depende
-        // de cuánto haya ocupado el resto del contenido arriba).
-        if (d.fechaFin) {
-            const fecha = new Date(d.fechaFin);
+        // Fecha límite — normalmente fija al pie de la tarjeta, pero nunca
+        // por encima del contenido de arriba (si una tarjeta llega muy
+        // cargada — nombre a 2 líneas, descuento y promoción larga — se
+        // desplaza hacia abajo junto con el resto en vez de solapar). La
+        // propia fecha del producto manda; si no tiene, se usa la fecha
+        // límite general de la sección Destacados (si está informada) — a
+        // petición explícita: "si la tiene informada hay que indicarlo en
+        // cada producto", y antes un producto sin fecha propia dentro de
+        // una sección con fecha límite general se quedaba sin indicarlo.
+        const fechaFinEfectiva = d.fechaFin || destacadosDatos_.fechaFin;
+        if (fechaFinEfectiva) {
+            const fecha = new Date(fechaFinEfectiva);
             if (!isNaN(fecha.getTime())) {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7.2);
                 doc.setTextColor(140, 143, 150);
                 const fechaTxt = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-                doc.text(`Válido hasta el ${fechaTxt}`, x + pad, y + h - 4);
+                doc.text(`Válido hasta el ${fechaTxt}`, x + pad, Math.max(y + h - 4, ty + 3));
             }
         }
     }
@@ -9985,7 +10014,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // página, igual que antes, pero cada una con mucho más protagonismo.
         const colGap = 8, rowGap = 8;
         const colW = (contentWidth - colGap) / 2;
-        const cardH = 112;
+        const cardH = 114;
         const filasPorPagina = Math.max(1, Math.floor((footerTopY - headerBottomY - 6 + rowGap) / (cardH + rowGap)));
         const porPagina = filasPorPagina * 2;
 
