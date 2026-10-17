@@ -9746,131 +9746,154 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // propia tarjeta en pantalla, solo aquí, a petición explícita) y,
     // para el perfil profesional, el precio al por mayor con una
     // etiqueta que lo distingue claramente del PVP.
+    // Tarjeta grande y vistosa, a petición explícita de Eloy tras ver la
+    // primera versión ("muy simple, la imagen pequeña, el chip pequeño,
+    // el detalle 3x2 apenas se ve, el precio pequeño"): imagen mucho más
+    // grande, chip con más presencia, precio como elemento principal de
+    // la tarjeta, y la promoción adicional (textoPromocion, p.ej. "3x2")
+    // como un banner de color propio en vez de una línea de texto pequeña.
     function dibujarTarjetaDestacadoPdf_(doc, x, y, w, h, foto, p, d) {
         doc.setFillColor(255, 255, 255);
         doc.setDrawColor(226, 228, 232);
-        doc.setLineWidth(0.3);
-        doc.roundedRect(x, y, w, h, 2.5, 2.5, 'FD');
-
-        const pad = 4;
-        const imgBoxH = 38;
-        if (foto) {
-            const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
-            const dw = foto.width * escala, dh = foto.height * escala;
-            doc.addImage(foto.dataUrl, 'JPEG', x + (w - dw) / 2, y + pad + (imgBoxH - dh) / 2, dw, dh);
-        } else {
-            doc.setFillColor(248, 249, 250);
-            doc.rect(x + pad, y + pad, w - pad * 2, imgBoxH, 'F');
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(7.5);
-            doc.setTextColor(170, 173, 180);
-            doc.text('Sin imagen', x + w / 2, y + pad + imgBoxH / 2, { align: 'center' });
-        }
+        doc.setLineWidth(0.4);
+        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
 
         const precioInfo = precioAMostrar_(p);
         const esMayor = !!(precioInfo && precioInfo.esMayor);
+        const mapaChip = {
+            oferta: ['OFERTA', [0, 135, 67]],
+            oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
+            liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
+        };
+        const chipEntrada = (d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
 
-        // Chip del tipo de destacado, sobre la imagen — nunca con precio
-        // mayor (es una promoción sobre el PVP público, no aplica).
-        if (d.tipoDestacado && !esMayor) {
-            const mapaChip = {
-                oferta: ['OFERTA', [0, 135, 67]],
-                oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
-                liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
-            };
-            const entrada = mapaChip[d.tipoDestacado];
-            if (entrada) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(6.4);
-                const txt = entrada[0];
-                const tw = doc.getTextWidth(txt) + 4;
-                doc.setFillColor(entrada[1][0], entrada[1][1], entrada[1][2]);
-                doc.roundedRect(x + pad + 1, y + pad + 1, tw, 4.4, 1.4, 1.4, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.text(txt, x + pad + 1 + tw / 2, y + pad + 1 + 3.1, { align: 'center' });
-            }
+        // Franja de color superior — mismo color que el chip (o el rojo de
+        // marca si no hay chip) a modo de "cabecera" de la tarjeta, para
+        // que destaque como una ficha comercial y no una fila de tabla.
+        const colorFranja = chipEntrada ? chipEntrada[1] : [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b];
+        doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
+        doc.roundedRect(x, y, w, 3, 3, 3, 'F');
+        doc.rect(x, y + 1.5, w, 1.5, 'F'); // cuadra las esquinas inferiores de la franja con el resto de la tarjeta
+
+        const pad = 5;
+        const imgBoxH = h * 0.48; // la imagen domina la tarjeta, no el texto
+        const imgBoxY = y + 3 + pad * 0.6;
+        if (foto) {
+            const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
+            const dw = foto.width * escala, dh = foto.height * escala;
+            doc.addImage(foto.dataUrl, 'JPEG', x + (w - dw) / 2, imgBoxY + (imgBoxH - dh) / 2, dw, dh);
+        } else {
+            doc.setFillColor(248, 249, 250);
+            doc.rect(x + pad, imgBoxY, w - pad * 2, imgBoxH, 'F');
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8.5);
+            doc.setTextColor(170, 173, 180);
+            doc.text('Sin imagen', x + w / 2, imgBoxY + imgBoxH / 2, { align: 'center' });
         }
 
-        let ty = y + pad + imgBoxH + 5;
+        // Chip del tipo de destacado, grande y con sombra simulada (doble
+        // rectángulo) para que resalte de verdad sobre la imagen — nunca
+        // con precio mayor (es una promoción sobre el PVP público).
+        if (chipEntrada) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            const txt = chipEntrada[0];
+            const tw = doc.getTextWidth(txt) + 7;
+            const th = 6.6;
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(x + pad + 0.5, imgBoxY + 2.5, tw, th, 1.8, 1.8, 'F');
+            doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
+            doc.roundedRect(x + pad, imgBoxY + 2, tw, th, 1.8, 1.8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(txt, x + pad + tw / 2, imgBoxY + 2 + th / 2 + 1.1, { align: 'center' });
+        }
+
+        let ty = imgBoxY + imgBoxH + 7;
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.6);
+        doc.setFontSize(10.5);
         doc.setTextColor(30, 33, 37);
         const nombreLineas = doc.splitTextToSize(p.nombre || p.ref, w - pad * 2).slice(0, 2);
         doc.text(nombreLineas, x + pad, ty);
-        ty += nombreLineas.length * 3.6 + 1.8;
+        ty += nombreLineas.length * 4.2 + 2;
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6.6);
+        doc.setFontSize(7.2);
         doc.setTextColor(140, 143, 150);
         doc.text(`Ref: ${p.ref}`, x + pad, ty);
-        ty += 5;
+        ty += 6.5;
 
         if (esMayor) {
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
+            doc.setFontSize(19);
             doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
             doc.text(`${precioInfo.con.toFixed(2).replace('.', ',')} €`, x + pad, ty);
-            ty += 4;
+            ty += 5.5;
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(6.2);
+            doc.setFontSize(7);
             const txtMayor = 'PRECIO PROFESIONAL (MAYOR)';
-            const twMayor = doc.getTextWidth(txtMayor) + 4;
+            const twMayor = doc.getTextWidth(txtMayor) + 5;
             doc.setFillColor(26, 26, 26);
-            doc.roundedRect(x + pad, ty, twMayor, 4.2, 1.2, 1.2, 'F');
+            doc.roundedRect(x + pad, ty, twMayor, 5.4, 1.4, 1.4, 'F');
             doc.setTextColor(255, 255, 255);
-            doc.text(txtMayor, x + pad + twMayor / 2, ty + 2.9, { align: 'center' });
-            ty += 8.2;
+            doc.text(txtMayor, x + pad + twMayor / 2, ty + 3.7, { align: 'center' });
+            ty += 10;
         } else {
             const dCalc = calcularPrecioDestacado_(p, d);
             if (dCalc.original === null) {
                 doc.setFont('helvetica', 'italic');
-                doc.setFontSize(7.5);
+                doc.setFontSize(8.5);
                 doc.setTextColor(150, 153, 160);
                 doc.text('Consultar precio y disponibilidad', x + pad, ty);
-                ty += 6;
+                ty += 7;
             } else if (dCalc.promo !== null) {
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7.5);
+                doc.setFontSize(8.5);
                 doc.setTextColor(170, 173, 180);
                 const origTxt = `${dCalc.original.toFixed(2).replace('.', ',')} €`;
                 doc.text(origTxt, x + pad, ty);
                 const wOrig = doc.getTextWidth(origTxt);
                 doc.setDrawColor(170, 173, 180);
-                doc.setLineWidth(0.25);
-                doc.line(x + pad, ty - 1, x + pad + wOrig, ty - 1);
-                ty += 4.8;
+                doc.setLineWidth(0.3);
+                doc.line(x + pad, ty - 1.2, x + pad + wOrig, ty - 1.2);
+                ty += 7.5;
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
+                doc.setFontSize(19);
                 doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
                 const promoTxt = `${dCalc.promo.toFixed(2).replace('.', ',')} €`;
                 doc.text(promoTxt, x + pad, ty);
                 if (dCalc.pct) {
                     const wPromo = doc.getTextWidth(promoTxt);
                     doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(6.6);
+                    doc.setFontSize(9);
                     const pctTxt = `-${dCalc.pct}%`;
-                    const wPct = doc.getTextWidth(pctTxt) + 3.4;
+                    const wPct = doc.getTextWidth(pctTxt) + 4.6;
                     doc.setFillColor(217, 27, 27);
-                    doc.roundedRect(x + pad + wPromo + 2, ty - 3.4, wPct, 4.4, 1.2, 1.2, 'F');
+                    doc.roundedRect(x + pad + wPromo + 3, ty - 5.2, wPct, 6.2, 1.6, 1.6, 'F');
                     doc.setTextColor(255, 255, 255);
-                    doc.text(pctTxt, x + pad + wPromo + 2 + wPct / 2, ty - 0.6, { align: 'center' });
+                    doc.text(pctTxt, x + pad + wPromo + 3 + wPct / 2, ty - 1.1, { align: 'center' });
                 }
-                ty += 4.6;
+                ty += 5.5;
             } else {
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
+                doc.setFontSize(19);
                 doc.setTextColor(30, 33, 37);
                 doc.text(`${dCalc.original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
-                ty += 6;
+                ty += 7;
             }
         }
 
+        // Promoción adicional (p.ej. "2x1", "Últimas unidades") — banner de
+        // color propio a todo el ancho de la tarjeta, no una línea de
+        // texto pequeña: es justo lo que pidió Eloy que se viera bien.
         if (!esMayor && d.textoPromocion) {
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(6.8);
-            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-            const promoLineas = doc.splitTextToSize(d.textoPromocion, w - pad * 2).slice(0, 2);
-            doc.text(promoLineas, x + pad, ty);
+            const bannerH = 7.5;
+            doc.setFillColor(241, 179, 0); // amarillo de marca — nunca se usa ya para precio ni chip, así resalta sin confundirse con ellos
+            doc.rect(x + pad, ty, w - pad * 2, bannerH, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(26, 26, 26);
+            const promoLineas = doc.splitTextToSize(d.textoPromocion.toUpperCase(), w - pad * 2 - 4).slice(0, 1);
+            doc.text(promoLineas, x + pad + (w - pad * 2) / 2, ty + bannerH / 2 + 1.1, { align: 'center' });
         }
 
         // Fecha límite — posición fija al pie de la tarjeta (no depende
@@ -9878,11 +9901,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (d.fechaFin) {
             const fecha = new Date(d.fechaFin);
             if (!isNaN(fecha.getTime())) {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(6.4);
-                doc.setTextColor(150, 153, 160);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7.2);
+                doc.setTextColor(140, 143, 150);
                 const fechaTxt = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-                doc.text(`Válido hasta el ${fechaTxt}`, x + pad, y + h - 3);
+                doc.text(`Válido hasta el ${fechaTxt}`, x + pad, y + h - 4);
             }
         }
     }
@@ -9957,9 +9980,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const itemsFotos = visibles.map(({ producto }) => ({ url: urlImagenProductoFolletoDestacados_(producto) }));
         const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
 
-        const colGap = 8, rowGap = 6;
+        // Tarjetas más grandes (a petición explícita de Eloy, "muy
+        // simple... hay que darle una vuelta al estilo para que sea más
+        // llamativo") — con esta altura caben 2 filas (4 tarjetas) por
+        // página, igual que antes, pero cada una con mucho más protagonismo.
+        const colGap = 8, rowGap = 8;
         const colW = (contentWidth - colGap) / 2;
-        const cardH = 84;
+        const cardH = 112;
         const filasPorPagina = Math.max(1, Math.floor((footerTopY - headerBottomY - 6 + rowGap) / (cardH + rowGap)));
         const porPagina = filasPorPagina * 2;
 
