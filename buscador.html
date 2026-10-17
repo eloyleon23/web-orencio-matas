@@ -743,6 +743,20 @@
         .btn-destacados-accion:disabled { opacity: .7; cursor: default; }
         .btn-destacados-pdf { background: #fef3c7; color: #92400e; }
         .btn-destacados-compartir { background: var(--blue); color: #fff; }
+        /* Móvil, a petición explícita de Eloy: solo los dos iconos (sin
+           texto), alineados al extremo derecho, en la misma fila que
+           "Destacados" — nowrap en la cabecera para que nunca bajen a su
+           propia línea, y botones cuadrados en vez de la píldora con
+           texto de escritorio. */
+        @media (max-width: 768px) {
+            .seccion-destacados__cabecera { flex-wrap: nowrap; }
+            .seccion-destacados__acciones { margin-bottom: 0; }
+            .btn-destacados-accion {
+                padding: 9px; width: 36px; height: 36px;
+                justify-content: center; gap: 0;
+            }
+            .btn-destacados-accion span { display: none; }
+        }
         .seccion-destacados__icono {
             display: inline-flex; align-items: center; justify-content: center;
             width: 38px; height: 38px; border-radius: 50%; font-size: 1.15rem; flex-shrink: 0;
@@ -4253,10 +4267,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                      "Compartir", con el precio según el perfil (normal o
                      profesional) de quien lo genera. Ver inicializarFolletoDestacados_. -->
                 <div class="seccion-destacados__acciones">
-                    <button type="button" id="btn-destacados-pdf" class="btn-destacados-accion btn-destacados-pdf">
+                    <button type="button" id="btn-destacados-pdf" class="btn-destacados-accion btn-destacados-pdf" title="Descargar folleto" aria-label="Descargar folleto">
                         <i class="fa-solid fa-file-pdf"></i> <span>Descargar folleto</span>
                     </button>
-                    <button type="button" id="btn-destacados-compartir" class="btn-destacados-accion btn-destacados-compartir">
+                    <button type="button" id="btn-destacados-compartir" class="btn-destacados-accion btn-destacados-compartir" title="Compartir" aria-label="Compartir">
                         <i class="fa-solid fa-share-nodes"></i> <span>Compartir</span>
                     </button>
                 </div>
