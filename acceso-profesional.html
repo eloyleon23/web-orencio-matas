@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <link rel="stylesheet" href="./src/css/estilos.css?v=20260829" />
     <link rel="stylesheet" href="./assets/css/soluciones.css?v=20260828i" />
+    <script src="https://www.google.com/recaptcha/api.js" defer></script>
     <style>
       /* Mismas tarjetas de acceso rápido que ya usa profesionales.html
          (.pro-sector-card) — copiadas aquí porque son CSS específico de
@@ -64,6 +65,18 @@
       }
       #ap-catalogos-lista .pro-sector-card{ cursor:default; }
       #ap-catalogos-lista .pro-sector-card[aria-disabled="true"]{ opacity:.55; pointer-events:none; }
+
+      /* .form-input (src/css/estilos.css) está pensado para fondos
+         oscuros (texto blanco sobre un panel casi transparente) — dentro
+         de este modal, con caja de fondo blanco (.cs-wizard), ese mismo
+         estilo deja el texto en blanco sobre blanco, invisible. Se
+         sobrescribe aquí solo dentro del modal con colores pensados
+         para fondo claro. */
+      #ap-solicitud-modal .form-input{
+        border: 1px solid #d7dce2; background: #f7f8fa; color: var(--text-dark);
+      }
+      #ap-solicitud-modal .form-input::placeholder{ color: #8a9099; }
+      #ap-solicitud-modal .form-input:focus{ background: #fff; }
     </style>
   </head>
   <body>
@@ -114,17 +127,31 @@
       <!-- VISTA 1: pantalla de PIN (visible por defecto) -->
       <section class="hero" id="ap-vista-pin" style="overflow:hidden;">
         <div class="container">
-          <div class="ap-pin-caja">
-            <span class="cs-hero__eyebrow">Acceso profesional</span>
-            <h1 class="cs-hero__title" style="font-size:clamp(1.8rem,4vw,2.4rem);">Accede como profesional</h1>
-            <p class="cs-hero__subtitle">Introduce el PIN profesional para ver precios y catálogos al por mayor.</p>
-            <form id="ap-form-pin" autocomplete="off">
-              <input type="password" inputmode="numeric" id="ap-pin-input" placeholder="PIN profesional" required />
-              <label><input type="checkbox" id="ap-recordar" /> Recordar PIN en este dispositivo</label>
-              <button type="submit" class="btn-primary" id="ap-btn-entrar">Entrar</button>
-              <p id="ap-pin-error"></p>
-              <p id="ap-pin-cargando">Comprobando…</p>
-            </form>
+          <!-- .cs-hero__contenido (mismo patrón que profesionales.html y
+               centro-soluciones.html): sin ella, el texto quedaba por
+               DEBAJO del degradado oscuro del .hero (.hero::before, con
+               position:absolute, pinta por encima de cualquier contenido
+               sin posicionar) — de ahí el aspecto "apagado" y el input/
+               botón con pinta de deshabilitados que reportó Eloy. Aporta
+               además position:relative + z-index:1 y su propio panel
+               oscuro semitransparente, que es lo que de verdad soluciona
+               el contraste. -->
+          <div class="cs-hero__contenido">
+            <div class="ap-pin-caja">
+              <span class="cs-hero__eyebrow">Acceso profesional</span>
+              <h1 class="cs-hero__title" style="font-size:clamp(1.8rem,4vw,2.4rem);">Accede como profesional</h1>
+              <p class="cs-hero__subtitle">Introduce el PIN profesional para ver precios y catálogos al por mayor.</p>
+              <form id="ap-form-pin" autocomplete="off">
+                <input type="password" inputmode="numeric" id="ap-pin-input" placeholder="PIN profesional" required />
+                <label><input type="checkbox" id="ap-recordar" /> Recordar PIN en este dispositivo</label>
+                <button type="submit" class="btn-primary" id="ap-btn-entrar">Entrar</button>
+                <p id="ap-pin-error"></p>
+                <p id="ap-pin-cargando">Comprobando…</p>
+              </form>
+              <button type="button" class="btn-secondary" id="ap-btn-solicitar-codigo" style="margin-top:14px;width:100%;">
+                ¿No tienes código de acceso? Solicítalo
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -134,9 +161,11 @@
       <section class="hero" id="ap-vista-profesional" hidden style="overflow:hidden;">
         <img class="pro-hero__logo-marca" src="./assets/logos/logo-orencio.png" alt="" aria-hidden="true" style="position:absolute;top:50%;right:-4%;transform:translateY(-50%);width:min(46vw,560px);max-width:90%;opacity:.1;filter:brightness(0) invert(1);pointer-events:none;z-index:0;">
         <div class="container">
-          <span class="ap-etiqueta-inicio">Perfil profesional</span>
-          <h1 class="cs-hero__title">Bienvenido, profesional</h1>
-          <p class="cs-hero__subtitle">Aquí tienes precios al por mayor y catálogos exclusivos para profesionales, además de los apartados habituales de productos y soluciones.</p>
+          <div class="cs-hero__contenido">
+            <span class="ap-etiqueta-inicio">Perfil profesional</span>
+            <h1 class="cs-hero__title">Bienvenido, profesional</h1>
+            <p class="cs-hero__subtitle">Aquí tienes precios al por mayor y catálogos exclusivos para profesionales, además de los apartados habituales de productos y soluciones.</p>
+          </div>
         </div>
       </section>
 
@@ -186,6 +215,51 @@
           </div>
         </div>
       </section>
+
+      <!-- Modal "Solicitar código de acceso profesional" — formulario de
+           contacto específico para quien aún no tiene PIN. Reutiliza el
+           overlay genérico .cs-modal-overlay (ya usado en
+           centro-soluciones.html) y la caja .cs-wizard (fondo blanco,
+           radio y sombra ya definidos), solo con contenido propio. -->
+      <div id="ap-solicitud-modal" class="cs-modal-overlay">
+        <div style="width:100%;max-width:480px;max-height:92vh;overflow-y:auto;">
+          <div class="cs-wizard" style="position:relative;margin:16px;text-align:left;">
+            <button id="ap-solicitud-cerrar" type="button" aria-label="Cerrar" style="position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:none;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.2);font-size:1.1rem;cursor:pointer;z-index:2;">✕</button>
+            <h2 style="margin:0 0 6px;padding-right:40px;font-size:1.3rem;color:var(--text-dark);">Solicitar código de acceso profesional</h2>
+            <p style="margin:0 0 20px;color:var(--text-gray);font-size:0.92rem;">Rellena tus datos y nos pondremos en contacto para facilitarte tu código de acceso como profesional.</p>
+            <form id="ap-solicitud-form" novalidate>
+              <label style="display:block;margin-bottom:14px;">
+                <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Nombre</span>
+                <input class="form-input" type="text" id="ap-sol-nombre" autocomplete="name" placeholder="Tu nombre" required />
+              </label>
+              <label style="display:block;margin-bottom:14px;">
+                <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Email</span>
+                <input class="form-input" type="email" id="ap-sol-email" autocomplete="email" placeholder="tu@email.com" required />
+              </label>
+              <label style="display:block;margin-bottom:14px;">
+                <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Teléfono</span>
+                <input class="form-input" type="tel" id="ap-sol-telefono" autocomplete="tel" placeholder="Tu teléfono" required />
+              </label>
+              <label style="display:block;margin-bottom:16px;">
+                <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Área profesional</span>
+                <select class="form-input" id="ap-sol-area">
+                  <option value="general" selected>Droguería, Perfumería y Pinturas</option>
+                  <option value="talleres">Talleres y Carrocerías</option>
+                </select>
+              </label>
+              <!-- Honeypot anti-bots — mismo patrón que index.html#contacto-form. -->
+              <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+                <label>No rellenar este campo
+                  <input type="text" id="ap-sol-honeypot" tabindex="-1" autocomplete="off" />
+                </label>
+              </div>
+              <div class="g-recaptcha" id="ap-sol-recaptcha" data-sitekey="6LeXpLMtAAAAALjpLDNDAHEOy0zWOCtZmeCa9rad" style="margin-bottom:16px;"></div>
+              <div id="ap-sol-estado" style="display:none;margin-bottom:14px;padding:12px 16px;border-radius:6px;font-weight:600;font-size:0.92rem;"></div>
+              <button class="btn-primary" type="submit" id="ap-sol-btn-enviar" style="width:100%;">SOLICITAR CÓDIGO →</button>
+            </form>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer class="site-footer">
@@ -277,6 +351,126 @@
       if (window.PerfilProfesional.sesionActiva()) {
         mostrarVistaProfesional();
       }
+
+      // Modal "Solicitar código de acceso profesional" ------------------
+      const solicitudModal = document.getElementById('ap-solicitud-modal');
+      document.getElementById('ap-btn-solicitar-codigo').addEventListener('click', function () {
+        solicitudModal.classList.add('is-open');
+      });
+      document.getElementById('ap-solicitud-cerrar').addEventListener('click', function () {
+        solicitudModal.classList.remove('is-open');
+      });
+      solicitudModal.addEventListener('click', function (ev) {
+        if (ev.target === solicitudModal) solicitudModal.classList.remove('is-open');
+      });
+
+      document.getElementById('ap-solicitud-form').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+
+        const nombre = document.getElementById('ap-sol-nombre').value.trim();
+        const email = document.getElementById('ap-sol-email').value.trim();
+        const telefono = document.getElementById('ap-sol-telefono').value.trim();
+        const area = document.getElementById('ap-sol-area').value;
+        const honeypot = document.getElementById('ap-sol-honeypot').value;
+        const btn = document.getElementById('ap-sol-btn-enviar');
+        const estado = document.getElementById('ap-sol-estado');
+
+        function mostrarEstadoSolicitud(texto, color, fondo) {
+          estado.textContent = texto;
+          estado.style.color = color;
+          estado.style.backgroundColor = fondo;
+          estado.style.border = '1px solid ' + color;
+          estado.style.display = 'block';
+          estado.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Honeypot: igual que en index.html#contacto-form — se finge
+        // éxito sin mandar nada de verdad, sin dar pistas al bot.
+        if (honeypot) {
+          mostrarEstadoSolicitud('✓ Solicitud enviada correctamente. En breve nos pondremos en contacto contigo para indicarte tu código de acceso como profesional.', '#1a7a4a', '#edfaf3');
+          document.getElementById('ap-solicitud-form').reset();
+          return;
+        }
+
+        if (!nombre || !email || !telefono) {
+          mostrarEstadoSolicitud('Por favor, rellena todos los campos obligatorios.', '#c0392b', '#fdf0ef');
+          return;
+        }
+
+        const tokenRecaptcha = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
+        if (!tokenRecaptcha) {
+          mostrarEstadoSolicitud('Por favor, confirma que no eres un robot marcando la casilla de reCAPTCHA.', '#c0392b', '#fdf0ef');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'ENVIANDO...';
+
+        const nombreArea = area === 'talleres' ? 'Talleres y Carrocerías' : 'Droguería, Perfumería y Pinturas';
+        const logoUrl = 'https://eloyleon23.github.io/web-orencio-matas/assets/logos/logo-orencio.png';
+        const logoCalUrl = 'https://eloyleon23.github.io/web-orencio-matas/assets/logos/logo_calidad.svg';
+
+        const cuerpo = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f0f0f0;font-family:Arial,sans-serif;">' +
+          '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f0f0;padding:20px 0;">' +
+          '<tr><td align="center">' +
+          '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">' +
+          '<tr><td style="background:#1a1a1a;padding:20px;text-align:center;">' +
+          '<img src="' + logoUrl + '" alt="Orencio Matas y Hnos" style="height:44px;width:auto;" />' +
+          '</td></tr>' +
+          '<tr><td style="background:#d91b1b;height:5px;font-size:0;">&nbsp;</td></tr>' +
+          '<tr><td style="background:#ffffff;padding:32px;">' +
+          '<h2 style="margin:0 0 6px;font-size:18px;color:#1a1a1a;">&#128273; Solicitud de código de acceso profesional</h2>' +
+          '<p style="margin:0 0 20px;font-size:11px;color:#888888;">Alguien ha solicitado un código de acceso profesional a través de orenciomatas.es</p>' +
+          '<hr style="border:none;border-top:1px solid #e0e0e0;margin:0 0 16px;" />' +
+          '<table width="100%" cellpadding="0" cellspacing="0">' +
+          '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;width:100px;">Nombre</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombre + '</td></tr>' +
+          '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Email</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + email + '</td></tr>' +
+          '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Teléfono</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + telefono + '</td></tr>' +
+          '<tr><td style="padding:8px 0;color:#888;font-size:11px;">Área</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombreArea + '</td></tr>' +
+          '</table>' +
+          '</td></tr>' +
+          '<tr><td style="background:#f7f7f7;border-top:1px solid #e0e0e0;padding:14px 20px;">' +
+          '<table cellpadding="0" cellspacing="0"><tr>' +
+          '<td style="padding-right:14px;vertical-align:middle;">' +
+          '<img src="' + logoCalUrl + '" alt="Logo calidad" style="height:44px;width:auto;" />' +
+          '</td>' +
+          '<td style="vertical-align:middle;font-size:10px;color:#888;line-height:1.6;">Orencio Matas y Hermanos, S.L.<br>orenciomatas.es · 926 221 217</td>' +
+          '</tr></table>' +
+          '</td></tr>' +
+          '</table>' +
+          '</td></tr></table>' +
+          '</body></html>';
+
+        fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            accion: 'solicitar_codigo_profesional',
+            nombre: nombre,
+            email: email,
+            cuerpoHtml: cuerpo,
+            tokenRecaptcha: tokenRecaptcha,
+            honeypot: honeypot,
+          }),
+        })
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            if (data.success) {
+              mostrarEstadoSolicitud('✓ Solicitud enviada correctamente. En breve nos pondremos en contacto contigo para indicarte tu código de acceso como profesional.', '#1a7a4a', '#edfaf3');
+              document.getElementById('ap-solicitud-form').reset();
+            } else {
+              throw new Error(data.error || 'Error desconocido');
+            }
+          })
+          .catch(function () {
+            mostrarEstadoSolicitud('Ha ocurrido un error al enviar la solicitud. Por favor, inténtalo de nuevo o llámanos al 926 221 217.', '#c0392b', '#fdf0ef');
+          })
+          .finally(function () {
+            btn.disabled = false;
+            btn.textContent = 'SOLICITAR CÓDIGO →';
+            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+          });
+      });
 
       document.getElementById('ap-form-pin').addEventListener('submit', async function (ev) {
         ev.preventDefault();

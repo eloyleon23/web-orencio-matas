@@ -1135,7 +1135,6 @@
       .presentacion-card--imagen-izquierda .presentacion-card-detalle{
         align-items:flex-end; text-align:right;
       }
-      .presentacion-card--imagen-izquierda .presentacion-card-precio{ align-items:flex-end; }
       .presentacion-card-img{
         position:relative; flex:1.15 1 0; width:auto; height:100%; min-width:0; min-height:0;
         border-radius:18px; background:rgba(255,255,255,.92);
@@ -1162,22 +1161,21 @@
         margin:10px 0 18px; font-size:clamp(22px, 3.6vw, 46px); line-height:1.15;
         font-weight:800; color:#fff;
       }
-      .presentacion-card-precio{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
-      .presentacion-card-precio .precio{
-        font-size:clamp(26px, 4.2vw, 54px); font-weight:800;
+      .presentacion-card-subfamilia{
+        margin-top:4px; font-size:clamp(15px, 1.8vw, 19px); font-weight:700;
         /* Mezclado con blanco (nunca el color de campaña puro): el
            colorSet "rojo_negro" usa un --accent-vivid-2 casi negro
            (#1A1A1A, pensado para texto sobre el fondo CLARO del resto
            de la web) — puesto tal cual aquí, sobre el fondo oscuro del
-           modo presentación, el precio quedaba prácticamente invisible.
-           Mezclarlo con blanco garantiza que se lea bien sea cual sea
-           la paleta elegida, conservando igualmente su tono. */
+           modo presentación, quedaba prácticamente invisible. Mezclarlo
+           con blanco garantiza que se lea bien sea cual sea la paleta
+           elegida, conservando igualmente su tono. Tamaño deliberadamente
+           discreto (bastante menor que el nombre del producto) — a
+           petición explícita de Eloy, antes heredaba el tamaño gigante
+           del precio que sustituye.
+        */
         color:color-mix(in srgb, var(--accent-vivid-2, #4ade80) 55%, #fff 45%);
       }
-      .presentacion-card-precio .precio .iva{
-        font-size:13px; font-weight:600; margin-left:6px; color:rgba(255,255,255,.55); vertical-align:middle;
-      }
-      .presentacion-card-precio .precio-siniva{ font-size:14px; color:rgba(255,255,255,.55); }
 
       /* Fichas pequeñas de contexto — foto del escaparate y logo de la
          empresa, discretas en las esquinas inferiores (petición
@@ -1240,7 +1238,6 @@
         .presentacion-card-detalle, .presentacion-card--imagen-izquierda .presentacion-card-detalle{
           align-items:center; text-align:center; margin-top:14px;
         }
-        .presentacion-card-precio, .presentacion-card--imagen-izquierda .presentacion-card-precio{ align-items:center; }
       }
       /* Ajustes de tamaño para pantallas estrechas en general (gap más
          pequeño, ocultar el nombre de la campaña en la ficha del
@@ -1270,8 +1267,7 @@
         .presentacion-card{ height:min(88vh, 760px); padding:12px; gap:16px; border-radius:18px; }
         .presentacion-card-nombre{ font-size:clamp(14px, 2.6vw, 20px); margin:4px 0 6px; }
         .presentacion-card-fam{ font-size:11px; }
-        .presentacion-card-precio .precio{ font-size:clamp(16px, 3.4vw, 24px); }
-        .presentacion-card-precio .precio-siniva{ font-size:11px; }
+        .presentacion-card-subfamilia{ font-size:clamp(11px, 2.4vw, 14px); }
         .presentacion-chip{ bottom:8px; }
         .presentacion-chip-escaparate img{ width:34px; height:34px; }
         .presentacion-chip-logo img{ height:24px; }
@@ -3214,11 +3210,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   let presentacionImagenIzquierda = false;
 
   // A petición explícita de Eloy: el modo presentación ya no muestra el
-  // precio — se sustituye por área + familia, con el mismo protagonismo
-  // visual que tenía el precio (misma clase .presentacion-card-precio,
-  // solo cambia su contenido). A petición explícita de Eloy, el área no
-  // convencía ahí — se sustituye por la subfamilia (la familia ya se ve
-  // en la etiqueta de arriba, .presentacion-card-fam).
+  // precio — se sustituye por la subfamilia del producto. La familia ya
+  // se ve en la etiqueta de arriba (.presentacion-card-fam) — repetirla
+  // también aquí abajo quedaba redundante, así que este bloque muestra
+  // solo la subfamilia, con su propio tamaño (bastante más discreto que
+  // el nombre del producto, antes heredaba el tamaño gigante de .precio).
 
   function tarjetaPresentacionHTML(ref, imagenIzquierda){
     const p = PRODUCTS[ref];
@@ -3233,10 +3229,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="presentacion-card-detalle">
           <span class="presentacion-card-fam">${p.familia || ''}</span>
           <h3 class="presentacion-card-nombre">${p.nombre || ''}</h3>
-          <div class="presentacion-card-precio">
-            ${p.subfamilia ? `<span class="precio">${p.subfamilia}</span>` : ''}
-            ${p.familia ? `<span class="precio-siniva">${p.familia}</span>` : ''}
-          </div>
+          ${p.subfamilia ? `<div class="presentacion-card-subfamilia">${p.subfamilia}</div>` : ''}
         </div>
       </div>`;
   }
