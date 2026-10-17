@@ -233,6 +233,10 @@
                 <input class="form-input" type="text" id="ap-sol-nombre" autocomplete="name" placeholder="Tu nombre" required />
               </label>
               <label style="display:block;margin-bottom:14px;">
+                <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Nombre comercial / Empresa</span>
+                <input class="form-input" type="text" id="ap-sol-empresa" autocomplete="organization" placeholder="Nombre de tu empresa (opcional)" />
+              </label>
+              <label style="display:block;margin-bottom:14px;">
                 <span style="display:block;margin-bottom:6px;font-weight:700;font-size:0.88rem;color:var(--text-dark);">Email</span>
                 <input class="form-input" type="email" id="ap-sol-email" autocomplete="email" placeholder="tu@email.com" required />
               </label>
@@ -368,6 +372,7 @@
         ev.preventDefault();
 
         const nombre = document.getElementById('ap-sol-nombre').value.trim();
+        const empresa = document.getElementById('ap-sol-empresa').value.trim();
         const email = document.getElementById('ap-sol-email').value.trim();
         const telefono = document.getElementById('ap-sol-telefono').value.trim();
         const area = document.getElementById('ap-sol-area').value;
@@ -424,6 +429,7 @@
           '<hr style="border:none;border-top:1px solid #e0e0e0;margin:0 0 16px;" />' +
           '<table width="100%" cellpadding="0" cellspacing="0">' +
           '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;width:100px;">Nombre</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombre + '</td></tr>' +
+          (empresa ? '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Empresa</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + empresa + '</td></tr>' : '') +
           '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Email</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + email + '</td></tr>' +
           '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Teléfono</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + telefono + '</td></tr>' +
           '<tr><td style="padding:8px 0;color:#888;font-size:11px;">Área</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombreArea + '</td></tr>' +
