@@ -3715,8 +3715,29 @@ function doGet(e) {
       // cualquiera, autorizado o no. Ahora el propio servidor decide qué
       // incluir, que es donde tiene que decidirse de verdad.
       const pinProfesionalOk = verificarPinProfesional_(e.parameter && e.parameter.pin);
+      // Vista previa interna del precio mayor en preproducción, para el
+      // perfil normal (sin PIN) — a petición explícita de Eloy: el botón
+      // "Ver precio mayor" de buscador.html debe seguir funcionando en
+      // preproducción (GitHub Pages) para cualquiera, igual que el resto
+      // de herramientas internas MOSTRAR_* de ese archivo, pero nunca en
+      // producción/IONOS. buscador.html solo manda "&preprod=1" cuando
+      // window.MOSTRAR_PRECIO_MAYOR (= OM_PREPRODUCCION) es true, y
+      // OM_PREPRODUCCION se fuerza a false en la build de IONOS (ver
+      // scripts_ci/preparar_build_ionos.py) — así que este parámetro
+      // nunca puede llegar desde la web pública en producción con el
+      // código legítimo del sitio.
+      // Aviso de seguridad asumido conscientemente, documentado con
+      // honestidad: a diferencia del PIN (validado contra una Script
+      // Property), "preprod=1" es un valor fijo — cualquiera que lo
+      // conozca podría llamar directamente a este Web App con ese
+      // parámetro y obtener el precio mayor sin PIN, desde donde sea. Es
+      // el mismo nivel de exposición que ya tenía el diseño original de
+      // este botón antes de la auditoría de seguridad del perfil
+      // profesional, reabierto aquí solo para este caso porque Eloy lo
+      // pidió explícitamente como herramienta interna.
+      const vistaPreviaPreproduccionOk = (e.parameter && e.parameter.preprod === '1');
       const quitarPrecioMayor_ = (lista) => {
-        if (pinProfesionalOk) return lista;
+        if (pinProfesionalOk || vistaPreviaPreproduccionOk) return lista;
         return lista.map(p => {
           if (p.precio_mayor_sin === undefined && p.precio_mayor_con === undefined) return p;
           const copia = Object.assign({}, p);

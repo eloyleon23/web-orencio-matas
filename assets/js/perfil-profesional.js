@@ -198,10 +198,21 @@
       // de ambos contextos (petición explícita) — con replace() para
       // que "Atrás" no vuelva a dejar a medio camino.
       location.replace('./' + PAGINA_INICIO_PROFESIONAL);
-    } else if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', aplicarUI_);
     } else {
+      // Se llama de inmediato, no solo en DOMContentLoaded: este script
+      // se carga siempre después de la cabecera en cada página (nunca en
+      // el <head>), así que el marcado del menú ya existe en el DOM en
+      // este mismo punto de la ejecución — esperar a DOMContentLoaded
+      // aquí solo conseguía que el visitante viera un instante el menú
+      // completo (Empresa/Historia/...) antes de que se ocultara, cada
+      // vez que abría o recargaba una página con la sesión ya activa. Se
+      // deja igualmente el listener como red de seguridad, por si algún
+      // día el script llegara a cargarse antes del propio menú —
+      // aplicarUI_ es idempotente (ver sus propias comprobaciones).
       aplicarUI_();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', aplicarUI_);
+      }
     }
   }
 
@@ -209,9 +220,19 @@
     PAGINAS_EXCLUIDAS: PAGINAS_EXCLUIDAS.slice(),
     sesionActiva: function () { return !!leerSesion_(); },
     pinActual: function () { const s = leerSesion_(); return s ? s.pin : null; },
+    // Expuesto para forzar el refresco del menú en el momento exacto en
+    // que un PIN se valida (ver acceso-profesional.html) — sin esto, la
+    // cabecera de ESA misma página (no hay recarga tras el login) seguía
+    // mostrando Empresa/Historia/... hasta que el visitante navegaba a
+    // otra página y el script volvía a ejecutarse desde cero. A petición
+    // explícita de Eloy.
+    actualizarNavegacion: aplicarUI_,
     iniciarSesion: async function (pin, recordar) {
       const resultado = await validarPin_(pin);
-      if (resultado.ok) guardarSesion_(pin, !!recordar);
+      if (resultado.ok) {
+        guardarSesion_(pin, !!recordar);
+        if (PAGINAS_EXCLUIDAS.indexOf(paginaActual) === -1) aplicarUI_();
+      }
       return resultado;
     },
     salir: function () {
