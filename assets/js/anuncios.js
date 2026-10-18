@@ -207,6 +207,35 @@
     cont.querySelectorAll('[data-accion="ver"]').forEach(btn => btn.addEventListener('click', () => accionVer_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="descargar"]').forEach(btn => btn.addEventListener('click', () => accionDescargar_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="compartir"]').forEach(btn => btn.addEventListener('click', () => accionCompartir_(btn.dataset.id)));
+
+    // Tarjeta clicable entera, a petición de Eloy: el usuario no tiene que
+    // acertar en el botón "Ver"/"Abrir" para consultar el recurso — toda
+    // la tarjeta funciona igual, SIEMPRE que el clic no caiga dentro de
+    // .an-card__acciones (ahí cada botón/enlace mantiene su propio
+    // comportamiento de siempre, incluido "Ver" abriendo en pestaña
+    // nueva, sin que el clic de la tarjeta lo dispare una segunda vez).
+    cont.querySelectorAll('.an-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.an-card__acciones')) return;
+        abrirRecursoTarjeta_(card.dataset.id);
+      });
+    });
+  }
+
+  // Abre el recurso tal y como ya lo hace su acción principal (nunca una
+  // acción nueva): "Ver" para un archivo de Drive (vista previa en
+  // pestaña nueva) o el mismo enlace externo que el botón "Abrir" para un
+  // recurso de tipo URL. No hay vista de detalle propia del sitio en la
+  // que mostrarlo mejor, así que abrir en pestaña nueva es siempre lo que
+  // se puede hacer.
+  function abrirRecursoTarjeta_(id) {
+    const a = encontrarAnuncio_(id);
+    if (!a) return;
+    if (a.tipoRecurso === 'archivo' && a.driveFileId) {
+      accionVer_(id);
+    } else if (a.tipoRecurso === 'url' && a.urlExterna) {
+      window.open(a.urlExterna, '_blank', 'noopener');
+    }
   }
 
   function encontrarAnuncio_(id) { return ANUNCIOS_.find(a => a.id === id); }
