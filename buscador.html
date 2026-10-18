@@ -651,6 +651,17 @@
         .mas-buscados__icono--verde   { background: rgba(56,142,60,.12);  color: var(--green); }
         .mas-buscados__icono--amarillo { background: rgba(251,192,45,.2); color: #9a6b00; }
         .mas-buscados__icono--azul    { background: rgba(25,118,210,.12); color: var(--blue); }
+        .mas-buscados__icono--gris   { background: rgba(100,116,139,.14); color: var(--muted); }
+        /* "Últimos productos vistos": única subsección con un botón propio
+           en la cabecera (Borrar historial) — reutiliza .btn-destacados-accion
+           (icono+texto en escritorio, solo icono en móvil, ver su @media
+           más arriba) solo con su propio color. */
+        .mas-buscados__cabecera-vistos {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+        }
+        .mas-buscados__cabecera-vistos .mas-buscados__titulo { margin: 0; }
+        .btn-vistos-borrar { background: #fee2e2; color: #b91c1c; }
         .mas-buscados__lista {
             display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;
             scroll-snap-type: x proximity;
@@ -4352,6 +4363,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <p>Cargando catálogo de productos…</p>
         </div>
 
+        <!-- "Últimos productos vistos": historial local (localStorage, nunca
+             se manda al servidor) de los productos cuyo detalle ha abierto
+             el usuario en los últimos 7 días, más reciente primero — ver
+             registrarProductoVistoHistorial_()/cargarUltimosVistos_(). Mismo
+             mecanismo de módulos de descubrimiento que el resto de bloques
+             de arriba (oculto con filtro/búsqueda activa, mismo "om-skeleton"
+             inicial) — justo antes del grid de resultados, a petición de
+             Eloy. -->
+        <div id="ultimos-vistos" class="mas-buscados">
+            <div class="mas-buscados__cabecera-vistos">
+                <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--gris"><i class="fa-solid fa-clock-rotate-left"></i></span> Últimos productos vistos</p>
+                <button type="button" id="btn-vistos-borrar" class="btn-destacados-accion btn-vistos-borrar" title="Borrar historial" aria-label="Borrar historial">
+                    <i class="fa-solid fa-trash"></i> <span>Borrar historial</span>
+                </button>
+            </div>
+            <div id="ultimos-vistos-lista" class="mas-buscados__lista">
+                <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+            </div>
+        </div>
+
         <div id="contenedor-resultados" style="display:none;"></div>
 
         <div id="sin-resultados" class="sin-resultados" style="display:none;">
@@ -6497,6 +6528,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-limpiar-arriba').addEventListener('click', limpiarFiltros);
+        $('btn-vistos-borrar').addEventListener('click', () => {
+            guardarHistorialVistos_([]);
+            modulosDescubrimientoConContenido_.vistos = 'vacio';
+            actualizarVisibilidadModulosDescubrimiento_();
+        });
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
@@ -6990,6 +7026,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cargarMasBuscados_();
         cargarMarcasMasBuscadas_();
         cargarBloquesCategorias_();
+        cargarUltimosVistos_();
     }
 
     // A petición de Eloy: con filtros/búsqueda activos, estos módulos solo
@@ -7046,7 +7083,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     const modulosDescubrimientoCacheInicial_ = leerCacheEstadoModulosDescubrimiento_();
     const modulosDescubrimientoConContenido_ = {};
-    ['destacados', 'masBuscados', 'novedades', 'marcas', 'categorias'].forEach(clave => {
+    ['destacados', 'masBuscados', 'novedades', 'marcas', 'categorias', 'vistos'].forEach(clave => {
         const cacheado = modulosDescubrimientoCacheInicial_[clave];
         modulosDescubrimientoConContenido_[clave] = (cacheado === 'vacio' || cacheado === 'con-contenido') ? cacheado : 'cargando';
     });
@@ -7086,6 +7123,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('novedades').style.display = visible_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
         $('categorias-descubrimiento-seccion').style.display = visible_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
+        if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visible_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
@@ -7910,6 +7948,76 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             programarSiguienteRotacionNovedad_(card, ESPERA_MINIMA_NOVEDADES_MS + Math.random() * (INTERVALO_ROTACION_NOVEDADES_MS - ESPERA_MINIMA_NOVEDADES_MS));
         });
         modulosDescubrimientoConContenido_.novedades = 'con-contenido';
+        actualizarVisibilidadModulosDescubrimiento_();
+    }
+
+    // ── Módulo "🕑 Últimos productos vistos" ─────────────────────────────
+    // Historial puramente LOCAL (localStorage, nunca se envía a ningún
+    // servidor): cada vez que se abre el detalle de un producto
+    // (abrirModalProducto) se guarda su referencia y el instante en que se
+    // vio. Aquí solo se LEE ese historial, se descartan las entradas de
+    // más de 7 días y las que ya no resuelven a un producto real
+    // (dado de baja, o referencia que ya no existe en el catálogo), y se
+    // pinta en el mismo orden en que se guardaron (más reciente primero —
+    // el propio registro ya inserta siempre al principio).
+    const HISTORIAL_VISTOS_CLAVE_ = 'omHistorialProductosVistos';
+    const HISTORIAL_VISTOS_DIAS_ = 7;
+    const HISTORIAL_VISTOS_MAX_ = 20;
+
+    function leerHistorialVistos_() {
+        try {
+            const datos = JSON.parse(localStorage.getItem(HISTORIAL_VISTOS_CLAVE_));
+            return Array.isArray(datos) ? datos : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function guardarHistorialVistos_(lista) {
+        try { localStorage.setItem(HISTORIAL_VISTOS_CLAVE_, JSON.stringify(lista)); } catch (e) { /* localStorage no disponible (privado/bloqueado) — se pierde el historial, sin más */ }
+    }
+
+    function limiteHistorialVistosMs_() {
+        return Date.now() - HISTORIAL_VISTOS_DIAS_ * 24 * 60 * 60 * 1000;
+    }
+
+    // Llamada desde abrirModalProducto() cada vez que se abre el detalle de
+    // un producto. Si el producto ya estaba en el historial, se quita de su
+    // posición anterior y se vuelve a insertar al principio con la fecha de
+    // ahora (es una "última vez visto", no una lista de todas las veces).
+    function registrarProductoVistoHistorial_(p) {
+        if (!p || !p.ref) return;
+        const limite = limiteHistorialVistosMs_();
+        let lista = leerHistorialVistos_().filter(it => it && it.ref && it.ts > limite && it.ref !== p.ref);
+        lista.unshift({ ref: String(p.ref), ts: Date.now() });
+        guardarHistorialVistos_(lista.slice(0, HISTORIAL_VISTOS_MAX_));
+    }
+
+    function cargarUltimosVistos_() {
+        if (!TODOS.length) return;
+        const limite = limiteHistorialVistosMs_();
+        const historial = leerHistorialVistos_().filter(it => it && it.ref && it.ts > limite);
+        // Aprovecha para limpiar ya del almacenamiento las entradas caducadas
+        // (>7 días), aunque no haya catálogo para resolverlas todavía.
+        guardarHistorialVistos_(historial);
+        if (!historial.length) {
+            modulosDescubrimientoConContenido_.vistos = 'vacio';
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
+        const mapaProductos = new Map(TODOS.map(p => [String(p.ref), p]));
+        const productos = historial
+            .map(it => mapaProductos.get(String(it.ref)))
+            .filter(p => p && !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        if (!productos.length) {
+            modulosDescubrimientoConContenido_.vistos = 'vacio';
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
+        const cont = $('ultimos-vistos-lista');
+        cont.innerHTML = '';
+        productos.forEach(p => cont.appendChild(crearTarjeta(p)));
+        modulosDescubrimientoConContenido_.vistos = 'con-contenido';
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -11529,6 +11637,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function abrirModalProducto(p, opciones) {
         opciones = opciones || {};
         registrarProductoVisto_(p);
+        registrarProductoVistoHistorial_(p);
+        cargarUltimosVistos_();
         ocultarDisclaimerPrecios();
         productoModalActual_ = p;
         actualizarBotonListaCompraEnModalProducto_();
