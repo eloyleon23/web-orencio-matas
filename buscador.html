@@ -2350,7 +2350,20 @@
            pulsado" de iOS sobre la imagen). */
         .modal-producto-imagen-ampliar {
             position: relative;
-            display: inline-flex;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Antes el botón solo tenía el tamaño de su <img> interior
+               (display:inline-flex, sin ancho/alto propios) — mientras la
+               imagen todavía no había terminado de cargar (justo al abrir
+               el modal, que es cuando más se pincha), el botón medía
+               0x0 y el clic no llegaba a ningún sitio: la modal de
+               imagen ampliada no se abría. Con ancho y alto completos
+               desde el principio, el botón es clicable en todo el hueco
+               de la imagen desde el primer instante, cargada o no. */
+            width: 100%;
+            height: 100%;
+            min-height: 260px;
             padding: 0;
             border: none;
             background: none;
@@ -3827,6 +3840,9 @@
             }
             .modal-producto-imagen img {
                 max-height: 300px;
+            }
+            .modal-producto-imagen-ampliar {
+                min-height: 220px;
             }
             .modal-producto-info {
                 padding: 20px;
