@@ -3844,6 +3844,18 @@
             .modal-producto-imagen-ampliar {
                 min-height: 220px;
             }
+            /* En este ancho .modal-producto-content pasa a una sola
+               columna (ver arriba), así que la imagen ocupa todo el
+               ancho de la modal — el icono de lupa (arriba a la
+               derecha de la imagen) quedaba entonces justo debajo del
+               botón de cerrar (arriba a la derecha de la modal entera),
+               solapados casi por completo. Se mueve la lupa a la
+               izquierda, lejos también de "Compartir" (abajo a la
+               derecha). */
+            .modal-producto-imagen-ampliar-icono {
+                left: 8px;
+                right: auto;
+            }
             .modal-producto-info {
                 padding: 20px;
             }
