@@ -3817,6 +3817,16 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Bloques de categoría de "Sigue explorando" — misma caché en Drive
+    // que el resto (ver regenerarCacheBloquesCategoriasDesdeSheet_).
+    // Devuelve TODOS los bloques (activos/inactivos): la página pública
+    // filtra por activo al pintar, y el gestor necesita ver también los
+    // inactivos para poder reactivarlos.
+    if (accion === 'obtener_bloques_categorias') {
+      return ContentService.createTextOutput(JSON.stringify(leerCacheBloquesCategorias_()))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     // A petición de Eloy: "prefiero no dar la opción [de buscar con IA]
     // cuando no hay cuota que darla y que falle" — comprobación RÁPIDA
     // (solo lee PropertiesService, nunca llama a Gemini) que el buscador
@@ -4026,6 +4036,17 @@ function doPost(e) {
     if (accion === 'eliminar_anuncio') {
       console.log('Acción: eliminar_anuncio');
       return procesarEliminarAnuncio(data);
+    }
+
+    // NUEVO — Bloques de categoría de "Sigue explorando"
+    if (accion === 'guardar_bloque_categoria') {
+      console.log('Acción: guardar_bloque_categoria');
+      return procesarGuardarBloqueCategoria(data);
+    }
+
+    if (accion === 'eliminar_bloque_categoria') {
+      console.log('Acción: eliminar_bloque_categoria');
+      return procesarEliminarBloqueCategoria(data);
     }
 
     if (accion === 'buscar_producto_ia') {
@@ -6243,6 +6264,272 @@ function procesarEliminarAnuncio(data) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarEliminarAnuncio:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BLOQUES DE CATEGORÍA — sección "Sigue explorando" del buscador
+// ══════════════════════════════════════════════════════════════════
+// A petición de Eloy ("quiero poder editar estos bloques sin tener que
+// desplegar nada"): antes la lista vivía fija dentro de buscador.html
+// (DEFINICION_BLOQUES_CATEGORIAS_, con una función de JavaScript por
+// bloque para decidir qué productos entraban) — ahora es una hoja más
+// del Sheet, gestionable desde el botón "Editar Sigue explorando" de la
+// propia sección (protegido por el mismo PIN que el resto de
+// administración, verificarPin_). Mismo patrón de caché en Drive que
+// Anuncios (leerCacheAnuncios_/regenerarCacheAnunciosDesdeSheet_): la
+// lectura pública (obtener_bloques_categorias) nunca toca el Sheet
+// directamente, solo el archivo de caché, que se regenera en cada
+// escritura.
+//
+// "palabras_clave" es la única columna que sustituye a la antigua
+// función match() de cada bloque — el front-end (ver
+// construirMatchDesdePalabrasClave_ en buscador.html) la interpreta
+// así: alternativas separadas por coma (sirve CUALQUIERA de ellas), y
+// dentro de cada alternativa, palabras unidas con "+" (tienen que
+// aparecer TODAS). Ej.: "titan+eco, titanpro" = (titan Y eco) O titanpro.
+const CABECERAS_BLOQUES_CATEGORIAS_ = [
+  'id', 'titulo', 'palabras_clave', 'area', 'estacion', 'activo',
+  'fecha_creacion', 'fecha_actualizacion',
+];
+
+// Mismos 28 bloques que ya existían fijos en el código, traducidos a
+// "palabras clave" uno a uno — para que la migración a esta hoja no
+// cambie nada de lo que ya se ve hoy en la web. Solo se usan la
+// PRIMERA vez que se crea la hoja (ver obtenerHojaBloquesCategorias_);
+// a partir de ahí, el contenido de la hoja manda y esto no se vuelve a
+// tocar nunca más.
+const BLOQUES_CATEGORIAS_SEMILLA_ = [
+  { titulo: 'Detergentes en polvo y líquidos', palabrasClave: 'detergente', area: 'drogueria', estacion: '' },
+  { titulo: 'Lavavajillas', palabrasClave: 'lavavajillas', area: 'drogueria', estacion: '' },
+  { titulo: 'Productos Ceys', palabrasClave: 'ceys', area: '', estacion: '' },
+  { titulo: 'Productos Werku', palabrasClave: 'werku', area: 'talleres', estacion: '' },
+  { titulo: 'Pintura Titán Ecológica', palabrasClave: 'titan+eco', area: 'pinturas', estacion: '' },
+  { titulo: 'Pintura TitanPro', palabrasClave: 'titanpro, titan pro', area: 'pinturas', estacion: '' },
+  { titulo: 'Colonias Poseidón', palabrasClave: 'posidon, poseidon', area: 'perfumeria', estacion: '' },
+  { titulo: 'Colonias Aire de Sevilla', palabrasClave: 'aire de sevilla', area: 'perfumeria', estacion: '' },
+  { titulo: 'Para calentar este invierno', palabrasClave: 'radiador, calefactor, estufa', area: 'drogueria', estacion: 'frio' },
+  { titulo: 'Contra los insectos del verano', palabrasClave: 'insecticida, mosquito, avispa, antipolillas', area: 'drogueria', estacion: 'calor' },
+  { titulo: 'Todo para tu piscina', palabrasClave: 'piscina', area: 'drogueria', estacion: 'calor' },
+  { titulo: 'Esmaltes para pintar', palabrasClave: 'esmalte', area: 'pinturas', estacion: '' },
+  { titulo: 'Barnices y protectores de madera', palabrasClave: 'barniz', area: 'pinturas', estacion: '' },
+  { titulo: 'Imprimaciones y selladores', palabrasClave: 'imprimacion, imp.', area: 'pinturas', estacion: '' },
+  { titulo: 'Colonias y perfumería', palabrasClave: 'colonia, perfume', area: 'perfumeria', estacion: '' },
+  { titulo: 'Limpieza del hogar', palabrasClave: 'limpiahogar, limpiador, lejia, friegasuelos', area: 'drogueria', estacion: '' },
+  { titulo: 'Desatascadores', palabrasClave: 'desatascador, desatasca', area: 'drogueria', estacion: '' },
+  { titulo: 'Ambientadores', palabrasClave: 'ambientador', area: 'drogueria', estacion: '' },
+  { titulo: 'Papel higiénico', palabrasClave: 'papel higienico, higienico', area: 'drogueria', estacion: '' },
+  { titulo: 'Cepillos y fregonas', palabrasClave: 'fregona, cepillo', area: 'drogueria', estacion: '' },
+  { titulo: 'Productos Bella Aurora', palabrasClave: 'bella aurora', area: 'perfumeria', estacion: '' },
+  { titulo: 'Insecticidas', palabrasClave: 'insecticida, mosquito, avispa, cucaracha, hormiga', area: 'drogueria', estacion: '' },
+  { titulo: 'Fregasuelos', palabrasClave: 'friegasuelos, fregasuelos', area: 'drogueria', estacion: '' },
+  { titulo: 'Productos Asevi', palabrasClave: 'asevi', area: 'drogueria', estacion: '' },
+  { titulo: 'Productos Baixens', palabrasClave: 'baixens', area: 'drogueria', estacion: '' },
+  { titulo: 'Geles de baño', palabrasClave: 'gel de baño, gel ducha', area: 'perfumeria', estacion: '' },
+  { titulo: 'Productos Campus', palabrasClave: 'campus', area: '', estacion: '' },
+  { titulo: 'Montana Colors', palabrasClave: 'montana', area: 'pinturas', estacion: '' },
+  { titulo: 'Productos Zaphiro', palabrasClave: 'zaphiro', area: 'talleres', estacion: '' },
+  { titulo: 'Dentífricos y enjuagues bucales', palabrasClave: 'dentifrico, pasta de dientes, pastas de dientes, enjuague bucal, colutorio', area: 'drogueria', estacion: '' },
+];
+
+function obtenerHojaBloquesCategorias_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('BloquesCategorias');
+  if (!sheet) {
+    sheet = ss.insertSheet('BloquesCategorias');
+    sheet.getRange(1, 1, 1, CABECERAS_BLOQUES_CATEGORIAS_.length).setValues([CABECERAS_BLOQUES_CATEGORIAS_]);
+    sheet.setFrozenRows(1);
+    const ahoraISO = new Date().toISOString();
+    const filasSemilla = BLOQUES_CATEGORIAS_SEMILLA_.map((def, i) => [
+      'bloque-' + (new Date().getTime() + i), def.titulo, def.palabrasClave, def.area, def.estacion, 'si', ahoraISO, ahoraISO,
+    ]);
+    sheet.getRange(2, 1, filasSemilla.length, CABECERAS_BLOQUES_CATEGORIAS_.length).setValues(filasSemilla);
+    console.log('Hoja BloquesCategorias creada con ' + filasSemilla.length + ' bloques de partida (migrados desde el código).');
+    return sheet;
+  }
+  const cabecerasActuales = sheet.getLastColumn() > 0
+    ? sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => h.toString().toLowerCase().trim().replace(/\s+/g, '_'))
+    : [];
+  const faltantes = CABECERAS_BLOQUES_CATEGORIAS_.filter(h => cabecerasActuales.indexOf(h) === -1);
+  if (faltantes.length) {
+    sheet.getRange(1, sheet.getLastColumn() + 1, 1, faltantes.length).setValues([faltantes]);
+    console.log('Hoja BloquesCategorias: columnas añadidas por migración automática:', JSON.stringify(faltantes));
+  }
+  return sheet;
+}
+
+function leerBloquesCategorias_() {
+  const sheet = obtenerHojaBloquesCategorias_();
+  const datos = sheet.getDataRange().getValues();
+  if (datos.length < 2) return [];
+  const COL = mapaCabeceras_(datos[0]);
+  const bloques = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    const id = (fila[COL['id']] || '').toString().trim();
+    if (!id) continue; // fila en blanco
+    bloques.push({
+      id: id,
+      titulo: (fila[COL['titulo']] || '').toString(),
+      palabrasClave: (fila[COL['palabras_clave']] || '').toString(),
+      area: (fila[COL['area']] || '').toString().trim(),
+      estacion: (fila[COL['estacion']] || '').toString().trim(),
+      // Igual criterio que 'visible' en Anuncios: solo un 'no' explícito
+      // lo desactiva — una fila antigua sin este campo se trata como activa.
+      activo: (fila[COL['activo']] || '').toString().trim().toLowerCase() !== 'no',
+      fechaCreacion: (fila[COL['fecha_creacion']] || '').toString(),
+      fechaActualizacion: (fila[COL['fecha_actualizacion']] || '').toString(),
+    });
+  }
+  return bloques;
+}
+
+// ── Caché de BloquesCategorias en Drive — mismo patrón que Anuncios ──────
+const NOMBRE_ARCHIVO_BLOQUES_CATEGORIAS_CACHE = 'bloques_categorias_cache.json';
+
+function obtenerArchivoBloquesCategoriasCache_() {
+  const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_BLOQUES_CATEGORIAS_CACHE);
+  if (archivos.hasNext()) return archivos.next();
+  const blobVacio = Utilities.newBlob('{"bloques":[]}', 'application/json', NOMBRE_ARCHIVO_BLOQUES_CATEGORIAS_CACHE);
+  const archivo = DriveApp.createFile(blobVacio);
+  archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  console.log('Archivo de caché de bloques de categoría creado en Drive:', archivo.getId());
+  return archivo;
+}
+
+function leerCacheBloquesCategorias_() {
+  try {
+    const archivo = obtenerArchivoBloquesCategoriasCache_();
+    return JSON.parse(archivo.getBlob().getDataAsString('UTF-8'));
+  } catch (e) {
+    console.error('leerCacheBloquesCategorias_: error leyendo la caché, devolviendo estructura vacía:', e);
+    return { bloques: [] };
+  }
+}
+
+function guardarCacheBloquesCategorias_(datos) {
+  obtenerArchivoBloquesCategoriasCache_().setContent(JSON.stringify(datos));
+}
+
+function regenerarCacheBloquesCategoriasDesdeSheet_() {
+  const bloques = leerBloquesCategorias_();
+  const payload = { generado: new Date().toISOString(), total: bloques.length, bloques: bloques };
+  const lock = LockService.getScriptLock();
+  try {
+    lock.tryLock(15000);
+    guardarCacheBloquesCategorias_(payload);
+  } finally {
+    lock.releaseLock();
+  }
+  console.log(`regenerarCacheBloquesCategoriasDesdeSheet_: ${bloques.length} bloques regenerados y guardados en la caché de Drive.`);
+  return payload;
+}
+
+const BLOQUES_CATEGORIAS_AREAS_VALIDAS_ = ['', 'drogueria', 'perfumeria', 'pinturas', 'talleres'];
+const BLOQUES_CATEGORIAS_ESTACIONES_VALIDAS_ = ['', 'frio', 'calor'];
+
+function validarCamposBloqueCategoria_(data) {
+  const titulo = (data.titulo || '').toString().trim().slice(0, 60);
+  if (!titulo) throw new Error('El título es obligatorio.');
+
+  const palabrasClave = (data.palabrasClave || '').toString().trim().slice(0, 200);
+  if (!palabrasClave) throw new Error('Las palabras clave son obligatorias.');
+
+  const area = (data.area || '').toString().trim().toLowerCase();
+  if (BLOQUES_CATEGORIAS_AREAS_VALIDAS_.indexOf(area) === -1) throw new Error('Área no válida.');
+
+  const estacion = (data.estacion || '').toString().trim().toLowerCase();
+  if (BLOQUES_CATEGORIAS_ESTACIONES_VALIDAS_.indexOf(estacion) === -1) throw new Error('Temporada no válida.');
+
+  const activo = data.activo !== false; // por defecto true, salvo 'false' explícito
+
+  return { titulo, palabrasClave, area, estacion, activo };
+}
+
+function procesarGuardarBloqueCategoria(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const campos = validarCamposBloqueCategoria_(data);
+    const sheet = obtenerHojaBloquesCategorias_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    const ahoraISO = new Date().toISOString();
+
+    const idExistente = (data.id || '').toString().trim();
+    let filaIdx = -1;
+    if (idExistente) {
+      for (let i = 1; i < datos.length; i++) {
+        if ((datos[i][COL['id']] || '').toString().trim() === idExistente) { filaIdx = i; break; }
+      }
+    }
+
+    if (filaIdx === -1) {
+      const id = 'bloque-' + new Date().getTime();
+      const fila = new Array(CABECERAS_BLOQUES_CATEGORIAS_.length).fill('');
+      fila[COL['id']] = id;
+      fila[COL['titulo']] = campos.titulo;
+      fila[COL['palabras_clave']] = campos.palabrasClave;
+      fila[COL['area']] = campos.area;
+      fila[COL['estacion']] = campos.estacion;
+      fila[COL['activo']] = campos.activo ? 'si' : 'no';
+      fila[COL['fecha_creacion']] = ahoraISO;
+      fila[COL['fecha_actualizacion']] = ahoraISO;
+      sheet.getRange(sheet.getLastRow() + 1, 1, 1, CABECERAS_BLOQUES_CATEGORIAS_.length).setValues([fila]);
+      console.log('Bloque de categoría creado:', id);
+      regenerarCacheBloquesCategoriasDesdeSheet_();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, id: id }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['titulo'] + 1).setValue(campos.titulo);
+    sheet.getRange(filaNum, COL['palabras_clave'] + 1).setValue(campos.palabrasClave);
+    sheet.getRange(filaNum, COL['area'] + 1).setValue(campos.area);
+    sheet.getRange(filaNum, COL['estacion'] + 1).setValue(campos.estacion);
+    sheet.getRange(filaNum, COL['activo'] + 1).setValue(campos.activo ? 'si' : 'no');
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
+    console.log('Bloque de categoría actualizado:', idExistente);
+    regenerarCacheBloquesCategoriasDesdeSheet_();
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, id: idExistente }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarGuardarBloqueCategoria:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function procesarEliminarBloqueCategoria(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const id = (data.id || '').toString().trim();
+    if (!id) throw new Error('Falta el id del bloque.');
+
+    const sheet = obtenerHojaBloquesCategorias_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) {
+        sheet.deleteRow(i + 1);
+        console.log('Bloque de categoría eliminado:', id);
+        regenerarCacheBloquesCategoriasDesdeSheet_();
+        return ContentService.createTextOutput(JSON.stringify({ success: true }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Bloque no encontrado.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarEliminarBloqueCategoria:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
