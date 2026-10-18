@@ -14328,6 +14328,32 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
+    // ── Lightbox de ampliación de imagen — compartido por el Asistente
+    //    de imágenes (imagen actual y candidata automática, solo
+    //    preproducción) y por el modal de detalle de producto (visible
+    //    en cualquier entorno). Declarado FUERA del "if" de más abajo a
+    //    propósito: antes vivía dentro de él, así que en producción (sin
+    //    el Asistente de imágenes) nunca llegaba a definirse — bug real,
+    //    el botón de ampliar del modal de producto llamaba a una función
+    //    inexistente y no hacía nada. Ver también lightbox-imagen-cerrar/
+    //    lightbox-imagen-overlay más abajo, que por el mismo motivo
+    //    tampoco pueden depender de ese "if". ──
+    function abrirLightboxImagen(url, nombre, ref) {
+        if (!url) return;
+        $('lightbox-imagen-img').src = url;
+        $('lightbox-imagen-nombre').textContent = nombre || '';
+        $('lightbox-imagen-ref').textContent = ref ? `Ref: ${ref}` : '';
+        $('lightbox-imagen-overlay').classList.add('activo');
+    }
+    function cerrarLightboxImagen() {
+        $('lightbox-imagen-overlay').classList.remove('activo');
+        $('lightbox-imagen-img').src = '';
+    }
+    $('lightbox-imagen-cerrar').addEventListener('click', cerrarLightboxImagen);
+    $('lightbox-imagen-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'lightbox-imagen-overlay') cerrarLightboxImagen();
+    });
+
     // Botón para abrir el asistente
     if ($('modal-asistente-imagenes-overlay')) {
     $('btn-abrir-asistente-imagenes').addEventListener('click', () => {
@@ -14342,22 +14368,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('modal-asistente-imagenes-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'modal-asistente-imagenes-overlay') cerrarAsistenteImagenes();
     });
-
-    // ── Lightbox de ampliación de imagen — compartido por el Asistente
-    //    de imágenes (imagen actual y candidata automática) y por el
-    //    modal de detalle de producto (ver más abajo, junto al resto de
-    //    listeners de ese modal) ──
-    function abrirLightboxImagen(url, nombre, ref) {
-        if (!url) return;
-        $('lightbox-imagen-img').src = url;
-        $('lightbox-imagen-nombre').textContent = nombre || '';
-        $('lightbox-imagen-ref').textContent = ref ? `Ref: ${ref}` : '';
-        $('lightbox-imagen-overlay').classList.add('activo');
-    }
-    function cerrarLightboxImagen() {
-        $('lightbox-imagen-overlay').classList.remove('activo');
-        $('lightbox-imagen-img').src = '';
-    }
     $('asistente-imagen-actual-ampliar').addEventListener('click', () => {
         const p = colaAsistente[indiceAsistenteActual];
         if (!p) return;
@@ -14366,10 +14376,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('asistente-candidata-auto-ampliar').addEventListener('click', () => {
         const p = colaAsistente[indiceAsistenteActual];
         abrirLightboxImagen($('asistente-candidata-auto-img').src, p ? p.nombre : '', p ? p.ref : '');
-    });
-    $('lightbox-imagen-cerrar').addEventListener('click', cerrarLightboxImagen);
-    $('lightbox-imagen-overlay').addEventListener('click', (e) => {
-        if (e.target.id === 'lightbox-imagen-overlay') cerrarLightboxImagen();
     });
 
     $('asistente-aplicar-filtros').addEventListener('click', () => {
