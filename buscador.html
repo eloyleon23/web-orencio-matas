@@ -1793,13 +1793,13 @@
             .grid-productos { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 480px) {
-            /* Con la vista de detalle disponible al tocar la tarjeta, no hace
-               falta que cada producto ocupe todo el ancho: mostramos varios
-               en horizontal en vez de una lista vertical de uno en uno. */
-            .grid-productos { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        }
-        @media (min-width: 420px) and (max-width: 480px) {
-            .grid-productos { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+            /* 2 por fila (antes 3, o incluso 4 entre 420-480px) — con 3-4
+               tarjetas por fila no cabía el nombre completo del producto y
+               había que recortarlo con elipsis, obligando a entrar en cada
+               una para identificarla. Con solo 2 por fila cabe bien el
+               nombre completo (ver .producto-nombre más abajo, que en este
+               mismo breakpoint deja de recortarse a 2 líneas). */
+            .grid-productos { grid-template-columns: repeat(2, 1fr); gap: 10px; }
         }
         /* Con .layout ya aprovechando el ancho disponible en pantallas
            grandes (ver arriba), añadir más columnas aquí evita que ese
@@ -2019,9 +2019,18 @@
             /* Tarjetas más compactas para que 3-4 quepan bien en una fila */
             .producto-info { padding: 8px 7px; }
             .producto-nombre {
-                font-size: 0.68rem;
-                -webkit-line-clamp: 2;
-                min-height: 1.75em;
+                font-size: 0.74rem;
+                /* Con 2 tarjetas por fila (ver .grid-productos más arriba)
+                   hay sitio de sobra para el nombre completo — se quita el
+                   recorte a 2 líneas con elipsis que tenía antes, a
+                   petición expresa de Eloy: el usuario debe poder
+                   identificar el producto sin tener que entrar en cada
+                   tarjeta. */
+                display: block;
+                -webkit-line-clamp: unset;
+                -webkit-box-orient: unset;
+                overflow: visible;
+                min-height: 0;
                 margin-bottom: 3px;
             }
             .producto-ref { font-size: 0.6rem; margin-bottom: 4px; }
