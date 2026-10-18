@@ -651,6 +651,17 @@
         .mas-buscados__icono--verde   { background: rgba(56,142,60,.12);  color: var(--green); }
         .mas-buscados__icono--amarillo { background: rgba(251,192,45,.2); color: #9a6b00; }
         .mas-buscados__icono--azul    { background: rgba(25,118,210,.12); color: var(--blue); }
+        .mas-buscados__icono--gris   { background: rgba(100,116,139,.14); color: var(--muted); }
+        /* "Últimos productos vistos": única subsección con un botón propio
+           en la cabecera (Borrar historial) — reutiliza .btn-destacados-accion
+           (icono+texto en escritorio, solo icono en móvil, ver su @media
+           más arriba) solo con su propio color. */
+        .mas-buscados__cabecera-vistos {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+        }
+        .mas-buscados__cabecera-vistos .mas-buscados__titulo { margin: 0; }
+        .btn-vistos-borrar { background: #fee2e2; color: #b91c1c; }
         .mas-buscados__lista {
             display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;
             scroll-snap-type: x proximity;
@@ -723,9 +734,49 @@
             position: absolute; top: 0; left: 0; right: 0; height: 4px;
             background: linear-gradient(90deg, var(--blue), var(--red));
         }
+        .seccion-destacados__cabecera {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 10px;
+        }
         .seccion-destacados__titulo {
             font-size: 1.3rem; font-weight: 800; color: var(--dark);
             margin: 4px 0 12px; display: flex; align-items: center; gap: 10px;
+        }
+        .seccion-destacados__acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .btn-destacados-accion {
+            padding: 8px 13px; border: none; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; gap: 7px; white-space: nowrap;
+            transition: filter .15s, transform .1s;
+        }
+        .btn-destacados-accion:active { transform: translateY(1px); }
+        .btn-destacados-accion:hover { filter: brightness(1.06); }
+        .btn-destacados-accion:disabled { opacity: .7; cursor: default; }
+        .btn-destacados-pdf { background: #fef3c7; color: #92400e; }
+        .btn-destacados-compartir { background: var(--blue); color: #fff; }
+        /* Antes era un botón flotante independiente (#btn-gestionar-
+           destacados), siempre fijo sobre el contenido — ahora va aquí
+           dentro, junto a los otros dos botones de la sección, a
+           petición de Eloy. Oculto por defecto (igual que antes): solo
+           se muestra con la clase .visible, que añade JS cuando
+           window.MOSTRAR_GESTION_DESTACADOS es cierto (solo
+           preproducción) — en producción el propio botón se elimina del
+           DOM (ver eliminarSiRestringido_), nunca solo se oculta. */
+        .btn-destacados-editar { background: #e0e7ff; color: #3730a3; display: none; }
+        .btn-destacados-editar.visible { display: flex; }
+        /* Móvil, a petición explícita de Eloy: solo los dos iconos (sin
+           texto), alineados al extremo derecho, en la misma fila que
+           "Destacados" — nowrap en la cabecera para que nunca bajen a su
+           propia línea, y botones cuadrados en vez de la píldora con
+           texto de escritorio. */
+        @media (max-width: 768px) {
+            .seccion-destacados__cabecera { flex-wrap: nowrap; }
+            .seccion-destacados__acciones { margin-bottom: 0; }
+            .btn-destacados-accion {
+                padding: 9px; width: 36px; height: 36px;
+                justify-content: center; gap: 0;
+            }
+            .btn-destacados-accion span { display: none; }
         }
         .seccion-destacados__icono {
             display: inline-flex; align-items: center; justify-content: center;
@@ -782,26 +833,6 @@
         .destacado-precio-pct {
             background: var(--red); color: #fff; font-size: 0.7rem; font-weight: 800;
             padding: 2px 6px; border-radius: 5px;
-        }
-
-        /* ── Botón flotante "Gestionar destacados" (solo preproducción) ── */
-        #btn-gestionar-destacados {
-            position: fixed; right: 22px; bottom: 78px; z-index: 3999;
-            display: none; align-items: center; gap: 8px;
-            padding: 10px 16px; border: none; border-radius: 24px;
-            background: var(--dark); color: #fff; font-size: 0.85rem; font-weight: 700;
-            cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25);
-        }
-        #btn-gestionar-destacados.visible { display: inline-flex; }
-        #btn-gestionar-destacados:hover { background: var(--blue); }
-        #btn-gestionar-destacados.oculto-por-modal { display: none !important; }
-        /* A petición de Eloy: en móvil debe verse igual que el botón
-           "Gestionar soluciones" del Centro de Soluciones (.cs-gestion-dock-btn,
-           ver assets/css/soluciones.css) — siempre la píldora completa con
-           icono + texto, nunca un círculo negro sin etiquetar. Solo se
-           reposiciona un poco para dejar sitio al resto de la UI móvil. */
-        @media (max-width: 640px) {
-            #btn-gestionar-destacados { right: 14px; bottom: 58px; }
         }
 
         /* ── Modal "Gestionar destacados" ─────────────────────────────── */
@@ -994,6 +1025,21 @@
         .modal-lista-compra-validez i { color: var(--yellow); }
         .modal-lista-compra-validez strong { color: var(--dark); }
         .modal-lista-compra-cuerpo { padding: 20px; }
+        .lista-compra-notas { margin-top: 18px; }
+        .lista-compra-notas label {
+            display: flex; align-items: center; gap: 6px; font-size: 0.85rem;
+            font-weight: 700; color: var(--dark); margin-bottom: 6px;
+        }
+        .lista-compra-notas label i { color: var(--red); }
+        .lista-compra-notas-input {
+            width: 100%; box-sizing: border-box; resize: vertical; min-height: 60px;
+            padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+            font-family: inherit; font-size: 0.9rem; color: var(--dark);
+        }
+        .lista-compra-notas-input:focus { outline: 2px solid var(--red); outline-offset: 1px; }
+        .lista-compra-notas-contador {
+            display: block; margin-top: 4px; font-size: 0.75rem; color: var(--muted); text-align: right;
+        }
         .modal-lista-compra-acciones {
             position: sticky; bottom: 0; z-index: 15; background: white;
             border-top: 1px solid var(--border); padding: 14px 20px;
@@ -1054,9 +1100,8 @@
         .modal-producto-lista-btn:hover { filter: brightness(1.08); }
         .modal-producto-lista-btn:active { transform: translateY(1px); }
         .modal-producto-lista-btn.incluido { background: var(--light); color: var(--green); border: 1px solid var(--green); }
-        .modal-producto-lista-btn.limite { background: var(--light); color: var(--muted); cursor: not-allowed; }
 
-        /* Selector de unidades (1-10) junto al botón — visible solo
+        /* Selector de unidades (mínimo 1, sin máximo) junto al botón — visible solo
            mientras el producto está en la lista (ver
            actualizarBotonListaCompraEnModalProducto_). */
         .lista-compra-unidades {
@@ -1749,13 +1794,13 @@
             .grid-productos { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 480px) {
-            /* Con la vista de detalle disponible al tocar la tarjeta, no hace
-               falta que cada producto ocupe todo el ancho: mostramos varios
-               en horizontal en vez de una lista vertical de uno en uno. */
-            .grid-productos { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        }
-        @media (min-width: 420px) and (max-width: 480px) {
-            .grid-productos { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+            /* 2 por fila (antes 3, o incluso 4 entre 420-480px) — con 3-4
+               tarjetas por fila no cabía el nombre completo del producto y
+               había que recortarlo con elipsis, obligando a entrar en cada
+               una para identificarla. Con solo 2 por fila cabe bien el
+               nombre completo (ver .producto-nombre más abajo, que en este
+               mismo breakpoint deja de recortarse a 2 líneas). */
+            .grid-productos { grid-template-columns: repeat(2, 1fr); gap: 10px; }
         }
         /* Con .layout ya aprovechando el ancho disponible en pantallas
            grandes (ver arriba), añadir más columnas aquí evita que ese
@@ -1975,9 +2020,18 @@
             /* Tarjetas más compactas para que 3-4 quepan bien en una fila */
             .producto-info { padding: 8px 7px; }
             .producto-nombre {
-                font-size: 0.68rem;
-                -webkit-line-clamp: 2;
-                min-height: 1.75em;
+                font-size: 0.74rem;
+                /* Con 2 tarjetas por fila (ver .grid-productos más arriba)
+                   hay sitio de sobra para el nombre completo — se quita el
+                   recorte a 2 líneas con elipsis que tenía antes, a
+                   petición expresa de Eloy: el usuario debe poder
+                   identificar el producto sin tener que entrar en cada
+                   tarjeta. */
+                display: block;
+                -webkit-line-clamp: unset;
+                -webkit-box-orient: unset;
+                overflow: visible;
+                min-height: 0;
                 margin-bottom: 3px;
             }
             .producto-ref { font-size: 0.6rem; margin-bottom: 4px; }
@@ -3896,15 +3950,6 @@
 <button id="btn-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
     <i class="fa-solid fa-arrow-up"></i>
 </button>
-<!-- Botón flotante de gestión de Destacados — gestión real protegida por
-     PIN (ver verificarPin_ en Apps Script); el propio botón solo se
-     muestra en preproducción (ver window.MOSTRAR_GESTION_DESTACADOS más
-     abajo), igual que el resto de herramientas de administración de esta
-     página, aunque la SECCIÓN "Destacados" en sí la ve cualquier
-     visitante, en cualquier entorno. -->
-<button id="btn-gestionar-destacados" title="Gestionar destacados" aria-label="Gestionar destacados">
-    <i class="fa-solid fa-fire"></i> <span class="btn-gestionar-destacados__texto">Gestionar destacados</span>
-</button>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -4216,7 +4261,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              repente al terminar de cargar; actualizarVisibilidadModulosDescubrimiento_()
              los oculta solo si se determina que no hay contenido real. -->
         <div id="destacados" class="seccion-destacados">
-            <p class="seccion-destacados__titulo"><span class="seccion-destacados__icono"><i class="fa-solid fa-fire"></i></span> Destacados</p>
+            <div class="seccion-destacados__cabecera">
+                <p class="seccion-destacados__titulo"><span class="seccion-destacados__icono"><i class="fa-solid fa-fire"></i></span> Destacados</p>
+                <!-- Folleto en PDF (generado en el propio navegador, nunca en
+                     el servidor) — mismo documento para "Descargar" y
+                     "Compartir", con el precio según el perfil (normal o
+                     profesional) de quien lo genera. Ver inicializarFolletoDestacados_. -->
+                <div class="seccion-destacados__acciones">
+                    <button type="button" id="btn-destacados-pdf" class="btn-destacados-accion btn-destacados-pdf" title="Descargar folleto" aria-label="Descargar folleto">
+                        <i class="fa-solid fa-file-pdf"></i> <span>Descargar folleto</span>
+                    </button>
+                    <button type="button" id="btn-destacados-compartir" class="btn-destacados-accion btn-destacados-compartir" title="Compartir" aria-label="Compartir">
+                        <i class="fa-solid fa-share-nodes"></i> <span>Compartir</span>
+                    </button>
+                    <!-- Edición de Destacados (gestión real protegida por PIN,
+                         ver verificarPin_ en Apps Script) — incluido aquí, en
+                         vez del antiguo botón flotante independiente. Oculto
+                         por defecto y solo se muestra en preproducción (ver
+                         window.MOSTRAR_GESTION_DESTACADOS más abajo); en
+                         producción se elimina del DOM del todo, nunca sube. -->
+                    <button type="button" id="btn-gestionar-destacados" class="btn-destacados-accion btn-destacados-editar" title="Editar destacados" aria-label="Editar destacados">
+                        <i class="fa-solid fa-pen-to-square"></i> <span>Editar destacados</span>
+                    </button>
+                </div>
+            </div>
             <div id="destacados-lista" class="seccion-destacados__lista">
                 <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
             </div>
@@ -4264,7 +4332,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              que el resto de subsecciones) para que se note que es otro
              bloque distinto del grid principal de resultados. -->
         <div id="categorias-descubrimiento-seccion" class="mas-buscados">
-            <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--azul"><i class="fa-solid fa-layer-group"></i></span> Seguir comprando</p>
+            <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--azul"><i class="fa-solid fa-layer-group"></i></span> Sigue explorando</p>
             <div id="categorias-descubrimiento" class="categorias-carrusel">
                 <div class="om-skeleton om-skeleton--bloque"></div><div class="om-skeleton om-skeleton--bloque"></div><div class="om-skeleton om-skeleton--bloque"></div>
             </div>
@@ -4283,6 +4351,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="cargando-inicial" class="cargando-inicial">
             <i id="icono-cargando" class="fa-solid fa-spinner"></i>
             <p>Cargando catálogo de productos…</p>
+        </div>
+
+        <!-- "Últimos productos vistos": historial local (localStorage, nunca
+             se manda al servidor) de los productos cuyo detalle ha abierto
+             el usuario en los últimos 7 días, más reciente primero — ver
+             registrarProductoVistoHistorial_()/cargarUltimosVistos_(). Mismo
+             mecanismo de módulos de descubrimiento que el resto de bloques
+             de arriba (oculto con filtro/búsqueda activa, mismo "om-skeleton"
+             inicial) — justo antes del grid de resultados, a petición de
+             Eloy. -->
+        <div id="ultimos-vistos" class="mas-buscados">
+            <div class="mas-buscados__cabecera-vistos">
+                <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--gris"><i class="fa-solid fa-clock-rotate-left"></i></span> Últimos productos vistos</p>
+                <button type="button" id="btn-vistos-borrar" class="btn-destacados-accion btn-vistos-borrar" title="Borrar historial" aria-label="Borrar historial">
+                    <i class="fa-solid fa-trash"></i> <span>Borrar historial</span>
+                </button>
+            </div>
+            <div id="ultimos-vistos-lista" class="mas-buscados__lista">
+                <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+            </div>
         </div>
 
         <div id="contenedor-resultados" style="display:none;"></div>
@@ -4419,12 +4507,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
                         <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
                     </button>
-                    <!-- Selector de unidades (1-10), solo visible mientras
+                    <!-- Selector de unidades (mínimo 1, sin máximo), solo visible mientras
                          el producto ya está en la lista — ver
                          actualizarBotonListaCompraEnModalProducto_. -->
                     <div class="lista-compra-unidades" id="modal-producto-lista-unidades" style="display:none;">
                         <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-menos" aria-label="Quitar una unidad">−</button>
-                        <input type="number" class="lista-compra-unidades-input" id="modal-producto-lista-unidades-input" min="1" max="10" step="1" value="1" aria-label="Unidades">
+                        <input type="number" class="lista-compra-unidades-input" id="modal-producto-lista-unidades-input" min="1" step="1" value="1" aria-label="Unidades">
                         <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-mas" aria-label="Añadir una unidad">+</button>
                     </div>
                 </div>
@@ -4985,6 +5073,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </ul>
             </div>
             <div id="lista-compra-grid" class="grid-productos"></div>
+            <div class="lista-compra-notas" id="lista-compra-notas-wrap">
+                <label for="lista-compra-notas-input">
+                    <i class="fa-solid fa-note-sticky"></i> Observaciones para el pedido (opcional)
+                </label>
+                <textarea id="lista-compra-notas-input" class="lista-compra-notas-input" maxlength="500" rows="3"
+                    placeholder="Horario preferido de recogida, alguna indicación sobre el pedido…"></textarea>
+                <span class="lista-compra-notas-contador" id="lista-compra-notas-contador">0 / 500</span>
+            </div>
         </div>
         <div class="modal-lista-compra-acciones" id="modal-lista-compra-acciones">
             <button type="button" id="btn-lista-compra-pdf" class="btn-lista-compra-pdf">
@@ -5110,6 +5206,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'buscador'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
 <script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<!-- Antes de la configuración de abajo (window.MOSTRAR_PRECIO_MAYOR,
+     etc.): esta página necesita saber si hay una sesión profesional
+     activa ANTES de decidir qué mostrar, así que perfil-profesional.js
+     tiene que cargarse aquí, no al final del body. -->
+<script src="./assets/js/perfil-profesional.js?v=20260829a"></script>
 <script src="./assets/js/ia-disponibilidad.js?v=20261007a"></script>
 <script>
 // ── Configuración del buscador ──
@@ -5209,7 +5310,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-producto-gestionar-relacionados', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-relacionados-overlay', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-producto-baja-reactivar', window.MOSTRAR_BOTON_GESTION_BAJA);
-    eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR);
+    // Este botón es solo la herramienta interna de previsualización del
+    // precio mayor para el perfil normal en preproducción (MOSTRAR_PRECIO_
+    // MAYOR, nunca en producción/release) — el perfil profesional YA ve el
+    // precio mayor siempre y directamente (ver precioAMostrar_), así que
+    // nunca necesita este botón, ni en preproducción ni en producción.
+    window.OM_SESION_PROFESIONAL_ACTIVA = !!(window.PerfilProfesional && window.PerfilProfesional.sesionActiva());
+    eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR && !window.OM_SESION_PROFESIONAL_ACTIVA);
     eliminarSiRestringido_('modal-producto-editar-ficha-tecnica', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     eliminarSiRestringido_('modal-editar-ficha-overlay', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
@@ -5640,7 +5747,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Actions, sin despliegue de por medio para esto — y la misma URL
     // sirve sin cambios sea cual sea el hosting de esta página.
     const PRODUCTOS_URL = './data/productos.json';
-    const PRODUCTOS_REMOTO_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+    const PRODUCTOS_REMOTO_URL_BASE = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+    // Si hay una sesión profesional activa, se reenvía su PIN en cada
+    // petición — es Apps Script quien vuelve a validarlo y decide si
+    // incluir o no precio_mayor_sin/con en la respuesta (ver
+    // verificarPinProfesional_ en scripts/apps_script_trigger.js); este
+    // archivo nunca decide eso por su cuenta.
+    //
+    // Sin PIN, en preproducción únicamente (MOSTRAR_PRECIO_MAYOR, nunca en
+    // producción/release — ver la configuración de arriba del archivo) se
+    // manda además "&preprod=1": es la vista previa interna del precio
+    // mayor para el perfil normal, detrás del botón "Ver precio mayor" de
+    // la ficha de detalle, a petición explícita de Eloy. Aviso de
+    // seguridad asumido conscientemente para este caso: a diferencia del
+    // PIN (validado contra una Script Property), este parámetro es un
+    // valor fijo visible en el código fuente de este archivo — cualquiera
+    // que lo conozca podría añadirlo a mano a una petición directa al Web
+    // App y obtener el precio mayor sin PIN. Igual que el resto de flags
+    // MOSTRAR_* de este archivo, nunca viaja desde la build de IONOS
+    // (preparar_build_ionos.py fuerza OM_PREPRODUCCION a false ahí).
+    function PRODUCTOS_REMOTO_URL_() {
+        const pin = window.PerfilProfesional && window.PerfilProfesional.pinActual();
+        if (pin) return `${PRODUCTOS_REMOTO_URL_BASE}&pin=${encodeURIComponent(pin)}`;
+        if (window.MOSTRAR_PRECIO_MAYOR) return `${PRODUCTOS_REMOTO_URL_BASE}&preprod=1`;
+        return PRODUCTOS_REMOTO_URL_BASE;
+    }
     const PRODUCTOS_TALLERES_URL = './data/productos_talleres.json';
     const PRODUCTOS_GLASURIT_URL = './data/productos_glasurit.json';
     const PRODUCTOS_BESA_URL = './data/productos_besa.json';
@@ -5751,7 +5882,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // peticiones que no vengan de preproducción — cambio de servidor,
     // fuera del alcance de lo que puede arreglar el HTML/JS del cliente.
     function limpiarPrecioMayorSiProcede_(productos) {
-        if (window.MOSTRAR_PRECIO_MAYOR) return productos;
+        if (window.MOSTRAR_PRECIO_MAYOR || window.OM_SESION_PROFESIONAL_ACTIVA) return productos;
         productos.forEach(p => {
             delete p.precio_mayor_sin;
             delete p.precio_mayor_con;
@@ -5876,6 +6007,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function mostrarResultadosPorPrimeraVez() {
         inicializarFiltros();
         inicializarListaCompra_();
+        inicializarFolletoDestacados_();
         aplicarFiltros();
         $('cargando-inicial').style.display = 'none';
         $('contenedor-resultados').style.display = '';
@@ -5969,7 +6101,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         //    despliegue. Si el primer pintado ha fallado, esta pasa a
         //    ser directamente la fuente principal.
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
             if (resp.ok) {
                 const texto = await resp.text();
                 const hash = await calcularHash(texto);
@@ -6044,7 +6176,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // inmediato en el paso 2 de cargarProductosPrincipales().
     async function resincronizarVersionConocida() {
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
             if (!resp.ok) return;
             const texto = await resp.text();
             hashConocido = await calcularHash(texto);
@@ -6068,7 +6200,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (comprobandoActualizacion) return;
         comprobandoActualizacion = true;
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
             if (!resp.ok) return;
             const texto = await resp.text();
             const hash = await calcularHash(texto);
@@ -6110,7 +6242,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.disabled = true;
         boton.textContent = 'Actualizando...';
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL, { cache: 'no-store' });
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
             if (!resp.ok) throw new Error('respuesta no OK');
             const texto = await resp.text();
             const data = JSON.parse(texto);
@@ -6386,6 +6518,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-limpiar-arriba').addEventListener('click', limpiarFiltros);
+        $('btn-vistos-borrar').addEventListener('click', () => {
+            guardarHistorialVistos_([]);
+            modulosDescubrimientoConContenido_.vistos = 'vacio';
+            actualizarVisibilidadModulosDescubrimiento_();
+        });
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
@@ -6879,6 +7016,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cargarMasBuscados_();
         cargarMarcasMasBuscadas_();
         cargarBloquesCategorias_();
+        cargarUltimosVistos_();
     }
 
     // A petición de Eloy: con filtros/búsqueda activos, estos módulos solo
@@ -6935,7 +7073,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     const modulosDescubrimientoCacheInicial_ = leerCacheEstadoModulosDescubrimiento_();
     const modulosDescubrimientoConContenido_ = {};
-    ['destacados', 'masBuscados', 'novedades', 'marcas', 'categorias'].forEach(clave => {
+    ['destacados', 'masBuscados', 'novedades', 'marcas', 'categorias', 'vistos'].forEach(clave => {
         const cacheado = modulosDescubrimientoCacheInicial_[clave];
         modulosDescubrimientoConContenido_[clave] = (cacheado === 'vacio' || cacheado === 'con-contenido') ? cacheado : 'cargando';
     });
@@ -6975,6 +7113,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('novedades').style.display = visible_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
         $('categorias-descubrimiento-seccion').style.display = visible_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
+        if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visible_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
@@ -7282,7 +7421,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         let resultados = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
         if (area) resultados = resultados.filter(p => p.area === area);
         if (familia) resultados = resultados.filter(p => p.familia === familia);
-        if (texto) resultados = resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto) || coincideReferencia(p.ref, texto));
+        // Igual que productosQueCoincidenConTexto_() y el buscador
+        // principal: una búsqueda predominantemente numérica (referencia)
+        // usa SOLO coincidencia estricta de referencia (coincideReferencia),
+        // nunca la fuzzy coincide(p.ref, texto) — esa fuzzy está pensada
+        // para nombres de producto y, aplicada a referencias, hacía que
+        // una referencia como "60" "encontrara" por coincidencia parcial
+        // referencias totalmente distintas que ni siquiera la contienen
+        // de verdad, devolviendo productos de más.
+        if (texto) {
+            resultados = esBusquedaNumerica(texto)
+                ? resultados.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+        }
         resultados = resultados.slice(0, 40);
         if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
         cont.innerHTML = '';
@@ -7787,6 +7938,76 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             programarSiguienteRotacionNovedad_(card, ESPERA_MINIMA_NOVEDADES_MS + Math.random() * (INTERVALO_ROTACION_NOVEDADES_MS - ESPERA_MINIMA_NOVEDADES_MS));
         });
         modulosDescubrimientoConContenido_.novedades = 'con-contenido';
+        actualizarVisibilidadModulosDescubrimiento_();
+    }
+
+    // ── Módulo "🕑 Últimos productos vistos" ─────────────────────────────
+    // Historial puramente LOCAL (localStorage, nunca se envía a ningún
+    // servidor): cada vez que se abre el detalle de un producto
+    // (abrirModalProducto) se guarda su referencia y el instante en que se
+    // vio. Aquí solo se LEE ese historial, se descartan las entradas de
+    // más de 7 días y las que ya no resuelven a un producto real
+    // (dado de baja, o referencia que ya no existe en el catálogo), y se
+    // pinta en el mismo orden en que se guardaron (más reciente primero —
+    // el propio registro ya inserta siempre al principio).
+    const HISTORIAL_VISTOS_CLAVE_ = 'omHistorialProductosVistos';
+    const HISTORIAL_VISTOS_DIAS_ = 7;
+    const HISTORIAL_VISTOS_MAX_ = 20;
+
+    function leerHistorialVistos_() {
+        try {
+            const datos = JSON.parse(localStorage.getItem(HISTORIAL_VISTOS_CLAVE_));
+            return Array.isArray(datos) ? datos : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function guardarHistorialVistos_(lista) {
+        try { localStorage.setItem(HISTORIAL_VISTOS_CLAVE_, JSON.stringify(lista)); } catch (e) { /* localStorage no disponible (privado/bloqueado) — se pierde el historial, sin más */ }
+    }
+
+    function limiteHistorialVistosMs_() {
+        return Date.now() - HISTORIAL_VISTOS_DIAS_ * 24 * 60 * 60 * 1000;
+    }
+
+    // Llamada desde abrirModalProducto() cada vez que se abre el detalle de
+    // un producto. Si el producto ya estaba en el historial, se quita de su
+    // posición anterior y se vuelve a insertar al principio con la fecha de
+    // ahora (es una "última vez visto", no una lista de todas las veces).
+    function registrarProductoVistoHistorial_(p) {
+        if (!p || !p.ref) return;
+        const limite = limiteHistorialVistosMs_();
+        let lista = leerHistorialVistos_().filter(it => it && it.ref && it.ts > limite && it.ref !== p.ref);
+        lista.unshift({ ref: String(p.ref), ts: Date.now() });
+        guardarHistorialVistos_(lista.slice(0, HISTORIAL_VISTOS_MAX_));
+    }
+
+    function cargarUltimosVistos_() {
+        if (!TODOS.length) return;
+        const limite = limiteHistorialVistosMs_();
+        const historial = leerHistorialVistos_().filter(it => it && it.ref && it.ts > limite);
+        // Aprovecha para limpiar ya del almacenamiento las entradas caducadas
+        // (>7 días), aunque no haya catálogo para resolverlas todavía.
+        guardarHistorialVistos_(historial);
+        if (!historial.length) {
+            modulosDescubrimientoConContenido_.vistos = 'vacio';
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
+        const mapaProductos = new Map(TODOS.map(p => [String(p.ref), p]));
+        const productos = historial
+            .map(it => mapaProductos.get(String(it.ref)))
+            .filter(p => p && !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        if (!productos.length) {
+            modulosDescubrimientoConContenido_.vistos = 'vacio';
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
+        const cont = $('ultimos-vistos-lista');
+        cont.innerHTML = '';
+        productos.forEach(p => cont.appendChild(crearTarjeta(p)));
+        modulosDescubrimientoConContenido_.vistos = 'con-contenido';
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -9302,6 +9523,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return { original: original, promo: promo, pct: pctMostrado > 0 ? pctMostrado : null };
     }
 
+    // Precio a usar en TODA la web para un producto — rejillas, ficha de
+    // detalle, lista de la compra, PDF y texto para compartir, todos pasan
+    // por aquí en vez de leer precio_con/precio_sin cada uno por su lado.
+    // A petición explícita de Eloy: el perfil profesional (sesión validada
+    // por PIN, ver window.OM_SESION_PROFESIONAL_ACTIVA) ve SIEMPRE el
+    // precio al por mayor, nunca el de venta al público, y sin botón ni
+    // paso intermedio — sustituye al precio normal en cualquier sitio
+    // donde se muestre, incluidas ofertas/destacados (que son una
+    // promoción sobre el PVP público, no aplica al mayorista). Fuera del
+    // perfil profesional no cambia nada: sigue el PVP de siempre.
+    function precioAMostrar_(p) {
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && p && p.precio_mayor_con) {
+            const con = parseFloat(p.precio_mayor_con.toString().replace(',', '.'));
+            if (isFinite(con) && con > 0) {
+                const sinRaw = p.precio_mayor_sin;
+                const sin = sinRaw ? parseFloat(sinRaw.toString().replace(',', '.')) : null;
+                return { con, sin: (isFinite(sin) && sin > 0) ? sin : null, esMayor: true };
+            }
+        }
+        if (p && p.mostrar_precio && p.precio_con) {
+            const con = parseFloat(p.precio_con.toString().replace(',', '.'));
+            if (isFinite(con) && con > 0) {
+                const sinRaw = p.precio_sin;
+                const sin = sinRaw ? parseFloat(sinRaw.toString().replace(',', '.')) : null;
+                return { con, sin: (isFinite(sin) && sin > 0) ? sin : null, esMayor: false };
+            }
+        }
+        return null;
+    }
+
     function construirContenidoTarjeta_(p, opciones) {
         opciones = opciones || {};
         const d = opciones.destacado || null;
@@ -9317,20 +9568,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // disponible en absoluto.
         const logoBadge = urlImg ? logoFabricanteHtml(p) : '';
 
-        const ofertaBadge = (!d && p.oferta) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
-        const destacadoChip = d ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
+        // Con precio al por mayor (perfil profesional), las ofertas/
+        // destacados del público (promoción sobre el PVP) no aplican — el
+        // mayorista tiene su propio precio fijo, ver precioAMostrar_.
+        const precioMayor_ = precioAMostrar_(p);
+        const esMayor_ = !!(precioMayor_ && precioMayor_.esMayor);
+
+        const ofertaBadge = (!d && p.oferta && !esMayor_) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
+        const destacadoChip = (d && !esMayor_) ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
 
         let precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
-        if (p.mostrar_precio) {
-            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2).replace('.', ',') : null;
-            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2).replace('.', ',') : null;
-            if (con) {
-                precioHtml = `<div class="producto-precio-con">${con} €</div>`;
-                if (sin) precioHtml += `<div class="producto-precio-sin">${sin} € sin IVA</div>`;
-            }
+        if (precioMayor_) {
+            precioHtml = `<div class="producto-precio-con">${precioMayor_.con.toFixed(2).replace('.', ',')} €</div>`;
+            if (precioMayor_.sin) precioHtml += `<div class="producto-precio-sin">${precioMayor_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         }
         let promoTextoHtml = '';
-        if (d) {
+        if (d && !esMayor_) {
             const precioDestacado = calcularPrecioDestacado_(p, d);
             if (precioDestacado.original !== null) {
                 if (precioDestacado.promo !== null) {
@@ -9514,6 +9767,477 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ══════════════════════════════════════════════════════════════════
+    // ── FOLLETO PDF DE DESTACADOS ───────────────────────────────────────
+    // Generado en el propio navegador con jsPDF (nunca en el servidor) —
+    // mismo enfoque que el folleto de escaparate.html y el PDF de la
+    // lista de la compra, a petición explícita de Eloy. Pensado como un
+    // documento comercial: cabecera con el logo, una tarjeta por producto
+    // (imagen, chip del tipo de destacado, precio original/con descuento/
+    // porcentaje, promoción adicional, fecha límite) en el MISMO orden en
+    // que ya se ven en la propia sección, y pie con los datos de contacto
+    // en cada página. Con sesión profesional activa, cada producto
+    // muestra su precio al por mayor en vez del PVP y sin los descuentos
+    // de campaña (que son sobre el PVP público) — mismo criterio que ya
+    // aplica construirContenidoTarjeta_ vía precioAMostrar_. "Descargar"
+    // y "Compartir" generan exactamente el mismo documento.
+    // ══════════════════════════════════════════════════════════════════
+
+    // Misma técnica que urlImagenProductoFolleto en escaparate.html (ver
+    // su comentario): drive.google.com/thumbnail es un redirect 302 sin
+    // cabecera CORS en el salto intermedio — el <img crossOrigin> ve ese
+    // salto sin CORS y el canvas queda contaminado, así que toDataURL()
+    // falla en silencio y la foto se pierde. Pidiendo directamente la URL
+    // final de googleusercontent.com se evita el salto por completo. Los
+    // productos de catálogos de proveedor (fabricante, imagen local) no
+    // tienen ese problema — se devuelven tal cual, mismo origen.
+    function urlImagenProductoFolletoDestacados_(p, tamano) {
+        tamano = tamano || 400;
+        if (!p || !p.img) return null;
+        if (p.fabricante) return `./assets/imagenes_talleres/${p.img}`;
+        return `https://lh3.googleusercontent.com/d/${p.img}=w${tamano}`;
+    }
+
+    // Reintento con espera — no por CORS (ya resuelto arriba) sino por
+    // posibles 429 (Too Many Requests) puntuales de googleusercontent.com
+    // ante varias peticiones seguidas sin autenticar, igual que ya le
+    // pasó a escaparate.html con catálogos grandes.
+    function cargarImagenFolletoDestacados_(url, timeoutMs) {
+        return new Promise((resolve) => {
+            if (!url) { resolve(null); return; }
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            let resuelto = false;
+            const terminar = (valor) => { if (!resuelto) { resuelto = true; resolve(valor); } };
+            const timer = setTimeout(() => terminar(null), timeoutMs || 9000);
+            img.onload = () => {
+                clearTimeout(timer);
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || 300;
+                    canvas.height = img.naturalHeight || 300;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    terminar({ dataUrl: canvas.toDataURL('image/jpeg', 0.86), width: canvas.width, height: canvas.height });
+                } catch (e) { terminar(null); } // canvas contaminado u otro fallo — la tarjeta cae al hueco "sin imagen"
+            };
+            img.onerror = () => { clearTimeout(timer); terminar(null); };
+            img.src = url;
+        });
+    }
+    async function cargarImagenFolletoDestacadosConReintento_(url) {
+        if (!url) return null;
+        const primero = await cargarImagenFolletoDestacados_(url);
+        if (primero) return primero;
+        await new Promise(r => setTimeout(r, 1200));
+        return cargarImagenFolletoDestacados_(url);
+    }
+
+    // Tandas espaciadas — mismo motivo que cargarImagenesEnTandas en
+    // escaparate.html. onProgreso(completadas, total, msRestantesEstimados)
+    // se llama tras cada tanda con una estimación del tiempo que falta a
+    // partir de la media real de lo ya cargado — es la fase con
+    // diferencia más lenta, así que es donde tiene sentido mostrar el
+    // tiempo restante en el botón.
+    async function cargarImagenesFolletoDestacadosEnTandas_(items, onProgreso) {
+        const TAMANO_TANDA = 2, ESPERA_MS = 550;
+        const resultados = new Array(items.length);
+        const inicio = Date.now();
+        for (let i = 0; i < items.length; i += TAMANO_TANDA) {
+            const tanda = items.slice(i, i + TAMANO_TANDA);
+            const parcial = await Promise.all(tanda.map(it => cargarImagenFolletoDestacadosConReintento_(it.url)));
+            parcial.forEach((r, j) => { resultados[i + j] = r; });
+            const completadas = Math.min(i + TAMANO_TANDA, items.length);
+            if (onProgreso) {
+                const transcurridoMs = Date.now() - inicio;
+                const msPorItem = transcurridoMs / completadas;
+                const restantesMs = msPorItem * (items.length - completadas);
+                onProgreso(completadas, items.length, restantesMs);
+            }
+            if (i + TAMANO_TANDA < items.length) await new Promise(r => setTimeout(r, ESPERA_MS));
+        }
+        return resultados;
+    }
+
+    const DESTACADOS_PDF_COLOR_ACCENT_ = { r: 211, g: 47, b: 47 }; // rojo de marca
+
+    // Una tarjeta del folleto — mismo contenido que se ve en pantalla
+    // (chip, precio con/sin descuento y su porcentaje, promoción
+    // adicional), más la fecha límite del producto (no se muestra en la
+    // propia tarjeta en pantalla, solo aquí, a petición explícita) y,
+    // para el perfil profesional, el precio al por mayor con una
+    // etiqueta que lo distingue claramente del PVP.
+    // Tarjeta grande y vistosa, a petición explícita de Eloy tras ver la
+    // primera versión ("muy simple, la imagen pequeña, el chip pequeño,
+    // el detalle 3x2 apenas se ve, el precio pequeño"): imagen mucho más
+    // grande, chip con más presencia, precio como elemento principal de
+    // la tarjeta, y la promoción adicional (textoPromocion, p.ej. "3x2")
+    // como un banner de color propio en vez de una línea de texto pequeña.
+    function dibujarTarjetaDestacadoPdf_(doc, x, y, w, h, foto, p, d) {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 228, 232);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
+
+        const precioInfo = precioAMostrar_(p);
+        const esMayor = !!(precioInfo && precioInfo.esMayor);
+        const mapaChip = {
+            oferta: ['OFERTA', [0, 135, 67]],
+            oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
+            liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
+        };
+        const chipEntrada = (d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
+
+        // Franja de color superior — mismo color que el chip (o el rojo de
+        // marca si no hay chip) a modo de "cabecera" de la tarjeta, para
+        // que destaque como una ficha comercial y no una fila de tabla.
+        const colorFranja = chipEntrada ? chipEntrada[1] : [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b];
+        doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
+        doc.roundedRect(x, y, w, 3, 3, 3, 'F');
+        doc.rect(x, y + 1.5, w, 1.5, 'F'); // cuadra las esquinas inferiores de la franja con el resto de la tarjeta
+
+        const pad = 5;
+        const imgBoxH = h * 0.48; // la imagen domina la tarjeta, no el texto
+        const imgBoxY = y + 3 + pad * 0.6;
+        if (foto) {
+            const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
+            const dw = foto.width * escala, dh = foto.height * escala;
+            doc.addImage(foto.dataUrl, 'JPEG', x + (w - dw) / 2, imgBoxY + (imgBoxH - dh) / 2, dw, dh);
+        } else {
+            doc.setFillColor(248, 249, 250);
+            doc.rect(x + pad, imgBoxY, w - pad * 2, imgBoxH, 'F');
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8.5);
+            doc.setTextColor(170, 173, 180);
+            doc.text('Sin imagen', x + w / 2, imgBoxY + imgBoxH / 2, { align: 'center' });
+        }
+
+        // Chip del tipo de destacado, grande y con sombra simulada (doble
+        // rectángulo) para que resalte de verdad sobre la imagen — nunca
+        // con precio mayor (es una promoción sobre el PVP público).
+        if (chipEntrada) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            const txt = chipEntrada[0];
+            const tw = doc.getTextWidth(txt) + 7;
+            const th = 6.6;
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(x + pad + 0.5, imgBoxY + 2.5, tw, th, 1.8, 1.8, 'F');
+            doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
+            doc.roundedRect(x + pad, imgBoxY + 2, tw, th, 1.8, 1.8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(txt, x + pad + tw / 2, imgBoxY + 2 + th / 2 + 1.1, { align: 'center' });
+        }
+
+        let ty = imgBoxY + imgBoxH + 7;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(30, 33, 37);
+        const nombreLineas = doc.splitTextToSize(p.nombre || p.ref, w - pad * 2).slice(0, 2);
+        doc.text(nombreLineas, x + pad, ty);
+        ty += nombreLineas.length * 4.2 + 1.5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.2);
+        doc.setTextColor(140, 143, 150);
+        doc.text(`Ref: ${p.ref}`, x + pad, ty);
+        ty += 5.5;
+
+        if (esMayor) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(19);
+            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.text(`${precioInfo.con.toFixed(2).replace('.', ',')} €`, x + pad, ty);
+            ty += 5;
+            // Discreto a propósito (a petición explícita de Eloy: "de
+            // manera más sutil") — sin fondo ni mayúsculas, como una nota
+            // al pie del precio, no como una etiqueta que compita con él.
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7.2);
+            doc.setTextColor(150, 153, 160);
+            doc.text('Precio profesional (al por mayor)', x + pad, ty);
+            ty += 7;
+        } else {
+            const dCalc = calcularPrecioDestacado_(p, d);
+            if (dCalc.original === null) {
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(8.5);
+                doc.setTextColor(150, 153, 160);
+                doc.text('Consultar precio y disponibilidad', x + pad, ty);
+                ty += 7;
+            } else if (dCalc.promo !== null) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(170, 173, 180);
+                const origTxt = `${dCalc.original.toFixed(2).replace('.', ',')} €`;
+                doc.text(origTxt, x + pad, ty);
+                const wOrig = doc.getTextWidth(origTxt);
+                doc.setDrawColor(170, 173, 180);
+                doc.setLineWidth(0.3);
+                doc.line(x + pad, ty - 1.2, x + pad + wOrig, ty - 1.2);
+                ty += 7;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(19);
+                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+                const promoTxt = `${dCalc.promo.toFixed(2).replace('.', ',')} €`;
+                doc.text(promoTxt, x + pad, ty);
+                if (dCalc.pct) {
+                    const wPromo = doc.getTextWidth(promoTxt);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    const pctTxt = `-${dCalc.pct}%`;
+                    const wPct = doc.getTextWidth(pctTxt) + 4.6;
+                    doc.setFillColor(217, 27, 27);
+                    doc.roundedRect(x + pad + wPromo + 3, ty - 5.2, wPct, 6.2, 1.6, 1.6, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(pctTxt, x + pad + wPromo + 3 + wPct / 2, ty - 1.1, { align: 'center' });
+                }
+                ty += 5;
+            } else {
+                // Precio sin descuento: mismo rojo de marca que el resto de
+                // precios de la tarjeta — a petición explícita de Eloy, "en
+                // color más resaltado que solo en negro".
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(19);
+                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+                doc.text(`${dCalc.original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
+                ty += 7;
+            }
+        }
+
+        // Promoción adicional (p.ej. "2x1", "Últimas unidades") — chip con
+        // sombra, mismo tratamiento que el chip del tipo de destacado y a
+        // la misma escala que el precio, en vez del banner a todo lo ancho
+        // de antes ("no me gusta así como si fuera un botón"; "que
+        // resalte tanto o más que el precio en modo chip"). Hasta 2 líneas
+        // dentro del propio chip (antes se recortaba en silencio a la
+        // primera línea sin más, cortando el texto a medias).
+        if (!esMayor && d.textoPromocion) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            const maxTextW = w - pad * 2 - 10;
+            const todasLasLineas = doc.splitTextToSize(d.textoPromocion.toUpperCase(), maxTextW);
+            const lineasPromo = todasLasLineas.slice(0, 2);
+            if (todasLasLineas.length > 2) {
+                let ultima = lineasPromo[1];
+                while (doc.getTextWidth(ultima + '…') > maxTextW && ultima.length > 1) ultima = ultima.slice(0, -1);
+                lineasPromo[1] = ultima + '…';
+            }
+            const lineH = 4.2;
+            const thPromo = lineasPromo.length * lineH + 3.2;
+            const twPromo = Math.max(...lineasPromo.map(l => doc.getTextWidth(l))) + 9;
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(x + pad + 0.6, ty + 0.6, twPromo, thPromo, 2.2, 2.2, 'F');
+            doc.setFillColor(241, 179, 0); // amarillo de marca — nunca se usa ya para precio ni chip de tipo, así resalta sin confundirse con ellos
+            doc.roundedRect(x + pad, ty, twPromo, thPromo, 2.2, 2.2, 'F');
+            doc.setTextColor(26, 26, 26);
+            lineasPromo.forEach((linea, i) => {
+                doc.text(linea, x + pad + twPromo / 2, ty + 3.3 + i * lineH, { align: 'center' });
+            });
+            ty += thPromo + 2.5;
+        }
+
+        // Fecha límite — normalmente fija al pie de la tarjeta, pero nunca
+        // por encima del contenido de arriba (si una tarjeta llega muy
+        // cargada — nombre a 2 líneas, descuento y promoción larga — se
+        // desplaza hacia abajo junto con el resto en vez de solapar). La
+        // propia fecha del producto manda; si no tiene, se usa la fecha
+        // límite general de la sección Destacados (si está informada) — a
+        // petición explícita: "si la tiene informada hay que indicarlo en
+        // cada producto", y antes un producto sin fecha propia dentro de
+        // una sección con fecha límite general se quedaba sin indicarlo.
+        const fechaFinEfectiva = d.fechaFin || destacadosDatos_.fechaFin;
+        if (fechaFinEfectiva) {
+            const fecha = new Date(fechaFinEfectiva);
+            if (!isNaN(fecha.getTime())) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7.2);
+                doc.setTextColor(140, 143, 150);
+                const fechaTxt = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+                doc.text(`Válido hasta el ${fechaTxt}`, x + pad, Math.max(y + h - 4, ty + 3));
+            }
+        }
+    }
+
+    // Construye el documento (sin guardarlo ni compartirlo) para que
+    // "Descargar" y "Compartir" generen exactamente el mismo PDF sin
+    // duplicar esta lógica — mismo patrón que construirDocumentoPdfListaCompra_.
+    // onProgreso(completadas, total, msRestantes), si se pasa, se reenvía
+    // tal cual desde cargarImagenesFolletoDestacadosEnTandas_.
+    async function construirDocumentoPdfDestacados_(onProgreso) {
+        if (typeof window.jspdf === 'undefined') return null;
+        const visibles = destacadosProductosVigentes_();
+        if (!visibles.length) return null;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const pageW = 210, margin = 14;
+        const headerBottomY = 30, footerTopY = 272;
+        const contentRight = pageW - margin;
+        const contentWidth = contentRight - margin;
+        const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+
+        const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+
+        function dibujarCabecera() {
+            doc.setFillColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.rect(0, 0, pageW, 3, 'F');
+            if (logo) {
+                const logoH = 11, logoW = logoH * (logo.width / logo.height);
+                doc.addImage(logo.dataUrl, 'PNG', margin, 8, logoW, logoH);
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text('PRODUCTOS DESTACADOS', contentRight, 12, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(120, 123, 130);
+            doc.text(
+                esProfesionalFolleto ? 'Precios profesionales (al por mayor) · ' + LISTA_COMPRA_EMPRESA_.web : LISTA_COMPRA_EMPRESA_.web,
+                contentRight, 17, { align: 'right' }
+            );
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
+        }
+
+        function dibujarPie(numPagina, totalPaginas) {
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, footerTopY, contentRight, footerTopY);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text(LISTA_COMPRA_EMPRESA_.nombre, margin, footerTopY + 6);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(110, 113, 120);
+            doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
+            doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(150, 153, 160);
+            doc.text(`Página ${numPagina} de ${totalPaginas}`, contentRight, footerTopY + 14.5, { align: 'right' });
+        }
+
+        // Fotos — por tandas espaciadas, mismo motivo que escaparate.html
+        // (evitar un 429 de googleusercontent.com).
+        const itemsFotos = visibles.map(({ producto }) => ({ url: urlImagenProductoFolletoDestacados_(producto) }));
+        const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
+
+        // Tarjetas más grandes (a petición explícita de Eloy, "muy
+        // simple... hay que darle una vuelta al estilo para que sea más
+        // llamativo") — con esta altura caben 2 filas (4 tarjetas) por
+        // página, igual que antes, pero cada una con mucho más protagonismo.
+        const colGap = 8, rowGap = 8;
+        const colW = (contentWidth - colGap) / 2;
+        const cardH = 114;
+        const filasPorPagina = Math.max(1, Math.floor((footerTopY - headerBottomY - 6 + rowGap) / (cardH + rowGap)));
+        const porPagina = filasPorPagina * 2;
+
+        visibles.forEach(({ producto, destacado }, i) => {
+            const indiceEnPagina = i % porPagina;
+            if (indiceEnPagina === 0) {
+                if (i > 0) doc.addPage();
+                dibujarCabecera();
+            }
+            const fila = Math.floor(indiceEnPagina / 2);
+            const col = indiceEnPagina % 2;
+            const x = margin + col * (colW + colGap);
+            const y = headerBottomY + 6 + fila * (cardH + rowGap);
+            dibujarTarjetaDestacadoPdf_(doc, x, y, colW, cardH, fotos[i], producto, destacado);
+        });
+
+        const totalPaginas = doc.internal.getNumberOfPages();
+        for (let pag = 1; pag <= totalPaginas; pag++) {
+            doc.setPage(pag);
+            dibujarPie(pag, totalPaginas);
+        }
+
+        return doc;
+    }
+
+    function destacadosNombreArchivoPdf_() {
+        return `destacados-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
+    }
+
+    // Deshabilita los dos botones (es el mismo documento para los dos, no
+    // tiene sentido lanzar dos generaciones a la vez) pero el spinner y el
+    // progreso (con la estimación del tiempo restante) solo se muestran en
+    // el botón que se ha pulsado de verdad — el otro se queda deshabilitado
+    // con su texto normal, no en modo "generando" como si también se
+    // hubiera pulsado. Bug real reportado: los dos parecían activarse a la
+    // vez al pulsar cualquiera de los dos.
+    let destacadosFolletoGenerando_ = false;
+    async function destacadosEjecutarAccionFolleto_(btnPulsado, accion) {
+        if (destacadosFolletoGenerando_) return;
+        if (!destacadosProductosVigentes_().length) {
+            mostrarToast('No hay productos destacados para generar el folleto.', 'error');
+            return;
+        }
+        destacadosFolletoGenerando_ = true;
+        const btnPdf = $('btn-destacados-pdf'), btnCompartir = $('btn-destacados-compartir');
+        const textoPulsadoOriginal = btnPulsado.innerHTML;
+        const fijarEstado = (texto) => {
+            btnPulsado.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`;
+        };
+        btnPdf.disabled = true;
+        btnCompartir.disabled = true;
+        fijarEstado('Preparando…');
+        try {
+            const doc = await construirDocumentoPdfDestacados_((completadas, total, restantesMs) => {
+                fijarEstado(completadas < total
+                    ? `Generando… (${completadas}/${total}, ~${Math.max(1, Math.round(restantesMs / 1000))}s)`
+                    : 'Componiendo folleto…');
+            });
+            if (!doc) {
+                mostrarToast('No se ha podido generar el folleto. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+                return;
+            }
+            await accion(doc);
+        } catch (e) {
+            console.error('Error generando el folleto de destacados:', e);
+            mostrarToast('No se ha podido generar el folleto. Inténtalo de nuevo.', 'error');
+        } finally {
+            destacadosFolletoGenerando_ = false;
+            btnPulsado.innerHTML = textoPulsadoOriginal;
+            btnPdf.disabled = false;
+            btnCompartir.disabled = false;
+        }
+    }
+
+    function destacadosDescargarPdf_() {
+        return destacadosEjecutarAccionFolleto_($('btn-destacados-pdf'), async (doc) => {
+            doc.save(destacadosNombreArchivoPdf_());
+        });
+    }
+
+    function destacadosCompartirPdf_() {
+        return destacadosEjecutarAccionFolleto_($('btn-destacados-compartir'), async (doc) => {
+            const blob = doc.output('blob');
+            const file = new File([blob], destacadosNombreArchivoPdf_(), { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: 'Productos destacados', text: 'Productos destacados — Orencio Matas y Hnos' });
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return; // cancelado a propósito, no es un fallo
+                    // sigue al fallback de descarga de abajo
+                }
+            }
+            doc.save(destacadosNombreArchivoPdf_());
+            mostrarToast('Tu navegador no permite compartir archivos directamente — se ha descargado el PDF, puedes adjuntarlo a mano.');
+        });
+    }
+
+    function inicializarFolletoDestacados_() {
+        $('btn-destacados-pdf').addEventListener('click', destacadosDescargarPdf_);
+        $('btn-destacados-compartir').addEventListener('click', destacadosCompartirPdf_);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
     // ── LISTA DE LA COMPRA ──────────────────────────────────────────────
     // Funcionalidad 100% cliente (sin Apps Script, sin backend): el
     // usuario guarda productos de interés en este navegador para
@@ -9527,9 +10251,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ══════════════════════════════════════════════════════════════════
     const LISTA_COMPRA_CLAVE_ = 'omListaCompra';
     const LISTA_COMPRA_VERSION_ = 2; // v2: añade "creado" (fecha de creación, para la validez de 15 días)
-    const LISTA_COMPRA_MAX_ = 24;
-    const LISTA_COMPRA_UNIDADES_MAX_ = 10;
     const LISTA_COMPRA_VALIDEZ_DIAS_ = 15;
+    const LISTA_COMPRA_NOTAS_MAX_ = 500;
     const LISTA_COMPRA_VALIDEZ_MS_ = LISTA_COMPRA_VALIDEZ_DIAS_ * 24 * 60 * 60 * 1000;
     // Días desde la creación en los que se avisa al usuario (una sola vez
     // cada uno) para que no se le olvide la lista — ver
@@ -9538,7 +10261,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Campos que de verdad hacen falta para pintar un producto guardado
     // sin depender del catálogo — ni más (no hay que guardar fichas
     // técnicas, descripciones largas, etc.) ni menos.
-    const LISTA_COMPRA_CAMPOS_ = ['ref', 'nombre', 'precio_sin', 'precio_con', 'mostrar_precio', 'area', 'familia', 'subfamilia', 'img', 'fabricante'];
+    // precio_mayor_sin/con viajan también aquí (aunque el perfil normal
+    // nunca los recibe del servidor, ver limpiarPrecioMayorSiProcede_) para
+    // que un profesional que añade un producto a la lista siga viendo su
+    // precio mayor en la propia lista, el PDF y el texto para compartir —
+    // ver precioAMostrar_.
+    const LISTA_COMPRA_CAMPOS_ = ['ref', 'nombre', 'precio_sin', 'precio_con', 'precio_mayor_sin', 'precio_mayor_con', 'mostrar_precio', 'area', 'familia', 'subfamilia', 'img', 'fabricante'];
 
     let listaCompraState_ = null;          // { version, productos: [...] } | null si no existe lista
     let listaCompraPersistenciaOk_ = true; // false tras el primer fallo real de localStorage (cuota, navegación privada...)
@@ -9556,20 +10284,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         limpio.nombre = p.nombre ? String(p.nombre) : '(sin nombre)';
         limpio.precio_sin = p.precio_sin != null ? String(p.precio_sin) : '';
         limpio.precio_con = p.precio_con != null ? String(p.precio_con) : '';
+        limpio.precio_mayor_sin = p.precio_mayor_sin != null ? String(p.precio_mayor_sin) : '';
+        limpio.precio_mayor_con = p.precio_mayor_con != null ? String(p.precio_mayor_con) : '';
         limpio.mostrar_precio = !!p.mostrar_precio;
         limpio.area = p.area ? String(p.area) : '';
         limpio.familia = p.familia ? String(p.familia) : '';
         limpio.subfamilia = p.subfamilia ? String(p.subfamilia) : '';
         limpio.img = p.img ? String(p.img) : '';
         limpio.fabricante = p.fabricante ? String(p.fabricante) : '';
-        // Unidades (1-10, por defecto 1) — campo añadido después de la
-        // estructura original; cualquier valor ausente, no numérico o
-        // fuera de rango se sanea a un entero válido en vez de romper
-        // los cálculos de totales.
+        // Unidades (mínimo 1, sin máximo — a petición explícita de Eloy)
+        // — campo añadido después de la estructura original; cualquier
+        // valor ausente, no numérico o no positivo se sanea a un entero
+        // válido en vez de romper los cálculos de totales.
         const unidadesNum = parseInt(p.unidades, 10);
-        limpio.unidades = Number.isFinite(unidadesNum)
-            ? Math.min(LISTA_COMPRA_UNIDADES_MAX_, Math.max(1, unidadesNum))
-            : 1;
+        limpio.unidades = Number.isFinite(unidadesNum) ? Math.max(1, unidadesNum) : 1;
         return limpio;
     }
 
@@ -9594,8 +10322,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const avisosMostrados = Array.isArray(data.avisosMostrados)
                 ? data.avisosMostrados.filter(h => LISTA_COMPRA_HITOS_AVISO_DIAS_.includes(h))
                 : [];
-            const productos = data.productos.map(listaCompraSanear_).filter(Boolean).slice(0, LISTA_COMPRA_MAX_);
-            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos };
+            // Igual que avisosMostrados: campo añadido después de la v2
+            // original, se sanea aparte sin forzar otro bump de versión.
+            const notas = typeof data.notas === 'string' ? data.notas.slice(0, LISTA_COMPRA_NOTAS_MAX_) : '';
+            const productos = data.productos.map(listaCompraSanear_).filter(Boolean);
+            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos, notas };
         } catch (e) {
             return null;
         }
@@ -9626,7 +10357,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraProductoPorRef_(ref) { return listaCompraProductos_().find(p => p.ref === ref) || null; }
 
     function listaCompraCrear_() {
-        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [] };
+        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [], notas: '' };
+        listaCompraPersistir_();
+    }
+
+    // Texto libre del cliente (observaciones, horario preferido de
+    // recogida, etc.) — a petición explícita de Eloy. Se trunca aquí
+    // también, no solo con el maxlength del textarea, por si llegara a
+    // cambiarse el valor sin pasar por el campo (consola, futuras
+    // integraciones).
+    function listaCompraNotas_() { return listaCompraState_ ? (listaCompraState_.notas || '') : ''; }
+    function listaCompraActualizarNotas_(texto) {
+        if (!listaCompraState_) return;
+        listaCompraState_.notas = (texto || '').toString().slice(0, LISTA_COMPRA_NOTAS_MAX_);
         listaCompraPersistir_();
     }
 
@@ -9739,12 +10482,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-aviso-validez-lista-compra-overlay').classList.add('activo');
     }
 
-    // Devuelve 'ok' | 'duplicado' | 'limite' — el llamador decide el
-    // mensaje exacto según el contexto (bloque, ficha de producto...).
+    // Devuelve 'ok' | 'duplicado' — el llamador decide el mensaje exacto
+    // según el contexto (bloque, ficha de producto...). Sin límite de
+    // productos (a petición explícita de Eloy).
     function listaCompraAnadir_(p) {
         if (!listaCompraState_) listaCompraCrear_();
         if (listaCompraTiene_(p.ref)) return 'duplicado';
-        if (listaCompraState_.productos.length >= LISTA_COMPRA_MAX_) return 'limite';
         listaCompraState_.productos.push(listaCompraSanear_(p));
         listaCompraPersistir_();
         return 'ok';
@@ -9756,14 +10499,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         listaCompraPersistir_();
     }
 
-    // Devuelve las unidades ya aplicadas (clamp 1-10) o null si el
-    // producto no está en la lista.
+    // Devuelve las unidades ya aplicadas (mínimo 1, sin máximo) o null si
+    // el producto no está en la lista.
     function listaCompraActualizarUnidades_(ref, unidades) {
         if (!listaCompraState_) return null;
         const p = listaCompraState_.productos.find(x => x.ref === ref);
         if (!p) return null;
         const num = parseInt(unidades, 10);
-        p.unidades = Number.isFinite(num) ? Math.min(LISTA_COMPRA_UNIDADES_MAX_, Math.max(1, num)) : 1;
+        p.unidades = Number.isFinite(num) ? Math.max(1, num) : 1;
         listaCompraPersistir_();
         return p.unidades;
     }
@@ -9776,9 +10519,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // crear — y por tanto también sus avisos de validez a los
         // 5/10/14 días, que de lo contrario quedarían marcados como ya
         // vistos para unos días que ya no se corresponden con la nueva
-        // fecha de creación.
+        // fecha de creación. Las notas también se reinician: son
+        // observaciones sobre ESTA lista, no tendría sentido conservarlas
+        // para una lista vaciada y empezada de nuevo.
         listaCompraState_.creado = Date.now();
         listaCompraState_.avisosMostrados = [];
+        listaCompraState_.notas = '';
         listaCompraPersistir_();
     }
 
@@ -9821,10 +10567,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraTotales_() {
         let sinIva = 0, conIva = 0;
         listaCompraProductos_().forEach(p => {
-            if (!p.mostrar_precio) return; // "consultar precio": no se puede sumar un importe que no se muestra
+            const precio = precioAMostrar_(p);
+            if (!precio) return; // "consultar precio": no se puede sumar un importe que no se muestra
             const unidades = p.unidades || 1;
-            conIva += listaCompraACentimos_(p.precio_con) * unidades;
-            sinIva += listaCompraACentimos_(p.precio_sin || p.precio_con) * unidades;
+            conIva += Math.round(precio.con * 100) * unidades;
+            sinIva += Math.round((precio.sin || precio.con) * 100) * unidades;
         });
         return { sinIva, iva: conIva - sinIva, conIva };
     }
@@ -9930,7 +10677,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         bloque.style.display = '';
 
         const cantidad = listaCompraCantidad_();
-        $('lista-compra-contador-bloque').textContent = `${cantidad} / ${LISTA_COMPRA_MAX_}`;
+        $('lista-compra-contador-bloque').textContent = String(cantidad);
 
         const carrusel = $('lista-compra-carrusel');
         carrusel.innerHTML = '';
@@ -9964,7 +10711,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ── Modal de gestión ─────────────────────────────────────────────
     function renderModalListaCompra_() {
         const cantidad = listaCompraCantidad_();
-        $('modal-lista-compra-contador').textContent = `${cantidad} / ${LISTA_COMPRA_MAX_} productos`;
+        $('modal-lista-compra-contador').textContent = `${cantidad} producto${cantidad === 1 ? '' : 's'}`;
         const totales = listaCompraTotales_();
         $('modal-lista-compra-total-sin').textContent = listaCompraFormatoEuros_(totales.sinIva);
         $('modal-lista-compra-total-con').textContent = listaCompraFormatoEuros_(totales.conIva);
@@ -9975,9 +10722,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const grid = $('lista-compra-grid');
         const vacia = $('lista-compra-vacia');
         const acciones = $('modal-lista-compra-acciones');
+        const notasWrap = $('lista-compra-notas-wrap');
         if (cantidad === 0) {
             grid.style.display = 'none';
             vacia.style.display = '';
+            notasWrap.style.display = 'none';
             // "Vaciar"/exportar/compartir no tienen sentido sin productos
             // — se ocultan en vez de dejarlos ahí sin hacer nada al
             // pulsarlos. "Eliminar la lista" se mantiene, es la forma de
@@ -9987,10 +10736,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         grid.style.display = '';
         vacia.style.display = 'none';
+        notasWrap.style.display = '';
         ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-vaciar'].forEach(id => $(id).style.display = '');
 
         grid.innerHTML = '';
         listaCompraOrdenada_().forEach(p => grid.appendChild(crearTarjetaListaCompraModal_(p)));
+
+        // Solo se repinta el valor si el campo no tiene el foco — este
+        // render también se dispara al añadir/quitar un producto mientras
+        // el usuario podría estar escribiendo observaciones; sin esta
+        // comprobación, cada cambio en la lista le movería el cursor o le
+        // "comería" lo que estuviera a medio escribir.
+        const notasInput = $('lista-compra-notas-input');
+        if (document.activeElement !== notasInput) {
+            notasInput.value = listaCompraNotas_();
+        }
+        $('lista-compra-notas-contador').textContent = `${notasInput.value.length} / ${LISTA_COMPRA_NOTAS_MAX_}`;
     }
 
     function abrirModalListaCompra_() {
@@ -10019,7 +10780,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const texto = $('modal-producto-lista-btn-texto');
         const unidadesWrap = $('modal-producto-lista-unidades');
         if (!productoModalActual_) return;
-        btn.classList.remove('incluido', 'limite');
+        btn.classList.remove('incluido');
 
         const enLista = listaCompraExiste_() ? listaCompraProductoPorRef_(productoModalActual_.ref) : null;
         unidadesWrap.style.display = enLista ? '' : 'none';
@@ -10037,19 +10798,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             btn.classList.add('incluido');
             return;
         }
-        if (listaCompraCantidad_() >= LISTA_COMPRA_MAX_) {
-            texto.textContent = `Lista completa (${LISTA_COMPRA_MAX_}/${LISTA_COMPRA_MAX_})`;
-            btn.classList.add('limite');
-            return;
-        }
         texto.textContent = 'Añadir a la lista de la compra';
     }
 
-    // Deshabilita "−" en 1 y "+" en el máximo, para que el límite se vea
-    // (no solo se aplique) sin depender únicamente del color.
+    // Deshabilita "−" en 1 — sin máximo, "+" nunca se deshabilita (a
+    // petición explícita de Eloy).
     function actualizarBotonesUnidades_(unidades) {
         $('modal-producto-lista-unidades-menos').disabled = unidades <= 1;
-        $('modal-producto-lista-unidades-mas').disabled = unidades >= LISTA_COMPRA_UNIDADES_MAX_;
+        $('modal-producto-lista-unidades-mas').disabled = false;
     }
 
     function alPulsarBotonListaCompraProducto_() {
@@ -10061,17 +10817,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             mostrarToast('Este producto ya está en tu lista de la compra.');
             return;
         }
-        if (resultado === 'limite') {
-            mostrarToast(`Tu lista ya tiene ${LISTA_COMPRA_MAX_} productos, el máximo permitido. Quita alguno antes de añadir otro.`, 'error');
-            return;
-        }
         mostrarToast(yaExistia
             ? `${escapeHtml(p.nombre)} se ha añadido a tu lista de la compra`
             : `Lista creada y ${escapeHtml(p.nombre)} añadido. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
         listaCompraActualizarUI_();
     }
 
-    // Selector de unidades (1-10) de la ficha de producto — "+"/"−" y
+    // Selector de unidades (mínimo 1, sin máximo) de la ficha de producto — "+"/"−" y
     // escribir directamente en el campo, ambos acaban en el mismo sitio
     // (listaCompraActualizarUnidades_, que ya aplica el límite).
     function alCambiarUnidadesProducto_(delta) {
@@ -10101,6 +10853,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         logo: './assets/logos/logo-orencio.png',
         direccion: 'Av. Alfred Nobel, 2 · 13005 Ciudad Real',
         horario: 'Lunes a Viernes: 9:00–14:00 y 16:30–19:30 · Sábados: 9:00–14:00 · Domingos: cerrado',
+        // Solo lo usa, de momento, el folleto de Destacados (ver más abajo)
+        // — la lista de la compra no lleva web en su pie, así que se deja
+        // aparte en vez de forzarla también ahí.
+        web: 'orenciomatas.es',
     };
 
     function listaCompraFechaFormateada_(marcaTiempo) {
@@ -10170,15 +10926,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // cambia, solo deja de mostrarse esa columna en la tabla.
         const filas = productos.map(p => {
             const unidades = p.unidades || 1;
-            const subtotalSin = listaCompraACentimos_(p.precio_sin || p.precio_con) * unidades;
+            const precio = precioAMostrar_(p);
+            const sinCentimos = precio ? Math.round((precio.sin || precio.con) * 100) : 0;
+            const subtotalSin = sinCentimos * unidades;
             return [
                 p.nombre,
                 p.ref,
                 p.familia || '—',
                 String(unidades),
-                p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(listaCompraACentimos_(p.precio_sin)) : '—',
-                p.mostrar_precio && p.precio_con ? formatoEurosPdf_(listaCompraACentimos_(p.precio_con)) : 'Consultar',
-                p.mostrar_precio && p.precio_sin ? formatoEurosPdf_(subtotalSin) : '—',
+                precio && precio.sin ? formatoEurosPdf_(Math.round(precio.sin * 100)) : '—',
+                precio ? formatoEurosPdf_(Math.round(precio.con * 100)) : 'Consultar',
+                precio ? formatoEurosPdf_(subtotalSin) : '—',
             ];
         });
 
@@ -10217,6 +10975,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.setFontSize(13);
         doc.setTextColor(211, 47, 47);
         doc.text(`Total con IVA: ${listaCompraFormatoEuros_(totales.conIva)}`, 40, y + 54);
+        y += 54;
+
+        // Observaciones del cliente (opcional, hasta 500 caracteres) — a
+        // petición explícita de Eloy. Se envuelve con splitTextToSize en
+        // vez de dejar que autoTable/jsPDF corten el texto solos, y se
+        // comprueba el espacio restante línea a línea para añadir página
+        // si hiciera falta (puede ocupar varias líneas con el máximo de
+        // caracteres permitido).
+        const notas = listaCompraNotas_();
+        if (notas) {
+            y += 24;
+            if (y > alturaPagina - 80) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+            doc.setFontSize(10);
+            doc.setTextColor(60);
+            doc.text('Observaciones:', 40, y);
+            y += 14;
+            doc.setFontSize(9.5);
+            doc.setTextColor(80);
+            const lineasNotas = doc.splitTextToSize(notas, anchoPagina - 80);
+            lineasNotas.forEach((linea) => {
+                if (y > alturaPagina - 50) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+                doc.text(linea, 40, y);
+                y += 13;
+            });
+        }
 
         // El pie no se dibuja solo en didDrawPage de autoTable si al
         // final se añaden más líneas tras la tabla sin pasar por otra
@@ -10275,13 +11058,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const totales = listaCompraTotales_();
         const lineas = [
             'Lista de la compra — Orencio Matas y Hnos',
-            `${productos.length} / ${LISTA_COMPRA_MAX_} productos`,
+            `${productos.length} producto${productos.length === 1 ? '' : 's'}`,
             '',
-            ...productos.map(p => `• ${p.nombre} (Ref: ${p.ref}) x${p.unidades || 1}${p.mostrar_precio && p.precio_con ? ' — ' + listaCompraFormatoEuros_(listaCompraACentimos_(p.precio_con)) : ''}`),
+            ...productos.map(p => {
+                const precio = precioAMostrar_(p);
+                return `• ${p.nombre} (Ref: ${p.ref}) x${p.unidades || 1}${precio ? ' — ' + listaCompraFormatoEuros_(Math.round(precio.con * 100)) : ''}`;
+            }),
             '',
             `Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`,
             `Total con IVA: ${listaCompraFormatoEuros_(totales.conIva)}`,
         ];
+        const notas = listaCompraNotas_();
+        if (notas) {
+            lineas.push('', 'Observaciones:', notas);
+        }
         return lineas.join('\n');
     }
 
@@ -10300,7 +11090,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             await navigator.share({
                 files: [file],
                 title: 'Lista de la compra',
-                text: `Lista de la compra — ${listaCompraCantidad_()} / ${LISTA_COMPRA_MAX_} productos`,
+                text: `Lista de la compra — ${listaCompraCantidad_()} producto${listaCompraCantidad_() === 1 ? '' : 's'}`,
             });
             return true;
         } catch (e) {
@@ -10389,6 +11179,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && $('modal-lista-compra-overlay').classList.contains('activo')) cerrarModalListaCompra_();
         });
+
+        // Se guarda en cada pulsación (debounced) — nunca hace falta un
+        // botón "guardar" aparte, igual que el resto de la lista.
+        $('lista-compra-notas-input').addEventListener('input', debounce(() => {
+            const input = $('lista-compra-notas-input');
+            listaCompraActualizarNotas_(input.value);
+            $('lista-compra-notas-contador').textContent = `${listaCompraNotas_().length} / ${LISTA_COMPRA_NOTAS_MAX_}`;
+        }, 300));
 
         $('btn-lista-compra-vaciar').addEventListener('click', () => {
             pedirConfirmacionListaCompra_(
@@ -10829,6 +11627,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function abrirModalProducto(p, opciones) {
         opciones = opciones || {};
         registrarProductoVisto_(p);
+        registrarProductoVistoHistorial_(p);
+        cargarUltimosVistos_();
         ocultarDisclaimerPrecios();
         productoModalActual_ = p;
         actualizarBotonListaCompraEnModalProducto_();
@@ -10898,14 +11698,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             logoFabricante.style.display = 'none';
         }
 
+        // Perfil profesional: precio al por mayor siempre, nunca el PVP ni
+        // las ofertas públicas — ver precioAMostrar_/construirContenidoTarjeta_.
+        const precioMayorModal_ = precioAMostrar_(p);
+        const esMayorModal_ = !!(precioMayorModal_ && precioMayorModal_.esMayor);
+
         let precioHtml = '';
-        if (p.mostrar_precio) {
-            const con = p.precio_con ? parseFloat(p.precio_con.replace(',', '.')).toFixed(2).replace('.', ',') : null;
-            const sin = p.precio_sin ? parseFloat(p.precio_sin.replace(',', '.')).toFixed(2).replace('.', ',') : null;
-            if (con) {
-                precioHtml = `<div class="modal-producto-precio-con">${con} €</div>`;
-                if (sin) precioHtml += `<div class="modal-producto-precio-sin">${sin} € sin IVA</div>`;
-            }
+        if (precioMayorModal_) {
+            precioHtml = `<div class="modal-producto-precio-con">${precioMayorModal_.con.toFixed(2).replace('.', ',')} €</div>`;
+            if (precioMayorModal_.sin) precioHtml += `<div class="modal-producto-precio-sin">${precioMayorModal_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         } else {
             precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         }
@@ -10913,8 +11714,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // A petición de Eloy: si el producto está en Destacados (activo y
         // vigente), la ficha de detalle debe mostrar el mismo precio
         // rebajado y la misma etiqueta que ya se ve en su tarjeta — misma
-        // lógica que construirContenidoTarjeta_, sin duplicarla.
-        const destacadoModal = destacadosVigentePara_(p.ref);
+        // lógica que construirContenidoTarjeta_, sin duplicarla. No aplica
+        // con precio al por mayor (promoción solo sobre el PVP público).
+        const destacadoModal = esMayorModal_ ? null : destacadosVigentePara_(p.ref);
         const chipDestacadoModal = $('modal-producto-destacado-chip');
         if (destacadoModal) {
             // Reutiliza etiquetaDestacadoHtml_ para la clase/texto del chip,

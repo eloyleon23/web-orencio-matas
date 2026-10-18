@@ -44,6 +44,12 @@
   function urlDescargarDrive_(id) { return `https://drive.google.com/uc?export=download&id=${id}`; }
   // Mismo patrón ya usado en buscador.html para miniaturas de producto.
   function urlMiniaturaDrive_(id, ancho) { return `https://drive.google.com/thumbnail?id=${id}&sz=w${ancho || 400}`; }
+  // Vista previa embebible de Drive — a diferencia de /view (pensada para
+  // abrirse como página propia), /preview es la URL que Google documenta
+  // para incrustar en un <iframe> de un sitio de terceros, y funciona
+  // para PDF, imágenes, Office (Docs/Sheets/Slides) y la mayoría de tipos
+  // que Drive ya sabe previsualizar.
+  function urlPreviewDrive_(id) { return `https://drive.google.com/file/d/${id}/preview`; }
 
   // ── Toast simple (independiente del de buscador.html, que no se carga aquí) ──
   function toast(msg, esError) {
@@ -207,14 +213,73 @@
     cont.querySelectorAll('[data-accion="ver"]').forEach(btn => btn.addEventListener('click', () => accionVer_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="descargar"]').forEach(btn => btn.addEventListener('click', () => accionDescargar_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="compartir"]').forEach(btn => btn.addEventListener('click', () => accionCompartir_(btn.dataset.id)));
+
+    // Tarjeta clicable entera, a petición de Eloy: el usuario no tiene que
+    // acertar en el botón "Ver"/"Abrir" para consultar el recurso — toda
+    // la tarjeta funciona igual, SIEMPRE que el clic no caiga dentro de
+    // .an-card__acciones (ahí cada botón/enlace mantiene su propio
+    // comportamiento de siempre, incluido "Ver" abriendo en pestaña
+    // nueva, sin que el clic de la tarjeta lo dispare una segunda vez).
+    cont.querySelectorAll('.an-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.an-card__acciones')) return;
+        abrirRecursoTarjeta_(card.dataset.id);
+      });
+    });
+  }
+
+  // Abre el recurso tal y como ya lo hace su acción principal (nunca una
+  // acción nueva): "Ver" para un archivo de Drive (vista previa en la
+  // ventana modal del propio sitio, ver accionVer_/abrirVisorRecurso_) o
+  // el mismo enlace externo que el botón "Abrir" para un recurso de tipo
+  // URL. A petición de Eloy ("que se abra todo lo que se pueda en la
+  // ventana modal para que el usuario no tenga que salir de la web"), un
+  // recurso de tipo URL sigue abriendo en pestaña nueva porque un sitio
+  // de terceros no se puede embeber de forma fiable (X-Frame-Options,
+  // CORS...) — ahí sí que no hay más remedio que salir de la web.
+  function abrirRecursoTarjeta_(id) {
+    const a = encontrarAnuncio_(id);
+    if (!a) return;
+    if (a.tipoRecurso === 'archivo' && a.driveFileId) {
+      accionVer_(id);
+    } else if (a.tipoRecurso === 'url' && a.urlExterna) {
+      window.open(a.urlExterna, '_blank', 'noopener');
+    }
   }
 
   function encontrarAnuncio_(id) { return ANUNCIOS_.find(a => a.id === id); }
 
+  // "Ver" — a petición de Eloy, ya no abre pestaña nueva: se previsualiza
+  // en una ventana modal del propio sitio. Imagen (mimeType image/...) se
+  // muestra directamente a tamaño grande; cualquier otro tipo de archivo
+  // (PDF, Office...) usa la vista previa embebida de Drive, que cubre la
+  // inmensa mayoría de lo que se sube aquí. El pie de la modal deja
+  // siempre "Descargar" y "Abrir en pestaña nueva" por si la previsualización
+  // no carga bien para un archivo concreto.
   function accionVer_(id) {
     const a = encontrarAnuncio_(id);
     if (!a || !a.driveFileId) return;
-    window.open(urlVerDrive_(a.driveFileId), '_blank', 'noopener');
+    abrirVisorRecurso_(a);
+  }
+
+  function abrirVisorRecurso_(a) {
+    const esImagen = a.mimeType && a.mimeType.indexOf('image/') === 0;
+    const contenido = $('an-visor-contenido');
+    $('an-visor-titulo').textContent = a.titulo;
+    $('an-visor-descargar').href = urlDescargarDrive_(a.driveFileId);
+    $('an-visor-abrir-fuera').href = urlVerDrive_(a.driveFileId);
+    contenido.innerHTML = esImagen
+      ? `<img src="${urlMiniaturaDrive_(a.driveFileId, 1600)}" alt="${escapeHtml(a.titulo)}">`
+      : `<iframe src="${urlPreviewDrive_(a.driveFileId)}" title="${escapeHtml(a.titulo)}" allow="autoplay"></iframe>`;
+    $('an-visor-overlay').classList.add('activo');
+  }
+
+  function cerrarVisorRecurso_() {
+    $('an-visor-overlay').classList.remove('activo');
+    // Vacía el contenido al cerrar — para un iframe, esto detiene de
+    // verdad cualquier carga/reproducción en curso (quitar solo la clase
+    // "activo" la dejaría viva, aunque invisible, de fondo).
+    $('an-visor-contenido').innerHTML = '';
   }
   function accionDescargar_(id) {
     const a = encontrarAnuncio_(id);
@@ -738,6 +803,12 @@
 
     $('an-buscar').addEventListener('input', renderPublico_);
     $('an-filtro-tipologia').addEventListener('change', renderPublico_);
+
+    // Visor de recurso — público, en cualquier entorno (a diferencia del
+    // modal de gestión, que solo existe en preproducción).
+    $('an-visor-cerrar').addEventListener('click', cerrarVisorRecurso_);
+    $('an-visor-overlay').addEventListener('click', (e) => { if (e.target.id === 'an-visor-overlay') cerrarVisorRecurso_(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('an-visor-overlay').classList.contains('activo')) cerrarVisorRecurso_(); });
 
     // Deep-link ?ref=<id> — si el enlace compartido apunta a un recurso
     // que ya no está visible/vigente, no se fuerza a mostrarlo como si

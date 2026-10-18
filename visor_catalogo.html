@@ -105,6 +105,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <p>El catálogo está siendo preparado.<br>Mientras tanto puedes contactar con nosotros.</p>
 </div>
 
+<!-- Antes del script principal (no al final del body, como en el resto
+     de páginas): este script decide de forma SÍNCRONA, nada más
+     cargarse, qué catálogo pedir (público o al por mayor) según
+     window.PerfilProfesional.pinActual() — si perfil-profesional.js se
+     cargara después, como es habitual, esa variable todavía no
+     existiría en este punto y el profesional seguiría viendo siempre el
+     catálogo público (bug real reportado por Eloy). -->
+<script src="./assets/js/perfil-profesional.js?v=20260829a"></script>
 <script>
 (function () {
     const AREAS = {
@@ -123,7 +131,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         return;
     }
 
-    document.getElementById('visor-titulo').textContent = cfg.titulo;
+    // Perfil profesional (sesión validada por PIN): se pide el catálogo
+    // AL POR MAYOR (obtener_catalogos_mayor, con PIN) en vez del público
+    // — a petición explícita de Eloy: "al ir a ver los catálogos sigo
+    // viendo el catálogo de venta al público y no al por mayor". Si por
+    // lo que sea esa área todavía no tiene catálogo mayor generado, se
+    // cae al público en vez de dejar al profesional sin nada que ver.
+    const pinProfesional = window.PerfilProfesional && window.PerfilProfesional.pinActual();
+    if (pinProfesional) {
+        document.getElementById('visor-titulo').textContent = cfg.titulo + ' (precio mayor)';
+    } else {
+        document.getElementById('visor-titulo').textContent = cfg.titulo;
+    }
 
     // "Volver" debe regresar a la vista de muestra del área (de donde
     // vino el usuario), no saltarse ese paso yendo directo a
@@ -141,28 +160,46 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // cada generación, está disponible aquí al instante.
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
 
-    fetch(`${APPS_SCRIPT_URL}?accion=obtener_catalogos`, { cache: 'no-store' })
+    const accionCatalogo = pinProfesional ? 'obtener_catalogos_mayor' : 'obtener_catalogos';
+    const urlCatalogo = pinProfesional
+        ? `${APPS_SCRIPT_URL}?accion=${accionCatalogo}&pin=${encodeURIComponent(pinProfesional)}`
+        : `${APPS_SCRIPT_URL}?accion=${accionCatalogo}`;
+
+    fetch(urlCatalogo, { cache: 'no-store' })
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(datos => {
-            const info = datos[area];
-            if (!info || !info.id) { mostrarError(); return; }
-
-            // Drive sirve PDFs con vista previa embebible nativa
-            // (/preview) — se ve inline en el iframe sin forzar descarga,
-            // igual que antes con el archivo servido desde el propio
-            // sitio. La descarga real usa la URL directa de descarga.
-            const urlVista = `https://drive.google.com/file/d/${info.id}/preview`;
-            const urlDescarga = `https://drive.google.com/uc?export=download&id=${info.id}`;
-
-            const btnDescargar = document.getElementById('btn-descargar-visor');
-            btnDescargar.href = urlDescarga;
-
-            document.getElementById('visor-iframe').src = urlVista;
-            document.getElementById('visor-cargando').style.display = 'none';
-            document.getElementById('visor-frame-wrap').style.display = '';
-            document.getElementById('visor-iframe').addEventListener('error', mostrarError);
+            let info = datos[area];
+            // Catálogo mayor sin generar todavía para esta área (o PIN no
+            // válido ya, p.ej. sesión caducada a medio camino): se cae al
+            // catálogo público en vez de dejar al profesional sin nada.
+            if (pinProfesional && (!info || !info.id || datos.error)) {
+                document.getElementById('visor-titulo').textContent = cfg.titulo;
+                return fetch(`${APPS_SCRIPT_URL}?accion=obtener_catalogos`, { cache: 'no-store' })
+                    .then(r => r.ok ? r.json() : Promise.reject())
+                    .then(datosPublico => pintarCatalogo_(datosPublico[area]));
+            }
+            pintarCatalogo_(info);
         })
         .catch(mostrarError);
+
+    function pintarCatalogo_(info) {
+        if (!info || !info.id) { mostrarError(); return; }
+
+        // Drive sirve PDFs con vista previa embebible nativa
+        // (/preview) — se ve inline en el iframe sin forzar descarga,
+        // igual que antes con el archivo servido desde el propio
+        // sitio. La descarga real usa la URL directa de descarga.
+        const urlVista = `https://drive.google.com/file/d/${info.id}/preview`;
+        const urlDescarga = `https://drive.google.com/uc?export=download&id=${info.id}`;
+
+        const btnDescargar = document.getElementById('btn-descargar-visor');
+        btnDescargar.href = urlDescarga;
+
+        document.getElementById('visor-iframe').src = urlVista;
+        document.getElementById('visor-cargando').style.display = 'none';
+        document.getElementById('visor-frame-wrap').style.display = '';
+        document.getElementById('visor-iframe').addEventListener('error', mostrarError);
+    }
 
     function mostrarError() {
         document.getElementById('visor-cargando').style.display = 'none';
