@@ -4360,7 +4360,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              que el resto de subsecciones) para que se note que es otro
              bloque distinto del grid principal de resultados. -->
         <div id="categorias-descubrimiento-seccion" class="mas-buscados">
-            <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--azul"><i class="fa-solid fa-layer-group"></i></span> Sigue explorando</p>
+            <div class="mas-buscados__cabecera-vistos">
+                <p class="mas-buscados__titulo"><span class="mas-buscados__icono mas-buscados__icono--azul"><i class="fa-solid fa-layer-group"></i></span> Sigue explorando</p>
+                <!-- Edición de los bloques de "Sigue explorando" (gestión real
+                     protegida por PIN, ver verificarPin_ en Apps Script) —
+                     mismo patrón que "Editar destacados". Oculto por defecto y
+                     solo visible en preproducción (ver
+                     window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS más abajo); en
+                     producción se elimina del DOM del todo, nunca sube. -->
+                <button type="button" id="btn-gestionar-bloques-categorias" class="btn-destacados-accion btn-destacados-editar" title="Editar Sigue explorando" aria-label="Editar Sigue explorando">
+                    <i class="fa-solid fa-pen-to-square"></i> <span>Editar Sigue explorando</span>
+                </button>
+            </div>
             <div id="categorias-descubrimiento" class="categorias-carrusel">
                 <div class="om-skeleton om-skeleton--bloque"></div><div class="om-skeleton om-skeleton--bloque"></div><div class="om-skeleton om-skeleton--bloque"></div>
             </div>
@@ -5221,6 +5232,74 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Modal "Editar Sigue explorando" — gestión de los bloques de
+     categoría del módulo de descubrimiento (ver cargarBloquesCategorias_
+     y DEFINICION_BLOQUES_CATEGORIAS_ previo a este cambio). Mismo
+     patrón que "Gestionar destacados": PIN de administración + listado +
+     formulario, sin archivos ni Drive de por medio (son solo datos de
+     texto). Protegido por el mismo PIN de administración
+     (verificarPin_ en Apps Script); el propio botón que la abre solo
+     existe en preproducción (ver window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS
+     más abajo). -->
+<div class="modal-overlay" id="bc-modal-overlay">
+    <div class="modal-producto-box modal-destacados-box" role="dialog" aria-modal="true" aria-labelledby="bc-modal-titulo">
+        <button class="modal-producto-cerrar" id="bc-modal-cerrar" aria-label="Cerrar edición de Sigue explorando">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 id="bc-modal-titulo"><i class="fa-solid fa-layer-group"></i> Editar "Sigue explorando"</h3>
+
+        <div id="bc-vista-pin" class="destacados-vista-pin">
+            <p>Introduce el PIN de administración para editar los bloques.</p>
+            <input type="password" id="bc-pin-input" inputmode="numeric" autocomplete="off" placeholder="PIN">
+            <label class="destacados-pin-recordar"><input type="checkbox" id="bc-pin-recordar"> Recordar en este dispositivo</label>
+            <p id="bc-pin-error" class="destacados-pin-error"></p>
+            <button type="button" id="bc-pin-entrar" class="destacados-btn-primario">Entrar</button>
+        </div>
+
+        <div id="bc-vista-principal" style="display:none;">
+            <p class="destacados-hint">Cada bloque se muestra solo si hay al menos 4 productos reales que coincidan con sus palabras clave. En "Palabras clave", sepáralas con coma para que valga cualquiera de ellas, y con "+" cuando todas deban aparecer a la vez — p. ej. <code>titan+eco, titanpro</code>.</p>
+            <div id="bc-listado" class="destacados-listado-lista"></div>
+            <button type="button" id="bc-nuevo" class="destacados-btn-secundario" style="margin-top:10px;">+ Añadir bloque</button>
+
+            <div id="bc-form" class="destacados-editor" style="display:none;">
+                <h4 id="bc-form-titulo-seccion">Nuevo bloque</h4>
+                <input type="hidden" id="bc-id">
+
+                <label>Título
+                <input type="text" id="bc-titulo" maxlength="60" placeholder="Ej: Detergentes en polvo y líquidos"></label>
+
+                <label>Palabras clave
+                <input type="text" id="bc-palabras-clave" maxlength="200" placeholder="Ej: detergente, titan+eco"></label>
+
+                <label>Área (opcional)
+                <select id="bc-area">
+                    <option value="">Todas las áreas</option>
+                    <option value="drogueria">Droguería</option>
+                    <option value="perfumeria">Perfumería</option>
+                    <option value="pinturas">Pinturas</option>
+                    <option value="talleres">Talleres</option>
+                </select></label>
+
+                <label>Temporada (opcional)
+                <select id="bc-estacion">
+                    <option value="">Todo el año</option>
+                    <option value="frio">Solo en frío (nov-feb)</option>
+                    <option value="calor">Solo en calor (may-sep)</option>
+                </select></label>
+
+                <label><input type="checkbox" id="bc-activo" checked> Activo (visible en la web)</label>
+
+                <p id="bc-form-error" class="destacados-editor-error"></p>
+                <div class="destacados-editor-acciones">
+                    <button type="button" id="bc-eliminar" class="destacados-btn-secundario" style="color:var(--red);display:none;">Eliminar</button>
+                    <button type="button" id="bc-cancelar" class="destacados-btn-secundario">Cancelar</button>
+                    <button type="button" id="bc-guardar" class="destacados-btn-primario">Guardar bloque</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <!-- Lista de la compra: exportación a PDF — único cliente de jsPDF/
      autoTable en el sitio, no existía ya ninguna solución de PDF en el
@@ -5274,6 +5353,7 @@ window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 // release, solo en preproducción.
 window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
+window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -5354,6 +5434,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         eliminarSiRestringido_('btn-gestionar-destacados', window.MOSTRAR_GESTION_DESTACADOS);
         eliminarSiRestringido_('modal-destacados-overlay', window.MOSTRAR_GESTION_DESTACADOS);
         eliminarSiRestringido_('destacados-preview-overlay', window.MOSTRAR_GESTION_DESTACADOS);
+    }
+    if (window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS) {
+        const btnBC = document.getElementById('btn-gestionar-bloques-categorias');
+        if (btnBC) btnBC.classList.add('visible');
+    } else {
+        eliminarSiRestringido_('btn-gestionar-bloques-categorias', window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS);
+        eliminarSiRestringido_('bc-modal-overlay', window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS);
     }
 
     const REPO = 'eloyleon23/web-orencio-matas';
@@ -8080,9 +8167,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // bloque entero (ver aplicarFiltroCategoria_) — reutiliza el motor de
     // búsqueda normal (coincide()/normalizar()) en vez de inventar un
     // mecanismo de filtrado nuevo, igual que ya hacen los chips de "Marcas
-    // más buscadas". No tiene por qué ser idéntico a "match" (que puede
-    // combinar varias palabras con AND/OR): solo el término más
-    // representativo de la categoría.
+    // más buscadas". Se deriva automáticamente de la primera alternativa de
+    // "palabrasClave" (ver construirMatchDesdePalabrasClave_), no hace
+    // falta guardarlo aparte.
     // "area": si está presente, restringe el bloque SOLO a productos de esa
     // área (p. ej. "pinturas", "perfumeria") — a petición de Eloy, para que
     // no se cuelen productos de otras áreas que compartan alguna palabra
@@ -8094,44 +8181,56 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // "area" en los casos realmente ambiguos (una marca que podría vender
     // en más de un área de este catálogo) para no excluir por error
     // productos legítimos solo por una suposición equivocada.
-    const DEFINICION_BLOQUES_CATEGORIAS_ = [
-        { id: 'detergentes',      titulo: 'Detergentes en polvo y líquidos',   match: t => t.includes('detergente'), terminoBusqueda: 'detergente', area: 'drogueria' },
-        { id: 'lavavajillas',     titulo: 'Lavavajillas',                      match: t => t.includes('lavavajillas'), terminoBusqueda: 'lavavajillas', area: 'drogueria' },
-        { id: 'ceys',             titulo: 'Productos Ceys',                    match: t => t.includes('ceys'), terminoBusqueda: 'ceys' },
-        { id: 'werku',            titulo: 'Productos Werku',                   match: t => t.includes('werku'), terminoBusqueda: 'werku', area: 'talleres' },
-        { id: 'titan-eco',        titulo: 'Pintura Titán Ecológica',           match: t => t.includes('titan') && t.includes('eco'), terminoBusqueda: 'titan eco', area: 'pinturas' },
-        { id: 'titanpro',         titulo: 'Pintura TitanPro',                  match: t => t.includes('titanpro') || t.includes('titan pro'), terminoBusqueda: 'titanpro', area: 'pinturas' },
-        { id: 'posidon',          titulo: 'Colonias Poseidón',                 match: t => t.includes('posidon') || t.includes('poseidon'), terminoBusqueda: 'posidon', area: 'perfumeria' },
-        { id: 'aire-sevilla',     titulo: 'Colonias Aire de Sevilla',          match: t => t.includes('aire de sevilla'), terminoBusqueda: 'aire de sevilla', area: 'perfumeria' },
-        { id: 'radiadores',       titulo: 'Para calentar este invierno',       match: t => t.includes('radiador') || t.includes('calefactor') || t.includes('estufa'), estacion: 'frio', terminoBusqueda: 'radiador', area: 'drogueria' },
-        { id: 'insectos',         titulo: 'Contra los insectos del verano',    match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('antipolillas'), estacion: 'calor', terminoBusqueda: 'insecticida', area: 'drogueria' },
-        { id: 'piscinas',         titulo: 'Todo para tu piscina',              match: t => t.includes('piscina'), estacion: 'calor', terminoBusqueda: 'piscina', area: 'drogueria' },
-        { id: 'esmaltes',         titulo: 'Esmaltes para pintar',              match: t => t.includes('esmalte'), terminoBusqueda: 'esmalte', area: 'pinturas' },
-        { id: 'barnices',         titulo: 'Barnices y protectores de madera',  match: t => t.includes('barniz'), terminoBusqueda: 'barniz', area: 'pinturas' },
-        { id: 'imprimaciones',    titulo: 'Imprimaciones y selladores',        match: t => t.includes('imprimacion') || t.includes('imp.'), terminoBusqueda: 'imprimacion', area: 'pinturas' },
-        { id: 'colonias',         titulo: 'Colonias y perfumería',             match: t => t.includes('colonia') || t.includes('perfume'), terminoBusqueda: 'colonia', area: 'perfumeria' },
-        { id: 'limpieza-hogar',   titulo: 'Limpieza del hogar',                match: t => t.includes('limpiahogar') || t.includes('limpiador') || t.includes('lejia') || t.includes('friegasuelos'), terminoBusqueda: 'limpiador', area: 'drogueria' },
-        { id: 'desatascadores',   titulo: 'Desatascadores',                    match: t => t.includes('desatascador') || t.includes('desatasca'), terminoBusqueda: 'desatascador', area: 'drogueria' },
-        { id: 'ambientadores',    titulo: 'Ambientadores',                     match: t => t.includes('ambientador'), terminoBusqueda: 'ambientador', area: 'drogueria' },
-        { id: 'papel-higienico',  titulo: 'Papel higiénico',                   match: t => t.includes('papel higienico') || t.includes('higienico'), terminoBusqueda: 'papel higienico', area: 'drogueria' },
-        { id: 'cepillos-fregonas', titulo: 'Cepillos y fregonas',              match: t => t.includes('fregona') || t.includes('cepillo'), terminoBusqueda: 'fregona', area: 'drogueria' },
-        { id: 'bella-aurora',     titulo: 'Productos Bella Aurora',            match: t => t.includes('bella aurora'), terminoBusqueda: 'bella aurora', area: 'perfumeria' },
-        { id: 'insecticidas',     titulo: 'Insecticidas',                      match: t => t.includes('insecticida') || t.includes('mosquito') || t.includes('avispa') || t.includes('cucaracha') || t.includes('hormiga'), terminoBusqueda: 'insecticida', area: 'drogueria' },
-        { id: 'fregasuelos',      titulo: 'Fregasuelos',                       match: t => t.includes('friegasuelos') || t.includes('fregasuelos'), terminoBusqueda: 'fregasuelos', area: 'drogueria' },
-        { id: 'asevi',            titulo: 'Productos Asevi',                   match: t => t.includes('asevi'), terminoBusqueda: 'asevi', area: 'drogueria' },
-        { id: 'baixens',          titulo: 'Productos Baixens',                 match: t => t.includes('baixens'), terminoBusqueda: 'baixens', area: 'drogueria' },
-        { id: 'geles',            titulo: 'Geles de baño',                     match: t => t.includes('gel de bano') || t.includes('gel ducha') || t.includes('gel baño'), terminoBusqueda: 'gel de baño', area: 'perfumeria' },
-        { id: 'campus',           titulo: 'Productos Campus',                  match: t => t.includes('campus'), terminoBusqueda: 'campus' },
-        { id: 'montana',          titulo: 'Montana Colors',                    match: t => t.includes('montana'), terminoBusqueda: 'montana', area: 'pinturas' },
-        { id: 'zaphiro',          titulo: 'Productos Zaphiro',                 match: t => t.includes('zaphiro'), terminoBusqueda: 'zaphiro', area: 'talleres' },
-        { id: 'higiene-bucal',    titulo: 'Dentífricos y enjuagues bucales',   match: t => t.includes('dentifrico') || t.includes('pasta de dientes') || t.includes('pastas de dientes') || t.includes('enjuague bucal') || t.includes('colutorio'), terminoBusqueda: 'dentifrico', area: 'drogueria' },
-    ];
+    //
+    // A petición de Eloy ("quiero poder editar estos bloques sin tener que
+    // desplegar nada"): la lista de bloques ya NO vive aquí fija en el
+    // código — se guarda en la hoja "BloquesCategorias" del Sheet y se
+    // gestiona desde el botón "Editar Sigue explorando" de la propia
+    // sección (ver bcAbrirModal_ y el resto de funciones bc* más abajo).
+    // Aquí solo queda la lógica para CONVERTIR cada fila de esa hoja en un
+    // bloque utilizable: construirDefDesdeFilaBloqueCategoria_() traduce el
+    // texto de "palabras clave" (lo único que puede escribir alguien sin
+    // tocar código) en la misma forma {match, terminoBusqueda...} que ya
+    // usaba el resto de esta sección, así que todo lo que viene después
+    // (cargarBloquesCategorias_, crearBloqueCategoria_,
+    // aplicarFiltroCategoria_, la rotación automática...) no tiene que
+    // cambiar nada de su propio funcionamiento.
+    //
+    // Sintaxis de "palabras clave" (pensada para poder escribirse desde una
+    // celda de hoja de cálculo, sin JavaScript):
+    //   - separadas por coma  → sirve CUALQUIERA de ellas (equivalente a ||)
+    //   - unidas con "+"      → tienen que aparecer TODAS a la vez (&&)
+    //   Ejemplo: "titan+eco, titanpro" = (titan Y eco) O titanpro.
+    function construirMatchDesdePalabrasClave_(palabrasClave) {
+        const alternativas = (palabrasClave || '')
+            .split(',')
+            .map(alt => alt.split('+').map(p => normalizar(p.trim())).filter(Boolean))
+            .filter(grupo => grupo.length);
+        return function (textoNormalizado) {
+            return alternativas.some(grupo => grupo.every(palabra => textoNormalizado.includes(palabra)));
+        };
+    }
+    function derivarTerminoBusqueda_(palabrasClave) {
+        const primeraAlternativa = (palabrasClave || '').split(',')[0] || '';
+        return primeraAlternativa.split('+').map(p => p.trim()).filter(Boolean).join(' ').trim();
+    }
+    function construirDefDesdeFilaBloqueCategoria_(fila) {
+        return {
+            id: fila.id,
+            titulo: fila.titulo,
+            match: construirMatchDesdePalabrasClave_(fila.palabrasClave),
+            terminoBusqueda: derivarTerminoBusqueda_(fila.palabrasClave),
+            area: fila.area || undefined,
+            estacion: fila.estacion || undefined,
+        };
+    }
 
     // A petición de Eloy ("cada vez que el usuario acceda a la web quiero
-    // que los bloques cambien de orden"): se baraja una vez, al cargar el
-    // script (es decir, una vez por visita/recarga de página) — no en
-    // cada refresco del catálogo dentro de la MISMA visita, para que los
-    // bloques no salten de sitio mientras el usuario ya está mirándolos.
+    // que los bloques cambien de orden"): se baraja una vez por visita, la
+    // primera vez que se cargan los bloques desde el servidor — no en cada
+    // refresco del catálogo dentro de la MISMA visita (bloquesCategoriasCache_
+    // ya resuelto no se vuelve a pedir ni a barajar), para que los bloques
+    // no salten de sitio mientras el usuario ya está mirándolos.
     function barajar_(array) {
         const copia = [...array];
         for (let i = copia.length - 1; i > 0; i--) {
@@ -8140,7 +8239,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         return copia;
     }
-    const ORDEN_BLOQUES_CATEGORIAS_ = barajar_(DEFINICION_BLOQUES_CATEGORIAS_);
+
+    // null = todavía no se ha pedido al servidor en esta visita.
+    let bloquesCategoriasCache_ = null;
+
+    // Pide SIEMPRE las filas crudas (activas e inactivas) — tanto la
+    // sección pública (que solo usa las activas) como el editor de
+    // administración (que necesita ver también las inactivas para poder
+    // reactivarlas) parten de esta misma función, igual que ya hace
+    // obtener_anuncios/leerCacheAnuncios_ en el servidor.
+    async function obtenerBloquesCategoriasDesdeApi_() {
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_bloques_categorias', { cache: 'no-store' });
+            const datos = await resp.json();
+            return Array.isArray(datos.bloques) ? datos.bloques : [];
+        } catch (e) {
+            console.error('obtenerBloquesCategoriasDesdeApi_: error cargando los bloques', e);
+            return [];
+        }
+    }
 
     // Tarjeta pequeña (solo imagen, sin nombre/precio) para la rejilla 2x2
     // de un bloque de categoría. A diferencia de crearTarjeta()
@@ -8242,13 +8359,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // lo largo de la sesión).
     let timersRotacionCategorias_ = [];
 
-    function cargarBloquesCategorias_() {
+    async function cargarBloquesCategorias_() {
         timersRotacionCategorias_.forEach(clearTimeout);
         timersRotacionCategorias_ = [];
         if (!TODOS.length) {
             modulosDescubrimientoConContenido_.categorias = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
+        }
+        if (!bloquesCategoriasCache_) {
+            const filas = await obtenerBloquesCategoriasDesdeApi_();
+            bloquesCategoriasCache_ = barajar_(filas.filter(f => f.activo).map(construirDefDesdeFilaBloqueCategoria_));
         }
         const estacion = estacionActual_();
         const colores = ['rojo', 'verde', 'amarillo', 'azul'];
@@ -8257,7 +8378,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cont.innerHTML = '';
         bloquesCategoriasActivos_ = [];
         let n = 0;
-        for (const def of ORDEN_BLOQUES_CATEGORIAS_) {
+        for (const def of bloquesCategoriasCache_) {
             if (n >= MAX_BLOQUES_CATEGORIAS) break;
             if (def.estacion && def.estacion !== estacion) continue;
             const candidatosConDuplicados = vigentes.filter(p => (!def.area || p.area === def.area) && def.match(textoBuscableProducto_(p)));
@@ -8334,6 +8455,206 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Fase inicial aleatoria (0-5s): evita que todos los bloques
         // recién cargados hagan su primer cambio a la vez.
         programarSiguienteRotacion_(entrada, Math.random() * INTERVALO_ROTACION_CATEGORIAS_MS);
+    }
+
+    // ── Gestión de "Sigue explorando" (editor de bloques, sin desplegar) ──
+    // Mismo patrón que la gestión de Destacados (PIN + listado + editor),
+    // solo que aquí cada bloque es un registro de texto suelto (título +
+    // palabras clave + área/temporada opcionales), sin ningún producto ni
+    // archivo de Drive de por medio.
+    let bcPin_ = '';
+    let bcFilasActuales_ = []; // última lista cruda (activas e inactivas) pedida al servidor — la usan tanto el listado como el editor
+
+    async function bcFetchPost_(payload) {
+        for (let intento = 0; intento < 2; intento++) {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+            });
+            const d = await resp.json();
+            if (d.success !== undefined || intento === 1) return d;
+            console.warn('bcFetchPost_: respuesta sin "success" (posible redirección a doGet) — reintentando...', d);
+        }
+    }
+
+    function bcGuardarPinLocal_(pin, recordar) {
+        if (recordar) { try { localStorage.setItem('omBloquesCategoriasPin', pin); } catch (e) {} }
+    }
+
+    async function bcValidarPinYArrancar_(pin) {
+        $('bc-pin-error').textContent = '';
+        const btn = $('bc-pin-entrar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Comprobando...';
+        try {
+            const d = await bcFetchPost_({ accion: 'panel_validar_pin', pin: pin });
+            if (d.success) {
+                bcPin_ = pin;
+                $('bc-vista-pin').style.display = 'none';
+                $('bc-vista-principal').style.display = '';
+                await bcRenderizarListado_();
+            } else {
+                $('bc-pin-error').textContent = 'PIN incorrecto.';
+                try { localStorage.removeItem('omBloquesCategoriasPin'); } catch (e) {}
+            }
+        } catch (e) {
+            $('bc-pin-error').textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    const BC_NOMBRES_AREA_ = { drogueria: 'Droguería', perfumeria: 'Perfumería', pinturas: 'Pinturas', talleres: 'Talleres' };
+    const BC_NOMBRES_ESTACION_ = { frio: 'Solo en frío', calor: 'Solo en calor' };
+
+    async function bcRenderizarListado_() {
+        const cont = $('bc-listado');
+        cont.innerHTML = '<p class="destacados-hint">Cargando…</p>';
+        bcFilasActuales_ = await obtenerBloquesCategoriasDesdeApi_();
+        cont.innerHTML = '';
+        if (!bcFilasActuales_.length) {
+            cont.innerHTML = '<p class="destacados-hint">Todavía no hay ningún bloque — usa "Añadir bloque" para crear el primero.</p>';
+            return;
+        }
+        bcFilasActuales_.forEach(fila => {
+            const item = document.createElement('div');
+            item.className = 'destacados-item' + (!fila.activo ? ' destacados-item--inactivo' : '');
+            const detalles = [fila.palabrasClave];
+            if (fila.area) detalles.push(BC_NOMBRES_AREA_[fila.area] || fila.area);
+            if (fila.estacion) detalles.push(BC_NOMBRES_ESTACION_[fila.estacion] || fila.estacion);
+            item.innerHTML = `
+                <div style="width:44px;height:44px;border-radius:6px;background:var(--light);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--muted);"><i class="fa-solid fa-layer-group"></i></div>
+                <div class="destacados-item-info">
+                    <div class="nombre">${escapeHtml(fila.titulo)}</div>
+                    <div class="detalle">${detalles.map(escapeHtml).join(' · ')}</div>
+                </div>
+                <div class="destacados-item-acciones">
+                    <button type="button" title="Editar" data-accion="editar"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" title="Eliminar" data-accion="eliminar"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            item.querySelector('[data-accion="editar"]').addEventListener('click', () => bcAbrirEditor_(fila.id));
+            item.querySelector('[data-accion="eliminar"]').addEventListener('click', (e) => bcEliminar_(fila.id, e.currentTarget));
+            cont.appendChild(item);
+        });
+    }
+
+    function bcAbrirEditor_(id) {
+        const fila = id ? bcFilasActuales_.find(f => f.id === id) : null;
+        $('bc-form-titulo-seccion').textContent = fila ? 'Editar bloque' : 'Nuevo bloque';
+        $('bc-id').value = fila ? fila.id : '';
+        $('bc-titulo').value = fila ? fila.titulo : '';
+        $('bc-palabras-clave').value = fila ? fila.palabrasClave : '';
+        $('bc-area').value = fila ? (fila.area || '') : '';
+        $('bc-estacion').value = fila ? (fila.estacion || '') : '';
+        $('bc-activo').checked = fila ? !!fila.activo : true;
+        $('bc-eliminar').style.display = fila ? '' : 'none';
+        $('bc-form-error').textContent = '';
+        $('bc-form').style.display = '';
+        $('bc-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function bcCerrarEditor_() {
+        $('bc-form').style.display = 'none';
+    }
+
+    // Tras cualquier cambio con éxito (guardar/eliminar), se invalida la
+    // caché pública (bloquesCategoriasCache_ = null) — el carrusel público
+    // ya visible en ESTA MISMA visita no se reconstruye solo (no tiene
+    // sentido rehacerlo mientras el propio admin está editando en el
+    // modal, encima), pero la próxima vez que cargarBloquesCategorias_ se
+    // ejecute (recarga de página, u otra visita) ya recogerá el cambio sin
+    // esperar a ningún despliegue.
+    async function bcGuardar_() {
+        const error = $('bc-form-error');
+        error.textContent = '';
+        const titulo = $('bc-titulo').value.trim();
+        const palabrasClave = $('bc-palabras-clave').value.trim();
+        if (!titulo) { error.textContent = 'El título es obligatorio.'; return; }
+        if (!palabrasClave) { error.textContent = 'Las palabras clave son obligatorias.'; return; }
+        const payload = {
+            accion: 'guardar_bloque_categoria',
+            pin: bcPin_,
+            id: $('bc-id').value,
+            titulo: titulo,
+            palabrasClave: palabrasClave,
+            area: $('bc-area').value,
+            estacion: $('bc-estacion').value,
+            activo: $('bc-activo').checked,
+        };
+        const btn = $('bc-guardar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        try {
+            const d = await bcFetchPost_(payload);
+            if (!d.success) { error.textContent = d.error || 'No se pudo guardar.'; return; }
+            bcCerrarEditor_();
+            await bcRenderizarListado_();
+            bloquesCategoriasCache_ = null;
+        } catch (e) {
+            error.textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    async function bcEliminar_(id, btn) {
+        if (!window.confirm('¿Eliminar este bloque? Esta acción no se puede deshacer.')) return;
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        try {
+            const d = await bcFetchPost_({ accion: 'eliminar_bloque_categoria', pin: bcPin_, id: id });
+            if (!d.success) { alert(d.error || 'No se pudo eliminar.'); return; }
+            bloquesCategoriasCache_ = null;
+            await bcRenderizarListado_();
+        } catch (e) {
+            alert('Error de conexión.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    function bcAbrirModal_() {
+        $('bc-modal-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+        bcCerrarEditor_();
+        const pinGuardado = (() => { try { return localStorage.getItem('omBloquesCategoriasPin'); } catch (e) { return null; } })();
+        if (pinGuardado) {
+            bcValidarPinYArrancar_(pinGuardado);
+        } else {
+            $('bc-vista-pin').style.display = '';
+            $('bc-vista-principal').style.display = 'none';
+        }
+    }
+
+    function bcCerrarModal_() {
+        bcCerrarEditor_();
+        $('bc-modal-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    if ($('btn-gestionar-bloques-categorias')) {
+        $('btn-gestionar-bloques-categorias').addEventListener('click', bcAbrirModal_);
+        $('bc-pin-entrar').addEventListener('click', () => {
+            const pin = $('bc-pin-input').value.trim();
+            bcGuardarPinLocal_(pin, $('bc-pin-recordar').checked);
+            bcValidarPinYArrancar_(pin);
+        });
+        $('bc-pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('bc-pin-entrar').click(); });
+        $('bc-nuevo').addEventListener('click', () => bcAbrirEditor_(null));
+        $('bc-cancelar').addEventListener('click', bcCerrarEditor_);
+        $('bc-guardar').addEventListener('click', bcGuardar_);
+        $('bc-eliminar').addEventListener('click', () => bcEliminar_($('bc-id').value, $('bc-eliminar')));
+        $('bc-modal-cerrar').addEventListener('click', bcCerrarModal_);
+        $('bc-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'bc-modal-overlay') bcCerrarModal_(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('bc-modal-overlay').classList.contains('activo')) bcCerrarModal_(); });
     }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
