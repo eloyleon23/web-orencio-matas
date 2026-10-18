@@ -6402,10 +6402,23 @@ function obtenerArchivoBloquesCategoriasCache_() {
 function leerCacheBloquesCategorias_() {
   try {
     const archivo = obtenerArchivoBloquesCategoriasCache_();
-    return JSON.parse(archivo.getBlob().getDataAsString('UTF-8'));
+    const datos = JSON.parse(archivo.getBlob().getDataAsString('UTF-8'));
+    // La caché recién creada (primer uso tras desplegar, antes de que
+    // nadie haya guardado nunca un bloque desde el editor) no tiene
+    // "generado": en ese caso se rellena ya mismo desde la hoja —que a su
+    // vez se crea y siembra con los bloques de siempre si tampoco existe
+    // todavía, ver obtenerHojaBloquesCategorias_— en vez de devolver la
+    // sección vacía a quien esté visitando la web en ese momento.
+    if (!datos.generado) return regenerarCacheBloquesCategoriasDesdeSheet_();
+    return datos;
   } catch (e) {
-    console.error('leerCacheBloquesCategorias_: error leyendo la caché, devolviendo estructura vacía:', e);
-    return { bloques: [] };
+    console.error('leerCacheBloquesCategorias_: error leyendo la caché, regenerándola desde la hoja:', e);
+    try {
+      return regenerarCacheBloquesCategoriasDesdeSheet_();
+    } catch (e2) {
+      console.error('leerCacheBloquesCategorias_: también falló la regeneración, devolviendo estructura vacía:', e2);
+      return { bloques: [] };
+    }
   }
 }
 
