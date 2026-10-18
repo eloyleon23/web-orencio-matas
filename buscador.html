@@ -754,6 +754,16 @@
         .btn-destacados-accion:disabled { opacity: .7; cursor: default; }
         .btn-destacados-pdf { background: #fef3c7; color: #92400e; }
         .btn-destacados-compartir { background: var(--blue); color: #fff; }
+        /* Antes era un botón flotante independiente (#btn-gestionar-
+           destacados), siempre fijo sobre el contenido — ahora va aquí
+           dentro, junto a los otros dos botones de la sección, a
+           petición de Eloy. Oculto por defecto (igual que antes): solo
+           se muestra con la clase .visible, que añade JS cuando
+           window.MOSTRAR_GESTION_DESTACADOS es cierto (solo
+           preproducción) — en producción el propio botón se elimina del
+           DOM (ver eliminarSiRestringido_), nunca solo se oculta. */
+        .btn-destacados-editar { background: #e0e7ff; color: #3730a3; display: none; }
+        .btn-destacados-editar.visible { display: flex; }
         /* Móvil, a petición explícita de Eloy: solo los dos iconos (sin
            texto), alineados al extremo derecho, en la misma fila que
            "Destacados" — nowrap en la cabecera para que nunca bajen a su
@@ -823,26 +833,6 @@
         .destacado-precio-pct {
             background: var(--red); color: #fff; font-size: 0.7rem; font-weight: 800;
             padding: 2px 6px; border-radius: 5px;
-        }
-
-        /* ── Botón flotante "Gestionar destacados" (solo preproducción) ── */
-        #btn-gestionar-destacados {
-            position: fixed; right: 22px; bottom: 78px; z-index: 3999;
-            display: none; align-items: center; gap: 8px;
-            padding: 10px 16px; border: none; border-radius: 24px;
-            background: var(--dark); color: #fff; font-size: 0.85rem; font-weight: 700;
-            cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25);
-        }
-        #btn-gestionar-destacados.visible { display: inline-flex; }
-        #btn-gestionar-destacados:hover { background: var(--blue); }
-        #btn-gestionar-destacados.oculto-por-modal { display: none !important; }
-        /* A petición de Eloy: en móvil debe verse igual que el botón
-           "Gestionar soluciones" del Centro de Soluciones (.cs-gestion-dock-btn,
-           ver assets/css/soluciones.css) — siempre la píldora completa con
-           icono + texto, nunca un círculo negro sin etiquetar. Solo se
-           reposiciona un poco para dejar sitio al resto de la UI móvil. */
-        @media (max-width: 640px) {
-            #btn-gestionar-destacados { right: 14px; bottom: 58px; }
         }
 
         /* ── Modal "Gestionar destacados" ─────────────────────────────── */
@@ -3960,15 +3950,6 @@
 <button id="btn-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
     <i class="fa-solid fa-arrow-up"></i>
 </button>
-<!-- Botón flotante de gestión de Destacados — gestión real protegida por
-     PIN (ver verificarPin_ en Apps Script); el propio botón solo se
-     muestra en preproducción (ver window.MOSTRAR_GESTION_DESTACADOS más
-     abajo), igual que el resto de herramientas de administración de esta
-     página, aunque la SECCIÓN "Destacados" en sí la ve cualquier
-     visitante, en cualquier entorno. -->
-<button id="btn-gestionar-destacados" title="Gestionar destacados" aria-label="Gestionar destacados">
-    <i class="fa-solid fa-fire"></i> <span class="btn-gestionar-destacados__texto">Gestionar destacados</span>
-</button>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -4292,6 +4273,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </button>
                     <button type="button" id="btn-destacados-compartir" class="btn-destacados-accion btn-destacados-compartir" title="Compartir" aria-label="Compartir">
                         <i class="fa-solid fa-share-nodes"></i> <span>Compartir</span>
+                    </button>
+                    <!-- Edición de Destacados (gestión real protegida por PIN,
+                         ver verificarPin_ en Apps Script) — incluido aquí, en
+                         vez del antiguo botón flotante independiente. Oculto
+                         por defecto y solo se muestra en preproducción (ver
+                         window.MOSTRAR_GESTION_DESTACADOS más abajo); en
+                         producción se elimina del DOM del todo, nunca sube. -->
+                    <button type="button" id="btn-gestionar-destacados" class="btn-destacados-accion btn-destacados-editar" title="Editar destacados" aria-label="Editar destacados">
+                        <i class="fa-solid fa-pen-to-square"></i> <span>Editar destacados</span>
                     </button>
                 </div>
             </div>
