@@ -185,6 +185,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <i class="fa-solid fa-rectangle-ad"></i> <span class="an-btn-gestionar__texto">Gestionar anuncios y recursos</span>
     </button>
 
+    <!-- Visor de recurso: vista previa en grande sin salir de la web (clic
+         en la tarjeta o botón "Ver") — imagen a tamaño grande, o vista
+         previa embebida de Drive (PDF, Office...) para cualquier otro
+         archivo que Drive pueda previsualizar. Solo para recursos de tipo
+         "archivo"; un recurso de tipo URL externa sigue abriendo en
+         pestaña nueva (ver abrirRecursoTarjeta_/accionVer_ en anuncios.js),
+         porque un sitio de terceros no se puede embeber de forma fiable. -->
+    <div class="modal-overlay" id="an-visor-overlay">
+      <div class="modal-producto-box an-visor-box" role="dialog" aria-modal="true" aria-labelledby="an-visor-titulo">
+        <button class="modal-producto-cerrar" id="an-visor-cerrar" aria-label="Cerrar vista previa">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 id="an-visor-titulo" class="an-visor-titulo"></h3>
+        <div id="an-visor-contenido" class="an-visor-contenido"></div>
+        <div class="an-visor-pie">
+          <a id="an-visor-descargar" href="#" class="an-btn an-btn--secundario"><i class="fa-solid fa-download"></i> Descargar</a>
+          <a id="an-visor-abrir-fuera" href="#" target="_blank" rel="noopener noreferrer" class="an-btn an-btn--secundario"><i class="fa-solid fa-up-right-from-square"></i> Abrir en pestaña nueva</a>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal de gestión -->
     <div class="modal-overlay" id="an-modal-overlay">
       <div class="modal-producto-box an-modal-box" role="dialog" aria-modal="true" aria-labelledby="an-modal-titulo">
