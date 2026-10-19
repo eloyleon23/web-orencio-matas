@@ -1,0 +1,63 @@
+name: Regenerar sitemap.xml
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Semanal: el sitemap no necesita regenerarse con más frecuencia —
+    # ni las páginas estáticas ni las fichas del Centro de Soluciones
+    # cambian a diario. Un workflow_dispatch manual cubre cualquier caso
+    # en el que convenga regenerarlo al momento (p. ej. tras publicar
+    # varias soluciones nuevas de golpe).
+    - cron: '0 5 * * 1'
+
+concurrency:
+  group: generar-sitemap
+  cancel-in-progress: false
+
+jobs:
+  generar_sitemap:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # necesario: el script usa "git log" por fichero para el lastmod de cada página estática
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Regenerar sitemap.xml
+        run: python3 scripts_ci/generar_sitemap.py
+
+      - name: Commit and push cambios
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Mismo patrón de reintento robusto que ya usa
+          # generar_productos_json.yml ante un remoto movido entre medias.
+          for intento in 1 2 3; do
+            git add sitemap.xml
+            if git diff --staged --quiet; then
+              echo "Nada que subir (sitemap ya al día)."
+              exit 0
+            fi
+            git commit -m "Auto: regenerar sitemap.xml"
+            if git push; then
+              echo "Push correcto (intento $intento)."
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento/3) — el remoto se movió mientras tanto."
+
+            cp sitemap.xml /tmp/sitemap.xml.regenerado
+            git reset --hard HEAD~1
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/sitemap.xml.regenerado sitemap.xml
+          done
+          echo "No se pudo hacer push tras 3 intentos." >&2
+          exit 1
