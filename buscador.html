@@ -5600,6 +5600,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     const $ = (id) => document.getElementById(id);
 
+    // Eventos de negocio para GA4 (vía Google Tag Manager, ver
+    // src/js/analytics-consent.js para el mismo patrón de dataLayer.push
+    // ya usado en el sitio) — búsquedas, productos vistos y bloques/marcas
+    // destacadas pulsadas. No requiere consentimiento de cookies aparte:
+    // igual que el resto de analítica del sitio, el contenedor de GTM solo
+    // se carga en el dominio de producción (orenciomatas.es), así que este
+    // push a dataLayer no tiene ningún efecto fuera de ahí.
+    function enviarEventoAnalitica_(nombre, datos) {
+        try {
+            (window.dataLayer = window.dataLayer || []).push(Object.assign({ event: nombre }, datos || {}));
+        } catch (e) { /* un fallo de analítica nunca debe romper el buscador */ }
+    }
+
     // ── Normalizar texto para búsqueda fuzzy (sin tildes, minúsculas) ──
     // Diccionario de abreviaturas SISTEMÁTICAS de este catálogo, usado por
     // normalizar() más abajo — ver el comentario completo junto a su uso.
@@ -6515,6 +6528,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             resetPaginacion();
             aplicarFiltros();
         }, 300));
+        // Evento de analítica de la búsqueda en sí (término + si hubo
+        // resultados) — debounce propio más largo que el de aplicarFiltros
+        // de arriba (que ya ha corrido y dejado listo resultadosActuales),
+        // para registrar una búsqueda por pausa al escribir, no una por
+        // cada tecla.
+        $('f-texto').addEventListener('input', debounce(() => {
+            const termino = $('f-texto').value.trim();
+            if (!termino) return;
+            enviarEventoAnalitica_('busqueda_realizada', {
+                busqueda_termino: termino,
+                busqueda_resultados: resultadosActuales.length,
+                busqueda_con_resultados: resultadosActuales.length > 0,
+            });
+        }, 1000));
         // Alternar entre la "X" (hay texto) y el icono de cámara (campo
         // vacío) — nunca se muestran los dos a la vez.
         $('f-texto').addEventListener('input', actualizarIconosBuscador);
@@ -7891,6 +7918,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // también una única familia) también se marcan — mismo motivo que ya
     // se aplicó a los bloques "Seguir comprando".
     function aplicarFiltroMarca_(marca, area, familia, refs) {
+        enviarEventoAnalitica_('marca_destacada_click', { marca_nombre: marca, marca_area: area || '' });
         refsMarcaActiva_ = new Set(refs);
         $('f-texto').value = marca;
         actualizarIconosBuscador();
@@ -8313,6 +8341,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // igual de restrictivo que el que ya aplica el propio bloque al
     // elegir qué productos mostrar.
     function aplicarFiltroCategoria_(def) {
+        enviarEventoAnalitica_('bloque_categoria_click', { bloque_titulo: def.titulo });
         refsMarcaActiva_ = null;
         $('f-texto').value = def.terminoBusqueda;
         actualizarIconosBuscador();
@@ -11975,6 +12004,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function abrirModalProducto(p, opciones) {
         opciones = opciones || {};
+        enviarEventoAnalitica_('ver_producto', {
+            producto_referencia: p.ref,
+            producto_nombre: p.nombre,
+            producto_area: p.area || '',
+            producto_familia: p.familia || '',
+        });
         registrarProductoVisto_(p);
         registrarProductoVistoHistorial_(p);
         cargarUltimosVistos_();
