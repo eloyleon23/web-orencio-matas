@@ -66,6 +66,55 @@
      https://www.google.com/recaptcha/admin/create, reCAPTCHA v2,
      "Casilla de verificación"), sustituida el 10/09/2026. -->
 <script src="https://www.google.com/recaptcha/api.js" defer></script>
+<!-- Datos estructurados (JSON-LD) del negocio — para que Google pueda
+     mostrar el panel de conocimiento, horarios y ficha en el mapa
+     directamente en los resultados de búsqueda. Mismos datos de
+     contacto que la sección #contacto de esta misma página; si cambian
+     ahí (dirección, teléfono, horario...), hay que actualizarlos aquí
+     también. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Store",
+  "name": "Orencio Matas y Hnos, S.L.",
+  "image": "https://orenciomatas.es/assets/logos/og-banner-1200x630.jpg",
+  "logo": "https://orenciomatas.es/assets/logos/logo-orencio.png",
+  "url": "https://orenciomatas.es/",
+  "telephone": "+34926221217",
+  "email": "correo@orenciomatas.es",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Av. Alfred Nobel, 2",
+    "addressLocality": "Ciudad Real",
+    "postalCode": "13005",
+    "addressRegion": "Ciudad Real",
+    "addressCountry": "ES"
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "09:00",
+      "closes": "14:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "16:30",
+      "closes": "19:30"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "Saturday",
+      "opens": "09:00",
+      "closes": "14:00"
+    }
+  ],
+  "sameAs": [
+    "https://www.instagram.com/orenciomatas/"
+  ]
+}
+</script>
 </head>
   <body>
 <!-- Google Tag Manager (noscript) -->
