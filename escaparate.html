@@ -227,9 +227,12 @@
       .vitrina-content{
         position:relative; z-index:1;
       }
-      /* Foto de campaña: NÍTIDA (sin difuminar), en un bloque a la
-         derecha, anclado arriba (no estirado a toda la altura de la
-         vitrina), solo en escritorio (900px+) — nunca en móvil. */
+      /* Foto de campaña: NÍTIDA (sin difuminar). En escritorio (900px+),
+         en un bloque a la derecha, anclado arriba (no estirado a toda
+         la altura de la vitrina). En móvil, a petición de Eloy, también
+         se ve — a todo el ancho del bloque principal, debajo del texto
+         (orden normal del HTML, sin flex), y más grande que en
+         escritorio a propósito ("no me importa que sea más grande"). */
       .vitrina-foto{
         display:none;
         flex:0 0 clamp(170px, 24%, 260px);
@@ -238,6 +241,9 @@
         position:relative; z-index:1;
       }
       .vitrina-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
+      @media (max-width:899px){
+        .vitrina.tiene-imagen .vitrina-foto{ display:block; margin-top:22px; }
+      }
       @media (min-width:900px){
         .vitrina.tiene-imagen{ display:flex; align-items:flex-start; gap:clamp(20px,3vw,36px); }
         .vitrina.tiene-imagen .vitrina-content{ flex:1 1 auto; min-width:0; }
@@ -773,7 +779,25 @@
         display:flex; align-items:center; gap:9px; flex-wrap:wrap;
         border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:6px 8px;
         background:var(--paper);
+        transition:opacity 140ms ease, box-shadow 140ms ease;
       }
+      .chip-producto.arrastrando{ opacity:.4; }
+      .chip-producto.arrastrando-sobre{ box-shadow:inset 0 2px 0 var(--accent), inset 0 -2px 0 var(--accent); }
+      .chip-arrastrar{
+        flex:none; width:20px; height:28px; border:none; padding:0; background:none;
+        color:var(--ink-faint); cursor:grab; display:flex; align-items:center; justify-content:center;
+        touch-action:none;
+      }
+      .chip-arrastrar:active{ cursor:grabbing; }
+      .chip-arrastrar svg{ width:16px; height:16px; }
+      .chip-orden{ flex:none; display:flex; flex-direction:column; gap:1px; }
+      .chip-orden-btn{
+        width:18px; height:14px; border:none; border-radius:3px; padding:0; background:var(--line);
+        color:var(--ink-soft); font-size:8px; line-height:1; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+      }
+      .chip-orden-btn:hover:not(:disabled){ background:var(--accent); color:#fff; }
+      .chip-orden-btn:disabled{ opacity:.3; cursor:not-allowed; }
       .chip-producto .chip-img{
         width:32px; height:32px; border-radius:6px; overflow:hidden; flex:none;
         background:var(--paper-raised); border:1px solid var(--line);
@@ -2700,12 +2724,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // Lista SIEMPRE visible de lo que ya está en la campaña (independiente
   // del filtro de búsqueda activo) — antes, para quitar un producto ya
   // asignado había que volver a encontrarlo entre miles de productos.
+  // Reordena `selected` moviendo `ref` `delta` posiciones (−1 = subir,
+  // +1 = bajar) — usado tanto por los botones ▲▼ (teclado/táctil) como,
+  // indirectamente, por el resultado final de arrastrar con el ratón
+  // (ver dragstart/drop en renderSeleccionados()). El orden de este Set
+  // ES el orden real que se guarda (ver productosArr más abajo, "orden
+  // de inserción" del Set) — no existe ninguna columna de orden aparte
+  // en la Sheet: no hace falta tocar nada en Apps Script.
+  function moverProductoSeleccionado_(ref, delta){
+    const refs = Array.from(selected);
+    const i = refs.indexOf(ref);
+    if(i === -1) return;
+    const j = i + delta;
+    if(j < 0 || j >= refs.length) return;
+    [refs[i], refs[j]] = [refs[j], refs[i]];
+    selected = new Set(refs);
+    renderSeleccionados();
+  }
+
+  let refArrastrando_ = null;
+
   function renderSeleccionados(){
     const cont = $("#selectedChips");
     const refs = Array.from(selected);
     $("#selectedHeadCount").textContent = refs.length;
     $("#btnQuitarTodos").disabled = !refs.length;
-    cont.innerHTML = refs.map(ref=>{
+    cont.innerHTML = refs.map((ref, indice)=>{
       const p = PRODUCTS[ref];
       const nombre = (p ? p.nombre : ref).replace(/"/g,'&quot;');
       const imgUrl = p ? urlImagenProducto(p, 80) : null;
@@ -2716,7 +2760,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
       if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
       const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento…';
-      return `<div class="chip-producto">
+      return `<div class="chip-producto" draggable="true" data-ref="${ref}">
+        <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar ${nombre}">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+        </button>
+        <span class="chip-orden">
+          <button type="button" class="chip-orden-btn" data-mover="${ref}" data-delta="-1" title="Subir" aria-label="Subir ${nombre}" ${indice===0?'disabled':''}>▲</button>
+          <button type="button" class="chip-orden-btn" data-mover="${ref}" data-delta="1" title="Bajar" aria-label="Bajar ${nombre}" ${indice===refs.length-1?'disabled':''}>▼</button>
+        </span>
         <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
         <span class="chip-nombre" title="${nombre}">${nombre}</span>
         <details class="destacar" ${(esDestacado||tieneDescuento)?'open':''}>
@@ -2760,6 +2811,59 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         updateSelCount();
         renderSeleccionados();
         renderPicker(); // por si el mismo producto se ve también en la búsqueda/sugerencias, para desmarcarlo ahí también
+      });
+    });
+    $$("[data-mover]", cont).forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        moverProductoSeleccionado_(btn.dataset.mover, parseInt(btn.dataset.delta, 10));
+      });
+    });
+    // Arrastrar y soltar para reordenar (drag-and-drop nativo del
+    // navegador) — alternativa de ratón a los botones ▲▼ de arriba, que
+    // cubren lo mismo por teclado/táctil (el drag-and-drop HTML5 nativo
+    // no es fiable en móvil). Solo arranca el arrastre si se agarra
+    // desde el tirador (chip-arrastrar): el resto de la chip tiene
+    // <select>/<input> con los que hay que poder interactuar con
+    // normalidad.
+    $$(".chip-producto", cont).forEach(chip=>{
+      chip.addEventListener("dragstart", (e)=>{
+        if(!e.target.closest(".chip-arrastrar")){ e.preventDefault(); return; }
+        refArrastrando_ = chip.dataset.ref;
+        chip.classList.add("arrastrando");
+        e.dataTransfer.effectAllowed = "move";
+        try{ e.dataTransfer.setData("text/plain", refArrastrando_); }catch(err){}
+      });
+      chip.addEventListener("dragend", ()=>{
+        chip.classList.remove("arrastrando");
+        $$(".chip-producto", cont).forEach(c=>c.classList.remove("arrastrando-sobre"));
+        refArrastrando_ = null;
+      });
+      chip.addEventListener("dragover", (e)=>{
+        if(!refArrastrando_) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+      });
+      chip.addEventListener("dragenter", ()=>{
+        if(refArrastrando_ && refArrastrando_ !== chip.dataset.ref) chip.classList.add("arrastrando-sobre");
+      });
+      chip.addEventListener("dragleave", ()=>{
+        chip.classList.remove("arrastrando-sobre");
+      });
+      chip.addEventListener("drop", (e)=>{
+        e.preventDefault();
+        chip.classList.remove("arrastrando-sobre");
+        const refDestino = chip.dataset.ref;
+        if(!refArrastrando_ || refArrastrando_ === refDestino) return;
+        const refs = Array.from(selected);
+        const iOrigen = refs.indexOf(refArrastrando_);
+        if(iOrigen === -1 || refs.indexOf(refDestino) === -1) return;
+        refs.splice(iOrigen, 1);
+        // Recalculado tras el splice: si el origen estaba antes del
+        // destino, el índice del destino se ha desplazado una posición.
+        const iDestinoTrasQuitar = refs.indexOf(refDestino);
+        refs.splice(iDestinoTrasQuitar, 0, refArrastrando_);
+        selected = new Set(refs);
+        renderSeleccionados();
       });
     });
     $$("[data-campo]", cont).forEach(campo=>{
@@ -2859,34 +2963,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
   }
 
-  // El catálogo completo (para poder BUSCAR y añadir productos nuevos,
-  // no solo ver los ya asignados) se carga aquí, de forma perezosa — ver
-  // cargarCatalogoCompleto(). Los productos YA asignados a esta campaña
-  // se ven al instante de todas formas (ya están en PRODUCTS desde la
-  // carga dirigida de la vitrina pública), así que solo afecta a poder
-  // buscar más, no a lo que ya se ve nada más abrir.
+  // Los productos YA asignados a esta campaña no dependen del catálogo
+  // completo (ya están en PRODUCTS desde la carga dirigida de la
+  // vitrina pública) — se pintan de inmediato, sin esperar nada.
+  // El catálogo completo (para poder BUSCAR y añadir productos nuevos)
+  // se carga aparte, de forma perezosa, con su propio spinner en el
+  // buscador de productos mientras tanto — antes se esperaba a las dos
+  // cosas a la vez (el comentario de aquí decía que no, pero el código
+  // sí lo hacía: renderSeleccionados() solo se llamaba DESPUÉS del
+  // await de cargarCatalogoCompleto()), así que la lista de ya-
+  // asignados tardaba en aparecer en blanco tanto como el catálogo
+  // entero (varios MB, "miles de productos"), sin ningún indicio de que
+  // estuviera cargando algo — aviso real de Eloy.
   async function productosCargarCampanaYMostrar_(campaignId){
     const c = findCampaign(campaignId);
     if(!c) return;
-    const btn = $("#btnProductos");
-    const textoOriginal = btn ? btn.textContent : '';
-    if(btn){ btn.disabled = true; btn.textContent = 'Cargando catálogo…'; }
-    try{
-      await cargarCatalogoCompleto();
-    } catch(err){
-      if(btn){ btn.disabled = false; btn.textContent = textoOriginal; }
-      toast('No se ha podido cargar el catálogo completo: ' + err.message, true);
-      return;
-    }
-    if(btn){ btn.disabled = false; btn.textContent = textoOriginal; }
 
-    // A partir de aquí, todo síncrono — pero envuelto en try/catch de
-    // todas formas: al ser esta función async, cualquier excepción sin
-    // capturar aquí dentro se convierte en un rechazo de promesa SIN
-    // CAPTURAR (nunca llega a window.onerror), silencioso para el
-    // usuario real y, en Node/jsdom, capaz de tirar abajo el proceso
-    // entero en vez de solo registrar el fallo — encontrado de verdad
-    // al probar esta función tras convertirla en async.
     try{
       selected = new Set(c.productos);
       sugeridosIA = [];
@@ -2897,17 +2989,43 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       updateSelCount();
       renderSeleccionados();
       $("#modalProdCampana").textContent = c.nombre;
-      fillFamiliaSelect();
       $("#fBusca").value = "";
       $("#fFamilia").value = "";
       $("#iaCriterioAdicional").value = "";
       $("#iaSuggestHint").classList.remove('error');
       $("#iaSuggestHint").textContent = HINT_IA_DEFECTO;
-      renderPicker();
     } catch(err){
       console.error('Error abriendo el modal de productos:', err);
       toast('No se ha podido abrir el modal de productos: ' + err.message, true);
+      return;
     }
+
+    // Spinner en el propio buscador de productos (mismo patrón visual
+    // que "Cargando el escaparate…" de la propia página, ver
+    // .spinner-line/.spinner-dot) mientras se descarga el catálogo
+    // completo — antes se quedaba en blanco sin ninguna pista de que
+    // había algo en marcha.
+    $("#pickerGrid").innerHTML = '<div class="spinner-line"><span class="spinner-dot"></span> Cargando catálogo completo…</div>';
+    $("#fFamilia").disabled = true;
+    $("#fBusca").disabled = true;
+    const btn = $("#btnProductos");
+    const textoOriginal = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Cargando catálogo…'; }
+    try{
+      await cargarCatalogoCompleto();
+    } catch(err){
+      if(btn){ btn.disabled = false; btn.textContent = textoOriginal; }
+      $("#fFamilia").disabled = false;
+      $("#fBusca").disabled = false;
+      $("#pickerGrid").innerHTML = '';
+      toast('No se ha podido cargar el catálogo completo: ' + err.message, true);
+      return;
+    }
+    if(btn){ btn.disabled = false; btn.textContent = textoOriginal; }
+    $("#fFamilia").disabled = false;
+    $("#fBusca").disabled = false;
+    fillFamiliaSelect();
+    renderPicker();
   }
   $("#fFamilia").addEventListener("change", renderPicker);
   $("#fBusca").addEventListener("input", renderPicker);
@@ -3589,7 +3707,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       });
 
       // Las fotos de producto se piden más abajo, una vez calculada la
-      // rejilla (ver filasProductos) — cada una se recorta al recuadro
+      // rejilla (ver itemsColocados) — cada una se recorta al recuadro
       // EXACTO que le toca en su tarjeta (ver cajaImagenDe), así que hace
       // falta conocer antes el tamaño real de esa tarjeta (normal, ancha
       // o grande). El logo es de este mismo origen, sin límite de
@@ -3845,89 +3963,161 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       }
       cursorY += alturaHeaderInfo + 7;
 
-      // ---- Rejilla de productos: 3 columnas base. Los destacados
-      // ocupan más espacio que el resto, igual que en la propia página
-      // (.card[data-tam]: tamaño 2/3 más ancho, 4/5/6 más ancho Y más
-      // alto) — aquí, para poder maquetar en tandas de fila completa sin
-      // dejar huecos raros junto a una tarjeta grande, tamaño 3 y 4-6 se
-      // quedan solos en su propia fila (banner ancho), y 1/2 se reparten
-      // en filas compartidas, tan apretadas como quepan (menos hueco en
-      // blanco, más productos normales por página). ----
+      // ---- Rejilla de productos: 3 columnas base, con celdas CUADRADAS
+      // (ROW_UNIT = mismo ancho que una columna) y los destacados
+      // ocupando varias columnas Y varias filas a la vez — no solo más
+      // ancho, como antes. Segundo aviso real de Eloy con el mismo
+      // folleto de ejemplo: incluso tras agrandar la altura de los
+      // destacados de ancho completo, seguían saliendo como "rectángulos
+      // panorámicos" (hasta ~3,9:1 de proporción) en vez de cuadrados —
+      // "cuando un producto se destaque hay que buscar ocupar más
+      // espacio pero siempre con cuadrados más que rectángulos, que es
+      // lo que hace que la foto del producto no se pueda agrandar". La
+      // única forma real de conseguir un hueco de imagen cuadrado con un
+      // ancho de varias columnas es que la tarjeta sea tan alta como
+      // ancha — de ahí la rejilla 2D de abajo (colocarEnRejilla_),
+      // equivalente a grid-auto-flow:dense de la propia página pero
+      // adaptada a la paginación del PDF (un bloque nunca puede partirse
+      // entre dos páginas). ----
       const gapX = 6, gapY = 6, baseCols = 3;
       const colW = (contentWidth - gapX*(baseCols-1)) / baseCols;
-      // cardH=54 se quedaba corto con descuento: precio tachado + precio
-      // rebajado ocupan una línea más que el precio simple, y esa línea
-      // de más empujaba la referencia (Ref. XXXXX) fuera del borde
-      // inferior de la tarjeta — el aviso de Eloy. Subido a 62 (el
-      // mínimo que deja margen real en ese caso, con los tamaños de
-      // fuente actuales) en vez de recortar más el hueco de la imagen,
-      // que es justo lo que se pidió agrandar hace poco.
-      const cardH = 62;       // tarjeta normal (tamaño 1 o 2/3 de ancho)
-      const cardHGrande = 78; // tamaño 4/5/6: además más alta, no solo más ancha
+      const ROW_UNIT = colW; // filas tan altas como anchas son las columnas → celda base cuadrada
       const padTarjeta = 3.5;
+      // Presupuesto FIJO (no proporcional a la altura de la tarjeta) para
+      // todo lo que no es la foto: franja superior + bloque de texto
+      // (familia/nombre/precio/ref) + margen inferior. Antes el hueco de
+      // imagen era un PORCENTAJE fijo de la altura (siempre el mismo
+      // 58%/42%), así que una tarjeta más alta destinaba también más
+      // espacio EXTRA al texto sin necesitarlo de verdad — el resto, toda
+      // la altura ganada al hacer la tarjeta más grande, tiene que ir a
+      // la foto (que es justo lo que hace falta para que un destacado
+      // grande se vea con una imagen grande, no con texto con mucho aire
+      // alrededor). "grande" = tarjetas con nombre a 2 líneas + familia +
+      // línea de precio sin IVA/descuento (ver esGrande más abajo); las
+      // normales (tamaño 1) no muestran ni familia ni esa línea extra,
+      // así que necesitan menos.
+      const CHROME_NORMAL = 24, CHROME_GRANDE = 32;
       // Mismo cálculo usado para pedir la foto ya recortada (más abajo) y
       // para colocarla en la tarjeta (dibujarTarjetaProducto) — tienen
       // que coincidir exactamente, o el recorte no llenaría el hueco real.
-      function cajaImagenDe(anchoTarjeta, altoTarjeta){
-        return { w: anchoTarjeta - padTarjeta*2, h: Math.round(altoTarjeta * 0.58) };
+      function cajaImagenDe(anchoTarjeta, altoTarjeta, grande){
+        const chrome = grande ? CHROME_GRANDE : CHROME_NORMAL;
+        return { w: anchoTarjeta - padTarjeta*2, h: Math.max(20, altoTarjeta - chrome) };
       }
 
       function especTarjeta(ref){
         const d = destacadosMap[ref];
         const tam = d && d.tamano > 1 ? d.tamano : 1;
-        if(tam >= 4) return { spanCols: baseCols, grande: true };
-        if(tam === 3) return { spanCols: baseCols, grande: false };
-        if(tam === 2) return { spanCols: 2, grande: false };
-        return { spanCols: 1, grande: false };
+        // Igual que en la propia página (tamaño 2/3 más ancho, 4/5/6 más
+        // ancho Y más alto), pero aquí SIEMPRE creciendo en las dos
+        // dimensiones a la vez — con solo 3 columnas en una página A4 (a
+        // diferencia de la web, con sitio para 5-8 columnas en pantallas
+        // anchas), ensanchar sin dar más alto deja bloques panorámicos
+        // casi vacíos en vez de cuadrados. Tamaño 3-6 se agrupan en un
+        // único nivel "grande" (ancho completo, 3x2 celdas — no 3x3):
+        // con solo 3 columnas no hay forma real de diferenciar más
+        // niveles por ancho, y 3x3 (182x182mm, casi una página entera)
+        // dejaba demasiado a menudo una página casi en blanco cuando ese
+        // destacado no cabía justo después de la cabecera — "hay que
+        // ocupar más espacio e intentar dejar menos huecos vacíos",
+        // aviso real de Eloy. 3x2 sigue siendo mucho más cuadrado que el
+        // diseño original (ratio de imagen ~2:1 en vez de ~3,9:1) pero
+        // con la mitad de alto, cabe en muchos más huecos sin romper
+        // página.
+        if(tam >= 3) return { spanCols: baseCols, spanRows: 2 };
+        if(tam === 2) return { spanCols: 2, spanRows: 2 };
+        return { spanCols: 1, spanRows: 1 };
       }
 
-      // Reparto en filas (equivalente sencillo al auto-flow de la
-      // rejilla CSS de la propia página, pero en un único sentido —
-      // hueco libre restante en la fila actual, sin "densar" hacia
-      // atrás): tamaño 3/4/5/6 siempre en fila propia a todo el ancho;
-      // 1/2 se acumulan en la fila actual mientras quepan.
-      const filasProductos = [];
-      let filaActual = { colOcupadas: 0, items: [] };
-      function cerrarFila(){
-        if(filaActual.items.length) filasProductos.push(filaActual);
-        filaActual = { colOcupadas: 0, items: [] };
+      // Colocación en una rejilla 2D (colOcupacion[fila][columna]) por
+      // "primer hueco libre" escaneando fila a fila, columna a columna —
+      // equivalente a grid-auto-flow:dense de la propia página (un
+      // producto normal que viene detrás en el pedido puede colarse en
+      // el hueco que deja, al lado, un destacado más grande), pero en
+      // un único sentido (sin "densar" hacia atrás sobre huecos ya
+      // pasados), que es sobrada para el volumen de productos de una
+      // campaña típica.
+      //
+      // Tercer aviso real de Eloy con el mismo folleto de ejemplo: "hay
+      // que ocupar todo el espacio posible dejando menos hueco vacío".
+      // La rejilla en sí ya empaquetaba denso, pero IGNORABA las páginas:
+      // un destacado de 2 filas podía "reservar" su hueco en una fila que
+      // luego no cabía entera en la página en curso (el salto de página
+      // se decide después, ya al dibujar, mirando la altura real), así
+      // que el salto se producía dejando vacío todo lo que quedaba de
+      // esa página — en vez de dejar que un producto normal (de una sola
+      // fila, que sí cabe) ocupara ese hueco y que el destacado pasara,
+      // completo, a la fila siguiente. Para evitarlo, calculamos aquí
+      // cuántas filas de rejilla caben de verdad en cada página (la
+      // primera, con la cabecera de campaña encima, y las siguientes,
+      // siempre iguales) y descartamos como candidata cualquier fila de
+      // arranque en la que un bloque de varias filas NO quepa entero
+      // antes de que acabe su página — así el hueco libre se lo queda,
+      // en su lugar, el siguiente producto normal que sí cabe en una
+      // sola fila.
+      const filaAltura_ = ROW_UNIT + gapY;
+      const filasPagina0_ = Math.max(1, Math.floor((footerTopY - 2 - cursorY) / filaAltura_));
+      const filasPaginaN_ = Math.max(1, Math.floor((footerTopY - 2 - (headerBottomY + 8)) / filaAltura_));
+      function finDePaginaDeFila_(fila){
+        if(fila < filasPagina0_) return filasPagina0_ - 1;
+        const pagina = Math.floor((fila - filasPagina0_) / filasPaginaN_);
+        return filasPagina0_ + (pagina + 1) * filasPaginaN_ - 1;
       }
-      refsOrdenados.forEach(ref => {
-        const spec = especTarjeta(ref);
-        if(spec.spanCols === baseCols){
-          cerrarFila();
-          filasProductos.push({ colOcupadas: baseCols, items: [{ ref, spanCols: baseCols, colStart: 0, grande: spec.grande }] });
-          return;
+      const colOcupacion_ = [];
+      function asegurarFilaRejilla_(i){
+        while(colOcupacion_.length <= i) colOcupacion_.push(new Array(baseCols).fill(false));
+      }
+      function buscarHuecoRejilla_(spanCols, spanRows){
+        let fila = 0;
+        for(;;){
+          if(fila + spanRows - 1 <= finDePaginaDeFila_(fila)){
+            asegurarFilaRejilla_(fila + spanRows - 1);
+            for(let col = 0; col <= baseCols - spanCols; col++){
+              let cabe = true;
+              for(let r = 0; r < spanRows && cabe; r++){
+                for(let c = 0; c < spanCols && cabe; c++){
+                  if(colOcupacion_[fila+r][col+c]) cabe = false;
+                }
+              }
+              if(cabe) return { fila, col };
+            }
+          }
+          fila++;
         }
-        if(filaActual.colOcupadas + spec.spanCols > baseCols) cerrarFila();
-        filaActual.items.push({ ref, spanCols: spec.spanCols, colStart: filaActual.colOcupadas, grande: false });
-        filaActual.colOcupadas += spec.spanCols;
-      });
-      cerrarFila();
+      }
+      function ocuparRejilla_(fila, col, spanCols, spanRows){
+        for(let r = 0; r < spanRows; r++) for(let c = 0; c < spanCols; c++) colOcupacion_[fila+r][col+c] = true;
+      }
 
-      // Las fotos se piden ahora que ya se conoce el tamaño real de cada
-      // tarjeta: cada una se recorta en el propio <canvas> (recorteRatio,
-      // ver cargarImagenDataURL) al ancho/alto EXACTO de su hueco — modo
-      // "cover", igual que object-fit:cover en CSS — así la imagen llena
-      // siempre todo el hueco en vez de quedar pequeña dentro de él
-      // ("las imágenes de los productos se diferencien bien ya que ocupa
-      // mas hueco el bloque que la propia imagen", el aviso de Eloy).
-      // Se cargan por tandas espaciadas (ver cargarImagenesEnTandas) para
-      // no disparar un 429 de googleusercontent.com; un fallo puntual en
-      // cualquiera no debe impedir generar el resto del folleto.
-      const itemsFotos = [];
-      filasProductos.forEach(fila => {
-        const altoFila = fila.items.some(it => it.grande) ? cardHGrande : cardH;
-        fila.items.forEach(it => {
-          const p = PRODUCTS[it.ref];
-          const anchoCard = it.spanCols * colW + (it.spanCols - 1) * gapX;
-          const caja = cajaImagenDe(anchoCard, altoFila);
-          itemsFotos.push({
-            ref: it.ref,
-            url: p ? urlImagenProductoFolleto(p, 500) : null,
-            opciones: { recorteRatio: caja.w / caja.h }
-          });
-        });
+      const itemsColocados = refsOrdenados.map(ref => {
+        const spec = especTarjeta(ref);
+        const { fila, col } = buscarHuecoRejilla_(spec.spanCols, spec.spanRows);
+        ocuparRejilla_(fila, col, spec.spanCols, spec.spanRows);
+        return { ref, fila, col, spanCols: spec.spanCols, spanRows: spec.spanRows };
+      });
+      const totalFilasRejilla = colOcupacion_.length;
+
+      // Las fotos de producto se piden SIN recortar (sin recorteRatio):
+      // se dibujan siempre enteras, en modo "contain" (ver
+      // dibujarTarjetaProducto), centradas en su hueco. Antes se
+      // recortaban en el propio <canvas> (modo "cover", hasta un 30%
+      // de cada lado) para acercarlas al hueco exacto de su tarjeta —
+      // pero con las cajas ahora más cuadradas que la foto real de
+      // muchos productos (botes, botellas, herramientas alargadas...),
+      // ese recorte llegaba a cortar parte del propio producto en la
+      // foto, no solo el aire sobrante alrededor ("las imágenes de los
+      // productos siguen siendo en algunos casos más grandes que el
+      // hueco... no se quede la imagen cortada", aviso real de Eloy).
+      // "Contain" nunca corta nada — como mucho dejará algo más de
+      // margen alrededor en los productos con una proporción muy
+      // distinta a su hueco, pero nunca pierde parte de la foto.
+      const itemsFotos = itemsColocados.map(it => {
+        const p = PRODUCTS[it.ref];
+        return {
+          ref: it.ref,
+          url: p ? urlImagenProductoFolleto(p, 500) : null,
+          opciones: {}
+        };
       });
       fijarEstadoBoton(`Extrayendo imágenes… (0/${itemsFotos.length})`);
       const fotos = await cargarImagenesEnTandas(itemsFotos, (completadas, total) => {
@@ -3969,17 +4159,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const tieneDescuento = !precioMayorFolleto && descuento > 0;
         const esDestacado = !!(d && d.tamano > 1);
         // El presupuesto vertical disponible depende de la ALTURA de la
-        // tarjeta, no de su ancho — una tarjeta ancha pero de la altura
-        // normal (tamaño 2/3) tiene el mismo hueco de texto que una
-        // normal, así que la familia y el nombre a 2 líneas solo caben
-        // en las tarjetas realmente más altas (tamaño 4/5/6).
-        const esGrande = altoTarjeta > cardH + 2;
+        // tarjeta, no de su ancho — una tarjeta de 1 sola fila (tamaño 1)
+        // tiene el mismo hueco de texto reducido sea cual sea su ancho;
+        // la familia y el nombre a 2 líneas solo caben en las tarjetas
+        // que ocupan más de una fila (tamaño 2 en adelante).
+        const esGrande = altoTarjeta > ROW_UNIT + 2;
         const mostrarFamilia = esGrande;
         const maxLineasNombre = esGrande ? 2 : 1;
 
         const padX = padTarjeta;
         const imgBoxY = y + 3;
-        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta);
+        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta, esGrande);
         const foto = fotoPorRef[ref];
         if(foto){
           // La foto ya viene recortada (ver itemsFotos/cajaImagenDe, más
@@ -4111,28 +4301,40 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.text(`Ref. ${p.ref}`, x + padX, ty + 4.4);
       }
 
-      // Fila a fila (no todo de golpe en un solo forEach síncrono) para
-      // poder informar "Componiendo folleto… (fila X/Y)" en el botón a
-      // medida que avanza — con catálogos de varias páginas, esta fase
-      // también se nota, y antes se quedaba con un único texto fijo todo
-      // el rato (justo el aviso de Eloy: "que vaya cambiando en base a lo
-      // que está ocurriendo por detrás").
-      for(let iFila = 0; iFila < filasProductos.length; iFila++){
-        const fila = filasProductos[iFila];
-        const esGrande = fila.items.some(it => it.grande);
-        const alturaFila = esGrande ? cardHGrande : cardH;
-        if(cursorY + alturaFila > footerTopY - 2){
+      // Se recorre la rejilla 2D fila a fila (de ROW_UNIT en ROW_UNIT, no
+      // todo de golpe en un solo forEach síncrono, para poder informar
+      // "Componiendo folleto… (fila X/Y)" en el botón a medida que avanza
+      // — justo el aviso de Eloy: "que vaya cambiando en base a lo que
+      // está ocurriendo por detrás"). cursorY avanza SIEMPRE un único
+      // ROW_UNIT por cada fila de la rejilla procesada, arranque o no ahí
+      // algún producto — un bloque de varias filas (destacado) se dibuja
+      // entero, de una sola vez, en la fila en la que arranca, con su
+      // alto real (spanRows*ROW_UNIT + huecos), y simplemente "sobresale"
+      // visualmente sobre las filas siguientes mientras cursorY se pone
+      // al día con ellas — así nunca hace falta partir un bloque entre
+      // dos páginas: el salto de página se decide ANTES de dibujar nada
+      // de una fila, mirando la altura real del bloque más alto que
+      // arranque en ella.
+      const itemsPorFila_ = {};
+      itemsColocados.forEach(it => { (itemsPorFila_[it.fila] = itemsPorFila_[it.fila] || []).push(it); });
+      for(let iFila = 0; iFila < totalFilasRejilla; iFila++){
+        const itemsFila = itemsPorFila_[iFila] || [];
+        const altoNecesario = itemsFila.length
+          ? Math.max(...itemsFila.map(it => it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY))
+          : ROW_UNIT;
+        if(cursorY + altoNecesario > footerTopY - 2){
           doc.addPage();
           dibujarCabecera();
           cursorY = headerBottomY + 8;
         }
-        fila.items.forEach(it => {
-          const x = margin + it.colStart * (colW + gapX);
+        itemsFila.forEach(it => {
+          const x = margin + it.col * (colW + gapX);
           const w = it.spanCols * colW + (it.spanCols - 1) * gapX;
-          dibujarTarjetaProducto(x, cursorY, w, alturaFila, it.ref);
+          const h = it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY;
+          dibujarTarjetaProducto(x, cursorY, w, h, it.ref);
         });
-        cursorY += alturaFila + gapY;
-        fijarEstadoBoton(`Componiendo folleto… (fila ${iFila + 1}/${filasProductos.length})`);
+        cursorY += ROW_UNIT + gapY;
+        fijarEstadoBoton(`Componiendo folleto… (fila ${iFila + 1}/${totalFilasRejilla})`);
         await new Promise(requestAnimationFrame);
       }
 
