@@ -274,8 +274,25 @@
         width:100%; aspect-ratio:16/9; border-radius:10px; overflow:hidden; margin-top:2px;
       }
       .campana-card-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+      /* Miniatura pequeña, solo en móvil (ver @media más abajo) — oculta
+         en escritorio, donde ya está la ancha de arriba en el flujo
+         normal de la tarjeta. */
+      .campana-card-thumb-movil{ display:none; }
       @media (max-width:900px){
         .campana-card-thumb{ display:none; }
+        /* A petición de Eloy: en móvil (donde la miniatura ancha de
+           arriba se oculta del todo) sí se quiere ver la imagen del
+           escaparate, pero pequeña y en la esquina superior derecha —
+           que ocupe "lo justo para no desordenar el contenido del
+           bloque". position:absolute, fuera del flujo normal: no
+           empuja nada del resto de la tarjeta (badges/áreas/título/
+           fechas siguen exactamente donde estaban sin ella). */
+        .campana-card-thumb-movil{
+          display:block; position:absolute; top:14px; right:14px;
+          width:44px; height:44px; border-radius:9px; overflow:hidden;
+          box-shadow:0 2px 8px rgba(0,0,0,.18); z-index:2;
+        }
+        .campana-card-thumb-movil img{ width:100%; height:100%; object-fit:cover; display:block; }
       }
 
       /* ---------- Botón "Gestionar campañas" junto al título ----------
@@ -1034,6 +1051,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const descuentoMax = descuentoMaximoCampana(c);
     return `
       <a class="campana-card" href="./escaparate.html?campana=${encodeURIComponent(c.id)}" style="--tarjeta-color:${cs.vivid}; --tarjeta-wash:${cs.wash};">
+        ${imgUrl ? `<div class="campana-card-thumb-movil"><img src="${imgUrl}" alt="" loading="lazy"></div>` : ''}
         <div class="campana-card-top">
           <span class="campana-card-badge">${c.tipo==='comercial' ? 'Comercial' : 'Temporada'}</span>
           ${hoyActiva ? '<span class="campana-card-badge hoy">● activa hoy</span>' : ''}
