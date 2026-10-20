@@ -5541,6 +5541,12 @@ function procesarGuardarCampana(data) {
 const TAMANOS_DESTACADO_VALIDOS_ = [1, 2, 3, 4, 5, 6];
 const ALINEACIONES_VALIDAS_ = ['izquierda', 'centro', 'derecha'];
 const POSICIONES_VALIDAS_ = ['arriba', 'medio', 'abajo'];
+// Chip de promoción alternativo al % de descuento (ver sanearDestacados_
+// más abajo) — lista cerrada que el front ofrece en el selector más un
+// "Otro" de texto libre; el backend NO valida contra esta lista (solo
+// recorta longitud), porque "Otro" es justamente texto libre — esta
+// constante solo documenta las opciones predefinidas del selector.
+const PROMOS_PREDEFINIDAS_ = ['2x1', '3x2', '3x1', '2ª unidad al 50%', '2ª unidad al 70%'];
 
 function sanearDestacados_(destacadosRaw, refsValidas) {
   if (!Array.isArray(destacadosRaw)) return [];
@@ -5571,17 +5577,27 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
     // completa) — ni la tarjeta del estante ni la del PDF tienen sitio
     // para un párrafo largo.
     const texto = (d.texto || '').toString().trim().slice(0, 220);
+    // Chip de promoción alternativo al % de descuento — petición real de
+    // Eloy: "permitir añadir un tipo de promoción a los productos de
+    // escaparate, a parte del descuento, que sea otra chip con ejemplos
+    // como 2x1 o 3x2, etc." Un producto puede tener las DOS cosas a la
+    // vez (p. ej. "3x2" Y un 10% de descuento adicional) — no son
+    // excluyentes, cada una se pinta en su propio chip. Recortado corto
+    // (es un chip, no una frase) — nunca se valida contra
+    // PROMOS_PREDEFINIDAS_ porque "Otro" es justo texto libre.
+    const promo = (d.promo || '').toString().trim().slice(0, 28);
     // Antes se omitía por completo cualquier producto con tamaño normal
     // (tamano===1) — correcto cuando "destacados" solo servía para el
     // tamaño/posición, pero ahora una entrada también hace falta para
-    // guardar un descuento propio, o un texto de pie, aunque el producto
-    // no esté agrandado. Solo se omite si NO aporta nada de verdad (ni
-    // tamaño destacado, ni descuento, ni texto).
-    if (tamano === 1 && !descuento && !texto) return;
+    // guardar un descuento propio, un texto de pie o una promo, aunque el
+    // producto no esté agrandado. Solo se omite si NO aporta nada de
+    // verdad (ni tamaño destacado, ni descuento, ni texto, ni promo).
+    if (tamano === 1 && !descuento && !texto && !promo) return;
     vistos.add(ref);
     const entrada = { ref: ref, tamano: tamano, alinH: alinH, posV: posV };
     if (descuento) entrada.descuento = descuento;
     if (texto) entrada.texto = texto;
+    if (promo) entrada.promo = promo;
     resultado.push(entrada);
   });
   return resultado;

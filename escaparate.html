@@ -462,11 +462,28 @@
          mismo motivo que el resto de chips de este proyecto: con un
          color personalizado de campaña muy claro, un chip con ese mismo
          color de fondo podría quedar ilegible. */
-      .card-descuento-badge{
+      /* Contenedor de los chips del lado izquierdo (descuento y/o promo) —
+         en columna, para que quepan los dos a la vez sin pisarse cuando
+         un producto tiene las dos cosas (no son excluyentes: "3x2" Y un
+         10% de descuento adicional, por ejemplo). */
+      .card-badges-izq{
         position:absolute; top:10px; left:10px; z-index:2;
+        display:flex; flex-direction:column; align-items:flex-start; gap:5px;
+        /* El chip de promoción es texto libre (ver card-promo-badge) — a
+           diferencia de "Destacado"/"-X%" (siempre cortos), uno largo
+           podría salirse de la tarjeta si no se limita su ancho. */
+        max-width:calc(100% - 20px);
+      }
+      .card-descuento-badge{
         display:inline-flex; align-items:center; gap:4px;
         background:#D91B1B; color:#fff; font-size:10px; font-weight:800;
         text-transform:uppercase; letter-spacing:.03em; padding:4px 9px; border-radius:99px;
+      }
+      .card-promo-badge{
+        display:inline-flex; align-items:center; gap:4px;
+        background:#1E7A4C; color:#fff; font-size:10px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.03em; padding:4px 9px; border-radius:99px;
+        max-width:100%; white-space:normal; line-height:1.25; text-align:center;
       }
       .card[data-tam="2"]{ grid-column:span 2; }
       .card[data-tam="3"]{ grid-column:span 3; }
@@ -857,6 +874,8 @@
          competir por hueco en la misma línea de flex-wrap. */
       .destacar-panel-ancho{ flex:1 1 100%; }
       .destacar-panel textarea{ resize:vertical; min-height:38px; font-weight:400; }
+      .destacar-panel-promo-otro{ flex:1 1 100%; }
+      .destacar-panel-promo-otro input{ font-weight:400; }
 
       .selected-count{ font-size:13px; color:var(--ink-soft); }
       .selected-count b{ color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -992,6 +1011,11 @@
         margin:0 0 14px; padding:10px 12px; background:var(--paper-raised);
         border-radius:var(--radius-s); font-size:0.92rem; line-height:1.5;
         color:var(--ink-soft); font-style:italic;
+      }
+      .modal-producto-promo-badge{
+        display:inline-flex; align-items:center; gap:4px; margin-bottom:14px;
+        background:#1E7A4C; color:#fff; font-size:11px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.03em; padding:5px 11px; border-radius:99px;
       }
       .modal-producto-disclaimer{
         margin-top:auto; padding-top:20px; border-top:1px solid var(--line);
@@ -1622,6 +1646,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <h3 id="modal-producto-nombre"></h3>
         <p class="modal-producto-ref" id="modal-producto-ref"></p>
         <div class="modal-producto-precio" id="modal-producto-precio"></div>
+        <span class="modal-producto-promo-badge" id="modal-producto-promo" hidden></span>
         <div class="modal-producto-detalles">
           <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
           <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
@@ -2372,10 +2397,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
          <span class="precio precio-rebajado">${fmtEUR(precioRebajado)}&nbsp;€<span class="iva">IVA inc.</span></span>`
       : `<span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
          ${precioSinIVA}`;
+    // Chip de promoción (2x1, 3x2…), aparte del % de descuento — mismo
+    // criterio que el descuento en perfil profesional: son promociones
+    // sobre el PVP público, se ocultan con el precio mayor.
+    const tienePromoBadge = !precioMayor && !!(destacado && destacado.promo && destacado.promo.trim());
     return `
       <article class="card ${ia?'ia-card':''}" data-ref="${p.ref}" data-descuento="${tieneDescuento?descuento:0}" role="button" tabindex="0" aria-label="Ver detalle de ${p.nombre||p.ref}"${atributoTam}>
         ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
-        ${tieneDescuento ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
+        ${(tieneDescuento || tienePromoBadge) ? `<div class="card-badges-izq">
+          ${tieneDescuento ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
+          ${tienePromoBadge ? `<span class="card-promo-badge">🎁 ${escaparHTML_(destacado.promo)}</span>` : ''}
+        </div>` : ''}
         <div class="icon-tile">
           ${iconFor(p)}
           ${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}
@@ -2464,6 +2496,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       textoPie.hidden = false;
     } else {
       textoPie.hidden = true;
+    }
+
+    // Chip de promoción (2x1, 3x2…) — oculto en perfil profesional, igual
+    // que en la propia tarjeta (son promociones sobre el PVP público).
+    const promoBadge = $("#modal-producto-promo");
+    if(!precioMayorModal && destacadoRef && destacadoRef.promo){
+      promoBadge.textContent = `🎁 ${destacadoRef.promo}`;
+      promoBadge.hidden = false;
+    } else {
+      promoBadge.hidden = true;
     }
 
     const btnBuscador = $("#modal-producto-verbuscador");
@@ -2674,8 +2716,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   const ETIQUETAS_ALINEACION = { izquierda:'Izda.', centro:'Centro', derecha:'Dcha.' };
   const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
   const MAX_TEXTO_PRODUCTO = 220;
+  const MAX_PROMO_PRODUCTO = 28;
+  // Chip de promoción alternativo al % de descuento (ver sanearDestacados_
+  // en el backend) — lista cerrada que ofrece el selector, más "Otro"
+  // (texto libre, sentinela "__otro__" solo en el <select>, nunca se
+  // guarda tal cual).
+  const PROMOS_PREDEFINIDAS_ = ['2x1', '3x2', '3x1', '2ª unidad al 50%', '2ª unidad al 70%'];
   function destacadoActual(ref){
-    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0, texto:'' };
+    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0, texto:'', promo:'', promoManual:false };
   }
 
   function familiasDisponibles(){
@@ -2802,11 +2850,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const esDestacado = d.tamano > 1;
       const tieneDescuento = Number(d.descuento) > 0;
       const tieneTexto = !!(d.texto && d.texto.trim());
+      const tienePromo = !!(d.promo && d.promo.trim());
+      const promoModoOtro = !!d.promoManual;
       const partesResumen = [];
       if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
       if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
+      if(tienePromo) partesResumen.push(`🎁 ${d.promo}`);
       if(tieneTexto) partesResumen.push(`📝 Con texto de pie`);
-      const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento / texto…';
+      const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento / promo / texto…';
       return `<div class="chip-producto" draggable="true" data-ref="${ref}">
         <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar ${nombre}">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
@@ -2817,8 +2868,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </span>
         <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
         <span class="chip-nombre" title="${nombre}">${nombre}</span>
-        <details class="destacar" ${(esDestacado||tieneDescuento||tieneTexto)?'open':''}>
-          <summary class="${(esDestacado||tieneDescuento||tieneTexto)?'activo':''}">${resumen}</summary>
+        <details class="destacar" ${(esDestacado||tieneDescuento||tieneTexto||tienePromo||promoModoOtro)?'open':''}>
+          <summary class="${(esDestacado||tieneDescuento||tieneTexto||tienePromo)?'activo':''}">${resumen}</summary>
           <div class="destacar-panel">
             <label>Tamaño
               <select data-campo="tamano" data-ref="${ref}">
@@ -2841,6 +2892,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </label>
             <label>Descuento (%)
               <input type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15" data-campo="descuento" data-ref="${ref}" value="${tieneDescuento ? d.descuento : ''}">
+            </label>
+            <label>Promoción (aparte del descuento)
+              <select data-campo="promo" data-ref="${ref}">
+                <option value="">Ninguna</option>
+                ${PROMOS_PREDEFINIDAS_.map(op=>`<option value="${op}" ${(!promoModoOtro && d.promo===op)?'selected':''}>${op}</option>`).join('')}
+                <option value="__otro__" ${promoModoOtro?'selected':''}>Otro…</option>
+              </select>
+            </label>
+            <label class="destacar-panel-promo-otro" ${!promoModoOtro?'hidden':''}>Texto de la promoción
+              <input type="text" maxlength="${MAX_PROMO_PRODUCTO}" placeholder="p. ej. Llévate 3 por el precio de 2" data-campo="promoTexto" data-ref="${ref}" value="${promoModoOtro ? (d.promo||'').replace(/"/g,'&quot;') : ''}">
             </label>
             <label class="destacar-panel-ancho">Texto de pie (opcional — descripción, ayuda o detalle técnico)
               <textarea data-campo="texto" data-ref="${ref}" maxlength="${MAX_TEXTO_PRODUCTO}" rows="2" placeholder="p. ej. Incluye 3 recambios de filtro">${(d.texto||'').replace(/</g,'&lt;')}</textarea>
@@ -2937,14 +2998,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           actual.descuento = (isFinite(n) && n > 0) ? Math.min(Math.round(n), 95) : 0;
         }
         else if(nombreCampo === 'texto') actual.texto = campo.value.trim().slice(0, MAX_TEXTO_PRODUCTO);
+        else if(nombreCampo === 'promo'){
+          if(campo.value === '__otro__'){ actual.promoManual = true; actual.promo = ''; }
+          else { actual.promoManual = false; actual.promo = campo.value; }
+        }
+        else if(nombreCampo === 'promoTexto'){ actual.promo = campo.value.trim().slice(0, MAX_PROMO_PRODUCTO); actual.promoManual = true; }
         else actual[nombreCampo] = campo.value;
         // Antes se borraba la entrada entera en cuanto tamano<=1 — correcto
         // cuando "destacados" solo servía para tamaño/posición, pero ahora
-        // también hace falta guardar un descuento propio, o un texto de
-        // pie, aunque el producto no esté agrandado. Solo se borra si de
-        // verdad no aporta nada (ni tamaño destacado, ni descuento, ni
-        // texto).
-        if(actual.tamano <= 1 && !actual.descuento && !actual.texto) delete destacados[ref];
+        // también hace falta guardar un descuento propio, un texto de pie
+        // o una promo, aunque el producto no esté agrandado. Solo se
+        // borra si de verdad no aporta nada (ni tamaño destacado, ni
+        // descuento, ni texto, ni promo).
+        // "!actual.promoManual" también cuenta aquí (no solo "!actual.promo"):
+        // si se acaba de elegir "Otro" en el selector pero todavía no se ha
+        // escrito el texto, hay que mantener la entrada viva para que el
+        // campo de texto siga visible — si no, se borraría de inmediato y
+        // la elección de "Otro" se perdería antes de poder escribir nada.
+        if(actual.tamano <= 1 && !actual.descuento && !actual.texto && !actual.promo && !actual.promoManual) delete destacados[ref];
         else destacados[ref] = actual;
         renderSeleccionados(); // refresca el resumen del <summary> (y habilita/deshabilita alineación/posición)
       });
@@ -3039,7 +3110,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       sugeridosIA = [];
       destacados = {};
       (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{
-        if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0, texto:d.texto||'' };
+        if(d && d.ref) destacados[d.ref] = {
+          tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0, texto:d.texto||'',
+          promo:d.promo||'',
+          // "Modo Otro" del selector de promoción: cualquier promo guardada
+          // que no esté en la lista predefinida viene de "Otro" — así el
+          // selector reabre ya en "Otro" con su texto libre, en vez de
+          // perder esa elección y mostrar el valor guardado como opción
+          // inexistente del <select>.
+          promoManual: !!(d.promo && PROMOS_PREDEFINIDAS_.indexOf(d.promo) === -1),
+        };
       });
       updateSelCount();
       renderSeleccionados();
@@ -3206,11 +3286,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // sanearDestacados_ del backend, que es quien decide de verdad qué
     // se guarda — esto es solo para no mandar de más).
     const destacadosArr = productosArr
-      .filter(ref => destacados[ref] && (destacados[ref].tamano > 1 || Number(destacados[ref].descuento) > 0 || (destacados[ref].texto && destacados[ref].texto.trim())))
+      .filter(ref => destacados[ref] && (destacados[ref].tamano > 1 || Number(destacados[ref].descuento) > 0 || (destacados[ref].texto && destacados[ref].texto.trim()) || (destacados[ref].promo && destacados[ref].promo.trim())))
       .map(ref => ({
         ref, tamano: destacados[ref].tamano, alinH: destacados[ref].alinH, posV: destacados[ref].posV,
         descuento: Number(destacados[ref].descuento) || 0,
         texto: (destacados[ref].texto || '').trim(),
+        promo: (destacados[ref].promo || '').trim(),
       }));
     try{
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
@@ -4282,15 +4363,43 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           doc.setTextColor(255,255,255);
           doc.text(txt, x + padX + 1.5 + w/2, insigniaY + 3.2, { align:'center' });
         }
+        let insigniaYDerecha = insigniaY;
         if(tieneDescuento){
           const txt = `-${descuento}%`;
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(6.6);
           const w = doc.getTextWidth(txt) + 4;
           doc.setFillColor(217, 27, 27);
-          doc.roundedRect(x + anchoTarjeta - padX - 1.5 - w, insigniaY, w, 4.6, 1.6, 1.6, 'F');
+          doc.roundedRect(x + anchoTarjeta - padX - 1.5 - w, insigniaYDerecha, w, 4.6, 1.6, 1.6, 'F');
           doc.setTextColor(255,255,255);
-          doc.text(txt, x + anchoTarjeta - padX - 1.5 - w/2, insigniaY + 3.2, { align:'center' });
+          doc.text(txt, x + anchoTarjeta - padX - 1.5 - w/2, insigniaYDerecha + 3.2, { align:'center' });
+          insigniaYDerecha += 5.6;
+        }
+        // Chip de promoción (2x1, 3x2…) — apilado bajo el de descuento si
+        // los dos coinciden (no son excluyentes: un producto puede tener
+        // las dos cosas a la vez). Verde, para distinguirse a simple
+        // vista del rojo de descuento. A diferencia de "DESTACADO"/"-X%"
+        // (textos cortos fijos, nunca desbordan), la promo es texto
+        // LIBRE ("Otro…") que en una tarjeta normal (1 columna) sí podía
+        // salirse del ancho de la propia tarjeta — se reduce el tamaño de
+        // letra y, si aun así no cupiera, se trunca con "…".
+        if(d && d.promo && d.promo.trim()){
+          const txtOriginal = d.promo.trim().toUpperCase();
+          const anchoMaxChip = anchoTarjeta - (padX + 1.5) * 2;
+          doc.setFont('helvetica', 'bold');
+          const medirChip_ = (t, fs) => { doc.setFontSize(fs); return doc.getTextWidth(t) + 4; };
+          let fontSizeChip = 6.6;
+          while(fontSizeChip > 5 && medirChip_(txtOriginal, fontSizeChip) > anchoMaxChip) fontSizeChip -= 0.3;
+          let txt = txtOriginal;
+          if(medirChip_(txt, fontSizeChip) > anchoMaxChip){
+            while(txt.length > 3 && medirChip_(txt + '…', fontSizeChip) > anchoMaxChip) txt = txt.slice(0, -1);
+            txt += '…';
+          }
+          const w = medirChip_(txt, fontSizeChip);
+          doc.setFillColor(30, 122, 76);
+          doc.roundedRect(x + anchoTarjeta - padX - 1.5 - w, insigniaYDerecha, w, 4.6, 1.6, 1.6, 'F');
+          doc.setTextColor(255,255,255);
+          doc.text(txt, x + anchoTarjeta - padX - 1.5 - w/2, insigniaYDerecha + 3.2, { align:'center' });
         }
 
         let ty = imgBoxY + imgBoxH + 4.5;
