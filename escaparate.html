@@ -553,6 +553,14 @@
       .ref-line{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
       .ref-line .ref{ font-size:10px; color:var(--ink-faint); }
 
+      /* Pie de producto (texto corto, opcional) — descripción/ayuda/
+         detalle técnico escrito a mano en la gestión del escaparate.
+         Discreto, nunca compite visualmente con el nombre o el precio. */
+      .card-texto-pie{
+        margin:0; font-size:11.5px; line-height:1.4; color:var(--ink-soft);
+        font-style:italic;
+      }
+
       .card .go{
         /* margin-top:auto ancla siempre "Ver ficha" al final de la
            tarjeta, aunque el resto del contenido ocupe menos alto que
@@ -839,11 +847,16 @@
         display:flex; flex-direction:column; gap:4px; font-size:10.5px; color:var(--ink-soft);
         text-transform:uppercase; letter-spacing:.04em; font-weight:600;
       }
-      .destacar-panel select{
+      .destacar-panel select, .destacar-panel input, .destacar-panel textarea{
         font-family:inherit; font-size:12.5px; text-transform:none; letter-spacing:normal; font-weight:500;
         padding:5px 7px; border:1px solid var(--line-strong); border-radius:5px; background:var(--paper); color:var(--ink);
       }
       .destacar-panel select:disabled{ opacity:.5; }
+      /* El texto de pie necesita más ancho que tamaño/alineación/posición/
+         descuento (son <select> cortos) — ocupa la fila entera en vez de
+         competir por hueco en la misma línea de flex-wrap. */
+      .destacar-panel-ancho{ flex:1 1 100%; }
+      .destacar-panel textarea{ resize:vertical; min-height:38px; font-weight:400; }
 
       .selected-count{ font-size:13px; color:var(--ink-soft); }
       .selected-count b{ color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -975,6 +988,11 @@
       .modal-producto-precio-sin{ font-size:0.9rem; color:var(--ink-faint); margin-top:4px; }
       .modal-producto-detalles p{ margin:8px 0; color:var(--ink-soft); font-size:0.95rem; }
       .modal-producto-detalles strong{ color:var(--ink); }
+      .modal-producto-texto{
+        margin:0 0 14px; padding:10px 12px; background:var(--paper-raised);
+        border-radius:var(--radius-s); font-size:0.92rem; line-height:1.5;
+        color:var(--ink-soft); font-style:italic;
+      }
       .modal-producto-disclaimer{
         margin-top:auto; padding-top:20px; border-top:1px solid var(--line);
         font-size:0.85rem; color:var(--ink-faint); display:flex; align-items:center; gap:8px;
@@ -1608,6 +1626,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
           <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
         </div>
+        <p class="modal-producto-texto" id="modal-producto-texto" hidden></p>
         <p class="modal-producto-disclaimer">
           ⓘ Los precios pueden variar y el producto está sujeto a disponibilidad; la imagen puede no coincidir exactamente con el producto real.
         </p>
@@ -1665,6 +1684,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   const precioNum = v => parseFloat((v==null?'':v.toString()).replace(',', '.')) || 0;
   const fmtEUR = n => precioNum(n).toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2});
   const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
+
+  // Escapa texto libre (p. ej. el pie de producto de un destacado) antes
+  // de insertarlo con innerHTML — es texto escrito a mano en la gestión,
+  // nunca debe interpretarse como HTML.
+  function escaparHTML_(str){
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
 
   // Perfil profesional: precio al por mayor siempre, en vez del PVP y sin
   // descuentos/promociones de campaña (que son sobre el PVP público) —
@@ -2361,6 +2389,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           ${barcodeSVG(p.ref)}
           <span class="ref mono">${p.ref}</span>
         </div>
+        ${destacado && destacado.texto ? `<p class="card-texto-pie">${escaparHTML_(destacado.texto)}</p>` : ''}
         <span class="go">
           Ver detalle
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
@@ -2421,6 +2450,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     $("#modal-producto-familia").textContent = p.familia || '—';
     $("#modal-producto-area").textContent = p.area || '—';
+
+    // Pie de producto (texto corto, opcional) — se busca en los
+    // destacados de la campaña actualmente mostrada, no se pasa como
+    // data-attribute de la tarjeta (texto libre, con posibles comillas)
+    // para no complicar el escapado en un atributo HTML.
+    const campanaActual = activeId ? findCampaign(activeId) : null;
+    const destacadoRef = campanaActual && Array.isArray(campanaActual.destacados)
+      ? campanaActual.destacados.find(d => d && d.ref === ref) : null;
+    const textoPie = $("#modal-producto-texto");
+    if(destacadoRef && destacadoRef.texto){
+      textoPie.textContent = destacadoRef.texto;
+      textoPie.hidden = false;
+    } else {
+      textoPie.hidden = true;
+    }
 
     const btnBuscador = $("#modal-producto-verbuscador");
     btnBuscador.href = `./buscador.html?ref=${encodeURIComponent(p.ref)}`;
@@ -2625,12 +2669,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
   let selected = new Set();
   let sugeridosIA = [];       // refs sugeridas por la IA en la sesión actual del modal
-  let destacados = {};        // ref -> {tamano(1-6), alinH, posV, descuento(%)} — solo entradas con tamano>1 o descuento>0
+  let destacados = {};        // ref -> {tamano(1-6), alinH, posV, descuento(%), texto} — solo entradas con tamano>1, descuento>0 o texto no vacío
   const HINT_IA_DEFECTO = 'Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.';
   const ETIQUETAS_ALINEACION = { izquierda:'Izda.', centro:'Centro', derecha:'Dcha.' };
   const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
+  const MAX_TEXTO_PRODUCTO = 220;
   function destacadoActual(ref){
-    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0 };
+    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0, texto:'' };
   }
 
   function familiasDisponibles(){
@@ -2756,10 +2801,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const d = destacadoActual(ref);
       const esDestacado = d.tamano > 1;
       const tieneDescuento = Number(d.descuento) > 0;
+      const tieneTexto = !!(d.texto && d.texto.trim());
       const partesResumen = [];
       if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
       if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
-      const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento…';
+      if(tieneTexto) partesResumen.push(`📝 Con texto de pie`);
+      const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento / texto…';
       return `<div class="chip-producto" draggable="true" data-ref="${ref}">
         <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar ${nombre}">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
@@ -2770,8 +2817,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </span>
         <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
         <span class="chip-nombre" title="${nombre}">${nombre}</span>
-        <details class="destacar" ${(esDestacado||tieneDescuento)?'open':''}>
-          <summary class="${(esDestacado||tieneDescuento)?'activo':''}">${resumen}</summary>
+        <details class="destacar" ${(esDestacado||tieneDescuento||tieneTexto)?'open':''}>
+          <summary class="${(esDestacado||tieneDescuento||tieneTexto)?'activo':''}">${resumen}</summary>
           <div class="destacar-panel">
             <label>Tamaño
               <select data-campo="tamano" data-ref="${ref}">
@@ -2794,6 +2841,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </label>
             <label>Descuento (%)
               <input type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15" data-campo="descuento" data-ref="${ref}" value="${tieneDescuento ? d.descuento : ''}">
+            </label>
+            <label class="destacar-panel-ancho">Texto de pie (opcional — descripción, ayuda o detalle técnico)
+              <textarea data-campo="texto" data-ref="${ref}" maxlength="${MAX_TEXTO_PRODUCTO}" rows="2" placeholder="p. ej. Incluye 3 recambios de filtro">${(d.texto||'').replace(/</g,'&lt;')}</textarea>
             </label>
           </div>
         </details>
@@ -2874,6 +2924,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // campo de descuento perdería el foco a la primera cifra escrita.
       // 'change' solo dispara al salir del campo (o pulsar Enter), que es
       // justo cuando SÍ hace falta refrescar el resumen.
+      // 'change' también para el <textarea> de texto (no 'input'): igual
+      // que con el descuento, con 'input' se perdería el foco a la
+      // primera tecla al reconstruir renderSeleccionados() el HTML entero.
       campo.addEventListener("change", ()=>{
         const ref = campo.dataset.ref;
         const nombreCampo = campo.dataset.campo;
@@ -2883,13 +2936,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           const n = parseFloat(campo.value);
           actual.descuento = (isFinite(n) && n > 0) ? Math.min(Math.round(n), 95) : 0;
         }
+        else if(nombreCampo === 'texto') actual.texto = campo.value.trim().slice(0, MAX_TEXTO_PRODUCTO);
         else actual[nombreCampo] = campo.value;
         // Antes se borraba la entrada entera en cuanto tamano<=1 — correcto
         // cuando "destacados" solo servía para tamaño/posición, pero ahora
-        // también hace falta guardar un descuento propio aunque el
-        // producto no esté agrandado. Solo se borra si de verdad no
-        // aporta nada (ni tamaño destacado ni descuento).
-        if(actual.tamano <= 1 && !actual.descuento) delete destacados[ref];
+        // también hace falta guardar un descuento propio, o un texto de
+        // pie, aunque el producto no esté agrandado. Solo se borra si de
+        // verdad no aporta nada (ni tamaño destacado, ni descuento, ni
+        // texto).
+        if(actual.tamano <= 1 && !actual.descuento && !actual.texto) delete destacados[ref];
         else destacados[ref] = actual;
         renderSeleccionados(); // refresca el resumen del <summary> (y habilita/deshabilita alineación/posición)
       });
@@ -2984,7 +3039,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       sugeridosIA = [];
       destacados = {};
       (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{
-        if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0 };
+        if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0, texto:d.texto||'' };
       });
       updateSelCount();
       renderSeleccionados();
@@ -3151,10 +3206,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // sanearDestacados_ del backend, que es quien decide de verdad qué
     // se guarda — esto es solo para no mandar de más).
     const destacadosArr = productosArr
-      .filter(ref => destacados[ref] && (destacados[ref].tamano > 1 || Number(destacados[ref].descuento) > 0))
+      .filter(ref => destacados[ref] && (destacados[ref].tamano > 1 || Number(destacados[ref].descuento) > 0 || (destacados[ref].texto && destacados[ref].texto.trim())))
       .map(ref => ({
         ref, tamano: destacados[ref].tamano, alinH: destacados[ref].alinH, posV: destacados[ref].posV,
         descuento: Number(destacados[ref].descuento) || 0,
+        texto: (destacados[ref].texto || '').trim(),
       }));
     try{
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
@@ -3997,11 +4053,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // normales (tamaño 1) no muestran ni familia ni esa línea extra,
       // así que necesitan menos.
       const CHROME_NORMAL = 24, CHROME_GRANDE = 32;
-      // Mismo cálculo usado para pedir la foto ya recortada (más abajo) y
-      // para colocarla en la tarjeta (dibujarTarjetaProducto) — tienen
-      // que coincidir exactamente, o el recorte no llenaría el hueco real.
-      function cajaImagenDe(anchoTarjeta, altoTarjeta, grande){
-        const chrome = grande ? CHROME_GRANDE : CHROME_NORMAL;
+      // Presupuesto EXTRA para el pie de producto (texto corto opcional,
+      // ver destacadosMap[ref].texto) — solo se resta cuando el producto
+      // de verdad tiene texto, para no reducir el hueco de imagen de
+      // todos los demás productos que no lo usan.
+      const CHROME_TEXTO_PRODUCTO = 8;
+      // Mismo cálculo usado para colocar la foto en la tarjeta
+      // (dibujarTarjetaProducto) — antes también se usaba para pedir la
+      // foto ya recortada, pero ya no se recorta (ver itemsFotos).
+      function cajaImagenDe(anchoTarjeta, altoTarjeta, grande, tieneTexto){
+        let chrome = grande ? CHROME_GRANDE : CHROME_NORMAL;
+        if(tieneTexto) chrome += CHROME_TEXTO_PRODUCTO;
         return { w: anchoTarjeta - padTarjeta*2, h: Math.max(20, altoTarjeta - chrome) };
       }
 
@@ -4158,6 +4220,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const descuento = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
         const tieneDescuento = !precioMayorFolleto && descuento > 0;
         const esDestacado = !!(d && d.tamano > 1);
+        const tieneTextoProducto = !!(d && d.texto && d.texto.trim());
         // El presupuesto vertical disponible depende de la ALTURA de la
         // tarjeta, no de su ancho — una tarjeta de 1 sola fila (tamaño 1)
         // tiene el mismo hueco de texto reducido sea cual sea su ancho;
@@ -4169,7 +4232,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         const padX = padTarjeta;
         const imgBoxY = y + 3;
-        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta, esGrande);
+        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta, esGrande, tieneTextoProducto);
         const foto = fotoPorRef[ref];
         if(foto){
           // La foto ya viene recortada (ver itemsFotos/cajaImagenDe, más
@@ -4299,6 +4362,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.setFontSize(6.6);
         doc.setTextColor(150, 153, 160);
         doc.text(`Ref. ${p.ref}`, x + padX, ty + 4.4);
+
+        // Pie de producto (texto corto, opcional) — mismo presupuesto
+        // extra ya reservado en cajaImagenDe (CHROME_TEXTO_PRODUCTO), así
+        // que siempre hay sitio para esto sin invadir el hueco de la
+        // imagen. 1 línea en tarjetas normales, 2 en las grandes — igual
+        // que el resto de bloques de texto de esta tarjeta.
+        if(tieneTextoProducto){
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(6.6);
+          doc.setTextColor(130, 133, 140);
+          const maxLineasTexto = esGrande ? 2 : 1;
+          const lineasTexto = doc.splitTextToSize(d.texto, anchoTarjeta - padX*2).slice(0, maxLineasTexto);
+          doc.text(lineasTexto, x + padX, ty + 4.4 + 3.4);
+        }
       }
 
       // Se recorre la rejilla 2D fila a fila (de ROW_UNIT en ROW_UNIT, no
