@@ -4037,6 +4037,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // un único sentido (sin "densar" hacia atrás sobre huecos ya
       // pasados), que es sobrada para el volumen de productos de una
       // campaña típica.
+      //
+      // Tercer aviso real de Eloy con el mismo folleto de ejemplo: "hay
+      // que ocupar todo el espacio posible dejando menos hueco vacío".
+      // La rejilla en sí ya empaquetaba denso, pero IGNORABA las páginas:
+      // un destacado de 2 filas podía "reservar" su hueco en una fila que
+      // luego no cabía entera en la página en curso (el salto de página
+      // se decide después, ya al dibujar, mirando la altura real), así
+      // que el salto se producía dejando vacío todo lo que quedaba de
+      // esa página — en vez de dejar que un producto normal (de una sola
+      // fila, que sí cabe) ocupara ese hueco y que el destacado pasara,
+      // completo, a la fila siguiente. Para evitarlo, calculamos aquí
+      // cuántas filas de rejilla caben de verdad en cada página (la
+      // primera, con la cabecera de campaña encima, y las siguientes,
+      // siempre iguales) y descartamos como candidata cualquier fila de
+      // arranque en la que un bloque de varias filas NO quepa entero
+      // antes de que acabe su página — así el hueco libre se lo queda,
+      // en su lugar, el siguiente producto normal que sí cabe en una
+      // sola fila.
+      const filaAltura_ = ROW_UNIT + gapY;
+      const filasPagina0_ = Math.max(1, Math.floor((footerTopY - 2 - cursorY) / filaAltura_));
+      const filasPaginaN_ = Math.max(1, Math.floor((footerTopY - 2 - (headerBottomY + 8)) / filaAltura_));
+      function finDePaginaDeFila_(fila){
+        if(fila < filasPagina0_) return filasPagina0_ - 1;
+        const pagina = Math.floor((fila - filasPagina0_) / filasPaginaN_);
+        return filasPagina0_ + (pagina + 1) * filasPaginaN_ - 1;
+      }
       const colOcupacion_ = [];
       function asegurarFilaRejilla_(i){
         while(colOcupacion_.length <= i) colOcupacion_.push(new Array(baseCols).fill(false));
@@ -4044,15 +4070,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       function buscarHuecoRejilla_(spanCols, spanRows){
         let fila = 0;
         for(;;){
-          asegurarFilaRejilla_(fila + spanRows - 1);
-          for(let col = 0; col <= baseCols - spanCols; col++){
-            let cabe = true;
-            for(let r = 0; r < spanRows && cabe; r++){
-              for(let c = 0; c < spanCols && cabe; c++){
-                if(colOcupacion_[fila+r][col+c]) cabe = false;
+          if(fila + spanRows - 1 <= finDePaginaDeFila_(fila)){
+            asegurarFilaRejilla_(fila + spanRows - 1);
+            for(let col = 0; col <= baseCols - spanCols; col++){
+              let cabe = true;
+              for(let r = 0; r < spanRows && cabe; r++){
+                for(let c = 0; c < spanCols && cabe; c++){
+                  if(colOcupacion_[fila+r][col+c]) cabe = false;
+                }
               }
+              if(cabe) return { fila, col };
             }
-            if(cabe) return { fila, col };
           }
           fila++;
         }
