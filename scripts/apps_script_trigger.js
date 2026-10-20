@@ -6698,11 +6698,39 @@ function limpiarEventosAnaliticosAntiguos_() {
 // días — todo el cálculo en el propio Apps Script, para que el panel
 // reciba ya el resumen listo y no tenga que descargar (ni procesar)
 // miles de filas en el navegador.
-function calcularResumenAnalitica_(dias) {
+// Formatea una fecha como 'yyyy-MM-dd' en la zona horaria del propio
+// proyecto de Apps Script (normalmente Europe/Madrid) — no en UTC, para
+// que "hoy" y los rangos de fechas coincidan con el día de calendario
+// real de quien consulta el panel, no con el de Greenwich.
+function formatearFechaLocal_(fecha) {
+  return Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}
+
+// Construye el rango de fechas [fechaInicio, fechaFin] (ambas
+// 'yyyy-MM-dd', ambos extremos incluidos) que de verdad se va a usar:
+// si vienen las dos informadas se respetan tal cual (intercambiando si
+// llegasen invertidas); si falta alguna, se usa por defecto "últimos 30
+// días hasta hoy", igual que el comportamiento original de este panel.
+function resolverRangoFechasAnalitica_(data) {
+  const hoy = formatearFechaLocal_(new Date());
+  let fechaInicio = (data.fechaInicio || '').toString().trim();
+  let fechaFin = (data.fechaFin || '').toString().trim();
+  if (!fechaInicio || !fechaFin) {
+    const inicioPorDefecto = new Date();
+    inicioPorDefecto.setDate(inicioPorDefecto.getDate() - 29);
+    fechaInicio = formatearFechaLocal_(inicioPorDefecto);
+    fechaFin = hoy;
+  }
+  if (fechaInicio > fechaFin) { const tmp = fechaInicio; fechaInicio = fechaFin; fechaFin = tmp; }
+  return { fechaInicio, fechaFin };
+}
+
+function calcularResumenAnalitica_(fechaInicio, fechaFin) {
   const sheet = obtenerHojaEventosAnaliticos_();
   const datos = sheet.getDataRange().getValues();
   const resumen = {
-    dias: dias,
+    fechaInicio: fechaInicio,
+    fechaFin: fechaFin,
     totalBusquedas: 0,
     totalProductosVistos: 0,
     totalBloquesClick: 0,
@@ -6712,23 +6740,27 @@ function calcularResumenAnalitica_(dias) {
     topProductos: [],
     topBloques: [],
     topMarcas: [],
+    topAreas: [],
+    topFamilias: [],
   };
   if (datos.length < 2) return resumen;
 
   const COL = mapaCabeceras_(datos[0]);
-  const limite = new Date();
-  limite.setDate(limite.getDate() - dias);
 
   const contadorBusquedas = {};
   const contadorBusquedasSinResultados = {};
   const contadorProductos = {}; // clave: referencia -> {nombre, total}
   const contadorBloques = {};
   const contadorMarcas = {};
+  const contadorAreas = {};
+  const contadorFamilias = {};
 
   for (let i = 1; i < datos.length; i++) {
     const fila = datos[i];
     const fechaHora = new Date(fila[COL['fecha_hora']]);
-    if (isNaN(fechaHora) || fechaHora < limite) continue;
+    if (isNaN(fechaHora)) continue;
+    const fechaDia = formatearFechaLocal_(fechaHora);
+    if (fechaDia < fechaInicio || fechaDia > fechaFin) continue;
 
     const tipo = (fila[COL['tipo_evento']] || '').toString();
     if (tipo === 'busqueda_realizada') {
@@ -6744,6 +6776,10 @@ function calcularResumenAnalitica_(dias) {
     } else if (tipo === 'ver_producto') {
       resumen.totalProductosVistos++;
       const ref = (fila[COL['producto_referencia']] || '').toString().trim();
+      const area = (fila[COL['producto_area']] || '').toString().trim();
+      const familia = (fila[COL['producto_familia']] || '').toString().trim();
+      if (area) contadorAreas[area] = (contadorAreas[area] || 0) + 1;
+      if (familia) contadorFamilias[familia] = (contadorFamilias[familia] || 0) + 1;
       if (!ref) continue;
       if (!contadorProductos[ref]) contadorProductos[ref] = { nombre: (fila[COL['producto_nombre']] || '').toString(), total: 0 };
       contadorProductos[ref].total++;
@@ -6769,6 +6805,11 @@ function calcularResumenAnalitica_(dias) {
   resumen.topBusquedasSinResultados = topDeContador(contadorBusquedasSinResultados, 15);
   resumen.topBloques = topDeContador(contadorBloques, 15);
   resumen.topMarcas = topDeContador(contadorMarcas, 15);
+  // Áreas/familias: sin límite de 15 — son categorías curadas del
+  // catálogo (pocas decenas como mucho), no texto libre, así que tiene
+  // sentido verlas todas.
+  resumen.topAreas = topDeContador(contadorAreas, 999);
+  resumen.topFamilias = topDeContador(contadorFamilias, 999);
   resumen.topProductos = Object.keys(contadorProductos)
     .map(ref => ({ referencia: ref, nombre: contadorProductos[ref].nombre, total: contadorProductos[ref].total }))
     .sort((a, b) => b.total - a.total)
@@ -6783,8 +6824,8 @@ function procesarObtenerResumenAnalitica(data) {
       return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto.' }))
         .setMimeType(ContentService.MimeType.JSON);
     }
-    const dias = parseInt(data.dias, 10) || 30;
-    const resumen = calcularResumenAnalitica_(dias);
+    const { fechaInicio, fechaFin } = resolverRangoFechasAnalitica_(data);
+    const resumen = calcularResumenAnalitica_(fechaInicio, fechaFin);
     return ContentService.createTextOutput(JSON.stringify(Object.assign({ success: true }, resumen)))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
