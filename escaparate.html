@@ -773,7 +773,25 @@
         display:flex; align-items:center; gap:9px; flex-wrap:wrap;
         border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:6px 8px;
         background:var(--paper);
+        transition:opacity 140ms ease, box-shadow 140ms ease;
       }
+      .chip-producto.arrastrando{ opacity:.4; }
+      .chip-producto.arrastrando-sobre{ box-shadow:inset 0 2px 0 var(--accent), inset 0 -2px 0 var(--accent); }
+      .chip-arrastrar{
+        flex:none; width:20px; height:28px; border:none; padding:0; background:none;
+        color:var(--ink-faint); cursor:grab; display:flex; align-items:center; justify-content:center;
+        touch-action:none;
+      }
+      .chip-arrastrar:active{ cursor:grabbing; }
+      .chip-arrastrar svg{ width:16px; height:16px; }
+      .chip-orden{ flex:none; display:flex; flex-direction:column; gap:1px; }
+      .chip-orden-btn{
+        width:18px; height:14px; border:none; border-radius:3px; padding:0; background:var(--line);
+        color:var(--ink-soft); font-size:8px; line-height:1; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+      }
+      .chip-orden-btn:hover:not(:disabled){ background:var(--accent); color:#fff; }
+      .chip-orden-btn:disabled{ opacity:.3; cursor:not-allowed; }
       .chip-producto .chip-img{
         width:32px; height:32px; border-radius:6px; overflow:hidden; flex:none;
         background:var(--paper-raised); border:1px solid var(--line);
@@ -2700,12 +2718,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // Lista SIEMPRE visible de lo que ya está en la campaña (independiente
   // del filtro de búsqueda activo) — antes, para quitar un producto ya
   // asignado había que volver a encontrarlo entre miles de productos.
+  // Reordena `selected` moviendo `ref` `delta` posiciones (−1 = subir,
+  // +1 = bajar) — usado tanto por los botones ▲▼ (teclado/táctil) como,
+  // indirectamente, por el resultado final de arrastrar con el ratón
+  // (ver dragstart/drop en renderSeleccionados()). El orden de este Set
+  // ES el orden real que se guarda (ver productosArr más abajo, "orden
+  // de inserción" del Set) — no existe ninguna columna de orden aparte
+  // en la Sheet: no hace falta tocar nada en Apps Script.
+  function moverProductoSeleccionado_(ref, delta){
+    const refs = Array.from(selected);
+    const i = refs.indexOf(ref);
+    if(i === -1) return;
+    const j = i + delta;
+    if(j < 0 || j >= refs.length) return;
+    [refs[i], refs[j]] = [refs[j], refs[i]];
+    selected = new Set(refs);
+    renderSeleccionados();
+  }
+
+  let refArrastrando_ = null;
+
   function renderSeleccionados(){
     const cont = $("#selectedChips");
     const refs = Array.from(selected);
     $("#selectedHeadCount").textContent = refs.length;
     $("#btnQuitarTodos").disabled = !refs.length;
-    cont.innerHTML = refs.map(ref=>{
+    cont.innerHTML = refs.map((ref, indice)=>{
       const p = PRODUCTS[ref];
       const nombre = (p ? p.nombre : ref).replace(/"/g,'&quot;');
       const imgUrl = p ? urlImagenProducto(p, 80) : null;
@@ -2716,7 +2754,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
       if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
       const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento…';
-      return `<div class="chip-producto">
+      return `<div class="chip-producto" draggable="true" data-ref="${ref}">
+        <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar ${nombre}">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+        </button>
+        <span class="chip-orden">
+          <button type="button" class="chip-orden-btn" data-mover="${ref}" data-delta="-1" title="Subir" aria-label="Subir ${nombre}" ${indice===0?'disabled':''}>▲</button>
+          <button type="button" class="chip-orden-btn" data-mover="${ref}" data-delta="1" title="Bajar" aria-label="Bajar ${nombre}" ${indice===refs.length-1?'disabled':''}>▼</button>
+        </span>
         <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
         <span class="chip-nombre" title="${nombre}">${nombre}</span>
         <details class="destacar" ${(esDestacado||tieneDescuento)?'open':''}>
@@ -2760,6 +2805,59 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         updateSelCount();
         renderSeleccionados();
         renderPicker(); // por si el mismo producto se ve también en la búsqueda/sugerencias, para desmarcarlo ahí también
+      });
+    });
+    $$("[data-mover]", cont).forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        moverProductoSeleccionado_(btn.dataset.mover, parseInt(btn.dataset.delta, 10));
+      });
+    });
+    // Arrastrar y soltar para reordenar (drag-and-drop nativo del
+    // navegador) — alternativa de ratón a los botones ▲▼ de arriba, que
+    // cubren lo mismo por teclado/táctil (el drag-and-drop HTML5 nativo
+    // no es fiable en móvil). Solo arranca el arrastre si se agarra
+    // desde el tirador (chip-arrastrar): el resto de la chip tiene
+    // <select>/<input> con los que hay que poder interactuar con
+    // normalidad.
+    $$(".chip-producto", cont).forEach(chip=>{
+      chip.addEventListener("dragstart", (e)=>{
+        if(!e.target.closest(".chip-arrastrar")){ e.preventDefault(); return; }
+        refArrastrando_ = chip.dataset.ref;
+        chip.classList.add("arrastrando");
+        e.dataTransfer.effectAllowed = "move";
+        try{ e.dataTransfer.setData("text/plain", refArrastrando_); }catch(err){}
+      });
+      chip.addEventListener("dragend", ()=>{
+        chip.classList.remove("arrastrando");
+        $$(".chip-producto", cont).forEach(c=>c.classList.remove("arrastrando-sobre"));
+        refArrastrando_ = null;
+      });
+      chip.addEventListener("dragover", (e)=>{
+        if(!refArrastrando_) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+      });
+      chip.addEventListener("dragenter", ()=>{
+        if(refArrastrando_ && refArrastrando_ !== chip.dataset.ref) chip.classList.add("arrastrando-sobre");
+      });
+      chip.addEventListener("dragleave", ()=>{
+        chip.classList.remove("arrastrando-sobre");
+      });
+      chip.addEventListener("drop", (e)=>{
+        e.preventDefault();
+        chip.classList.remove("arrastrando-sobre");
+        const refDestino = chip.dataset.ref;
+        if(!refArrastrando_ || refArrastrando_ === refDestino) return;
+        const refs = Array.from(selected);
+        const iOrigen = refs.indexOf(refArrastrando_);
+        if(iOrigen === -1 || refs.indexOf(refDestino) === -1) return;
+        refs.splice(iOrigen, 1);
+        // Recalculado tras el splice: si el origen estaba antes del
+        // destino, el índice del destino se ha desplazado una posición.
+        const iDestinoTrasQuitar = refs.indexOf(refDestino);
+        refs.splice(iDestinoTrasQuitar, 0, refArrastrando_);
+        selected = new Set(refs);
+        renderSeleccionados();
       });
     });
     $$("[data-campo]", cont).forEach(campo=>{
