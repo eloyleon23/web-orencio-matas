@@ -3973,8 +3973,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       function especTarjeta(ref){
         const d = destacadosMap[ref];
         const tam = d && d.tamano > 1 ? d.tamano : 1;
-        if(tam >= 4) return { spanCols: baseCols, grande: true };
-        if(tam === 3) return { spanCols: baseCols, grande: false };
+        // tamaño 3 ya ocupaba el ancho COMPLETO de la fila (igual que
+        // 4/5/6) pero con la altura normal (cardH, pensada para una
+        // tarjeta de 1/3 del ancho) — el hueco de imagen resultante era
+        // casi 5 veces más ancho que alto, así que cualquier foto de
+        // producto normal (ni de lejos tan panorámica) quedaba diminuta
+        // en medio de un hueco gris enorme ("las imágenes no están
+        // saliendo correctamente en los huecos", aviso real de Eloy con
+        // un folleto de ejemplo). Con la misma altura grande que 4/5/6
+        // (que sí se veían bien) el hueco queda con una proporción que
+        // una foto de producto normal sí puede llenar de verdad.
+        if(tam >= 3) return { spanCols: baseCols, grande: true };
         if(tam === 2) return { spanCols: 2, grande: false };
         return { spanCols: 1, grande: false };
       }
