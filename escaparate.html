@@ -3687,7 +3687,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       });
 
       // Las fotos de producto se piden más abajo, una vez calculada la
-      // rejilla (ver filasProductos) — cada una se recorta al recuadro
+      // rejilla (ver itemsColocados) — cada una se recorta al recuadro
       // EXACTO que le toca en su tarjeta (ver cajaImagenDe), así que hace
       // falta conocer antes el tamaño real de esa tarjeta (normal, ancha
       // o grande). El logo es de este mismo origen, sin límite de
@@ -3943,74 +3943,105 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       }
       cursorY += alturaHeaderInfo + 7;
 
-      // ---- Rejilla de productos: 3 columnas base. Los destacados
-      // ocupan más espacio que el resto, igual que en la propia página
-      // (.card[data-tam]: tamaño 2/3 más ancho, 4/5/6 más ancho Y más
-      // alto) — aquí, para poder maquetar en tandas de fila completa sin
-      // dejar huecos raros junto a una tarjeta grande, tamaño 3 y 4-6 se
-      // quedan solos en su propia fila (banner ancho), y 1/2 se reparten
-      // en filas compartidas, tan apretadas como quepan (menos hueco en
-      // blanco, más productos normales por página). ----
+      // ---- Rejilla de productos: 3 columnas base, con celdas CUADRADAS
+      // (ROW_UNIT = mismo ancho que una columna) y los destacados
+      // ocupando varias columnas Y varias filas a la vez — no solo más
+      // ancho, como antes. Segundo aviso real de Eloy con el mismo
+      // folleto de ejemplo: incluso tras agrandar la altura de los
+      // destacados de ancho completo, seguían saliendo como "rectángulos
+      // panorámicos" (hasta ~3,9:1 de proporción) en vez de cuadrados —
+      // "cuando un producto se destaque hay que buscar ocupar más
+      // espacio pero siempre con cuadrados más que rectángulos, que es
+      // lo que hace que la foto del producto no se pueda agrandar". La
+      // única forma real de conseguir un hueco de imagen cuadrado con un
+      // ancho de varias columnas es que la tarjeta sea tan alta como
+      // ancha — de ahí la rejilla 2D de abajo (colocarEnRejilla_),
+      // equivalente a grid-auto-flow:dense de la propia página pero
+      // adaptada a la paginación del PDF (un bloque nunca puede partirse
+      // entre dos páginas). ----
       const gapX = 6, gapY = 6, baseCols = 3;
       const colW = (contentWidth - gapX*(baseCols-1)) / baseCols;
-      // cardH=54 se quedaba corto con descuento: precio tachado + precio
-      // rebajado ocupan una línea más que el precio simple, y esa línea
-      // de más empujaba la referencia (Ref. XXXXX) fuera del borde
-      // inferior de la tarjeta — el aviso de Eloy. Subido a 62 (el
-      // mínimo que deja margen real en ese caso, con los tamaños de
-      // fuente actuales) en vez de recortar más el hueco de la imagen,
-      // que es justo lo que se pidió agrandar hace poco.
-      const cardH = 62;       // tarjeta normal (tamaño 1 o 2/3 de ancho)
-      const cardHGrande = 78; // tamaño 4/5/6: además más alta, no solo más ancha
+      const ROW_UNIT = colW; // filas tan altas como anchas son las columnas → celda base cuadrada
       const padTarjeta = 3.5;
+      // Presupuesto FIJO (no proporcional a la altura de la tarjeta) para
+      // todo lo que no es la foto: franja superior + bloque de texto
+      // (familia/nombre/precio/ref) + margen inferior. Antes el hueco de
+      // imagen era un PORCENTAJE fijo de la altura (siempre el mismo
+      // 58%/42%), así que una tarjeta más alta destinaba también más
+      // espacio EXTRA al texto sin necesitarlo de verdad — el resto, toda
+      // la altura ganada al hacer la tarjeta más grande, tiene que ir a
+      // la foto (que es justo lo que hace falta para que un destacado
+      // grande se vea con una imagen grande, no con texto con mucho aire
+      // alrededor). "grande" = tarjetas con nombre a 2 líneas + familia +
+      // línea de precio sin IVA/descuento (ver esGrande más abajo); las
+      // normales (tamaño 1) no muestran ni familia ni esa línea extra,
+      // así que necesitan menos.
+      const CHROME_NORMAL = 24, CHROME_GRANDE = 32;
       // Mismo cálculo usado para pedir la foto ya recortada (más abajo) y
       // para colocarla en la tarjeta (dibujarTarjetaProducto) — tienen
       // que coincidir exactamente, o el recorte no llenaría el hueco real.
-      function cajaImagenDe(anchoTarjeta, altoTarjeta){
-        return { w: anchoTarjeta - padTarjeta*2, h: Math.round(altoTarjeta * 0.58) };
+      function cajaImagenDe(anchoTarjeta, altoTarjeta, grande){
+        const chrome = grande ? CHROME_GRANDE : CHROME_NORMAL;
+        return { w: anchoTarjeta - padTarjeta*2, h: Math.max(20, altoTarjeta - chrome) };
       }
 
       function especTarjeta(ref){
         const d = destacadosMap[ref];
         const tam = d && d.tamano > 1 ? d.tamano : 1;
-        // tamaño 3 ya ocupaba el ancho COMPLETO de la fila (igual que
-        // 4/5/6) pero con la altura normal (cardH, pensada para una
-        // tarjeta de 1/3 del ancho) — el hueco de imagen resultante era
-        // casi 5 veces más ancho que alto, así que cualquier foto de
-        // producto normal (ni de lejos tan panorámica) quedaba diminuta
-        // en medio de un hueco gris enorme ("las imágenes no están
-        // saliendo correctamente en los huecos", aviso real de Eloy con
-        // un folleto de ejemplo). Con la misma altura grande que 4/5/6
-        // (que sí se veían bien) el hueco queda con una proporción que
-        // una foto de producto normal sí puede llenar de verdad.
-        if(tam >= 3) return { spanCols: baseCols, grande: true };
-        if(tam === 2) return { spanCols: 2, grande: false };
-        return { spanCols: 1, grande: false };
+        // Igual que en la propia página (tamaño 2/3 más ancho, 4/5/6 más
+        // ancho Y más alto), pero aquí SIEMPRE creciendo en las dos
+        // dimensiones a la vez — con solo 3 columnas en una página A4 (a
+        // diferencia de la web, con sitio para 5-8 columnas en pantallas
+        // anchas), ensanchar sin dar más alto deja bloques panorámicos
+        // casi vacíos en vez de cuadrados. Tamaño 3-6 se agrupan en un
+        // único nivel "grande" (ancho completo y alto a juego, 3x3
+        // celdas): con solo 3 columnas no hay forma real de diferenciar
+        // más niveles por ancho, y seguir subiendo solo el alto para
+        // 4/5/6 volvería a alejarse del cuadrado.
+        if(tam >= 3) return { spanCols: baseCols, spanRows: 3 };
+        if(tam === 2) return { spanCols: 2, spanRows: 2 };
+        return { spanCols: 1, spanRows: 1 };
       }
 
-      // Reparto en filas (equivalente sencillo al auto-flow de la
-      // rejilla CSS de la propia página, pero en un único sentido —
-      // hueco libre restante en la fila actual, sin "densar" hacia
-      // atrás): tamaño 3/4/5/6 siempre en fila propia a todo el ancho;
-      // 1/2 se acumulan en la fila actual mientras quepan.
-      const filasProductos = [];
-      let filaActual = { colOcupadas: 0, items: [] };
-      function cerrarFila(){
-        if(filaActual.items.length) filasProductos.push(filaActual);
-        filaActual = { colOcupadas: 0, items: [] };
+      // Colocación en una rejilla 2D (colOcupacion[fila][columna]) por
+      // "primer hueco libre" escaneando fila a fila, columna a columna —
+      // equivalente a grid-auto-flow:dense de la propia página (un
+      // producto normal que viene detrás en el pedido puede colarse en
+      // el hueco que deja, al lado, un destacado más grande), pero en
+      // un único sentido (sin "densar" hacia atrás sobre huecos ya
+      // pasados), que es sobrada para el volumen de productos de una
+      // campaña típica.
+      const colOcupacion_ = [];
+      function asegurarFilaRejilla_(i){
+        while(colOcupacion_.length <= i) colOcupacion_.push(new Array(baseCols).fill(false));
       }
-      refsOrdenados.forEach(ref => {
-        const spec = especTarjeta(ref);
-        if(spec.spanCols === baseCols){
-          cerrarFila();
-          filasProductos.push({ colOcupadas: baseCols, items: [{ ref, spanCols: baseCols, colStart: 0, grande: spec.grande }] });
-          return;
+      function buscarHuecoRejilla_(spanCols, spanRows){
+        let fila = 0;
+        for(;;){
+          asegurarFilaRejilla_(fila + spanRows - 1);
+          for(let col = 0; col <= baseCols - spanCols; col++){
+            let cabe = true;
+            for(let r = 0; r < spanRows && cabe; r++){
+              for(let c = 0; c < spanCols && cabe; c++){
+                if(colOcupacion_[fila+r][col+c]) cabe = false;
+              }
+            }
+            if(cabe) return { fila, col };
+          }
+          fila++;
         }
-        if(filaActual.colOcupadas + spec.spanCols > baseCols) cerrarFila();
-        filaActual.items.push({ ref, spanCols: spec.spanCols, colStart: filaActual.colOcupadas, grande: false });
-        filaActual.colOcupadas += spec.spanCols;
+      }
+      function ocuparRejilla_(fila, col, spanCols, spanRows){
+        for(let r = 0; r < spanRows; r++) for(let c = 0; c < spanCols; c++) colOcupacion_[fila+r][col+c] = true;
+      }
+
+      const itemsColocados = refsOrdenados.map(ref => {
+        const spec = especTarjeta(ref);
+        const { fila, col } = buscarHuecoRejilla_(spec.spanCols, spec.spanRows);
+        ocuparRejilla_(fila, col, spec.spanCols, spec.spanRows);
+        return { ref, fila, col, spanCols: spec.spanCols, spanRows: spec.spanRows };
       });
-      cerrarFila();
+      const totalFilasRejilla = colOcupacion_.length;
 
       // Las fotos se piden ahora que ya se conoce el tamaño real de cada
       // tarjeta: cada una se recorta en el propio <canvas> (recorteRatio,
@@ -4022,19 +4053,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // Se cargan por tandas espaciadas (ver cargarImagenesEnTandas) para
       // no disparar un 429 de googleusercontent.com; un fallo puntual en
       // cualquiera no debe impedir generar el resto del folleto.
-      const itemsFotos = [];
-      filasProductos.forEach(fila => {
-        const altoFila = fila.items.some(it => it.grande) ? cardHGrande : cardH;
-        fila.items.forEach(it => {
-          const p = PRODUCTS[it.ref];
-          const anchoCard = it.spanCols * colW + (it.spanCols - 1) * gapX;
-          const caja = cajaImagenDe(anchoCard, altoFila);
-          itemsFotos.push({
-            ref: it.ref,
-            url: p ? urlImagenProductoFolleto(p, 500) : null,
-            opciones: { recorteRatio: caja.w / caja.h }
-          });
-        });
+      const itemsFotos = itemsColocados.map(it => {
+        const p = PRODUCTS[it.ref];
+        const anchoCard = it.spanCols * colW + (it.spanCols - 1) * gapX;
+        const altoCard = it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY;
+        const caja = cajaImagenDe(anchoCard, altoCard, it.spanRows > 1);
+        return {
+          ref: it.ref,
+          url: p ? urlImagenProductoFolleto(p, 500) : null,
+          opciones: { recorteRatio: caja.w / caja.h }
+        };
       });
       fijarEstadoBoton(`Extrayendo imágenes… (0/${itemsFotos.length})`);
       const fotos = await cargarImagenesEnTandas(itemsFotos, (completadas, total) => {
@@ -4076,17 +4104,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const tieneDescuento = !precioMayorFolleto && descuento > 0;
         const esDestacado = !!(d && d.tamano > 1);
         // El presupuesto vertical disponible depende de la ALTURA de la
-        // tarjeta, no de su ancho — una tarjeta ancha pero de la altura
-        // normal (tamaño 2/3) tiene el mismo hueco de texto que una
-        // normal, así que la familia y el nombre a 2 líneas solo caben
-        // en las tarjetas realmente más altas (tamaño 4/5/6).
-        const esGrande = altoTarjeta > cardH + 2;
+        // tarjeta, no de su ancho — una tarjeta de 1 sola fila (tamaño 1)
+        // tiene el mismo hueco de texto reducido sea cual sea su ancho;
+        // la familia y el nombre a 2 líneas solo caben en las tarjetas
+        // que ocupan más de una fila (tamaño 2 en adelante).
+        const esGrande = altoTarjeta > ROW_UNIT + 2;
         const mostrarFamilia = esGrande;
         const maxLineasNombre = esGrande ? 2 : 1;
 
         const padX = padTarjeta;
         const imgBoxY = y + 3;
-        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta);
+        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta, esGrande);
         const foto = fotoPorRef[ref];
         if(foto){
           // La foto ya viene recortada (ver itemsFotos/cajaImagenDe, más
@@ -4218,28 +4246,40 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.text(`Ref. ${p.ref}`, x + padX, ty + 4.4);
       }
 
-      // Fila a fila (no todo de golpe en un solo forEach síncrono) para
-      // poder informar "Componiendo folleto… (fila X/Y)" en el botón a
-      // medida que avanza — con catálogos de varias páginas, esta fase
-      // también se nota, y antes se quedaba con un único texto fijo todo
-      // el rato (justo el aviso de Eloy: "que vaya cambiando en base a lo
-      // que está ocurriendo por detrás").
-      for(let iFila = 0; iFila < filasProductos.length; iFila++){
-        const fila = filasProductos[iFila];
-        const esGrande = fila.items.some(it => it.grande);
-        const alturaFila = esGrande ? cardHGrande : cardH;
-        if(cursorY + alturaFila > footerTopY - 2){
+      // Se recorre la rejilla 2D fila a fila (de ROW_UNIT en ROW_UNIT, no
+      // todo de golpe en un solo forEach síncrono, para poder informar
+      // "Componiendo folleto… (fila X/Y)" en el botón a medida que avanza
+      // — justo el aviso de Eloy: "que vaya cambiando en base a lo que
+      // está ocurriendo por detrás"). cursorY avanza SIEMPRE un único
+      // ROW_UNIT por cada fila de la rejilla procesada, arranque o no ahí
+      // algún producto — un bloque de varias filas (destacado) se dibuja
+      // entero, de una sola vez, en la fila en la que arranca, con su
+      // alto real (spanRows*ROW_UNIT + huecos), y simplemente "sobresale"
+      // visualmente sobre las filas siguientes mientras cursorY se pone
+      // al día con ellas — así nunca hace falta partir un bloque entre
+      // dos páginas: el salto de página se decide ANTES de dibujar nada
+      // de una fila, mirando la altura real del bloque más alto que
+      // arranque en ella.
+      const itemsPorFila_ = {};
+      itemsColocados.forEach(it => { (itemsPorFila_[it.fila] = itemsPorFila_[it.fila] || []).push(it); });
+      for(let iFila = 0; iFila < totalFilasRejilla; iFila++){
+        const itemsFila = itemsPorFila_[iFila] || [];
+        const altoNecesario = itemsFila.length
+          ? Math.max(...itemsFila.map(it => it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY))
+          : ROW_UNIT;
+        if(cursorY + altoNecesario > footerTopY - 2){
           doc.addPage();
           dibujarCabecera();
           cursorY = headerBottomY + 8;
         }
-        fila.items.forEach(it => {
-          const x = margin + it.colStart * (colW + gapX);
+        itemsFila.forEach(it => {
+          const x = margin + it.col * (colW + gapX);
           const w = it.spanCols * colW + (it.spanCols - 1) * gapX;
-          dibujarTarjetaProducto(x, cursorY, w, alturaFila, it.ref);
+          const h = it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY;
+          dibujarTarjetaProducto(x, cursorY, w, h, it.ref);
         });
-        cursorY += alturaFila + gapY;
-        fijarEstadoBoton(`Componiendo folleto… (fila ${iFila + 1}/${filasProductos.length})`);
+        cursorY += ROW_UNIT + gapY;
+        fijarEstadoBoton(`Componiendo folleto… (fila ${iFila + 1}/${totalFilasRejilla})`);
         await new Promise(requestAnimationFrame);
       }
 
