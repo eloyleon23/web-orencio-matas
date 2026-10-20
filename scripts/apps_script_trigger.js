@@ -5563,16 +5563,25 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
     // la campaña tuviera uno).
     const descuentoNum = parseFloat((d.descuento || '').toString().replace(',', '.'));
     const descuento = (isFinite(descuentoNum) && descuentoNum > 0) ? Math.min(descuentoNum, 95) : 0;
+    // Pie de producto (texto corto, opcional) — petición real de Eloy:
+    // "permitir texto a los productos añadidos a los escaparates para
+    // poder incluir una descripción o ayuda o detalle técnico al
+    // producto. Este texto se incluirá como pie del producto." Recortado
+    // a un tamaño razonable para un pie de tarjeta (no una ficha
+    // completa) — ni la tarjeta del estante ni la del PDF tienen sitio
+    // para un párrafo largo.
+    const texto = (d.texto || '').toString().trim().slice(0, 220);
     // Antes se omitía por completo cualquier producto con tamaño normal
     // (tamano===1) — correcto cuando "destacados" solo servía para el
     // tamaño/posición, pero ahora una entrada también hace falta para
-    // guardar un descuento propio aunque el producto no esté agrandado.
-    // Solo se omite si NO aporta nada de verdad (ni tamaño destacado ni
-    // descuento).
-    if (tamano === 1 && !descuento) return;
+    // guardar un descuento propio, o un texto de pie, aunque el producto
+    // no esté agrandado. Solo se omite si NO aporta nada de verdad (ni
+    // tamaño destacado, ni descuento, ni texto).
+    if (tamano === 1 && !descuento && !texto) return;
     vistos.add(ref);
     const entrada = { ref: ref, tamano: tamano, alinH: alinH, posV: posV };
     if (descuento) entrada.descuento = descuento;
+    if (texto) entrada.texto = texto;
     resultado.push(entrada);
   });
   return resultado;
