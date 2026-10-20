@@ -4008,11 +4008,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // diferencia de la web, con sitio para 5-8 columnas en pantallas
         // anchas), ensanchar sin dar más alto deja bloques panorámicos
         // casi vacíos en vez de cuadrados. Tamaño 3-6 se agrupan en un
-        // único nivel "grande" (ancho completo y alto a juego, 3x3
-        // celdas): con solo 3 columnas no hay forma real de diferenciar
-        // más niveles por ancho, y seguir subiendo solo el alto para
-        // 4/5/6 volvería a alejarse del cuadrado.
-        if(tam >= 3) return { spanCols: baseCols, spanRows: 3 };
+        // único nivel "grande" (ancho completo, 3x2 celdas — no 3x3):
+        // con solo 3 columnas no hay forma real de diferenciar más
+        // niveles por ancho, y 3x3 (182x182mm, casi una página entera)
+        // dejaba demasiado a menudo una página casi en blanco cuando ese
+        // destacado no cabía justo después de la cabecera — "hay que
+        // ocupar más espacio e intentar dejar menos huecos vacíos",
+        // aviso real de Eloy. 3x2 sigue siendo mucho más cuadrado que el
+        // diseño original (ratio de imagen ~2:1 en vez de ~3,9:1) pero
+        // con la mitad de alto, cabe en muchos más huecos sin romper
+        // página.
+        if(tam >= 3) return { spanCols: baseCols, spanRows: 2 };
         if(tam === 2) return { spanCols: 2, spanRows: 2 };
         return { spanCols: 1, spanRows: 1 };
       }
@@ -4057,25 +4063,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       });
       const totalFilasRejilla = colOcupacion_.length;
 
-      // Las fotos se piden ahora que ya se conoce el tamaño real de cada
-      // tarjeta: cada una se recorta en el propio <canvas> (recorteRatio,
-      // ver cargarImagenDataURL) al ancho/alto EXACTO de su hueco — modo
-      // "cover", igual que object-fit:cover en CSS — así la imagen llena
-      // siempre todo el hueco en vez de quedar pequeña dentro de él
-      // ("las imágenes de los productos se diferencien bien ya que ocupa
-      // mas hueco el bloque que la propia imagen", el aviso de Eloy).
-      // Se cargan por tandas espaciadas (ver cargarImagenesEnTandas) para
-      // no disparar un 429 de googleusercontent.com; un fallo puntual en
-      // cualquiera no debe impedir generar el resto del folleto.
+      // Las fotos de producto se piden SIN recortar (sin recorteRatio):
+      // se dibujan siempre enteras, en modo "contain" (ver
+      // dibujarTarjetaProducto), centradas en su hueco. Antes se
+      // recortaban en el propio <canvas> (modo "cover", hasta un 30%
+      // de cada lado) para acercarlas al hueco exacto de su tarjeta —
+      // pero con las cajas ahora más cuadradas que la foto real de
+      // muchos productos (botes, botellas, herramientas alargadas...),
+      // ese recorte llegaba a cortar parte del propio producto en la
+      // foto, no solo el aire sobrante alrededor ("las imágenes de los
+      // productos siguen siendo en algunos casos más grandes que el
+      // hueco... no se quede la imagen cortada", aviso real de Eloy).
+      // "Contain" nunca corta nada — como mucho dejará algo más de
+      // margen alrededor en los productos con una proporción muy
+      // distinta a su hueco, pero nunca pierde parte de la foto.
       const itemsFotos = itemsColocados.map(it => {
         const p = PRODUCTS[it.ref];
-        const anchoCard = it.spanCols * colW + (it.spanCols - 1) * gapX;
-        const altoCard = it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY;
-        const caja = cajaImagenDe(anchoCard, altoCard, it.spanRows > 1);
         return {
           ref: it.ref,
           url: p ? urlImagenProductoFolleto(p, 500) : null,
-          opciones: { recorteRatio: caja.w / caja.h }
+          opciones: {}
         };
       });
       fijarEstadoBoton(`Extrayendo imágenes… (0/${itemsFotos.length})`);
