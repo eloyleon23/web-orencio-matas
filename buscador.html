@@ -5336,11 +5336,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="pa-vista-principal" style="display:none;">
             <div class="destacados-buscador-controles">
                 <select id="pa-periodo">
+                    <option value="hoy">Hoy</option>
                     <option value="7">Últimos 7 días</option>
                     <option value="30" selected>Últimos 30 días</option>
                     <option value="90">Últimos 90 días</option>
+                    <option value="personalizado">Rango personalizado…</option>
                 </select>
                 <button type="button" id="pa-recargar" class="destacados-btn-secundario"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+            </div>
+            <div id="pa-rango-personalizado" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px;" class="destacados-buscador-controles">
+                <label style="display:flex;flex-direction:column;font-size:0.78rem;color:var(--muted);gap:2px;">Desde
+                    <input type="date" id="pa-fecha-inicio">
+                </label>
+                <label style="display:flex;flex-direction:column;font-size:0.78rem;color:var(--muted);gap:2px;">Hasta
+                    <input type="date" id="pa-fecha-fin">
+                </label>
             </div>
             <div id="pa-contenido"><p class="destacados-hint">Cargando…</p></div>
         </div>
@@ -5678,6 +5688,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     function panelAnaliticaEnviarEvento_(nombre, datos) {
+        // A petición de Eloy: el tráfico de demo/preproducción (GitHub
+        // Pages, local, cualquier dominio que no sea el real) no debe
+        // mezclarse con las estadísticas de verdad — igual que GA4/GTM,
+        // que ya solo se activan en orenciomatas.es. Aquí se corta en el
+        // mismo punto que allí: window.OM_PREPRODUCCION (ver
+        // assets/js/entorno.js) es la única variable que distingue los
+        // dos entornos en todo el sitio.
+        if (window.OM_PREPRODUCCION) return;
         try {
             const payload = Object.assign({ accion: 'registrar_evento', tipo_evento: nombre }, datos || {});
             fetch(window.GOOGLE_APPS_SCRIPT_URL, {
@@ -8831,12 +8849,50 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         </div>`;
     }
 
+    // 'YYYY-MM-DD' en la fecha LOCAL del navegador (nunca
+    // toISOString(), que es UTC y puede dar el día de ayer o mañana
+    // según la hora) — para que "Hoy" y el selector de fechas coincidan
+    // con el día de calendario real de quien usa el panel.
+    function paFechaLocalYYYYMMDD_(fecha) {
+        const y = fecha.getFullYear();
+        const m = (fecha.getMonth() + 1).toString().padStart(2, '0');
+        const d = fecha.getDate().toString().padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    function paCalcularRangoFechas_() {
+        const periodo = $('pa-periodo').value;
+        const hoy = paFechaLocalYYYYMMDD_(new Date());
+        if (periodo === 'personalizado') {
+            const inicio = $('pa-fecha-inicio').value || hoy;
+            const fin = $('pa-fecha-fin').value || hoy;
+            return { fechaInicio: inicio, fechaFin: fin };
+        }
+        if (periodo === 'hoy') return { fechaInicio: hoy, fechaFin: hoy };
+        const dias = parseInt(periodo, 10) || 30;
+        const inicioDate = new Date();
+        inicioDate.setDate(inicioDate.getDate() - (dias - 1));
+        return { fechaInicio: paFechaLocalYYYYMMDD_(inicioDate), fechaFin: hoy };
+    }
+
+    function paActualizarVisibilidadRango_() {
+        const esPersonalizado = $('pa-periodo').value === 'personalizado';
+        $('pa-rango-personalizado').style.display = esPersonalizado ? 'flex' : 'none';
+        if (esPersonalizado && !$('pa-fecha-inicio').value) {
+            const hoy = paFechaLocalYYYYMMDD_(new Date());
+            const hace7 = new Date();
+            hace7.setDate(hace7.getDate() - 6);
+            $('pa-fecha-inicio').value = paFechaLocalYYYYMMDD_(hace7);
+            $('pa-fecha-fin').value = hoy;
+        }
+    }
+
     async function paCargarResumen_() {
         const cont = $('pa-contenido');
         cont.innerHTML = '<p class="destacados-hint">Cargando…</p>';
         try {
-            const dias = parseInt($('pa-periodo').value, 10) || 30;
-            const r = await paFetchPost_({ accion: 'obtener_resumen_analitica', pin: paPin_, dias: dias });
+            const { fechaInicio, fechaFin } = paCalcularRangoFechas_();
+            const r = await paFetchPost_({ accion: 'obtener_resumen_analitica', pin: paPin_, fechaInicio, fechaFin });
             if (!r.success) {
                 cont.innerHTML = `<p class="destacados-editor-error">${escapeHtml(r.error || 'Error al cargar las estadísticas.')}</p>`;
                 return;
@@ -8855,10 +8911,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 `).join('')}
             </div>`;
 
+            const topAreasConNombre = (r.topAreas || []).map(it => ({ termino: AREAS_NOMBRE[it.termino] || it.termino, total: it.total }));
+
             cont.innerHTML = tarjetas
                 + paBloqueLista_('Términos más buscados', 'fa-magnifying-glass', r.topBusquedas, 'Todavía no hay búsquedas registradas en este periodo.')
                 + paBloqueLista_('Búsquedas SIN resultados (oportunidades)', 'fa-triangle-exclamation', r.topBusquedasSinResultados, 'Ninguna búsqueda se ha quedado sin resultados — buena señal.')
                 + paBloqueLista_('Productos más vistos', 'fa-box-open', r.topProductos, 'Todavía no hay productos vistos en este periodo.', it => 'Ref: ' + it.referencia)
+                + paBloqueLista_('Áreas más consultadas', 'fa-shapes', topAreasConNombre, 'Todavía no hay productos vistos en este periodo.')
+                + paBloqueLista_('Familias más consultadas', 'fa-list', r.topFamilias, 'Todavía no hay productos vistos en este periodo.')
                 + paBloqueLista_('Bloques de "Sigue explorando" más pulsados', 'fa-layer-group', r.topBloques, 'Todavía no hay clics en bloques en este periodo.')
                 + paBloqueLista_('Marcas más pulsadas', 'fa-tags', r.topMarcas, 'Todavía no hay clics en marcas en este periodo.');
         } catch (e) {
@@ -8894,7 +8954,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             paValidarPinYArrancar_(pin);
         });
         $('pa-pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('pa-pin-entrar').click(); });
-        $('pa-periodo').addEventListener('change', paCargarResumen_);
+        $('pa-periodo').addEventListener('change', () => { paActualizarVisibilidadRango_(); paCargarResumen_(); });
+        $('pa-fecha-inicio').addEventListener('change', paCargarResumen_);
+        $('pa-fecha-fin').addEventListener('change', paCargarResumen_);
         $('pa-recargar').addEventListener('click', paCargarResumen_);
         $('pa-modal-cerrar').addEventListener('click', paCerrarModal_);
         $('pa-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'pa-modal-overlay') paCerrarModal_(); });
