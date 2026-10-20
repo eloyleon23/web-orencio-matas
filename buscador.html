@@ -4288,6 +4288,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              .om-skeleton) en vez de display:none — así nunca aparecen de
              repente al terminar de cargar; actualizarVisibilidadModulosDescubrimiento_()
              los oculta solo si se determina que no hay contenido real. -->
+        <!-- Panel propio de analítica (búsquedas, productos vistos,
+             bloques y marcas pulsadas) — fuera de #destacados a propósito:
+             esa sección se oculta entera cuando no tiene contenido real
+             (ver actualizarVisibilidadModulosDescubrimiento_), y este
+             botón debe seguir accesible pase lo que pase con Destacados.
+             Mismo patrón de botón+PIN que el resto de gestión, oculto y
+             eliminado del DOM en producción (ver
+             window.MOSTRAR_PANEL_ANALITICA). -->
+        <div class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
+            <button type="button" id="btn-panel-analitica" class="btn-destacados-accion btn-destacados-editar" title="Ver estadísticas de uso" aria-label="Ver estadísticas de uso">
+                <i class="fa-solid fa-chart-line"></i> <span>Estadísticas</span>
+            </button>
+        </div>
         <div id="destacados" class="seccion-destacados">
             <div class="seccion-destacados__cabecera">
                 <p class="seccion-destacados__titulo"><span class="seccion-destacados__icono"><i class="fa-solid fa-fire"></i></span> Destacados</p>
@@ -5300,6 +5313,40 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Panel propio de analítica — rankings de búsquedas, productos vistos
+     y bloques/marcas pulsadas, a partir de la hoja EventosAnaliticos
+     (ver registrar_evento / obtener_resumen_analitica en Apps Script).
+     Mismo patrón de PIN que el resto de paneles de gestión; solo existe
+     en preproducción (ver window.MOSTRAR_PANEL_ANALITICA). -->
+<div class="modal-overlay" id="pa-modal-overlay">
+    <div class="modal-producto-box modal-destacados-box" role="dialog" aria-modal="true" aria-labelledby="pa-modal-titulo">
+        <button class="modal-producto-cerrar" id="pa-modal-cerrar" aria-label="Cerrar estadísticas de uso">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 id="pa-modal-titulo"><i class="fa-solid fa-chart-line"></i> Estadísticas de uso</h3>
+
+        <div id="pa-vista-pin" class="destacados-vista-pin">
+            <p>Introduce el PIN de administración para ver las estadísticas.</p>
+            <input type="password" id="pa-pin-input" inputmode="numeric" autocomplete="off" placeholder="PIN">
+            <label class="destacados-pin-recordar"><input type="checkbox" id="pa-pin-recordar"> Recordar en este dispositivo</label>
+            <p id="pa-pin-error" class="destacados-pin-error"></p>
+            <button type="button" id="pa-pin-entrar" class="destacados-btn-primario">Entrar</button>
+        </div>
+
+        <div id="pa-vista-principal" style="display:none;">
+            <div class="destacados-buscador-controles">
+                <select id="pa-periodo">
+                    <option value="7">Últimos 7 días</option>
+                    <option value="30" selected>Últimos 30 días</option>
+                    <option value="90">Últimos 90 días</option>
+                </select>
+                <button type="button" id="pa-recargar" class="destacados-btn-secundario"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+            </div>
+            <div id="pa-contenido"><p class="destacados-hint">Cargando…</p></div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <!-- Lista de la compra: exportación a PDF — único cliente de jsPDF/
      autoTable en el sitio, no existía ya ninguna solución de PDF en el
@@ -5354,6 +5401,7 @@ window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
+window.MOSTRAR_PANEL_ANALITICA = window.OM_PREPRODUCCION;
 
 // URL del web app de Google Apps Script para registrar productos y solicitudes de catálogos
 window.GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
@@ -5441,6 +5489,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     } else {
         eliminarSiRestringido_('btn-gestionar-bloques-categorias', window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS);
         eliminarSiRestringido_('bc-modal-overlay', window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS);
+    }
+    if (window.MOSTRAR_PANEL_ANALITICA) {
+        const btnPA = document.getElementById('btn-panel-analitica');
+        if (btnPA) btnPA.classList.add('visible');
+    } else {
+        eliminarSiRestringido_('btn-panel-analitica', window.MOSTRAR_PANEL_ANALITICA);
+        eliminarSiRestringido_('pa-modal-overlay', window.MOSTRAR_PANEL_ANALITICA);
     }
 
     const REPO = 'eloyleon23/web-orencio-matas';
@@ -5600,16 +5655,37 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     const $ = (id) => document.getElementById(id);
 
-    // Eventos de negocio para GA4 (vía Google Tag Manager, ver
-    // src/js/analytics-consent.js para el mismo patrón de dataLayer.push
-    // ya usado en el sitio) — búsquedas, productos vistos y bloques/marcas
-    // destacadas pulsadas. No requiere consentimiento de cookies aparte:
-    // igual que el resto de analítica del sitio, el contenedor de GTM solo
-    // se carga en el dominio de producción (orenciomatas.es), así que este
-    // push a dataLayer no tiene ningún efecto fuera de ahí.
+    // Eventos de negocio — búsquedas, productos vistos y bloques/marcas
+    // destacadas pulsadas. Van a dos sitios en paralelo:
+    //  1) GA4 vía Google Tag Manager (mismo patrón de dataLayer.push que
+    //     ya usa src/js/analytics-consent.js). No requiere consentimiento
+    //     de cookies aparte: igual que el resto de analítica del sitio,
+    //     el contenedor de GTM solo se carga en producción
+    //     (orenciomatas.es), así que este push no tiene efecto fuera de
+    //     ahí.
+    //  2) El panel propio de analítica (hoja EventosAnaliticos vía Apps
+    //     Script, ver panelAnaliticaEnviarEvento_ más abajo) — a petición
+    //     de Eloy: GA4/GTM exige configurar manualmente activadores y
+    //     etiquetas antes de ver nada, y aun así da un informe genérico,
+    //     no un ranking directo de "qué se busca y no se encuentra" o
+    //     "qué productos enganchan más". Nunca bloquea ni puede romper
+    //     la búsqueda — es una llamada "dispara y olvida".
     function enviarEventoAnalitica_(nombre, datos) {
         try {
             (window.dataLayer = window.dataLayer || []).push(Object.assign({ event: nombre }, datos || {}));
+        } catch (e) { /* un fallo de analítica nunca debe romper el buscador */ }
+        panelAnaliticaEnviarEvento_(nombre, datos);
+    }
+
+    function panelAnaliticaEnviarEvento_(nombre, datos) {
+        try {
+            const payload = Object.assign({ accion: 'registrar_evento', tipo_evento: nombre }, datos || {});
+            fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+                keepalive: true,
+            }).catch(() => {});
         } catch (e) { /* un fallo de analítica nunca debe romper el buscador */ }
     }
 
@@ -8684,6 +8760,145 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('bc-modal-cerrar').addEventListener('click', bcCerrarModal_);
         $('bc-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'bc-modal-overlay') bcCerrarModal_(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('bc-modal-overlay').classList.contains('activo')) bcCerrarModal_(); });
+    }
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║ Panel propio de analítica — rankings de búsquedas, productos  ║
+    // ║ vistos y bloques/marcas pulsadas (ver registrar_evento /      ║
+    // ║ obtener_resumen_analitica en Apps Script)                     ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    let paPin_ = '';
+
+    async function paFetchPost_(payload) {
+        for (let intento = 0; intento < 2; intento++) {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+            });
+            const d = await resp.json();
+            if (d.success !== undefined || intento === 1) return d;
+            console.warn('paFetchPost_: respuesta sin "success" (posible redirección a doGet) — reintentando...', d);
+        }
+    }
+
+    function paGuardarPinLocal_(pin, recordar) {
+        if (recordar) { try { localStorage.setItem('omPanelAnaliticaPin', pin); } catch (e) {} }
+    }
+
+    async function paValidarPinYArrancar_(pin) {
+        $('pa-pin-error').textContent = '';
+        const btn = $('pa-pin-entrar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Comprobando...';
+        try {
+            const d = await paFetchPost_({ accion: 'panel_validar_pin', pin: pin });
+            if (d.success) {
+                paPin_ = pin;
+                $('pa-vista-pin').style.display = 'none';
+                $('pa-vista-principal').style.display = 'block';
+                await paCargarResumen_();
+            } else {
+                $('pa-pin-error').textContent = 'PIN incorrecto.';
+                try { localStorage.removeItem('omPanelAnaliticaPin'); } catch (e) {}
+            }
+        } catch (e) {
+            $('pa-pin-error').textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    function paFilaTop_(item, etiquetaExtra) {
+        return `<div class="destacados-item" style="padding:6px 10px;">
+            <div class="destacados-item-info">
+                <div class="nombre">${escapeHtml(item.nombre || item.termino)}</div>
+                ${etiquetaExtra ? `<div class="detalle">${escapeHtml(etiquetaExtra)}</div>` : ''}
+            </div>
+            <div style="font-weight:800;color:var(--red);flex-shrink:0;">${item.total}</div>
+        </div>`;
+    }
+
+    function paBloqueLista_(titulo, icono, items, etiquetaVacio, construirExtra) {
+        const filas = items.length
+            ? items.map(it => paFilaTop_(it, construirExtra ? construirExtra(it) : null)).join('')
+            : `<p class="destacados-hint">${etiquetaVacio}</p>`;
+        return `<div style="margin-top:16px;">
+            <h4 style="margin:0 0 8px;"><i class="fa-solid ${icono}"></i> ${titulo}</h4>
+            <div class="destacados-listado-lista">${filas}</div>
+        </div>`;
+    }
+
+    async function paCargarResumen_() {
+        const cont = $('pa-contenido');
+        cont.innerHTML = '<p class="destacados-hint">Cargando…</p>';
+        try {
+            const dias = parseInt($('pa-periodo').value, 10) || 30;
+            const r = await paFetchPost_({ accion: 'obtener_resumen_analitica', pin: paPin_, dias: dias });
+            if (!r.success) {
+                cont.innerHTML = `<p class="destacados-editor-error">${escapeHtml(r.error || 'Error al cargar las estadísticas.')}</p>`;
+                return;
+            }
+            const tarjetas = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px;">
+                ${[
+                    ['fa-magnifying-glass', 'Búsquedas', r.totalBusquedas],
+                    ['fa-box-open', 'Productos vistos', r.totalProductosVistos],
+                    ['fa-layer-group', 'Bloques pulsados', r.totalBloquesClick],
+                    ['fa-tags', 'Marcas pulsadas', r.totalMarcasClick],
+                ].map(([icono, etiqueta, total]) => `
+                    <div style="background:var(--light);border-radius:10px;padding:10px;text-align:center;">
+                        <div style="font-size:1.4rem;font-weight:900;color:var(--red);"><i class="fa-solid ${icono}"></i> ${total}</div>
+                        <div style="font-size:0.78rem;color:var(--muted);">${etiqueta}</div>
+                    </div>
+                `).join('')}
+            </div>`;
+
+            cont.innerHTML = tarjetas
+                + paBloqueLista_('Términos más buscados', 'fa-magnifying-glass', r.topBusquedas, 'Todavía no hay búsquedas registradas en este periodo.')
+                + paBloqueLista_('Búsquedas SIN resultados (oportunidades)', 'fa-triangle-exclamation', r.topBusquedasSinResultados, 'Ninguna búsqueda se ha quedado sin resultados — buena señal.')
+                + paBloqueLista_('Productos más vistos', 'fa-box-open', r.topProductos, 'Todavía no hay productos vistos en este periodo.', it => 'Ref: ' + it.referencia)
+                + paBloqueLista_('Bloques de "Sigue explorando" más pulsados', 'fa-layer-group', r.topBloques, 'Todavía no hay clics en bloques en este periodo.')
+                + paBloqueLista_('Marcas más pulsadas', 'fa-tags', r.topMarcas, 'Todavía no hay clics en marcas en este periodo.');
+        } catch (e) {
+            cont.innerHTML = '<p class="destacados-editor-error">Error de conexión.</p>';
+        }
+    }
+
+    function paAbrirModal_() {
+        $('pa-modal-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('pa-vista-pin').style.display = 'block';
+        $('pa-vista-principal').style.display = 'none';
+        $('pa-pin-input').value = '';
+        $('pa-pin-error').textContent = '';
+        const pinGuardado = (() => { try { return localStorage.getItem('omPanelAnaliticaPin'); } catch (e) { return null; } })();
+        if (pinGuardado) {
+            $('pa-pin-input').value = pinGuardado;
+            $('pa-pin-recordar').checked = true;
+            paValidarPinYArrancar_(pinGuardado);
+        }
+    }
+
+    function paCerrarModal_() {
+        $('pa-modal-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    if ($('btn-panel-analitica')) {
+        $('btn-panel-analitica').addEventListener('click', paAbrirModal_);
+        $('pa-pin-entrar').addEventListener('click', () => {
+            const pin = $('pa-pin-input').value.trim();
+            paGuardarPinLocal_(pin, $('pa-pin-recordar').checked);
+            paValidarPinYArrancar_(pin);
+        });
+        $('pa-pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('pa-pin-entrar').click(); });
+        $('pa-periodo').addEventListener('change', paCargarResumen_);
+        $('pa-recargar').addEventListener('click', paCargarResumen_);
+        $('pa-modal-cerrar').addEventListener('click', paCerrarModal_);
+        $('pa-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'pa-modal-overlay') paCerrarModal_(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('pa-modal-overlay').classList.contains('activo')) paCerrarModal_(); });
     }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
