@@ -4049,6 +4049,17 @@ function doPost(e) {
       return procesarEliminarBloqueCategoria(data);
     }
 
+    // NUEVO — Panel propio de analítica (búsquedas, productos vistos,
+    // bloques y marcas pulsadas)
+    if (accion === 'registrar_evento') {
+      return procesarRegistrarEvento(data);
+    }
+
+    if (accion === 'obtener_resumen_analitica') {
+      console.log('Acción: obtener_resumen_analitica');
+      return procesarObtenerResumenAnalitica(data);
+    }
+
     if (accion === 'buscar_producto_ia') {
       console.log('Acción: buscar_producto_ia');
       return procesarBuscarProductoIA(data);
@@ -6543,6 +6554,241 @@ function procesarEliminarBloqueCategoria(data) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarEliminarBloqueCategoria:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║ EVENTOS ANALÍTICOS — panel propio de uso (búsquedas, productos    ║
+// ║ vistos, bloques y marcas pulsadas)                                 ║
+// ╚══════════════════════════════════════════════════════════════════╝
+//
+// A petición de Eloy: GA4/GTM exigen configurar manualmente activadores
+// y etiquetas antes de poder ver nada, y aun configurado bien el
+// resultado es un informe genérico — no un ranking directo de "qué
+// busca la gente y no encuentra" o "qué productos engancha más". Este
+// bloque registra los MISMOS eventos de negocio que ya se envían al
+// dataLayer de GA4 (ver enviarEventoAnalitica_ en buscador.html) en una
+// hoja propia, para poder calcular esos rankings sin depender de
+// ninguna configuración externa.
+//
+// Deliberadamente SIN PIN en el registro (procesarRegistrarEvento): es
+// un simple "apuntar una fila", igual de público que cualquier otra
+// acción de solo lectura de este backend, y el PIN solo protege la
+// LECTURA agregada (procesarObtenerResumenAnalitica), que es el dato
+// de negocio sensible.
+
+const CABECERAS_EVENTOS_ANALITICOS_ = [
+  'fecha_hora', 'tipo_evento',
+  'busqueda_termino', 'busqueda_resultados', 'busqueda_con_resultados',
+  'producto_referencia', 'producto_nombre', 'producto_area', 'producto_familia',
+  'bloque_titulo', 'marca_nombre', 'marca_area',
+];
+
+// Nombres de evento aceptados — cualquier otro valor se descarta en
+// silencio (ver procesarRegistrarEvento), para que la hoja no se pueda
+// llenar de basura con una petición HTTP manual a este endpoint público.
+const EVENTOS_ANALITICOS_TIPOS_VALIDOS_ = [
+  'busqueda_realizada', 'ver_producto', 'bloque_categoria_click', 'marca_destacada_click',
+];
+
+function obtenerHojaEventosAnaliticos_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('EventosAnaliticos');
+  if (!sheet) {
+    sheet = ss.insertSheet('EventosAnaliticos');
+    sheet.getRange(1, 1, 1, CABECERAS_EVENTOS_ANALITICOS_.length).setValues([CABECERAS_EVENTOS_ANALITICOS_]);
+    sheet.setFrozenRows(1);
+    console.log('Hoja EventosAnaliticos creada.');
+  }
+  return sheet;
+}
+
+// Recorta un string a una longitud máxima razonable — ningún campo de
+// este registro público debería superar esto nunca en uso normal; es
+// solo una red de seguridad frente a un envío manual con datos enormes.
+function recortarTextoEvento_(valor, maxLength) {
+  return (valor === undefined || valor === null) ? '' : valor.toString().slice(0, maxLength || 120);
+}
+
+function procesarRegistrarEvento(data) {
+  try {
+    const tipoEvento = (data.tipo_evento || '').toString().trim();
+    if (EVENTOS_ANALITICOS_TIPOS_VALIDOS_.indexOf(tipoEvento) === -1) {
+      // Se descarta en silencio (y con success:true, nunca con error) —
+      // nunca debe hacer que fetch() falle o se reintente desde el
+      // navegador por un tipo de evento desconocido o un bloqueador de
+      // anuncios manipulando la petición.
+      return ContentService.createTextOutput(JSON.stringify({ success: true, descartado: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const sheet = obtenerHojaEventosAnaliticos_();
+    const fila = [
+      new Date().toISOString(),
+      tipoEvento,
+      recortarTextoEvento_(data.busqueda_termino, 80),
+      recortarTextoEvento_(data.busqueda_resultados, 10),
+      recortarTextoEvento_(data.busqueda_con_resultados, 10),
+      recortarTextoEvento_(data.producto_referencia, 20),
+      recortarTextoEvento_(data.producto_nombre, 120),
+      recortarTextoEvento_(data.producto_area, 30),
+      recortarTextoEvento_(data.producto_familia, 60),
+      recortarTextoEvento_(data.bloque_titulo, 80),
+      recortarTextoEvento_(data.marca_nombre, 60),
+      recortarTextoEvento_(data.marca_area, 30),
+    ];
+
+    // Lock corto y best-effort: ante contención (varias visitas
+    // simultáneas escribiendo a la vez), se prefiere perder algún
+    // evento puntual antes que hacer esperar al navegador del usuario o
+    // devolver un error — esto es analítica, no un dato de negocio que
+    // no se pueda permitir perder.
+    const lock = LockService.getScriptLock();
+    if (lock.tryLock(2000)) {
+      try {
+        sheet.appendRow(fila);
+      } finally {
+        lock.releaseLock();
+      }
+    }
+
+    // Purga ocasional (aprox. 1 de cada 200 registros) de filas con más
+    // de 180 días, para que la hoja no crezca sin límite — no necesita
+    // ser exacta ni instantánea, así que no vale la pena un trigger de
+    // tiempo aparte solo para esto.
+    if (Math.random() < 0.005) {
+      try { limpiarEventosAnaliticosAntiguos_(); } catch (e) { console.error('Purga de EventosAnaliticos fallida (no crítico):', e); }
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarRegistrarEvento:', err);
+    // Tampoco aquí se devuelve success:false — un fallo de registro de
+    // analítica nunca debe aparecer como error en el navegador del
+    // visitante.
+    return ContentService.createTextOutput(JSON.stringify({ success: true, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function limpiarEventosAnaliticosAntiguos_() {
+  const sheet = obtenerHojaEventosAnaliticos_();
+  const datos = sheet.getDataRange().getValues();
+  if (datos.length < 2) return;
+  const COL = mapaCabeceras_(datos[0]);
+  const limite = new Date();
+  limite.setDate(limite.getDate() - 180);
+  let borradas = 0;
+  // De abajo arriba, para que borrar una fila no desplace los índices
+  // de las que quedan por revisar.
+  for (let i = datos.length - 1; i >= 1; i--) {
+    const fechaHora = new Date(datos[i][COL['fecha_hora']]);
+    if (!isNaN(fechaHora) && fechaHora < limite) {
+      sheet.deleteRow(i + 1);
+      borradas++;
+    }
+  }
+  if (borradas) console.log(`limpiarEventosAnaliticosAntiguos_: ${borradas} filas de más de 180 días eliminadas.`);
+}
+
+// Construye los rankings a partir de las filas de los últimos `dias`
+// días — todo el cálculo en el propio Apps Script, para que el panel
+// reciba ya el resumen listo y no tenga que descargar (ni procesar)
+// miles de filas en el navegador.
+function calcularResumenAnalitica_(dias) {
+  const sheet = obtenerHojaEventosAnaliticos_();
+  const datos = sheet.getDataRange().getValues();
+  const resumen = {
+    dias: dias,
+    totalBusquedas: 0,
+    totalProductosVistos: 0,
+    totalBloquesClick: 0,
+    totalMarcasClick: 0,
+    topBusquedas: [],
+    topBusquedasSinResultados: [],
+    topProductos: [],
+    topBloques: [],
+    topMarcas: [],
+  };
+  if (datos.length < 2) return resumen;
+
+  const COL = mapaCabeceras_(datos[0]);
+  const limite = new Date();
+  limite.setDate(limite.getDate() - dias);
+
+  const contadorBusquedas = {};
+  const contadorBusquedasSinResultados = {};
+  const contadorProductos = {}; // clave: referencia -> {nombre, total}
+  const contadorBloques = {};
+  const contadorMarcas = {};
+
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    const fechaHora = new Date(fila[COL['fecha_hora']]);
+    if (isNaN(fechaHora) || fechaHora < limite) continue;
+
+    const tipo = (fila[COL['tipo_evento']] || '').toString();
+    if (tipo === 'busqueda_realizada') {
+      resumen.totalBusquedas++;
+      const termino = (fila[COL['busqueda_termino']] || '').toString().trim();
+      if (!termino) continue;
+      const terminoNormalizado = termino.toLowerCase();
+      contadorBusquedas[terminoNormalizado] = (contadorBusquedas[terminoNormalizado] || 0) + 1;
+      const conResultados = (fila[COL['busqueda_con_resultados']] || '').toString() === 'true';
+      if (!conResultados) {
+        contadorBusquedasSinResultados[terminoNormalizado] = (contadorBusquedasSinResultados[terminoNormalizado] || 0) + 1;
+      }
+    } else if (tipo === 'ver_producto') {
+      resumen.totalProductosVistos++;
+      const ref = (fila[COL['producto_referencia']] || '').toString().trim();
+      if (!ref) continue;
+      if (!contadorProductos[ref]) contadorProductos[ref] = { nombre: (fila[COL['producto_nombre']] || '').toString(), total: 0 };
+      contadorProductos[ref].total++;
+    } else if (tipo === 'bloque_categoria_click') {
+      resumen.totalBloquesClick++;
+      const titulo = (fila[COL['bloque_titulo']] || '').toString().trim();
+      if (!titulo) continue;
+      contadorBloques[titulo] = (contadorBloques[titulo] || 0) + 1;
+    } else if (tipo === 'marca_destacada_click') {
+      resumen.totalMarcasClick++;
+      const marca = (fila[COL['marca_nombre']] || '').toString().trim();
+      if (!marca) continue;
+      contadorMarcas[marca] = (contadorMarcas[marca] || 0) + 1;
+    }
+  }
+
+  const topDeContador = (contador, limiteTop) => Object.keys(contador)
+    .map(clave => ({ termino: clave, total: contador[clave] }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limiteTop || 15);
+
+  resumen.topBusquedas = topDeContador(contadorBusquedas, 15);
+  resumen.topBusquedasSinResultados = topDeContador(contadorBusquedasSinResultados, 15);
+  resumen.topBloques = topDeContador(contadorBloques, 15);
+  resumen.topMarcas = topDeContador(contadorMarcas, 15);
+  resumen.topProductos = Object.keys(contadorProductos)
+    .map(ref => ({ referencia: ref, nombre: contadorProductos[ref].nombre, total: contadorProductos[ref].total }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 15);
+
+  return resumen;
+}
+
+function procesarObtenerResumenAnalitica(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const dias = parseInt(data.dias, 10) || 30;
+    const resumen = calcularResumenAnalitica_(dias);
+    return ContentService.createTextOutput(JSON.stringify(Object.assign({ success: true }, resumen)))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarObtenerResumenAnalitica:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
