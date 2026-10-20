@@ -227,9 +227,12 @@
       .vitrina-content{
         position:relative; z-index:1;
       }
-      /* Foto de campaña: NÍTIDA (sin difuminar), en un bloque a la
-         derecha, anclado arriba (no estirado a toda la altura de la
-         vitrina), solo en escritorio (900px+) — nunca en móvil. */
+      /* Foto de campaña: NÍTIDA (sin difuminar). En escritorio (900px+),
+         en un bloque a la derecha, anclado arriba (no estirado a toda
+         la altura de la vitrina). En móvil, a petición de Eloy, también
+         se ve — a todo el ancho del bloque principal, debajo del texto
+         (orden normal del HTML, sin flex), y más grande que en
+         escritorio a propósito ("no me importa que sea más grande"). */
       .vitrina-foto{
         display:none;
         flex:0 0 clamp(170px, 24%, 260px);
@@ -238,6 +241,9 @@
         position:relative; z-index:1;
       }
       .vitrina-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
+      @media (max-width:899px){
+        .vitrina.tiene-imagen .vitrina-foto{ display:block; margin-top:22px; }
+      }
       @media (min-width:900px){
         .vitrina.tiene-imagen{ display:flex; align-items:flex-start; gap:clamp(20px,3vw,36px); }
         .vitrina.tiene-imagen .vitrina-content{ flex:1 1 auto; min-width:0; }
