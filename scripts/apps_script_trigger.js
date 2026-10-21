@@ -5765,7 +5765,7 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
 // Eloy: "simple por bloque completo" en vez de "enriquecido de
 // verdad, por fragmento").
 const TAMANOS_BLOQUE_VALIDOS_ = ['normal', 'grande', 'muy-grande'];
-const POSICIONES_IMAGEN_BLOQUE_VALIDAS_ = ['arriba', 'abajo'];
+const POSICIONES_IMAGEN_BLOQUE_VALIDAS_ = ['arriba', 'abajo', 'izquierda', 'derecha'];
 function sanearBloquesContenido_(bloquesRaw) {
   if (!Array.isArray(bloquesRaw)) return [];
   const vistos = new Set();
