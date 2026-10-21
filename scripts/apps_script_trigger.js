@@ -5664,7 +5664,21 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
     // 0/no numérico = sin descuento propio (usará el de la campaña, si
     // la campaña tuviera uno).
     const descuentoNum = parseFloat((d.descuento || '').toString().replace(',', '.'));
-    const descuento = (isFinite(descuentoNum) && descuentoNum > 0) ? Math.min(descuentoNum, 95) : 0;
+    let descuento = (isFinite(descuentoNum) && descuentoNum > 0) ? Math.min(descuentoNum, 95) : 0;
+    // Precio de promoción FIJO (€, con IVA) — alternativa al % de
+    // descuento cuando el precio final no sale de un porcentaje limpio
+    // (petición real de Eloy: "incluir un bloque de texto para poder
+    // editar el precio de promoción en lugar de poner un porcentaje").
+    // Mutuamente excluyente con "descuento": si se informa un precio
+    // fijo, manda él y se descarta cualquier % que viniera a la vez (el
+    // propio front ya los limpia el uno al otro al editar, pero se
+    // reafirma aquí por si acaso). Sin tope superior razonable que
+    // imponer aquí (no se conoce el precio original del producto en
+    // este punto) — se confía en la validación visual del propio
+    // formulario.
+    const precioPromoNum = parseFloat((d.precioPromo || '').toString().replace(',', '.'));
+    const precioPromo = (isFinite(precioPromoNum) && precioPromoNum > 0) ? Math.round(precioPromoNum * 100) / 100 : 0;
+    if (precioPromo) descuento = 0;
     // Pie de producto (texto corto, opcional) — petición real de Eloy:
     // "permitir texto a los productos añadidos a los escaparates para
     // poder incluir una descripción o ayuda o detalle técnico al
@@ -5688,10 +5702,11 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
     // guardar un descuento propio, un texto de pie o una promo, aunque el
     // producto no esté agrandado. Solo se omite si NO aporta nada de
     // verdad (ni tamaño destacado, ni descuento, ni texto, ni promo).
-    if (tamano === 1 && !descuento && !texto && !promo) return;
+    if (tamano === 1 && !descuento && !precioPromo && !texto && !promo) return;
     vistos.add(ref);
     const entrada = { ref: ref, tamano: tamano, alinH: alinH, posV: posV };
     if (descuento) entrada.descuento = descuento;
+    if (precioPromo) entrada.precioPromo = precioPromo;
     if (texto) entrada.texto = texto;
     if (promo) entrada.promo = promo;
     resultado.push(entrada);
