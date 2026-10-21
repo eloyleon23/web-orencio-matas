@@ -2976,6 +2976,132 @@
         .modal-editar-ficha-guardar { background: var(--blue); color: #fff; }
         .modal-editar-ficha-guardar:disabled { opacity: 0.6; cursor: default; }
 
+        /* Bloque "Información adicional" en el detalle del producto —
+           visible siempre (producción incluida) cuando hay contenido. */
+        .modal-producto-info-adicional {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--light);
+        }
+        .modal-producto-info-adicional h4 {
+            margin: 0 0 8px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .info-adicional-contenido {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--dark);
+        }
+        .info-adicional-contenido p { margin: 0 0 8px; }
+        .info-adicional-contenido p:last-child { margin-bottom: 0; }
+        .info-adicional-contenido ul, .info-adicional-contenido ol { margin: 0 0 8px 18px; padding: 0; }
+
+        /* Editor de texto enriquecido compartido (información adicional) —
+           contenteditable + barra de botones mínima (execCommand sigue
+           funcionando en todos los navegadores que usa este sitio, pese a
+           estar "deprecado" — sin dependencias externas, suficiente para
+           negrita/cursiva/subrayado/listas, que es todo lo que se pidió). */
+        .editor-enriquecido-toolbar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        .editor-enriquecido-toolbar button {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--dark);
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .editor-enriquecido-toolbar button:hover { background: var(--light); }
+        .editor-enriquecido-area {
+            min-height: 120px;
+            max-height: 40vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            font-family: inherit;
+        }
+        .editor-enriquecido-area:empty::before {
+            content: attr(data-placeholder);
+            color: var(--muted);
+        }
+        .editor-enriquecido-area ul, .editor-enriquecido-area ol { margin: 0 0 0 18px; padding: 0; }
+        .editor-enriquecido-contador {
+            margin: 6px 0 0;
+            font-size: 0.76rem;
+            color: var(--muted);
+            text-align: right;
+        }
+        .editor-enriquecido-contador.es-limite { color: var(--red); font-weight: 700; }
+        .modal-editar-info-ia-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 9px 12px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--light);
+            color: var(--dark);
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .modal-editar-info-ia-btn:hover { background: #eef2f7; }
+        .modal-editar-info-ia-btn:disabled { opacity: 0.6; cursor: default; }
+
+        /* Botón "Ficha técnica con IA" — su propio spinner sustituye el
+           icono mientras la petición está en curso (ver abrirFichaIA). */
+        #modal-producto-ficha-ia-icono.es-cargando {
+            animation: girar-spinner 900ms linear infinite;
+        }
+        @keyframes girar-spinner { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .modal-ficha-ia-box { max-width: 560px; }
+        .modal-ficha-ia-contenido { min-height: 80px; }
+        .modal-ficha-ia-contenido .ficha-ia-seccion { margin-bottom: 14px; }
+        .modal-ficha-ia-contenido .ficha-ia-seccion:last-child { margin-bottom: 0; }
+        .modal-ficha-ia-contenido .ficha-ia-seccion h5 {
+            margin: 0 0 4px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--dark);
+        }
+        .modal-ficha-ia-contenido .ficha-ia-seccion p {
+            margin: 0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--dark);
+        }
+        .modal-ficha-ia-contenido .ficha-ia-cargando {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            padding: 20px 0;
+        }
+        .modal-ficha-ia-contenido .ficha-ia-error {
+            color: var(--red);
+            font-size: 0.88rem;
+        }
+
         /* Calculadora de rendimiento (solo pinturas) */
         .btn-abrir-calculadora {
             margin-top: 10px;
@@ -4591,6 +4717,34 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </button>
                 </div>
 
+                <!-- Información adicional (texto enriquecido) — detalles
+                     técnicos, limitaciones, venta por cajas/lotes...
+                     redactados a mano, visible para TODOS (producción
+                     incluida) solo cuando se ha informado algo. El botón
+                     de editar es solo preproducción (ver
+                     window.MOSTRAR_EDITAR_INFO_ADICIONAL más abajo). -->
+                <div id="modal-producto-info-adicional" class="modal-producto-info-adicional" style="display:none;">
+                    <h4><i class="fa-solid fa-circle-info"></i> Información adicional</h4>
+                    <div id="modal-producto-info-adicional-contenido" class="info-adicional-contenido"></div>
+                </div>
+                <!-- Solo preproducción -->
+                <button type="button" id="modal-producto-editar-info-adicional" class="modal-producto-reportar" style="display:none; width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-pen"></i>
+                    Editar información adicional
+                </button>
+
+                <!-- Ficha técnica con IA — accesible a cualquier visitante
+                     (no depende de ningún flag de fase de desarrollo):
+                     genera al vuelo detalles técnicos, recomendaciones,
+                     modo de empleo, seguridad, aplicación y para qué
+                     sirve el producto. El propio botón muestra un
+                     spinner mientras dura la petición (ver
+                     configurarFichaIA/abrirFichaIA). -->
+                <button type="button" id="modal-producto-ficha-ia-btn" class="modal-producto-reportar" style="width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-wand-magic-sparkles" id="modal-producto-ficha-ia-icono"></i>
+                    <span id="modal-producto-ficha-ia-texto">Ficha técnica con IA</span>
+                </button>
+
                 <!-- Calculadora de rendimiento (solo pinturas) -->
                 <button type="button" id="btn-abrir-calculadora" class="btn-abrir-calculadora" style="display:none;">
                     <i class="fa-solid fa-calculator"></i>
@@ -4715,6 +4869,56 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="modal-editar-ficha-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
             <button type="button" id="modal-editar-ficha-guardar" class="modal-editar-ficha-guardar">Guardar</button>
         </div>
+    </div>
+</div>
+
+<!-- Modal "Editar información adicional" (texto enriquecido) — solo preproducción -->
+<div class="modal-overlay" id="modal-editar-info-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box modal-editar-info-box">
+        <button class="modal-producto-cerrar" id="modal-editar-info-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-circle-info"></i> Editar información adicional</h3>
+        <p id="modal-editar-info-nombre" class="modal-editar-ficha-nombre"></p>
+
+        <button type="button" id="modal-editar-info-ia" class="modal-editar-info-ia-btn">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span id="modal-editar-info-ia-texto">Ayúdame con la IA</span>
+        </button>
+        <p id="modal-editar-info-ia-error" class="modal-editar-ficha-error" style="display:none;"></p>
+
+        <div class="editor-enriquecido">
+            <div class="editor-enriquecido-toolbar">
+                <button type="button" data-cmd="bold" title="Negrita"><i class="fa-solid fa-bold"></i></button>
+                <button type="button" data-cmd="italic" title="Cursiva"><i class="fa-solid fa-italic"></i></button>
+                <button type="button" data-cmd="underline" title="Subrayado"><i class="fa-solid fa-underline"></i></button>
+                <button type="button" data-cmd="insertUnorderedList" title="Lista"><i class="fa-solid fa-list-ul"></i></button>
+                <button type="button" data-cmd="insertOrderedList" title="Lista numerada"><i class="fa-solid fa-list-ol"></i></button>
+            </div>
+            <div class="editor-enriquecido-area" id="modal-editar-info-editable" contenteditable="true" data-placeholder="Detalles técnicos, limitaciones, venta por cajas/lotes/packs..."></div>
+            <p class="editor-enriquecido-contador"><span id="modal-editar-info-contador">0</span> / <span id="modal-editar-info-maximo">6000</span> caracteres</p>
+        </div>
+        <p id="modal-editar-info-error" class="modal-editar-ficha-error" style="display:none;"></p>
+        <div class="modal-editar-ficha-acciones">
+            <button type="button" id="modal-editar-info-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
+            <button type="button" id="modal-editar-info-guardar" class="modal-editar-ficha-guardar">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal "Ficha técnica con IA" — pública, por encima del detalle del producto -->
+<div class="modal-overlay" id="modal-ficha-ia-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box modal-ficha-ia-box">
+        <button class="modal-producto-cerrar" id="modal-ficha-ia-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-wand-magic-sparkles"></i> Ficha técnica con IA</h3>
+        <p id="modal-ficha-ia-nombre" class="modal-editar-ficha-nombre"></p>
+        <div id="modal-ficha-ia-contenido" class="modal-ficha-ia-contenido"></div>
+        <p class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-circle-info"></i>
+            Contenido generado por IA a partir de información pública — puede contener imprecisiones. Consulta siempre el envase del producto.
+        </p>
     </div>
 </div>
 
@@ -5409,6 +5613,7 @@ window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 // a petición de Eloy, nunca debe verse ni ser accesible en producción/
 // release, solo en preproducción.
 window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
+window.MOSTRAR_EDITAR_INFO_ADICIONAL = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_PANEL_ANALITICA = window.OM_PREPRODUCCION;
@@ -5485,6 +5690,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR && !window.OM_SESION_PROFESIONAL_ACTIVA);
     eliminarSiRestringido_('modal-producto-editar-ficha-tecnica', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     eliminarSiRestringido_('modal-editar-ficha-overlay', window.MOSTRAR_EDITAR_FICHA_TECNICA);
+    eliminarSiRestringido_('modal-producto-editar-info-adicional', window.MOSTRAR_EDITAR_INFO_ADICIONAL);
+    eliminarSiRestringido_('modal-editar-info-overlay', window.MOSTRAR_EDITAR_INFO_ADICIONAL);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
         const btnGD = document.getElementById('btn-gestionar-destacados');
         if (btnGD) btnGD.classList.add('visible');
@@ -12625,6 +12832,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         configurarBotonFichaTecnica(p);
         configurarBotonCartaColores(p);
         configurarEditarFichaTecnica(p);
+        configurarInfoAdicional(p);
+        configurarFichaIA(p);
         // Oculta también la fila que las envuelve cuando ninguno de los dos
         // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas) —
         // salvo en preproducción, que la deja visible siempre que esté el
@@ -13235,6 +13444,304 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!boton) return; // eliminado del DOM en producción
         boton.style.display = 'inline-flex';
         boton.onclick = () => abrirModalEditarFichaTecnica(p);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Información adicional (texto enriquecido) — detalles técnicos,
+    // limitaciones, venta por cajas/lotes... Visible para TODOS
+    // (producción incluida) cuando el producto tiene algo escrito; el
+    // botón de editar es solo preproducción (ver
+    // window.MOSTRAR_EDITAR_INFO_ADICIONAL).
+    // ══════════════════════════════════════════════════════════════════
+
+    // Mismo saneador (lista blanca de etiquetas, sin atributos) que
+    // sanearHtmlEnriquecido_ en apps_script_trigger.js — se aplica
+    // TAMBIÉN aquí, en el cliente, antes de pintar nada con innerHTML:
+    // aunque el servidor ya lo sanea al guardar, nunca se confía a
+    // ciegas ni siquiera en los propios datos ya guardados (defensa en
+    // profundidad — p. ej. si algún día se sirviera este campo desde
+    // otra fuente, o hubiera un fallo en el saneado del servidor).
+    const TAGS_ENRIQUECIDO_PERMITIDAS_ = ['b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'p'];
+    function sanearHtmlEnriquecidoCliente_(entrada) {
+        let escapado = (entrada || '').toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        TAGS_ENRIQUECIDO_PERMITIDAS_.forEach((tag) => {
+            escapado = escapado
+                .replace(new RegExp('&lt;' + tag + '&gt;', 'gi'), '<' + tag + '>')
+                .replace(new RegExp('&lt;/' + tag + '&gt;', 'gi'), '</' + tag + '>');
+        });
+        return escapado.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
+    }
+
+    function configurarInfoAdicional(p) {
+        const bloque = $('modal-producto-info-adicional');
+        const contenido = $('modal-producto-info-adicional-contenido');
+        const tieneTexto = !!(p.info_adicional && p.info_adicional.trim());
+        if (bloque && contenido) {
+            bloque.style.display = tieneTexto ? '' : 'none';
+            contenido.innerHTML = tieneTexto ? sanearHtmlEnriquecidoCliente_(p.info_adicional) : '';
+        }
+        const boton = $('modal-producto-editar-info-adicional');
+        if (!boton) return; // eliminado del DOM en producción
+        boton.style.display = 'block';
+        boton.onclick = () => abrirModalEditarInfoAdicional(p);
+    }
+
+    const MAX_INFO_ADICIONAL_CARACTERES_ = 6000;
+    let productoEditarInfoActual_ = null;
+
+    function contarTextoPlanoEditable_(el) {
+        // .innerText (no .textContent) respeta los saltos de línea reales
+        // que ve quien escribe (cada <p>/<li> cuenta como una línea) — es
+        // el mismo criterio con el que luego se mide en el servidor (ver
+        // sanearHtmlEnriquecido_, que mide sobre el texto plano visible).
+        return (el.innerText || '').length;
+    }
+
+    function actualizarContadorInfoAdicional_() {
+        const el = $('modal-editar-info-editable');
+        const total = contarTextoPlanoEditable_(el);
+        const contador = $('modal-editar-info-contador');
+        contador.textContent = total;
+        contador.parentElement.classList.toggle('es-limite', total > MAX_INFO_ADICIONAL_CARACTERES_);
+    }
+
+    function abrirModalEditarInfoAdicional(p) {
+        if (!window.MOSTRAR_EDITAR_INFO_ADICIONAL) return; // red de seguridad, además del botón ya eliminado en producción
+        productoEditarInfoActual_ = p;
+        $('modal-editar-info-nombre').textContent = p.nombre;
+        $('modal-editar-info-maximo').textContent = MAX_INFO_ADICIONAL_CARACTERES_;
+        $('modal-editar-info-editable').innerHTML = p.info_adicional ? sanearHtmlEnriquecidoCliente_(p.info_adicional) : '';
+        $('modal-editar-info-error').style.display = 'none';
+        $('modal-editar-info-ia-error').style.display = 'none';
+        $('modal-editar-info-guardar').textContent = 'Guardar';
+        actualizarContadorInfoAdicional_();
+        $('modal-editar-info-overlay').classList.add('activo');
+        setTimeout(() => $('modal-editar-info-editable').focus(), 50);
+    }
+
+    function cerrarModalEditarInfoAdicional() {
+        $('modal-editar-info-overlay').classList.remove('activo');
+        productoEditarInfoActual_ = null;
+    }
+
+    // Barra de herramientas — execCommand sigue siendo la forma más
+    // simple de aplicar negrita/cursiva/subrayado/listas sobre una
+    // selección dentro de un contenteditable sin añadir ninguna
+    // dependencia externa; aunque está "deprecado", los navegadores que
+    // usa este sitio lo siguen soportando de sobra para este alcance tan
+    // acotado (solo 5 comandos, nunca HTML arbitrario).
+    document.querySelectorAll('.editor-enriquecido-toolbar button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            $('modal-editar-info-editable').focus();
+            document.execCommand(btn.dataset.cmd, false, null);
+            actualizarContadorInfoAdicional_();
+        });
+    });
+    if ($('modal-editar-info-editable')) {
+        $('modal-editar-info-editable').addEventListener('input', actualizarContadorInfoAdicional_);
+    }
+
+    function ejecutarGuardarInfoAdicional() {
+        const p = productoEditarInfoActual_;
+        if (!p) return;
+        const editable = $('modal-editar-info-editable');
+        const errorEl = $('modal-editar-info-error');
+        const btn = $('modal-editar-info-guardar');
+
+        if (contarTextoPlanoEditable_(editable) > MAX_INFO_ADICIONAL_CARACTERES_) {
+            errorEl.textContent = `El texto supera el máximo de ${MAX_INFO_ADICIONAL_CARACTERES_} caracteres.`;
+            errorEl.style.display = 'block';
+            return;
+        }
+        errorEl.style.display = 'none';
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            return;
+        }
+        // El propio contenido del contenteditable (generado por
+        // execCommand) es el que se manda — el servidor lo vuelve a
+        // sanear de todas formas (ver sanearHtmlEnriquecido_), así que no
+        // hace falta limpiarlo aquí antes de enviarlo.
+        const html = editable.innerHTML.trim();
+
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ accion: 'actualizar_info_adicional', referencia: p.ref, html: html }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+            p.info_adicional = data.info_adicional;
+            configurarInfoAdicional(p);
+            mostrarToast('✓ Información adicional actualizada correctamente.');
+            cerrarModalEditarInfoAdicional();
+        })
+        .catch(err => {
+            console.error('Error al actualizar información adicional:', err);
+            errorEl.textContent = err.message || 'Error al guardar. Verifica la conexión y los logs.';
+            errorEl.style.display = 'block';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = original;
+        });
+    }
+
+    // Botón "Ayúdame con la IA" dentro de la propia modal — redacta un
+    // borrador a partir del nombre/marca/familia del producto, que
+    // SUSTITUYE el contenido actual del editor (quien edita sigue
+    // pudiendo retocarlo o descartarlo con "Cancelar" antes de guardar
+    // nada de verdad).
+    function ejecutarGenerarInfoAdicionalIA() {
+        const p = productoEditarInfoActual_;
+        if (!p) return;
+        if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+            mostrarToast('La IA no está disponible ahora mismo (cuota agotada temporalmente).', 'error');
+            return;
+        }
+        const btn = $('modal-editar-info-ia');
+        const texto = $('modal-editar-info-ia-texto');
+        const errorEl = $('modal-editar-info-ia-error');
+        errorEl.style.display = 'none';
+        btn.disabled = true;
+        const original = texto.textContent;
+        texto.textContent = 'Pensando...';
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                accion: 'generar_info_adicional_ia_producto',
+                nombre: p.nombre, marca: p.marca || '', familia: p.familia || '',
+            }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.cuotaAgotada && window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
+            if (!data.success) throw new Error(data.error || 'No se pudo generar el resumen.');
+            $('modal-editar-info-editable').innerHTML = sanearHtmlEnriquecidoCliente_(data.html);
+            actualizarContadorInfoAdicional_();
+        })
+        .catch(err => {
+            errorEl.textContent = err.message || 'Error al generar el resumen con IA.';
+            errorEl.style.display = 'block';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            texto.textContent = original;
+        });
+    }
+
+    if ($('modal-editar-info-cerrar')) $('modal-editar-info-cerrar').addEventListener('click', cerrarModalEditarInfoAdicional);
+    if ($('modal-editar-info-cancelar')) $('modal-editar-info-cancelar').addEventListener('click', cerrarModalEditarInfoAdicional);
+    if ($('modal-editar-info-guardar')) $('modal-editar-info-guardar').addEventListener('click', ejecutarGuardarInfoAdicional);
+    if ($('modal-editar-info-ia')) $('modal-editar-info-ia').addEventListener('click', ejecutarGenerarInfoAdicionalIA);
+    if ($('modal-editar-info-overlay')) {
+        $('modal-editar-info-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-editar-info-overlay') cerrarModalEditarInfoAdicional();
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Ficha técnica con IA — botón público (cualquier visitante, en
+    // cualquier fase) que genera al vuelo detalles técnicos,
+    // recomendaciones, modo de empleo, seguridad, aplicación y para qué
+    // sirve el producto. Spinner en el propio botón mientras dura la
+    // petición; se cancela si el usuario cierra el detalle del producto
+    // antes de que termine (ver fichaIAAbortController_ y su uso en
+    // cerrarModalProducto).
+    // ══════════════════════════════════════════════════════════════════
+    let fichaIAAbortController_ = null;
+
+    function configurarFichaIA(p) {
+        const boton = $('modal-producto-ficha-ia-btn');
+        if (!boton) return;
+        boton.onclick = () => abrirFichaIA(p);
+    }
+
+    function fijarEstadoBotonFichaIA_(cargando) {
+        const boton = $('modal-producto-ficha-ia-btn');
+        const icono = $('modal-producto-ficha-ia-icono');
+        const texto = $('modal-producto-ficha-ia-texto');
+        boton.disabled = cargando;
+        icono.className = cargando ? 'fa-solid fa-spinner es-cargando' : 'fa-solid fa-wand-magic-sparkles';
+        texto.textContent = cargando ? 'Consultando...' : 'Ficha técnica con IA';
+    }
+
+    function abrirFichaIA(p) {
+        if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+            mostrarToast('La IA no está disponible ahora mismo (cuota agotada temporalmente).', 'error');
+            return;
+        }
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) return;
+
+        fichaIAAbortController_ = new AbortController();
+        fijarEstadoBotonFichaIA_(true);
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            signal: fichaIAAbortController_.signal,
+            body: JSON.stringify({
+                accion: 'obtener_ficha_tecnica_ia_producto',
+                referencia: p.ref, nombre: p.nombre, marca: p.marca || '', familia: p.familia || '',
+            }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.cuotaAgotada && window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
+            if (!data.success) throw new Error(data.error || 'No se pudo generar la ficha técnica.');
+            mostrarModalFichaIA_(p, data.secciones);
+        })
+        .catch(err => {
+            if (err.name === 'AbortError') return; // cancelado al cerrar el detalle — no es un error que mostrar
+            console.error('Error al generar ficha técnica con IA:', err);
+            mostrarToast(err.message || 'Error al generar la ficha técnica con IA.', 'error');
+        })
+        .finally(() => {
+            fichaIAAbortController_ = null;
+            fijarEstadoBotonFichaIA_(false);
+        });
+    }
+
+    function mostrarModalFichaIA_(p, secciones) {
+        $('modal-ficha-ia-nombre').textContent = p.nombre;
+        $('modal-ficha-ia-contenido').innerHTML = secciones.map(s => `
+            <div class="ficha-ia-seccion">
+                <h5>${escaparHtmlTexto_(s.titulo)}</h5>
+                <p>${escaparHtmlTexto_(s.texto)}</p>
+            </div>
+        `).join('');
+        $('modal-ficha-ia-overlay').classList.add('activo');
+    }
+
+    function escaparHtmlTexto_(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+    }
+
+    function cerrarModalFichaIA() {
+        $('modal-ficha-ia-overlay').classList.remove('activo');
+    }
+
+    if ($('modal-ficha-ia-cerrar')) $('modal-ficha-ia-cerrar').addEventListener('click', cerrarModalFichaIA);
+    if ($('modal-ficha-ia-overlay')) {
+        $('modal-ficha-ia-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-ficha-ia-overlay') cerrarModalFichaIA();
+        });
     }
 
     // Familias del área "pinturas" que NO son pintura en sí (herramientas,
@@ -13968,6 +14475,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalProducto() {
         $('modal-producto-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        // Si "Ficha técnica con IA" tiene una petición en curso, se
+        // cancela al salir del detalle del producto — petición real de
+        // Eloy: "si el usuario se sale de la vista detalle se cancelará".
+        if (fichaIAAbortController_) {
+            fichaIAAbortController_.abort();
+            fichaIAAbortController_ = null;
+            fijarEstadoBotonFichaIA_(false);
+        }
+        cerrarModalFichaIA();
         // Si se llegó aquí con un ?ref= en la URL (por haber navegado por
         // productos del listado o sugeridos dentro del modal), se limpia
         // sin crear ni quitar ninguna entrada de historial — un cierre

@@ -76,6 +76,52 @@ function cuotaIADisponible_() {
   }
 }
 
+// ── "Información adicional" de producto (texto enriquecido) ────────────
+// Columna "info_adicional" del Sheet — detalles técnicos, limitaciones,
+// venta por cajas/lotes... redactados a mano desde el botón "Editar
+// información adicional" en preproducción (ver window.
+// MOSTRAR_EDITAR_INFO_ADICIONAL en buscador.html) o desde panel_admin.
+// A diferencia de los bloques de contenido de escaparates (texto plano
+// a propósito, sin ningún riesgo de XSS posible), aquí SÍ se pidió
+// texto enriquecido de verdad — así que hace falta sanear de verdad el
+// HTML antes de guardarlo, nunca confiar en lo que mande el cliente.
+//
+// sanearHtmlEnriquecido_ nunca interpreta el HTML de entrada como HTML
+// real: primero escapa TODO (ningún "<"/">" del texto puede acabar
+// siendo una etiqueta), y solo DESPUÉS reintroduce, una por una, las
+// etiquetas exactas de la lista blanca (siempre sin atributos: nunca
+// "<b style=...>", solo "<b>") — cualquier otra cosa (<script>, <img
+// onerror=...>, atributos, comentarios HTML) se queda como texto inerte
+// para siempre, nunca llega a ejecutarse ni a interpretarse. Mismo
+// principio ya aplicado (con un alcance más estricto, sin ninguna
+// etiqueta) en los bloques de contenido de escaparates.
+const MAX_INFO_ADICIONAL_CARACTERES_ = 6000;
+const TAGS_ENRIQUECIDO_PERMITIDAS_ = ['b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'p'];
+
+function sanearHtmlEnriquecido_(entrada, maxCaracteres) {
+  const limite = maxCaracteres || MAX_INFO_ADICIONAL_CARACTERES_;
+  let escapado = (entrada || '').toString()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  TAGS_ENRIQUECIDO_PERMITIDAS_.forEach(function (tag) {
+    escapado = escapado
+      .replace(new RegExp('&lt;' + tag + '&gt;', 'gi'), '<' + tag + '>')
+      .replace(new RegExp('&lt;/' + tag + '&gt;', 'gi'), '</' + tag + '>');
+  });
+  escapado = escapado.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
+
+  // El límite se mide sobre el TEXTO PLANO visible (sin las propias
+  // etiquetas de formato) — es lo que de verdad escribe y ve quien
+  // redacta esto, un párrafo muy formateado no debe "gastar" su límite
+  // en las etiquetas HTML que lo envuelven.
+  const textoPlano = escapado.replace(/<[^>]+>/g, '');
+  if (textoPlano.length > limite) {
+    throw new Error('El texto supera el máximo de ' + limite + ' caracteres (tiene ' + textoPlano.length + ').');
+  }
+  return escapado;
+}
+
 // Recordatorio de sincronización de productos pendiente desde el CRM (ver
 // bloque completo más abajo, junto a revisarAvisoSincronizacionCRMProgramado):
 // CRM_SYNC_AVISO_DIAS son los días sin sincronizar a partir de los que el
@@ -1175,6 +1221,12 @@ function guardarProducto(datos, filaExistente) {
     sheet.getRange(1, headers.length + 1).setValue('ficha_url');
     headers = headers.concat(['ficha_url']);
   }
+  // Mismo criterio que "ficha_url" arriba, para "info_adicional" (ver
+  // sanearHtmlEnriquecido_ y procesarActualizarInfoAdicional).
+  if (datos['info_adicional'] !== undefined && headers.indexOf('info_adicional') === -1) {
+    sheet.getRange(1, headers.length + 1).setValue('info_adicional');
+    headers = headers.concat(['info_adicional']);
+  }
 
   const ahora = Utilities.formatDate(new Date(), 'Europe/Madrid', 'dd/MM/yyyy HH:mm');
 
@@ -1195,6 +1247,11 @@ function guardarProducto(datos, filaExistente) {
     const val = datos[h];
     if (['precio_sin_iva','precio_con_iva'].includes(h) && val !== '')
       return val.toString().replace('.', ',');
+    // Defensa en profundidad: panel_admin también puede escribir en
+    // "info_adicional" con su propio editor de texto enriquecido — se
+    // sanea aquí igual que en procesarActualizarInfoAdicional, nunca se
+    // confía en que el HTML que llega del cliente ya venga limpio.
+    if (h === 'info_adicional' && val) return sanearHtmlEnriquecido_(val, MAX_INFO_ADICIONAL_CARACTERES_);
     return val;
   });
 
@@ -3227,6 +3284,14 @@ function regenerarCacheCompletaDesdeSheet_() {
         relacionados_gestionado: relacionadosGestionado,
         ficha_url: fichaUrl,
         grupo: grupo,
+        // "Información adicional" (texto enriquecido) — detalles
+        // técnicos, limitaciones, venta por cajas/lotes... ver
+        // sanearHtmlEnriquecido_ y procesarActualizarInfoAdicional más
+        // abajo. Ya viene saneado desde que se guardó, pero
+        // buscador.html lo vuelve a sanear igualmente al pintarlo (ver
+        // sanearHtmlEnriquecidoCliente_) — nunca se confía a ciegas ni
+        // siquiera en los propios datos ya guardados.
+        info_adicional: valorCelda_(row, 'info_adicional'),
       });
     });
   }
@@ -3935,6 +4000,21 @@ function doPost(e) {
       return procesarActualizarFichaUrl(data);
     }
 
+    if (accion === 'actualizar_info_adicional') {
+      console.log('Acción: actualizar_info_adicional');
+      return procesarActualizarInfoAdicional(data);
+    }
+
+    if (accion === 'generar_info_adicional_ia_producto') {
+      console.log('Acción: generar_info_adicional_ia_producto');
+      return procesarGenerarInfoAdicionalIA(data);
+    }
+
+    if (accion === 'obtener_ficha_tecnica_ia_producto') {
+      console.log('Acción: obtener_ficha_tecnica_ia_producto');
+      return procesarObtenerFichaTecnicaIAProducto(data);
+    }
+
     if (accion === 'actualizar_grupo_producto') {
       console.log('Acción: actualizar_grupo_producto');
       return procesarActualizarGrupoProducto(data);
@@ -4605,6 +4685,282 @@ function procesarActualizarFichaUrl(data) {
 
   } catch (err) {
     console.error('Error al procesar actualización de ficha técnica:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── "Información adicional" (texto enriquecido) de un producto ─────────
+// Mismo mecanismo que procesarActualizarFichaUrl (columna del Sheet +
+// parcheo instantáneo de la caché de productos.json) — botón "Editar
+// información adicional" en el detalle del producto, SOLO visible en
+// preproducción (ver window.MOSTRAR_EDITAR_INFO_ADICIONAL en
+// buscador.html), y también editable desde panel_admin (ver
+// guardarProducto, que sanea este mismo campo por su cuenta). A
+// diferencia de ficha_url (una URL), aquí se guarda HTML enriquecido —
+// SIEMPRE saneado aquí mismo (ver sanearHtmlEnriquecido_) antes de
+// escribirlo, nunca se confía en que el cliente ya lo haya limpiado.
+function procesarActualizarInfoAdicional(data) {
+  try {
+    console.log('procesarActualizarInfoAdicional iniciado');
+
+    const referencia = (data.referencia || '').toString().trim();
+    if (!referencia) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta la referencia del producto' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    let html;
+    try {
+      html = sanearHtmlEnriquecido_(data.html || '');
+    } catch (errSaneado) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: errSaneado.message }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    let colInfo = PROD['info_adicional'];
+    if (colInfo === undefined) {
+      colInfo = prodHeaders.length;
+      sheetProd.getRange(1, colInfo + 1).setValue('info_adicional');
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    sheetProd.getRange(prodRowNum, colInfo + 1).setValue(html);
+    console.log('info_adicional actualizada para', referencia);
+
+    actualizarProductoEnCache_(referencia, { info_adicional: html });
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, info_adicional: html }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error al procesar actualización de información adicional:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Asistente de IA para redactar "información adicional" ──────────────
+// Botón "Ayúdame con la IA" dentro de la propia modal de edición — NO
+// escribe nada por sí solo (el cliente sigue decidiendo si acepta,
+// edita o descarta el borrador antes de guardar, con "Guardar" aparte).
+// Petición real de Eloy: a partir del nombre/marca/familia del
+// producto, un resumen técnico redactado (tipo de material, uso
+// recomendado, acabado, formato de venta...), con el mismo criterio ya
+// aplicado en el resto de la IA del proyecto: nunca inventar datos que
+// no pueda verificar — se activa la búsqueda real en la web (Grounding,
+// ver el comentario completo junto a llamarGemini_) para apoyarse en
+// información real del fabricante en vez de solo "sonar plausible".
+function procesarGenerarInfoAdicionalIA(data) {
+  try {
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
+      throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
+    }
+    if (!cuotaIADisponible_()) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, cuotaAgotada: true, error: 'La IA no está disponible ahora mismo (cuota agotada temporalmente).' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const nombre = (data.nombre || '').toString().trim();
+    const marca = (data.marca || '').toString().trim();
+    const familia = (data.familia || '').toString().trim();
+    if (!nombre) throw new Error('Falta el nombre del producto');
+
+    const prompt = 'Eres un redactor técnico de Orencio Matas y Hermanos, una tienda de droguería, perfumería, ' +
+      'pinturas y suministros para talleres y carrocerías.\n' +
+      'Necesito un resumen técnico breve y útil para la ficha de este producto:\n' +
+      'Nombre: ' + nombre + (marca ? '\nMarca: ' + marca : '') + (familia ? '\nFamilia/categoría: ' + familia : '') + '\n\n' +
+      'Tienes acceso a búsqueda real en la web — úsala para encontrar información técnica genuina de este producto o marca ' +
+      '(ficha técnica del fabricante, manuales, tiendas que lo vendan) antes de redactar.\n\n' +
+      'REGLAS IMPORTANTES:\n' +
+      '- Redacta SIEMPRE con tus propias palabras, resumiendo lo esencial — nunca copies frases completas tal cual de una web.\n' +
+      '- Si no encuentras información técnica fiable, sé honesto en el propio texto (p. ej. "No se ha podido verificar información técnica específica de este producto") en vez de inventar datos.\n' +
+      '- Incluye, cuando la encuentres: tipo de material/composición, uso o superficie recomendada, acabado, rendimiento/formato, y si se vende por unidad, caja, lote o pack.\n' +
+      '- Extensión: 2 a 4 frases cortas, como mucho un par de líneas adicionales con alguna característica destacada en una lista.\n\n' +
+      'Responde ÚNICAMENTE con el HTML del resumen (sin explicaciones ni comentarios alrededor), usando EXCLUSIVAMENTE estas etiquetas, sin atributos de ningún tipo: <p>, <b>, <i>, <u>, <ul>, <ol>, <li>. No uses ninguna otra etiqueta ni Markdown (nada de **, #, etc.).';
+
+    const r = llamarGemini_(prompt, 400, true);
+    if (!r.ok) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'No se pudo generar el resumen (' + (r.errorHttp || 'error desconocido') + ').' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Defensa en profundidad: aunque el prompt pide una lista blanca de
+    // etiquetas concreta, el texto de Gemini SIEMPRE pasa por el mismo
+    // saneador que cualquier guardado manual antes de llegar al
+    // cliente — nunca se confía en que el modelo respete el formato
+    // pedido al pie de la letra.
+    const html = sanearHtmlEnriquecido_(r.texto.trim(), MAX_INFO_ADICIONAL_CARACTERES_);
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, html: html, fuentes: r.fuentes || [] }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarGenerarInfoAdicionalIA:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Ficha técnica con IA (botón público en el detalle del producto) ────
+// A diferencia de "información adicional" (redactado a mano una vez,
+// visible para todos), este botón genera la respuesta EN EL MOMENTO,
+// cada vez que un visitante lo pulsa — detalles técnicos, recomendaciones,
+// modo de empleo, seguridad, aplicación y para qué sirve el producto,
+// con Grounding (búsqueda real en la web) para apoyarse en información
+// real en vez de solo "sonar plausible". Se cachea por referencia (ver
+// obtenerHojaCacheFichaIA_) para no repetir la misma llamada a Gemini en
+// cada visita del mismo producto — con el botón accesible a cualquier
+// visitante (no solo en preproducción), sin caché el coste/cuota de
+// Gemini escalaría con cada clic de cualquiera, no con el número de
+// productos distintos consultados de verdad.
+const DIAS_CACHE_FICHA_IA_ = 60;
+const CABECERAS_CACHE_FICHA_IA_ = ['ref', 'contenido', 'fecha_generado'];
+
+function obtenerHojaCacheFichaIA_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('CacheFichaIA');
+  if (!sheet) {
+    sheet = ss.insertSheet('CacheFichaIA');
+    sheet.getRange(1, 1, 1, CABECERAS_CACHE_FICHA_IA_.length).setValues([CABECERAS_CACHE_FICHA_IA_]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function leerCacheFichaIA_(referencia) {
+  const sheet = obtenerHojaCacheFichaIA_();
+  const datos = sheet.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if ((datos[i][0] || '').toString().trim() === referencia) {
+      const fecha = datos[i][2] ? new Date(datos[i][2]) : null;
+      const edadDias = fecha ? (Date.now() - fecha.getTime()) / 86400000 : Infinity;
+      if (edadDias <= DIAS_CACHE_FICHA_IA_) {
+        try { return JSON.parse(datos[i][1]); } catch (e) { return null; }
+      }
+      return null; // caducada — se regenera
+    }
+  }
+  return null;
+}
+
+function guardarCacheFichaIA_(referencia, secciones) {
+  const sheet = obtenerHojaCacheFichaIA_();
+  const datos = sheet.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if ((datos[i][0] || '').toString().trim() === referencia) {
+      sheet.getRange(i + 1, 2, 1, 2).setValues([[JSON.stringify(secciones), new Date().toISOString()]]);
+      return;
+    }
+  }
+  sheet.appendRow([referencia, JSON.stringify(secciones), new Date().toISOString()]);
+}
+
+function procesarObtenerFichaTecnicaIAProducto(data) {
+  try {
+    const referencia = (data.referencia || '').toString().trim();
+    const nombre = (data.nombre || '').toString().trim();
+    if (!referencia || !nombre) throw new Error('Faltan datos requeridos: referencia o nombre del producto');
+
+    const cacheado = leerCacheFichaIA_(referencia);
+    if (cacheado) {
+      console.log('Ficha técnica IA servida desde caché para', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, secciones: cacheado, cacheado: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.indexOf('PON_AQUI') === 0) {
+      throw new Error('GEMINI_API_KEY no configurada — ver el comentario junto a su declaración arriba del todo');
+    }
+    if (!cuotaIADisponible_()) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, cuotaAgotada: true, error: 'La IA no está disponible ahora mismo (cuota agotada temporalmente).' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const marca = (data.marca || '').toString().trim();
+    const familia = (data.familia || '').toString().trim();
+
+    const prompt = 'Eres el asistente técnico de Orencio Matas y Hermanos, una tienda de droguería, perfumería, ' +
+      'pinturas y suministros para talleres y carrocerías.\n' +
+      'Un cliente está viendo la ficha de este producto y ha pedido más información técnica:\n' +
+      'Nombre: ' + nombre + (marca ? '\nMarca: ' + marca : '') + (familia ? '\nFamilia/categoría: ' + familia : '') + '\n\n' +
+      'Tienes acceso a búsqueda real en la web — úsala para encontrar información técnica genuina de este producto o marca ' +
+      '(ficha técnica del fabricante, manuales, catálogos) antes de responder.\n\n' +
+      'REGLAS IMPORTANTES:\n' +
+      '- Redacta SIEMPRE con tus propias palabras — nunca copies frases completas tal cual de una web.\n' +
+      '- Si no encuentras información fiable para alguna sección, dilo con honestidad en esa misma sección (p. ej. "No se ha encontrado información específica") en vez de inventar.\n' +
+      '- Nunca inventes certificaciones, normativas o composiciones que no puedas verificar.\n\n' +
+      'Responde EXACTAMENTE con estas líneas, sin nada más:\n' +
+      'PARA_QUE_SIRVE: 1-2 frases sobre el uso principal de este producto.\n' +
+      'DETALLES_TECNICOS: características técnicas relevantes (composición, formato, rendimiento, acabado...), si las encuentras.\n' +
+      'MODO_DE_EMPLEO: cómo se usa o aplica, paso a paso si procede.\n' +
+      'RECOMENDACIONES: consejos de uso, superficies o combinaciones recomendadas.\n' +
+      'SEGURIDAD: precauciones, ventilación, protección, conservación — si no encuentras nada específico, recuerda seguir siempre las indicaciones del envase.\n' +
+      'APLICACION: dónde o para qué tipo de trabajo se aplica mejor este producto.\n' +
+      'Cada línea puede ocupar varias frases seguidas (sin saltos de línea dentro de la misma sección) — si de verdad no hay nada que decir en una sección, escribe solo la etiqueta seguida de "Sin información específica disponible."';
+
+    const r = llamarGemini_(prompt, 900, true);
+    if (!r.ok) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'No se pudo generar la ficha técnica (' + (r.errorHttp || 'error desconocido') + ').' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const ETIQUETAS_FICHA_IA_ = [
+      ['PARA_QUE_SIRVE', '¿Para qué sirve?'],
+      ['DETALLES_TECNICOS', 'Detalles técnicos'],
+      ['MODO_DE_EMPLEO', 'Modo de empleo'],
+      ['RECOMENDACIONES', 'Recomendaciones'],
+      ['SEGURIDAD', 'Seguridad'],
+      ['APLICACION', 'Aplicación'],
+    ];
+    const valores = {};
+    let seccionActual = null;
+    r.texto.split('\n').forEach(function (linea) {
+      const l = linea.trim();
+      const coincide = ETIQUETAS_FICHA_IA_.find(function (e) { return new RegExp('^' + e[0] + ':', 'i').test(l); });
+      if (coincide) {
+        seccionActual = coincide[0];
+        valores[seccionActual] = l.replace(new RegExp('^' + coincide[0] + ':', 'i'), '').trim();
+      } else if (seccionActual && l) {
+        valores[seccionActual] = (valores[seccionActual] + ' ' + l).trim();
+      }
+    });
+
+    const secciones = ETIQUETAS_FICHA_IA_
+      .map(function (e) { return { titulo: e[1], texto: (valores[e[0]] || '').trim() }; })
+      .filter(function (s) { return s.texto; });
+
+    if (!secciones.length) throw new Error('La IA no ha devuelto ninguna sección con contenido.');
+
+    guardarCacheFichaIA_(referencia, secciones);
+    console.log('Ficha técnica IA generada y cacheada para', referencia);
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, secciones: secciones, cacheado: false }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarObtenerFichaTecnicaIAProducto:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
