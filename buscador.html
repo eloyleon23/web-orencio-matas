@@ -3002,6 +3002,17 @@
         .info-adicional-contenido p { margin: 0 0 8px; }
         .info-adicional-contenido p:last-child { margin-bottom: 0; }
         .info-adicional-contenido ul, .info-adicional-contenido ol { margin: 0 0 8px 18px; padding: 0; }
+        /* Recorte visual a ~8 líneas en la vista de detalle — el bloque
+           entero (párrafos, listas...) se trata como una sola caja con
+           límite de líneas, con "…" al final si sobra algo (ver
+           configurarInfoAdicional, que decide si mostrar el botón "Ver
+           información completa" según si esto recorta de verdad algo). */
+        .info-adicional-contenido.es-recortado {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 8;
+            overflow: hidden;
+        }
         .info-adicional-vertodo {
             display: inline-flex;
             align-items: center;
@@ -13510,19 +13521,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return escapado.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
     }
 
-    // Por encima de este umbral (medido en texto plano), la información
+    // Por encima de este número de LÍNEAS visibles, la información
     // adicional ya no cabe razonablemente en la propia vista de detalle
     // — a petición de Eloy, tras comprobar que un resumen largo de la
-    // IA "es enorme" ahí metido: se corta a un extracto con un botón
-    // "Ver información completa" que abre el contenido íntegro (con
-    // todo su formato) en una modal aparte.
-    const UMBRAL_INFO_ADICIONAL_MODAL_ = 2000;
-
-    function textoPlanoDeHtml_(html) {
-        const d = document.createElement('div');
-        d.innerHTML = html; // ya viene saneado (lista blanca), seguro de pintar
-        return d.textContent || '';
-    }
+    // IA "es enorme" ahí metido: se recorta visualmente (CSS
+    // line-clamp, igual de alto sea cual sea el formato/tamaño de
+    // fuente real) con un botón "Ver información completa" que abre el
+    // contenido íntegro (con todo su formato) en una modal aparte. Se
+    // mide el recorte REAL en pantalla (scrollHeight > clientHeight),
+    // no un número de caracteres — un número de caracteres no tiene en
+    // cuenta cuánto ocupa de verdad el texto ya formateado (listas,
+    // negrita, ancho de columna...).
+    const LINEAS_CLAMP_INFO_ADICIONAL_ = 8;
 
     function configurarInfoAdicional(p) {
         const bloque = $('modal-producto-info-adicional');
@@ -13533,20 +13543,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             bloque.style.display = tieneTexto ? '' : 'none';
             if (tieneTexto) {
                 const htmlSaneado = sanearHtmlEnriquecidoCliente_(p.info_adicional);
-                const textoPlano = textoPlanoDeHtml_(htmlSaneado);
-                const esLargo = textoPlano.length > UMBRAL_INFO_ADICIONAL_MODAL_;
-                if (esLargo) {
-                    const extracto = textoPlano.slice(0, UMBRAL_INFO_ADICIONAL_MODAL_).trim() + '…';
-                    contenido.innerHTML = `<p>${escaparHtmlTexto_(extracto)}</p>`;
-                } else {
-                    contenido.innerHTML = htmlSaneado;
-                }
-                if (botonVerTodo) {
-                    botonVerTodo.style.display = esLargo ? 'inline-flex' : 'none';
-                    botonVerTodo.onclick = () => mostrarModalInfoAdicionalCompleta_(p, htmlSaneado);
-                }
+                contenido.innerHTML = htmlSaneado;
+                contenido.classList.add('es-recortado');
+                if (botonVerTodo) botonVerTodo.style.display = 'none';
+                // El recorte (line-clamp) necesita que el navegador ya
+                // haya calculado el layout real para saber si de verdad
+                // sobra texto — se comprueba en el siguiente frame, no
+                // de inmediato (justo tras fijar innerHTML, scrollHeight
+                // todavía podría no reflejar el contenido nuevo).
+                requestAnimationFrame(() => {
+                    const haySobrante = contenido.scrollHeight > contenido.clientHeight + 1;
+                    if (botonVerTodo) {
+                        botonVerTodo.style.display = haySobrante ? 'inline-flex' : 'none';
+                        botonVerTodo.onclick = () => mostrarModalInfoAdicionalCompleta_(p, htmlSaneado);
+                    }
+                });
             } else {
                 contenido.innerHTML = '';
+                contenido.classList.remove('es-recortado');
                 if (botonVerTodo) botonVerTodo.style.display = 'none';
             }
         }
@@ -13638,6 +13652,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     });
     if ($('modal-editar-info-editable')) {
         $('modal-editar-info-editable').addEventListener('input', actualizarContadorInfoAdicional_);
+        // Pegar SIEMPRE como texto plano — caso real de Eloy: pegar una
+        // respuesta copiada tal cual desde la web de Gemini insertaba
+        // todo el HTML interno de Google (<div class="ZLzG0d...">,
+        // estilos en línea, atributos jscontroller...), que el
+        // saneador del servidor neutraliza correctamente (nunca se
+        // ejecuta nada), pero deja como texto literal visible — "aparece
+        // mal formado". Forzando texto plano al pegar, lo único que
+        // puede llevar formato real es lo que el propio usuario aplique
+        // después con la barra de herramientas de aquí arriba.
+        $('modal-editar-info-editable').addEventListener('paste', (e) => {
+            e.preventDefault();
+            const texto = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, texto);
+        });
     }
 
     function ejecutarGuardarInfoAdicional() {
