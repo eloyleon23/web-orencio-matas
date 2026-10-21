@@ -13434,6 +13434,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return escapado.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
     }
 
+    // Limpia basura de copia-pega que haya quedado guardada de ANTES de
+    // existir limpiarTextoPegado_/el handler de 'drop' (o por cualquier
+    // otra vía no contemplada) y sobrevive como texto escapado visible
+    // ("&lt;span style=...&gt;") — se aplica sobre los nodos de TEXTO ya
+    // renderizados (nunca reinterpretando HTML), así que no hay ningún
+    // riesgo de seguridad en este paso. Arregla de golpe, sin que haga
+    // falta volver a editar cada ficha a mano, cualquier registro ya
+    // guardado con esta basura.
+    function limpiarTextosEnDom_(contenedor) {
+        const walker = document.createTreeWalker(contenedor, NodeFilter.SHOW_TEXT);
+        const nodos = [];
+        let n;
+        while ((n = walker.nextNode())) nodos.push(n);
+        nodos.forEach((nodo) => {
+            const limpio = limpiarTextoPegado_(nodo.textContent);
+            if (limpio !== nodo.textContent) nodo.textContent = limpio;
+        });
+    }
+
     // Por encima de este número de LÍNEAS visibles, la información
     // adicional ya no cabe razonablemente en la propia vista de detalle
     // — a petición de Eloy, tras comprobar que un resumen largo de la
@@ -13455,8 +13474,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (bloque && contenido) {
             bloque.style.display = tieneTexto ? '' : 'none';
             if (tieneTexto) {
-                const htmlSaneado = sanearHtmlEnriquecidoCliente_(p.info_adicional);
-                contenido.innerHTML = htmlSaneado;
+                contenido.innerHTML = sanearHtmlEnriquecidoCliente_(p.info_adicional);
+                limpiarTextosEnDom_(contenido);
                 contenido.classList.add('es-recortado');
                 if (botonVerTodo) botonVerTodo.style.display = 'none';
                 // El recorte (line-clamp) necesita que el navegador ya
@@ -13468,7 +13487,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     const haySobrante = contenido.scrollHeight > contenido.clientHeight + 1;
                     if (botonVerTodo) {
                         botonVerTodo.style.display = haySobrante ? 'inline-flex' : 'none';
-                        botonVerTodo.onclick = () => mostrarModalInfoAdicionalCompleta_(p, htmlSaneado);
+                        // Se usa el HTML YA limpio de "contenido" (tras
+                        // limpiarTextosEnDom_), no el crudo recién
+                        // saneado — así la modal completa nunca muestra
+                        // basura que el extracto de aquí arriba ya no
+                        // tiene.
+                        botonVerTodo.onclick = () => mostrarModalInfoAdicionalCompleta_(p, contenido.innerHTML);
                     }
                 });
             } else {
@@ -13523,6 +13547,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-editar-info-nombre').textContent = p.nombre;
         $('modal-editar-info-maximo').textContent = MAX_INFO_ADICIONAL_CARACTERES_;
         $('modal-editar-info-editable').innerHTML = p.info_adicional ? sanearHtmlEnriquecidoCliente_(p.info_adicional) : '';
+        limpiarTextosEnDom_($('modal-editar-info-editable'));
         $('modal-editar-info-error').style.display = 'none';
         $('modal-editar-info-guardar').textContent = 'Guardar';
         actualizarContadorInfoAdicional_();
@@ -13566,13 +13591,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
     function limpiarTextoPegado_(texto) {
         let t = texto;
-        // Fragmentos de etiquetas HTML sueltos como texto literal.
-        t = t.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(\s+[^<>]*)?>/g, '');
-        // Entidades HTML comunes, decodificadas a su carácter real — DOS
-        // pasadas, no una: un texto doblemente escapado como "&amp;nbsp;"
+        // Entidades HTML comunes, decodificadas a su carácter real —
+        // SIEMPRE antes de quitar fragmentos de etiqueta, no después:
+        // un fragmento como "&lt;span style=...&gt;" solo se VE como una
+        // etiqueta real una vez decodificado ("<span style=...>"); si se
+        // quitaran las etiquetas primero, este caso pasaría de largo sin
+        // tocarlo (bug real detectado: sobrevivía como "&lt;span...&gt;"
+        // visible incluso después de "limpiar" el texto). Dos pasadas,
+        // no una: un texto doblemente escapado como "&amp;nbsp;"
         // decodifica primero a "&nbsp;" en la primera pasada (&amp;->&)
         // y necesita una segunda pasada para llegar al espacio real.
         t = decodificarEntidadesHtml_(decodificarEntidadesHtml_(t));
+        // Fragmentos de etiquetas HTML sueltos, ya revelados por la
+        // decodificación de arriba (o que ya venían como texto real).
+        t = t.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(\s+[^<>]*)?>/g, '');
         // Colapsa 3+ saltos de línea seguidos (frecuente tras quitar
         // divs vacíos) a como mucho una línea en blanco entre párrafos.
         return t.replace(/\n{3,}/g, '\n\n').trim();
@@ -13681,6 +13713,47 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             document.execCommand('insertHTML', false, convertirTextoPlanoAHtmlBasico_(textoLimpio));
             actualizarContadorInfoAdicional_();
         });
+        // Arrastrar y soltar texto seleccionado desde otra pestaña/app —
+        // caso real detectado: el 'drop' NO dispara el evento 'paste',
+        // así que sin este handler el navegador inserta el HTML de
+        // origen tal cual (con sus propios <span style="...">, por
+        // ejemplo), saltándose por completo la limpieza de arriba.
+        // Mismo tratamiento que al pegar: texto plano, limpio y
+        // reestructurado.
+        $('modal-editar-info-editable').addEventListener('drop', (e) => {
+            e.preventDefault();
+            document.execCommand('removeFormat', false, null);
+            const textoOriginal = e.dataTransfer.getData('text/plain');
+            const textoLimpio = limpiarTextoPegado_(textoOriginal);
+            document.execCommand('insertHTML', false, convertirTextoPlanoAHtmlBasico_(textoLimpio));
+            actualizarContadorInfoAdicional_();
+        });
+    }
+
+    // Red de seguridad FINAL antes de guardar o de medir el contador —
+    // por si, pese a los handlers de paste/drop de arriba, ha entrado
+    // en el editor cualquier etiqueta real que no esté en la lista
+    // blanca (otra vía no contemplada: un gestor de portapapeles,
+    // alguna extensión del navegador...). Se "desenvuelve" cada
+    // etiqueta no permitida (se quita la etiqueta y sus atributos,
+    // conservando su contenido) operando sobre el DOM real ya
+    // renderizado — nunca sobre una cadena de texto sin procesar, así
+    // que no hay ningún riesgo de seguridad en este paso. Sin esto, esa
+    // etiqueta real llegaba intacta hasta el guardado y el servidor la
+    // escapaba como texto literal visible ("&lt;span...&gt;"), aviso
+    // real de Eloy.
+    const TAGS_ENRIQUECIDO_PERMITIDAS_DOM_ = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'UL', 'OL', 'LI', 'P', 'BR']);
+    function limpiarDomEditable_(contenedor) {
+        Array.from(contenedor.childNodes).forEach((hijo) => {
+            if (hijo.nodeType !== 1) return; // solo nodos elemento
+            limpiarDomEditable_(hijo); // primero los hijos, antes de poder desenvolver el propio nodo
+            if (!TAGS_ENRIQUECIDO_PERMITIDAS_DOM_.has(hijo.tagName)) {
+                while (hijo.firstChild) contenedor.insertBefore(hijo.firstChild, hijo);
+                contenedor.removeChild(hijo);
+            } else {
+                Array.from(hijo.attributes).forEach((attr) => hijo.removeAttribute(attr.name));
+            }
+        });
     }
 
     function ejecutarGuardarInfoAdicional() {
@@ -13689,6 +13762,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const editable = $('modal-editar-info-editable');
         const errorEl = $('modal-editar-info-error');
         const btn = $('modal-editar-info-guardar');
+        limpiarDomEditable_(editable);
 
         if (contarTextoPlanoEditable_(editable) > MAX_INFO_ADICIONAL_CARACTERES_) {
             errorEl.textContent = `El texto supera el máximo de ${MAX_INFO_ADICIONAL_CARACTERES_} caracteres.`;
@@ -13702,10 +13776,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
             return;
         }
-        // El propio contenido del contenteditable (generado por
-        // execCommand) es el que se manda — el servidor lo vuelve a
-        // sanear de todas formas (ver sanearHtmlEnriquecido_), así que no
-        // hace falta limpiarlo aquí antes de enviarlo.
+        // El propio contenido del contenteditable, ya limpiado de
+        // cualquier etiqueta real no permitida por limpiarDomEditable_
+        // justo arriba — el servidor lo vuelve a sanear de todas formas
+        // (ver sanearHtmlEnriquecido_) como defensa adicional.
         const html = editable.innerHTML.trim();
 
         const original = btn.textContent;
