@@ -182,6 +182,13 @@ def exportar_productos_json(productos, familias, subfamilias):
         # productos" del modal de asignación.
         grupo = p.get('grupo', '').strip()
 
+        # Información adicional (texto enriquecido) — detalles técnicos,
+        # limitaciones, venta por cajas/lotes... columna "info_adicional"
+        # del Sheet (ver procesarActualizarInfoAdicional en
+        # apps_script_trigger.js, que es quien la sanea antes de
+        # guardarla — ya llega limpia aquí, nunca HTML arbitrario).
+        info_adicional = p.get('info_adicional', '').strip()
+
         exportados.append({
             'ref':       ref,
             'nombre':    p.get('nombre', '').strip(),
@@ -209,6 +216,7 @@ def exportar_productos_json(productos, familias, subfamilias):
             'relacionados_gestionado': relacionados_gestionado,
             'ficha_url': ficha_url,
             'grupo': grupo,
+            'info_adicional': info_adicional,
         })
 
     payload = {
