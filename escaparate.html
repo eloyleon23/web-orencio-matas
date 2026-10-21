@@ -407,6 +407,45 @@
         grid-auto-flow:dense;
         gap:16px;
       }
+      /* Agrupación de productos (campo "grupo" del producto maestro +
+         check "Agrupar productos" de la campaña) — petición real de
+         Eloy a partir de un folleto manual de ejemplo, que agrupa los
+         productos bajo títulos de sección ("MAQUINARIA", "ACCESORIOS
+         LIJADO"…). Cada grupo es su PROPIA rejilla .shelf (en vez de
+         meter el título como una fila más dentro de una única rejilla):
+         con grid-auto-rows:minmax(272px,auto) de arriba, una fila de
+         título habría heredado esos mismos 272px mínimos de alto, un
+         derroche enorme de espacio para una sola línea de texto. */
+      .shelf-grupo-titulo{
+        font-size:14px; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+        color:var(--ink); margin:30px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--accent-2);
+      }
+      .shelf-grupo-titulo:first-child{ margin-top:0; }
+      /* Bloque de contenido (texto + imagen) intercalado entre
+         productos — full-width, igual que los títulos de grupo de
+         arriba (fuera de .shelf, para no heredar su minmax(272px,auto)
+         por una simple ficha de texto). */
+      .bloque-contenido{
+        margin:30px 0; padding:18px 20px; border-radius:var(--radius-m);
+        background:var(--paper-raised); border:1px solid var(--line);
+        display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center;
+      }
+      .bloque-contenido:first-child{ margin-top:0; }
+      .bloque-contenido-texto{ max-width:70ch; white-space:pre-wrap; line-height:1.5; color:var(--ink); }
+      .bloque-contenido-img{ max-width:420px; width:100%; }
+      .bloque-contenido-img img{ width:100%; height:auto; border-radius:var(--radius-s); display:block; }
+      /* Imagen a la izquierda/derecha del texto — fila en vez de
+         columna, texto alineado a la izquierda (tiene más sentido junto
+         a una imagen al lado que centrado). Se apila en vertical en
+         móvil: una fila con imagen+texto demasiado estrechos pierde
+         legibilidad. */
+      .bloque-contenido-fila{ flex-direction:row; text-align:left; align-items:center; }
+      .bloque-contenido-fila .bloque-contenido-texto{ text-align:left; flex:1 1 auto; }
+      .bloque-contenido-fila .bloque-contenido-img{ max-width:280px; flex:1 1 220px; }
+      @media (max-width:640px){
+        .bloque-contenido-fila{ flex-direction:column; text-align:center; }
+        .bloque-contenido-fila .bloque-contenido-texto{ text-align:center; }
+      }
       .card{
         position:relative; cursor:pointer;
         background:var(--paper-raised); border:1px solid var(--line);
@@ -462,11 +501,28 @@
          mismo motivo que el resto de chips de este proyecto: con un
          color personalizado de campaña muy claro, un chip con ese mismo
          color de fondo podría quedar ilegible. */
-      .card-descuento-badge{
+      /* Contenedor de los chips del lado izquierdo (descuento y/o promo) —
+         en columna, para que quepan los dos a la vez sin pisarse cuando
+         un producto tiene las dos cosas (no son excluyentes: "3x2" Y un
+         10% de descuento adicional, por ejemplo). */
+      .card-badges-izq{
         position:absolute; top:10px; left:10px; z-index:2;
+        display:flex; flex-direction:column; align-items:flex-start; gap:5px;
+        /* El chip de promoción es texto libre (ver card-promo-badge) — a
+           diferencia de "Destacado"/"-X%" (siempre cortos), uno largo
+           podría salirse de la tarjeta si no se limita su ancho. */
+        max-width:calc(100% - 20px);
+      }
+      .card-descuento-badge{
         display:inline-flex; align-items:center; gap:4px;
         background:#D91B1B; color:#fff; font-size:10px; font-weight:800;
         text-transform:uppercase; letter-spacing:.03em; padding:4px 9px; border-radius:99px;
+      }
+      .card-promo-badge{
+        display:inline-flex; align-items:center; gap:4px;
+        background:#1E7A4C; color:#fff; font-size:10px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.03em; padding:4px 9px; border-radius:99px;
+        max-width:100%; white-space:normal; line-height:1.25; text-align:center;
       }
       .card[data-tam="2"]{ grid-column:span 2; }
       .card[data-tam="3"]{ grid-column:span 3; }
@@ -552,6 +608,14 @@
       .barcode{ height:20px; align-self:flex-start; min-width:74px; opacity:.85; }
       .ref-line{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
       .ref-line .ref{ font-size:10px; color:var(--ink-faint); }
+
+      /* Pie de producto (texto corto, opcional) — descripción/ayuda/
+         detalle técnico escrito a mano en la gestión del escaparate.
+         Discreto, nunca compite visualmente con el nombre o el precio. */
+      .card-texto-pie{
+        margin:0; font-size:11.5px; line-height:1.4; color:var(--ink-soft);
+        font-style:italic;
+      }
 
       .card .go{
         /* margin-top:auto ancla siempre "Ver ficha" al final de la
@@ -765,6 +829,11 @@
       .selected-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
       .selected-head-title{ font-size:13px; font-weight:600; color:var(--ink-soft); }
       .selected-head-title b{ color:var(--ink); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .chk-agrupar-productos{
+        display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-soft);
+        margin-bottom:12px; cursor:pointer;
+      }
+      .chk-agrupar-productos input{ width:15px; height:15px; cursor:pointer; }
       .link-btn{
         background:none; border:none; padding:0; font-size:12.5px; font-weight:600;
         color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:2px;
@@ -809,13 +878,14 @@
         font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
         flex:1 1 140px; min-width:100px;
       }
-      .chip-producto .chip-quitar{
+      .chip-producto .chip-quitar, .chip-bloque .chip-quitar{
         flex:none; width:22px; height:22px; border-radius:50%; border:none; padding:0;
         background:var(--line); display:flex; align-items:center; justify-content:center;
         cursor:pointer; color:var(--ink-soft); transition:background 140ms ease, color 140ms ease;
+        align-self:flex-start;
       }
-      .chip-producto .chip-quitar:hover{ background:#C81E1E; color:#fff; }
-      .chip-producto .chip-quitar svg{ width:10px; height:10px; }
+      .chip-producto .chip-quitar:hover, .chip-bloque .chip-quitar:hover{ background:#C81E1E; color:#fff; }
+      .chip-producto .chip-quitar svg, .chip-bloque .chip-quitar svg{ width:10px; height:10px; flex:none; }
 
       /* ---------- Destacar producto (tamaño/alineación/posición) ----------
          <details>/<summary> nativo: no hace falta JS para abrir/cerrar,
@@ -839,11 +909,69 @@
         display:flex; flex-direction:column; gap:4px; font-size:10.5px; color:var(--ink-soft);
         text-transform:uppercase; letter-spacing:.04em; font-weight:600;
       }
-      .destacar-panel select{
+      .destacar-panel select, .destacar-panel input, .destacar-panel textarea{
         font-family:inherit; font-size:12.5px; text-transform:none; letter-spacing:normal; font-weight:500;
         padding:5px 7px; border:1px solid var(--line-strong); border-radius:5px; background:var(--paper); color:var(--ink);
       }
       .destacar-panel select:disabled{ opacity:.5; }
+      /* El texto de pie necesita más ancho que tamaño/alineación/posición/
+         descuento (son <select> cortos) — ocupa la fila entera en vez de
+         competir por hueco en la misma línea de flex-wrap. */
+      .destacar-panel-ancho{ flex:1 1 100%; }
+      .destacar-panel textarea{ resize:vertical; min-height:38px; font-weight:400; }
+      .destacar-panel-promo-otro{ flex:1 1 100%; }
+      .destacar-panel-promo-otro input{ font-weight:400; }
+
+      /* ---------- Bloque de contenido (texto + imagen, intercalado
+         entre productos) — siempre "abierto" (sin <details>), a
+         diferencia de los productos: crear un bloque implica que se
+         quiere editar su texto ya mismo. */
+      .chip-bloque{
+        display:flex; align-items:flex-start; gap:9px;
+        border:1px solid var(--accent-2); border-radius:var(--radius-s); padding:8px;
+        background:var(--paper-raised);
+        transition:opacity 140ms ease, box-shadow 140ms ease;
+      }
+      .chip-bloque.arrastrando{ opacity:.4; }
+      .chip-bloque.arrastrando-sobre{ box-shadow:inset 0 2px 0 var(--accent), inset 0 -2px 0 var(--accent); }
+      .chip-bloque-cuerpo{ flex:1 1 auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
+      .chip-bloque-etiqueta{
+        font-size:10.5px; color:var(--accent-2); text-transform:uppercase; letter-spacing:.04em; font-weight:700;
+        display:inline-flex; align-items:center; gap:4px;
+      }
+      .chip-bloque-etiqueta svg{ width:12px; height:12px; flex:none; }
+      .chip-bloque-cuerpo textarea{
+        font-family:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--line-strong);
+        border-radius:5px; background:var(--paper); color:var(--ink); resize:vertical; min-height:54px;
+      }
+      .chip-bloque-opciones{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      .chip-bloque-opciones label{
+        display:flex; align-items:center; gap:4px; font-size:11px; color:var(--ink-soft);
+        text-transform:uppercase; letter-spacing:.03em; font-weight:600;
+      }
+      .chip-bloque-opciones select{
+        font-family:inherit; font-size:12px; text-transform:none; letter-spacing:normal; font-weight:500;
+        padding:4px 6px; border:1px solid var(--line-strong); border-radius:5px; background:var(--paper); color:var(--ink);
+      }
+      .chip-bloque-opciones .btn-link-chip{
+        font-family:inherit; font-size:11px; font-weight:600; text-transform:none; letter-spacing:normal;
+        border:none; background:none; color:var(--accent-2); cursor:pointer; padding:2px 0;
+      }
+      .chip-bloque-imagen-zona{
+        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+        border:1px dashed var(--line-strong); border-radius:var(--radius-s); padding:8px;
+        transition:border-color 120ms ease, background 120ms ease;
+      }
+      .chip-bloque-imagen-zona.is-dragover{ border-color:var(--accent-2); border-style:solid; background:var(--paper); }
+      .chip-bloque-imagen-boton{
+        flex:1 1 auto; display:flex; align-items:center; gap:8px; font-family:inherit;
+        border:none; background:none; cursor:pointer; padding:6px; color:var(--ink-soft); text-align:left;
+      }
+      .chip-bloque-imagen-boton svg{ width:20px; height:20px; flex:none; color:var(--accent-2); }
+      .chip-bloque-imagen-boton b{ display:block; font-size:12px; color:var(--ink); }
+      .chip-bloque-imagen-boton small{ font-size:10.5px; color:var(--ink-faint); font-weight:400; }
+      .chip-bloque-preview{ max-width:90px; max-height:60px; border-radius:6px; border:1px solid var(--line); object-fit:cover; flex:none; }
+      .chip-bloque-imagen-acciones{ display:flex; gap:10px; flex-wrap:wrap; }
 
       .selected-count{ font-size:13px; color:var(--ink-soft); }
       .selected-count b{ color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -975,6 +1103,16 @@
       .modal-producto-precio-sin{ font-size:0.9rem; color:var(--ink-faint); margin-top:4px; }
       .modal-producto-detalles p{ margin:8px 0; color:var(--ink-soft); font-size:0.95rem; }
       .modal-producto-detalles strong{ color:var(--ink); }
+      .modal-producto-texto{
+        margin:0 0 14px; padding:10px 12px; background:var(--paper-raised);
+        border-radius:var(--radius-s); font-size:0.92rem; line-height:1.5;
+        color:var(--ink-soft); font-style:italic;
+      }
+      .modal-producto-promo-badge{
+        display:inline-flex; align-items:center; gap:4px; margin-bottom:14px;
+        background:#1E7A4C; color:#fff; font-size:11px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.03em; padding:5px 11px; border-radius:99px;
+      }
       .modal-producto-disclaimer{
         margin-top:auto; padding-top:20px; border-top:1px solid var(--line);
         font-size:0.85rem; color:var(--ink-faint); display:flex; align-items:center; gap:8px;
@@ -1396,7 +1534,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <h2 id="shelfTitle">Productos de la campaña</h2>
         <span class="count" id="shelfCount"></span>
       </div>
-      <div class="shelf" id="shelf"></div>
+      <div id="shelf"></div>
     </section>
 
     <section class="vitrina-cierre" id="vitrinaCierre" hidden>
@@ -1552,7 +1690,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <span class="selected-head-title">Productos en esta campaña (<b id="selectedHeadCount">0</b>)</span>
         <button type="button" class="link-btn" id="btnQuitarTodos">Quitar todos</button>
       </div>
+      <label class="chk-agrupar-productos">
+        <input type="checkbox" id="chkAgruparProductos">
+        Agrupar productos por su campo de agrupación (en el escaparate y en el folleto PDF)
+      </label>
       <div class="selected-chips" id="selectedChips"></div>
+      <button type="button" class="btn ghost small" id="btnAnadirBloqueContenido">+ Añadir bloque de texto/imagen</button>
+      <input type="file" id="bloqueImgInput" accept="image/*" hidden>
     </div>
     <div class="filters-row">
       <div class="field">
@@ -1604,10 +1748,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <h3 id="modal-producto-nombre"></h3>
         <p class="modal-producto-ref" id="modal-producto-ref"></p>
         <div class="modal-producto-precio" id="modal-producto-precio"></div>
+        <span class="modal-producto-promo-badge" id="modal-producto-promo" hidden></span>
         <div class="modal-producto-detalles">
           <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
           <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
         </div>
+        <p class="modal-producto-texto" id="modal-producto-texto" hidden></p>
         <p class="modal-producto-disclaimer">
           ⓘ Los precios pueden variar y el producto está sujeto a disponibilidad; la imagen puede no coincidir exactamente con el producto real.
         </p>
@@ -1665,6 +1811,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   const precioNum = v => parseFloat((v==null?'':v.toString()).replace(',', '.')) || 0;
   const fmtEUR = n => precioNum(n).toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2});
   const fmtFecha = iso => { if(!iso) return '—'; const d = new Date(iso+"T00:00:00"); return isNaN(d) ? iso : d.toLocaleDateString('es-ES',{day:'numeric', month:'short'}); };
+
+  // Escapa texto libre (p. ej. el pie de producto de un destacado) antes
+  // de insertarlo con innerHTML — es texto escrito a mano en la gestión,
+  // nunca debe interpretarse como HTML.
+  function escaparHTML_(str){
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  // Pinta un bloque de contenido (texto + imagen opcional) en la vitrina
+  // pública/buscador — SIEMPRE como texto plano escapado (nunca
+  // innerHTML del texto en crudo): lo escribe un encargado desde un
+  // <textarea> simple, no un editor de HTML, así que no hay ninguna
+  // superficie de XSS que cubrir aquí.
+  function bloqueContenidoHTML_(b){
+    if(!b) return '';
+    const estiloTexto = [
+      b.tamano === 'grande' ? 'font-size:1.15em' : (b.tamano === 'muy-grande' ? 'font-size:1.4em' : ''),
+      b.negrita ? 'font-weight:700' : '',
+      b.cursiva ? 'font-style:italic' : '',
+    ].filter(Boolean).join(';');
+    const textoHtml = (b.texto && b.texto.trim()) ? `<p class="bloque-contenido-texto" style="${estiloTexto}">${escaparHTML_(b.texto)}</p>` : '';
+    const imgHtml = b.imagen ? `<div class="bloque-contenido-img"><img src="${urlImagenCampana(b.imagen, 900)}" alt="" loading="lazy"></div>` : '';
+    if(!textoHtml && !imgHtml) return '';
+    const enFila = b.imagenPosicion === 'izquierda' || b.imagenPosicion === 'derecha';
+    const partes = (b.imagenPosicion === 'abajo' || b.imagenPosicion === 'derecha') ? [textoHtml, imgHtml] : [imgHtml, textoHtml];
+    return `<div class="bloque-contenido${enFila ? ' bloque-contenido-fila' : ''}">${partes.join('')}</div>`;
+  }
 
   // Perfil profesional: precio al por mayor siempre, en vez del PVP y sin
   // descuentos/promociones de campaña (que son sobre el PVP público) —
@@ -1849,13 +2024,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
+  // Solo comprueba la VENTANA DE FECHAS (o "permanente") — el interruptor
+  // "activa"/"desactivada" se comprueba aparte, en campanaDeHoy() más
+  // abajo (mismo criterio que escaparate-campanas.html, que ya hacía
+  // bien esta separación). Bug real encontrado: campanaDeHoy() NUNCA
+  // comprobaba `c.activa` — una campaña desactivada a mano pero todavía
+  // dentro de su rango de fechas se seguía eligiendo como "la de hoy" y
+  // mostrando al público, justo lo contrario de lo que se espera de
+  // "desactivar" una campaña.
   function activaEn(camp, fecha){
     if(camp.permanente) return true;
     if(!camp.fechaInicio || !camp.fechaFin) return false;
     return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
   }
   function campanaDeHoy(){
-    const activas = CAMPAIGNS.filter(c=>activaEn(c, HOY));
+    const activas = CAMPAIGNS.filter(c=>c.activa !== false && activaEn(c, HOY));
     const manual = activas.find(c=>c.origen==="manual");
     return manual || activas[0] || null;
   }
@@ -2309,7 +2492,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     return Math.round(p * (1 - pct/100) * 100) / 100;
   }
 
-  function productCard(ref, {ia=false, destacado=null, descuento=0}={}){
+  function productCard(ref, {ia=false, destacado=null, descuento=0, precioPromo=0}={}){
     const p = PRODUCTS[ref];
     if(!p) return `<article class="card"><span class="fam">Referencia no encontrada</span><span class="nombre mono">${ref}</span></article>`;
     const imgUrl = urlImagenProducto(p, 300);
@@ -2317,8 +2500,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const tam = destacado && destacado.tamano > 1 ? destacado.tamano : 1;
     const atributoTam = tam > 1 ? ` data-tam="${tam}" data-alin="${destacado.alinH || 'centro'}"` : '';
     const precioMayor = precioMayorEscaparate_(p);
-    const tieneDescuento = !precioMayor && Number(descuento) > 0;
-    const precioRebajado = tieneDescuento ? precioConDescuento(p.precio_con, descuento) : null;
+    // Precio de promoción FIJO (€) — alternativa al % de descuento
+    // cuando el precio final no sale de un porcentaje limpio ("incluir
+    // un bloque de texto para poder editar el precio de promoción en
+    // lugar de poner un porcentaje"). Mutuamente excluyente con
+    // descuento (ver sanearDestacados_/el panel de edición — nunca
+    // llegan los dos a la vez), mismo tratamiento visual que un
+    // descuento normal.
+    const tienePrecioPromo = !precioMayor && Number(precioPromo) > 0;
+    const tieneDescuento = !precioMayor && !tienePrecioPromo && Number(descuento) > 0;
+    const tieneOferta = tieneDescuento || tienePrecioPromo;
+    const precioRebajado = tieneDescuento ? precioConDescuento(p.precio_con, descuento) : (tienePrecioPromo ? precioNum(precioPromo) : null);
     // p.precio_sin ya viene calculado del propio catálogo (no se
     // recalcula aquí a partir del IVA — el % de IVA puede variar según
     // la familia del producto, así que es más fiable confiar en el
@@ -2338,16 +2530,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const bloquePrecio = precioMayor
       ? `<span class="precio">${fmtEUR(precioMayor.con)}&nbsp;€<span class="iva">IVA inc.</span></span>
          ${precioMayor.sin != null ? `<span class="precio-siniva">${fmtEUR(precioMayor.sin)}&nbsp;€ sin IVA</span>` : ''}`
-      : tieneDescuento
+      : tieneOferta
       ? `<span class="precio-tachado">${fmtEUR(p.precio_con)}&nbsp;€</span>
          <span class="precio-siniva precio-siniva-tachado">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>
          <span class="precio precio-rebajado">${fmtEUR(precioRebajado)}&nbsp;€<span class="iva">IVA inc.</span></span>`
       : `<span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
          ${precioSinIVA}`;
+    // Chip de promoción (2x1, 3x2…), aparte del % de descuento — mismo
+    // criterio que el descuento en perfil profesional: son promociones
+    // sobre el PVP público, se ocultan con el precio mayor.
+    const tienePromoBadge = !precioMayor && !!(destacado && destacado.promo && destacado.promo.trim());
     return `
-      <article class="card ${ia?'ia-card':''}" data-ref="${p.ref}" data-descuento="${tieneDescuento?descuento:0}" role="button" tabindex="0" aria-label="Ver detalle de ${p.nombre||p.ref}"${atributoTam}>
+      <article class="card ${ia?'ia-card':''}" data-ref="${p.ref}" data-descuento="${tieneDescuento?descuento:0}" data-precio-promo="${tienePrecioPromo?precioPromo:0}" role="button" tabindex="0" aria-label="Ver detalle de ${p.nombre||p.ref}"${atributoTam}>
         ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
-        ${tieneDescuento ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
+        ${(tieneOferta || tienePromoBadge) ? `<div class="card-badges-izq">
+          ${tieneDescuento ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
+          ${tienePrecioPromo ? `<span class="card-descuento-badge">🏷️ OFERTA</span>` : ''}
+          ${tienePromoBadge ? `<span class="card-promo-badge">🎁 ${escaparHTML_(destacado.promo)}</span>` : ''}
+        </div>` : ''}
         <div class="icon-tile">
           ${iconFor(p)}
           ${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}
@@ -2361,6 +2561,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           ${barcodeSVG(p.ref)}
           <span class="ref mono">${p.ref}</span>
         </div>
+        ${destacado && destacado.texto ? `<p class="card-texto-pie">${escaparHTML_(destacado.texto)}</p>` : ''}
         <span class="go">
           Ver detalle
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
@@ -2374,7 +2575,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // variables de color propias de esta página. Petición explícita de
   // Eloy: "poder visualizar el producto con más detalle clicando... y
   // que se vea en una modal igual que en el centro de soluciones".
-  function abrirModalProductoPublico(ref, descuento){
+  function abrirModalProductoPublico(ref, descuento, precioPromo){
     const p = PRODUCTS[ref];
     if(!p) return;
     const overlay = $("#modal-producto-overlay");
@@ -2403,13 +2604,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // pulsada), no se recalcula aquí. Perfil profesional: precio mayor
     // directo, sin descuentos (ver precioMayorEscaparate_).
     const precioMayorModal = precioMayorEscaparate_(p);
-    const tieneDescuento = !precioMayorModal && Number(descuento) > 0;
+    // Precio de promoción FIJO — mismo criterio que la tarjeta: manda
+    // sobre cualquier % de descuento cuando está informado.
+    const tienePrecioPromo = !precioMayorModal && Number(precioPromo) > 0;
+    const tieneDescuento = !precioMayorModal && !tienePrecioPromo && Number(descuento) > 0;
+    const tieneOfertaModal = tieneDescuento || tienePrecioPromo;
     let precioHtml;
     if(precioMayorModal){
       precioHtml = `<div class="modal-producto-precio-con">${fmtEUR(precioMayorModal.con)} € <span style="font-size:0.9rem; font-weight:400;">IVA inc.</span></div>` +
         (precioMayorModal.sin != null ? `<div class="modal-producto-precio-sin">${fmtEUR(precioMayorModal.sin)} € sin IVA</div>` : '');
-    } else if(tieneDescuento){
-      const precioRebajado = precioConDescuento(p.precio_con, descuento);
+    } else if(tieneOfertaModal){
+      const precioRebajado = tienePrecioPromo ? precioNum(precioPromo) : precioConDescuento(p.precio_con, descuento);
       precioHtml = `<div class="modal-producto-precio-con precio-tachado" style="font-size:1rem;">${fmtEUR(p.precio_con)} €</div>
         <div class="modal-producto-precio-sin precio-siniva-tachado">${fmtEUR(p.precio_sin)} € sin IVA</div>
         <div class="modal-producto-precio-con" style="margin-top:6px;">${fmtEUR(precioRebajado)} € <span style="font-size:0.9rem; font-weight:400;">IVA inc.</span></div>`;
@@ -2421,6 +2626,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     $("#modal-producto-familia").textContent = p.familia || '—';
     $("#modal-producto-area").textContent = p.area || '—';
+
+    // Pie de producto (texto corto, opcional) — se busca en los
+    // destacados de la campaña actualmente mostrada, no se pasa como
+    // data-attribute de la tarjeta (texto libre, con posibles comillas)
+    // para no complicar el escapado en un atributo HTML.
+    const campanaActual = activeId ? findCampaign(activeId) : null;
+    const destacadoRef = campanaActual && Array.isArray(campanaActual.destacados)
+      ? campanaActual.destacados.find(d => d && d.ref === ref) : null;
+    const textoPie = $("#modal-producto-texto");
+    if(destacadoRef && destacadoRef.texto){
+      textoPie.textContent = destacadoRef.texto;
+      textoPie.hidden = false;
+    } else {
+      textoPie.hidden = true;
+    }
+
+    // Chip de promoción (2x1, 3x2…) — oculto en perfil profesional, igual
+    // que en la propia tarjeta (son promociones sobre el PVP público).
+    const promoBadge = $("#modal-producto-promo");
+    if(!precioMayorModal && destacadoRef && destacadoRef.promo){
+      promoBadge.textContent = `🎁 ${destacadoRef.promo}`;
+      promoBadge.hidden = false;
+    } else {
+      promoBadge.hidden = true;
+    }
 
     const btnBuscador = $("#modal-producto-verbuscador");
     btnBuscador.href = `./buscador.html?ref=${encodeURIComponent(p.ref)}`;
@@ -2449,14 +2679,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(shelf){
       shelf.addEventListener('click', (ev)=>{
         const card = ev.target.closest('.card[data-ref]');
-        if(card) abrirModalProductoPublico(card.dataset.ref, card.dataset.descuento);
+        if(card) abrirModalProductoPublico(card.dataset.ref, card.dataset.descuento, card.dataset.precioPromo);
       });
       shelf.addEventListener('keydown', (ev)=>{
         if(ev.key!=='Enter' && ev.key!==' ') return;
         const card = ev.target.closest('.card[data-ref]');
         if(!card) return;
         ev.preventDefault();
-        abrirModalProductoPublico(card.dataset.ref, card.dataset.descuento);
+        abrirModalProductoPublico(card.dataset.ref, card.dataset.descuento, card.dataset.precioPromo);
       });
     }
   }
@@ -2544,17 +2774,96 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const pb = PESO_POSICION_[(destacadosMap[b] || {}).posV] || 0;
       return pa - pb;
     });
-    $("#shelf").innerHTML = productosOrdenados.length
-      ? productosOrdenados.map(r=>{
-          const d = destacadosMap[r] || null;
-          // El descuento del producto (si lo tiene) manda como preferente
-          // sobre el general de la campaña — petición explícita: "si un
-          // producto también lo tiene añadido aplicará el indicado en el
-          // producto como preferente".
-          const descuentoEfectivo = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
-          return productCard(r, { destacado: d, descuento: descuentoEfectivo });
-        }).join("")
-      : `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
+    const tarjetaDe_ = (r) => {
+      const d = destacadosMap[r] || null;
+      // El precio de promoción FIJO del producto (si lo tiene) manda
+      // sobre cualquier % de descuento (propio o de campaña) — no tiene
+      // sentido aplicar un % encima de un precio ya fijado a mano.
+      const precioPromoEfectivo = (d && Number(d.precioPromo) > 0) ? Number(d.precioPromo) : 0;
+      // El descuento del producto (si lo tiene) manda como preferente
+      // sobre el general de la campaña — petición explícita: "si un
+      // producto también lo tiene añadido aplicará el indicado en el
+      // producto como preferente".
+      const descuentoEfectivo = precioPromoEfectivo ? 0 : ((d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0));
+      return productCard(r, { destacado: d, descuento: descuentoEfectivo, precioPromo: precioPromoEfectivo });
+    };
+    const tieneBloquesContenido_ = Array.isArray(c.ordenContenido) && c.ordenContenido.some(cl => (cl||'').indexOf('bloque:') === 0);
+    if(!productosOrdenados.length && !tieneBloquesContenido_){
+      $("#shelf").innerHTML = `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
+    } else if(tieneBloquesContenido_){
+      // Bloques de texto/imagen intercalados en cualquier punto del
+      // orden (petición real: "intercalados, en cualquier punto") — el
+      // agrupado por campo "grupo" y el orden por posV (arriba/medio/
+      // abajo) se siguen aplicando, pero solo DENTRO de cada tramo de
+      // productos entre dos bloques, nunca saltando por encima de un
+      // bloque: así un bloque de contenido nunca rompe un grupo a
+      // medias ni se ve "adelantado" fuera de su sitio en el orden.
+      const bloquesContenidoMap_ = {};
+      (Array.isArray(c.bloquesContenido) ? c.bloquesContenido : []).forEach(b=>{ if(b && b.id) bloquesContenidoMap_[b.id] = b; });
+      const refsValidos_ = new Set(c.productos);
+      const secuencia_ = c.ordenContenido.filter(cl => (cl||'').indexOf('bloque:') === 0 ? !!bloquesContenidoMap_[cl.slice(7)] : refsValidos_.has(cl));
+      // Cualquier producto ausente de la secuencia guardada (p. ej.
+      // añadido sin volver a tocar el orden) se añade al final, para no
+      // perderlo nunca de la vitrina.
+      c.productos.forEach(ref => { if(secuencia_.indexOf(ref) === -1) secuencia_.push(ref); });
+
+      const segmentos_ = [];
+      secuencia_.forEach(clave => {
+        if(clave.indexOf('bloque:') === 0){
+          segmentos_.push({ tipo:'bloque', html: bloqueContenidoHTML_(bloquesContenidoMap_[clave.slice(7)]) });
+        } else {
+          const ultimo = segmentos_[segmentos_.length - 1];
+          if(ultimo && ultimo.tipo === 'productos') ultimo.refs.push(clave);
+          else segmentos_.push({ tipo:'productos', refs:[clave] });
+        }
+      });
+
+      $("#shelf").innerHTML = segmentos_.map(seg => {
+        if(seg.tipo === 'bloque') return seg.html;
+        if(c.agruparProductos){
+          const SIN_GRUPO_TRAMO_ = Symbol('sin-grupo');
+          let grupoAnterior = SIN_GRUPO_TRAMO_;
+          const subBloques = [];
+          seg.refs.forEach(r => {
+            const grupoActual = ((PRODUCTS[r] && PRODUCTS[r].grupo) || '').toString().trim();
+            if(grupoActual !== grupoAnterior){ subBloques.push({ titulo: grupoActual || null, html: '' }); grupoAnterior = grupoActual; }
+            subBloques[subBloques.length - 1].html += tarjetaDe_(r);
+          });
+          return subBloques.map(b => (b.titulo ? `<h3 class="shelf-grupo-titulo">${escaparHTML_(b.titulo)}</h3>` : '') + `<div class="shelf">${b.html}</div>`).join("");
+        }
+        const refsOrdenadosTramo = seg.refs.slice().sort((a,b) => {
+          const pa = PESO_POSICION_[(destacadosMap[a] || {}).posV] || 0;
+          const pb = PESO_POSICION_[(destacadosMap[b] || {}).posV] || 0;
+          return pa - pb;
+        });
+        return `<div class="shelf">${refsOrdenadosTramo.map(tarjetaDe_).join("")}</div>`;
+      }).join("");
+    } else if(c.agruparProductos){
+      // Agrupación activada: se ignora el reordenado por posV (arriba/
+      // medio/abajo es cosa de destacados, no compatible con "mostrar
+      // agrupado") y se usa el orden EXACTO guardado en c.productos (el
+      // mismo que se ve/arrastra en la gestión) — un grupo nuevo empieza
+      // cada vez que el campo "grupo" del producto cambia respecto al
+      // anterior, nunca reordenando productos para "juntar" grupos no
+      // contiguos: así el folleto/escaparate siempre refleja el orden
+      // que Eloy ha decidido a mano, sin sorpresas.
+      const SIN_GRUPO_ = Symbol('sin-grupo'); // nunca igual a ningún string, fuerza que el primer producto siempre abra bloque
+      let grupoAnterior = SIN_GRUPO_;
+      const bloques = []; // cada bloque: { titulo: string|null, html: string }
+      c.productos.forEach(r => {
+        const grupoActual = ((PRODUCTS[r] && PRODUCTS[r].grupo) || '').toString().trim();
+        if(grupoActual !== grupoAnterior){
+          bloques.push({ titulo: grupoActual || null, html: '' });
+          grupoAnterior = grupoActual;
+        }
+        bloques[bloques.length - 1].html += tarjetaDe_(r);
+      });
+      $("#shelf").innerHTML = bloques.map(b =>
+        (b.titulo ? `<h3 class="shelf-grupo-titulo">${escaparHTML_(b.titulo)}</h3>` : '') + `<div class="shelf">${b.html}</div>`
+      ).join("");
+    } else {
+      $("#shelf").innerHTML = `<div class="shelf">${productosOrdenados.map(tarjetaDe_).join("")}</div>`;
+    }
 
     // Bloque de cierre, con la frase opcional definida en el formulario de
     // campaña. Sin frase, se ve igual el bloque, solo que sin texto
@@ -2625,12 +2934,59 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
   let selected = new Set();
   let sugeridosIA = [];       // refs sugeridas por la IA en la sesión actual del modal
-  let destacados = {};        // ref -> {tamano(1-6), alinH, posV, descuento(%)} — solo entradas con tamano>1 o descuento>0
+  let destacados = {};        // ref -> {tamano(1-6), alinH, posV, descuento(%), texto} — solo entradas con tamano>1, descuento>0 o texto no vacío
+  // Bloques de contenido personalizados (texto + imagen opcional),
+  // intercalables con los productos — petición real de Eloy: "poder
+  // añadir bloques customizados... y al final sea otro bloque más del
+  // escaparate y se puedan añadir tantos como se deseen". `bloques` es
+  // el contenido de cada uno (id -> {texto, tamano, negrita, cursiva,
+  // imagen, imagenPosicion}); `ordenMostrar` es el ORDEN COMBINADO real
+  // (productos Y bloques mezclados) — ESTE es el que de verdad se
+  // arrastra/reordena y se guarda como "ordenContenido"; `selected`
+  // sigue existiendo tal cual (solo para el picker: "¿ya está añadido
+  // este producto?"), pero deja de ser la fuente del orden.
+  let bloques = {};
+  let ordenMostrar = []; // array de { tipo:'producto', ref } | { tipo:'bloque', id }
+  const MAX_TEXTO_BLOQUE = 2000;
+  const TAMANOS_BLOQUE_ETIQUETAS_ = { normal:'Normal', grande:'Grande', 'muy-grande':'Muy grande' };
   const HINT_IA_DEFECTO = 'Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.';
   const ETIQUETAS_ALINEACION = { izquierda:'Izda.', centro:'Centro', derecha:'Dcha.' };
   const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
+  const MAX_TEXTO_PRODUCTO = 220;
+  const MAX_PROMO_PRODUCTO = 28;
+  const MAX_GRUPO_PRODUCTO = 60;
+  // Chip de promoción alternativo al % de descuento (ver sanearDestacados_
+  // en el backend) — lista cerrada que ofrece el selector, más "Otro"
+  // (texto libre, sentinela "__otro__" solo en el <select>, nunca se
+  // guarda tal cual).
+  const PROMOS_PREDEFINIDAS_ = ['2x1', '3x2', '3x1', '2ª unidad al 50%', '2ª unidad al 70%'];
   function destacadoActual(ref){
-    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0 };
+    return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0, precioPromo:'', texto:'', promo:'', promoManual:false };
+  }
+
+  // Guarda el "grupo" (agrupación) del PRODUCTO MAESTRO — a diferencia
+  // del resto de campos de este panel (tamaño/descuento/promo/texto),
+  // vive en la hoja Productos, no en "destacados" de la campaña, así
+  // que se guarda aparte, al momento, sin esperar al botón "Guardar
+  // productos" general (igual que "Editar ficha técnica"/"Relacionados"
+  // en buscador.html, mismo tipo de campo del catálogo).
+  async function guardarGrupoProducto_(ref, grupo){
+    const valorAnterior = (PRODUCTS[ref] && PRODUCTS[ref].grupo) || '';
+    if(grupo === valorAnterior) return;
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion:'actualizar_grupo_producto', referencia:ref, grupo, pin: productosPin_ }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      if(PRODUCTS[ref]) PRODUCTS[ref].grupo = grupo;
+      toast(`Grupo de ${ref} guardado.`);
+    } catch(err){
+      toast('No se pudo guardar el grupo: ' + err.message, true);
+      renderSeleccionados(); // revierte el campo visualmente al valor anterior (no tocado en PRODUCTS[ref])
+    }
   }
 
   function familiasDisponibles(){
@@ -2660,7 +3016,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $$(".pick-card", $("#pickerGrid")).forEach(card=>{
       card.addEventListener("click", ()=>{
         const ref = card.dataset.ref;
-        if(selected.has(ref)) selected.delete(ref); else selected.add(ref);
+        if(selected.has(ref)) quitarProductoDeOrden_(ref); else agregarProductoAOrden_(ref);
         card.classList.toggle("selected");
         updateSelCount();
         renderSeleccionados();
@@ -2714,7 +3070,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     attachPickCardHandlers();
   }
   $("#btnAnadirTodos").addEventListener("click", ()=>{
-    itemsPickerActual.forEach(p=>selected.add(p.ref));
+    itemsPickerActual.forEach(p=>agregarProductoAOrden_(p.ref));
     updateSelCount();
     renderSeleccionados();
     renderPicker(); // refresca el propio picker (marca como ya-añadidos, actualiza/oculta la barra)
@@ -2731,91 +3087,203 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // ES el orden real que se guarda (ver productosArr más abajo, "orden
   // de inserción" del Set) — no existe ninguna columna de orden aparte
   // en la Sheet: no hace falta tocar nada en Apps Script.
-  function moverProductoSeleccionado_(ref, delta){
-    const refs = Array.from(selected);
-    const i = refs.indexOf(ref);
+  // Helpers del orden combinado (productos Y bloques de contenido
+  // intercalados — ver ordenMostrar más arriba). "clave" identifica
+  // cualquier entrada de ordenMostrar de forma única: la propia ref
+  // para un producto, o "bloque:<id>" para un bloque — mismo formato
+  // que ordenContenido en el backend, para no tener que traducir nada
+  // al guardar.
+  function claveDeItem_(it){ return it.tipo === 'bloque' ? ('bloque:' + it.id) : it.ref; }
+  function agregarProductoAOrden_(ref){
+    selected.add(ref);
+    if(!ordenMostrar.some(it => it.tipo === 'producto' && it.ref === ref)) ordenMostrar.push({ tipo:'producto', ref });
+  }
+  function quitarProductoDeOrden_(ref){
+    selected.delete(ref);
+    ordenMostrar = ordenMostrar.filter(it => !(it.tipo === 'producto' && it.ref === ref));
+  }
+  function crearBloqueNuevo_(){
+    const id = 'bloque-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    bloques[id] = { id, texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba' };
+    ordenMostrar.push({ tipo:'bloque', id });
+    return id;
+  }
+  function quitarBloqueDeOrden_(id){
+    delete bloques[id];
+    ordenMostrar = ordenMostrar.filter(it => !(it.tipo === 'bloque' && it.id === id));
+  }
+  // Reordena ordenMostrar moviendo la entrada identificada por `clave`
+  // `delta` posiciones (−1 = subir, +1 = bajar) — usado tanto por los
+  // botones ▲▼ como por el resultado final de arrastrar con el ratón
+  // (ver dragstart/drop en renderSeleccionados()). El orden de este
+  // array ES el orden real que se guarda como "ordenContenido".
+  function moverEnOrden_(clave, delta){
+    const i = ordenMostrar.findIndex(it => claveDeItem_(it) === clave);
     if(i === -1) return;
     const j = i + delta;
-    if(j < 0 || j >= refs.length) return;
-    [refs[i], refs[j]] = [refs[j], refs[i]];
-    selected = new Set(refs);
+    if(j < 0 || j >= ordenMostrar.length) return;
+    [ordenMostrar[i], ordenMostrar[j]] = [ordenMostrar[j], ordenMostrar[i]];
     renderSeleccionados();
   }
 
-  let refArrastrando_ = null;
+  let claveArrastrando_ = null;
 
+  function chipProductoHTML_(ref, indice, total){
+    const p = PRODUCTS[ref];
+    const nombre = (p ? p.nombre : ref).replace(/"/g,'&quot;');
+    const imgUrl = p ? urlImagenProducto(p, 80) : null;
+    const d = destacadoActual(ref);
+    const esDestacado = d.tamano > 1;
+    const tieneDescuento = Number(d.descuento) > 0;
+    const tienePrecioPromo = Number(d.precioPromo) > 0;
+    const tieneTexto = !!(d.texto && d.texto.trim());
+    const tienePromo = !!(d.promo && d.promo.trim());
+    const promoModoOtro = !!d.promoManual;
+    const partesResumen = [];
+    if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
+    if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
+    if(tienePrecioPromo) partesResumen.push(`🏷️ ${fmtEUR(d.precioPromo)} € promo`);
+    if(tienePromo) partesResumen.push(`🎁 ${d.promo}`);
+    if(tieneTexto) partesResumen.push(`📝 Con texto de pie`);
+    const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento / promo / texto…';
+    return `<div class="chip-item chip-producto" draggable="true" data-ref="${ref}" data-clave="${ref}">
+      <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar ${nombre}">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+      </button>
+      <span class="chip-orden">
+        <button type="button" class="chip-orden-btn" data-mover-clave="${ref}" data-delta="-1" title="Subir" aria-label="Subir ${nombre}" ${indice===0?'disabled':''}>▲</button>
+        <button type="button" class="chip-orden-btn" data-mover-clave="${ref}" data-delta="1" title="Bajar" aria-label="Bajar ${nombre}" ${indice===total-1?'disabled':''}>▼</button>
+      </span>
+      <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
+      <span class="chip-nombre" title="${nombre}">${nombre}</span>
+      <details class="destacar" ${(esDestacado||tieneDescuento||tienePrecioPromo||tieneTexto||tienePromo||promoModoOtro)?'open':''}>
+        <summary class="${(esDestacado||tieneDescuento||tienePrecioPromo||tieneTexto||tienePromo)?'activo':''}">${resumen}</summary>
+        <div class="destacar-panel">
+          <label>Tamaño
+            <select data-campo="tamano" data-ref="${ref}">
+              ${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n===d.tamano?'selected':''}>${n===1?'1 (normal)':n}</option>`).join('')}
+            </select>
+          </label>
+          <label>Alineación
+            <select data-campo="alinH" data-ref="${ref}" ${!esDestacado?'disabled':''}>
+              <option value="izquierda" ${d.alinH==='izquierda'?'selected':''}>Izquierda</option>
+              <option value="centro" ${d.alinH==='centro'?'selected':''}>Centro</option>
+              <option value="derecha" ${d.alinH==='derecha'?'selected':''}>Derecha</option>
+            </select>
+          </label>
+          <label>Posición
+            <select data-campo="posV" data-ref="${ref}" ${!esDestacado?'disabled':''}>
+              <option value="arriba" ${d.posV==='arriba'?'selected':''}>Arriba</option>
+              <option value="medio" ${d.posV==='medio'?'selected':''}>Medio</option>
+              <option value="abajo" ${d.posV==='abajo'?'selected':''}>Abajo</option>
+            </select>
+          </label>
+          <label>Descuento (%)
+            <input type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15" data-campo="descuento" data-ref="${ref}" value="${tieneDescuento ? d.descuento : ''}" ${tienePrecioPromo?'disabled':''}>
+          </label>
+          <label>Precio de promoción (€, con IVA)
+            <input type="number" inputmode="decimal" min="0" step="0.01" placeholder="p. ej. 44,25" data-campo="precioPromo" data-ref="${ref}" value="${tienePrecioPromo ? d.precioPromo : ''}" ${tieneDescuento?'disabled':''}>
+          </label>
+          <label>Promoción (aparte del descuento)
+            <select data-campo="promo" data-ref="${ref}">
+              <option value="">Ninguna</option>
+              ${PROMOS_PREDEFINIDAS_.map(op=>`<option value="${op}" ${(!promoModoOtro && d.promo===op)?'selected':''}>${op}</option>`).join('')}
+              <option value="__otro__" ${promoModoOtro?'selected':''}>Otro…</option>
+            </select>
+          </label>
+          <label class="destacar-panel-promo-otro" ${!promoModoOtro?'hidden':''}>Texto de la promoción
+            <input type="text" maxlength="${MAX_PROMO_PRODUCTO}" placeholder="p. ej. Llévate 3 por el precio de 2" data-campo="promoTexto" data-ref="${ref}" value="${promoModoOtro ? (d.promo||'').replace(/"/g,'&quot;') : ''}">
+          </label>
+          <label class="destacar-panel-ancho">Texto de pie (opcional — descripción, ayuda o detalle técnico)
+            <textarea data-campo="texto" data-ref="${ref}" maxlength="${MAX_TEXTO_PRODUCTO}" rows="2" placeholder="p. ej. Incluye 3 recambios de filtro">${(d.texto||'').replace(/</g,'&lt;')}</textarea>
+          </label>
+          <label class="destacar-panel-ancho">Grupo (agrupación del producto — vale para todos los escaparates, no solo este)
+            <input type="text" maxlength="${MAX_GRUPO_PRODUCTO}" placeholder="p. ej. MAQUINARIA" data-campo="grupoProducto" data-ref="${ref}" value="${((p&&p.grupo)||'').replace(/"/g,'&quot;')}">
+          </label>
+        </div>
+      </details>
+      <button type="button" class="chip-quitar" data-quitar-clave="${ref}" data-tipo="producto" title="Quitar de la campaña" aria-label="Quitar ${nombre}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>`;
+  }
+  function chipBloqueHTML_(id, indice, total){
+    const b = bloques[id] || { texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba' };
+    const texto = (b.texto||'').replace(/</g,'&lt;');
+    return `<div class="chip-item chip-bloque" draggable="true" data-clave="bloque:${id}">
+      <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar este bloque">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+      </button>
+      <span class="chip-orden">
+        <button type="button" class="chip-orden-btn" data-mover-clave="bloque:${id}" data-delta="-1" title="Subir" aria-label="Subir bloque" ${indice===0?'disabled':''}>▲</button>
+        <button type="button" class="chip-orden-btn" data-mover-clave="bloque:${id}" data-delta="1" title="Bajar" aria-label="Bajar bloque" ${indice===total-1?'disabled':''}>▼</button>
+      </span>
+      <div class="chip-bloque-cuerpo">
+        <span class="chip-bloque-etiqueta">${ICONS.sparkle}Bloque de texto/imagen</span>
+        <textarea data-campo-bloque="texto" data-bloque="${id}" maxlength="${MAX_TEXTO_BLOQUE}" rows="3" placeholder="Escribe aquí el texto de este bloque…">${texto}</textarea>
+        <div class="chip-bloque-opciones">
+          <label>Tamaño
+            <select data-campo-bloque="tamano" data-bloque="${id}">
+              ${Object.keys(TAMANOS_BLOQUE_ETIQUETAS_).map(k=>`<option value="${k}" ${k===b.tamano?'selected':''}>${TAMANOS_BLOQUE_ETIQUETAS_[k]}</option>`).join('')}
+            </select>
+          </label>
+          <label><input type="checkbox" data-campo-bloque="negrita" data-bloque="${id}" ${b.negrita?'checked':''}> Negrita</label>
+          <label><input type="checkbox" data-campo-bloque="cursiva" data-bloque="${id}" ${b.cursiva?'checked':''}> Cursiva</label>
+          <label>Imagen respecto al texto
+            <select data-campo-bloque="imagenPosicion" data-bloque="${id}" ${!b.imagen?'disabled':''}>
+              <option value="arriba" ${b.imagenPosicion==='arriba'?'selected':''}>Encima</option>
+              <option value="abajo" ${b.imagenPosicion==='abajo'?'selected':''}>Debajo</option>
+              <option value="izquierda" ${b.imagenPosicion==='izquierda'?'selected':''}>A la izquierda</option>
+              <option value="derecha" ${b.imagenPosicion==='derecha'?'selected':''}>A la derecha</option>
+            </select>
+          </label>
+        </div>
+        <div class="chip-bloque-imagen-zona" data-bloque-dropzone="${id}">
+          ${b.imagen ? `
+            <img class="chip-bloque-preview" src="${urlImagenCampana(b.imagen,200)}" alt="">
+            <div class="chip-bloque-imagen-acciones">
+              <button type="button" class="btn-link-chip" data-subir-imagen-bloque="${id}">Cambiar imagen</button>
+              <button type="button" class="btn-link-chip" data-quitar-imagen-bloque="${id}">Quitar imagen</button>
+            </div>
+          ` : `
+            <button type="button" class="chip-bloque-imagen-boton" data-subir-imagen-bloque="${id}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+              <span><b>Añadir imagen</b><small>Haz clic, arrastra el archivo aquí o pega con Ctrl+V</small></span>
+            </button>
+          `}
+        </div>
+      </div>
+      <button type="button" class="chip-quitar" data-quitar-clave="bloque:${id}" data-tipo="bloque" title="Quitar bloque" aria-label="Quitar bloque">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>`;
+  }
   function renderSeleccionados(){
     const cont = $("#selectedChips");
-    const refs = Array.from(selected);
-    $("#selectedHeadCount").textContent = refs.length;
-    $("#btnQuitarTodos").disabled = !refs.length;
-    cont.innerHTML = refs.map((ref, indice)=>{
-      const p = PRODUCTS[ref];
-      const nombre = (p ? p.nombre : ref).replace(/"/g,'&quot;');
-      const imgUrl = p ? urlImagenProducto(p, 80) : null;
-      const d = destacadoActual(ref);
-      const esDestacado = d.tamano > 1;
-      const tieneDescuento = Number(d.descuento) > 0;
-      const partesResumen = [];
-      if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
-      if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
-      const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento…';
-      return `<div class="chip-producto" draggable="true" data-ref="${ref}">
-        <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar ${nombre}">
-          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
-        </button>
-        <span class="chip-orden">
-          <button type="button" class="chip-orden-btn" data-mover="${ref}" data-delta="-1" title="Subir" aria-label="Subir ${nombre}" ${indice===0?'disabled':''}>▲</button>
-          <button type="button" class="chip-orden-btn" data-mover="${ref}" data-delta="1" title="Bajar" aria-label="Bajar ${nombre}" ${indice===refs.length-1?'disabled':''}>▼</button>
-        </span>
-        <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
-        <span class="chip-nombre" title="${nombre}">${nombre}</span>
-        <details class="destacar" ${(esDestacado||tieneDescuento)?'open':''}>
-          <summary class="${(esDestacado||tieneDescuento)?'activo':''}">${resumen}</summary>
-          <div class="destacar-panel">
-            <label>Tamaño
-              <select data-campo="tamano" data-ref="${ref}">
-                ${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n===d.tamano?'selected':''}>${n===1?'1 (normal)':n}</option>`).join('')}
-              </select>
-            </label>
-            <label>Alineación
-              <select data-campo="alinH" data-ref="${ref}" ${!esDestacado?'disabled':''}>
-                <option value="izquierda" ${d.alinH==='izquierda'?'selected':''}>Izquierda</option>
-                <option value="centro" ${d.alinH==='centro'?'selected':''}>Centro</option>
-                <option value="derecha" ${d.alinH==='derecha'?'selected':''}>Derecha</option>
-              </select>
-            </label>
-            <label>Posición
-              <select data-campo="posV" data-ref="${ref}" ${!esDestacado?'disabled':''}>
-                <option value="arriba" ${d.posV==='arriba'?'selected':''}>Arriba</option>
-                <option value="medio" ${d.posV==='medio'?'selected':''}>Medio</option>
-                <option value="abajo" ${d.posV==='abajo'?'selected':''}>Abajo</option>
-              </select>
-            </label>
-            <label>Descuento (%)
-              <input type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15" data-campo="descuento" data-ref="${ref}" value="${tieneDescuento ? d.descuento : ''}">
-            </label>
-          </div>
-        </details>
-        <button type="button" class="chip-quitar" data-quitar="${ref}" title="Quitar de la campaña" aria-label="Quitar ${nombre}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>`;
+    const items = ordenMostrar;
+    $("#selectedHeadCount").textContent = items.filter(it=>it.tipo==='producto').length;
+    $("#btnQuitarTodos").disabled = !items.length;
+    cont.innerHTML = items.map((it, indice)=>{
+      return it.tipo === 'bloque' ? chipBloqueHTML_(it.id, indice, items.length) : chipProductoHTML_(it.ref, indice, items.length);
     }).join("");
-    $$("[data-quitar]", cont).forEach(btn=>{
+    $$("[data-quitar-clave]", cont).forEach(btn=>{
       btn.addEventListener("click", ()=>{
-        const ref = btn.dataset.quitar;
-        selected.delete(ref);
-        sugeridosIA = sugeridosIA.filter(r=>r!==ref);
-        delete destacados[ref];
+        if(btn.dataset.tipo === 'bloque'){
+          quitarBloqueDeOrden_(btn.dataset.quitarClave.replace(/^bloque:/, ''));
+        } else {
+          const ref = btn.dataset.quitarClave;
+          quitarProductoDeOrden_(ref);
+          sugeridosIA = sugeridosIA.filter(r=>r!==ref);
+          delete destacados[ref];
+        }
         updateSelCount();
         renderSeleccionados();
         renderPicker(); // por si el mismo producto se ve también en la búsqueda/sugerencias, para desmarcarlo ahí también
       });
     });
-    $$("[data-mover]", cont).forEach(btn=>{
+    $$("[data-mover-clave]", cont).forEach(btn=>{
       btn.addEventListener("click", ()=>{
-        moverProductoSeleccionado_(btn.dataset.mover, parseInt(btn.dataset.delta, 10));
+        moverEnOrden_(btn.dataset.moverClave, parseInt(btn.dataset.delta, 10));
       });
     });
     // Arrastrar y soltar para reordenar (drag-and-drop nativo del
@@ -2824,27 +3292,29 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // no es fiable en móvil). Solo arranca el arrastre si se agarra
     // desde el tirador (chip-arrastrar): el resto de la chip tiene
     // <select>/<input> con los que hay que poder interactuar con
-    // normalidad.
-    $$(".chip-producto", cont).forEach(chip=>{
+    // normalidad. ".chip-item" cubre tanto productos como bloques de
+    // contenido, para poder arrastrar y mezclar los dos tipos en el
+    // mismo orden.
+    $$(".chip-item", cont).forEach(chip=>{
       chip.addEventListener("dragstart", (e)=>{
         if(!e.target.closest(".chip-arrastrar")){ e.preventDefault(); return; }
-        refArrastrando_ = chip.dataset.ref;
+        claveArrastrando_ = chip.dataset.clave;
         chip.classList.add("arrastrando");
         e.dataTransfer.effectAllowed = "move";
-        try{ e.dataTransfer.setData("text/plain", refArrastrando_); }catch(err){}
+        try{ e.dataTransfer.setData("text/plain", claveArrastrando_); }catch(err){}
       });
       chip.addEventListener("dragend", ()=>{
         chip.classList.remove("arrastrando");
-        $$(".chip-producto", cont).forEach(c=>c.classList.remove("arrastrando-sobre"));
-        refArrastrando_ = null;
+        $$(".chip-item", cont).forEach(c=>c.classList.remove("arrastrando-sobre"));
+        claveArrastrando_ = null;
       });
       chip.addEventListener("dragover", (e)=>{
-        if(!refArrastrando_) return;
+        if(!claveArrastrando_) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
       });
       chip.addEventListener("dragenter", ()=>{
-        if(refArrastrando_ && refArrastrando_ !== chip.dataset.ref) chip.classList.add("arrastrando-sobre");
+        if(claveArrastrando_ && claveArrastrando_ !== chip.dataset.clave) chip.classList.add("arrastrando-sobre");
       });
       chip.addEventListener("dragleave", ()=>{
         chip.classList.remove("arrastrando-sobre");
@@ -2852,18 +3322,56 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       chip.addEventListener("drop", (e)=>{
         e.preventDefault();
         chip.classList.remove("arrastrando-sobre");
-        const refDestino = chip.dataset.ref;
-        if(!refArrastrando_ || refArrastrando_ === refDestino) return;
-        const refs = Array.from(selected);
-        const iOrigen = refs.indexOf(refArrastrando_);
-        if(iOrigen === -1 || refs.indexOf(refDestino) === -1) return;
-        refs.splice(iOrigen, 1);
+        const claveDestino = chip.dataset.clave;
+        if(!claveArrastrando_ || claveArrastrando_ === claveDestino) return;
+        const iOrigen = ordenMostrar.findIndex(it=>claveDeItem_(it)===claveArrastrando_);
+        if(iOrigen === -1 || ordenMostrar.findIndex(it=>claveDeItem_(it)===claveDestino) === -1) return;
+        const [itemMovido] = ordenMostrar.splice(iOrigen, 1);
         // Recalculado tras el splice: si el origen estaba antes del
         // destino, el índice del destino se ha desplazado una posición.
-        const iDestinoTrasQuitar = refs.indexOf(refDestino);
-        refs.splice(iDestinoTrasQuitar, 0, refArrastrando_);
-        selected = new Set(refs);
+        const iDestinoTrasQuitar = ordenMostrar.findIndex(it=>claveDeItem_(it)===claveDestino);
+        ordenMostrar.splice(iDestinoTrasQuitar, 0, itemMovido);
         renderSeleccionados();
+      });
+    });
+    $$("[data-campo-bloque]", cont).forEach(campo=>{
+      campo.addEventListener("change", ()=>{
+        const id = campo.dataset.bloque;
+        const b = bloques[id];
+        if(!b) return;
+        const nombreCampo = campo.dataset.campoBloque;
+        if(nombreCampo === 'negrita' || nombreCampo === 'cursiva') b[nombreCampo] = campo.checked;
+        else if(nombreCampo === 'texto') b.texto = campo.value.slice(0, MAX_TEXTO_BLOQUE);
+        else b[nombreCampo] = campo.value;
+        renderSeleccionados();
+      });
+    });
+    $$("[data-subir-imagen-bloque]", cont).forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        bloqueImagenObjetivo_ = btn.dataset.subirImagenBloque;
+        bloqueEnfocado_ = btn.dataset.subirImagenBloque;
+        $("#bloqueImgInput").click();
+      });
+    });
+    // Arrastrar y soltar un archivo de imagen directamente sobre la zona
+    // del bloque — mismo patrón que la foto de fondo de la campaña (ver
+    // zonaImagenCampana en escaparate-campanas.html).
+    $$("[data-bloque-dropzone]", cont).forEach(zona=>{
+      const id = zona.dataset.bloqueDropzone;
+      ['dragenter','dragover'].forEach(evento => {
+        zona.addEventListener(evento, (e)=>{ e.preventDefault(); e.stopPropagation(); zona.classList.add('is-dragover'); });
+      });
+      ['dragleave','drop'].forEach(evento => {
+        zona.addEventListener(evento, (e)=>{ e.preventDefault(); e.stopPropagation(); zona.classList.remove('is-dragover'); });
+      });
+      zona.addEventListener('drop', (e)=>{
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if(file) subirImagenBloque_(id, file);
+      });
+    });
+    $$("[data-quitar-imagen-bloque]", cont).forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        eliminarImagenBloque_(btn.dataset.quitarImagenBloque);
       });
     });
     $$("[data-campo]", cont).forEach(campo=>{
@@ -2874,36 +3382,155 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // campo de descuento perdería el foco a la primera cifra escrita.
       // 'change' solo dispara al salir del campo (o pulsar Enter), que es
       // justo cuando SÍ hace falta refrescar el resumen.
+      // 'change' también para el <textarea> de texto (no 'input'): igual
+      // que con el descuento, con 'input' se perdería el foco a la
+      // primera tecla al reconstruir renderSeleccionados() el HTML entero.
       campo.addEventListener("change", ()=>{
         const ref = campo.dataset.ref;
         const nombreCampo = campo.dataset.campo;
+        // "Grupo" es un campo del PRODUCTO MAESTRO (vale para todos los
+        // escaparates, no solo esta campaña) — no vive en "destacados"
+        // como el resto de campos de este panel, así que se guarda aparte
+        // con su propia acción (ver guardarGrupoProducto_).
+        if(nombreCampo === 'grupoProducto'){
+          guardarGrupoProducto_(ref, campo.value.trim().slice(0, MAX_GRUPO_PRODUCTO));
+          return;
+        }
         const actual = Object.assign({}, destacadoActual(ref));
         if(nombreCampo === 'tamano') actual.tamano = parseInt(campo.value, 10);
         else if(nombreCampo === 'descuento'){
           const n = parseFloat(campo.value);
           actual.descuento = (isFinite(n) && n > 0) ? Math.min(Math.round(n), 95) : 0;
+          // Mutuamente excluyente con el precio de promoción fijo — dos
+          // formas distintas de decir lo mismo (el precio final), no
+          // tiene sentido guardar las dos a la vez.
+          if(actual.descuento) actual.precioPromo = 0;
         }
+        else if(nombreCampo === 'precioPromo'){
+          const n = parseFloat((campo.value || '').toString().replace(',', '.'));
+          actual.precioPromo = (isFinite(n) && n > 0) ? Math.round(n * 100) / 100 : 0;
+          if(actual.precioPromo) actual.descuento = 0;
+        }
+        else if(nombreCampo === 'texto') actual.texto = campo.value.trim().slice(0, MAX_TEXTO_PRODUCTO);
+        else if(nombreCampo === 'promo'){
+          if(campo.value === '__otro__'){ actual.promoManual = true; actual.promo = ''; }
+          else { actual.promoManual = false; actual.promo = campo.value; }
+        }
+        else if(nombreCampo === 'promoTexto'){ actual.promo = campo.value.trim().slice(0, MAX_PROMO_PRODUCTO); actual.promoManual = true; }
         else actual[nombreCampo] = campo.value;
         // Antes se borraba la entrada entera en cuanto tamano<=1 — correcto
         // cuando "destacados" solo servía para tamaño/posición, pero ahora
-        // también hace falta guardar un descuento propio aunque el
-        // producto no esté agrandado. Solo se borra si de verdad no
-        // aporta nada (ni tamaño destacado ni descuento).
-        if(actual.tamano <= 1 && !actual.descuento) delete destacados[ref];
+        // también hace falta guardar un descuento propio (% o precio fijo),
+        // un texto de pie o una promo, aunque el producto no esté
+        // agrandado. Solo se borra si de verdad no aporta nada.
+        // "!actual.promoManual" también cuenta aquí (no solo "!actual.promo"):
+        // si se acaba de elegir "Otro" en el selector pero todavía no se ha
+        // escrito el texto, hay que mantener la entrada viva para que el
+        // campo de texto siga visible — si no, se borraría de inmediato y
+        // la elección de "Otro" se perdería antes de poder escribir nada.
+        if(actual.tamano <= 1 && !actual.descuento && !actual.precioPromo && !actual.texto && !actual.promo && !actual.promoManual) delete destacados[ref];
         else destacados[ref] = actual;
         renderSeleccionados(); // refresca el resumen del <summary> (y habilita/deshabilita alineación/posición)
       });
     });
   }
   $("#btnQuitarTodos").addEventListener("click", ()=>{
-    if(!selected.size) return;
-    if(!confirm(`¿Quitar los ${selected.size} productos de esta campaña? El cambio no se guarda hasta que pulses "Guardar productos".`)) return;
+    if(!selected.size && !ordenMostrar.some(it=>it.tipo==='bloque')) return;
+    if(!confirm(`¿Quitar los ${selected.size} productos (y los bloques de contenido) de esta campaña? El cambio no se guarda hasta que pulses "Guardar productos".`)) return;
     selected.clear();
     sugeridosIA = [];
     destacados = {};
+    bloques = {};
+    ordenMostrar = [];
     updateSelCount();
     renderSeleccionados();
     renderPicker();
+  });
+
+  $("#btnAnadirBloqueContenido").addEventListener("click", ()=>{
+    crearBloqueNuevo_();
+    renderSeleccionados();
+  });
+
+  // Subida/eliminación de imagen de un bloque de contenido — mismo
+  // patrón que subirImagenCampana() en escaparate-campanas.html (foto
+  // de fondo de la campaña), pero aplicado a un bloque anidado dentro
+  // de "bloques_contenido". Requiere que el bloque ya exista en el
+  // servidor (es decir, haber pulsado "Guardar productos" al menos una
+  // vez tras crearlo) — el backend lo avisa con un error claro si no.
+  let bloqueImagenObjetivo_ = null;
+  // Bloque "activo" para pegar una imagen con Ctrl+V — se actualiza al
+  // enfocar cualquier campo de un bloque (su texto, o el propio botón de
+  // subir imagen), igual que ya se hace para campanaImgPreview pero por
+  // bloque: aquí puede haber varios bloques a la vez, así que hace falta
+  // saber sobre cuál se quiere pegar.
+  let bloqueEnfocado_ = null;
+  $("#selectedChips").addEventListener('focusin', (e)=>{
+    const chip = e.target.closest('.chip-bloque');
+    if(chip) bloqueEnfocado_ = chip.dataset.clave.replace(/^bloque:/, '');
+  });
+  document.addEventListener('paste', (ev)=>{
+    if(!modalProductos.open || !bloqueEnfocado_ || !bloques[bloqueEnfocado_]) return;
+    const item = Array.from(ev.clipboardData?.items || []).find(i => i.type.startsWith('image/'));
+    if(!item) return;
+    ev.preventDefault();
+    subirImagenBloque_(bloqueEnfocado_, item.getAsFile());
+  });
+  async function subirImagenBloque_(id, file){
+    const campaignId = modalProductos.dataset.campaignId;
+    if(!file || !file.type || !file.type.startsWith('image/')){
+      toast('Elige un archivo de imagen.', true);
+      return;
+    }
+    const LIMITE_MB = 5;
+    if(file.size > LIMITE_MB*1024*1024){
+      toast(`La imagen pesa demasiado (máximo ${LIMITE_MB} MB).`, true);
+      return;
+    }
+    try{
+      const base64 = await new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+        reader.readAsDataURL(file);
+      });
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          accion:'actualizar_imagen_bloque_contenido', id:campaignId, bloqueId:id, pin: productosPin_,
+          archivo: { nombre:file.name || 'imagen-bloque.png', tipo:file.type, datos: base64 },
+        }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      if(bloques[id]) bloques[id].imagen = data.imagen;
+      renderSeleccionados();
+      toast('Imagen del bloque actualizada.');
+    } catch(err){
+      toast('No se pudo subir la imagen: ' + err.message, true);
+    }
+  }
+  async function eliminarImagenBloque_(id){
+    const campaignId = modalProductos.dataset.campaignId;
+    if(!confirm('¿Quitar la imagen de este bloque?')) return;
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ accion:'eliminar_imagen_bloque_contenido', id:campaignId, bloqueId:id, pin: productosPin_ }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      if(bloques[id]) bloques[id].imagen = '';
+      renderSeleccionados();
+      toast('Imagen del bloque eliminada.');
+    } catch(err){
+      toast('No se pudo quitar la imagen: ' + err.message, true);
+    }
+  }
+  $("#bloqueImgInput").addEventListener("change", (ev)=>{
+    const file = ev.target.files[0];
+    ev.target.value = '';
+    if(file && bloqueImagenObjetivo_) subirImagenBloque_(bloqueImagenObjetivo_, file);
   });
 
   // Acceso con PIN — mismo patrón que "Gestionar destacados" en
@@ -2984,10 +3611,37 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       sugeridosIA = [];
       destacados = {};
       (Array.isArray(c.destacados) ? c.destacados : []).forEach(d=>{
-        if(d && d.ref) destacados[d.ref] = { tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0 };
+        if(d && d.ref) destacados[d.ref] = {
+          tamano:d.tamano||1, alinH:d.alinH||'centro', posV:d.posV||'medio', descuento:Number(d.descuento)||0,
+          precioPromo:Number(d.precioPromo)||0, texto:d.texto||'',
+          promo:d.promo||'',
+          // "Modo Otro" del selector de promoción: cualquier promo guardada
+          // que no esté en la lista predefinida viene de "Otro" — así el
+          // selector reabre ya en "Otro" con su texto libre, en vez de
+          // perder esa elección y mostrar el valor guardado como opción
+          // inexistente del <select>.
+          promoManual: !!(d.promo && PROMOS_PREDEFINIDAS_.indexOf(d.promo) === -1),
+        };
       });
+      bloques = {};
+      (Array.isArray(c.bloquesContenido) ? c.bloquesContenido : []).forEach(b=>{
+        if(b && b.id) bloques[b.id] = {
+          id:b.id, texto:b.texto||'', tamano:b.tamano||'normal', negrita:!!b.negrita, cursiva:!!b.cursiva,
+          imagen:b.imagen||'', imagenPosicion:b.imagenPosicion||'arriba',
+        };
+      });
+      // Escaparates guardados antes de esta función no tienen
+      // "ordenContenido" — se reconstruye entonces a partir del orden
+      // ya guardado en c.productos (sin bloques, que es justo lo que
+      // había hasta ahora).
+      const ordenGuardado = Array.isArray(c.ordenContenido) ? c.ordenContenido : [];
+      ordenMostrar = ordenGuardado.length
+        ? ordenGuardado.map(clave => (clave.indexOf('bloque:') === 0 ? { tipo:'bloque', id: clave.slice(7) } : { tipo:'producto', ref: clave }))
+          .filter(it => it.tipo === 'bloque' ? bloques[it.id] : selected.has(it.ref))
+        : c.productos.map(ref => ({ tipo:'producto', ref }));
       updateSelCount();
       renderSeleccionados();
+      $("#chkAgruparProductos").checked = !!c.agruparProductos;
       $("#modalProdCampana").textContent = c.nombre;
       $("#fBusca").value = "";
       $("#fFamilia").value = "";
@@ -3120,7 +3774,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       }
 
       sugeridosIA = Array.from(encontrados.keys());
-      sugeridosIA.forEach(ref=>selected.add(ref));
+      sugeridosIA.forEach(ref=>agregarProductoAOrden_(ref));
       updateSelCount();
       renderSeleccionados();
       $("#fBusca").value = '';
@@ -3151,21 +3805,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // sanearDestacados_ del backend, que es quien decide de verdad qué
     // se guarda — esto es solo para no mandar de más).
     const destacadosArr = productosArr
-      .filter(ref => destacados[ref] && (destacados[ref].tamano > 1 || Number(destacados[ref].descuento) > 0))
+      .filter(ref => destacados[ref] && (destacados[ref].tamano > 1 || Number(destacados[ref].descuento) > 0 || Number(destacados[ref].precioPromo) > 0 || (destacados[ref].texto && destacados[ref].texto.trim()) || (destacados[ref].promo && destacados[ref].promo.trim())))
       .map(ref => ({
         ref, tamano: destacados[ref].tamano, alinH: destacados[ref].alinH, posV: destacados[ref].posV,
         descuento: Number(destacados[ref].descuento) || 0,
+        precioPromo: Number(destacados[ref].precioPromo) || 0,
+        texto: (destacados[ref].texto || '').trim(),
+        promo: (destacados[ref].promo || '').trim(),
       }));
+    const agruparProductos = $("#chkAgruparProductos").checked;
+    // Solo se mandan los bloques que de verdad siguen en ordenMostrar
+    // (crearBloqueNuevo_ ya los añade ahí al crearlos, y quitarBloqueDeOrden_
+    // los borra de los dos sitios a la vez — pero por si acaso, nunca se
+    // manda un bloque huérfano que ya no esté en el orden).
+    const clavesBloqueEnOrden = new Set(ordenMostrar.filter(it=>it.tipo==='bloque').map(it=>it.id));
+    const bloquesArr = Object.values(bloques).filter(b => clavesBloqueEnOrden.has(b.id));
+    const ordenContenidoArr = ordenMostrar.map(claveDeItem_);
     try{
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones del proyecto
-        body: JSON.stringify({ accion:'actualizar_productos_campana', id:campaignId, pin: productosPin_, productos:productosArr, destacados:destacadosArr }),
+        body: JSON.stringify({ accion:'actualizar_productos_campana', id:campaignId, pin: productosPin_, productos:productosArr, destacados:destacadosArr, agrupar:agruparProductos, bloques:bloquesArr, ordenContenido:ordenContenidoArr }),
       });
       const data = await resp.json();
       if(!data.success) throw new Error(data.error || 'Error desconocido');
       const c = findCampaign(campaignId);
-      if(c){ c.productos = productosArr; c.destacados = data.destacados || destacadosArr; }
+      if(c){
+        c.productos = productosArr; c.destacados = data.destacados || destacadosArr; c.agruparProductos = !!data.agrupar;
+        c.bloquesContenido = data.bloques || bloquesArr; c.ordenContenido = data.ordenContenido || ordenContenidoArr;
+      }
       // Sincroniza la caché de sesión con este mismo cambio local — así
       // si el usuario vuelve al listado o entra en otro escaparate, no
       // ve el número de productos de antes de este guardado.
@@ -3696,25 +4364,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
       // Mismo orden que ya ve el visitante en el estante (arriba/medio/
       // abajo según destacados[].posV) — el folleto refleja el mismo
-      // escaparate, no un orden distinto inventado para el PDF.
+      // escaparate, no un orden distinto inventado para el PDF. Con
+      // "Agrupar productos" activado se ignora este reordenado (igual
+      // que en la propia página — ver render()): el orden pasa a ser el
+      // EXACTO guardado en c.productos, para que un grupo salga siempre
+      // en un único bloque contiguo en vez de romperse por posV.
       const destacadosMap = {};
       (Array.isArray(c.destacados) ? c.destacados : []).forEach(d => { if(d && d.ref) destacadosMap[d.ref] = d; });
       const PESO_POSICION = { arriba:-1, medio:0, abajo:1 };
-      const refsOrdenados = c.productos.slice().sort((a,b) => {
+      const refsOrdenados = c.agruparProductos ? c.productos.slice() : c.productos.slice().sort((a,b) => {
         const pa = PESO_POSICION[(destacadosMap[a]||{}).posV] || 0;
         const pb = PESO_POSICION[(destacadosMap[b]||{}).posV] || 0;
         return pa - pb;
       });
 
-      // Las fotos de producto se piden más abajo, una vez calculada la
-      // rejilla (ver itemsColocados) — cada una se recorta al recuadro
-      // EXACTO que le toca en su tarjeta (ver cajaImagenDe), así que hace
-      // falta conocer antes el tamaño real de esa tarjeta (normal, ancha
-      // o grande). El logo es de este mismo origen, sin límite de
-      // peticiones ni recorte que dependa del layout, así que se pide ya
-      // — junto con la foto propia del escaparate (c.imagenFondo, la
-      // misma que se ve nítida en .vitrina-foto en la propia página), que
-      // solo existe si la campaña tiene una asignada.
+      // Las fotos de producto se piden más abajo (ver itemsFotos), sin
+      // depender de dónde acabe colocada cada una en la rejilla (ver
+      // empaquetarGrupo_, más abajo) — nunca se recortan a un recuadro
+      // concreto, solo se encajan en modo "contain" al dibujar la
+      // tarjeta (ver dibujarTarjetaProducto). El logo es de este mismo
+      // origen, sin límite de peticiones ni recorte que dependa del
+      // layout, así que se pide ya — junto con la foto propia del
+      // escaparate (c.imagenFondo, la misma que se ve nítida en
+      // .vitrina-foto en la propia página), que solo existe si la
+      // campaña tiene una asignada.
       const ANCHO_FOTO_CABECERA = 46, ALTO_FOTO_CABECERA = ANCHO_FOTO_CABECERA * 3/4; // mismo 4:3 que .vitrina-foto
       const [logo, fotoCabecera] = await Promise.all([
         cargarImagenDataURL('./assets/logos/logo-orencio.png', { tipo:'image/png' }),
@@ -3997,11 +4670,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // normales (tamaño 1) no muestran ni familia ni esa línea extra,
       // así que necesitan menos.
       const CHROME_NORMAL = 24, CHROME_GRANDE = 32;
-      // Mismo cálculo usado para pedir la foto ya recortada (más abajo) y
-      // para colocarla en la tarjeta (dibujarTarjetaProducto) — tienen
-      // que coincidir exactamente, o el recorte no llenaría el hueco real.
-      function cajaImagenDe(anchoTarjeta, altoTarjeta, grande){
-        const chrome = grande ? CHROME_GRANDE : CHROME_NORMAL;
+      // Presupuesto EXTRA para el pie de producto (texto corto opcional,
+      // ver destacadosMap[ref].texto) — solo se resta cuando el producto
+      // de verdad tiene texto, para no reducir el hueco de imagen de
+      // todos los demás productos que no lo usan.
+      const CHROME_TEXTO_PRODUCTO = 8;
+      // Mismo cálculo usado para colocar la foto en la tarjeta
+      // (dibujarTarjetaProducto) — antes también se usaba para pedir la
+      // foto ya recortada, pero ya no se recorta (ver itemsFotos).
+      function cajaImagenDe(anchoTarjeta, altoTarjeta, grande, tieneTexto){
+        let chrome = grande ? CHROME_GRANDE : CHROME_NORMAL;
+        if(tieneTexto) chrome += CHROME_TEXTO_PRODUCTO;
         return { w: anchoTarjeta - padTarjeta*2, h: Math.max(20, altoTarjeta - chrome) };
       }
 
@@ -4056,46 +4735,124 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // en su lugar, el siguiente producto normal que sí cabe en una
       // sola fila.
       const filaAltura_ = ROW_UNIT + gapY;
-      const filasPagina0_ = Math.max(1, Math.floor((footerTopY - 2 - cursorY) / filaAltura_));
       const filasPaginaN_ = Math.max(1, Math.floor((footerTopY - 2 - (headerBottomY + 8)) / filaAltura_));
-      function finDePaginaDeFila_(fila){
-        if(fila < filasPagina0_) return filasPagina0_ - 1;
-        const pagina = Math.floor((fila - filasPagina0_) / filasPaginaN_);
-        return filasPagina0_ + (pagina + 1) * filasPaginaN_ - 1;
-      }
-      const colOcupacion_ = [];
-      function asegurarFilaRejilla_(i){
-        while(colOcupacion_.length <= i) colOcupacion_.push(new Array(baseCols).fill(false));
-      }
-      function buscarHuecoRejilla_(spanCols, spanRows){
-        let fila = 0;
-        for(;;){
-          if(fila + spanRows - 1 <= finDePaginaDeFila_(fila)){
-            asegurarFilaRejilla_(fila + spanRows - 1);
-            for(let col = 0; col <= baseCols - spanCols; col++){
-              let cabe = true;
-              for(let r = 0; r < spanRows && cabe; r++){
-                for(let c = 0; c < spanCols && cabe; c++){
-                  if(colOcupacion_[fila+r][col+c]) cabe = false;
-                }
-              }
-              if(cabe) return { fila, col };
-            }
-          }
-          fila++;
+      // Empaqueta UN grupo de refs en su PROPIA rejilla 2D, nueva y vacía
+      // — cuando "Agrupar productos" está activo, cada grupo arranca
+      // siempre en una fila nueva, nunca compartiendo huecos con el
+      // grupo anterior (así un destacado del grupo A nunca "roba" hueco
+      // a un producto normal del grupo B). Sin agrupación, solo hay un
+      // "grupo" (todos los productos), así que este empaquetado se llama
+      // una única vez — mismo resultado que antes de añadir grupos.
+      // "filasPaginaActual" se recalcula aquí, con el cursorY REAL en el
+      // momento de llamar (que ya ha avanzado por los grupos/títulos
+      // anteriores) — no es un valor fijo calculado una sola vez al
+      // principio, como pasaba antes de que existieran los grupos.
+      function empaquetarGrupo_(refs){
+        const filasPaginaActual = Math.max(1, Math.floor((footerTopY - 2 - cursorY) / filaAltura_));
+        function finDePaginaDeFila_(fila){
+          if(fila < filasPaginaActual) return filasPaginaActual - 1;
+          const pagina = Math.floor((fila - filasPaginaActual) / filasPaginaN_);
+          return filasPaginaActual + (pagina + 1) * filasPaginaN_ - 1;
         }
-      }
-      function ocuparRejilla_(fila, col, spanCols, spanRows){
-        for(let r = 0; r < spanRows; r++) for(let c = 0; c < spanCols; c++) colOcupacion_[fila+r][col+c] = true;
+        const colOcupacion_ = [];
+        function asegurarFilaRejilla_(i){
+          while(colOcupacion_.length <= i) colOcupacion_.push(new Array(baseCols).fill(false));
+        }
+        function buscarHuecoRejilla_(spanCols, spanRows){
+          let fila = 0;
+          for(;;){
+            if(fila + spanRows - 1 <= finDePaginaDeFila_(fila)){
+              asegurarFilaRejilla_(fila + spanRows - 1);
+              for(let col = 0; col <= baseCols - spanCols; col++){
+                let cabe = true;
+                for(let r = 0; r < spanRows && cabe; r++){
+                  for(let c = 0; c < spanCols && cabe; c++){
+                    if(colOcupacion_[fila+r][col+c]) cabe = false;
+                  }
+                }
+                if(cabe) return { fila, col };
+              }
+            }
+            fila++;
+          }
+        }
+        function ocuparRejilla_(fila, col, spanCols, spanRows){
+          for(let r = 0; r < spanRows; r++) for(let c = 0; c < spanCols; c++) colOcupacion_[fila+r][col+c] = true;
+        }
+        const itemsColocados = refs.map(ref => {
+          const spec = especTarjeta(ref);
+          const { fila, col } = buscarHuecoRejilla_(spec.spanCols, spec.spanRows);
+          ocuparRejilla_(fila, col, spec.spanCols, spec.spanRows);
+          return { ref, fila, col, spanCols: spec.spanCols, spanRows: spec.spanRows };
+        });
+        return { itemsColocados, totalFilasRejilla: colOcupacion_.length };
       }
 
-      const itemsColocados = refsOrdenados.map(ref => {
-        const spec = especTarjeta(ref);
-        const { fila, col } = buscarHuecoRejilla_(spec.spanCols, spec.spanRows);
-        ocuparRejilla_(fila, col, spec.spanCols, spec.spanRows);
-        return { ref, fila, col, spanCols: spec.spanCols, spanRows: spec.spanRows };
-      });
-      const totalFilasRejilla = colOcupacion_.length;
+      // Agrupación — petición real de Eloy a partir de un folleto manual
+      // de ejemplo, que agrupa los productos bajo títulos de sección:
+      // "si se agrupan se mostrará en el escaparate y en el pdf
+      // agrupados por el texto indicado en los productos". Mismo
+      // criterio "sin reordenar nada" que en la propia página (ver
+      // render()): un grupo nuevo empieza cada vez que el campo "grupo"
+      // del producto CAMBIA respecto al anterior en refsOrdenados — un
+      // grupo repetido más adelante (no contiguo) simplemente vuelve a
+      // salir con su mismo título, en vez de "fusionarse" con el bloque
+      // de antes reordenando productos.
+      function construirGruposDeTramoFolleto_(refsTramo){
+        const salida = [];
+        if(c.agruparProductos){
+          let grupoAnterior = Symbol('sin-grupo');
+          refsTramo.forEach(ref => {
+            const grupoActual = ((PRODUCTS[ref] && PRODUCTS[ref].grupo) || '').toString().trim();
+            if(grupoActual !== grupoAnterior){
+              salida.push({ tipo:'grupo', titulo: grupoActual || null, refs: [] });
+              grupoAnterior = grupoActual;
+            }
+            salida[salida.length - 1].refs.push(ref);
+          });
+        } else {
+          salida.push({ tipo:'grupo', titulo: null, refs: refsTramo });
+        }
+        return salida;
+      }
+
+      // Bloques de contenido (texto + imagen) intercalados en cualquier
+      // punto del folleto — mismo criterio que en la vitrina web (ver
+      // render()): el agrupado por campo "grupo" y el ordenado por posV
+      // se siguen aplicando, pero solo DENTRO de cada tramo de productos
+      // entre dos bloques, nunca cruzando uno.
+      const bloquesContenidoMapFolleto_ = {};
+      (Array.isArray(c.bloquesContenido) ? c.bloquesContenido : []).forEach(b=>{ if(b && b.id) bloquesContenidoMapFolleto_[b.id] = b; });
+      const tieneBloquesContenidoFolleto_ = Array.isArray(c.ordenContenido) && c.ordenContenido.some(cl => (cl||'').indexOf('bloque:') === 0);
+
+      const gruposFolleto = [];
+      if(tieneBloquesContenidoFolleto_){
+        const refsValidosFolleto_ = new Set(c.productos);
+        const secuenciaFolleto_ = c.ordenContenido.filter(cl => (cl||'').indexOf('bloque:') === 0 ? !!bloquesContenidoMapFolleto_[cl.slice(7)] : refsValidosFolleto_.has(cl));
+        c.productos.forEach(ref => { if(secuenciaFolleto_.indexOf(ref) === -1) secuenciaFolleto_.push(ref); });
+        let tramoActual = [];
+        const cerrarTramoFolleto_ = () => {
+          if(!tramoActual.length) return;
+          const tramoOrdenado = c.agruparProductos ? tramoActual : tramoActual.slice().sort((a,b) => {
+            const pa = PESO_POSICION[(destacadosMap[a]||{}).posV] || 0;
+            const pb = PESO_POSICION[(destacadosMap[b]||{}).posV] || 0;
+            return pa - pb;
+          });
+          gruposFolleto.push(...construirGruposDeTramoFolleto_(tramoOrdenado));
+          tramoActual = [];
+        };
+        secuenciaFolleto_.forEach(clave => {
+          if(clave.indexOf('bloque:') === 0){
+            cerrarTramoFolleto_();
+            gruposFolleto.push({ tipo:'bloque', bloque: bloquesContenidoMapFolleto_[clave.slice(7)] });
+          } else {
+            tramoActual.push(clave);
+          }
+        });
+        cerrarTramoFolleto_();
+      } else {
+        gruposFolleto.push(...construirGruposDeTramoFolleto_(refsOrdenados));
+      }
 
       // Las fotos de producto se piden SIN recortar (sin recorteRatio):
       // se dibujan siempre enteras, en modo "contain" (ver
@@ -4111,14 +4868,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // "Contain" nunca corta nada — como mucho dejará algo más de
       // margen alrededor en los productos con una proporción muy
       // distinta a su hueco, pero nunca pierde parte de la foto.
-      const itemsFotos = itemsColocados.map(it => {
-        const p = PRODUCTS[it.ref];
+      const itemsFotos = refsOrdenados.map(ref => {
+        const p = PRODUCTS[ref];
         return {
-          ref: it.ref,
+          ref: ref,
           url: p ? urlImagenProductoFolleto(p, 500) : null,
           opciones: {}
         };
-      });
+      }).concat(
+        gruposFolleto.filter(g => g.tipo === 'bloque' && g.bloque && g.bloque.imagen).map(g => ({
+          ref: 'bloque:' + g.bloque.id,
+          url: urlImagenCampanaFolleto(g.bloque.imagen, 700),
+          opciones: {}
+        }))
+      );
       fijarEstadoBoton(`Extrayendo imágenes… (0/${itemsFotos.length})`);
       const fotos = await cargarImagenesEnTandas(itemsFotos, (completadas, total) => {
         fijarEstadoBoton(`Extrayendo imágenes… (${completadas}/${total})`);
@@ -4155,9 +4918,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         }
         const d = destacadosMap[ref] || null;
         const precioMayorFolleto = precioMayorEscaparate_(p);
-        const descuento = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
-        const tieneDescuento = !precioMayorFolleto && descuento > 0;
+        // Precio de promoción FIJO del producto — manda sobre cualquier
+        // % de descuento (propio o de campaña) cuando está informado,
+        // mismo criterio que en la tarjeta pública y el modal.
+        const precioPromo = (d && Number(d.precioPromo) > 0) ? Number(d.precioPromo) : 0;
+        const descuento = precioPromo ? 0 : ((d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0));
+        const tienePrecioPromo = !precioMayorFolleto && precioPromo > 0;
+        const tieneDescuento = !precioMayorFolleto && !tienePrecioPromo && descuento > 0;
+        const tieneOfertaFolleto = tieneDescuento || tienePrecioPromo;
         const esDestacado = !!(d && d.tamano > 1);
+        const tieneTextoProducto = !!(d && d.texto && d.texto.trim());
         // El presupuesto vertical disponible depende de la ALTURA de la
         // tarjeta, no de su ancho — una tarjeta de 1 sola fila (tamaño 1)
         // tiene el mismo hueco de texto reducido sea cual sea su ancho;
@@ -4169,7 +4939,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         const padX = padTarjeta;
         const imgBoxY = y + 3;
-        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta, esGrande);
+        const { w: imgBoxW, h: imgBoxH } = cajaImagenDe(anchoTarjeta, altoTarjeta, esGrande, tieneTextoProducto);
         const foto = fotoPorRef[ref];
         if(foto){
           // La foto ya viene recortada (ver itemsFotos/cajaImagenDe, más
@@ -4219,15 +4989,43 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           doc.setTextColor(255,255,255);
           doc.text(txt, x + padX + 1.5 + w/2, insigniaY + 3.2, { align:'center' });
         }
-        if(tieneDescuento){
-          const txt = `-${descuento}%`;
+        let insigniaYDerecha = insigniaY;
+        if(tieneOfertaFolleto){
+          const txt = tieneDescuento ? `-${descuento}%` : 'OFERTA';
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(6.6);
           const w = doc.getTextWidth(txt) + 4;
           doc.setFillColor(217, 27, 27);
-          doc.roundedRect(x + anchoTarjeta - padX - 1.5 - w, insigniaY, w, 4.6, 1.6, 1.6, 'F');
+          doc.roundedRect(x + anchoTarjeta - padX - 1.5 - w, insigniaYDerecha, w, 4.6, 1.6, 1.6, 'F');
           doc.setTextColor(255,255,255);
-          doc.text(txt, x + anchoTarjeta - padX - 1.5 - w/2, insigniaY + 3.2, { align:'center' });
+          doc.text(txt, x + anchoTarjeta - padX - 1.5 - w/2, insigniaYDerecha + 3.2, { align:'center' });
+          insigniaYDerecha += 5.6;
+        }
+        // Chip de promoción (2x1, 3x2…) — apilado bajo el de descuento si
+        // los dos coinciden (no son excluyentes: un producto puede tener
+        // las dos cosas a la vez). Verde, para distinguirse a simple
+        // vista del rojo de descuento. A diferencia de "DESTACADO"/"-X%"
+        // (textos cortos fijos, nunca desbordan), la promo es texto
+        // LIBRE ("Otro…") que en una tarjeta normal (1 columna) sí podía
+        // salirse del ancho de la propia tarjeta — se reduce el tamaño de
+        // letra y, si aun así no cupiera, se trunca con "…".
+        if(d && d.promo && d.promo.trim()){
+          const txtOriginal = d.promo.trim().toUpperCase();
+          const anchoMaxChip = anchoTarjeta - (padX + 1.5) * 2;
+          doc.setFont('helvetica', 'bold');
+          const medirChip_ = (t, fs) => { doc.setFontSize(fs); return doc.getTextWidth(t) + 4; };
+          let fontSizeChip = 6.6;
+          while(fontSizeChip > 5 && medirChip_(txtOriginal, fontSizeChip) > anchoMaxChip) fontSizeChip -= 0.3;
+          let txt = txtOriginal;
+          if(medirChip_(txt, fontSizeChip) > anchoMaxChip){
+            while(txt.length > 3 && medirChip_(txt + '…', fontSizeChip) > anchoMaxChip) txt = txt.slice(0, -1);
+            txt += '…';
+          }
+          const w = medirChip_(txt, fontSizeChip);
+          doc.setFillColor(30, 122, 76);
+          doc.roundedRect(x + anchoTarjeta - padX - 1.5 - w, insigniaYDerecha, w, 4.6, 1.6, 1.6, 'F');
+          doc.setTextColor(255,255,255);
+          doc.text(txt, x + anchoTarjeta - padX - 1.5 - w/2, insigniaYDerecha + 3.2, { align:'center' });
         }
 
         let ty = imgBoxY + imgBoxH + 4.5;
@@ -4247,10 +5045,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         ty += 3 + nombreLineas.length * 3.5 + 1.3;
 
         // Precio: igual que en la propia tarjeta pública (bloquePrecio) —
-        // con descuento, el precio de partida tachado y más pequeño, y
-        // debajo el ya rebajado en tamaño normal.
-        if(tieneDescuento){
-          const rebajado = precioConDescuento(p.precio_con, descuento);
+        // con oferta (descuento % o precio de promoción fijo), el precio
+        // de partida tachado y más pequeño, y debajo el ya rebajado en
+        // tamaño normal.
+        if(tieneOfertaFolleto){
+          const rebajado = tienePrecioPromo ? precioPromo : precioConDescuento(p.precio_con, descuento);
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(7.2);
           doc.setTextColor(170, 173, 180);
@@ -4299,43 +5098,176 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.setFontSize(6.6);
         doc.setTextColor(150, 153, 160);
         doc.text(`Ref. ${p.ref}`, x + padX, ty + 4.4);
+
+        // Pie de producto (texto corto, opcional) — mismo presupuesto
+        // extra ya reservado en cajaImagenDe (CHROME_TEXTO_PRODUCTO), así
+        // que siempre hay sitio para esto sin invadir el hueco de la
+        // imagen. 1 línea en tarjetas normales, 2 en las grandes — igual
+        // que el resto de bloques de texto de esta tarjeta.
+        if(tieneTextoProducto){
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(6.6);
+          doc.setTextColor(130, 133, 140);
+          const maxLineasTexto = esGrande ? 2 : 1;
+          const lineasTexto = doc.splitTextToSize(d.texto, anchoTarjeta - padX*2).slice(0, maxLineasTexto);
+          doc.text(lineasTexto, x + padX, ty + 4.4 + 3.4);
+        }
       }
 
-      // Se recorre la rejilla 2D fila a fila (de ROW_UNIT en ROW_UNIT, no
-      // todo de golpe en un solo forEach síncrono, para poder informar
-      // "Componiendo folleto… (fila X/Y)" en el botón a medida que avanza
-      // — justo el aviso de Eloy: "que vaya cambiando en base a lo que
-      // está ocurriendo por detrás"). cursorY avanza SIEMPRE un único
-      // ROW_UNIT por cada fila de la rejilla procesada, arranque o no ahí
-      // algún producto — un bloque de varias filas (destacado) se dibuja
-      // entero, de una sola vez, en la fila en la que arranca, con su
-      // alto real (spanRows*ROW_UNIT + huecos), y simplemente "sobresale"
-      // visualmente sobre las filas siguientes mientras cursorY se pone
-      // al día con ellas — así nunca hace falta partir un bloque entre
-      // dos páginas: el salto de página se decide ANTES de dibujar nada
-      // de una fila, mirando la altura real del bloque más alto que
-      // arranque en ella.
-      const itemsPorFila_ = {};
-      itemsColocados.forEach(it => { (itemsPorFila_[it.fila] = itemsPorFila_[it.fila] || []).push(it); });
-      for(let iFila = 0; iFila < totalFilasRejilla; iFila++){
-        const itemsFila = itemsPorFila_[iFila] || [];
-        const altoNecesario = itemsFila.length
-          ? Math.max(...itemsFila.map(it => it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY))
-          : ROW_UNIT;
-        if(cursorY + altoNecesario > footerTopY - 2){
+      // Título de grupo (solo con "Agrupar productos" activo) — franja
+      // corta de texto en mayúsculas con una regla fina debajo, NUNCA
+      // tan alta como una fila de productos (ROW_UNIT, ~56mm): un título
+      // es una sola línea de texto, no un hueco cuadrado de producto. Se
+      // exige que quepa también al menos una fila normal detrás, para
+      // que un título nunca quede "huérfano" solo al final de una
+      // página con todo su grupo empujado a la página siguiente.
+      const TITULO_GRUPO_ALTURA_ = 11;
+      function dibujarTituloGrupoFolleto_(texto){
+        if(cursorY + TITULO_GRUPO_ALTURA_ + ROW_UNIT + gapY > footerTopY - 2){
           doc.addPage();
           dibujarCabecera();
           cursorY = headerBottomY + 8;
         }
-        itemsFila.forEach(it => {
-          const x = margin + it.col * (colW + gapX);
-          const w = it.spanCols * colW + (it.spanCols - 1) * gapX;
-          const h = it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY;
-          dibujarTarjetaProducto(x, cursorY, w, h, it.ref);
-        });
-        cursorY += ROW_UNIT + gapY;
-        fijarEstadoBoton(`Componiendo folleto… (fila ${iFila + 1}/${totalFilasRejilla})`);
-        await new Promise(requestAnimationFrame);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11.5);
+        doc.setTextColor(30, 33, 37);
+        doc.text(texto.toUpperCase(), margin, cursorY + 6);
+        doc.setDrawColor(vivid.r, vivid.g, vivid.b);
+        doc.setLineWidth(0.8);
+        doc.line(margin, cursorY + 9, contentRight, cursorY + 9);
+        cursorY += TITULO_GRUPO_ALTURA_;
+      }
+
+      // Bloque de contenido (texto + imagen) en el folleto — mismo
+      // contenido simple (sin HTML) definido en la gestión del
+      // escaparate, centrado a todo el ancho de página. Nunca se parte
+      // entre dos páginas: si no cabe entero en lo que queda, salta de
+      // página antes de dibujar nada.
+      function dibujarBloqueContenidoFolleto_(bloque, foto){
+        if(!bloque) return;
+        const texto = (bloque.texto || '').trim();
+        const tieneImagen = !!(foto && foto.dataURL);
+        if(!texto && !tieneImagen) return;
+        const tamanoFuente = bloque.tamano === 'muy-grande' ? 14 : (bloque.tamano === 'grande' ? 12 : 10.5);
+        const estiloFuente = bloque.negrita && bloque.cursiva ? 'bolditalic' : (bloque.negrita ? 'bold' : (bloque.cursiva ? 'italic' : 'normal'));
+        const interlineado = tamanoFuente * 0.42;
+        const padBloque = 6;
+        doc.setFont('helvetica', estiloFuente);
+        doc.setFontSize(tamanoFuente);
+
+        // Imagen a la izquierda/derecha del texto — dos columnas en vez
+        // de apilado vertical (mismo criterio que en la web: ver
+        // .bloque-contenido-fila).
+        const enFila = tieneImagen && (bloque.imagenPosicion === 'izquierda' || bloque.imagenPosicion === 'derecha');
+        if(enFila){
+          const ANCHO_IMG_FILA_ = 55, ALTO_IMG_FILA_MAX_ = 70, GAP_COLUMNAS_ = 8;
+          const escala = Math.min(ANCHO_IMG_FILA_ / foto.w, ALTO_IMG_FILA_MAX_ / foto.h, 1);
+          const anchoImg = foto.w * escala, altoImg = foto.h * escala;
+          const anchoTexto = contentWidth - anchoImg - GAP_COLUMNAS_;
+          const lineasTexto = texto ? doc.splitTextToSize(texto, anchoTexto) : [];
+          const altoTexto = lineasTexto.length * interlineado;
+          const altoContenido = Math.max(altoImg, altoTexto);
+          const altoTotal = padBloque * 2 + altoContenido;
+          if(cursorY + altoTotal > footerTopY - 2){
+            doc.addPage();
+            dibujarCabecera();
+            cursorY = headerBottomY + 8;
+          }
+          const xImg = bloque.imagenPosicion === 'izquierda' ? margin : contentRight - anchoImg;
+          const xTexto = bloque.imagenPosicion === 'izquierda' ? margin + anchoImg + GAP_COLUMNAS_ : margin;
+          const yImg = cursorY + padBloque + (altoContenido - altoImg) / 2;
+          const yTexto = cursorY + padBloque + (altoContenido - altoTexto) / 2;
+          try{ doc.addImage(foto.dataURL, 'JPEG', xImg, yImg, anchoImg, altoImg); }catch(e){}
+          if(lineasTexto.length){
+            doc.setTextColor(30, 33, 37);
+            doc.text(lineasTexto, xTexto, yTexto + interlineado, { align:'left' });
+          }
+          cursorY += altoTotal + 6;
+          return;
+        }
+
+        // Arriba/abajo (o solo texto, o solo imagen) — centrado, apilado
+        // en una sola columna.
+        const lineasTexto = texto ? doc.splitTextToSize(texto, contentWidth) : [];
+        const altoTexto = lineasTexto.length ? lineasTexto.length * interlineado + 4 : 0;
+        const ANCHO_IMG_BLOQUE_ = 70, ALTO_IMG_MAX_ = 90;
+        let anchoImg = 0, altoImg = 0;
+        if(tieneImagen){
+          const escala = Math.min(ANCHO_IMG_BLOQUE_ / foto.w, ALTO_IMG_MAX_ / foto.h, 1);
+          anchoImg = foto.w * escala; altoImg = foto.h * escala;
+        }
+        const altoTotal = padBloque * 2 + altoTexto + altoImg + (altoTexto && altoImg ? 4 : 0);
+        if(cursorY + altoTotal > footerTopY - 2){
+          doc.addPage();
+          dibujarCabecera();
+          cursorY = headerBottomY + 8;
+        }
+        let y = cursorY + padBloque;
+        if(bloque.imagenPosicion !== 'abajo' && tieneImagen){
+          try{ doc.addImage(foto.dataURL, 'JPEG', margin + (contentWidth - anchoImg)/2, y, anchoImg, altoImg); }catch(e){}
+          y += altoImg + 4;
+        }
+        if(lineasTexto.length){
+          doc.setTextColor(30, 33, 37);
+          doc.text(lineasTexto, pageW/2, y + interlineado, { align:'center' });
+          y += altoTexto;
+        }
+        if(bloque.imagenPosicion === 'abajo' && tieneImagen){
+          try{ doc.addImage(foto.dataURL, 'JPEG', margin + (contentWidth - anchoImg)/2, y, anchoImg, altoImg); }catch(e){}
+        }
+        cursorY += altoTotal + 6;
+      }
+
+      // Se recorre la rejilla 2D de cada grupo fila a fila (de ROW_UNIT
+      // en ROW_UNIT, no todo de golpe en un solo forEach síncrono, para
+      // poder informar "Componiendo folleto… (fila X/Y)" en el botón a
+      // medida que avanza — justo el aviso de Eloy: "que vaya cambiando
+      // en base a lo que está ocurriendo por detrás"). cursorY avanza
+      // SIEMPRE un único ROW_UNIT por cada fila de la rejilla procesada,
+      // arranque o no ahí algún producto — un bloque de varias filas
+      // (destacado) se dibuja entero, de una sola vez, en la fila en la
+      // que arranca, con su alto real (spanRows*ROW_UNIT + huecos), y
+      // simplemente "sobresale" visualmente sobre las filas siguientes
+      // mientras cursorY se pone al día con ellas — así nunca hace falta
+      // partir un bloque entre dos páginas: el salto de página se decide
+      // ANTES de dibujar nada de una fila, mirando la altura real del
+      // bloque más alto que arranque en ella. Sin "Agrupar productos"
+      // solo hay un grupo (gruposFolleto.length === 1, sin título), así
+      // que este bucle se comporta exactamente igual que antes.
+      for(let iGrupo = 0; iGrupo < gruposFolleto.length; iGrupo++){
+        const grupo = gruposFolleto[iGrupo];
+        if(grupo.tipo === 'bloque'){
+          dibujarBloqueContenidoFolleto_(grupo.bloque, fotoPorRef['bloque:' + grupo.bloque.id]);
+          fijarEstadoBoton(`Componiendo folleto… (bloque ${iGrupo + 1}/${gruposFolleto.length})`);
+          await new Promise(requestAnimationFrame);
+          continue;
+        }
+        if(grupo.titulo) dibujarTituloGrupoFolleto_(grupo.titulo);
+        const { itemsColocados, totalFilasRejilla } = empaquetarGrupo_(grupo.refs);
+        const itemsPorFila_ = {};
+        itemsColocados.forEach(it => { (itemsPorFila_[it.fila] = itemsPorFila_[it.fila] || []).push(it); });
+        for(let iFila = 0; iFila < totalFilasRejilla; iFila++){
+          const itemsFila = itemsPorFila_[iFila] || [];
+          const altoNecesario = itemsFila.length
+            ? Math.max(...itemsFila.map(it => it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY))
+            : ROW_UNIT;
+          if(cursorY + altoNecesario > footerTopY - 2){
+            doc.addPage();
+            dibujarCabecera();
+            cursorY = headerBottomY + 8;
+          }
+          itemsFila.forEach(it => {
+            const x = margin + it.col * (colW + gapX);
+            const w = it.spanCols * colW + (it.spanCols - 1) * gapX;
+            const h = it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY;
+            dibujarTarjetaProducto(x, cursorY, w, h, it.ref);
+          });
+          cursorY += ROW_UNIT + gapY;
+          fijarEstadoBoton(gruposFolleto.length > 1
+            ? `Componiendo folleto… (grupo ${iGrupo + 1}/${gruposFolleto.length}, fila ${iFila + 1}/${totalFilasRejilla})`
+            : `Componiendo folleto… (fila ${iFila + 1}/${totalFilasRejilla})`);
+          await new Promise(requestAnimationFrame);
+        }
       }
 
       fijarEstadoBoton('Añadiendo cierre y pies de página…');
