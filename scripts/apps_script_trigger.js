@@ -3188,6 +3188,10 @@ function regenerarCacheCompletaDesdeSheet_() {
       // obtenerFichaTecnicaProducto en soluciones-data.js).
       const fichaUrl = valorCelda_(row, 'ficha_url');
 
+      // Agrupación (texto libre) — columna "grupo" del Sheet, ver
+      // procesarActualizarGrupoProducto más abajo.
+      const grupo = valorCelda_(row, 'grupo');
+
       exportados.push({
         ref: ref,
         nombre: valorCelda_(row, 'nombre'),
@@ -3222,6 +3226,7 @@ function regenerarCacheCompletaDesdeSheet_() {
         relacionados: relacionados,
         relacionados_gestionado: relacionadosGestionado,
         ficha_url: fichaUrl,
+        grupo: grupo,
       });
     });
   }
@@ -3930,6 +3935,11 @@ function doPost(e) {
       return procesarActualizarFichaUrl(data);
     }
 
+    if (accion === 'actualizar_grupo_producto') {
+      console.log('Acción: actualizar_grupo_producto');
+      return procesarActualizarGrupoProducto(data);
+    }
+
     // NUEVO — Escaparate OM
     if (accion === 'guardar_campana') {
       console.log('Acción: guardar_campana');
@@ -4590,6 +4600,83 @@ function procesarActualizarFichaUrl(data) {
   }
 }
 
+// Agrupación de producto (texto libre, p. ej. "MAQUINARIA", "ACCESORIOS
+// LIJADO"…) — petición real de Eloy a partir de un folleto manual de
+// ejemplo, que agrupa los productos bajo títulos de sección: "añadir a
+// los productos un campo de texto de agrupación". Es un campo del
+// PRODUCTO MAESTRO (vale para todos los escaparates donde aparezca ese
+// producto), no de una campaña concreta — por eso sigue el mismo patrón
+// que procesarActualizarFichaUrl/procesarActualizarRelacionados (editar
+// un campo del catálogo), con la salvedad de que SÍ se protege con PIN:
+// a diferencia de ficha_url/relacionados (editados desde el buscador
+// público con su propio control de acceso), este campo se edita desde
+// el modal de asignación de productos del escaparate, que ya maneja un
+// PIN para todo lo demás que guarda ahí.
+function procesarActualizarGrupoProducto(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    console.log('procesarActualizarGrupoProducto iniciado:', data);
+
+    const referencia = (data.referencia || '').toString().trim();
+    const grupo = (data.grupo || '').toString().trim().slice(0, 60);
+
+    if (!referencia) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta la referencia del producto' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    let colGrupo = PROD['grupo'];
+    if (colGrupo === undefined) {
+      colGrupo = prodHeaders.length;
+      sheetProd.getRange(1, colGrupo + 1).setValue('grupo');
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    sheetProd.getRange(prodRowNum, colGrupo + 1).setValue(grupo);
+    console.log('grupo actualizado:', referencia, '→', grupo || '(vacío)');
+
+    // Vista rápida: parchear productos.json al instante.
+    actualizarProductoEnCache_(referencia, { grupo: grupo });
+
+    console.log('procesarActualizarGrupoProducto completado exitosamente');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, grupo: grupo }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al procesar actualización de grupo:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // ESCAPARATE OM — Campañas de temporada/comerciales (escaparate.html)
 // ═══════════════════════════════════════════════════════════════════
@@ -4616,7 +4703,7 @@ function procesarActualizarFichaUrl(data) {
 // esta hoja tiene, como mucho, unas pocas decenas de filas, así que
 // se lee directamente en cada doGet — mucho más simple que mantener
 // sincronizada otra caché, y siempre al día sin parcheos.
-const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'descuento', 'permanente', 'activa', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'descuento', 'permanente', 'activa', 'agrupar_productos', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaCampanas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -4721,6 +4808,15 @@ function leerCampanas_() {
       // es que NO sea permanente, así que el valor por defecto para
       // filas antiguas debe ser "no permanente", no lo contrario).
       permanente: (fila[COL['permanente']] || '').toString().trim().toLowerCase() === 'si',
+      // Agrupar productos por el campo "grupo" del producto maestro (ver
+      // procesarActualizarGrupoProducto) — check del formulario de
+      // asignación de productos, petición real de Eloy: "añadiremos un
+      // check en el formulario de asignación de productos que indique
+      // agrupar los productos o no. Si se agrupan se mostrará en el
+      // escaparate y en el pdf agrupados por el texto indicado en los
+      // productos." Mismo criterio que 'permanente': solo un 'si'
+      // explícito lo activa.
+      agruparProductos: (fila[COL['agrupar_productos']] || '').toString().trim().toLowerCase() === 'si',
       // Solo un 'no' explícito la desactiva — así las campañas creadas
       // antes de que existiera esta columna (celda vacía) se siguen
       // tratando como activas por defecto, sin tener que revisarlas
@@ -5614,6 +5710,7 @@ function procesarActualizarProductosCampana(data) {
     const id = (data.id || '').toString().trim();
     const productos = Array.isArray(data.productos) ? data.productos : [];
     const destacados = sanearDestacados_(data.destacados, productos);
+    const agruparProductos = !!data.agrupar;
     if (!id) {
       return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta el id de la campaña.' }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -5635,11 +5732,12 @@ function procesarActualizarProductosCampana(data) {
     const filaNum = filaIdx + 1;
     sheet.getRange(filaNum, COL['productos'] + 1).setValue(productos.join(', '));
     sheet.getRange(filaNum, COL['destacados'] + 1).setValue(destacados.length ? JSON.stringify(destacados) : '');
+    sheet.getRange(filaNum, COL['agrupar_productos'] + 1).setValue(agruparProductos ? 'si' : 'no');
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
-    console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos,', destacados.length, 'destacados');
+    console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos,', destacados.length, 'destacados, agrupar:', agruparProductos);
     regenerarCacheCampanasDesdeSheet_();
 
-    return ContentService.createTextOutput(JSON.stringify({ success: true, productos: productos, destacados: destacados }))
+    return ContentService.createTextOutput(JSON.stringify({ success: true, productos: productos, destacados: destacados, agrupar: agruparProductos }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarActualizarProductosCampana:', err);
