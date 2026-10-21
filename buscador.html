@@ -13747,6 +13747,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     if ($('modal-editar-info-editable')) {
+        // Al pulsar Enter dentro de un contenteditable, Chrome envuelve
+        // cada línea nueva en un <div> por defecto — una etiqueta que
+        // NO está en la lista blanca, así que cualquier línea escrita a
+        // mano (no pegada) se guardaba como basura escapada literal
+        // ("&lt;div&gt;..."), aviso real de Eloy. defaultParagraphSeparator
+        // fuerza que use <p> en su lugar (que sí está permitido) — hay
+        // que fijarlo cada vez que el editor recibe el foco, nunca una
+        // sola vez de antemano.
+        $('modal-editar-info-editable').addEventListener('focus', () => {
+            document.execCommand('defaultParagraphSeparator', false, 'p');
+        });
         $('modal-editar-info-editable').addEventListener('input', actualizarContadorInfoAdicional_);
         // Pegar SIEMPRE como texto plano ya limpio y con una estructura
         // básica (párrafos/listas/títulos) — nunca el HTML de la página
