@@ -3002,6 +3002,22 @@
         .info-adicional-contenido p { margin: 0 0 8px; }
         .info-adicional-contenido p:last-child { margin-bottom: 0; }
         .info-adicional-contenido ul, .info-adicional-contenido ol { margin: 0 0 8px 18px; padding: 0; }
+        .info-adicional-vertodo {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--blue);
+            font-weight: 700;
+            font-size: 0.82rem;
+            cursor: pointer;
+        }
+        .info-adicional-vertodo:hover { text-decoration: underline; }
+        .info-adicional-vertodo i { font-size: 0.75rem; }
+        #modal-info-adicional-contenido { font-size: 0.9rem; line-height: 1.6; max-height: 65vh; overflow-y: auto; }
 
         /* Editor de texto enriquecido compartido (información adicional) —
            contenteditable + barra de botones mínima (execCommand sigue
@@ -4726,6 +4742,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div id="modal-producto-info-adicional" class="modal-producto-info-adicional" style="display:none;">
                     <h4><i class="fa-solid fa-circle-info"></i> Información adicional</h4>
                     <div id="modal-producto-info-adicional-contenido" class="info-adicional-contenido"></div>
+                    <!-- Solo visible cuando el texto es largo (ver UMBRAL_INFO_ADICIONAL_MODAL_) -->
+                    <button type="button" id="modal-producto-info-adicional-vertodo" class="info-adicional-vertodo" style="display:none;">
+                        Ver información completa <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                    </button>
                 </div>
                 <!-- Solo preproducción -->
                 <button type="button" id="modal-producto-editar-info-adicional" class="modal-producto-reportar" style="display:none; width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
@@ -4919,6 +4939,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <i class="fa-solid fa-circle-info"></i>
             Contenido generado por IA a partir de información pública — puede contener imprecisiones. Consulta siempre el envase del producto.
         </p>
+    </div>
+</div>
+
+<!-- Modal "Información adicional" completa — cuando el texto es largo
+     (ver UMBRAL_INFO_ADICIONAL_MODAL_), la vista de detalle solo
+     muestra un extracto con un botón para abrir esto. Pública (no
+     depende de ningún flag de fase de desarrollo). -->
+<div class="modal-overlay" id="modal-info-adicional-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box modal-ficha-ia-box">
+        <button class="modal-producto-cerrar" id="modal-info-adicional-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-circle-info"></i> Información adicional</h3>
+        <p id="modal-info-adicional-nombre" class="modal-editar-ficha-nombre"></p>
+        <div id="modal-info-adicional-contenido" class="info-adicional-contenido"></div>
     </div>
 </div>
 
@@ -13475,13 +13510,45 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return escapado.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
     }
 
+    // Por encima de este umbral (medido en texto plano), la información
+    // adicional ya no cabe razonablemente en la propia vista de detalle
+    // — a petición de Eloy, tras comprobar que un resumen largo de la
+    // IA "es enorme" ahí metido: se corta a un extracto con un botón
+    // "Ver información completa" que abre el contenido íntegro (con
+    // todo su formato) en una modal aparte.
+    const UMBRAL_INFO_ADICIONAL_MODAL_ = 2000;
+
+    function textoPlanoDeHtml_(html) {
+        const d = document.createElement('div');
+        d.innerHTML = html; // ya viene saneado (lista blanca), seguro de pintar
+        return d.textContent || '';
+    }
+
     function configurarInfoAdicional(p) {
         const bloque = $('modal-producto-info-adicional');
         const contenido = $('modal-producto-info-adicional-contenido');
+        const botonVerTodo = $('modal-producto-info-adicional-vertodo');
         const tieneTexto = !!(p.info_adicional && p.info_adicional.trim());
         if (bloque && contenido) {
             bloque.style.display = tieneTexto ? '' : 'none';
-            contenido.innerHTML = tieneTexto ? sanearHtmlEnriquecidoCliente_(p.info_adicional) : '';
+            if (tieneTexto) {
+                const htmlSaneado = sanearHtmlEnriquecidoCliente_(p.info_adicional);
+                const textoPlano = textoPlanoDeHtml_(htmlSaneado);
+                const esLargo = textoPlano.length > UMBRAL_INFO_ADICIONAL_MODAL_;
+                if (esLargo) {
+                    const extracto = textoPlano.slice(0, UMBRAL_INFO_ADICIONAL_MODAL_).trim() + '…';
+                    contenido.innerHTML = `<p>${escaparHtmlTexto_(extracto)}</p>`;
+                } else {
+                    contenido.innerHTML = htmlSaneado;
+                }
+                if (botonVerTodo) {
+                    botonVerTodo.style.display = esLargo ? 'inline-flex' : 'none';
+                    botonVerTodo.onclick = () => mostrarModalInfoAdicionalCompleta_(p, htmlSaneado);
+                }
+            } else {
+                contenido.innerHTML = '';
+                if (botonVerTodo) botonVerTodo.style.display = 'none';
+            }
         }
         const boton = $('modal-producto-editar-info-adicional');
         if (!boton) return; // eliminado del DOM en producción
@@ -13489,7 +13556,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         boton.onclick = () => abrirModalEditarInfoAdicional(p);
     }
 
-    const MAX_INFO_ADICIONAL_CARACTERES_ = 6000;
+    function mostrarModalInfoAdicionalCompleta_(p, htmlSaneado) {
+        $('modal-info-adicional-nombre').textContent = p.nombre;
+        $('modal-info-adicional-contenido').innerHTML = htmlSaneado;
+        $('modal-info-adicional-overlay').classList.add('activo');
+    }
+    function cerrarModalInfoAdicionalCompleta_() {
+        $('modal-info-adicional-overlay').classList.remove('activo');
+    }
+    if ($('modal-info-adicional-cerrar')) $('modal-info-adicional-cerrar').addEventListener('click', cerrarModalInfoAdicionalCompleta_);
+    if ($('modal-info-adicional-overlay')) {
+        $('modal-info-adicional-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-info-adicional-overlay') cerrarModalInfoAdicionalCompleta_();
+        });
+    }
+
+    const MAX_INFO_ADICIONAL_CARACTERES_ = 40000;
     let productoEditarInfoActual_ = null;
 
     function contarTextoPlanoEditable_(el) {

@@ -95,7 +95,15 @@ function cuotaIADisponible_() {
 // para siempre, nunca llega a ejecutarse ni a interpretarse. Mismo
 // principio ya aplicado (con un alcance más estricto, sin ninguna
 // etiqueta) en los bloques de contenido de escaparates.
-const MAX_INFO_ADICIONAL_CARACTERES_ = 6000;
+//
+// 40.000 caracteres (de texto plano) — a petición de Eloy, tras un caso
+// real de un resumen de la IA de más de 32.000 caracteres que no cabía
+// con el límite anterior (6.000) y que SÍ hacía falta conservar
+// completo. Se deja margen de sobra bajo el límite real de una celda
+// de Google Sheets (50.000 caracteres), que aquí se mide sobre el HTML
+// ya saneado (con las etiquetas de formato incluidas, siempre algo más
+// largo que el texto plano) — ver sanearHtmlEnriquecido_.
+const MAX_INFO_ADICIONAL_CARACTERES_ = 40000;
 const TAGS_ENRIQUECIDO_PERMITIDAS_ = ['b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'p'];
 
 function sanearHtmlEnriquecido_(entrada, maxCaracteres) {
