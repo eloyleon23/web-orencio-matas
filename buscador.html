@@ -13517,6 +13517,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-editar-info-error').style.display = 'none';
         $('modal-editar-info-ia-error').style.display = 'none';
         $('modal-editar-info-guardar').textContent = 'Guardar';
+        // No se ofrece el botón de IA si sabemos que no hay cuota
+        // disponible — a petición de Eloy, prefiere no dar la opción a
+        // que falle (ver window.IADisponibilidad). Se usa
+        // comprobarAhora() en vez de estaDisponible() por el mismo
+        // motivo que en configurarFichaIA (cubre el caso de abrir esta
+        // modal antes de que la primera comprobación real haya resuelto).
+        const botonIA = $('modal-editar-info-ia');
+        botonIA.style.display = '';
+        if (window.IADisponibilidad) {
+            window.IADisponibilidad.comprobarAhora().then((disponible) => {
+                if (productoEditarInfoActual_ !== p) return;
+                botonIA.style.display = disponible ? '' : 'none';
+            });
+        }
         actualizarContadorInfoAdicional_();
         $('modal-editar-info-overlay').classList.add('activo');
         setTimeout(() => $('modal-editar-info-editable').focus(), 50);
@@ -13668,6 +13682,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const boton = $('modal-producto-ficha-ia-btn');
         if (!boton) return;
         boton.onclick = () => abrirFichaIA(p);
+        // No se ofrece el botón si sabemos que no hay cuota de IA
+        // disponible — a petición de Eloy, prefiere no dar la opción a
+        // que falle (ver window.IADisponibilidad), igual que el resto de
+        // botones de IA del proyecto. Se usa comprobarAhora() (en vez de
+        // leer solo estaDisponible(), que empieza en "true" por
+        // optimismo hasta la primera comprobación real) para cubrir
+        // justo el caso de un producto abierto nada más cargar la
+        // página (deep-link ?ref=, "Ver ficha completa en el buscador"),
+        // antes de que esa primera comprobación haya tenido tiempo de
+        // resolverse — mismo tipo de condición de carrera ya detectada
+        // y arreglada para las promociones de campaña de escaparate.
+        boton.style.display = ''; // optimista por defecto, se corrige abajo en cuanto se sepa de verdad
+        if (!window.IADisponibilidad) return;
+        window.IADisponibilidad.comprobarAhora().then((disponible) => {
+            // El usuario pudo haber cerrado este producto o abierto otro
+            // mientras se esperaba la respuesta — no tocar un botón que
+            // ya no corresponde a "p".
+            if (productoModalActual_ !== p) return;
+            boton.style.display = disponible ? '' : 'none';
+        });
     }
 
     function fijarEstadoBotonFichaIA_(cargando) {
