@@ -189,6 +189,13 @@ def exportar_productos_json(productos, familias, subfamilias):
         # guardarla — ya llega limpia aquí, nunca HTML arbitrario).
         info_adicional = p.get('info_adicional', '').strip()
 
+        # Formato de envase ("12 unidades/caja") — columnas "envase_cantidad"
+        # / "envase_unidad" / "envase_tipo" del Sheet (ver
+        # procesarActualizarEnvaseProducto en apps_script_trigger.js).
+        envase_cantidad = p.get('envase_cantidad', '').strip()
+        envase_unidad = p.get('envase_unidad', '').strip()
+        envase_tipo = p.get('envase_tipo', '').strip()
+
         exportados.append({
             'ref':       ref,
             'nombre':    p.get('nombre', '').strip(),
@@ -217,6 +224,9 @@ def exportar_productos_json(productos, familias, subfamilias):
             'ficha_url': ficha_url,
             'grupo': grupo,
             'info_adicional': info_adicional,
+            'envase_cantidad': envase_cantidad,
+            'envase_unidad': envase_unidad,
+            'envase_tipo': envase_tipo,
         })
 
     payload = {

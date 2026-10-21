@@ -3300,6 +3300,11 @@ function regenerarCacheCompletaDesdeSheet_() {
         // sanearHtmlEnriquecidoCliente_) — nunca se confía a ciegas ni
         // siquiera en los propios datos ya guardados.
         info_adicional: valorCelda_(row, 'info_adicional'),
+        // Formato de envase ("12 unidades/caja") — ver
+        // procesarActualizarEnvaseProducto más abajo.
+        envase_cantidad: valorCelda_(row, 'envase_cantidad'),
+        envase_unidad: valorCelda_(row, 'envase_unidad'),
+        envase_tipo: valorCelda_(row, 'envase_tipo'),
       });
     });
   }
@@ -4016,6 +4021,11 @@ function doPost(e) {
     if (accion === 'actualizar_grupo_producto') {
       console.log('Acción: actualizar_grupo_producto');
       return procesarActualizarGrupoProducto(data);
+    }
+
+    if (accion === 'actualizar_envase_producto') {
+      console.log('Acción: actualizar_envase_producto');
+      return procesarActualizarEnvaseProducto(data);
     }
 
     // NUEVO — Escaparate OM
@@ -4756,6 +4766,95 @@ function procesarActualizarInfoAdicional(data) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error al procesar actualización de información adicional:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Formato de envase ("unidades por caja/bolsa/paquete") de un producto ──
+// Mismo mecanismo que procesarActualizarInfoAdicional (columna del Sheet +
+// parcheo instantáneo de la caché de productos.json) — botón "Editar
+// formato de envase" en el detalle del producto, SOLO visible en
+// preproducción (ver window.MOSTRAR_EDITAR_ENVASE en buscador.html).
+// Petición real de Eloy: "necesito que añadamos... el número de unidades
+// por caja... si viene pondremos algo como '12 unidades/caja' o '12
+// paquetes/caja'" — de ahí tres campos independientes en vez de un único
+// texto libre: la CANTIDAD (siempre un entero positivo), qué se cuenta
+// (envase_unidad, p. ej. "unidades" o "paquetes") y el envase a gran
+// escala (envase_tipo, p. ej. "caja", "bolsa", "paquete"). Si la cantidad
+// no es un entero positivo válido, se borra TODO el formato de envase
+// (un "12 /caja" sin unidad contada no tiene sentido) — así nunca queda
+// guardado un dato a medias.
+const MAX_ENVASE_UNIDAD_CARACTERES_ = 40;
+const MAX_ENVASE_TIPO_CARACTERES_ = 40;
+function procesarActualizarEnvaseProducto(data) {
+  try {
+    console.log('procesarActualizarEnvaseProducto iniciado');
+
+    const referencia = (data.referencia || '').toString().trim();
+    if (!referencia) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta la referencia del producto' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const cantidadNum = Math.floor(Number(data.cantidad));
+    const cantidadValida = Number.isFinite(cantidadNum) && cantidadNum > 0;
+    const cantidad = cantidadValida ? cantidadNum : '';
+    const unidad = cantidadValida ? (data.unidad || '').toString().trim().slice(0, MAX_ENVASE_UNIDAD_CARACTERES_) : '';
+    const tipo = cantidadValida ? (data.tipo || '').toString().trim().slice(0, MAX_ENVASE_TIPO_CARACTERES_) : '';
+    // Sin unidad contada o sin tipo de envase, la cantidad tampoco se
+    // guarda — los tres campos van juntos o no van (ver comentario de
+    // arriba sobre no dejar datos a medias).
+    const cantidadFinal = (unidad && tipo) ? cantidad : '';
+    const unidadFinal = cantidadFinal !== '' ? unidad : '';
+    const tipoFinal = cantidadFinal !== '' ? tipo : '';
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    ['envase_cantidad', 'envase_unidad', 'envase_tipo'].forEach((nombreCol) => {
+      if (PROD[nombreCol] === undefined) {
+        PROD[nombreCol] = prodHeaders.length;
+        prodHeaders.push(nombreCol);
+        sheetProd.getRange(1, PROD[nombreCol] + 1).setValue(nombreCol);
+      }
+    });
+    sheetProd.getRange(prodRowNum, PROD['envase_cantidad'] + 1).setValue(cantidadFinal);
+    sheetProd.getRange(prodRowNum, PROD['envase_unidad'] + 1).setValue(unidadFinal);
+    sheetProd.getRange(prodRowNum, PROD['envase_tipo'] + 1).setValue(tipoFinal);
+    console.log('Formato de envase actualizado para', referencia, '→', cantidadFinal, unidadFinal, tipoFinal);
+
+    actualizarProductoEnCache_(referencia, {
+      envase_cantidad: cantidadFinal, envase_unidad: unidadFinal, envase_tipo: tipoFinal,
+    });
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true, envase_cantidad: cantidadFinal, envase_unidad: unidadFinal, envase_tipo: tipoFinal,
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error al procesar actualización de formato de envase:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
