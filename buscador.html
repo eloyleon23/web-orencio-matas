@@ -10595,14 +10595,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // disponible en absoluto.
         const logoBadge = urlImg ? logoFabricanteHtml(p) : '';
 
-        // Con precio al por mayor (perfil profesional), las ofertas/
-        // destacados del público (promoción sobre el PVP) no aplican — el
-        // mayorista tiene su propio precio fijo, ver precioAMostrar_.
+        // Con precio al por mayor (perfil profesional), el PRECIO con
+        // descuento/promoción del público no aplica — el mayorista tiene
+        // su propio precio fijo, ver precioAMostrar_. Pero los
+        // chips/badges (OFERTA, destacado, texto de promo) son
+        // informativos sobre el producto en sí, no sobre el precio
+        // mostrado — deben seguir viéndose igual en perfil profesional,
+        // aviso real de Eloy: "en los productos destacados no aparece
+        // los chips de oferta o 3x2... solo aparece en la vista de
+        // usuario normal... creo que esto se ha debido de perder en
+        // algún cambio" (se perdió al añadir el precio al por mayor,
+        // reutilizando aquí la misma condición que debía aplicar solo
+        // al PRECIO).
         const precioMayor_ = precioAMostrar_(p);
         const esMayor_ = !!(precioMayor_ && precioMayor_.esMayor);
 
-        const ofertaBadge = (!d && p.oferta && !esMayor_) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
-        const destacadoChip = (d && !esMayor_) ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
+        const ofertaBadge = (!d && p.oferta) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
+        const destacadoChip = d ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
 
         let precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         if (precioMayor_) {
@@ -10610,19 +10619,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (precioMayor_.sin) precioHtml += `<div class="producto-precio-sin">${precioMayor_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         }
         let promoTextoHtml = '';
-        if (d && !esMayor_) {
-            const precioDestacado = calcularPrecioDestacado_(p, d);
-            if (precioDestacado.original !== null) {
-                if (precioDestacado.promo !== null) {
-                    const originalTxt = precioDestacado.original.toFixed(2).replace('.', ',');
-                    const promoTxt = precioDestacado.promo.toFixed(2).replace('.', ',');
-                    precioHtml = `<div class="destacado-precio-descuento">` +
-                        `<span class="destacado-precio-original">${originalTxt} €</span>` +
-                        `<span class="destacado-precio-promo">${promoTxt} €</span>` +
-                        (precioDestacado.pct ? `<span class="destacado-precio-pct">-${precioDestacado.pct}%</span>` : '') +
-                        `</div>`;
-                } else {
-                    precioHtml = `<div class="producto-precio-con">${precioDestacado.original.toFixed(2).replace('.', ',')} €</div>`;
+        if (d) {
+            if (!esMayor_) {
+                const precioDestacado = calcularPrecioDestacado_(p, d);
+                if (precioDestacado.original !== null) {
+                    if (precioDestacado.promo !== null) {
+                        const originalTxt = precioDestacado.original.toFixed(2).replace('.', ',');
+                        const promoTxt = precioDestacado.promo.toFixed(2).replace('.', ',');
+                        precioHtml = `<div class="destacado-precio-descuento">` +
+                            `<span class="destacado-precio-original">${originalTxt} €</span>` +
+                            `<span class="destacado-precio-promo">${promoTxt} €</span>` +
+                            (precioDestacado.pct ? `<span class="destacado-precio-pct">-${precioDestacado.pct}%</span>` : '') +
+                            `</div>`;
+                    } else {
+                        precioHtml = `<div class="producto-precio-con">${precioDestacado.original.toFixed(2).replace('.', ',')} €</div>`;
+                    }
                 }
             }
             if (d.textoPromocion) {
@@ -12940,9 +12951,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // campaña actúa como añadido), la ficha de detalle debe mostrar
         // el mismo precio rebajado y la misma etiqueta que ya se ve en
         // su tarjeta — misma lógica que construirContenidoTarjeta_, sin
-        // duplicarla. No aplica con precio al por mayor (promoción solo
-        // sobre el PVP público).
-        const destacadoModal = esMayorModal_ ? null : destacadoEfectivoPara_(p.ref);
+        // duplicarla. El chip y el texto de promo son informativos y se
+        // muestran SIEMPRE, también con precio al por mayor — solo el
+        // PRECIO rebajado (que es una promoción sobre el PVP público) no
+        // aplica en ese caso, ver construirContenidoTarjeta_ más arriba
+        // (mismo arreglo, mismo motivo: se perdió al añadir el precio al
+        // por mayor).
+        const destacadoModal = destacadoEfectivoPara_(p.ref);
         const chipDestacadoModal = $('modal-producto-destacado-chip');
         if (destacadoModal) {
             // Reutiliza etiquetaDestacadoHtml_ para la clase/texto del chip,
@@ -12958,18 +12973,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             } else {
                 chipDestacadoModal.style.display = 'none';
             }
-            const precioDestacadoModal = calcularPrecioDestacado_(p, destacadoModal);
-            if (precioDestacadoModal.original !== null) {
-                if (precioDestacadoModal.promo !== null) {
-                    const originalTxt = precioDestacadoModal.original.toFixed(2).replace('.', ',');
-                    const promoTxt = precioDestacadoModal.promo.toFixed(2).replace('.', ',');
-                    precioHtml = `<div class="destacado-precio-descuento">` +
-                        `<span class="destacado-precio-original">${originalTxt} €</span>` +
-                        `<span class="destacado-precio-promo">${promoTxt} €</span>` +
-                        (precioDestacadoModal.pct ? `<span class="destacado-precio-pct">-${precioDestacadoModal.pct}%</span>` : '') +
-                        `</div>`;
-                } else {
-                    precioHtml = `<div class="modal-producto-precio-con">${precioDestacadoModal.original.toFixed(2).replace('.', ',')} €</div>`;
+            if (!esMayorModal_) {
+                const precioDestacadoModal = calcularPrecioDestacado_(p, destacadoModal);
+                if (precioDestacadoModal.original !== null) {
+                    if (precioDestacadoModal.promo !== null) {
+                        const originalTxt = precioDestacadoModal.original.toFixed(2).replace('.', ',');
+                        const promoTxt = precioDestacadoModal.promo.toFixed(2).replace('.', ',');
+                        precioHtml = `<div class="destacado-precio-descuento">` +
+                            `<span class="destacado-precio-original">${originalTxt} €</span>` +
+                            `<span class="destacado-precio-promo">${promoTxt} €</span>` +
+                            (precioDestacadoModal.pct ? `<span class="destacado-precio-pct">-${precioDestacadoModal.pct}%</span>` : '') +
+                            `</div>`;
+                    } else {
+                        precioHtml = `<div class="modal-producto-precio-con">${precioDestacadoModal.original.toFixed(2).replace('.', ',')} €</div>`;
+                    }
                 }
             }
             if (destacadoModal.textoPromocion) {
