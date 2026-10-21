@@ -2976,6 +2976,107 @@
         .modal-editar-ficha-guardar { background: var(--blue); color: #fff; }
         .modal-editar-ficha-guardar:disabled { opacity: 0.6; cursor: default; }
 
+        /* Bloque "Información adicional" en el detalle del producto —
+           visible siempre (producción incluida) cuando hay contenido. */
+        .modal-producto-info-adicional {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--light);
+        }
+        .modal-producto-info-adicional h4 {
+            margin: 0 0 8px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .info-adicional-contenido {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--dark);
+        }
+        .info-adicional-contenido p { margin: 0 0 8px; }
+        .info-adicional-contenido p:last-child { margin-bottom: 0; }
+        .info-adicional-contenido ul, .info-adicional-contenido ol { margin: 0 0 8px 18px; padding: 0; }
+        /* Recorte visual a ~8 líneas en la vista de detalle — el bloque
+           entero (párrafos, listas...) se trata como una sola caja con
+           límite de líneas, con "…" al final si sobra algo (ver
+           configurarInfoAdicional, que decide si mostrar el botón "Ver
+           información completa" según si esto recorta de verdad algo). */
+        .info-adicional-contenido.es-recortado {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 8;
+            overflow: hidden;
+        }
+        .info-adicional-vertodo {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--blue);
+            font-weight: 700;
+            font-size: 0.82rem;
+            cursor: pointer;
+        }
+        .info-adicional-vertodo:hover { text-decoration: underline; }
+        .info-adicional-vertodo i { font-size: 0.75rem; }
+        #modal-info-adicional-contenido { font-size: 0.9rem; line-height: 1.6; max-height: 65vh; overflow-y: auto; }
+
+        /* Editor de texto enriquecido compartido (información adicional) —
+           contenteditable + barra de botones mínima (execCommand sigue
+           funcionando en todos los navegadores que usa este sitio, pese a
+           estar "deprecado" — sin dependencias externas, suficiente para
+           negrita/cursiva/subrayado/listas, que es todo lo que se pidió). */
+        .editor-enriquecido-toolbar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        .editor-enriquecido-toolbar button {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--dark);
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .editor-enriquecido-toolbar button:hover { background: var(--light); }
+        .editor-enriquecido-area {
+            min-height: 120px;
+            max-height: 40vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            font-family: inherit;
+        }
+        .editor-enriquecido-area:empty::before {
+            content: attr(data-placeholder);
+            color: var(--muted);
+        }
+        .editor-enriquecido-area ul, .editor-enriquecido-area ol { margin: 0 0 0 18px; padding: 0; }
+        .editor-enriquecido-contador {
+            margin: 6px 0 0;
+            font-size: 0.76rem;
+            color: var(--muted);
+            text-align: right;
+        }
+        .editor-enriquecido-contador.es-limite { color: var(--red); font-weight: 700; }
+        /* Reutilizada también por la modal "Información adicional" completa. */
+        .modal-ficha-ia-box { max-width: 560px; }
+
         /* Calculadora de rendimiento (solo pinturas) */
         .btn-abrir-calculadora {
             margin-top: 10px;
@@ -4591,6 +4692,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </button>
                 </div>
 
+                <!-- Información adicional (texto enriquecido) — detalles
+                     técnicos, limitaciones, venta por cajas/lotes...
+                     redactados a mano, visible para TODOS (producción
+                     incluida) solo cuando se ha informado algo. El botón
+                     de editar es solo preproducción (ver
+                     window.MOSTRAR_EDITAR_INFO_ADICIONAL más abajo). -->
+                <div id="modal-producto-info-adicional" class="modal-producto-info-adicional" style="display:none;">
+                    <h4><i class="fa-solid fa-circle-info"></i> Información adicional</h4>
+                    <div id="modal-producto-info-adicional-contenido" class="info-adicional-contenido"></div>
+                    <!-- Solo visible cuando el texto es largo (ver UMBRAL_INFO_ADICIONAL_MODAL_) -->
+                    <button type="button" id="modal-producto-info-adicional-vertodo" class="info-adicional-vertodo" style="display:none;">
+                        Ver información completa <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                    </button>
+                </div>
+                <!-- Solo preproducción -->
+                <button type="button" id="modal-producto-editar-info-adicional" class="modal-producto-reportar" style="display:none; width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-pen"></i>
+                    Editar información adicional
+                </button>
+
                 <!-- Calculadora de rendimiento (solo pinturas) -->
                 <button type="button" id="btn-abrir-calculadora" class="btn-abrir-calculadora" style="display:none;">
                     <i class="fa-solid fa-calculator"></i>
@@ -4715,6 +4836,49 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="modal-editar-ficha-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
             <button type="button" id="modal-editar-ficha-guardar" class="modal-editar-ficha-guardar">Guardar</button>
         </div>
+    </div>
+</div>
+
+<!-- Modal "Editar información adicional" (texto enriquecido) — solo preproducción -->
+<div class="modal-overlay" id="modal-editar-info-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box modal-editar-info-box">
+        <button class="modal-producto-cerrar" id="modal-editar-info-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-circle-info"></i> Editar información adicional</h3>
+        <p id="modal-editar-info-nombre" class="modal-editar-ficha-nombre"></p>
+
+        <div class="editor-enriquecido">
+            <div class="editor-enriquecido-toolbar">
+                <button type="button" data-cmd="bold" title="Negrita"><i class="fa-solid fa-bold"></i></button>
+                <button type="button" data-cmd="italic" title="Cursiva"><i class="fa-solid fa-italic"></i></button>
+                <button type="button" data-cmd="underline" title="Subrayado"><i class="fa-solid fa-underline"></i></button>
+                <button type="button" data-cmd="insertUnorderedList" title="Lista"><i class="fa-solid fa-list-ul"></i></button>
+                <button type="button" data-cmd="insertOrderedList" title="Lista numerada"><i class="fa-solid fa-list-ol"></i></button>
+            </div>
+            <div class="editor-enriquecido-area" id="modal-editar-info-editable" contenteditable="true" data-placeholder="Detalles técnicos, limitaciones, venta por cajas/lotes/packs..."></div>
+            <p class="editor-enriquecido-contador"><span id="modal-editar-info-contador">0</span> / <span id="modal-editar-info-maximo">6000</span> caracteres</p>
+        </div>
+        <p id="modal-editar-info-error" class="modal-editar-ficha-error" style="display:none;"></p>
+        <div class="modal-editar-ficha-acciones">
+            <button type="button" id="modal-editar-info-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
+            <button type="button" id="modal-editar-info-guardar" class="modal-editar-ficha-guardar">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal "Información adicional" completa — cuando el texto es largo
+     (ver UMBRAL_INFO_ADICIONAL_MODAL_), la vista de detalle solo
+     muestra un extracto con un botón para abrir esto. Pública (no
+     depende de ningún flag de fase de desarrollo). -->
+<div class="modal-overlay" id="modal-info-adicional-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box modal-ficha-ia-box">
+        <button class="modal-producto-cerrar" id="modal-info-adicional-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-circle-info"></i> Información adicional</h3>
+        <p id="modal-info-adicional-nombre" class="modal-editar-ficha-nombre"></p>
+        <div id="modal-info-adicional-contenido" class="info-adicional-contenido"></div>
     </div>
 </div>
 
@@ -5409,6 +5573,7 @@ window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 // a petición de Eloy, nunca debe verse ni ser accesible en producción/
 // release, solo en preproducción.
 window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
+window.MOSTRAR_EDITAR_INFO_ADICIONAL = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_PANEL_ANALITICA = window.OM_PREPRODUCCION;
@@ -5485,6 +5650,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-producto-precio-mayor-bloque', window.MOSTRAR_PRECIO_MAYOR && !window.OM_SESION_PROFESIONAL_ACTIVA);
     eliminarSiRestringido_('modal-producto-editar-ficha-tecnica', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     eliminarSiRestringido_('modal-editar-ficha-overlay', window.MOSTRAR_EDITAR_FICHA_TECNICA);
+    eliminarSiRestringido_('modal-producto-editar-info-adicional', window.MOSTRAR_EDITAR_INFO_ADICIONAL);
+    eliminarSiRestringido_('modal-editar-info-overlay', window.MOSTRAR_EDITAR_INFO_ADICIONAL);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
         const btnGD = document.getElementById('btn-gestionar-destacados');
         if (btnGD) btnGD.classList.add('visible');
@@ -12625,6 +12792,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         configurarBotonFichaTecnica(p);
         configurarBotonCartaColores(p);
         configurarEditarFichaTecnica(p);
+        configurarInfoAdicional(p);
         // Oculta también la fila que las envuelve cuando ninguno de los dos
         // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas) —
         // salvo en preproducción, que la deja visible siempre que esté el
@@ -13235,6 +13403,352 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!boton) return; // eliminado del DOM en producción
         boton.style.display = 'inline-flex';
         boton.onclick = () => abrirModalEditarFichaTecnica(p);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Información adicional (texto enriquecido) — detalles técnicos,
+    // limitaciones, venta por cajas/lotes... Visible para TODOS
+    // (producción incluida) cuando el producto tiene algo escrito; el
+    // botón de editar es solo preproducción (ver
+    // window.MOSTRAR_EDITAR_INFO_ADICIONAL).
+    // ══════════════════════════════════════════════════════════════════
+
+    // Mismo saneador (lista blanca de etiquetas, sin atributos) que
+    // sanearHtmlEnriquecido_ en apps_script_trigger.js — se aplica
+    // TAMBIÉN aquí, en el cliente, antes de pintar nada con innerHTML:
+    // aunque el servidor ya lo sanea al guardar, nunca se confía a
+    // ciegas ni siquiera en los propios datos ya guardados (defensa en
+    // profundidad — p. ej. si algún día se sirviera este campo desde
+    // otra fuente, o hubiera un fallo en el saneado del servidor).
+    const TAGS_ENRIQUECIDO_PERMITIDAS_ = ['b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'p'];
+    function sanearHtmlEnriquecidoCliente_(entrada) {
+        let escapado = (entrada || '').toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        TAGS_ENRIQUECIDO_PERMITIDAS_.forEach((tag) => {
+            escapado = escapado
+                .replace(new RegExp('&lt;' + tag + '&gt;', 'gi'), '<' + tag + '>')
+                .replace(new RegExp('&lt;/' + tag + '&gt;', 'gi'), '</' + tag + '>');
+        });
+        return escapado.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
+    }
+
+    // Por encima de este número de LÍNEAS visibles, la información
+    // adicional ya no cabe razonablemente en la propia vista de detalle
+    // — a petición de Eloy, tras comprobar que un resumen largo de la
+    // IA "es enorme" ahí metido: se recorta visualmente (CSS
+    // line-clamp, igual de alto sea cual sea el formato/tamaño de
+    // fuente real) con un botón "Ver información completa" que abre el
+    // contenido íntegro (con todo su formato) en una modal aparte. Se
+    // mide el recorte REAL en pantalla (scrollHeight > clientHeight),
+    // no un número de caracteres — un número de caracteres no tiene en
+    // cuenta cuánto ocupa de verdad el texto ya formateado (listas,
+    // negrita, ancho de columna...).
+    const LINEAS_CLAMP_INFO_ADICIONAL_ = 8;
+
+    function configurarInfoAdicional(p) {
+        const bloque = $('modal-producto-info-adicional');
+        const contenido = $('modal-producto-info-adicional-contenido');
+        const botonVerTodo = $('modal-producto-info-adicional-vertodo');
+        const tieneTexto = !!(p.info_adicional && p.info_adicional.trim());
+        if (bloque && contenido) {
+            bloque.style.display = tieneTexto ? '' : 'none';
+            if (tieneTexto) {
+                const htmlSaneado = sanearHtmlEnriquecidoCliente_(p.info_adicional);
+                contenido.innerHTML = htmlSaneado;
+                contenido.classList.add('es-recortado');
+                if (botonVerTodo) botonVerTodo.style.display = 'none';
+                // El recorte (line-clamp) necesita que el navegador ya
+                // haya calculado el layout real para saber si de verdad
+                // sobra texto — se comprueba en el siguiente frame, no
+                // de inmediato (justo tras fijar innerHTML, scrollHeight
+                // todavía podría no reflejar el contenido nuevo).
+                requestAnimationFrame(() => {
+                    const haySobrante = contenido.scrollHeight > contenido.clientHeight + 1;
+                    if (botonVerTodo) {
+                        botonVerTodo.style.display = haySobrante ? 'inline-flex' : 'none';
+                        botonVerTodo.onclick = () => mostrarModalInfoAdicionalCompleta_(p, htmlSaneado);
+                    }
+                });
+            } else {
+                contenido.innerHTML = '';
+                contenido.classList.remove('es-recortado');
+                if (botonVerTodo) botonVerTodo.style.display = 'none';
+            }
+        }
+        const boton = $('modal-producto-editar-info-adicional');
+        if (!boton) return; // eliminado del DOM en producción
+        boton.style.display = 'block';
+        boton.onclick = () => abrirModalEditarInfoAdicional(p);
+    }
+
+    function mostrarModalInfoAdicionalCompleta_(p, htmlSaneado) {
+        $('modal-info-adicional-nombre').textContent = p.nombre;
+        $('modal-info-adicional-contenido').innerHTML = htmlSaneado;
+        $('modal-info-adicional-overlay').classList.add('activo');
+    }
+    function cerrarModalInfoAdicionalCompleta_() {
+        $('modal-info-adicional-overlay').classList.remove('activo');
+    }
+    if ($('modal-info-adicional-cerrar')) $('modal-info-adicional-cerrar').addEventListener('click', cerrarModalInfoAdicionalCompleta_);
+    if ($('modal-info-adicional-overlay')) {
+        $('modal-info-adicional-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-info-adicional-overlay') cerrarModalInfoAdicionalCompleta_();
+        });
+    }
+
+    const MAX_INFO_ADICIONAL_CARACTERES_ = 40000;
+    let productoEditarInfoActual_ = null;
+
+    function contarTextoPlanoEditable_(el) {
+        // .innerText (no .textContent) respeta los saltos de línea reales
+        // que ve quien escribe (cada <p>/<li> cuenta como una línea) — es
+        // el mismo criterio con el que luego se mide en el servidor (ver
+        // sanearHtmlEnriquecido_, que mide sobre el texto plano visible).
+        return (el.innerText || '').length;
+    }
+
+    function actualizarContadorInfoAdicional_() {
+        const el = $('modal-editar-info-editable');
+        const total = contarTextoPlanoEditable_(el);
+        const contador = $('modal-editar-info-contador');
+        contador.textContent = total;
+        contador.parentElement.classList.toggle('es-limite', total > MAX_INFO_ADICIONAL_CARACTERES_);
+    }
+
+    function abrirModalEditarInfoAdicional(p) {
+        if (!window.MOSTRAR_EDITAR_INFO_ADICIONAL) return; // red de seguridad, además del botón ya eliminado en producción
+        productoEditarInfoActual_ = p;
+        $('modal-editar-info-nombre').textContent = p.nombre;
+        $('modal-editar-info-maximo').textContent = MAX_INFO_ADICIONAL_CARACTERES_;
+        $('modal-editar-info-editable').innerHTML = p.info_adicional ? sanearHtmlEnriquecidoCliente_(p.info_adicional) : '';
+        $('modal-editar-info-error').style.display = 'none';
+        $('modal-editar-info-guardar').textContent = 'Guardar';
+        actualizarContadorInfoAdicional_();
+        $('modal-editar-info-overlay').classList.add('activo');
+        setTimeout(() => $('modal-editar-info-editable').focus(), 50);
+    }
+
+    function cerrarModalEditarInfoAdicional() {
+        $('modal-editar-info-overlay').classList.remove('activo');
+        productoEditarInfoActual_ = null;
+    }
+
+    // Barra de herramientas — execCommand sigue siendo la forma más
+    // simple de aplicar negrita/cursiva/subrayado/listas sobre una
+    // selección dentro de un contenteditable sin añadir ninguna
+    // dependencia externa; aunque está "deprecado", los navegadores que
+    // usa este sitio lo siguen soportando de sobra para este alcance tan
+    // acotado (solo 5 comandos, nunca HTML arbitrario).
+    document.querySelectorAll('.editor-enriquecido-toolbar button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            $('modal-editar-info-editable').focus();
+            document.execCommand(btn.dataset.cmd, false, null);
+            actualizarContadorInfoAdicional_();
+        });
+    });
+    // Limpia basura típica de un copia-pega desde otra web (Gemini y
+    // similares) — a veces el propio texto PLANO del portapapeles ya
+    // trae fragmentos de etiquetas ("<div>", "</div>") y entidades HTML
+    // sueltas ("&nbsp;", "&amp;nbsp;") como caracteres literales, no
+    // como HTML real — no son ningún riesgo de seguridad (nunca se
+    // interpretan), pero ensucian la lectura y obligaban a borrarlas a
+    // mano una por una ("aparece mal formado", aviso real de Eloy).
+    function decodificarEntidadesHtml_(s) {
+        return s
+            .replace(/&amp;/gi, '&')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/&lt;/gi, '<')
+            .replace(/&gt;/gi, '>')
+            .replace(/&quot;/gi, '"')
+            .replace(/&#0?39;/gi, '\'');
+    }
+    function limpiarTextoPegado_(texto) {
+        let t = texto;
+        // Fragmentos de etiquetas HTML sueltos como texto literal.
+        t = t.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(\s+[^<>]*)?>/g, '');
+        // Entidades HTML comunes, decodificadas a su carácter real — DOS
+        // pasadas, no una: un texto doblemente escapado como "&amp;nbsp;"
+        // decodifica primero a "&nbsp;" en la primera pasada (&amp;->&)
+        // y necesita una segunda pasada para llegar al espacio real.
+        t = decodificarEntidadesHtml_(decodificarEntidadesHtml_(t));
+        // Colapsa 3+ saltos de línea seguidos (frecuente tras quitar
+        // divs vacíos) a como mucho una línea en blanco entre párrafos.
+        return t.replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    // Quita marcadores de énfasis Markdown en negrita ("**texto**") que
+    // a veces trae el texto copiado de la IA — aquí siempre se tratan
+    // como simple marcado de texto, nunca como negrita real (ver
+    // convertirTextoPlanoAHtmlBasico_, que sí distingue aparte las
+    // líneas que SON un título completo).
+    function quitarNegritaMarkdownInline_(s) {
+        return s.replace(/\*\*(.+?)\*\*/g, '$1');
+    }
+
+    // Ayuda a formatear más rápido un texto pegado ya limpio:
+    // - Las líneas que son un título completo (encabezado Markdown
+    //   "# Título", o toda la línea envuelta en "**negrita**", patrón
+    //   habitual de la IA para separar secciones) son lo ÚNICO que se
+    //   deja en negrita real.
+    // - Las líneas que empiezan por un marcador de lista habitual
+    //   (-, *, •) se agrupan en una lista real <ul><li> sin tener que
+    //   seleccionarlas a mano y pulsar el botón de lista.
+    // - Todo lo demás (y cualquier "**énfasis**" suelto dentro de una
+    //   línea que no sea el título completo) se deja en texto normal —
+    //   petición real de Eloy: "que no lo deje en negrita todo, solo
+    //   cabeceras, lo demás en texto normal y/o con guiones".
+    // Todo el contenido variable pasa por escaparHtmlTexto_ antes de
+    // ensamblarse — el HTML resultante lo construye por completo este
+    // código, nunca el texto pegado directamente.
+    function convertirTextoPlanoAHtmlBasico_(texto) {
+        const RE_VINETA = /^\s*[-*•]\s+(.*)$/;
+        const RE_ENCABEZADO_MD = /^#{1,6}\s+(.+)$/;
+        const RE_LINEA_NEGRITA_COMPLETA = /^\*\*(.+)\*\*$/;
+        const partes = [];
+        let parrafo = [];
+        let lista = [];
+        const cerrarParrafo = () => {
+            if (parrafo.length) partes.push('<p>' + parrafo.map(escaparHtmlTexto_).join('<br>') + '</p>');
+            parrafo = [];
+        };
+        const cerrarLista = () => {
+            if (lista.length) partes.push('<ul>' + lista.map(li => '<li>' + escaparHtmlTexto_(li) + '</li>').join('') + '</ul>');
+            lista = [];
+        };
+        texto.split('\n').forEach((linea) => {
+            const lineaTrim = linea.trim();
+            const mTitulo = lineaTrim.match(RE_ENCABEZADO_MD) || lineaTrim.match(RE_LINEA_NEGRITA_COMPLETA);
+            if (mTitulo) {
+                cerrarLista();
+                cerrarParrafo();
+                const texto = quitarNegritaMarkdownInline_(mTitulo[1].trim());
+                partes.push('<p><b>' + escaparHtmlTexto_(texto) + '</b></p>');
+                return;
+            }
+            const mVineta = linea.match(RE_VINETA);
+            if (mVineta) {
+                cerrarParrafo();
+                lista.push(quitarNegritaMarkdownInline_(mVineta[1].trim()));
+            } else if (lineaTrim === '') {
+                cerrarLista();
+                cerrarParrafo();
+            } else {
+                cerrarLista();
+                parrafo.push(quitarNegritaMarkdownInline_(lineaTrim));
+            }
+        });
+        cerrarLista();
+        cerrarParrafo();
+        return partes.join('');
+    }
+
+    if ($('modal-editar-info-editable')) {
+        // Al pulsar Enter dentro de un contenteditable, Chrome envuelve
+        // cada línea nueva en un <div> por defecto — una etiqueta que
+        // NO está en la lista blanca, así que cualquier línea escrita a
+        // mano (no pegada) se guardaba como basura escapada literal
+        // ("&lt;div&gt;..."), aviso real de Eloy. defaultParagraphSeparator
+        // fuerza que use <p> en su lugar (que sí está permitido) — hay
+        // que fijarlo cada vez que el editor recibe el foco, nunca una
+        // sola vez de antemano.
+        $('modal-editar-info-editable').addEventListener('focus', () => {
+            document.execCommand('defaultParagraphSeparator', false, 'p');
+        });
+        $('modal-editar-info-editable').addEventListener('input', actualizarContadorInfoAdicional_);
+        // Pegar SIEMPRE como texto plano ya limpio y con una estructura
+        // básica (párrafos/listas/títulos) — nunca el HTML de la página
+        // de origen tal cual (ver limpiarTextoPegado_/
+        // convertirTextoPlanoAHtmlBasico_ más arriba para el porqué
+        // completo). Fuera de eso, lo único que puede llevar formato
+        // real (negrita/cursiva/subrayado) es lo que el propio usuario
+        // aplique después con la barra de herramientas de aquí arriba.
+        $('modal-editar-info-editable').addEventListener('paste', (e) => {
+            e.preventDefault();
+            // Red de seguridad: si el cursor estaba en medio de un
+            // "modo negrita/cursiva/subrayado" activado a mano justo
+            // antes de pegar (p. ej. tras escribir un título con el
+            // botón de negrita sin desactivarlo luego), se quita ANTES
+            // de insertar — sin esto, todo el texto pegado podía
+            // heredar ese formato y salir entero en negrita, aviso real
+            // de Eloy. removeFormat (no un toggle por comando) es lo
+            // único que de verdad limpia el "modo" de formato activo en
+            // el punto de inserción, haya o no selección.
+            document.execCommand('removeFormat', false, null);
+            const textoOriginal = (e.clipboardData || window.clipboardData).getData('text/plain');
+            const textoLimpio = limpiarTextoPegado_(textoOriginal);
+            document.execCommand('insertHTML', false, convertirTextoPlanoAHtmlBasico_(textoLimpio));
+            actualizarContadorInfoAdicional_();
+        });
+    }
+
+    function ejecutarGuardarInfoAdicional() {
+        const p = productoEditarInfoActual_;
+        if (!p) return;
+        const editable = $('modal-editar-info-editable');
+        const errorEl = $('modal-editar-info-error');
+        const btn = $('modal-editar-info-guardar');
+
+        if (contarTextoPlanoEditable_(editable) > MAX_INFO_ADICIONAL_CARACTERES_) {
+            errorEl.textContent = `El texto supera el máximo de ${MAX_INFO_ADICIONAL_CARACTERES_} caracteres.`;
+            errorEl.style.display = 'block';
+            return;
+        }
+        errorEl.style.display = 'none';
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            return;
+        }
+        // El propio contenido del contenteditable (generado por
+        // execCommand) es el que se manda — el servidor lo vuelve a
+        // sanear de todas formas (ver sanearHtmlEnriquecido_), así que no
+        // hace falta limpiarlo aquí antes de enviarlo.
+        const html = editable.innerHTML.trim();
+
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ accion: 'actualizar_info_adicional', referencia: p.ref, html: html }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+            p.info_adicional = data.info_adicional;
+            configurarInfoAdicional(p);
+            mostrarToast('✓ Información adicional actualizada correctamente.');
+            cerrarModalEditarInfoAdicional();
+        })
+        .catch(err => {
+            console.error('Error al actualizar información adicional:', err);
+            errorEl.textContent = err.message || 'Error al guardar. Verifica la conexión y los logs.';
+            errorEl.style.display = 'block';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = original;
+        });
+    }
+
+    if ($('modal-editar-info-cerrar')) $('modal-editar-info-cerrar').addEventListener('click', cerrarModalEditarInfoAdicional);
+    if ($('modal-editar-info-cancelar')) $('modal-editar-info-cancelar').addEventListener('click', cerrarModalEditarInfoAdicional);
+    if ($('modal-editar-info-guardar')) $('modal-editar-info-guardar').addEventListener('click', ejecutarGuardarInfoAdicional);
+    // A diferencia del resto de modales de detalle de producto, esta NO
+    // se cierra al hacer clic fuera (en el fondo oscuro) — petición
+    // real de Eloy: mientras se redacta un texto largo a mano, un clic
+    // fuera por error cerraba la modal y se perdía todo lo escrito.
+    // Solo se cierra con la "X" o "Cancelar", nunca por accidente.
+
+    function escaparHtmlTexto_(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
     }
 
     // Familias del área "pinturas" que NO son pintura en sí (herramientas,
