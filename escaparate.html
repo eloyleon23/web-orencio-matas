@@ -421,6 +421,19 @@
         color:var(--ink); margin:30px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--accent-2);
       }
       .shelf-grupo-titulo:first-child{ margin-top:0; }
+      /* Bloque de contenido (texto + imagen) intercalado entre
+         productos — full-width, igual que los títulos de grupo de
+         arriba (fuera de .shelf, para no heredar su minmax(272px,auto)
+         por una simple ficha de texto). */
+      .bloque-contenido{
+        margin:30px 0; padding:18px 20px; border-radius:var(--radius-m);
+        background:var(--paper-raised); border:1px solid var(--line);
+        display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center;
+      }
+      .bloque-contenido:first-child{ margin-top:0; }
+      .bloque-contenido-texto{ max-width:70ch; white-space:pre-wrap; line-height:1.5; color:var(--ink); }
+      .bloque-contenido-img{ max-width:420px; width:100%; }
+      .bloque-contenido-img img{ width:100%; height:auto; border-radius:var(--radius-s); display:block; }
       .card{
         position:relative; cursor:pointer;
         background:var(--paper-raised); border:1px solid var(--line);
@@ -895,6 +908,39 @@
       .destacar-panel textarea{ resize:vertical; min-height:38px; font-weight:400; }
       .destacar-panel-promo-otro{ flex:1 1 100%; }
       .destacar-panel-promo-otro input{ font-weight:400; }
+
+      /* ---------- Bloque de contenido (texto + imagen, intercalado
+         entre productos) — siempre "abierto" (sin <details>), a
+         diferencia de los productos: crear un bloque implica que se
+         quiere editar su texto ya mismo. */
+      .chip-bloque{
+        display:flex; align-items:flex-start; gap:9px;
+        border:1px solid var(--accent-2); border-radius:var(--radius-s); padding:8px;
+        background:var(--paper-raised);
+        transition:opacity 140ms ease, box-shadow 140ms ease;
+      }
+      .chip-bloque.arrastrando{ opacity:.4; }
+      .chip-bloque.arrastrando-sobre{ box-shadow:inset 0 2px 0 var(--accent), inset 0 -2px 0 var(--accent); }
+      .chip-bloque-cuerpo{ flex:1 1 auto; display:flex; flex-direction:column; gap:8px; min-width:0; }
+      .chip-bloque-etiqueta{ font-size:10.5px; color:var(--accent-2); text-transform:uppercase; letter-spacing:.04em; font-weight:700; }
+      .chip-bloque-cuerpo textarea{
+        font-family:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--line-strong);
+        border-radius:5px; background:var(--paper); color:var(--ink); resize:vertical; min-height:54px;
+      }
+      .chip-bloque-opciones{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      .chip-bloque-opciones label{
+        display:flex; align-items:center; gap:4px; font-size:11px; color:var(--ink-soft);
+        text-transform:uppercase; letter-spacing:.03em; font-weight:600;
+      }
+      .chip-bloque-opciones select{
+        font-family:inherit; font-size:12px; text-transform:none; letter-spacing:normal; font-weight:500;
+        padding:4px 6px; border:1px solid var(--line-strong); border-radius:5px; background:var(--paper); color:var(--ink);
+      }
+      .chip-bloque-opciones .btn-link-chip{
+        font-family:inherit; font-size:11px; font-weight:600; text-transform:none; letter-spacing:normal;
+        border:none; background:none; color:var(--accent-2); cursor:pointer; padding:2px 0;
+      }
+      .chip-bloque-preview{ max-width:140px; max-height:90px; border-radius:6px; border:1px solid var(--line); object-fit:cover; }
 
       .selected-count{ font-size:13px; color:var(--ink-soft); }
       .selected-count b{ color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -1618,6 +1664,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         Agrupar productos por su campo de agrupación (en el escaparate y en el folleto PDF)
       </label>
       <div class="selected-chips" id="selectedChips"></div>
+      <button type="button" class="btn ghost small" id="btnAnadirBloqueContenido">+ Añadir bloque de texto/imagen</button>
+      <input type="file" id="bloqueImgInput" accept="image/*" hidden>
     </div>
     <div class="filters-row">
       <div class="field">
@@ -1740,6 +1788,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const d = document.createElement('div');
     d.textContent = str || '';
     return d.innerHTML;
+  }
+
+  // Pinta un bloque de contenido (texto + imagen opcional) en la vitrina
+  // pública/buscador — SIEMPRE como texto plano escapado (nunca
+  // innerHTML del texto en crudo): lo escribe un encargado desde un
+  // <textarea> simple, no un editor de HTML, así que no hay ninguna
+  // superficie de XSS que cubrir aquí.
+  function bloqueContenidoHTML_(b){
+    if(!b) return '';
+    const estiloTexto = [
+      b.tamano === 'grande' ? 'font-size:1.15em' : (b.tamano === 'muy-grande' ? 'font-size:1.4em' : ''),
+      b.negrita ? 'font-weight:700' : '',
+      b.cursiva ? 'font-style:italic' : '',
+    ].filter(Boolean).join(';');
+    const textoHtml = (b.texto && b.texto.trim()) ? `<p class="bloque-contenido-texto" style="${estiloTexto}">${escaparHTML_(b.texto)}</p>` : '';
+    const imgHtml = b.imagen ? `<div class="bloque-contenido-img"><img src="${urlImagenCampana(b.imagen, 900)}" alt="" loading="lazy"></div>` : '';
+    if(!textoHtml && !imgHtml) return '';
+    const partes = b.imagenPosicion === 'abajo' ? [textoHtml, imgHtml] : [imgHtml, textoHtml];
+    return `<div class="bloque-contenido">${partes.join('')}</div>`;
   }
 
   // Perfil profesional: precio al por mayor siempre, en vez del PVP y sin
@@ -2688,8 +2755,57 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const descuentoEfectivo = precioPromoEfectivo ? 0 : ((d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0));
       return productCard(r, { destacado: d, descuento: descuentoEfectivo, precioPromo: precioPromoEfectivo });
     };
-    if(!productosOrdenados.length){
+    const tieneBloquesContenido_ = Array.isArray(c.ordenContenido) && c.ordenContenido.some(cl => (cl||'').indexOf('bloque:') === 0);
+    if(!productosOrdenados.length && !tieneBloquesContenido_){
       $("#shelf").innerHTML = `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
+    } else if(tieneBloquesContenido_){
+      // Bloques de texto/imagen intercalados en cualquier punto del
+      // orden (petición real: "intercalados, en cualquier punto") — el
+      // agrupado por campo "grupo" y el orden por posV (arriba/medio/
+      // abajo) se siguen aplicando, pero solo DENTRO de cada tramo de
+      // productos entre dos bloques, nunca saltando por encima de un
+      // bloque: así un bloque de contenido nunca rompe un grupo a
+      // medias ni se ve "adelantado" fuera de su sitio en el orden.
+      const bloquesContenidoMap_ = {};
+      (Array.isArray(c.bloquesContenido) ? c.bloquesContenido : []).forEach(b=>{ if(b && b.id) bloquesContenidoMap_[b.id] = b; });
+      const refsValidos_ = new Set(c.productos);
+      const secuencia_ = c.ordenContenido.filter(cl => (cl||'').indexOf('bloque:') === 0 ? !!bloquesContenidoMap_[cl.slice(7)] : refsValidos_.has(cl));
+      // Cualquier producto ausente de la secuencia guardada (p. ej.
+      // añadido sin volver a tocar el orden) se añade al final, para no
+      // perderlo nunca de la vitrina.
+      c.productos.forEach(ref => { if(secuencia_.indexOf(ref) === -1) secuencia_.push(ref); });
+
+      const segmentos_ = [];
+      secuencia_.forEach(clave => {
+        if(clave.indexOf('bloque:') === 0){
+          segmentos_.push({ tipo:'bloque', html: bloqueContenidoHTML_(bloquesContenidoMap_[clave.slice(7)]) });
+        } else {
+          const ultimo = segmentos_[segmentos_.length - 1];
+          if(ultimo && ultimo.tipo === 'productos') ultimo.refs.push(clave);
+          else segmentos_.push({ tipo:'productos', refs:[clave] });
+        }
+      });
+
+      $("#shelf").innerHTML = segmentos_.map(seg => {
+        if(seg.tipo === 'bloque') return seg.html;
+        if(c.agruparProductos){
+          const SIN_GRUPO_TRAMO_ = Symbol('sin-grupo');
+          let grupoAnterior = SIN_GRUPO_TRAMO_;
+          const subBloques = [];
+          seg.refs.forEach(r => {
+            const grupoActual = ((PRODUCTS[r] && PRODUCTS[r].grupo) || '').toString().trim();
+            if(grupoActual !== grupoAnterior){ subBloques.push({ titulo: grupoActual || null, html: '' }); grupoAnterior = grupoActual; }
+            subBloques[subBloques.length - 1].html += tarjetaDe_(r);
+          });
+          return subBloques.map(b => (b.titulo ? `<h3 class="shelf-grupo-titulo">${escaparHTML_(b.titulo)}</h3>` : '') + `<div class="shelf">${b.html}</div>`).join("");
+        }
+        const refsOrdenadosTramo = seg.refs.slice().sort((a,b) => {
+          const pa = PESO_POSICION_[(destacadosMap[a] || {}).posV] || 0;
+          const pb = PESO_POSICION_[(destacadosMap[b] || {}).posV] || 0;
+          return pa - pb;
+        });
+        return `<div class="shelf">${refsOrdenadosTramo.map(tarjetaDe_).join("")}</div>`;
+      }).join("");
     } else if(c.agruparProductos){
       // Agrupación activada: se ignora el reordenado por posV (arriba/
       // medio/abajo es cosa de destacados, no compatible con "mostrar
@@ -2787,6 +2903,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   let selected = new Set();
   let sugeridosIA = [];       // refs sugeridas por la IA en la sesión actual del modal
   let destacados = {};        // ref -> {tamano(1-6), alinH, posV, descuento(%), texto} — solo entradas con tamano>1, descuento>0 o texto no vacío
+  // Bloques de contenido personalizados (texto + imagen opcional),
+  // intercalables con los productos — petición real de Eloy: "poder
+  // añadir bloques customizados... y al final sea otro bloque más del
+  // escaparate y se puedan añadir tantos como se deseen". `bloques` es
+  // el contenido de cada uno (id -> {texto, tamano, negrita, cursiva,
+  // imagen, imagenPosicion}); `ordenMostrar` es el ORDEN COMBINADO real
+  // (productos Y bloques mezclados) — ESTE es el que de verdad se
+  // arrastra/reordena y se guarda como "ordenContenido"; `selected`
+  // sigue existiendo tal cual (solo para el picker: "¿ya está añadido
+  // este producto?"), pero deja de ser la fuente del orden.
+  let bloques = {};
+  let ordenMostrar = []; // array de { tipo:'producto', ref } | { tipo:'bloque', id }
+  const MAX_TEXTO_BLOQUE = 2000;
+  const TAMANOS_BLOQUE_ETIQUETAS_ = { normal:'Normal', grande:'Grande', 'muy-grande':'Muy grande' };
   const HINT_IA_DEFECTO = 'Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.';
   const ETIQUETAS_ALINEACION = { izquierda:'Izda.', centro:'Centro', derecha:'Dcha.' };
   const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
@@ -2854,7 +2984,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     $$(".pick-card", $("#pickerGrid")).forEach(card=>{
       card.addEventListener("click", ()=>{
         const ref = card.dataset.ref;
-        if(selected.has(ref)) selected.delete(ref); else selected.add(ref);
+        if(selected.has(ref)) quitarProductoDeOrden_(ref); else agregarProductoAOrden_(ref);
         card.classList.toggle("selected");
         updateSelCount();
         renderSeleccionados();
@@ -2908,7 +3038,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     attachPickCardHandlers();
   }
   $("#btnAnadirTodos").addEventListener("click", ()=>{
-    itemsPickerActual.forEach(p=>selected.add(p.ref));
+    itemsPickerActual.forEach(p=>agregarProductoAOrden_(p.ref));
     updateSelCount();
     renderSeleccionados();
     renderPicker(); // refresca el propio picker (marca como ya-añadidos, actualiza/oculta la barra)
@@ -2925,117 +3055,190 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   // ES el orden real que se guarda (ver productosArr más abajo, "orden
   // de inserción" del Set) — no existe ninguna columna de orden aparte
   // en la Sheet: no hace falta tocar nada en Apps Script.
-  function moverProductoSeleccionado_(ref, delta){
-    const refs = Array.from(selected);
-    const i = refs.indexOf(ref);
+  // Helpers del orden combinado (productos Y bloques de contenido
+  // intercalados — ver ordenMostrar más arriba). "clave" identifica
+  // cualquier entrada de ordenMostrar de forma única: la propia ref
+  // para un producto, o "bloque:<id>" para un bloque — mismo formato
+  // que ordenContenido en el backend, para no tener que traducir nada
+  // al guardar.
+  function claveDeItem_(it){ return it.tipo === 'bloque' ? ('bloque:' + it.id) : it.ref; }
+  function agregarProductoAOrden_(ref){
+    selected.add(ref);
+    if(!ordenMostrar.some(it => it.tipo === 'producto' && it.ref === ref)) ordenMostrar.push({ tipo:'producto', ref });
+  }
+  function quitarProductoDeOrden_(ref){
+    selected.delete(ref);
+    ordenMostrar = ordenMostrar.filter(it => !(it.tipo === 'producto' && it.ref === ref));
+  }
+  function crearBloqueNuevo_(){
+    const id = 'bloque-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    bloques[id] = { id, texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba' };
+    ordenMostrar.push({ tipo:'bloque', id });
+    return id;
+  }
+  function quitarBloqueDeOrden_(id){
+    delete bloques[id];
+    ordenMostrar = ordenMostrar.filter(it => !(it.tipo === 'bloque' && it.id === id));
+  }
+  // Reordena ordenMostrar moviendo la entrada identificada por `clave`
+  // `delta` posiciones (−1 = subir, +1 = bajar) — usado tanto por los
+  // botones ▲▼ como por el resultado final de arrastrar con el ratón
+  // (ver dragstart/drop en renderSeleccionados()). El orden de este
+  // array ES el orden real que se guarda como "ordenContenido".
+  function moverEnOrden_(clave, delta){
+    const i = ordenMostrar.findIndex(it => claveDeItem_(it) === clave);
     if(i === -1) return;
     const j = i + delta;
-    if(j < 0 || j >= refs.length) return;
-    [refs[i], refs[j]] = [refs[j], refs[i]];
-    selected = new Set(refs);
+    if(j < 0 || j >= ordenMostrar.length) return;
+    [ordenMostrar[i], ordenMostrar[j]] = [ordenMostrar[j], ordenMostrar[i]];
     renderSeleccionados();
   }
 
-  let refArrastrando_ = null;
+  let claveArrastrando_ = null;
 
+  function chipProductoHTML_(ref, indice, total){
+    const p = PRODUCTS[ref];
+    const nombre = (p ? p.nombre : ref).replace(/"/g,'&quot;');
+    const imgUrl = p ? urlImagenProducto(p, 80) : null;
+    const d = destacadoActual(ref);
+    const esDestacado = d.tamano > 1;
+    const tieneDescuento = Number(d.descuento) > 0;
+    const tienePrecioPromo = Number(d.precioPromo) > 0;
+    const tieneTexto = !!(d.texto && d.texto.trim());
+    const tienePromo = !!(d.promo && d.promo.trim());
+    const promoModoOtro = !!d.promoManual;
+    const partesResumen = [];
+    if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
+    if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
+    if(tienePrecioPromo) partesResumen.push(`🏷️ ${fmtEUR(d.precioPromo)} € promo`);
+    if(tienePromo) partesResumen.push(`🎁 ${d.promo}`);
+    if(tieneTexto) partesResumen.push(`📝 Con texto de pie`);
+    const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento / promo / texto…';
+    return `<div class="chip-item chip-producto" draggable="true" data-ref="${ref}" data-clave="${ref}">
+      <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar ${nombre}">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+      </button>
+      <span class="chip-orden">
+        <button type="button" class="chip-orden-btn" data-mover-clave="${ref}" data-delta="-1" title="Subir" aria-label="Subir ${nombre}" ${indice===0?'disabled':''}>▲</button>
+        <button type="button" class="chip-orden-btn" data-mover-clave="${ref}" data-delta="1" title="Bajar" aria-label="Bajar ${nombre}" ${indice===total-1?'disabled':''}>▼</button>
+      </span>
+      <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
+      <span class="chip-nombre" title="${nombre}">${nombre}</span>
+      <details class="destacar" ${(esDestacado||tieneDescuento||tienePrecioPromo||tieneTexto||tienePromo||promoModoOtro)?'open':''}>
+        <summary class="${(esDestacado||tieneDescuento||tienePrecioPromo||tieneTexto||tienePromo)?'activo':''}">${resumen}</summary>
+        <div class="destacar-panel">
+          <label>Tamaño
+            <select data-campo="tamano" data-ref="${ref}">
+              ${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n===d.tamano?'selected':''}>${n===1?'1 (normal)':n}</option>`).join('')}
+            </select>
+          </label>
+          <label>Alineación
+            <select data-campo="alinH" data-ref="${ref}" ${!esDestacado?'disabled':''}>
+              <option value="izquierda" ${d.alinH==='izquierda'?'selected':''}>Izquierda</option>
+              <option value="centro" ${d.alinH==='centro'?'selected':''}>Centro</option>
+              <option value="derecha" ${d.alinH==='derecha'?'selected':''}>Derecha</option>
+            </select>
+          </label>
+          <label>Posición
+            <select data-campo="posV" data-ref="${ref}" ${!esDestacado?'disabled':''}>
+              <option value="arriba" ${d.posV==='arriba'?'selected':''}>Arriba</option>
+              <option value="medio" ${d.posV==='medio'?'selected':''}>Medio</option>
+              <option value="abajo" ${d.posV==='abajo'?'selected':''}>Abajo</option>
+            </select>
+          </label>
+          <label>Descuento (%)
+            <input type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15" data-campo="descuento" data-ref="${ref}" value="${tieneDescuento ? d.descuento : ''}" ${tienePrecioPromo?'disabled':''}>
+          </label>
+          <label>Precio de promoción (€, con IVA)
+            <input type="number" inputmode="decimal" min="0" step="0.01" placeholder="p. ej. 44,25" data-campo="precioPromo" data-ref="${ref}" value="${tienePrecioPromo ? d.precioPromo : ''}" ${tieneDescuento?'disabled':''}>
+          </label>
+          <label>Promoción (aparte del descuento)
+            <select data-campo="promo" data-ref="${ref}">
+              <option value="">Ninguna</option>
+              ${PROMOS_PREDEFINIDAS_.map(op=>`<option value="${op}" ${(!promoModoOtro && d.promo===op)?'selected':''}>${op}</option>`).join('')}
+              <option value="__otro__" ${promoModoOtro?'selected':''}>Otro…</option>
+            </select>
+          </label>
+          <label class="destacar-panel-promo-otro" ${!promoModoOtro?'hidden':''}>Texto de la promoción
+            <input type="text" maxlength="${MAX_PROMO_PRODUCTO}" placeholder="p. ej. Llévate 3 por el precio de 2" data-campo="promoTexto" data-ref="${ref}" value="${promoModoOtro ? (d.promo||'').replace(/"/g,'&quot;') : ''}">
+          </label>
+          <label class="destacar-panel-ancho">Texto de pie (opcional — descripción, ayuda o detalle técnico)
+            <textarea data-campo="texto" data-ref="${ref}" maxlength="${MAX_TEXTO_PRODUCTO}" rows="2" placeholder="p. ej. Incluye 3 recambios de filtro">${(d.texto||'').replace(/</g,'&lt;')}</textarea>
+          </label>
+          <label class="destacar-panel-ancho">Grupo (agrupación del producto — vale para todos los escaparates, no solo este)
+            <input type="text" maxlength="${MAX_GRUPO_PRODUCTO}" placeholder="p. ej. MAQUINARIA" data-campo="grupoProducto" data-ref="${ref}" value="${((p&&p.grupo)||'').replace(/"/g,'&quot;')}">
+          </label>
+        </div>
+      </details>
+      <button type="button" class="chip-quitar" data-quitar-clave="${ref}" data-tipo="producto" title="Quitar de la campaña" aria-label="Quitar ${nombre}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>`;
+  }
+  function chipBloqueHTML_(id, indice, total){
+    const b = bloques[id] || { texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba' };
+    const texto = (b.texto||'').replace(/</g,'&lt;');
+    return `<div class="chip-item chip-bloque" draggable="true" data-clave="bloque:${id}">
+      <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar este bloque">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+      </button>
+      <span class="chip-orden">
+        <button type="button" class="chip-orden-btn" data-mover-clave="bloque:${id}" data-delta="-1" title="Subir" aria-label="Subir bloque" ${indice===0?'disabled':''}>▲</button>
+        <button type="button" class="chip-orden-btn" data-mover-clave="bloque:${id}" data-delta="1" title="Bajar" aria-label="Bajar bloque" ${indice===total-1?'disabled':''}>▼</button>
+      </span>
+      <div class="chip-bloque-cuerpo">
+        <span class="chip-bloque-etiqueta">${ICONS.sparkle}Bloque de texto/imagen</span>
+        <textarea data-campo-bloque="texto" data-bloque="${id}" maxlength="${MAX_TEXTO_BLOQUE}" rows="3" placeholder="Escribe aquí el texto de este bloque…">${texto}</textarea>
+        <div class="chip-bloque-opciones">
+          <label>Tamaño
+            <select data-campo-bloque="tamano" data-bloque="${id}">
+              ${Object.keys(TAMANOS_BLOQUE_ETIQUETAS_).map(k=>`<option value="${k}" ${k===b.tamano?'selected':''}>${TAMANOS_BLOQUE_ETIQUETAS_[k]}</option>`).join('')}
+            </select>
+          </label>
+          <label><input type="checkbox" data-campo-bloque="negrita" data-bloque="${id}" ${b.negrita?'checked':''}> Negrita</label>
+          <label><input type="checkbox" data-campo-bloque="cursiva" data-bloque="${id}" ${b.cursiva?'checked':''}> Cursiva</label>
+          <label><button type="button" class="btn-link-chip" data-subir-imagen-bloque="${id}">${b.imagen?'Cambiar imagen':'+ Imagen'}</button></label>
+          ${b.imagen?`<label><button type="button" class="btn-link-chip" data-quitar-imagen-bloque="${id}">Quitar imagen</button></label>`:''}
+          ${b.imagen?`<label>Imagen
+            <select data-campo-bloque="imagenPosicion" data-bloque="${id}">
+              <option value="arriba" ${b.imagenPosicion==='arriba'?'selected':''}>Arriba</option>
+              <option value="abajo" ${b.imagenPosicion==='abajo'?'selected':''}>Abajo</option>
+            </select>
+          </label>`:''}
+        </div>
+        ${b.imagen?`<img class="chip-bloque-preview" src="${urlImagenCampana(b.imagen,200)}" alt="">`:''}
+      </div>
+      <button type="button" class="chip-quitar" data-quitar-clave="bloque:${id}" data-tipo="bloque" title="Quitar bloque" aria-label="Quitar bloque">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>`;
+  }
   function renderSeleccionados(){
     const cont = $("#selectedChips");
-    const refs = Array.from(selected);
-    $("#selectedHeadCount").textContent = refs.length;
-    $("#btnQuitarTodos").disabled = !refs.length;
-    cont.innerHTML = refs.map((ref, indice)=>{
-      const p = PRODUCTS[ref];
-      const nombre = (p ? p.nombre : ref).replace(/"/g,'&quot;');
-      const imgUrl = p ? urlImagenProducto(p, 80) : null;
-      const d = destacadoActual(ref);
-      const esDestacado = d.tamano > 1;
-      const tieneDescuento = Number(d.descuento) > 0;
-      const tienePrecioPromo = Number(d.precioPromo) > 0;
-      const tieneTexto = !!(d.texto && d.texto.trim());
-      const tienePromo = !!(d.promo && d.promo.trim());
-      const promoModoOtro = !!d.promoManual;
-      const partesResumen = [];
-      if(esDestacado) partesResumen.push(`${ICONS.sparkle}Tamaño ${d.tamano} · ${ETIQUETAS_ALINEACION[d.alinH]} · ${ETIQUETAS_POSICION[d.posV]}`);
-      if(tieneDescuento) partesResumen.push(`🏷️ ${d.descuento}% dto.`);
-      if(tienePrecioPromo) partesResumen.push(`🏷️ ${fmtEUR(d.precioPromo)} € promo`);
-      if(tienePromo) partesResumen.push(`🎁 ${d.promo}`);
-      if(tieneTexto) partesResumen.push(`📝 Con texto de pie`);
-      const resumen = partesResumen.length ? partesResumen.join(' · ') : 'Destacar / descuento / promo / texto…';
-      return `<div class="chip-producto" draggable="true" data-ref="${ref}">
-        <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar ${nombre}">
-          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
-        </button>
-        <span class="chip-orden">
-          <button type="button" class="chip-orden-btn" data-mover="${ref}" data-delta="-1" title="Subir" aria-label="Subir ${nombre}" ${indice===0?'disabled':''}>▲</button>
-          <button type="button" class="chip-orden-btn" data-mover="${ref}" data-delta="1" title="Bajar" aria-label="Bajar ${nombre}" ${indice===refs.length-1?'disabled':''}>▼</button>
-        </span>
-        <span class="chip-img">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">` : (p ? iconFor(p) : '')}</span>
-        <span class="chip-nombre" title="${nombre}">${nombre}</span>
-        <details class="destacar" ${(esDestacado||tieneDescuento||tienePrecioPromo||tieneTexto||tienePromo||promoModoOtro)?'open':''}>
-          <summary class="${(esDestacado||tieneDescuento||tienePrecioPromo||tieneTexto||tienePromo)?'activo':''}">${resumen}</summary>
-          <div class="destacar-panel">
-            <label>Tamaño
-              <select data-campo="tamano" data-ref="${ref}">
-                ${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n===d.tamano?'selected':''}>${n===1?'1 (normal)':n}</option>`).join('')}
-              </select>
-            </label>
-            <label>Alineación
-              <select data-campo="alinH" data-ref="${ref}" ${!esDestacado?'disabled':''}>
-                <option value="izquierda" ${d.alinH==='izquierda'?'selected':''}>Izquierda</option>
-                <option value="centro" ${d.alinH==='centro'?'selected':''}>Centro</option>
-                <option value="derecha" ${d.alinH==='derecha'?'selected':''}>Derecha</option>
-              </select>
-            </label>
-            <label>Posición
-              <select data-campo="posV" data-ref="${ref}" ${!esDestacado?'disabled':''}>
-                <option value="arriba" ${d.posV==='arriba'?'selected':''}>Arriba</option>
-                <option value="medio" ${d.posV==='medio'?'selected':''}>Medio</option>
-                <option value="abajo" ${d.posV==='abajo'?'selected':''}>Abajo</option>
-              </select>
-            </label>
-            <label>Descuento (%)
-              <input type="number" inputmode="numeric" min="0" max="95" step="1" placeholder="p. ej. 15" data-campo="descuento" data-ref="${ref}" value="${tieneDescuento ? d.descuento : ''}" ${tienePrecioPromo?'disabled':''}>
-            </label>
-            <label>Precio de promoción (€, con IVA)
-              <input type="number" inputmode="decimal" min="0" step="0.01" placeholder="p. ej. 44,25" data-campo="precioPromo" data-ref="${ref}" value="${tienePrecioPromo ? d.precioPromo : ''}" ${tieneDescuento?'disabled':''}>
-            </label>
-            <label>Promoción (aparte del descuento)
-              <select data-campo="promo" data-ref="${ref}">
-                <option value="">Ninguna</option>
-                ${PROMOS_PREDEFINIDAS_.map(op=>`<option value="${op}" ${(!promoModoOtro && d.promo===op)?'selected':''}>${op}</option>`).join('')}
-                <option value="__otro__" ${promoModoOtro?'selected':''}>Otro…</option>
-              </select>
-            </label>
-            <label class="destacar-panel-promo-otro" ${!promoModoOtro?'hidden':''}>Texto de la promoción
-              <input type="text" maxlength="${MAX_PROMO_PRODUCTO}" placeholder="p. ej. Llévate 3 por el precio de 2" data-campo="promoTexto" data-ref="${ref}" value="${promoModoOtro ? (d.promo||'').replace(/"/g,'&quot;') : ''}">
-            </label>
-            <label class="destacar-panel-ancho">Texto de pie (opcional — descripción, ayuda o detalle técnico)
-              <textarea data-campo="texto" data-ref="${ref}" maxlength="${MAX_TEXTO_PRODUCTO}" rows="2" placeholder="p. ej. Incluye 3 recambios de filtro">${(d.texto||'').replace(/</g,'&lt;')}</textarea>
-            </label>
-            <label class="destacar-panel-ancho">Grupo (agrupación del producto — vale para todos los escaparates, no solo este)
-              <input type="text" maxlength="${MAX_GRUPO_PRODUCTO}" placeholder="p. ej. MAQUINARIA" data-campo="grupoProducto" data-ref="${ref}" value="${((p&&p.grupo)||'').replace(/"/g,'&quot;')}">
-            </label>
-          </div>
-        </details>
-        <button type="button" class="chip-quitar" data-quitar="${ref}" title="Quitar de la campaña" aria-label="Quitar ${nombre}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>`;
+    const items = ordenMostrar;
+    $("#selectedHeadCount").textContent = items.filter(it=>it.tipo==='producto').length;
+    $("#btnQuitarTodos").disabled = !items.length;
+    cont.innerHTML = items.map((it, indice)=>{
+      return it.tipo === 'bloque' ? chipBloqueHTML_(it.id, indice, items.length) : chipProductoHTML_(it.ref, indice, items.length);
     }).join("");
-    $$("[data-quitar]", cont).forEach(btn=>{
+    $$("[data-quitar-clave]", cont).forEach(btn=>{
       btn.addEventListener("click", ()=>{
-        const ref = btn.dataset.quitar;
-        selected.delete(ref);
-        sugeridosIA = sugeridosIA.filter(r=>r!==ref);
-        delete destacados[ref];
+        if(btn.dataset.tipo === 'bloque'){
+          quitarBloqueDeOrden_(btn.dataset.quitarClave.replace(/^bloque:/, ''));
+        } else {
+          const ref = btn.dataset.quitarClave;
+          quitarProductoDeOrden_(ref);
+          sugeridosIA = sugeridosIA.filter(r=>r!==ref);
+          delete destacados[ref];
+        }
         updateSelCount();
         renderSeleccionados();
         renderPicker(); // por si el mismo producto se ve también en la búsqueda/sugerencias, para desmarcarlo ahí también
       });
     });
-    $$("[data-mover]", cont).forEach(btn=>{
+    $$("[data-mover-clave]", cont).forEach(btn=>{
       btn.addEventListener("click", ()=>{
-        moverProductoSeleccionado_(btn.dataset.mover, parseInt(btn.dataset.delta, 10));
+        moverEnOrden_(btn.dataset.moverClave, parseInt(btn.dataset.delta, 10));
       });
     });
     // Arrastrar y soltar para reordenar (drag-and-drop nativo del
@@ -3044,27 +3247,29 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // no es fiable en móvil). Solo arranca el arrastre si se agarra
     // desde el tirador (chip-arrastrar): el resto de la chip tiene
     // <select>/<input> con los que hay que poder interactuar con
-    // normalidad.
-    $$(".chip-producto", cont).forEach(chip=>{
+    // normalidad. ".chip-item" cubre tanto productos como bloques de
+    // contenido, para poder arrastrar y mezclar los dos tipos en el
+    // mismo orden.
+    $$(".chip-item", cont).forEach(chip=>{
       chip.addEventListener("dragstart", (e)=>{
         if(!e.target.closest(".chip-arrastrar")){ e.preventDefault(); return; }
-        refArrastrando_ = chip.dataset.ref;
+        claveArrastrando_ = chip.dataset.clave;
         chip.classList.add("arrastrando");
         e.dataTransfer.effectAllowed = "move";
-        try{ e.dataTransfer.setData("text/plain", refArrastrando_); }catch(err){}
+        try{ e.dataTransfer.setData("text/plain", claveArrastrando_); }catch(err){}
       });
       chip.addEventListener("dragend", ()=>{
         chip.classList.remove("arrastrando");
-        $$(".chip-producto", cont).forEach(c=>c.classList.remove("arrastrando-sobre"));
-        refArrastrando_ = null;
+        $$(".chip-item", cont).forEach(c=>c.classList.remove("arrastrando-sobre"));
+        claveArrastrando_ = null;
       });
       chip.addEventListener("dragover", (e)=>{
-        if(!refArrastrando_) return;
+        if(!claveArrastrando_) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
       });
       chip.addEventListener("dragenter", ()=>{
-        if(refArrastrando_ && refArrastrando_ !== chip.dataset.ref) chip.classList.add("arrastrando-sobre");
+        if(claveArrastrando_ && claveArrastrando_ !== chip.dataset.clave) chip.classList.add("arrastrando-sobre");
       });
       chip.addEventListener("dragleave", ()=>{
         chip.classList.remove("arrastrando-sobre");
@@ -3072,18 +3277,39 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       chip.addEventListener("drop", (e)=>{
         e.preventDefault();
         chip.classList.remove("arrastrando-sobre");
-        const refDestino = chip.dataset.ref;
-        if(!refArrastrando_ || refArrastrando_ === refDestino) return;
-        const refs = Array.from(selected);
-        const iOrigen = refs.indexOf(refArrastrando_);
-        if(iOrigen === -1 || refs.indexOf(refDestino) === -1) return;
-        refs.splice(iOrigen, 1);
+        const claveDestino = chip.dataset.clave;
+        if(!claveArrastrando_ || claveArrastrando_ === claveDestino) return;
+        const iOrigen = ordenMostrar.findIndex(it=>claveDeItem_(it)===claveArrastrando_);
+        if(iOrigen === -1 || ordenMostrar.findIndex(it=>claveDeItem_(it)===claveDestino) === -1) return;
+        const [itemMovido] = ordenMostrar.splice(iOrigen, 1);
         // Recalculado tras el splice: si el origen estaba antes del
         // destino, el índice del destino se ha desplazado una posición.
-        const iDestinoTrasQuitar = refs.indexOf(refDestino);
-        refs.splice(iDestinoTrasQuitar, 0, refArrastrando_);
-        selected = new Set(refs);
+        const iDestinoTrasQuitar = ordenMostrar.findIndex(it=>claveDeItem_(it)===claveDestino);
+        ordenMostrar.splice(iDestinoTrasQuitar, 0, itemMovido);
         renderSeleccionados();
+      });
+    });
+    $$("[data-campo-bloque]", cont).forEach(campo=>{
+      campo.addEventListener("change", ()=>{
+        const id = campo.dataset.bloque;
+        const b = bloques[id];
+        if(!b) return;
+        const nombreCampo = campo.dataset.campoBloque;
+        if(nombreCampo === 'negrita' || nombreCampo === 'cursiva') b[nombreCampo] = campo.checked;
+        else if(nombreCampo === 'texto') b.texto = campo.value.slice(0, MAX_TEXTO_BLOQUE);
+        else b[nombreCampo] = campo.value;
+        renderSeleccionados();
+      });
+    });
+    $$("[data-subir-imagen-bloque]", cont).forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        bloqueImagenObjetivo_ = btn.dataset.subirImagenBloque;
+        $("#bloqueImgInput").click();
+      });
+    });
+    $$("[data-quitar-imagen-bloque]", cont).forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        eliminarImagenBloque_(btn.dataset.quitarImagenBloque);
       });
     });
     $$("[data-campo]", cont).forEach(campo=>{
@@ -3147,14 +3373,85 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
   }
   $("#btnQuitarTodos").addEventListener("click", ()=>{
-    if(!selected.size) return;
-    if(!confirm(`¿Quitar los ${selected.size} productos de esta campaña? El cambio no se guarda hasta que pulses "Guardar productos".`)) return;
+    if(!selected.size && !ordenMostrar.some(it=>it.tipo==='bloque')) return;
+    if(!confirm(`¿Quitar los ${selected.size} productos (y los bloques de contenido) de esta campaña? El cambio no se guarda hasta que pulses "Guardar productos".`)) return;
     selected.clear();
     sugeridosIA = [];
     destacados = {};
+    bloques = {};
+    ordenMostrar = [];
     updateSelCount();
     renderSeleccionados();
     renderPicker();
+  });
+
+  $("#btnAnadirBloqueContenido").addEventListener("click", ()=>{
+    crearBloqueNuevo_();
+    renderSeleccionados();
+  });
+
+  // Subida/eliminación de imagen de un bloque de contenido — mismo
+  // patrón que subirImagenCampana() en escaparate-campanas.html (foto
+  // de fondo de la campaña), pero aplicado a un bloque anidado dentro
+  // de "bloques_contenido". Requiere que el bloque ya exista en el
+  // servidor (es decir, haber pulsado "Guardar productos" al menos una
+  // vez tras crearlo) — el backend lo avisa con un error claro si no.
+  let bloqueImagenObjetivo_ = null;
+  async function subirImagenBloque_(id, file){
+    const campaignId = modalProductos.dataset.campaignId;
+    if(!file || !file.type || !file.type.startsWith('image/')){
+      toast('Elige un archivo de imagen.', true);
+      return;
+    }
+    const LIMITE_MB = 5;
+    if(file.size > LIMITE_MB*1024*1024){
+      toast(`La imagen pesa demasiado (máximo ${LIMITE_MB} MB).`, true);
+      return;
+    }
+    try{
+      const base64 = await new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+        reader.readAsDataURL(file);
+      });
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          accion:'actualizar_imagen_bloque_contenido', id:campaignId, bloqueId:id, pin: productosPin_,
+          archivo: { nombre:file.name || 'imagen-bloque.png', tipo:file.type, datos: base64 },
+        }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      if(bloques[id]) bloques[id].imagen = data.imagen;
+      renderSeleccionados();
+      toast('Imagen del bloque actualizada.');
+    } catch(err){
+      toast('No se pudo subir la imagen: ' + err.message, true);
+    }
+  }
+  async function eliminarImagenBloque_(id){
+    const campaignId = modalProductos.dataset.campaignId;
+    if(!confirm('¿Quitar la imagen de este bloque?')) return;
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ accion:'eliminar_imagen_bloque_contenido', id:campaignId, bloqueId:id, pin: productosPin_ }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      if(bloques[id]) bloques[id].imagen = '';
+      renderSeleccionados();
+      toast('Imagen del bloque eliminada.');
+    } catch(err){
+      toast('No se pudo quitar la imagen: ' + err.message, true);
+    }
+  }
+  $("#bloqueImgInput").addEventListener("change", (ev)=>{
+    const file = ev.target.files[0];
+    ev.target.value = '';
+    if(file && bloqueImagenObjetivo_) subirImagenBloque_(bloqueImagenObjetivo_, file);
   });
 
   // Acceso con PIN — mismo patrón que "Gestionar destacados" en
@@ -3247,6 +3544,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           promoManual: !!(d.promo && PROMOS_PREDEFINIDAS_.indexOf(d.promo) === -1),
         };
       });
+      bloques = {};
+      (Array.isArray(c.bloquesContenido) ? c.bloquesContenido : []).forEach(b=>{
+        if(b && b.id) bloques[b.id] = {
+          id:b.id, texto:b.texto||'', tamano:b.tamano||'normal', negrita:!!b.negrita, cursiva:!!b.cursiva,
+          imagen:b.imagen||'', imagenPosicion:b.imagenPosicion||'arriba',
+        };
+      });
+      // Escaparates guardados antes de esta función no tienen
+      // "ordenContenido" — se reconstruye entonces a partir del orden
+      // ya guardado en c.productos (sin bloques, que es justo lo que
+      // había hasta ahora).
+      const ordenGuardado = Array.isArray(c.ordenContenido) ? c.ordenContenido : [];
+      ordenMostrar = ordenGuardado.length
+        ? ordenGuardado.map(clave => (clave.indexOf('bloque:') === 0 ? { tipo:'bloque', id: clave.slice(7) } : { tipo:'producto', ref: clave }))
+          .filter(it => it.tipo === 'bloque' ? bloques[it.id] : selected.has(it.ref))
+        : c.productos.map(ref => ({ tipo:'producto', ref }));
       updateSelCount();
       renderSeleccionados();
       $("#chkAgruparProductos").checked = !!c.agruparProductos;
@@ -3382,7 +3695,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       }
 
       sugeridosIA = Array.from(encontrados.keys());
-      sugeridosIA.forEach(ref=>selected.add(ref));
+      sugeridosIA.forEach(ref=>agregarProductoAOrden_(ref));
       updateSelCount();
       renderSeleccionados();
       $("#fBusca").value = '';
@@ -3422,16 +3735,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         promo: (destacados[ref].promo || '').trim(),
       }));
     const agruparProductos = $("#chkAgruparProductos").checked;
+    // Solo se mandan los bloques que de verdad siguen en ordenMostrar
+    // (crearBloqueNuevo_ ya los añade ahí al crearlos, y quitarBloqueDeOrden_
+    // los borra de los dos sitios a la vez — pero por si acaso, nunca se
+    // manda un bloque huérfano que ya no esté en el orden).
+    const clavesBloqueEnOrden = new Set(ordenMostrar.filter(it=>it.tipo==='bloque').map(it=>it.id));
+    const bloquesArr = Object.values(bloques).filter(b => clavesBloqueEnOrden.has(b.id));
+    const ordenContenidoArr = ordenMostrar.map(claveDeItem_);
     try{
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones del proyecto
-        body: JSON.stringify({ accion:'actualizar_productos_campana', id:campaignId, pin: productosPin_, productos:productosArr, destacados:destacadosArr, agrupar:agruparProductos }),
+        body: JSON.stringify({ accion:'actualizar_productos_campana', id:campaignId, pin: productosPin_, productos:productosArr, destacados:destacadosArr, agrupar:agruparProductos, bloques:bloquesArr, ordenContenido:ordenContenidoArr }),
       });
       const data = await resp.json();
       if(!data.success) throw new Error(data.error || 'Error desconocido');
       const c = findCampaign(campaignId);
-      if(c){ c.productos = productosArr; c.destacados = data.destacados || destacadosArr; c.agruparProductos = !!data.agrupar; }
+      if(c){
+        c.productos = productosArr; c.destacados = data.destacados || destacadosArr; c.agruparProductos = !!data.agrupar;
+        c.bloquesContenido = data.bloques || bloquesArr; c.ordenContenido = data.ordenContenido || ordenContenidoArr;
+      }
       // Sincroniza la caché de sesión con este mismo cambio local — así
       // si el usuario vuelve al listado o entra en otro escaparate, no
       // ve el número de productos de antes de este guardado.
@@ -4396,19 +4719,60 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // grupo repetido más adelante (no contiguo) simplemente vuelve a
       // salir con su mismo título, en vez de "fusionarse" con el bloque
       // de antes reordenando productos.
+      function construirGruposDeTramoFolleto_(refsTramo){
+        const salida = [];
+        if(c.agruparProductos){
+          let grupoAnterior = Symbol('sin-grupo');
+          refsTramo.forEach(ref => {
+            const grupoActual = ((PRODUCTS[ref] && PRODUCTS[ref].grupo) || '').toString().trim();
+            if(grupoActual !== grupoAnterior){
+              salida.push({ tipo:'grupo', titulo: grupoActual || null, refs: [] });
+              grupoAnterior = grupoActual;
+            }
+            salida[salida.length - 1].refs.push(ref);
+          });
+        } else {
+          salida.push({ tipo:'grupo', titulo: null, refs: refsTramo });
+        }
+        return salida;
+      }
+
+      // Bloques de contenido (texto + imagen) intercalados en cualquier
+      // punto del folleto — mismo criterio que en la vitrina web (ver
+      // render()): el agrupado por campo "grupo" y el ordenado por posV
+      // se siguen aplicando, pero solo DENTRO de cada tramo de productos
+      // entre dos bloques, nunca cruzando uno.
+      const bloquesContenidoMapFolleto_ = {};
+      (Array.isArray(c.bloquesContenido) ? c.bloquesContenido : []).forEach(b=>{ if(b && b.id) bloquesContenidoMapFolleto_[b.id] = b; });
+      const tieneBloquesContenidoFolleto_ = Array.isArray(c.ordenContenido) && c.ordenContenido.some(cl => (cl||'').indexOf('bloque:') === 0);
+
       const gruposFolleto = [];
-      if(c.agruparProductos){
-        let grupoAnterior = Symbol('sin-grupo');
-        refsOrdenados.forEach(ref => {
-          const grupoActual = ((PRODUCTS[ref] && PRODUCTS[ref].grupo) || '').toString().trim();
-          if(grupoActual !== grupoAnterior){
-            gruposFolleto.push({ titulo: grupoActual || null, refs: [] });
-            grupoAnterior = grupoActual;
+      if(tieneBloquesContenidoFolleto_){
+        const refsValidosFolleto_ = new Set(c.productos);
+        const secuenciaFolleto_ = c.ordenContenido.filter(cl => (cl||'').indexOf('bloque:') === 0 ? !!bloquesContenidoMapFolleto_[cl.slice(7)] : refsValidosFolleto_.has(cl));
+        c.productos.forEach(ref => { if(secuenciaFolleto_.indexOf(ref) === -1) secuenciaFolleto_.push(ref); });
+        let tramoActual = [];
+        const cerrarTramoFolleto_ = () => {
+          if(!tramoActual.length) return;
+          const tramoOrdenado = c.agruparProductos ? tramoActual : tramoActual.slice().sort((a,b) => {
+            const pa = PESO_POSICION[(destacadosMap[a]||{}).posV] || 0;
+            const pb = PESO_POSICION[(destacadosMap[b]||{}).posV] || 0;
+            return pa - pb;
+          });
+          gruposFolleto.push(...construirGruposDeTramoFolleto_(tramoOrdenado));
+          tramoActual = [];
+        };
+        secuenciaFolleto_.forEach(clave => {
+          if(clave.indexOf('bloque:') === 0){
+            cerrarTramoFolleto_();
+            gruposFolleto.push({ tipo:'bloque', bloque: bloquesContenidoMapFolleto_[clave.slice(7)] });
+          } else {
+            tramoActual.push(clave);
           }
-          gruposFolleto[gruposFolleto.length - 1].refs.push(ref);
         });
+        cerrarTramoFolleto_();
       } else {
-        gruposFolleto.push({ titulo: null, refs: refsOrdenados });
+        gruposFolleto.push(...construirGruposDeTramoFolleto_(refsOrdenados));
       }
 
       // Las fotos de producto se piden SIN recortar (sin recorteRatio):
@@ -4432,7 +4796,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           url: p ? urlImagenProductoFolleto(p, 500) : null,
           opciones: {}
         };
-      });
+      }).concat(
+        gruposFolleto.filter(g => g.tipo === 'bloque' && g.bloque && g.bloque.imagen).map(g => ({
+          ref: 'bloque:' + g.bloque.id,
+          url: urlImagenCampanaFolleto(g.bloque.imagen, 700),
+          opciones: {}
+        }))
+      );
       fijarEstadoBoton(`Extrayendo imágenes… (0/${itemsFotos.length})`);
       const fotos = await cargarImagenesEnTandas(itemsFotos, (completadas, total) => {
         fijarEstadoBoton(`Extrayendo imágenes… (${completadas}/${total})`);
@@ -4689,6 +5059,54 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         cursorY += TITULO_GRUPO_ALTURA_;
       }
 
+      // Bloque de contenido (texto + imagen) en el folleto — mismo
+      // contenido simple (sin HTML) definido en la gestión del
+      // escaparate, centrado a todo el ancho de página. Nunca se parte
+      // entre dos páginas: si no cabe entero en lo que queda, salta de
+      // página antes de dibujar nada.
+      function dibujarBloqueContenidoFolleto_(bloque, foto){
+        if(!bloque) return;
+        const texto = (bloque.texto || '').trim();
+        const tieneImagen = !!(foto && foto.dataURL);
+        if(!texto && !tieneImagen) return;
+        const tamanoFuente = bloque.tamano === 'muy-grande' ? 14 : (bloque.tamano === 'grande' ? 12 : 10.5);
+        const estiloFuente = bloque.negrita && bloque.cursiva ? 'bolditalic' : (bloque.negrita ? 'bold' : (bloque.cursiva ? 'italic' : 'normal'));
+        doc.setFont('helvetica', estiloFuente);
+        doc.setFontSize(tamanoFuente);
+        const lineasTexto = texto ? doc.splitTextToSize(texto, contentWidth) : [];
+        const interlineado = tamanoFuente * 0.42;
+        const altoTexto = lineasTexto.length ? lineasTexto.length * interlineado + 4 : 0;
+        const ANCHO_IMG_BLOQUE_ = 70, ALTO_IMG_MAX_ = 90;
+        let anchoImg = 0, altoImg = 0;
+        if(tieneImagen){
+          const escala = Math.min(ANCHO_IMG_BLOQUE_ / foto.w, ALTO_IMG_MAX_ / foto.h, 1);
+          anchoImg = foto.w * escala; altoImg = foto.h * escala;
+        }
+        const padBloque = 6;
+        const altoTotal = padBloque * 2 + altoTexto + altoImg + (altoTexto && altoImg ? 4 : 0);
+        if(cursorY + altoTotal > footerTopY - 2){
+          doc.addPage();
+          dibujarCabecera();
+          cursorY = headerBottomY + 8;
+        }
+        let y = cursorY + padBloque;
+        if(bloque.imagenPosicion !== 'abajo' && tieneImagen){
+          try{ doc.addImage(foto.dataURL, 'JPEG', margin + (contentWidth - anchoImg)/2, y, anchoImg, altoImg); }catch(e){}
+          y += altoImg + 4;
+        }
+        if(lineasTexto.length){
+          doc.setFont('helvetica', estiloFuente);
+          doc.setFontSize(tamanoFuente);
+          doc.setTextColor(30, 33, 37);
+          doc.text(lineasTexto, pageW/2, y + interlineado, { align:'center' });
+          y += altoTexto;
+        }
+        if(bloque.imagenPosicion === 'abajo' && tieneImagen){
+          try{ doc.addImage(foto.dataURL, 'JPEG', margin + (contentWidth - anchoImg)/2, y, anchoImg, altoImg); }catch(e){}
+        }
+        cursorY += altoTotal + 6;
+      }
+
       // Se recorre la rejilla 2D de cada grupo fila a fila (de ROW_UNIT
       // en ROW_UNIT, no todo de golpe en un solo forEach síncrono, para
       // poder informar "Componiendo folleto… (fila X/Y)" en el botón a
@@ -4707,6 +5125,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // que este bucle se comporta exactamente igual que antes.
       for(let iGrupo = 0; iGrupo < gruposFolleto.length; iGrupo++){
         const grupo = gruposFolleto[iGrupo];
+        if(grupo.tipo === 'bloque'){
+          dibujarBloqueContenidoFolleto_(grupo.bloque, fotoPorRef['bloque:' + grupo.bloque.id]);
+          fijarEstadoBoton(`Componiendo folleto… (bloque ${iGrupo + 1}/${gruposFolleto.length})`);
+          await new Promise(requestAnimationFrame);
+          continue;
+        }
         if(grupo.titulo) dibujarTituloGrupoFolleto_(grupo.titulo);
         const { itemsColocados, totalFilasRejilla } = empaquetarGrupo_(grupo.refs);
         const itemsPorFila_ = {};
