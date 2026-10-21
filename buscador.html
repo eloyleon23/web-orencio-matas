@@ -3074,60 +3074,8 @@
             text-align: right;
         }
         .editor-enriquecido-contador.es-limite { color: var(--red); font-weight: 700; }
-        .modal-editar-info-ia-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 9px 12px;
-            margin-bottom: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--light);
-            color: var(--dark);
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-        .modal-editar-info-ia-btn:hover { background: #eef2f7; }
-        .modal-editar-info-ia-btn:disabled { opacity: 0.6; cursor: default; }
-
-        /* Botón "Ficha técnica con IA" — su propio spinner sustituye el
-           icono mientras la petición está en curso (ver abrirFichaIA). */
-        #modal-producto-ficha-ia-icono.es-cargando {
-            animation: girar-spinner 900ms linear infinite;
-        }
-        @keyframes girar-spinner { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
+        /* Reutilizada también por la modal "Información adicional" completa. */
         .modal-ficha-ia-box { max-width: 560px; }
-        .modal-ficha-ia-contenido { min-height: 80px; }
-        .modal-ficha-ia-contenido .ficha-ia-seccion { margin-bottom: 14px; }
-        .modal-ficha-ia-contenido .ficha-ia-seccion:last-child { margin-bottom: 0; }
-        .modal-ficha-ia-contenido .ficha-ia-seccion h5 {
-            margin: 0 0 4px;
-            font-size: 0.85rem;
-            font-weight: 800;
-            color: var(--dark);
-        }
-        .modal-ficha-ia-contenido .ficha-ia-seccion p {
-            margin: 0;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: var(--dark);
-        }
-        .modal-ficha-ia-contenido .ficha-ia-cargando {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--muted);
-            font-size: 0.88rem;
-            padding: 20px 0;
-        }
-        .modal-ficha-ia-contenido .ficha-ia-error {
-            color: var(--red);
-            font-size: 0.88rem;
-        }
 
         /* Calculadora de rendimiento (solo pinturas) */
         .btn-abrir-calculadora {
@@ -4764,18 +4712,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     Editar información adicional
                 </button>
 
-                <!-- Ficha técnica con IA — accesible a cualquier visitante
-                     (no depende de ningún flag de fase de desarrollo):
-                     genera al vuelo detalles técnicos, recomendaciones,
-                     modo de empleo, seguridad, aplicación y para qué
-                     sirve el producto. El propio botón muestra un
-                     spinner mientras dura la petición (ver
-                     configurarFichaIA/abrirFichaIA). -->
-                <button type="button" id="modal-producto-ficha-ia-btn" class="modal-producto-reportar" style="width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
-                    <i class="fa-solid fa-wand-magic-sparkles" id="modal-producto-ficha-ia-icono"></i>
-                    <span id="modal-producto-ficha-ia-texto">Ficha técnica con IA</span>
-                </button>
-
                 <!-- Calculadora de rendimiento (solo pinturas) -->
                 <button type="button" id="btn-abrir-calculadora" class="btn-abrir-calculadora" style="display:none;">
                     <i class="fa-solid fa-calculator"></i>
@@ -4912,12 +4848,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-circle-info"></i> Editar información adicional</h3>
         <p id="modal-editar-info-nombre" class="modal-editar-ficha-nombre"></p>
 
-        <button type="button" id="modal-editar-info-ia" class="modal-editar-info-ia-btn">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-            <span id="modal-editar-info-ia-texto">Ayúdame con la IA</span>
-        </button>
-        <p id="modal-editar-info-ia-error" class="modal-editar-ficha-error" style="display:none;"></p>
-
         <div class="editor-enriquecido">
             <div class="editor-enriquecido-toolbar">
                 <button type="button" data-cmd="bold" title="Negrita"><i class="fa-solid fa-bold"></i></button>
@@ -4934,22 +4864,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="modal-editar-info-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
             <button type="button" id="modal-editar-info-guardar" class="modal-editar-ficha-guardar">Guardar</button>
         </div>
-    </div>
-</div>
-
-<!-- Modal "Ficha técnica con IA" — pública, por encima del detalle del producto -->
-<div class="modal-overlay" id="modal-ficha-ia-overlay">
-    <div class="modal-producto-box modal-editar-ficha-box modal-ficha-ia-box">
-        <button class="modal-producto-cerrar" id="modal-ficha-ia-cerrar">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-wand-magic-sparkles"></i> Ficha técnica con IA</h3>
-        <p id="modal-ficha-ia-nombre" class="modal-editar-ficha-nombre"></p>
-        <div id="modal-ficha-ia-contenido" class="modal-ficha-ia-contenido"></div>
-        <p class="modal-editar-ficha-nota">
-            <i class="fa-solid fa-circle-info"></i>
-            Contenido generado por IA a partir de información pública — puede contener imprecisiones. Consulta siempre el envase del producto.
-        </p>
     </div>
 </div>
 
@@ -12879,7 +12793,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         configurarBotonCartaColores(p);
         configurarEditarFichaTecnica(p);
         configurarInfoAdicional(p);
-        configurarFichaIA(p);
         // Oculta también la fila que las envuelve cuando ninguno de los dos
         // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas) —
         // salvo en preproducción, que la deja visible siempre que esté el
@@ -13611,22 +13524,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-editar-info-maximo').textContent = MAX_INFO_ADICIONAL_CARACTERES_;
         $('modal-editar-info-editable').innerHTML = p.info_adicional ? sanearHtmlEnriquecidoCliente_(p.info_adicional) : '';
         $('modal-editar-info-error').style.display = 'none';
-        $('modal-editar-info-ia-error').style.display = 'none';
         $('modal-editar-info-guardar').textContent = 'Guardar';
-        // No se ofrece el botón de IA si sabemos que no hay cuota
-        // disponible — a petición de Eloy, prefiere no dar la opción a
-        // que falle (ver window.IADisponibilidad). Se usa
-        // comprobarAhora() en vez de estaDisponible() por el mismo
-        // motivo que en configurarFichaIA (cubre el caso de abrir esta
-        // modal antes de que la primera comprobación real haya resuelto).
-        const botonIA = $('modal-editar-info-ia');
-        botonIA.style.display = '';
-        if (window.IADisponibilidad) {
-            window.IADisponibilidad.comprobarAhora().then((disponible) => {
-                if (productoEditarInfoActual_ !== p) return;
-                botonIA.style.display = disponible ? '' : 'none';
-            });
-        }
         actualizarContadorInfoAdicional_();
         $('modal-editar-info-overlay').classList.add('activo');
         setTimeout(() => $('modal-editar-info-editable').focus(), 50);
@@ -13838,171 +13736,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
-    // Botón "Ayúdame con la IA" dentro de la propia modal — redacta un
-    // borrador a partir del nombre/marca/familia del producto, que
-    // SUSTITUYE el contenido actual del editor (quien edita sigue
-    // pudiendo retocarlo o descartarlo con "Cancelar" antes de guardar
-    // nada de verdad).
-    function ejecutarGenerarInfoAdicionalIA() {
-        const p = productoEditarInfoActual_;
-        if (!p) return;
-        if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
-            mostrarToast('La IA no está disponible ahora mismo (cuota agotada temporalmente).', 'error');
-            return;
-        }
-        const btn = $('modal-editar-info-ia');
-        const texto = $('modal-editar-info-ia-texto');
-        const errorEl = $('modal-editar-info-ia-error');
-        errorEl.style.display = 'none';
-        btn.disabled = true;
-        const original = texto.textContent;
-        texto.textContent = 'Pensando...';
-
-        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
-        fetch(scriptUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-                accion: 'generar_info_adicional_ia_producto',
-                nombre: p.nombre, marca: p.marca || '', familia: p.familia || '',
-            }),
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.cuotaAgotada && window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
-            if (!data.success) throw new Error(data.error || 'No se pudo generar el resumen.');
-            $('modal-editar-info-editable').innerHTML = sanearHtmlEnriquecidoCliente_(data.html);
-            actualizarContadorInfoAdicional_();
-        })
-        .catch(err => {
-            errorEl.textContent = err.message || 'Error al generar el resumen con IA.';
-            errorEl.style.display = 'block';
-        })
-        .finally(() => {
-            btn.disabled = false;
-            texto.textContent = original;
-        });
-    }
-
     if ($('modal-editar-info-cerrar')) $('modal-editar-info-cerrar').addEventListener('click', cerrarModalEditarInfoAdicional);
     if ($('modal-editar-info-cancelar')) $('modal-editar-info-cancelar').addEventListener('click', cerrarModalEditarInfoAdicional);
     if ($('modal-editar-info-guardar')) $('modal-editar-info-guardar').addEventListener('click', ejecutarGuardarInfoAdicional);
-    if ($('modal-editar-info-ia')) $('modal-editar-info-ia').addEventListener('click', ejecutarGenerarInfoAdicionalIA);
     // A diferencia del resto de modales de detalle de producto, esta NO
     // se cierra al hacer clic fuera (en el fondo oscuro) — petición
     // real de Eloy: mientras se redacta un texto largo a mano, un clic
     // fuera por error cerraba la modal y se perdía todo lo escrito.
     // Solo se cierra con la "X" o "Cancelar", nunca por accidente.
 
-    // ══════════════════════════════════════════════════════════════════
-    // Ficha técnica con IA — botón público (cualquier visitante, en
-    // cualquier fase) que genera al vuelo detalles técnicos,
-    // recomendaciones, modo de empleo, seguridad, aplicación y para qué
-    // sirve el producto. Spinner en el propio botón mientras dura la
-    // petición; se cancela si el usuario cierra el detalle del producto
-    // antes de que termine (ver fichaIAAbortController_ y su uso en
-    // cerrarModalProducto).
-    // ══════════════════════════════════════════════════════════════════
-    let fichaIAAbortController_ = null;
-
-    function configurarFichaIA(p) {
-        const boton = $('modal-producto-ficha-ia-btn');
-        if (!boton) return;
-        boton.onclick = () => abrirFichaIA(p);
-        // No se ofrece el botón si sabemos que no hay cuota de IA
-        // disponible — a petición de Eloy, prefiere no dar la opción a
-        // que falle (ver window.IADisponibilidad), igual que el resto de
-        // botones de IA del proyecto. Se usa comprobarAhora() (en vez de
-        // leer solo estaDisponible(), que empieza en "true" por
-        // optimismo hasta la primera comprobación real) para cubrir
-        // justo el caso de un producto abierto nada más cargar la
-        // página (deep-link ?ref=, "Ver ficha completa en el buscador"),
-        // antes de que esa primera comprobación haya tenido tiempo de
-        // resolverse — mismo tipo de condición de carrera ya detectada
-        // y arreglada para las promociones de campaña de escaparate.
-        boton.style.display = ''; // optimista por defecto, se corrige abajo en cuanto se sepa de verdad
-        if (!window.IADisponibilidad) return;
-        window.IADisponibilidad.comprobarAhora().then((disponible) => {
-            // El usuario pudo haber cerrado este producto o abierto otro
-            // mientras se esperaba la respuesta — no tocar un botón que
-            // ya no corresponde a "p".
-            if (productoModalActual_ !== p) return;
-            boton.style.display = disponible ? '' : 'none';
-        });
-    }
-
-    function fijarEstadoBotonFichaIA_(cargando) {
-        const boton = $('modal-producto-ficha-ia-btn');
-        const icono = $('modal-producto-ficha-ia-icono');
-        const texto = $('modal-producto-ficha-ia-texto');
-        boton.disabled = cargando;
-        icono.className = cargando ? 'fa-solid fa-spinner es-cargando' : 'fa-solid fa-wand-magic-sparkles';
-        texto.textContent = cargando ? 'Consultando...' : 'Ficha técnica con IA';
-    }
-
-    function abrirFichaIA(p) {
-        if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
-            mostrarToast('La IA no está disponible ahora mismo (cuota agotada temporalmente).', 'error');
-            return;
-        }
-        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
-        if (!scriptUrl) return;
-
-        fichaIAAbortController_ = new AbortController();
-        fijarEstadoBotonFichaIA_(true);
-
-        fetch(scriptUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            signal: fichaIAAbortController_.signal,
-            body: JSON.stringify({
-                accion: 'obtener_ficha_tecnica_ia_producto',
-                referencia: p.ref, nombre: p.nombre, marca: p.marca || '', familia: p.familia || '',
-            }),
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.cuotaAgotada && window.IADisponibilidad) window.IADisponibilidad.marcarNoDisponible();
-            if (!data.success) throw new Error(data.error || 'No se pudo generar la ficha técnica.');
-            mostrarModalFichaIA_(p, data.secciones);
-        })
-        .catch(err => {
-            if (err.name === 'AbortError') return; // cancelado al cerrar el detalle — no es un error que mostrar
-            console.error('Error al generar ficha técnica con IA:', err);
-            mostrarToast(err.message || 'Error al generar la ficha técnica con IA.', 'error');
-        })
-        .finally(() => {
-            fichaIAAbortController_ = null;
-            fijarEstadoBotonFichaIA_(false);
-        });
-    }
-
-    function mostrarModalFichaIA_(p, secciones) {
-        $('modal-ficha-ia-nombre').textContent = p.nombre;
-        $('modal-ficha-ia-contenido').innerHTML = secciones.map(s => `
-            <div class="ficha-ia-seccion">
-                <h5>${escaparHtmlTexto_(s.titulo)}</h5>
-                <p>${escaparHtmlTexto_(s.texto)}</p>
-            </div>
-        `).join('');
-        $('modal-ficha-ia-overlay').classList.add('activo');
-    }
-
     function escaparHtmlTexto_(str) {
         const d = document.createElement('div');
         d.textContent = str || '';
         return d.innerHTML;
-    }
-
-    function cerrarModalFichaIA() {
-        $('modal-ficha-ia-overlay').classList.remove('activo');
-    }
-
-    if ($('modal-ficha-ia-cerrar')) $('modal-ficha-ia-cerrar').addEventListener('click', cerrarModalFichaIA);
-    if ($('modal-ficha-ia-overlay')) {
-        $('modal-ficha-ia-overlay').addEventListener('click', (e) => {
-            if (e.target.id === 'modal-ficha-ia-overlay') cerrarModalFichaIA();
-        });
     }
 
     // Familias del área "pinturas" que NO son pintura en sí (herramientas,
@@ -14736,15 +14482,6 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalProducto() {
         $('modal-producto-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
-        // Si "Ficha técnica con IA" tiene una petición en curso, se
-        // cancela al salir del detalle del producto — petición real de
-        // Eloy: "si el usuario se sale de la vista detalle se cancelará".
-        if (fichaIAAbortController_) {
-            fichaIAAbortController_.abort();
-            fichaIAAbortController_ = null;
-            fijarEstadoBotonFichaIA_(false);
-        }
-        cerrarModalFichaIA();
         // Si se llegó aquí con un ?ref= en la URL (por haber navegado por
         // productos del listado o sugeridos dentro del modal), se limpia
         // sin crear ni quitar ninguna entrada de historial — un cierre
