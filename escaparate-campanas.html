@@ -964,35 +964,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   function campanasGuardarPinLocal_(pin, recordar) {
     if (recordar) { try { localStorage.setItem('omCampanasPin', pin); } catch (e) {} }
   }
-  async function campanasValidarPinYArrancar_(pin) {
-    const error = $("#campanasPinError");
-    const btn = $("#campanasPinEntrar");
-    error.textContent = '';
-    const textoOriginal = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Comprobando…';
-    try {
-      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'panel_validar_pin', pin: pin }),
-      });
-      const d = await resp.json();
-      if (d.success) {
-        campanasPin_ = pin;
-        $("#campanasVistaPin").style.display = 'none';
-        $("#campanasVistaPrincipal").style.display = '';
-        $("#campanasModalFoot").style.display = '';
-        limpiarFormulario();
-        renderCampaignList();
-      } else {
-        error.textContent = 'PIN incorrecto.';
-        try { localStorage.removeItem('omCampanasPin'); } catch (e) {}
-      }
-    } catch (e) {
-      error.textContent = 'Error de conexión.';
-    } finally {
-      btn.disabled = false; btn.textContent = textoOriginal;
-    }
-  }
+  // campanasValidarPinYArrancar_ vive MÁS ABAJO, dentro del bloque
+  // "if (window.MOSTRAR_GESTION_CAMPANAS)" — ver el porqué justo donde
+  // empieza ese bloque: llama a limpiarFormulario()/renderCampaignList(),
+  // declaradas ahí dentro como funciones de bloque, y en scripts de
+  // módulo (modo estricto) una función declarada dentro de un bloque NO
+  // es visible fuera de él, aunque el bloque ya se haya ejecutado — así
+  // que tenía que vivir en el mismo bloque que ellas para poder verlas.
 
   /* ---------------- Tarjetas de campaña ---------------- */
   let CAMPAIGNS = []; // TODAS las campañas (activas e inactivas) — la gestión (Modal B) necesita ver también las inactivas para poder reactivarlas
@@ -1192,6 +1170,76 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   if (window.MOSTRAR_GESTION_CAMPANAS) {
+  // Bug real reportado: "la modal de gestión de escaparates no me está
+  // cargando los creados para poderlos editar" — se quedaba callado
+  // (sin red, sin consola) tras meter el PIN. Causa encontrada:
+  // campanasValidarPinYArrancar_ vivía FUERA de este bloque (antes de
+  // la línea de arriba) pero llama a limpiarFormulario()/
+  // renderCampaignList(), declaradas DENTRO de él — en un script de
+  // módulo (modo estricto), una función declarada con "function" dentro
+  // de un bloque {} NO es visible desde fuera de ese bloque, aunque el
+  // bloque ya se haya ejecutado (a diferencia de una variable con
+  // let/const, que sí es visible normalmente desde dentro hacia fuera
+  // en la dirección correcta — aquí el problema era justo la dirección
+  // contraria). El resultado era un ReferenceError ("limpiarFormulario
+  // is not defined") que el propio try/catch de la función atrapaba en
+  // silencio y mostraba como "Error de conexión." — nunca llegaba a
+  // tocar la red para nada de lo de después, así que no había ninguna
+  // petición ni en Red ni ningún error "rojo" en Consola (ese catch no
+  // hace console.error, solo cambia el texto del PIN), coincide con
+  // "no veo ninguna petición pendiente... ni la consola tiene nada en
+  // rojo" — el fallo real quedaba invisible en ambas pestañas. Se
+  // mueve aquí dentro, junto a lo que necesita, para que pueda verlo.
+  async function campanasValidarPinYArrancar_(pin) {
+    const error = $("#campanasPinError");
+    const btn = $("#campanasPinEntrar");
+    error.textContent = '';
+    const textoOriginal = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Comprobando…';
+    try {
+      const resp = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'panel_validar_pin', pin: pin }),
+      });
+      const d = await resp.json();
+      if (d.success) {
+        campanasPin_ = pin;
+        $("#campanasVistaPin").style.display = 'none';
+        $("#campanasVistaPrincipal").style.display = '';
+        $("#campanasModalFoot").style.display = '';
+        limpiarFormulario();
+        // Asegura que CAMPAIGNS está REALMENTE cargado antes de listar —
+        // antes se confiaba ciegamente en lo que ya hubiera en memoria.
+        // Con un PIN ya guardado de antes (entrada automática, sin
+        // esperar a que el usuario teclee nada), este flujo podía
+        // ejecutarse ANTES de que la carga inicial de la página
+        // (cargarCampanas() dentro de iniciar()) hubiera terminado de
+        // verdad contra Apps Script — la rejilla pública sí se refresca
+        // sola en cuanto esa carga acaba, pero esta lista del editor, ya
+        // pintada con un CAMPAIGNS todavía vacío, se quedaba así para
+        // siempre (nada volvía a llamar a renderCampaignList() más
+        // tarde). cargarCampanas() sin "forzar" reutiliza la caché de
+        // sesión si ya está disponible, así que este await es
+        // prácticamente instantáneo en el caso normal.
+        $("#campaignList").innerHTML = `<p class="picker-empty">Cargando escaparates…</p>`;
+        try{
+          await cargarCampanas();
+        } catch(err){
+          $("#campaignList").innerHTML = `<p class="picker-empty">No se han podido cargar los escaparates: ${err.message}</p>`;
+          return;
+        }
+        renderCampaignList();
+      } else {
+        error.textContent = 'PIN incorrecto.';
+        try { localStorage.removeItem('omCampanasPin'); } catch (e) {}
+      }
+    } catch (e) {
+      error.textContent = 'Error de conexión.';
+    } finally {
+      btn.disabled = false; btn.textContent = textoOriginal;
+    }
+  }
+
   function renderCampaignList(){
     if(!CAMPAIGNS.length){
       $("#campaignList").innerHTML = `<p class="picker-empty">Todavía no hay ninguna campaña. Crea la primera con el formulario de abajo.</p>`;
