@@ -407,6 +407,20 @@
         grid-auto-flow:dense;
         gap:16px;
       }
+      /* Agrupación de productos (campo "grupo" del producto maestro +
+         check "Agrupar productos" de la campaña) — petición real de
+         Eloy a partir de un folleto manual de ejemplo, que agrupa los
+         productos bajo títulos de sección ("MAQUINARIA", "ACCESORIOS
+         LIJADO"…). Cada grupo es su PROPIA rejilla .shelf (en vez de
+         meter el título como una fila más dentro de una única rejilla):
+         con grid-auto-rows:minmax(272px,auto) de arriba, una fila de
+         título habría heredado esos mismos 272px mínimos de alto, un
+         derroche enorme de espacio para una sola línea de texto. */
+      .shelf-grupo-titulo{
+        font-size:14px; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+        color:var(--ink); margin:30px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--accent-2);
+      }
+      .shelf-grupo-titulo:first-child{ margin-top:0; }
       .card{
         position:relative; cursor:pointer;
         background:var(--paper-raised); border:1px solid var(--line);
@@ -790,6 +804,11 @@
       .selected-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
       .selected-head-title{ font-size:13px; font-weight:600; color:var(--ink-soft); }
       .selected-head-title b{ color:var(--ink); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .chk-agrupar-productos{
+        display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-soft);
+        margin-bottom:12px; cursor:pointer;
+      }
+      .chk-agrupar-productos input{ width:15px; height:15px; cursor:pointer; }
       .link-btn{
         background:none; border:none; padding:0; font-size:12.5px; font-weight:600;
         color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:2px;
@@ -1438,7 +1457,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <h2 id="shelfTitle">Productos de la campaña</h2>
         <span class="count" id="shelfCount"></span>
       </div>
-      <div class="shelf" id="shelf"></div>
+      <div id="shelf"></div>
     </section>
 
     <section class="vitrina-cierre" id="vitrinaCierre" hidden>
@@ -1594,6 +1613,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <span class="selected-head-title">Productos en esta campaña (<b id="selectedHeadCount">0</b>)</span>
         <button type="button" class="link-btn" id="btnQuitarTodos">Quitar todos</button>
       </div>
+      <label class="chk-agrupar-productos">
+        <input type="checkbox" id="chkAgruparProductos">
+        Agrupar productos por su campo de agrupación (en el escaparate y en el folleto PDF)
+      </label>
       <div class="selected-chips" id="selectedChips"></div>
     </div>
     <div class="filters-row">
@@ -2630,17 +2653,43 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const pb = PESO_POSICION_[(destacadosMap[b] || {}).posV] || 0;
       return pa - pb;
     });
-    $("#shelf").innerHTML = productosOrdenados.length
-      ? productosOrdenados.map(r=>{
-          const d = destacadosMap[r] || null;
-          // El descuento del producto (si lo tiene) manda como preferente
-          // sobre el general de la campaña — petición explícita: "si un
-          // producto también lo tiene añadido aplicará el indicado en el
-          // producto como preferente".
-          const descuentoEfectivo = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
-          return productCard(r, { destacado: d, descuento: descuentoEfectivo });
-        }).join("")
-      : `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
+    const tarjetaDe_ = (r) => {
+      const d = destacadosMap[r] || null;
+      // El descuento del producto (si lo tiene) manda como preferente
+      // sobre el general de la campaña — petición explícita: "si un
+      // producto también lo tiene añadido aplicará el indicado en el
+      // producto como preferente".
+      const descuentoEfectivo = (d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0);
+      return productCard(r, { destacado: d, descuento: descuentoEfectivo });
+    };
+    if(!productosOrdenados.length){
+      $("#shelf").innerHTML = `<p class="empty-shelf">Esta campaña todavía no tiene productos asignados. Usa "Asignar productos" para añadir los primeros.</p>`;
+    } else if(c.agruparProductos){
+      // Agrupación activada: se ignora el reordenado por posV (arriba/
+      // medio/abajo es cosa de destacados, no compatible con "mostrar
+      // agrupado") y se usa el orden EXACTO guardado en c.productos (el
+      // mismo que se ve/arrastra en la gestión) — un grupo nuevo empieza
+      // cada vez que el campo "grupo" del producto cambia respecto al
+      // anterior, nunca reordenando productos para "juntar" grupos no
+      // contiguos: así el folleto/escaparate siempre refleja el orden
+      // que Eloy ha decidido a mano, sin sorpresas.
+      const SIN_GRUPO_ = Symbol('sin-grupo'); // nunca igual a ningún string, fuerza que el primer producto siempre abra bloque
+      let grupoAnterior = SIN_GRUPO_;
+      const bloques = []; // cada bloque: { titulo: string|null, html: string }
+      c.productos.forEach(r => {
+        const grupoActual = ((PRODUCTS[r] && PRODUCTS[r].grupo) || '').toString().trim();
+        if(grupoActual !== grupoAnterior){
+          bloques.push({ titulo: grupoActual || null, html: '' });
+          grupoAnterior = grupoActual;
+        }
+        bloques[bloques.length - 1].html += tarjetaDe_(r);
+      });
+      $("#shelf").innerHTML = bloques.map(b =>
+        (b.titulo ? `<h3 class="shelf-grupo-titulo">${escaparHTML_(b.titulo)}</h3>` : '') + `<div class="shelf">${b.html}</div>`
+      ).join("");
+    } else {
+      $("#shelf").innerHTML = `<div class="shelf">${productosOrdenados.map(tarjetaDe_).join("")}</div>`;
+    }
 
     // Bloque de cierre, con la frase opcional definida en el formulario de
     // campaña. Sin frase, se ve igual el bloque, solo que sin texto
@@ -2717,6 +2766,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
   const MAX_TEXTO_PRODUCTO = 220;
   const MAX_PROMO_PRODUCTO = 28;
+  const MAX_GRUPO_PRODUCTO = 60;
   // Chip de promoción alternativo al % de descuento (ver sanearDestacados_
   // en el backend) — lista cerrada que ofrece el selector, más "Otro"
   // (texto libre, sentinela "__otro__" solo en el <select>, nunca se
@@ -2724,6 +2774,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   const PROMOS_PREDEFINIDAS_ = ['2x1', '3x2', '3x1', '2ª unidad al 50%', '2ª unidad al 70%'];
   function destacadoActual(ref){
     return destacados[ref] || { tamano:1, alinH:'centro', posV:'medio', descuento:0, texto:'', promo:'', promoManual:false };
+  }
+
+  // Guarda el "grupo" (agrupación) del PRODUCTO MAESTRO — a diferencia
+  // del resto de campos de este panel (tamaño/descuento/promo/texto),
+  // vive en la hoja Productos, no en "destacados" de la campaña, así
+  // que se guarda aparte, al momento, sin esperar al botón "Guardar
+  // productos" general (igual que "Editar ficha técnica"/"Relacionados"
+  // en buscador.html, mismo tipo de campo del catálogo).
+  async function guardarGrupoProducto_(ref, grupo){
+    const valorAnterior = (PRODUCTS[ref] && PRODUCTS[ref].grupo) || '';
+    if(grupo === valorAnterior) return;
+    try{
+      const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion:'actualizar_grupo_producto', referencia:ref, grupo, pin: productosPin_ }),
+      });
+      const data = await resp.json();
+      if(!data.success) throw new Error(data.error || 'Error desconocido');
+      if(PRODUCTS[ref]) PRODUCTS[ref].grupo = grupo;
+      toast(`Grupo de ${ref} guardado.`);
+    } catch(err){
+      toast('No se pudo guardar el grupo: ' + err.message, true);
+      renderSeleccionados(); // revierte el campo visualmente al valor anterior (no tocado en PRODUCTS[ref])
+    }
   }
 
   function familiasDisponibles(){
@@ -2906,6 +2981,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <label class="destacar-panel-ancho">Texto de pie (opcional — descripción, ayuda o detalle técnico)
               <textarea data-campo="texto" data-ref="${ref}" maxlength="${MAX_TEXTO_PRODUCTO}" rows="2" placeholder="p. ej. Incluye 3 recambios de filtro">${(d.texto||'').replace(/</g,'&lt;')}</textarea>
             </label>
+            <label class="destacar-panel-ancho">Grupo (agrupación del producto — vale para todos los escaparates, no solo este)
+              <input type="text" maxlength="${MAX_GRUPO_PRODUCTO}" placeholder="p. ej. MAQUINARIA" data-campo="grupoProducto" data-ref="${ref}" value="${((p&&p.grupo)||'').replace(/"/g,'&quot;')}">
+            </label>
           </div>
         </details>
         <button type="button" class="chip-quitar" data-quitar="${ref}" title="Quitar de la campaña" aria-label="Quitar ${nombre}">
@@ -2991,6 +3069,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       campo.addEventListener("change", ()=>{
         const ref = campo.dataset.ref;
         const nombreCampo = campo.dataset.campo;
+        // "Grupo" es un campo del PRODUCTO MAESTRO (vale para todos los
+        // escaparates, no solo esta campaña) — no vive en "destacados"
+        // como el resto de campos de este panel, así que se guarda aparte
+        // con su propia acción (ver guardarGrupoProducto_).
+        if(nombreCampo === 'grupoProducto'){
+          guardarGrupoProducto_(ref, campo.value.trim().slice(0, MAX_GRUPO_PRODUCTO));
+          return;
+        }
         const actual = Object.assign({}, destacadoActual(ref));
         if(nombreCampo === 'tamano') actual.tamano = parseInt(campo.value, 10);
         else if(nombreCampo === 'descuento'){
@@ -3123,6 +3209,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       });
       updateSelCount();
       renderSeleccionados();
+      $("#chkAgruparProductos").checked = !!c.agruparProductos;
       $("#modalProdCampana").textContent = c.nombre;
       $("#fBusca").value = "";
       $("#fFamilia").value = "";
@@ -3293,16 +3380,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         texto: (destacados[ref].texto || '').trim(),
         promo: (destacados[ref].promo || '').trim(),
       }));
+    const agruparProductos = $("#chkAgruparProductos").checked;
     try{
       const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight OPTIONS, igual que el resto de acciones del proyecto
-        body: JSON.stringify({ accion:'actualizar_productos_campana', id:campaignId, pin: productosPin_, productos:productosArr, destacados:destacadosArr }),
+        body: JSON.stringify({ accion:'actualizar_productos_campana', id:campaignId, pin: productosPin_, productos:productosArr, destacados:destacadosArr, agrupar:agruparProductos }),
       });
       const data = await resp.json();
       if(!data.success) throw new Error(data.error || 'Error desconocido');
       const c = findCampaign(campaignId);
-      if(c){ c.productos = productosArr; c.destacados = data.destacados || destacadosArr; }
+      if(c){ c.productos = productosArr; c.destacados = data.destacados || destacadosArr; c.agruparProductos = !!data.agrupar; }
       // Sincroniza la caché de sesión con este mismo cambio local — así
       // si el usuario vuelve al listado o entra en otro escaparate, no
       // ve el número de productos de antes de este guardado.
@@ -3833,25 +3921,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
       // Mismo orden que ya ve el visitante en el estante (arriba/medio/
       // abajo según destacados[].posV) — el folleto refleja el mismo
-      // escaparate, no un orden distinto inventado para el PDF.
+      // escaparate, no un orden distinto inventado para el PDF. Con
+      // "Agrupar productos" activado se ignora este reordenado (igual
+      // que en la propia página — ver render()): el orden pasa a ser el
+      // EXACTO guardado en c.productos, para que un grupo salga siempre
+      // en un único bloque contiguo en vez de romperse por posV.
       const destacadosMap = {};
       (Array.isArray(c.destacados) ? c.destacados : []).forEach(d => { if(d && d.ref) destacadosMap[d.ref] = d; });
       const PESO_POSICION = { arriba:-1, medio:0, abajo:1 };
-      const refsOrdenados = c.productos.slice().sort((a,b) => {
+      const refsOrdenados = c.agruparProductos ? c.productos.slice() : c.productos.slice().sort((a,b) => {
         const pa = PESO_POSICION[(destacadosMap[a]||{}).posV] || 0;
         const pb = PESO_POSICION[(destacadosMap[b]||{}).posV] || 0;
         return pa - pb;
       });
 
-      // Las fotos de producto se piden más abajo, una vez calculada la
-      // rejilla (ver itemsColocados) — cada una se recorta al recuadro
-      // EXACTO que le toca en su tarjeta (ver cajaImagenDe), así que hace
-      // falta conocer antes el tamaño real de esa tarjeta (normal, ancha
-      // o grande). El logo es de este mismo origen, sin límite de
-      // peticiones ni recorte que dependa del layout, así que se pide ya
-      // — junto con la foto propia del escaparate (c.imagenFondo, la
-      // misma que se ve nítida en .vitrina-foto en la propia página), que
-      // solo existe si la campaña tiene una asignada.
+      // Las fotos de producto se piden más abajo (ver itemsFotos), sin
+      // depender de dónde acabe colocada cada una en la rejilla (ver
+      // empaquetarGrupo_, más abajo) — nunca se recortan a un recuadro
+      // concreto, solo se encajan en modo "contain" al dibujar la
+      // tarjeta (ver dibujarTarjetaProducto). El logo es de este mismo
+      // origen, sin límite de peticiones ni recorte que dependa del
+      // layout, así que se pide ya — junto con la foto propia del
+      // escaparate (c.imagenFondo, la misma que se ve nítida en
+      // .vitrina-foto en la propia página), que solo existe si la
+      // campaña tiene una asignada.
       const ANCHO_FOTO_CABECERA = 46, ALTO_FOTO_CABECERA = ANCHO_FOTO_CABECERA * 3/4; // mismo 4:3 que .vitrina-foto
       const [logo, fotoCabecera] = await Promise.all([
         cargarImagenDataURL('./assets/logos/logo-orencio.png', { tipo:'image/png' }),
@@ -4199,46 +4292,83 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // en su lugar, el siguiente producto normal que sí cabe en una
       // sola fila.
       const filaAltura_ = ROW_UNIT + gapY;
-      const filasPagina0_ = Math.max(1, Math.floor((footerTopY - 2 - cursorY) / filaAltura_));
       const filasPaginaN_ = Math.max(1, Math.floor((footerTopY - 2 - (headerBottomY + 8)) / filaAltura_));
-      function finDePaginaDeFila_(fila){
-        if(fila < filasPagina0_) return filasPagina0_ - 1;
-        const pagina = Math.floor((fila - filasPagina0_) / filasPaginaN_);
-        return filasPagina0_ + (pagina + 1) * filasPaginaN_ - 1;
-      }
-      const colOcupacion_ = [];
-      function asegurarFilaRejilla_(i){
-        while(colOcupacion_.length <= i) colOcupacion_.push(new Array(baseCols).fill(false));
-      }
-      function buscarHuecoRejilla_(spanCols, spanRows){
-        let fila = 0;
-        for(;;){
-          if(fila + spanRows - 1 <= finDePaginaDeFila_(fila)){
-            asegurarFilaRejilla_(fila + spanRows - 1);
-            for(let col = 0; col <= baseCols - spanCols; col++){
-              let cabe = true;
-              for(let r = 0; r < spanRows && cabe; r++){
-                for(let c = 0; c < spanCols && cabe; c++){
-                  if(colOcupacion_[fila+r][col+c]) cabe = false;
-                }
-              }
-              if(cabe) return { fila, col };
-            }
-          }
-          fila++;
+      // Empaqueta UN grupo de refs en su PROPIA rejilla 2D, nueva y vacía
+      // — cuando "Agrupar productos" está activo, cada grupo arranca
+      // siempre en una fila nueva, nunca compartiendo huecos con el
+      // grupo anterior (así un destacado del grupo A nunca "roba" hueco
+      // a un producto normal del grupo B). Sin agrupación, solo hay un
+      // "grupo" (todos los productos), así que este empaquetado se llama
+      // una única vez — mismo resultado que antes de añadir grupos.
+      // "filasPaginaActual" se recalcula aquí, con el cursorY REAL en el
+      // momento de llamar (que ya ha avanzado por los grupos/títulos
+      // anteriores) — no es un valor fijo calculado una sola vez al
+      // principio, como pasaba antes de que existieran los grupos.
+      function empaquetarGrupo_(refs){
+        const filasPaginaActual = Math.max(1, Math.floor((footerTopY - 2 - cursorY) / filaAltura_));
+        function finDePaginaDeFila_(fila){
+          if(fila < filasPaginaActual) return filasPaginaActual - 1;
+          const pagina = Math.floor((fila - filasPaginaActual) / filasPaginaN_);
+          return filasPaginaActual + (pagina + 1) * filasPaginaN_ - 1;
         }
-      }
-      function ocuparRejilla_(fila, col, spanCols, spanRows){
-        for(let r = 0; r < spanRows; r++) for(let c = 0; c < spanCols; c++) colOcupacion_[fila+r][col+c] = true;
+        const colOcupacion_ = [];
+        function asegurarFilaRejilla_(i){
+          while(colOcupacion_.length <= i) colOcupacion_.push(new Array(baseCols).fill(false));
+        }
+        function buscarHuecoRejilla_(spanCols, spanRows){
+          let fila = 0;
+          for(;;){
+            if(fila + spanRows - 1 <= finDePaginaDeFila_(fila)){
+              asegurarFilaRejilla_(fila + spanRows - 1);
+              for(let col = 0; col <= baseCols - spanCols; col++){
+                let cabe = true;
+                for(let r = 0; r < spanRows && cabe; r++){
+                  for(let c = 0; c < spanCols && cabe; c++){
+                    if(colOcupacion_[fila+r][col+c]) cabe = false;
+                  }
+                }
+                if(cabe) return { fila, col };
+              }
+            }
+            fila++;
+          }
+        }
+        function ocuparRejilla_(fila, col, spanCols, spanRows){
+          for(let r = 0; r < spanRows; r++) for(let c = 0; c < spanCols; c++) colOcupacion_[fila+r][col+c] = true;
+        }
+        const itemsColocados = refs.map(ref => {
+          const spec = especTarjeta(ref);
+          const { fila, col } = buscarHuecoRejilla_(spec.spanCols, spec.spanRows);
+          ocuparRejilla_(fila, col, spec.spanCols, spec.spanRows);
+          return { ref, fila, col, spanCols: spec.spanCols, spanRows: spec.spanRows };
+        });
+        return { itemsColocados, totalFilasRejilla: colOcupacion_.length };
       }
 
-      const itemsColocados = refsOrdenados.map(ref => {
-        const spec = especTarjeta(ref);
-        const { fila, col } = buscarHuecoRejilla_(spec.spanCols, spec.spanRows);
-        ocuparRejilla_(fila, col, spec.spanCols, spec.spanRows);
-        return { ref, fila, col, spanCols: spec.spanCols, spanRows: spec.spanRows };
-      });
-      const totalFilasRejilla = colOcupacion_.length;
+      // Agrupación — petición real de Eloy a partir de un folleto manual
+      // de ejemplo, que agrupa los productos bajo títulos de sección:
+      // "si se agrupan se mostrará en el escaparate y en el pdf
+      // agrupados por el texto indicado en los productos". Mismo
+      // criterio "sin reordenar nada" que en la propia página (ver
+      // render()): un grupo nuevo empieza cada vez que el campo "grupo"
+      // del producto CAMBIA respecto al anterior en refsOrdenados — un
+      // grupo repetido más adelante (no contiguo) simplemente vuelve a
+      // salir con su mismo título, en vez de "fusionarse" con el bloque
+      // de antes reordenando productos.
+      const gruposFolleto = [];
+      if(c.agruparProductos){
+        let grupoAnterior = Symbol('sin-grupo');
+        refsOrdenados.forEach(ref => {
+          const grupoActual = ((PRODUCTS[ref] && PRODUCTS[ref].grupo) || '').toString().trim();
+          if(grupoActual !== grupoAnterior){
+            gruposFolleto.push({ titulo: grupoActual || null, refs: [] });
+            grupoAnterior = grupoActual;
+          }
+          gruposFolleto[gruposFolleto.length - 1].refs.push(ref);
+        });
+      } else {
+        gruposFolleto.push({ titulo: null, refs: refsOrdenados });
+      }
 
       // Las fotos de producto se piden SIN recortar (sin recorteRatio):
       // se dibujan siempre enteras, en modo "contain" (ver
@@ -4254,10 +4384,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // "Contain" nunca corta nada — como mucho dejará algo más de
       // margen alrededor en los productos con una proporción muy
       // distinta a su hueco, pero nunca pierde parte de la foto.
-      const itemsFotos = itemsColocados.map(it => {
-        const p = PRODUCTS[it.ref];
+      const itemsFotos = refsOrdenados.map(ref => {
+        const p = PRODUCTS[ref];
         return {
-          ref: it.ref,
+          ref: ref,
           url: p ? urlImagenProductoFolleto(p, 500) : null,
           opciones: {}
         };
@@ -4487,41 +4617,74 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         }
       }
 
-      // Se recorre la rejilla 2D fila a fila (de ROW_UNIT en ROW_UNIT, no
-      // todo de golpe en un solo forEach síncrono, para poder informar
-      // "Componiendo folleto… (fila X/Y)" en el botón a medida que avanza
-      // — justo el aviso de Eloy: "que vaya cambiando en base a lo que
-      // está ocurriendo por detrás"). cursorY avanza SIEMPRE un único
-      // ROW_UNIT por cada fila de la rejilla procesada, arranque o no ahí
-      // algún producto — un bloque de varias filas (destacado) se dibuja
-      // entero, de una sola vez, en la fila en la que arranca, con su
-      // alto real (spanRows*ROW_UNIT + huecos), y simplemente "sobresale"
-      // visualmente sobre las filas siguientes mientras cursorY se pone
-      // al día con ellas — así nunca hace falta partir un bloque entre
-      // dos páginas: el salto de página se decide ANTES de dibujar nada
-      // de una fila, mirando la altura real del bloque más alto que
-      // arranque en ella.
-      const itemsPorFila_ = {};
-      itemsColocados.forEach(it => { (itemsPorFila_[it.fila] = itemsPorFila_[it.fila] || []).push(it); });
-      for(let iFila = 0; iFila < totalFilasRejilla; iFila++){
-        const itemsFila = itemsPorFila_[iFila] || [];
-        const altoNecesario = itemsFila.length
-          ? Math.max(...itemsFila.map(it => it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY))
-          : ROW_UNIT;
-        if(cursorY + altoNecesario > footerTopY - 2){
+      // Título de grupo (solo con "Agrupar productos" activo) — franja
+      // corta de texto en mayúsculas con una regla fina debajo, NUNCA
+      // tan alta como una fila de productos (ROW_UNIT, ~56mm): un título
+      // es una sola línea de texto, no un hueco cuadrado de producto. Se
+      // exige que quepa también al menos una fila normal detrás, para
+      // que un título nunca quede "huérfano" solo al final de una
+      // página con todo su grupo empujado a la página siguiente.
+      const TITULO_GRUPO_ALTURA_ = 11;
+      function dibujarTituloGrupoFolleto_(texto){
+        if(cursorY + TITULO_GRUPO_ALTURA_ + ROW_UNIT + gapY > footerTopY - 2){
           doc.addPage();
           dibujarCabecera();
           cursorY = headerBottomY + 8;
         }
-        itemsFila.forEach(it => {
-          const x = margin + it.col * (colW + gapX);
-          const w = it.spanCols * colW + (it.spanCols - 1) * gapX;
-          const h = it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY;
-          dibujarTarjetaProducto(x, cursorY, w, h, it.ref);
-        });
-        cursorY += ROW_UNIT + gapY;
-        fijarEstadoBoton(`Componiendo folleto… (fila ${iFila + 1}/${totalFilasRejilla})`);
-        await new Promise(requestAnimationFrame);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11.5);
+        doc.setTextColor(30, 33, 37);
+        doc.text(texto.toUpperCase(), margin, cursorY + 6);
+        doc.setDrawColor(vivid.r, vivid.g, vivid.b);
+        doc.setLineWidth(0.8);
+        doc.line(margin, cursorY + 9, contentRight, cursorY + 9);
+        cursorY += TITULO_GRUPO_ALTURA_;
+      }
+
+      // Se recorre la rejilla 2D de cada grupo fila a fila (de ROW_UNIT
+      // en ROW_UNIT, no todo de golpe en un solo forEach síncrono, para
+      // poder informar "Componiendo folleto… (fila X/Y)" en el botón a
+      // medida que avanza — justo el aviso de Eloy: "que vaya cambiando
+      // en base a lo que está ocurriendo por detrás"). cursorY avanza
+      // SIEMPRE un único ROW_UNIT por cada fila de la rejilla procesada,
+      // arranque o no ahí algún producto — un bloque de varias filas
+      // (destacado) se dibuja entero, de una sola vez, en la fila en la
+      // que arranca, con su alto real (spanRows*ROW_UNIT + huecos), y
+      // simplemente "sobresale" visualmente sobre las filas siguientes
+      // mientras cursorY se pone al día con ellas — así nunca hace falta
+      // partir un bloque entre dos páginas: el salto de página se decide
+      // ANTES de dibujar nada de una fila, mirando la altura real del
+      // bloque más alto que arranque en ella. Sin "Agrupar productos"
+      // solo hay un grupo (gruposFolleto.length === 1, sin título), así
+      // que este bucle se comporta exactamente igual que antes.
+      for(let iGrupo = 0; iGrupo < gruposFolleto.length; iGrupo++){
+        const grupo = gruposFolleto[iGrupo];
+        if(grupo.titulo) dibujarTituloGrupoFolleto_(grupo.titulo);
+        const { itemsColocados, totalFilasRejilla } = empaquetarGrupo_(grupo.refs);
+        const itemsPorFila_ = {};
+        itemsColocados.forEach(it => { (itemsPorFila_[it.fila] = itemsPorFila_[it.fila] || []).push(it); });
+        for(let iFila = 0; iFila < totalFilasRejilla; iFila++){
+          const itemsFila = itemsPorFila_[iFila] || [];
+          const altoNecesario = itemsFila.length
+            ? Math.max(...itemsFila.map(it => it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY))
+            : ROW_UNIT;
+          if(cursorY + altoNecesario > footerTopY - 2){
+            doc.addPage();
+            dibujarCabecera();
+            cursorY = headerBottomY + 8;
+          }
+          itemsFila.forEach(it => {
+            const x = margin + it.col * (colW + gapX);
+            const w = it.spanCols * colW + (it.spanCols - 1) * gapX;
+            const h = it.spanRows * ROW_UNIT + (it.spanRows - 1) * gapY;
+            dibujarTarjetaProducto(x, cursorY, w, h, it.ref);
+          });
+          cursorY += ROW_UNIT + gapY;
+          fijarEstadoBoton(gruposFolleto.length > 1
+            ? `Componiendo folleto… (grupo ${iGrupo + 1}/${gruposFolleto.length}, fila ${iFila + 1}/${totalFilasRejilla})`
+            : `Componiendo folleto… (fila ${iFila + 1}/${totalFilasRejilla})`);
+          await new Promise(requestAnimationFrame);
+        }
       }
 
       fijarEstadoBoton('Añadiendo cierre y pies de página…');

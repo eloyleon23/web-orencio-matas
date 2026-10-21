@@ -175,6 +175,13 @@ def exportar_productos_json(productos, familias, subfamilias):
         # Centro de Soluciones.
         ficha_url = p.get('ficha_url', '').strip()
 
+        # Agrupación (texto libre, p. ej. "MAQUINARIA") — columna "grupo"
+        # del Sheet (ver procesarActualizarGrupoProducto en
+        # apps_script_trigger.js). Solo tiene efecto visible en un
+        # escaparate si esa campaña tiene activado el check "Agrupar
+        # productos" del modal de asignación.
+        grupo = p.get('grupo', '').strip()
+
         exportados.append({
             'ref':       ref,
             'nombre':    p.get('nombre', '').strip(),
@@ -201,6 +208,7 @@ def exportar_productos_json(productos, familias, subfamilias):
             'relacionados': relacionados,
             'relacionados_gestionado': relacionados_gestionado,
             'ficha_url': ficha_url,
+            'grupo': grupo,
         })
 
     payload = {
