@@ -1024,6 +1024,15 @@
         }
         .modal-lista-compra-validez i { color: var(--yellow); }
         .modal-lista-compra-validez strong { color: var(--dark); }
+        /* Aviso de precio calculado por unidades (no por caja) cuando
+           algún producto de la lista está en modo "cajas" sin formato
+           de envase informado — ver listaCompraTieneCantidadAmbigua_. */
+        .modal-lista-compra-aviso-envase {
+            margin: 8px 0 0; padding: 8px 12px; border-radius: 8px;
+            background: #fff7e6; border: 1px solid #f1c979; color: #8a5a00;
+            font-size: 0.78rem; display: flex; align-items: flex-start; gap: 6px;
+        }
+        .modal-lista-compra-aviso-envase i { margin-top: 1px; }
         .modal-lista-compra-cuerpo { padding: 20px; }
         .lista-compra-notas { margin-top: 18px; }
         .lista-compra-notas label {
@@ -5363,6 +5372,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                  fecha de creación y fecha a partir de la cual la lista se
                  elimina automáticamente. -->
             <p class="modal-lista-compra-validez" id="modal-lista-compra-validez"></p>
+            <!-- Aviso de precio por unidades (no por caja real) — solo
+                 visible si algún producto está en modo "cajas" sin
+                 formato de envase informado (ver
+                 listaCompraTieneCantidadAmbigua_/renderModalListaCompra_). -->
+            <p class="modal-lista-compra-aviso-envase" id="modal-lista-compra-aviso-envase" style="display:none;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Para algún producto no se ha informado el número de unidades por caja: el precio indicado para esas cajas se calcula por unidad (no por el total real de la caja).</span>
+            </p>
         </div>
         <div class="modal-lista-compra-cuerpo">
             <div id="lista-compra-vacia" class="lista-compra-vacia" style="display:none;">
@@ -11755,6 +11772,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return { sinIva, iva: conIva - sinIva, conIva };
     }
 
+    // ¿Hay algún producto en la lista comprado "por cajas" sin formato de
+    // envase informado? En ese caso, el número de unidades realmente
+    // comprado NO es seguro: se usa tal cual el número de cajas como
+    // cantidad de cálculo (ver listaCompraActualizarCantidadEnvases_),
+    // así que el precio mostrado/calculado para esas cajas es, en
+    // realidad, un precio por UNIDAD, no por el contenido real de la
+    // caja. Petición real de Eloy: "hay que indicar cuando no se tiene
+    // claro el número de unidades por caja que el precio indicado es
+    // calculado por unidades y no por el total real... esto es solo
+    // cuando no tengamos la certeza del número real de unidades".
+    function listaCompraTieneCantidadAmbigua_() {
+        return listaCompraProductos_().some(p => p.modoCompra === 'envase' && !envaseCantidadValida_(p));
+    }
+
     // ── Tarjeta del carrusel del bloque (mini, igual aspecto que el
     // resto de carruseles) — reutiliza el mismo contenido que crearTarjeta
     // pero el click abre la MODAL DE LA LISTA (no el detalle del
@@ -11902,6 +11933,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-lista-compra-validez').innerHTML = listaCompraState_
             ? `<i class="fa-solid fa-calendar-days"></i> Creada el <strong>${listaCompraFechaFormateada_(listaCompraState_.creado)}</strong> · Válida hasta el <strong>${listaCompraFechaFormateada_(listaCompraFechaCaducidad_())}</strong> (${LISTA_COMPRA_VALIDEZ_DIAS_} días)`
             : '';
+        $('modal-lista-compra-aviso-envase').style.display = listaCompraTieneCantidadAmbigua_() ? 'flex' : 'none';
 
         const grid = $('lista-compra-grid');
         const vacia = $('lista-compra-vacia');
@@ -12254,6 +12286,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 y += 13;
             });
         }
+
+        // Avisos — mismo tratamiento que las observaciones de arriba
+        // (splitTextToSize + salto de página si hiciera falta). El
+        // primero es condicional (solo si hay algún producto con
+        // cantidad ambigua, ver listaCompraTieneCantidadAmbigua_); el
+        // segundo se muestra SIEMPRE, a petición explícita de Eloy.
+        const dibujarAvisoPdf_ = (texto) => {
+            y += 24;
+            if (y > alturaPagina - 80) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8.5);
+            doc.setTextColor(140, 100, 20);
+            const lineasAviso = doc.splitTextToSize(texto, anchoPagina - 80);
+            lineasAviso.forEach((linea) => {
+                if (y > alturaPagina - 50) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+                doc.text(linea, 40, y);
+                y += 11;
+            });
+            doc.setFont('helvetica', 'normal');
+        };
+        if (listaCompraTieneCantidadAmbigua_()) {
+            dibujarAvisoPdf_('Aviso: para algún producto no se ha informado el número de unidades por caja — el precio indicado para esas cajas se calcula por unidad, no por el total real de la caja.');
+        }
+        dibujarAvisoPdf_(`Los precios indicados pueden variar en el momento de la compra respecto a los de este documento, generado el ${listaCompraFechaFormateada_()}.`);
 
         // El pie no se dibuja solo en didDrawPage de autoTable si al
         // final se añaden más líneas tras la tabla sin pasar por otra
