@@ -434,6 +434,13 @@
       .bloque-contenido-texto{ max-width:70ch; white-space:pre-wrap; line-height:1.5; color:var(--ink); }
       .bloque-contenido-img{ max-width:420px; width:100%; }
       .bloque-contenido-img img{ width:100%; height:auto; border-radius:var(--radius-s); display:block; }
+      /* Selector de tamaño de imagen (pequeña/normal/grande) del bloque
+         de texto/imagen — petición real de Eloy: "ajustar el tamaño de
+         la imagen... para que ocupen más espacio". "Normal" mantiene el
+         max-width de siempre (420px apilado, 280px en fila); pequeña y
+         grande son variaciones proporcionales de ese mismo valor. */
+      .bloque-contenido-img--pequena{ max-width:260px; }
+      .bloque-contenido-img--grande{ max-width:620px; }
       /* Imagen a la izquierda/derecha del texto — fila en vez de
          columna, texto alineado a la izquierda (tiene más sentido junto
          a una imagen al lado que centrado). Se apila en vertical en
@@ -442,6 +449,8 @@
       .bloque-contenido-fila{ flex-direction:row; text-align:left; align-items:center; }
       .bloque-contenido-fila .bloque-contenido-texto{ text-align:left; flex:1 1 auto; }
       .bloque-contenido-fila .bloque-contenido-img{ max-width:280px; flex:1 1 220px; }
+      .bloque-contenido-fila .bloque-contenido-img--pequena{ max-width:180px; flex-basis:160px; }
+      .bloque-contenido-fila .bloque-contenido-img--grande{ max-width:420px; flex:1 1 360px; }
       @media (max-width:640px){
         .bloque-contenido-fila{ flex-direction:column; text-align:center; }
         .bloque-contenido-fila .bloque-contenido-texto{ text-align:center; }
@@ -1834,7 +1843,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       b.cursiva ? 'font-style:italic' : '',
     ].filter(Boolean).join(';');
     const textoHtml = (b.texto && b.texto.trim()) ? `<p class="bloque-contenido-texto" style="${estiloTexto}">${escaparHTML_(b.texto)}</p>` : '';
-    const imgHtml = b.imagen ? `<div class="bloque-contenido-img"><img src="${urlImagenCampana(b.imagen, 900)}" alt="" loading="lazy"></div>` : '';
+    const claseTamanoImg = b.imagenTamano === 'pequena' ? ' bloque-contenido-img--pequena' : (b.imagenTamano === 'grande' ? ' bloque-contenido-img--grande' : '');
+    const imgHtml = b.imagen ? `<div class="bloque-contenido-img${claseTamanoImg}"><img src="${urlImagenCampana(b.imagen, 900)}" alt="" loading="lazy"></div>` : '';
     if(!textoHtml && !imgHtml) return '';
     const enFila = b.imagenPosicion === 'izquierda' || b.imagenPosicion === 'derecha';
     const partes = (b.imagenPosicion === 'abajo' || b.imagenPosicion === 'derecha') ? [textoHtml, imgHtml] : [imgHtml, textoHtml];
@@ -2949,6 +2959,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   let ordenMostrar = []; // array de { tipo:'producto', ref } | { tipo:'bloque', id }
   const MAX_TEXTO_BLOQUE = 2000;
   const TAMANOS_BLOQUE_ETIQUETAS_ = { normal:'Normal', grande:'Grande', 'muy-grande':'Muy grande' };
+  // Tamaño de la IMAGEN del bloque — independiente de TAMANOS_BLOQUE_ETIQUETAS_
+  // (ese es el tamaño del TEXTO). Petición real de Eloy: "ajustar el
+  // tamaño de la imagen... para que ocupen más espacio, un selector de
+  // pequeña, normal y grande".
+  const TAMANOS_IMAGEN_BLOQUE_ETIQUETAS_ = { pequena:'Pequeña', normal:'Normal', grande:'Grande' };
   const HINT_IA_DEFECTO = 'Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.';
   const ETIQUETAS_ALINEACION = { izquierda:'Izda.', centro:'Centro', derecha:'Dcha.' };
   const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
@@ -3104,7 +3119,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
   function crearBloqueNuevo_(){
     const id = 'bloque-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-    bloques[id] = { id, texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba' };
+    bloques[id] = { id, texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba', imagenTamano:'normal' };
     ordenMostrar.push({ tipo:'bloque', id });
     return id;
   }
@@ -3208,7 +3223,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>`;
   }
   function chipBloqueHTML_(id, indice, total){
-    const b = bloques[id] || { texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba' };
+    const b = bloques[id] || { texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba', imagenTamano:'normal' };
     const texto = (b.texto||'').replace(/</g,'&lt;');
     return `<div class="chip-item chip-bloque" draggable="true" data-clave="bloque:${id}">
       <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar este bloque">
@@ -3235,6 +3250,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <option value="abajo" ${b.imagenPosicion==='abajo'?'selected':''}>Debajo</option>
               <option value="izquierda" ${b.imagenPosicion==='izquierda'?'selected':''}>A la izquierda</option>
               <option value="derecha" ${b.imagenPosicion==='derecha'?'selected':''}>A la derecha</option>
+            </select>
+          </label>
+          <label>Tamaño de la imagen
+            <select data-campo-bloque="imagenTamano" data-bloque="${id}" ${!b.imagen?'disabled':''}>
+              ${Object.keys(TAMANOS_IMAGEN_BLOQUE_ETIQUETAS_).map(k=>`<option value="${k}" ${k===(b.imagenTamano||'normal')?'selected':''}>${TAMANOS_IMAGEN_BLOQUE_ETIQUETAS_[k]}</option>`).join('')}
             </select>
           </label>
         </div>
@@ -3627,7 +3647,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       (Array.isArray(c.bloquesContenido) ? c.bloquesContenido : []).forEach(b=>{
         if(b && b.id) bloques[b.id] = {
           id:b.id, texto:b.texto||'', tamano:b.tamano||'normal', negrita:!!b.negrita, cursiva:!!b.cursiva,
-          imagen:b.imagen||'', imagenPosicion:b.imagenPosicion||'arriba',
+          imagen:b.imagen||'', imagenPosicion:b.imagenPosicion||'arriba', imagenTamano:b.imagenTamano||'normal',
         };
       });
       // Escaparates guardados antes de esta función no tienen
@@ -4911,7 +4931,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       }).concat(
         gruposFolleto.filter(g => g.tipo === 'bloque' && g.bloque && g.bloque.imagen).map(g => ({
           ref: 'bloque:' + g.bloque.id,
-          url: urlImagenCampanaFolleto(g.bloque.imagen, 700),
+          // Resolución pedida a Drive algo mayor para el tamaño "grande"
+          // (ver dibujarBloqueContenidoFolleto_/FACTOR_TAMANO_IMG_BLOQUE_)
+          // — si no, una imagen que ahora se dibuja más grande en el PDF
+          // saldría pixelada.
+          url: urlImagenCampanaFolleto(g.bloque.imagen, g.bloque.imagenTamano === 'grande' ? 1100 : 700),
           opciones: {}
         }))
       );
@@ -5188,12 +5212,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.setFont('helvetica', estiloFuente);
         doc.setFontSize(tamanoFuente);
 
+        // Tamaño de la imagen (pequeña/normal/grande) — mismo selector y
+        // mismo criterio proporcional que en la web (ver
+        // .bloque-contenido-img--pequena/--grande). "Normal" mantiene las
+        // medidas de siempre; pequeña/grande las escalan.
+        const FACTOR_TAMANO_IMG_BLOQUE_ = bloque.imagenTamano === 'pequena' ? 0.65 : (bloque.imagenTamano === 'grande' ? 1.5 : 1);
+
         // Imagen a la izquierda/derecha del texto — dos columnas en vez
         // de apilado vertical (mismo criterio que en la web: ver
         // .bloque-contenido-fila).
         const enFila = tieneImagen && (bloque.imagenPosicion === 'izquierda' || bloque.imagenPosicion === 'derecha');
         if(enFila){
-          const ANCHO_IMG_FILA_ = 55, ALTO_IMG_FILA_MAX_ = 70, GAP_COLUMNAS_ = 8;
+          const ANCHO_IMG_FILA_ = 55 * FACTOR_TAMANO_IMG_BLOQUE_, ALTO_IMG_FILA_MAX_ = 70 * FACTOR_TAMANO_IMG_BLOQUE_, GAP_COLUMNAS_ = 8;
           const escala = Math.min(ANCHO_IMG_FILA_ / foto.w, ALTO_IMG_FILA_MAX_ / foto.h, 1);
           const anchoImg = foto.w * escala, altoImg = foto.h * escala;
           const anchoTexto = contentWidth - anchoImg - GAP_COLUMNAS_;
@@ -5223,7 +5253,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // en una sola columna.
         const lineasTexto = texto ? doc.splitTextToSize(texto, contentWidth) : [];
         const altoTexto = lineasTexto.length ? lineasTexto.length * interlineado + 4 : 0;
-        const ANCHO_IMG_BLOQUE_ = 70, ALTO_IMG_MAX_ = 90;
+        const ANCHO_IMG_BLOQUE_ = 70 * FACTOR_TAMANO_IMG_BLOQUE_, ALTO_IMG_MAX_ = 90 * FACTOR_TAMANO_IMG_BLOQUE_;
         let anchoImg = 0, altoImg = 0;
         if(tieneImagen){
           const escala = Math.min(ANCHO_IMG_BLOQUE_ / foto.w, ALTO_IMG_MAX_ / foto.h, 1);

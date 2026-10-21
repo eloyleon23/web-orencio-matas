@@ -5917,6 +5917,11 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
 // verdad, por fragmento").
 const TAMANOS_BLOQUE_VALIDOS_ = ['normal', 'grande', 'muy-grande'];
 const POSICIONES_IMAGEN_BLOQUE_VALIDAS_ = ['arriba', 'abajo', 'izquierda', 'derecha'];
+// Tamaño de la IMAGEN del bloque — independiente de "tamano" (ese es el
+// tamaño del TEXTO, ver TAMANOS_BLOQUE_VALIDOS_). Petición real de Eloy:
+// "necesito que ajustemos el tamaño de la imagen... para que ocupen más
+// espacio, incluiría un selector de pequeña, normal y grande".
+const TAMANOS_IMAGEN_BLOQUE_VALIDOS_ = ['pequena', 'normal', 'grande'];
 function sanearBloquesContenido_(bloquesRaw) {
   if (!Array.isArray(bloquesRaw)) return [];
   const vistos = new Set();
@@ -5943,11 +5948,12 @@ function sanearBloquesContenido_(bloquesRaw) {
     // (nunca se inventa un id al azar).
     const imagen = (b.imagen || '').toString().trim().slice(0, 100);
     const imagenPosicion = POSICIONES_IMAGEN_BLOQUE_VALIDAS_.indexOf(b.imagenPosicion) !== -1 ? b.imagenPosicion : 'arriba';
+    const imagenTamano = TAMANOS_IMAGEN_BLOQUE_VALIDOS_.indexOf(b.imagenTamano) !== -1 ? b.imagenTamano : 'normal';
     // Un bloque sin texto Y sin imagen no aporta nada — se descarta en
     // silencio (puede pasar si se crea uno y se borra todo su
     // contenido antes de guardar).
     if (!texto && !imagen) return;
-    resultado.push({ id: id, texto: texto, tamano: tamano, negrita: negrita, cursiva: cursiva, imagen: imagen, imagenPosicion: imagenPosicion });
+    resultado.push({ id: id, texto: texto, tamano: tamano, negrita: negrita, cursiva: cursiva, imagen: imagen, imagenPosicion: imagenPosicion, imagenTamano: imagenTamano });
   });
   return resultado;
 }
