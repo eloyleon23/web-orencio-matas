@@ -9272,6 +9272,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     ['fa-box-open', 'Productos vistos', r.totalProductosVistos],
                     ['fa-layer-group', 'Bloques pulsados', r.totalBloquesClick],
                     ['fa-tags', 'Marcas pulsadas', r.totalMarcasClick],
+                    ['fa-cart-shopping', 'Usos de la lista de la compra', r.totalListaCompraUsada],
+                    ['fa-file-export', 'Listas exportadas/compartidas', r.totalListaCompraExportada],
                 ].map(([icono, etiqueta, total]) => `
                     <div style="background:var(--light);border-radius:10px;padding:10px;text-align:center;">
                         <div style="font-size:1.4rem;font-weight:900;color:var(--red);"><i class="fa-solid ${icono}"></i> ${total}</div>
@@ -9289,7 +9291,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 + paBloqueLista_('Áreas más consultadas', 'fa-shapes', topAreasConNombre, 'Todavía no hay productos vistos en este periodo.')
                 + paBloqueLista_('Familias más consultadas', 'fa-list', r.topFamilias, 'Todavía no hay productos vistos en este periodo.')
                 + paBloqueLista_('Bloques de "Sigue explorando" más pulsados', 'fa-layer-group', r.topBloques, 'Todavía no hay clics en bloques en este periodo.')
-                + paBloqueLista_('Marcas más pulsadas', 'fa-tags', r.topMarcas, 'Todavía no hay clics en marcas en este periodo.');
+                + paBloqueLista_('Marcas más pulsadas', 'fa-tags', r.topMarcas, 'Todavía no hay clics en marcas en este periodo.')
+                + paBloqueLista_('Exportaciones de la lista por medio', 'fa-file-export', r.topListaCompraMedio, 'Todavía no se ha exportado ni compartido ninguna lista en este periodo.');
         } catch (e) {
             cont.innerHTML = '<p class="destacados-editor-error">Error de conexión.</p>';
         }
@@ -12012,6 +12015,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ? `${escapeHtml(p.nombre)} se ha añadido a tu lista de la compra`
             : `Lista creada y ${escapeHtml(p.nombre)} añadido. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
         listaCompraActualizarUI_();
+        // Estadística: uso de la lista de la compra — a petición de
+        // Eloy, se cuenta cada vez que se añade un producto (la acción
+        // real de "usar" la lista), no cada apertura del modal.
+        enviarEventoAnalitica_('lista_compra_usada', {});
     }
 
     // Selector de unidades (mínimo 1, sin máximo) de la ficha de producto — "+"/"−" y
@@ -12223,6 +12230,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
         doc.save(listaCompraNombreArchivoPdf_());
+        enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'pdf' });
     }
 
     // Devuelve el PDF ya generado como File (para adjuntarlo vía Web
@@ -12302,6 +12310,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     async function compartirListaCompraWhatsapp_() {
+        // Se cuenta como "exportada" tanto si se ha compartido el PDF
+        // adjunto como si ha caído al resumen en texto (ver más abajo) —
+        // en ambos casos el usuario se ha llevado su lista fuera de la
+        // web, que es lo que de verdad importa para la estadística.
+        enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'whatsapp' });
         if (await intentarCompartirPdfListaCompra_()) return;
         // Sin soporte para compartir archivos (desktop, navegadores sin
         // Web Share API...): no se puede adjuntar el PDF a un enlace
@@ -12314,6 +12327,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     async function compartirListaCompraCorreo_() {
+        enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'correo' });
         if (await intentarCompartirPdfListaCompra_()) return;
         // mailto: no admite adjuntar archivos — se avisa y se deja a mano
         // exportarlo con el botón de al lado, como contempla el encargo.

@@ -7224,6 +7224,10 @@ const CABECERAS_EVENTOS_ANALITICOS_ = [
   'busqueda_termino', 'busqueda_resultados', 'busqueda_con_resultados',
   'producto_referencia', 'producto_nombre', 'producto_area', 'producto_familia',
   'bloque_titulo', 'marca_nombre', 'marca_area',
+  // Medio de exportación/compartido de la lista de la compra ('pdf',
+  // 'whatsapp' o 'correo') — ver procesarRegistrarEvento y
+  // lista_compra_exportada en buscador.html.
+  'lista_compra_medio',
 ];
 
 // Nombres de evento aceptados — cualquier otro valor se descarta en
@@ -7231,6 +7235,10 @@ const CABECERAS_EVENTOS_ANALITICOS_ = [
 // llenar de basura con una petición HTTP manual a este endpoint público.
 const EVENTOS_ANALITICOS_TIPOS_VALIDOS_ = [
   'busqueda_realizada', 'ver_producto', 'bloque_categoria_click', 'marca_destacada_click',
+  // Petición real de Eloy: "añadir a las estadísticas las veces que se
+  // utiliza la lista de la compra y sobre todo el número de listas que
+  // se exportan a pdf o comparten".
+  'lista_compra_usada', 'lista_compra_exportada',
 ];
 
 function obtenerHojaEventosAnaliticos_() {
@@ -7241,6 +7249,14 @@ function obtenerHojaEventosAnaliticos_() {
     sheet.getRange(1, 1, 1, CABECERAS_EVENTOS_ANALITICOS_.length).setValues([CABECERAS_EVENTOS_ANALITICOS_]);
     sheet.setFrozenRows(1);
     console.log('Hoja EventosAnaliticos creada.');
+  } else if (sheet.getLastColumn() < CABECERAS_EVENTOS_ANALITICOS_.length) {
+    // Columna(s) añadidas después de crear la hoja por primera vez (p.
+    // ej. "lista_compra_medio") — se completan las cabeceras que
+    // falten, igual que el resto de columnas que se añaden bajo
+    // demanda en este proyecto.
+    const colActual = sheet.getLastColumn();
+    sheet.getRange(1, colActual + 1, 1, CABECERAS_EVENTOS_ANALITICOS_.length - colActual)
+      .setValues([CABECERAS_EVENTOS_ANALITICOS_.slice(colActual)]);
   }
   return sheet;
 }
@@ -7278,6 +7294,7 @@ function procesarRegistrarEvento(data) {
       recortarTextoEvento_(data.bloque_titulo, 80),
       recortarTextoEvento_(data.marca_nombre, 60),
       recortarTextoEvento_(data.marca_area, 30),
+      recortarTextoEvento_(data.lista_compra_medio, 20),
     ];
 
     // Lock corto y best-effort: ante contención (varias visitas
@@ -7375,6 +7392,8 @@ function calcularResumenAnalitica_(fechaInicio, fechaFin) {
     totalProductosVistos: 0,
     totalBloquesClick: 0,
     totalMarcasClick: 0,
+    totalListaCompraUsada: 0,
+    totalListaCompraExportada: 0,
     topBusquedas: [],
     topBusquedasSinResultados: [],
     topProductos: [],
@@ -7382,6 +7401,7 @@ function calcularResumenAnalitica_(fechaInicio, fechaFin) {
     topMarcas: [],
     topAreas: [],
     topFamilias: [],
+    topListaCompraMedio: [],
   };
   if (datos.length < 2) return resumen;
 
@@ -7394,6 +7414,8 @@ function calcularResumenAnalitica_(fechaInicio, fechaFin) {
   const contadorMarcas = {};
   const contadorAreas = {};
   const contadorFamilias = {};
+  const ETIQUETAS_MEDIO_LISTA_COMPRA_ = { pdf: 'PDF', whatsapp: 'WhatsApp', correo: 'Correo' };
+  const contadorListaCompraMedio = {};
 
   for (let i = 1; i < datos.length; i++) {
     const fila = datos[i];
@@ -7433,6 +7455,13 @@ function calcularResumenAnalitica_(fechaInicio, fechaFin) {
       const marca = (fila[COL['marca_nombre']] || '').toString().trim();
       if (!marca) continue;
       contadorMarcas[marca] = (contadorMarcas[marca] || 0) + 1;
+    } else if (tipo === 'lista_compra_usada') {
+      resumen.totalListaCompraUsada++;
+    } else if (tipo === 'lista_compra_exportada') {
+      resumen.totalListaCompraExportada++;
+      const medio = (fila[COL['lista_compra_medio']] || '').toString().trim();
+      const etiquetaMedio = ETIQUETAS_MEDIO_LISTA_COMPRA_[medio] || medio || 'Desconocido';
+      contadorListaCompraMedio[etiquetaMedio] = (contadorListaCompraMedio[etiquetaMedio] || 0) + 1;
     }
   }
 
@@ -7454,6 +7483,9 @@ function calcularResumenAnalitica_(fechaInicio, fechaFin) {
     .map(ref => ({ referencia: ref, nombre: contadorProductos[ref].nombre, total: contadorProductos[ref].total }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 15);
+  // Solo 3 medios posibles (pdf/whatsapp/correo) — sin límite real de
+  // "top N" necesario, pero se reutiliza topDeContador por consistencia.
+  resumen.topListaCompraMedio = topDeContador(contadorListaCompraMedio, 10);
 
   return resumen;
 }
