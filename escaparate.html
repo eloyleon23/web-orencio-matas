@@ -4692,19 +4692,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // dimensiones a la vez — con solo 3 columnas en una página A4 (a
         // diferencia de la web, con sitio para 5-8 columnas en pantallas
         // anchas), ensanchar sin dar más alto deja bloques panorámicos
-        // casi vacíos en vez de cuadrados. Tamaño 3-6 se agrupan en un
-        // único nivel "grande" (ancho completo, 3x2 celdas — no 3x3):
-        // con solo 3 columnas no hay forma real de diferenciar más
-        // niveles por ancho, y 3x3 (182x182mm, casi una página entera)
+        // casi vacíos en vez de cuadrados. Con solo 3 columnas no hay
+        // forma real de diferenciar más de dos niveles por ancho, así
+        // que tamaño 2-4 se agrupan en un nivel "medio" (2x2 celdas) y
+        // solo 5-6 (los destacados realmente enormes) llegan a ancho
+        // completo (3x2 — no 3x3: 182x182mm, casi una página entera,
         // dejaba demasiado a menudo una página casi en blanco cuando ese
-        // destacado no cabía justo después de la cabecera — "hay que
-        // ocupar más espacio e intentar dejar menos huecos vacíos",
-        // aviso real de Eloy. 3x2 sigue siendo mucho más cuadrado que el
-        // diseño original (ratio de imagen ~2:1 en vez de ~3,9:1) pero
-        // con la mitad de alto, cabe en muchos más huecos sin romper
-        // página.
-        if(tam >= 3) return { spanCols: baseCols, spanRows: 2 };
-        if(tam === 2) return { spanCols: 2, spanRows: 2 };
+        // destacado no cabía justo después de la cabecera).
+        //
+        // Cuarto aviso real de Eloy con el mismo folleto de ejemplo
+        // (tras el arreglo del agrupado por "grupo" vacío, ver más
+        // abajo): "haz más pequeños los bloques para que se distribuya
+        // mejor". Antes, tamaño 3 y 4 TAMBIÉN ocupaban ancho completo
+        // (3x2) como el 5/6 — un destacado de tamaño medio-alto (muy
+        // habitual: en la práctica, la mayoría de destacados reales son
+        // 2, 3 o 4, no 5/6) bloqueaba igualmente LAS TRES columnas
+        // enteras, sin dejar ninguna columna libre al lado para que un
+        // producto normal la rellenara — de ahí buena parte del hueco
+        // vacío que seguía sobrando tras ese primer arreglo. Al bajar
+        // 3 y 4 a 2x2 (como el 2), siempre queda una columna libre al
+        // lado de CUALQUIER destacado salvo los 5/6 (que de verdad lo
+        // merecen, son la excepción, no la norma), que un producto
+        // normal puede ocupar de inmediato.
+        if(tam >= 5) return { spanCols: baseCols, spanRows: 2 };
+        if(tam >= 2) return { spanCols: 2, spanRows: 2 };
         return { spanCols: 1, spanRows: 1 };
       }
 
