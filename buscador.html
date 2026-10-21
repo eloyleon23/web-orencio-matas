@@ -6226,7 +6226,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
     }
 
-    function mostrarResultadosPorPrimeraVez() {
+    async function mostrarResultadosPorPrimeraVez() {
         inicializarFiltros();
         inicializarListaCompra_();
         inicializarFolletoDestacados_();
@@ -6235,7 +6235,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('contenedor-resultados').style.display = '';
         iniciarComprobacionActualizaciones();
         aplicarFiltrosDesdeURL();
-        abrirProductoDesdeURL();
+        // "await": abrirProductoDesdeURL() espera a su vez a que las
+        // campañas de escaparate hayan cargado antes de abrir el modal
+        // (ver campanasEscaparateCargadas_) — hay que esperar aquí
+        // también, para que la comprobación de "¿ya hay un modal
+        // abierto?" de abajo (que decide si robar el foco a la barra de
+        // búsqueda) vea el resultado FINAL, no el de a mitad de abrir.
+        await abrirProductoDesdeURL();
         // A petición de Eloy: al entrar o recargar la página, el foco del
         // teclado se pone automáticamente en la barra de búsqueda — muy
         // útil con el lector de códigos de barras, que "escribe"
@@ -6303,7 +6309,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 const texto = await r.text();
                 hashConocido = await calcularHash(texto);
                 poblarDesdeTexto(texto);
-                mostrarResultadosPorPrimeraVez();
+                await mostrarResultadosPorPrimeraVez();
                 primerPintadoHecho = true;
                 // Igual que el grid principal: pintado instantáneo con el
                 // JSON estático, sin esperar a la reconciliación en vivo de
@@ -6335,7 +6341,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                         actualizarModulosDescubrimiento_(); // corrige los módulos si la reconciliación cambió algo (p.ej. una imagen)
                     } else {
                         poblarDesdeTexto(texto);
-                        mostrarResultadosPorPrimeraVez();
+                        await mostrarResultadosPorPrimeraVez();
                         primerPintadoHecho = true;
                         actualizarModulosDescubrimiento_();
                     }
@@ -6352,6 +6358,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         cargarProductosAdicionalesEnSegundoPlano();
     }
+
+    // Campañas de escaparate: se lanza la carga YA, en PARALELO con el
+    // catálogo (no solo como parte de actualizarModulosDescubrimiento_,
+    // que llega DESPUÉS del primer pintado) — si no, el flujo "Ver
+    // ficha completa en el buscador" desde el detalle de un producto de
+    // escaparate.html (que abre esta página con ?ref=... y dispara
+    // abrirProductoDesdeURL() justo en ese primer pintado, antes de que
+    // actualizarModulosDescubrimiento_ llegue siquiera a arrancar) podía
+    // abrir la ficha ANTES de que las campañas hubieran llegado,
+    // mostrando el producto sin su promoción vigente — bug real
+    // reportado: "al abrir el detalle en el buscador no carga el
+    // producto con la promoción... cuando accedes desde el buscador y
+    // buscas el producto, sí carga". abrirProductoDesdeURL() espera a
+    // esta misma promesa antes de abrir el modal (ver más abajo).
+    const campanasEscaparateCargadas_ = cargarCampanasEscaparate_();
 
     cargarProductosPrincipales();
 
@@ -12718,10 +12739,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // producto al cargar la página (enlaces "compartir producto"). Limpia el
     // parámetro de la barra de direcciones para que al recargar o navegar no
     // se vuelva a abrir el modal.
-    function abrirProductoDesdeURL() {
+    async function abrirProductoDesdeURL() {
         const params = new URLSearchParams(window.location.search);
         const ref = params.get('ref');
         if (!ref) return;
+
+        // Espera a que las campañas de escaparate hayan terminado de
+        // cargar (lanzadas en paralelo al principio del script, ver
+        // campanasEscaparateCargadas_) — así la ficha abierta por enlace
+        // directo (p. ej. "Ver ficha completa en el buscador" desde el
+        // detalle de un producto de escaparate.html) siempre refleja la
+        // promoción vigente, igual que si se hubiera buscado el producto
+        // a mano tras esperar a que la página cargase del todo. Bug real
+        // reportado: "al abrir el detalle en el buscador no carga el
+        // producto con la promoción... cuando accedes desde el buscador
+        // y buscas el producto, sí carga" — sin este await, este flujo
+        // abría el modal con campanasEscaparate_ todavía vacío.
+        await campanasEscaparateCargadas_;
 
         const producto = TODOS.find(p => String(p.ref) === String(ref));
         if (producto) {
