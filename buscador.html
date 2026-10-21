@@ -11356,22 +11356,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Modo de compra ("unidad" sueltas o "envase" cajas/bolsas/
         // paquetes enteros) — petición real de Eloy: "muchos usuarios
         // querrán confeccionar la lista... pudiendo seleccionar cajas o
-        // paquetes de unidades, en lugar de unidades". Solo tiene sentido
-        // "envase" si el producto de verdad tiene un formato de envase
-        // informado — si no, se fuerza a "unidad" pase lo que pase.
-        const cantidadPorEnvase = envaseCantidadValida_(limpio);
-        limpio.modoCompra = (p.modoCompra === 'envase' && cantidadPorEnvase > 0) ? 'envase' : 'unidad';
+        // paquetes de unidades, en lugar de unidades". Disponible SIEMPRE,
+        // tenga o no el producto un formato de envase informado —
+        // segunda petición real de Eloy: "quiero que salga el selector
+        // de sueltas o cajas independientemente de que se haya
+        // informado el formato... así el usuario puede confeccionar su
+        // lista si ya conoce el producto". Sin formato informado, no hay
+        // cantidad por envase conocida con la que convertir — el número
+        // de "cajas" que escriba el usuario se usa tal cual como
+        // cantidad real (sin multiplicar por nada), y no se muestra
+        // ningún cálculo de equivalencia en unidades (ver
+        // listaCompraTextoCantidad_/actualizarSelectorModoCompra_).
+        limpio.modoCompra = (p.modoCompra === 'envase') ? 'envase' : 'unidad';
         const cantidadEnvasesNum = parseInt(p.cantidadEnvases, 10);
         limpio.cantidadEnvases = Number.isFinite(cantidadEnvasesNum) ? Math.max(1, cantidadEnvasesNum) : 1;
         // En modo "envase", "unidades" (el total real en unidades sueltas,
         // el que de verdad usan los cálculos de precio — ver
         // listaCompraTotales_) se recalcula SIEMPRE a partir de
-        // cantidadEnvases × cantidad por envase, en vez de confiar en el
-        // valor ya guardado — así, si el formato de envase del producto
-        // cambia más tarde, un ítem ya guardado en la lista se mantiene
-        // sincronizado sin que haga falta migrar nada a mano.
+        // cantidadEnvases × cantidad por envase (o, sin formato
+        // informado, directamente = cantidadEnvases), en vez de confiar
+        // en el valor ya guardado — así, si el formato de envase del
+        // producto cambia más tarde, un ítem ya guardado en la lista se
+        // mantiene sincronizado sin que haga falta migrar nada a mano.
         if (limpio.modoCompra === 'envase') {
-            limpio.unidades = Math.max(1, limpio.cantidadEnvases * cantidadPorEnvase);
+            const cantidadPorEnvase = envaseCantidadValida_(limpio);
+            limpio.unidades = Math.max(1, limpio.cantidadEnvases * (cantidadPorEnvase || 1));
         }
         return limpio;
     }
@@ -11591,19 +11600,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // (cajas/bolsas/paquetes enteros, venta al por mayor) — "unidades"
     // (el total real en unidades sueltas, el que de verdad usan los
     // cálculos de precio — ver listaCompraTotales_) se recalcula siempre
-    // a partir de cantidadEnvases × cantidad por envase. Devuelve null si
-    // el producto no está en la lista O no tiene formato de envase
-    // informado (nunca se puede quedar en modo "envase" sin él).
+    // a partir de cantidadEnvases × cantidad por envase.
+    //
+    // Disponible aunque el producto NO tenga formato de envase informado
+    // — petición real de Eloy: "quiero que salga el selector de sueltas
+    // o cajas independientemente de que se haya informado el formato...
+    // así el usuario puede confeccionar su lista si ya conoce el
+    // producto. Lo que no hará o mostraría sería el cálculo de unidades
+    // totales". Sin formato informado no hay cantidad por envase
+    // conocida con la que multiplicar, así que el número de "cajas" que
+    // escriba el usuario se usa tal cual como cantidad real (sin
+    // equivalencia en unidades que mostrar — ver
+    // listaCompraTextoCantidad_/actualizarSelectorModoCompra_).
     function listaCompraActualizarCantidadEnvases_(ref, cantidadEnvases) {
         if (!listaCompraState_) return null;
         const p = listaCompraState_.productos.find(x => x.ref === ref);
         if (!p) return null;
         const cantidadPorEnvase = envaseCantidadValida_(p);
-        if (!cantidadPorEnvase) return null;
         const num = parseInt(cantidadEnvases, 10);
         p.modoCompra = 'envase';
         p.cantidadEnvases = Number.isFinite(num) ? Math.max(1, num) : 1;
-        p.unidades = p.cantidadEnvases * cantidadPorEnvase;
+        p.unidades = p.cantidadEnvases * (cantidadPorEnvase || 1);
         listaCompraPersistir_();
         return { cantidadEnvases: p.cantidadEnvases, unidades: p.unidades };
     }
@@ -11620,10 +11637,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // Texto de cantidad a mostrar en la lista/PDF/texto para compartir —
-    // "3 cajas (36 unidades)" en modo envase, o simplemente "5" en modo
-    // unidad suelta (como ya era antes de este campo).
+    // "3 cajas (36 unidades)" en modo envase CON formato informado, "3
+    // cajas" a secas sin formato informado (no hay equivalencia real que
+    // mostrar — ver comentario de listaCompraActualizarCantidadEnvases_),
+    // o simplemente "5" en modo unidad suelta (como ya era antes).
     function listaCompraTextoCantidad_(p) {
         if (p.modoCompra === 'envase') {
+            const cantidadPorEnvase = envaseCantidadValida_(p);
+            if (!cantidadPorEnvase) return listaCompraTextoCantidadCompacto_(p);
             return `${listaCompraTextoCantidadCompacto_(p)} (${p.unidades} ${(p.envase_unidad || 'unidades').trim()})`;
         }
         return String(p.unidades || 1);
@@ -11632,7 +11653,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // circular de la tarjeta, donde no cabe el texto completo.
     function listaCompraTextoCantidadCompacto_(p) {
         if (p.modoCompra === 'envase') {
-            const tipo = (p.envase_tipo || 'envase').trim();
+            // Sin formato de envase informado, "caja" es la etiqueta
+            // genérica por defecto (nunca se inventa un tipo de envase
+            // que el producto no tiene).
+            const tipo = (p.envase_tipo || 'caja').trim();
             const numEnvases = p.cantidadEnvases || 1;
             const tipoMostrado = numEnvases === 1 ? tipo : (tipo.endsWith('s') ? tipo : tipo + 's');
             return `${numEnvases} ${tipoMostrado}`;
@@ -11653,14 +11677,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         item.envase_cantidad = (p.envase_cantidad != null && p.envase_cantidad !== '') ? String(p.envase_cantidad) : '';
         item.envase_unidad = p.envase_unidad ? String(p.envase_unidad) : '';
         item.envase_tipo = p.envase_tipo ? String(p.envase_tipo) : '';
-        const cantidadPorEnvase = envaseCantidadValida_(item);
-        if (!cantidadPorEnvase && item.modoCompra === 'envase') {
-            // El producto ha perdido su formato de envase — el ítem ya
-            // guardado no puede seguir en modo "envase" sin él.
-            item.modoCompra = 'unidad';
-            item.unidades = Math.max(1, item.cantidadEnvases || 1);
-        } else if (item.modoCompra === 'envase') {
-            item.unidades = Math.max(1, (item.cantidadEnvases || 1) * cantidadPorEnvase);
+        // El modo "envase" sigue siendo válido con o sin formato
+        // informado (ver listaCompraActualizarCantidadEnvases_) — aquí
+        // solo hace falta recalcular "unidades" con la cantidad por
+        // envase que haya ahora (o 1, sin multiplicar, si el producto se
+        // ha quedado sin formato informado).
+        if (item.modoCompra === 'envase') {
+            const cantidadPorEnvase = envaseCantidadValida_(item);
+            item.unidades = Math.max(1, (item.cantidadEnvases || 1) * (cantidadPorEnvase || 1));
         }
         listaCompraPersistir_();
         listaCompraActualizarUI_();
@@ -11968,25 +11992,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // Selector de modo de compra (sueltas/cajas) de la ficha de producto —
-    // solo visible si el producto tiene formato de envase informado (ver
-    // configurarEnvase/formatearEnvase_). Refleja el modo actual del
-    // ítem de la lista (`enLista`) en los botones y en el propio
-    // selector de unidades (que pasa a contar envases enteros, no
-    // unidades sueltas, mientras el modo "envase" está activo).
+    // SIEMPRE visible, tenga o no el producto formato de envase
+    // informado (petición real de Eloy: "quiero que salga el selector
+    // de sueltas o cajas independientemente de que se haya informado el
+    // formato... así el usuario puede confeccionar su lista si ya
+    // conoce el producto"). Sin formato informado, la etiqueta del botón
+    // se queda en el genérico "Cajas" de la plantilla — nunca se inventa
+    // un tipo de envase ("Lo único que no quiero que aparezca es el
+    // campo formato si previamente no se ha informado") — y no se
+    // muestra ningún cálculo de equivalencia en unidades (no hay
+    // cantidad por envase conocida con la que calcularlo). Refleja el
+    // modo actual del ítem de la lista (`enLista`) en los botones y en
+    // el propio selector de unidades (que pasa a contar envases enteros,
+    // no unidades sueltas, mientras el modo "envase" está activo).
     function actualizarSelectorModoCompra_(enLista) {
         const modoWrap = $('modal-producto-lista-modo');
-        const cantidadPorEnvase = envaseCantidadValida_(productoModalActual_);
-        if (!cantidadPorEnvase) {
-            modoWrap.style.display = 'none';
-            $('modal-producto-lista-equivalencia').style.display = 'none';
-            $('modal-producto-lista-unidades-input').value = enLista.unidades || 1;
-            actualizarBotonesUnidades_(enLista.unidades || 1);
-            return;
-        }
         modoWrap.style.display = 'flex';
-        const tipo = (productoModalActual_.envase_tipo || 'caja').trim();
-        const tipoPlural = tipo.endsWith('s') ? tipo : tipo + 's';
-        $('modal-producto-lista-modo-envase').textContent = tipoPlural.charAt(0).toUpperCase() + tipoPlural.slice(1);
+        const cantidadPorEnvase = envaseCantidadValida_(productoModalActual_);
+        if (cantidadPorEnvase) {
+            const tipo = (productoModalActual_.envase_tipo || 'caja').trim();
+            const tipoPlural = tipo.endsWith('s') ? tipo : tipo + 's';
+            $('modal-producto-lista-modo-envase').textContent = tipoPlural.charAt(0).toUpperCase() + tipoPlural.slice(1);
+        } else {
+            $('modal-producto-lista-modo-envase').textContent = 'Cajas';
+        }
         const enModoEnvase = enLista.modoCompra === 'envase';
         $('modal-producto-lista-modo-unidad').classList.toggle('activo', !enModoEnvase);
         $('modal-producto-lista-modo-envase').classList.toggle('activo', enModoEnvase);
@@ -11997,8 +12026,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (enModoEnvase) {
             $('modal-producto-lista-unidades-input').value = enLista.cantidadEnvases || 1;
             actualizarBotonesUnidades_(enLista.cantidadEnvases || 1);
-            equivalenciaEl.textContent = `= ${enLista.unidades} ${(productoModalActual_.envase_unidad || 'unidades').trim()}`;
-            equivalenciaEl.style.display = '';
+            if (cantidadPorEnvase) {
+                equivalenciaEl.textContent = `= ${enLista.unidades} ${(productoModalActual_.envase_unidad || 'unidades').trim()}`;
+                equivalenciaEl.style.display = '';
+            } else {
+                equivalenciaEl.style.display = 'none';
+            }
         } else {
             $('modal-producto-lista-unidades-input').value = enLista.unidades || 1;
             actualizarBotonesUnidades_(enLista.unidades || 1);
