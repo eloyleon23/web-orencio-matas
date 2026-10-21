@@ -13650,21 +13650,90 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             actualizarContadorInfoAdicional_();
         });
     });
+    // Limpia basura típica de un copia-pega desde otra web (Gemini y
+    // similares) — a veces el propio texto PLANO del portapapeles ya
+    // trae fragmentos de etiquetas ("<div>", "</div>") y entidades HTML
+    // sueltas ("&nbsp;", "&amp;nbsp;") como caracteres literales, no
+    // como HTML real — no son ningún riesgo de seguridad (nunca se
+    // interpretan), pero ensucian la lectura y obligaban a borrarlas a
+    // mano una por una ("aparece mal formado", aviso real de Eloy).
+    function decodificarEntidadesHtml_(s) {
+        return s
+            .replace(/&amp;/gi, '&')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/&lt;/gi, '<')
+            .replace(/&gt;/gi, '>')
+            .replace(/&quot;/gi, '"')
+            .replace(/&#0?39;/gi, '\'');
+    }
+    function limpiarTextoPegado_(texto) {
+        let t = texto;
+        // Fragmentos de etiquetas HTML sueltos como texto literal.
+        t = t.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(\s+[^<>]*)?>/g, '');
+        // Entidades HTML comunes, decodificadas a su carácter real — DOS
+        // pasadas, no una: un texto doblemente escapado como "&amp;nbsp;"
+        // decodifica primero a "&nbsp;" en la primera pasada (&amp;->&)
+        // y necesita una segunda pasada para llegar al espacio real.
+        t = decodificarEntidadesHtml_(decodificarEntidadesHtml_(t));
+        // Colapsa 3+ saltos de línea seguidos (frecuente tras quitar
+        // divs vacíos) a como mucho una línea en blanco entre párrafos.
+        return t.replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    // Ayuda a formatear más rápido un texto pegado ya limpio: las
+    // líneas que empiezan por un marcador de lista habitual (-, *, •)
+    // se agrupan en una lista real <ul><li> sin tener que seleccionarlas
+    // a mano y pulsar el botón de lista; el resto se deja como
+    // párrafos normales (una línea en blanco separa un párrafo del
+    // siguiente). Todo el contenido variable pasa por escaparHtmlTexto_
+    // antes de ensamblarse — el HTML resultante lo construye por
+    // completo este código, nunca el texto pegado directamente.
+    function convertirTextoPlanoAHtmlBasico_(texto) {
+        const RE_VINETA = /^\s*[-*•]\s+(.*)$/;
+        const partes = [];
+        let parrafo = [];
+        let lista = [];
+        const cerrarParrafo = () => {
+            if (parrafo.length) partes.push('<p>' + parrafo.map(escaparHtmlTexto_).join('<br>') + '</p>');
+            parrafo = [];
+        };
+        const cerrarLista = () => {
+            if (lista.length) partes.push('<ul>' + lista.map(li => '<li>' + escaparHtmlTexto_(li) + '</li>').join('') + '</ul>');
+            lista = [];
+        };
+        texto.split('\n').forEach((linea) => {
+            const m = linea.match(RE_VINETA);
+            if (m) {
+                cerrarParrafo();
+                lista.push(m[1].trim());
+            } else if (linea.trim() === '') {
+                cerrarLista();
+                cerrarParrafo();
+            } else {
+                cerrarLista();
+                parrafo.push(linea.trim());
+            }
+        });
+        cerrarLista();
+        cerrarParrafo();
+        return partes.join('');
+    }
+
     if ($('modal-editar-info-editable')) {
         $('modal-editar-info-editable').addEventListener('input', actualizarContadorInfoAdicional_);
-        // Pegar SIEMPRE como texto plano — caso real de Eloy: pegar una
-        // respuesta copiada tal cual desde la web de Gemini insertaba
-        // todo el HTML interno de Google (<div class="ZLzG0d...">,
-        // estilos en línea, atributos jscontroller...), que el
-        // saneador del servidor neutraliza correctamente (nunca se
-        // ejecuta nada), pero deja como texto literal visible — "aparece
-        // mal formado". Forzando texto plano al pegar, lo único que
-        // puede llevar formato real es lo que el propio usuario aplique
-        // después con la barra de herramientas de aquí arriba.
+        // Pegar SIEMPRE como texto plano ya limpio y con una estructura
+        // básica (párrafos/listas) — nunca el HTML de la página de
+        // origen tal cual (ver limpiarTextoPegado_/
+        // convertirTextoPlanoAHtmlBasico_ más arriba para el porqué
+        // completo). Lo único que puede llevar formato de verdad
+        // (negrita/cursiva/subrayado) es lo que el propio usuario
+        // aplique después con la barra de herramientas de aquí arriba.
         $('modal-editar-info-editable').addEventListener('paste', (e) => {
             e.preventDefault();
-            const texto = (e.clipboardData || window.clipboardData).getData('text/plain');
-            document.execCommand('insertText', false, texto);
+            const textoOriginal = (e.clipboardData || window.clipboardData).getData('text/plain');
+            const textoLimpio = limpiarTextoPegado_(textoOriginal);
+            document.execCommand('insertHTML', false, convertirTextoPlanoAHtmlBasico_(textoLimpio));
+            actualizarContadorInfoAdicional_();
         });
     }
 
