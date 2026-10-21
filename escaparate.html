@@ -4798,15 +4798,37 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // grupo repetido más adelante (no contiguo) simplemente vuelve a
       // salir con su mismo título, en vez de "fusionarse" con el bloque
       // de antes reordenando productos.
+      //
+      // Un producto SIN "grupo" (texto vacío) NUNCA abre una sección
+      // nueva por sí solo: se queda dentro de la que ya estuviera
+      // abierta (o sin título, si todavía no se ha abierto ninguna).
+      // Motivo real (folleto "Productos Mirka", aviso de Eloy: "hay
+      // productos que solo se vuelcan en una página dejando hueco
+      // vacío"): cada "grupo" se empaqueta en su PROPIA rejilla, nueva y
+      // vacía (ver empaquetarGrupo_), que nunca comparte huecos con la
+      // de otro grupo — necesario cuando de verdad hay dos secciones
+      // distintas que el usuario quiere separar visualmente. Pero en esa
+      // campaña real, solo los primeros productos (los destacados
+      // grandes) tenían el campo "grupo" relleno ("MAQUINARIA"); el
+      // resto de productos normales lo tenían vacío — un dato incompleto
+      // en la hoja, no una sección distinta de verdad (no se dibuja
+      // ningún título nuevo para un grupo vacío). Tratar ese cambio a
+      // "vacío" como un grupo distinto abría igualmente una rejilla
+      // nueva y aislada para el resto de productos, así que ninguno de
+      // ellos podía rellenar el hueco que dejaban los destacados grandes
+      // en sus propias páginas — de ahí el hueco vacío enorme. Al
+      // fusionarlos con la sección abierta, pueden ocupar esos huecos.
       function construirGruposDeTramoFolleto_(refsTramo){
         const salida = [];
         if(c.agruparProductos){
-          let grupoAnterior = Symbol('sin-grupo');
+          let tituloActivo = Symbol('sin-grupo');
           refsTramo.forEach(ref => {
             const grupoActual = ((PRODUCTS[ref] && PRODUCTS[ref].grupo) || '').toString().trim();
-            if(grupoActual !== grupoAnterior){
-              salida.push({ tipo:'grupo', titulo: grupoActual || null, refs: [] });
-              grupoAnterior = grupoActual;
+            if(grupoActual && grupoActual !== tituloActivo){
+              salida.push({ tipo:'grupo', titulo: grupoActual, refs: [] });
+              tituloActivo = grupoActual;
+            } else if(!salida.length){
+              salida.push({ tipo:'grupo', titulo: null, refs: [] });
             }
             salida[salida.length - 1].refs.push(ref);
           });
