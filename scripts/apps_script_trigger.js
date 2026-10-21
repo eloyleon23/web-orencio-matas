@@ -3993,6 +3993,16 @@ function doPost(e) {
       return procesarEliminarImagenCampana(data);
     }
 
+    if (accion === 'actualizar_imagen_bloque_contenido') {
+      console.log('Acción: actualizar_imagen_bloque_contenido');
+      return procesarActualizarImagenBloqueContenido(data);
+    }
+
+    if (accion === 'eliminar_imagen_bloque_contenido') {
+      console.log('Acción: eliminar_imagen_bloque_contenido');
+      return procesarEliminarImagenBloqueContenido(data);
+    }
+
     if (accion === 'dar_baja_producto') {
       console.log('Acción: dar_baja_producto');
       return procesarDarBajaProducto(data);
@@ -4703,7 +4713,7 @@ function procesarActualizarGrupoProducto(data) {
 // esta hoja tiene, como mucho, unas pocas decenas de filas, así que
 // se lee directamente en cada doGet — mucho más simple que mantener
 // sincronizada otra caché, y siempre al día sin parcheos.
-const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'descuento', 'permanente', 'activa', 'agrupar_productos', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_CAMPANAS_ = ['id', 'nombre', 'tipo', 'origen', 'color_set', 'color_personalizado_1', 'color_personalizado_2', 'fecha_inicio', 'fecha_fin', 'areas', 'productos', 'destacados', 'imagen_fondo', 'eslogan', 'descuento', 'permanente', 'activa', 'agrupar_productos', 'bloques_contenido', 'orden_contenido', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaCampanas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -4772,6 +4782,21 @@ function leerCampanas_() {
       return [];
     }
   };
+  // Mismo patrón que leerDestacados, generalizado — "bloques_contenido"
+  // y "orden_contenido" guardan JSON por el mismo motivo (estructuras
+  // con varios campos/mezcla de tipos, no listas simples separadas por
+  // comas).
+  const leerJSONArray_ = (val, nombreCampo) => {
+    const texto = (val || '').toString().trim();
+    if (!texto) return [];
+    try {
+      const arr = JSON.parse(texto);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      console.error(nombreCampo + ' con JSON inválido, se ignora:', texto);
+      return [];
+    }
+  };
 
   const campanas = [];
   for (let i = 1; i < datos.length; i++) {
@@ -4817,6 +4842,19 @@ function leerCampanas_() {
       // productos." Mismo criterio que 'permanente': solo un 'si'
       // explícito lo activa.
       agruparProductos: (fila[COL['agrupar_productos']] || '').toString().trim().toLowerCase() === 'si',
+      // Bloques de contenido personalizados (texto + imagen opcional) y
+      // el orden combinado en el que se intercalan con los productos —
+      // petición real de Eloy: "poder añadir bloques customizados que
+      // sea un editor de texto que se pueda incluir imagen... y al
+      // final sea otro bloque más del escaparate". Ver
+      // sanearBloquesContenido_/sanearOrdenContenido_ en
+      // procesarActualizarProductosCampana para el saneado al guardar.
+      bloquesContenido: leerJSONArray_(fila[COL['bloques_contenido']], 'bloques_contenido'),
+      // Vacío = "sin orden combinado guardado todavía" (campañas de
+      // antes de esta función, o que nunca han tenido bloques) — el
+      // frontend cae entonces a su propio criterio de siempre
+      // (productos en su orden guardado, con posV/agrupación).
+      ordenContenido: leerJSONArray_(fila[COL['orden_contenido']], 'orden_contenido'),
       // Solo un 'no' explícito la desactiva — así las campañas creadas
       // antes de que existiera esta columna (celda vacía) se siguen
       // tratando como activas por defecto, sin tener que revisarlas
@@ -5714,6 +5752,86 @@ function sanearDestacados_(destacadosRaw, refsValidas) {
   return resultado;
 }
 
+// Bloques de contenido personalizados (texto + imagen opcional) del
+// escaparate — petición real de Eloy: "poder añadir bloques
+// customizados que sea un editor de texto que se pueda incluir imagen
+// y que la tipografía del texto o tamaño sea editable... y se puedan
+// añadir tantos como se deseen". Deliberadamente texto PLANO (nunca
+// HTML): el editor del front es un simple <textarea> + un selector de
+// tamaño/negrita/cursiva aplicados a TODO el bloque, no un
+// contenteditable que genere marcado arbitrario — así el texto se
+// inserta siempre vía textContent, nunca innerHTML, sin ninguna
+// superficie de XSS que sanear en el servidor (decisión explícita de
+// Eloy: "simple por bloque completo" en vez de "enriquecido de
+// verdad, por fragmento").
+const TAMANOS_BLOQUE_VALIDOS_ = ['normal', 'grande', 'muy-grande'];
+const POSICIONES_IMAGEN_BLOQUE_VALIDAS_ = ['arriba', 'abajo'];
+function sanearBloquesContenido_(bloquesRaw) {
+  if (!Array.isArray(bloquesRaw)) return [];
+  const vistos = new Set();
+  const resultado = [];
+  bloquesRaw.forEach((b) => {
+    if (!b || typeof b !== 'object') return;
+    // El id lo genera normalmente el front (igual que las refs de
+    // producto, pero inventado: "bloque-<timestamp>-<aleatorio>") —
+    // aun así se regenera aquí si faltara o viniera repetido, para que
+    // nunca haya dos bloques con el mismo id dentro de una campaña (el
+    // orden combinado los referencia por id, una colisión mezclaría el
+    // contenido de dos bloques distintos).
+    let id = (b.id || '').toString().trim().slice(0, 60);
+    if (!id || vistos.has(id)) id = 'bloque-' + new Date().getTime() + '-' + Math.random().toString(36).slice(2, 8);
+    vistos.add(id);
+    const texto = (b.texto || '').toString().trim().slice(0, 2000);
+    const tamano = TAMANOS_BLOQUE_VALIDOS_.indexOf(b.tamano) !== -1 ? b.tamano : 'normal';
+    const negrita = b.negrita === true;
+    const cursiva = b.cursiva === true;
+    // La imagen del bloque (id de Drive) se sube aparte, con su propia
+    // acción (actualizar_imagen_bloque_contenido) — igual que
+    // imagenFondo de la propia campaña. Si el front no manda nada o
+    // manda algo que no tiene pinta de id de Drive, se conserva vacío
+    // (nunca se inventa un id al azar).
+    const imagen = (b.imagen || '').toString().trim().slice(0, 100);
+    const imagenPosicion = POSICIONES_IMAGEN_BLOQUE_VALIDAS_.indexOf(b.imagenPosicion) !== -1 ? b.imagenPosicion : 'arriba';
+    // Un bloque sin texto Y sin imagen no aporta nada — se descarta en
+    // silencio (puede pasar si se crea uno y se borra todo su
+    // contenido antes de guardar).
+    if (!texto && !imagen) return;
+    resultado.push({ id: id, texto: texto, tamano: tamano, negrita: negrita, cursiva: cursiva, imagen: imagen, imagenPosicion: imagenPosicion });
+  });
+  return resultado;
+}
+
+// Orden combinado de productos Y bloques de contenido intercalados —
+// petición real de Eloy: "al final sea otro bloque más del
+// escaparate" (se pueden arrastrar y colocar entre dos productos
+// cualquiera, igual que ya se arrastran los productos entre sí). Cada
+// entrada es, o bien una ref de producto válida, o bien "bloque:<id>"
+// de uno de los bloques ya saneados arriba. Se descarta cualquier
+// entrada que no encaje con ninguno de los dos (producto quitado
+// mientras tanto, bloque borrado...) y se añaden al final los
+// productos/bloques que faltaran por completo del orden recibido (por
+// si acaso el front no llegara a incluir alguno) — así nunca
+// "desaparece" silenciosamente un producto o bloque real por un hueco
+// en el orden.
+function sanearOrdenContenido_(ordenRaw, refsValidas, bloquesSaneados) {
+  const refsSet = new Set(refsValidas);
+  const bloqueIds = new Set(bloquesSaneados.map(b => b.id));
+  const vistos = new Set();
+  const resultado = [];
+  (Array.isArray(ordenRaw) ? ordenRaw : []).forEach((entrada) => {
+    const clave = (entrada || '').toString().trim();
+    if (!clave || vistos.has(clave)) return;
+    if (clave.indexOf('bloque:') === 0) {
+      if (bloqueIds.has(clave.slice(7))) { vistos.add(clave); resultado.push(clave); }
+      return;
+    }
+    if (refsSet.has(clave)) { vistos.add(clave); resultado.push(clave); }
+  });
+  refsValidas.forEach(ref => { if (!vistos.has(ref)) { vistos.add(ref); resultado.push(ref); } });
+  bloquesSaneados.forEach(b => { const clave = 'bloque:' + b.id; if (!vistos.has(clave)) { vistos.add(clave); resultado.push(clave); } });
+  return resultado;
+}
+
 function procesarActualizarProductosCampana(data) {
   try {
     if (!verificarPin_(data.pin)) {
@@ -5726,6 +5844,8 @@ function procesarActualizarProductosCampana(data) {
     const productos = Array.isArray(data.productos) ? data.productos : [];
     const destacados = sanearDestacados_(data.destacados, productos);
     const agruparProductos = !!data.agrupar;
+    const bloquesContenido = sanearBloquesContenido_(data.bloques);
+    const ordenContenido = sanearOrdenContenido_(data.ordenContenido, productos, bloquesContenido);
     if (!id) {
       return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta el id de la campaña.' }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -5748,12 +5868,16 @@ function procesarActualizarProductosCampana(data) {
     sheet.getRange(filaNum, COL['productos'] + 1).setValue(productos.join(', '));
     sheet.getRange(filaNum, COL['destacados'] + 1).setValue(destacados.length ? JSON.stringify(destacados) : '');
     sheet.getRange(filaNum, COL['agrupar_productos'] + 1).setValue(agruparProductos ? 'si' : 'no');
+    sheet.getRange(filaNum, COL['bloques_contenido'] + 1).setValue(bloquesContenido.length ? JSON.stringify(bloquesContenido) : '');
+    sheet.getRange(filaNum, COL['orden_contenido'] + 1).setValue(ordenContenido.length ? JSON.stringify(ordenContenido) : '');
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
-    console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos,', destacados.length, 'destacados, agrupar:', agruparProductos);
+    console.log('Productos de campaña actualizados:', id, '→', productos.length, 'productos,', destacados.length, 'destacados, agrupar:', agruparProductos, ', bloques:', bloquesContenido.length);
     regenerarCacheCampanasDesdeSheet_();
 
-    return ContentService.createTextOutput(JSON.stringify({ success: true, productos: productos, destacados: destacados, agrupar: agruparProductos }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true, productos: productos, destacados: destacados, agrupar: agruparProductos,
+      bloques: bloquesContenido, ordenContenido: ordenContenido,
+    })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarActualizarProductosCampana:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
@@ -5865,6 +5989,128 @@ function procesarEliminarImagenCampana(data) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarEliminarImagenCampana:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Sube/reemplaza la imagen de UN bloque de contenido concreto dentro
+// de "bloques_contenido" — mismo patrón que
+// procesarActualizarImagenCampana, pero el bloque vive dentro de un
+// array JSON (no es una columna propia), así que hay que leer el
+// array, localizar el bloque por id, modificar solo su campo "imagen"
+// y volver a guardar el array entero. El bloque debe existir YA en
+// "bloques_contenido" (el front guarda primero los productos/bloques
+// con "Guardar productos" antes de poder subir la imagen de uno
+// nuevo) — mismo requisito que ya tiene la imagen de fondo de la
+// propia campaña ("Guarda primero el escaparate para poder añadir una
+// imagen").
+function procesarActualizarImagenBloqueContenido(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const id = (data.id || '').toString().trim();
+    const bloqueId = (data.bloqueId || '').toString().trim();
+    const archivo = data.archivo;
+    if (!id || !bloqueId || !archivo || !archivo.datos) {
+      throw new Error('Faltan datos requeridos: id de campaña, id de bloque o archivo.');
+    }
+
+    const sheet = obtenerHojaCampanas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    let filaIdx = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) { filaIdx = i; break; }
+    }
+    if (filaIdx === -1) throw new Error('Campaña no encontrada.');
+
+    const bloquesRaw = (datos[filaIdx][COL['bloques_contenido']] || '').toString().trim();
+    let bloques = [];
+    try { bloques = bloquesRaw ? JSON.parse(bloquesRaw) : []; } catch (e) { bloques = []; }
+    if (!Array.isArray(bloques)) bloques = [];
+    const bloqueIdx = bloques.findIndex(b => b && b.id === bloqueId);
+    if (bloqueIdx === -1) throw new Error('No se encuentra ese bloque de contenido — guarda primero los productos y vuelve a intentarlo.');
+
+    const extension = (archivo.nombre || 'imagen.jpg').split('.').pop().toLowerCase();
+    const decoded = Utilities.base64Decode(archivo.datos);
+    const blob = Utilities.newBlob(decoded, archivo.tipo || 'image/jpeg', id + '-' + bloqueId + '.' + extension);
+
+    const anteriorId = (bloques[bloqueIdx].imagen || '').toString().trim();
+    if (anteriorId) {
+      try { DriveApp.getFileById(anteriorId).setTrashed(true); }
+      catch (e) { console.log('No se pudo enviar a la papelera la imagen anterior del bloque (puede que ya no exista):', e.message); }
+    }
+
+    const carpeta = obtenerCarpetaImagenesCampanas_();
+    const driveFile = carpeta.createFile(blob);
+    try {
+      driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (sharingError) {
+      console.log('No se pudo compartir la imagen del bloque públicamente:', sharingError.message);
+    }
+
+    bloques[bloqueIdx].imagen = driveFile.getId();
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['bloques_contenido'] + 1).setValue(JSON.stringify(bloques));
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
+    console.log('Imagen de bloque de contenido actualizada:', id, bloqueId, '→', driveFile.getId());
+    regenerarCacheCampanasDesdeSheet_();
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, imagen: driveFile.getId(), bloques: bloques }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarActualizarImagenBloqueContenido:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function procesarEliminarImagenBloqueContenido(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const id = (data.id || '').toString().trim();
+    const bloqueId = (data.bloqueId || '').toString().trim();
+    if (!id || !bloqueId) throw new Error('Faltan datos requeridos: id de campaña o id de bloque.');
+
+    const sheet = obtenerHojaCampanas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    let filaIdx = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) { filaIdx = i; break; }
+    }
+    if (filaIdx === -1) throw new Error('Campaña no encontrada.');
+
+    const bloquesRaw = (datos[filaIdx][COL['bloques_contenido']] || '').toString().trim();
+    let bloques = [];
+    try { bloques = bloquesRaw ? JSON.parse(bloquesRaw) : []; } catch (e) { bloques = []; }
+    if (!Array.isArray(bloques)) bloques = [];
+    const bloqueIdx = bloques.findIndex(b => b && b.id === bloqueId);
+    if (bloqueIdx === -1) throw new Error('No se encuentra ese bloque de contenido.');
+
+    const actualId = (bloques[bloqueIdx].imagen || '').toString().trim();
+    if (actualId) {
+      try { DriveApp.getFileById(actualId).setTrashed(true); }
+      catch (e) { console.log('No se pudo enviar a la papelera la imagen del bloque (puede que ya no exista):', e.message); }
+    }
+    bloques[bloqueIdx].imagen = '';
+
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['bloques_contenido'] + 1).setValue(JSON.stringify(bloques));
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
+    console.log('Imagen de bloque de contenido eliminada:', id, bloqueId);
+    regenerarCacheCampanasDesdeSheet_();
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, bloques: bloques }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarEliminarImagenBloqueContenido:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
