@@ -7253,6 +7253,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cargarMarcasMasBuscadas_();
         cargarBloquesCategorias_();
         cargarUltimosVistos_();
+        // A diferencia de los módulos de arriba (secciones propias,
+        // aparte del grid principal), las campañas de escaparate SÍ
+        // afectan al grid general (ver crearTarjeta/destacadoEfectivoPara_
+        // más abajo) — si ya había algo pintado antes de que esta carga
+        // termine, hay que repintarlo para que las tarjetas ya visibles
+        // reflejen la promoción en cuanto llega.
+        cargarCampanasEscaparate_().then(() => { if (TODOS.length) aplicarFiltros(); });
     }
 
     // A petición de Eloy: con filtros/búsqueda activos, estos módulos solo
@@ -7483,6 +7490,89 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!destacadosDatos_.activo || !destacadosFechaVigente_(destacadosDatos_.fechaFin)) return null;
         const d = destacadosDatos_.productos.find(x => String(x.referencia) === String(ref) && x.activo && destacadosFechaVigente_(x.fechaFin));
         return d || null;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // PROMOCIONES DE CAMPAÑAS DE ESCAPARATE (escaparate.html) EN EL
+    // BUSCADOR — petición real de Eloy: "si un producto de escaparate
+    // está en promoción temporal o fija, si se accede a la ficha en el
+    // buscador o bien si se accede desde el buscador directamente
+    // también se debería ver reflejado tanto en el grid como en la
+    // vista detalle y si deja de estar en promoción o el escaparate ya
+    // no está activo o la temporalidad ya ha terminado no debería verse
+    // la promoción aplicada".
+    //
+    // Completamente aparte del sistema "Destacados" de arriba (hoja
+    // Sheet distinta, gestión propia) — las campañas de escaparate son
+    // la fuente de datos de escaparate.html, cargadas aquí EN VIVO
+    // (nunca desde un JSON estático: a diferencia del catálogo, lo que
+    // de verdad importa aquí es si la campaña está activa AHORA MISMO,
+    // y cualquier staleness directamente contradice lo que pide Eloy).
+    // Construye un objeto con la MISMA forma que un registro de
+    // Destacados ({precioAlternativo, descuentoPorcentaje, tipoDestacado,
+    // textoPromocion}) para poder reutilizar tal cual
+    // calcularPrecioDestacado_/etiquetaDestacadoHtml_/
+    // construirContenidoTarjeta_ sin duplicar nada de esa lógica.
+    let campanasEscaparate_ = [];
+
+    // Mismo criterio que activaEn()+campanaDeHoy() en escaparate.html,
+    // YA CORREGIDO ahí (ver ese archivo): "permanente" ignora fechas,
+    // si no hay fechas no está activa, y el interruptor "activa" manda
+    // siempre por encima de las fechas — una campaña desactivada a mano
+    // nunca debe considerarse vigente aunque esté dentro de su rango.
+    function campanaActivaHoy_(c) {
+        if (c.activa === false) return false;
+        if (c.permanente) return true;
+        if (!c.fechaInicio || !c.fechaFin) return false;
+        const hoy = new Date();
+        return hoy >= new Date(c.fechaInicio + 'T00:00:00') && hoy <= new Date(c.fechaFin + 'T23:59:59');
+    }
+
+    async function cargarCampanasEscaparate_() {
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas', { cache: 'no-store' });
+            const datos = await resp.json();
+            campanasEscaparate_ = Array.isArray(datos.campanas) ? datos.campanas : [];
+        } catch (e) {
+            console.error('cargarCampanasEscaparate_: error cargando campañas de escaparate', e);
+            campanasEscaparate_ = [];
+        }
+    }
+
+    // Primera campaña ACTIVA AHORA MISMO (en el orden en que las
+    // devuelve Apps Script) que incluya esta referencia y aporte de
+    // verdad alguna promoción (precio fijo, % o chip de texto) — un
+    // producto puede estar en los "productos" de una campaña sin tener
+    // ninguna promoción propia ni general, eso no cuenta como "en
+    // promoción". Mismo criterio de precedencia que escaparate.html:
+    // precio fijo del producto > % propio del producto > % general de
+    // la campaña.
+    function campanaDestacadoVigentePara_(ref) {
+        for (const c of campanasEscaparate_) {
+            if (!campanaActivaHoy_(c)) continue;
+            if (!Array.isArray(c.productos) || c.productos.indexOf(ref) === -1) continue;
+            const d = Array.isArray(c.destacados) ? c.destacados.find(x => x && x.ref === ref) : null;
+            const precioPromo = (d && Number(d.precioPromo) > 0) ? Number(d.precioPromo) : 0;
+            const descuento = precioPromo ? 0 : ((d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0));
+            const textoPromocion = (d && d.promo) ? d.promo : '';
+            if (!precioPromo && !descuento && !textoPromocion) continue; // en la campaña, pero sin ninguna oferta real
+            return {
+                referencia: ref,
+                precioAlternativo: precioPromo || null,
+                descuentoPorcentaje: descuento || null,
+                tipoDestacado: 'oferta',
+                textoPromocion: textoPromocion,
+            };
+        }
+        return null;
+    }
+
+    // Resuelve la promoción vigente de un producto combinando las DOS
+    // fuentes — el sistema "Destacados" propio del buscador manda si
+    // tiene algo (no cambia su comportamiento de hoy), y las campañas
+    // de escaparate actúan como añadido cuando no lo hay.
+    function destacadoEfectivoPara_(ref) {
+        return destacadosVigentePara_(ref) || campanaDestacadoVigentePara_(ref);
     }
 
     function renderDestacados_() {
@@ -10403,7 +10493,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const ordenActual = $('f-orden').value;
         const enModoPlano = ordenActual && ordenActual !== 'area';
 
-        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano });
+        // Promoción de una campaña de escaparate ACTIVA (ver
+        // campanaDestacadoVigentePara_) — a propósito, SOLO esta fuente
+        // aquí, no destacadoEfectivoPara_ (que también mira el sistema
+        // "Destacados" propio del buscador): ese sistema ya tiene su
+        // propia sección dedicada en portada y nunca se había mostrado
+        // en el grid general — cambiar eso no lo ha pedido Eloy, así que
+        // el grid general solo se amplía con la fuente nueva (campañas).
+        const destacadoCampana = campanaDestacadoVigentePara_(p.ref);
+
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano, destacado: destacadoCampana });
         return card;
     }
 
@@ -12373,11 +12472,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
 
         // A petición de Eloy: si el producto está en Destacados (activo y
-        // vigente), la ficha de detalle debe mostrar el mismo precio
-        // rebajado y la misma etiqueta que ya se ve en su tarjeta — misma
-        // lógica que construirContenidoTarjeta_, sin duplicarla. No aplica
-        // con precio al por mayor (promoción solo sobre el PVP público).
-        const destacadoModal = esMayorModal_ ? null : destacadosVigentePara_(p.ref);
+        // vigente) O en una campaña de escaparate activa (ver
+        // destacadoEfectivoPara_ — Destacados manda si tiene algo, la
+        // campaña actúa como añadido), la ficha de detalle debe mostrar
+        // el mismo precio rebajado y la misma etiqueta que ya se ve en
+        // su tarjeta — misma lógica que construirContenidoTarjeta_, sin
+        // duplicarla. No aplica con precio al por mayor (promoción solo
+        // sobre el PVP público).
+        const destacadoModal = esMayorModal_ ? null : destacadoEfectivoPara_(p.ref);
         const chipDestacadoModal = $('modal-producto-destacado-chip');
         if (destacadoModal) {
             // Reutiliza etiquetaDestacadoHtml_ para la clase/texto del chip,

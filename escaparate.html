@@ -1925,13 +1925,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 
   function findCampaign(id){ return CAMPAIGNS.find(c=>c.id===id); }
+  // Solo comprueba la VENTANA DE FECHAS (o "permanente") — el interruptor
+  // "activa"/"desactivada" se comprueba aparte, en campanaDeHoy() más
+  // abajo (mismo criterio que escaparate-campanas.html, que ya hacía
+  // bien esta separación). Bug real encontrado: campanaDeHoy() NUNCA
+  // comprobaba `c.activa` — una campaña desactivada a mano pero todavía
+  // dentro de su rango de fechas se seguía eligiendo como "la de hoy" y
+  // mostrando al público, justo lo contrario de lo que se espera de
+  // "desactivar" una campaña.
   function activaEn(camp, fecha){
     if(camp.permanente) return true;
     if(!camp.fechaInicio || !camp.fechaFin) return false;
     return fecha >= new Date(camp.fechaInicio+"T00:00:00") && fecha <= new Date(camp.fechaFin+"T23:59:59");
   }
   function campanaDeHoy(){
-    const activas = CAMPAIGNS.filter(c=>activaEn(c, HOY));
+    const activas = CAMPAIGNS.filter(c=>c.activa !== false && activaEn(c, HOY));
     const manual = activas.find(c=>c.origen==="manual");
     return manual || activas[0] || null;
   }
