@@ -13680,16 +13680,34 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return t.replace(/\n{3,}/g, '\n\n').trim();
     }
 
-    // Ayuda a formatear más rápido un texto pegado ya limpio: las
-    // líneas que empiezan por un marcador de lista habitual (-, *, •)
-    // se agrupan en una lista real <ul><li> sin tener que seleccionarlas
-    // a mano y pulsar el botón de lista; el resto se deja como
-    // párrafos normales (una línea en blanco separa un párrafo del
-    // siguiente). Todo el contenido variable pasa por escaparHtmlTexto_
-    // antes de ensamblarse — el HTML resultante lo construye por
-    // completo este código, nunca el texto pegado directamente.
+    // Quita marcadores de énfasis Markdown en negrita ("**texto**") que
+    // a veces trae el texto copiado de la IA — aquí siempre se tratan
+    // como simple marcado de texto, nunca como negrita real (ver
+    // convertirTextoPlanoAHtmlBasico_, que sí distingue aparte las
+    // líneas que SON un título completo).
+    function quitarNegritaMarkdownInline_(s) {
+        return s.replace(/\*\*(.+?)\*\*/g, '$1');
+    }
+
+    // Ayuda a formatear más rápido un texto pegado ya limpio:
+    // - Las líneas que son un título completo (encabezado Markdown
+    //   "# Título", o toda la línea envuelta en "**negrita**", patrón
+    //   habitual de la IA para separar secciones) son lo ÚNICO que se
+    //   deja en negrita real.
+    // - Las líneas que empiezan por un marcador de lista habitual
+    //   (-, *, •) se agrupan en una lista real <ul><li> sin tener que
+    //   seleccionarlas a mano y pulsar el botón de lista.
+    // - Todo lo demás (y cualquier "**énfasis**" suelto dentro de una
+    //   línea que no sea el título completo) se deja en texto normal —
+    //   petición real de Eloy: "que no lo deje en negrita todo, solo
+    //   cabeceras, lo demás en texto normal y/o con guiones".
+    // Todo el contenido variable pasa por escaparHtmlTexto_ antes de
+    // ensamblarse — el HTML resultante lo construye por completo este
+    // código, nunca el texto pegado directamente.
     function convertirTextoPlanoAHtmlBasico_(texto) {
         const RE_VINETA = /^\s*[-*•]\s+(.*)$/;
+        const RE_ENCABEZADO_MD = /^#{1,6}\s+(.+)$/;
+        const RE_LINEA_NEGRITA_COMPLETA = /^\*\*(.+)\*\*$/;
         const partes = [];
         let parrafo = [];
         let lista = [];
@@ -13702,16 +13720,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             lista = [];
         };
         texto.split('\n').forEach((linea) => {
-            const m = linea.match(RE_VINETA);
-            if (m) {
+            const lineaTrim = linea.trim();
+            const mTitulo = lineaTrim.match(RE_ENCABEZADO_MD) || lineaTrim.match(RE_LINEA_NEGRITA_COMPLETA);
+            if (mTitulo) {
+                cerrarLista();
                 cerrarParrafo();
-                lista.push(m[1].trim());
-            } else if (linea.trim() === '') {
+                const texto = quitarNegritaMarkdownInline_(mTitulo[1].trim());
+                partes.push('<p><b>' + escaparHtmlTexto_(texto) + '</b></p>');
+                return;
+            }
+            const mVineta = linea.match(RE_VINETA);
+            if (mVineta) {
+                cerrarParrafo();
+                lista.push(quitarNegritaMarkdownInline_(mVineta[1].trim()));
+            } else if (lineaTrim === '') {
                 cerrarLista();
                 cerrarParrafo();
             } else {
                 cerrarLista();
-                parrafo.push(linea.trim());
+                parrafo.push(quitarNegritaMarkdownInline_(lineaTrim));
             }
         });
         cerrarLista();
@@ -13722,14 +13749,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     if ($('modal-editar-info-editable')) {
         $('modal-editar-info-editable').addEventListener('input', actualizarContadorInfoAdicional_);
         // Pegar SIEMPRE como texto plano ya limpio y con una estructura
-        // básica (párrafos/listas) — nunca el HTML de la página de
-        // origen tal cual (ver limpiarTextoPegado_/
+        // básica (párrafos/listas/títulos) — nunca el HTML de la página
+        // de origen tal cual (ver limpiarTextoPegado_/
         // convertirTextoPlanoAHtmlBasico_ más arriba para el porqué
-        // completo). Lo único que puede llevar formato de verdad
-        // (negrita/cursiva/subrayado) es lo que el propio usuario
+        // completo). Fuera de eso, lo único que puede llevar formato
+        // real (negrita/cursiva/subrayado) es lo que el propio usuario
         // aplique después con la barra de herramientas de aquí arriba.
         $('modal-editar-info-editable').addEventListener('paste', (e) => {
             e.preventDefault();
+            // Red de seguridad: si el cursor estaba en medio de un
+            // "modo negrita/cursiva/subrayado" activado a mano justo
+            // antes de pegar (p. ej. tras escribir un título con el
+            // botón de negrita sin desactivarlo luego), se quita ANTES
+            // de insertar — sin esto, todo el texto pegado podía
+            // heredar ese formato y salir entero en negrita, aviso real
+            // de Eloy. removeFormat (no un toggle por comando) es lo
+            // único que de verdad limpia el "modo" de formato activo en
+            // el punto de inserción, haya o no selección.
+            document.execCommand('removeFormat', false, null);
             const textoOriginal = (e.clipboardData || window.clipboardData).getData('text/plain');
             const textoLimpio = limpiarTextoPegado_(textoOriginal);
             document.execCommand('insertHTML', false, convertirTextoPlanoAHtmlBasico_(textoLimpio));
@@ -13840,11 +13877,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     if ($('modal-editar-info-cancelar')) $('modal-editar-info-cancelar').addEventListener('click', cerrarModalEditarInfoAdicional);
     if ($('modal-editar-info-guardar')) $('modal-editar-info-guardar').addEventListener('click', ejecutarGuardarInfoAdicional);
     if ($('modal-editar-info-ia')) $('modal-editar-info-ia').addEventListener('click', ejecutarGenerarInfoAdicionalIA);
-    if ($('modal-editar-info-overlay')) {
-        $('modal-editar-info-overlay').addEventListener('click', (e) => {
-            if (e.target.id === 'modal-editar-info-overlay') cerrarModalEditarInfoAdicional();
-        });
-    }
+    // A diferencia del resto de modales de detalle de producto, esta NO
+    // se cierra al hacer clic fuera (en el fondo oscuro) — petición
+    // real de Eloy: mientras se redacta un texto largo a mano, un clic
+    // fuera por error cerraba la modal y se perdía todo lo escrito.
+    // Solo se cierra con la "X" o "Cancelar", nunca por accidente.
 
     // ══════════════════════════════════════════════════════════════════
     // Ficha técnica con IA — botón público (cualquier visitante, en
