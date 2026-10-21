@@ -1024,6 +1024,15 @@
         }
         .modal-lista-compra-validez i { color: var(--yellow); }
         .modal-lista-compra-validez strong { color: var(--dark); }
+        /* Aviso de precio calculado por unidades (no por caja) cuando
+           algún producto de la lista está en modo "cajas" sin formato
+           de envase informado — ver listaCompraTieneCantidadAmbigua_. */
+        .modal-lista-compra-aviso-envase {
+            margin: 8px 0 0; padding: 8px 12px; border-radius: 8px;
+            background: #fff7e6; border: 1px solid #f1c979; color: #8a5a00;
+            font-size: 0.78rem; display: flex; align-items: flex-start; gap: 6px;
+        }
+        .modal-lista-compra-aviso-envase i { margin-top: 1px; }
         .modal-lista-compra-cuerpo { padding: 20px; }
         .lista-compra-notas { margin-top: 18px; }
         .lista-compra-notas label {
@@ -1103,10 +1112,35 @@
 
         /* Selector de unidades (mínimo 1, sin máximo) junto al botón — visible solo
            mientras el producto está en la lista (ver
-           actualizarBotonListaCompraEnModalProducto_). */
+           actualizarBotonListaCompraEnModalProducto_). Envuelve, además de
+           la fila de +/-, el selector de modo (sueltas/cajas, ver
+           .lista-compra-modo) y el texto de equivalencia en unidades —
+           los tres apilados en vertical. */
         .lista-compra-unidades {
-            display: flex; align-items: center; flex-shrink: 0;
+            display: flex; flex-direction: column; align-items: stretch; gap: 4px; flex-shrink: 0;
+        }
+        .lista-compra-unidades-fila {
+            display: flex; align-items: center;
             border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+        }
+        /* Selector de modo de compra (unidades sueltas / por envase) —
+           venta al por mayor, petición real de Eloy: "muchos usuarios
+           querrán... seleccionar cajas o paquetes de unidades, en lugar
+           de unidades". Solo aparece si el producto tiene formato de
+           envase informado (ver configurarEnvase/formatearEnvase_). */
+        .lista-compra-modo {
+            display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+        }
+        .lista-compra-modo-btn {
+            flex: 1; border: none; background: var(--light); color: var(--dark);
+            font-size: 0.72rem; font-weight: 700; padding: 4px 6px; cursor: pointer;
+            white-space: nowrap;
+        }
+        .lista-compra-modo-btn:not(:last-child) { border-right: 1px solid var(--border); }
+        .lista-compra-modo-btn:hover { background: #e2e8f0; }
+        .lista-compra-modo-btn.activo { background: var(--red); color: #fff; }
+        .lista-compra-equivalencia {
+            margin: 0; font-size: 0.72rem; color: var(--gray); text-align: center;
         }
         .lista-compra-unidades-btn {
             width: 34px; height: 100%; border: none; background: var(--light);
@@ -4664,15 +4698,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                          el producto ya está en la lista — ver
                          actualizarBotonListaCompraEnModalProducto_. -->
                     <div class="lista-compra-unidades" id="modal-producto-lista-unidades" style="display:none;">
-                        <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-menos" aria-label="Quitar una unidad">−</button>
-                        <input type="number" class="lista-compra-unidades-input" id="modal-producto-lista-unidades-input" min="1" step="1" value="1" aria-label="Unidades">
-                        <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-mas" aria-label="Añadir una unidad">+</button>
+                        <!-- Modo de compra (unidades sueltas / por envase) — solo
+                             visible si el producto tiene formato de envase
+                             informado (ver configurarEnvase/formatearEnvase_).
+                             Venta al por mayor: petición real de Eloy. -->
+                        <div class="lista-compra-modo" id="modal-producto-lista-modo" style="display:none;">
+                            <button type="button" class="lista-compra-modo-btn" id="modal-producto-lista-modo-unidad" data-modo="unidad">Sueltas</button>
+                            <button type="button" class="lista-compra-modo-btn" id="modal-producto-lista-modo-envase" data-modo="envase">Cajas</button>
+                        </div>
+                        <div class="lista-compra-unidades-fila">
+                            <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-menos" aria-label="Quitar una unidad">−</button>
+                            <input type="number" class="lista-compra-unidades-input" id="modal-producto-lista-unidades-input" min="1" step="1" value="1" aria-label="Unidades">
+                            <button type="button" class="lista-compra-unidades-btn" id="modal-producto-lista-unidades-mas" aria-label="Añadir una unidad">+</button>
+                        </div>
+                        <p class="lista-compra-equivalencia" id="modal-producto-lista-equivalencia" style="display:none;"></p>
                     </div>
                 </div>
                 <div class="modal-producto-detalles">
                     <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
                     <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
+                    <!-- Formato de envase ("12 unidades/caja") — visible para
+                         TODOS (producción incluida) solo cuando se ha
+                         informado. El botón de editar es solo preproducción
+                         (ver window.MOSTRAR_EDITAR_ENVASE más abajo). -->
+                    <p id="modal-producto-envase" style="display:none;"><strong>Formato:</strong> <span id="modal-producto-envase-texto"></span></p>
                 </div>
+                <!-- Solo preproducción -->
+                <button type="button" id="modal-producto-editar-envase" class="modal-producto-reportar" style="display:none; width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-pen"></i>
+                    Editar formato de envase
+                </button>
                 <p class="modal-producto-disclaimer">
                     <i class="fa-solid fa-circle-info"></i>
                     Los precios pueden variar y este producto está sujeto a disponibilidad, así como la imagen puede no coincidir exactamente con el producto real.
@@ -4835,6 +4890,48 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-editar-ficha-acciones">
             <button type="button" id="modal-editar-ficha-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
             <button type="button" id="modal-editar-ficha-guardar" class="modal-editar-ficha-guardar">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal "Editar formato de envase" — solo preproducción -->
+<div class="modal-overlay" id="modal-editar-envase-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box">
+        <button class="modal-producto-cerrar" id="modal-editar-envase-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-box"></i> Editar formato de envase</h3>
+        <p id="modal-editar-envase-nombre" class="modal-editar-ficha-nombre"></p>
+        <div class="modal-editar-ficha-campo">
+            <label for="modal-editar-envase-cantidad">Cantidad por envase</label>
+            <input type="number" id="modal-editar-envase-cantidad" min="1" step="1" placeholder="p. ej. 12" autocomplete="off">
+        </div>
+        <div class="modal-editar-ficha-campo">
+            <label for="modal-editar-envase-unidad">Qué se cuenta</label>
+            <input type="text" id="modal-editar-envase-unidad" maxlength="40" placeholder="p. ej. unidades, paquetes" autocomplete="off">
+        </div>
+        <div class="modal-editar-ficha-campo">
+            <label for="modal-editar-envase-tipo">Envase a gran escala</label>
+            <select id="modal-editar-envase-tipo">
+                <option value="caja">Caja</option>
+                <option value="bolsa">Bolsa</option>
+                <option value="paquete">Paquete</option>
+                <option value="__otro__">Otro…</option>
+            </select>
+        </div>
+        <div class="modal-editar-ficha-campo" id="modal-editar-envase-tipo-otro-fila" style="display:none;">
+            <label for="modal-editar-envase-tipo-otro">Nombre del envase</label>
+            <input type="text" id="modal-editar-envase-tipo-otro" maxlength="40" placeholder="p. ej. garrafa, cubo" autocomplete="off">
+        </div>
+        <p id="modal-editar-envase-error" class="modal-editar-ficha-error"></p>
+        <p class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-circle-info"></i>
+            Deja la cantidad vacía y guarda para quitar el formato de envase actual.
+            Se mostrará como, por ejemplo, "12 unidades/caja".
+        </p>
+        <div class="modal-editar-ficha-acciones">
+            <button type="button" id="modal-editar-envase-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
+            <button type="button" id="modal-editar-envase-guardar" class="modal-editar-ficha-guardar">Guardar</button>
         </div>
     </div>
 </div>
@@ -5275,6 +5372,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                  fecha de creación y fecha a partir de la cual la lista se
                  elimina automáticamente. -->
             <p class="modal-lista-compra-validez" id="modal-lista-compra-validez"></p>
+            <!-- Aviso de precio por unidades (no por caja real) — solo
+                 visible si algún producto está en modo "cajas" sin
+                 formato de envase informado (ver
+                 listaCompraTieneCantidadAmbigua_/renderModalListaCompra_). -->
+            <p class="modal-lista-compra-aviso-envase" id="modal-lista-compra-aviso-envase" style="display:none;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Para algún producto no se ha informado el número de unidades por caja: el precio indicado para esas cajas se calcula por unidad (no por el total real de la caja).</span>
+            </p>
         </div>
         <div class="modal-lista-compra-cuerpo">
             <div id="lista-compra-vacia" class="lista-compra-vacia" style="display:none;">
@@ -5574,6 +5679,7 @@ window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 // release, solo en preproducción.
 window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
 window.MOSTRAR_EDITAR_INFO_ADICIONAL = window.OM_PREPRODUCCION;
+window.MOSTRAR_EDITAR_ENVASE = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_PANEL_ANALITICA = window.OM_PREPRODUCCION;
@@ -5652,6 +5758,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-editar-ficha-overlay', window.MOSTRAR_EDITAR_FICHA_TECNICA);
     eliminarSiRestringido_('modal-producto-editar-info-adicional', window.MOSTRAR_EDITAR_INFO_ADICIONAL);
     eliminarSiRestringido_('modal-editar-info-overlay', window.MOSTRAR_EDITAR_INFO_ADICIONAL);
+    eliminarSiRestringido_('modal-producto-editar-envase', window.MOSTRAR_EDITAR_ENVASE);
+    eliminarSiRestringido_('modal-editar-envase-overlay', window.MOSTRAR_EDITAR_ENVASE);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
         const btnGD = document.getElementById('btn-gestionar-destacados');
         if (btnGD) btnGD.classList.add('visible');
@@ -9181,6 +9289,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     ['fa-box-open', 'Productos vistos', r.totalProductosVistos],
                     ['fa-layer-group', 'Bloques pulsados', r.totalBloquesClick],
                     ['fa-tags', 'Marcas pulsadas', r.totalMarcasClick],
+                    ['fa-cart-shopping', 'Usos de la lista de la compra', r.totalListaCompraUsada],
+                    ['fa-file-export', 'Listas exportadas/compartidas', r.totalListaCompraExportada],
                 ].map(([icono, etiqueta, total]) => `
                     <div style="background:var(--light);border-radius:10px;padding:10px;text-align:center;">
                         <div style="font-size:1.4rem;font-weight:900;color:var(--red);"><i class="fa-solid ${icono}"></i> ${total}</div>
@@ -9198,7 +9308,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 + paBloqueLista_('Áreas más consultadas', 'fa-shapes', topAreasConNombre, 'Todavía no hay productos vistos en este periodo.')
                 + paBloqueLista_('Familias más consultadas', 'fa-list', r.topFamilias, 'Todavía no hay productos vistos en este periodo.')
                 + paBloqueLista_('Bloques de "Sigue explorando" más pulsados', 'fa-layer-group', r.topBloques, 'Todavía no hay clics en bloques en este periodo.')
-                + paBloqueLista_('Marcas más pulsadas', 'fa-tags', r.topMarcas, 'Todavía no hay clics en marcas en este periodo.');
+                + paBloqueLista_('Marcas más pulsadas', 'fa-tags', r.topMarcas, 'Todavía no hay clics en marcas en este periodo.')
+                + paBloqueLista_('Exportaciones de la lista por medio', 'fa-file-export', r.topListaCompraMedio, 'Todavía no se ha exportado ni compartido ninguna lista en este periodo.');
         } catch (e) {
             cont.innerHTML = '<p class="destacados-editor-error">Error de conexión.</p>';
         }
@@ -10501,14 +10612,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // disponible en absoluto.
         const logoBadge = urlImg ? logoFabricanteHtml(p) : '';
 
-        // Con precio al por mayor (perfil profesional), las ofertas/
-        // destacados del público (promoción sobre el PVP) no aplican — el
-        // mayorista tiene su propio precio fijo, ver precioAMostrar_.
+        // Con precio al por mayor (perfil profesional), el PRECIO con
+        // descuento/promoción del público no aplica — el mayorista tiene
+        // su propio precio fijo, ver precioAMostrar_. Pero los
+        // chips/badges (OFERTA, destacado, texto de promo) son
+        // informativos sobre el producto en sí, no sobre el precio
+        // mostrado — deben seguir viéndose igual en perfil profesional,
+        // aviso real de Eloy: "en los productos destacados no aparece
+        // los chips de oferta o 3x2... solo aparece en la vista de
+        // usuario normal... creo que esto se ha debido de perder en
+        // algún cambio" (se perdió al añadir el precio al por mayor,
+        // reutilizando aquí la misma condición que debía aplicar solo
+        // al PRECIO).
         const precioMayor_ = precioAMostrar_(p);
         const esMayor_ = !!(precioMayor_ && precioMayor_.esMayor);
 
-        const ofertaBadge = (!d && p.oferta && !esMayor_) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
-        const destacadoChip = (d && !esMayor_) ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
+        const ofertaBadge = (!d && p.oferta) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
+        const destacadoChip = d ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
 
         let precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         if (precioMayor_) {
@@ -10516,19 +10636,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (precioMayor_.sin) precioHtml += `<div class="producto-precio-sin">${precioMayor_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         }
         let promoTextoHtml = '';
-        if (d && !esMayor_) {
-            const precioDestacado = calcularPrecioDestacado_(p, d);
-            if (precioDestacado.original !== null) {
-                if (precioDestacado.promo !== null) {
-                    const originalTxt = precioDestacado.original.toFixed(2).replace('.', ',');
-                    const promoTxt = precioDestacado.promo.toFixed(2).replace('.', ',');
-                    precioHtml = `<div class="destacado-precio-descuento">` +
-                        `<span class="destacado-precio-original">${originalTxt} €</span>` +
-                        `<span class="destacado-precio-promo">${promoTxt} €</span>` +
-                        (precioDestacado.pct ? `<span class="destacado-precio-pct">-${precioDestacado.pct}%</span>` : '') +
-                        `</div>`;
-                } else {
-                    precioHtml = `<div class="producto-precio-con">${precioDestacado.original.toFixed(2).replace('.', ',')} €</div>`;
+        if (d) {
+            if (!esMayor_) {
+                const precioDestacado = calcularPrecioDestacado_(p, d);
+                if (precioDestacado.original !== null) {
+                    if (precioDestacado.promo !== null) {
+                        const originalTxt = precioDestacado.original.toFixed(2).replace('.', ',');
+                        const promoTxt = precioDestacado.promo.toFixed(2).replace('.', ',');
+                        precioHtml = `<div class="destacado-precio-descuento">` +
+                            `<span class="destacado-precio-original">${originalTxt} €</span>` +
+                            `<span class="destacado-precio-promo">${promoTxt} €</span>` +
+                            (precioDestacado.pct ? `<span class="destacado-precio-pct">-${precioDestacado.pct}%</span>` : '') +
+                            `</div>`;
+                    } else {
+                        precioHtml = `<div class="producto-precio-con">${precioDestacado.original.toFixed(2).replace('.', ',')} €</div>`;
+                    }
                 }
             }
             if (d.textoPromocion) {
@@ -11208,7 +11330,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // que un profesional que añade un producto a la lista siga viendo su
     // precio mayor en la propia lista, el PDF y el texto para compartir —
     // ver precioAMostrar_.
-    const LISTA_COMPRA_CAMPOS_ = ['ref', 'nombre', 'precio_sin', 'precio_con', 'precio_mayor_sin', 'precio_mayor_con', 'mostrar_precio', 'area', 'familia', 'subfamilia', 'img', 'fabricante'];
+    const LISTA_COMPRA_CAMPOS_ = ['ref', 'nombre', 'precio_sin', 'precio_con', 'precio_mayor_sin', 'precio_mayor_con', 'mostrar_precio', 'area', 'familia', 'subfamilia', 'img', 'fabricante', 'envase_cantidad', 'envase_unidad', 'envase_tipo'];
 
     let listaCompraState_ = null;          // { version, productos: [...] } | null si no existe lista
     let listaCompraPersistenciaOk_ = true; // false tras el primer fallo real de localStorage (cuota, navegación privada...)
@@ -11240,6 +11362,43 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // válido en vez de romper los cálculos de totales.
         const unidadesNum = parseInt(p.unidades, 10);
         limpio.unidades = Number.isFinite(unidadesNum) ? Math.max(1, unidadesNum) : 1;
+        // Formato de envase ("12 unidades/caja") snapshot del producto —
+        // campo añadido después de la estructura original, igual que
+        // "unidades" arriba (ver listaCompraSincronizarEnvaseProducto_,
+        // que lo mantiene al día si se edita en preproducción mientras el
+        // producto ya está en la lista).
+        limpio.envase_cantidad = (p.envase_cantidad != null && p.envase_cantidad !== '') ? String(p.envase_cantidad) : '';
+        limpio.envase_unidad = p.envase_unidad ? String(p.envase_unidad) : '';
+        limpio.envase_tipo = p.envase_tipo ? String(p.envase_tipo) : '';
+        // Modo de compra ("unidad" sueltas o "envase" cajas/bolsas/
+        // paquetes enteros) — petición real de Eloy: "muchos usuarios
+        // querrán confeccionar la lista... pudiendo seleccionar cajas o
+        // paquetes de unidades, en lugar de unidades". Disponible SIEMPRE,
+        // tenga o no el producto un formato de envase informado —
+        // segunda petición real de Eloy: "quiero que salga el selector
+        // de sueltas o cajas independientemente de que se haya
+        // informado el formato... así el usuario puede confeccionar su
+        // lista si ya conoce el producto". Sin formato informado, no hay
+        // cantidad por envase conocida con la que convertir — el número
+        // de "cajas" que escriba el usuario se usa tal cual como
+        // cantidad real (sin multiplicar por nada), y no se muestra
+        // ningún cálculo de equivalencia en unidades (ver
+        // listaCompraTextoCantidad_/actualizarSelectorModoCompra_).
+        limpio.modoCompra = (p.modoCompra === 'envase') ? 'envase' : 'unidad';
+        const cantidadEnvasesNum = parseInt(p.cantidadEnvases, 10);
+        limpio.cantidadEnvases = Number.isFinite(cantidadEnvasesNum) ? Math.max(1, cantidadEnvasesNum) : 1;
+        // En modo "envase", "unidades" (el total real en unidades sueltas,
+        // el que de verdad usan los cálculos de precio — ver
+        // listaCompraTotales_) se recalcula SIEMPRE a partir de
+        // cantidadEnvases × cantidad por envase (o, sin formato
+        // informado, directamente = cantidadEnvases), en vez de confiar
+        // en el valor ya guardado — así, si el formato de envase del
+        // producto cambia más tarde, un ítem ya guardado en la lista se
+        // mantiene sincronizado sin que haga falta migrar nada a mano.
+        if (limpio.modoCompra === 'envase') {
+            const cantidadPorEnvase = envaseCantidadValida_(limpio);
+            limpio.unidades = Math.max(1, limpio.cantidadEnvases * (cantidadPorEnvase || 1));
+        }
         return limpio;
     }
 
@@ -11448,9 +11607,104 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const p = listaCompraState_.productos.find(x => x.ref === ref);
         if (!p) return null;
         const num = parseInt(unidades, 10);
+        p.modoCompra = 'unidad';
         p.unidades = Number.isFinite(num) ? Math.max(1, num) : 1;
         listaCompraPersistir_();
         return p.unidades;
+    }
+
+    // Igual que listaCompraActualizarUnidades_ pero en modo "por envase"
+    // (cajas/bolsas/paquetes enteros, venta al por mayor) — "unidades"
+    // (el total real en unidades sueltas, el que de verdad usan los
+    // cálculos de precio — ver listaCompraTotales_) se recalcula siempre
+    // a partir de cantidadEnvases × cantidad por envase.
+    //
+    // Disponible aunque el producto NO tenga formato de envase informado
+    // — petición real de Eloy: "quiero que salga el selector de sueltas
+    // o cajas independientemente de que se haya informado el formato...
+    // así el usuario puede confeccionar su lista si ya conoce el
+    // producto. Lo que no hará o mostraría sería el cálculo de unidades
+    // totales". Sin formato informado no hay cantidad por envase
+    // conocida con la que multiplicar, así que el número de "cajas" que
+    // escriba el usuario se usa tal cual como cantidad real (sin
+    // equivalencia en unidades que mostrar — ver
+    // listaCompraTextoCantidad_/actualizarSelectorModoCompra_).
+    function listaCompraActualizarCantidadEnvases_(ref, cantidadEnvases) {
+        if (!listaCompraState_) return null;
+        const p = listaCompraState_.productos.find(x => x.ref === ref);
+        if (!p) return null;
+        const cantidadPorEnvase = envaseCantidadValida_(p);
+        const num = parseInt(cantidadEnvases, 10);
+        p.modoCompra = 'envase';
+        p.cantidadEnvases = Number.isFinite(num) ? Math.max(1, num) : 1;
+        p.unidades = p.cantidadEnvases * (cantidadPorEnvase || 1);
+        listaCompraPersistir_();
+        return { cantidadEnvases: p.cantidadEnvases, unidades: p.unidades };
+    }
+
+    // Cambia el modo de compra (unidad suelta / por envase) de un ítem ya
+    // añadido — al cambiar, la cantidad se reinicia a 1 DEL NUEVO MODO (1
+    // unidad suelta, o 1 envase entero) en vez de intentar "traducir" la
+    // cantidad anterior: mezclar sueltas y cajas da números que casi
+    // nunca son exactos (5 unidades sueltas no son "1,67 cajas de 3") y
+    // complican la UI sin necesidad real.
+    function listaCompraCambiarModoCompra_(ref, modo) {
+        if (modo === 'envase') return listaCompraActualizarCantidadEnvases_(ref, 1);
+        return listaCompraActualizarUnidades_(ref, 1);
+    }
+
+    // Texto de cantidad a mostrar en la lista/PDF/texto para compartir —
+    // "3 cajas (36 unidades)" en modo envase CON formato informado, "3
+    // cajas" a secas sin formato informado (no hay equivalencia real que
+    // mostrar — ver comentario de listaCompraActualizarCantidadEnvases_),
+    // o simplemente "5" en modo unidad suelta (como ya era antes).
+    function listaCompraTextoCantidad_(p) {
+        if (p.modoCompra === 'envase') {
+            const cantidadPorEnvase = envaseCantidadValida_(p);
+            if (!cantidadPorEnvase) return listaCompraTextoCantidadCompacto_(p);
+            return `${listaCompraTextoCantidadCompacto_(p)} (${p.unidades} ${(p.envase_unidad || 'unidades').trim()})`;
+        }
+        return String(p.unidades || 1);
+    }
+    // Versión corta, sin la equivalencia en unidades — para el badge
+    // circular de la tarjeta, donde no cabe el texto completo.
+    function listaCompraTextoCantidadCompacto_(p) {
+        if (p.modoCompra === 'envase') {
+            // Sin formato de envase informado, "caja" es la etiqueta
+            // genérica por defecto (nunca se inventa un tipo de envase
+            // que el producto no tiene).
+            const tipo = (p.envase_tipo || 'caja').trim();
+            const numEnvases = p.cantidadEnvases || 1;
+            const tipoMostrado = numEnvases === 1 ? tipo : (tipo.endsWith('s') ? tipo : tipo + 's');
+            return `${numEnvases} ${tipoMostrado}`;
+        }
+        return String(p.unidades || 1);
+    }
+
+    // Reflejar al instante, en la propia sesión de preproducción, que el
+    // formato de envase de un producto se ha editado (ver
+    // ejecutarGuardarEnvase en el detalle del producto) mientras ese
+    // mismo producto ya estaba en la lista de la compra — sin esto, el
+    // ítem ya guardado se quedaría con el snapshot antiguo hasta la
+    // siguiente carga de productos.json.
+    function listaCompraSincronizarEnvaseProducto_(p) {
+        if (!listaCompraState_) return;
+        const item = listaCompraState_.productos.find(x => x.ref === p.ref);
+        if (!item) return;
+        item.envase_cantidad = (p.envase_cantidad != null && p.envase_cantidad !== '') ? String(p.envase_cantidad) : '';
+        item.envase_unidad = p.envase_unidad ? String(p.envase_unidad) : '';
+        item.envase_tipo = p.envase_tipo ? String(p.envase_tipo) : '';
+        // El modo "envase" sigue siendo válido con o sin formato
+        // informado (ver listaCompraActualizarCantidadEnvases_) — aquí
+        // solo hace falta recalcular "unidades" con la cantidad por
+        // envase que haya ahora (o 1, sin multiplicar, si el producto se
+        // ha quedado sin formato informado).
+        if (item.modoCompra === 'envase') {
+            const cantidadPorEnvase = envaseCantidadValida_(item);
+            item.unidades = Math.max(1, (item.cantidadEnvases || 1) * (cantidadPorEnvase || 1));
+        }
+        listaCompraPersistir_();
+        listaCompraActualizarUI_();
     }
 
     function listaCompraVaciar_() {
@@ -11518,6 +11772,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return { sinIva, iva: conIva - sinIva, conIva };
     }
 
+    // ¿Hay algún producto en la lista comprado "por cajas" sin formato de
+    // envase informado? En ese caso, el número de unidades realmente
+    // comprado NO es seguro: se usa tal cual el número de cajas como
+    // cantidad de cálculo (ver listaCompraActualizarCantidadEnvases_),
+    // así que el precio mostrado/calculado para esas cajas es, en
+    // realidad, un precio por UNIDAD, no por el contenido real de la
+    // caja. Petición real de Eloy: "hay que indicar cuando no se tiene
+    // claro el número de unidades por caja que el precio indicado es
+    // calculado por unidades y no por el total real... esto es solo
+    // cuando no tengamos la certeza del número real de unidades".
+    function listaCompraTieneCantidadAmbigua_() {
+        return listaCompraProductos_().some(p => p.modoCompra === 'envase' && !envaseCantidadValida_(p));
+    }
+
     // ── Tarjeta del carrusel del bloque (mini, igual aspecto que el
     // resto de carruseles) — reutiliza el mismo contenido que crearTarjeta
     // pero el click abre la MODAL DE LA LISTA (no el detalle del
@@ -11529,8 +11797,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function crearBadgeUnidadesListaCompra_(p) {
         const badge = document.createElement('span');
         badge.className = 'lista-compra-badge-unidades';
-        badge.textContent = String(p.unidades || 1);
-        badge.setAttribute('aria-label', `${p.unidades || 1} unidad${(p.unidades || 1) === 1 ? '' : 'es'}`);
+        if (p.modoCompra === 'envase') {
+            badge.textContent = listaCompraTextoCantidadCompacto_(p);
+            badge.setAttribute('aria-label', listaCompraTextoCantidad_(p));
+        } else {
+            badge.textContent = String(p.unidades || 1);
+            badge.setAttribute('aria-label', `${p.unidades || 1} unidad${(p.unidades || 1) === 1 ? '' : 'es'}`);
+        }
         return badge;
     }
 
@@ -11660,6 +11933,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-lista-compra-validez').innerHTML = listaCompraState_
             ? `<i class="fa-solid fa-calendar-days"></i> Creada el <strong>${listaCompraFechaFormateada_(listaCompraState_.creado)}</strong> · Válida hasta el <strong>${listaCompraFechaFormateada_(listaCompraFechaCaducidad_())}</strong> (${LISTA_COMPRA_VALIDEZ_DIAS_} días)`
             : '';
+        $('modal-lista-compra-aviso-envase').style.display = listaCompraTieneCantidadAmbigua_() ? 'flex' : 'none';
 
         const grid = $('lista-compra-grid');
         const vacia = $('lista-compra-vacia');
@@ -11727,8 +12001,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const enLista = listaCompraExiste_() ? listaCompraProductoPorRef_(productoModalActual_.ref) : null;
         unidadesWrap.style.display = enLista ? '' : 'none';
         if (enLista) {
-            $('modal-producto-lista-unidades-input').value = enLista.unidades || 1;
-            actualizarBotonesUnidades_(enLista.unidades || 1);
+            actualizarSelectorModoCompra_(enLista);
         }
 
         if (!listaCompraExiste_()) {
@@ -11750,6 +12023,61 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-producto-lista-unidades-mas').disabled = false;
     }
 
+    // Selector de modo de compra (sueltas/cajas) de la ficha de producto —
+    // SIEMPRE visible, tenga o no el producto formato de envase
+    // informado (petición real de Eloy: "quiero que salga el selector
+    // de sueltas o cajas independientemente de que se haya informado el
+    // formato... así el usuario puede confeccionar su lista si ya
+    // conoce el producto"). Sin formato informado, la etiqueta del botón
+    // se queda en el genérico "Cajas" de la plantilla — nunca se inventa
+    // un tipo de envase ("Lo único que no quiero que aparezca es el
+    // campo formato si previamente no se ha informado") — y no se
+    // muestra ningún cálculo de equivalencia en unidades (no hay
+    // cantidad por envase conocida con la que calcularlo). Refleja el
+    // modo actual del ítem de la lista (`enLista`) en los botones y en
+    // el propio selector de unidades (que pasa a contar envases enteros,
+    // no unidades sueltas, mientras el modo "envase" está activo).
+    function actualizarSelectorModoCompra_(enLista) {
+        const modoWrap = $('modal-producto-lista-modo');
+        modoWrap.style.display = 'flex';
+        const cantidadPorEnvase = envaseCantidadValida_(productoModalActual_);
+        if (cantidadPorEnvase) {
+            const tipo = (productoModalActual_.envase_tipo || 'caja').trim();
+            const tipoPlural = tipo.endsWith('s') ? tipo : tipo + 's';
+            $('modal-producto-lista-modo-envase').textContent = tipoPlural.charAt(0).toUpperCase() + tipoPlural.slice(1);
+        } else {
+            $('modal-producto-lista-modo-envase').textContent = 'Cajas';
+        }
+        const enModoEnvase = enLista.modoCompra === 'envase';
+        $('modal-producto-lista-modo-unidad').classList.toggle('activo', !enModoEnvase);
+        $('modal-producto-lista-modo-envase').classList.toggle('activo', enModoEnvase);
+        $('modal-producto-lista-modo-unidad').onclick = () => alCambiarModoCompraProducto_('unidad');
+        $('modal-producto-lista-modo-envase').onclick = () => alCambiarModoCompraProducto_('envase');
+
+        const equivalenciaEl = $('modal-producto-lista-equivalencia');
+        if (enModoEnvase) {
+            $('modal-producto-lista-unidades-input').value = enLista.cantidadEnvases || 1;
+            actualizarBotonesUnidades_(enLista.cantidadEnvases || 1);
+            if (cantidadPorEnvase) {
+                equivalenciaEl.textContent = `= ${enLista.unidades} ${(productoModalActual_.envase_unidad || 'unidades').trim()}`;
+                equivalenciaEl.style.display = '';
+            } else {
+                equivalenciaEl.style.display = 'none';
+            }
+        } else {
+            $('modal-producto-lista-unidades-input').value = enLista.unidades || 1;
+            actualizarBotonesUnidades_(enLista.unidades || 1);
+            equivalenciaEl.style.display = 'none';
+        }
+    }
+
+    function alCambiarModoCompraProducto_(modo) {
+        if (!productoModalActual_) return;
+        const resultado = listaCompraCambiarModoCompra_(productoModalActual_.ref, modo);
+        if (resultado == null) return;
+        listaCompraActualizarUI_();
+    }
+
     function alPulsarBotonListaCompraProducto_() {
         if (!productoModalActual_) return;
         const p = productoModalActual_;
@@ -11763,6 +12091,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ? `${escapeHtml(p.nombre)} se ha añadido a tu lista de la compra`
             : `Lista creada y ${escapeHtml(p.nombre)} añadido. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
         listaCompraActualizarUI_();
+        // Estadística: uso de la lista de la compra — a petición de
+        // Eloy, se cuenta cada vez que se añade un producto (la acción
+        // real de "usar" la lista), no cada apertura del modal.
+        enviarEventoAnalitica_('lista_compra_usada', {});
     }
 
     // Selector de unidades (mínimo 1, sin máximo) de la ficha de producto — "+"/"−" y
@@ -11772,17 +12104,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!productoModalActual_) return;
         const actual = listaCompraProductoPorRef_(productoModalActual_.ref);
         if (!actual) return;
-        aplicarNuevasUnidadesProducto_((actual.unidades || 1) + delta);
+        const base = actual.modoCompra === 'envase' ? (actual.cantidadEnvases || 1) : (actual.unidades || 1);
+        aplicarNuevasUnidadesProducto_(base + delta);
     }
     function alEscribirUnidadesProducto_() {
         if (!productoModalActual_) return;
         aplicarNuevasUnidadesProducto_($('modal-producto-lista-unidades-input').value);
     }
+    // El valor del selector representa, según el modo de compra actual
+    // del ítem, o bien unidades sueltas o bien envases enteros (ver
+    // actualizarSelectorModoCompra_) — se aplica al campo que
+    // corresponda en cada caso.
     function aplicarNuevasUnidadesProducto_(valor) {
-        const aplicado = listaCompraActualizarUnidades_(productoModalActual_.ref, valor);
+        const actual = listaCompraProductoPorRef_(productoModalActual_.ref);
+        if (!actual) return;
+        const aplicado = actual.modoCompra === 'envase'
+            ? listaCompraActualizarCantidadEnvases_(productoModalActual_.ref, valor)
+            : { unidades: listaCompraActualizarUnidades_(productoModalActual_.ref, valor) };
         if (aplicado == null) return;
-        $('modal-producto-lista-unidades-input').value = aplicado;
-        actualizarBotonesUnidades_(aplicado);
         listaCompraActualizarUI_();
     }
 
@@ -11875,7 +12214,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 p.nombre,
                 p.ref,
                 p.familia || '—',
-                String(unidades),
+                // "3 cajas (36 ud.)" en modo envase (venta al por mayor,
+                // ver listaCompraTextoCantidad_), o el número de siempre
+                // en modo unidad suelta.
+                listaCompraTextoCantidad_(p),
                 precio && precio.sin ? formatoEurosPdf_(Math.round(precio.sin * 100)) : '—',
                 precio ? formatoEurosPdf_(Math.round(precio.con * 100)) : 'Consultar',
                 precio ? formatoEurosPdf_(subtotalSin) : '—',
@@ -11892,13 +12234,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // Familia más estrecha y con elipsis ("...") si no cabe, en
             // vez de partir el texto en varias líneas — y ancho fijo en
             // las columnas de unidades/importes para que no se partan en
-            // dos líneas.
+            // dos líneas. La columna "Uds." es más ancha que antes: en
+            // modo envase (venta al por mayor) su texto es más largo
+            // ("3 cajas (36 ud.)", no solo "36").
             columnStyles: {
-                2: { cellWidth: 55, overflow: 'ellipsize' },
-                3: { cellWidth: 32, halign: 'center' },
-                4: { cellWidth: 60 },
-                5: { cellWidth: 60 },
-                6: { cellWidth: 65 },
+                2: { cellWidth: 50, overflow: 'ellipsize' },
+                3: { cellWidth: 68, halign: 'center' },
+                4: { cellWidth: 58 },
+                5: { cellWidth: 58 },
+                6: { cellWidth: 62 },
             },
             didDrawPage: dibujarPie,
         });
@@ -11943,6 +12287,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             });
         }
 
+        // Avisos — mismo tratamiento que las observaciones de arriba
+        // (splitTextToSize + salto de página si hiciera falta). El
+        // primero es condicional (solo si hay algún producto con
+        // cantidad ambigua, ver listaCompraTieneCantidadAmbigua_); el
+        // segundo se muestra SIEMPRE, a petición explícita de Eloy.
+        const dibujarAvisoPdf_ = (texto) => {
+            y += 24;
+            if (y > alturaPagina - 80) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8.5);
+            doc.setTextColor(140, 100, 20);
+            const lineasAviso = doc.splitTextToSize(texto, anchoPagina - 80);
+            lineasAviso.forEach((linea) => {
+                if (y > alturaPagina - 50) { doc.addPage(); dibujarPie({ pageNumber: doc.internal.getNumberOfPages() }); y = 50; }
+                doc.text(linea, 40, y);
+                y += 11;
+            });
+            doc.setFont('helvetica', 'normal');
+        };
+        if (listaCompraTieneCantidadAmbigua_()) {
+            dibujarAvisoPdf_('Aviso: para algún producto no se ha informado el número de unidades por caja — el precio indicado para esas cajas se calcula por unidad, no por el total real de la caja.');
+        }
+        dibujarAvisoPdf_(`Los precios indicados pueden variar en el momento de la compra respecto a los de este documento, generado el ${listaCompraFechaFormateada_()}.`);
+
         // El pie no se dibuja solo en didDrawPage de autoTable si al
         // final se añaden más líneas tras la tabla sin pasar por otra
         // página — se redibuja aquí por si acaso para la página actual.
@@ -11962,6 +12330,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
         doc.save(listaCompraNombreArchivoPdf_());
+        enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'pdf' });
     }
 
     // Devuelve el PDF ya generado como File (para adjuntarlo vía Web
@@ -12004,7 +12373,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             '',
             ...productos.map(p => {
                 const precio = precioAMostrar_(p);
-                return `• ${p.nombre} (Ref: ${p.ref}) x${p.unidades || 1}${precio ? ' — ' + listaCompraFormatoEuros_(Math.round(precio.con * 100)) : ''}`;
+                return `• ${p.nombre} (Ref: ${p.ref}) x${listaCompraTextoCantidad_(p)}${precio ? ' — ' + listaCompraFormatoEuros_(Math.round(precio.con * 100)) : ''}`;
             }),
             '',
             `Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`,
@@ -12041,6 +12410,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     async function compartirListaCompraWhatsapp_() {
+        // Se cuenta como "exportada" tanto si se ha compartido el PDF
+        // adjunto como si ha caído al resumen en texto (ver más abajo) —
+        // en ambos casos el usuario se ha llevado su lista fuera de la
+        // web, que es lo que de verdad importa para la estadística.
+        enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'whatsapp' });
         if (await intentarCompartirPdfListaCompra_()) return;
         // Sin soporte para compartir archivos (desktop, navegadores sin
         // Web Share API...): no se puede adjuntar el PDF a un enlace
@@ -12053,6 +12427,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     async function compartirListaCompraCorreo_() {
+        enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'correo' });
         if (await intentarCompartirPdfListaCompra_()) return;
         // mailto: no admite adjuntar archivos — se avisa y se deja a mano
         // exportarlo con el botón de al lado, como contempla el encargo.
@@ -12665,9 +13040,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // campaña actúa como añadido), la ficha de detalle debe mostrar
         // el mismo precio rebajado y la misma etiqueta que ya se ve en
         // su tarjeta — misma lógica que construirContenidoTarjeta_, sin
-        // duplicarla. No aplica con precio al por mayor (promoción solo
-        // sobre el PVP público).
-        const destacadoModal = esMayorModal_ ? null : destacadoEfectivoPara_(p.ref);
+        // duplicarla. El chip y el texto de promo son informativos y se
+        // muestran SIEMPRE, también con precio al por mayor — solo el
+        // PRECIO rebajado (que es una promoción sobre el PVP público) no
+        // aplica en ese caso, ver construirContenidoTarjeta_ más arriba
+        // (mismo arreglo, mismo motivo: se perdió al añadir el precio al
+        // por mayor).
+        const destacadoModal = destacadoEfectivoPara_(p.ref);
         const chipDestacadoModal = $('modal-producto-destacado-chip');
         if (destacadoModal) {
             // Reutiliza etiquetaDestacadoHtml_ para la clase/texto del chip,
@@ -12683,18 +13062,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             } else {
                 chipDestacadoModal.style.display = 'none';
             }
-            const precioDestacadoModal = calcularPrecioDestacado_(p, destacadoModal);
-            if (precioDestacadoModal.original !== null) {
-                if (precioDestacadoModal.promo !== null) {
-                    const originalTxt = precioDestacadoModal.original.toFixed(2).replace('.', ',');
-                    const promoTxt = precioDestacadoModal.promo.toFixed(2).replace('.', ',');
-                    precioHtml = `<div class="destacado-precio-descuento">` +
-                        `<span class="destacado-precio-original">${originalTxt} €</span>` +
-                        `<span class="destacado-precio-promo">${promoTxt} €</span>` +
-                        (precioDestacadoModal.pct ? `<span class="destacado-precio-pct">-${precioDestacadoModal.pct}%</span>` : '') +
-                        `</div>`;
-                } else {
-                    precioHtml = `<div class="modal-producto-precio-con">${precioDestacadoModal.original.toFixed(2).replace('.', ',')} €</div>`;
+            if (!esMayorModal_) {
+                const precioDestacadoModal = calcularPrecioDestacado_(p, destacadoModal);
+                if (precioDestacadoModal.original !== null) {
+                    if (precioDestacadoModal.promo !== null) {
+                        const originalTxt = precioDestacadoModal.original.toFixed(2).replace('.', ',');
+                        const promoTxt = precioDestacadoModal.promo.toFixed(2).replace('.', ',');
+                        precioHtml = `<div class="destacado-precio-descuento">` +
+                            `<span class="destacado-precio-original">${originalTxt} €</span>` +
+                            `<span class="destacado-precio-promo">${promoTxt} €</span>` +
+                            (precioDestacadoModal.pct ? `<span class="destacado-precio-pct">-${precioDestacadoModal.pct}%</span>` : '') +
+                            `</div>`;
+                    } else {
+                        precioHtml = `<div class="modal-producto-precio-con">${precioDestacadoModal.original.toFixed(2).replace('.', ',')} €</div>`;
+                    }
                 }
             }
             if (destacadoModal.textoPromocion) {
@@ -12793,6 +13174,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         configurarBotonCartaColores(p);
         configurarEditarFichaTecnica(p);
         configurarInfoAdicional(p);
+        configurarEnvase(p);
         // Oculta también la fila que las envuelve cuando ninguno de los dos
         // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas) —
         // salvo en preproducción, que la deja visible siempre que esté el
@@ -13403,6 +13785,153 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!boton) return; // eliminado del DOM en producción
         boton.style.display = 'inline-flex';
         boton.onclick = () => abrirModalEditarFichaTecnica(p);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Formato de envase ("12 unidades/caja") — detalle a mano, visible
+    // para TODOS (producción incluida) cuando el producto tiene algo
+    // informado; el botón de editar es solo preproducción (ver
+    // window.MOSTRAR_EDITAR_ENVASE). Usado también por la lista de la
+    // compra (ver ShoppingList más abajo) para ofrecer "cajas" como
+    // unidad de venta al por mayor.
+    const ENVASE_TIPOS_FIJOS_ = ['caja', 'bolsa', 'paquete'];
+
+    function envaseCantidadValida_(p) {
+        const cantidad = parseInt(p && p.envase_cantidad, 10);
+        return (Number.isFinite(cantidad) && cantidad > 0) ? cantidad : 0;
+    }
+
+    function formatearEnvase_(p) {
+        const cantidad = envaseCantidadValida_(p);
+        if (!cantidad) return '';
+        const unidad = ((p.envase_unidad || '').toString()).trim();
+        const tipo = ((p.envase_tipo || '').toString()).trim();
+        if (!unidad || !tipo) return '';
+        return `${cantidad} ${unidad}/${tipo}`;
+    }
+
+    function configurarEnvase(p) {
+        const bloque = $('modal-producto-envase');
+        const texto = $('modal-producto-envase-texto');
+        if (bloque && texto) {
+            const formateado = formatearEnvase_(p);
+            bloque.style.display = formateado ? '' : 'none';
+            texto.textContent = formateado;
+        }
+        const boton = $('modal-producto-editar-envase');
+        if (!boton) return; // eliminado del DOM en producción
+        boton.style.display = 'block';
+        boton.onclick = () => abrirModalEditarEnvase(p);
+    }
+
+    let productoEditarEnvaseActual_ = null;
+
+    function abrirModalEditarEnvase(p) {
+        // Red de seguridad además del botón ya eliminado del DOM en
+        // producción: aunque algo llame a esta función directamente,
+        // nunca debe abrirse fuera de preproducción.
+        if (!window.MOSTRAR_EDITAR_ENVASE) return;
+        productoEditarEnvaseActual_ = p;
+        const cantidad = envaseCantidadValida_(p);
+        $('modal-editar-envase-cantidad').value = cantidad || '';
+        $('modal-editar-envase-unidad').value = p.envase_unidad || '';
+        const tipoActual = ((p.envase_tipo || '').toString()).trim().toLowerCase();
+        if (tipoActual && ENVASE_TIPOS_FIJOS_.indexOf(tipoActual) === -1) {
+            $('modal-editar-envase-tipo').value = '__otro__';
+            $('modal-editar-envase-tipo-otro-fila').style.display = '';
+            $('modal-editar-envase-tipo-otro').value = (p.envase_tipo || '').toString().trim();
+        } else {
+            $('modal-editar-envase-tipo').value = tipoActual || 'caja';
+            $('modal-editar-envase-tipo-otro-fila').style.display = 'none';
+            $('modal-editar-envase-tipo-otro').value = '';
+        }
+        $('modal-editar-envase-nombre').textContent = p.nombre;
+        $('modal-editar-envase-error').style.display = 'none';
+        $('modal-editar-envase-overlay').classList.add('activo');
+        setTimeout(() => $('modal-editar-envase-cantidad').focus(), 50);
+    }
+
+    function cerrarModalEditarEnvase() {
+        $('modal-editar-envase-overlay').classList.remove('activo');
+        productoEditarEnvaseActual_ = null;
+    }
+
+    function ejecutarGuardarEnvase() {
+        const p = productoEditarEnvaseActual_;
+        if (!p) return;
+
+        const errorEl = $('modal-editar-envase-error');
+        const btn = $('modal-editar-envase-guardar');
+        const cantidadStr = $('modal-editar-envase-cantidad').value.trim();
+        const unidad = $('modal-editar-envase-unidad').value.trim();
+        const tipoSeleccionado = $('modal-editar-envase-tipo').value;
+        const tipo = tipoSeleccionado === '__otro__' ? $('modal-editar-envase-tipo-otro').value.trim() : tipoSeleccionado;
+
+        errorEl.style.display = 'none';
+
+        // Cantidad vacía: se permite guardar para QUITAR el formato de
+        // envase actual, sin pasar por ninguna validación (no hay nada
+        // que validar en un campo vacío).
+        if (cantidadStr) {
+            const cantidad = parseInt(cantidadStr, 10);
+            if (!Number.isFinite(cantidad) || cantidad <= 0 || cantidad.toString() !== cantidadStr) {
+                errorEl.textContent = 'La cantidad debe ser un número entero mayor que 0.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            if (!unidad) {
+                errorEl.textContent = 'Indica qué se cuenta (p. ej. "unidades" o "paquetes").';
+                errorEl.style.display = 'block';
+                return;
+            }
+            if (!tipo) {
+                errorEl.textContent = 'Indica el envase a gran escala (p. ej. "caja").';
+                errorEl.style.display = 'block';
+                return;
+            }
+        }
+
+        const estadoOriginal = 'Guardar';
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            btn.disabled = false;
+            btn.textContent = estadoOriginal;
+            return;
+        }
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ accion: 'actualizar_envase_producto', referencia: p.ref, cantidad: cantidadStr, unidad: unidad, tipo: tipo }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+
+            // Reflejar el cambio al instante en la propia sesión, sin
+            // esperar a la siguiente carga de productos.json.
+            p.envase_cantidad = data.envase_cantidad;
+            p.envase_unidad = data.envase_unidad;
+            p.envase_tipo = data.envase_tipo;
+            configurarEnvase(p);
+            listaCompraSincronizarEnvaseProducto_(p);
+
+            mostrarToast('✓ Formato de envase actualizado correctamente.');
+            cerrarModalEditarEnvase();
+        })
+        .catch(err => {
+            console.error('Error al actualizar formato de envase:', err);
+            errorEl.textContent = err.message || 'Error al guardar. Verifica la conexión y los logs.';
+            errorEl.style.display = 'block';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = estadoOriginal;
+        });
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -15333,6 +15862,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-editar-ficha-error').classList.remove('es-advertencia');
         $('modal-editar-ficha-input').classList.remove('es-invalida');
         $('modal-editar-ficha-guardar').textContent = 'Guardar';
+    });
+    }
+
+    // Event listeners de la modal "Editar formato de envase" — el modal
+    // se elimina del DOM si MOSTRAR_EDITAR_ENVASE está desactivado
+    // (producción), igual que el resto de modales de administración.
+    if ($('modal-editar-envase-overlay')) {
+    $('modal-editar-envase-cerrar').addEventListener('click', cerrarModalEditarEnvase);
+    $('modal-editar-envase-cancelar').addEventListener('click', cerrarModalEditarEnvase);
+    $('modal-editar-envase-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-editar-envase-overlay') cerrarModalEditarEnvase();
+    });
+    $('modal-editar-envase-guardar').addEventListener('click', ejecutarGuardarEnvase);
+    $('modal-editar-envase-tipo').addEventListener('change', () => {
+        $('modal-editar-envase-tipo-otro-fila').style.display = $('modal-editar-envase-tipo').value === '__otro__' ? '' : 'none';
     });
     }
 

@@ -434,6 +434,13 @@
       .bloque-contenido-texto{ max-width:70ch; white-space:pre-wrap; line-height:1.5; color:var(--ink); }
       .bloque-contenido-img{ max-width:420px; width:100%; }
       .bloque-contenido-img img{ width:100%; height:auto; border-radius:var(--radius-s); display:block; }
+      /* Selector de tamaño de imagen (pequeña/normal/grande) del bloque
+         de texto/imagen — petición real de Eloy: "ajustar el tamaño de
+         la imagen... para que ocupen más espacio". "Normal" mantiene el
+         max-width de siempre (420px apilado, 280px en fila); pequeña y
+         grande son variaciones proporcionales de ese mismo valor. */
+      .bloque-contenido-img--pequena{ max-width:260px; }
+      .bloque-contenido-img--grande{ max-width:620px; }
       /* Imagen a la izquierda/derecha del texto — fila en vez de
          columna, texto alineado a la izquierda (tiene más sentido junto
          a una imagen al lado que centrado). Se apila en vertical en
@@ -442,6 +449,8 @@
       .bloque-contenido-fila{ flex-direction:row; text-align:left; align-items:center; }
       .bloque-contenido-fila .bloque-contenido-texto{ text-align:left; flex:1 1 auto; }
       .bloque-contenido-fila .bloque-contenido-img{ max-width:280px; flex:1 1 220px; }
+      .bloque-contenido-fila .bloque-contenido-img--pequena{ max-width:180px; flex-basis:160px; }
+      .bloque-contenido-fila .bloque-contenido-img--grande{ max-width:420px; flex:1 1 360px; }
       @media (max-width:640px){
         .bloque-contenido-fila{ flex-direction:column; text-align:center; }
         .bloque-contenido-fila .bloque-contenido-texto{ text-align:center; }
@@ -1834,7 +1843,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       b.cursiva ? 'font-style:italic' : '',
     ].filter(Boolean).join(';');
     const textoHtml = (b.texto && b.texto.trim()) ? `<p class="bloque-contenido-texto" style="${estiloTexto}">${escaparHTML_(b.texto)}</p>` : '';
-    const imgHtml = b.imagen ? `<div class="bloque-contenido-img"><img src="${urlImagenCampana(b.imagen, 900)}" alt="" loading="lazy"></div>` : '';
+    const claseTamanoImg = b.imagenTamano === 'pequena' ? ' bloque-contenido-img--pequena' : (b.imagenTamano === 'grande' ? ' bloque-contenido-img--grande' : '');
+    const imgHtml = b.imagen ? `<div class="bloque-contenido-img${claseTamanoImg}"><img src="${urlImagenCampana(b.imagen, 900)}" alt="" loading="lazy"></div>` : '';
     if(!textoHtml && !imgHtml) return '';
     const enFila = b.imagenPosicion === 'izquierda' || b.imagenPosicion === 'derecha';
     const partes = (b.imagenPosicion === 'abajo' || b.imagenPosicion === 'derecha') ? [textoHtml, imgHtml] : [imgHtml, textoHtml];
@@ -2507,8 +2517,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // descuento (ver sanearDestacados_/el panel de edición — nunca
     // llegan los dos a la vez), mismo tratamiento visual que un
     // descuento normal.
-    const tienePrecioPromo = !precioMayor && Number(precioPromo) > 0;
-    const tieneDescuento = !precioMayor && !tienePrecioPromo && Number(descuento) > 0;
+    //
+    // "tieneXxxConfigurada" (sin el "!precioMayor") es lo que de verdad
+    // decide si se MUESTRAN LOS CHIPS (OFERTA, %, 2x1/3x2...) — son
+    // informativos sobre el producto, no sobre el precio en pantalla, y
+    // deben verse igual en perfil profesional. "tieneXxx" (con
+    // "!precioMayor") sigue decidiendo solo el PRECIO mostrado: el
+    // mayorista tiene su propio precio fijo, la promoción sobre el PVP
+    // público no se le aplica A ÉL. Aviso real de Eloy: "en los
+    // productos destacados no aparece los chips de oferta o 3x2...
+    // solo aparece en la vista de usuario normal" — se perdió al
+    // reutilizar aquí la misma condición para las dos cosas a la vez.
+    const tienePrecioPromoConfigurada = Number(precioPromo) > 0;
+    const tieneDescuentoConfigurado = !tienePrecioPromoConfigurada && Number(descuento) > 0;
+    const tieneOfertaBadge = tieneDescuentoConfigurado || tienePrecioPromoConfigurada;
+    const tienePrecioPromo = !precioMayor && tienePrecioPromoConfigurada;
+    const tieneDescuento = !precioMayor && tieneDescuentoConfigurado;
     const tieneOferta = tieneDescuento || tienePrecioPromo;
     const precioRebajado = tieneDescuento ? precioConDescuento(p.precio_con, descuento) : (tienePrecioPromo ? precioNum(precioPromo) : null);
     // p.precio_sin ya viene calculado del propio catálogo (no se
@@ -2536,16 +2560,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
          <span class="precio precio-rebajado">${fmtEUR(precioRebajado)}&nbsp;€<span class="iva">IVA inc.</span></span>`
       : `<span class="precio">${fmtEUR(p.precio_con)}&nbsp;€<span class="iva">IVA inc.</span></span>
          ${precioSinIVA}`;
-    // Chip de promoción (2x1, 3x2…), aparte del % de descuento — mismo
-    // criterio que el descuento en perfil profesional: son promociones
-    // sobre el PVP público, se ocultan con el precio mayor.
-    const tienePromoBadge = !precioMayor && !!(destacado && destacado.promo && destacado.promo.trim());
+    // Chip de promoción (2x1, 3x2…), aparte del % de descuento — chip
+    // informativo, se ve igual en perfil profesional (ver comentario de
+    // arriba).
+    const tienePromoBadge = !!(destacado && destacado.promo && destacado.promo.trim());
     return `
       <article class="card ${ia?'ia-card':''}" data-ref="${p.ref}" data-descuento="${tieneDescuento?descuento:0}" data-precio-promo="${tienePrecioPromo?precioPromo:0}" role="button" tabindex="0" aria-label="Ver detalle de ${p.nombre||p.ref}"${atributoTam}>
         ${tam > 1 ? `<span class="card-destacado-badge">${ICONS.sparkle}Destacado</span>` : ''}
-        ${(tieneOferta || tienePromoBadge) ? `<div class="card-badges-izq">
-          ${tieneDescuento ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
-          ${tienePrecioPromo ? `<span class="card-descuento-badge">🏷️ OFERTA</span>` : ''}
+        ${(tieneOfertaBadge || tienePromoBadge) ? `<div class="card-badges-izq">
+          ${tieneDescuentoConfigurado ? `<span class="card-descuento-badge">🏷️ -${descuento}%</span>` : ''}
+          ${tienePrecioPromoConfigurada ? `<span class="card-descuento-badge">🏷️ OFERTA</span>` : ''}
           ${tienePromoBadge ? `<span class="card-promo-badge">🎁 ${escaparHTML_(destacado.promo)}</span>` : ''}
         </div>` : ''}
         <div class="icon-tile">
@@ -2642,10 +2666,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       textoPie.hidden = true;
     }
 
-    // Chip de promoción (2x1, 3x2…) — oculto en perfil profesional, igual
-    // que en la propia tarjeta (son promociones sobre el PVP público).
+    // Chip de promoción (2x1, 3x2…) — informativo, se ve igual en
+    // perfil profesional (ver comentario sobre tienePrecioPromoConfigurada
+    // en productCard más arriba: solo el PRECIO rebajado no aplica al
+    // por mayor, el chip no es "el precio").
     const promoBadge = $("#modal-producto-promo");
-    if(!precioMayorModal && destacadoRef && destacadoRef.promo){
+    if(destacadoRef && destacadoRef.promo){
       promoBadge.textContent = `🎁 ${destacadoRef.promo}`;
       promoBadge.hidden = false;
     } else {
@@ -2949,6 +2975,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   let ordenMostrar = []; // array de { tipo:'producto', ref } | { tipo:'bloque', id }
   const MAX_TEXTO_BLOQUE = 2000;
   const TAMANOS_BLOQUE_ETIQUETAS_ = { normal:'Normal', grande:'Grande', 'muy-grande':'Muy grande' };
+  // Tamaño de la IMAGEN del bloque — independiente de TAMANOS_BLOQUE_ETIQUETAS_
+  // (ese es el tamaño del TEXTO). Petición real de Eloy: "ajustar el
+  // tamaño de la imagen... para que ocupen más espacio, un selector de
+  // pequeña, normal y grande".
+  const TAMANOS_IMAGEN_BLOQUE_ETIQUETAS_ = { pequena:'Pequeña', normal:'Normal', grande:'Grande' };
   const HINT_IA_DEFECTO = 'Usa el título, las fechas y las áreas de la campaña para proponer productos reales del catálogo — luego puedes quitar, mantener o añadir más a mano.';
   const ETIQUETAS_ALINEACION = { izquierda:'Izda.', centro:'Centro', derecha:'Dcha.' };
   const ETIQUETAS_POSICION = { arriba:'Arriba', medio:'Medio', abajo:'Abajo' };
@@ -3104,7 +3135,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
   function crearBloqueNuevo_(){
     const id = 'bloque-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-    bloques[id] = { id, texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba' };
+    bloques[id] = { id, texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba', imagenTamano:'normal' };
     ordenMostrar.push({ tipo:'bloque', id });
     return id;
   }
@@ -3208,7 +3239,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>`;
   }
   function chipBloqueHTML_(id, indice, total){
-    const b = bloques[id] || { texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba' };
+    const b = bloques[id] || { texto:'', tamano:'normal', negrita:false, cursiva:false, imagen:'', imagenPosicion:'arriba', imagenTamano:'normal' };
     const texto = (b.texto||'').replace(/</g,'&lt;');
     return `<div class="chip-item chip-bloque" draggable="true" data-clave="bloque:${id}">
       <button type="button" class="chip-arrastrar" title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar este bloque">
@@ -3235,6 +3266,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <option value="abajo" ${b.imagenPosicion==='abajo'?'selected':''}>Debajo</option>
               <option value="izquierda" ${b.imagenPosicion==='izquierda'?'selected':''}>A la izquierda</option>
               <option value="derecha" ${b.imagenPosicion==='derecha'?'selected':''}>A la derecha</option>
+            </select>
+          </label>
+          <label>Tamaño de la imagen
+            <select data-campo-bloque="imagenTamano" data-bloque="${id}" ${!b.imagen?'disabled':''}>
+              ${Object.keys(TAMANOS_IMAGEN_BLOQUE_ETIQUETAS_).map(k=>`<option value="${k}" ${k===(b.imagenTamano||'normal')?'selected':''}>${TAMANOS_IMAGEN_BLOQUE_ETIQUETAS_[k]}</option>`).join('')}
             </select>
           </label>
         </div>
@@ -3627,7 +3663,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       (Array.isArray(c.bloquesContenido) ? c.bloquesContenido : []).forEach(b=>{
         if(b && b.id) bloques[b.id] = {
           id:b.id, texto:b.texto||'', tamano:b.tamano||'normal', negrita:!!b.negrita, cursiva:!!b.cursiva,
-          imagen:b.imagen||'', imagenPosicion:b.imagenPosicion||'arriba',
+          imagen:b.imagen||'', imagenPosicion:b.imagenPosicion||'arriba', imagenTamano:b.imagenTamano||'normal',
         };
       });
       // Escaparates guardados antes de esta función no tienen
@@ -4692,19 +4728,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // dimensiones a la vez — con solo 3 columnas en una página A4 (a
         // diferencia de la web, con sitio para 5-8 columnas en pantallas
         // anchas), ensanchar sin dar más alto deja bloques panorámicos
-        // casi vacíos en vez de cuadrados. Tamaño 3-6 se agrupan en un
-        // único nivel "grande" (ancho completo, 3x2 celdas — no 3x3):
-        // con solo 3 columnas no hay forma real de diferenciar más
-        // niveles por ancho, y 3x3 (182x182mm, casi una página entera)
+        // casi vacíos en vez de cuadrados. Con solo 3 columnas no hay
+        // forma real de diferenciar más de dos niveles por ancho, así
+        // que tamaño 2-4 se agrupan en un nivel "medio" (2x2 celdas) y
+        // solo 5-6 (los destacados realmente enormes) llegan a ancho
+        // completo (3x2 — no 3x3: 182x182mm, casi una página entera,
         // dejaba demasiado a menudo una página casi en blanco cuando ese
-        // destacado no cabía justo después de la cabecera — "hay que
-        // ocupar más espacio e intentar dejar menos huecos vacíos",
-        // aviso real de Eloy. 3x2 sigue siendo mucho más cuadrado que el
-        // diseño original (ratio de imagen ~2:1 en vez de ~3,9:1) pero
-        // con la mitad de alto, cabe en muchos más huecos sin romper
-        // página.
-        if(tam >= 3) return { spanCols: baseCols, spanRows: 2 };
-        if(tam === 2) return { spanCols: 2, spanRows: 2 };
+        // destacado no cabía justo después de la cabecera).
+        //
+        // Cuarto aviso real de Eloy con el mismo folleto de ejemplo
+        // (tras el arreglo del agrupado por "grupo" vacío, ver más
+        // abajo): "haz más pequeños los bloques para que se distribuya
+        // mejor". Antes, tamaño 3 y 4 TAMBIÉN ocupaban ancho completo
+        // (3x2) como el 5/6 — un destacado de tamaño medio-alto (muy
+        // habitual: en la práctica, la mayoría de destacados reales son
+        // 2, 3 o 4, no 5/6) bloqueaba igualmente LAS TRES columnas
+        // enteras, sin dejar ninguna columna libre al lado para que un
+        // producto normal la rellenara — de ahí buena parte del hueco
+        // vacío que seguía sobrando tras ese primer arreglo. Al bajar
+        // 3 y 4 a 2x2 (como el 2), siempre queda una columna libre al
+        // lado de CUALQUIER destacado salvo los 5/6 (que de verdad lo
+        // merecen, son la excepción, no la norma), que un producto
+        // normal puede ocupar de inmediato.
+        if(tam >= 5) return { spanCols: baseCols, spanRows: 2 };
+        if(tam >= 2) return { spanCols: 2, spanRows: 2 };
         return { spanCols: 1, spanRows: 1 };
       }
 
@@ -4798,15 +4845,37 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // grupo repetido más adelante (no contiguo) simplemente vuelve a
       // salir con su mismo título, en vez de "fusionarse" con el bloque
       // de antes reordenando productos.
+      //
+      // Un producto SIN "grupo" (texto vacío) NUNCA abre una sección
+      // nueva por sí solo: se queda dentro de la que ya estuviera
+      // abierta (o sin título, si todavía no se ha abierto ninguna).
+      // Motivo real (folleto "Productos Mirka", aviso de Eloy: "hay
+      // productos que solo se vuelcan en una página dejando hueco
+      // vacío"): cada "grupo" se empaqueta en su PROPIA rejilla, nueva y
+      // vacía (ver empaquetarGrupo_), que nunca comparte huecos con la
+      // de otro grupo — necesario cuando de verdad hay dos secciones
+      // distintas que el usuario quiere separar visualmente. Pero en esa
+      // campaña real, solo los primeros productos (los destacados
+      // grandes) tenían el campo "grupo" relleno ("MAQUINARIA"); el
+      // resto de productos normales lo tenían vacío — un dato incompleto
+      // en la hoja, no una sección distinta de verdad (no se dibuja
+      // ningún título nuevo para un grupo vacío). Tratar ese cambio a
+      // "vacío" como un grupo distinto abría igualmente una rejilla
+      // nueva y aislada para el resto de productos, así que ninguno de
+      // ellos podía rellenar el hueco que dejaban los destacados grandes
+      // en sus propias páginas — de ahí el hueco vacío enorme. Al
+      // fusionarlos con la sección abierta, pueden ocupar esos huecos.
       function construirGruposDeTramoFolleto_(refsTramo){
         const salida = [];
         if(c.agruparProductos){
-          let grupoAnterior = Symbol('sin-grupo');
+          let tituloActivo = Symbol('sin-grupo');
           refsTramo.forEach(ref => {
             const grupoActual = ((PRODUCTS[ref] && PRODUCTS[ref].grupo) || '').toString().trim();
-            if(grupoActual !== grupoAnterior){
-              salida.push({ tipo:'grupo', titulo: grupoActual || null, refs: [] });
-              grupoAnterior = grupoActual;
+            if(grupoActual && grupoActual !== tituloActivo){
+              salida.push({ tipo:'grupo', titulo: grupoActual, refs: [] });
+              tituloActivo = grupoActual;
+            } else if(!salida.length){
+              salida.push({ tipo:'grupo', titulo: null, refs: [] });
             }
             salida[salida.length - 1].refs.push(ref);
           });
@@ -4878,7 +4947,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       }).concat(
         gruposFolleto.filter(g => g.tipo === 'bloque' && g.bloque && g.bloque.imagen).map(g => ({
           ref: 'bloque:' + g.bloque.id,
-          url: urlImagenCampanaFolleto(g.bloque.imagen, 700),
+          // Resolución pedida a Drive algo mayor para el tamaño "grande"
+          // (ver dibujarBloqueContenidoFolleto_/FACTOR_TAMANO_IMG_BLOQUE_)
+          // — si no, una imagen que ahora se dibuja más grande en el PDF
+          // saldría pixelada.
+          url: urlImagenCampanaFolleto(g.bloque.imagen, g.bloque.imagenTamano === 'grande' ? 1100 : 700),
           opciones: {}
         }))
       );
@@ -4923,8 +4996,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // mismo criterio que en la tarjeta pública y el modal.
         const precioPromo = (d && Number(d.precioPromo) > 0) ? Number(d.precioPromo) : 0;
         const descuento = precioPromo ? 0 : ((d && Number(d.descuento) > 0) ? Number(d.descuento) : (Number(c.descuento) || 0));
-        const tienePrecioPromo = !precioMayorFolleto && precioPromo > 0;
-        const tieneDescuento = !precioMayorFolleto && !tienePrecioPromo && descuento > 0;
+        // "ConfiguradoFolleto" (sin el "!precioMayorFolleto") decide si
+        // se dibuja la INSIGNIA (OFERTA/-X%) — informativa, igual en
+        // perfil profesional (ver mismo criterio en productCard más
+        // arriba). "tieneXxxFolleto" sigue decidiendo solo el PRECIO
+        // dibujado: el mayorista tiene su propio precio fijo.
+        const tienePrecioPromoConfiguradoFolleto = precioPromo > 0;
+        const tieneDescuentoConfiguradoFolleto = !tienePrecioPromoConfiguradoFolleto && descuento > 0;
+        const tieneOfertaBadgeFolleto = tieneDescuentoConfiguradoFolleto || tienePrecioPromoConfiguradoFolleto;
+        const tienePrecioPromo = !precioMayorFolleto && tienePrecioPromoConfiguradoFolleto;
+        const tieneDescuento = !precioMayorFolleto && tieneDescuentoConfiguradoFolleto;
         const tieneOfertaFolleto = tieneDescuento || tienePrecioPromo;
         const esDestacado = !!(d && d.tamano > 1);
         const tieneTextoProducto = !!(d && d.texto && d.texto.trim());
@@ -4990,8 +5071,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           doc.text(txt, x + padX + 1.5 + w/2, insigniaY + 3.2, { align:'center' });
         }
         let insigniaYDerecha = insigniaY;
-        if(tieneOfertaFolleto){
-          const txt = tieneDescuento ? `-${descuento}%` : 'OFERTA';
+        if(tieneOfertaBadgeFolleto){
+          const txt = tieneDescuentoConfiguradoFolleto ? `-${descuento}%` : 'OFERTA';
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(6.6);
           const w = doc.getTextWidth(txt) + 4;
@@ -5155,12 +5236,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.setFont('helvetica', estiloFuente);
         doc.setFontSize(tamanoFuente);
 
+        // Tamaño de la imagen (pequeña/normal/grande) — mismo selector y
+        // mismo criterio proporcional que en la web (ver
+        // .bloque-contenido-img--pequena/--grande). "Normal" mantiene las
+        // medidas de siempre; pequeña/grande las escalan.
+        const FACTOR_TAMANO_IMG_BLOQUE_ = bloque.imagenTamano === 'pequena' ? 0.65 : (bloque.imagenTamano === 'grande' ? 1.5 : 1);
+
         // Imagen a la izquierda/derecha del texto — dos columnas en vez
         // de apilado vertical (mismo criterio que en la web: ver
         // .bloque-contenido-fila).
         const enFila = tieneImagen && (bloque.imagenPosicion === 'izquierda' || bloque.imagenPosicion === 'derecha');
         if(enFila){
-          const ANCHO_IMG_FILA_ = 55, ALTO_IMG_FILA_MAX_ = 70, GAP_COLUMNAS_ = 8;
+          const ANCHO_IMG_FILA_ = 55 * FACTOR_TAMANO_IMG_BLOQUE_, ALTO_IMG_FILA_MAX_ = 70 * FACTOR_TAMANO_IMG_BLOQUE_, GAP_COLUMNAS_ = 8;
           const escala = Math.min(ANCHO_IMG_FILA_ / foto.w, ALTO_IMG_FILA_MAX_ / foto.h, 1);
           const anchoImg = foto.w * escala, altoImg = foto.h * escala;
           const anchoTexto = contentWidth - anchoImg - GAP_COLUMNAS_;
@@ -5190,7 +5277,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // en una sola columna.
         const lineasTexto = texto ? doc.splitTextToSize(texto, contentWidth) : [];
         const altoTexto = lineasTexto.length ? lineasTexto.length * interlineado + 4 : 0;
-        const ANCHO_IMG_BLOQUE_ = 70, ALTO_IMG_MAX_ = 90;
+        const ANCHO_IMG_BLOQUE_ = 70 * FACTOR_TAMANO_IMG_BLOQUE_, ALTO_IMG_MAX_ = 90 * FACTOR_TAMANO_IMG_BLOQUE_;
         let anchoImg = 0, altoImg = 0;
         if(tieneImagen){
           const escala = Math.min(ANCHO_IMG_BLOQUE_ / foto.w, ALTO_IMG_MAX_ / foto.h, 1);
