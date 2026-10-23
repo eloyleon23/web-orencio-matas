@@ -601,8 +601,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 btn.disabled = true;
                 btn.textContent = 'ENVIANDO...';
 
-                var logoUrl = 'https://eloyleon23.github.io/web-orencio-matas/assets/logos/logo-orencio.png';
-                var logoCalUrl = 'https://eloyleon23.github.io/web-orencio-matas/assets/logos/logo_calidad.svg';
+                // URL absolutas de producción (los clientes de correo no pueden
+                // cargar rutas relativas) — antes apuntaban por error al dominio
+                // de preproducción de GitHub Pages, ver auditoría SEO.
+                var logoUrl = 'https://orenciomatas.es/assets/logos/logo-orencio.png';
+                var logoCalUrl = 'https://orenciomatas.es/assets/logos/logo_calidad.svg';
 
                 var cuerpo = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f0f0f0;font-family:Arial,sans-serif;">' +
                   '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f0f0;padding:20px 0;">' +
