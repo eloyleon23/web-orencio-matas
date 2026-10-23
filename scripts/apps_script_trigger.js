@@ -1725,7 +1725,7 @@ function crearHojaAyuda() {
     ['DESCRIPCIÓN DE COLUMNAS — HOJA PRODUCTOS', ''],
     ['referencia', 'Código EAN del producto. Clave única de identificación'],
     ['nombre', 'Nombre comercial del producto'],
-    ['marca', 'Marca del producto (uso interno, no aparece en el catálogo)'],
+    ['marca', 'Marca/fabricante del producto. Se exporta al buscador como "fabricante": si se rellena, muestra el logo de la marca (solo área Talleres) y activa el filtro por marca'],
     ['area', 'Área: drogueria / perfumeria / pinturas / talleres. Se asigna desde FamiliaProductos (ver "Reevaluar áreas")'],
     ['tipologia', 'Subcategoría/familia. Debe coincidir EXACTAMENTE con la columna Familia de FamiliaProductos'],
     ['precio_sin_iva', 'Precio base sin impuestos (coma decimal). Ej: 2,45'],
@@ -3305,6 +3305,20 @@ function regenerarCacheCompletaDesdeSheet_() {
         envase_cantidad: valorCelda_(row, 'envase_cantidad'),
         envase_unidad: valorCelda_(row, 'envase_unidad'),
         envase_tipo: valorCelda_(row, 'envase_tipo'),
+        // Marca/fabricante del producto — columna "marca" del Sheet, ya
+        // existente (capturada desde el alta/edición en panel_admin,
+        // antes marcada "uso interno, no aparece en el catálogo").
+        // Auditoría SEO: se exporta aquí como "fabricante" porque
+        // buscador.html ya tiene toda la lógica de badges/filtro de
+        // marca construida sobre ese nombre de campo (usada hasta ahora
+        // solo por los catálogos de proveedor de Talleres cargados
+        // aparte — Zaphiro/Glasurit/BESA/Baslac). Reutilizar la MISMA
+        // columna y el MISMO nombre de campo activa esa lógica ya
+        // existente también para el catálogo principal, sin tocar
+        // nada de buscador.html. No cambia nada mientras "marca" siga
+        // vacía — solo empieza a mostrarse en cuanto se rellene un
+        // producto desde panel_admin.
+        fabricante: valorCelda_(row, 'marca'),
       });
     });
   }
