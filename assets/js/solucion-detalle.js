@@ -186,6 +186,28 @@
     const ogUrl = document.getElementById('seo-og-url');
     if (ogUrl) ogUrl.setAttribute('content', seoUrl);
 
+    // Datos estructurados BreadcrumbList (JSON-LD) — auditoría SEO: solo
+    // los dos niveles que de verdad son páginas navegables (Centro de
+    // Soluciones y esta propia ficha); el nivel de categoría intermedio
+    // de sol.breadcrumb (p.ej. "Coche y carrocería") no tiene una URL
+    // propia a la que apuntar, así que se omite en vez de inventar una
+    // que no existe.
+    let breadcrumbScript = document.getElementById('seo-breadcrumb-jsonld');
+    if (!breadcrumbScript) {
+      breadcrumbScript = document.createElement('script');
+      breadcrumbScript.type = 'application/ld+json';
+      breadcrumbScript.id = 'seo-breadcrumb-jsonld';
+      document.head.appendChild(breadcrumbScript);
+    }
+    breadcrumbScript.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Centro de Soluciones', item: 'https://orenciomatas.es/centro-soluciones.html' },
+        { '@type': 'ListItem', position: 2, name: sol.title, item: seoUrl },
+      ],
+    });
+
     const relacionadas = (sol.relatedSolutions || []).map((s) => D.soluciones[s]).filter(Boolean);
 
     cont.innerHTML = `
