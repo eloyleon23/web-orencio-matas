@@ -4042,6 +4042,11 @@ function doPost(e) {
       return procesarActualizarEnvaseProducto(data);
     }
 
+    if (accion === 'actualizar_subfamilia_producto') {
+      console.log('Acción: actualizar_subfamilia_producto');
+      return procesarActualizarSubfamiliaProducto(data);
+    }
+
     // NUEVO — Escaparate OM
     if (accion === 'guardar_campana') {
       console.log('Acción: guardar_campana');
@@ -4869,6 +4874,74 @@ function procesarActualizarEnvaseProducto(data) {
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error al procesar actualización de formato de envase:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Subfamilia de un producto (texto libre, o "General" cuando no aplica
+// ninguna subfamilia concreta) — botón "Editar subfamilia" (lapicero)
+// del detalle del producto en el buscador, SOLO visible en
+// preproducción (ver window.MOSTRAR_EDITAR_SUBFAMILIA en buscador.html).
+// Mismo mecanismo que procesarActualizarFichaUrl/procesarActualizarEnvaseProducto
+// (columna del Sheet + parcheo instantáneo de la caché de productos.json),
+// sin PIN — igual que esos dos, se edita desde el propio buscador público.
+function procesarActualizarSubfamiliaProducto(data) {
+  try {
+    console.log('procesarActualizarSubfamiliaProducto iniciado');
+
+    const referencia = (data.referencia || '').toString().trim();
+    const subfamilia = (data.subfamilia || '').toString().trim();
+
+    if (!referencia) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta la referencia del producto' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    let colSubfamilia = PROD['subfamilia'];
+    if (colSubfamilia === undefined) {
+      colSubfamilia = prodHeaders.length;
+      sheetProd.getRange(1, colSubfamilia + 1).setValue('subfamilia');
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    sheetProd.getRange(prodRowNum, colSubfamilia + 1).setValue(subfamilia);
+    console.log('subfamilia actualizada:', subfamilia || '(vacía)');
+
+    // Vista rápida: parchear productos.json al instante.
+    actualizarProductoEnCache_(referencia, { subfamilia: subfamilia });
+
+    console.log('procesarActualizarSubfamiliaProducto completado exitosamente');
+    return ContentService.createTextOutput(JSON.stringify({ success: true, subfamilia: subfamilia }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al procesar actualización de subfamilia:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
