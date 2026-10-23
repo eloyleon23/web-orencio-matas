@@ -2938,6 +2938,28 @@
         }
         .modal-producto-editar-ficha:hover { background: #eef2f7; filter: none; }
 
+        /* Botón "Editar subfamilia" — solo preproducción (ver
+           window.MOSTRAR_EDITAR_SUBFAMILIA). Lapicero compacto en línea
+           junto al texto de familia/subfamilia del detalle. */
+        .modal-producto-editar-subfamilia {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            margin-left: 4px;
+            padding: 0;
+            background: var(--light);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            vertical-align: middle;
+            transition: filter 0.15s;
+        }
+        .modal-producto-editar-subfamilia:hover { background: #eef2f7; filter: none; }
+
         /* Modal "Editar ficha técnica" — reutiliza .modal-overlay/
            .modal-producto-box/.modal-producto-cerrar ya existentes para el
            fondo, la caja y el botón de cerrar; aquí solo lo específico de
@@ -4715,7 +4737,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </div>
                 </div>
                 <div class="modal-producto-detalles">
-                    <p><strong>Familia:</strong> <span id="modal-producto-familia"></span></p>
+                    <p><strong>Familia:</strong> <span id="modal-producto-familia"></span>
+                        <!-- Solo preproducción (ver window.MOSTRAR_EDITAR_SUBFAMILIA) -->
+                        <button type="button" id="modal-producto-editar-subfamilia" class="modal-producto-editar-subfamilia" title="Editar subfamilia" style="display:none;">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </p>
                     <p><strong>Área:</strong> <span id="modal-producto-area"></span></p>
                     <!-- Formato de envase ("12 unidades/caja") — visible para
                          TODOS (producción incluida) solo cuando se ha
@@ -4890,6 +4917,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-editar-ficha-acciones">
             <button type="button" id="modal-editar-ficha-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
             <button type="button" id="modal-editar-ficha-guardar" class="modal-editar-ficha-guardar">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal "Editar subfamilia" — solo preproducción -->
+<div class="modal-overlay" id="modal-editar-subfamilia-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box">
+        <button class="modal-producto-cerrar" id="modal-editar-subfamilia-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-pen"></i> Editar subfamilia</h3>
+        <p id="modal-editar-subfamilia-nombre" class="modal-editar-ficha-nombre"></p>
+        <div class="modal-editar-ficha-campo">
+            <label for="modal-editar-subfamilia-input">Subfamilia</label>
+            <input type="text" id="modal-editar-subfamilia-input" placeholder="Nombre de la subfamilia" autocomplete="off">
+        </div>
+        <p id="modal-editar-subfamilia-error" class="modal-editar-ficha-error"></p>
+        <p class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-circle-info"></i>
+            <button type="button" id="modal-editar-subfamilia-general" class="modal-editar-ficha-cancelar" style="padding: 4px 10px; font-size: 0.78rem;">Marcar como "General"</button>
+        </p>
+        <div class="modal-editar-ficha-acciones">
+            <button type="button" id="modal-editar-subfamilia-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
+            <button type="button" id="modal-editar-subfamilia-guardar" class="modal-editar-ficha-guardar">Actualizar</button>
         </div>
     </div>
 </div>
@@ -5680,6 +5731,7 @@ window.MOSTRAR_GESTION_RELACIONADOS = window.OM_PREPRODUCCION;
 window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
 window.MOSTRAR_EDITAR_INFO_ADICIONAL = window.OM_PREPRODUCCION;
 window.MOSTRAR_EDITAR_ENVASE = window.OM_PREPRODUCCION;
+window.MOSTRAR_EDITAR_SUBFAMILIA = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_PANEL_ANALITICA = window.OM_PREPRODUCCION;
@@ -5760,6 +5812,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-editar-info-overlay', window.MOSTRAR_EDITAR_INFO_ADICIONAL);
     eliminarSiRestringido_('modal-producto-editar-envase', window.MOSTRAR_EDITAR_ENVASE);
     eliminarSiRestringido_('modal-editar-envase-overlay', window.MOSTRAR_EDITAR_ENVASE);
+    eliminarSiRestringido_('modal-producto-editar-subfamilia', window.MOSTRAR_EDITAR_SUBFAMILIA);
+    eliminarSiRestringido_('modal-editar-subfamilia-overlay', window.MOSTRAR_EDITAR_SUBFAMILIA);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
         const btnGD = document.getElementById('btn-gestionar-destacados');
         if (btnGD) btnGD.classList.add('visible');
@@ -13175,6 +13229,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         configurarEditarFichaTecnica(p);
         configurarInfoAdicional(p);
         configurarEnvase(p);
+        configurarEditarSubfamilia(p);
         // Oculta también la fila que las envuelve cuando ninguno de los dos
         // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas) —
         // salvo en preproducción, que la deja visible siempre que esté el
@@ -13785,6 +13840,92 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!boton) return; // eliminado del DOM en producción
         boton.style.display = 'inline-flex';
         boton.onclick = () => abrirModalEditarFichaTecnica(p);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Subfamilia de un producto — botón "lapicero" junto a la línea de
+    // Familia en el detalle, solo preproducción (ver
+    // window.MOSTRAR_EDITAR_SUBFAMILIA). Mismo patrón que la ficha
+    // técnica/información adicional/envase: sin PIN, editable desde el
+    // propio buscador público en preproducción.
+    let productoEditarSubfamiliaActual_ = null;
+
+    function abrirModalEditarSubfamilia(p) {
+        // Red de seguridad además del botón ya eliminado del DOM en
+        // producción: aunque algo llame a esta función directamente,
+        // nunca debe abrirse fuera de preproducción.
+        if (!window.MOSTRAR_EDITAR_SUBFAMILIA) return;
+        productoEditarSubfamiliaActual_ = p;
+        $('modal-editar-subfamilia-input').value = p.subfamilia || '';
+        $('modal-editar-subfamilia-nombre').textContent = p.nombre;
+        $('modal-editar-subfamilia-error').style.display = 'none';
+        $('modal-editar-subfamilia-overlay').classList.add('activo');
+        setTimeout(() => $('modal-editar-subfamilia-input').focus(), 50);
+    }
+
+    function cerrarModalEditarSubfamilia() {
+        $('modal-editar-subfamilia-overlay').classList.remove('activo');
+        productoEditarSubfamiliaActual_ = null;
+    }
+
+    function ejecutarGuardarSubfamilia() {
+        const p = productoEditarSubfamiliaActual_;
+        if (!p) return;
+
+        const input = $('modal-editar-subfamilia-input');
+        const errorEl = $('modal-editar-subfamilia-error');
+        const btn = $('modal-editar-subfamilia-guardar');
+        const subfamilia = input.value.trim();
+        const estadoOriginal = 'Actualizar';
+
+        errorEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            btn.disabled = false;
+            btn.textContent = estadoOriginal;
+            return;
+        }
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ accion: 'actualizar_subfamilia_producto', referencia: p.ref, subfamilia: subfamilia }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+
+            // Reflejar el cambio al instante en la propia sesión, sin
+            // esperar a la siguiente carga de productos.json.
+            p.subfamilia = subfamilia;
+            const familiaTexto = p.familia || '—';
+            const subfamiliaTexto = p.subfamilia ? ` (${p.subfamilia})` : '';
+            const fabricanteTexto = (p.area === 'talleres' && p.fabricante) ? ` · ${p.fabricante}` : '';
+            $('modal-producto-familia').textContent = familiaTexto + subfamiliaTexto + fabricanteTexto;
+
+            mostrarToast('✓ Subfamilia actualizada correctamente.');
+            cerrarModalEditarSubfamilia();
+        })
+        .catch(err => {
+            console.error('Error al actualizar subfamilia:', err);
+            errorEl.textContent = err.message || 'Error al guardar. Verifica la conexión y los logs.';
+            errorEl.style.display = 'block';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = estadoOriginal;
+        });
+    }
+
+    function configurarEditarSubfamilia(p) {
+        const boton = $('modal-producto-editar-subfamilia');
+        if (!boton) return; // eliminado del DOM en producción
+        boton.style.display = 'inline-flex';
+        boton.onclick = () => abrirModalEditarSubfamilia(p);
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -15862,6 +16003,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-editar-ficha-error').classList.remove('es-advertencia');
         $('modal-editar-ficha-input').classList.remove('es-invalida');
         $('modal-editar-ficha-guardar').textContent = 'Guardar';
+    });
+    }
+
+    // Event listeners de la modal "Editar subfamilia" — el modal se
+    // elimina del DOM si MOSTRAR_EDITAR_SUBFAMILIA está desactivado
+    // (producción), igual que el resto de modales de administración.
+    if ($('modal-editar-subfamilia-overlay')) {
+    $('modal-editar-subfamilia-cerrar').addEventListener('click', cerrarModalEditarSubfamilia);
+    $('modal-editar-subfamilia-cancelar').addEventListener('click', cerrarModalEditarSubfamilia);
+    $('modal-editar-subfamilia-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-editar-subfamilia-overlay') cerrarModalEditarSubfamilia();
+    });
+    $('modal-editar-subfamilia-guardar').addEventListener('click', ejecutarGuardarSubfamilia);
+    $('modal-editar-subfamilia-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); ejecutarGuardarSubfamilia(); }
+    });
+    $('modal-editar-subfamilia-general').addEventListener('click', () => {
+        $('modal-editar-subfamilia-input').value = 'General';
+        $('modal-editar-subfamilia-input').focus();
     });
     }
 
