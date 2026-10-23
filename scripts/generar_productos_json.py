@@ -196,6 +196,12 @@ def exportar_productos_json(productos, familias, subfamilias):
         envase_unidad = p.get('envase_unidad', '').strip()
         envase_tipo = p.get('envase_tipo', '').strip()
 
+        # Marca/fabricante — columna "marca" del Sheet, ya existente
+        # (antes de uso interno). Se exporta como "fabricante", el
+        # nombre de campo que ya usa buscador.html para sus badges y
+        # filtro de marca — ver apps_script_trigger.js.
+        fabricante = p.get('marca', '').strip()
+
         exportados.append({
             'ref':       ref,
             'nombre':    p.get('nombre', '').strip(),
@@ -227,6 +233,7 @@ def exportar_productos_json(productos, familias, subfamilias):
             'envase_cantidad': envase_cantidad,
             'envase_unidad': envase_unidad,
             'envase_tipo': envase_tipo,
+            'fabricante': fabricante,
         })
 
     payload = {
