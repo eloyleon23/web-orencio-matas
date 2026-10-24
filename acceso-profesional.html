@@ -280,6 +280,31 @@
         overflow: visible;
         pointer-events: none;
         z-index: 0;
+        /* Separado un poco del logo (no pegado a su propio borde) para
+           que se distinga claramente como un trazo aparte en vez de
+           confundirse con el contorno del propio dibujo — a petición
+           de Eloy: "no veo la línea que viaja... sepáralo un poco del
+           logo para que se diferencie". El origen por defecto de
+           transform (50% 50%, el centro de este mismo cuadro, que ya
+           coincide con el centro de la gota) hace que el escalado
+           agrande el trazo hacia afuera por igual en todas direcciones,
+           dejando un hueco visible alrededor de la gota real. */
+        transform: scale(1.22);
+      }
+      .om-gota-trazo path {
+        fill: none;
+        stroke: var(--om-gota-1);
+        stroke-width: 95;
+        stroke-linecap: round;
+        opacity: 0;
+        /* 19249 es la longitud real del contorno (SVGPathElement.
+           getTotalLength() del propio path, en sus unidades) — un
+           tramo corto (≈15%) visible y el resto del trazo vacío, para
+           que se vea como una única línea viajando alrededor del
+           perfil en vez de todo el contorno coloreado de golpe. Más
+           grueso y más largo que el primer intento ("no veo la
+           línea"), para que se note de verdad. */
+        stroke-dasharray: 2900 19249;
       }
       .om-gota-trazo path {
         fill: none;
