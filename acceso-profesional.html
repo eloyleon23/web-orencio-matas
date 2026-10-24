@@ -140,21 +140,60 @@
       /* Logotipo con efecto diferencial cuando la sesión profesional
          está activa (perfil-profesional.js añade la clase om-logo-
          profesional al enlace del logo) — a petición de Eloy: mantener
-         la palabra "Profesional" en la cabecera (sin tocar) y que el
-         LOGO en sí se vea distinto al de un usuario normal.
+         la palabra "Profesional" en la cabecera (sin tocar, ya está
+         bien así) y que el LOGO en sí se vea distinto al de un usuario
+         normal.
          Intentos descartados: iluminar el icono del menú, un
-         resplandor fijo sobre el logo entero, y un anillo estático
-         rodeando la gota — "quiero un efecto apropiado para una gota"
-         (💧). El efecto más propio de una gota de verdad es la onda
-         que deja al caer: aquí se simulan dos ondas concéntricas que
-         nacen pegadas a la gota, se expanden hacia afuera y se
-         desvanecen, encadenadas con medio ciclo de desfase para que
-         siempre haya una onda visible — como una gota cayendo sobre
-         agua, en bucle. Reutiliza la silueta aproximada de la gota
-         (ver más abajo el radio distinto por esquina, ya afinado
-         antes) como punto de partida de cada onda. */
+         resplandor fijo sobre el logo entero, un anillo estático
+         rodeando la gota, y unas ondas expandiéndose sobre la gota
+         ("sigue sin gustarme"). Lo que pide ahora es un efecto en dos
+         tiempos: "una gota de pintura cayendo y luego que cambie a
+         otro efecto como los del spinner" — así que se anima una
+         gotita propia (no la del logo, que no se mueve) cayendo desde
+         arriba hasta la gota del logo, con un ligero aplastamiento al
+         "aterrizar" (como una gota real al caer), y justo después se
+         desvanece mientras aparece un anillo giratorio de carga
+         (spinner) alrededor de la gota del logo — gira un rato y se
+         desvanece también, y el ciclo entero se repite desde el
+         principio. Dos pseudo-elementos, cada uno con su propia
+         animación: ::before es la gotita que cae (forma de lágrima
+         clásica en CSS: cuadrado con un borde redondeado al 50% salvo
+         una esquina, rotado 45°), ::after es el anillo del spinner
+         (borde con dos lados de color, los otros dos transparentes,
+         girando sin parar — solo se le anima la opacidad para que
+         aparezca y desaparezca en su momento del ciclo; la rotación va
+         aparte, en bucle constante, para que nunca se note un salto
+         al reaparecer). */
       .om-logo-profesional { position: relative; }
-      .om-logo-profesional::before,
+
+      /* Gotita que cae: forma de lágrima clásica en CSS. */
+      .om-logo-profesional::before {
+        content: "";
+        position: absolute;
+        left: 13%;
+        top: -14px;
+        width: 9px;
+        height: 9px;
+        background: var(--primary-red);
+        border-radius: 50% 50% 50% 0;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 2;
+        animation: om-gota-cae 3.4s cubic-bezier(.55, 0, .85, .35) infinite;
+      }
+      @keyframes om-gota-cae {
+        0%     { top: -14px; opacity: 0; transform: rotate(45deg) scale(0.5); }
+        6%     { opacity: 1; transform: rotate(45deg) scale(1); }
+        27%    { top: 46%;  opacity: 1; transform: rotate(45deg) scale(1); }
+        /* Aplastamiento al aterrizar, igual que una gota real. */
+        30%    { top: 48%;  opacity: 1; transform: rotate(45deg) scaleX(1.7) scaleY(0.45); }
+        38%    { top: 48%;  opacity: 0; transform: rotate(45deg) scaleX(0.3) scaleY(0.3); }
+        38.01%, 100% { opacity: 0; }
+      }
+
+      /* Anillo "spinner" alrededor de la gota del logo — aparece justo
+         cuando la gotita de arriba termina de aterrizar, gira un rato
+         y se desvanece antes de que la siguiente gotita vuelva a caer. */
       .om-logo-profesional::after {
         content: "";
         position: absolute;
@@ -162,31 +201,35 @@
         top: 0;
         height: 100%;
         aspect-ratio: 1 / 1;
-        border-radius: 32% 32% 46% 46% / 22% 22% 46% 46%;
-        border: 1.5px solid var(--primary-red);
+        border-radius: 50%;
+        border: 2px solid transparent;
+        border-top-color: var(--primary-red);
+        border-right-color: var(--primary-red);
         opacity: 0;
         pointer-events: none;
         z-index: 0;
-        animation: om-gota-onda 2.6s ease-out infinite;
+        animation:
+          om-spinner-opacidad 3.4s ease-in-out infinite,
+          om-spinner-gira 0.9s linear infinite;
       }
-      .om-logo-profesional::after {
-        animation-delay: 1.3s;
+      @keyframes om-spinner-opacidad {
+        0%, 32%   { opacity: 0; }
+        40%, 88%  { opacity: 1; }
+        97%, 100% { opacity: 0; }
       }
+      @keyframes om-spinner-gira {
+        to { transform: rotate(360deg); }
+      }
+
       .om-logo-profesional .navbar__logo-image {
         position: relative;
         z-index: 1;
       }
-      @keyframes om-gota-onda {
-        0%   { transform: scale(0.82); opacity: 0.75; }
-        70%  { opacity: 0.18; }
-        100% { transform: scale(1.65); opacity: 0; }
-      }
       @media (prefers-reduced-motion: reduce) {
-        .om-logo-profesional::before,
+        .om-logo-profesional::before { display: none; }
         .om-logo-profesional::after {
           animation: none;
           opacity: 1;
-          transform: scale(1.08);
         }
       }
     </style>
