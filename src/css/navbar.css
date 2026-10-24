@@ -342,12 +342,20 @@
   }
 }
 
-@media (max-width: 767px) {
-  .navbar__inner {
-    width: 100%;
-    padding: 0 20px;
-  }
-}
+/* Antes había aquí una regla "@media (max-width: 767px) {
+   .navbar__inner { width: 100%; padding: 0 20px; } }" sin equivalente
+   en src/css/estilos.css (que no añade ningún padding propio a
+   .navbar__inner, solo deja que ".navbar .container" — aquí
+   ".navbar-wrapper .container", arriba — marque el ancho). Ese padding
+   extra, solo en las páginas que cargan ESTE archivo, metía 20px de
+   más a cada lado dentro de .navbar__inner, así que el icono de menú
+   hamburguesa se quedaba 20px corto del borde derecho real en vez de
+   ir pegado a él — visible comparando capturas reales de iPhone de
+   buscador.html frente a acceso-profesional.html. Bug real reportado
+   por Eloy: "falta ajustar el gap entre el logo y el icono de
+   hamburguesa". Eliminada para que ".navbar-wrapper .container" (línea
+   41 de este mismo archivo) sea quien decida el ancho, igual que en el
+   resto del sitio. */
 
 /* Replica de ".navbar__logo-image { max-height: 52px; }" dentro de
    "@media (max-width: 480px)" en src/css/estilos.css (PR #96) — se
