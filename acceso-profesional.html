@@ -178,10 +178,10 @@
       .om-logo-profesional::before {
         content: "";
         position: absolute;
-        left: 13%;
-        top: -14px;
-        width: 8px;
-        height: 11px;
+        left: 20%;
+        top: -16px;
+        width: 10%;
+        aspect-ratio: 8 / 11;
         background: var(--primary-red);
         border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
         opacity: 0;
@@ -191,13 +191,17 @@
           om-gota-cae 3.4s cubic-bezier(.55, 0, .85, .35) infinite,
           om-gota-color 3.4s linear infinite;
       }
+      /* Centrada en el eje X sobre la gota del logo (left:20% marca el
+         centro, no el borde) — translateX(-50%) se combina en cada
+         fotograma con la escala de turno porque "transform" sustituye
+         el valor anterior entero, no se acumula entre fotogramas. */
       @keyframes om-gota-cae {
-        0%     { top: -14px; opacity: 0; transform: scale(0.5); }
-        6%     { opacity: 1; transform: scale(1); }
-        27%    { top: 46%;  opacity: 1; transform: scale(1); }
+        0%     { top: -16px; opacity: 0; transform: translateX(-50%) scale(0.5); }
+        6%     { opacity: 1; transform: translateX(-50%) scale(1); }
+        27%    { top: 44%;  opacity: 1; transform: translateX(-50%) scale(1); }
         /* Aplastamiento al aterrizar, igual que una gota real. */
-        30%    { top: 48%;  opacity: 1; transform: scaleX(1.7) scaleY(0.45); }
-        38%    { top: 48%;  opacity: 0; transform: scaleX(0.3) scaleY(0.3); }
+        30%    { top: 46%;  opacity: 1; transform: translateX(-50%) scaleX(1.7) scaleY(0.45); }
+        38%    { top: 46%;  opacity: 0; transform: translateX(-50%) scaleX(0.3) scaleY(0.3); }
         38.01%, 100% { opacity: 0; }
       }
       @keyframes om-gota-color {
@@ -210,16 +214,22 @@
       /* Anillo "spinner" alrededor de la gota del logo — aparece justo
          cuando la gotita de arriba termina de aterrizar, gira
          cambiando por los mismos 4 colores del logo, y se desvanece
-         antes de que la siguiente gotita vuelva a caer. Desplazado más
-         a la izquierda que en el primer intento ("no gira entorno al
-         logo") para quedar centrado sobre la gota real. */
+         antes de que la siguiente gotita vuelva a caer.
+         Centrado con left/top al 20%/50% (el centro real de la gota
+         del logo, calculado a partir del propio PNG: ocupa las
+         columnas 0-81 de 202 de ancho y casi toda la altura) MÁS
+         translate(-50%,-50%), en vez de jugar con el borde del
+         elemento — así queda simétrico de verdad alrededor de la gota
+         en vez de aproximado a ojo ("no me rodea de manera simétrica
+         al logo", bug real reportado). */
       .om-logo-profesional::after {
         content: "";
         position: absolute;
-        left: -11%;
-        top: 0;
-        height: 96%;
+        left: 20%;
+        top: 50%;
+        width: 42%;
         aspect-ratio: 1 / 1;
+        transform: translate(-50%, -50%);
         border-radius: 50%;
         border: 2px solid transparent;
         opacity: 0;
@@ -227,7 +237,7 @@
         z-index: 0;
         animation:
           om-spinner-opacidad 3.4s ease-in-out infinite,
-          om-spinner-gira 0.9s linear infinite,
+          om-spinner-gira 2.4s linear infinite,
           om-spinner-color 2.4s linear infinite;
       }
       @keyframes om-spinner-opacidad {
@@ -235,8 +245,13 @@
         40%, 88%  { opacity: 1; }
         97%, 100% { opacity: 0; }
       }
+      /* Incluye el mismo translate(-50%,-50%) de centrado en los dos
+         extremos — "transform" en una animación sustituye el valor
+         estático entero, así que sin esto el anillo se "destentraba"
+         en cuanto arrancaba el giro. */
       @keyframes om-spinner-gira {
-        to { transform: rotate(360deg); }
+        from { transform: translate(-50%, -50%) rotate(0deg); }
+        to   { transform: translate(-50%, -50%) rotate(360deg); }
       }
       @keyframes om-spinner-color {
         0%   { border-top-color: var(--primary-red);    border-right-color: var(--primary-red); }
