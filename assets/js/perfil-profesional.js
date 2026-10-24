@@ -450,11 +450,30 @@
     // <ul>) y cualquier otro enlace a index.html del pie de página —
     // selector amplio a propósito, sin limitarlo a .navbar__menu, para
     // no tener que mantener una lista de sitios donde pueda aparecer.
-    // Los enlaces con ancla (p.ej. index.html#contacto) NO se tocan:
-    // siguen aportando (datos de contacto), no son "ir al inicio".
+    //
+    // "Contacto" (index.html#contacto) es un caso aparte: al principio
+    // se dejaba tal cual, razonando que un enlace con ancla "sigue
+    // aportando, no es ir al inicio" — pero el guard de más abajo
+    // (esPaginaInicioPublica_) redirige SIEMPRE fuera de index.html a
+    // cualquier profesional que llegue ahí, ancla o no (location.
+    // pathname no incluye el "#"), así que ese razonamiento no se
+    // sostenía: el enlace llevaba a un formulario que el profesional
+    // nunca llegaba a ver, perdía el ancla por el camino. Bug real
+    // reportado por Eloy: "la pagina de contacto para profesionales...
+    // ya no sale". Ahora ese enlace concreto se repunta al mismo
+    // formulario, ya incluido también al final de la página de acceso
+    // profesional (ver acceso-profesional.html, sección #contacto).
+    // El resto de enlaces con ancla a index.html (#inicio, #marcas,
+    // #profesionales) no se tocan: son secciones de la portada pública
+    // sin equivalente en la vista profesional.
     document.querySelectorAll('a[href]').forEach((a) => {
       const href = a.getAttribute('href');
-      if (!href || href.indexOf('#') !== -1) return;
+      if (!href) return;
+      if (nombreArchivoDe_(href) === 'index.html' && href.indexOf('#contacto') !== -1) {
+        a.setAttribute('href', './' + PAGINA_INICIO_PROFESIONAL + '#contacto');
+        return;
+      }
+      if (href.indexOf('#') !== -1) return;
       if (nombreArchivoDe_(href) !== 'index.html') return;
       a.setAttribute('href', './' + PAGINA_INICIO_PROFESIONAL);
     });
