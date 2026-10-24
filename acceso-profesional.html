@@ -199,9 +199,20 @@
         opacity: 0;
         pointer-events: none;
         z-index: 2;
+      }
+      /* El efecto ya NO está en bucle continuo — a petición de Eloy:
+         "que no esté todo el tiempo, sino que de manera aleatoria
+         salga... que no pase más de 20 segundos sin salir el efecto".
+         Las animaciones solo se reproducen (una vez, sin "infinite")
+         cuando el script de más abajo añade la clase om-logo-jugar,
+         que JS quita y vuelve a poner en cada disparo (con un reflow
+         forzado en medio para poder reiniciarla desde el principio,
+         ver ese script) en un intervalo aleatorio entre 2 y 20
+         segundos — nunca más de 20s sin que salga. */
+      .om-logo-profesional.om-logo-jugar::before {
         animation:
-          om-gota-cae 3.6s infinite,
-          om-gota-color 3.6s linear infinite;
+          om-gota-cae 3.6s,
+          om-gota-color 3.6s linear;
       }
       /* Centrada en el eje X sobre la gota del logo (left:17% marca el
          centro, no el borde) — translateX(-50%) se combina en cada
@@ -255,10 +266,19 @@
         opacity: 0;
         pointer-events: none;
         z-index: 0;
+      }
+      /* Mismo criterio que la gotita de arriba: solo se reproduce (una
+         vez) con la clase om-logo-jugar. Las tres animaciones duran
+         ahora lo mismo (3.6s, la misma duración que toda la secuencia
+         de un disparo) en vez de bucles independientes de distinta
+         duración — ya no hace falta que giro/color sigan "de fondo"
+         entre disparo y disparo, porque ya no hay fondo: el anillo
+         solo existe mientras dura este único disparo. */
+      .om-logo-profesional.om-logo-jugar::after {
         animation:
-          om-spinner-opacidad 3.6s ease-in-out infinite,
-          om-spinner-gira 2.4s linear infinite,
-          om-spinner-color 6s linear infinite;
+          om-spinner-opacidad 3.6s ease-in-out,
+          om-spinner-gira 3.6s linear,
+          om-spinner-color 3.6s linear;
       }
       @keyframes om-spinner-opacidad {
         0%, 32%   { opacity: 0; }
@@ -538,6 +558,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <script src="./assets/js/entorno.js?v=20260924a"></script>
     <script src="./assets/js/perfil-profesional.js?v=20260829a"></script>
+    <!-- Disparador aleatorio del efecto de la gota del logo (ver el
+         <style> de arriba, om-logo-jugar) — a petición de Eloy: "que
+         no esté todo el tiempo, sino que de manera aleatoria salga...
+         que no pase más de 20 segundos sin salir el efecto". Se
+         dispara nada más cargar la página (perfil-profesional.js ya
+         ha añadido om-logo-profesional al logo en este punto, al ir
+         justo antes en el HTML) y luego en un intervalo aleatorio
+         entre 2 y 20 segundos, sin parar. De momento solo aquí
+         (acceso-profesional.html), igual que el resto del efecto. -->
+    <script>
+    (function () {
+      const logo = document.querySelector('.om-logo-profesional');
+      if (!logo) return; // sin sesión profesional activa, no hay nada que disparar
+
+      function dispararEfectoLogo_() {
+        // Quitar la clase, forzar una repintada y volver a ponerla es
+        // la única forma de reiniciar una animación CSS desde el
+        // principio — añadirla directamente si ya estaba puesta no
+        // hace nada (el navegador no ve ningún cambio).
+        logo.classList.remove('om-logo-jugar');
+        void logo.offsetWidth;
+        logo.classList.add('om-logo-jugar');
+
+        const espera = 2000 + Math.random() * 18000; // entre 2s y 20s, nunca más
+        setTimeout(dispararEfectoLogo_, espera);
+      }
+      dispararEfectoLogo_();
+    })();
+    </script>
     <script>
     (function () {
       const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
