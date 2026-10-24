@@ -6336,10 +6336,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // simplemente dejar de cargarse o convivir con ellos sin conflicto
     // (referencias con prefijo "Z" no se solapan con las de droguería/
     // perfumería/pinturas).
+    // _catalogoProveedorEstatico marca estos productos como "del archivo
+    // estático de un proveedor" (imagen local en assets/imagenes_talleres/,
+    // sin referencia única global, no gestionados desde la administración
+    // del buscador) — bug real reportado: antes de este flag explícito, el
+    // código usaba p.fabricante como proxy de "es de estos 4 catálogos",
+    // pero desde que el catálogo principal del Sheet también exporta
+    // fabricante (marca) para CUALQUIER producto con marca informada, ese
+    // proxy dejó de ser fiable: un producto normal de droguería/
+    // perfumería/pinturas con marca rellena se interpretaba como si su
+    // 'img' (un ID de Drive) fuera un nombre de archivo local, rompiendo
+    // su foto. Ver urlImagenProducto/urlImagenProductoFolletoDestacados_.
     function cargarProductosTalleres() {
         return fetch(PRODUCTOS_TALLERES_URL)
             .then(r => r.ok ? r.json() : null)
             .then(data => data && data.productos ? data.productos : [])
+            .then(productos => productos.map(p => Object.assign(p, { _catalogoProveedorEstatico: true })))
             .catch(() => []); // si falla, simplemente no se añaden (no rompe el catálogo principal)
     }
 
@@ -6353,6 +6365,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return fetch(PRODUCTOS_GLASURIT_URL)
             .then(r => r.ok ? r.json() : null)
             .then(data => data && data.productos ? data.productos : [])
+            .then(productos => productos.map(p => Object.assign(p, { _catalogoProveedorEstatico: true })))
             .catch(() => []);
     }
 
@@ -6364,6 +6377,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return fetch(PRODUCTOS_BESA_URL)
             .then(r => r.ok ? r.json() : null)
             .then(data => data && data.productos ? data.productos : [])
+            .then(productos => productos.map(p => Object.assign(p, { _catalogoProveedorEstatico: true })))
             .catch(() => []);
     }
 
@@ -6376,6 +6390,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return fetch(PRODUCTOS_BASLAC_URL)
             .then(r => r.ok ? r.json() : null)
             .then(data => data && data.productos ? data.productos : [])
+            .then(productos => productos.map(p => Object.assign(p, { _catalogoProveedorEstatico: true })))
             .catch(() => []);
     }
 
@@ -6460,7 +6475,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const porRef = new Map(productosEntrantes.map(p => [p.ref, p]));
         const refsYaCargadas = new Set();
         TODOS.forEach(p => {
-            if (!p.fabricante) refsYaCargadas.add(p.ref);
+            if (!p._catalogoProveedorEstatico) refsYaCargadas.add(p.ref);
             const actualizado = porRef.get(p.ref);
             if (actualizado) {
                 Object.assign(p, actualizado);
@@ -6509,13 +6524,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // pestaña que ya lo tuviera en memoria — nunca volvía a recibir
         // ningún dato que lo marcara como tal (bug real reportado).
         // Los productos de los catálogos de proveedores de Talleres
-        // (Zaphiro/Glasurit/Besa/Baslac, identificables por tener
-        // 'fabricante') NUNCA forman parte de esta fuente en vivo — se
-        // cargan aparte en cargarProductosAdicionalesEnSegundoPlano — así
-        // que se excluyen a propósito de esta poda para no borrarlos por
-        // error.
+        // (Zaphiro/Glasurit/Besa/Baslac, identificables por
+        // _catalogoProveedorEstatico) NUNCA forman parte de esta fuente en
+        // vivo — se cargan aparte en cargarProductosAdicionalesEnSegundoPlano
+        // — así que se excluyen a propósito de esta poda para no borrarlos
+        // por error.
         const antesDePodar = TODOS.length;
-        TODOS = TODOS.filter(p => p.fabricante || porRef.has(p.ref));
+        TODOS = TODOS.filter(p => p._catalogoProveedorEstatico || porRef.has(p.ref));
         const podados = antesDePodar - TODOS.length;
         if (podados > 0) {
             console.log(`reconciliarConTextoEnVivo: ${podados} producto(s) retirado(s) por haberse dado de baja.`);
@@ -6537,7 +6552,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const antesDeDeduplicar = TODOS.length;
         const refsVistas = new Set();
         TODOS = TODOS.filter(p => {
-            if (p.fabricante) return true; // catálogos de proveedor: sin referencia única global, no tocar
+            if (p._catalogoProveedorEstatico) return true; // catálogos de proveedor: sin referencia única global, no tocar
             if (refsVistas.has(p.ref)) return false;
             refsVistas.add(p.ref);
             return true;
@@ -10906,12 +10921,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // salto sin CORS y el canvas queda contaminado, así que toDataURL()
     // falla en silencio y la foto se pierde. Pidiendo directamente la URL
     // final de googleusercontent.com se evita el salto por completo. Los
-    // productos de catálogos de proveedor (fabricante, imagen local) no
-    // tienen ese problema — se devuelven tal cual, mismo origen.
+    // productos de catálogos de proveedor (_catalogoProveedorEstatico,
+    // imagen local) no tienen ese problema — se devuelven tal cual, mismo
+    // origen.
     function urlImagenProductoFolletoDestacados_(p, tamano) {
         tamano = tamano || 400;
         if (!p || !p.img) return null;
-        if (p.fabricante) return `./assets/imagenes_talleres/${p.img}`;
+        if (p._catalogoProveedorEstatico) return `./assets/imagenes_talleres/${p.img}`;
         return `https://lh3.googleusercontent.com/d/${p.img}=w${tamano}`;
     }
 
@@ -16202,7 +16218,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const textoFiltro = sinAcentosAsistente($('asistente-f-texto').value.trim());
 
         colaAsistente = TODOS.filter(p => {
-            if (p.fabricante) return false; // catálogos estáticos de proveedor: no gestionados aquí
+            if (p._catalogoProveedorEstatico) return false; // catálogos estáticos de proveedor: no gestionados aquí
             if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
             if (!productoCoincideConAreas(p, areasSelAsistente)) return false;
             if (familiaFiltro && p.familia !== familiaFiltro) return false;
@@ -16820,19 +16836,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (p._imgLocalOverride) return p._imgLocalOverride;
         if (p.img) {
             // Los 4 catálogos estáticos de proveedor (Zaphiro/Besa/Glasurit/
-            // Baslac) traen 'fabricante' y su 'img' es un nombre de archivo
-            // real en assets/imagenes_talleres/. Los productos normales del
-            // Sheet (incluidos los que ahora son area='talleres' tras la
-            // reclasificación por marca/familia/punto inicial de esta
-            // sesión) NO tienen 'fabricante' — su 'img' es un ID de Drive,
+            // Baslac) traen _catalogoProveedorEstatico (ver
+            // cargarProductosTalleres/Glasurit/Besa/Baslac) y su 'img' es un
+            // nombre de archivo real en assets/imagenes_talleres/. Los
+            // productos normales del Sheet tienen 'img' como un ID de Drive,
             // igual que cualquier otro producto del catálogo principal.
-            // Antes se miraba 'area === talleres' para decidirlo, pero eso
-            // dejó de ser válido en cuanto productos normales del Sheet
-            // empezaron a tener area='talleres' sin venir de esos 4
-            // catálogos — sus fotos recién subidas no se veían porque se
-            // construía una ruta estática con un ID de Drive como si fuera
-            // un nombre de archivo.
-            if (p.fabricante) return `./assets/imagenes_talleres/${p.img}`;
+            // Antes se miraba 'area === talleres', y luego 'fabricante', para
+            // decidirlo — ambos dejaron de ser válidos en cuanto productos
+            // normales del Sheet empezaron a tener area='talleres' (sin venir
+            // de esos 4 catálogos) y, más tarde, 'fabricante' informado (ver
+            // exportación de "marca" como "fabricante") sin ser de esos
+            // catálogos: sus fotos (un ID de Drive real) se interpretaban
+            // como si fueran un nombre de archivo local, rompiendo la imagen.
+            if (p._catalogoProveedorEstatico) return `./assets/imagenes_talleres/${p.img}`;
             return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
         }
         // Sin foto propia: usar la imagen genérica del fabricante si existe
