@@ -175,7 +175,24 @@
       logo.insertAdjacentElement('afterend', distintivo);
     });
 
-    // 3) "Salir" — última opción del menú (escritorio y móvil comparten
+    // 3) Repunta cualquier enlace "Inicio" (al index.html público, sin
+    // ancla) hacia el inicio profesional — a petición de Eloy: "no
+    // quiero páginas innecesarias o que a los profesionales no les
+    // aporten, para eso está la vista de perfil de usuario normal".
+    // Cubre el logo, "Inicio" del menú (escritorio y móvil, mismo
+    // <ul>) y cualquier otro enlace a index.html del pie de página —
+    // selector amplio a propósito, sin limitarlo a .navbar__menu, para
+    // no tener que mantener una lista de sitios donde pueda aparecer.
+    // Los enlaces con ancla (p.ej. index.html#contacto) NO se tocan:
+    // siguen aportando (datos de contacto), no son "ir al inicio".
+    document.querySelectorAll('a[href]').forEach((a) => {
+      const href = a.getAttribute('href');
+      if (!href || href.indexOf('#') !== -1) return;
+      if (nombreArchivoDe_(href) !== 'index.html') return;
+      a.setAttribute('href', './' + PAGINA_INICIO_PROFESIONAL);
+    });
+
+    // 4) "Salir" — última opción del menú (escritorio y móvil comparten
     // el mismo <ul>, ver nota arriba).
     document.querySelectorAll('.navbar__menu').forEach((menu) => {
       if (menu.querySelector('.om-salir-profesional')) return;
@@ -193,12 +210,24 @@
   const sesionActual = leerSesion_();
   const paginaActual = nombreArchivoDe_(location.pathname);
 
+  // La home pública (index.html) tampoco aporta nada al profesional, a
+  // petición explícita de Eloy — mismo criterio que PAGINAS_EXCLUIDAS,
+  // así que si se llega aquí con sesión activa se redirige igual. Se
+  // comprueba aparte (no se mete directamente en PAGINAS_EXCLUIDAS)
+  // porque esa lista también decide qué enlaces del menú se OCULTAN
+  // (ver aplicarUI_, paso 1) — para "Inicio" no se oculta el enlace,
+  // se REAPUNTA al inicio profesional (ver aplicarUI_, paso 3).
+  // location.pathname da "" (cadena vacía) para la raíz del sitio
+  // ("/"), que el servidor sirve como index.html — se trata igual.
+  const esPaginaInicioPublica_ = paginaActual === '' || paginaActual === 'index.html';
+
   if (sesionActual) {
-    if (PAGINAS_EXCLUIDAS.indexOf(paginaActual) !== -1) {
-      // Página pública excluida con sesión profesional activa: se
-      // redirige al inicio profesional en vez de dejar ver una mezcla
-      // de ambos contextos (petición explícita) — con replace() para
-      // que "Atrás" no vuelva a dejar a medio camino.
+    if (PAGINAS_EXCLUIDAS.indexOf(paginaActual) !== -1 || esPaginaInicioPublica_) {
+      // Página pública excluida (o la home pública) con sesión
+      // profesional activa: se redirige al inicio profesional en vez
+      // de dejar ver una mezcla de ambos contextos (petición
+      // explícita) — con replace() para que "Atrás" no vuelva a dejar
+      // a medio camino.
       location.replace('./' + PAGINA_INICIO_PROFESIONAL);
     } else {
       // Se llama de inmediato, no solo en DOMContentLoaded: este script
