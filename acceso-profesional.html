@@ -105,6 +105,41 @@
       }
       #ap-solicitud-modal .form-input::placeholder{ color: #8a9099; }
       #ap-solicitud-modal .form-input:focus{ background: #fff; }
+
+      /* Ajuste del distintivo "PROFESIONALES" en móvil (ver
+         assets/js/perfil-profesional.js, que lo inserta justo después
+         del logo) — bug real reportado: el texto empujaba (o apretaba,
+         según la página) el icono del menú hamburguesa hasta dejarlo
+         parcialmente fuera de la vista, porque competía con él por el
+         mismo espacio dentro de .navbar__inner. Se saca del flujo flex
+         y se ancla justo debajo del logo, así nunca vuelve a competir
+         por espacio con el icono, sea cual sea el ancho de pantalla.
+         De momento solo aplicado aquí (acceso-profesional.html, a
+         petición de Eloy, para validar antes de extenderlo al resto
+         de páginas visibles para profesionales). */
+      @media (max-width: 860px) {
+        .om-distintivo-profesional {
+          position: absolute;
+          left: 0;
+          top: 100%;
+          margin: 6px 0 0 !important;
+        }
+      }
+
+      /* Icono del menú "iluminado" cuando la sesión profesional está
+         activa (perfil-profesional.js añade la clase om-toggle-
+         profesional al botón) — señal visual adicional en la propia
+         barra de menús, a petición de Eloy, más allá del distintivo de
+         texto. Mismo criterio que el bloque de arriba: de momento solo
+         aquí, validando antes de extenderlo. */
+      .om-toggle-profesional {
+        border-color: var(--primary-red) !important;
+        background: rgba(217, 27, 27, 0.08) !important;
+        box-shadow: 0 0 0 3px rgba(217, 27, 27, 0.18), 0 0 14px rgba(217, 27, 27, 0.45);
+      }
+      .om-toggle-profesional span {
+        background: var(--primary-red) !important;
+      }
     </style>
   </head>
   <body>

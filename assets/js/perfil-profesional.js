@@ -164,7 +164,20 @@
       logo.insertAdjacentElement('afterend', distintivo);
     });
 
-    // 3) "Salir" — última opción del menú (escritorio y móvil comparten
+    // 3) Marca el botón de menú (hamburguesa) con una clase cuando la
+    // sesión profesional está activa, para que cada página pueda darle
+    // un tratamiento visual diferenciador propio (brillo/resalte) sin
+    // que esto cambie nada por sí solo en páginas que todavía no
+    // tengan el CSS correspondiente — a petición de Eloy: "me gustaría
+    // que el icono se ilumine o tenga un efecto diferencial en la
+    // barra de menús". De momento solo tiene estilo real en
+    // acceso-profesional.html (ver su <style>), mientras se valida;
+    // el resto de páginas se extenderá después.
+    document.querySelectorAll('.navbar__toggle').forEach((boton) => {
+        boton.classList.add('om-toggle-profesional');
+    });
+
+    // 4) "Salir" — última opción del menú (escritorio y móvil comparten
     // el mismo <ul>, ver nota arriba).
     document.querySelectorAll('.navbar__menu').forEach((menu) => {
       if (menu.querySelector('.om-salir-profesional')) return;
