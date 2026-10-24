@@ -1,6 +1,23 @@
 Options -Indexes
 DirectoryIndex index.html
 
+# Forzar HTTPS — bug real reportado: el sitio servía http:// y
+# https:// como variantes independientes sin redirección entre
+# ellas, y alguien accediendo por http:// desde datos móviles (una
+# red donde la operadora puede interceptar/alterar tráfico sin
+# cifrar) se encontraba el buscador sin productos, incluso en
+# incógnito — mientras que https:// siempre cargaba bien. No toca
+# DNS ni el panel de IONOS (a diferencia del redirect de variante
+# de dominio www/sin-www, aparcado por el riesgo de su asistente
+# automático sobre el registro MX del correo) — es solo una regla
+# de Apache en este mismo .htaccess, sin ningún riesgo para el
+# correo de la empresa.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
 # Redirigir /defaultsite (y subpáginas antiguas indexadas) a la raíz
 RedirectMatch 301 ^/defaultsite(/?.*)$ /$1
 
