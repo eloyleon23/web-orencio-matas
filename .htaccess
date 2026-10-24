@@ -3,3 +3,24 @@ DirectoryIndex index.html
 
 # Redirigir /defaultsite (y subpáginas antiguas indexadas) a la raíz
 RedirectMatch 301 ^/defaultsite(/?.*)$ /$1
+
+# Evitar que el navegador sirva una copia cacheada antigua de una
+# página o de un catálogo tras un despliegue — bug real reportado:
+# tras subir cambios a IONOS, Chrome (normal, no incógnito) seguía
+# sirviendo una copia precargada de ANTES del despliegue a quien
+# llegaba desde un enlace de resultados/ficha de Google (que activa
+# la precarga predictiva de Chrome), mientras que incógnito y Safari
+# cargaban bien la versión nueva — exactamente la diferencia que
+# delata una caché local obsoleta, no un fallo de servidor. Como
+# Apache no enviaba ninguna cabecera Cache-Control, el navegador
+# decidía por heurística cuánto confiar en lo ya guardado. Con
+# "no-cache" el navegador SIGUE pudiendo guardar la copia, pero
+# está obligado a revalidarla con el servidor (ETag/Last-Modified)
+# antes de usarla — así nunca se queda pegado a una versión
+# anterior, y si no ha cambiado nada la revalidación es barata
+# (304, sin volver a descargar el archivo entero).
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|json)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+</IfModule>
