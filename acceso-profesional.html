@@ -111,18 +111,30 @@
          del logo) — bug real reportado: el texto empujaba (o apretaba,
          según la página) el icono del menú hamburguesa hasta dejarlo
          parcialmente fuera de la vista, porque competía con él por el
-         mismo espacio dentro de .navbar__inner. Se saca del flujo flex
-         y se ancla justo debajo del logo, así nunca vuelve a competir
-         por espacio con el icono, sea cual sea el ancho de pantalla.
+         mismo espacio dentro de .navbar__inner.
+         Primer intento (sacarlo del flujo con position:absolute,
+         anclado justo debajo del logo) quedaba fuera de la propia
+         barra de cabecera — visualmente "flotando" sobre el contenido
+         de la página en vez de dentro del navbar, a petición de Eloy:
+         "la palabra profesionales la quiero en la barra de cabecera de
+         menu". Se sustituye por flex-wrap: en vez de sacarlo del
+         flujo, se le fuerza a ocupar una línea propia DENTRO de
+         .navbar__inner (flex-basis:100%) cuando no cabe — la propia
+         barra crece de alto para acomodarlo, nunca se superpone al
+         contenido de debajo. "order" adelanta el icono del menú por
+         delante del distintivo en el flujo visual, para que logo+icono
+         quepan siempre en la primera línea y el distintivo caiga solo
+         a la segunda si hace falta.
          De momento solo aplicado aquí (acceso-profesional.html, a
          petición de Eloy, para validar antes de extenderlo al resto
          de páginas visibles para profesionales). */
       @media (max-width: 860px) {
+        .navbar__inner { flex-wrap: wrap; row-gap: 2px; }
+        .navbar__toggle { order: 1; }
         .om-distintivo-profesional {
-          position: absolute;
-          left: 0;
-          top: 100%;
-          margin: 6px 0 0 !important;
+          order: 2;
+          flex: 1 0 100%;
+          margin: 4px 0 2px !important;
         }
       }
 
@@ -148,16 +160,21 @@
          tamaño renderizado del logo (móvil/escritorio). Como el PNG de
          la gota tiene fondo transparente, el anillo se ve asomar por
          fuera y por dentro de su silueta en vez de taparla. */
+      /* border-radius:50% (círculo perfecto) dejaba huecos visibles —
+         la gota no es un círculo, es más bien un escudo/gota con la
+         parte de arriba casi plana ("montañas") y solo se redondea de
+         verdad hacia abajo. Un radio distinto por esquina (más cerrado
+         arriba, más abierto abajo) se ciñe mucho mejor a su silueta
+         real sin necesidad de recortar la imagen. */
       .om-logo-profesional { position: relative; }
       .om-logo-profesional::before {
         content: "";
         position: absolute;
-        left: 0;
-        top: 50%;
-        height: 92%;
+        left: -4%;
+        top: 0;
+        height: 100%;
         aspect-ratio: 1 / 1;
-        transform: translateY(-50%);
-        border-radius: 50%;
+        border-radius: 32% 32% 46% 46% / 22% 22% 46% 46%;
         background: radial-gradient(circle, rgba(217, 27, 27, 0.32) 0%, rgba(217, 27, 27, 0.12) 55%, rgba(217, 27, 27, 0) 76%);
         animation: om-gota-resplandor 2.4s ease-in-out infinite;
         pointer-events: none;
