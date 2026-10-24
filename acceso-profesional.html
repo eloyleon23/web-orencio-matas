@@ -211,8 +211,8 @@
          segundos — nunca más de 20s sin que salga. */
       .om-logo-profesional.om-logo-jugar::before {
         animation:
-          om-gota-cae 3.6s,
-          om-gota-color 3.6s linear;
+          om-gota-cae 4.4s,
+          om-gota-color 4.4s linear;
       }
       /* Centrada en el eje X sobre la gota del logo (left:17% marca el
          centro, no el borde) — translateX(-50%) se combina en cada
@@ -233,10 +233,19 @@
         39%    { top: 46%;   opacity: 0;  transform: translateX(-50%) scaleX(0.3) scaleY(0.3); }
         39.01%, 100% { opacity: 0; }
       }
+      /* Antes se veía casi siempre azul (el color final se mantenía
+         durante el 70% del ciclo) y apenas se distinguía el amarillo
+         de camino — "no acabo de ver el amarillo y azul... alterna la
+         gota con esos colores", bug real reportado. Ahora son 4
+         bloques de color bien diferenciados (rojo, ámbar, verde,
+         azul), cada uno con su propio tramo de reposo y un cambio
+         rápido al siguiente — alternando de verdad, no un degradado
+         continuo donde los colores intermedios casi no se ven. */
       @keyframes om-gota-color {
-        0%   { background: var(--om-gota-1); }
-        15%  { background: var(--om-gota-2); }
-        30%, 100% { background: var(--om-gota-5); }
+        0%, 7%   { background: var(--om-gota-1); }
+        9%, 16%  { background: var(--om-gota-2); }
+        18%, 25% { background: var(--om-gota-4); }
+        27%, 100% { background: var(--om-gota-5); }
       }
 
       /* Anillo "spinner" alrededor de la gota del logo — aparece justo
@@ -261,29 +270,39 @@
         width: 38%;
         aspect-ratio: 1 / 1;
         transform: translate(-50%, -50%);
-        border-radius: 50%;
+        /* Mismo border-radius asimétrico que la gotita de arriba (más
+           afilado arriba, más redondeado abajo) en vez de un círculo
+           perfecto — a petición de Eloy: "si consigues que el círculo
+           sea sobre la parte de abajo y arriba lo haga en punta, de
+           esta forma ese efecto acaba bordeando la gota del logo". Un
+           círculo nunca podía encajar del todo con la silueta real de
+           la gota (afilada arriba); esta forma sí. */
+        border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
         border: 2px solid transparent;
         opacity: 0;
         pointer-events: none;
         z-index: 0;
       }
       /* Mismo criterio que la gotita de arriba: solo se reproduce (una
-         vez) con la clase om-logo-jugar. Las tres animaciones duran
-         ahora lo mismo (3.6s, la misma duración que toda la secuencia
-         de un disparo) en vez de bucles independientes de distinta
-         duración — ya no hace falta que giro/color sigan "de fondo"
-         entre disparo y disparo, porque ya no hay fondo: el anillo
-         solo existe mientras dura este único disparo. */
+         vez) con la clase om-logo-jugar, sobre la misma duración total
+         (4.4s). A petición de Eloy, "que dure un poco más y que no
+         desaparezca tan pronto, de esta forma se ven todos los
+         colores": la ventana visible pasa de 40%-88% a 39%-95% (más
+         larga) y el ciclo de color (más abajo) se alinea EXACTAMENTE
+         con esa ventana en vez de correr sobre el 0%-100% del ciclo
+         entero — antes sus primeros tramos de color caían mientras el
+         anillo todavía era invisible, así que esos colores (rojo,
+         ámbar) nunca llegaban a verse. */
       .om-logo-profesional.om-logo-jugar::after {
         animation:
-          om-spinner-opacidad 3.6s ease-in-out,
-          om-spinner-gira 3.6s linear,
-          om-spinner-color 3.6s linear;
+          om-spinner-opacidad 4.4s ease-in-out,
+          om-spinner-gira 4.4s linear,
+          om-spinner-color 4.4s linear;
       }
       @keyframes om-spinner-opacidad {
         0%, 32%   { opacity: 0; }
-        40%, 88%  { opacity: 1; }
-        97%, 100% { opacity: 0; }
+        39%, 95%  { opacity: 1; }
+        99%, 100% { opacity: 0; }
       }
       /* Incluye el mismo translate(-50%,-50%) de centrado en los dos
          extremos — "transform" en una animación sustituye el valor
@@ -293,13 +312,17 @@
         from { transform: translate(-50%, -50%) rotate(0deg); }
         to   { transform: translate(-50%, -50%) rotate(360deg); }
       }
+      /* Los 6 tonos reales del logo, uno por cada tramo de la ventana
+         visible (39%-95%, ver arriba) — así se ven todos, incluidos
+         el amarillo y el azul, en vez de que algunos caigan mientras
+         el anillo todavía está invisible. */
       @keyframes om-spinner-color {
-        0%   { border-top-color: var(--om-gota-1); border-right-color: var(--om-gota-1); }
-        20%  { border-top-color: var(--om-gota-2); border-right-color: var(--om-gota-2); }
-        40%  { border-top-color: var(--om-gota-3); border-right-color: var(--om-gota-3); }
-        60%  { border-top-color: var(--om-gota-4); border-right-color: var(--om-gota-4); }
-        80%  { border-top-color: var(--om-gota-5); border-right-color: var(--om-gota-5); }
-        100% { border-top-color: var(--om-gota-1); border-right-color: var(--om-gota-1); }
+        0%, 39%   { border-top-color: var(--om-gota-1); border-right-color: var(--om-gota-1); }
+        50%  { border-top-color: var(--om-gota-2); border-right-color: var(--om-gota-2); }
+        61%  { border-top-color: var(--om-gota-3); border-right-color: var(--om-gota-3); }
+        73%  { border-top-color: var(--om-gota-4); border-right-color: var(--om-gota-4); }
+        84%  { border-top-color: var(--om-gota-5); border-right-color: var(--om-gota-5); }
+        95%, 100% { border-top-color: var(--om-gota-6); border-right-color: var(--om-gota-6); }
       }
 
       .om-logo-profesional .navbar__logo-image {
