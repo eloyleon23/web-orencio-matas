@@ -349,6 +349,26 @@
   }
 }
 
+/* Replica de ".navbar__logo-image { max-height: 52px; }" dentro de
+   "@media (max-width: 480px)" en src/css/estilos.css (PR #96) — se
+   quedó sin mirar aquí, así que en móviles estrechos (≤480px) el logo
+   se veía notablemente más grande en las páginas que cargan ESTE
+   archivo (empresa/historia/productos/buscador/servicios/actualidad/
+   catalogo_talleres) que en el resto del sitio. Bug real reportado por
+   Eloy: "la cabecera de logo e icono de menu en las páginas de
+   buscador y productos tiene distintos tamaños... que del resto que
+   esta perfecta" — confirmado comparando capturas reales de iPhone
+   (buscador.html: logo de 140.9x60px; acceso-profesional.html, que sí
+   carga estilos.css: 122.1x52px, con la misma sesión profesional
+   activa y el mismo ancho de pantalla). Mismo criterio que el
+   comentario de arriba de este archivo: cualquier cambio en el navbar
+   de estilos.css debe replicarse aquí también. */
+@media (max-width: 480px) {
+  .navbar__logo-image {
+    max-height: 52px;
+  }
+}
+
 /* Sub-submenú (Ver catálogos > áreas) */
 .navbar__item--dropdown .navbar__item--dropdown { position: relative; }
 .navbar__item--dropdown .navbar__item--dropdown .navbar__submenu {
