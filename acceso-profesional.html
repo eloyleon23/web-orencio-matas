@@ -166,51 +166,69 @@
          al reaparecer). */
       .om-logo-profesional { position: relative; }
 
-      /* Gotita que cae: forma de lágrima clásica en CSS. */
+      /* Gotita que cae, con los 4 colores del propio logo (rojo,
+         amarillo, verde, azul — las mismas variables --primary-* que
+         ya usa el resto del sitio) cambiando conforme cae, a petición
+         de Eloy: "quiero decir que conforme cae la gota vaya
+         cambiando de color con los del logo". Forma de gota real (más
+         redondeada abajo, más afilada arriba — como 💧, no el truco
+         clásico de "cuadrado rotado 45°" que a este tamaño tan pequeño
+         se veía más un círculo que una gota) vía un border-radius
+         distinto arriba/abajo, sin necesidad de rotación. */
       .om-logo-profesional::before {
         content: "";
         position: absolute;
         left: 13%;
         top: -14px;
-        width: 9px;
-        height: 9px;
+        width: 8px;
+        height: 11px;
         background: var(--primary-red);
-        border-radius: 50% 50% 50% 0;
+        border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
         opacity: 0;
         pointer-events: none;
         z-index: 2;
-        animation: om-gota-cae 3.4s cubic-bezier(.55, 0, .85, .35) infinite;
+        animation:
+          om-gota-cae 3.4s cubic-bezier(.55, 0, .85, .35) infinite,
+          om-gota-color 3.4s linear infinite;
       }
       @keyframes om-gota-cae {
-        0%     { top: -14px; opacity: 0; transform: rotate(45deg) scale(0.5); }
-        6%     { opacity: 1; transform: rotate(45deg) scale(1); }
-        27%    { top: 46%;  opacity: 1; transform: rotate(45deg) scale(1); }
+        0%     { top: -14px; opacity: 0; transform: scale(0.5); }
+        6%     { opacity: 1; transform: scale(1); }
+        27%    { top: 46%;  opacity: 1; transform: scale(1); }
         /* Aplastamiento al aterrizar, igual que una gota real. */
-        30%    { top: 48%;  opacity: 1; transform: rotate(45deg) scaleX(1.7) scaleY(0.45); }
-        38%    { top: 48%;  opacity: 0; transform: rotate(45deg) scaleX(0.3) scaleY(0.3); }
+        30%    { top: 48%;  opacity: 1; transform: scaleX(1.7) scaleY(0.45); }
+        38%    { top: 48%;  opacity: 0; transform: scaleX(0.3) scaleY(0.3); }
         38.01%, 100% { opacity: 0; }
+      }
+      @keyframes om-gota-color {
+        0%   { background: var(--primary-red); }
+        10%  { background: var(--primary-yellow); }
+        20%  { background: var(--primary-green); }
+        30%, 100% { background: var(--primary-blue); }
       }
 
       /* Anillo "spinner" alrededor de la gota del logo — aparece justo
-         cuando la gotita de arriba termina de aterrizar, gira un rato
-         y se desvanece antes de que la siguiente gotita vuelva a caer. */
+         cuando la gotita de arriba termina de aterrizar, gira
+         cambiando por los mismos 4 colores del logo, y se desvanece
+         antes de que la siguiente gotita vuelva a caer. Desplazado más
+         a la izquierda que en el primer intento ("no gira entorno al
+         logo") para quedar centrado sobre la gota real. */
       .om-logo-profesional::after {
         content: "";
         position: absolute;
-        left: -4%;
+        left: -11%;
         top: 0;
-        height: 100%;
+        height: 96%;
         aspect-ratio: 1 / 1;
         border-radius: 50%;
         border: 2px solid transparent;
-        border-top-color: var(--primary-red);
-        border-right-color: var(--primary-red);
         opacity: 0;
         pointer-events: none;
         z-index: 0;
         animation:
           om-spinner-opacidad 3.4s ease-in-out infinite,
-          om-spinner-gira 0.9s linear infinite;
+          om-spinner-gira 0.9s linear infinite,
+          om-spinner-color 2.4s linear infinite;
       }
       @keyframes om-spinner-opacidad {
         0%, 32%   { opacity: 0; }
@@ -219,6 +237,13 @@
       }
       @keyframes om-spinner-gira {
         to { transform: rotate(360deg); }
+      }
+      @keyframes om-spinner-color {
+        0%   { border-top-color: var(--primary-red);    border-right-color: var(--primary-red); }
+        25%  { border-top-color: var(--primary-yellow); border-right-color: var(--primary-yellow); }
+        50%  { border-top-color: var(--primary-green);  border-right-color: var(--primary-green); }
+        75%  { border-top-color: var(--primary-blue);   border-right-color: var(--primary-blue); }
+        100% { border-top-color: var(--primary-red);    border-right-color: var(--primary-red); }
       }
 
       .om-logo-profesional .navbar__logo-image {
@@ -230,6 +255,8 @@
         .om-logo-profesional::after {
           animation: none;
           opacity: 1;
+          border-top-color: var(--primary-red);
+          border-right-color: var(--primary-red);
         }
       }
     </style>
