@@ -126,33 +126,35 @@
         }
       }
 
-      /* Icono del menú "iluminado" cuando la sesión profesional está
-         activa (perfil-profesional.js añade la clase om-toggle-
-         profesional al botón) — señal visual adicional en la propia
-         barra de menús, a petición de Eloy, más allá del distintivo de
-         texto. Mismo criterio que el bloque de arriba: de momento solo
-         aquí, validando antes de extenderlo.
-         Primera versión (borde + resplandor sutil en blanco) pasaba
-         desapercibida ("no noto mucha diferencia") — se sustituye por
-         fondo rojo sólido (máximo contraste con las líneas del icono,
-         ahora en blanco) más un anillo que pulsa hacia afuera sin
-         parar, igual que un indicador de notificación, para que se
-         note de un vistazo. */
-      .om-toggle-profesional {
-        border-color: var(--primary-red) !important;
-        background: var(--primary-red) !important;
-        animation: om-pulso-profesional 1.8s ease-in-out infinite;
+      /* Logotipo con efecto diferencial cuando la sesión profesional
+         está activa (perfil-profesional.js añade la clase om-logo-
+         profesional al enlace del logo) — a petición de Eloy: mantener
+         la palabra "Profesional" en la cabecera tal cual YA estaba
+         (om-distintivo-profesional, sin tocar) y, además, que el LOGO
+         en sí se vea distinto al de un usuario normal. Se probó antes
+         iluminando el icono del menú hamburguesa en su lugar — "no me
+         gusta", descartado — así que el efecto va aquí, en el logo:
+         un resplandor rojo de marca que respira (crece y mengua) a su
+         alrededor, usando drop-shadow (actúa sobre la silueta real del
+         PNG con transparencia, no un rectángulo). Mismo criterio que
+         el bloque de arriba: de momento solo aquí, validando antes de
+         extenderlo. */
+      .om-logo-profesional .navbar__logo-image {
+        animation: om-logo-resplandor 2.4s ease-in-out infinite;
       }
-      .om-toggle-profesional span {
-        background: #fff !important;
-      }
-      @keyframes om-pulso-profesional {
-        0%   { box-shadow: 0 0 0 0 rgba(217, 27, 27, 0.55); }
-        70%  { box-shadow: 0 0 0 11px rgba(217, 27, 27, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(217, 27, 27, 0); }
+      @keyframes om-logo-resplandor {
+        0%, 100% {
+          filter: drop-shadow(0 0 3px rgba(217, 27, 27, 0.45)) drop-shadow(0 0 9px rgba(217, 27, 27, 0.25));
+        }
+        50% {
+          filter: drop-shadow(0 0 9px rgba(217, 27, 27, 0.9)) drop-shadow(0 0 20px rgba(217, 27, 27, 0.55));
+        }
       }
       @media (prefers-reduced-motion: reduce) {
-        .om-toggle-profesional { animation: none; box-shadow: 0 0 0 4px rgba(217, 27, 27, 0.3); }
+        .om-logo-profesional .navbar__logo-image {
+          animation: none;
+          filter: drop-shadow(0 0 7px rgba(217, 27, 27, 0.65));
+        }
       }
     </style>
   </head>
