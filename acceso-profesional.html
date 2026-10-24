@@ -106,259 +106,14 @@
       #ap-solicitud-modal .form-input::placeholder{ color: #8a9099; }
       #ap-solicitud-modal .form-input:focus{ background: #fff; }
 
-      /* Ajuste del distintivo "PROFESIONALES" en móvil (ver
-         assets/js/perfil-profesional.js, que lo inserta justo después
-         del logo) — bug real reportado: el texto empujaba (o apretaba,
-         según la página) el icono del menú hamburguesa hasta dejarlo
-         parcialmente fuera de la vista, porque competía con él por el
-         mismo espacio dentro de .navbar__inner.
-         Dos intentos descartados: sacarlo del flujo con
-         position:absolute (quedaba flotando fuera de la cabecera) y
-         forzarlo a su propia línea con flex-wrap (tampoco — Eloy lo
-         quiere EN LA MISMA LÍNEA, "entre el logo y el icono de menú",
-         como ya estaba en escritorio). Se achica lo justo en móvil
-         (fuente, relleno, espaciado entre letras) y se reduce el hueco
-         del navbar en ese ancho para que logo + distintivo + icono
-         quepan los tres en una sola fila sin que ninguno empuje al
-         siguiente fuera de la vista — comprobado con el ancho real
-         disponible (containers de ~280-335px en móvil).
-         De momento solo aplicado aquí (acceso-profesional.html, a
-         petición de Eloy, para validar antes de extenderlo al resto
-         de páginas visibles para profesionales). */
-      @media (max-width: 860px) {
-        .navbar__inner { gap: 8px; }
-        .om-distintivo-profesional {
-          margin-left: 0 !important;
-          margin-top: 0 !important;
-          padding: 3px 7px;
-          font-size: 8.5px;
-          letter-spacing: 0.03em;
-          flex-shrink: 0;
-        }
-      }
-
-      /* Logotipo con efecto diferencial cuando la sesión profesional
-         está activa (perfil-profesional.js añade la clase om-logo-
-         profesional al enlace del logo) — a petición de Eloy: mantener
-         la palabra "Profesional" en la cabecera (sin tocar, ya está
-         bien así) y que el LOGO en sí se vea distinto al de un usuario
-         normal.
-         Intentos descartados: iluminar el icono del menú, un
-         resplandor fijo sobre el logo entero, un anillo estático
-         rodeando la gota, y unas ondas expandiéndose sobre la gota
-         ("sigue sin gustarme"). Lo que pide ahora es un efecto en dos
-         tiempos: "una gota de pintura cayendo y luego que cambie a
-         otro efecto como los del spinner" — así que se anima una
-         gotita propia (no la del logo, que no se mueve) cayendo desde
-         arriba hasta la gota del logo, con un ligero aplastamiento al
-         "aterrizar" (como una gota real al caer), y justo después se
-         desvanece mientras aparece un anillo giratorio de carga
-         (spinner) alrededor de la gota del logo — gira un rato y se
-         desvanece también, y el ciclo entero se repite desde el
-         principio. Dos pseudo-elementos, cada uno con su propia
-         animación: ::before es la gotita que cae (forma de lágrima
-         clásica en CSS: cuadrado con un borde redondeado al 50% salvo
-         una esquina, rotado 45°), ::after es el anillo del spinner
-         (borde con dos lados de color, los otros dos transparentes,
-         girando sin parar — solo se le anima la opacidad para que
-         aparezca y desaparezca en su momento del ciclo; la rotación va
-         aparte, en bucle constante, para que nunca se note un salto
-         al reaparecer). */
-      .om-logo-profesional {
-        position: relative;
-        /* Colores reales del logo, muestreados directamente del propio
-           PNG (no las variables --primary-* genéricas del sitio, que
-           no son exactamente las mismas — "no son los mismos del
-           logo", bug real reportado): rojo, dos tonos de ámbar/
-           amarillo, verde azulado y dos tonos de azul, en el mismo
-           orden en que aparecen en el anillo de color de la gota. */
-        --om-gota-1: #d81b24;
-        --om-gota-2: #f0a800;
-        --om-gota-3: #fccc00;
-        --om-gota-4: #008454;
-        --om-gota-5: #0078a8;
-        --om-gota-6: #0c4884;
-      }
-
-      /* Gotita que cae, cambiando por los colores reales del logo
-         conforme cae ("conforme cae la gota vaya cambiando de color
-         con los del logo"), de forma gradual y lenta — no un parpadeo
-         entre colores muy distintos de golpe. Forma de gota real (más
-         redondeada abajo, más afilada arriba — como 💧) vía un
-         border-radius distinto arriba/abajo, sin necesidad de
-         rotación; tamaño relativo al logo (no fijo en píxeles). */
-      .om-logo-profesional::before {
-        content: "";
-        position: absolute;
-        left: 17%;
-        top: -16px;
-        width: 10%;
-        aspect-ratio: 8 / 11;
-        background: var(--om-gota-1);
-        border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
-        opacity: 0;
-        pointer-events: none;
-        z-index: 2;
-      }
-      /* El efecto ya NO está en bucle continuo — a petición de Eloy:
-         "que no esté todo el tiempo, sino que de manera aleatoria
-         salga... que no pase más de 20 segundos sin salir el efecto".
-         Las animaciones solo se reproducen (una vez, sin "infinite")
-         cuando el script de más abajo añade la clase om-logo-jugar,
-         que JS quita y vuelve a poner en cada disparo (con un reflow
-         forzado en medio para poder reiniciarla desde el principio,
-         ver ese script) en un intervalo aleatorio entre 2 y 20
-         segundos — nunca más de 20s sin que salga. */
-      .om-logo-profesional.om-logo-jugar::before {
-        animation:
-          om-gota-cae 4.4s,
-          om-gota-color 4.4s linear;
-      }
-      /* Centrada en el eje X sobre la gota del logo (left:17% marca el
-         centro, no el borde) — translateX(-50%) se combina en cada
-         fotograma con la escala de turno porque "transform" sustituye
-         el valor anterior entero, no se acumula entre fotogramas.
-         La caída empieza despacio y acelera hacia el final, como una
-         gota real tirada por la gravedad ("que la gota caiga al
-         principio mas lento y luego normal") — cada fotograma fija su
-         propia curva de aceleración hacia el siguiente en vez de una
-         única curva para toda la animación (que también afectaría al
-         aplastamiento final, donde no pega). */
-      @keyframes om-gota-cae {
-        0%     { top: -16px; opacity: 0;  transform: translateX(-50%) scale(0.5); animation-timing-function: ease-out; }
-        6%     { top: -16px; opacity: 1;  transform: translateX(-50%) scale(1);   animation-timing-function: cubic-bezier(.7, 0, .9, .35); }
-        28%    { top: 44%;   opacity: 1;  transform: translateX(-50%) scale(1);   animation-timing-function: ease-out; }
-        /* Aplastamiento al aterrizar, igual que una gota real. */
-        31%    { top: 46%;   opacity: 1;  transform: translateX(-50%) scaleX(1.7) scaleY(0.45); animation-timing-function: ease-out; }
-        39%    { top: 46%;   opacity: 0;  transform: translateX(-50%) scaleX(0.3) scaleY(0.3); }
-        39.01%, 100% { opacity: 0; }
-      }
-      /* Antes se veía casi siempre azul (el color final se mantenía
-         durante el 70% del ciclo) y apenas se distinguía el amarillo
-         de camino — "no acabo de ver el amarillo y azul... alterna la
-         gota con esos colores", bug real reportado. Ahora son 4
-         bloques de color bien diferenciados (rojo, ámbar, verde,
-         azul), cada uno con su propio tramo de reposo y un cambio
-         rápido al siguiente — alternando de verdad, no un degradado
-         continuo donde los colores intermedios casi no se ven. */
-      @keyframes om-gota-color {
-        0%, 7%   { background: var(--om-gota-1); }
-        9%, 16%  { background: var(--om-gota-2); }
-        18%, 25% { background: var(--om-gota-4); }
-        27%, 100% { background: var(--om-gota-5); }
-      }
-
-      /* Anillo "spinner" alrededor de la gota del logo — aparece justo
-         cuando la gotita de arriba termina de aterrizar, gira
-         cambiando por los colores reales del logo (ciclo lento y
-         gradual, no un parpadeo — "el cambio de color que sea más
-         sutil y no como un parpadeo"), y se desvanece antes de que la
-         siguiente gotita vuelva a caer.
-         Centrado con left/top al 17%/54% — el centro de masa real de
-         la gota del logo (calculado a partir del propio PNG, ponderado
-         por opacidad, no solo la caja que la encierra) — MÁS
-         translate(-50%,-50%), en vez de jugar con el borde del
-         elemento: así queda simétrico de verdad alrededor de la gota
-         del logo principal en cualquier tamaño de pantalla ("no es
-         simétrico respecto al logo principal... tiene que ir todo
-         algo más a la izquierda", bug real reportado dos veces). */
-      /* Sustituye el anillo geométrico (círculo, luego con forma de
-         gota pero aproximada) por una línea que recorre el contorno
-         REAL de la gota del logo — a petición de Eloy: "la idea es
-         hacer que el círculo pase a ser una línea que pasa por el
-         perfil de la gota del logo". El <svg> con el path trazado
-         vive en el propio HTML, dentro de .navbar__logo (ver el
-         comentario junto a él) — aquí solo se posiciona sobre la
-         gota real (mismo left:0/width ≈ fracción de la gota en el
-         logo completo, 76/202) y se anima el trazo. */
-      .om-gota-trazo {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 37.6%;
-        height: 100%;
-        overflow: visible;
-        pointer-events: none;
-        z-index: 0;
-        /* Separado un poco del logo (no pegado a su propio borde) para
-           que se distinga claramente como un trazo aparte en vez de
-           confundirse con el contorno del propio dibujo — a petición
-           de Eloy: "no veo la línea que viaja... sepáralo un poco del
-           logo para que se diferencie". El origen por defecto de
-           transform (50% 50%, el centro de este mismo cuadro, que ya
-           coincide con el centro de la gota) hace que el escalado
-           agrande el trazo hacia afuera por igual en todas direcciones,
-           dejando un hueco visible alrededor de la gota real. */
-        transform: scale(1.22);
-      }
-      .om-gota-trazo path {
-        fill: none;
-        stroke: var(--om-gota-1);
-        stroke-width: 120;
-        stroke-linecap: round;
-        opacity: 0;
-        /* 19249 es la longitud real del contorno (SVGPathElement.
-           getTotalLength() del propio path, en sus unidades) — un
-           tramo visible algo más largo y el resto del trazo vacío,
-           para que se vea como una única línea viajando alrededor del
-           perfil en vez de todo el contorno coloreado de golpe. Más
-           grueso y más largo que el primer intento ("no veo la
-           línea"), para que se note de verdad; agrandado otra vez a
-           petición de Eloy ("un poco mas grande la linea"). */
-        stroke-dasharray: 3400 19249;
-      }
-      /* Mismo criterio que la gotita de arriba: solo se reproduce (una
-         vez) con la clase om-logo-jugar. La gotita sigue cayendo en su
-         propia duración (4.4s, sin cambios), pero el trazo que la
-         rodea tiene su PROPIA duración, más larga (6s en vez de 4.4s,
-         "que gire un poco mas lenta... y duré mas"), y su ventana
-         visible empieza en el mismo instante absoluto en que la gotita
-         aterriza (29% de 6s ≈ 1.7s, igual que antes) pero se mantiene
-         visible mucho más tiempo y se desvanece más tarde ("desaparezca
-         mas tarde"). */
-      .om-logo-profesional.om-logo-jugar .om-gota-trazo path {
-        animation:
-          om-trazo-opacidad 6s ease-in-out,
-          om-trazo-viaja 6s linear,
-          om-trazo-color 6s linear;
-      }
-      @keyframes om-trazo-opacidad {
-        0%, 22%   { opacity: 0; }
-        29%, 95%  { opacity: 1; }
-        99%, 100% { opacity: 0; }
-      }
-      /* Recorre el contorno completo (una vuelta) exactamente durante
-         la ventana visible (29%-95% de los ahora 6s, un tramo más
-         largo en tiempo absoluto que antes → gira más lento) — fuera
-         de ella da igual dónde esté, es invisible. */
-      @keyframes om-trazo-viaja {
-        0%, 29%  { stroke-dashoffset: 0; }
-        95%, 100% { stroke-dashoffset: -19249; }
-      }
-      /* Los 6 tonos reales del logo, uno por cada tramo de la ventana
-         visible — así se ven todos, incluidos el amarillo y el azul. */
-      @keyframes om-trazo-color {
-        0%, 29%   { stroke: var(--om-gota-1); }
-        42%  { stroke: var(--om-gota-2); }
-        55%  { stroke: var(--om-gota-3); }
-        69%  { stroke: var(--om-gota-4); }
-        82%  { stroke: var(--om-gota-5); }
-        95%, 100% { stroke: var(--om-gota-6); }
-      }
-
-      .om-logo-profesional .navbar__logo-image {
-        position: relative;
-        z-index: 1;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .om-logo-profesional::before { display: none; }
-        .om-gota-trazo path {
-          animation: none;
-          opacity: 1;
-          stroke: var(--om-gota-1);
-          stroke-dasharray: none;
-        }
-      }
+      /* El efecto del logo profesional (gotita cayendo + línea que
+         recorre el contorno real de la gota) y el ajuste del
+         distintivo "PROFESIONALES" para que no empuje el icono de
+         menú ya NO viven aquí: se validaron primero en esta página y
+         ahora están centralizados en assets/js/perfil-profesional.js
+         (inyectarEstilos_, anadirTrazoLogo_, dispararEfectoLogo_) para
+         que se apliquen igual en todas las páginas visibles para
+         profesionales, a petición de Eloy. */
     </style>
   </head>
   <body>
@@ -371,55 +126,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="container navbar__inner">
           <a class="navbar__logo" href="index.html" aria-label="Ir al inicio">
             <img class="navbar__logo-image" src="./assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
-            <!-- Trazo de la silueta REAL de la gota del logo (no una
-                 aproximación geométrica tipo círculo) — a petición de
-                 Eloy: "la idea es hacer que el círculo pase a ser una
-                 línea que pasa por el perfil de la gota del logo". El
-                 path se obtuvo vectorizando (potrace) el propio canal
-                 alfa de assets/logos/logo-orencio.png recortado a la
-                 gota, así que sigue EXACTAMENTE su contorno real, no
-                 una forma redondeada que se le parece. Solo se ve y se
-                 anima cuando el logo tiene la clase om-logo-profesional
-                 (ver perfil-profesional.js) — el resto del tiempo es
-                 invisible y no afecta en nada a usuarios normales. -->
-            <svg class="om-gota-trazo" viewBox="0 0 608 688" aria-hidden="true" focusable="false">
-              <g transform="translate(0,688) scale(0.1,-0.1)">
-                <path d="M2792 6851 c-6 -17 -24 -37 -42 -46 -37 -19 -151 -96 -195 -132 -16
--13 -54 -44 -84 -68 -30 -25 -58 -45 -62 -45 -4 0 -28 -17 -52 -37 -25 -21
--71 -58 -102 -83 -32 -25 -74 -59 -94 -77 -20 -17 -115 -100 -211 -184 -223
--195 -527 -499 -702 -704 -75 -88 -150 -176 -167 -195 -94 -109 -107 -126
--195 -255 -19 -28 -41 -57 -51 -65 -9 -7 -23 -27 -32 -44 -9 -17 -27 -44 -40
--61 -14 -16 -40 -55 -59 -85 -63 -103 -69 -112 -91 -144 -13 -17 -33 -51 -44
--76 -12 -25 -34 -61 -49 -80 -15 -19 -33 -52 -39 -73 -7 -21 -23 -50 -36 -65
--13 -16 -32 -51 -43 -78 -10 -27 -33 -71 -50 -98 -18 -28 -32 -57 -32 -66 0
--9 -14 -38 -31 -66 -18 -27 -41 -76 -52 -109 -11 -33 -28 -72 -38 -86 -11 -15
--26 -55 -35 -89 -9 -34 -27 -92 -41 -129 -14 -36 -31 -109 -39 -161 -19 -123
--38 -190 -64 -217 -19 -22 -20 -33 -20 -437 l0 -415 30 -48 c23 -38 34 -74 50
--175 11 -71 31 -156 44 -190 14 -35 30 -88 36 -118 6 -30 24 -78 40 -106 15
--28 34 -71 40 -95 6 -24 24 -62 39 -84 16 -22 34 -57 40 -78 7 -21 23 -50 35
--65 13 -15 33 -47 46 -72 12 -25 34 -59 49 -76 14 -17 34 -44 43 -60 17 -28
-74 -106 133 -181 106 -136 378 -412 470 -476 17 -12 34 -27 38 -34 4 -7 25
--22 46 -32 20 -11 57 -36 80 -55 24 -20 49 -36 56 -36 7 0 32 -15 54 -34 23
--19 58 -40 79 -47 20 -7 59 -27 86 -46 26 -18 56 -33 66 -33 10 0 48 -16 83
--35 36 -19 92 -41 125 -49 32 -9 79 -25 104 -36 24 -10 89 -26 144 -35 131
--21 196 -40 219 -65 18 -20 29 -20 512 -20 339 0 493 3 493 11 0 21 96 52 216
-70 68 10 150 29 181 43 32 13 85 29 118 36 33 6 76 22 96 35 20 13 63 31 95
-41 33 9 79 29 103 45 25 16 62 34 82 39 21 6 51 21 67 35 15 13 53 34 83 48
-30 13 61 32 69 42 8 10 33 26 55 36 22 11 60 35 85 54 25 19 67 52 94 72 154
-120 373 330 421 405 14 20 29 39 35 43 5 3 26 30 45 58 47 70 78 114 114 163
-17 22 37 56 45 75 8 19 26 49 39 67 14 18 31 48 38 65 7 18 23 47 36 65 13 17
-33 57 43 87 10 30 30 74 44 97 14 24 32 75 40 113 8 39 26 95 40 125 13 30 30
-91 36 135 6 44 22 121 35 170 36 134 45 241 45 540 0 297 -9 402 -44 515 -13
-41 -29 111 -36 155 -6 44 -24 109 -40 145 -16 36 -34 90 -40 120 -7 30 -25 78
--40 105 -16 28 -34 70 -40 95 -7 25 -23 60 -37 78 -13 18 -31 54 -40 80 -9 26
--26 61 -40 79 -13 18 -33 54 -44 80 -11 26 -29 57 -39 68 -11 11 -28 41 -39
-66 -12 26 -28 52 -37 60 -8 7 -26 34 -39 59 -13 25 -31 52 -40 60 -9 8 -28 34
--41 59 -23 43 -41 69 -124 176 -17 22 -56 74 -87 115 -30 41 -68 91 -84 110
--56 67 -104 124 -149 174 -25 28 -99 114 -165 191 -215 251 -742 763 -1073
-1043 -24 20 -61 53 -82 72 -36 33 -81 72 -160 138 -45 38 -157 122 -194 146
--16 10 -33 31 -39 47 -17 43 -80 43 -95 0z"/>
-              </g>
-            </svg>
+            <!-- El trazo de la silueta real de la gota (SVG) lo añade
+                 ahora assets/js/perfil-profesional.js (anadirTrazoLogo_)
+                 en todas las páginas visibles para profesionales, no
+                 solo aquí — ver ese archivo para el detalle. -->
           </a>
           <button class="navbar__toggle" type="button" aria-label="Abrir menú de navegación" aria-controls="main-navigation" aria-expanded="false" data-menu-toggle>
             <span></span><span></span><span></span>
@@ -650,36 +360,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </footer>
 
     <script src="./assets/js/entorno.js?v=20260924a"></script>
-    <script src="./assets/js/perfil-profesional.js?v=20260829a"></script>
-    <!-- Disparador aleatorio del efecto de la gota del logo (ver el
-         <style> de arriba, om-logo-jugar) — a petición de Eloy: "que
-         no esté todo el tiempo, sino que de manera aleatoria salga...
-         que no pase más de 20 segundos sin salir el efecto". Se
-         dispara nada más cargar la página (perfil-profesional.js ya
-         ha añadido om-logo-profesional al logo en este punto, al ir
-         justo antes en el HTML) y luego en un intervalo aleatorio
-         entre 2 y 20 segundos, sin parar. De momento solo aquí
-         (acceso-profesional.html), igual que el resto del efecto. -->
-    <script>
-    (function () {
-      const logo = document.querySelector('.om-logo-profesional');
-      if (!logo) return; // sin sesión profesional activa, no hay nada que disparar
-
-      function dispararEfectoLogo_() {
-        // Quitar la clase, forzar una repintada y volver a ponerla es
-        // la única forma de reiniciar una animación CSS desde el
-        // principio — añadirla directamente si ya estaba puesta no
-        // hace nada (el navegador no ve ningún cambio).
-        logo.classList.remove('om-logo-jugar');
-        void logo.offsetWidth;
-        logo.classList.add('om-logo-jugar');
-
-        const espera = 2000 + Math.random() * 18000; // entre 2s y 20s, nunca más
-        setTimeout(dispararEfectoLogo_, espera);
-      }
-      dispararEfectoLogo_();
-    })();
-    </script>
+    <script src="./assets/js/perfil-profesional.js?v=20261024a"></script>
+    <!-- El disparador aleatorio del efecto del logo (antes aquí, solo
+         para esta página) ahora vive en perfil-profesional.js
+         (dispararEfectoLogo_), que lo arranca para todas las páginas
+         visibles para profesionales. -->
     <script>
     (function () {
       const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
