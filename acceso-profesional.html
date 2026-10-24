@@ -164,70 +164,90 @@
          aparezca y desaparezca en su momento del ciclo; la rotación va
          aparte, en bucle constante, para que nunca se note un salto
          al reaparecer). */
-      .om-logo-profesional { position: relative; }
+      .om-logo-profesional {
+        position: relative;
+        /* Colores reales del logo, muestreados directamente del propio
+           PNG (no las variables --primary-* genéricas del sitio, que
+           no son exactamente las mismas — "no son los mismos del
+           logo", bug real reportado): rojo, dos tonos de ámbar/
+           amarillo, verde azulado y dos tonos de azul, en el mismo
+           orden en que aparecen en el anillo de color de la gota. */
+        --om-gota-1: #d81b24;
+        --om-gota-2: #f0a800;
+        --om-gota-3: #fccc00;
+        --om-gota-4: #008454;
+        --om-gota-5: #0078a8;
+        --om-gota-6: #0c4884;
+      }
 
-      /* Gotita que cae, con los 4 colores del propio logo (rojo,
-         amarillo, verde, azul — las mismas variables --primary-* que
-         ya usa el resto del sitio) cambiando conforme cae, a petición
-         de Eloy: "quiero decir que conforme cae la gota vaya
-         cambiando de color con los del logo". Forma de gota real (más
-         redondeada abajo, más afilada arriba — como 💧, no el truco
-         clásico de "cuadrado rotado 45°" que a este tamaño tan pequeño
-         se veía más un círculo que una gota) vía un border-radius
-         distinto arriba/abajo, sin necesidad de rotación. */
+      /* Gotita que cae, cambiando por los colores reales del logo
+         conforme cae ("conforme cae la gota vaya cambiando de color
+         con los del logo"), de forma gradual y lenta — no un parpadeo
+         entre colores muy distintos de golpe. Forma de gota real (más
+         redondeada abajo, más afilada arriba — como 💧) vía un
+         border-radius distinto arriba/abajo, sin necesidad de
+         rotación; tamaño relativo al logo (no fijo en píxeles). */
       .om-logo-profesional::before {
         content: "";
         position: absolute;
-        left: 20%;
+        left: 17%;
         top: -16px;
         width: 10%;
         aspect-ratio: 8 / 11;
-        background: var(--primary-red);
+        background: var(--om-gota-1);
         border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
         opacity: 0;
         pointer-events: none;
         z-index: 2;
         animation:
-          om-gota-cae 3.4s cubic-bezier(.55, 0, .85, .35) infinite,
-          om-gota-color 3.4s linear infinite;
+          om-gota-cae 3.6s infinite,
+          om-gota-color 3.6s linear infinite;
       }
-      /* Centrada en el eje X sobre la gota del logo (left:20% marca el
+      /* Centrada en el eje X sobre la gota del logo (left:17% marca el
          centro, no el borde) — translateX(-50%) se combina en cada
          fotograma con la escala de turno porque "transform" sustituye
-         el valor anterior entero, no se acumula entre fotogramas. */
+         el valor anterior entero, no se acumula entre fotogramas.
+         La caída empieza despacio y acelera hacia el final, como una
+         gota real tirada por la gravedad ("que la gota caiga al
+         principio mas lento y luego normal") — cada fotograma fija su
+         propia curva de aceleración hacia el siguiente en vez de una
+         única curva para toda la animación (que también afectaría al
+         aplastamiento final, donde no pega). */
       @keyframes om-gota-cae {
-        0%     { top: -16px; opacity: 0; transform: translateX(-50%) scale(0.5); }
-        6%     { opacity: 1; transform: translateX(-50%) scale(1); }
-        27%    { top: 44%;  opacity: 1; transform: translateX(-50%) scale(1); }
+        0%     { top: -16px; opacity: 0;  transform: translateX(-50%) scale(0.5); animation-timing-function: ease-out; }
+        6%     { top: -16px; opacity: 1;  transform: translateX(-50%) scale(1);   animation-timing-function: cubic-bezier(.7, 0, .9, .35); }
+        28%    { top: 44%;   opacity: 1;  transform: translateX(-50%) scale(1);   animation-timing-function: ease-out; }
         /* Aplastamiento al aterrizar, igual que una gota real. */
-        30%    { top: 46%;  opacity: 1; transform: translateX(-50%) scaleX(1.7) scaleY(0.45); }
-        38%    { top: 46%;  opacity: 0; transform: translateX(-50%) scaleX(0.3) scaleY(0.3); }
-        38.01%, 100% { opacity: 0; }
+        31%    { top: 46%;   opacity: 1;  transform: translateX(-50%) scaleX(1.7) scaleY(0.45); animation-timing-function: ease-out; }
+        39%    { top: 46%;   opacity: 0;  transform: translateX(-50%) scaleX(0.3) scaleY(0.3); }
+        39.01%, 100% { opacity: 0; }
       }
       @keyframes om-gota-color {
-        0%   { background: var(--primary-red); }
-        10%  { background: var(--primary-yellow); }
-        20%  { background: var(--primary-green); }
-        30%, 100% { background: var(--primary-blue); }
+        0%   { background: var(--om-gota-1); }
+        15%  { background: var(--om-gota-2); }
+        30%, 100% { background: var(--om-gota-5); }
       }
 
       /* Anillo "spinner" alrededor de la gota del logo — aparece justo
          cuando la gotita de arriba termina de aterrizar, gira
-         cambiando por los mismos 4 colores del logo, y se desvanece
-         antes de que la siguiente gotita vuelva a caer.
-         Centrado con left/top al 20%/50% (el centro real de la gota
-         del logo, calculado a partir del propio PNG: ocupa las
-         columnas 0-81 de 202 de ancho y casi toda la altura) MÁS
+         cambiando por los colores reales del logo (ciclo lento y
+         gradual, no un parpadeo — "el cambio de color que sea más
+         sutil y no como un parpadeo"), y se desvanece antes de que la
+         siguiente gotita vuelva a caer.
+         Centrado con left/top al 17%/54% — el centro de masa real de
+         la gota del logo (calculado a partir del propio PNG, ponderado
+         por opacidad, no solo la caja que la encierra) — MÁS
          translate(-50%,-50%), en vez de jugar con el borde del
-         elemento — así queda simétrico de verdad alrededor de la gota
-         en vez de aproximado a ojo ("no me rodea de manera simétrica
-         al logo", bug real reportado). */
+         elemento: así queda simétrico de verdad alrededor de la gota
+         del logo principal en cualquier tamaño de pantalla ("no es
+         simétrico respecto al logo principal... tiene que ir todo
+         algo más a la izquierda", bug real reportado dos veces). */
       .om-logo-profesional::after {
         content: "";
         position: absolute;
-        left: 20%;
-        top: 50%;
-        width: 42%;
+        left: 17%;
+        top: 54%;
+        width: 38%;
         aspect-ratio: 1 / 1;
         transform: translate(-50%, -50%);
         border-radius: 50%;
@@ -236,9 +256,9 @@
         pointer-events: none;
         z-index: 0;
         animation:
-          om-spinner-opacidad 3.4s ease-in-out infinite,
+          om-spinner-opacidad 3.6s ease-in-out infinite,
           om-spinner-gira 2.4s linear infinite,
-          om-spinner-color 2.4s linear infinite;
+          om-spinner-color 6s linear infinite;
       }
       @keyframes om-spinner-opacidad {
         0%, 32%   { opacity: 0; }
@@ -254,11 +274,12 @@
         to   { transform: translate(-50%, -50%) rotate(360deg); }
       }
       @keyframes om-spinner-color {
-        0%   { border-top-color: var(--primary-red);    border-right-color: var(--primary-red); }
-        25%  { border-top-color: var(--primary-yellow); border-right-color: var(--primary-yellow); }
-        50%  { border-top-color: var(--primary-green);  border-right-color: var(--primary-green); }
-        75%  { border-top-color: var(--primary-blue);   border-right-color: var(--primary-blue); }
-        100% { border-top-color: var(--primary-red);    border-right-color: var(--primary-red); }
+        0%   { border-top-color: var(--om-gota-1); border-right-color: var(--om-gota-1); }
+        20%  { border-top-color: var(--om-gota-2); border-right-color: var(--om-gota-2); }
+        40%  { border-top-color: var(--om-gota-3); border-right-color: var(--om-gota-3); }
+        60%  { border-top-color: var(--om-gota-4); border-right-color: var(--om-gota-4); }
+        80%  { border-top-color: var(--om-gota-5); border-right-color: var(--om-gota-5); }
+        100% { border-top-color: var(--om-gota-1); border-right-color: var(--om-gota-1); }
       }
 
       .om-logo-profesional .navbar__logo-image {
@@ -270,8 +291,8 @@
         .om-logo-profesional::after {
           animation: none;
           opacity: 1;
-          border-top-color: var(--primary-red);
-          border-right-color: var(--primary-red);
+          border-top-color: var(--om-gota-1);
+          border-right-color: var(--om-gota-1);
         }
       }
     </style>
