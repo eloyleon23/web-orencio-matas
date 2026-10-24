@@ -154,9 +154,20 @@
       if (li) li.remove(); else a.remove();
     });
 
-    // 2) Distintivo "PROFESIONALES" junto al logotipo de la cabecera.
+    // 2) Distintivo "PROFESIONALES" junto al logotipo de la cabecera, y
+    // una clase en el propio logo para que cada página pueda darle un
+    // tratamiento visual diferenciador propio (efecto distinto al de
+    // un usuario normal) sin que esto cambie nada por sí solo en
+    // páginas que todavía no tengan el CSS correspondiente — a
+    // petición de Eloy: mantener la palabra "Profesional" en la
+    // cabecera Y que el LOGO tenga un efecto diferencial (se probó
+    // antes iluminando el icono del menú en su lugar, "no me gusta",
+    // descartado). De momento solo tiene estilo real en
+    // acceso-profesional.html (ver su <style>), mientras se valida; el
+    // resto de páginas se extenderá después.
     document.querySelectorAll('.navbar__logo').forEach((logo) => {
       if (logo.closest('.site-footer')) return; // solo en la cabecera, no en el logo del pie
+      logo.classList.add('om-logo-profesional');
       if (logo.parentElement.querySelector('.om-distintivo-profesional')) return;
       const distintivo = document.createElement('span');
       distintivo.className = 'om-distintivo-profesional';
@@ -164,20 +175,7 @@
       logo.insertAdjacentElement('afterend', distintivo);
     });
 
-    // 3) Marca el botón de menú (hamburguesa) con una clase cuando la
-    // sesión profesional está activa, para que cada página pueda darle
-    // un tratamiento visual diferenciador propio (brillo/resalte) sin
-    // que esto cambie nada por sí solo en páginas que todavía no
-    // tengan el CSS correspondiente — a petición de Eloy: "me gustaría
-    // que el icono se ilumine o tenga un efecto diferencial en la
-    // barra de menús". De momento solo tiene estilo real en
-    // acceso-profesional.html (ver su <style>), mientras se valida;
-    // el resto de páginas se extenderá después.
-    document.querySelectorAll('.navbar__toggle').forEach((boton) => {
-        boton.classList.add('om-toggle-profesional');
-    });
-
-    // 4) "Salir" — última opción del menú (escritorio y móvil comparten
+    // 3) "Salir" — última opción del menú (escritorio y móvil comparten
     // el mismo <ul>, ver nota arriba).
     document.querySelectorAll('.navbar__menu').forEach((menu) => {
       if (menu.querySelector('.om-salir-profesional')) return;
