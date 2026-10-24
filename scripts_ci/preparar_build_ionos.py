@@ -177,10 +177,30 @@ def main():
         'Options -Indexes\n'
         'DirectoryIndex index.html\n\n'
         '# Redirigir /defaultsite (y subpáginas antiguas indexadas) a la raíz\n'
-        'RedirectMatch 301 ^/defaultsite(/?.*)$ /$1\n',
+        'RedirectMatch 301 ^/defaultsite(/?.*)$ /$1\n\n'
+        '# Evitar que el navegador sirva una copia cacheada antigua de una\n'
+        '# página o de un catálogo tras un despliegue — bug real reportado:\n'
+        '# tras subir cambios a IONOS, Chrome (normal, no incógnito) seguía\n'
+        '# sirviendo una copia precargada de ANTES del despliegue a quien\n'
+        '# llegaba desde un enlace de resultados/ficha de Google (que activa\n'
+        '# la precarga predictiva de Chrome), mientras que incógnito y Safari\n'
+        '# cargaban bien la versión nueva — exactamente la diferencia que\n'
+        '# delata una caché local obsoleta, no un fallo de servidor. Como\n'
+        '# Apache no enviaba ninguna cabecera Cache-Control, el navegador\n'
+        '# decidía por heurística cuánto confiar en lo ya guardado. Con\n'
+        '# "no-cache" el navegador SIGUE pudiendo guardar la copia, pero\n'
+        '# está obligado a revalidarla con el servidor (ETag/Last-Modified)\n'
+        '# antes de usarla — así nunca se queda pegado a una versión\n'
+        '# anterior, y si no ha cambiado nada la revalidación es barata\n'
+        '# (304, sin volver a descargar el archivo entero).\n'
+        '<IfModule mod_headers.c>\n'
+        '    <FilesMatch "\\.(html|json)$">\n'
+        '        Header set Cache-Control "no-cache, must-revalidate"\n'
+        '    </FilesMatch>\n'
+        '</IfModule>\n',
         encoding='utf-8'
     )
-    print('✓ .htaccess: redirección de /defaultsite a raíz añadida.')
+    print('✓ .htaccess: redirección de /defaultsite a raíz y Cache-Control (no-cache en HTML/JSON) añadidos.')
 
     # Fallback por si .htaccess no se lee o /defaultsite pide
     # explícitamente una página de índice: redirigir con meta-refresh
