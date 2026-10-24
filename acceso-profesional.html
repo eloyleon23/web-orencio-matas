@@ -131,14 +131,28 @@
          profesional al botón) — señal visual adicional en la propia
          barra de menús, a petición de Eloy, más allá del distintivo de
          texto. Mismo criterio que el bloque de arriba: de momento solo
-         aquí, validando antes de extenderlo. */
+         aquí, validando antes de extenderlo.
+         Primera versión (borde + resplandor sutil en blanco) pasaba
+         desapercibida ("no noto mucha diferencia") — se sustituye por
+         fondo rojo sólido (máximo contraste con las líneas del icono,
+         ahora en blanco) más un anillo que pulsa hacia afuera sin
+         parar, igual que un indicador de notificación, para que se
+         note de un vistazo. */
       .om-toggle-profesional {
         border-color: var(--primary-red) !important;
-        background: rgba(217, 27, 27, 0.08) !important;
-        box-shadow: 0 0 0 3px rgba(217, 27, 27, 0.18), 0 0 14px rgba(217, 27, 27, 0.45);
+        background: var(--primary-red) !important;
+        animation: om-pulso-profesional 1.8s ease-in-out infinite;
       }
       .om-toggle-profesional span {
-        background: var(--primary-red) !important;
+        background: #fff !important;
+      }
+      @keyframes om-pulso-profesional {
+        0%   { box-shadow: 0 0 0 0 rgba(217, 27, 27, 0.55); }
+        70%  { box-shadow: 0 0 0 11px rgba(217, 27, 27, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(217, 27, 27, 0); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .om-toggle-profesional { animation: none; box-shadow: 0 0 0 4px rgba(217, 27, 27, 0.3); }
       }
     </style>
   </head>
