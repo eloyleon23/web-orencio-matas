@@ -112,62 +112,50 @@
          según la página) el icono del menú hamburguesa hasta dejarlo
          parcialmente fuera de la vista, porque competía con él por el
          mismo espacio dentro de .navbar__inner.
-         Primer intento (sacarlo del flujo con position:absolute,
-         anclado justo debajo del logo) quedaba fuera de la propia
-         barra de cabecera — visualmente "flotando" sobre el contenido
-         de la página en vez de dentro del navbar, a petición de Eloy:
-         "la palabra profesionales la quiero en la barra de cabecera de
-         menu". Se sustituye por flex-wrap: en vez de sacarlo del
-         flujo, se le fuerza a ocupar una línea propia DENTRO de
-         .navbar__inner (flex-basis:100%) cuando no cabe — la propia
-         barra crece de alto para acomodarlo, nunca se superpone al
-         contenido de debajo. "order" adelanta el icono del menú por
-         delante del distintivo en el flujo visual, para que logo+icono
-         quepan siempre en la primera línea y el distintivo caiga solo
-         a la segunda si hace falta.
+         Dos intentos descartados: sacarlo del flujo con
+         position:absolute (quedaba flotando fuera de la cabecera) y
+         forzarlo a su propia línea con flex-wrap (tampoco — Eloy lo
+         quiere EN LA MISMA LÍNEA, "entre el logo y el icono de menú",
+         como ya estaba en escritorio). Se achica lo justo en móvil
+         (fuente, relleno, espaciado entre letras) y se reduce el hueco
+         del navbar en ese ancho para que logo + distintivo + icono
+         quepan los tres en una sola fila sin que ninguno empuje al
+         siguiente fuera de la vista — comprobado con el ancho real
+         disponible (containers de ~280-335px en móvil).
          De momento solo aplicado aquí (acceso-profesional.html, a
          petición de Eloy, para validar antes de extenderlo al resto
          de páginas visibles para profesionales). */
       @media (max-width: 860px) {
-        .navbar__inner { flex-wrap: wrap; row-gap: 2px; }
-        .navbar__toggle { order: 1; }
+        .navbar__inner { gap: 8px; }
         .om-distintivo-profesional {
-          order: 2;
-          flex: 1 0 100%;
-          margin: 4px 0 2px !important;
+          margin-left: 0 !important;
+          margin-top: 0 !important;
+          padding: 3px 7px;
+          font-size: 8.5px;
+          letter-spacing: 0.03em;
+          flex-shrink: 0;
         }
       }
 
       /* Logotipo con efecto diferencial cuando la sesión profesional
          está activa (perfil-profesional.js añade la clase om-logo-
          profesional al enlace del logo) — a petición de Eloy: mantener
-         la palabra "Profesional" en la cabecera tal cual YA estaba
-         (om-distintivo-profesional, sin tocar).
-         Primeros dos intentos descartados: iluminar el icono del menú
-         ("no me gusta") y un resplandor sobre el logo entero vía
-         drop-shadow (tampoco). Lo que se pide ahora es más concreto:
-         un efecto que RODEE la gota de pintura del logo en sí, no el
-         logo entero (que también incluye el texto "Orencio Matas
-         Hnos"). logo-orencio.png (202×86px) tiene la gota ocupando la
-         franja izquierda, prácticamente cuadrada (columnas 0-78 de
-         202, es decir, un ancho ≈ el alto completo de la imagen) y el
-         texto a la derecha — confirmado inspeccionando el PNG a nivel
-         de píxel. En vez de recortar/duplicar la imagen, se coloca un
-         anillo luminoso (pseudo-elemento circular, detrás de la
-         imagen) del tamaño del alto del logo — por tanto casi
-         exactamente el tamaño de la gota — anclado al borde izquierdo
-         del enlace, que es donde cae la gota siempre, sea cual sea el
-         tamaño renderizado del logo (móvil/escritorio). Como el PNG de
-         la gota tiene fondo transparente, el anillo se ve asomar por
-         fuera y por dentro de su silueta en vez de taparla. */
-      /* border-radius:50% (círculo perfecto) dejaba huecos visibles —
-         la gota no es un círculo, es más bien un escudo/gota con la
-         parte de arriba casi plana ("montañas") y solo se redondea de
-         verdad hacia abajo. Un radio distinto por esquina (más cerrado
-         arriba, más abierto abajo) se ciñe mucho mejor a su silueta
-         real sin necesidad de recortar la imagen. */
+         la palabra "Profesional" en la cabecera (sin tocar) y que el
+         LOGO en sí se vea distinto al de un usuario normal.
+         Intentos descartados: iluminar el icono del menú, un
+         resplandor fijo sobre el logo entero, y un anillo estático
+         rodeando la gota — "quiero un efecto apropiado para una gota"
+         (💧). El efecto más propio de una gota de verdad es la onda
+         que deja al caer: aquí se simulan dos ondas concéntricas que
+         nacen pegadas a la gota, se expanden hacia afuera y se
+         desvanecen, encadenadas con medio ciclo de desfase para que
+         siempre haya una onda visible — como una gota cayendo sobre
+         agua, en bucle. Reutiliza la silueta aproximada de la gota
+         (ver más abajo el radio distinto por esquina, ya afinado
+         antes) como punto de partida de cada onda. */
       .om-logo-profesional { position: relative; }
-      .om-logo-profesional::before {
+      .om-logo-profesional::before,
+      .om-logo-profesional::after {
         content: "";
         position: absolute;
         left: -4%;
@@ -175,23 +163,30 @@
         height: 100%;
         aspect-ratio: 1 / 1;
         border-radius: 32% 32% 46% 46% / 22% 22% 46% 46%;
-        background: radial-gradient(circle, rgba(217, 27, 27, 0.32) 0%, rgba(217, 27, 27, 0.12) 55%, rgba(217, 27, 27, 0) 76%);
-        animation: om-gota-resplandor 2.4s ease-in-out infinite;
+        border: 1.5px solid var(--primary-red);
+        opacity: 0;
         pointer-events: none;
         z-index: 0;
+        animation: om-gota-onda 2.6s ease-out infinite;
+      }
+      .om-logo-profesional::after {
+        animation-delay: 1.3s;
       }
       .om-logo-profesional .navbar__logo-image {
         position: relative;
         z-index: 1;
       }
-      @keyframes om-gota-resplandor {
-        0%, 100% { box-shadow: 0 0 0 2px rgba(217, 27, 27, 0.45), 0 0 10px 2px rgba(217, 27, 27, 0.3); }
-        50%      { box-shadow: 0 0 0 3px rgba(217, 27, 27, 0.85), 0 0 18px 6px rgba(217, 27, 27, 0.55); }
+      @keyframes om-gota-onda {
+        0%   { transform: scale(0.82); opacity: 0.75; }
+        70%  { opacity: 0.18; }
+        100% { transform: scale(1.65); opacity: 0; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .om-logo-profesional::before {
+        .om-logo-profesional::before,
+        .om-logo-profesional::after {
           animation: none;
-          box-shadow: 0 0 0 3px rgba(217, 27, 27, 0.6), 0 0 14px 3px rgba(217, 27, 27, 0.4);
+          opacity: 1;
+          transform: scale(1.08);
         }
       }
     </style>
