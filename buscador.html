@@ -178,7 +178,22 @@
                 top: 90px; /* mismo valor que .filtros, para que se queden fijos juntos */
                 align-self: start;
                 z-index: 40;
-                background: linear-gradient(135deg, #1e293b, #0f172a); /* mismo tono que .buscador-header */
+                /* Antes fondo sólido opaco (mismo tono que .buscador-header)
+                   — a petición de Eloy, para que la barra de búsqueda quede
+                   "incluida" en el fondo degradado de arriba (ver
+                   .om-fondo-degradado) en vez de taparlo con su propia caja
+                   oscura, se deja translúcida con un ligero cristal
+                   esmerilado (backdrop-filter): el degradado se ve a través
+                   mientras está arriba del todo, y sigue teniendo presencia
+                   propia (tinte oscuro + blur) una vez el scroll la deja ya
+                   fuera de la zona del degradado. Los controles de dentro
+                   (desplegable de Área, campo de búsqueda) mantienen su
+                   propio fondo opaco — ver reglas de abajo — así que esto
+                   solo afecta al marco/padding alrededor, nunca a la
+                   legibilidad del texto. */
+                background: rgba(15, 23, 42, 0.32);
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
                 padding: 8px;
                 border-radius: 10px;
                 box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
@@ -2315,12 +2330,32 @@
            HORIZONTAL se deja más ancho que el vertical (130% vs 100%) para
            que el color se extienda más hacia la derecha que hacia abajo,
            dando ese aspecto diagonal "desde la esquina superior izquierda
-           hacia la inferior derecha" que pedía Eloy. */
+           hacia la inferior derecha" que pedía Eloy.
+
+           Ancho completo de página (petición de Eloy: "hay un pequeño
+           margen a la izquierda que no has incluido"): .layout tiene
+           max-width:min(96vw,1760px) y margin:auto, así que en pantallas
+           normales queda un margen a cada lado (el 4% restante del 96vw,
+           o el sobrante si la pantalla supera 1760px) — ese margen SÍ es
+           parte de .layout (containing block de este div), así que
+           left:0/right:0 por sí solos no llegaban hasta el borde real de
+           la ventana. Técnica estándar para "full-bleed" dentro de un
+           contenedor centrado: left:50% (el 50% de .layout coincide con
+           el centro real de la ventana, porque .layout está centrado con
+           margin:auto) + translateX(-50%) de un ancho igual al viewport
+           real. Se usa --om-vw-real (medido por JS con
+           document.documentElement.clientWidth, que SÍ descuenta la
+           barra de scroll) en vez de "100vw" directamente — "100vw"
+           incluye el ancho de la barra de scroll en la mayoría de
+           navegadores, lo que añade un desbordamiento horizontal
+           invisible pero real (puede generar scroll horizontal
+           fantasma). */
         .om-fondo-degradado {
             position: absolute;
             top: 0;
-            left: 0;
-            right: 0;
+            left: 50%;
+            width: var(--om-vw-real, 100vw);
+            transform: translateX(-50%);
             height: max(20vh, 260px);
             z-index: 0;
             pointer-events: none;
@@ -2346,8 +2381,17 @@
            a medias, pero tampoco se alarga más de lo necesario si la
            carga de datos es más lenta que la propia animación. */
         body.om-cargando { overflow: hidden; }
+        /* blur(4px), no 7px: con el catálogo real (6500+ productos) construir
+           el grid/carruseles de golpe bloquea el hilo principal varios
+           segundos (confirmado con Performance.longtask) — cuanto más fuerte
+           el blur, más caro es volver a rasterizarlo cada vez que ese
+           contenido muta debajo, y eso se sumaba al bloqueo general
+           haciendo el efecto menos fluido (bug real reportado por Eloy:
+           "el efecto se corta"). Un blur más ligero no lo arregla del
+           todo (la causa de fondo es el bloqueo del hilo principal, ver
+           más abajo) pero sí reduce ese coste extra. */
         body.om-cargando > *:not(#om-splash-carga) {
-            filter: blur(7px);
+            filter: blur(4px);
             transition: filter 0.5s ease;
         }
         #om-splash-carga {
@@ -2442,19 +2486,41 @@
             display: block;
             width: 100%;
             height: auto;
-            clip-path: inset(0 0 100% 0);
+        }
+        /* Fase 3 (revelado): ANTES animaba clip-path sobre la propia imagen.
+           clip-path no está garantizado en el hilo compuesto (compositor) en
+           todos los navegadores — con el catálogo real bloqueando el hilo
+           principal varios segundos (ver nota de "blur" más arriba), esa
+           animación se congelaba durante el bloqueo y luego SALTABA
+           directamente al punto que le tocaba por tiempo real transcurrido,
+           en vez de progresar fotograma a fotograma — eso es exactamente el
+           "corte"/salto que reportó Eloy. Se sustituye por una tapa
+           (::after) que se encoge con transform:scaleY(), anclada abajo
+           (transform-origin:bottom) para que el hueco que deja crezca de
+           arriba hacia abajo — mismo efecto visual que el clip-path de
+           antes, pero "transform" SÍ está garantizado en el hilo compuesto:
+           sigue animando con fluidez aunque el hilo principal esté
+           bloqueado construyendo el catálogo. */
+        .om-splash-logo::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            background: #f8fafc;
+            transform-origin: bottom;
+            will-change: transform;
             animation: om-splash-logo-revelar 0.7s cubic-bezier(.3, .7, .4, 1) 3.92s both;
         }
         @keyframes om-splash-logo-revelar {
-            0%   { clip-path: inset(0 0 100% 0); }
-            100% { clip-path: inset(0 0 0% 0); }
+            0%   { transform: scaleY(1); }
+            100% { transform: scaleY(0); }
         }
 
         @media (prefers-reduced-motion: reduce) {
             body.om-cargando > *:not(#om-splash-carga) { filter: none; }
             .om-splash-logo::before,
+            .om-splash-logo::after,
             .om-splash-logo .om-gota-trazo-splash { display: none; }
-            .om-splash-logo img { clip-path: none; animation: none; }
         }
 
         /* Modal solicitud catálogo */
@@ -4316,12 +4382,28 @@
 <!-- Color del degradado superior (ver .om-fondo-degradado): al azar entre
      los 4 colores del logo en CADA carga de página, a petición de Eloy —
      se fija aquí, muy pronto en <head>, para que al pintar el body ya
-     tenga el color definitivo y no haya parpadeo/cambio visible. -->
+     tenga el color definitivo y no haya parpadeo/cambio visible.
+     También se fija aquí --om-vw-real (ancho real de la ventana, sin la
+     barra de scroll) para que .om-fondo-degradado pueda ocupar todo el
+     ancho de la página ("full-bleed") en vez de quedarse dentro del
+     margen de .layout — ver el comentario junto a .om-fondo-degradado en
+     el <style> de más abajo. Se recalcula en cada resize/giro de
+     pantalla (debounced) para que siga siendo exacto. -->
 <script>
 (function () {
   var COLORES = ['#0078a8', '#fccc00', '#d81b24', '#008454'];
   var color = COLORES[Math.floor(Math.random() * COLORES.length)];
   document.documentElement.style.setProperty('--om-color-degradado', color);
+
+  function fijarAnchoReal_() {
+    document.documentElement.style.setProperty('--om-vw-real', document.documentElement.clientWidth + 'px');
+  }
+  fijarAnchoReal_();
+  var temporizadorResize_;
+  window.addEventListener('resize', function () {
+    clearTimeout(temporizadorResize_);
+    temporizadorResize_ = setTimeout(fijarAnchoReal_, 150);
+  });
 })();
 </script>
 </head>
