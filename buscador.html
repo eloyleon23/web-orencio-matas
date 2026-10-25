@@ -224,6 +224,20 @@
 
         /* ── Filtros ── */
         .filtros {
+            /* OJO: nunca poner backdrop-filter (ni filter/transform/
+               perspective) aquí. .filtros es el contenedor de
+               #grupo-buscador-principal Y de #filtros-extra (el cajón de
+               filtros en móvil), y AMBOS son position:fixed anclados al
+               viewport real — pero backdrop-filter en un ANCESTOR convierte
+               a ese ancestor en el "containing block" de sus descendientes
+               fixed (igual que filter/transform), así que con
+               backdrop-filter aquí esos dos elementos dejaban de anclarse
+               al viewport y se rompían por completo (bug real, detectado
+               al intentar incluir la barra del buscador en el degradado:
+               la barra ya no aparecía donde debía). La traslucidez para
+               que se vea el degradado detrás se aplica en los propios
+               elementos fixed — #grupo-buscador-principal (móvil) y
+               #toolbar-buscador-pc (escritorio) — nunca aquí. */
             background: white;
             border: 1px solid var(--border);
             border-radius: 14px;
@@ -480,7 +494,16 @@
                 right: 0;
                 top: 0;
                 z-index: 90;
-                background: #fff;
+                /* Antes blanco sólido opaco — igual que #toolbar-buscador-pc
+                   en escritorio (ver más arriba), a petición de Eloy
+                   ("el degradado no aparece nada desde el bloque de la
+                   barra del buscador y filtros"): en móvil ESTA es la caja
+                   que de verdad se ve ahí arriba (fixed, encima de todo,
+                   z-index:90) — tapaba el degradado por completo. Blanco
+                   translúcido + cristal esmerilado en vez de sólido. */
+                background: rgba(255, 255, 255, 0.82);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
                 padding: 8px 20px;
                 box-shadow: 0 2px 10px rgba(0,0,0,.06);
             }
@@ -2356,7 +2379,9 @@
             left: 50%;
             width: var(--om-vw-real, 100vw);
             transform: translateX(-50%);
-            height: max(20vh, 260px);
+            /* 50% de la altura del dispositivo, empezando desde arriba —
+               petición explícita de Eloy (antes 20vh/260px). */
+            height: max(50vh, 320px);
             z-index: 0;
             pointer-events: none;
             background: radial-gradient(
@@ -2480,47 +2505,35 @@
             74%      { stroke: var(--om-gota-5); }
             88%, 100% { stroke: var(--om-gota-6); }
         }
+        /* Fase 3 (revelado): vuelve a clip-path sobre la propia imagen — el
+           intento anterior de sustituirlo por una tapa (::after) en todo el
+           contenedor (.om-splash-logo) fue un error real: esa tapa, al
+           cubrir TODO el contenedor (gota + línea + imagen, no solo la
+           imagen) con animation-fill-mode:both, estaba encima de todo desde
+           el segundo 0 — tapando la gota cayendo y la línea con un simple
+           cuadro blanco hasta el revelado final (bug reportado por Eloy:
+           "fatal"). clip-path en la propia imagen, en cambio, solo afecta a
+           la imagen — nunca tapa la gota ni la línea, que son elementos
+           hermanos/propios del contenedor, no hijos de la imagen. */
         .om-splash-logo img {
             position: relative;
             z-index: 1;
             display: block;
             width: 100%;
             height: auto;
-        }
-        /* Fase 3 (revelado): ANTES animaba clip-path sobre la propia imagen.
-           clip-path no está garantizado en el hilo compuesto (compositor) en
-           todos los navegadores — con el catálogo real bloqueando el hilo
-           principal varios segundos (ver nota de "blur" más arriba), esa
-           animación se congelaba durante el bloqueo y luego SALTABA
-           directamente al punto que le tocaba por tiempo real transcurrido,
-           en vez de progresar fotograma a fotograma — eso es exactamente el
-           "corte"/salto que reportó Eloy. Se sustituye por una tapa
-           (::after) que se encoge con transform:scaleY(), anclada abajo
-           (transform-origin:bottom) para que el hueco que deja crezca de
-           arriba hacia abajo — mismo efecto visual que el clip-path de
-           antes, pero "transform" SÍ está garantizado en el hilo compuesto:
-           sigue animando con fluidez aunque el hilo principal esté
-           bloqueado construyendo el catálogo. */
-        .om-splash-logo::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            background: #f8fafc;
-            transform-origin: bottom;
-            will-change: transform;
+            clip-path: inset(0 0 100% 0);
             animation: om-splash-logo-revelar 0.7s cubic-bezier(.3, .7, .4, 1) 3.92s both;
         }
         @keyframes om-splash-logo-revelar {
-            0%   { transform: scaleY(1); }
-            100% { transform: scaleY(0); }
+            0%   { clip-path: inset(0 0 100% 0); }
+            100% { clip-path: inset(0 0 0% 0); }
         }
 
         @media (prefers-reduced-motion: reduce) {
             body.om-cargando > *:not(#om-splash-carga) { filter: none; }
             .om-splash-logo::before,
-            .om-splash-logo::after,
             .om-splash-logo .om-gota-trazo-splash { display: none; }
+            .om-splash-logo img { clip-path: none; animation: none; }
         }
 
         /* Modal solicitud catálogo */
