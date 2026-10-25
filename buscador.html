@@ -117,7 +117,19 @@
            Bug real detectado por Eloy: "en la vista responsive móvil
            se rompe la estética que ya tenía el buscador" al añadir el
            carrusel de Novedades. */
-        .layout > section { min-width: 0; position: relative; z-index: 1; }
+        /* z-index:0, NO 1 — con 1 empataba exactamente con .filtros
+           (z-index:1 también, ver más abajo), y en ese empate gana el que
+           va DESPUÉS en el DOM: esta <section> (grid de resultados) va
+           después de <aside class="filtros">, así que con el mismo valor
+           el grid acababa pintándose POR ENCIMA de filtros al hacer
+           scroll (filtros es sticky, pensado para quedarse fijo con el
+           grid pasando por DEBAJO) — bug real reportado por Eloy. Con 0
+           (por debajo del 1 de .filtros) sigue estando por encima de
+           .om-fondo-degradado (position:absolute, z-index:0 también,
+           pero va ANTES en el DOM, así que con el mismo valor el empate
+           ya lo gana esta <section>) y a la vez por debajo de filtros,
+           que es el orden correcto de los tres. */
+        .layout > section { min-width: 0; position: relative; z-index: 0; }
 
         .layout {
             /* position:relative — para que .om-fondo-degradado (ver más
