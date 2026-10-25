@@ -2405,9 +2405,10 @@
             left: 50%;
             width: var(--om-vw-real, 100vw);
             transform: translateX(-50%);
-            /* 50% de la altura del dispositivo, empezando desde arriba —
-               petición explícita de Eloy (antes 20vh/260px). */
-            height: max(50vh, 320px);
+            /* 90% de la altura del dispositivo, empezando desde arriba —
+               petición explícita de Eloy (antes 70vh, 50vh, y 20vh/260px
+               antes de eso). */
+            height: max(90vh, 320px);
             z-index: 0;
             pointer-events: none;
             background: radial-gradient(
