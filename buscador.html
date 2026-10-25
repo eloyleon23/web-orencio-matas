@@ -1783,6 +1783,20 @@
             gap: 8px;
         }
         .catalog-disclaimer.oculto { display: none; }
+        /* A petición de Eloy: al cerrar el aviso ("Nota: Los precios..."),
+           el botón "Estadísticas" (.seccion-destacados__cabecera, justo
+           encima de "Destacados") se quedaba flotando solo en medio de un
+           hueco vacío que antes ocupaba el propio aviso — demasiado margen
+           entre la barra de búsqueda y la primera sección. El botón se
+           queda exactamente donde estaba (no se toca su tamaño ni su
+           posición horizontal), solo se acerca un poco más a la barra de
+           búsqueda cuando el aviso está cerrado, recuperando parte de ese
+           hueco. Selector de hermano general (~), no adyacente (+): entre
+           el aviso y este bloque va #ancla-lista-compra-arriba, que no
+           ocupa espacio propio pero sí cuenta como hermano de por medio. */
+        #catalog-disclaimer.oculto ~ .seccion-destacados__cabecera {
+            margin-top: -18px;
+        }
         .catalog-disclaimer__contenido { flex: 1; min-width: 0; }
         .btn-cerrar-disclaimer {
             flex-shrink: 0;
