@@ -117,9 +117,25 @@
            Bug real detectado por Eloy: "en la vista responsive móvil
            se rompe la estética que ya tenía el buscador" al añadir el
            carrusel de Novedades. */
-        .layout > section { min-width: 0; }
+        /* z-index:0, NO 1 — con 1 empataba exactamente con .filtros
+           (z-index:1 también, ver más abajo), y en ese empate gana el que
+           va DESPUÉS en el DOM: esta <section> (grid de resultados) va
+           después de <aside class="filtros">, así que con el mismo valor
+           el grid acababa pintándose POR ENCIMA de filtros al hacer
+           scroll (filtros es sticky, pensado para quedarse fijo con el
+           grid pasando por DEBAJO) — bug real reportado por Eloy. Con 0
+           (por debajo del 1 de .filtros) sigue estando por encima de
+           .om-fondo-degradado (position:absolute, z-index:0 también,
+           pero va ANTES en el DOM, así que con el mismo valor el empate
+           ya lo gana esta <section>) y a la vez por debajo de filtros,
+           que es el orden correcto de los tres. */
+        .layout > section { min-width: 0; position: relative; z-index: 0; }
 
         .layout {
+            /* position:relative — para que .om-fondo-degradado (ver más
+               abajo), absoluto dentro de este contenedor, quede detrás de
+               filtros/resultados en vez de flotar sobre toda la página. */
+            position: relative;
             /* Antes max-width fijo de 1180px: en pantallas grandes (portátiles
                anchos, monitores 1440p/4K) dejaba mucho margen sin usar a los
                lados, con los filtros y el grid de productos siempre
@@ -174,7 +190,22 @@
                 top: 90px; /* mismo valor que .filtros, para que se queden fijos juntos */
                 align-self: start;
                 z-index: 40;
-                background: linear-gradient(135deg, #1e293b, #0f172a); /* mismo tono que .buscador-header */
+                /* Antes fondo sólido opaco (mismo tono que .buscador-header)
+                   — a petición de Eloy, para que la barra de búsqueda quede
+                   "incluida" en el fondo degradado de arriba (ver
+                   .om-fondo-degradado) en vez de taparlo con su propia caja
+                   oscura, se deja translúcida con un ligero cristal
+                   esmerilado (backdrop-filter): el degradado se ve a través
+                   mientras está arriba del todo, y sigue teniendo presencia
+                   propia (tinte oscuro + blur) una vez el scroll la deja ya
+                   fuera de la zona del degradado. Los controles de dentro
+                   (desplegable de Área, campo de búsqueda) mantienen su
+                   propio fondo opaco — ver reglas de abajo — así que esto
+                   solo afecta al marco/padding alrededor, nunca a la
+                   legibilidad del texto. */
+                background: rgba(15, 23, 42, 0.32);
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
                 padding: 8px;
                 border-radius: 10px;
                 box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
@@ -205,6 +236,20 @@
 
         /* ── Filtros ── */
         .filtros {
+            /* OJO: nunca poner backdrop-filter (ni filter/transform/
+               perspective) aquí. .filtros es el contenedor de
+               #grupo-buscador-principal Y de #filtros-extra (el cajón de
+               filtros en móvil), y AMBOS son position:fixed anclados al
+               viewport real — pero backdrop-filter en un ANCESTOR convierte
+               a ese ancestor en el "containing block" de sus descendientes
+               fixed (igual que filter/transform), así que con
+               backdrop-filter aquí esos dos elementos dejaban de anclarse
+               al viewport y se rompían por completo (bug real, detectado
+               al intentar incluir la barra del buscador en el degradado:
+               la barra ya no aparecía donde debía). La traslucidez para
+               que se vea el degradado detrás se aplica en los propios
+               elementos fixed — #grupo-buscador-principal (móvil) y
+               #toolbar-buscador-pc (escritorio) — nunca aquí. */
             background: white;
             border: 1px solid var(--border);
             border-radius: 14px;
@@ -213,6 +258,7 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
+            z-index: 1; /* por encima de .om-fondo-degradado */
         }
         @media (max-width: 880px) {
             .filtros { position: static; max-height: none; overflow-y: visible; }
@@ -460,7 +506,16 @@
                 right: 0;
                 top: 0;
                 z-index: 90;
-                background: #fff;
+                /* Antes blanco sólido opaco — igual que #toolbar-buscador-pc
+                   en escritorio (ver más arriba), a petición de Eloy
+                   ("el degradado no aparece nada desde el bloque de la
+                   barra del buscador y filtros"): en móvil ESTA es la caja
+                   que de verdad se ve ahí arriba (fixed, encima de todo,
+                   z-index:90) — tapaba el degradado por completo. Blanco
+                   translúcido + cristal esmerilado en vez de sólido. */
+                background: rgba(255, 255, 255, 0.82);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
                 padding: 8px 20px;
                 box-shadow: 0 2px 10px rgba(0,0,0,.06);
             }
@@ -1728,6 +1783,20 @@
             gap: 8px;
         }
         .catalog-disclaimer.oculto { display: none; }
+        /* A petición de Eloy: al cerrar el aviso ("Nota: Los precios..."),
+           el botón "Estadísticas" (.seccion-destacados__cabecera, justo
+           encima de "Destacados") se quedaba flotando solo en medio de un
+           hueco vacío que antes ocupaba el propio aviso — demasiado margen
+           entre la barra de búsqueda y la primera sección. El botón se
+           queda exactamente donde estaba (no se toca su tamaño ni su
+           posición horizontal), solo se acerca un poco más a la barra de
+           búsqueda cuando el aviso está cerrado, recuperando parte de ese
+           hueco. Selector de hermano general (~), no adyacente (+): entre
+           el aviso y este bloque va #ancla-lista-compra-arriba, que no
+           ocupa espacio propio pero sí cuenta como hermano de por medio. */
+        #catalog-disclaimer.oculto ~ .seccion-destacados__cabecera {
+            margin-top: -18px;
+        }
         .catalog-disclaimer__contenido { flex: 1; min-width: 0; }
         .btn-cerrar-disclaimer {
             flex-shrink: 0;
@@ -2272,6 +2341,257 @@
             animation: girar 1s linear infinite;
         }
         @keyframes girar { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+
+        /* ── Fondo degradado superior (petición de Eloy, ref. captura de
+           Amazon): franja decorativa, SOLO en la parte de arriba (no toda
+           la página), detrás de filtros/resultados — ver z-index:1 en
+           .filtros y en ".layout > section" de más arriba, y
+           position:relative en .layout. Degradado diagonal desde la
+           esquina superior izquierda (un color del logo) hacia la
+           inferior derecha (tendiendo a --light, el fondo real de la
+           página, para que el final del degradado no se note). El color
+           concreto lo fija JS al azar en cada carga (ver
+           --om-color-degradado, variable puesta en <html> muy pronto en
+           <head> para evitar parpadeo) entre los 4 colores que pide Eloy:
+           azul/amarillo/rojo/verde — los mismos tonos reales del logo
+           (ver --om-gota-* en .om-splash-logo de más abajo).
+
+           Altura en vh (al menos el 20% de la página, independientemente
+           del dispositivo, a petición de Eloy) en vez de un valor fijo en
+           px — así escala igual en móvil que en escritorio.
+
+           radial-gradient en vez de linear-gradient, a propósito: con un
+           linear-gradient diagonal (p.ej. 135deg), en un contenedor mucho
+           más ANCHO que ALTO (como este, filtros+grid ocupan casi todo el
+           ancho de la página pero la franja solo mide unos cientos de
+           px de alto) el lado IZQUIERDO del degradado recorre mucho menos
+           distancia a lo largo del eje diagonal que el lado derecho a la
+           misma altura — así que al llegar al borde inferior, el lado
+           izquierdo todavía no había terminado de desvanecerse del todo:
+           se notaba un corte visible ahí, y el degradado nunca llegaba a
+           blanco del todo (bug real reportado por Eloy). Con un
+           radial-gradient en forma de elipse anclado en la esquina
+           superior izquierda, el eje VERTICAL de la elipse se fija
+           exactamente al 100% de la altura del contenedor — así el borde
+           inferior SIEMPRE coincide exactamente con el último stop
+           (blanco sólido, --light) sea cual sea el ancho de pantalla,
+           eliminando el corte para cualquier dispositivo. El eje
+           HORIZONTAL se deja más ancho que el vertical (130% vs 100%) para
+           que el color se extienda más hacia la derecha que hacia abajo,
+           dando ese aspecto diagonal "desde la esquina superior izquierda
+           hacia la inferior derecha" que pedía Eloy.
+
+           Ancho completo de página (petición de Eloy: "hay un pequeño
+           margen a la izquierda que no has incluido"): .layout tiene
+           max-width:min(96vw,1760px) y margin:auto, así que en pantallas
+           normales queda un margen a cada lado (el 4% restante del 96vw,
+           o el sobrante si la pantalla supera 1760px) — ese margen SÍ es
+           parte de .layout (containing block de este div), así que
+           left:0/right:0 por sí solos no llegaban hasta el borde real de
+           la ventana. Técnica estándar para "full-bleed" dentro de un
+           contenedor centrado: left:50% (el 50% de .layout coincide con
+           el centro real de la ventana, porque .layout está centrado con
+           margin:auto) + translateX(-50%) de un ancho igual al viewport
+           real. Se usa --om-vw-real (medido por JS con
+           document.documentElement.clientWidth, que SÍ descuenta la
+           barra de scroll) en vez de "100vw" directamente — "100vw"
+           incluye el ancho de la barra de scroll en la mayoría de
+           navegadores, lo que añade un desbordamiento horizontal
+           invisible pero real (puede generar scroll horizontal
+           fantasma). */
+        .om-fondo-degradado {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: var(--om-vw-real, 100vw);
+            transform: translateX(-50%);
+            /* 50% de la altura del dispositivo, empezando desde arriba —
+               petición explícita de Eloy (antes 20vh/260px). */
+            height: max(50vh, 320px);
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(
+                ellipse 130% 100% at 0% 0%,
+                var(--om-color-degradado, #0078a8) 0%,
+                var(--om-color-degradado, #0078a8) 8%,
+                rgba(248, 250, 252, 0.55) 58%,
+                #f8fafc 100%
+            );
+        }
+
+        /* ── Pantalla de carga inicial (petición de Eloy): mientras
+           terminan de llegar los productos/secciones, se muestra a
+           pantalla completa el mismo logo grande de la página de inicio
+           (ver .om-logo-grande-inicio en index.html) con su misma
+           secuencia de 3 fases (gota cayendo → línea que recorre el
+           contorno → logo revelado de arriba a abajo), con el contenido
+           real de la página detrás, visible pero borroso. Se cierra
+           cuando se cumplen DOS condiciones a la vez (ver JS más abajo,
+           om-splash-datos-listos): la animación ha terminado Y los
+           productos ya están pintados — así nunca se corta la secuencia
+           a medias, pero tampoco se alarga más de lo necesario si la
+           carga de datos es más lenta que la propia animación. */
+        body.om-cargando { overflow: hidden; }
+        /* blur(4px), no 7px: con el catálogo real (6500+ productos) construir
+           el grid/carruseles de golpe bloquea el hilo principal varios
+           segundos (confirmado con Performance.longtask) — cuanto más fuerte
+           el blur, más caro es volver a rasterizarlo cada vez que ese
+           contenido muta debajo, y eso se sumaba al bloqueo general
+           haciendo el efecto menos fluido (bug real reportado por Eloy:
+           "el efecto se corta"). Un blur más ligero no lo arregla del
+           todo (la causa de fondo es el bloqueo del hilo principal, ver
+           más abajo) pero sí reduce ese coste extra. */
+        body.om-cargando > *:not(#om-splash-carga) {
+            filter: blur(4px);
+            transition: filter 0.5s ease;
+        }
+        #om-splash-carga {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(248, 250, 252, 0.78);
+            transition: opacity 0.5s ease;
+        }
+        #om-splash-carga.om-splash-saliendo {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .om-splash-logo {
+            position: relative;
+            display: inline-block;
+            width: min(42vw, 260px);
+            /* Mismo ratio real del SVG (ver viewBox="5100 3300 2150 2650" en
+               assets/logos/logo_calidad.svg: 2150 de ancho x 2650 de alto)
+               — declarado aquí para que el alto de este contenedor se sepa
+               YA por CSS puro a partir del ancho, sin esperar a que cargue
+               la imagen y sin depender de JS. Lo usa @keyframes
+               om-splash-gota-cae de aquí abajo para calcular hasta dónde
+               cae la gota en "transform" en vez de en "top" — ver el
+               porqué en el comentario de esa regla. */
+            aspect-ratio: 2150 / 2650;
+            --om-gota-1: #d81b24;
+            --om-gota-2: #f0a800;
+            --om-gota-3: #fccc00;
+            --om-gota-4: #008454;
+            --om-gota-5: #0078a8;
+            --om-gota-6: #0c4884;
+        }
+        .om-splash-logo::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            /* "top" YA NUNCA se anima (ver @keyframes de abajo) — se queda
+               fijo en este valor de siempre, el punto de partida real de
+               la caída; todo el recorrido hacia abajo se hace por
+               "transform: translateY()" en su lugar. */
+            top: -34px;
+            width: 9%;
+            aspect-ratio: 8 / 11;
+            background: var(--om-gota-1);
+            border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2;
+            will-change: transform, opacity;
+            animation: om-splash-gota-cae 1.72s both;
+        }
+        /* ANTES animaba "top" (-34px → 46% → 48%, en porcentaje de la
+           altura del contenedor) — "top" obliga a recalcular el layout en
+           cada fotograma, algo que el navegador NO puede hacer si el hilo
+           principal está ocupado (con el catálogo real, construir el grid
+           bloquea el hilo principal varios segundos, confirmado con
+           Performance.longtask): la gota se congelaba durante esos
+           bloqueos y saltaba al reanudarse — justo la falta de fluidez que
+           reportó Eloy. "transform" sí anima en el hilo compuesto (GPU),
+           inmune a que el hilo principal esté ocupado, pero sus
+           porcentajes son relativos a la propia gota (minúscula), no al
+           contenedor — así que el recorrido de caída se expresa en su
+           lugar con calc()/min(), replicando exactamente el mismo punto
+           de llegada que antes (46%/48% de la altura real del
+           contenedor, que ahora se conoce por CSS puro gracias al
+           aspect-ratio de .om-splash-logo): altura del contenedor =
+           min(42vw,260px) × 2650/2150, y el recorrido es esa altura ×
+           0.46 (o 0.48) sumado a los 34px de partida. */
+        @keyframes om-splash-gota-cae {
+            0%     { opacity: 0; transform: translate(-50%, 0) scale(0.5); animation-timing-function: ease-out; }
+            15.4%  { opacity: 1; transform: translate(-50%, 0) scale(1);   animation-timing-function: cubic-bezier(.7, 0, .9, .35); }
+            71.8%  { opacity: 1; transform: translate(-50%, calc(min(42vw, 260px) * 0.566977 + 34px)) scale(1); animation-timing-function: ease-out; }
+            79.5%  { opacity: 1; transform: translate(-50%, calc(min(42vw, 260px) * 0.591628 + 34px)) scaleX(1.7) scaleY(0.45); animation-timing-function: ease-out; }
+            100%   { opacity: 0; transform: translate(-50%, calc(min(42vw, 260px) * 0.591628 + 34px)) scaleX(0.3) scaleY(0.3); }
+        }
+        .om-splash-logo .om-gota-trazo-splash {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 46%;
+            height: 46%;
+            overflow: visible;
+            pointer-events: none;
+            z-index: 0;
+            transform: translate(-50%, -50%) scale(1.22);
+        }
+        .om-splash-logo .om-gota-trazo-splash path {
+            fill: none;
+            stroke: var(--om-gota-1);
+            stroke-width: 120;
+            stroke-linecap: round;
+            opacity: 0;
+            stroke-dasharray: 3400 19249;
+            animation:
+                om-splash-trazo-opacidad 2.2s ease-in-out 1.72s both,
+                om-splash-trazo-viaja 2.2s linear 1.72s both,
+                om-splash-trazo-color 2.2s linear 1.72s both;
+        }
+        @keyframes om-splash-trazo-opacidad {
+            0%, 8%    { opacity: 0; }
+            16%, 88%  { opacity: 1; }
+            100%      { opacity: 0; }
+        }
+        @keyframes om-splash-trazo-viaja {
+            0%, 16%   { stroke-dashoffset: 0; }
+            88%, 100% { stroke-dashoffset: -19249; }
+        }
+        @keyframes om-splash-trazo-color {
+            0%, 16%  { stroke: var(--om-gota-1); }
+            32%      { stroke: var(--om-gota-2); }
+            46%      { stroke: var(--om-gota-3); }
+            60%      { stroke: var(--om-gota-4); }
+            74%      { stroke: var(--om-gota-5); }
+            88%, 100% { stroke: var(--om-gota-6); }
+        }
+        /* Fase 3 (revelado): vuelve a clip-path sobre la propia imagen — el
+           intento anterior de sustituirlo por una tapa (::after) en todo el
+           contenedor (.om-splash-logo) fue un error real: esa tapa, al
+           cubrir TODO el contenedor (gota + línea + imagen, no solo la
+           imagen) con animation-fill-mode:both, estaba encima de todo desde
+           el segundo 0 — tapando la gota cayendo y la línea con un simple
+           cuadro blanco hasta el revelado final (bug reportado por Eloy:
+           "fatal"). clip-path en la propia imagen, en cambio, solo afecta a
+           la imagen — nunca tapa la gota ni la línea, que son elementos
+           hermanos/propios del contenedor, no hijos de la imagen. */
+        .om-splash-logo img {
+            position: relative;
+            z-index: 1;
+            display: block;
+            width: 100%;
+            height: auto;
+            clip-path: inset(0 0 100% 0);
+            animation: om-splash-logo-revelar 0.7s cubic-bezier(.3, .7, .4, 1) 3.92s both;
+        }
+        @keyframes om-splash-logo-revelar {
+            0%   { clip-path: inset(0 0 100% 0); }
+            100% { clip-path: inset(0 0 0% 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.om-cargando > *:not(#om-splash-carga) { filter: none; }
+            .om-splash-logo::before,
+            .om-splash-logo .om-gota-trazo-splash { display: none; }
+            .om-splash-logo img { clip-path: none; animation: none; }
+        }
 
         /* Modal solicitud catálogo */
         .modal-overlay {
@@ -4129,9 +4449,47 @@
     gtag('config', 'G-HMM85HSJ4Y');
   }
 </script>
+<!-- Color del degradado superior (ver .om-fondo-degradado): al azar entre
+     los 4 colores del logo en CADA carga de página, a petición de Eloy —
+     se fija aquí, muy pronto en <head>, para que al pintar el body ya
+     tenga el color definitivo y no haya parpadeo/cambio visible.
+     También se fija aquí --om-vw-real (ancho real de la ventana, sin la
+     barra de scroll) para que .om-fondo-degradado pueda ocupar todo el
+     ancho de la página ("full-bleed") en vez de quedarse dentro del
+     margen de .layout — ver el comentario junto a .om-fondo-degradado en
+     el <style> de más abajo. Se recalcula en cada resize/giro de
+     pantalla (debounced) para que siga siendo exacto. -->
+<script>
+(function () {
+  var COLORES = ['#0078a8', '#fccc00', '#d81b24', '#008454'];
+  var color = COLORES[Math.floor(Math.random() * COLORES.length)];
+  document.documentElement.style.setProperty('--om-color-degradado', color);
+
+  function fijarAnchoReal_() {
+    document.documentElement.style.setProperty('--om-vw-real', document.documentElement.clientWidth + 'px');
+  }
+  fijarAnchoReal_();
+  var temporizadorResize_;
+  window.addEventListener('resize', function () {
+    clearTimeout(temporizadorResize_);
+    temporizadorResize_ = setTimeout(fijarAnchoReal_, 150);
+  });
+})();
+</script>
 </head>
 
-<body>
+<body class="om-cargando">
+<!-- Pantalla de carga inicial a pantalla completa (petición de Eloy): el
+     mismo logo grande de la página de inicio (ver .om-splash-logo en el
+     <style> de la cabecera), con el resto de la página detrás, visible
+     pero borrosa (ver body.om-cargando en el CSS). Se cierra por JS (ver
+     script tras perfil-profesional.js) cuando terminan a la vez la
+     animación y la carga real de productos. -->
+<div id="om-splash-carga" aria-hidden="true">
+    <div class="om-splash-logo">
+        <img src="./assets/logos/logo_calidad.svg" alt="" />
+    </div>
+</div>
 <div id="banner-actualizacion">
     <div class="texto">
         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -4200,6 +4558,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <main class="layout">
+    <!-- Franja decorativa de fondo (petición de Eloy, ref. Amazon): solo
+         la parte de arriba, detrás de filtros/resultados — ver
+         .om-fondo-degradado en el <style> de la cabecera. Color fijado al
+         azar por el script inline de <head> (--om-color-degradado). -->
+    <div class="om-fondo-degradado" aria-hidden="true"></div>
     <!-- Franja superior de escritorio (≥881px): aquí se reubican por JS el
          buscador y el filtro de Área — ver moverBuscadorSegunViewport().
          Vacío/oculto en móvil y tablet. -->
@@ -5705,6 +6068,72 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      activa ANTES de decidir qué mostrar, así que perfil-profesional.js
      tiene que cargarse aquí, no al final del body. -->
 <script src="./assets/js/perfil-profesional.js?v=20261024b"></script>
+<!-- Control de la pantalla de carga inicial (#om-splash-carga, ver HTML al
+     principio del <body> y el <style> de la cabecera): se cierra solo
+     cuando se cumplen DOS condiciones — la animación de las 3 fases ha
+     terminado (om_splash_animLista_) Y los productos ya están pintados en
+     pantalla (om_splash_datosListos_, invocado desde
+     mostrarResultadosPorPrimeraVez() y desde el aviso de error de
+     cargarProductosPrincipales(), más abajo en este mismo archivo) — así
+     nunca se corta la secuencia a medias, pero tampoco se alarga más de lo
+     necesario si cargar los datos es más lento que la propia animación.
+     Reutiliza window.OM_GOTA_PATH_D, expuesto por perfil-profesional.js,
+     para el trazo de la gota — igual que hace index.html. -->
+<script>
+(function () {
+    var animLista = false;
+    var datosListos = false;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function cerrarSiToca_() {
+        if (!animLista || !datosListos) return;
+        document.body.classList.remove('om-cargando');
+        var el = document.getElementById('om-splash-carga');
+        if (!el) return;
+        el.classList.add('om-splash-saliendo');
+        setTimeout(function () { el.remove(); }, 520);
+    }
+
+    window.om_splash_datosListos_ = function () {
+        datosListos = true;
+        cerrarSiToca_();
+    };
+
+    // Red de seguridad: si por lo que sea nunca llega a invocarse
+    // om_splash_datosListos_ (fallo inesperado fuera de los dos puntos de
+    // control ya cubiertos), esto evita dejar al usuario con la pantalla
+    // de carga atascada para siempre.
+    setTimeout(function () { window.om_splash_datosListos_(); }, 15000);
+
+    if (reduceMotion) {
+        animLista = true;
+        cerrarSiToca_();
+    } else {
+        var logo = document.querySelector('.om-splash-logo');
+        if (logo && window.OM_GOTA_PATH_D) {
+            var SVG_NS = 'http://www.w3.org/2000/svg';
+            var svg = document.createElementNS(SVG_NS, 'svg');
+            svg.setAttribute('class', 'om-gota-trazo-splash');
+            svg.setAttribute('viewBox', '0 0 608 688');
+            svg.setAttribute('aria-hidden', 'true');
+            svg.setAttribute('focusable', 'false');
+            var g = document.createElementNS(SVG_NS, 'g');
+            g.setAttribute('transform', 'translate(0,688) scale(0.1,-0.1)');
+            var path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('d', window.OM_GOTA_PATH_D);
+            g.appendChild(path);
+            svg.appendChild(g);
+            logo.appendChild(svg);
+        }
+        // 1.72s (gota) + 2.2s (trazo) + 0.7s (revelado) = 4.62s, con un
+        // pequeño margen.
+        setTimeout(function () {
+            animLista = true;
+            cerrarSiToca_();
+        }, 4700);
+    }
+})();
+</script>
 <script src="./assets/js/ia-disponibilidad.js?v=20261007a"></script>
 <script>
 // ── Configuración del buscador ──
@@ -6612,6 +7041,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         aplicarFiltros();
         $('cargando-inicial').style.display = 'none';
         $('contenedor-resultados').style.display = '';
+        if (window.om_splash_datosListos_) window.om_splash_datosListos_();
         iniciarComprobacionActualizaciones();
         aplicarFiltrosDesdeURL();
         // "await": abrirProductoDesdeURL() espera a su vez a que las
@@ -6753,6 +7183,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!primerPintadoHecho) {
             $('cargando-inicial').innerHTML =
                 '<i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo cargar el catálogo de productos. Inténtalo de nuevo más tarde.</p>';
+            if (window.om_splash_datosListos_) window.om_splash_datosListos_();
             return;
         }
         cargarProductosAdicionalesEnSegundoPlano();
