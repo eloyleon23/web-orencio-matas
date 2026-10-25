@@ -258,7 +258,20 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
-            z-index: 1; /* por encima de .om-fondo-degradado */
+            /* NUNCA poner aquí un z-index explícito (ver bug real reportado
+               por Eloy: con el panel de filtros móvil abierto, #filtros-extra
+               — que vive DENTRO de este elemento — se quedaba por detrás del
+               fondo oscuro #filtros-backdrop (que es hermano, fuera de
+               .filtros), imposible de usar. Confirmado a fondo, con bisect
+               incluido: el culpable era precisamente el "z-index:1" que
+               tenía esta regla desde el primer commit del degradado —
+               quitándolo se arregla, incluso en móvil, donde .filtros es
+               position:static (donde un z-index "no debería" tener efecto
+               según la especificación, pero en la práctica sí lo tiene
+               sobre el orden de pintado de #filtros-extra, un descendiente
+               position:fixed). .filtros ya queda por encima de
+               .om-fondo-degradado solo por el orden normal del DOM (va
+               después en el HTML), sin necesitar ningún z-index. */
         }
         @media (max-width: 880px) {
             .filtros { position: static; max-height: none; overflow-y: visible; }
