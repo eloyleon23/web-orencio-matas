@@ -533,6 +533,12 @@
     }
   }
 
+  // Expuesto para que otras páginas puedan reutilizar el mismo contorno
+  // vectorizado de la gota del logo sin duplicar esta cadena enorme —
+  // ver la prueba de concepto del efecto de logo en index.html (gotita +
+  // trazo + revelado), que necesita exactamente este mismo path.
+  window.OM_GOTA_PATH_D = OM_GOTA_PATH_D;
+
   window.PerfilProfesional = {
     PAGINAS_EXCLUIDAS: PAGINAS_EXCLUIDAS.slice(),
     sesionActiva: function () { return !!leerSesion_(); },
