@@ -2449,6 +2449,15 @@
             position: relative;
             display: inline-block;
             width: min(42vw, 260px);
+            /* Mismo ratio real del SVG (ver viewBox="5100 3300 2150 2650" en
+               assets/logos/logo_calidad.svg: 2150 de ancho x 2650 de alto)
+               — declarado aquí para que el alto de este contenedor se sepa
+               YA por CSS puro a partir del ancho, sin esperar a que cargue
+               la imagen y sin depender de JS. Lo usa @keyframes
+               om-splash-gota-cae de aquí abajo para calcular hasta dónde
+               cae la gota en "transform" en vez de en "top" — ver el
+               porqué en el comentario de esa regla. */
+            aspect-ratio: 2150 / 2650;
             --om-gota-1: #d81b24;
             --om-gota-2: #f0a800;
             --om-gota-3: #fccc00;
@@ -2460,6 +2469,10 @@
             content: "";
             position: absolute;
             left: 50%;
+            /* "top" YA NUNCA se anima (ver @keyframes de abajo) — se queda
+               fijo en este valor de siempre, el punto de partida real de
+               la caída; todo el recorrido hacia abajo se hace por
+               "transform: translateY()" en su lugar. */
             top: -34px;
             width: 9%;
             aspect-ratio: 8 / 11;
@@ -2468,14 +2481,32 @@
             opacity: 0;
             pointer-events: none;
             z-index: 2;
+            will-change: transform, opacity;
             animation: om-splash-gota-cae 1.72s both;
         }
+        /* ANTES animaba "top" (-34px → 46% → 48%, en porcentaje de la
+           altura del contenedor) — "top" obliga a recalcular el layout en
+           cada fotograma, algo que el navegador NO puede hacer si el hilo
+           principal está ocupado (con el catálogo real, construir el grid
+           bloquea el hilo principal varios segundos, confirmado con
+           Performance.longtask): la gota se congelaba durante esos
+           bloqueos y saltaba al reanudarse — justo la falta de fluidez que
+           reportó Eloy. "transform" sí anima en el hilo compuesto (GPU),
+           inmune a que el hilo principal esté ocupado, pero sus
+           porcentajes son relativos a la propia gota (minúscula), no al
+           contenedor — así que el recorrido de caída se expresa en su
+           lugar con calc()/min(), replicando exactamente el mismo punto
+           de llegada que antes (46%/48% de la altura real del
+           contenedor, que ahora se conoce por CSS puro gracias al
+           aspect-ratio de .om-splash-logo): altura del contenedor =
+           min(42vw,260px) × 2650/2150, y el recorrido es esa altura ×
+           0.46 (o 0.48) sumado a los 34px de partida. */
         @keyframes om-splash-gota-cae {
-            0%     { top: -34px; opacity: 0;  transform: translateX(-50%) scale(0.5); animation-timing-function: ease-out; }
-            15.4%  { top: -34px; opacity: 1;  transform: translateX(-50%) scale(1);   animation-timing-function: cubic-bezier(.7, 0, .9, .35); }
-            71.8%  { top: 46%;   opacity: 1;  transform: translateX(-50%) scale(1);   animation-timing-function: ease-out; }
-            79.5%  { top: 48%;   opacity: 1;  transform: translateX(-50%) scaleX(1.7) scaleY(0.45); animation-timing-function: ease-out; }
-            100%   { top: 48%;   opacity: 0;  transform: translateX(-50%) scaleX(0.3) scaleY(0.3); }
+            0%     { opacity: 0; transform: translate(-50%, 0) scale(0.5); animation-timing-function: ease-out; }
+            15.4%  { opacity: 1; transform: translate(-50%, 0) scale(1);   animation-timing-function: cubic-bezier(.7, 0, .9, .35); }
+            71.8%  { opacity: 1; transform: translate(-50%, calc(min(42vw, 260px) * 0.566977 + 34px)) scale(1); animation-timing-function: ease-out; }
+            79.5%  { opacity: 1; transform: translate(-50%, calc(min(42vw, 260px) * 0.591628 + 34px)) scaleX(1.7) scaleY(0.45); animation-timing-function: ease-out; }
+            100%   { opacity: 0; transform: translate(-50%, calc(min(42vw, 260px) * 0.591628 + 34px)) scaleX(0.3) scaleY(0.3); }
         }
         .om-splash-logo .om-gota-trazo-splash {
             position: absolute;
