@@ -117,9 +117,13 @@
            Bug real detectado por Eloy: "en la vista responsive móvil
            se rompe la estética que ya tenía el buscador" al añadir el
            carrusel de Novedades. */
-        .layout > section { min-width: 0; }
+        .layout > section { min-width: 0; position: relative; z-index: 1; }
 
         .layout {
+            /* position:relative — para que .om-fondo-degradado (ver más
+               abajo), absoluto dentro de este contenedor, quede detrás de
+               filtros/resultados en vez de flotar sobre toda la página. */
+            position: relative;
             /* Antes max-width fijo de 1180px: en pantallas grandes (portátiles
                anchos, monitores 1440p/4K) dejaba mucho margen sin usar a los
                lados, con los filtros y el grid de productos siempre
@@ -213,6 +217,7 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
+            z-index: 1; /* por encima de .om-fondo-degradado */
         }
         @media (max-width: 880px) {
             .filtros { position: static; max-height: none; overflow-y: visible; }
@@ -2273,6 +2278,157 @@
         }
         @keyframes girar { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
 
+        /* ── Fondo degradado superior (petición de Eloy, ref. captura de
+           Amazon): franja decorativa, SOLO en la parte de arriba (no toda
+           la página), detrás de filtros/resultados — ver z-index:1 en
+           .filtros y en ".layout > section" de más arriba, y
+           position:relative en .layout. Degradado diagonal desde la
+           esquina superior izquierda (un color del logo) hacia la
+           inferior derecha (tendiendo a --light, el fondo real de la
+           página, para que el final del degradado no se note). El color
+           concreto lo fija JS al azar en cada carga (ver
+           --om-color-degradado, variable puesta en <html> muy pronto en
+           <head> para evitar parpadeo) entre los 4 colores que pide Eloy:
+           azul/amarillo/rojo/verde — los mismos tonos reales del logo
+           (ver --om-gota-* en .om-splash-logo de más abajo). */
+        .om-fondo-degradado {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 460px;
+            z-index: 0;
+            pointer-events: none;
+            background: linear-gradient(135deg, var(--om-color-degradado, #0078a8) 0%, rgba(248,250,252,0) 62%);
+        }
+        @media (max-width: 880px) {
+            .om-fondo-degradado { height: 320px; }
+        }
+
+        /* ── Pantalla de carga inicial (petición de Eloy): mientras
+           terminan de llegar los productos/secciones, se muestra a
+           pantalla completa el mismo logo grande de la página de inicio
+           (ver .om-logo-grande-inicio en index.html) con su misma
+           secuencia de 3 fases (gota cayendo → línea que recorre el
+           contorno → logo revelado de arriba a abajo), con el contenido
+           real de la página detrás, visible pero borroso. Se cierra
+           cuando se cumplen DOS condiciones a la vez (ver JS más abajo,
+           om-splash-datos-listos): la animación ha terminado Y los
+           productos ya están pintados — así nunca se corta la secuencia
+           a medias, pero tampoco se alarga más de lo necesario si la
+           carga de datos es más lenta que la propia animación. */
+        body.om-cargando { overflow: hidden; }
+        body.om-cargando > *:not(#om-splash-carga) {
+            filter: blur(7px);
+            transition: filter 0.5s ease;
+        }
+        #om-splash-carga {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(248, 250, 252, 0.78);
+            transition: opacity 0.5s ease;
+        }
+        #om-splash-carga.om-splash-saliendo {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .om-splash-logo {
+            position: relative;
+            display: inline-block;
+            width: min(42vw, 260px);
+            --om-gota-1: #d81b24;
+            --om-gota-2: #f0a800;
+            --om-gota-3: #fccc00;
+            --om-gota-4: #008454;
+            --om-gota-5: #0078a8;
+            --om-gota-6: #0c4884;
+        }
+        .om-splash-logo::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: -34px;
+            width: 9%;
+            aspect-ratio: 8 / 11;
+            background: var(--om-gota-1);
+            border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2;
+            animation: om-splash-gota-cae 1.72s both;
+        }
+        @keyframes om-splash-gota-cae {
+            0%     { top: -34px; opacity: 0;  transform: translateX(-50%) scale(0.5); animation-timing-function: ease-out; }
+            15.4%  { top: -34px; opacity: 1;  transform: translateX(-50%) scale(1);   animation-timing-function: cubic-bezier(.7, 0, .9, .35); }
+            71.8%  { top: 46%;   opacity: 1;  transform: translateX(-50%) scale(1);   animation-timing-function: ease-out; }
+            79.5%  { top: 48%;   opacity: 1;  transform: translateX(-50%) scaleX(1.7) scaleY(0.45); animation-timing-function: ease-out; }
+            100%   { top: 48%;   opacity: 0;  transform: translateX(-50%) scaleX(0.3) scaleY(0.3); }
+        }
+        .om-splash-logo .om-gota-trazo-splash {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 46%;
+            height: 46%;
+            overflow: visible;
+            pointer-events: none;
+            z-index: 0;
+            transform: translate(-50%, -50%) scale(1.22);
+        }
+        .om-splash-logo .om-gota-trazo-splash path {
+            fill: none;
+            stroke: var(--om-gota-1);
+            stroke-width: 120;
+            stroke-linecap: round;
+            opacity: 0;
+            stroke-dasharray: 3400 19249;
+            animation:
+                om-splash-trazo-opacidad 2.2s ease-in-out 1.72s both,
+                om-splash-trazo-viaja 2.2s linear 1.72s both,
+                om-splash-trazo-color 2.2s linear 1.72s both;
+        }
+        @keyframes om-splash-trazo-opacidad {
+            0%, 8%    { opacity: 0; }
+            16%, 88%  { opacity: 1; }
+            100%      { opacity: 0; }
+        }
+        @keyframes om-splash-trazo-viaja {
+            0%, 16%   { stroke-dashoffset: 0; }
+            88%, 100% { stroke-dashoffset: -19249; }
+        }
+        @keyframes om-splash-trazo-color {
+            0%, 16%  { stroke: var(--om-gota-1); }
+            32%      { stroke: var(--om-gota-2); }
+            46%      { stroke: var(--om-gota-3); }
+            60%      { stroke: var(--om-gota-4); }
+            74%      { stroke: var(--om-gota-5); }
+            88%, 100% { stroke: var(--om-gota-6); }
+        }
+        .om-splash-logo img {
+            position: relative;
+            z-index: 1;
+            display: block;
+            width: 100%;
+            height: auto;
+            clip-path: inset(0 0 100% 0);
+            animation: om-splash-logo-revelar 0.7s cubic-bezier(.3, .7, .4, 1) 3.92s both;
+        }
+        @keyframes om-splash-logo-revelar {
+            0%   { clip-path: inset(0 0 100% 0); }
+            100% { clip-path: inset(0 0 0% 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.om-cargando > *:not(#om-splash-carga) { filter: none; }
+            .om-splash-logo::before,
+            .om-splash-logo .om-gota-trazo-splash { display: none; }
+            .om-splash-logo img { clip-path: none; animation: none; }
+        }
+
         /* Modal solicitud catálogo */
         .modal-overlay {
             display: none;
@@ -4129,9 +4285,31 @@
     gtag('config', 'G-HMM85HSJ4Y');
   }
 </script>
+<!-- Color del degradado superior (ver .om-fondo-degradado): al azar entre
+     los 4 colores del logo en CADA carga de página, a petición de Eloy —
+     se fija aquí, muy pronto en <head>, para que al pintar el body ya
+     tenga el color definitivo y no haya parpadeo/cambio visible. -->
+<script>
+(function () {
+  var COLORES = ['#0078a8', '#fccc00', '#d81b24', '#008454'];
+  var color = COLORES[Math.floor(Math.random() * COLORES.length)];
+  document.documentElement.style.setProperty('--om-color-degradado', color);
+})();
+</script>
 </head>
 
-<body>
+<body class="om-cargando">
+<!-- Pantalla de carga inicial a pantalla completa (petición de Eloy): el
+     mismo logo grande de la página de inicio (ver .om-splash-logo en el
+     <style> de la cabecera), con el resto de la página detrás, visible
+     pero borrosa (ver body.om-cargando en el CSS). Se cierra por JS (ver
+     script tras perfil-profesional.js) cuando terminan a la vez la
+     animación y la carga real de productos. -->
+<div id="om-splash-carga" aria-hidden="true">
+    <div class="om-splash-logo">
+        <img src="./assets/logos/logo_calidad.svg" alt="" />
+    </div>
+</div>
 <div id="banner-actualizacion">
     <div class="texto">
         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -4200,6 +4378,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <main class="layout">
+    <!-- Franja decorativa de fondo (petición de Eloy, ref. Amazon): solo
+         la parte de arriba, detrás de filtros/resultados — ver
+         .om-fondo-degradado en el <style> de la cabecera. Color fijado al
+         azar por el script inline de <head> (--om-color-degradado). -->
+    <div class="om-fondo-degradado" aria-hidden="true"></div>
     <!-- Franja superior de escritorio (≥881px): aquí se reubican por JS el
          buscador y el filtro de Área — ver moverBuscadorSegunViewport().
          Vacío/oculto en móvil y tablet. -->
@@ -5705,6 +5888,72 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      activa ANTES de decidir qué mostrar, así que perfil-profesional.js
      tiene que cargarse aquí, no al final del body. -->
 <script src="./assets/js/perfil-profesional.js?v=20261024b"></script>
+<!-- Control de la pantalla de carga inicial (#om-splash-carga, ver HTML al
+     principio del <body> y el <style> de la cabecera): se cierra solo
+     cuando se cumplen DOS condiciones — la animación de las 3 fases ha
+     terminado (om_splash_animLista_) Y los productos ya están pintados en
+     pantalla (om_splash_datosListos_, invocado desde
+     mostrarResultadosPorPrimeraVez() y desde el aviso de error de
+     cargarProductosPrincipales(), más abajo en este mismo archivo) — así
+     nunca se corta la secuencia a medias, pero tampoco se alarga más de lo
+     necesario si cargar los datos es más lento que la propia animación.
+     Reutiliza window.OM_GOTA_PATH_D, expuesto por perfil-profesional.js,
+     para el trazo de la gota — igual que hace index.html. -->
+<script>
+(function () {
+    var animLista = false;
+    var datosListos = false;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function cerrarSiToca_() {
+        if (!animLista || !datosListos) return;
+        document.body.classList.remove('om-cargando');
+        var el = document.getElementById('om-splash-carga');
+        if (!el) return;
+        el.classList.add('om-splash-saliendo');
+        setTimeout(function () { el.remove(); }, 520);
+    }
+
+    window.om_splash_datosListos_ = function () {
+        datosListos = true;
+        cerrarSiToca_();
+    };
+
+    // Red de seguridad: si por lo que sea nunca llega a invocarse
+    // om_splash_datosListos_ (fallo inesperado fuera de los dos puntos de
+    // control ya cubiertos), esto evita dejar al usuario con la pantalla
+    // de carga atascada para siempre.
+    setTimeout(function () { window.om_splash_datosListos_(); }, 15000);
+
+    if (reduceMotion) {
+        animLista = true;
+        cerrarSiToca_();
+    } else {
+        var logo = document.querySelector('.om-splash-logo');
+        if (logo && window.OM_GOTA_PATH_D) {
+            var SVG_NS = 'http://www.w3.org/2000/svg';
+            var svg = document.createElementNS(SVG_NS, 'svg');
+            svg.setAttribute('class', 'om-gota-trazo-splash');
+            svg.setAttribute('viewBox', '0 0 608 688');
+            svg.setAttribute('aria-hidden', 'true');
+            svg.setAttribute('focusable', 'false');
+            var g = document.createElementNS(SVG_NS, 'g');
+            g.setAttribute('transform', 'translate(0,688) scale(0.1,-0.1)');
+            var path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('d', window.OM_GOTA_PATH_D);
+            g.appendChild(path);
+            svg.appendChild(g);
+            logo.appendChild(svg);
+        }
+        // 1.72s (gota) + 2.2s (trazo) + 0.7s (revelado) = 4.62s, con un
+        // pequeño margen.
+        setTimeout(function () {
+            animLista = true;
+            cerrarSiToca_();
+        }, 4700);
+    }
+})();
+</script>
 <script src="./assets/js/ia-disponibilidad.js?v=20261007a"></script>
 <script>
 // ── Configuración del buscador ──
@@ -6612,6 +6861,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         aplicarFiltros();
         $('cargando-inicial').style.display = 'none';
         $('contenedor-resultados').style.display = '';
+        if (window.om_splash_datosListos_) window.om_splash_datosListos_();
         iniciarComprobacionActualizaciones();
         aplicarFiltrosDesdeURL();
         // "await": abrirProductoDesdeURL() espera a su vez a que las
@@ -6753,6 +7003,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!primerPintadoHecho) {
             $('cargando-inicial').innerHTML =
                 '<i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo cargar el catálogo de productos. Inténtalo de nuevo más tarde.</p>';
+            if (window.om_splash_datosListos_) window.om_splash_datosListos_();
             return;
         }
         cargarProductosAdicionalesEnSegundoPlano();
