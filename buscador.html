@@ -2049,6 +2049,15 @@
             color: var(--muted);
             font-style: italic;
         }
+        /* Precio al por mayor todavía sin confirmar contra la fuente EN
+           VIVO (ver preciosMayorConfirmados_ en el script) — nunca se
+           muestra el PVP público mientras tanto, bug real muy grave
+           reportado por Eloy. */
+        .producto-precio-cargando {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+        .producto-precio-cargando i { margin-right: 4px; }
 
         @media (max-width: 480px) {
             /* Tarjetas más compactas para que 3-4 quepan bien en una fila */
@@ -2072,6 +2081,7 @@
             .producto-precio-con { font-size: 0.82rem; }
             .producto-precio-sin { font-size: 0.6rem; }
             .producto-sin-precio { font-size: 0.65rem; }
+            .producto-precio-cargando { font-size: 0.65rem; }
             .badge-oferta {
                 font-size: 0.55rem;
                 padding: 3px 7px;
@@ -5942,6 +5952,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     let SUBFAMILIAS_ORDEN = {}; // {familia: {subfamilia: orden}}
     let resultadosActuales = []; // tras aplicar filtros
 
+    // Bug real MUY GRAVE reportado por Eloy: "al acceder en modo
+    // profesional los productos destacados que deberían tener precio de
+    // mayor aparecen al entrar con el mismo precio que venta al
+    // público... he refrescado la página y ya aparecen actualizados".
+    // Causa raíz: el precio al por mayor NUNCA viaja en el JSON estático
+    // del primer pintado instantáneo (data/productos.json — un archivo
+    // público, el mismo para cualquier visitante, nunca puede incluir
+    // precios privilegiados) — solo llega después, en la reconciliación
+    // con la fuente EN VIVO de Apps Script, que sí verifica el PIN y
+    // decide servidor-side si incluir precio_mayor_con/sin (ver
+    // scripts/apps_script_trigger.js, acción obtener_productos). Hasta
+    // que esa segunda petición responde (puede tardar varios segundos),
+    // cualquier producto se queda sin "precio_mayor_con" aunque la
+    // sesión profesional esté activa — y precioAMostrar_() caía
+    // entonces al PVP público, mostrándolo como si fuera el precio
+    // correcto en vez de uno todavía sin confirmar. "Refrescar la
+    // página" no arreglaba nada de verdad: solo repetía la misma carrera
+    // con otra suerte de tiempos.
+    // Mientras esto sea false Y haya sesión profesional activa,
+    // precioAMostrar_() devuelve un estado "pendiente" en vez de caer al
+    // PVP — ver precioAMostrar_ más abajo y el punto donde se confirma a
+    // "true" en cargarProductosPrincipales(), tras la primera respuesta
+    // EN VIVO ya autenticada con el PIN.
+    let preciosMayorConfirmados_ = !window.OM_SESION_PROFESIONAL_ACTIVA;
+
     // Refs exactas a las que restringir el resultado cuando el filtro
     // activo viene de un chip de "Marcas más buscadas" (ver
     // aplicarFiltroMarca_) — null en cualquier otro caso. Necesario
@@ -6677,6 +6712,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (resp.ok) {
                 const texto = await resp.text();
                 const hash = await calcularHash(texto);
+                // Se comprueba ANTES de aplicar el hash/reconciliación de
+                // abajo: esta es la primera respuesta ya autenticada con
+                // el PIN (ver PRODUCTOS_REMOTO_URL_), así que a partir de
+                // aquí el precio al por mayor de cualquier producto en
+                // TODOS ya es de fiar — ver preciosMayorConfirmados_.
+                const confirmandoPorPrimeraVez_ = window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_;
                 if (hash !== hashConocido || !primerPintadoHecho) {
                     hashConocido = hash;
                     if (primerPintadoHecho) {
@@ -6690,6 +6731,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                         actualizarModulosDescubrimiento_();
                     }
                 }
+                preciosMayorConfirmados_ = true;
+                if (confirmandoPorPrimeraVez_) {
+                    // Repintado explícito de TODO lo que pudiera haber
+                    // mostrado el indicador "Cargando precio..." — no
+                    // basta con fiarse de que el hash haya cambiado (si
+                    // por lo que sea no cambiara, el bloque de arriba no
+                    // repintaría nada) ni con el repintado de arriba, que
+                    // no cubre la ficha de detalle ni la lista de la
+                    // compra si están abiertas en ese momento. Bug real
+                    // MUY GRAVE reportado por Eloy, ver preciosMayorConfirmados_.
+                    aplicarFiltros();
+                    actualizarModulosDescubrimiento_();
+                    repintarPendientesPrecioMayor_();
+                }
             }
         } catch (e) {
             console.warn('No se pudo cargar la fuente en vivo de Apps Script:', e);
@@ -6701,6 +6756,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
         cargarProductosAdicionalesEnSegundoPlano();
+    }
+
+    // Repinta lo que no cubre el repintado normal (aplicarFiltros/
+    // actualizarModulosDescubrimiento_, que solo tocan el grid y los
+    // módulos de portada) en cuanto se confirma el precio al por mayor
+    // por primera vez — la ficha de detalle y la lista de la compra, SI
+    // están abiertas en ese momento, para que dejen de mostrar "Cargando
+    // precio..." sin que el profesional tenga que cerrar y volver a
+    // abrirlas. Ver preciosMayorConfirmados_/cargarProductosPrincipales.
+    function repintarPendientesPrecioMayor_() {
+        if ($('modal-producto-overlay').classList.contains('activo') && productoModalActual_) {
+            abrirModalProducto(productoModalActual_, { soloRefrescoPrecio: true });
+        }
+        if (typeof listaCompraActualizarUI_ === 'function') listaCompraActualizarUI_();
     }
 
     // Campañas de escaparate: se lanza la carga YA, en PARALELO con el
@@ -8562,7 +8631,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         card._producto = p;
         const ordenActual = $('f-orden').value;
         const enModoPlano = ordenActual && ordenActual !== 'area';
-        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano });
+        // Igual que crearTarjeta(): si el producto está destacado (ver
+        // destacadoEfectivoPara_), también se muestra aquí.
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano, destacado: destacadoEfectivoPara_(p.ref) });
     }
 
     function rotarTarjetaNovedad_(card) {
@@ -10630,12 +10701,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // calculó para el público (tanto si viene de un descuento en % como
     // de un precio alternativo absoluto).
     function calcularPrecioDestacado_(p, d) {
-        if (!p.mostrar_precio || !p.precio_con) return { original: null, promo: null, pct: null, originalMayor: null, promoMayor: null };
+        const vacio = { original: null, promo: null, pct: null, originalMayor: null, promoMayor: null, promoSin: null, promoMayorSin: null };
+        if (!p.mostrar_precio || !p.precio_con) return vacio;
         const original = parseFloat(p.precio_con.toString().replace(',', '.'));
-        if (!isFinite(original) || original <= 0) return { original: null, promo: null, pct: null, originalMayor: null, promoMayor: null };
+        if (!isFinite(original) || original <= 0) return vacio;
 
         let promo = null;
-        let fraccionDescuento = null; // 0-1, reutilizada para el precio mayorista
+        let fraccionDescuento = null; // 0-1, reutilizada para el precio mayorista y el "sin IVA"
         if (d.precioAlternativo !== null && d.precioAlternativo !== undefined && d.precioAlternativo !== '') {
             const alt = parseFloat(d.precioAlternativo);
             if (isFinite(alt) && alt >= 0 && alt < original) { promo = alt; fraccionDescuento = 1 - (alt / original); }
@@ -10653,9 +10725,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
 
-        if (promo === null) return { original: original, promo: null, pct: null, originalMayor, promoMayor: null };
+        // "Sin IVA" del precio rebajado — misma fracción de descuento
+        // aplicada sobre precio_sin/precio_mayor_sin, para que la lista
+        // de la compra y su PDF puedan desglosar con/sin IVA también en
+        // los productos destacados (antes solo se calculaba el "con
+        // IVA", así que esas columnas se quedaban vacías o mostraban el
+        // precio sin rebajar — bug real reportado).
+        let promoSin = null, promoMayorSin = null;
+        if (fraccionDescuento !== null) {
+            if (p.precio_sin) {
+                const sinBase = parseFloat(p.precio_sin.toString().replace(',', '.'));
+                if (isFinite(sinBase) && sinBase > 0) promoSin = sinBase * (1 - fraccionDescuento);
+            }
+            if (p.precio_mayor_sin) {
+                const sinMayorBase = parseFloat(p.precio_mayor_sin.toString().replace(',', '.'));
+                if (isFinite(sinMayorBase) && sinMayorBase > 0) promoMayorSin = sinMayorBase * (1 - fraccionDescuento);
+            }
+        }
+
+        if (promo === null) return { original: original, promo: null, pct: null, originalMayor, promoMayor: null, promoSin: null, promoMayorSin: null };
         const pctMostrado = Math.round((1 - promo / original) * 100);
-        return { original: original, promo: promo, pct: pctMostrado > 0 ? pctMostrado : null, originalMayor, promoMayor };
+        return { original: original, promo: promo, pct: pctMostrado > 0 ? pctMostrado : null, originalMayor, promoMayor, promoSin, promoMayorSin };
     }
 
     // Precio a usar en TODA la web para un producto — rejillas, ficha de
@@ -10669,6 +10759,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // promoción sobre el PVP público, no aplica al mayorista). Fuera del
     // perfil profesional no cambia nada: sigue el PVP de siempre.
     function precioAMostrar_(p) {
+        // Mientras el precio al por mayor todavía no se ha confirmado
+        // contra la fuente EN VIVO (ver preciosMayorConfirmados_, arriba),
+        // NUNCA se cae al PVP público como si fuera el precio correcto —
+        // bug real MUY GRAVE reportado por Eloy, ver el comentario junto a
+        // preciosMayorConfirmados_. Se devuelve un estado "pendiente"
+        // explícito en su lugar, que cada sitio que llama a esta función
+        // debe tratar como "todavía cargando", nunca como "sin precio
+        // mayor configurado".
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) {
+            return { pending: true, con: null, sin: null, esMayor: true };
+        }
         if (window.OM_SESION_PROFESIONAL_ACTIVA && p && p.precio_mayor_con) {
             const con = parseFloat(p.precio_mayor_con.toString().replace(',', '.'));
             if (isFinite(con) && con > 0) {
@@ -10686,6 +10787,87 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
         return null;
+    }
+
+    // Precio FINAL de un producto para cualquier sitio que solo necesite
+    // el número (lista de la compra: totales, PDF, "compartir"), no el
+    // HTML decorado de la tarjeta — combina precioAMostrar_ (PVP vs
+    // mayorista según sesión) con el descuento de Destacados si el
+    // producto está destacado ahora mismo, exactamente igual que
+    // construirContenidoTarjeta_/el modal de detalle, sin duplicar esa
+    // lógica. A petición de Eloy: "si añades un producto destacado a la
+    // lista de compra tampoco aparece con el precio... de destacado" —
+    // antes estos tres sitios llamaban a precioAMostrar_ directamente,
+    // sin pasar nunca por calcularPrecioDestacado_, así que el precio
+    // rebajado nunca llegaba a la lista de la compra ni a su PDF/texto
+    // para compartir.
+    // Devuelve lo mismo que precioAMostrar_ (con/sin/esMayor/pending) más
+    // "destacado" (el registro d, o null) y "pctDescuento", para poder
+    // mostrar también el chip/texto de promoción en esos mismos sitios.
+    function precioEfectivoParaLista_(p) {
+        const base = precioAMostrar_(p);
+        if (!base || base.pending) return base;
+        const d = destacadoEfectivoPara_(p.ref);
+        if (!d) return Object.assign({}, base, { destacado: null, pctDescuento: null });
+        const info = calcularPrecioDestacado_(p, d);
+        if (base.esMayor) {
+            if (info.originalMayor !== null && info.promoMayor !== null) {
+                return { con: info.promoMayor, sin: info.promoMayorSin, esMayor: true, destacado: d, pctDescuento: info.pct };
+            }
+            return Object.assign({}, base, { destacado: d, pctDescuento: null });
+        }
+        if (info.original !== null && info.promo !== null) {
+            return { con: info.promo, sin: info.promoSin, esMayor: false, destacado: d, pctDescuento: info.pct };
+        }
+        return Object.assign({}, base, { destacado: d, pctDescuento: null });
+    }
+
+    // Parsea el texto libre de "textoPromocion" (p.ej. "3x2", "2+1") en
+    // unidades "sin cargo" — SOLO reconoce los dos formatos que ofrece el
+    // propio editor de Destacados (ver su campo, placeholder "2x1, 3x2,
+    // 4x3, 5+1..."): "AxB" (de cada A unidades compradas, se pagan solo
+    // B → A-B van sin cargo) y "A+B" (comprando A, se regalan B más).
+    // Cualquier otro texto (p.ej. "Últimas unidades", o vacío) no es una
+    // cantidad reconocible y se ignora a propósito — mejor no calcular
+    // nada a calcular mal en un documento que el cliente se lleva. A
+    // petición de Eloy: "si añades a la lista de la compra un producto
+    // destacado que tiene 2x1 o 3x2... debería indicarlo en la lista pdf
+    // exportada como una línea más de producto indicando que va sin
+    // cargo".
+    function unidadesSinCargoPorPromocion_(textoPromocion, unidadesCompradas) {
+        if (!textoPromocion || !unidadesCompradas) return 0;
+        const texto = textoPromocion.toString().trim();
+        let m = texto.match(/^(\d+)\s*x\s*(\d+)$/i);
+        if (m) {
+            const compradas = parseInt(m[1], 10), pagadas = parseInt(m[2], 10);
+            if (compradas > pagadas && pagadas > 0) {
+                return Math.floor(unidadesCompradas / compradas) * (compradas - pagadas);
+            }
+            return 0;
+        }
+        m = texto.match(/^(\d+)\s*\+\s*(\d+)$/);
+        if (m) {
+            const compradas = parseInt(m[1], 10), gratis = parseInt(m[2], 10);
+            if (compradas > 0 && gratis > 0) {
+                return Math.floor(unidadesCompradas / compradas) * gratis;
+            }
+            return 0;
+        }
+        return 0;
+    }
+
+    // Fecha límite de la promoción de un destacado, formateada — misma
+    // fuente que dibujarTarjetaDestacadoPdf_ (el producto propio manda;
+    // si no tiene, la fecha límite general de la sección Destacados, si
+    // está informada) y reutilizada también por el PDF/texto para
+    // compartir de la lista de la compra, a petición de Eloy: "debería
+    // indicar la fecha valida de la promoción de ese producto".
+    function fechaValidaDestacado_(d) {
+        const fechaFinEfectiva = d.fechaFin || destacadosDatos_.fechaFin;
+        if (!fechaFinEfectiva) return '';
+        const fecha = new Date(fechaFinEfectiva);
+        if (isNaN(fecha.getTime())) return '';
+        return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
     function construirContenidoTarjeta_(p, opciones) {
@@ -10718,6 +10900,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         const ofertaBadge = (!d && p.oferta) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
         const destacadoChip = d ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
+
+        // Precio todavía sin confirmar contra la fuente EN VIVO (ver
+        // preciosMayorConfirmados_) — nunca se muestra el PVP público
+        // como si fuera el definitivo; un indicador de carga breve en su
+        // lugar, que se repinta solo en cuanto se confirme (ver
+        // cargarProductosPrincipales).
+        if (precioMayor_ && precioMayor_.pending) {
+            return `
+                <div class="producto-img-wrap">${ofertaBadge}${destacadoChip}${logoBadge}${imgHtml}</div>
+                <div class="producto-info">
+                    ${opciones.mostrarAreaFamilia ? `<p class="producto-area-familia">${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}${(opciones.mostrarSubfamilia && p.subfamilia) ? ' · ' + escapeHtml(p.subfamilia) : ''}</p>` : ''}
+                    <p class="producto-nombre">${escapeHtml(p.nombre)}</p>
+                    <p class="producto-ref">Ref: ${escapeHtml(p.ref)}</p>
+                    <p class="producto-precio-cargando"><i class="fa-solid fa-spinner fa-spin"></i> Cargando precio...</p>
+                </div>
+            `;
+        }
 
         let precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         if (precioMayor_) {
@@ -10902,16 +11101,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const ordenActual = $('f-orden').value;
         const enModoPlano = ordenActual && ordenActual !== 'area';
 
-        // Promoción de una campaña de escaparate ACTIVA (ver
-        // campanaDestacadoVigentePara_) — a propósito, SOLO esta fuente
-        // aquí, no destacadoEfectivoPara_ (que también mira el sistema
-        // "Destacados" propio del buscador): ese sistema ya tiene su
-        // propia sección dedicada en portada y nunca se había mostrado
-        // en el grid general — cambiar eso no lo ha pedido Eloy, así que
-        // el grid general solo se amplía con la fuente nueva (campañas).
-        const destacadoCampana = campanaDestacadoVigentePara_(p.ref);
+        // Promoción vigente, de Destacados o de campaña de escaparate (ver
+        // destacadoEfectivoPara_) — antes aquí solo se miraba la promoción
+        // de campaña (campanaDestacadoVigentePara_), nunca el sistema
+        // "Destacados" propio del buscador, que solo se veía en su propia
+        // sección dedicada de portada. A petición de Eloy: "cualquier
+        // producto destacado que aparezca en cualquier sección deberá
+        // indicar los detalles de producto destacado" — se amplía a
+        // destacadoEfectivoPara_ para que el grid general, Novedades, Más
+        // buscados, Últimos vistos y los resultados de IA (todos pasan
+        // por crearTarjeta()) muestren el mismo chip/precio rebajado que
+        // ya se veía en la sección Destacados y en la ficha de detalle.
+        const destacado = destacadoEfectivoPara_(p.ref);
 
-        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano, destacado: destacadoCampana });
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano, destacado });
         return card;
     }
 
@@ -11263,6 +11466,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // tal cual desde cargarImagenesFolletoDestacadosEnTandas_.
     async function construirDocumentoPdfDestacados_(onProgreso) {
         if (typeof window.jspdf === 'undefined') return null;
+        // Nunca generar el PDF con el precio al por mayor todavía sin
+        // confirmar (ver preciosMayorConfirmados_) — saldría con el PVP
+        // público o, peor, con un error al intentar formatear un precio
+        // nulo. Quien llama debe esperar/avisar al profesional en vez de
+        // generar un documento potencialmente incorrecto.
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) return 'pendiente';
         const visibles = destacadosProductosVigentes_();
         if (!visibles.length) return null;
 
@@ -11391,6 +11600,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     ? `Generando… (${completadas}/${total}, ~${Math.max(1, Math.round(restantesMs / 1000))}s)`
                     : 'Componiendo folleto…');
             });
+            if (doc === 'pendiente') {
+                mostrarToast('Todavía se está confirmando el precio profesional, espera unos segundos y vuelve a intentarlo.', 'error');
+                return;
+            }
             if (!doc) {
                 mostrarToast('No se ha podido generar el folleto. Comprueba tu conexión e inténtalo de nuevo.', 'error');
                 return;
@@ -11898,8 +12111,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraTotales_() {
         let sinIva = 0, conIva = 0;
         listaCompraProductos_().forEach(p => {
-            const precio = precioAMostrar_(p);
-            if (!precio) return; // "consultar precio": no se puede sumar un importe que no se muestra
+            // precioEfectivoParaLista_ (no precioAMostrar_ a secas): si el
+            // producto está destacado, el total debe reflejar el precio
+            // YA REBAJADO, no el precio base — bug real reportado.
+            const precio = precioEfectivoParaLista_(p);
+            if (!precio || precio.pending || precio.con == null) return; // "consultar precio"/todavía sin confirmar: no se puede sumar
             const unidades = p.unidades || 1;
             conIva += Math.round(precio.con * 100) * unidades;
             sinIva += Math.round((precio.sin || precio.con) * 100) * unidades;
@@ -11946,7 +12162,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const card = document.createElement('div');
         card.className = 'producto-card';
         card.dataset.ref = p.ref;
-        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: false });
+        // Mismo chip/precio rebajado que en cualquier otra tarjeta si el
+        // producto está destacado (ver destacadoEfectivoPara_) — a
+        // petición de Eloy: "si añades un producto destacado a la lista
+        // de compra tampoco aparece con el precio o chips de destacado".
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: false, destacado: destacadoEfectivoPara_(p.ref) });
         card.appendChild(crearBadgeUnidadesListaCompra_(p));
         return card;
     }
@@ -11961,7 +12181,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const card = document.createElement('div');
         card.className = 'producto-card lista-compra-tarjeta';
         card.dataset.ref = p.ref;
-        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: false });
+        // Mismo chip/precio rebajado que en cualquier otra tarjeta si el
+        // producto está destacado (ver destacadoEfectivoPara_) — a
+        // petición de Eloy: "si accedes al detalle de la lista de la
+        // compra tampoco se ven los detalles de los productos destacados".
+        card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: false, destacado: destacadoEfectivoPara_(p.ref) });
         card.appendChild(crearBadgeUnidadesListaCompra_(p));
 
         const papelera = document.createElement('button');
@@ -12333,6 +12557,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // solo al principio de la siguiente, con poco ancho de columna.
         const formatoEurosPdf_ = (centimos) => listaCompraFormatoEuros_(centimos).replace(' ', ' ');
 
+        // Etiqueta de texto plano del tipo de destacado — mismo mapa que
+        // etiquetaDestacadoHtml_, pero en texto llano para una celda de
+        // tabla jsPDF (no admite HTML).
+        const ETIQUETA_DESTACADO_TEXTO_ = { oferta: 'OFERTA', oportunidad: 'OPORTUNIDAD', liquidacion: 'LIQUIDACIÓN' };
+
         // Sin columna de Subfamilia a petición explícita — el orden
         // interno (área > familia > subfamilia > producto) no cambia,
         // solo deja de mostrarse esa columna en la tabla.
@@ -12340,23 +12569,77 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // estrecha para dejar sitio a las columnas de importes) — el
         // orden interno (área > familia > subfamilia > producto) no
         // cambia, solo deja de mostrarse esa columna en la tabla.
-        const filas = productos.map(p => {
+        //
+        // A petición de Eloy: "si añades a la lista de la compra un
+        // producto destacado... tampoco se ven los detalles en la lista
+        // pdf exportada (precio, oferta, 3x2)" — cada fila usa ahora
+        // precioEfectivoParaLista_ (precio YA rebajado si el producto
+        // está destacado, no el precio base) y, si está destacado, el
+        // nombre lleva delante la etiqueta de tipo (p.ej. "[OFERTA]") y
+        // el texto de promoción libre (p.ej. "3x2"); además, si ese texto
+        // es una cantidad reconocible ("AxB"/"A+B", ver
+        // unidadesSinCargoPorPromocion_), se añade justo debajo una fila
+        // extra indicando cuántas unidades de las compradas van sin
+        // cargo — nunca se inventa esa cantidad si el texto no es un
+        // formato reconocido.
+
+        // Filas con estilo propio (la línea "X ud. sin cargo") — se
+        // marcan por índice para dárselo en didParseCell, más abajo.
+        const filasSinCargoIndices_ = new Set();
+        const filas = [];
+        productos.forEach(p => {
             const unidades = p.unidades || 1;
-            const precio = precioAMostrar_(p);
-            const sinCentimos = precio ? Math.round((precio.sin || precio.con) * 100) : 0;
+            const precio = precioEfectivoParaLista_(p);
+            const tienePrecio = !!(precio && !precio.pending && precio.con != null);
+            const sinCentimos = tienePrecio ? Math.round((precio.sin || precio.con) * 100) : 0;
             const subtotalSin = sinCentimos * unidades;
-            return [
-                p.nombre,
+            const d = precio && precio.destacado;
+            let nombreCelda = p.nombre;
+            if (d) {
+                const prefijos = [];
+                if (ETIQUETA_DESTACADO_TEXTO_[d.tipoDestacado]) prefijos.push(ETIQUETA_DESTACADO_TEXTO_[d.tipoDestacado]);
+                if (d.textoPromocion) prefijos.push(d.textoPromocion.toString().toUpperCase());
+                if (prefijos.length) nombreCelda = `[${prefijos.join(' · ')}] ${p.nombre}`;
+                // A petición de Eloy: la fecha límite de la promoción
+                // también debe verse en el PDF, junto al producto al que
+                // corresponde (autoTable admite varias líneas con "\n").
+                const fechaTxt = fechaValidaDestacado_(d);
+                if (fechaTxt) nombreCelda += `\nVálido hasta el ${fechaTxt}`;
+            }
+            filas.push([
+                nombreCelda,
                 p.ref,
                 p.familia || '—',
                 // "3 cajas (36 ud.)" en modo envase (venta al por mayor,
                 // ver listaCompraTextoCantidad_), o el número de siempre
                 // en modo unidad suelta.
                 listaCompraTextoCantidad_(p),
-                precio && precio.sin ? formatoEurosPdf_(Math.round(precio.sin * 100)) : '—',
-                precio ? formatoEurosPdf_(Math.round(precio.con * 100)) : 'Consultar',
-                precio ? formatoEurosPdf_(subtotalSin) : '—',
-            ];
+                tienePrecio && precio.sin ? formatoEurosPdf_(Math.round(precio.sin * 100)) : '—',
+                tienePrecio ? formatoEurosPdf_(Math.round(precio.con * 100)) : 'Consultar',
+                tienePrecio ? formatoEurosPdf_(subtotalSin) : '—',
+            ]);
+            if (d && d.textoPromocion) {
+                const sinCargo = unidadesSinCargoPorPromocion_(d.textoPromocion, unidades);
+                if (sinCargo > 0) {
+                    // Bug real reportado por Eloy: antes esta línea usaba
+                    // la flecha "↳", un carácter que la fuente por
+                    // defecto de jsPDF (helvetica, codificación WinAnsi,
+                    // sin símbolos Unicode) no sabe dibujar — salía como
+                    // texto ilegible, partido letra a letra. Ahora texto
+                    // llano, sin ningún símbolo fuera de ese alfabeto, y
+                    // con el producto, la referencia, la promoción exacta
+                    // y su fecha límite explícitos — no solo "sin cargo"
+                    // suelto, que no decía de qué producto ni de qué
+                    // oferta se trataba.
+                    const fechaTxt = fechaValidaDestacado_(d);
+                    filasSinCargoIndices_.add(filas.length);
+                    filas.push([{
+                        content: `${sinCargo} ud. de "${p.nombre}" (Ref: ${p.ref}) van SIN CARGO — promoción ${d.textoPromocion}` +
+                            (fechaTxt ? `, válida hasta el ${fechaTxt}` : ''),
+                        colSpan: 7,
+                    }]);
+                }
+            }
         });
 
         doc.autoTable({
@@ -12378,6 +12661,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 4: { cellWidth: 58 },
                 5: { cellWidth: 58 },
                 6: { cellWidth: 62 },
+            },
+            // Estilo propio (cursiva, gris, fondo suave) para la línea
+            // "X ud. ... van SIN CARGO" — se distingue visualmente de las
+            // filas de producto normales sin necesitar una tabla aparte.
+            didParseCell: (data) => {
+                if (data.section === 'body' && filasSinCargoIndices_.has(data.row.index)) {
+                    data.cell.styles.fontStyle = 'italic';
+                    data.cell.styles.textColor = [120, 123, 130];
+                    data.cell.styles.fillColor = [250, 245, 235];
+                }
             },
             didDrawPage: dibujarPie,
         });
@@ -12506,9 +12799,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             'Lista de la compra — Orencio Matas y Hnos',
             `${productos.length} producto${productos.length === 1 ? '' : 's'}`,
             '',
-            ...productos.map(p => {
-                const precio = precioAMostrar_(p);
-                return `• ${p.nombre} (Ref: ${p.ref}) x${listaCompraTextoCantidad_(p)}${precio ? ' — ' + listaCompraFormatoEuros_(Math.round(precio.con * 100)) : ''}`;
+            ...productos.flatMap(p => {
+                const unidades = p.unidades || 1;
+                const precio = precioEfectivoParaLista_(p);
+                const tienePrecio = !!(precio && !precio.pending && precio.con != null);
+                const d = precio && precio.destacado;
+                const etiqueta = d && d.textoPromocion ? ` [${d.textoPromocion.toString().toUpperCase()}]` : '';
+                const linea = `• ${p.nombre}${etiqueta} (Ref: ${p.ref}) x${listaCompraTextoCantidad_(p)}${tienePrecio ? ' — ' + listaCompraFormatoEuros_(Math.round(precio.con * 100)) : ''}`;
+                const sinCargo = d && d.textoPromocion ? unidadesSinCargoPorPromocion_(d.textoPromocion, unidades) : 0;
+                if (sinCargo <= 0) return [linea];
+                // A petición de Eloy: la fecha límite de la promoción
+                // también debe verse aquí, igual que en el PDF (texto
+                // plano enviado por WhatsApp/correo, donde la flecha
+                // Unicode sí se ve bien — a diferencia del PDF, que usa
+                // una fuente sin esos símbolos, ver el comentario junto a
+                // filasSinCargoIndices_ más abajo).
+                const fechaTxt = fechaValidaDestacado_(d);
+                return [linea, `   ↳ ${sinCargo} ud. sin cargo (promoción ${d.textoPromocion}${fechaTxt ? ', válida hasta el ' + fechaTxt : ''})`];
             }),
             '',
             `Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`,
@@ -13078,15 +13385,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function abrirModalProducto(p, opciones) {
         opciones = opciones || {};
-        enviarEventoAnalitica_('ver_producto', {
-            producto_referencia: p.ref,
-            producto_nombre: p.nombre,
-            producto_area: p.area || '',
-            producto_familia: p.familia || '',
-        });
-        registrarProductoVisto_(p);
-        registrarProductoVistoHistorial_(p);
-        cargarUltimosVistos_();
+        // soloRefrescoPrecio: usado para volver a pintar la ficha YA
+        // ABIERTA en cuanto se confirma el precio al por mayor (ver
+        // preciosMayorConfirmados_/cargarProductosPrincipales) — no es
+        // una apertura real del modal por parte del usuario, así que se
+        // salta la analítica y el registro de "visto" (se duplicarían
+        // sin que el profesional haya hecho nada nuevo).
+        if (!opciones.soloRefrescoPrecio) {
+            enviarEventoAnalitica_('ver_producto', {
+                producto_referencia: p.ref,
+                producto_nombre: p.nombre,
+                producto_area: p.area || '',
+                producto_familia: p.familia || '',
+            });
+            registrarProductoVisto_(p);
+            registrarProductoVistoHistorial_(p);
+            cargarUltimosVistos_();
+        }
         ocultarDisclaimerPrecios();
         productoModalActual_ = p;
         actualizarBotonListaCompraEnModalProducto_();
@@ -13162,7 +13477,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const esMayorModal_ = !!(precioMayorModal_ && precioMayorModal_.esMayor);
 
         let precioHtml = '';
-        if (precioMayorModal_) {
+        // Precio al por mayor todavía sin confirmar (ver
+        // preciosMayorConfirmados_) — nunca el PVP público como si fuera
+        // el definitivo, bug real muy grave reportado por Eloy. Solo se
+        // salta el bloque de precio/destacado (más abajo), el resto de
+        // la ficha (stock, descripción, botón "añadir a la lista"...) se
+        // sigue rellenando con normalidad.
+        const precioPendienteModal_ = !!(precioMayorModal_ && precioMayorModal_.pending);
+        if (precioPendienteModal_) {
+            precioHtml = '<p class="producto-precio-cargando"><i class="fa-solid fa-spinner fa-spin"></i> Cargando precio...</p>';
+        } else if (precioMayorModal_) {
             precioHtml = `<div class="modal-producto-precio-con">${precioMayorModal_.con.toFixed(2).replace('.', ',')} €</div>`;
             if (precioMayorModal_.sin) precioHtml += `<div class="modal-producto-precio-sin">${precioMayorModal_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         } else {
@@ -13180,9 +13504,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // también se aplica (mismo % que el público, ver
         // calcularPrecioDestacado_/construirContenidoTarjeta_) — bug real
         // reportado: antes nunca se aplicaba en perfil profesional.
-        const destacadoModal = destacadoEfectivoPara_(p.ref);
+        const destacadoModal = precioPendienteModal_ ? null : destacadoEfectivoPara_(p.ref);
         const chipDestacadoModal = $('modal-producto-destacado-chip');
-        if (destacadoModal) {
+        if (precioPendienteModal_) {
+            chipDestacadoModal.style.display = 'none';
+        } else if (destacadoModal) {
             // Reutiliza etiquetaDestacadoHtml_ para la clase/texto del chip,
             // pero sin sustituir el elemento (outerHTML lo destruiría y
             // perdería su id, necesario en la próxima apertura del modal).
