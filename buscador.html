@@ -2290,19 +2290,47 @@
            --om-color-degradado, variable puesta en <html> muy pronto en
            <head> para evitar parpadeo) entre los 4 colores que pide Eloy:
            azul/amarillo/rojo/verde — los mismos tonos reales del logo
-           (ver --om-gota-* en .om-splash-logo de más abajo). */
+           (ver --om-gota-* en .om-splash-logo de más abajo).
+
+           Altura en vh (al menos el 20% de la página, independientemente
+           del dispositivo, a petición de Eloy) en vez de un valor fijo en
+           px — así escala igual en móvil que en escritorio.
+
+           radial-gradient en vez de linear-gradient, a propósito: con un
+           linear-gradient diagonal (p.ej. 135deg), en un contenedor mucho
+           más ANCHO que ALTO (como este, filtros+grid ocupan casi todo el
+           ancho de la página pero la franja solo mide unos cientos de
+           px de alto) el lado IZQUIERDO del degradado recorre mucho menos
+           distancia a lo largo del eje diagonal que el lado derecho a la
+           misma altura — así que al llegar al borde inferior, el lado
+           izquierdo todavía no había terminado de desvanecerse del todo:
+           se notaba un corte visible ahí, y el degradado nunca llegaba a
+           blanco del todo (bug real reportado por Eloy). Con un
+           radial-gradient en forma de elipse anclado en la esquina
+           superior izquierda, el eje VERTICAL de la elipse se fija
+           exactamente al 100% de la altura del contenedor — así el borde
+           inferior SIEMPRE coincide exactamente con el último stop
+           (blanco sólido, --light) sea cual sea el ancho de pantalla,
+           eliminando el corte para cualquier dispositivo. El eje
+           HORIZONTAL se deja más ancho que el vertical (130% vs 100%) para
+           que el color se extienda más hacia la derecha que hacia abajo,
+           dando ese aspecto diagonal "desde la esquina superior izquierda
+           hacia la inferior derecha" que pedía Eloy. */
         .om-fondo-degradado {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 460px;
+            height: max(20vh, 260px);
             z-index: 0;
             pointer-events: none;
-            background: linear-gradient(135deg, var(--om-color-degradado, #0078a8) 0%, rgba(248,250,252,0) 62%);
-        }
-        @media (max-width: 880px) {
-            .om-fondo-degradado { height: 320px; }
+            background: radial-gradient(
+                ellipse 130% 100% at 0% 0%,
+                var(--om-color-degradado, #0078a8) 0%,
+                var(--om-color-degradado, #0078a8) 8%,
+                rgba(248, 250, 252, 0.55) 58%,
+                #f8fafc 100%
+            );
         }
 
         /* ── Pantalla de carga inicial (petición de Eloy): mientras
