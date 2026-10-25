@@ -10856,6 +10856,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return 0;
     }
 
+    // Fecha límite de la promoción de un destacado, formateada — misma
+    // fuente que dibujarTarjetaDestacadoPdf_ (el producto propio manda;
+    // si no tiene, la fecha límite general de la sección Destacados, si
+    // está informada) y reutilizada también por el PDF/texto para
+    // compartir de la lista de la compra, a petición de Eloy: "debería
+    // indicar la fecha valida de la promoción de ese producto".
+    function fechaValidaDestacado_(d) {
+        const fechaFinEfectiva = d.fechaFin || destacadosDatos_.fechaFin;
+        if (!fechaFinEfectiva) return '';
+        const fecha = new Date(fechaFinEfectiva);
+        if (isNaN(fecha.getTime())) return '';
+        return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
     function construirContenidoTarjeta_(p, opciones) {
         opciones = opciones || {};
         const d = opciones.destacado || null;
@@ -12568,6 +12582,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // extra indicando cuántas unidades de las compradas van sin
         // cargo — nunca se inventa esa cantidad si el texto no es un
         // formato reconocido.
+
+        // Filas con estilo propio (la línea "X ud. sin cargo") — se
+        // marcan por índice para dárselo en didParseCell, más abajo.
+        const filasSinCargoIndices_ = new Set();
         const filas = [];
         productos.forEach(p => {
             const unidades = p.unidades || 1;
@@ -12582,6 +12600,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 if (ETIQUETA_DESTACADO_TEXTO_[d.tipoDestacado]) prefijos.push(ETIQUETA_DESTACADO_TEXTO_[d.tipoDestacado]);
                 if (d.textoPromocion) prefijos.push(d.textoPromocion.toString().toUpperCase());
                 if (prefijos.length) nombreCelda = `[${prefijos.join(' · ')}] ${p.nombre}`;
+                // A petición de Eloy: la fecha límite de la promoción
+                // también debe verse en el PDF, junto al producto al que
+                // corresponde (autoTable admite varias líneas con "\n").
+                const fechaTxt = fechaValidaDestacado_(d);
+                if (fechaTxt) nombreCelda += `\nVálido hasta el ${fechaTxt}`;
             }
             filas.push([
                 nombreCelda,
@@ -12598,10 +12621,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (d && d.textoPromocion) {
                 const sinCargo = unidadesSinCargoPorPromocion_(d.textoPromocion, unidades);
                 if (sinCargo > 0) {
-                    filas.push([
-                        `↳ ${sinCargo} ud. sin cargo (promoción ${d.textoPromocion})`,
-                        '', '', '', '', '', '',
-                    ]);
+                    // Bug real reportado por Eloy: antes esta línea usaba
+                    // la flecha "↳", un carácter que la fuente por
+                    // defecto de jsPDF (helvetica, codificación WinAnsi,
+                    // sin símbolos Unicode) no sabe dibujar — salía como
+                    // texto ilegible, partido letra a letra. Ahora texto
+                    // llano, sin ningún símbolo fuera de ese alfabeto, y
+                    // con el producto, la referencia, la promoción exacta
+                    // y su fecha límite explícitos — no solo "sin cargo"
+                    // suelto, que no decía de qué producto ni de qué
+                    // oferta se trataba.
+                    const fechaTxt = fechaValidaDestacado_(d);
+                    filasSinCargoIndices_.add(filas.length);
+                    filas.push([{
+                        content: `${sinCargo} ud. de "${p.nombre}" (Ref: ${p.ref}) van SIN CARGO — promoción ${d.textoPromocion}` +
+                            (fechaTxt ? `, válida hasta el ${fechaTxt}` : ''),
+                        colSpan: 7,
+                    }]);
                 }
             }
         });
@@ -12625,6 +12661,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 4: { cellWidth: 58 },
                 5: { cellWidth: 58 },
                 6: { cellWidth: 62 },
+            },
+            // Estilo propio (cursiva, gris, fondo suave) para la línea
+            // "X ud. ... van SIN CARGO" — se distingue visualmente de las
+            // filas de producto normales sin necesitar una tabla aparte.
+            didParseCell: (data) => {
+                if (data.section === 'body' && filasSinCargoIndices_.has(data.row.index)) {
+                    data.cell.styles.fontStyle = 'italic';
+                    data.cell.styles.textColor = [120, 123, 130];
+                    data.cell.styles.fillColor = [250, 245, 235];
+                }
             },
             didDrawPage: dibujarPie,
         });
@@ -12761,7 +12807,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 const etiqueta = d && d.textoPromocion ? ` [${d.textoPromocion.toString().toUpperCase()}]` : '';
                 const linea = `• ${p.nombre}${etiqueta} (Ref: ${p.ref}) x${listaCompraTextoCantidad_(p)}${tienePrecio ? ' — ' + listaCompraFormatoEuros_(Math.round(precio.con * 100)) : ''}`;
                 const sinCargo = d && d.textoPromocion ? unidadesSinCargoPorPromocion_(d.textoPromocion, unidades) : 0;
-                return sinCargo > 0 ? [linea, `   ↳ ${sinCargo} ud. sin cargo (promoción ${d.textoPromocion})`] : [linea];
+                if (sinCargo <= 0) return [linea];
+                // A petición de Eloy: la fecha límite de la promoción
+                // también debe verse aquí, igual que en el PDF (texto
+                // plano enviado por WhatsApp/correo, donde la flecha
+                // Unicode sí se ve bien — a diferencia del PDF, que usa
+                // una fuente sin esos símbolos, ver el comentario junto a
+                // filasSinCargoIndices_ más abajo).
+                const fechaTxt = fechaValidaDestacado_(d);
+                return [linea, `   ↳ ${sinCargo} ud. sin cargo (promoción ${d.textoPromocion}${fechaTxt ? ', válida hasta el ' + fechaTxt : ''})`];
             }),
             '',
             `Total sin IVA: ${listaCompraFormatoEuros_(totales.sinIva)}`,
