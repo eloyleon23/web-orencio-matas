@@ -2532,6 +2532,7 @@
             --om-gota-4: #008454;
             --om-gota-5: #0078a8;
             --om-gota-6: #0c4884;
+            --om-gota-7: #2b2a29;
         }
         .om-splash-logo::before {
             content: "";
@@ -2544,7 +2545,7 @@
             top: -34px;
             width: 9%;
             aspect-ratio: 8 / 11;
-            background: var(--om-gota-1);
+            background: var(--om-gota-7);
             border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
             opacity: 0;
             pointer-events: none;
@@ -2589,7 +2590,7 @@
         }
         .om-splash-logo .om-gota-trazo-splash path {
             fill: none;
-            stroke: var(--om-gota-1);
+            stroke: var(--om-gota-7);
             stroke-width: 120;
             stroke-linecap: round;
             opacity: 0;
@@ -2609,7 +2610,8 @@
             88%, 100% { stroke-dashoffset: -19249; }
         }
         @keyframes om-splash-trazo-color {
-            0%, 16%  { stroke: var(--om-gota-1); }
+            0%, 16%  { stroke: var(--om-gota-7); }
+            25%      { stroke: var(--om-gota-1); }
             32%      { stroke: var(--om-gota-2); }
             46%      { stroke: var(--om-gota-3); }
             60%      { stroke: var(--om-gota-4); }
