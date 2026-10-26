@@ -585,22 +585,62 @@
                 transform: translateX(0);
             }
 
+            /* Antes una barra blanca opaca de ancho completo (sticky,
+               fondo:white) — a petición de Eloy: "esta bien que esté
+               flotante la x pero que no tape el contenido", y el margen
+               en blanco hasta "ÁREA" era demasiado grande. Se queda
+               transparente (pointer-events:none, para que los toques en
+               el hueco vacío entre los botones lleguen al contenido de
+               debajo, p.ej. el propio título "ÁREA") y cada botón lleva
+               ahora su propio fondo blanco redondeado — "flotan" de
+               verdad como chips sueltos en vez de ir montados en una
+               franja sólida que tapaba todo lo que pasaba por debajo al
+               hacer scroll. El margen inferior baja a 10px (antes 26px),
+               suficiente para no solaparse con "ÁREA" (bug real de
+               Safari/iOS reportado por Eloy) sin dejar tanto hueco en
+               blanco. */
             .filtros-extra-cabecera {
                 position: sticky;
-                top: 0;
-                /* Margen inferior más generoso (antes 12px): en algunos
-                   motores (Safari/iOS, reportado por Eloy) el hueco se
-                   quedaba justo y llegaba a solaparse ligeramente con el
-                   título "ÁREA" de justo debajo. */
+                top: 8px;
+                /* 26px: el mínimo real para que "Limpiar filtros" (el chip
+                   más ancho de los dos, pegado a la izquierda) no tape el
+                   texto de "ÁREA" justo debajo — comprobado con medidas
+                   reales, no a ojo (con menos se solapaban). Sigue siendo
+                   menos hueco que antes: la franja opaca de antes sumaba
+                   36px entre su padding inferior (10px) y este margen
+                   (26px); ahora, sin esa franja ni su padding, son solo
+                   estos 26px. */
                 margin: -18px -20px 26px;
-                padding: 6px 14px 10px 20px;
-                background: white;
+                padding: 0 14px 0 20px;
+                background: none;
                 z-index: 1;
+                pointer-events: none;
             }
+            /* Solo la X recupera "pointer-events:auto" aquí — "Limpiar
+               filtros" (.btn-limpiar-arriba) YA tiene su propia regla más
+               abajo que decide cuándo es clicable (pointer-events:none
+               hasta que el panel termina de abrirse del todo, protección
+               contra el "ghost click" de Safari/iOS, ver esa regla) — si
+               también se incluyera aquí con un selector genérico tipo
+               ">*", esta regla (que va DESPUÉS en el CSS) ganaría el
+               empate de especificidad y rompería esa protección. */
+            .filtros-extra-cabecera .btn-cerrar-filtros-movil { pointer-events: auto; }
             .btn-cerrar-filtros-movil {
                 display: block;
                 margin-left: auto;
                 padding: 10px 14px;
+                background: white;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+            }
+            /* "Limpiar filtros" también flota como chip suelto, con su
+               propio fondo — igual que la X, para que siga siendo legible
+               cuando el contenido pasa por debajo al hacer scroll. */
+            .filtros-extra-cabecera .btn-limpiar-arriba.visible {
+                background: white;
+                border-radius: 20px;
+                padding: 6px 12px;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
             }
 
             .btn-mostrar-resultados-movil {
@@ -2492,6 +2532,7 @@
             --om-gota-4: #008454;
             --om-gota-5: #0078a8;
             --om-gota-6: #0c4884;
+            --om-gota-7: #2b2a29;
         }
         .om-splash-logo::before {
             content: "";
@@ -2504,7 +2545,7 @@
             top: -34px;
             width: 9%;
             aspect-ratio: 8 / 11;
-            background: var(--om-gota-1);
+            background: var(--om-gota-7);
             border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
             opacity: 0;
             pointer-events: none;
@@ -2549,7 +2590,7 @@
         }
         .om-splash-logo .om-gota-trazo-splash path {
             fill: none;
-            stroke: var(--om-gota-1);
+            stroke: var(--om-gota-7);
             stroke-width: 120;
             stroke-linecap: round;
             opacity: 0;
@@ -2569,7 +2610,8 @@
             88%, 100% { stroke-dashoffset: -19249; }
         }
         @keyframes om-splash-trazo-color {
-            0%, 16%  { stroke: var(--om-gota-1); }
+            0%, 16%  { stroke: var(--om-gota-7); }
+            25%      { stroke: var(--om-gota-1); }
             32%      { stroke: var(--om-gota-2); }
             46%      { stroke: var(--om-gota-3); }
             60%      { stroke: var(--om-gota-4); }
