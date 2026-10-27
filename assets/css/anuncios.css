@@ -229,4 +229,8 @@
 @media (max-width: 640px) {
   .an-form .an-fila-2 { grid-template-columns: 1fr; }
   .an-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  /* Solo el icono en los botones de la tarjeta (Ver/Abrir/Descargar/
+     Compartir) — a petición de Eloy: con el texto, en una tarjeta
+     estrecha (ver .an-grid de arriba) el texto se salía del bloque. */
+  .an-card__acciones button span, .an-card__acciones a span { display: none; }
 }
