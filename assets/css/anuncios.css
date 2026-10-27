@@ -80,6 +80,18 @@
   background: rgba(255,255,255,.95); color: var(--text-dark); font-size: .68rem; font-weight: 700;
   padding: 4px 9px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.12);
 }
+/* Distintivo de "esto es un vídeo" sobre su miniatura (igual que
+   cualquier otro recurso: imagen de portada + este círculo con el
+   triángulo de reproducción encima, como en YouTube/Instagram) — a
+   petición de Eloy, al añadir la tipología de vídeos (YouTube, TikTok,
+   Instagram). */
+.an-card__video-play {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(15, 23, 42, .62); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; pointer-events: none;
+}
 .an-card__cuerpo { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
 .an-card__titulo { font-weight: 700; font-size: .95rem; color: var(--text-dark); line-height: 1.3; }
 .an-card__descripcion { font-size: .82rem; color: var(--text-gray); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
