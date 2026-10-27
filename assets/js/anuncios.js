@@ -51,6 +51,23 @@
   // que Drive ya sabe previsualizar.
   function urlPreviewDrive_(id) { return `https://drive.google.com/file/d/${id}/preview`; }
 
+  // ── Vídeo externo (YouTube/TikTok/Instagram) ─────────────────────────
+  // "mimeType" de un recurso de vídeo no es un MIME real — el backend
+  // reutiliza ese mismo campo como etiqueta de plataforma ("video/youtube"
+  // | "video/tiktok" | "video/instagram" | "video/otro", ver
+  // detectarPlataformaVideo_ en apps_script_trigger.js), para no añadir
+  // una columna nueva a la hoja solo para esto.
+  function plataformaVideo_(a) { return (a.mimeType || '').replace('video/', ''); }
+  const VIDEO_ICONOS_ = { youtube: { clase: 'fa-brands', icono: 'fa-youtube' }, tiktok: { clase: 'fa-brands', icono: 'fa-tiktok' }, instagram: { clase: 'fa-brands', icono: 'fa-instagram' } };
+  function iconoVideo_(a) { return VIDEO_ICONOS_[plataformaVideo_(a)] || { clase: 'fa-solid', icono: 'fa-video' }; }
+  // Mismo regex que extraerIdYoutube_ en el backend — se necesita también
+  // aquí para poder embeber el reproductor en la vista previa sin tener
+  // que ir y volver al servidor solo para sacar el ID.
+  function extraerIdYoutubeCliente_(url) {
+    const m = (url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{6,15})/);
+    return m ? m[1] : '';
+  }
+
   // ── Toast simple (independiente del de buscador.html, que no se carga aquí) ──
   function toast(msg, esError) {
     const cont = $('toast-container-anuncios');
@@ -106,7 +123,9 @@
     let src = '';
     if (a.driveThumbnailId) src = urlMiniaturaDrive_(a.driveThumbnailId, 400);
     else if (a.tipoRecurso === 'archivo' && a.mimeType && a.mimeType.indexOf('image/') === 0 && a.driveFileId) src = urlMiniaturaDrive_(a.driveFileId, 400);
-    if (src) return `<img src="${src}" alt="" loading="lazy">`;
+    const esVideo = a.tipoRecurso === 'video';
+    if (src) return `<img src="${src}" alt="" loading="lazy">${esVideo ? '<span class="an-card__video-play"><i class="fa-solid fa-play"></i></span>' : ''}`;
+    if (esVideo) { const ic = iconoVideo_(a); return `<span class="an-card__miniatura-generica"><i class="${ic.clase} ${ic.icono}"></i></span>`; }
     return `<span class="an-card__miniatura-generica"><i class="fa-solid ${iconoTipologia_(a)}"></i></span>`;
   }
 
@@ -127,6 +146,11 @@
     } else if (a.tipoRecurso === 'url' && a.urlExterna) {
       acciones = `
         <a href="${escapeHtml(a.urlExterna)}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-up-right-from-square"></i> Abrir</a>
+        <button type="button" data-accion="compartir" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-share-nodes"></i></button>
+      `;
+    } else if (a.tipoRecurso === 'video' && a.urlExterna) {
+      acciones = `
+        <button type="button" data-accion="ver-video" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-play"></i> Ver</button>
         <button type="button" data-accion="compartir" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-share-nodes"></i></button>
       `;
     }
@@ -212,6 +236,7 @@
 
     cont.querySelectorAll('[data-accion="ver"]').forEach(btn => btn.addEventListener('click', () => accionVer_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="descargar"]').forEach(btn => btn.addEventListener('click', () => accionDescargar_(btn.dataset.id)));
+    cont.querySelectorAll('[data-accion="ver-video"]').forEach(btn => btn.addEventListener('click', () => accionVerVideo_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="compartir"]').forEach(btn => btn.addEventListener('click', () => accionCompartir_(btn.dataset.id)));
 
     // Tarjeta clicable entera, a petición de Eloy: el usuario no tiene que
@@ -242,6 +267,8 @@
     if (!a) return;
     if (a.tipoRecurso === 'archivo' && a.driveFileId) {
       accionVer_(id);
+    } else if (a.tipoRecurso === 'video' && a.urlExterna) {
+      accionVerVideo_(id);
     } else if (a.tipoRecurso === 'url' && a.urlExterna) {
       window.open(a.urlExterna, '_blank', 'noopener');
     }
@@ -266,11 +293,37 @@
     const esImagen = a.mimeType && a.mimeType.indexOf('image/') === 0;
     const contenido = $('an-visor-contenido');
     $('an-visor-titulo').textContent = a.titulo;
+    $('an-visor-descargar').style.display = ''; // por si el visor anterior era un vídeo (ver abrirVisorVideo_, que lo oculta)
     $('an-visor-descargar').href = urlDescargarDrive_(a.driveFileId);
     $('an-visor-abrir-fuera').href = urlVerDrive_(a.driveFileId);
     contenido.innerHTML = esImagen
       ? `<img src="${urlMiniaturaDrive_(a.driveFileId, 1600)}" alt="${escapeHtml(a.titulo)}">`
       : `<iframe src="${urlPreviewDrive_(a.driveFileId)}" title="${escapeHtml(a.titulo)}" allow="autoplay"></iframe>`;
+    $('an-visor-overlay').classList.add('activo');
+  }
+
+  // "Ver" de un recurso de vídeo: YouTube se embebe en la misma ventana
+  // modal del sitio (igual que el resto de recursos, nunca sale de la
+  // web) — TikTok e Instagram no ofrecen una URL de embebido fiable sin
+  // su propio script externo, así que para esas dos plataformas se abre
+  // el enlace tal cual, en pestaña nueva (mismo criterio ya aplicado a
+  // un recurso de tipo "URL externa": un sitio de terceros no se puede
+  // embeber de forma fiable).
+  function accionVerVideo_(id) {
+    const a = encontrarAnuncio_(id);
+    if (!a || !a.urlExterna) return;
+    if (plataformaVideo_(a) === 'youtube') {
+      const ytId = extraerIdYoutubeCliente_(a.urlExterna);
+      if (ytId) { abrirVisorVideo_(a, ytId); return; }
+    }
+    window.open(a.urlExterna, '_blank', 'noopener');
+  }
+
+  function abrirVisorVideo_(a, ytId) {
+    $('an-visor-titulo').textContent = a.titulo;
+    $('an-visor-descargar').style.display = 'none'; // no hay nada que descargar: es un enlace, no un archivo propio
+    $('an-visor-abrir-fuera').href = a.urlExterna;
+    $('an-visor-contenido').innerHTML = `<iframe src="https://www.youtube.com/embed/${encodeURIComponent(ytId)}" title="${escapeHtml(a.titulo)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
     $('an-visor-overlay').classList.add('activo');
   }
 
@@ -497,6 +550,9 @@
     $('an-area').value = 'general';
     actualizarSelectorFamilia_();
     $('an-url-externa').value = '';
+    $('an-url-miniatura-input').value = '';
+    $('an-video-url').value = '';
+    $('an-video-miniatura-input').value = '';
     $('an-dropzone').classList.remove('con-archivo');
     $('an-dropzone').innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Arrastra un archivo aquí, pégalo (Ctrl+V) o haz clic para elegir (PDF, JPG, PNG o WebP — máx. <span id="an-tamano-max-mb">20</span> MB)`;
     $('an-archivo-input').value = '';
@@ -540,8 +596,9 @@
     $('an-area').value = a.area;
     actualizarSelectorFamilia_();
     $('an-familia').value = a.familia || '';
-    cambiarTab_(a.tipoRecurso === 'url' ? 'url' : 'archivo');
+    cambiarTab_(a.tipoRecurso === 'url' ? 'url' : (a.tipoRecurso === 'video' ? 'video' : 'archivo'));
     if (a.tipoRecurso === 'url') $('an-url-externa').value = a.urlExterna;
+    else if (a.tipoRecurso === 'video') $('an-video-url').value = a.urlExterna;
     else if (a.nombreArchivo) {
       $('an-dropzone').classList.add('con-archivo');
       $('an-dropzone').innerHTML = `<i class="fa-solid fa-file-circle-check"></i> Archivo actual: ${escapeHtml(a.nombreArchivo)} — haz clic para sustituirlo`;
@@ -562,8 +619,10 @@
   function cambiarTab_(nombre) {
     $('an-tab-archivo').classList.toggle('activo', nombre === 'archivo');
     $('an-tab-url').classList.toggle('activo', nombre === 'url');
+    $('an-tab-video').classList.toggle('activo', nombre === 'video');
     $('an-panel-archivo').classList.toggle('activo', nombre === 'archivo');
     $('an-panel-url').classList.toggle('activo', nombre === 'url');
+    $('an-panel-video').classList.toggle('activo', nombre === 'video');
   }
 
   function actualizarContadores_() {
@@ -699,7 +758,7 @@
     error.textContent = ''; ok.textContent = '';
     const btn = $('an-guardar');
 
-    const tab = $('an-tab-url').classList.contains('activo') ? 'url' : 'archivo';
+    const tab = $('an-tab-url').classList.contains('activo') ? 'url' : ($('an-tab-video').classList.contains('activo') ? 'video' : 'archivo');
     const tipologia = $('an-tipologia').value;
 
     const payload = {
@@ -726,6 +785,10 @@
       error.textContent = 'Introduce la URL externa.';
       return;
     }
+    if (tab === 'video' && !$('an-video-url').value.trim()) {
+      error.textContent = 'Introduce el enlace del vídeo.';
+      return;
+    }
 
     const restaurarBoton = mostrarSpinnerBoton_(btn, 'Guardando…');
     try {
@@ -745,6 +808,11 @@
         if (miniaturaGenerada_) payloadUrl.archivoMiniatura = miniaturaGenerada_;
         const dUrl = await anunciosFetchPost_(payloadUrl);
         if (!dUrl.success) { error.textContent = 'Guardado, pero falló el enlace externo: ' + (dUrl.error || ''); return; }
+      } else if (tab === 'video') {
+        const payloadVideo = { accion: 'actualizar_archivo_anuncio', pin: anunciosPin_, id: id, tipoRecurso: 'video', urlExterna: $('an-video-url').value.trim() };
+        if (miniaturaGenerada_) payloadVideo.archivoMiniatura = miniaturaGenerada_;
+        const dVideo = await anunciosFetchPost_(payloadVideo);
+        if (!dVideo.success) { error.textContent = 'Guardado, pero falló el vídeo: ' + (dVideo.error || ''); return; }
       }
 
       ok.textContent = '✓ Guardado correctamente.';
@@ -855,7 +923,25 @@
 
     $('an-tab-archivo').addEventListener('click', () => cambiarTab_('archivo'));
     $('an-tab-url').addEventListener('click', () => cambiarTab_('url'));
+    $('an-tab-video').addEventListener('click', () => cambiarTab_('video'));
     $('an-dropzone').addEventListener('click', () => $('an-archivo-input').click());
+    // Miniatura/portada manual de "URL externa" o "Vídeo" — a diferencia
+    // de un PDF (ver manejarArchivoSeleccionado_), aquí NO hay nada que
+    // generar: la imagen elegida ES la miniatura, solo hay que leerla
+    // igual que cualquier otro archivo pendiente de subir.
+    async function manejarMiniaturaManualSeleccionada_(file) {
+      if (!file) { miniaturaGenerada_ = null; return; }
+      try {
+        const datos = await blobABase64_(file);
+        miniaturaGenerada_ = { nombre: file.name, tipo: file.type || 'image/jpeg', datos: datos };
+      } catch (e) {
+        console.error('No se pudo leer la miniatura:', e);
+        toast('No se pudo leer la miniatura elegida.', true);
+        miniaturaGenerada_ = null;
+      }
+    }
+    $('an-url-miniatura-input').addEventListener('change', (e) => manejarMiniaturaManualSeleccionada_(e.target.files[0]));
+    $('an-video-miniatura-input').addEventListener('change', (e) => manejarMiniaturaManualSeleccionada_(e.target.files[0]));
     $('an-archivo-input').addEventListener('change', (e) => { if (e.target.files[0]) manejarArchivoSeleccionado_(e.target.files[0]); });
 
     // Arrastrar y soltar — mismo mecanismo ya usado en el resto del
@@ -894,7 +980,7 @@
     document.addEventListener('paste', (e) => {
       if (!$('an-modal-overlay').classList.contains('activo')) return;
       if (!$('an-form').classList.contains('activo')) return;
-      if ($('an-tab-url').classList.contains('activo')) return; // en la pestaña de URL, un Ctrl+V normal debe pegar texto
+      if ($('an-tab-url').classList.contains('activo') || $('an-tab-video').classList.contains('activo')) return; // en la pestaña de URL o de vídeo, un Ctrl+V normal debe pegar texto
       const item = Array.from(e.clipboardData?.items || []).find((i) => ANUNCIOS_MIME_PERMITIDOS_.indexOf(i.type) !== -1);
       if (!item) return;
       e.preventDefault();

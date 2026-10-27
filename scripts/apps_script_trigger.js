@@ -6839,6 +6839,68 @@ function procesarGuardarAnuncio(data) {
   }
 }
 
+// Detecta la plataforma de un enlace de vídeo a partir del propio
+// dominio — nunca de una lista cerrada de formatos de URL (cada
+// plataforma cambia los suyos con el tiempo: /shorts/, /reel/, enlaces
+// acortados vm.tiktok.com, etc.), así que basta con el dominio para
+// decidir qué icono mostrar en el frontend y si hay miniatura
+// automática disponible (ver obtenerMiniaturaAutoVideo_).
+function detectarPlataformaVideo_(url) {
+  const u = url.toLowerCase();
+  if (u.indexOf('youtube.com') !== -1 || u.indexOf('youtu.be') !== -1) return 'youtube';
+  if (u.indexOf('tiktok.com') !== -1) return 'tiktok';
+  if (u.indexOf('instagram.com') !== -1) return 'instagram';
+  return 'otro';
+}
+
+// Extrae el ID de vídeo de cualquier formato habitual de enlace de
+// YouTube (youtu.be/ID, watch?v=ID, /shorts/ID, /embed/ID) — el ID
+// siempre son 11 caracteres alfanuméricos (+ "-"/"_"), pero se acepta
+// un rango algo más amplio por si acaso para no ser quebradizo.
+function extraerIdYoutube_(url) {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{6,15})/);
+  return m ? m[1] : '';
+}
+
+// Miniatura automática de un vídeo externo, SOLO cuando hay una vía
+// pública fiable sin credenciales propias:
+// - YouTube: "img.youtube.com/vi/<id>/hqdefault.jpg" es una URL estable
+//   y pública para cualquier vídeo, documentada por Google, sin API ni
+//   clave de por medio.
+// - TikTok: su propio endpoint oEmbed público (tiktok.com/oembed) da un
+//   "thumbnail_url" sin necesitar clave.
+// - Instagram: su oEmbed actual exige un token de la API de Meta (app
+//   revisada por Meta) que este proyecto no tiene — se devuelve null
+//   siempre, y el llamador ya sabe tratar null como "sin miniatura
+//   automática, seguir sin romper nada".
+// Nunca lanza por un fallo externo (red, formato de enlace no
+// reconocido, etc.) — se decide fuera, en el try/catch de quien llama,
+// que una miniatura automática es "mejor que nada pero nunca
+// imprescindible".
+function obtenerMiniaturaAutoVideo_(url, mimeTypeVideo) {
+  const plataforma = mimeTypeVideo.replace('video/', '');
+
+  if (plataforma === 'youtube') {
+    const id = extraerIdYoutube_(url);
+    if (!id) return null;
+    const resp = UrlFetchApp.fetch('https://img.youtube.com/vi/' + id + '/hqdefault.jpg', { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) return null;
+    return resp.getBlob().setName('miniatura-video.jpg');
+  }
+
+  if (plataforma === 'tiktok') {
+    const respOembed = UrlFetchApp.fetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent(url), { muteHttpExceptions: true });
+    if (respOembed.getResponseCode() !== 200) return null;
+    const datosOembed = JSON.parse(respOembed.getContentText());
+    if (!datosOembed.thumbnail_url) return null;
+    const respImg = UrlFetchApp.fetch(datosOembed.thumbnail_url, { muteHttpExceptions: true });
+    if (respImg.getResponseCode() !== 200) return null;
+    return respImg.getBlob().setName('miniatura-video.jpg');
+  }
+
+  return null; // instagram / otro: sin vía pública fiable, miniatura manual
+}
+
 // Sube/reemplaza el archivo (o la URL externa) de un recurso ya creado,
 // y opcionalmente su miniatura. Igual que con la imagen de campaña: si
 // ya había un archivo/miniatura anterior, se envía a la papelera DESPUÉS
@@ -6854,7 +6916,7 @@ function procesarActualizarArchivoAnuncio(data) {
     }
     const id = (data.id || '').toString().trim();
     if (!id) throw new Error('Falta el id del anuncio.');
-    const tipoRecurso = data.tipoRecurso === 'url' ? 'url' : 'archivo';
+    const tipoRecurso = data.tipoRecurso === 'url' ? 'url' : (data.tipoRecurso === 'video' ? 'video' : 'archivo');
 
     const sheet = obtenerHojaAnuncios_();
     const datos = sheet.getDataRange().getValues();
@@ -6893,6 +6955,25 @@ function procesarActualizarArchivoAnuncio(data) {
       nombreArchivo = (archivo.nombre || blob.getName()).toString().slice(0, 150);
       mimeType = verificacion.mime;
       tamanoBytes = decoded.length;
+    } else if (tipoRecurso === 'video') {
+      // A petición de Eloy: una tercera forma de añadir un recurso, para
+      // enlaces de YouTube/TikTok/Instagram (tutoriales o anuncios en
+      // vídeo) — se guarda igual que "url" (solo el enlace, nunca el
+      // vídeo en sí), pero la plataforma detectada se guarda en
+      // "mime_type" como "video/youtube" | "video/tiktok" |
+      // "video/instagram" | "video/otro" (reutilizando ese campo como
+      // etiqueta de formato, igual que ya se hace con el MIME real de un
+      // archivo — sin añadir una columna nueva a la hoja solo para esto),
+      // así el frontend sabe qué icono mostrar y, para YouTube, puede
+      // embeber el reproductor en la vista previa en vez de abrir una
+      // pestaña nueva.
+      urlExterna = (data.urlExterna || '').toString().trim();
+      if (!urlExterna) throw new Error('Falta el enlace del vídeo.');
+      if (!/^https?:\/\//i.test(urlExterna)) {
+        throw new Error('El enlace no es válido — debe empezar por http:// o https://.');
+      }
+      nombreArchivo = urlExterna.slice(0, 150);
+      mimeType = 'video/' + detectarPlataformaVideo_(urlExterna);
     } else {
       urlExterna = (data.urlExterna || '').toString().trim();
       if (!urlExterna) throw new Error('Falta la URL externa.');
@@ -6932,6 +7013,30 @@ function procesarActualizarArchivoAnuncio(data) {
       try { driveThumb.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
       catch (sharingError) { console.log('No se pudo compartir la miniatura públicamente:', sharingError.message); }
       nuevoThumbId = driveThumb.getId();
+    }
+
+    // Vídeo sin miniatura manual: se intenta conseguir una automática —
+    // YouTube siempre tiene una miniatura pública estable (sin API ni
+    // clave); TikTok la da su propio oEmbed público. Instagram NO tiene
+    // una vía pública sin credenciales de la API de Meta (su oEmbed
+    // exige un token de aplicación revisada por Meta, que este proyecto
+    // no tiene) — ahí se queda sin miniatura automática, igual que
+    // cualquier otro fallo al intentarlo: nunca bloquea el guardado del
+    // recurso, se queda con el icono genérico hasta que alguien suba una
+    // miniatura a mano (mismo campo opcional que ya existía para "URL
+    // externa").
+    if (!nuevoThumbId && tipoRecurso === 'video') {
+      try {
+        const miniaturaAuto = obtenerMiniaturaAutoVideo_(urlExterna, mimeType);
+        if (miniaturaAuto) {
+          const driveThumbAuto = obtenerCarpetaAnunciosMiniaturas_().createFile(miniaturaAuto);
+          try { driveThumbAuto.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
+          catch (sharingError) { console.log('No se pudo compartir la miniatura automática del vídeo públicamente:', sharingError.message); }
+          nuevoThumbId = driveThumbAuto.getId();
+        }
+      } catch (e) {
+        console.log('No se pudo obtener una miniatura automática del vídeo (' + mimeType + '):', e.message);
+      }
     }
 
     // Archivo y registro ya confirmados — AHORA sí se actualiza la hoja

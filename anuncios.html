@@ -248,6 +248,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="an-tabs">
               <button type="button" id="an-tab-archivo" class="activo" data-tab="archivo">Subir archivo</button>
               <button type="button" id="an-tab-url" data-tab="url">Añadir URL externa</button>
+              <button type="button" id="an-tab-video" data-tab="video">Añadir vídeo</button>
             </div>
 
             <div id="an-panel-archivo" class="an-tab-panel activo">
@@ -266,6 +267,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <input type="text" id="an-url-externa" placeholder="https://...">
               <label for="an-url-miniatura-input">Miniatura/portada (opcional)</label>
               <input type="file" id="an-url-miniatura-input" accept=".jpg,.jpeg,.png,.webp">
+            </div>
+            <div id="an-panel-video" class="an-tab-panel">
+              <label for="an-video-url">Enlace del vídeo (YouTube, TikTok o Instagram)</label>
+              <input type="text" id="an-video-url" placeholder="https://www.youtube.com/watch?v=...">
+              <p class="an-hint">Para YouTube y TikTok la miniatura se obtiene automáticamente. Instagram no lo permite sin iniciar sesión — sube una miniatura a mano más abajo.</p>
+              <label for="an-video-miniatura-input">Miniatura/portada (opcional, obligatoria en la práctica para Instagram)</label>
+              <input type="file" id="an-video-miniatura-input" accept=".jpg,.jpeg,.png,.webp">
             </div>
 
             <div class="an-fila-2">
