@@ -6896,11 +6896,17 @@ function procesarActualizarArchivoAnuncio(data) {
     } else {
       urlExterna = (data.urlExterna || '').toString().trim();
       if (!urlExterna) throw new Error('Falta la URL externa.');
-      try {
-        const protocolo = urlExterna.split(':')[0].toLowerCase();
-        if (protocolo !== 'http' && protocolo !== 'https') throw new Error('bad protocol');
-        new URL(urlExterna); // lanza si la URL no es válida
-      } catch (e) {
+      // Antes se exigía además que "new URL(urlExterna)" no lanzara — en la
+      // práctica, enlaces reales y válidos (copiados tal cual de la barra
+      // de direcciones de un navegador, con espacios o acentos sin
+      // porcentaje-codificar en la ruta, p.ej. ".../FOLLETOS Y
+      // CATÁLOGOS/...") hacían fallar esa comprobación en el entorno de
+      // Apps Script aunque el enlace era perfectamente válido y se abre
+      // sin problema en cualquier navegador (bug real reportado por Eloy
+      // con un enlace de un catálogo de un proveedor). El único requisito
+      // real, y el único que anuncia el propio mensaje de error, es que
+      // empiece por "http://" o "https://" — se comprueba solo eso.
+      if (!/^https?:\/\//i.test(urlExterna)) {
         throw new Error('La URL introducida no es válida — debe empezar por http:// o https://.');
       }
       nombreArchivo = urlExterna.slice(0, 150);
