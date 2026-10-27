@@ -145,22 +145,27 @@
     if (a.familia) metaPartes.push(a.familia);
     if (fechaTexto) metaPartes.push(fechaTexto);
 
+    // El texto de cada botón va en su propio <span> — a petición de
+    // Eloy, en móvil se oculta ese texto y se deja solo el icono (el
+    // texto se salía del bloque de la tarjeta); con el texto suelto,
+    // sin envolver, no habría forma de ocultarlo por CSS sin tocar
+    // también el icono (ver .an-card__acciones en anuncios.css).
     let acciones = '';
     if (a.tipoRecurso === 'archivo' && a.driveFileId) {
       acciones = `
-        <button type="button" data-accion="ver" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-eye"></i> Ver</button>
-        <button type="button" data-accion="descargar" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-download"></i> Descargar</button>
+        <button type="button" data-accion="ver" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-eye"></i> <span>Ver</span></button>
+        <button type="button" data-accion="descargar" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-download"></i> <span>Descargar</span></button>
         <button type="button" data-accion="compartir" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-share-nodes"></i></button>
       `;
     } else if (a.tipoRecurso === 'url' && a.urlExterna) {
       acciones = `
-        ${esUrlPdf_(a.urlExterna) ? `<button type="button" data-accion="ver-url-pdf" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-eye"></i> Ver</button>` : ''}
-        <a href="${escapeHtml(a.urlExterna)}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-up-right-from-square"></i> Abrir</a>
+        ${esUrlPdf_(a.urlExterna) ? `<button type="button" data-accion="ver-url-pdf" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-eye"></i> <span>Ver</span></button>` : ''}
+        <a href="${escapeHtml(a.urlExterna)}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-up-right-from-square"></i> <span>Abrir</span></a>
         <button type="button" data-accion="compartir" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-share-nodes"></i></button>
       `;
     } else if (a.tipoRecurso === 'video' && a.urlExterna) {
       acciones = `
-        <button type="button" data-accion="ver-video" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-play"></i> Ver</button>
+        <button type="button" data-accion="ver-video" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-play"></i> <span>Ver</span></button>
         <button type="button" data-accion="compartir" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-share-nodes"></i></button>
       `;
     }
