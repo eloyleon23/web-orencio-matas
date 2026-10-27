@@ -51,6 +51,15 @@
   // que Drive ya sabe previsualizar.
   function urlPreviewDrive_(id) { return `https://drive.google.com/file/d/${id}/preview`; }
 
+  // ── URL externa que apunta directamente a un PDF ─────────────────────
+  // Solo mira la extensión en la propia URL (antes de "?"/"#") — no hay
+  // forma de comprobar el Content-Type real desde el navegador sin
+  // descargar el archivo entero, y esto cubre el caso real (enlaces
+  // directos a un .pdf, como los catálogos de proveedores que enlaza
+  // Eloy aquí). Si la URL no termina en ".pdf", sigue comportándose
+  // igual que cualquier otro recurso de tipo URL (solo "Abrir").
+  function esUrlPdf_(url) { return /\.pdf(?:[?#]|$)/i.test(url || ''); }
+
   // ── Vídeo externo (YouTube/TikTok/Instagram) ─────────────────────────
   // "mimeType" de un recurso de vídeo no es un MIME real — el backend
   // reutiliza ese mismo campo como etiqueta de plataforma ("video/youtube"
@@ -145,6 +154,7 @@
       `;
     } else if (a.tipoRecurso === 'url' && a.urlExterna) {
       acciones = `
+        ${esUrlPdf_(a.urlExterna) ? `<button type="button" data-accion="ver-url-pdf" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-eye"></i> Ver</button>` : ''}
         <a href="${escapeHtml(a.urlExterna)}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-up-right-from-square"></i> Abrir</a>
         <button type="button" data-accion="compartir" data-id="${escapeHtml(a.id)}"><i class="fa-solid fa-share-nodes"></i></button>
       `;
@@ -237,6 +247,7 @@
     cont.querySelectorAll('[data-accion="ver"]').forEach(btn => btn.addEventListener('click', () => accionVer_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="descargar"]').forEach(btn => btn.addEventListener('click', () => accionDescargar_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="ver-video"]').forEach(btn => btn.addEventListener('click', () => accionVerVideo_(btn.dataset.id)));
+    cont.querySelectorAll('[data-accion="ver-url-pdf"]').forEach(btn => btn.addEventListener('click', () => accionVerUrlPdf_(btn.dataset.id)));
     cont.querySelectorAll('[data-accion="compartir"]').forEach(btn => btn.addEventListener('click', () => accionCompartir_(btn.dataset.id)));
 
     // Tarjeta clicable entera, a petición de Eloy: el usuario no tiene que
@@ -254,13 +265,15 @@
   }
 
   // Abre el recurso tal y como ya lo hace su acción principal (nunca una
-  // acción nueva): "Ver" para un archivo de Drive (vista previa en la
-  // ventana modal del propio sitio, ver accionVer_/abrirVisorRecurso_) o
-  // el mismo enlace externo que el botón "Abrir" para un recurso de tipo
-  // URL. A petición de Eloy ("que se abra todo lo que se pueda en la
-  // ventana modal para que el usuario no tenga que salir de la web"), un
-  // recurso de tipo URL sigue abriendo en pestaña nueva porque un sitio
-  // de terceros no se puede embeber de forma fiable (X-Frame-Options,
+  // acción nueva): "Ver" para un archivo de Drive o una URL que apunte a
+  // un PDF (vista previa en la ventana modal del propio sitio, ver
+  // accionVer_/abrirVisorRecurso_/accionVerUrlPdf_), "Ver" embebiendo el
+  // reproductor para un vídeo de YouTube (accionVerVideo_), o el mismo
+  // enlace externo que el botón "Abrir" para cualquier otro recurso de
+  // tipo URL. A petición de Eloy ("que se abra todo lo que se pueda en
+  // la ventana modal para que el usuario no tenga que salir de la web"),
+  // un sitio de terceros que no sea un PDF sigue abriendo en pestaña
+  // nueva porque no se puede embeber de forma fiable (X-Frame-Options,
   // CORS...) — ahí sí que no hay más remedio que salir de la web.
   function abrirRecursoTarjeta_(id) {
     const a = encontrarAnuncio_(id);
@@ -269,6 +282,8 @@
       accionVer_(id);
     } else if (a.tipoRecurso === 'video' && a.urlExterna) {
       accionVerVideo_(id);
+    } else if (a.tipoRecurso === 'url' && a.urlExterna && esUrlPdf_(a.urlExterna)) {
+      accionVerUrlPdf_(id);
     } else if (a.tipoRecurso === 'url' && a.urlExterna) {
       window.open(a.urlExterna, '_blank', 'noopener');
     }
@@ -324,6 +339,27 @@
     $('an-visor-descargar').style.display = 'none'; // no hay nada que descargar: es un enlace, no un archivo propio
     $('an-visor-abrir-fuera').href = a.urlExterna;
     $('an-visor-contenido').innerHTML = `<iframe src="https://www.youtube.com/embed/${encodeURIComponent(ytId)}" title="${escapeHtml(a.titulo)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    $('an-visor-overlay').classList.add('activo');
+  }
+
+  // "Ver" de una URL externa que apunta a un PDF — se intenta embeber
+  // directamente la propia URL en un <iframe>: los navegadores actuales
+  // (Chrome, Firefox, Safari, Edge) tienen su propio visor de PDF
+  // integrado que renderiza cualquier PDF cargado en un iframe con su
+  // propio motor, sin pasar por el servidor de terceros como si fuera
+  // una página HTML — X-Frame-Options (pensado para evitar que SITIOS
+  // enteros se enmarquen) no suele aplicarse a servidores de archivos
+  // estáticos, que es de donde vienen este tipo de enlaces en la
+  // práctica (catálogos PDF de proveedores). Si el PDF concreto no se
+  // deja embeber, "Abrir en pestaña nueva" (siempre visible en el pie
+  // del visor) sigue siendo la vía garantizada.
+  function accionVerUrlPdf_(id) {
+    const a = encontrarAnuncio_(id);
+    if (!a || !a.urlExterna) return;
+    $('an-visor-titulo').textContent = a.titulo;
+    $('an-visor-descargar').style.display = 'none'; // no hay nada que descargar: es un enlace, no un archivo propio
+    $('an-visor-abrir-fuera').href = a.urlExterna;
+    $('an-visor-contenido').innerHTML = `<iframe src="${escapeHtml(a.urlExterna)}" title="${escapeHtml(a.titulo)}"></iframe>`;
     $('an-visor-overlay').classList.add('activo');
   }
 
