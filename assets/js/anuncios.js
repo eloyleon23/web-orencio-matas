@@ -58,7 +58,25 @@
   // directos a un .pdf, como los catálogos de proveedores que enlaza
   // Eloy aquí). Si la URL no termina en ".pdf", sigue comportándose
   // igual que cualquier otro recurso de tipo URL (solo "Abrir").
-  function esUrlPdf_(url) { return /\.pdf(?:[?#]|$)/i.test(url || ''); }
+  //
+  // Excepción real encontrada (bug reportado por Eloy): un enlace
+  // "http://" (sin cifrar) NUNCA se puede embeber en un <iframe> de esta
+  // página, que siempre se sirve por "https://" (GitHub Pages e IONOS) —
+  // los navegadores bloquean en silencio cualquier iframe "http://"
+  // dentro de una página "https://" ("contenido mixto"), así que el
+  // visor se quedaba con un hueco en blanco aunque "Abrir en pestaña
+  // nueva" funcionara perfectamente (una navegación de nivel superior sí
+  // puede ser insegura). Pasar el enlace a "https://" tampoco sirve aquí
+  // si el proveedor no tiene un certificado válido en ese dominio (caso
+  // real comprobado: lo tiene, pero autofirmado/no válido) — así que, en
+  // vez de mostrar un "Ver" que nunca va a funcionar, directamente no se
+  // ofrece: el recurso se comporta como cualquier otra URL externa, con
+  // "Abrir" como única acción (que sí funciona siempre).
+  function esUrlPdf_(url) {
+    if (!/\.pdf(?:[?#]|$)/i.test(url || '')) return false;
+    if (window.location.protocol === 'https:' && /^http:\/\//i.test(url)) return false;
+    return true;
+  }
 
   // ── Vídeo externo (YouTube/TikTok/Instagram) ─────────────────────────
   // "mimeType" de un recurso de vídeo no es un MIME real — el backend
