@@ -390,6 +390,15 @@ function sincronizarRegistroProductos(opciones) {
         const prodRow    = prodData[prodRowIdx]; // referencia directa: mutar aquí ya actualiza prodData
         let cambios = false;
 
+        // IMPORTANTE: esta lista de columnas a sincronizar NUNCA debe
+        // incluir "incluir_en_catalogo" — un producto puede estar
+        // deshabilitado a propósito de la web (ver
+        // procesarDeshabilitarProductoCatalogo más abajo) y debe seguir
+        // recibiendo sus actualizaciones de precio/nombre/etc. desde el
+        // CRM con total normalidad SIN que eso lo reactive en la web.
+        // "incluir_en_catalogo" solo se escribe al dar de alta un
+        // producto NUEVO (más abajo, set('incluir_en_catalogo', 'si')) —
+        // nunca para uno que ya existía.
         const checks = [
           ['precio_sin_iva', formatPrecio_(precioSinIva)],
           ['iva',            iva],
@@ -3258,6 +3267,17 @@ function regenerarCacheCompletaDesdeSheet_() {
       const fechaBaja = valorCelda_(row, 'fecha_baja');
       if (fechaBaja) return;
 
+      // Productos deshabilitados manualmente para no aparecer en la web
+      // (incluir_en_catalogo = "no") — distinto de la baja: un producto
+      // puede seguir de alta y sincronizándose con normalidad desde el
+      // CRM (precio, stock...) pero no queremos que se muestre nunca en
+      // ninguna página pública. Ver procesarDeshabilitarProductoCatalogo_/
+      // procesarHabilitarProductoCatalogo_ más abajo — la sincronización
+      // del CRM NUNCA toca esta columna para un producto ya existente,
+      // así que deshabilitar aquí es duradero hasta que se habilite a mano.
+      const incluirEnCatalogo = (valorCelda_(row, 'incluir_en_catalogo') || '').toLowerCase();
+      if (incluirEnCatalogo === 'no') return;
+
       let imgId = valorCelda_(row, 'imagen_drive_id');
       if (imgId === 'NO_TIENE_FOTO') imgId = '';
 
@@ -4151,6 +4171,16 @@ function doPost(e) {
     if (accion === 'reactivar_producto') {
       console.log('Acción: reactivar_producto');
       return procesarReactivarProducto(data);
+    }
+
+    if (accion === 'deshabilitar_producto_catalogo') {
+      console.log('Acción: deshabilitar_producto_catalogo');
+      return procesarDeshabilitarProductoCatalogo(data);
+    }
+
+    if (accion === 'habilitar_producto_catalogo') {
+      console.log('Acción: habilitar_producto_catalogo');
+      return procesarHabilitarProductoCatalogo(data);
     }
 
     if (accion === 'marcar_sin_imagen') {
@@ -8246,6 +8276,87 @@ function procesarReactivarProducto(data) {
 
   } catch (err) {
     console.error('Error al reactivar el producto:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Deshabilitar / habilitar un producto en el catálogo de la web ─────────
+// Distinto de dar de baja/reactivar (fecha_baja, arriba): la baja es un
+// estado de ciclo de vida del CRM (el producto ha dejado de venderse y
+// puede volver a aparecer en un listado futuro, momento en el que se
+// reactiva solo); deshabilitar es una decisión de negocio — un producto
+// que SIGUE de alta y SIGUE sincronizándose con normalidad (precio,
+// stock...) desde el CRM, pero que no queremos que se muestre nunca en
+// la web. Reutiliza la columna "incluir_en_catalogo" que ya existía en
+// la hoja Productos. La sincronización desde el CRM (sincronizarRegistroProductos)
+// NUNCA escribe esta columna para un producto que ya existía — solo la
+// pone a "si" al dar de alta un producto nuevo — así que deshabilitar un
+// producto aquí es duradero: seguirá actualizándose con el CRM sin
+// volver a aparecer en la web hasta que se habilite a mano otra vez.
+function procesarDeshabilitarProductoCatalogo(data) {
+  return _procesarCambiarIncluirEnCatalogo_(data, 'no');
+}
+
+function procesarHabilitarProductoCatalogo(data) {
+  return _procesarCambiarIncluirEnCatalogo_(data, 'si');
+}
+
+function _procesarCambiarIncluirEnCatalogo_(data, valor) {
+  try {
+    const referencia = data.referencia;
+    if (!referencia) {
+      throw new Error('Falta la referencia del producto');
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    if (PROD['incluir_en_catalogo'] === undefined) {
+      throw new Error('La hoja Productos no tiene la columna "incluir_en_catalogo".');
+    }
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia.toString().trim()) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    sheetProd.getRange(prodRowNum, PROD['incluir_en_catalogo'] + 1).setValue(valor);
+    console.log('incluir_en_catalogo = "' + valor + '" para', referencia);
+
+    // Vista rápida: parchear productos.json al instante — igual que
+    // dar de baja/reactivar, esto solo actualiza el campo en el array ya
+    // existente en la caché (no añade ni quita productos de ella); es el
+    // propio frontend el que, con este campo ya actualizado, deja de
+    // mostrar el producto de inmediato (ver comprobación de
+    // incluir_en_catalogo añadida junto a la de fecha_baja en buscador.html,
+    // soluciones-data.js, catalogo-preview.js y escaparate.html).
+    actualizarProductoEnCache_(referencia, { incluir_en_catalogo: valor });
+
+    const mensaje = valor === 'no' ? 'Producto deshabilitado del catálogo correctamente' : 'Producto habilitado en el catálogo correctamente';
+    return ContentService.createTextOutput(JSON.stringify({ success: true, message: mensaje, incluir_en_catalogo: valor }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al cambiar incluir_en_catalogo del producto:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }

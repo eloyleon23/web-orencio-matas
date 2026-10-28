@@ -268,6 +268,7 @@
             const candidatos = todos.filter(p =>
                 p.area === area &&
                 !p.fecha_baja &&
+                p.incluir_en_catalogo !== 'no' &&
                 tieneImagenReal(p)
             );
 

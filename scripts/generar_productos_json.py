@@ -127,6 +127,14 @@ def exportar_productos_json(productos, familias, subfamilias):
         if fecha_baja:
             continue
 
+        # Productos deshabilitados a propósito de la web (columna
+        # incluir_en_catalogo = "no") — distinto de la baja: el producto
+        # sigue de alta y sincronizándose con normalidad desde el CRM,
+        # solo que no queremos que se muestre nunca al público. Ver
+        # procesarDeshabilitarProductoCatalogo_ en apps_script_trigger.js.
+        if not es_si(p.get('incluir_en_catalogo', 'si')):
+            continue
+
         ref = p.get('referencia', '').strip()
         if not ref:
             continue

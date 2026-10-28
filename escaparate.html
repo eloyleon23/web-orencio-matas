@@ -2258,7 +2258,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const resp = await fetch(url);
       if(resp.ok){
         const datos = await resp.json();
-        const lista = (datos.productos || []).filter(p => !p.fecha_baja);
+        const lista = (datos.productos || []).filter(p => !p.fecha_baja && p.incluir_en_catalogo !== 'no');
         if(lista.length){
           asignarProductos(lista);
           return;
@@ -2278,7 +2278,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
     const datos = await resp.json();
     const refsSet = new Set(refs);
-    asignarProductos((datos.productos || []).filter(p => refsSet.has(p.ref)));
+    asignarProductos((datos.productos || []).filter(p => refsSet.has(p.ref) && p.incluir_en_catalogo !== 'no'));
   }
 
   // Catálogo COMPLETO — a diferencia de cargarProductosDeCampana(), este
@@ -2304,7 +2304,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const resp = await fetch(PRODUCTOS_REMOTO_URL());
       if(resp.ok){
         const datos = await resp.json();
-        const lista = (datos.productos || []).filter(p => !p.fecha_baja);
+        const lista = (datos.productos || []).filter(p => !p.fecha_baja && p.incluir_en_catalogo !== 'no');
         if(lista.length){
           asignarProductos(lista);
           guardarCacheProductosRemotoSesion(lista);
