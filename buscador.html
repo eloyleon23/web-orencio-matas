@@ -5121,6 +5121,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <span>Este producto está dado de baja desde el <strong id="modal-producto-baja-fecha"></strong>. No es visible para los usuarios del buscador.</span>
                 </div>
+                <!-- Deshabilitado del catálogo — distinto de la baja: el
+                     producto sigue de alta y sincronizándose con el CRM,
+                     pero no debe mostrarse nunca al público. Ver
+                     window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO. -->
+                <div id="modal-producto-deshabilitado-banner" class="modal-producto-baja-banner" style="display:none;">
+                    <i class="fa-solid fa-eye-slash"></i>
+                    <span>Este producto está deshabilitado en el catálogo de la web. Sigue sincronizándose con el CRM, pero no es visible para los usuarios.</span>
+                </div>
                 <p class="modal-producto-descripcion" id="modal-producto-descripcion" style="display:none;"></p>
                 <div class="modal-producto-precio" id="modal-producto-precio"></div>
                 <!-- Precio de venta a MAYOR — información interna, nunca
@@ -5318,6 +5326,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <button type="button" class="modal-producto-baja-btn" id="modal-producto-baja-reactivar" style="display:none;">
                     <i class="fa-solid fa-ban"></i>
                     <span>Dar de baja este producto</span>
+                </button>
+
+                <!-- Deshabilitar/habilitar en el catálogo de la web —
+                     acción administrativa distinta de dar de baja (ver
+                     comentario del banner más arriba). Gestionada por
+                     window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO. -->
+                <button type="button" class="modal-producto-baja-btn" id="modal-producto-deshabilitar-catalogo" style="display:none;">
+                    <i class="fa-solid fa-eye-slash"></i>
+                    <span>Deshabilitar en el catálogo</span>
                 </button>
             </div>
         </div>
@@ -6211,6 +6228,12 @@ window.MOSTRAR_FILTRO_IMAGENES_REVISADAS = window.OM_PREPRODUCCION;
 // Botón para dar de baja / reactivar un producto (fase de desarrollo — se
 // restringirá al perfil administrador cuando exista esa distinción)
 window.MOSTRAR_BOTON_GESTION_BAJA = window.OM_PREPRODUCCION;
+// Botón para deshabilitar/habilitar un producto en el catálogo de la web
+// (columna incluir_en_catalogo) — a petición de Eloy: distinto de dar de
+// baja, para productos que SIGUEN de alta y sincronizándose con el CRM
+// pero que no queremos mostrar nunca al público. Solo en preproducción,
+// igual que el resto de acciones administrativas de esta ficha.
+window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO = window.OM_PREPRODUCCION;
 // Precio de venta a MAYOR (sin/con IVA) en la ficha de detalle, oculto
 // tras un botón — a petición de Eloy, 11/09/2026. INFORMACIÓN INTERNA,
 // nunca debe verse en producción/release.
@@ -6294,6 +6317,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-producto-gestionar-relacionados', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-relacionados-overlay', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-producto-baja-reactivar', window.MOSTRAR_BOTON_GESTION_BAJA);
+    eliminarSiRestringido_('modal-producto-deshabilitar-catalogo', window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO);
     // Este botón es solo la herramienta interna de previsualización del
     // precio mayor para el perfil normal en preproducción (MOSTRAR_PRECIO_
     // MAYOR, nunca en producción/release) — el perfil profesional YA ve el
@@ -6513,6 +6537,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const FAMILIAS_POR_CARGA = 3; // cuántas familias se cargan cada vez (~12 productos aprox)
 
     const $ = (id) => document.getElementById(id);
+
+    // Un producto está activo en el catálogo cuando NO está dado de baja
+    // Y NO está deshabilitado a propósito (incluir_en_catalogo = "no") —
+    // ver window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO. Usado en todos los
+    // filtros de productos "activos"/"vigentes" del buscador.
+    function estaActivoEnCatalogo_(p) {
+        if (p.fecha_baja && p.fecha_baja.toString().trim()) return false;
+        if ((p.incluir_en_catalogo || '').toString().trim().toLowerCase() === 'no') return false;
+        return true;
+    }
 
     // Eventos de negocio — búsquedas, productos vistos y bloques/marcas
     // destacadas pulsadas. Van a dos sitios en paralelo:
@@ -8319,7 +8353,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // RESOLVER esos mismos términos contra el TODOS más reciente, sin
     // repetir la petición de red.
     function productosQueCoincidenConTexto_(texto) {
-        const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        const activos = TODOS.filter(p => estaActivoEnCatalogo_(p));
         if (esBusquedaNumerica(texto)) {
             return activos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto));
         }
@@ -8665,7 +8699,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cont = $('destacados-buscar-resultados');
         if (!texto && !area && !familia) { cont.innerHTML = ''; return; }
         const refsYaIncluidas = new Set(destacadosDatos_.productos.map(d => d.referencia));
-        let resultados = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        let resultados = TODOS.filter(p => estaActivoEnCatalogo_(p));
         if (area) resultados = resultados.filter(p => p.area === area);
         if (familia) resultados = resultados.filter(p => p.familia === familia);
         // Igual que productosQueCoincidenConTexto_() y el buscador
@@ -9165,7 +9199,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // filtro — talleres se sigue viendo/filtrando igual en el resto
         // del buscador).
         const pool = TODOS
-            .filter(p => p.area !== 'talleres' && !(p.fecha_baja && p.fecha_baja.toString().trim()) && parseFecha(p.fecha_alta) > 0)
+            .filter(p => p.area !== 'talleres' && estaActivoEnCatalogo_(p) && parseFecha(p.fecha_alta) > 0)
             .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta))
             .slice(0, POOL_NOVEDADES_ROTACION);
         poolNovedadesActivo_ = pool;
@@ -9248,7 +9282,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const mapaProductos = new Map(TODOS.map(p => [String(p.ref), p]));
         const productos = historial
             .map(it => mapaProductos.get(String(it.ref)))
-            .filter(p => p && !(p.fecha_baja && p.fecha_baja.toString().trim()));
+            .filter(p => p && estaActivoEnCatalogo_(p));
         if (!productos.length) {
             modulosDescubrimientoConContenido_.vistos = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
@@ -9509,7 +9543,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         const estacion = estacionActual_();
         const colores = ['rojo', 'verde', 'amarillo', 'azul'];
-        const vigentes = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        const vigentes = TODOS.filter(p => estaActivoEnCatalogo_(p));
         const cont = $('categorias-descubrimiento');
         cont.innerHTML = '';
         bloquesCategoriasActivos_ = [];
@@ -10573,7 +10607,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // margen entre dar de baja un producto y la siguiente
             // regeneración completa de la caché), nunca debería excluir
             // nada en el caso normal.
-            if (p.fecha_baja && p.fecha_baja.toString().trim()) return false;
+            if (!estaActivoEnCatalogo_(p)) return false;
 
             // Filtro por marca exacta (chip de "Marcas más buscadas") —
             // ver refsMarcaActiva_.
@@ -13546,7 +13580,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function puntuarCandidatosProductosIA(texto) {
         const palabras = normalizar(texto).split(/[^a-z0-9áéíóúñ]+/i).filter(w => w.length >= 3 && !STOPWORDS_CANDIDATOS_IA.has(w));
         if (!palabras.length) return [];
-        const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()));
+        const activos = TODOS.filter(p => estaActivoEnCatalogo_(p));
         const resultados = [];
         activos.forEach(p => {
             const nombreNorm = normalizar(p.nombre || '');
@@ -13611,7 +13645,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // como red de seguridad si el filtro no encuentra nada.
     function buscarProductosConTerminosIA(terminos, familiasFiltro, refsExcluir) {
         const excluir = new Set(refsExcluir || []);
-        const activos = TODOS.filter(p => !(p.fecha_baja && p.fecha_baja.toString().trim()) && !excluir.has(p.ref));
+        const activos = TODOS.filter(p => estaActivoEnCatalogo_(p) && !excluir.has(p.ref));
         const palabras = (terminos || []).join(' ').split(/\s+/).map(normalizar).filter(w => w.length >= 3);
         if (!palabras.length) return [];
         const puntuar = (lista) => {
@@ -13928,6 +13962,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             bannerBaja.style.display = 'none';
         }
 
+        // Banner de estado: producto deshabilitado del catálogo de la web
+        // (distinto de dar de baja — ver window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO).
+        const bannerDeshabilitado = $('modal-producto-deshabilitado-banner');
+        const estaDeshabilitadoCatalogo = (p.incluir_en_catalogo || '').toString().trim().toLowerCase() === 'no';
+        if (bannerDeshabilitado) {
+            bannerDeshabilitado.style.display = estaDeshabilitadoCatalogo ? 'flex' : 'none';
+        }
+
         // Descripción propia del producto (ej. el registro único de Baslac,
         // que indica consultar la gama completa en vez de listar productos).
         // Solo se muestra cuando el producto trae este texto.
@@ -14114,6 +14156,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ? '<i class="fa-solid fa-rotate-left"></i><span>Reactivar este producto</span>'
                 : '<i class="fa-solid fa-ban"></i><span>Dar de baja este producto</span>';
             btnBajaReactivar.onclick = () => estaDeBaja ? reactivarProducto(p) : darDeBajaProducto(p);
+        }
+
+        // Botón de deshabilitar/habilitar en el catálogo — mismo patrón
+        // que el de dar de baja/reactivar, pero para incluir_en_catalogo
+        // (ver estaDeshabilitadoCatalogo más arriba).
+        const btnDeshabilitarCatalogo = $('modal-producto-deshabilitar-catalogo');
+        if (btnDeshabilitarCatalogo) {
+            btnDeshabilitarCatalogo.style.display = 'flex';
+            btnDeshabilitarCatalogo.disabled = false;
+            btnDeshabilitarCatalogo.classList.toggle('es-reactivar', estaDeshabilitadoCatalogo);
+            btnDeshabilitarCatalogo.innerHTML = estaDeshabilitadoCatalogo
+                ? '<i class="fa-solid fa-eye"></i><span>Habilitar en el catálogo</span>'
+                : '<i class="fa-solid fa-eye-slash"></i><span>Deshabilitar en el catálogo</span>';
+            btnDeshabilitarCatalogo.onclick = () => estaDeshabilitadoCatalogo
+                ? habilitarProductoCatalogo(p)
+                : deshabilitarProductoCatalogo(p);
         }
 
         // Botón de buscar imagen — mismo tratamiento.
@@ -15791,7 +15849,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             x.area === p.area &&
             x.familia !== p.familia &&
             !excluir.has(x.ref) &&
-            !(x.fecha_baja && x.fecha_baja.toString().trim())
+            estaActivoEnCatalogo_(x)
         );
         const porFamilia = {};
         activos.forEach(x => { (porFamilia[x.familia] = porFamilia[x.familia] || []).push(x); });
@@ -16731,7 +16789,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         // Nunca sugerir el propio producto, ni los ya añadidos, ni productos dados de baja.
         const excluir = new Set([productoRelacionadosActual.ref, ...relacionadosSeleccion]);
-        const activo = p => !(p.fecha_baja && p.fecha_baja.toString().trim());
+        const activo = p => estaActivoEnCatalogo_(p);
 
         let candidatos = TODOS.filter(p => !excluir.has(p.ref) && activo(p));
         if (areaSel) candidatos = candidatos.filter(p => p.area === areaSel);
@@ -17177,7 +17235,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             enlaces.push({
                 texto: 'Buscar por EAN',
                 icono: 'fa-solid fa-barcode',
-                url: `https://world.openfoodfacts.org/product/${p.ref}`,
+                url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p.ref)}`,
             });
         }
 
@@ -17594,15 +17652,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         let paso = 1;
 
+        const TEXTOS_CONFIRMACION_ = {
+            baja: {
+                paso1Titulo: '¿Dar de baja este producto?',
+                paso1Mensaje: 'Dejará de aparecer en el buscador para los usuarios. Podrás reactivarlo más adelante cuando quieras.',
+                paso2Mensaje: 'El producto quedará oculto de inmediato para los usuarios. ¿Seguro que quieres continuar?',
+                paso2Boton: 'Sí, dar de baja',
+            },
+            reactivar: {
+                paso1Titulo: '¿Reactivar este producto?',
+                paso1Mensaje: 'Volverá a aparecer en el buscador para los usuarios, como cualquier otro producto activo.',
+                paso2Mensaje: '¿Confirmas que quieres reactivar este producto en el catálogo?',
+                paso2Boton: 'Sí, reactivar',
+            },
+            // Deshabilitar/habilitar en el catálogo — distinto de dar de
+            // baja/reactivar: el producto sigue de alta y sincronizándose
+            // con el CRM, solo deja de mostrarse en la web.
+            deshabilitar: {
+                paso1Titulo: '¿Deshabilitar este producto en el catálogo?',
+                paso1Mensaje: 'Dejará de mostrarse en cualquier página de la web (buscador, Centro de Soluciones, escaparates y catálogos), aunque seguirá sincronizándose con normalidad desde el CRM. Podrás habilitarlo de nuevo cuando quieras.',
+                paso2Mensaje: 'El producto quedará oculto de inmediato para los usuarios. ¿Seguro que quieres continuar?',
+                paso2Boton: 'Sí, deshabilitar',
+            },
+            habilitar: {
+                paso1Titulo: '¿Habilitar este producto en el catálogo?',
+                paso1Mensaje: 'Volverá a mostrarse en la web, como cualquier otro producto habilitado.',
+                paso2Mensaje: '¿Confirmas que quieres habilitar este producto en el catálogo?',
+                paso2Boton: 'Sí, habilitar',
+            },
+        };
+
         function mostrarPaso1() {
             paso = 1;
-            if (tipo === 'baja') {
-                titulo.textContent = '¿Dar de baja este producto?';
-                mensaje.textContent = 'Dejará de aparecer en el buscador para los usuarios. Podrás reactivarlo más adelante cuando quieras.';
-            } else {
-                titulo.textContent = '¿Reactivar este producto?';
-                mensaje.textContent = 'Volverá a aparecer en el buscador para los usuarios, como cualquier otro producto activo.';
-            }
+            const textos = TEXTOS_CONFIRMACION_[tipo];
+            titulo.textContent = textos.paso1Titulo;
+            mensaje.textContent = textos.paso1Mensaje;
             btnConfirmar.textContent = 'Continuar';
             nombre.textContent = p.nombre;
             ref.textContent = 'Ref: ' + p.ref;
@@ -17611,11 +17695,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         function mostrarPaso2() {
             paso = 2;
+            const textos = TEXTOS_CONFIRMACION_[tipo];
             titulo.textContent = 'Confirmación final';
-            mensaje.textContent = tipo === 'baja'
-                ? 'El producto quedará oculto de inmediato para los usuarios. ¿Seguro que quieres continuar?'
-                : '¿Confirmas que quieres reactivar este producto en el catálogo?';
-            btnConfirmar.textContent = tipo === 'baja' ? 'Sí, dar de baja' : 'Sí, reactivar';
+            mensaje.textContent = textos.paso2Mensaje;
+            btnConfirmar.textContent = textos.paso2Boton;
         }
 
         btnConfirmar.onclick = () => {
@@ -17641,6 +17724,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function reactivarProducto(p) {
         if (!window.MOSTRAR_BOTON_GESTION_BAJA) return;
         pedirConfirmacionBaja(p, 'reactivar', () => ejecutarAccionBajaReactivar(p, 'reactivar_producto'));
+    }
+
+    function deshabilitarProductoCatalogo(p) {
+        if (!window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO) return;
+        pedirConfirmacionBaja(p, 'deshabilitar', () => ejecutarAccionDeshabilitarCatalogo(p, 'deshabilitar_producto_catalogo'));
+    }
+
+    function habilitarProductoCatalogo(p) {
+        if (!window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO) return;
+        pedirConfirmacionBaja(p, 'habilitar', () => ejecutarAccionDeshabilitarCatalogo(p, 'habilitar_producto_catalogo'));
     }
 
     // Igual que ejecutarValidacion(): el Web App se llama con mode:'no-cors',
@@ -17686,6 +17779,52 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         })
         .catch(err => {
             console.error('Error al ' + (esBaja ? 'dar de baja' : 'reactivar') + ' el producto:', err);
+            mostrarToast('Error al procesar la acción. Verifica la conexión y los logs.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = estadoOriginal;
+        });
+    }
+
+    // Mismo patrón que ejecutarAccionBajaReactivar(), para incluir_en_catalogo.
+    function ejecutarAccionDeshabilitarCatalogo(p, accion) {
+        const btn = $('modal-producto-deshabilitar-catalogo');
+        const estadoOriginal = btn.innerHTML;
+        const esDeshabilitar = accion === 'deshabilitar_producto_catalogo';
+
+        btn.disabled = true;
+        btn.innerHTML = esDeshabilitar
+            ? '<i class="fa-solid fa-spinner fa-spin"></i><span>Deshabilitando...</span>'
+            : '<i class="fa-solid fa-spinner fa-spin"></i><span>Habilitando...</span>';
+
+        const url = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!url) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = estadoOriginal;
+            return;
+        }
+
+        mostrarToast(esDeshabilitar ? 'Deshabilitando el producto...' : 'Habilitando el producto...');
+
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accion, referencia: p.ref })
+        })
+        .then(() => {
+            const nuevoValor = esDeshabilitar ? 'no' : 'si';
+            p.incluir_en_catalogo = nuevoValor;
+            const idx = TODOS.findIndex(x => x.ref === p.ref);
+            if (idx !== -1) TODOS[idx].incluir_en_catalogo = nuevoValor;
+
+            mostrarToast(esDeshabilitar ? '✓ Producto deshabilitado correctamente.' : '✓ Producto habilitado correctamente.');
+            abrirModalProducto(p); // re-renderiza el modal con el nuevo estado
+            aplicarFiltros();      // refresca el listado (el producto recién deshabilitado desaparece)
+            resincronizarVersionConocida(); // evita que el banner salte por este mismo cambio
+        })
+        .catch(err => {
+            console.error('Error al ' + (esDeshabilitar ? 'deshabilitar' : 'habilitar') + ' el producto:', err);
             mostrarToast('Error al procesar la acción. Verifica la conexión y los logs.', 'error');
             btn.disabled = false;
             btn.innerHTML = estadoOriginal;

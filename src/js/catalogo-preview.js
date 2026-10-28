@@ -117,16 +117,33 @@
                 fetch(url).then(r => r.ok ? r.json() : { productos: [] }).catch(() => ({ productos: [] }))
             )
         );
-        const productosProveedor = proveedores.flatMap(d => d.productos || d || []);
+        // _catalogoProveedorEstatico marca estos productos como "del
+        // archivo estático de proveedor" — su 'img' es un nombre de
+        // archivo local, no un ID de Drive (ver urlImagenProductoCatalogo
+        // más abajo). Mismo patrón que buscador.html: no basta con mirar
+        // 'fabricante', porque los productos normales del Sheet también
+        // pueden traer ese campo informado (columna "marca") sin ser de
+        // estos catálogos de proveedor — así se interpretaba su ID de
+        // Drive real como si fuera un nombre de archivo local, rompiendo
+        // la imagen.
+        const productosProveedor = proveedores
+            .flatMap(d => d.productos || d || [])
+            .map(p => Object.assign(p, { _catalogoProveedorEstatico: true }));
         return [...principales, ...productosProveedor];
     }
 
     function urlImagenProductoCatalogo(p, tamano) {
         if (!p.img) return null;
         // Los 4 catálogos estáticos de proveedor (Zaphiro/Besa/Glasurit/
-        // Baslac) traen 'fabricante' y su 'img' es un nombre de archivo
-        // real en assets/imagenes_talleres/, no un ID de Drive.
-        if (p.fabricante) return `./assets/imagenes_talleres/${p.img}`;
+        // Baslac) se marcan con _catalogoProveedorEstatico al cargarlos
+        // (ver cargarProductosParaMuestra_) — su 'img' es un nombre de
+        // archivo real en assets/imagenes_talleres/, no un ID de Drive.
+        // NO basta con mirar 'fabricante': los productos normales del
+        // Sheet también pueden traerlo informado (columna "marca") sin
+        // ser de estos catálogos, y entonces su ID de Drive real se
+        // interpretaba como un nombre de archivo local, rompiendo la
+        // imagen — mismo bug ya corregido en buscador.html.
+        if (p._catalogoProveedorEstatico) return `./assets/imagenes_talleres/${p.img}`;
         return `https://drive.google.com/thumbnail?id=${p.img}&sz=w${tamano}`;
     }
 
@@ -268,6 +285,7 @@
             const candidatos = todos.filter(p =>
                 p.area === area &&
                 !p.fecha_baja &&
+                p.incluir_en_catalogo !== 'no' &&
                 tieneImagenReal(p)
             );
 

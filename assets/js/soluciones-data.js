@@ -5476,7 +5476,7 @@ window.SOLUCIONES_DATA = (function () {
     catalogoRealCachePromise = fetch(PRODUCTOS_REMOTO_URL())
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('respuesta no OK'))))
       .then((d) => {
-        catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja);
+        catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja && p.incluir_en_catalogo !== 'no');
         return catalogoRealCache;
       })
       .catch(() => {
@@ -5485,7 +5485,7 @@ window.SOLUCIONES_DATA = (function () {
         return fetch(rutaCatalogoReal())
           .then((r) => r.json())
           .then((d) => {
-            catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja);
+            catalogoRealCache = (d.productos || []).filter((p) => !p.fecha_baja && p.incluir_en_catalogo !== 'no');
             return catalogoRealCache;
           })
           .catch(() => {
