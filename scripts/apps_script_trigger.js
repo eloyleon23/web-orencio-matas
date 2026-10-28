@@ -491,6 +491,22 @@ function sincronizarRegistroProductos() {
     '📥 Sincronización completada', 8
   );
 
+  // Registrar también aquí la fecha/resumen en la hoja Configuracion
+  // (crm_sync_ultima_fecha / crm_sync_ultimo_resumen) — antes solo se
+  // registraba cuando la sincronización llegaba por el flujo automático
+  // del correo (revisarCorreoListadoProductos -> enviarResumenSincronizacionCRM_),
+  // así que si se lanzaba este menú directamente (p.ej. tras pegar el
+  // Excel a mano en RegistroProductos) los productos quedaban
+  // actualizados de verdad pero la fecha de "última sincronización" se
+  // quedaba congelada, y el aviso automático de "lleva X días sin
+  // sincronizar" terminaba disparándose aunque sí se hubiera sincronizado.
+  // Si esto se llama desde el flujo del correo, se vuelve a registrar
+  // un poco después con el resumen más completo — no pasa nada, solo
+  // sobrescribe con una fecha/resumen igualmente correctos.
+  const zonaSync = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  const fechaSync = Utilities.formatDate(new Date(), zonaSync, 'dd/MM/yyyy HH:mm');
+  registrarResultadoSincronizacionCRM_({ nuevos, actualizados, reactivados, saltados, errores }, fechaSync);
+
   return { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError };
 }
 
@@ -9715,37 +9731,46 @@ function configurarTriggerRevisionCorreoProductos() {
 // (el listado es un volcado completo cada vez, no incremental — los
 // correos más antiguos sin procesar quedan superados) y manda el resumen.
 function revisarCorreoListadoProductos() {
-  const query = `from:${CORREO_CRM_REMITENTE} subject:"${CORREO_CRM_ASUNTO}" -label:${CORREO_CRM_ETIQUETA}`;
-  const hilos = GmailApp.search(query, 0, 10);
-
-  if (hilos.length === 0) {
-    console.log('No hay correos nuevos de listado de productos del CRM.');
-    return { huboCorreo: false };
-  }
-
-  let etiqueta = GmailApp.getUserLabelByName(CORREO_CRM_ETIQUETA);
-  if (!etiqueta) etiqueta = GmailApp.createLabel(CORREO_CRM_ETIQUETA);
-
-  // Gmail devuelve los hilos más recientes primero. Se etiquetan TODOS
-  // los encontrados como procesados (para no repetir trabajo si se han
-  // acumulado varios), pero solo se sincroniza con el más reciente.
-  const hiloMasReciente = hilos[0];
-  hilos.forEach(hilo => hilo.addLabel(etiqueta));
-
-  const mensajes = hiloMasReciente.getMessages();
-  const ultimoMensaje = mensajes[mensajes.length - 1];
-  const adjuntos = ultimoMensaje.getAttachments();
-  const excel = adjuntos.find(a => /\.xlsx?$/i.test(a.getName()));
-
-  if (!excel) {
-    const mensajeError = 'El correo del CRM ("' + ultimoMensaje.getSubject() + '", ' + ultimoMensaje.getDate() +
-      ') no traía ningún adjunto .xlsx/.xls reconocible.';
-    console.error(mensajeError);
-    enviarResumenSincronizacionCRM_({ error: mensajeError });
-    return { huboCorreo: true, exito: false, mensaje: mensajeError };
-  }
-
+  // Todo el cuerpo va envuelto en un try/catch general — antes solo la
+  // parte de procesarListadoProductosExcel_() estaba protegida, así que
+  // un fallo en la búsqueda/etiquetado de Gmail (p.ej. un hilo ya
+  // etiquetado como procesado por un intento anterior fallido, o un
+  // error puntual de la API) se quedaba sin capturar: la ejecución del
+  // disparador fallaba en silencio (sin correo de aviso al administrador
+  // y, sobre todo, sin registrar la fecha/resumen del intento en
+  // Configuracion), dejando la fecha de "última sincronización" congelada
+  // aunque en Gmail pareciera que ya se había procesado.
   try {
+    const query = `from:${CORREO_CRM_REMITENTE} subject:"${CORREO_CRM_ASUNTO}" -label:${CORREO_CRM_ETIQUETA}`;
+    const hilos = GmailApp.search(query, 0, 10);
+
+    if (hilos.length === 0) {
+      console.log('No hay correos nuevos de listado de productos del CRM.');
+      return { huboCorreo: false };
+    }
+
+    let etiqueta = GmailApp.getUserLabelByName(CORREO_CRM_ETIQUETA);
+    if (!etiqueta) etiqueta = GmailApp.createLabel(CORREO_CRM_ETIQUETA);
+
+    // Gmail devuelve los hilos más recientes primero. Se etiquetan TODOS
+    // los encontrados como procesados (para no repetir trabajo si se han
+    // acumulado varios), pero solo se sincroniza con el más reciente.
+    const hiloMasReciente = hilos[0];
+    hilos.forEach(hilo => hilo.addLabel(etiqueta));
+
+    const mensajes = hiloMasReciente.getMessages();
+    const ultimoMensaje = mensajes[mensajes.length - 1];
+    const adjuntos = ultimoMensaje.getAttachments();
+    const excel = adjuntos.find(a => /\.xlsx?$/i.test(a.getName()));
+
+    if (!excel) {
+      const mensajeError = 'El correo del CRM ("' + ultimoMensaje.getSubject() + '", ' + ultimoMensaje.getDate() +
+        ') no traía ningún adjunto .xlsx/.xls reconocible.';
+      console.error(mensajeError);
+      enviarResumenSincronizacionCRM_({ error: mensajeError });
+      return { huboCorreo: true, exito: false, mensaje: mensajeError };
+    }
+
     const resultado = procesarListadoProductosExcel_(excel);
     enviarResumenSincronizacionCRM_(resultado);
     // Regenerar los catálogos PDF automáticamente tras una sincronización
@@ -9769,7 +9794,11 @@ function revisarCorreoListadoProductos() {
     return { huboCorreo: true, exito: true, resultado: resultado };
   } catch (err) {
     console.error('Error procesando el listado de productos del CRM:', err);
-    enviarResumenSincronizacionCRM_({ error: err.message });
+    try {
+      enviarResumenSincronizacionCRM_({ error: err.message });
+    } catch (errEnvio) {
+      console.error('Además, no se pudo enviar/registrar el aviso del fallo anterior:', errEnvio);
+    }
     return { huboCorreo: true, exito: false, mensaje: err.message };
   }
 }
