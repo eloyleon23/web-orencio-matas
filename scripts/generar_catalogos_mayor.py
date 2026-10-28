@@ -638,10 +638,14 @@ def generar_catalogo(area, productos, logo_png, familias={}, marca_agua=None, li
     # criterio que ya usa generar_productos_json.py (el que alimenta el
     # buscador web) para mantener ambos catálogos, en PDF y en la web,
     # consistentes entre sí.
+    # Excluye también los productos deshabilitados a propósito de la web
+    # (incluir_en_catalogo = "no") — distinto de la baja: siguen de alta
+    # y sincronizándose desde el CRM, solo que no deben mostrarse nunca.
     productos_area = [
         p for p in productos
         if p.get('area','').lower().strip() == area
         and not p.get('fecha_baja','').strip()
+        and p.get('incluir_en_catalogo','si').strip().lower() not in ('no',)
     ]
 
     if limite_productos:
