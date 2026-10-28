@@ -251,7 +251,18 @@ function dispararWorkflowCatalogosMayor_() {
 function generarCatalogosMayorAhora() { dispararWorkflowCatalogosMayor_(); }
 
 // ── SINCRONIZACIÓN RegistroProductos → Productos ───────────────────────────
-function sincronizarRegistroProductos() {
+function sincronizarRegistroProductos(opciones) {
+  // enviarResumenPorCorreo=false SOLO lo usa la llamada interna desde
+  // procesarListadoProductosExcel_() (flujo automático del correo del
+  // CRM): ese flujo ya manda su propio correo de resumen más completo
+  // (con el Excel adjunto que lo originó) justo después, desde
+  // revisarCorreoListadoProductos() -> enviarResumenSincronizacionCRM_();
+  // mandar aquí también duplicaría el correo. Cuando se lanza este menú
+  // directamente ("📥 Sincronizar RegistroProductos → Productos"), en
+  // cambio, es la ÚNICA sincronización que hay — antes aquí solo se
+  // avisaba con un toast en pantalla (invisible si no estás delante de la
+  // hoja) y ni se registraba la fecha ni se mandaba correo alguno.
+  const enviarResumenPorCorreo = !opciones || opciones.enviarResumenPorCorreo !== false;
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const sheetReg  = ss.getSheetByName('RegistroProductos');
   const sheetProd = ss.getSheetByName('Productos');
@@ -491,7 +502,29 @@ function sincronizarRegistroProductos() {
     '📥 Sincronización completada', 8
   );
 
-  return { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError };
+  const resultadoSync = { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError };
+
+  if (enviarResumenPorCorreo) {
+    // Única sincronización de este intento (no viene del correo del CRM):
+    // registra la fecha/resumen en Configuracion Y manda el correo de
+    // resumen de verdad, igual que hace el flujo automático del correo.
+    // "Productos leídos del Excel" aquí no aplica tal cual (no hubo
+    // Excel adjunto en un correo), así que se usa el total de filas
+    // realmente procesadas de RegistroProductos como aproximación.
+    enviarResumenSincronizacionCRM_({
+      ...resultadoSync,
+      totalRegistrados: nuevos + actualizados + reactivados + saltados + errores,
+    });
+  } else {
+    // Llamada interna desde el flujo del correo: solo registrar la fecha
+    // como red de seguridad — el correo de resumen definitivo (con el
+    // Excel que lo originó) lo manda el llamador justo después.
+    const zonaSync = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+    const fechaSync = Utilities.formatDate(new Date(), zonaSync, 'dd/MM/yyyy HH:mm');
+    registrarResultadoSincronizacionCRM_(resultadoSync, fechaSync);
+  }
+
+  return resultadoSync;
 }
 
 // ── ACTUALIZAR PRECIOS DE PRODUCTOS ───────────────────────────────────────────
@@ -9715,37 +9748,46 @@ function configurarTriggerRevisionCorreoProductos() {
 // (el listado es un volcado completo cada vez, no incremental — los
 // correos más antiguos sin procesar quedan superados) y manda el resumen.
 function revisarCorreoListadoProductos() {
-  const query = `from:${CORREO_CRM_REMITENTE} subject:"${CORREO_CRM_ASUNTO}" -label:${CORREO_CRM_ETIQUETA}`;
-  const hilos = GmailApp.search(query, 0, 10);
-
-  if (hilos.length === 0) {
-    console.log('No hay correos nuevos de listado de productos del CRM.');
-    return { huboCorreo: false };
-  }
-
-  let etiqueta = GmailApp.getUserLabelByName(CORREO_CRM_ETIQUETA);
-  if (!etiqueta) etiqueta = GmailApp.createLabel(CORREO_CRM_ETIQUETA);
-
-  // Gmail devuelve los hilos más recientes primero. Se etiquetan TODOS
-  // los encontrados como procesados (para no repetir trabajo si se han
-  // acumulado varios), pero solo se sincroniza con el más reciente.
-  const hiloMasReciente = hilos[0];
-  hilos.forEach(hilo => hilo.addLabel(etiqueta));
-
-  const mensajes = hiloMasReciente.getMessages();
-  const ultimoMensaje = mensajes[mensajes.length - 1];
-  const adjuntos = ultimoMensaje.getAttachments();
-  const excel = adjuntos.find(a => /\.xlsx?$/i.test(a.getName()));
-
-  if (!excel) {
-    const mensajeError = 'El correo del CRM ("' + ultimoMensaje.getSubject() + '", ' + ultimoMensaje.getDate() +
-      ') no traía ningún adjunto .xlsx/.xls reconocible.';
-    console.error(mensajeError);
-    enviarResumenSincronizacionCRM_({ error: mensajeError });
-    return { huboCorreo: true, exito: false, mensaje: mensajeError };
-  }
-
+  // Todo el cuerpo va envuelto en un try/catch general — antes solo la
+  // parte de procesarListadoProductosExcel_() estaba protegida, así que
+  // un fallo en la búsqueda/etiquetado de Gmail (p.ej. un hilo ya
+  // etiquetado como procesado por un intento anterior fallido, o un
+  // error puntual de la API) se quedaba sin capturar: la ejecución del
+  // disparador fallaba en silencio (sin correo de aviso al administrador
+  // y, sobre todo, sin registrar la fecha/resumen del intento en
+  // Configuracion), dejando la fecha de "última sincronización" congelada
+  // aunque en Gmail pareciera que ya se había procesado.
   try {
+    const query = `from:${CORREO_CRM_REMITENTE} subject:"${CORREO_CRM_ASUNTO}" -label:${CORREO_CRM_ETIQUETA}`;
+    const hilos = GmailApp.search(query, 0, 10);
+
+    if (hilos.length === 0) {
+      console.log('No hay correos nuevos de listado de productos del CRM.');
+      return { huboCorreo: false };
+    }
+
+    let etiqueta = GmailApp.getUserLabelByName(CORREO_CRM_ETIQUETA);
+    if (!etiqueta) etiqueta = GmailApp.createLabel(CORREO_CRM_ETIQUETA);
+
+    // Gmail devuelve los hilos más recientes primero. Se etiquetan TODOS
+    // los encontrados como procesados (para no repetir trabajo si se han
+    // acumulado varios), pero solo se sincroniza con el más reciente.
+    const hiloMasReciente = hilos[0];
+    hilos.forEach(hilo => hilo.addLabel(etiqueta));
+
+    const mensajes = hiloMasReciente.getMessages();
+    const ultimoMensaje = mensajes[mensajes.length - 1];
+    const adjuntos = ultimoMensaje.getAttachments();
+    const excel = adjuntos.find(a => /\.xlsx?$/i.test(a.getName()));
+
+    if (!excel) {
+      const mensajeError = 'El correo del CRM ("' + ultimoMensaje.getSubject() + '", ' + ultimoMensaje.getDate() +
+        ') no traía ningún adjunto .xlsx/.xls reconocible.';
+      console.error(mensajeError);
+      enviarResumenSincronizacionCRM_({ error: mensajeError });
+      return { huboCorreo: true, exito: false, mensaje: mensajeError };
+    }
+
     const resultado = procesarListadoProductosExcel_(excel);
     enviarResumenSincronizacionCRM_(resultado);
     // Regenerar los catálogos PDF automáticamente tras una sincronización
@@ -9769,7 +9811,11 @@ function revisarCorreoListadoProductos() {
     return { huboCorreo: true, exito: true, resultado: resultado };
   } catch (err) {
     console.error('Error procesando el listado de productos del CRM:', err);
-    enviarResumenSincronizacionCRM_({ error: err.message });
+    try {
+      enviarResumenSincronizacionCRM_({ error: err.message });
+    } catch (errEnvio) {
+      console.error('Además, no se pudo enviar/registrar el aviso del fallo anterior:', errEnvio);
+    }
     return { huboCorreo: true, exito: false, mensaje: err.message };
   }
 }
@@ -9872,8 +9918,10 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
   sheetReg.getRange(2, 1, filasParaEscribir.length, regHeaderRow.length).setValues(filasParaEscribir);
   SpreadsheetApp.flush();
 
-  // 5) Ejecutar la sincronización ya existente
-  const resultado = sincronizarRegistroProductos();
+  // 5) Ejecutar la sincronización ya existente — sin su propio correo de
+  // resumen, para no duplicar el que manda revisarCorreoListadoProductos()
+  // justo después con el Excel que originó esta sincronización.
+  const resultado = sincronizarRegistroProductos({ enviarResumenPorCorreo: false });
   resultado.totalRegistrados = filasDatos.length;
 
   // 6) Reevaluar áreas y clasificar subfamilias — a petición del usuario,
