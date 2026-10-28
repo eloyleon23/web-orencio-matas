@@ -9712,6 +9712,30 @@ const CORREO_CRM_ETIQUETA    = 'CRM-Listado-Procesado';
 // tocar — es una acción manual y separada, Eloy no ha pedido cambiarla).
 const CORREO_RESUMEN_CRM_TO = 'correo@orenciomatas.es';
 const CORREO_RESUMEN_CRM_CC = 'eloyleon23@gmail.com';
+// Alerta de error crítico, SOLO para Eloy — a petición explícita suya:
+// un fallo real en este flujo (la sincronización de productos con el
+// CRM) no debe depender de que alguien se fije en el CC de un correo
+// compartido con la corporativa, ni de las notificaciones de fallo de
+// Apps Script (que dependen de la configuración de cada cuenta y pueden
+// no llegarle). notificarErrorCriticoCRM_() es la única vía: un correo
+// aparte, dirigido únicamente a él, cada vez que algo se rompe de
+// verdad en este flujo (no un simple "0 productos nuevos", sino una
+// excepción real o un fallo que impide completar la sincronización).
+const CORREO_ALERTA_CRITICA_CRM = 'eloyleon23@gmail.com';
+
+function notificarErrorCriticoCRM_(asunto, detalle) {
+  try {
+    MailApp.sendEmail({
+      to: CORREO_ALERTA_CRITICA_CRM,
+      subject: '🚨 CRM — ' + asunto,
+      body: detalle,
+    });
+  } catch (err) {
+    // Si ni siquiera se puede enviar la alerta, al menos que quede en
+    // los registros de ejecución de Apps Script.
+    console.error('No se pudo enviar la alerta crítica de CRM a ' + CORREO_ALERTA_CRITICA_CRM + ':', err);
+  }
+}
 // Envío bajo demanda del Excel de productos sin imagen (menú de la
 // Sheet) — acción manual y separada del resumen automático de arriba.
 const CORREO_RESUMEN_DESTINO = 'eloyleon23@gmail.com';
@@ -9785,6 +9809,10 @@ function revisarCorreoListadoProductos() {
         ') no traía ningún adjunto .xlsx/.xls reconocible.';
       console.error(mensajeError);
       enviarResumenSincronizacionCRM_({ error: mensajeError });
+      notificarErrorCriticoCRM_(
+        'Correo del CRM sin adjunto válido',
+        'revisarCorreoListadoProductos() ha encontrado un correo del CRM pero no ha podido sincronizar:\n\n' + mensajeError
+      );
       return { huboCorreo: true, exito: false, mensaje: mensajeError };
     }
 
@@ -9816,6 +9844,11 @@ function revisarCorreoListadoProductos() {
     } catch (errEnvio) {
       console.error('Además, no se pudo enviar/registrar el aviso del fallo anterior:', errEnvio);
     }
+    notificarErrorCriticoCRM_(
+      'Sincronización de productos FALLIDA',
+      'revisarCorreoListadoProductos() ha fallado con una excepción:\n\n' + err.message +
+      (err.stack ? '\n\n' + err.stack : '')
+    );
     return { huboCorreo: true, exito: false, mensaje: err.message };
   }
 }
@@ -10207,20 +10240,34 @@ function configurarTriggerAvisoSincronizacionCRM() {
 // desde la última sincronización real — a diferencia del envío bajo
 // demanda desde el panel (panelCrmSyncEnviarAhora), que sí o sí envía.
 function revisarAvisoSincronizacionCRMProgramado() {
-  const estado = _leerEstadoAvisoSyncCRM_();
-  if (!estado.habilitado) {
-    console.log('Aviso de sincronización CRM: envío automático deshabilitado — no se hace nada.');
-    return;
+  // Envuelto en try/catch — antes, si esta función fallaba (p.ej.
+  // "crm_sync_emails_aviso" vacío al enviar), la ejecución del disparador
+  // simplemente fallaba sin que Eloy se enterase (dependía de las
+  // notificaciones de fallo de Apps Script, que no son fiables para
+  // este flujo crítico).
+  try {
+    const estado = _leerEstadoAvisoSyncCRM_();
+    if (!estado.habilitado) {
+      console.log('Aviso de sincronización CRM: envío automático deshabilitado — no se hace nada.');
+      return;
+    }
+    const fechaUltima = _parsearFechaConfigCRM_(estado.ultimaFecha);
+    const diasSinSincronizar = fechaUltima
+      ? Math.floor((Date.now() - fechaUltima.getTime()) / (1000 * 60 * 60 * 24))
+      : Infinity; // nunca se ha sincronizado -> avisar sí o sí
+    if (diasSinSincronizar < CRM_SYNC_AVISO_DIAS) {
+      console.log('Aviso de sincronización CRM: hace ' + diasSinSincronizar + ' días de la última sincronización — todavía no toca avisar.');
+      return;
+    }
+    _enviarAvisoSincronizacionPendienteCRM_(estado, false);
+  } catch (err) {
+    console.error('Error en revisarAvisoSincronizacionCRMProgramado:', err);
+    notificarErrorCriticoCRM_(
+      'Fallo comprobando si hay que avisar de sincronización pendiente',
+      'revisarAvisoSincronizacionCRMProgramado() ha fallado con una excepción:\n\n' + err.message +
+      (err.stack ? '\n\n' + err.stack : '')
+    );
   }
-  const fechaUltima = _parsearFechaConfigCRM_(estado.ultimaFecha);
-  const diasSinSincronizar = fechaUltima
-    ? Math.floor((Date.now() - fechaUltima.getTime()) / (1000 * 60 * 60 * 24))
-    : Infinity; // nunca se ha sincronizado -> avisar sí o sí
-  if (diasSinSincronizar < CRM_SYNC_AVISO_DIAS) {
-    console.log('Aviso de sincronización CRM: hace ' + diasSinSincronizar + ' días de la última sincronización — todavía no toca avisar.');
-    return;
-  }
-  _enviarAvisoSincronizacionPendienteCRM_(estado, false);
 }
 
 // ── Acciones nuevas del panel de administración (protegidas por PIN,
