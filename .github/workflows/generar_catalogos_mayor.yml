@@ -56,10 +56,41 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/manifiesto_mayor.json data/catalogos/*_mayor.pdf
-          git diff --staged --quiet || git commit -m "Auto: actualizar catálogos al por mayor $(date +'%Y-%m-%d %H:%M')"
-          git pull --rebase origin main
-          git push
+
+          # Reintento robusto ante el remoto movido — mismo patrón que
+          # generar_catalogos.yml / generar_productos_json.yml: "pull
+          # --rebase" entraba en CONFLICTO REAL en cuanto main se movía
+          # mientras corría este workflow, porque los PDF y el
+          # manifiesto son binarios/generados por completo en cada
+          # ejecución (git no puede fusionar la versión vieja del commit
+          # local con la nueva de main). En cada intento se vuelve a
+          # comitear los archivos YA GENERADOS en este mismo run sobre
+          # la base más reciente de main.
+          for intento in 1 2 3; do
+            git add data/manifiesto_mayor.json data/catalogos/*_mayor.pdf
+            if git diff --staged --quiet; then
+              echo "Nada que subir (contenido ya al día)."
+              exit 0
+            fi
+            git commit -m "Auto: actualizar catálogos al por mayor $(date +'%Y-%m-%d %H:%M')"
+            if git push; then
+              echo "Push correcto (intento $intento)."
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento/3) — el remoto se movió mientras tanto."
+
+            mkdir -p /tmp/catalogos_mayor_regenerados
+            cp data/manifiesto_mayor.json /tmp/catalogos_mayor_regenerados/
+            cp data/catalogos/*_mayor.pdf /tmp/catalogos_mayor_regenerados/
+            git reset --hard HEAD~1   # deshacer SOLO el commit local que no se pudo subir
+            git fetch origin main
+            git reset --hard origin/main   # partir de la base más reciente real
+            mkdir -p data/catalogos
+            cp /tmp/catalogos_mayor_regenerados/manifiesto_mayor.json data/
+            cp /tmp/catalogos_mayor_regenerados/*_mayor.pdf data/catalogos/
+          done
+          echo "No se pudo hacer push tras 3 intentos." >&2
+          exit 1
 
       - name: Publicar como Release (para el botón de descarga directa)
         uses: softprops/action-gh-release@v2
