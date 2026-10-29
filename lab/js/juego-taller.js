@@ -44,7 +44,7 @@
             src: 'assets/coche-berlina.png',
             wallAlpha: 60,
             exteriorExcluido: false,
-            semillasExcluir: [[430, 165], [560, 150], [185, 355], [690, 350]],
+            semillasExcluir: [[470, 70], [640, 70], [165, 225], [830, 230]],
         },
         suv: {
             nombre: 'SUV Urbano',
