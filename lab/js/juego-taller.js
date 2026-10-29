@@ -11,27 +11,81 @@
 (function () {
     'use strict';
 
-    // ── Geometría del coche (mismo sistema de coordenadas: 600x260) ────
-    // Un único modelo a propósito — cuanto más simple el juego, más fácil
-    // engancha. Las "d" son compatibles tal cual con Path2D (sintaxis SVG).
-
-    const CUERPO_D =
-        'M40,172 C40,150 55,140 80,138 C95,108 132,68 176,60 L228,55 ' +
-        'C260,49 300,49 330,57 C366,65 392,84 412,110 C432,112 482,118 520,138 ' +
-        'C546,148 556,158 556,172 L556,186 C556,196 548,200 538,200 L500,200 ' +
-        'C500,178 482,160 460,160 C438,160 420,178 420,200 L220,200 ' +
-        'C220,178 202,160 180,160 C158,160 140,178 140,200 L70,200 ' +
-        'C54,200 40,190 40,178 Z';
-
-    const CRISTALES_D =
-        'M172,62 L226,57 L300,56 L344,62 L384,88 L344,96 L226,96 L182,96 L164,86 Z';
-
-    const RUEDAS = [
-        { cx: 180, cy: 200, r: 40 },
-        { cx: 460, cy: 200, r: 40 },
-    ];
+    // ── Geometría de los modelos (mismo sistema de coordenadas: 600x260) ──
+    // Nombres genéricos de carrocería a propósito (sin marcas reales,
+    // por derechos de marca registrada). Cada modelo trae su carrocería
+    // (con el espejo incluido como una segunda subforma del mismo "d",
+    // así es pintable igual que el resto de la chapa), sus cristales,
+    // ruedas, y los elementos NO pintables (faro/piloto/parrilla), que
+    // siempre se quedan con su color real sea cual sea el color elegido.
 
     const VB_W = 600, VB_H = 260;
+
+    const VEHICULOS = {
+        berlina: {
+            nombre: 'Berlina GT',
+            cuerpoD:
+                'M26,176 C26,156 38,146 58,144 C70,118 96,86 132,68 C152,58 172,53 196,51 ' +
+                'L344,50 C368,49 384,55 396,66 C410,80 418,96 422,110 C452,112 494,118 528,134 ' +
+                'C554,146 576,158 576,172 L576,184 C576,195 567,200 556,200 L518,200 ' +
+                'C518,178 500,160 478,160 C456,160 438,178 438,200 L232,200 ' +
+                'C232,178 214,160 192,160 C170,160 152,178 152,200 L84,200 ' +
+                'C58,200 26,196 26,182 Z ' +
+                'M158,62 C166,58 176,59 178,66 C176,72 166,73 158,69 Z',
+            cristalesD: [
+                'M172,60 L198,54 L300,53 L340,55 L380,68 L398,94 L350,100 L230,100 L190,100 L168,88 Z',
+            ],
+            ruedas: [
+                { cx: 192, cy: 200, r: 40 },
+                { cx: 478, cy: 200, r: 40 },
+            ],
+            faro: { cx: 42, cy: 168, rx: 11, ry: 7, color: '#fef3c7' },
+            piloto: { cx: 566, cy: 172, rx: 9, ry: 9, color: '#c0392b' },
+            parrilla: { x: 28, y: 172, w: 24, h: 18, color: '#2a2a2a' },
+        },
+        suv: {
+            nombre: 'SUV Urbano',
+            cuerpoD:
+                'M30,188 C30,162 44,148 68,145 L80,98 C83,75 98,58 120,53 L160,50 ' +
+                'C176,42 196,40 218,40 L420,40 C452,40 476,58 482,88 L482,178 ' +
+                'C482,192 472,202 458,202 L420,202 C420,180 402,162 380,162 C358,162 340,180 340,202 ' +
+                'L195,202 C195,180 177,162 155,162 C133,162 115,180 115,202 L58,202 ' +
+                'C42,202 30,198 30,186 Z ' +
+                'M118,96 C126,91 136,92 138,99 C136,105 126,106 118,102 Z',
+            cristalesD: [
+                'M122,54 L158,49 L158,92 L108,92 Z',
+                'M172,46 L410,46 L410,92 L172,92 Z',
+            ],
+            ruedas: [
+                { cx: 155, cy: 202, r: 44 },
+                { cx: 380, cy: 202, r: 44 },
+            ],
+            faro: { cx: 72, cy: 152, rx: 12, ry: 9, color: '#fef3c7' },
+            piloto: { cx: 476, cy: 158, rx: 10, ry: 11, color: '#c0392b' },
+            parrilla: { x: 48, y: 150, w: 28, h: 26, color: '#1f2023' },
+        },
+        furgoneta: {
+            nombre: 'Furgoneta Reparto',
+            cuerpoD:
+                'M40,190 C40,166 55,150 80,148 L90,100 C92,80 106,65 126,60 L166,58 ' +
+                'C182,50 200,48 222,48 L480,48 C512,48 536,66 540,96 L540,172 ' +
+                'C540,188 530,198 515,198 L480,198 C480,176 462,158 440,158 C418,158 400,176 400,198 ' +
+                'L220,198 C220,176 202,158 180,158 C158,158 140,176 140,198 L65,198 ' +
+                'C50,198 40,186 40,174 Z ' +
+                'M88,96 C96,91 106,92 108,99 C106,105 96,106 88,102 Z',
+            cristalesD: [
+                'M100,68 L122,64 L156,64 L156,140 L112,140 L100,110 Z',
+                'M232,60 L470,60 L470,140 L232,140 Z',
+            ],
+            ruedas: [
+                { cx: 180, cy: 198, r: 40 },
+                { cx: 440, cy: 198, r: 40 },
+            ],
+            faro: { cx: 52, cy: 160, rx: 11, ry: 8, color: '#fef3c7' },
+            piloto: { cx: 534, cy: 165, rx: 9, ry: 10, color: '#c0392b' },
+            parrilla: { x: 32, y: 158, w: 20, h: 24, color: '#1f2023' },
+        },
+    };
 
     // ── Herramientas ──────────────────────────────────────────────────
     const HERRAMIENTAS = {
@@ -41,6 +95,7 @@
 
     // ── Estado ────────────────────────────────────────────────────────
     const estado = {
+        vehiculo: 'berlina',
         herramienta: 'pistola',
         color: '#b3261e',
         pintando: false,
@@ -61,34 +116,36 @@
     let clipPintable = null; // Path2D, en coordenadas de canvas reales (no viewBox)
     let escala = 1;
     let puntosMuestra = []; // { x, y } en coords de canvas, precalculados "dentro" del área pintable
+    let clipViewBox = null;
+    let cuerpoViewBox = null;
 
-    function pathEnEscala(d) {
-        // Re-escala una "d" de un viewBox fijo (600x260) al tamaño real del
-        // canvas, para no tener que mantener dos juegos de coordenadas.
-        // No hace falta tocar las curvas: basta con escalar el contexto al
-        // dibujar/recortar. Esta función solo construye el Path2D en
-        // coordenadas de VIEWBOX — el escalado real se aplica con
-        // ctx.scale() antes de usarlo.
-        return new Path2D(d);
-    }
+    function construirPathsDelVehiculo() {
+        // Carrocería MENOS cristales MENOS ruedas MENOS faro/piloto/
+        // parrilla, vía regla "evenodd": el mismo punto cubierto dos
+        // veces (cuerpo + agujero) queda fuera del recorte — así la
+        // pintura nunca cubre cristales, llantas ni los elementos fijos.
+        const v = VEHICULOS[estado.vehiculo];
+        cuerpoViewBox = new Path2D(v.cuerpoD);
 
-    function construirClipPintable() {
-        // Carrocería MENOS cristales MENOS ruedas, vía regla "evenodd":
-        // el mismo punto cubierto dos veces (cuerpo + agujero) queda
-        // fuera del recorte.
         const p = new Path2D();
-        p.addPath(new Path2D(CUERPO_D));
-        p.addPath(new Path2D(CRISTALES_D));
-        RUEDAS.forEach((r) => {
+        p.addPath(cuerpoViewBox);
+        v.cristalesD.forEach((d) => p.addPath(new Path2D(d)));
+        v.ruedas.forEach((r) => {
             const rueda = new Path2D();
             rueda.arc(r.cx, r.cy, r.r, 0, Math.PI * 2);
             p.addPath(rueda);
         });
-        return p;
-    }
+        [v.faro, v.piloto].forEach((el) => {
+            const forma = new Path2D();
+            forma.ellipse(el.cx, el.cy, el.rx, el.ry, 0, 0, Math.PI * 2);
+            p.addPath(forma);
+        });
+        const parrilla = new Path2D();
+        parrilla.rect(v.parrilla.x, v.parrilla.y, v.parrilla.w, v.parrilla.h);
+        p.addPath(parrilla);
 
-    const clipViewBox = construirClipPintable();
-    const cuerpoViewBox = new Path2D(CUERPO_D);
+        clipViewBox = p;
+    }
 
     function ajustarTamanoCanvas() {
         const rect = lienzoVisible.getBoundingClientRect();
@@ -114,9 +171,9 @@
 
     function precalcularPuntosMuestra() {
         // Rejilla de puntos (cada ~10px reales) usados para estimar el
-        // % pintado — se calcula una sola vez por tamaño de canvas
-        // comprobando con isPointInPath cuáles caen dentro del área
-        // pintable (evenodd, excluye cristales/ruedas).
+        // % pintado — se calcula una sola vez por tamaño de canvas/
+        // vehículo comprobando con isPointInPath cuáles caen dentro del
+        // área pintable (evenodd, excluye cristales/ruedas/faros/etc.).
         puntosMuestra = [];
         const paso = 10;
         for (let y = 0; y < lienzoVisible.height; y += paso) {
@@ -163,13 +220,14 @@
     }
 
     function dibujarCristalesYRuedas(ctx) {
+        const v = VEHICULOS[estado.vehiculo];
         ctx.save();
         ctx.scale(escala, escala);
 
         ctx.fillStyle = 'rgba(188, 211, 230, 0.9)';
-        ctx.fill(new Path2D(CRISTALES_D));
+        v.cristalesD.forEach((d) => ctx.fill(new Path2D(d)));
 
-        RUEDAS.forEach((r) => {
+        v.ruedas.forEach((r) => {
             ctx.fillStyle = '#2b2d30';
             ctx.beginPath();
             ctx.arc(r.cx, r.cy, r.r, 0, Math.PI * 2);
@@ -177,6 +235,16 @@
             ctx.fillStyle = '#8a8d92';
             ctx.beginPath();
             ctx.arc(r.cx, r.cy, r.r * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.fillStyle = v.parrilla.color;
+        ctx.fillRect(v.parrilla.x, v.parrilla.y, v.parrilla.w, v.parrilla.h);
+
+        [v.faro, v.piloto].forEach((el) => {
+            ctx.fillStyle = el.color;
+            ctx.beginPath();
+            ctx.ellipse(el.cx, el.cy, el.rx, el.ry, 0, 0, Math.PI * 2);
             ctx.fill();
         });
 
@@ -431,6 +499,27 @@
         reiniciarPartida();
     });
 
+    // ── Modelo de vehículo ───────────────────────────────────────────
+    // Cambiar de modelo reinicia la partida: las siluetas no comparten
+    // tamaño ni posición de ruedas, así que no tiene sentido intentar
+    // conservar la pintura ya hecha.
+
+    document.querySelectorAll('.jt-chip-modelo').forEach((boton) => {
+        boton.addEventListener('click', () => {
+            if (boton.classList.contains('is-activo')) return;
+            document.querySelectorAll('.jt-chip-modelo').forEach((b) => {
+                b.classList.remove('is-activo');
+                b.setAttribute('aria-checked', 'false');
+            });
+            boton.classList.add('is-activo');
+            boton.setAttribute('aria-checked', 'true');
+            estado.vehiculo = boton.dataset.vehiculo;
+            construirPathsDelVehiculo();
+            reiniciarPartida();
+            ajustarTamanoCanvas();
+        });
+    });
+
     // ── Celebración final ────────────────────────────────────────────
 
     function lanzarConfeti() {
@@ -529,5 +618,6 @@
         };
     }
 
+    construirPathsDelVehiculo();
     ajustarTamanoCanvas();
 })();
