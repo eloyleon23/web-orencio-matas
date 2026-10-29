@@ -282,6 +282,12 @@ body {
     font-size: 1.3rem;
 }
 
+.jt-icono-pistola {
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: currentColor;
+}
+
 .jt-boton-herramienta.is-activo {
     border-color: var(--jt-rojo);
     color: var(--jt-rojo-oscuro);
