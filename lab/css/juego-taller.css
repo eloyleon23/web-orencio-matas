@@ -1,7 +1,6 @@
 /*
- * El Pintor de Carrocería — PoC de gamificación/captación (lab/taller.html)
- * Mobile-first: el visor queda fijo/proporcional arriba, los controles
- * debajo con objetivos táctiles de al menos 44px.
+ * Pinta el Coche — minijuego (lab/taller.html)
+ * Mobile-first, controles táctiles de al menos 44px.
  */
 
 :root {
@@ -27,6 +26,7 @@ body {
     background: var(--jt-gris-fondo);
     color: var(--jt-negro);
     -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
 }
 
 /* ── Cabecera ────────────────────────────────────────────────────────── */
@@ -34,13 +34,13 @@ body {
 .jt-header {
     background: var(--jt-negro);
     color: var(--jt-blanco);
-    padding: 18px 20px 20px;
+    padding: 16px 20px 18px;
     text-align: center;
 }
 
 .jt-header__etiqueta {
     margin: 0 0 6px;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #c7c7c9;
@@ -48,7 +48,7 @@ body {
 
 .jt-header__titulo {
     margin: 0;
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 800;
     display: flex;
     align-items: center;
@@ -59,7 +59,7 @@ body {
 .jt-header__subtitulo {
     margin: 8px auto 0;
     max-width: 480px;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: #d8d8da;
     line-height: 1.4;
 }
@@ -71,139 +71,132 @@ body {
     flex-direction: column;
     max-width: 1100px;
     margin: 0 auto;
-    padding: 16px 16px 40px;
-    gap: 16px;
+    padding: 14px 14px 36px;
+    gap: 14px;
 }
 
 @media (min-width: 900px) {
     .jt-main {
         flex-direction: row;
         align-items: flex-start;
-        padding: 24px 24px 60px;
-        gap: 24px;
+        padding: 22px 24px 60px;
+        gap: 22px;
     }
 }
 
-/* ── Visor del vehículo ─────────────────────────────────────────────── */
+/* ── Zona de juego ───────────────────────────────────────────────────── */
 
-.jt-visor {
-    position: sticky;
-    top: 0;
-    z-index: 5;
+.jt-juego {
     background: var(--jt-blanco);
     border-radius: var(--jt-radio);
     box-shadow: var(--jt-sombra);
-    padding: 14px 14px 10px;
+    padding: 12px;
 }
 
 @media (min-width: 900px) {
-    .jt-visor {
-        flex: 1 1 58%;
+    .jt-juego {
+        flex: 1 1 60%;
         position: sticky;
-        top: 24px;
+        top: 20px;
     }
 }
 
-.jt-visor__selector-modelo {
+.jt-barra-superior {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 10px;
 }
 
-.jt-chip-modelo {
+.jt-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jt-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jt-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jt-barra-progreso {
     flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 44px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    border: 1.5px solid var(--jt-gris-borde);
-    background: var(--jt-blanco);
-    color: var(--jt-gris-texto);
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.jt-chip-modelo.is-activo {
-    background: var(--jt-negro);
-    border-color: var(--jt-negro);
-    color: var(--jt-blanco);
-}
-
-.jt-visor__lienzo {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background:
-        linear-gradient(to bottom, #eef1f4 0%, #eef1f4 70%, #dadfe4 70%, #dadfe4 100%);
-    border-radius: 10px;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jt-gris-fondo);
     overflow: hidden;
 }
 
-.jt-visor__lienzo svg {
-    width: 90%;
-    height: auto;
-    display: block;
+.jt-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jt-rojo), #e0564c);
+    border-radius: 6px;
+    transition: width 0.18s ease;
 }
 
-.jt-visor__acabado-actual {
-    margin: 10px 2px 2px;
-    font-size: 0.8rem;
+.jt-lienzo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #eef1f4 0%, #eef1f4 72%, #d7dce1 72%, #d7dce1 100%);
+}
+
+#jt-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.jt-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.6);
+    color: var(--jt-blanco);
+    font-size: 1.2rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+.jt-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
     color: var(--jt-gris-texto);
     text-align: center;
 }
 
-.jt-visor__acabado-actual strong {
-    color: var(--jt-negro);
+/* ── Partículas de pintura decorativas ──────────────────────────────── */
+
+.jt-particula {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.55;
+    animation: jt-particula-fade 0.5s ease-out forwards;
 }
 
-/* ── Capas del vehículo (SVG) ───────────────────────────────────────── */
-
-#carroceria {
-    transition: fill 0.2s ease;
-}
-
-#carroceria.acabado-mate {
-    filter: saturate(0.6) contrast(0.92) brightness(0.97);
-}
-
-#carroceria.acabado-brillo {
-    filter: saturate(1.05) contrast(1.03);
-}
-
-#sombras-relieve .jt-sombra-capa {
-    mix-blend-mode: multiply;
-}
-
-#sombras-relieve .jt-brillo-capa {
-    mix-blend-mode: screen;
-}
-
-#sombras-relieve.acabado-mate .jt-brillo-capa {
-    opacity: 0.25;
-}
-
-#sombras-relieve.acabado-metalizado .jt-brillo-capa {
-    opacity: 1;
-}
-
-#cristales {
-    fill: #bcd3e6;
-    fill-opacity: 0.88;
-}
-
-#llantas {
-    fill: #2b2d30;
-}
-
-#llantas .jt-llanta-centro {
-    fill: #8a8d92;
+@keyframes jt-particula-fade {
+    from { transform: scale(0.4); opacity: 0.55; }
+    to { transform: scale(1.6); opacity: 0; }
 }
 
 /* ── Panel de controles ─────────────────────────────────────────────── */
@@ -211,12 +204,12 @@ body {
 .jt-controles {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
 }
 
 @media (min-width: 900px) {
     .jt-controles {
-        flex: 1 1 42%;
+        flex: 1 1 40%;
     }
 }
 
@@ -233,54 +226,36 @@ body {
     font-weight: 700;
 }
 
-.jt-selector-acabado {
+.jt-selector-herramienta {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
 }
 
-.jt-boton-acabado {
-    min-height: 60px;
+.jt-boton-herramienta {
+    min-height: 56px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 4px;
+    gap: 8px;
     border-radius: 10px;
     border: 1.5px solid var(--jt-gris-borde);
     background: var(--jt-blanco);
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--jt-gris-texto);
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
-.jt-boton-acabado.is-activo {
+.jt-boton-herramienta__icono {
+    font-size: 1.3rem;
+}
+
+.jt-boton-herramienta.is-activo {
     border-color: var(--jt-rojo);
     color: var(--jt-rojo-oscuro);
     background: #fdf1f0;
-}
-
-.jt-boton-acabado__muestra {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.jt-boton-acabado__muestra--brillo {
-    background: radial-gradient(circle at 35% 30%, #6b6b6b, #2a2a2a 70%);
-}
-
-.jt-boton-acabado__muestra--metalizado {
-    background: linear-gradient(135deg, #9aa0a6, #e8eaed 45%, #6e7378 55%, #c7cace);
-}
-
-.jt-boton-acabado__muestra--mate {
-    background: #4a4a4a;
-    filter: saturate(0.5);
 }
 
 .jt-paleta {
@@ -313,12 +288,12 @@ body {
     border-radius: 50%;
     border: 1.5px dashed var(--jt-gris-borde);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     position: relative;
     color: var(--jt-gris-texto);
+    font-weight: 700;
 }
 
 .jt-swatch-personalizado input[type="color"] {
@@ -330,106 +305,179 @@ body {
     cursor: pointer;
 }
 
-.jt-swatch-personalizado__icono {
-    font-size: 1rem;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.jt-swatch-personalizado__texto {
-    display: none;
-}
-
-.jt-ficha-tecnica {
-    background: var(--jt-blanco);
-    border-radius: var(--jt-radio);
-    box-shadow: var(--jt-sombra);
-    padding: 14px;
-}
-
-.jt-ficha-tecnica #jt-ficha-tecnica__texto {
-    margin: 0 0 6px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--jt-negro);
-    line-height: 1.5;
-}
-
-.jt-ficha-tecnica__nota {
+.jt-marca {
     margin: 0;
-    font-size: 0.72rem;
-    color: #8a8d92;
-    line-height: 1.4;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
 }
 
-/* ── Botón de conversión ────────────────────────────────────────────── */
+/* ── Botones de acción ──────────────────────────────────────────────── */
 
-.jt-boton-cta {
+.jt-boton-compartir,
+.jt-boton-secundario {
     min-height: 50px;
     width: 100%;
     border: none;
     border-radius: 12px;
-    background: var(--jt-rojo);
-    color: var(--jt-blanco);
     font-size: 0.92rem;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
 }
 
-.jt-boton-cta:hover {
-    background: var(--jt-rojo-oscuro);
+.jt-boton-compartir {
+    background: var(--jt-negro);
+    color: var(--jt-blanco);
 }
 
-.jt-boton-cta:disabled {
-    opacity: 0.6;
-    cursor: default;
+.jt-boton-compartir:hover {
+    background: #333;
 }
 
-/* ── Modal ───────────────────────────────────────────────────────────── */
+.jt-boton-secundario {
+    background: var(--jt-gris-fondo);
+    color: var(--jt-negro);
+    border: 1.5px solid var(--jt-gris-borde);
+}
 
-.jt-modal-overlay {
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jt-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jt-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jt-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jt-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jt-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jt-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jt-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jt-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jt-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jt-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jt-gris-texto);
+    font-weight: 600;
+}
+
+.jt-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: linear-gradient(to bottom, #eef1f4 0%, #eef1f4 72%, #d7dce1 72%, #d7dce1 100%);
+}
+
+#jt-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jt-celebracion .jt-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jt-compartir-overlay {
     position: fixed;
     inset: 0;
     background: rgba(20, 20, 22, 0.55);
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    z-index: 100;
-    padding: 0;
+    z-index: 250;
 }
 
-.jt-modal-overlay[hidden] {
+.jt-compartir-overlay[hidden] {
     display: none;
 }
 
 @media (min-width: 640px) {
-    .jt-modal-overlay {
+    .jt-compartir-overlay {
         align-items: center;
         padding: 20px;
     }
 }
 
-.jt-modal {
+.jt-compartir-panel {
+    position: relative;
     background: var(--jt-blanco);
     width: 100%;
-    max-width: 440px;
-    max-height: 92vh;
-    overflow-y: auto;
+    max-width: 400px;
     border-radius: 18px 18px 0 0;
-    padding: 20px 20px 24px;
-    position: relative;
+    padding: 22px;
     box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
 }
 
 @media (min-width: 640px) {
-    .jt-modal {
+    .jt-compartir-panel {
         border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
     }
 }
 
-.jt-modal__cerrar {
+.jt-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jt-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jt-gris-texto);
+}
+
+.jt-compartir-cerrar {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -438,112 +486,42 @@ body {
     border-radius: 50%;
     border: none;
     background: var(--jt-gris-fondo);
-    color: var(--jt-negro);
     font-size: 1.3rem;
-    line-height: 1;
     cursor: pointer;
 }
 
-.jt-modal__titulo {
-    margin: 0 36px 14px 0;
-    font-size: 1.1rem;
-    font-weight: 800;
-}
-
-.jt-modal__resumen {
+.jt-boton-descargar {
     display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    background: var(--jt-gris-fondo);
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
     border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 16px;
-}
-
-.jt-modal__muestra-color {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    flex-shrink: 0;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.jt-modal__resumen-texto p {
-    margin: 0 0 3px;
-    font-size: 0.82rem;
-    color: var(--jt-gris-texto);
-    line-height: 1.4;
-}
-
-.jt-modal__resumen-texto p:first-child {
+    background: var(--jt-rojo);
+    color: var(--jt-blanco);
+    font-weight: 700;
     font-size: 0.9rem;
-    color: var(--jt-negro);
+    text-decoration: none;
+    margin-bottom: 14px;
 }
 
-.jt-modal__resumen-ficha {
-    margin-top: 6px !important;
-    font-size: 0.75rem !important;
+.jt-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
-.jt-form {
+.jt-boton-red {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.jt-campo {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.jt-campo label {
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
     font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--jt-gris-texto);
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jt-blanco);
 }
 
-.jt-campo__opcional {
-    font-weight: 400;
-    color: #a5a8ad;
-}
-
-.jt-campo input,
-.jt-campo textarea {
-    min-height: 44px;
-    border-radius: 10px;
-    border: 1.5px solid var(--jt-gris-borde);
-    padding: 10px 12px;
-    font-size: 0.9rem;
-    font-family: inherit;
-    resize: vertical;
-}
-
-.jt-campo input:focus,
-.jt-campo textarea:focus {
-    outline: none;
-    border-color: var(--jt-rojo);
-}
-
-.jt-campo-trampa {
-    position: absolute;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-}
-
-.jt-form__estado {
-    margin: 0;
-    min-height: 1.1em;
-    font-size: 0.82rem;
-    font-weight: 600;
-}
-
-.jt-form__estado.es-ok {
-    color: #1a7a4a;
-}
-
-.jt-form__estado.es-error {
-    color: #c0392b;
-}
+.jt-boton-red--whatsapp { background: #25d366; }
+.jt-boton-red--x { background: #000000; }
+.jt-boton-red--facebook { background: #1877f2; }

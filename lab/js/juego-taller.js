@@ -1,271 +1,397 @@
 /**
- * El Pintor de Carrocería — lógica de la PoC (lab/taller.html).
- * Vanilla JS, sin dependencias externas. Todo el estado vive en este
- * archivo; el SVG de cada vehículo se construye e inyecta por completo
- * al cambiar de modelo, así las capas #carroceria/#llantas/#cristales/
- * #sombras-relieve son siempre un único elemento válido en el DOM (en
- * vez de IDs duplicados ocultando el vehículo no activo).
+ * Pinta el Coche — minijuego (lab/taller.html)
+ * Vanilla JS, sin dependencias. El coche se dibuja en un <canvas> con
+ * tres capas: una base "imprimación" gris con sombreado, una capa de
+ * pintura transparente donde el usuario va dejando manchas con el dedo
+ * o el ratón (recortada a la silueta de la carrocería, sin pintar
+ * cristales ni llantas), y un sombreado final que se vuelve a aplicar
+ * encima de todo en cada repintado para que la pintura "tenga volumen"
+ * sea cual sea el color elegido.
  */
 (function () {
     'use strict';
 
-    // ── Estado ──────────────────────────────────────────────────────────
+    // ── Geometría del coche (mismo sistema de coordenadas: 600x260) ────
+    // Un único modelo a propósito — cuanto más simple el juego, más fácil
+    // engancha. Las "d" son compatibles tal cual con Path2D (sintaxis SVG).
+
+    const CUERPO_D =
+        'M40,172 C40,150 55,140 80,138 C95,108 132,68 176,60 L228,55 ' +
+        'C260,49 300,49 330,57 C366,65 392,84 412,110 C432,112 482,118 520,138 ' +
+        'C546,148 556,158 556,172 L556,186 C556,196 548,200 538,200 L500,200 ' +
+        'C500,178 482,160 460,160 C438,160 420,178 420,200 L220,200 ' +
+        'C220,178 202,160 180,160 C158,160 140,178 140,200 L70,200 ' +
+        'C54,200 40,190 40,178 Z';
+
+    const CRISTALES_D =
+        'M172,62 L226,57 L300,56 L344,62 L384,88 L344,96 L226,96 L182,96 L164,86 Z';
+
+    const RUEDAS = [
+        { cx: 180, cy: 200, r: 40 },
+        { cx: 460, cy: 200, r: 40 },
+    ];
+
+    const VB_W = 600, VB_H = 260;
+
+    // ── Herramientas ──────────────────────────────────────────────────
+    const HERRAMIENTAS = {
+        pistola: { radio: 30, opacidadDab: 0.5, mancha: false, espaciadoPx: 7 },
+        spray: { radio: 20, opacidadDab: 0.3, mancha: true, espaciadoPx: 6 },
+    };
+
+    // ── Estado ────────────────────────────────────────────────────────
     const estado = {
-        vehiculo: 'turismo',
-        acabado: 'brillo',
-        color: '#f3f1ea',
-        colorNombre: 'Blanco perlado',
+        herramienta: 'pistola',
+        color: '#b3261e',
+        pintando: false,
+        ultimoPunto: null,
+        inicioTiempo: null,
+        cronometroId: null,
+        terminado: false,
+        porcentaje: 0,
     };
 
-    const NOMBRES_VEHICULO = {
-        turismo: 'Turismo compacto',
-        furgoneta: 'Furgoneta comercial / reparto',
-    };
+    // ── Canvas principal ──────────────────────────────────────────────
+    const lienzoVisible = document.getElementById('jt-canvas');
+    const ctxVisible = lienzoVisible.getContext('2d');
 
-    const NOMBRES_ACABADO = {
-        brillo: 'Brillo clásico',
-        metalizado: 'Metalizado',
-        mate: 'Mate',
-    };
+    const capaPintura = document.createElement('canvas');
+    const ctxPintura = capaPintura.getContext('2d');
 
-    // Consumo orientativo de materiales por vehículo — cifras de
-    // referencia para la PoC, no un presupuesto real (se indica también
-    // en el texto de la ficha y en la nota bajo ella).
-    const FICHA_TECNICA = {
-        turismo: { bicapa: 2.5, barniz: 1.2 },
-        furgoneta: { bicapa: 4.0, barniz: 1.8 },
-    };
+    let clipPintable = null; // Path2D, en coordenadas de canvas reales (no viewBox)
+    let escala = 1;
+    let puntosMuestra = []; // { x, y } en coords de canvas, precalculados "dentro" del área pintable
 
-    // ── Utilidades de color ─────────────────────────────────────────────
-
-    function hexAInt(hex) {
-        return parseInt(hex.replace('#', ''), 16);
+    function pathEnEscala(d) {
+        // Re-escala una "d" de un viewBox fijo (600x260) al tamaño real del
+        // canvas, para no tener que mantener dos juegos de coordenadas.
+        // No hace falta tocar las curvas: basta con escalar el contexto al
+        // dibujar/recortar. Esta función solo construye el Path2D en
+        // coordenadas de VIEWBOX — el escalado real se aplica con
+        // ctx.scale() antes de usarlo.
+        return new Path2D(d);
     }
 
-    // factor > 0 aclara hacia blanco, factor < 0 oscurece hacia negro.
-    // factor en [-1, 1].
-    function ajustarBrillo(hex, factor) {
-        const num = hexAInt(hex);
-        let r = (num >> 16) & 0xff;
-        let g = (num >> 8) & 0xff;
-        let b = num & 0xff;
-        const destino = factor > 0 ? 255 : 0;
-        const f = Math.abs(factor);
-        r = Math.round(r + (destino - r) * f);
-        g = Math.round(g + (destino - g) * f);
-        b = Math.round(b + (destino - b) * f);
-        return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
-    }
-
-    // ── Plantillas SVG de los vehículos ─────────────────────────────────
-    // Cada plantilla incluye su propio <defs> (clip-path de la silueta +
-    // degradado dinámico para el acabado metalizado) y las 4 capas con
-    // los IDs que pide la especificación: #carroceria, #llantas,
-    // #cristales y #sombras-relieve (esta última superpuesta a la
-    // carrocería con mix-blend-mode, clipada a la silueta exacta
-    // reutilizando el mismo path del cuerpo vía <clipPath>+<use>).
-
-    function defsComunes() {
-        return `
-            <linearGradient id="jt-grad-sombra-inferior" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#000" stop-opacity="0"/>
-                <stop offset="100%" stop-color="#000" stop-opacity="0.45"/>
-            </linearGradient>
-            <radialGradient id="jt-grad-brillo-superior" cx="32%" cy="10%" r="65%">
-                <stop offset="0%" stop-color="#fff" stop-opacity="0.55"/>
-                <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="jt-grad-brillo-diagonal" x1="0%" y1="0%" x2="100%" y2="25%">
-                <stop offset="0%" stop-color="#fff" stop-opacity="0"/>
-                <stop offset="42%" stop-color="#fff" stop-opacity="0.55"/>
-                <stop offset="58%" stop-color="#fff" stop-opacity="0.55"/>
-                <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-            </linearGradient>
-            <linearGradient id="jt-grad-metalizado-color" x1="0%" y1="0%" x2="100%" y2="20%">
-                <stop offset="0%" stop-color="#000"/>
-                <stop offset="30%" stop-color="#000"/>
-                <stop offset="50%" stop-color="#fff"/>
-                <stop offset="70%" stop-color="#000"/>
-                <stop offset="100%" stop-color="#000"/>
-            </linearGradient>`;
-    }
-
-    function capaSombras(idClip) {
-        return `
-            <g id="sombras-relieve" clip-path="url(#${idClip})">
-                <rect class="jt-sombra-capa" x="0" y="0" width="600" height="260" fill="url(#jt-grad-sombra-inferior)"/>
-                <ellipse class="jt-brillo-capa" cx="190" cy="40" rx="260" ry="90" fill="url(#jt-grad-brillo-superior)"/>
-                <rect class="jt-brillo-capa jt-brillo-metalizado" x="0" y="0" width="600" height="260" fill="url(#jt-grad-brillo-diagonal)"/>
-            </g>`;
-    }
-
-    function svgTurismo() {
-        const bodyPath =
-            'M40,172 C40,150 55,140 80,138 C95,108 132,68 176,60 L228,55 ' +
-            'C260,49 300,49 330,57 C366,65 392,84 412,110 C432,112 482,118 520,138 ' +
-            'C546,148 556,158 556,172 L556,186 C556,196 548,200 538,200 L500,200 ' +
-            'C500,178 482,160 460,160 C438,160 420,178 420,200 L220,200 ' +
-            'C220,178 202,160 180,160 C158,160 140,178 140,200 L70,200 ' +
-            'C54,200 40,190 40,178 Z';
-
-        return `
-<svg viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vista lateral de un turismo compacto">
-    <defs>
-        ${defsComunes()}
-        <clipPath id="jt-clip-turismo"><path d="${bodyPath}"/></clipPath>
-    </defs>
-
-    <path id="carroceria" d="${bodyPath}" fill="${estado.color}"/>
-
-    ${capaSombras('jt-clip-turismo')}
-
-    <g id="cristales">
-        <path d="M172,62 L226,57 L300,56 L344,62 L384,88 L344,96 L226,96 L182,96 L164,86 Z"/>
-    </g>
-
-    <g id="llantas">
-        <circle cx="180" cy="200" r="40"/>
-        <circle class="jt-llanta-centro" cx="180" cy="200" r="16"/>
-        <circle cx="460" cy="200" r="40"/>
-        <circle class="jt-llanta-centro" cx="460" cy="200" r="16"/>
-    </g>
-</svg>`;
-    }
-
-    function svgFurgoneta() {
-        const bodyPath =
-            'M40,190 C40,166 55,150 80,148 L90,100 C92,80 106,65 126,60 L166,58 ' +
-            'C182,50 200,48 222,48 L480,48 C512,48 536,66 540,96 L540,172 ' +
-            'C540,188 530,198 515,198 L480,198 C480,176 462,158 440,158 C418,158 400,176 400,198 L220,198 ' +
-            'C220,176 202,158 180,158 C158,158 140,176 140,198 L65,198 ' +
-            'C50,198 40,186 40,174 Z';
-
-        return `
-<svg viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vista lateral de una furgoneta comercial">
-    <defs>
-        ${defsComunes()}
-        <clipPath id="jt-clip-furgoneta"><path d="${bodyPath}"/></clipPath>
-    </defs>
-
-    <path id="carroceria" d="${bodyPath}" fill="${estado.color}"/>
-
-    ${capaSombras('jt-clip-furgoneta')}
-
-    <g id="cristales">
-        <path d="M100,68 L122,64 L156,64 L156,140 L112,140 L100,110 Z"/>
-        <rect x="232" y="60" width="238" height="80" rx="6"/>
-    </g>
-
-    <g id="llantas">
-        <circle cx="180" cy="198" r="40"/>
-        <circle class="jt-llanta-centro" cx="180" cy="198" r="16"/>
-        <circle cx="440" cy="198" r="40"/>
-        <circle class="jt-llanta-centro" cx="440" cy="198" r="16"/>
-    </g>
-</svg>`;
-    }
-
-    // ── Render ──────────────────────────────────────────────────────────
-
-    const lienzo = document.getElementById('jt-lienzo-vehiculo');
-
-    function construirGradienteMetalizado(svgRaiz) {
-        const grad = svgRaiz.querySelector('#jt-grad-metalizado-color');
-        if (!grad) return;
-        const oscuro = ajustarBrillo(estado.color, -0.35);
-        const claro = ajustarBrillo(estado.color, 0.45);
-        const stops = grad.querySelectorAll('stop');
-        // orden de paradas: oscuro, oscuro, claro (reflejo), oscuro, oscuro
-        stops[0].setAttribute('stop-color', oscuro);
-        stops[1].setAttribute('stop-color', oscuro);
-        stops[2].setAttribute('stop-color', claro);
-        stops[3].setAttribute('stop-color', oscuro);
-        stops[4].setAttribute('stop-color', oscuro);
-    }
-
-    function aplicarColorYAcabado() {
-        const svgRaiz = lienzo.querySelector('svg');
-        if (!svgRaiz) return;
-        const carroceria = svgRaiz.querySelector('#carroceria');
-        const sombras = svgRaiz.querySelector('#sombras-relieve');
-        if (!carroceria) return;
-
-        carroceria.classList.remove('acabado-brillo', 'acabado-metalizado', 'acabado-mate');
-        carroceria.classList.add('acabado-' + estado.acabado);
-        if (sombras) {
-            sombras.classList.remove('acabado-brillo', 'acabado-metalizado', 'acabado-mate');
-            sombras.classList.add('acabado-' + estado.acabado);
-        }
-
-        if (estado.acabado === 'metalizado') {
-            construirGradienteMetalizado(svgRaiz);
-            carroceria.setAttribute('fill', 'url(#jt-grad-metalizado-color)');
-        } else {
-            carroceria.setAttribute('fill', estado.color);
-        }
-    }
-
-    function actualizarFichaTecnica() {
-        const base = FICHA_TECNICA[estado.vehiculo];
-        const tipoBarniz = estado.acabado === 'mate' ? 'mate' : 'UHS brillante';
-        const notaAcabado = estado.acabado === 'metalizado'
-            ? ' (incluye capa base metalizada)'
-            : '';
-        const texto = `Consumo estimado: ${base.bicapa.toFixed(1)} L de pintura bicapa${notaAcabado} ` +
-            `+ ${base.barniz.toFixed(1)} L de barniz ${tipoBarniz}.`;
-        document.getElementById('jt-ficha-tecnica__texto').textContent = texto;
-        return texto;
-    }
-
-    function actualizarTextoResumen() {
-        document.getElementById('jt-texto-acabado').textContent = NOMBRES_ACABADO[estado.acabado];
-        document.getElementById('jt-texto-color').textContent = estado.colorNombre;
-    }
-
-    function renderVehiculo() {
-        lienzo.innerHTML = estado.vehiculo === 'turismo' ? svgTurismo() : svgFurgoneta();
-        aplicarColorYAcabado();
-        actualizarFichaTecnica();
-        actualizarTextoResumen();
-    }
-
-    // ── Controles: modelo de vehículo ──────────────────────────────────
-
-    document.querySelectorAll('.jt-chip-modelo').forEach((boton) => {
-        boton.addEventListener('click', () => {
-            document.querySelectorAll('.jt-chip-modelo').forEach((b) => {
-                b.classList.remove('is-activo');
-                b.setAttribute('aria-selected', 'false');
-            });
-            boton.classList.add('is-activo');
-            boton.setAttribute('aria-selected', 'true');
-            estado.vehiculo = boton.dataset.vehiculo;
-            renderVehiculo();
+    function construirClipPintable() {
+        // Carrocería MENOS cristales MENOS ruedas, vía regla "evenodd":
+        // el mismo punto cubierto dos veces (cuerpo + agujero) queda
+        // fuera del recorte.
+        const p = new Path2D();
+        p.addPath(new Path2D(CUERPO_D));
+        p.addPath(new Path2D(CRISTALES_D));
+        RUEDAS.forEach((r) => {
+            const rueda = new Path2D();
+            rueda.arc(r.cx, r.cy, r.r, 0, Math.PI * 2);
+            p.addPath(rueda);
         });
+        return p;
+    }
+
+    const clipViewBox = construirClipPintable();
+    const cuerpoViewBox = new Path2D(CUERPO_D);
+
+    function ajustarTamanoCanvas() {
+        const rect = lienzoVisible.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.round(rect.width * dpr);
+        const h = Math.round(rect.height * dpr);
+
+        [lienzoVisible, capaPintura].forEach((c) => {
+            c.width = w;
+            c.height = h;
+        });
+
+        escala = w / VB_W;
+
+        // Recalcular el clip pintable en coordenadas reales de canvas.
+        const m = new DOMMatrix().scale(escala, escala);
+        clipPintable = new Path2D();
+        clipPintable.addPath(clipViewBox, m);
+
+        precalcularPuntosMuestra();
+        dibujarEscena();
+    }
+
+    function precalcularPuntosMuestra() {
+        // Rejilla de puntos (cada ~10px reales) usados para estimar el
+        // % pintado — se calcula una sola vez por tamaño de canvas
+        // comprobando con isPointInPath cuáles caen dentro del área
+        // pintable (evenodd, excluye cristales/ruedas).
+        puntosMuestra = [];
+        const paso = 10;
+        for (let y = 0; y < lienzoVisible.height; y += paso) {
+            for (let x = 0; x < lienzoVisible.width; x += paso) {
+                if (ctxVisible.isPointInPath(clipPintable, x, y, 'evenodd')) {
+                    puntosMuestra.push({ x, y });
+                }
+            }
+        }
+    }
+
+    // ── Dibujo de la base (imprimación gris + sombreado) ───────────────
+
+    function dibujarCuerpo(ctx, relleno) {
+        ctx.save();
+        ctx.scale(escala, escala);
+        ctx.fillStyle = relleno;
+        ctx.fill(cuerpoViewBox);
+        ctx.restore();
+    }
+
+    function dibujarSombreado(ctx) {
+        ctx.save();
+        ctx.scale(escala, escala);
+        ctx.clip(cuerpoViewBox);
+
+        // Sombra inferior (multiply)
+        ctx.globalCompositeOperation = 'multiply';
+        let g = ctx.createLinearGradient(0, 0, 0, VB_H);
+        g.addColorStop(0, 'rgba(0,0,0,0)');
+        g.addColorStop(1, 'rgba(0,0,0,0.42)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, VB_W, VB_H);
+
+        // Brillo superior (screen)
+        ctx.globalCompositeOperation = 'screen';
+        g = ctx.createRadialGradient(190, 40, 0, 190, 40, 260);
+        g.addColorStop(0, 'rgba(255,255,255,0.5)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, VB_W, VB_H);
+
+        ctx.restore();
+    }
+
+    function dibujarCristalesYRuedas(ctx) {
+        ctx.save();
+        ctx.scale(escala, escala);
+
+        ctx.fillStyle = 'rgba(188, 211, 230, 0.9)';
+        ctx.fill(new Path2D(CRISTALES_D));
+
+        RUEDAS.forEach((r) => {
+            ctx.fillStyle = '#2b2d30';
+            ctx.beginPath();
+            ctx.arc(r.cx, r.cy, r.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#8a8d92';
+            ctx.beginPath();
+            ctx.arc(r.cx, r.cy, r.r * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.restore();
+    }
+
+    function dibujarEscena() {
+        ctxVisible.clearRect(0, 0, lienzoVisible.width, lienzoVisible.height);
+        dibujarCuerpo(ctxVisible, '#c7cacd'); // imprimación gris
+        ctxVisible.drawImage(capaPintura, 0, 0);
+        dibujarSombreado(ctxVisible);
+        dibujarCristalesYRuedas(ctxVisible);
+    }
+
+    // ── Pintura: dabs en la capa de pintura ─────────────────────────────
+
+    function dibujarDab(x, y) {
+        const cfg = HERRAMIENTAS[estado.herramienta];
+        const radio = cfg.radio * escala;
+
+        ctxPintura.save();
+        ctxPintura.clip(clipPintable);
+
+        const g = ctxPintura.createRadialGradient(x, y, 0, x, y, radio);
+        g.addColorStop(0, hexAAlpha(estado.color, cfg.opacidadDab));
+        g.addColorStop(0.7, hexAAlpha(estado.color, cfg.opacidadDab));
+        g.addColorStop(1, hexAAlpha(estado.color, 0));
+        ctxPintura.fillStyle = g;
+        ctxPintura.beginPath();
+        ctxPintura.arc(x, y, radio, 0, Math.PI * 2);
+        ctxPintura.fill();
+
+        if (cfg.mancha) {
+            // Textura de spray: motas pequeñas alrededor del centro.
+            for (let i = 0; i < 7; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const dist = Math.random() * radio * 1.3;
+                const mx = x + Math.cos(ang) * dist;
+                const my = y + Math.sin(ang) * dist;
+                ctxPintura.fillStyle = hexAAlpha(estado.color, 0.18 + Math.random() * 0.25);
+                ctxPintura.beginPath();
+                ctxPintura.arc(mx, my, (1 + Math.random() * 2.2) * escala, 0, Math.PI * 2);
+                ctxPintura.fill();
+            }
+        }
+
+        ctxPintura.restore();
+    }
+
+    function hexAAlpha(hex, alpha) {
+        const n = parseInt(hex.replace('#', ''), 16);
+        const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function pintarEntre(p0, p1) {
+        const cfg = HERRAMIENTAS[estado.herramienta];
+        const dx = p1.x - p0.x, dy = p1.y - p0.y;
+        const dist = Math.hypot(dx, dy);
+        const paso = cfg.espaciadoPx * escala;
+        const pasos = Math.max(1, Math.floor(dist / paso));
+        for (let i = 0; i <= pasos; i++) {
+            const t = i / pasos;
+            dibujarDab(p0.x + dx * t, p0.y + dy * t);
+        }
+    }
+
+    // ── Puntero (ratón + táctil, unificado vía Pointer Events) ─────────
+
+    function coordsDesdeEvento(ev) {
+        const rect = lienzoVisible.getBoundingClientRect();
+        return {
+            x: (ev.clientX - rect.left) * (lienzoVisible.width / rect.width),
+            y: (ev.clientY - rect.top) * (lienzoVisible.height / rect.height),
+        };
+    }
+
+    function lanzarParticulaDecorativa(clientX, clientY) {
+        const wrap = lienzoVisible.parentElement;
+        const rect = wrap.getBoundingClientRect();
+        const p = document.createElement('span');
+        p.className = 'jt-particula';
+        const tam = 8 + Math.random() * 10;
+        p.style.width = tam + 'px';
+        p.style.height = tam + 'px';
+        p.style.left = (clientX - rect.left - tam / 2) + 'px';
+        p.style.top = (clientY - rect.top - tam / 2) + 'px';
+        p.style.background = estado.color;
+        wrap.appendChild(p);
+        setTimeout(() => p.remove(), 520);
+    }
+
+    let ultimaParticula = 0;
+
+    function alPuntero(ev) {
+        if (estado.terminado) return;
+        const punto = coordsDesdeEvento(ev);
+
+        if (!estado.inicioTiempo) iniciarCronometro();
+
+        if (estado.ultimoPunto) {
+            pintarEntre(estado.ultimoPunto, punto);
+        } else {
+            dibujarDab(punto.x, punto.y);
+        }
+        estado.ultimoPunto = punto;
+
+        const ahora = performance.now();
+        if (ahora - ultimaParticula > 90) {
+            lanzarParticulaDecorativa(ev.clientX, ev.clientY);
+            ultimaParticula = ahora;
+            if (navigator.vibrate) navigator.vibrate(8);
+        }
+
+        dibujarEscena();
+        actualizarProgresoThrottled();
+    }
+
+    lienzoVisible.addEventListener('pointerdown', (ev) => {
+        lienzoVisible.setPointerCapture(ev.pointerId);
+        estado.pintando = true;
+        estado.ultimoPunto = null;
+        document.getElementById('jt-pista').style.display = 'none';
+        alPuntero(ev);
     });
 
-    // ── Controles: acabado ──────────────────────────────────────────────
+    lienzoVisible.addEventListener('pointermove', (ev) => {
+        if (!estado.pintando) return;
+        alPuntero(ev);
+    });
 
-    document.querySelectorAll('.jt-boton-acabado').forEach((boton) => {
+    function detenerPintura() {
+        estado.pintando = false;
+        estado.ultimoPunto = null;
+    }
+
+    lienzoVisible.addEventListener('pointerup', detenerPintura);
+    lienzoVisible.addEventListener('pointercancel', detenerPintura);
+    lienzoVisible.addEventListener('pointerleave', detenerPintura);
+
+    // ── Progreso ─────────────────────────────────────────────────────
+
+    let ultimoCalculoProgreso = 0;
+
+    function actualizarProgresoThrottled() {
+        const ahora = performance.now();
+        if (ahora - ultimoCalculoProgreso < 150) return;
+        ultimoCalculoProgreso = ahora;
+        calcularProgreso();
+    }
+
+    function calcularProgreso() {
+        if (!puntosMuestra.length) return;
+        const datos = ctxPintura.getImageData(0, 0, capaPintura.width, capaPintura.height).data;
+        let cubiertos = 0;
+        for (const pt of puntosMuestra) {
+            const idx = (pt.y * capaPintura.width + pt.x) * 4 + 3; // canal alpha
+            if (datos[idx] > 140) cubiertos++;
+        }
+        const pct = Math.round((cubiertos / puntosMuestra.length) * 100);
+        if (pct === estado.porcentaje) return;
+        estado.porcentaje = pct;
+
+        document.getElementById('jt-porcentaje').textContent = pct + '%';
+        document.getElementById('jt-barra-progreso-relleno').style.width = pct + '%';
+        document.getElementById('jt-barra-progreso').setAttribute('aria-valuenow', String(pct));
+
+        if (pct >= 90 && !estado.terminado) {
+            terminarPartida();
+        }
+    }
+
+    // ── Cronómetro ───────────────────────────────────────────────────
+
+    function iniciarCronometro() {
+        estado.inicioTiempo = performance.now();
+        estado.cronometroId = setInterval(actualizarCronometro, 250);
+    }
+
+    function actualizarCronometro() {
+        const segundos = Math.floor((performance.now() - estado.inicioTiempo) / 1000);
+        const m = Math.floor(segundos / 60);
+        const s = segundos % 60;
+        document.getElementById('jt-cronometro').textContent = m + ':' + String(s).padStart(2, '0');
+    }
+
+    function detenerCronometro() {
+        if (estado.cronometroId) clearInterval(estado.cronometroId);
+        estado.cronometroId = null;
+    }
+
+    function textoTiempoTranscurrido() {
+        if (!estado.inicioTiempo) return '0:00';
+        const segundos = Math.floor((performance.now() - estado.inicioTiempo) / 1000);
+        const m = Math.floor(segundos / 60);
+        const s = segundos % 60;
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    // ── Herramienta y color ──────────────────────────────────────────
+
+    document.querySelectorAll('.jt-boton-herramienta').forEach((boton) => {
         boton.addEventListener('click', () => {
-            document.querySelectorAll('.jt-boton-acabado').forEach((b) => {
+            document.querySelectorAll('.jt-boton-herramienta').forEach((b) => {
                 b.classList.remove('is-activo');
                 b.setAttribute('aria-checked', 'false');
             });
             boton.classList.add('is-activo');
             boton.setAttribute('aria-checked', 'true');
-            estado.acabado = boton.dataset.acabado;
-            aplicarColorYAcabado();
-            actualizarFichaTecnica();
-            actualizarTextoResumen();
+            estado.herramienta = boton.dataset.herramienta;
         });
     });
 
-    // ── Controles: color ─────────────────────────────────────────────────
-
-    function seleccionarColor(hex, nombre, swatchActivo) {
+    function seleccionarColor(hex, swatchActivo) {
         estado.color = hex;
-        estado.colorNombre = nombre;
         document.querySelectorAll('.jt-swatch').forEach((s) => {
             s.classList.remove('is-activo');
             s.setAttribute('aria-checked', 'false');
@@ -274,136 +400,134 @@
             swatchActivo.classList.add('is-activo');
             swatchActivo.setAttribute('aria-checked', 'true');
         }
-        aplicarColorYAcabado();
-        actualizarTextoResumen();
     }
 
     document.querySelectorAll('.jt-swatch').forEach((swatch) => {
-        swatch.addEventListener('click', () => {
-            seleccionarColor(swatch.dataset.color, swatch.dataset.nombre, swatch);
-        });
+        swatch.addEventListener('click', () => seleccionarColor(swatch.dataset.color, swatch));
     });
 
     const inputColorPersonalizado = document.getElementById('jt-color-personalizado');
-    inputColorPersonalizado.addEventListener('input', () => {
-        seleccionarColor(inputColorPersonalizado.value, 'Personalizado (' + inputColorPersonalizado.value.toUpperCase() + ')', null);
+    inputColorPersonalizado.addEventListener('input', () => seleccionarColor(inputColorPersonalizado.value, null));
+
+    // ── Reiniciar ────────────────────────────────────────────────────
+
+    function reiniciarPartida() {
+        ctxPintura.clearRect(0, 0, capaPintura.width, capaPintura.height);
+        estado.inicioTiempo = null;
+        estado.terminado = false;
+        estado.porcentaje = 0;
+        estado.ultimoPunto = null;
+        detenerCronometro();
+        document.getElementById('jt-cronometro').textContent = '0:00';
+        document.getElementById('jt-porcentaje').textContent = '0%';
+        document.getElementById('jt-barra-progreso-relleno').style.width = '0%';
+        document.getElementById('jt-pista').style.display = '';
+        dibujarEscena();
+    }
+
+    document.getElementById('jt-boton-reiniciar').addEventListener('click', reiniciarPartida);
+    document.getElementById('jt-boton-jugar-de-nuevo').addEventListener('click', () => {
+        document.getElementById('jt-celebracion-overlay').hidden = true;
+        reiniciarPartida();
     });
 
-    // ── Modal de contacto ────────────────────────────────────────────────
+    // ── Celebración final ────────────────────────────────────────────
 
-    const overlay = document.getElementById('jt-modal-overlay');
-    const modal = document.getElementById('jt-modal');
-    const botonAbrir = document.getElementById('jt-boton-abrir-modal');
-    const botonCerrar = document.getElementById('jt-modal-cerrar');
-    const form = document.getElementById('jt-form-contacto');
-    const estadoForm = document.getElementById('jt-form-estado');
-    let elementoConFocoPrevio = null;
+    function lanzarConfeti() {
+        const contenedor = document.getElementById('jt-confeti');
+        contenedor.innerHTML = '';
+        const colores = ['#b3261e', '#1e4b8f', '#1b8f4c', '#f0b429', '#ffffff'];
+        for (let i = 0; i < 46; i++) {
+            const pieza = document.createElement('span');
+            pieza.className = 'jt-confeti-pieza';
+            pieza.style.left = Math.random() * 100 + '%';
+            pieza.style.background = colores[Math.floor(Math.random() * colores.length)];
+            pieza.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+            pieza.style.animationDelay = (Math.random() * 0.4) + 's';
+            contenedor.appendChild(pieza);
+        }
+    }
 
-    function abrirModal() {
-        document.getElementById('jt-modal-vehiculo').textContent = NOMBRES_VEHICULO[estado.vehiculo];
-        document.getElementById('jt-modal-acabado').textContent = NOMBRES_ACABADO[estado.acabado].toLowerCase();
-        document.getElementById('jt-modal-color').textContent = estado.colorNombre;
-        document.getElementById('jt-modal-muestra-color').style.background = estado.color;
-        document.getElementById('jt-modal-ficha').textContent = actualizarFichaTecnica();
+    function terminarPartida() {
+        estado.terminado = true;
+        detenerCronometro();
 
-        const mensaje = document.getElementById('jt-mensaje');
-        if (!mensaje.value) {
-            mensaje.value = `Hola, me interesa recibir presupuesto de materiales para pintar un ${NOMBRES_VEHICULO[estado.vehiculo]} ` +
-                `en acabado ${NOMBRES_ACABADO[estado.acabado].toLowerCase()}, color ${estado.colorNombre} (${estado.color.toUpperCase()}).`;
+        const tiempoTexto = textoTiempoTranscurrido();
+        document.getElementById('jt-celebracion-stat').textContent =
+            `Pintado al ${estado.porcentaje}% en ${tiempoTexto}`;
+
+        const resultado = document.getElementById('jt-canvas-resultado');
+        resultado.width = lienzoVisible.width;
+        resultado.height = lienzoVisible.height;
+        resultado.getContext('2d').drawImage(lienzoVisible, 0, 0);
+
+        document.getElementById('jt-celebracion-overlay').hidden = false;
+        lanzarConfeti();
+    }
+
+    // ── Compartir ─────────────────────────────────────────────────────
+
+    const TEXTO_COMPARTIR = '¡He pintado mi coche en el minijuego de Orencio Matas y Hnos! 🎨🚗';
+    const URL_SITIO = window.location.href;
+
+    async function compartir() {
+        lienzoVisible.toBlob(async (blob) => {
+            if (!blob) return abrirPanelCompartir(null);
+
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'mi-coche.png', { type: 'image/png' })] })) {
+                try {
+                    await navigator.share({
+                        files: [new File([blob], 'mi-coche-pintado.png', { type: 'image/png' })],
+                        title: 'Pinta el Coche — Orencio Matas y Hnos',
+                        text: TEXTO_COMPARTIR,
+                    });
+                    return;
+                } catch (err) {
+                    // Cancelado por el usuario u otro fallo — se cae al panel manual.
+                }
+            }
+            abrirPanelCompartir(blob);
+        }, 'image/png');
+    }
+
+    function abrirPanelCompartir(blob) {
+        const overlay = document.getElementById('jt-compartir-overlay');
+        const enlaceDescargar = document.getElementById('jt-boton-descargar');
+
+        if (blob) {
+            enlaceDescargar.href = URL.createObjectURL(blob);
+        } else {
+            enlaceDescargar.href = lienzoVisible.toDataURL('image/png');
         }
 
-        elementoConFocoPrevio = document.activeElement;
+        const texto = encodeURIComponent(TEXTO_COMPARTIR + ' ' + URL_SITIO);
+        document.getElementById('jt-enlace-whatsapp').href = `https://wa.me/?text=${texto}`;
+        document.getElementById('jt-enlace-x').href = `https://twitter.com/intent/tweet?text=${texto}`;
+        document.getElementById('jt-enlace-facebook').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(URL_SITIO)}`;
+
         overlay.hidden = false;
-        document.body.style.overflow = 'hidden';
-        document.getElementById('jt-nombre').focus();
-        document.addEventListener('keydown', alEscapeCerrar);
     }
 
-    function cerrarModal() {
-        overlay.hidden = true;
-        document.body.style.overflow = '';
-        document.removeEventListener('keydown', alEscapeCerrar);
-        if (elementoConFocoPrevio) elementoConFocoPrevio.focus();
-    }
-
-    function alEscapeCerrar(ev) {
-        if (ev.key === 'Escape') cerrarModal();
-    }
-
-    botonAbrir.addEventListener('click', abrirModal);
-    botonCerrar.addEventListener('click', cerrarModal);
-    overlay.addEventListener('click', (ev) => {
-        if (ev.target === overlay) cerrarModal();
+    document.getElementById('jt-boton-compartir').addEventListener('click', compartir);
+    document.getElementById('jt-boton-compartir-final').addEventListener('click', compartir);
+    document.getElementById('jt-compartir-cerrar').addEventListener('click', () => {
+        document.getElementById('jt-compartir-overlay').hidden = true;
+    });
+    document.getElementById('jt-compartir-overlay').addEventListener('click', (ev) => {
+        if (ev.target.id === 'jt-compartir-overlay') ev.currentTarget.hidden = true;
     });
 
-    // Foco atrapado dentro del modal mientras está abierto (accesibilidad
-    // básica: Tab no debe poder escapar hacia el contenido de detrás).
-    modal.addEventListener('keydown', (ev) => {
-        if (ev.key !== 'Tab') return;
-        const focusables = modal.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])');
-        if (!focusables.length) return;
-        const primero = focusables[0];
-        const ultimo = focusables[focusables.length - 1];
-        if (ev.shiftKey && document.activeElement === primero) {
-            ev.preventDefault();
-            ultimo.focus();
-        } else if (!ev.shiftKey && document.activeElement === ultimo) {
-            ev.preventDefault();
-            primero.focus();
-        }
-    });
+    // ── Arranque ─────────────────────────────────────────────────────
 
-    // ── Envío del formulario ──────────────────────────────────────────────
-    // PoC: esta es una CONFIRMACIÓN SIMULADA, no un envío real — la
-    // acción "enviar_contacto" ya existente en Apps Script (ver
-    // scripts/apps_script_trigger.js) exige un campo "email" válido y un
-    // token de reCAPTCHA v2 verificado en servidor, y este formulario de
-    // prueba pide "teléfono o email" en un único campo libre. Para pasar
-    // esta PoC a producción real bastaría con: añadir el widget de
-    // reCAPTCHA (mismo sitekey que index.html), separar el campo en
-    // nombre/email, y sustituir la simulación de abajo por el mismo
-    // fetch() a GOOGLE_APPS_SCRIPT_URL con accion:'enviar_contacto' que
-    // ya usa el formulario de contacto de index.html.
-    form.addEventListener('submit', (ev) => {
-        ev.preventDefault();
+    window.addEventListener('resize', debounce(ajustarTamanoCanvas, 200));
 
-        // Honeypot — si un bot rellenó el campo oculto, fingir éxito sin
-        // hacer nada más (mismo criterio que el resto del sitio).
-        if (document.getElementById('jt-web').value) {
-            estadoForm.textContent = '✓ Solicitud enviada. Nos pondremos en contacto contigo pronto.';
-            estadoForm.className = 'jt-form__estado es-ok';
-            return;
-        }
-
-        if (!form.reportValidity()) return;
-
-        const botonEnviar = document.getElementById('jt-boton-enviar');
-        botonEnviar.disabled = true;
-        botonEnviar.textContent = 'Enviando…';
-        estadoForm.textContent = '';
-        estadoForm.className = 'jt-form__estado';
-
-        const datos = {
-            nombre: document.getElementById('jt-nombre').value.trim(),
-            contacto: document.getElementById('jt-contacto').value.trim(),
-            empresa: document.getElementById('jt-empresa').value.trim(),
-            mensaje: document.getElementById('jt-mensaje').value.trim(),
-            vehiculo: estado.vehiculo,
-            acabado: estado.acabado,
-            color: estado.color,
+    function debounce(fn, ms) {
+        let t;
+        return (...args) => {
+            clearTimeout(t);
+            t = setTimeout(() => fn(...args), ms);
         };
-        console.log('[PoC El Pintor de Carrocería] Solicitud de presupuesto (simulada):', datos);
+    }
 
-        setTimeout(() => {
-            botonEnviar.disabled = false;
-            botonEnviar.textContent = 'Enviar solicitud';
-            estadoForm.textContent = '✓ Solicitud enviada correctamente. Nos pondremos en contacto contigo pronto.';
-            estadoForm.className = 'jt-form__estado es-ok';
-            form.reset();
-            setTimeout(cerrarModal, 1400);
-        }, 700);
-    });
-
-    // ── Arranque ───────────────────────────────────────────────────────
-    renderVehiculo();
+    ajustarTamanoCanvas();
 })();

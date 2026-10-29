@@ -2,155 +2,129 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <!--
-  PoC de gamificación / captación comercial — "El Pintor de Carrocería".
+  PoC de gamificación / captación comercial — "Pinta el Coche".
   Vive aislada en lab/, sin enlaces desde el navbar ni el footer del
   sitio público: es una prueba de concepto, no una página de producción.
-  No indexar mientras esté en fase de prueba.
 -->
 <meta name="robots" content="noindex, nofollow">
-<title>El Pintor de Carrocería — Laboratorio Orencio Matas</title>
-<meta name="description" content="Prueba de concepto: configura el color y acabado de un vehículo y solicita presupuesto de materiales de pintura.">
+<title>Pinta el Coche — Laboratorio Orencio Matas</title>
+<meta name="description" content="Minijuego: pinta la carrocería de un coche con una pistola o un spray, a mano o con el dedo, y comparte el resultado.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="css/juego-taller.css">
 </head>
 <body>
 
 <header class="jt-header">
-    <p class="jt-header__etiqueta">Laboratorio — prueba de concepto</p>
-    <h1 class="jt-header__titulo">
-        <span aria-hidden="true">🎨</span>
-        El Pintor de Carrocería
-    </h1>
-    <p class="jt-header__subtitulo">Elige vehículo, acabado y color: calculamos al momento una estimación de materiales.</p>
+    <p class="jt-header__etiqueta">Laboratorio — minijuego</p>
+    <h1 class="jt-header__titulo"><span aria-hidden="true">🎨</span> Pinta el Coche</h1>
+    <p class="jt-header__subtitulo">Elige tu herramienta y pinta la carrocería arrastrando el dedo o el ratón. ¡Termínalo y compártelo!</p>
 </header>
 
 <main class="jt-main">
 
-    <!-- Zona de visualización — fija arriba en móvil, ver CSS -->
-    <section class="jt-visor" aria-label="Vista previa del vehículo">
-        <div class="jt-visor__selector-modelo" role="tablist" aria-label="Modelo de vehículo">
-            <button type="button" class="jt-chip-modelo is-activo" data-vehiculo="turismo" role="tab" aria-selected="true">
-                <span aria-hidden="true">🚗</span> Turismo compacto
-            </button>
-            <button type="button" class="jt-chip-modelo" data-vehiculo="furgoneta" role="tab" aria-selected="false">
-                <span aria-hidden="true">🚐</span> Furgoneta comercial
+    <section class="jt-juego" aria-label="Zona de juego">
+
+        <div class="jt-barra-superior">
+            <div class="jt-stat">
+                <span class="jt-stat__valor" id="jt-porcentaje">0%</span>
+                <span class="jt-stat__etiqueta">pintado</span>
+            </div>
+            <div class="jt-barra-progreso" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="jt-barra-progreso">
+                <div class="jt-barra-progreso__relleno" id="jt-barra-progreso-relleno"></div>
+            </div>
+            <div class="jt-stat">
+                <span class="jt-stat__valor" id="jt-cronometro">0:00</span>
+                <span class="jt-stat__etiqueta">tiempo</span>
+            </div>
+        </div>
+
+        <div class="jt-lienzo-wrap">
+            <canvas id="jt-canvas" width="640" height="360" aria-label="Coche a pintar"></canvas>
+            <button type="button" class="jt-boton-reiniciar" id="jt-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
+                <span aria-hidden="true">↺</span>
             </button>
         </div>
 
-        <div class="jt-visor__lienzo" id="jt-lienzo-vehiculo" aria-live="polite">
-            <!-- El SVG del vehículo activo se inyecta aquí por JS (ver juego-taller.js) -->
-        </div>
+        <p class="jt-pista" id="jt-pista">Arrastra sobre el coche para empezar a pintar</p>
 
-        <p class="jt-visor__acabado-actual">
-            Acabado: <strong id="jt-texto-acabado">Brillo clásico</strong> ·
-            Color: <strong id="jt-texto-color">Blanco perlado</strong>
-        </p>
     </section>
 
-    <!-- Panel de controles — abajo en móvil, objetivo táctil >= 44px -->
-    <section class="jt-controles" aria-label="Controles de configuración">
+    <section class="jt-controles" aria-label="Herramientas">
 
         <div class="jt-grupo-control">
-            <h2 class="jt-grupo-control__titulo">Acabado</h2>
-            <div class="jt-selector-acabado" role="radiogroup" aria-label="Acabado de pintura">
-                <button type="button" class="jt-boton-acabado is-activo" data-acabado="brillo" role="radio" aria-checked="true">
-                    <span class="jt-boton-acabado__muestra jt-boton-acabado__muestra--brillo"></span>
-                    Brillo clásico
+            <h2 class="jt-grupo-control__titulo">Herramienta</h2>
+            <div class="jt-selector-herramienta" role="radiogroup" aria-label="Herramienta de pintura">
+                <button type="button" class="jt-boton-herramienta is-activo" data-herramienta="pistola" role="radio" aria-checked="true">
+                    <span class="jt-boton-herramienta__icono" aria-hidden="true">🔫</span>
+                    Pistola
                 </button>
-                <button type="button" class="jt-boton-acabado" data-acabado="metalizado" role="radio" aria-checked="false">
-                    <span class="jt-boton-acabado__muestra jt-boton-acabado__muestra--metalizado"></span>
-                    Metalizado
-                </button>
-                <button type="button" class="jt-boton-acabado" data-acabado="mate" role="radio" aria-checked="false">
-                    <span class="jt-boton-acabado__muestra jt-boton-acabado__muestra--mate"></span>
-                    Mate
+                <button type="button" class="jt-boton-herramienta" data-herramienta="spray" role="radio" aria-checked="false">
+                    <span class="jt-boton-herramienta__icono" aria-hidden="true">🧴</span>
+                    Spray
                 </button>
             </div>
         </div>
 
         <div class="jt-grupo-control">
             <h2 class="jt-grupo-control__titulo">Color</h2>
-            <div class="jt-paleta" role="radiogroup" aria-label="Color de carrocería">
-                <button type="button" class="jt-swatch is-activo" data-color="#f3f1ea" data-nombre="Blanco perlado" style="--jt-swatch-color:#f3f1ea" role="radio" aria-checked="true" aria-label="Blanco perlado"></button>
-                <button type="button" class="jt-swatch" data-color="#3c4044" data-nombre="Gris antracita" style="--jt-swatch-color:#3c4044" role="radio" aria-checked="false" aria-label="Gris antracita"></button>
-                <button type="button" class="jt-swatch" data-color="#b3261e" data-nombre="Rojo fuego" style="--jt-swatch-color:#b3261e" role="radio" aria-checked="false" aria-label="Rojo fuego"></button>
-                <button type="button" class="jt-swatch" data-color="#1e4b8f" data-nombre="Azul cobalto" style="--jt-swatch-color:#1e4b8f" role="radio" aria-checked="false" aria-label="Azul cobalto"></button>
-                <button type="button" class="jt-swatch" data-color="#1b1b1d" data-nombre="Negro grafito" style="--jt-swatch-color:#1b1b1d" role="radio" aria-checked="false" aria-label="Negro grafito"></button>
+            <div class="jt-paleta" role="radiogroup" aria-label="Color de pintura">
+                <button type="button" class="jt-swatch is-activo" data-color="#b3261e" style="--jt-swatch-color:#b3261e" role="radio" aria-checked="true" aria-label="Rojo fuego"></button>
+                <button type="button" class="jt-swatch" data-color="#1e4b8f" style="--jt-swatch-color:#1e4b8f" role="radio" aria-checked="false" aria-label="Azul cobalto"></button>
+                <button type="button" class="jt-swatch" data-color="#1b8f4c" style="--jt-swatch-color:#1b8f4c" role="radio" aria-checked="false" aria-label="Verde racing"></button>
+                <button type="button" class="jt-swatch" data-color="#f0b429" style="--jt-swatch-color:#f0b429" role="radio" aria-checked="false" aria-label="Amarillo taxi"></button>
+                <button type="button" class="jt-swatch" data-color="#f3f1ea" style="--jt-swatch-color:#f3f1ea" role="radio" aria-checked="false" aria-label="Blanco perlado"></button>
+                <button type="button" class="jt-swatch" data-color="#1b1b1d" style="--jt-swatch-color:#1b1b1d" role="radio" aria-checked="false" aria-label="Negro grafito"></button>
 
                 <label class="jt-swatch-personalizado" for="jt-color-personalizado">
-                    <input type="color" id="jt-color-personalizado" value="#f3f1ea" aria-label="Elegir color personalizado">
-                    <span class="jt-swatch-personalizado__icono" aria-hidden="true">+</span>
-                    <span class="jt-swatch-personalizado__texto">Personalizado</span>
+                    <input type="color" id="jt-color-personalizado" value="#ff00aa" aria-label="Elegir color personalizado">
+                    <span aria-hidden="true">+</span>
                 </label>
             </div>
         </div>
 
-        <div class="jt-ficha-tecnica" id="jt-ficha-tecnica" aria-live="polite">
-            <h2 class="jt-grupo-control__titulo">Ficha técnica estimada</h2>
-            <p id="jt-ficha-tecnica__texto">—</p>
-            <p class="jt-ficha-tecnica__nota">Estimación orientativa según el modelo y acabado elegidos. El presupuesto real puede variar según el estado de la superficie.</p>
-        </div>
-
-        <button type="button" class="jt-boton-cta" id="jt-boton-abrir-modal">
-            Solicitar presupuesto de materiales para esta configuración
+        <button type="button" class="jt-boton-compartir" id="jt-boton-compartir">
+            Compartir mi coche
         </button>
+
+        <p class="jt-marca">
+            Un minijuego de <strong>Orencio Matas y Hnos</strong> — pinturas y materiales profesionales para taller y carrocería.
+        </p>
     </section>
 
 </main>
 
-<!-- ───────────────── Modal de contacto (nativo, accesible) ───────────────── -->
-<div class="jt-modal-overlay" id="jt-modal-overlay" hidden>
-    <div class="jt-modal" role="dialog" aria-modal="true" aria-labelledby="jt-modal-titulo" id="jt-modal">
-        <button type="button" class="jt-modal__cerrar" id="jt-modal-cerrar" aria-label="Cerrar">
-            <span aria-hidden="true">&times;</span>
-        </button>
-
-        <h2 id="jt-modal-titulo" class="jt-modal__titulo">Solicitar presupuesto de materiales</h2>
-
-        <div class="jt-modal__resumen">
-            <div class="jt-modal__muestra-color" id="jt-modal-muestra-color" aria-hidden="true"></div>
-            <div class="jt-modal__resumen-texto">
-                <p><strong id="jt-modal-vehiculo">Turismo compacto</strong></p>
-                <p>Acabado <span id="jt-modal-acabado">brillo clásico</span> · Color <span id="jt-modal-color">Blanco perlado</span></p>
-                <p class="jt-modal__resumen-ficha" id="jt-modal-ficha">—</p>
-            </div>
+<!-- ───────────────── Celebración al terminar ───────────────── -->
+<div class="jt-celebracion-overlay" id="jt-celebracion-overlay" hidden>
+    <div class="jt-confeti" id="jt-confeti" aria-hidden="true"></div>
+    <div class="jt-celebracion" role="dialog" aria-modal="true" aria-labelledby="jt-celebracion-titulo">
+        <h2 id="jt-celebracion-titulo">¡Coche terminado! 🏁</h2>
+        <p class="jt-celebracion__stat" id="jt-celebracion-stat">Pintado al 93% en 0:12</p>
+        <div class="jt-celebracion__lienzo-wrap">
+            <canvas id="jt-canvas-resultado"></canvas>
         </div>
+        <button type="button" class="jt-boton-compartir" id="jt-boton-compartir-final">
+            Compartir mi coche
+        </button>
+        <button type="button" class="jt-boton-secundario" id="jt-boton-jugar-de-nuevo">
+            Jugar de nuevo
+        </button>
+    </div>
+</div>
 
-        <form id="jt-form-contacto" class="jt-form" novalidate>
-            <!-- Honeypot anti-spam — mismo patrón que el resto del sitio -->
-            <div class="jt-campo-trampa" aria-hidden="true">
-                <label for="jt-web">No rellenar este campo</label>
-                <input type="text" id="jt-web" name="web" tabindex="-1" autocomplete="off">
-            </div>
-
-            <div class="jt-campo">
-                <label for="jt-nombre">Nombre *</label>
-                <input type="text" id="jt-nombre" name="nombre" required autocomplete="name">
-            </div>
-
-            <div class="jt-campo">
-                <label for="jt-contacto">Teléfono o email *</label>
-                <input type="text" id="jt-contacto" name="contacto" required autocomplete="tel email">
-            </div>
-
-            <div class="jt-campo">
-                <label for="jt-empresa">Empresa <span class="jt-campo__opcional">(opcional)</span></label>
-                <input type="text" id="jt-empresa" name="empresa" autocomplete="organization">
-            </div>
-
-            <div class="jt-campo">
-                <label for="jt-mensaje">Mensaje</label>
-                <textarea id="jt-mensaje" name="mensaje" rows="3"></textarea>
-            </div>
-
-            <p class="jt-form__estado" id="jt-form-estado" role="status" aria-live="polite"></p>
-
-            <button type="submit" class="jt-boton-cta jt-boton-cta--enviar" id="jt-boton-enviar">
-                Enviar solicitud
-            </button>
-        </form>
+<!-- ───────────────── Panel de compartir (enlaces directos) ───────────────── -->
+<div class="jt-compartir-overlay" id="jt-compartir-overlay" hidden>
+    <div class="jt-compartir-panel" role="dialog" aria-modal="true" aria-labelledby="jt-compartir-titulo">
+        <button type="button" class="jt-compartir-cerrar" id="jt-compartir-cerrar" aria-label="Cerrar">&times;</button>
+        <h2 id="jt-compartir-titulo">Comparte tu coche</h2>
+        <p>Descarga la imagen y compártela donde quieras, o usa un acceso directo:</p>
+        <a class="jt-boton-descargar" id="jt-boton-descargar" download="mi-coche-pintado.png">Descargar imagen</a>
+        <div class="jt-redes">
+            <a class="jt-boton-red jt-boton-red--whatsapp" id="jt-enlace-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="jt-boton-red jt-boton-red--x" id="jt-enlace-x" target="_blank" rel="noopener">X</a>
+            <a class="jt-boton-red jt-boton-red--facebook" id="jt-enlace-facebook" target="_blank" rel="noopener">Facebook</a>
+        </div>
     </div>
 </div>
 
