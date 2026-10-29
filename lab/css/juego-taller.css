@@ -32,10 +32,29 @@ body {
 /* ── Cabecera ────────────────────────────────────────────────────────── */
 
 .jt-header {
+    position: relative;
     background: var(--jt-negro);
     color: var(--jt-blanco);
     padding: 16px 20px 18px;
     text-align: center;
+}
+
+.jt-header__volver {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 8px;
+    color: #c7c7c9;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.jt-header__volver:hover {
+    color: var(--jt-blanco);
 }
 
 .jt-header__etiqueta {
@@ -99,6 +118,49 @@ body {
         position: sticky;
         top: 20px;
     }
+}
+
+.jt-selector-modo {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jt-chip-modo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 56px;
+    padding: 8px 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jt-gris-borde);
+    background: var(--jt-blanco);
+    color: var(--jt-gris-texto);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jt-chip-modo__titulo {
+    white-space: nowrap;
+}
+
+.jt-chip-modo small {
+    font-size: 0.66rem;
+    font-weight: 500;
+    color: inherit;
+    opacity: 0.75;
+}
+
+.jt-chip-modo.is-activo {
+    background: var(--jt-rojo);
+    border-color: var(--jt-rojo);
+    color: var(--jt-blanco);
 }
 
 .jt-selector-modelo {
@@ -349,6 +411,57 @@ body {
     text-align: center;
 }
 
+/* ── Historial / ranking de sesión ──────────────────────────────────── */
+
+.jt-historial__vacio {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #9a9da2;
+}
+
+.jt-historial__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.jt-historial__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--jt-gris-fondo);
+    font-size: 0.8rem;
+}
+
+.jt-historial__item.es-mejor {
+    background: #fdf1f0;
+    border: 1px solid #f3c9c6;
+    font-weight: 700;
+}
+
+.jt-historial__puesto {
+    color: #9a9da2;
+    font-variant-numeric: tabular-nums;
+    min-width: 1.4em;
+}
+
+.jt-historial__detalle {
+    flex: 1;
+    color: var(--jt-negro);
+}
+
+.jt-historial__fecha {
+    color: #9a9da2;
+    font-size: 0.72rem;
+    white-space: nowrap;
+}
+
 /* ── Botones de acción ──────────────────────────────────────────────── */
 
 .jt-boton-compartir,
@@ -440,10 +553,18 @@ body {
 }
 
 .jt-celebracion__stat {
-    margin: 0 0 14px;
+    margin: 0 0 4px;
     font-size: 0.88rem;
     color: var(--jt-gris-texto);
     font-weight: 600;
+}
+
+.jt-celebracion__ranking {
+    margin: 0 0 14px;
+    font-size: 0.8rem;
+    color: var(--jt-rojo-oscuro);
+    font-weight: 700;
+    min-height: 1.2em;
 }
 
 .jt-celebracion__lienzo-wrap {

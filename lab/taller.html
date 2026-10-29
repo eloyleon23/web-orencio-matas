@@ -17,14 +17,26 @@
 <body>
 
 <header class="jt-header">
+    <a class="jt-header__volver" href="index.html">&larr; Minijuegos</a>
     <p class="jt-header__etiqueta">Laboratorio — minijuego</p>
     <h1 class="jt-header__titulo"><span aria-hidden="true">🎨</span> Pinta el Coche</h1>
-    <p class="jt-header__subtitulo">Elige modelo y herramienta, y pinta la carrocería arrastrando el dedo o el ratón. ¡Termínalo y compártelo!</p>
+    <p class="jt-header__subtitulo">Elige modo, modelo y herramienta, y pinta la carrocería arrastrando el dedo o el ratón. ¡Termínalo y compártelo!</p>
 </header>
 
 <main class="jt-main">
 
     <section class="jt-juego" aria-label="Zona de juego">
+
+        <div class="jt-selector-modo" role="radiogroup" aria-label="Modo de juego">
+            <button type="button" class="jt-chip-modo is-activo" data-modo="contrarreloj" role="radio" aria-checked="true">
+                <span class="jt-chip-modo__titulo"><span aria-hidden="true">⏱️</span> Contrarreloj</span>
+                <small>Pinta el 100% lo más rápido posible</small>
+            </button>
+            <button type="button" class="jt-chip-modo" data-modo="desafio" role="radio" aria-checked="false">
+                <span class="jt-chip-modo__titulo"><span aria-hidden="true">🎯</span> Desafío (<span id="jt-desafio-duracion">30</span>s)</span>
+                <small>Pinta el mayor % posible antes de que acabe el tiempo</small>
+            </button>
+        </div>
 
         <div class="jt-selector-modelo" role="radiogroup" aria-label="Modelo de vehículo">
             <button type="button" class="jt-chip-modelo is-activo" data-vehiculo="berlina" role="radio" aria-checked="true">
@@ -48,7 +60,7 @@
             </div>
             <div class="jt-stat">
                 <span class="jt-stat__valor" id="jt-cronometro">0:00</span>
-                <span class="jt-stat__etiqueta">tiempo</span>
+                <span class="jt-stat__etiqueta" id="jt-cronometro-etiqueta">tiempo</span>
             </div>
         </div>
 
@@ -101,6 +113,12 @@
             </div>
         </div>
 
+        <div class="jt-grupo-control jt-historial">
+            <h2 class="jt-grupo-control__titulo">Tu historial (esta sesión)</h2>
+            <p class="jt-historial__vacio" id="jt-historial-vacio">Todavía no has completado ninguna partida en este modo.</p>
+            <ol class="jt-historial__lista" id="jt-historial-lista"></ol>
+        </div>
+
         <button type="button" class="jt-boton-compartir" id="jt-boton-compartir">
             Compartir mi coche
         </button>
@@ -118,6 +136,7 @@
     <div class="jt-celebracion" role="dialog" aria-modal="true" aria-labelledby="jt-celebracion-titulo">
         <h2 id="jt-celebracion-titulo">¡Coche terminado! 🏁</h2>
         <p class="jt-celebracion__stat" id="jt-celebracion-stat">Pintado al 93% en 0:12</p>
+        <p class="jt-celebracion__ranking" id="jt-celebracion-ranking"></p>
         <div class="jt-celebracion__lienzo-wrap">
             <canvas id="jt-canvas-resultado"></canvas>
         </div>
