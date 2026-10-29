@@ -51,7 +51,11 @@
   // apartado 10 del encargo) — comparadas por nombre de archivo, no por
   // URL completa, para que funcionen igual con o sin parámetros/anclas
   // y sea cual sea la profundidad de carpeta desde la que se cargue.
-  const PAGINAS_EXCLUIDAS = ['empresa.html', 'historia.html', 'servicios.html', 'actualidad.html', 'profesionales.html'];
+  // 'taller.html' cubre la suite de minijuegos del laboratorio (lab/) —
+  // no está pensada para profesionales. El hub de la suite (lab/index.html)
+  // ya queda fuera por tener el mismo nombre de archivo que la home pública
+  // (ver esPaginaInicioPublica_ más abajo), así que no necesita entrada aquí.
+  const PAGINAS_EXCLUIDAS = ['empresa.html', 'historia.html', 'servicios.html', 'actualidad.html', 'profesionales.html', 'taller.html'];
 
   function nombreArchivoDe_(href) {
     if (!href) return '';
@@ -514,7 +518,11 @@
       // de dejar ver una mezcla de ambos contextos (petición
       // explícita) — con replace() para que "Atrás" no vuelva a dejar
       // a medio camino.
-      location.replace('./' + PAGINA_INICIO_PROFESIONAL);
+      // Mismo convenio de window.OM_RUTA_RAIZ que ya usa mantenimiento.js:
+      // páginas fuera de la raíz del sitio (p.ej. lab/) deben declararlo
+      // para que este redirect no se rompa buscando acceso-profesional.html
+      // dentro de su propia carpeta.
+      location.replace((window.OM_RUTA_RAIZ || './') + PAGINA_INICIO_PROFESIONAL);
     } else {
       // Se llama de inmediato, no solo en DOMContentLoaded: este script
       // se carga siempre después de la cabecera en cada página (nunca en

@@ -44,7 +44,7 @@
             src: 'assets/coche-berlina.png',
             wallAlpha: 60,
             exteriorExcluido: false,
-            semillasExcluir: [[430, 165], [560, 150], [185, 355], [690, 350]],
+            semillasExcluir: [[470, 70], [640, 70], [165, 225], [830, 230]],
         },
         suv: {
             nombre: 'SUV Urbano',
@@ -68,8 +68,19 @@
         spray: { radio: 20, opacidadDab: 0.32, mancha: true, espaciadoPx: 6 },
     };
 
+    // ── Modos de juego ──────────────────────────────────────────────────
+    // contrarreloj: pintar el 100% en el menor tiempo posible (cronómetro
+    // cuenta hacia arriba, la partida termina en cuanto se completa).
+    // desafio: pintar el mayor % posible en un tiempo fijo (cuenta atrás;
+    // la partida termina al agotarse el tiempo, o antes si se llega al
+    // 100%). DURACION_DESAFIO_MS es la única fuente de verdad de los
+    // "30s" que también se muestran en el botón del modo (ver arranque).
+    const DURACION_DESAFIO_MS = 30000;
+    const UMBRAL_COMPLETADO = 100; // % para dar la partida por "terminada" en contrarreloj/desafío anticipado
+
     // ── Estado ────────────────────────────────────────────────────────
     const estado = {
+        modo: 'contrarreloj',
         vehiculo: 'berlina',
         herramienta: 'pistola',
         color: '#b3261e',
@@ -91,8 +102,10 @@
     const ctxMascara = capaMascara.getContext('2d');
     const capaSombra = document.createElement('canvas'); // sombreado inferior, ya recortado a la máscara
     const capaBrillo = document.createElement('canvas'); // brillo superior, ya recortado a la máscara
-    const capaPintura = document.createElement('canvas'); // manchas de color del jugador
+    const capaPintura = document.createElement('canvas'); // manchas de color YA confirmadas (permanentes)
     const ctxPintura = capaPintura.getContext('2d');
+    const capaTrazo = document.createElement('canvas'); // dabs del trazo en curso, antes de confirmarse
+    const ctxTrazo = capaTrazo.getContext('2d');
 
     let puntosMuestra = []; // { x, y } precalculados dentro del área pintable, para estimar el %
     let imagenActual = null;
@@ -190,7 +203,7 @@
     function reconstruirCapas() {
         if (!imagenActual) return;
         const w = lienzoVisible.width, h = lienzoVisible.height;
-        [capaBase, capaMascara, capaSombra, capaBrillo, capaPintura].forEach((c) => {
+        [capaBase, capaMascara, capaSombra, capaBrillo, capaPintura, capaTrazo].forEach((c) => {
             c.width = w;
             c.height = h;
         });
@@ -222,6 +235,21 @@
         ctxMascara.clearRect(0, 0, w, h);
         ctxMascara.imageSmoothingEnabled = true;
         ctxMascara.drawImage(mascaraOriginal, encaje.x, encaje.y, encaje.w, encaje.h);
+
+        // Binarizar la máscara ya escalada (alfa 0 o 255, sin medios
+        // tonos) — el suavizado del drawImage de arriba deja un borde
+        // antialiasado de varios píxeles con alfa intermedio. Sin este
+        // paso, esos píxeles de borde entran en puntosMuestra (alfa >
+        // umbral de inclusión) pero el recorte de la pintura (ver
+        // confirmarTrazo) los limita a ESE MISMO alfa parcial como
+        // máximo posible — nunca llegan al umbral de "ya está pintado",
+        // así que una parte del contorno queda matemáticamente
+        // imposible de completar y el 100% nunca se alcanza.
+        const bin = ctxMascara.getImageData(0, 0, w, h);
+        for (let i = 3; i < bin.data.length; i += 4) {
+            bin.data[i] = bin.data[i] > 127 ? 255 : 0;
+        }
+        ctxMascara.putImageData(bin, 0, 0);
 
         construirSombreado(w, h);
         precalcularPuntosMuestra(w, h);
@@ -306,21 +334,30 @@
         ctxVisible.globalCompositeOperation = 'source-over';
     }
 
-    // ── Pintura: dabs en la capa de pintura ─────────────────────────────
+    // ── Pintura: dabs en la capa de trazo, confirmados a la de pintura ──
+    // Los dabs se dibujan primero en capaTrazo (el trazo en curso) y SOLO
+    // al final de cada evento de puntero se recortan a la máscara UNA vez
+    // y se funden en capaPintura (permanente, ya no se vuelve a tocar).
+    // Antes el recorte se repetía en cada dab sobre la capa YA
+    // permanente: como la máscara tenía un borde antialiasado (alfa
+    // intermedio en varios píxeles), cada recorte volvía a multiplicar
+    // ese alfa por el mismo valor fraccionario — la pintura cercana al
+    // contorno se iba "desvaneciendo" con cada trazo nuevo en cualquier
+    // parte del coche, y el 100% nunca llegaba a alcanzarse de verdad.
 
     function dibujarDab(x, y) {
         const cfg = HERRAMIENTAS[estado.herramienta];
         const escala = encajeActual ? encajeActual.escala : 1;
         const radio = cfg.radio * escala;
 
-        const g = ctxPintura.createRadialGradient(x, y, 0, x, y, radio);
+        const g = ctxTrazo.createRadialGradient(x, y, 0, x, y, radio);
         g.addColorStop(0, hexAAlpha(estado.color, cfg.opacidadDab));
         g.addColorStop(0.7, hexAAlpha(estado.color, cfg.opacidadDab));
         g.addColorStop(1, hexAAlpha(estado.color, 0));
-        ctxPintura.fillStyle = g;
-        ctxPintura.beginPath();
-        ctxPintura.arc(x, y, radio, 0, Math.PI * 2);
-        ctxPintura.fill();
+        ctxTrazo.fillStyle = g;
+        ctxTrazo.beginPath();
+        ctxTrazo.arc(x, y, radio, 0, Math.PI * 2);
+        ctxTrazo.fill();
 
         if (cfg.mancha) {
             // Textura de spray: motas pequeñas alrededor del centro.
@@ -329,19 +366,23 @@
                 const dist = Math.random() * radio * 1.3;
                 const mx = x + Math.cos(ang) * dist;
                 const my = y + Math.sin(ang) * dist;
-                ctxPintura.fillStyle = hexAAlpha(estado.color, 0.18 + Math.random() * 0.25);
-                ctxPintura.beginPath();
-                ctxPintura.arc(mx, my, (1 + Math.random() * 2.2) * escala, 0, Math.PI * 2);
-                ctxPintura.fill();
+                ctxTrazo.fillStyle = hexAAlpha(estado.color, 0.18 + Math.random() * 0.25);
+                ctxTrazo.beginPath();
+                ctxTrazo.arc(mx, my, (1 + Math.random() * 2.2) * escala, 0, Math.PI * 2);
+                ctxTrazo.fill();
             }
         }
+    }
 
-        // Recortar la capa de pintura a la máscara tras cada trazo —
-        // barato (una sola imagen) y mantiene la pintura siempre dentro
-        // de la carrocería, pinte donde pinte el usuario.
-        ctxPintura.globalCompositeOperation = 'destination-in';
-        ctxPintura.drawImage(capaMascara, 0, 0);
-        ctxPintura.globalCompositeOperation = 'source-over';
+    function confirmarTrazo() {
+        // Recorta SOLO lo nuevo (capaTrazo) a la máscara, una vez, y lo
+        // funde en la capa permanente — esta última nunca se vuelve a
+        // recortar, así que no puede decaer.
+        ctxTrazo.globalCompositeOperation = 'destination-in';
+        ctxTrazo.drawImage(capaMascara, 0, 0);
+        ctxTrazo.globalCompositeOperation = 'source-over';
+        ctxPintura.drawImage(capaTrazo, 0, 0);
+        ctxTrazo.clearRect(0, 0, capaTrazo.width, capaTrazo.height);
     }
 
     function hexAAlpha(hex, alpha) {
@@ -402,6 +443,7 @@
             dibujarDab(punto.x, punto.y);
         }
         estado.ultimoPunto = punto;
+        confirmarTrazo();
 
         const ahora = performance.now();
         if (ahora - ultimaParticula > 90) {
@@ -463,23 +505,45 @@
         document.getElementById('jt-barra-progreso-relleno').style.width = pct + '%';
         document.getElementById('jt-barra-progreso').setAttribute('aria-valuenow', String(pct));
 
-        if (pct >= 90 && !estado.terminado) {
-            terminarPartida();
+        // En los dos modos, llegar al 100% da la partida por terminada
+        // de inmediato — en desafío, de sobra, nada más que pintar.
+        if (pct >= UMBRAL_COMPLETADO && !estado.terminado) {
+            terminarPartida('completado');
         }
     }
 
     // ── Cronómetro ───────────────────────────────────────────────────
+    // Contrarreloj: cuenta HACIA ARRIBA, sin límite, hasta completar.
+    // Desafío: cuenta ATRÁS desde DURACION_DESAFIO_MS; al llegar a 0,
+    // termina la partida aunque no se haya pintado el 100%.
+
+    function formatoTiempoMs(ms) {
+        const segundos = Math.max(0, Math.floor(ms / 1000));
+        const m = Math.floor(segundos / 60);
+        const s = segundos % 60;
+        return m + ':' + String(s).padStart(2, '0');
+    }
 
     function iniciarCronometro() {
         estado.inicioTiempo = performance.now();
-        estado.cronometroId = setInterval(actualizarCronometro, 250);
+        if (estado.modo === 'desafio') {
+            estado.cronometroId = setInterval(actualizarCronometroDesafio, 200);
+        } else {
+            estado.cronometroId = setInterval(actualizarCronometroContrarreloj, 250);
+        }
     }
 
-    function actualizarCronometro() {
-        const segundos = Math.floor((performance.now() - estado.inicioTiempo) / 1000);
-        const m = Math.floor(segundos / 60);
-        const s = segundos % 60;
-        document.getElementById('jt-cronometro').textContent = m + ':' + String(s).padStart(2, '0');
+    function actualizarCronometroContrarreloj() {
+        document.getElementById('jt-cronometro').textContent =
+            formatoTiempoMs(performance.now() - estado.inicioTiempo);
+    }
+
+    function actualizarCronometroDesafio() {
+        const restante = DURACION_DESAFIO_MS - (performance.now() - estado.inicioTiempo);
+        document.getElementById('jt-cronometro').textContent = formatoTiempoMs(restante);
+        if (restante <= 0 && !estado.terminado) {
+            terminarPartida('tiempo');
+        }
     }
 
     function detenerCronometro() {
@@ -487,12 +551,75 @@
         estado.cronometroId = null;
     }
 
-    function textoTiempoTranscurrido() {
-        if (!estado.inicioTiempo) return '0:00';
-        const segundos = Math.floor((performance.now() - estado.inicioTiempo) / 1000);
-        const m = Math.floor(segundos / 60);
-        const s = segundos % 60;
-        return m + ':' + String(s).padStart(2, '0');
+    function tiempoTranscurridoMs() {
+        return estado.inicioTiempo ? performance.now() - estado.inicioTiempo : 0;
+    }
+
+    // ── Historial / ranking de esta sesión (sessionStorage) ────────────
+    // Guardado por modo + modelo (los tiempos de un turismo y de una
+    // furgoneta no son comparables). "En sesión": se usa sessionStorage
+    // a propósito, no localStorage — se pierde al cerrar la pestaña.
+
+    const CLAVE_HISTORIAL = 'jt_historial_v1';
+
+    function cargarHistorialCompleto() {
+        try {
+            return JSON.parse(sessionStorage.getItem(CLAVE_HISTORIAL)) || [];
+        } catch (err) {
+            return [];
+        }
+    }
+
+    function guardarResultado(entrada) {
+        const todo = cargarHistorialCompleto();
+        todo.push(entrada);
+        try {
+            sessionStorage.setItem(CLAVE_HISTORIAL, JSON.stringify(todo));
+        } catch (err) {
+            // Cuota llena o sessionStorage no disponible (navegación
+            // privada muy restrictiva) — el ranking de esta partida
+            // simplemente no queda guardado, el juego sigue funcionando.
+        }
+        return todo;
+    }
+
+    function historialFiltrado(todo) {
+        return todo
+            .filter((e) => e.modo === estado.modo && e.vehiculo === estado.vehiculo)
+            .sort((a, b) => estado.modo === 'contrarreloj'
+                ? a.tiempoMs - b.tiempoMs
+                : (b.porcentaje - a.porcentaje) || (a.tiempoMs - b.tiempoMs));
+    }
+
+    function renderHistorial() {
+        const lista = document.getElementById('jt-historial-lista');
+        const vacio = document.getElementById('jt-historial-vacio');
+        const filtrado = historialFiltrado(cargarHistorialCompleto()).slice(0, 5);
+
+        lista.innerHTML = '';
+        vacio.style.display = filtrado.length ? 'none' : '';
+
+        filtrado.forEach((entrada, i) => {
+            const li = document.createElement('li');
+            li.className = 'jt-historial__item' + (i === 0 ? ' es-mejor' : '');
+
+            const puesto = document.createElement('span');
+            puesto.className = 'jt-historial__puesto';
+            puesto.textContent = '#' + (i + 1);
+
+            const detalle = document.createElement('span');
+            detalle.className = 'jt-historial__detalle';
+            detalle.textContent = estado.modo === 'contrarreloj'
+                ? `${entrada.porcentaje}% en ${formatoTiempoMs(entrada.tiempoMs)}`
+                : `${entrada.porcentaje}% pintado`;
+
+            const fechaSpan = document.createElement('span');
+            fechaSpan.className = 'jt-historial__fecha';
+            fechaSpan.textContent = new Date(entrada.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+            li.append(puesto, detalle, fechaSpan);
+            lista.appendChild(li);
+        });
     }
 
     // ── Herramienta y color ──────────────────────────────────────────
@@ -532,15 +659,20 @@
 
     function reiniciarPartida() {
         ctxPintura.clearRect(0, 0, capaPintura.width, capaPintura.height);
+        ctxTrazo.clearRect(0, 0, capaTrazo.width, capaTrazo.height);
         estado.inicioTiempo = null;
         estado.terminado = false;
         estado.porcentaje = 0;
         estado.ultimoPunto = null;
         detenerCronometro();
-        document.getElementById('jt-cronometro').textContent = '0:00';
+        document.getElementById('jt-cronometro').textContent =
+            estado.modo === 'desafio' ? formatoTiempoMs(DURACION_DESAFIO_MS) : '0:00';
+        document.getElementById('jt-cronometro-etiqueta').textContent =
+            estado.modo === 'desafio' ? 'restante' : 'tiempo';
         document.getElementById('jt-porcentaje').textContent = '0%';
         document.getElementById('jt-barra-progreso-relleno').style.width = '0%';
         document.getElementById('jt-pista').style.display = '';
+        document.getElementById('jt-celebracion-ranking').textContent = '';
         dibujarEscena();
     }
 
@@ -566,7 +698,25 @@
             boton.setAttribute('aria-checked', 'true');
             estado.vehiculo = boton.dataset.vehiculo;
             reiniciarPartida();
+            renderHistorial();
             cargarVehiculo(estado.vehiculo);
+        });
+    });
+
+    // ── Modo de juego ──────────────────────────────────────────────────
+
+    document.querySelectorAll('.jt-chip-modo').forEach((boton) => {
+        boton.addEventListener('click', () => {
+            if (boton.classList.contains('is-activo')) return;
+            document.querySelectorAll('.jt-chip-modo').forEach((b) => {
+                b.classList.remove('is-activo');
+                b.setAttribute('aria-checked', 'false');
+            });
+            boton.classList.add('is-activo');
+            boton.setAttribute('aria-checked', 'true');
+            estado.modo = boton.dataset.modo;
+            reiniciarPartida();
+            renderHistorial();
         });
     });
 
@@ -587,13 +737,41 @@
         }
     }
 
-    function terminarPartida() {
+    // motivo: 'completado' (llegó al 100%, en cualquier modo) o 'tiempo'
+    // (se acabó la cuenta atrás del desafío sin llegar al 100%).
+    function terminarPartida(motivo) {
         estado.terminado = true;
         detenerCronometro();
 
-        const tiempoTexto = textoTiempoTranscurrido();
-        document.getElementById('jt-celebracion-stat').textContent =
-            `Pintado al ${estado.porcentaje}% en ${tiempoTexto}`;
+        const entrada = {
+            modo: estado.modo,
+            vehiculo: estado.vehiculo,
+            porcentaje: estado.porcentaje,
+            tiempoMs: Math.round(estado.modo === 'desafio' ? DURACION_DESAFIO_MS : tiempoTranscurridoMs()),
+            fecha: new Date().toISOString(),
+        };
+        const todoElHistorial = guardarResultado(entrada);
+        const filtrado = historialFiltrado(todoElHistorial);
+        const posicion = filtrado.findIndex((e) => e.fecha === entrada.fecha) + 1;
+        const tiempoTexto = formatoTiempoMs(entrada.tiempoMs);
+
+        const titulo = document.getElementById('jt-celebracion-titulo');
+        const stat = document.getElementById('jt-celebracion-stat');
+        if (motivo === 'tiempo') {
+            titulo.textContent = '¡Se acabó el tiempo! ⏰';
+            stat.textContent = `Pintaste el ${estado.porcentaje}% en ${tiempoTexto}`;
+        } else {
+            titulo.textContent = '¡Coche terminado! 🏁';
+            stat.textContent = estado.modo === 'contrarreloj'
+                ? `Lo pintaste en ${tiempoTexto}`
+                : `Pintaste el ${estado.porcentaje}% — ¡con tiempo de sobra! (${tiempoTexto})`;
+        }
+
+        document.getElementById('jt-celebracion-ranking').textContent = posicion === 1
+            ? '🏆 ¡Nuevo mejor resultado de la sesión, en este modo y modelo!'
+            : `Puesto #${posicion} de ${filtrado.length} intentos (este modo y modelo).`;
+
+        renderHistorial();
 
         const resultado = document.getElementById('jt-canvas-resultado');
         resultado.width = lienzoVisible.width;
@@ -668,5 +846,7 @@
         };
     }
 
+    document.getElementById('jt-desafio-duracion').textContent = Math.round(DURACION_DESAFIO_MS / 1000);
+    renderHistorial();
     cargarVehiculo(estado.vehiculo);
 })();
