@@ -1,96 +1,71 @@
 /**
  * Pinta el Coche — minijuego (lab/taller.html)
- * Vanilla JS, sin dependencias. El coche se dibuja en un <canvas> con
- * tres capas: una base "imprimación" gris con sombreado, una capa de
- * pintura transparente donde el usuario va dejando manchas con el dedo
- * o el ratón (recortada a la silueta de la carrocería, sin pintar
- * cristales ni llantas), y un sombreado final que se vuelve a aplicar
- * encima de todo en cada repintado para que la pintura "tenga volumen"
- * sea cual sea el color elegido.
+ * Vanilla JS, sin dependencias. Las siluetas de los 3 modelos son
+ * ilustraciones vectoriales reales (no dibujadas a mano aquí), de
+ * Pixabay — licencia Pixabay Content License (gratis para uso
+ * comercial, sin atribución obligatoria): "Car Silhouette Vehicle Auto
+ * Sedan" / "Blueprint Automobile Technical" (Clker-Free-Vector-Images),
+ * "SUV Vehicle Suburban" (Clker-Free-Vector-Images), "Truck Van White
+ * Vehicle" (OpenClipart-Vectors). Guardadas en lab/assets/.
+ *
+ * El coche se dibuja en un <canvas> con tres capas: la ilustración
+ * original tal cual (siempre arriba del todo, para que las líneas y
+ * los detalles —cristales, llantas, faros— se mantengan nítidos), una
+ * capa de pintura donde el usuario va dejando manchas de color, y un
+ * sombreado final — todo recortado a una MÁSCARA del área pintable
+ * calculada automáticamente por inundación (flood fill) a partir de la
+ * propia imagen: se parte de fuera del coche y de dentro de cada
+ * cristal/llanta (puntos "semilla") y se expande por los píxeles
+ * conectados hasta chocar con una línea del dibujo — así nunca hay que
+ * dibujar a mano el contorno de la carrocería.
  */
 (function () {
     'use strict';
 
-    // ── Geometría de los modelos (mismo sistema de coordenadas: 600x260) ──
+    // ── Modelos disponibles ──────────────────────────────────────────
     // Nombres genéricos de carrocería a propósito (sin marcas reales,
-    // por derechos de marca registrada). Cada modelo trae su carrocería
-    // (con el espejo incluido como una segunda subforma del mismo "d",
-    // así es pintable igual que el resto de la chapa), sus cristales,
-    // ruedas, y los elementos NO pintables (faro/piloto/parrilla), que
-    // siempre se quedan con su color real sea cual sea el color elegido.
-
-    const VB_W = 600, VB_H = 260;
-
+    // por derechos de marca registrada).
+    //
+    // Cada modelo define cómo construir su máscara de área pintable:
+    //  - wallAlpha: umbral de alfa para considerar un píxel "línea del
+    //    dibujo" al expandirse desde FUERA del coche (siempre encuentra
+    //    el contorno exterior real, sea cual sea su forma).
+    //  - exteriorExcluido: true si la imagen tiene la carrocería en
+    //    blanco OPACO (en vez de transparente) — en ese caso, además de
+    //    "no-exterior", solo se pinta lo que además sea casi blanco (el
+    //    resto —líneas, cristales ya coloreados, pilotos— se deja tal
+    //    cual sin necesitar semillas de exclusión una a una).
+    //  - semillasExcluir: puntos (en píxeles de la imagen original) de
+    //    dentro de cada cristal/llanta — se excluyen igual que el
+    //    exterior, expandiéndose hasta la siguiente línea.
     const VEHICULOS = {
         berlina: {
-            nombre: 'Berlina GT',
-            cuerpoD:
-                'M26,176 C26,156 38,146 58,144 C70,118 96,86 132,68 C152,58 172,53 196,51 ' +
-                'L344,50 C368,49 384,55 396,66 C410,80 418,96 422,110 C452,112 494,118 528,134 ' +
-                'C554,146 576,158 576,172 L576,184 C576,195 567,200 556,200 L518,200 ' +
-                'C518,178 500,160 478,160 C456,160 438,178 438,200 L232,200 ' +
-                'C232,178 214,160 192,160 C170,160 152,178 152,200 L84,200 ' +
-                'C58,200 26,196 26,182 Z ' +
-                'M158,62 C166,58 176,59 178,66 C176,72 166,73 158,69 Z',
-            cristalesD: [
-                'M172,60 L198,54 L300,53 L340,55 L380,68 L398,94 L350,100 L230,100 L190,100 L168,88 Z',
-            ],
-            ruedas: [
-                { cx: 192, cy: 200, r: 40 },
-                { cx: 478, cy: 200, r: 40 },
-            ],
-            faro: { cx: 42, cy: 168, rx: 11, ry: 7, color: '#fef3c7' },
-            piloto: { cx: 566, cy: 172, rx: 9, ry: 9, color: '#c0392b' },
-            parrilla: { x: 28, y: 172, w: 24, h: 18, color: '#2a2a2a' },
+            nombre: 'Berlina',
+            src: 'assets/coche-berlina.png',
+            wallAlpha: 60,
+            exteriorExcluido: false,
+            semillasExcluir: [[430, 165], [560, 150], [185, 355], [690, 350]],
         },
         suv: {
             nombre: 'SUV Urbano',
-            cuerpoD:
-                'M30,188 C30,162 44,148 68,145 L80,98 C83,75 98,58 120,53 L160,50 ' +
-                'C176,42 196,40 218,40 L420,40 C452,40 476,58 482,88 L482,178 ' +
-                'C482,192 472,202 458,202 L420,202 C420,180 402,162 380,162 C358,162 340,180 340,202 ' +
-                'L195,202 C195,180 177,162 155,162 C133,162 115,180 115,202 L58,202 ' +
-                'C42,202 30,198 30,186 Z ' +
-                'M118,96 C126,91 136,92 138,99 C136,105 126,106 118,102 Z',
-            cristalesD: [
-                'M122,54 L158,49 L158,92 L108,92 Z',
-                'M172,46 L410,46 L410,92 L172,92 Z',
-            ],
-            ruedas: [
-                { cx: 155, cy: 202, r: 44 },
-                { cx: 380, cy: 202, r: 44 },
-            ],
-            faro: { cx: 72, cy: 152, rx: 12, ry: 9, color: '#fef3c7' },
-            piloto: { cx: 476, cy: 158, rx: 10, ry: 11, color: '#c0392b' },
-            parrilla: { x: 48, y: 150, w: 28, h: 26, color: '#1f2023' },
+            src: 'assets/coche-suv.png',
+            wallAlpha: 60,
+            exteriorExcluido: false,
+            semillasExcluir: [[150, 270], [500, 270], [800, 270], [290, 580], [1065, 580]],
         },
         furgoneta: {
             nombre: 'Furgoneta Reparto',
-            cuerpoD:
-                'M40,190 C40,166 55,150 80,148 L90,100 C92,80 106,65 126,60 L166,58 ' +
-                'C182,50 200,48 222,48 L480,48 C512,48 536,66 540,96 L540,172 ' +
-                'C540,188 530,198 515,198 L480,198 C480,176 462,158 440,158 C418,158 400,176 400,198 ' +
-                'L220,198 C220,176 202,158 180,158 C158,158 140,176 140,198 L65,198 ' +
-                'C50,198 40,186 40,174 Z ' +
-                'M88,96 C96,91 106,92 108,99 C106,105 96,106 88,102 Z',
-            cristalesD: [
-                'M100,68 L122,64 L156,64 L156,140 L112,140 L100,110 Z',
-                'M232,60 L470,60 L470,140 L232,140 Z',
-            ],
-            ruedas: [
-                { cx: 180, cy: 198, r: 40 },
-                { cx: 440, cy: 198, r: 40 },
-            ],
-            faro: { cx: 52, cy: 160, rx: 11, ry: 8, color: '#fef3c7' },
-            piloto: { cx: 534, cy: 165, rx: 9, ry: 10, color: '#c0392b' },
-            parrilla: { x: 32, y: 158, w: 20, h: 24, color: '#1f2023' },
+            src: 'assets/coche-furgoneta.png',
+            wallAlpha: 10,
+            exteriorExcluido: true,
+            semillasExcluir: [[365, 525], [1090, 500]],
         },
     };
 
     // ── Herramientas ──────────────────────────────────────────────────
     const HERRAMIENTAS = {
-        pistola: { radio: 30, opacidadDab: 0.5, mancha: false, espaciadoPx: 7 },
-        spray: { radio: 20, opacidadDab: 0.3, mancha: true, espaciadoPx: 6 },
+        pistola: { radio: 30, opacidadDab: 0.55, mancha: false, espaciadoPx: 7 },
+        spray: { radio: 20, opacidadDab: 0.32, mancha: true, espaciadoPx: 6 },
     };
 
     // ── Estado ────────────────────────────────────────────────────────
@@ -106,45 +81,198 @@
         porcentaje: 0,
     };
 
-    // ── Canvas principal ──────────────────────────────────────────────
+    // ── Canvas principal y capas de trabajo ─────────────────────────────
     const lienzoVisible = document.getElementById('jt-canvas');
     const ctxVisible = lienzoVisible.getContext('2d');
 
-    const capaPintura = document.createElement('canvas');
+    const capaBase = document.createElement('canvas'); // la ilustración, ya encajada y centrada
+    const ctxBase = capaBase.getContext('2d');
+    const capaMascara = document.createElement('canvas'); // blanco opaco = pintable, transparente = no
+    const ctxMascara = capaMascara.getContext('2d');
+    const capaSombra = document.createElement('canvas'); // sombreado inferior, ya recortado a la máscara
+    const capaBrillo = document.createElement('canvas'); // brillo superior, ya recortado a la máscara
+    const capaPintura = document.createElement('canvas'); // manchas de color del jugador
     const ctxPintura = capaPintura.getContext('2d');
 
-    let clipPintable = null; // Path2D, en coordenadas de canvas reales (no viewBox)
-    let escala = 1;
-    let puntosMuestra = []; // { x, y } en coords de canvas, precalculados "dentro" del área pintable
-    let clipViewBox = null;
-    let cuerpoViewBox = null;
+    let puntosMuestra = []; // { x, y } precalculados dentro del área pintable, para estimar el %
+    let imagenActual = null;
+    let cargandoVehiculo = false;
 
-    function construirPathsDelVehiculo() {
-        // Carrocería MENOS cristales MENOS ruedas MENOS faro/piloto/
-        // parrilla, vía regla "evenodd": el mismo punto cubierto dos
-        // veces (cuerpo + agujero) queda fuera del recorte — así la
-        // pintura nunca cubre cristales, llantas ni los elementos fijos.
-        const v = VEHICULOS[estado.vehiculo];
-        cuerpoViewBox = new Path2D(v.cuerpoD);
+    // ── Construcción de la máscara por inundación (flood fill) ─────────
 
-        const p = new Path2D();
-        p.addPath(cuerpoViewBox);
-        v.cristalesD.forEach((d) => p.addPath(new Path2D(d)));
-        v.ruedas.forEach((r) => {
-            const rueda = new Path2D();
-            rueda.arc(r.cx, r.cy, r.r, 0, Math.PI * 2);
-            p.addPath(rueda);
+    function alfaEn(datos, w, h, x, y, fueraDeLimites) {
+        if (x < 0 || y < 0 || x >= w || y >= h) return fueraDeLimites;
+        return datos[(y * w + x) * 4 + 3];
+    }
+
+    function esCasiBlanco(datos, w, x, y) {
+        const o = (y * w + x) * 4;
+        return datos[o + 3] > 200 && datos[o] > 225 && datos[o + 1] > 225 && datos[o + 2] > 225;
+    }
+
+    // Inundación desde una lista de semillas, expandiéndose por píxeles
+    // 4-conectados mientras NO sean "pared" según esParedFn. Devuelve un
+    // Uint8Array (1 = alcanzado por la inundación).
+    function inundar(datos, w, h, semillas, esParedFn) {
+        const visitado = new Uint8Array(w * h);
+        const pila = [];
+        semillas.forEach(([sx, sy]) => {
+            if (sx >= 0 && sy >= 0 && sx < w && sy < h && !esParedFn(sx, sy)) pila.push([sx, sy]);
         });
-        [v.faro, v.piloto].forEach((el) => {
-            const forma = new Path2D();
-            forma.ellipse(el.cx, el.cy, el.rx, el.ry, 0, 0, Math.PI * 2);
-            p.addPath(forma);
-        });
-        const parrilla = new Path2D();
-        parrilla.rect(v.parrilla.x, v.parrilla.y, v.parrilla.w, v.parrilla.h);
-        p.addPath(parrilla);
+        while (pila.length) {
+            const [x, y] = pila.pop();
+            if (x < 0 || y < 0 || x >= w || y >= h) continue;
+            const idx = y * w + x;
+            if (visitado[idx]) continue;
+            if (esParedFn(x, y)) continue;
+            visitado[idx] = 1;
+            pila.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+        }
+        return visitado;
+    }
 
-        clipViewBox = p;
+    // Construye el Uint8Array de "es pintable" para la imagen ORIGINAL
+    // (en sus propias coordenadas de píxel, antes de escalarla al
+    // canvas). Un punto es pintable si: no es exterior del coche, no
+    // cae en ninguna de las semillas de exclusión (cristales/llantas), y
+    // —si el modelo lo pide— además es de color casi blanco.
+    function calcularMascaraPintable(img, cfg) {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        const tmp = document.createElement('canvas');
+        tmp.width = w;
+        tmp.height = h;
+        const tctx = tmp.getContext('2d');
+        tctx.drawImage(img, 0, 0);
+        const datos = tctx.getImageData(0, 0, w, h).data;
+
+        const esParedExterior = (x, y) => alfaEn(datos, w, h, x, y, 255) >= cfg.wallAlpha;
+        const exterior = inundar(datos, w, h,
+            [[1, 1], [w - 2, 1], [1, h - 2], [w - 2, h - 2], [Math.floor(w / 2), 1]],
+            esParedExterior);
+
+        const esParedExcluir = cfg.exteriorExcluido
+            ? (x, y) => !esCasiBlanco(datos, w, x, y)
+            : esParedExterior;
+        const excluido = cfg.semillasExcluir.length
+            ? inundar(datos, w, h, cfg.semillasExcluir, esParedExcluir)
+            : new Uint8Array(w * h);
+
+        const pintable = new Uint8Array(w * h);
+        for (let i = 0; i < w * h; i++) {
+            if (exterior[i] || excluido[i]) continue;
+            if (cfg.exteriorExcluido) {
+                const x = i % w, y = (i / w) | 0;
+                if (!esCasiBlanco(datos, w, x, y)) continue;
+            }
+            pintable[i] = 1;
+        }
+        return { pintable, w, h };
+    }
+
+    // ── Encaje de la imagen en el canvas (estilo "contain", centrada) ──
+
+    function calcularEncaje(imgW, imgH, canvasW, canvasH) {
+        const margen = 0.92;
+        const escala = Math.min(canvasW / imgW, canvasH / imgH) * margen;
+        const drawW = imgW * escala;
+        const drawH = imgH * escala;
+        return {
+            escala,
+            x: (canvasW - drawW) / 2,
+            y: (canvasH - drawH) / 2,
+            w: drawW,
+            h: drawH,
+        };
+    }
+
+    let encajeActual = null;
+
+    function reconstruirCapas() {
+        if (!imagenActual) return;
+        const w = lienzoVisible.width, h = lienzoVisible.height;
+        [capaBase, capaMascara, capaSombra, capaBrillo, capaPintura].forEach((c) => {
+            c.width = w;
+            c.height = h;
+        });
+
+        const cfg = VEHICULOS[estado.vehiculo];
+        const encaje = calcularEncaje(imagenActual.naturalWidth, imagenActual.naturalHeight, w, h);
+        encajeActual = encaje;
+
+        // Capa base: la ilustración tal cual, encajada y centrada.
+        ctxBase.clearRect(0, 0, w, h);
+        ctxBase.drawImage(imagenActual, encaje.x, encaje.y, encaje.w, encaje.h);
+
+        // Máscara pintable (en coordenadas originales de la imagen),
+        // reescalada al mismo encaje que la capa base.
+        const { pintable, w: mw, h: mh } = calcularMascaraPintable(imagenActual, cfg);
+        const mascaraOriginal = document.createElement('canvas');
+        mascaraOriginal.width = mw;
+        mascaraOriginal.height = mh;
+        const mctx = mascaraOriginal.getContext('2d');
+        const salida = mctx.createImageData(mw, mh);
+        for (let i = 0; i < mw * mh; i++) {
+            if (pintable[i]) {
+                const o = i * 4;
+                salida.data[o] = 255; salida.data[o + 1] = 255; salida.data[o + 2] = 255; salida.data[o + 3] = 255;
+            }
+        }
+        mctx.putImageData(salida, 0, 0);
+
+        ctxMascara.clearRect(0, 0, w, h);
+        ctxMascara.imageSmoothingEnabled = true;
+        ctxMascara.drawImage(mascaraOriginal, encaje.x, encaje.y, encaje.w, encaje.h);
+
+        construirSombreado(w, h);
+        precalcularPuntosMuestra(w, h);
+    }
+
+    function construirSombreado(w, h) {
+        const sctx = capaSombra.getContext('2d');
+        sctx.clearRect(0, 0, w, h);
+        let g = sctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, 'rgba(0,0,0,0)');
+        g.addColorStop(1, 'rgba(0,0,0,0.38)');
+        sctx.fillStyle = g;
+        sctx.fillRect(0, 0, w, h);
+        sctx.globalCompositeOperation = 'destination-in';
+        sctx.drawImage(capaMascara, 0, 0);
+        sctx.globalCompositeOperation = 'source-over';
+
+        const bctx = capaBrillo.getContext('2d');
+        bctx.clearRect(0, 0, w, h);
+        g = bctx.createRadialGradient(w * 0.32, h * 0.12, 0, w * 0.32, h * 0.12, w * 0.55);
+        g.addColorStop(0, 'rgba(255,255,255,0.45)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        bctx.fillStyle = g;
+        bctx.fillRect(0, 0, w, h);
+        bctx.globalCompositeOperation = 'destination-in';
+        bctx.drawImage(capaMascara, 0, 0);
+        bctx.globalCompositeOperation = 'source-over';
+    }
+
+    function precalcularPuntosMuestra(w, h) {
+        puntosMuestra = [];
+        const datos = ctxMascara.getImageData(0, 0, w, h).data;
+        const paso = 10;
+        for (let y = 0; y < h; y += paso) {
+            for (let x = 0; x < w; x += paso) {
+                if (datos[(y * w + x) * 4 + 3] > 128) puntosMuestra.push({ x, y });
+            }
+        }
+    }
+
+    function cargarVehiculo(clave, callback) {
+        cargandoVehiculo = true;
+        const cfg = VEHICULOS[clave];
+        const img = new Image();
+        img.onload = () => {
+            imagenActual = img;
+            cargandoVehiculo = false;
+            ajustarTamanoCanvas();
+            if (callback) callback();
+        };
+        img.src = cfg.src;
     }
 
     function ajustarTamanoCanvas() {
@@ -152,121 +280,38 @@
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const w = Math.round(rect.width * dpr);
         const h = Math.round(rect.height * dpr);
-
-        [lienzoVisible, capaPintura].forEach((c) => {
-            c.width = w;
-            c.height = h;
-        });
-
-        escala = w / VB_W;
-
-        // Recalcular el clip pintable en coordenadas reales de canvas.
-        const m = new DOMMatrix().scale(escala, escala);
-        clipPintable = new Path2D();
-        clipPintable.addPath(clipViewBox, m);
-
-        precalcularPuntosMuestra();
+        lienzoVisible.width = w;
+        lienzoVisible.height = h;
+        reconstruirCapas();
         dibujarEscena();
     }
 
-    function precalcularPuntosMuestra() {
-        // Rejilla de puntos (cada ~10px reales) usados para estimar el
-        // % pintado — se calcula una sola vez por tamaño de canvas/
-        // vehículo comprobando con isPointInPath cuáles caen dentro del
-        // área pintable (evenodd, excluye cristales/ruedas/faros/etc.).
-        puntosMuestra = [];
-        const paso = 10;
-        for (let y = 0; y < lienzoVisible.height; y += paso) {
-            for (let x = 0; x < lienzoVisible.width; x += paso) {
-                if (ctxVisible.isPointInPath(clipPintable, x, y, 'evenodd')) {
-                    puntosMuestra.push({ x, y });
-                }
-            }
-        }
-    }
-
-    // ── Dibujo de la base (imprimación gris + sombreado) ───────────────
-
-    function dibujarCuerpo(ctx, relleno) {
-        ctx.save();
-        ctx.scale(escala, escala);
-        ctx.fillStyle = relleno;
-        ctx.fill(cuerpoViewBox);
-        ctx.restore();
-    }
-
-    function dibujarSombreado(ctx) {
-        ctx.save();
-        ctx.scale(escala, escala);
-        ctx.clip(cuerpoViewBox);
-
-        // Sombra inferior (multiply)
-        ctx.globalCompositeOperation = 'multiply';
-        let g = ctx.createLinearGradient(0, 0, 0, VB_H);
-        g.addColorStop(0, 'rgba(0,0,0,0)');
-        g.addColorStop(1, 'rgba(0,0,0,0.42)');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, VB_W, VB_H);
-
-        // Brillo superior (screen)
-        ctx.globalCompositeOperation = 'screen';
-        g = ctx.createRadialGradient(190, 40, 0, 190, 40, 260);
-        g.addColorStop(0, 'rgba(255,255,255,0.5)');
-        g.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, VB_W, VB_H);
-
-        ctx.restore();
-    }
-
-    function dibujarCristalesYRuedas(ctx) {
-        const v = VEHICULOS[estado.vehiculo];
-        ctx.save();
-        ctx.scale(escala, escala);
-
-        ctx.fillStyle = 'rgba(188, 211, 230, 0.9)';
-        v.cristalesD.forEach((d) => ctx.fill(new Path2D(d)));
-
-        v.ruedas.forEach((r) => {
-            ctx.fillStyle = '#2b2d30';
-            ctx.beginPath();
-            ctx.arc(r.cx, r.cy, r.r, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#8a8d92';
-            ctx.beginPath();
-            ctx.arc(r.cx, r.cy, r.r * 0.4, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        ctx.fillStyle = v.parrilla.color;
-        ctx.fillRect(v.parrilla.x, v.parrilla.y, v.parrilla.w, v.parrilla.h);
-
-        [v.faro, v.piloto].forEach((el) => {
-            ctx.fillStyle = el.color;
-            ctx.beginPath();
-            ctx.ellipse(el.cx, el.cy, el.rx, el.ry, 0, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        ctx.restore();
-    }
+    // ── Composición final de cada fotograma ─────────────────────────────
+    // multiply(blanco, color) = color exactamente, así que "teñir" el
+    // cuerpo pintado de blanco con el color elegido es tan simple como
+    // dibujar la capa de pintura (ya recortada a la máscara) encima con
+    // mezcla "multiply" — las líneas oscuras del dibujo, al multiplicar
+    // por casi negro, se quedan prácticamente igual de oscuras.
 
     function dibujarEscena() {
-        ctxVisible.clearRect(0, 0, lienzoVisible.width, lienzoVisible.height);
-        dibujarCuerpo(ctxVisible, '#c7cacd'); // imprimación gris
+        const w = lienzoVisible.width, h = lienzoVisible.height;
+        ctxVisible.clearRect(0, 0, w, h);
+        ctxVisible.drawImage(capaBase, 0, 0);
+
+        ctxVisible.globalCompositeOperation = 'multiply';
         ctxVisible.drawImage(capaPintura, 0, 0);
-        dibujarSombreado(ctxVisible);
-        dibujarCristalesYRuedas(ctxVisible);
+        ctxVisible.drawImage(capaSombra, 0, 0);
+        ctxVisible.globalCompositeOperation = 'screen';
+        ctxVisible.drawImage(capaBrillo, 0, 0);
+        ctxVisible.globalCompositeOperation = 'source-over';
     }
 
     // ── Pintura: dabs en la capa de pintura ─────────────────────────────
 
     function dibujarDab(x, y) {
         const cfg = HERRAMIENTAS[estado.herramienta];
+        const escala = encajeActual ? encajeActual.escala : 1;
         const radio = cfg.radio * escala;
-
-        ctxPintura.save();
-        ctxPintura.clip(clipPintable);
 
         const g = ctxPintura.createRadialGradient(x, y, 0, x, y, radio);
         g.addColorStop(0, hexAAlpha(estado.color, cfg.opacidadDab));
@@ -291,7 +336,12 @@
             }
         }
 
-        ctxPintura.restore();
+        // Recortar la capa de pintura a la máscara tras cada trazo —
+        // barato (una sola imagen) y mantiene la pintura siempre dentro
+        // de la carrocería, pinte donde pinte el usuario.
+        ctxPintura.globalCompositeOperation = 'destination-in';
+        ctxPintura.drawImage(capaMascara, 0, 0);
+        ctxPintura.globalCompositeOperation = 'source-over';
     }
 
     function hexAAlpha(hex, alpha) {
@@ -302,6 +352,7 @@
 
     function pintarEntre(p0, p1) {
         const cfg = HERRAMIENTAS[estado.herramienta];
+        const escala = encajeActual ? encajeActual.escala : 1;
         const dx = p1.x - p0.x, dy = p1.y - p0.y;
         const dist = Math.hypot(dx, dy);
         const paso = cfg.espaciadoPx * escala;
@@ -340,7 +391,7 @@
     let ultimaParticula = 0;
 
     function alPuntero(ev) {
-        if (estado.terminado) return;
+        if (estado.terminado || cargandoVehiculo) return;
         const punto = coordsDesdeEvento(ev);
 
         if (!estado.inicioTiempo) iniciarCronometro();
@@ -500,13 +551,13 @@
     });
 
     // ── Modelo de vehículo ───────────────────────────────────────────
-    // Cambiar de modelo reinicia la partida: las siluetas no comparten
-    // tamaño ni posición de ruedas, así que no tiene sentido intentar
-    // conservar la pintura ya hecha.
+    // Cambiar de modelo reinicia la partida: las ilustraciones no
+    // comparten tamaño ni posición de ruedas, así que no tiene sentido
+    // intentar conservar la pintura ya hecha.
 
     document.querySelectorAll('.jt-chip-modelo').forEach((boton) => {
         boton.addEventListener('click', () => {
-            if (boton.classList.contains('is-activo')) return;
+            if (boton.classList.contains('is-activo') || cargandoVehiculo) return;
             document.querySelectorAll('.jt-chip-modelo').forEach((b) => {
                 b.classList.remove('is-activo');
                 b.setAttribute('aria-checked', 'false');
@@ -514,9 +565,8 @@
             boton.classList.add('is-activo');
             boton.setAttribute('aria-checked', 'true');
             estado.vehiculo = boton.dataset.vehiculo;
-            construirPathsDelVehiculo();
             reiniciarPartida();
-            ajustarTamanoCanvas();
+            cargarVehiculo(estado.vehiculo);
         });
     });
 
@@ -618,6 +668,5 @@
         };
     }
 
-    construirPathsDelVehiculo();
-    ajustarTamanoCanvas();
+    cargarVehiculo(estado.vehiculo);
 })();
