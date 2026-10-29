@@ -6,10 +6,13 @@
 :root {
     --jt-rojo: #b3261e;
     --jt-rojo-oscuro: #8f1e18;
+    --jt-naranja: #ff8a3d;
+    --jt-amarillo: #ffc93c;
+    --jt-morado: #8338ec;
     --jt-negro: #1a1a1a;
     --jt-gris-texto: #52555a;
     --jt-gris-borde: #e2e2e4;
-    --jt-gris-fondo: #f5f5f3;
+    --jt-gris-fondo: #fff7ef;
     --jt-blanco: #ffffff;
     --jt-radio: 14px;
     --jt-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
@@ -33,28 +36,36 @@ body {
 
 .jt-header {
     position: relative;
-    background: var(--jt-negro);
+    background: linear-gradient(120deg, var(--jt-morado), var(--jt-rojo) 55%, var(--jt-naranja));
     color: var(--jt-blanco);
     padding: 16px 20px 18px;
     text-align: center;
+    box-shadow: 0 8px 22px rgba(131, 56, 236, 0.2);
 }
 
 .jt-header__volver {
     position: absolute;
-    top: 6px;
+    top: 8px;
     left: 8px;
     display: flex;
     align-items: center;
+    gap: 5px;
     min-height: 44px;
-    padding: 0 8px;
-    color: #c7c7c9;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--jt-morado);
     font-size: 0.78rem;
-    font-weight: 600;
+    font-weight: 800;
     text-decoration: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+    transition: transform 0.15s ease, background 0.15s ease;
 }
 
-.jt-header__volver:hover {
-    color: var(--jt-blanco);
+.jt-header__volver:hover,
+.jt-header__volver:focus-visible {
+    background: var(--jt-blanco);
+    transform: translateY(-1px) scale(1.04);
 }
 
 .jt-header__etiqueta {

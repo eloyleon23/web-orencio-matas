@@ -51,11 +51,12 @@
   // apartado 10 del encargo) — comparadas por nombre de archivo, no por
   // URL completa, para que funcionen igual con o sin parámetros/anclas
   // y sea cual sea la profundidad de carpeta desde la que se cargue.
-  // 'taller.html' cubre la suite de minijuegos del laboratorio (lab/) —
-  // no está pensada para profesionales. El hub de la suite (lab/index.html)
-  // ya queda fuera por tener el mismo nombre de archivo que la home pública
-  // (ver esPaginaInicioPublica_ más abajo), así que no necesita entrada aquí.
-  const PAGINAS_EXCLUIDAS = ['empresa.html', 'historia.html', 'servicios.html', 'actualidad.html', 'profesionales.html', 'taller.html'];
+  // 'taller.html'/'pinturas.html' cubren la suite de minijuegos del
+  // laboratorio (lab/) — no está pensada para profesionales. El hub de
+  // la suite (lab/index.html) ya queda fuera por tener el mismo nombre
+  // de archivo que la home pública (ver esPaginaInicioPublica_ más
+  // abajo), así que no necesita entrada aquí.
+  const PAGINAS_EXCLUIDAS = ['empresa.html', 'historia.html', 'servicios.html', 'actualidad.html', 'profesionales.html', 'taller.html', 'pinturas.html'];
 
   function nombreArchivoDe_(href) {
     if (!href) return '';
