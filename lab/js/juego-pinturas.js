@@ -31,8 +31,9 @@
             src: 'assets/sala-salon.png',
             wallAlpha: 60,
             exteriorExcluido: false,
-            // techo, suelo, puerta, ventana
-            semillasExcluir: [[500, 65], [500, 545], [360, 350], [640, 230]],
+            // techo, suelo, puerta, panel izq. ventana, panel der. ventana,
+            // sofá, mesa de centro
+            semillasExcluir: [[500, 65], [850, 500], [360, 280], [610, 225], [670, 225], [525, 490], [525, 554]],
         },
         dormitorio: {
             nombre: 'Dormitorio',
@@ -40,8 +41,9 @@
             src: 'assets/sala-dormitorio.png',
             wallAlpha: 60,
             exteriorExcluido: false,
-            // techo, suelo, puerta, ventana
-            semillasExcluir: [[500, 65], [500, 545], [640, 350], [360, 225]],
+            // techo, suelo, puerta, panel izq. ventana, panel der. ventana,
+            // cama (fondo), almohada izq., almohada der., mesita
+            semillasExcluir: [[500, 65], [850, 500], [650, 350], [330, 220], [390, 220], [450, 460], [365, 438], [435, 438], [610, 475]],
         },
         bano: {
             nombre: 'Baño',
@@ -49,8 +51,9 @@
             src: 'assets/sala-bano.png',
             wallAlpha: 60,
             exteriorExcluido: false,
-            // techo, suelo, puerta, ventana
-            semillasExcluir: [[500, 65], [500, 545], [345, 370], [645, 210]],
+            // techo, suelo, puerta, ventana, espejo/armario (sup. e inf.),
+            // bañera (sup. e inf.), cisterna, taza
+            semillasExcluir: [[500, 65], [850, 500], [345, 370], [620, 205], [450, 175], [450, 200], [520, 428], [520, 460], [675, 428], [670, 455]],
         },
         cocina: {
             nombre: 'Cocina',
@@ -58,8 +61,13 @@
             src: 'assets/sala-cocina.png',
             wallAlpha: 60,
             exteriorExcluido: false,
-            // techo, suelo, puerta, ventana
-            semillasExcluir: [[500, 65], [500, 545], [650, 350], [400, 200]],
+            // techo, suelo, nevera/despensa, panel izq. ventana, panel der.
+            // ventana, vitrocerámica, 4 fuegos, 4 módulos de armario bajo
+            semillasExcluir: [
+                [500, 65], [850, 500], [650, 350], [360, 200], [440, 200],
+                [365, 398], [340, 370], [390, 370], [340, 396], [390, 396],
+                [335, 450], [405, 450], [475, 450], [535, 450],
+            ],
         },
         fachada: {
             nombre: 'Fachada',
@@ -67,8 +75,14 @@
             src: 'assets/sala-fachada.png',
             wallAlpha: 60,
             exteriorExcluido: false,
-            // tejado, puerta, ventana izquierda, ventana derecha
-            semillasExcluir: [[500, 150], [500, 480], [320, 330], [680, 330]],
+            // tejado, puerta, 4 cristales ventana izq., 4 cristales
+            // ventana der., arbusto izq., arbusto der.
+            semillasExcluir: [
+                [250, 180], [500, 470],
+                [290, 295], [350, 295], [290, 345], [350, 345],
+                [650, 295], [710, 295], [650, 345], [710, 345],
+                [320, 545], [680, 545],
+            ],
         },
         piscina: {
             nombre: 'Piscina',
@@ -76,6 +90,9 @@
             src: 'assets/sala-piscina.png',
             wallAlpha: 60,
             exteriorExcluido: false,
+            // Sin huecos que excluir: las líneas de calle dividen la
+            // lámina de agua en 4 regiones, pero cada una es pintable
+            // por defecto (no excluida ni exterior) sin necesitar semilla.
             semillasExcluir: [],
         },
     };
