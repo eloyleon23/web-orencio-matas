@@ -1,116 +1,89 @@
 /**
  * Pinta tu Estancia — minijuego (lab/pinturas.html)
  * Vanilla JS, sin dependencias. 6 estancias (salón, dormitorio, baño,
- * cocina, fachada y piscina), todas ilustraciones geométricas propias
- * (sin fuente externa — planos sencillos en esquina o elevación, sin
- * problema de derechos de imagen al estar creadas aquí mismo).
- * Guardadas en lab/assets/sala-*.png.
+ * cocina, fachada y piscina), ilustraciones geométricas propias —
+ * deliberadamente sencillas y con pocos elementos: pensado para
+ * pintarse con el dedo en móvil, donde no se puede "hilar fino" sobre
+ * detalles pequeños (marcos, paneles, cojines...). Guardadas en
+ * lab/assets/sala-*.png.
  *
  * Mismo motor de pintura que "Pinta el Coche" (ver lab/js/juego-taller.js
  * para la explicación completa del porqué): el área pintable se calcula
  * por inundación (flood fill) a partir de la propia imagen —se parte de
- * fuera de la estancia y de dentro de cada puerta/ventana (semillas) y
- * se expande hasta chocar con una línea del dibujo—, la máscara se
- * binariza para evitar bordes a medio pintar, y cada trazo se confirma
- * una sola vez sobre la capa permanente para que el 100% sea siempre
- * alcanzable.
+ * fuera de la estancia y de dentro de cada puerta/ventana/mueble
+ * (semillas) y se expande hasta chocar con una línea del dibujo—, la
+ * máscara se binariza para evitar bordes a medio pintar, y cada trazo
+ * se confirma una sola vez sobre la capa permanente para que el 100%
+ * sea siempre alcanzable.
  */
 (function () {
     'use strict';
 
     // ── Estancias disponibles ──────────────────────────────────────────
-    // Mismo campo que VEHICULOS en juego-taller.js: wallAlpha,
-    // exteriorExcluido y semillasExcluir (puertas/ventanas/tejado aquí,
-    // en vez de cristales/llantas). "piscina" no tiene huecos que
-    // excluir (toda la lámina de agua es pintable), de ahí el array
-    // vacío.
-    // Ilustraciones profesionales reales (no dibujadas a mano aquí),
-    // con licencia Pixabay Content License (gratis para uso comercial,
-    // sin atribución obligatoria): salón/dormitorio/baño/cocina, de
-    // Silvia Gaudenzi; fachada y piscina, procesadas por extracción de
-    // bordes a partir de sendas ilustraciones vectoriales también de
-    // Pixabay. Guardadas en lab/assets/.
-    //
-    // Con ilustraciones tan detalladas (muebles, marcos, texturas...)
-    // enumerar cada hueco a excluir sería inabarcable, así que estas 6
-    // estancias usan modoMascara:'incluir' (ver calcularMascaraPintable):
-    // semillasIncluir son puntos sobre la propia pared/superficie lisa,
-    // y SOLO eso es pintable — todo lo demás (muebles, marcos, ventanas,
-    // vistas exteriores) queda fuera sin tener que señalarlo uno a uno.
+    // Mismo campo que VEHICULOS en juego-taller.js: wallAlpha y
+    // semillasExcluir (puertas/ventanas/muebles/tejado aquí, en vez de
+    // cristales/llantas). "piscina" no tiene huecos que excluir (toda
+    // la lámina de agua es pintable), de ahí el array vacío.
     const ESTANCIAS = {
         salon: {
             nombre: 'Salón',
             icono: '🛋️',
             src: 'assets/sala-salon.png',
             wallAlpha: 60,
-            modoMascara: 'incluir',
-            semillasIncluir: [[270, 150], [600, 150]],
+            // techo, suelo, puerta, ventana, sofá
+            semillasExcluir: [[500, 65], [850, 510], [360, 355], [620, 230], [550, 460]],
         },
         dormitorio: {
             nombre: 'Dormitorio',
             icono: '🛏️',
             src: 'assets/sala-dormitorio.png',
             wallAlpha: 60,
-            modoMascara: 'incluir',
-            semillasIncluir: [[60, 60], [160, 50], [400, 90], [550, 70]],
+            // techo, suelo, puerta, ventana, cama (fondo), almohada
+            semillasExcluir: [[500, 65], [850, 510], [650, 350], [380, 225], [500, 465], [375, 430]],
         },
         bano: {
             nombre: 'Baño',
             icono: '🛁',
             src: 'assets/sala-bano.png',
             wallAlpha: 60,
-            modoMascara: 'incluir',
-            semillasIncluir: [
-                [20, 15], [20, 35], [20, 55], [20, 75], [20, 95], [20, 115],
-                [20, 155], [20, 175], [20, 195], [20, 215], [20, 235],
-                [330, 180],
-            ],
+            // techo, suelo, puerta, ventana, bañera, taza
+            semillasExcluir: [[500, 65], [850, 510], [345, 370], [630, 210], [520, 440], [680, 450]],
         },
         cocina: {
             nombre: 'Cocina',
             icono: '🍳',
             src: 'assets/sala-cocina.png',
             wallAlpha: 60,
-            modoMascara: 'incluir',
-            // Esta cocina está completamente ocupada por armarios de
-            // pared a pared — la única superficie realmente lisa es el
-            // suelo embaldosado, así que aquí se pinta el suelo. Rejilla
-            // densa de semillas: las baldosas en diagonal son pequeñas y
-            // una rejilla más espaciada dejaba demasiadas sin conectar.
-            semillasIncluir: (() => {
-                const puntos = [];
-                for (let x = 20; x < 1260; x += 40) {
-                    for (let y = 660; y < 840; y += 30) puntos.push([x, y]);
-                }
-                return puntos;
-            })(),
+            // techo, suelo, puerta/nevera, ventana, encimera
+            semillasExcluir: [[500, 65], [850, 510], [650, 350], [380, 205], [430, 440]],
         },
         fachada: {
             nombre: 'Fachada',
             icono: '🏠',
             src: 'assets/sala-fachada.png',
             wallAlpha: 60,
-            modoMascara: 'incluir',
-            semillasIncluir: [
-                [60, 40], [270, 40], [480, 40], [690, 40], [900, 40], [1110, 40],
-                [60, 150], [480, 150], [690, 150], [930, 150],
-                [60, 340], [270, 340], [480, 340], [690, 340], [900, 340], [1110, 340],
-            ],
+            // tejado, puerta, ventana izquierda, ventana derecha
+            semillasExcluir: [[500, 150], [500, 470], [320, 320], [680, 320]],
         },
         piscina: {
             nombre: 'Piscina',
             icono: '🏊',
             src: 'assets/sala-piscina.png',
             wallAlpha: 60,
-            modoMascara: 'incluir',
-            semillasIncluir: [[300, 150]],
+            semillasExcluir: [],
         },
     };
 
     // ── Herramientas ──────────────────────────────────────────────────
+    // Rodillo: trazo ancho, opacidad alta desde el primer paso — cubre
+    // mucho de golpe, pensado para superficies grandes.
+    // Brocha: trazo estrecho y bien menos opaco (hacen falta varias
+    // pasadas para cubrir del todo) además de la textura de cerdas —
+    // pensada para bordes/rincones, con una sensación claramente
+    // distinta a la del rodillo al pintar.
     const HERRAMIENTAS = {
-        rodillo: { radio: 34, opacidadDab: 0.62, mancha: false, espaciadoPx: 10 },
-        brocha: { radio: 15, opacidadDab: 0.5, mancha: true, espaciadoPx: 5 },
+        rodillo: { radio: 52, opacidadDab: 0.88, mancha: false, espaciadoPx: 16 },
+        brocha: { radio: 16, opacidadDab: 0.3, mancha: true, espaciadoPx: 5 },
     };
 
     const UMBRAL_COMPLETADO = 100;
