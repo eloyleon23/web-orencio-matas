@@ -24,64 +24,77 @@
     // en vez de cristales/llantas). "piscina" no tiene huecos que
     // excluir (toda la lámina de agua es pintable), de ahí el array
     // vacío.
+    // Ilustraciones profesionales reales (no dibujadas a mano aquí),
+    // con licencia Pixabay Content License (gratis para uso comercial,
+    // sin atribución obligatoria): salón/dormitorio/baño/cocina, de
+    // Silvia Gaudenzi; fachada y piscina, procesadas por extracción de
+    // bordes a partir de sendas ilustraciones vectoriales también de
+    // Pixabay. Guardadas en lab/assets/.
+    //
+    // Con ilustraciones tan detalladas (muebles, marcos, texturas...)
+    // enumerar cada hueco a excluir sería inabarcable, así que estas 6
+    // estancias usan modoMascara:'incluir' (ver calcularMascaraPintable):
+    // semillasIncluir son puntos sobre la propia pared/superficie lisa,
+    // y SOLO eso es pintable — todo lo demás (muebles, marcos, ventanas,
+    // vistas exteriores) queda fuera sin tener que señalarlo uno a uno.
     const ESTANCIAS = {
         salon: {
             nombre: 'Salón',
             icono: '🛋️',
             src: 'assets/sala-salon.png',
             wallAlpha: 60,
-            exteriorExcluido: false,
-            // techo, suelo, puerta, panel izq. ventana, panel der. ventana,
-            // sofá, mesa de centro
-            semillasExcluir: [[500, 65], [850, 500], [360, 280], [610, 225], [670, 225], [525, 490], [525, 554]],
+            modoMascara: 'incluir',
+            semillasIncluir: [[270, 150], [600, 150]],
         },
         dormitorio: {
             nombre: 'Dormitorio',
             icono: '🛏️',
             src: 'assets/sala-dormitorio.png',
             wallAlpha: 60,
-            exteriorExcluido: false,
-            // techo, suelo, puerta, panel izq. ventana, panel der. ventana,
-            // cama (fondo), almohada izq., almohada der., mesita
-            semillasExcluir: [[500, 65], [850, 500], [650, 350], [330, 220], [390, 220], [450, 460], [365, 438], [435, 438], [610, 475]],
+            modoMascara: 'incluir',
+            semillasIncluir: [[60, 60], [160, 50], [400, 90], [550, 70]],
         },
         bano: {
             nombre: 'Baño',
             icono: '🛁',
             src: 'assets/sala-bano.png',
             wallAlpha: 60,
-            exteriorExcluido: false,
-            // techo, suelo, puerta, ventana, espejo/armario (sup. e inf.),
-            // bañera (sup. e inf.), cisterna, taza
-            semillasExcluir: [[500, 65], [850, 500], [345, 370], [620, 205], [450, 175], [450, 200], [520, 428], [520, 460], [675, 428], [670, 455]],
+            modoMascara: 'incluir',
+            semillasIncluir: [
+                [20, 15], [20, 35], [20, 55], [20, 75], [20, 95], [20, 115],
+                [20, 155], [20, 175], [20, 195], [20, 215], [20, 235],
+                [330, 180],
+            ],
         },
         cocina: {
             nombre: 'Cocina',
             icono: '🍳',
             src: 'assets/sala-cocina.png',
             wallAlpha: 60,
-            exteriorExcluido: false,
-            // techo, suelo, nevera/despensa, panel izq. ventana, panel der.
-            // ventana, vitrocerámica, 4 fuegos, 4 módulos de armario bajo
-            semillasExcluir: [
-                [500, 65], [850, 500], [650, 350], [360, 200], [440, 200],
-                [365, 398], [340, 370], [390, 370], [340, 396], [390, 396],
-                [335, 450], [405, 450], [475, 450], [535, 450],
-            ],
+            modoMascara: 'incluir',
+            // Esta cocina está completamente ocupada por armarios de
+            // pared a pared — la única superficie realmente lisa es el
+            // suelo embaldosado, así que aquí se pinta el suelo. Rejilla
+            // densa de semillas: las baldosas en diagonal son pequeñas y
+            // una rejilla más espaciada dejaba demasiadas sin conectar.
+            semillasIncluir: (() => {
+                const puntos = [];
+                for (let x = 20; x < 1260; x += 40) {
+                    for (let y = 660; y < 840; y += 30) puntos.push([x, y]);
+                }
+                return puntos;
+            })(),
         },
         fachada: {
             nombre: 'Fachada',
             icono: '🏠',
             src: 'assets/sala-fachada.png',
             wallAlpha: 60,
-            exteriorExcluido: false,
-            // tejado, puerta, 4 cristales ventana izq., 4 cristales
-            // ventana der., arbusto izq., arbusto der.
-            semillasExcluir: [
-                [250, 180], [500, 470],
-                [290, 295], [350, 295], [290, 345], [350, 345],
-                [650, 295], [710, 295], [650, 345], [710, 345],
-                [320, 545], [680, 545],
+            modoMascara: 'incluir',
+            semillasIncluir: [
+                [60, 40], [270, 40], [480, 40], [690, 40], [900, 40], [1110, 40],
+                [60, 150], [480, 150], [690, 150], [930, 150],
+                [60, 340], [270, 340], [480, 340], [690, 340], [900, 340], [1110, 340],
             ],
         },
         piscina: {
@@ -89,11 +102,8 @@
             icono: '🏊',
             src: 'assets/sala-piscina.png',
             wallAlpha: 60,
-            exteriorExcluido: false,
-            // Sin huecos que excluir: las líneas de calle dividen la
-            // lámina de agua en 4 regiones, pero cada una es pintable
-            // por defecto (no excluida ni exterior) sin necesitar semilla.
-            semillasExcluir: [],
+            modoMascara: 'incluir',
+            semillasIncluir: [[300, 150]],
         },
     };
 
@@ -167,6 +177,17 @@
         return visitado;
     }
 
+    // Dos modos de máscara:
+    //  - 'excluir' (el de siempre): todo es pintable salvo el exterior y
+    //    los huecos sembrados en semillasExcluir (puertas, ventanas,
+    //    muebles...). Funciona bien cuando la ilustración tiene pocos
+    //    huecos bien delimitados.
+    //  - 'incluir': al revés — SOLO es pintable lo alcanzado desde
+    //    semillasIncluir (puntos sobre la propia pared/superficie lisa).
+    //    Pensado para ilustraciones muy detalladas (muebles con mil
+    //    detalles, marcos, cojines...) donde enumerar cada hueco a
+    //    excluir sería inabarcable: basta con sembrar la propia pared y
+    //    la inundación se para sola en cualquier línea del dibujo.
     function calcularMascaraPintable(img, cfg) {
         const w = img.naturalWidth, h = img.naturalHeight;
         const tmp = document.createElement('canvas');
@@ -177,6 +198,12 @@
         const datos = tctx.getImageData(0, 0, w, h).data;
 
         const esParedExterior = (x, y) => alfaEn(datos, w, h, x, y, 255) >= cfg.wallAlpha;
+
+        if (cfg.modoMascara === 'incluir') {
+            const incluido = inundar(datos, w, h, cfg.semillasIncluir, esParedExterior);
+            return { pintable: incluido, w, h };
+        }
+
         const exterior = inundar(datos, w, h,
             [[1, 1], [w - 2, 1], [1, h - 2], [w - 2, h - 2], [Math.floor(w / 2), 1]],
             esParedExterior);
