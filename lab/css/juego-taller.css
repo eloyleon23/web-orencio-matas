@@ -1,0 +1,527 @@
+/*
+ * Pinta el Coche — minijuego (lab/taller.html)
+ * Mobile-first, controles táctiles de al menos 44px.
+ */
+
+:root {
+    --jt-rojo: #b3261e;
+    --jt-rojo-oscuro: #8f1e18;
+    --jt-negro: #1a1a1a;
+    --jt-gris-texto: #52555a;
+    --jt-gris-borde: #e2e2e4;
+    --jt-gris-fondo: #f5f5f3;
+    --jt-blanco: #ffffff;
+    --jt-radio: 14px;
+    --jt-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jt-gris-fondo);
+    color: var(--jt-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jt-header {
+    background: var(--jt-negro);
+    color: var(--jt-blanco);
+    padding: 16px 20px 18px;
+    text-align: center;
+}
+
+.jt-header__etiqueta {
+    margin: 0 0 6px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #c7c7c9;
+}
+
+.jt-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jt-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: #d8d8da;
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jt-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jt-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jt-juego {
+    background: var(--jt-blanco);
+    border-radius: var(--jt-radio);
+    box-shadow: var(--jt-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jt-juego {
+        flex: 1 1 60%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jt-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.jt-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jt-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jt-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jt-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jt-gris-fondo);
+    overflow: hidden;
+}
+
+.jt-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jt-rojo), #e0564c);
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+.jt-lienzo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #eef1f4 0%, #eef1f4 72%, #d7dce1 72%, #d7dce1 100%);
+}
+
+#jt-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.jt-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.6);
+    color: var(--jt-blanco);
+    font-size: 1.2rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+.jt-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jt-gris-texto);
+    text-align: center;
+}
+
+/* ── Partículas de pintura decorativas ──────────────────────────────── */
+
+.jt-particula {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.55;
+    animation: jt-particula-fade 0.5s ease-out forwards;
+}
+
+@keyframes jt-particula-fade {
+    from { transform: scale(0.4); opacity: 0.55; }
+    to { transform: scale(1.6); opacity: 0; }
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jt-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jt-controles {
+        flex: 1 1 40%;
+    }
+}
+
+.jt-grupo-control {
+    background: var(--jt-blanco);
+    border-radius: var(--jt-radio);
+    box-shadow: var(--jt-sombra);
+    padding: 14px;
+}
+
+.jt-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jt-selector-herramienta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.jt-boton-herramienta {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jt-gris-borde);
+    background: var(--jt-blanco);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--jt-gris-texto);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.jt-boton-herramienta__icono {
+    font-size: 1.3rem;
+}
+
+.jt-boton-herramienta.is-activo {
+    border-color: var(--jt-rojo);
+    color: var(--jt-rojo-oscuro);
+    background: #fdf1f0;
+}
+
+.jt-paleta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.jt-swatch {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--jt-blanco);
+    outline: 1.5px solid var(--jt-gris-borde);
+    background: var(--jt-swatch-color);
+    cursor: pointer;
+    padding: 0;
+    transition: outline-color 0.15s, transform 0.1s;
+}
+
+.jt-swatch.is-activo {
+    outline-color: var(--jt-rojo);
+    outline-width: 2.5px;
+    transform: scale(1.06);
+}
+
+.jt-swatch-personalizado {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1.5px dashed var(--jt-gris-borde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    color: var(--jt-gris-texto);
+    font-weight: 700;
+}
+
+.jt-swatch-personalizado input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.jt-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jt-boton-compartir,
+.jt-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jt-boton-compartir {
+    background: var(--jt-negro);
+    color: var(--jt-blanco);
+}
+
+.jt-boton-compartir:hover {
+    background: #333;
+}
+
+.jt-boton-secundario {
+    background: var(--jt-gris-fondo);
+    color: var(--jt-negro);
+    border: 1.5px solid var(--jt-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jt-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jt-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jt-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jt-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jt-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jt-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jt-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jt-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jt-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jt-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jt-gris-texto);
+    font-weight: 600;
+}
+
+.jt-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: linear-gradient(to bottom, #eef1f4 0%, #eef1f4 72%, #d7dce1 72%, #d7dce1 100%);
+}
+
+#jt-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jt-celebracion .jt-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jt-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jt-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jt-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jt-compartir-panel {
+    position: relative;
+    background: var(--jt-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jt-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jt-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jt-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jt-gris-texto);
+}
+
+.jt-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jt-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jt-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jt-rojo);
+    color: var(--jt-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jt-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jt-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jt-blanco);
+}
+
+.jt-boton-red--whatsapp { background: #25d366; }
+.jt-boton-red--x { background: #000000; }
+.jt-boton-red--facebook { background: #1877f2; }
