@@ -101,6 +101,36 @@ body {
     }
 }
 
+.jt-selector-modelo {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jt-chip-modelo {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jt-gris-borde);
+    background: var(--jt-blanco);
+    color: var(--jt-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jt-chip-modelo.is-activo {
+    background: var(--jt-negro);
+    border-color: var(--jt-negro);
+    color: var(--jt-blanco);
+}
+
 .jt-barra-superior {
     display: flex;
     align-items: center;

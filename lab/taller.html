@@ -19,12 +19,24 @@
 <header class="jt-header">
     <p class="jt-header__etiqueta">Laboratorio — minijuego</p>
     <h1 class="jt-header__titulo"><span aria-hidden="true">🎨</span> Pinta el Coche</h1>
-    <p class="jt-header__subtitulo">Elige tu herramienta y pinta la carrocería arrastrando el dedo o el ratón. ¡Termínalo y compártelo!</p>
+    <p class="jt-header__subtitulo">Elige modelo y herramienta, y pinta la carrocería arrastrando el dedo o el ratón. ¡Termínalo y compártelo!</p>
 </header>
 
 <main class="jt-main">
 
     <section class="jt-juego" aria-label="Zona de juego">
+
+        <div class="jt-selector-modelo" role="radiogroup" aria-label="Modelo de vehículo">
+            <button type="button" class="jt-chip-modelo is-activo" data-vehiculo="berlina" role="radio" aria-checked="true">
+                <span aria-hidden="true">🚗</span> Berlina GT
+            </button>
+            <button type="button" class="jt-chip-modelo" data-vehiculo="suv" role="radio" aria-checked="false">
+                <span aria-hidden="true">🚙</span> SUV Urbano
+            </button>
+            <button type="button" class="jt-chip-modelo" data-vehiculo="furgoneta" role="radio" aria-checked="false">
+                <span aria-hidden="true">🚐</span> Furgoneta
+            </button>
+        </div>
 
         <div class="jt-barra-superior">
             <div class="jt-stat">
