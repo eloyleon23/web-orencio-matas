@@ -4,15 +4,12 @@
  */
 
 :root {
-    --jt-rojo: #b3261e;
-    --jt-rojo-oscuro: #8f1e18;
-    --jt-naranja: #ff8a3d;
-    --jt-amarillo: #ffc93c;
-    --jt-morado: #8338ec;
+    --jt-rojo: #d91b1b;
+    --jt-rojo-oscuro: #ad1515;
     --jt-negro: #1a1a1a;
     --jt-gris-texto: #52555a;
     --jt-gris-borde: #e2e2e4;
-    --jt-gris-fondo: #fff7ef;
+    --jt-gris-fondo: #f7f6f4;
     --jt-blanco: #ffffff;
     --jt-radio: 14px;
     --jt-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
@@ -35,37 +32,43 @@ body {
 /* ── Cabecera ────────────────────────────────────────────────────────── */
 
 .jt-header {
-    position: relative;
-    background: linear-gradient(120deg, var(--jt-morado), var(--jt-rojo) 55%, var(--jt-naranja));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jt-negro), var(--jt-rojo-oscuro));
     color: var(--jt-blanco);
-    padding: 16px 20px 18px;
+    padding: 12px 20px 18px;
     text-align: center;
-    box-shadow: 0 8px 22px rgba(131, 56, 236, 0.2);
 }
 
 .jt-header__volver {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    display: flex;
+    align-self: flex-start;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     min-height: 44px;
-    padding: 0 14px;
+    padding: 0 12px;
+    margin-bottom: 4px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--jt-morado);
-    font-size: 0.78rem;
-    font-weight: 800;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jt-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
     text-decoration: none;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
-    transition: transform 0.15s ease, background 0.15s ease;
+    transition: background 0.15s ease;
 }
 
 .jt-header__volver:hover,
 .jt-header__volver:focus-visible {
-    background: var(--jt-blanco);
-    transform: translateY(-1px) scale(1.04);
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jt-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
 }
 
 .jt-header__etiqueta {

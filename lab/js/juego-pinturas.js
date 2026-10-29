@@ -1,10 +1,10 @@
 /**
  * Pinta tu Estancia — minijuego (lab/pinturas.html)
- * Vanilla JS, sin dependencias. Prototipo inicial: una sola estancia
- * ("Salón"), ilustración geométrica propia (sin fuente externa, es un
- * plano sencillo de habitación en esquina — no hay problema de
- * derechos de imagen al ser creada aquí mismo). Guardada en
- * lab/assets/sala-salon.png.
+ * Vanilla JS, sin dependencias. 6 estancias (salón, dormitorio, baño,
+ * cocina, fachada y piscina), todas ilustraciones geométricas propias
+ * (sin fuente externa — planos sencillos en esquina o elevación, sin
+ * problema de derechos de imagen al estar creadas aquí mismo).
+ * Guardadas en lab/assets/sala-*.png.
  *
  * Mismo motor de pintura que "Pinta el Coche" (ver lab/js/juego-taller.js
  * para la explicación completa del porqué): el área pintable se calcula
@@ -20,18 +20,63 @@
 
     // ── Estancias disponibles ──────────────────────────────────────────
     // Mismo campo que VEHICULOS en juego-taller.js: wallAlpha,
-    // exteriorExcluido y semillasExcluir (puertas/ventanas aquí, en vez
-    // de cristales/llantas). Solo "salón" por ahora — más estancias en
-    // iteraciones siguientes, igual que "Pinta el Coche" empezó con un
-    // único modelo.
+    // exteriorExcluido y semillasExcluir (puertas/ventanas/tejado aquí,
+    // en vez de cristales/llantas). "piscina" no tiene huecos que
+    // excluir (toda la lámina de agua es pintable), de ahí el array
+    // vacío.
     const ESTANCIAS = {
         salon: {
             nombre: 'Salón',
+            icono: '🛋️',
             src: 'assets/sala-salon.png',
             wallAlpha: 60,
             exteriorExcluido: false,
             // techo, suelo, puerta, ventana
             semillasExcluir: [[500, 65], [500, 545], [360, 350], [640, 230]],
+        },
+        dormitorio: {
+            nombre: 'Dormitorio',
+            icono: '🛏️',
+            src: 'assets/sala-dormitorio.png',
+            wallAlpha: 60,
+            exteriorExcluido: false,
+            // techo, suelo, puerta, ventana
+            semillasExcluir: [[500, 65], [500, 545], [640, 350], [360, 225]],
+        },
+        bano: {
+            nombre: 'Baño',
+            icono: '🛁',
+            src: 'assets/sala-bano.png',
+            wallAlpha: 60,
+            exteriorExcluido: false,
+            // techo, suelo, puerta, ventana
+            semillasExcluir: [[500, 65], [500, 545], [345, 370], [645, 210]],
+        },
+        cocina: {
+            nombre: 'Cocina',
+            icono: '🍳',
+            src: 'assets/sala-cocina.png',
+            wallAlpha: 60,
+            exteriorExcluido: false,
+            // techo, suelo, puerta, ventana
+            semillasExcluir: [[500, 65], [500, 545], [650, 350], [400, 200]],
+        },
+        fachada: {
+            nombre: 'Fachada',
+            icono: '🏠',
+            src: 'assets/sala-fachada.png',
+            wallAlpha: 60,
+            exteriorExcluido: false,
+            // tejado, puerta, ventana izquierda, ventana derecha
+            semillasExcluir: [[500, 150], [500, 480], [320, 330], [680, 330]],
+        },
+        piscina: {
+            nombre: 'Piscina',
+            icono: '🏊',
+            src: 'assets/sala-piscina.png',
+            wallAlpha: 60,
+            exteriorExcluido: false,
+            semillasExcluir: [],
         },
     };
 
@@ -568,6 +613,26 @@
     });
     document.getElementById('jp-compartir-overlay').addEventListener('click', (ev) => {
         if (ev.target.id === 'jp-compartir-overlay') ev.currentTarget.hidden = true;
+    });
+
+    // ── Estancia ─────────────────────────────────────────────────────
+    // Cambiar de estancia reinicia la partida: las ilustraciones no
+    // comparten tamaño ni posición de huecos, así que no tiene sentido
+    // intentar conservar la pintura ya hecha.
+
+    document.querySelectorAll('.jp-chip-estancia').forEach((boton) => {
+        boton.addEventListener('click', () => {
+            if (boton.classList.contains('is-activo') || cargandoEstancia) return;
+            document.querySelectorAll('.jp-chip-estancia').forEach((b) => {
+                b.classList.remove('is-activo');
+                b.setAttribute('aria-checked', 'false');
+            });
+            boton.classList.add('is-activo');
+            boton.setAttribute('aria-checked', 'true');
+            estado.estancia = boton.dataset.estancia;
+            reiniciarPartida();
+            cargarEstancia(estado.estancia);
+        });
     });
 
     // ── Arranque ─────────────────────────────────────────────────────

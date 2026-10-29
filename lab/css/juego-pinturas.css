@@ -1,20 +1,17 @@
 /*
  * Pinta tu Estancia — minijuego (lab/pinturas.html)
  * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
- * que juego-taller.css, con paleta propia (coherente con la del hub,
- * ver lab/css/hub.css).
+ * que juego-taller.css, con la paleta REAL del sitio (ver
+ * src/css/estilos.css), coherente con el resto de la web.
  */
 
 :root {
-    --jp-rojo: #e63946;
-    --jp-naranja: #ff8a3d;
-    --jp-amarillo: #ffc93c;
-    --jp-morado: #8338ec;
-    --jp-verde: #06d6a0;
+    --jp-rojo: #d91b1b;
+    --jp-rojo-oscuro: #ad1515;
     --jp-negro: #1a1a1a;
     --jp-gris-texto: #52555a;
     --jp-gris-borde: #e2e2e4;
-    --jp-gris-fondo: #fff7ef;
+    --jp-gris-fondo: #f7f6f4;
     --jp-blanco: #ffffff;
     --jp-radio: 14px;
     --jp-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
@@ -37,37 +34,43 @@ body {
 /* ── Cabecera ────────────────────────────────────────────────────────── */
 
 .jp-header {
-    position: relative;
-    background: linear-gradient(120deg, var(--jp-morado), var(--jp-rojo) 55%, var(--jp-naranja));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jp-negro), var(--jp-rojo-oscuro));
     color: var(--jp-blanco);
-    padding: 16px 20px 18px;
+    padding: 12px 20px 18px;
     text-align: center;
-    box-shadow: 0 8px 22px rgba(131, 56, 236, 0.2);
 }
 
 .jp-header__volver {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    display: flex;
+    align-self: flex-start;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     min-height: 44px;
-    padding: 0 14px;
+    padding: 0 12px;
+    margin-bottom: 4px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--jp-morado);
-    font-size: 0.78rem;
-    font-weight: 800;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jp-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
     text-decoration: none;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
-    transition: transform 0.15s ease, background 0.15s ease;
+    transition: background 0.15s ease;
 }
 
 .jp-header__volver:hover,
 .jp-header__volver:focus-visible {
-    background: var(--jp-blanco);
-    transform: translateY(-1px) scale(1.04);
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jp-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
 }
 
 .jp-header__etiqueta {
@@ -137,6 +140,37 @@ body {
     }
 }
 
+.jp-selector-estancia {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jp-chip-estancia {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jp-gris-borde);
+    background: var(--jp-blanco);
+    color: var(--jp-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jp-chip-estancia.is-activo {
+    background: var(--jp-negro);
+    border-color: var(--jp-negro);
+    color: var(--jp-blanco);
+}
+
 .jp-barra-superior {
     display: flex;
     align-items: center;
@@ -176,7 +210,7 @@ body {
 .jp-barra-progreso__relleno {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--jp-naranja), var(--jp-amarillo));
+    background: linear-gradient(90deg, var(--jp-rojo), var(--jp-rojo-oscuro));
     border-radius: 6px;
     transition: width 0.18s ease;
 }
@@ -295,9 +329,9 @@ body {
 }
 
 .jp-boton-herramienta.is-activo {
-    border-color: var(--jp-naranja);
-    color: #a8501c;
-    background: #fff1e6;
+    border-color: var(--jp-rojo);
+    color: var(--jp-rojo-oscuro);
+    background: #fdf1f0;
 }
 
 .jp-paleta {
@@ -319,7 +353,7 @@ body {
 }
 
 .jp-swatch.is-activo {
-    outline-color: var(--jp-naranja);
+    outline-color: var(--jp-rojo);
     outline-width: 2.5px;
     transform: scale(1.06);
 }
@@ -370,12 +404,12 @@ body {
 }
 
 .jp-boton-compartir {
-    background: linear-gradient(120deg, var(--jp-morado), var(--jp-rojo));
+    background: var(--jp-negro);
     color: var(--jp-blanco);
 }
 
 .jp-boton-compartir:hover {
-    filter: brightness(1.08);
+    background: #333;
 }
 
 .jp-boton-secundario {
@@ -538,7 +572,7 @@ body {
     justify-content: center;
     min-height: 48px;
     border-radius: 12px;
-    background: var(--jp-naranja);
+    background: var(--jp-rojo);
     color: var(--jp-blanco);
     font-weight: 700;
     font-size: 0.9rem;
