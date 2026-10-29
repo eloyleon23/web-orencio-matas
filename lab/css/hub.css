@@ -1,17 +1,24 @@
 /*
- * Hub de minijuegos (lab/index.html). Paleta compartida con el resto
- * del laboratorio (ver lab/css/juego-taller.css).
+ * Hub de minijuegos (lab/index.html). Paleta propia, deliberadamente
+ * más viva y lúdica que el resto del sitio corporativo — esto es la
+ * "zona de juegos", no una página de producto, así que el negro/gris
+ * serio de antes se sustituye por un degradado de color y acentos
+ * redondeados/animados típicos de una arcade.
  */
 
 :root {
-    --jh-rojo: #b3261e;
-    --jh-rojo-oscuro: #8f1e18;
+    --jh-rojo: #e63946;
+    --jh-naranja: #ff8a3d;
+    --jh-amarillo: #ffc93c;
+    --jh-azul: #3a86ff;
+    --jh-morado: #8338ec;
+    --jh-verde: #06d6a0;
     --jh-negro: #1a1a1a;
     --jh-gris-texto: #52555a;
     --jh-gris-borde: #e2e2e4;
-    --jh-gris-fondo: #f5f5f3;
+    --jh-gris-fondo: #fff7ef;
     --jh-blanco: #ffffff;
-    --jh-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    --jh-sombra: 0 10px 28px rgba(225, 70, 70, 0.14);
     color-scheme: light;
 }
 
@@ -22,53 +29,66 @@
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    background: var(--jh-gris-fondo);
+    background:
+        radial-gradient(520px circle at 8% 0%, rgba(255, 201, 60, 0.35), transparent 60%),
+        radial-gradient(620px circle at 100% 15%, rgba(58, 134, 255, 0.22), transparent 55%),
+        radial-gradient(500px circle at 50% 100%, rgba(6, 214, 160, 0.18), transparent 55%),
+        var(--jh-gris-fondo);
+    background-attachment: fixed;
     color: var(--jh-negro);
 }
 
 .jh-header {
-    background: var(--jh-negro);
+    background: linear-gradient(120deg, var(--jh-morado), var(--jh-rojo) 55%, var(--jh-naranja));
     color: var(--jh-blanco);
-    padding: 28px 20px 30px;
+    padding: 34px 20px 46px;
     text-align: center;
+    border-radius: 0 0 28px 28px;
+    box-shadow: 0 12px 30px rgba(131, 56, 236, 0.25);
 }
 
 .jh-header__etiqueta {
-    margin: 0 0 8px;
-    font-size: 0.7rem;
+    margin: 0 0 10px;
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.68rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #c7c7c9;
+    font-weight: 700;
+    color: var(--jh-blanco);
 }
 
 .jh-header__titulo {
     margin: 0;
-    font-size: 1.7rem;
-    font-weight: 800;
+    font-size: 2rem;
+    font-weight: 900;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
 .jh-header__subtitulo {
     margin: 10px auto 0;
     max-width: 480px;
-    font-size: 0.9rem;
-    color: #d8d8da;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.92);
     line-height: 1.5;
 }
 
 .jh-main {
-    max-width: 800px;
+    max-width: 820px;
     margin: 0 auto;
-    padding: 28px 20px 60px;
+    padding: 30px 20px 64px;
 }
 
 .jh-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 18px;
 }
 
 @media (min-width: 620px) {
@@ -78,31 +98,50 @@ body {
 }
 
 .jh-tarjeta {
+    position: relative;
     display: flex;
     flex-direction: column;
     background: var(--jh-blanco);
-    border-radius: 16px;
+    border-radius: 20px;
     box-shadow: var(--jh-sombra);
-    padding: 24px 20px;
+    padding: 26px 22px;
     text-decoration: none;
     color: inherit;
-    border: 1.5px solid transparent;
-    transition: border-color 0.15s, transform 0.15s;
+    border: 2px solid transparent;
+    overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-a.jh-tarjeta:hover {
-    border-color: var(--jh-rojo);
-    transform: translateY(-2px);
+.jh-tarjeta::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--jh-rojo), var(--jh-naranja), var(--jh-amarillo));
+}
+
+a.jh-tarjeta:hover,
+a.jh-tarjeta:focus-visible {
+    border-color: var(--jh-naranja);
+    transform: translateY(-5px) scale(1.015);
+    box-shadow: 0 18px 38px rgba(230, 57, 70, 0.22);
 }
 
 .jh-tarjeta__icono {
-    font-size: 2.4rem;
-    margin-bottom: 10px;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #ffe3c4, #ffd1dc);
 }
 
 .jh-tarjeta__titulo {
     margin: 0 0 8px;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 800;
 }
 
@@ -118,13 +157,17 @@ a.jh-tarjeta:hover {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-weight: 700;
-    font-size: 0.88rem;
+    font-weight: 800;
+    font-size: 0.9rem;
     color: var(--jh-rojo);
 }
 
 .jh-tarjeta--proximamente {
-    opacity: 0.6;
+    opacity: 0.65;
+}
+
+.jh-tarjeta--proximamente .jh-tarjeta__icono {
+    background: linear-gradient(135deg, #e4e4e8, #f1f1f3);
 }
 
 .jh-tarjeta__cta--proximamente {
