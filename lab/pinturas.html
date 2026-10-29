@@ -7,9 +7,9 @@
   PoC de gamificación / captación comercial — "Pinta tu Estancia".
   Vive aislada en lab/, sin enlaces desde el navbar ni el footer del
   sitio público: es una prueba de concepto, no una página de producción.
-  Prototipo inicial: una sola estancia (Salón) — más estancias y
-  detalles (rodapiés, más mobiliario) se añadirán en iteraciones
-  siguientes, igual que "Pinta el Coche" empezó con un solo modelo.
+  Seis estancias: salón, dormitorio, baño, cocina, fachada y piscina —
+  más detalle (rodapiés, mobiliario) se añadirá en iteraciones
+  siguientes.
 -->
 <meta name="robots" content="noindex, nofollow">
 <title>Pinta tu Estancia — Laboratorio Orencio Matas</title>
@@ -71,12 +71,33 @@
     <a class="jp-header__volver" href="index.html">&larr; Minijuegos</a>
     <p class="jp-header__etiqueta">Laboratorio — minijuego — prototipo</p>
     <h1 class="jp-header__titulo"><span aria-hidden="true">🖌️</span> Pinta tu Estancia</h1>
-    <p class="jp-header__subtitulo">Elige herramienta y color, y pinta las paredes del salón arrastrando el dedo o el ratón.</p>
+    <p class="jp-header__subtitulo">Elige estancia, herramienta y color, y pinta arrastrando el dedo o el ratón.</p>
 </header>
 
 <main class="jp-main">
 
     <section class="jp-juego" aria-label="Zona de juego">
+
+        <div class="jp-selector-estancia" role="radiogroup" aria-label="Estancia a pintar">
+            <button type="button" class="jp-chip-estancia is-activo" data-estancia="salon" role="radio" aria-checked="true">
+                <span aria-hidden="true">🛋️</span> Salón
+            </button>
+            <button type="button" class="jp-chip-estancia" data-estancia="dormitorio" role="radio" aria-checked="false">
+                <span aria-hidden="true">🛏️</span> Dormitorio
+            </button>
+            <button type="button" class="jp-chip-estancia" data-estancia="bano" role="radio" aria-checked="false">
+                <span aria-hidden="true">🛁</span> Baño
+            </button>
+            <button type="button" class="jp-chip-estancia" data-estancia="cocina" role="radio" aria-checked="false">
+                <span aria-hidden="true">🍳</span> Cocina
+            </button>
+            <button type="button" class="jp-chip-estancia" data-estancia="fachada" role="radio" aria-checked="false">
+                <span aria-hidden="true">🏠</span> Fachada
+            </button>
+            <button type="button" class="jp-chip-estancia" data-estancia="piscina" role="radio" aria-checked="false">
+                <span aria-hidden="true">🏊</span> Piscina
+            </button>
+        </div>
 
         <div class="jp-barra-superior">
             <div class="jp-stat">

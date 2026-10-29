@@ -137,6 +137,37 @@ body {
     }
 }
 
+.jp-selector-estancia {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jp-chip-estancia {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jp-gris-borde);
+    background: var(--jp-blanco);
+    color: var(--jp-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jp-chip-estancia.is-activo {
+    background: var(--jp-morado);
+    border-color: var(--jp-morado);
+    color: var(--jp-blanco);
+}
+
 .jp-barra-superior {
     display: flex;
     align-items: center;
