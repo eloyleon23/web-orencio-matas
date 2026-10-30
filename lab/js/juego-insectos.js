@@ -257,6 +257,7 @@
                 ? `Despejaste todos los bichos en ${formatoTiempo(cfg.tiempoTotal - estado.tiempoRestante)}`
                 : `Despejaste el ${pct}% de los bichos (${estado.matados}/${cfg.totalInsectos})`;
 
+        dibujarResultadoEnCanvas();
         document.getElementById('ji-celebracion-overlay').hidden = false;
         if (limpiado) lanzarConfeti();
     }
