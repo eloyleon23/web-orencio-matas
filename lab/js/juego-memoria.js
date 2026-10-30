@@ -189,13 +189,29 @@
 
         const cfg = cfgDificultad();
         const filas = Math.ceil((cfg.pares * 2) / cfg.columnas);
-        const ratioTablero = cfg.columnas / filas;
 
+        // El hueco entre cartas ("gap: 8px" en CSS) es un valor fijo,
+        // no proporcional al tamaño de la carta — así que la relación
+        // ancho/alto real del tablero (columnas de cartas + huecos)
+        // NO es exactamente "columnas / filas" salvo que el hueco sea
+        // 0. Tratarlo como una proporción pura (como se hacía antes)
+        // dejaba un tablero ligeramente más bajo de lo que el grid
+        // necesita de verdad para colocar todas las filas sin
+        // recortarse — más notable cuantas más columnas/filas hay
+        // (p. ej. en difícil) y gaps más gastosos. Por eso aquí se
+        // calcula el tamaño de carta primero (restando los huecos) y
+        // se deriva el ancho/alto del tablero a partir de ese tamaño
+        // de carta real, para que coincida exactamente con lo que el
+        // grid va a dibujar.
+        const GAP = 8;
         let ancho = dispW;
-        let alto = ancho / ratioTablero;
+        let tamanoCarta = (ancho - (cfg.columnas - 1) * GAP) / cfg.columnas;
+        let alto = filas * tamanoCarta + (filas - 1) * GAP;
+
         if (alto > dispH) {
             alto = dispH;
-            ancho = alto * ratioTablero;
+            tamanoCarta = (alto - (filas - 1) * GAP) / filas;
+            ancho = cfg.columnas * tamanoCarta + (cfg.columnas - 1) * GAP;
         }
 
         tablero.style.width = Math.floor(ancho) + 'px';
