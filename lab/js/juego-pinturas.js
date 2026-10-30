@@ -68,8 +68,15 @@
         piscina: {
             nombre: 'Piscina',
             icono: '🏊',
+            // wallAlpha más alto que el resto: el césped y el coping de
+            // alrededor de la piscina llevan ahora un relleno de color
+            // semitransparente (antes todo lo de fuera de la piscina era
+            // transparente sin más) — tiene que seguir contando como
+            // "no es pared" para que la inundación exterior lo atraviese
+            // y se pare justo en el borde de la piscina, su único límite
+            // real (no usa semillasExcluir).
             src: 'assets/sala-piscina.png',
-            wallAlpha: 60,
+            wallAlpha: 150,
             semillasExcluir: [],
         },
     };
@@ -122,11 +129,6 @@
     // Idéntico algoritmo que juego-taller.js — ver ahí la explicación
     // detallada de cada paso.
 
-    function alfaEn(datos, w, h, x, y, fueraDeLimites) {
-        if (x < 0 || y < 0 || x >= w || y >= h) return fueraDeLimites;
-        return datos[(y * w + x) * 4 + 3];
-    }
-
     function esCasiBlanco(datos, w, x, y) {
         const o = (y * w + x) * 4;
         return datos[o + 3] > 200 && datos[o] > 225 && datos[o + 1] > 225 && datos[o + 2] > 225;
@@ -161,6 +163,36 @@
     //    detalles, marcos, cojines...) donde enumerar cada hueco a
     //    excluir sería inabarcable: basta con sembrar la propia pared y
     //    la inundación se para sola en cualquier línea del dibujo.
+    // Máximo del canal alfa en la vecindad de 3x3 de cada píxel. Un
+    // trazo de línea casi cerrado puede dejar, por el antialiasing del
+    // propio PNG, un hueco de solo 1px donde dos segmentos casi se
+    // tocan — por ahí se "filtraba" la inundación exterior o excluida
+    // hacia dentro de una zona que debía quedar aislada, dejando una
+    // lengua de máscara pintable tan fina que nunca llegaba a
+    // cubrirse del todo (el "se queda en el 99% y no termina"
+    // reportado). Dilatar el alfa 1px antes de decidir qué cuenta como
+    // "pared" cierra esos huecos sin tocar el dibujo que se ve.
+    function construirAlfaDilatada(datos, w, h) {
+        const salida = new Uint8ClampedArray(w * h);
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                let maxA = 0;
+                for (let dy = -1; dy <= 1; dy++) {
+                    const ny = y + dy;
+                    if (ny < 0 || ny >= h) continue;
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const nx = x + dx;
+                        if (nx < 0 || nx >= w) continue;
+                        const a = datos[(ny * w + nx) * 4 + 3];
+                        if (a > maxA) maxA = a;
+                    }
+                }
+                salida[y * w + x] = maxA;
+            }
+        }
+        return salida;
+    }
+
     function calcularMascaraPintable(img, cfg) {
         const w = img.naturalWidth, h = img.naturalHeight;
         const tmp = document.createElement('canvas');
@@ -169,8 +201,12 @@
         const tctx = tmp.getContext('2d');
         tctx.drawImage(img, 0, 0);
         const datos = tctx.getImageData(0, 0, w, h).data;
+        const alfaDilatada = construirAlfaDilatada(datos, w, h);
 
-        const esParedExterior = (x, y) => alfaEn(datos, w, h, x, y, 255) >= cfg.wallAlpha;
+        const esParedExterior = (x, y) => {
+            if (x < 0 || y < 0 || x >= w || y >= h) return true;
+            return alfaDilatada[y * w + x] >= cfg.wallAlpha;
+        };
 
         if (cfg.modoMascara === 'incluir') {
             const incluido = inundar(datos, w, h, cfg.semillasIncluir, esParedExterior);
@@ -181,9 +217,23 @@
             [[1, 1], [w - 2, 1], [1, h - 2], [w - 2, h - 2], [Math.floor(w / 2), 1]],
             esParedExterior);
 
+        // Los muebles/puertas/ventanas van ahora rellenos de color (antes
+        // eran solo un contorno transparente por dentro) para que las
+        // plantillas tengan mejor aspecto. Si se usara el mismo umbral
+        // wallAlpha(60) para "excluirlos", la semilla sembrada dentro de
+        // cada uno caería sobre su propio relleno opaco y la inundación
+        // nunca arrancaría — quedarían sin excluir y se podrían pintar
+        // por encima. Por eso el relleno de esas formas se dibuja con un
+        // alfa intermedio (bien por debajo de UMBRAL_EXCLUIR) y solo su
+        // contorno es opaco al 100%: la inundación de exclusión atraviesa
+        // el relleno y se para justo en el contorno.
+        const UMBRAL_EXCLUIR = 220;
         const esParedExcluir = cfg.exteriorExcluido
             ? (x, y) => !esCasiBlanco(datos, w, x, y)
-            : esParedExterior;
+            : (x, y) => {
+                if (x < 0 || y < 0 || x >= w || y >= h) return true;
+                return alfaDilatada[y * w + x] >= UMBRAL_EXCLUIR;
+            };
         const excluido = cfg.semillasExcluir.length
             ? inundar(datos, w, h, cfg.semillasExcluir, esParedExcluir)
             : new Uint8Array(w * h);
@@ -203,7 +253,7 @@
     // ── Encaje de la imagen en el canvas (estilo "contain", centrada) ──
 
     function calcularEncaje(imgW, imgH, canvasW, canvasH) {
-        const margen = 0.94;
+        const margen = 0.99;
         const escala = Math.min(canvasW / imgW, canvasH / imgH) * margen;
         const drawW = imgW * escala;
         const drawH = imgH * escala;
@@ -320,6 +370,24 @@
         lienzoVisible.height = h;
         reconstruirCapas();
         dibujarEscena();
+    }
+
+    // En móvil, mostrar/ocultar la barra de direcciones u otros paneles
+    // del navegador dispara un evento "resize" de window aunque el
+    // tamaño real del lienzo (que depende del ancho de su contenedor,
+    // no del alto del viewport) no haya cambiado. Sin esta comprobación,
+    // ajustarTamanoCanvas() volvía a crear capaPintura desde cero en
+    // cada uno de esos resizes espurios y se perdía todo lo pintado —
+    // el "se reinicia solo" reportado. Al cambiar de estancia se sigue
+    // llamando a ajustarTamanoCanvas() directamente (ver cargarEstancia),
+    // sin pasar por esta comprobación, así que ese caso no se ve afectado.
+    function alRedimensionarVentana() {
+        const rect = lienzoVisible.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.round(rect.width * dpr);
+        const h = Math.round(rect.height * dpr);
+        if (w === lienzoVisible.width && h === lienzoVisible.height) return;
+        ajustarTamanoCanvas();
     }
 
     function dibujarEscena() {
@@ -654,7 +722,7 @@
 
     // ── Arranque ─────────────────────────────────────────────────────
 
-    window.addEventListener('resize', debounce(ajustarTamanoCanvas, 200));
+    window.addEventListener('resize', debounce(alRedimensionarVentana, 200));
 
     function debounce(fn, ms) {
         let t;
