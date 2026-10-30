@@ -95,7 +95,26 @@
         </a>
 
     </div>
+
+    <button type="button" class="jh-boton-compartir" id="jh-boton-compartir">
+        <span aria-hidden="true">📤</span> Compartir estos minijuegos
+    </button>
 </main>
+
+<!-- ───────────────── Panel de compartir (enlaces directos) ───────────────── -->
+<div class="jh-compartir-overlay" id="jh-compartir-overlay" hidden>
+    <div class="jh-compartir-panel" role="dialog" aria-modal="true" aria-labelledby="jh-compartir-titulo">
+        <button type="button" class="jh-compartir-cerrar" id="jh-compartir-cerrar" aria-label="Cerrar">&times;</button>
+        <h2 id="jh-compartir-titulo">Comparte los minijuegos</h2>
+        <p>Comparte el enlace con quien quieras, o usa un acceso directo:</p>
+        <button type="button" class="jh-boton-copiar" id="jh-boton-copiar-enlace">Copiar enlace</button>
+        <div class="jh-redes">
+            <a class="jh-boton-red jh-boton-red--whatsapp" id="jh-enlace-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="jh-boton-red jh-boton-red--x" id="jh-enlace-x" target="_blank" rel="noopener">X</a>
+            <a class="jh-boton-red jh-boton-red--facebook" id="jh-enlace-facebook" target="_blank" rel="noopener">Facebook</a>
+        </div>
+    </div>
+</div>
 
 <footer class="site-footer">
   <div class="container site-footer__grid">
@@ -161,6 +180,7 @@
 </footer>
 
 <script src="../src/js/app.js?v=20260829"></script>
+<script src="js/hub.js?v=20261030"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
     // documentado en assets/js/mantenimiento.js y usado también por
