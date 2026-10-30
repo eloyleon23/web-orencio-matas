@@ -256,8 +256,15 @@ body.om-pantalla-completa-activa .jc-tablero-wrap {
    las cartas cuadradas) lo calcula JS — ver ajustarTableroAlEspacio()
    en juego-memoria.js — porque el ajuste de "aspect-ratio + auto +
    max-width/max-height" de CSS no se resuelve de forma fiable en un
-   grid sin una base de tamaño propia. */
+   grid sin una base de tamaño propia. "width: 100%" aquí es solo la
+   red de seguridad para el instante antes de que JS calcule el
+   tamaño definitivo (o si por lo que sea no llega a hacerlo): sin
+   ancho propio, dentro de un contenedor con "align-items/
+   justify-content: center" que no estira a sus hijos, el tablero se
+   queda sin ninguna base de tamaño y se colapsa a un puñado de
+   píxeles — invisible. */
 body.om-pantalla-completa-activa .jc-tablero {
+    width: 100%;
     max-width: 100%;
     max-height: 100%;
 }
