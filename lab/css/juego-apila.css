@@ -175,6 +175,22 @@ body {
     flex-direction: column;
 }
 
+.jq-objetivo {
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #fdf3e2;
+    border: 1.5px solid #f0d9a8;
+    color: var(--jq-negro);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.jq-objetivo strong {
+    font-weight: 800;
+}
+
 .jq-barra-superior {
     display: flex;
     align-items: center;
@@ -182,17 +198,37 @@ body {
     margin-bottom: 10px;
 }
 
+.jq-barra-superior--euros {
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
 .jq-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 3.6rem;
+}
+
+.jq-stat__valor {
     font-weight: 800;
     font-size: 1.05rem;
     white-space: nowrap;
-    min-width: 3.4rem;
     text-align: center;
     font-variant-numeric: tabular-nums;
+    line-height: 1.1;
 }
 
-.jq-stat--euros { color: var(--jq-verde); }
-.jq-stat--combo { color: var(--jq-rojo); }
+.jq-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jq-stat--euros .jq-stat__valor { color: var(--jq-verde); }
+.jq-stat--combo .jq-stat__valor { color: var(--jq-rojo); }
 
 .jq-barra-progreso {
     flex: 1;
@@ -252,6 +288,21 @@ body {
     inset: 0;
 }
 
+/* "Cámara" que sigue a la torre: todas las capas y la barra viven
+   aquí dentro, ancladas por `bottom` a su fila real; al crecer la
+   torre por encima de lo que cabe en pantalla, este contenedor se
+   desplaza hacia abajo con una transición suave, así que las capas
+   antiguas se deslizan fuera de vista en vez de desaparecer de golpe. */
+.jq-pila-interior {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.28s ease;
+}
+
+.jq-pila-interior--sin-transicion {
+    transition: none;
+}
+
 .jq-capa {
     position: absolute;
     height: 32px;
@@ -261,6 +312,10 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+}
+
+.jq-capa--perfecta {
+    box-shadow: 0 0 0 2px #f6c445 inset, 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .jq-capa__etiqueta {
@@ -293,6 +348,46 @@ body {
         transform: translateY(120px) rotate(12deg);
         opacity: 0;
     }
+}
+
+.jq-ganancia-flotante {
+    position: absolute;
+    left: 50%;
+    z-index: 6;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--jq-verde);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6);
+    animation: jq-flotar 0.76s ease-out forwards;
+}
+
+@keyframes jq-flotar {
+    0% { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
+    100% { opacity: 0; transform: translate(-50%, -50%) translateY(-30px); }
+}
+
+.jq-insignia-perfecto {
+    position: absolute;
+    left: 50%;
+    z-index: 6;
+    background: #f6c445;
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 0.72rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: jq-perfecto-pop 0.65s ease-out forwards;
+}
+
+@keyframes jq-perfecto-pop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -50%) translateY(-18px) scale(1); }
 }
 
 /* ── Panel de controles ─────────────────────────────────────────────── */

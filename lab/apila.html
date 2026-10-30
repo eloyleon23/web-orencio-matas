@@ -95,28 +95,42 @@
 
         <div class="jq-contenedor">
 
+            <p class="jq-objetivo" id="jq-objetivo">
+                🎯 Objetivo: apila <strong id="jq-objetivo-numero">20</strong> capas sin que la torre se caiga
+            </p>
+
             <div class="jq-barra-superior">
-                <span class="jq-stat jq-stat--combo" id="jq-combo">—</span>
+                <div class="jq-stat jq-stat--combo">
+                    <span class="jq-stat__valor" id="jq-combo">—</span>
+                    <span class="jq-stat__etiqueta">combo</span>
+                </div>
                 <div class="jq-barra-progreso" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="jq-barra-progreso">
                     <div class="jq-barra-progreso__relleno" id="jq-barra-progreso-relleno"></div>
                 </div>
-                <span class="jq-stat" id="jq-contador">0/20</span>
+                <div class="jq-stat">
+                    <span class="jq-stat__valor" id="jq-contador">0/20</span>
+                    <span class="jq-stat__etiqueta">capas</span>
+                </div>
             </div>
 
-            <p class="jq-pista" id="jq-pista">Toca la pantalla para soltar cada capa justo encima de la anterior</p>
+            <p class="jq-pista" id="jq-pista">Toca la pantalla para soltar la barra justo encima de la última capa. Si se pasa, se recorta; si falla del todo, se cae la torre.</p>
 
             <div class="jq-escenario" id="jq-escenario" aria-label="Torre de pedidos">
                 <div class="jq-torre" id="jq-torre">
-                    <div class="jq-barra-movil" id="jq-barra-movil"></div>
+                    <div class="jq-pila-interior" id="jq-pila-interior">
+                        <div class="jq-barra-movil" id="jq-barra-movil"></div>
+                    </div>
                 </div>
                 <button type="button" class="jq-boton-reiniciar" id="jq-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
                     <span aria-hidden="true">↺</span>
                 </button>
             </div>
 
-            <div class="jq-barra-superior" style="margin-top: 0.75rem; justify-content: center;">
-                <span class="jq-stat jq-stat--euros" id="jq-euros">0,00 €</span>
-                <span style="color:#70737a; font-size:0.9rem;">cargados en el camión</span>
+            <div class="jq-barra-superior jq-barra-superior--euros">
+                <div class="jq-stat jq-stat--euros">
+                    <span class="jq-stat__valor" id="jq-euros">0,00 €</span>
+                    <span class="jq-stat__etiqueta">cargados en el camión</span>
+                </div>
             </div>
 
         </div>
