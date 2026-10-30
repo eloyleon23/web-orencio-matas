@@ -153,3 +153,127 @@ a.jh-tarjeta:focus-visible {
 .jh-tarjeta__cta--proximamente {
     color: var(--jh-gris-texto);
 }
+
+/* ── Compartir el hub ───────────────────────────────────────────────── */
+
+.jh-boton-compartir {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 50px;
+    width: 100%;
+    max-width: 360px;
+    margin: 24px auto 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--jh-negro);
+    color: var(--jh-blanco);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jh-boton-compartir:hover {
+    background: #333;
+}
+
+.jh-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jh-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jh-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jh-compartir-panel {
+    position: relative;
+    background: var(--jh-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jh-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jh-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jh-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jh-gris-texto);
+}
+
+.jh-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jh-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jh-boton-copiar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    background: var(--jh-rojo);
+    color: var(--jh-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-bottom: 14px;
+}
+
+.jh-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jh-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jh-blanco);
+}
+
+.jh-boton-red--whatsapp { background: #25d366; }
+.jh-boton-red--x { background: #000000; }
+.jh-boton-red--facebook { background: #1877f2; }

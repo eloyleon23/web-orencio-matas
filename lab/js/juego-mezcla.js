@@ -147,6 +147,7 @@
         document.getElementById('jm-boton-deshacer').disabled = estado.historialVertidos.length === 0;
         document.getElementById('jm-boton-vaciar').disabled = total === 0;
         document.getElementById('jm-boton-terminar').disabled = total === 0;
+        document.getElementById('jm-boton-compartir').disabled = total === 0;
         document.querySelectorAll('.jm-bote-color').forEach((boton) => {
             boton.disabled = alTope;
         });
@@ -346,6 +347,7 @@
     }
 
     document.getElementById('jm-boton-compartir').addEventListener('click', compartir);
+    document.getElementById('jm-boton-compartir-final').addEventListener('click', compartir);
     document.getElementById('jm-compartir-cerrar').addEventListener('click', () => {
         document.getElementById('jm-compartir-overlay').hidden = true;
     });
