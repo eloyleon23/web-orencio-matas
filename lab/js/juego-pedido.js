@@ -37,12 +37,12 @@
         { clave: 'spray_pintura', icono: '🧪', nombre: 'Spray de pintura' },
         { clave: 'barniz', icono: '🪵', nombre: 'Barniz para madera' },
         { clave: 'disolvente', icono: '⚗️', nombre: 'Disolvente' },
-        { clave: 'aceite_motor', icono: '🛢️', nombre: 'Aceite de motor' },
-        { clave: 'llave_inglesa', icono: '🔧', nombre: 'Llave inglesa' },
-        { clave: 'filtro_aire', icono: '🌀', nombre: 'Filtro de aire' },
-        { clave: 'bateria', icono: '🔋', nombre: 'Batería de coche' },
-        { clave: 'neumatico', icono: '🛞', nombre: 'Neumático' },
-        { clave: 'limpiaparabrisas', icono: '🌧️', nombre: 'Líquido limpiaparabrisas' },
+        { clave: 'lija', icono: '🟫', nombre: 'Lija' },
+        { clave: 'pulimento', icono: '🧽', nombre: 'Pulimento' },
+        { clave: 'esmalte_sintetico', icono: '🎨', nombre: 'Esmalte sintético' },
+        { clave: 'masilla', icono: '🧱', nombre: 'Masilla de carrocería' },
+        { clave: 'imprimacion', icono: '🧴', nombre: 'Imprimación' },
+        { clave: 'limpiacristales', icono: '🪟', nombre: 'Limpiacristales' },
     ];
     const PRODUCTOS_POR_CLAVE = new Map(PRODUCTOS.map((p) => [p.clave, p]));
 
