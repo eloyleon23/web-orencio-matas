@@ -7,8 +7,8 @@
 
 .om-pantalla-completa {
     position: fixed;
-    right: 16px;
-    bottom: 16px;
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     z-index: 500;
     width: 46px;
     height: 46px;
@@ -44,26 +44,36 @@ main:-webkit-full-screen {
     overflow-y: auto;
     background: #f7f6f4;
     padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 /* ── Modo "maximizado" simulado — para navegadores sin Fullscreen
-   API en elementos arbitrarios (algunos navegadores de iOS) ────────── */
+   API en elementos arbitrarios (p. ej. Safari en iPhone, que no
+   soporta la Fullscreen API en elementos que no son <video>) ──────── */
 
 .om-pantalla-completa-simulada {
     position: fixed !important;
     inset: 0 !important;
     z-index: 400 !important;
     width: 100vw !important;
+    /* 100vh se queda corto en móvil porque cuenta la barra de
+       direcciones; 100dvh ("dynamic viewport height") se ajusta a la
+       altura visible real y la sustituye en los navegadores que la
+       soportan (se declara después para que gane por cascada). */
     height: 100vh !important;
+    height: 100dvh !important;
     max-width: none !important;
     margin: 0 !important;
     border-radius: 0 !important;
     overflow-y: auto !important;
     background: #f7f6f4;
     padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     display: flex !important;
     flex-direction: column !important;
     align-items: center;
