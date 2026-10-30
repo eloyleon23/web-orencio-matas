@@ -62,6 +62,11 @@
         { clave: 'zaphiro', archivo: '../assets/proveedores/zaphiro_logo_oscuro.png' },
     ];
 
+    // Nuestro propio logo (la gota, sin el texto "Orencio Matas y
+    // Hnos") entra siempre como una pareja más, en toda partida —
+    // además de las marcas de proveedores sorteadas al azar.
+    const LOGO_PROPIO = { clave: 'orencio', archivo: '../assets/logos/logo_transparente.png' };
+
     // ── Dificultad ───────────────────────────────────────────────────
     const DIFICULTADES = {
         facil: { nombre: 'Fácil', pares: 6, columnas: 4, tiempoTotal: 90 },
@@ -100,7 +105,7 @@
 
     function construirTablero() {
         const cfg = cfgDificultad();
-        const elegidos = mezclar(LOGOS).slice(0, cfg.pares);
+        const elegidos = [LOGO_PROPIO, ...mezclar(LOGOS).slice(0, cfg.pares - 1)];
         const cartas = mezclar(elegidos.concat(elegidos));
 
         tablero.innerHTML = '';
