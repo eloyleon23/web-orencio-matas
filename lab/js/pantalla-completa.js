@@ -1,63 +1,73 @@
 /**
  * Pantalla completa — botón flotante reutilizable en todos los
- * minijuegos del laboratorio. Pone en pantalla completa la sección de
- * juego (selector de dificultad + marcador + zona de juego), usando
- * la Fullscreen API cuando el navegador la soporta y, si no, un modo
- * "maximizado" simulado (position: fixed cubriendo toda la pantalla)
- * para que funcione también en navegadores que no la implementan.
+ * minijuegos del laboratorio. Pone en pantalla completa el <main> de
+ * la página (zona de juego + panel de herramientas/color cuando
+ * existe), usando la Fullscreen API cuando el navegador la soporta y,
+ * si no, un modo "maximizado" simulado (position: fixed cubriendo
+ * toda la pantalla) para que funcione también en navegadores que no
+ * la implementan.
  *
- * Cada página de minijuego solo tiene que incluir este script: busca
- * automáticamente la sección jugable por su aria-label, común a todos
- * los juegos de la suite.
+ * Mientras está activa, se ocultan los controles que no hacen falta
+ * para jugar (selector de dificultad/modo, pista, marca, botón de
+ * compartir, historial de partidas…) marcados en cada página con la
+ * clase ".om-oculto-en-pantalla-completa" — lo necesario para jugar
+ * (zona/canvas, marcador, selector de herramienta y color cuando
+ * existen) se queda visible.
+ *
+ * Cada página de minijuego solo tiene que incluir este script: usa
+ * el único <main> de la página, común a todos los juegos de la suite.
  */
 (function () {
     'use strict';
 
-    const seccion = document.querySelector('section[aria-label="Zona de juego"]');
-    if (!seccion) return;
+    const main = document.querySelector('main');
+    if (!main) return;
 
     const CLASE_SIMULADA = 'om-pantalla-completa-simulada';
-    const CLASE_BODY = 'om-pantalla-completa-activa-body';
+    const CLASE_ACTIVA = 'om-pantalla-completa-activa';
 
-    // Se añade como primer hijo de la propia sección (no de <body>):
-    // en pantalla completa nativa el elemento pasa a una "capa
-    // superior" del navegador por encima de todo lo demás, así que un
-    // botón fuera de la sección quedaría tapado y sería inalcanzable.
-    // Sigue siendo "position: fixed" (relativo a la ventana) porque la
-    // sección no tiene transform/filter propio que cree su propio
-    // contexto de posicionamiento.
+    // Se añade como primer hijo del propio <main> (no de <body>): en
+    // pantalla completa nativa el elemento pasa a una "capa superior"
+    // del navegador por encima de todo lo demás, así que un botón
+    // fuera de él quedaría tapado y sería inalcanzable. Sigue siendo
+    // "position: fixed" (relativo a la ventana) porque <main> no
+    // tiene transform/filter propio que cree su propio contexto de
+    // posicionamiento.
     const boton = document.createElement('button');
     boton.type = 'button';
     boton.className = 'om-pantalla-completa';
-    seccion.insertBefore(boton, seccion.firstChild);
+    main.insertBefore(boton, main.firstChild);
 
     function elementoFullscreen() {
         return document.fullscreenElement || document.webkitFullscreenElement || null;
     }
 
     function enPantallaCompleta() {
-        return elementoFullscreen() === seccion || seccion.classList.contains(CLASE_SIMULADA);
+        return elementoFullscreen() === main || main.classList.contains(CLASE_SIMULADA);
+    }
+
+    function sincronizar() {
+        document.body.classList.toggle(CLASE_ACTIVA, enPantallaCompleta());
+        actualizarBoton();
     }
 
     function activarSimulado() {
-        seccion.classList.add(CLASE_SIMULADA);
-        document.body.classList.add(CLASE_BODY);
-        actualizarBoton();
+        main.classList.add(CLASE_SIMULADA);
+        sincronizar();
     }
 
     function desactivarSimulado() {
-        seccion.classList.remove(CLASE_SIMULADA);
-        document.body.classList.remove(CLASE_BODY);
-        actualizarBoton();
+        main.classList.remove(CLASE_SIMULADA);
+        sincronizar();
     }
 
     function pedirFullscreen() {
-        const metodo = seccion.requestFullscreen || seccion.webkitRequestFullscreen;
+        const metodo = main.requestFullscreen || main.webkitRequestFullscreen;
         if (!metodo) {
             activarSimulado();
             return;
         }
-        const resultado = metodo.call(seccion);
+        const resultado = metodo.call(main);
         if (resultado && typeof resultado.catch === 'function') {
             resultado.catch(() => activarSimulado());
         }
@@ -65,7 +75,7 @@
 
     function salirFullscreen() {
         const metodo = document.exitFullscreen || document.webkitExitFullscreen;
-        if (elementoFullscreen() === seccion && metodo) {
+        if (elementoFullscreen() === main && metodo) {
             metodo.call(document);
         }
         desactivarSimulado();
@@ -89,13 +99,31 @@
     });
 
     document.addEventListener('fullscreenchange', () => {
-        if (elementoFullscreen() !== seccion) desactivarSimulado();
-        actualizarBoton();
+        if (elementoFullscreen() !== main) main.classList.remove(CLASE_SIMULADA);
+        sincronizar();
     });
     document.addEventListener('webkitfullscreenchange', () => {
-        if (elementoFullscreen() !== seccion) desactivarSimulado();
-        actualizarBoton();
+        if (elementoFullscreen() !== main) main.classList.remove(CLASE_SIMULADA);
+        sincronizar();
     });
 
-    actualizarBoton();
+    // El overlay de celebración (y el de compartir) vive fuera de
+    // <main>, como el resto de los juegos de la suite. En pantalla
+    // completa nativa, todo lo que no es descendiente del elemento en
+    // fullscreen queda fuera de la "capa superior" del navegador y no
+    // se ve; en el modo simulado, el overlay de <main> (más alto en
+    // z-index) lo tapa igualmente. Así que en cuanto termina la
+    // partida salimos de pantalla completa automáticamente para que
+    // el resultado y el botón de compartir se vean con normalidad.
+    const overlayCelebracion = document.querySelector('[id$="-celebracion-overlay"]');
+    if (overlayCelebracion) {
+        const observador = new MutationObserver(() => {
+            if (!overlayCelebracion.hasAttribute('hidden') && enPantallaCompleta()) {
+                salirFullscreen();
+            }
+        });
+        observador.observe(overlayCelebracion, { attributes: true, attributeFilter: ['hidden'] });
+    }
+
+    sincronizar();
 })();
