@@ -232,6 +232,33 @@ body {
     background: linear-gradient(180deg, #eef0f0, #dfe3e3);
 }
 
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa la zona se dimensiona por el ancho
+   (aspect-ratio 3/4, tope de 60vh). En pantalla completa eso se
+   quedaba corto en vertical (mucho espacio vacío debajo) y demasiado
+   plano en horizontal (el tope de 60vh con poca altura de viewport
+   la dejaba casi sin recorrido de caída). Aquí se cambia a que la
+   zona ocupe directamente el alto disponible. ──────────────────────── */
+
+body.om-pantalla-completa-activa .jf-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jf-zona-wrap {
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jf-zona {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: unset;
+    max-height: none;
+}
+
 .jf-producto {
     position: absolute;
     top: 0%;

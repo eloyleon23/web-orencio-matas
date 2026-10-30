@@ -49,6 +49,13 @@
     function sincronizar() {
         document.body.classList.toggle(CLASE_ACTIVA, enPantallaCompleta());
         actualizarBoton();
+        // Algunos juegos recalculan tamaños en píxeles (p. ej. el
+        // tablero de Encuentra la Pareja) cuando entra o sale de
+        // pantalla completa, porque CSS puro no les basta para
+        // encajar en ambas dimensiones a la vez. "resize" no siempre
+        // se dispara al instante (sobre todo al activar el modo
+        // simulado), así que se avisa también con este evento propio.
+        document.dispatchEvent(new CustomEvent('om-pantalla-completa-cambio'));
     }
 
     // En los navegadores sin Fullscreen API en elementos arbitrarios

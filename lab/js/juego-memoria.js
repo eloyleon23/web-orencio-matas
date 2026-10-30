@@ -148,7 +148,52 @@
             boton.addEventListener('click', () => voltear(boton));
             tablero.appendChild(boton);
         });
+
+        ajustarTableroAlEspacio();
     }
+
+    // En pantalla completa el tablero pasa a vivir en una caja con alto
+    // definido (ver ".jc-tablero-wrap" en pantalla completa en
+    // juego-memoria.css): aquí se calcula en píxeles el mayor tamaño
+    // cuadrado-por-carta que cabe a la vez en el ancho y el alto
+    // disponibles, replicando lo que "object-fit: contain" haría con
+    // una imagen — CSS puro (aspect-ratio + auto + max-width/height)
+    // no resuelve esto de forma fiable en un grid sin tamaño propio.
+    // Fuera de pantalla completa no hace falta: el ancho al 100% ya es
+    // suficiente (cada carta se dimensiona sola vía aspect-ratio 1/1).
+    function ajustarTableroAlEspacio() {
+        const enPantallaCompleta = document.body.classList.contains('om-pantalla-completa-activa');
+        if (!enPantallaCompleta) {
+            tablero.style.width = '';
+            tablero.style.height = '';
+            return;
+        }
+
+        const wrap = tablero.parentElement;
+        const dispW = wrap.clientWidth;
+        const dispH = wrap.clientHeight;
+        if (!dispW || !dispH) return;
+
+        const cfg = cfgDificultad();
+        const filas = Math.ceil((cfg.pares * 2) / cfg.columnas);
+        const ratioTablero = cfg.columnas / filas;
+
+        let ancho = dispW;
+        let alto = ancho / ratioTablero;
+        if (alto > dispH) {
+            alto = dispH;
+            ancho = alto * ratioTablero;
+        }
+
+        tablero.style.width = Math.floor(ancho) + 'px';
+        tablero.style.height = Math.floor(alto) + 'px';
+    }
+
+    window.addEventListener('resize', ajustarTableroAlEspacio);
+    // Disparado por lab/js/pantalla-completa.js al entrar/salir de
+    // pantalla completa (un cambio de tamaño que "resize" no siempre
+    // captura al instante, sobre todo al activar el modo simulado).
+    document.addEventListener('om-pantalla-completa-cambio', ajustarTableroAlEspacio);
 
     // ── Voltear / comparar ───────────────────────────────────────────
 
