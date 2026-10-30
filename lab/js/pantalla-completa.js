@@ -51,9 +51,21 @@
         actualizarBoton();
     }
 
+    // En los navegadores sin Fullscreen API en elementos arbitrarios
+    // (sobre todo Safari en iPhone) no hay forma de pedirle al
+    // navegador que oculte su propia barra de direcciones — pero el
+    // truco clásico de hacer un scroll mínimo nada más cargar hace que
+    // la mayoría la colapse sola. No hace daño en los navegadores que
+    // no lo necesitan.
+    function intentarColapsarBarraNavegador() {
+        window.scrollTo(0, 1);
+        setTimeout(() => window.scrollTo(0, 1), 150);
+    }
+
     function activarSimulado() {
         main.classList.add(CLASE_SIMULADA);
         sincronizar();
+        intentarColapsarBarraNavegador();
     }
 
     function desactivarSimulado() {
