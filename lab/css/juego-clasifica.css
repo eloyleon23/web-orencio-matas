@@ -1,0 +1,638 @@
+/*
+ * Clasifica por Pasillos — minijuego (lab/clasifica.html)
+ * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
+ * que el resto de minijuegos del laboratorio, con la paleta REAL del
+ * sitio (ver src/css/estilos.css).
+ */
+
+:root {
+    --jf-rojo: #d91b1b;
+    --jf-rojo-oscuro: #ad1515;
+    --jf-negro: #1a1a1a;
+    --jf-gris-texto: #52555a;
+    --jf-gris-borde: #e2e2e4;
+    --jf-gris-fondo: #f7f6f4;
+    --jf-blanco: #ffffff;
+    --jf-verde: #1a8f4c;
+    --jf-radio: 14px;
+    --jf-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jf-gris-fondo);
+    color: var(--jf-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jf-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jf-negro), var(--jf-rojo-oscuro));
+    color: var(--jf-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jf-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jf-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jf-header__volver:hover,
+.jf-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jf-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jf-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jf-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jf-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jf-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jf-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jf-juego {
+    background: var(--jf-blanco);
+    border-radius: var(--jf-radio);
+    box-shadow: var(--jf-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jf-juego {
+        flex: 1 1 62%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jf-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jf-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jf-gris-borde);
+    background: var(--jf-blanco);
+    color: var(--jf-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jf-chip-dificultad.is-activo {
+    background: var(--jf-negro);
+    border-color: var(--jf-negro);
+    color: var(--jf-blanco);
+}
+
+.jf-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.jf-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jf-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jf-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jf-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jf-gris-fondo);
+    overflow: hidden;
+}
+
+.jf-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jf-rojo), var(--jf-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+/* ── Zona de caída ───────────────────────────────────────────────────── */
+
+.jf-zona-wrap {
+    position: relative;
+}
+
+.jf-zona {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    max-height: 60vh;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #eef0f0, #dfe3e3);
+}
+
+.jf-producto {
+    position: absolute;
+    top: 0%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: var(--jf-blanco);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.jf-producto__icono {
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.jf-producto__nombre {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--jf-gris-texto);
+}
+
+.jf-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.65);
+    color: var(--jf-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+    z-index: 3;
+}
+
+/* ── Cestas (áreas) ──────────────────────────────────────────────────── */
+
+.jf-areas {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.jf-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 60px;
+    padding: 8px 4px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jf-gris-borde);
+    background: var(--jf-blanco);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.jf-area__icono {
+    font-size: 1.4rem;
+}
+
+.jf-area__nombre {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--jf-gris-texto);
+    text-align: center;
+}
+
+.jf-area--acierto {
+    border-color: var(--jf-verde);
+    background: #e8f6ee;
+    transform: scale(1.05);
+}
+
+.jf-area--fallo {
+    border-color: var(--jf-rojo);
+    background: #fbeaea;
+    animation: jf-sacudir 0.28s ease;
+}
+
+@keyframes jf-sacudir {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+.jf-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jf-gris-texto);
+    text-align: center;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jf-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jf-controles {
+        flex: 1 1 38%;
+    }
+}
+
+.jf-grupo-control {
+    background: var(--jf-blanco);
+    border-radius: var(--jf-radio);
+    box-shadow: var(--jf-sombra);
+    padding: 14px;
+}
+
+.jf-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jf-marcador {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+}
+
+.jf-marcador .jf-stat__valor {
+    font-size: 1.3rem;
+}
+
+.jf-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jf-boton-compartir,
+.jf-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jf-boton-compartir {
+    background: var(--jf-negro);
+    color: var(--jf-blanco);
+}
+
+.jf-boton-compartir:hover {
+    background: #333;
+}
+
+.jf-boton-secundario {
+    background: var(--jf-gris-fondo);
+    color: var(--jf-negro);
+    border: 1.5px solid var(--jf-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jf-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jf-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jf-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jf-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jf-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jf-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jf-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jf-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jf-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jf-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jf-gris-texto);
+    font-weight: 600;
+}
+
+.jf-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jf-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jf-celebracion .jf-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jf-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jf-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jf-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jf-compartir-panel {
+    position: relative;
+    background: var(--jf-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jf-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jf-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jf-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jf-gris-texto);
+}
+
+.jf-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jf-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jf-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jf-rojo);
+    color: var(--jf-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jf-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jf-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jf-blanco);
+}
+
+.jf-boton-red--whatsapp { background: #25d366; }
+.jf-boton-red--x { background: #000000; }
+.jf-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas aleatorias (al buscador general, sin filtrar) ───────────── */
+
+.jf-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jf-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jf-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jf-gris-texto);
+    text-align: center;
+}
+
+.jf-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jf-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jf-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jf-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
