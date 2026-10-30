@@ -56,7 +56,7 @@
   // profesionales. El hub de la suite (lab/index.html) ya queda fuera
   // por tener el mismo nombre de archivo que la home pública (ver
   // esPaginaInicioPublica_ más abajo), así que no necesita entrada aquí.
-  const PAGINAS_EXCLUIDAS = ['empresa.html', 'historia.html', 'servicios.html', 'actualidad.html', 'profesionales.html', 'taller.html', 'pinturas.html', 'mezcla-colores.html', 'limpieza.html', 'insectos.html', 'almacen.html', 'pedido.html', 'memoria.html'];
+  const PAGINAS_EXCLUIDAS = ['empresa.html', 'historia.html', 'servicios.html', 'actualidad.html', 'profesionales.html', 'taller.html', 'pinturas.html', 'mezcla-colores.html', 'limpieza.html', 'insectos.html', 'almacen.html', 'pedido.html', 'memoria.html', 'clasifica.html'];
 
   function nombreArchivoDe_(href) {
     if (!href) return '';
