@@ -161,7 +161,7 @@
     // no resuelve esto de forma fiable en un grid sin tamaño propio.
     // Fuera de pantalla completa no hace falta: el ancho al 100% ya es
     // suficiente (cada carta se dimensiona sola vía aspect-ratio 1/1).
-    function ajustarTableroAlEspacio() {
+    function ajustarTableroAlEspacio(intentosRestantes) {
         const enPantallaCompleta = document.body.classList.contains('om-pantalla-completa-activa');
         if (!enPantallaCompleta) {
             tablero.style.width = '';
@@ -172,7 +172,20 @@
         const wrap = tablero.parentElement;
         const dispW = wrap.clientWidth;
         const dispH = wrap.clientHeight;
-        if (!dispW || !dispH) return;
+
+        // Justo al entrar en pantalla completa (sobre todo en el modo
+        // simulado, o en navegadores donde el alto dinámico tarda un
+        // instante en asentarse tras ocultar su propia barra) el wrap
+        // puede no tener todavía un tamaño definido. En vez de
+        // rendirnos y dejar el tablero sin ancho/alto — lo que lo deja
+        // invisible, porque sin aspect-ratio ni tamaño propio un grid
+        // se puede colapsar a casi 0px — reintentamos unas pocas veces
+        // en los siguientes frames.
+        if (!dispW || !dispH) {
+            const quedan = intentosRestantes === undefined ? 10 : intentosRestantes;
+            if (quedan > 0) requestAnimationFrame(() => ajustarTableroAlEspacio(quedan - 1));
+            return;
+        }
 
         const cfg = cfgDificultad();
         const filas = Math.ceil((cfg.pares * 2) / cfg.columnas);
@@ -189,11 +202,18 @@
         tablero.style.height = Math.floor(alto) + 'px';
     }
 
-    window.addEventListener('resize', ajustarTableroAlEspacio);
+    window.addEventListener('resize', () => ajustarTableroAlEspacio());
     // Disparado por lab/js/pantalla-completa.js al entrar/salir de
     // pantalla completa (un cambio de tamaño que "resize" no siempre
     // captura al instante, sobre todo al activar el modo simulado).
-    document.addEventListener('om-pantalla-completa-cambio', ajustarTableroAlEspacio);
+    // Además de la llamada inmediata, se reintenta una vez pasado un
+    // instante por si el navegador tarda en asentar el alto real
+    // (p. ej. mientras colapsa su propia barra de direcciones): un
+    // tamaño ya correcto se recalcula igual sin que se note.
+    document.addEventListener('om-pantalla-completa-cambio', () => {
+        ajustarTableroAlEspacio();
+        setTimeout(() => ajustarTableroAlEspacio(), 350);
+    });
 
     // ── Voltear / comparar ───────────────────────────────────────────
 
