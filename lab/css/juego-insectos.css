@@ -1,0 +1,591 @@
+/*
+ * Fuera Bichos — minijuego (lab/insectos.html)
+ * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
+ * que juego-limpieza.css/juego-pinturas.css, con la paleta REAL del
+ * sitio (ver src/css/estilos.css), coherente con el resto de la web.
+ */
+
+:root {
+    --ji-rojo: #d91b1b;
+    --ji-rojo-oscuro: #ad1515;
+    --ji-negro: #1a1a1a;
+    --ji-gris-texto: #52555a;
+    --ji-gris-borde: #e2e2e4;
+    --ji-gris-fondo: #f7f6f4;
+    --ji-blanco: #ffffff;
+    --ji-radio: 14px;
+    --ji-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--ji-gris-fondo);
+    color: var(--ji-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.ji-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--ji-negro), var(--ji-rojo-oscuro));
+    color: var(--ji-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.ji-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--ji-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.ji-header__volver:hover,
+.ji-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .ji-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.ji-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.ji-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.ji-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.ji-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .ji-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.ji-juego {
+    background: var(--ji-blanco);
+    border-radius: var(--ji-radio);
+    box-shadow: var(--ji-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .ji-juego {
+        flex: 1 1 60%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.ji-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.ji-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--ji-gris-borde);
+    background: var(--ji-blanco);
+    color: var(--ji-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ji-chip-dificultad.is-activo {
+    background: var(--ji-negro);
+    border-color: var(--ji-negro);
+    color: var(--ji-blanco);
+}
+
+.ji-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.ji-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.ji-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.ji-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ji-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--ji-gris-fondo);
+    overflow: hidden;
+}
+
+.ji-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--ji-rojo), var(--ji-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+/* ── Arena de juego ──────────────────────────────────────────────────── */
+
+.ji-arena-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1000 / 650;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.ji-arena {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.5), transparent 55%),
+        linear-gradient(160deg, #e9eef0, #cfd8da);
+    cursor: none;
+    touch-action: none;
+    overflow: hidden;
+}
+
+.ji-insecto {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    padding: 0;
+    line-height: 1;
+    cursor: none;
+    touch-action: none;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+    transform-origin: center;
+}
+
+.ji-insecto--muerto {
+    animation: ji-aplastar 0.26s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes ji-aplastar {
+    to {
+        transform: scale(0.15) rotate(25deg);
+        opacity: 0;
+    }
+}
+
+.ji-spray-cursor {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    margin-left: -8px;
+    margin-top: -26px;
+    font-size: 1.7rem;
+    pointer-events: none;
+    transform: rotate(-18deg);
+    z-index: 5;
+}
+
+.ji-nube {
+    position: absolute;
+    width: 54px;
+    height: 54px;
+    margin-left: -27px;
+    margin-top: -27px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+    pointer-events: none;
+    animation: ji-nube-expandir 0.42s ease-out forwards;
+    z-index: 4;
+}
+
+@keyframes ji-nube-expandir {
+    from { transform: scale(0.3); opacity: 0.9; }
+    to { transform: scale(1.6); opacity: 0; }
+}
+
+.ji-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.6);
+    color: var(--ji-blanco);
+    font-size: 1.2rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+    z-index: 6;
+}
+
+.ji-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--ji-gris-texto);
+    text-align: center;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.ji-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .ji-controles {
+        flex: 1 1 40%;
+    }
+}
+
+.ji-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.ji-boton-compartir,
+.ji-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ji-boton-compartir {
+    background: var(--ji-negro);
+    color: var(--ji-blanco);
+}
+
+.ji-boton-compartir:hover {
+    background: #333;
+}
+
+.ji-boton-secundario {
+    background: var(--ji-gris-fondo);
+    color: var(--ji-negro);
+    border: 1.5px solid var(--ji-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.ji-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.ji-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.ji-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.ji-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: ji-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes ji-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.ji-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--ji-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.ji-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.ji-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--ji-gris-texto);
+    font-weight: 600;
+}
+
+.ji-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#ji-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.ji-celebracion .ji-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.ji-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.ji-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .ji-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.ji-compartir-panel {
+    position: relative;
+    background: var(--ji-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .ji-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.ji-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.ji-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--ji-gris-texto);
+}
+
+.ji-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--ji-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.ji-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--ji-rojo);
+    color: var(--ji-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.ji-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.ji-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--ji-blanco);
+}
+
+.ji-boton-red--whatsapp { background: #25d366; }
+.ji-boton-red--x { background: #000000; }
+.ji-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas de droguería ─────────────────────────────────────────────── */
+
+.ji-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.ji-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.ji-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--ji-gris-texto);
+    text-align: center;
+}
+
+.ji-proveedores__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+.ji-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.ji-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
