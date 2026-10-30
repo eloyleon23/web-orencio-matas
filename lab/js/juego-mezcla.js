@@ -32,27 +32,49 @@
     const CLAVES_PALETA = Object.keys(PALETA);
     const DISTANCIA_MAXIMA = Math.sqrt(3 * 255 * 255);
 
+    // ── Dificultad ───────────────────────────────────────────────────
+    // minColores/maxColores: cuántos colores distintos entran en la
+    // receta secreta del objetivo — con más colores el resultado es
+    // más "turbio" y difícil de adivinar a ojo.
+    // maxVertidos: tope de cazos que puede verter el jugador (null =
+    // sin límite) — con menos cazos hay menos margen para afinar la
+    // proporción, así que toca acertar antes.
+    const DIFICULTADES = {
+        facil: { nombre: 'Fácil', minColores: 1, maxColores: 2, maxVertidos: null },
+        medio: { nombre: 'Medio', minColores: 2, maxColores: 4, maxVertidos: 14 },
+        dificil: { nombre: 'Difícil', minColores: 3, maxColores: 6, maxVertidos: 9 },
+    };
+
     const estado = {
+        dificultad: 'medio',
         objetivo: null, // { r, g, b }
         cantidades: {}, // { rojo: n, amarillo: n, ... }
         historialVertidos: [], // pila de claves vertidas, para "deshacer"
         terminado: false,
     };
 
-    function nuevoObjetivo() {
-        // Receta secreta: cantidades aleatorias (algunas pueden ser 0)
-        // de la misma paleta, garantizando al menos una cantidad total
-        // positiva para que el objetivo no sea "sin pintura".
-        let total = 0;
-        const receta = {};
-        CLAVES_PALETA.forEach((clave) => {
-            const cantidad = Math.random() < 0.25 ? 0 : 1 + Math.floor(Math.random() * 5);
-            receta[clave] = cantidad;
-            total += cantidad;
-        });
-        if (total === 0) {
-            receta[CLAVES_PALETA[Math.floor(Math.random() * CLAVES_PALETA.length)]] = 2;
+    function mezclar(array) {
+        const copia = array.slice();
+        for (let i = copia.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copia[i], copia[j]] = [copia[j], copia[i]];
         }
+        return copia;
+    }
+
+    function nuevoObjetivo() {
+        // Receta secreta: entre minColores y maxColores colores
+        // distintos (según la dificultad), cada uno con una cantidad
+        // aleatoria — nunca se le muestra al jugador, solo el color
+        // resultante.
+        const cfg = DIFICULTADES[estado.dificultad];
+        const nColores = cfg.minColores + Math.floor(Math.random() * (cfg.maxColores - cfg.minColores + 1));
+        const elegidos = mezclar(CLAVES_PALETA).slice(0, nColores);
+
+        const receta = {};
+        elegidos.forEach((clave) => {
+            receta[clave] = 1 + Math.floor(Math.random() * 5);
+        });
         return mezclarDesdeCantidades(receta);
     }
 
@@ -108,19 +130,34 @@
             document.getElementById('jm-cantidad-' + clave).textContent = String(estado.cantidades[clave] || 0);
         });
 
-        document.getElementById('jm-pista').textContent = total === 0
-            ? 'Toca un bote de pintura para empezar a verter'
-            : `${total} ${total === 1 ? 'cazo vertido' : 'cazos vertidos'} — toca "Terminar mezcla" cuando estés listo`;
+        const cfg = DIFICULTADES[estado.dificultad];
+        const tope = cfg.maxVertidos;
+        const alTope = tope != null && total >= tope;
+
+        if (total === 0) {
+            document.getElementById('jm-pista').textContent = 'Toca un bote de pintura para empezar a verter';
+        } else if (alTope) {
+            document.getElementById('jm-pista').textContent = `Has llegado al límite de ${tope} cazos — toca "Terminar mezcla" o vacía el bote para reintentarlo`;
+        } else {
+            const restantes = tope != null ? ` (quedan ${tope - total})` : '';
+            document.getElementById('jm-pista').textContent =
+                `${total}${tope != null ? '/' + tope : ''} ${total === 1 ? 'cazo vertido' : 'cazos vertidos'}${restantes} — toca "Terminar mezcla" cuando estés listo`;
+        }
 
         document.getElementById('jm-boton-deshacer').disabled = estado.historialVertidos.length === 0;
         document.getElementById('jm-boton-vaciar').disabled = total === 0;
         document.getElementById('jm-boton-terminar').disabled = total === 0;
+        document.querySelectorAll('.jm-bote-color').forEach((boton) => {
+            boton.disabled = alTope;
+        });
     }
 
     // ── Verter / deshacer / vaciar ──────────────────────────────────
 
     function verter(clave) {
         if (estado.terminado) return;
+        const cfg = DIFICULTADES[estado.dificultad];
+        if (cfg.maxVertidos != null && totalVertido() >= cfg.maxVertidos) return;
         estado.cantidades[clave] = (estado.cantidades[clave] || 0) + 1;
         estado.historialVertidos.push(clave);
         lanzarSalpicadura(clave);
@@ -165,6 +202,27 @@
         document.getElementById('jm-objetivo-swatch').style.background = rgbACss(estado.objetivo);
         actualizarVista();
     }
+
+    document.getElementById('jm-boton-nuevo-objetivo').addEventListener('click', () => {
+        document.getElementById('jm-celebracion-overlay').hidden = true;
+        nuevaPartida();
+    });
+
+    // ── Dificultad ───────────────────────────────────────────────────
+
+    document.querySelectorAll('.jm-chip-dificultad').forEach((boton) => {
+        boton.addEventListener('click', () => {
+            if (boton.classList.contains('is-activo')) return;
+            document.querySelectorAll('.jm-chip-dificultad').forEach((b) => {
+                b.classList.remove('is-activo');
+                b.setAttribute('aria-checked', 'false');
+            });
+            boton.classList.add('is-activo');
+            boton.setAttribute('aria-checked', 'true');
+            estado.dificultad = boton.dataset.dificultad;
+            nuevaPartida();
+        });
+    });
 
     // ── Celebración final ────────────────────────────────────────────
 

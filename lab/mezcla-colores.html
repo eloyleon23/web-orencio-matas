@@ -78,6 +78,18 @@
 
     <section class="jm-juego" aria-label="Zona de juego">
 
+        <div class="jm-selector-dificultad" role="radiogroup" aria-label="Dificultad">
+            <button type="button" class="jm-chip-dificultad" data-dificultad="facil" role="radio" aria-checked="false">
+                Fácil
+            </button>
+            <button type="button" class="jm-chip-dificultad is-activo" data-dificultad="medio" role="radio" aria-checked="true">
+                Medio
+            </button>
+            <button type="button" class="jm-chip-dificultad" data-dificultad="dificil" role="radio" aria-checked="false">
+                Difícil
+            </button>
+        </div>
+
         <div class="jm-comparacion">
             <div class="jm-bote-wrap">
                 <div class="jm-bote" id="jm-objetivo-swatch" aria-hidden="true"></div>
@@ -100,6 +112,10 @@
         </div>
 
         <p class="jm-pista" id="jm-pista">Toca un bote de pintura para empezar a verter</p>
+
+        <button type="button" class="jm-boton-objetivo" id="jm-boton-nuevo-objetivo">
+            <span aria-hidden="true">🎲</span> Cambiar objetivo
+        </button>
 
     </section>
 
