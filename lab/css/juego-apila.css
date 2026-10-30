@@ -267,6 +267,32 @@ body {
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa el escenario tiene una altura fija
+   (420px). En pantalla completa eso dejaba mucho espacio vacío debajo
+   en vertical, y en horizontal (pantallas más bajas) hasta se salía
+   de lo que cabe en pantalla. Aquí pasa a ocupar el alto disponible;
+   la torre y la barra se siguen posicionando igual (son offsets desde
+   abajo, no dependen del alto exacto del contenedor). ─────────────── */
+
+body.om-pantalla-completa-activa .jq-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jq-contenedor {
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jq-escenario {
+    flex: 1;
+    height: auto;
+    min-height: 220px;
+}
+
 .jq-boton-reiniciar {
     position: absolute;
     top: 8px;

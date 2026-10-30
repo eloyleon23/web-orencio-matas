@@ -226,6 +226,42 @@ body {
     gap: 8px;
 }
 
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa el tablero se dimensiona solo por el
+   ancho (cada carta es 1/1, así que la altura sale sola). En pantalla
+   completa eso dejaba mucho espacio vacío debajo en vertical y, peor,
+   en horizontal el tablero podía salir muchísimo más alto que la
+   pantalla (su ancho de sobra no tenía límite de altura). Aquí se
+   fija la altura al espacio disponible y se deja que el ancho salga
+   del aspect-ratio (columnas/filas, fijado por JS) — el navegador
+   calcula solo el mayor tablero cuadrado-por-carta que cabe en ambas
+   dimensiones a la vez. ───────────────────────────────────────────── */
+
+body.om-pantalla-completa-activa .jc-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jc-tablero-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* El tamaño exacto (que quepa a la vez en ancho y alto, manteniendo
+   las cartas cuadradas) lo calcula JS — ver ajustarTableroAlEspacio()
+   en juego-memoria.js — porque el ajuste de "aspect-ratio + auto +
+   max-width/max-height" de CSS no se resuelve de forma fiable en un
+   grid sin una base de tamaño propia. */
+body.om-pantalla-completa-activa .jc-tablero {
+    max-width: 100%;
+    max-height: 100%;
+}
+
 .jc-carta {
     position: relative;
     aspect-ratio: 1 / 1;
