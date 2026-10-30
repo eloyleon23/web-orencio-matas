@@ -231,7 +231,7 @@ body {
     background:
         radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.5), transparent 55%),
         linear-gradient(160deg, #e9eef0, #cfd8da);
-    cursor: none;
+    cursor: crosshair;
     touch-action: none;
     overflow: hidden;
 }
@@ -245,7 +245,7 @@ body {
     background: none;
     padding: 0;
     line-height: 1;
-    cursor: none;
+    cursor: crosshair;
     touch-action: none;
     filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
     transform-origin: center;
@@ -277,20 +277,20 @@ body {
 
 .ji-nube {
     position: absolute;
-    width: 54px;
-    height: 54px;
-    margin-left: -27px;
-    margin-top: -27px;
+    width: 90px;
+    height: 90px;
+    margin-left: -45px;
+    margin-top: -45px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(214, 231, 235, 0.55) 60%, rgba(214, 231, 235, 0));
     pointer-events: none;
-    animation: ji-nube-expandir 0.42s ease-out forwards;
-    z-index: 4;
+    animation: ji-nube-expandir 0.5s ease-out forwards;
+    z-index: 10;
 }
 
 @keyframes ji-nube-expandir {
-    from { transform: scale(0.3); opacity: 0.9; }
-    to { transform: scale(1.6); opacity: 0; }
+    from { transform: scale(0.25); opacity: 1; }
+    to { transform: scale(1.7); opacity: 0; }
 }
 
 .ji-boton-reiniciar {

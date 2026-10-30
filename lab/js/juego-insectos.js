@@ -18,23 +18,28 @@
     'use strict';
 
     // ── Bichos disponibles ──────────────────────────────────────────────
+    // velocidadBase en píxeles/segundo — cada bicho recorre la distancia
+    // real hasta su próximo punto a esta velocidad (en vez de un tiempo
+    // fijo al azar), para que un salto largo no se vea disparado: antes
+    // tardaba lo mismo recorrer 50px que 500px, así que un salto largo
+    // parecía mucho más rápido de lo que debía.
     const INSECTOS = {
-        cucaracha: { emoji: '🪳', tam: 46, duracionMin: 650, duracionMax: 1050 },
-        hormiga: { emoji: '🐜', tam: 30, duracionMin: 450, duracionMax: 800 },
-        mosca: { emoji: '🪰', tam: 34, duracionMin: 380, duracionMax: 680 },
-        avispa: { emoji: '🐝', tam: 40, duracionMin: 320, duracionMax: 600 },
+        cucaracha: { emoji: '🪳', tam: 46, velocidadBase: 55 },
+        hormiga: { emoji: '🐜', tam: 30, velocidadBase: 70 },
+        mosca: { emoji: '🪰', tam: 34, velocidadBase: 95 },
+        avispa: { emoji: '🐝', tam: 40, velocidadBase: 115 },
     };
     const CLAVES_INSECTOS = Object.keys(INSECTOS);
 
     // ── Dificultad ───────────────────────────────────────────────────
     // tiempoTotal (s), totalInsectos (a lo largo de toda la partida),
     // maxSimultaneos (a la vez en pantalla), intervaloAparicion (ms
-    // entre apariciones) y velocidad (multiplica lo rápido que se
-    // desplazan: más difícil, más rápidos y con menos tiempo).
+    // entre apariciones) y velocidad (multiplica la velocidadBase de
+    // cada bicho: más difícil, algo más rápidos y con menos tiempo).
     const DIFICULTADES = {
-        facil: { nombre: 'Fácil', tiempoTotal: 60, totalInsectos: 14, maxSimultaneos: 4, intervaloAparicion: 1300, velocidad: 1 },
-        medio: { nombre: 'Medio', tiempoTotal: 50, totalInsectos: 20, maxSimultaneos: 6, intervaloAparicion: 950, velocidad: 1.4 },
-        dificil: { nombre: 'Difícil', tiempoTotal: 40, totalInsectos: 28, maxSimultaneos: 8, intervaloAparicion: 700, velocidad: 1.9 },
+        facil: { nombre: 'Fácil', tiempoTotal: 65, totalInsectos: 12, maxSimultaneos: 3, intervaloAparicion: 1500, velocidad: 0.7 },
+        medio: { nombre: 'Medio', tiempoTotal: 55, totalInsectos: 18, maxSimultaneos: 5, intervaloAparicion: 1150, velocidad: 0.9 },
+        dificil: { nombre: 'Difícil', tiempoTotal: 45, totalInsectos: 24, maxSimultaneos: 7, intervaloAparicion: 900, velocidad: 1.25 },
     };
 
     // ── Estado ────────────────────────────────────────────────────────
@@ -57,7 +62,7 @@
 
     const spray = document.createElement('div');
     spray.className = 'ji-spray-cursor';
-    spray.textContent = '🧴';
+    spray.textContent = '💦';
     spray.hidden = true;
     arena.appendChild(spray);
 
@@ -126,16 +131,24 @@
         const maxX = Math.max(1, rect.width - cfg.tam);
         const maxY = Math.max(1, rect.height - cfg.tam);
         const actualX = parseFloat(el.style.left) || 0;
+        const actualY = parseFloat(el.style.top) || 0;
         const nuevoX = Math.random() * maxX;
         const nuevoY = Math.random() * maxY;
-        const duracion = (cfg.duracionMin + Math.random() * (cfg.duracionMax - cfg.duracionMin)) / cfgDificultad().velocidad;
+
+        const distancia = Math.hypot(nuevoX - actualX, nuevoY - actualY);
+        const velocidadPxSeg = cfg.velocidadBase * cfgDificultad().velocidad;
+        const duracion = Math.max(450, (distancia / velocidadPxSeg) * 1000);
 
         el.style.transition = `left ${duracion}ms linear, top ${duracion}ms linear`;
         el.style.left = nuevoX + 'px';
         el.style.top = nuevoY + 'px';
         el.style.transform = nuevoX < actualX ? 'scaleX(-1)' : 'scaleX(1)';
 
-        el._temporizadorMovimiento = setTimeout(() => moverInsecto(el, cfg), duracion);
+        // Pequeña pausa al llegar (como si se detuviera a "mirar
+        // alrededor") antes de elegir el siguiente punto — da una
+        // ventana estática en la que es más fácil acertarle.
+        const pausa = 250 + Math.random() * 450;
+        el._temporizadorMovimiento = setTimeout(() => moverInsecto(el, cfg), duracion + pausa);
     }
 
     function matarInsecto(el) {
