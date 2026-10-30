@@ -260,16 +260,36 @@ body {
     background: linear-gradient(to bottom, #eef1f4 0%, #eef1f4 72%, #d7dce1 72%, #d7dce1 100%);
 }
 
+/* Envoltorio fijo entre el wrap y el canvas: fuera de pantalla
+   completa es un simple paso a través (100%/100%, igual que antes de
+   que existiera). Existe para que, en pantalla completa, el que haga
+   "contain-fit" (encajar manteniendo proporción) sea ESTE div y no
+   el <canvas> directamente — ver el porqué más abajo. */
+.jt-lienzo-proporcion {
+    width: 100%;
+    height: 100%;
+}
+
 /* ── Pantalla completa: aprovechar el alto liberado ──────────────────
    Fuera de pantalla completa el lienzo se dimensiona por el ancho
    (aspect-ratio 16/9). En pantalla completa el contenedor pasa a
-   ocupar el alto disponible, pero el CANVAS no puede simplemente
-   estirarse a esa forma: tiene una resolución de dibujo fija
-   (640×360) y forzar su CSS a otra proporción distorsionaría el
-   coche dibujado. Así que el contenedor se estira, pero el canvas se
-   mantiene centrado dentro con su proporción intacta (como
-   "object-fit: contain") — aprovecha más alto cuando lo hay sin
-   deformar el dibujo. ────────────────────────────────────────────── */
+   ocupar el alto disponible, pero el dibujo no puede simplemente
+   estirarse a esa forma sin deformar el coche — necesita un
+   "contain-fit" (como "object-fit: contain") que tanto encoja como
+   AGRANDE el lienzo hasta el mayor tamaño que quepa, manteniendo la
+   proporción 16:9.
+   Ese contain-fit NO puede aplicarse directamente al <canvas>: el
+   canvas redimensiona su propia resolución de dibujo (atributos
+   width/height) para que coincida con su tamaño en pantalla — ver
+   ajustarTamanoCanvas() en juego-taller.js — y "width/height: auto"
+   en un elemento con tamaño intrínseco propio (como el canvas) usa
+   ESE tamaño intrínseco tal cual en vez de crecer para llenar el
+   hueco disponible; tras encogerse una vez (p. ej. al girar a
+   horizontal), se quedaba pequeño para siempre aunque hubiera más
+   sitio al volver a vertical. Por eso el contain-fit se aplica a
+   ".jt-lienzo-proporcion" (un div sin tamaño propio: sí crece y
+   encoge con libertad) y el canvas simplemente lo rellena al
+   100%/100%, como fuera de pantalla completa. ──────────────────────── */
 
 body.om-pantalla-completa-activa .jt-juego {
     display: flex;
@@ -288,9 +308,21 @@ body.om-pantalla-completa-activa .jt-lienzo-wrap {
     background: #eef1f4;
 }
 
-body.om-pantalla-completa-activa #jt-canvas {
-    width: auto;
-    height: auto;
+/* El tamaño exacto (que quepa a la vez en ancho y alto, manteniendo
+   la proporción 16:9) lo calcula y fija en línea
+   ajustarCajaProporcion() en juego-taller.js — igual que con el
+   tablero de Encuentra la Pareja, porque CSS puro (aspect-ratio +
+   auto + max-width/max-height) no se resuelve de forma fiable aquí:
+   el canvas es un elemento "reemplazado" con tamaño intrínseco
+   propio (sus atributos width/height, que a su vez JS recalcula para
+   que coincidan con su tamaño en pantalla), así que cualquier
+   contenedor que intente autodimensionarse a partir de su contenido
+   hereda esa dependencia circular por mucho que se envuelva en más
+   capas de divs — el contenedor se queda pillado en el último
+   tamaño del canvas en vez de crecer cuando hay más sitio. Lo de
+   abajo es solo una red de seguridad para el instante antes de que
+   JS calcule el tamaño definitivo. */
+body.om-pantalla-completa-activa .jt-lienzo-proporcion {
     max-width: 100%;
     max-height: 100%;
 }

@@ -224,6 +224,13 @@ body {
     background: #fdfaf4;
 }
 
+/* Envoltorio fijo entre el wrap y el canvas — ver el porqué,
+   comentado, en juego-taller.css. */
+.jp-lienzo-proporcion {
+    width: 100%;
+    height: 100%;
+}
+
 /* ── Pantalla completa: aprovechar el alto liberado sin deformar el
    dibujo — ver la misma técnica, comentada, en juego-taller.css ──── */
 
@@ -243,9 +250,11 @@ body.om-pantalla-completa-activa .jp-lienzo-wrap {
     justify-content: center;
 }
 
-body.om-pantalla-completa-activa #jp-canvas {
-    width: auto;
-    height: auto;
+/* El tamaño exacto lo fija en línea JS (ajustarCajaProporcion en
+   juego-pinturas.js) — ver el porqué, comentado, en
+   juego-taller.css. Esto es solo la red de seguridad para el
+   instante antes de que JS calcule el tamaño definitivo. */
+body.om-pantalla-completa-activa .jp-lienzo-proporcion {
     max-width: 100%;
     max-height: 100%;
 }

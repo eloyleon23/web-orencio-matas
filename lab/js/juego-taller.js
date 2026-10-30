@@ -332,7 +332,43 @@
         img.src = cfg.src;
     }
 
+    const RATIO_LIENZO = 16 / 9;
+
+    // En pantalla completa, ".jt-lienzo-proporcion" (el div que
+    // envuelve el canvas) tiene que medir el mayor tamaño 16:9 que
+    // cabe en ".jt-lienzo-wrap" — pero el canvas es un elemento
+    // "reemplazado" con tamaño intrínseco propio (sus atributos
+    // width/height, que esta misma función recalcula para que
+    // coincidan con su tamaño en pantalla), así que CSS puro
+    // (aspect-ratio + auto + max-width/max-height) se queda pillado
+    // en un ciclo: el tamaño del contenedor depende del canvas, que
+    // depende del tamaño del contenedor. Se calcula aquí a mano,
+    // a partir del wrap (que no tiene ese problema) y se fija como
+    // ancho/alto en línea — igual que con el tablero de Encuentra la
+    // Pareja.
+    function ajustarCajaProporcion() {
+        const proporcion = lienzoVisible.parentElement;
+        if (!document.body.classList.contains('om-pantalla-completa-activa')) {
+            proporcion.style.width = '';
+            proporcion.style.height = '';
+            return;
+        }
+        const wrap = proporcion.parentElement;
+        const dispW = wrap.clientWidth;
+        const dispH = wrap.clientHeight;
+        if (!dispW || !dispH) return;
+        let w = dispW;
+        let h = w / RATIO_LIENZO;
+        if (h > dispH) {
+            h = dispH;
+            w = h * RATIO_LIENZO;
+        }
+        proporcion.style.width = Math.floor(w) + 'px';
+        proporcion.style.height = Math.floor(h) + 'px';
+    }
+
     function ajustarTamanoCanvas() {
+        ajustarCajaProporcion();
         const rect = lienzoVisible.getBoundingClientRect();
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const w = Math.round(rect.width * dpr);
@@ -353,6 +389,7 @@
     // llamando a ajustarTamanoCanvas() directamente (ver cargarVehiculo),
     // sin pasar por esta comprobación, así que ese caso no se ve afectado.
     function alRedimensionarVentana() {
+        ajustarCajaProporcion();
         const rect = lienzoVisible.getBoundingClientRect();
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const w = Math.round(rect.width * dpr);
@@ -883,7 +920,33 @@
 
     // ── Arranque ─────────────────────────────────────────────────────
 
-    window.addEventListener('resize', debounce(alRedimensionarVentana, 200));
+    // Tras girar la pantalla, el tamaño real del lienzo (y por tanto
+    // el de alRedimensionarVentana) puede tardar un instante en
+    // asentarse — sobre todo en pantalla completa, donde el lienzo
+    // ahora depende de un reflow de flexbox en vez de solo del ancho.
+    // Un único chequeo con un retraso fijo podía pillar una medida
+    // todavía vieja y, por la comprobación que evita redimensionar de
+    // más (ver alRedimensionarVentana), quedarse pillado en el tamaño
+    // de antes de girar. Reintentar varias veces es inofensivo: si la
+    // medida ya es la correcta, simplemente no hace nada.
+    function comprobarTamanoVariasVeces() {
+        alRedimensionarVentana();
+        [150, 350, 600, 1000].forEach((ms) => setTimeout(alRedimensionarVentana, ms));
+    }
+
+    window.addEventListener('resize', debounce(comprobarTamanoVariasVeces, 200));
+    window.addEventListener('orientationchange', comprobarTamanoVariasVeces);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', debounce(comprobarTamanoVariasVeces, 200));
+    }
+    // El modo "maximizado" simulado de pantalla completa (ver
+    // lab/js/pantalla-completa.js) no cambia el tamaño de la ventana
+    // — es un position:fixed por encima de la página — así que
+    // activarlo no dispara ningún "resize" de window. Sin este
+    // aviso propio, el lienzo se quedaba con el tamaño de la página
+    // normal (o mal encajado) nada más entrar en pantalla completa en
+    // esos navegadores.
+    document.addEventListener('om-pantalla-completa-cambio', comprobarTamanoVariasVeces);
 
     function debounce(fn, ms) {
         let t;

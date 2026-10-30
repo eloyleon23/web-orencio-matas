@@ -16,7 +16,7 @@
 <meta name="description" content="Minijuego: pinta las paredes de una estancia con rodillo o brocha, a mano o con el dedo.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
-<link rel="stylesheet" href="css/juego-pinturas.css?v=20261030d">
+<link rel="stylesheet" href="css/juego-pinturas.css?v=20261030e">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
 </head>
 <body>
@@ -111,7 +111,9 @@
         </div>
 
         <div class="jp-lienzo-wrap">
-            <canvas id="jp-canvas" width="640" height="416" aria-label="Estancia a pintar"></canvas>
+            <div class="jp-lienzo-proporcion">
+                <canvas id="jp-canvas" width="640" height="416" aria-label="Estancia a pintar"></canvas>
+            </div>
             <button type="button" class="jp-boton-reiniciar" id="jp-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
                 <span aria-hidden="true">↺</span>
             </button>
@@ -279,7 +281,7 @@
 </footer>
 
 <script src="../src/js/app.js?v=20260829"></script>
-<script src="js/juego-pinturas.js?v=20261030d"></script>
+<script src="js/juego-pinturas.js?v=20261030e"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
