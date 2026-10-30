@@ -101,6 +101,24 @@
         return copia;
     }
 
+    // ── Dorso de las cartas ──────────────────────────────────────────
+    // Degradados a partir de los propios colores del logo (la gota:
+    // antracita, rojo, naranja, amarillo, verde y azul del remolino) —
+    // uno distinto sorteado en cada partida, para que el dorso también
+    // "vaya alternando" como los propios logos.
+    const GRADIENTES_DORSO = [
+        'linear-gradient(135deg, #3a3f44, #e4392c)',
+        'linear-gradient(135deg, #e4392c, #f0932b, #f6c445)',
+        'linear-gradient(135deg, #1f6f8b, #2f9e6e)',
+        'linear-gradient(135deg, #1a1a1a, #1f6f8b)',
+        'linear-gradient(135deg, #f0932b, #2f9e6e)',
+        'linear-gradient(135deg, #e4392c, #1f6f8b)',
+    ];
+
+    function elegirGradienteDorso() {
+        return GRADIENTES_DORSO[Math.floor(Math.random() * GRADIENTES_DORSO.length)];
+    }
+
     // ── Tablero ──────────────────────────────────────────────────────
 
     function construirTablero() {
@@ -110,17 +128,18 @@
 
         tablero.innerHTML = '';
         tablero.style.gridTemplateColumns = `repeat(${cfg.columnas}, 1fr)`;
+        tablero.style.setProperty('--jc-dorso-gradiente', elegirGradienteDorso());
 
         cartas.forEach((logo, indice) => {
             const boton = document.createElement('button');
             boton.type = 'button';
-            boton.className = 'jc-carta';
+            boton.className = 'jc-carta' + (logo.clave === LOGO_PROPIO.clave ? ' jc-carta--propia' : '');
             boton.dataset.clave = logo.clave;
             boton.dataset.indice = String(indice);
             boton.setAttribute('aria-label', 'Carta boca abajo');
             boton.innerHTML = `
                 <span class="jc-carta__cara jc-carta__cara--dorso" aria-hidden="true">
-                    <span class="jc-carta__inicial">OM</span>
+                    <img class="jc-carta__marca-agua" src="${LOGO_PROPIO.archivo}" alt="">
                 </span>
                 <span class="jc-carta__cara jc-carta__cara--frente">
                     <img src="${logo.archivo}" alt="" loading="lazy">
