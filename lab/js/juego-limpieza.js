@@ -177,7 +177,43 @@
 
     // ── Canvas / escena ─────────────────────────────────────────────────
 
+    const RATIO_LIENZO = 1000 / 650;
+
+    // En pantalla completa, ".jl-lienzo-proporcion" (el div que
+    // envuelve el canvas) tiene que medir el mayor tamaño 1000:650
+    // que cabe en ".jl-lienzo-wrap" — pero el canvas es un elemento
+    // "reemplazado" con tamaño intrínseco propio (sus atributos
+    // width/height, que esta misma función recalcula para que
+    // coincidan con su tamaño en pantalla), así que CSS puro
+    // (aspect-ratio + auto + max-width/max-height) se queda pillado
+    // en un ciclo: el tamaño del contenedor depende del canvas, que
+    // depende del tamaño del contenedor. Se calcula aquí a mano,
+    // a partir del wrap (que no tiene ese problema) y se fija como
+    // ancho/alto en línea — igual que con el tablero de Encuentra la
+    // Pareja.
+    function ajustarCajaProporcion() {
+        const proporcion = lienzoVisible.parentElement;
+        if (!document.body.classList.contains('om-pantalla-completa-activa')) {
+            proporcion.style.width = '';
+            proporcion.style.height = '';
+            return;
+        }
+        const wrap = proporcion.parentElement;
+        const dispW = wrap.clientWidth;
+        const dispH = wrap.clientHeight;
+        if (!dispW || !dispH) return;
+        let w = dispW;
+        let h = w / RATIO_LIENZO;
+        if (h > dispH) {
+            h = dispH;
+            w = h * RATIO_LIENZO;
+        }
+        proporcion.style.width = Math.floor(w) + 'px';
+        proporcion.style.height = Math.floor(h) + 'px';
+    }
+
     function ajustarTamanoCanvas() {
+        ajustarCajaProporcion();
         const rect = lienzoVisible.getBoundingClientRect();
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const w = Math.round(rect.width * dpr);
@@ -490,7 +526,43 @@
 
     // ── Arranque ─────────────────────────────────────────────────────
 
-    window.addEventListener('resize', debounce(ajustarTamanoCanvas, 200));
+    // En móvil, mostrar/ocultar la barra de direcciones u otros
+    // paneles del navegador dispara un evento "resize" de window
+    // aunque el tamaño real del lienzo no haya cambiado. Sin esta
+    // comprobación, ajustarTamanoCanvas() regeneraba la suciedad
+    // (aleatoria) desde cero en cada uno de esos resizes espurios y
+    // se perdía el progreso — igual que se corrigió en su día para
+    // Pinta el Coche y Pinta tu Estancia.
+    function alRedimensionarVentana() {
+        ajustarCajaProporcion();
+        const rect = lienzoVisible.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.round(rect.width * dpr);
+        const h = Math.round(rect.height * dpr);
+        if (w === lienzoVisible.width && h === lienzoVisible.height) return;
+        ajustarTamanoCanvas();
+    }
+
+    // Tras girar la pantalla, el tamaño real del lienzo puede tardar
+    // un instante en asentarse — un único chequeo con un retraso fijo
+    // podía pillar una medida todavía vieja y, por la comprobación de
+    // arriba, quedarse pillado en el tamaño de antes de girar.
+    // Reintentar varias veces es inofensivo: si la medida ya es la
+    // correcta, simplemente no hace nada.
+    function comprobarTamanoVariasVeces() {
+        alRedimensionarVentana();
+        [150, 350, 600, 1000].forEach((ms) => setTimeout(alRedimensionarVentana, ms));
+    }
+
+    window.addEventListener('resize', debounce(comprobarTamanoVariasVeces, 200));
+    window.addEventListener('orientationchange', comprobarTamanoVariasVeces);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', debounce(comprobarTamanoVariasVeces, 200));
+    }
+    // El modo "maximizado" simulado de pantalla completa no dispara
+    // ningún "resize" de window (es un position:fixed, no cambia el
+    // tamaño de la ventana) — ver el mismo aviso en juego-taller.js.
+    document.addEventListener('om-pantalla-completa-cambio', comprobarTamanoVariasVeces);
 
     function debounce(fn, ms) {
         let t;

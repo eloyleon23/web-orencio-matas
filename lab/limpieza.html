@@ -16,7 +16,7 @@
 <meta name="description" content="Minijuego: limpia manchas y suciedad con bayeta o estropajo, a mano o con el dedo.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
-<link rel="stylesheet" href="css/juego-limpieza.css?v=20261030d">
+<link rel="stylesheet" href="css/juego-limpieza.css?v=20261030e">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
 </head>
 <body>
@@ -102,7 +102,9 @@
         </div>
 
         <div class="jl-lienzo-wrap">
-            <canvas id="jl-canvas" width="640" height="416" aria-label="Superficie a limpiar"></canvas>
+            <div class="jl-lienzo-proporcion">
+                <canvas id="jl-canvas" width="640" height="416" aria-label="Superficie a limpiar"></canvas>
+            </div>
             <button type="button" class="jl-boton-reiniciar" id="jl-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
                 <span aria-hidden="true">↺</span>
             </button>
@@ -255,7 +257,7 @@
 </footer>
 
 <script src="../src/js/app.js?v=20260829"></script>
-<script src="js/juego-limpieza.js?v=20261030d"></script>
+<script src="js/juego-limpieza.js?v=20261030e"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
