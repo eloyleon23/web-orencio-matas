@@ -35,8 +35,8 @@
 
 /* ── Pantalla completa nativa (Fullscreen API) ──────────────────────── */
 
-section[aria-label="Zona de juego"]:fullscreen,
-section[aria-label="Zona de juego"]:-webkit-full-screen {
+main:fullscreen,
+main:-webkit-full-screen {
     width: 100%;
     height: 100%;
     max-width: none;
@@ -46,7 +46,7 @@ section[aria-label="Zona de juego"]:-webkit-full-screen {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    align-items: center;
 }
 
 /* ── Modo "maximizado" simulado — para navegadores sin Fullscreen
@@ -64,11 +64,22 @@ section[aria-label="Zona de juego"]:-webkit-full-screen {
     overflow-y: auto !important;
     background: #f7f6f4;
     padding: 16px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center;
 }
 
-body.om-pantalla-completa-activa-body {
+body.om-pantalla-completa-activa {
     overflow: hidden;
+}
+
+/* ── Qué se oculta mientras se juega en pantalla completa ───────────
+   Cada página marca con esta clase lo que NO hace falta para jugar:
+   selector de dificultad/modo, pista, marca, botón de compartir,
+   historial… Lo necesario (zona/canvas, marcador, selector de
+   herramienta y color cuando existen) no lleva esta clase y se queda
+   visible. ─────────────────────────────────────────────────────────── */
+
+body.om-pantalla-completa-activa .om-oculto-en-pantalla-completa {
+    display: none !important;
 }
