@@ -54,7 +54,7 @@
     let animacionId = null;
     let inicioAnimacion = 0;
 
-    const torre = document.getElementById('jq-torre');
+    const pilaInterior = document.getElementById('jq-pila-interior');
     const barra = document.getElementById('jq-barra-movil');
 
     function cfgDificultad() {
@@ -66,28 +66,44 @@
         return Math.max(cfg.periodoMin, cfg.periodoMs - estado.capas.length * cfg.reduccionPorCapa);
     }
 
-    // ── Render de la torre (capas visibles, "cámara" hacia arriba) ───
+    // ── Render de la torre: "cámara" que sigue a la última capa ──────
+    // Cada capa se queda siempre en el DOM, anclada por `bottom` a su
+    // fila real (índice × altura). Cuando la torre supera lo que cabe
+    // en pantalla, se desplaza TODO el contenedor interior hacia abajo
+    // con una transición CSS, de forma que las capas más antiguas se
+    // deslizan fuera de vista de forma continua — nunca desaparecen de
+    // golpe — mientras la más nueva se queda siempre a la misma altura.
 
     const ALTURA_CAPA_PX = 34;
-    const FILAS_VISIBLES = 9;
+    const FILAS_FIJAS = 8;
 
-    function renderizarTorre() {
-        torre.querySelectorAll('.jq-capa').forEach((el) => el.remove());
-        const total = estado.capas.length;
-        const desde = Math.max(0, total - FILAS_VISIBLES);
-        for (let i = desde; i < total; i++) {
-            const capa = estado.capas[i];
-            const el = document.createElement('div');
-            el.className = 'jq-capa';
-            el.style.left = capa.izquierda + '%';
-            el.style.width = capa.ancho + '%';
-            el.style.bottom = ((total - 1 - i) * ALTURA_CAPA_PX) + 'px';
-            el.style.background = capa.color;
-            el.innerHTML = `<span class="jq-capa__etiqueta">${capa.etiqueta}</span>`;
-            torre.insertBefore(el, barra);
-        }
-        barra.style.bottom = (total * ALTURA_CAPA_PX) + 'px';
+    function agregarCapaAlDom(indice, capa) {
+        const el = document.createElement('div');
+        el.className = 'jq-capa' + (capa.perfecta ? ' jq-capa--perfecta' : '');
+        el.style.left = capa.izquierda + '%';
+        el.style.width = capa.ancho + '%';
+        el.style.bottom = (indice * ALTURA_CAPA_PX) + 'px';
+        el.style.background = capa.color;
+        el.innerHTML = `<span class="jq-capa__etiqueta">${capa.etiqueta}</span>`;
+        pilaInterior.insertBefore(el, barra);
+        return el;
+    }
+
+    function actualizarCamara() {
+        const totalFilas = estado.capas.length;
+        const desplazamiento = Math.max(0, (totalFilas - 1 - FILAS_FIJAS)) * ALTURA_CAPA_PX;
+        pilaInterior.style.transform = `translateY(${desplazamiento}px)`;
+        barra.style.bottom = (totalFilas * ALTURA_CAPA_PX) + 'px';
         barra.style.width = barraAncho + '%';
+    }
+
+    function reiniciarTorreEnDom() {
+        pilaInterior.querySelectorAll('.jq-capa').forEach((el) => el.remove());
+        pilaInterior.classList.add('jq-pila-interior--sin-transicion');
+        agregarCapaAlDom(0, estado.capas[0]);
+        actualizarCamara();
+        void pilaInterior.offsetWidth;
+        pilaInterior.classList.remove('jq-pila-interior--sin-transicion');
     }
 
     // ── Movimiento de la barra ───────────────────────────────────────
@@ -130,21 +146,25 @@
         const esPerfecta = (ultima.ancho - solape) <= cfgDificultad().toleranciaPerfecta;
         const color = COLORES_CAPA[estado.capas.length % COLORES_CAPA.length];
         const etiqueta = ETIQUETAS_CAPA[Math.floor(Math.random() * ETIQUETAS_CAPA.length)];
+        const ganancia = Math.round((3 + Math.random() * 15) * (esPerfecta ? 1.5 : 1) * 10) / 10;
 
         const capa = esPerfecta
-            ? { izquierda: ultima.izquierda, ancho: ultima.ancho, color, etiqueta }
-            : { izquierda: nuevaIzq, ancho: solape, color, etiqueta };
+            ? { izquierda: ultima.izquierda, ancho: ultima.ancho, color, etiqueta, perfecta: true }
+            : { izquierda: nuevaIzq, ancho: solape, color, etiqueta, perfecta: false };
 
         estado.capas.push(capa);
+        const indiceNueva = estado.capas.length - 1;
         barraAncho = capa.ancho;
 
         estado.combo = esPerfecta ? estado.combo + 1 : 0;
         estado.comboMaximo = Math.max(estado.comboMaximo, estado.combo);
-        estado.euros += Math.round((3 + Math.random() * 15) * (esPerfecta ? 1.5 : 1) * 10) / 10;
+        estado.euros += ganancia;
 
-        renderizarTorre();
+        agregarCapaAlDom(indiceNueva, capa);
+        actualizarCamara();
         actualizarVista();
-        lanzarRecorte(ultima, capa);
+        lanzarRecorte(ultima, capa, indiceNueva);
+        mostrarGananciaFlotante(indiceNueva, esPerfecta, ganancia);
 
         if (estado.capas.length - 1 >= cfgDificultad().objetivo) {
             finalizarPartida(true);
@@ -155,7 +175,7 @@
         requestAnimationFrame(animarBarra);
     }
 
-    function lanzarRecorte(anterior, nueva) {
+    function lanzarRecorte(anterior, nueva, indice) {
         // Pequeño trozo que "cae" representando el recorte, solo si de
         // verdad se ha recortado algo (no en un golpe perfecto).
         if (nueva.izquierda <= anterior.izquierda && nueva.ancho >= anterior.ancho - 0.01) return;
@@ -169,12 +189,35 @@
             el.style.left = (nueva.izquierda + nueva.ancho) + '%';
             el.style.width = (anterior.izquierda + anterior.ancho - (nueva.izquierda + nueva.ancho)) + '%';
         }
-        el.style.bottom = '0px';
-        torre.appendChild(el);
+        el.style.bottom = (indice * ALTURA_CAPA_PX) + 'px';
+        pilaInterior.insertBefore(el, barra);
         setTimeout(() => el.remove(), 500);
     }
 
-    torre.addEventListener('pointerdown', (ev) => {
+    // Deja claro, en el momento, qué se ha ganado con cada golpe: un
+    // "+X,XX €" flotando junto a la capa y, si ha sido un encaje
+    // perfecto (no se recorta nada), una insignia "¡Perfecto!".
+    function mostrarGananciaFlotante(indice, esPerfecta, ganancia) {
+        const alturaBase = (indice * ALTURA_CAPA_PX) + ALTURA_CAPA_PX + 4;
+
+        const popup = document.createElement('span');
+        popup.className = 'jq-ganancia-flotante';
+        popup.textContent = '+' + ganancia.toFixed(2).replace('.', ',') + ' €';
+        popup.style.bottom = alturaBase + 'px';
+        pilaInterior.insertBefore(popup, barra);
+        setTimeout(() => popup.remove(), 780);
+
+        if (esPerfecta) {
+            const insignia = document.createElement('span');
+            insignia.className = 'jq-insignia-perfecto';
+            insignia.textContent = '¡Perfecto!';
+            insignia.style.bottom = (alturaBase + 22) + 'px';
+            pilaInterior.insertBefore(insignia, barra);
+            setTimeout(() => insignia.remove(), 660);
+        }
+    }
+
+    document.getElementById('jq-escenario').addEventListener('pointerdown', (ev) => {
         if (ev.target.closest('.jq-boton-reiniciar')) return;
         soltar();
     });
@@ -223,8 +266,9 @@
 
         document.getElementById('jq-celebracion-overlay').hidden = true;
         document.getElementById('jq-pista').style.display = '';
+        document.getElementById('jq-objetivo-numero').textContent = String(cfgDificultad().objetivo);
 
-        renderizarTorre();
+        reiniciarTorreEnDom();
         actualizarVista();
         requestAnimationFrame(animarBarra);
     }
