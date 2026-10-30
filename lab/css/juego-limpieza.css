@@ -1,0 +1,608 @@
+/*
+ * Quita la Mancha — minijuego (lab/limpieza.html)
+ * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
+ * que juego-pinturas.css/juego-taller.css, con la paleta REAL del
+ * sitio (ver src/css/estilos.css), coherente con el resto de la web.
+ */
+
+:root {
+    --jl-rojo: #d91b1b;
+    --jl-rojo-oscuro: #ad1515;
+    --jl-negro: #1a1a1a;
+    --jl-gris-texto: #52555a;
+    --jl-gris-borde: #e2e2e4;
+    --jl-gris-fondo: #f7f6f4;
+    --jl-blanco: #ffffff;
+    --jl-radio: 14px;
+    --jl-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jl-gris-fondo);
+    color: var(--jl-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jl-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jl-negro), var(--jl-rojo-oscuro));
+    color: var(--jl-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jl-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jl-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jl-header__volver:hover,
+.jl-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jl-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jl-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jl-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jl-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jl-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jl-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jl-juego {
+    background: var(--jl-blanco);
+    border-radius: var(--jl-radio);
+    box-shadow: var(--jl-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jl-juego {
+        flex: 1 1 60%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jl-selector-superficie {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jl-chip-superficie {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jl-gris-borde);
+    background: var(--jl-blanco);
+    color: var(--jl-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jl-chip-superficie.is-activo {
+    background: var(--jl-negro);
+    border-color: var(--jl-negro);
+    color: var(--jl-blanco);
+}
+
+.jl-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.jl-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jl-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jl-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jl-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jl-gris-fondo);
+    overflow: hidden;
+}
+
+.jl-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jl-rojo), var(--jl-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+.jl-lienzo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1000 / 650;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fdfaf4;
+}
+
+#jl-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.jl-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.6);
+    color: var(--jl-blanco);
+    font-size: 1.2rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+.jl-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jl-gris-texto);
+    text-align: center;
+}
+
+/* ── Partículas de suciedad decorativas ─────────────────────────────── */
+
+.jl-particula {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.55;
+    animation: jl-particula-fade 0.5s ease-out forwards;
+}
+
+@keyframes jl-particula-fade {
+    from { transform: scale(0.4); opacity: 0.55; }
+    to { transform: scale(1.6); opacity: 0; }
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jl-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jl-controles {
+        flex: 1 1 40%;
+    }
+}
+
+.jl-grupo-control {
+    background: var(--jl-blanco);
+    border-radius: var(--jl-radio);
+    box-shadow: var(--jl-sombra);
+    padding: 14px;
+}
+
+.jl-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jl-selector-herramienta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.jl-boton-herramienta {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jl-gris-borde);
+    background: var(--jl-blanco);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--jl-gris-texto);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.jl-boton-herramienta__icono {
+    font-size: 1.3rem;
+}
+
+.jl-boton-herramienta.is-activo {
+    border-color: var(--jl-rojo);
+    color: var(--jl-rojo-oscuro);
+    background: #fdf1f0;
+}
+
+.jl-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jl-boton-compartir,
+.jl-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jl-boton-compartir {
+    background: var(--jl-negro);
+    color: var(--jl-blanco);
+}
+
+.jl-boton-compartir:hover {
+    background: #333;
+}
+
+.jl-boton-secundario {
+    background: var(--jl-gris-fondo);
+    color: var(--jl-negro);
+    border: 1.5px solid var(--jl-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jl-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jl-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jl-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jl-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jl-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jl-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jl-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jl-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jl-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jl-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jl-gris-texto);
+    font-weight: 600;
+}
+
+.jl-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jl-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jl-celebracion .jl-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jl-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jl-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jl-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jl-compartir-panel {
+    position: relative;
+    background: var(--jl-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jl-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jl-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jl-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jl-gris-texto);
+}
+
+.jl-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jl-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jl-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jl-rojo);
+    color: var(--jl-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jl-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jl-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jl-blanco);
+}
+
+.jl-boton-red--whatsapp { background: #25d366; }
+.jl-boton-red--x { background: #000000; }
+.jl-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas de droguería ─────────────────────────────────────────────── */
+
+.jl-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jl-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jl-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jl-gris-texto);
+    text-align: center;
+}
+
+.jl-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jl-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jl-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jl-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
+
+/* "La Lavandera" no tiene fichero de logo en assets/marcas/ (a
+   diferencia de Asevi y Fairy, ya usados en la cabecera del sitio) —
+   mismo tratamiento de texto que ./src/componentes/marcas.html usa
+   para marcas sin logo de imagen. */
+.jl-proveedores__grid .jl-marca-texto {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--jl-negro);
+    text-align: center;
+    letter-spacing: 0.01em;
+}
