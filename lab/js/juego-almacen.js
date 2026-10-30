@@ -437,6 +437,7 @@
                 ? `Colocaste las ${cfg.totalCajas} cajas en ${formatoTiempo(cfg.tiempoTotal - estado.tiempoRestante)}`
                 : `Dejaste ${colocadas}/${cfg.totalCajas} cajas colocadas (${pct}%)`;
 
+        dibujarResultadoEnCanvas();
         document.getElementById('ja-celebracion-overlay').hidden = false;
         if (completado) lanzarConfeti();
     }
