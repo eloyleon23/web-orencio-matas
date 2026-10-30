@@ -34,13 +34,40 @@
     // ── Dificultad ───────────────────────────────────────────────────
     // tiempoTotal (s), totalInsectos (a lo largo de toda la partida),
     // maxSimultaneos (a la vez en pantalla), intervaloAparicion (ms
-    // entre apariciones) y velocidad (multiplica la velocidadBase de
-    // cada bicho: más difícil, algo más rápidos y con menos tiempo).
+    // entre apariciones), velocidad (multiplica la velocidadBase de
+    // cada bicho) y pausaMin/Max (ms parado entre un salto y el
+    // siguiente: a más difícil, pausas más cortas, así que apenas se
+    // está quieto). pesos: probabilidad de que aparezca cada tipo de
+    // bicho — a más difícil, predominan los más rápidos (mosca/avispa)
+    // sobre los más lentos (cucaracha/hormiga), no solo sube un
+    // multiplicador global.
     const DIFICULTADES = {
-        facil: { nombre: 'Fácil', tiempoTotal: 65, totalInsectos: 12, maxSimultaneos: 3, intervaloAparicion: 1500, velocidad: 0.7 },
-        medio: { nombre: 'Medio', tiempoTotal: 55, totalInsectos: 18, maxSimultaneos: 5, intervaloAparicion: 1150, velocidad: 0.9 },
-        dificil: { nombre: 'Difícil', tiempoTotal: 45, totalInsectos: 24, maxSimultaneos: 7, intervaloAparicion: 900, velocidad: 1.25 },
+        facil: {
+            nombre: 'Fácil', tiempoTotal: 65, totalInsectos: 12, maxSimultaneos: 3,
+            intervaloAparicion: 1500, velocidad: 0.7, pausaMin: 300, pausaMax: 600,
+            pesos: { cucaracha: 0.4, hormiga: 0.3, mosca: 0.2, avispa: 0.1 },
+        },
+        medio: {
+            nombre: 'Medio', tiempoTotal: 55, totalInsectos: 20, maxSimultaneos: 6,
+            intervaloAparicion: 850, velocidad: 1.15, pausaMin: 150, pausaMax: 350,
+            pesos: { cucaracha: 0.2, hormiga: 0.25, mosca: 0.3, avispa: 0.25 },
+        },
+        dificil: {
+            nombre: 'Difícil', tiempoTotal: 45, totalInsectos: 30, maxSimultaneos: 9,
+            intervaloAparicion: 550, velocidad: 1.7, pausaMin: 60, pausaMax: 180,
+            pesos: { cucaracha: 0.1, hormiga: 0.15, mosca: 0.35, avispa: 0.4 },
+        },
     };
+
+    function elegirInsecto(pesos) {
+        const r = Math.random();
+        let acum = 0;
+        for (const clave of CLAVES_INSECTOS) {
+            acum += pesos[clave];
+            if (r <= acum) return clave;
+        }
+        return CLAVES_INSECTOS[CLAVES_INSECTOS.length - 1];
+    }
 
     // ── Estado ────────────────────────────────────────────────────────
     const estado = {
@@ -95,7 +122,7 @@
         if (estado.aparecidos >= cfgDificultad().totalInsectos) return;
         if (estado.vivos.length >= cfgDificultad().maxSimultaneos) return;
 
-        const clave = CLAVES_INSECTOS[Math.floor(Math.random() * CLAVES_INSECTOS.length)];
+        const clave = elegirInsecto(cfgDificultad().pesos);
         const cfg = INSECTOS[clave];
         const rect = arena.getBoundingClientRect();
 
@@ -146,8 +173,11 @@
 
         // Pequeña pausa al llegar (como si se detuviera a "mirar
         // alrededor") antes de elegir el siguiente punto — da una
-        // ventana estática en la que es más fácil acertarle.
-        const pausa = 250 + Math.random() * 450;
+        // ventana estática en la que es más fácil acertarle. La
+        // duración de esa ventana depende de la dificultad (ver
+        // pausaMin/pausaMax en DIFICULTADES).
+        const cfgDif = cfgDificultad();
+        const pausa = cfgDif.pausaMin + Math.random() * (cfgDif.pausaMax - cfgDif.pausaMin);
         el._temporizadorMovimiento = setTimeout(() => moverInsecto(el, cfg), duracion + pausa);
     }
 
