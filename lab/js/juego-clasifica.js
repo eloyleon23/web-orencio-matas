@@ -93,7 +93,7 @@
         el.innerHTML = `<span class="jf-producto__icono" aria-hidden="true">${producto.icono}</span><span class="jf-producto__nombre">${producto.nombre}</span>`;
         zona.appendChild(el);
 
-        const entrada = { el, producto, atrapado: false };
+        const entrada = { el, producto, atrapado: false, inicio: performance.now(), duracion };
         estado.cayendo.push(entrada);
 
         requestAnimationFrame(() => {
@@ -122,9 +122,27 @@
 
     // ── Cesta (tocar área) ───────────────────────────────────────────
 
+    // Si hay varios productos de la misma área cayendo a la vez, se
+    // captura el que esté más cerca de llegar abajo (el más urgente),
+    // no el primero que apareció — así el resultado coincide con lo
+    // que el jugador ve en pantalla en ese instante.
+    function entradaMasUrgente(area) {
+        let mejor = null;
+        let mejorProgreso = -1;
+        estado.cayendo.forEach((e) => {
+            if (e.producto.area !== area || e.atrapado) return;
+            const progreso = (performance.now() - e.inicio) / e.duracion;
+            if (progreso > mejorProgreso) {
+                mejorProgreso = progreso;
+                mejor = e;
+            }
+        });
+        return mejor;
+    }
+
     function tocarArea(area, boton) {
         if (estado.terminado) return;
-        const entrada = estado.cayendo.find((e) => e.producto.area === area && !e.atrapado);
+        const entrada = entradaMasUrgente(area);
 
         if (!entrada) {
             flashBoton(boton, 'jf-area--fallo');
@@ -134,13 +152,17 @@
         }
 
         entrada.atrapado = true;
-        quitarEntrada(entrada);
+        clearTimeout(entrada.temporizador);
+        estado.cayendo = estado.cayendo.filter((e) => e !== entrada);
         flashBoton(boton, 'jf-area--acierto');
 
         estado.capturados++;
         estado.combo++;
         estado.comboMaximo = Math.max(estado.comboMaximo, estado.combo);
-        estado.puntos += 10 + Math.floor(estado.combo / 3) * 2;
+        const puntosGanados = 10 + Math.floor(estado.combo / 3) * 2;
+        estado.puntos += puntosGanados;
+
+        volarACesta(entrada, boton, puntosGanados);
         actualizarVista();
         comprobarVictoria();
     }
@@ -150,6 +172,42 @@
         void boton.offsetWidth;
         boton.classList.add(clase);
         setTimeout(() => boton.classList.remove(clase), 280);
+    }
+
+    // Anima el producto capturado volando hacia la cesta tocada y deja
+    // un "+N" flotando ahí mismo, para que se vea con claridad qué se
+    // ha capturado exactamente y cuánto ha sumado.
+    function volarACesta(entrada, boton, puntos) {
+        const el = entrada.el;
+        const rectoZona = zona.getBoundingClientRect();
+        const rectoEl = el.getBoundingClientRect();
+        const rectoBoton = boton.getBoundingClientRect();
+
+        const origenX = rectoEl.left - rectoZona.left + rectoEl.width / 2;
+        const origenY = rectoEl.top - rectoZona.top + rectoEl.height / 2;
+        const destinoX = rectoBoton.left - rectoZona.left + rectoBoton.width / 2;
+        const destinoY = rectoBoton.top - rectoZona.top + rectoBoton.height / 2;
+
+        el.classList.add('jf-producto--capturado');
+        el.style.transition = 'none';
+        el.style.left = origenX + 'px';
+        el.style.top = origenY + 'px';
+        el.style.transform = 'translate(-50%, -50%) scale(1)';
+        void el.offsetWidth;
+        el.style.transition = 'left 0.32s ease-in, top 0.32s ease-in, transform 0.32s ease-in, opacity 0.32s ease-in';
+        el.style.left = destinoX + 'px';
+        el.style.top = destinoY + 'px';
+        el.style.transform = 'translate(-50%, -50%) scale(0.25)';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 340);
+
+        const popup = document.createElement('span');
+        popup.className = 'jf-puntos-flotantes';
+        popup.textContent = '+' + puntos;
+        popup.style.left = destinoX + 'px';
+        popup.style.top = (destinoY - 14) + 'px';
+        zona.appendChild(popup);
+        setTimeout(() => popup.remove(), 720);
     }
 
     document.querySelectorAll('.jf-area').forEach((boton) => {
@@ -211,7 +269,9 @@
     function limpiarZona() {
         estado.cayendo.forEach((e) => clearTimeout(e.temporizador));
         estado.cayendo = [];
-        zona.innerHTML = '';
+        // Las cestas (.jf-areas) viven dentro de la zona: solo se
+        // retiran los productos y los "+N" flotantes, no el overlay.
+        zona.querySelectorAll('.jf-producto, .jf-puntos-flotantes').forEach((el) => el.remove());
     }
 
     function nuevaPartida() {

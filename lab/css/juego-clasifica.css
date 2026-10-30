@@ -274,22 +274,31 @@ body {
     z-index: 3;
 }
 
-/* ── Cestas (áreas) ──────────────────────────────────────────────────── */
+/* ── Cestas (áreas) — ancladas al fondo de la propia zona de caída,
+   para que estén siempre en el mismo campo visual que lo que cae ──── */
 
 .jf-areas {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 4;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-top: 10px;
+    gap: 6px;
+    padding: 8px 8px 10px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.97) 60%, rgba(255, 255, 255, 0));
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .jf-area {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 2px;
-    min-height: 60px;
-    padding: 8px 4px;
+    min-height: 56px;
+    padding: 6px 4px;
     border-radius: 10px;
     border: 1.5px solid var(--jf-gris-borde);
     background: var(--jf-blanco);
@@ -298,11 +307,11 @@ body {
 }
 
 .jf-area__icono {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
 }
 
 .jf-area__nombre {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     font-weight: 700;
     color: var(--jf-gris-texto);
     text-align: center;
@@ -324,6 +333,28 @@ body {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-4px); }
     75% { transform: translateX(4px); }
+}
+
+/* ── Vuelo de captura y puntos flotantes ──────────────────────────────── */
+
+.jf-producto--capturado {
+    z-index: 5;
+}
+
+.jf-puntos-flotantes {
+    position: absolute;
+    z-index: 6;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--jf-verde);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: jf-flotar 0.7s ease-out forwards;
+}
+
+@keyframes jf-flotar {
+    0% { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
+    100% { opacity: 0; transform: translate(-50%, -50%) translateY(-28px); }
 }
 
 .jf-pista {
