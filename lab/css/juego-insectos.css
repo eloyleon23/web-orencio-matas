@@ -225,6 +225,26 @@ body {
     overflow: hidden;
 }
 
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa la arena se dimensiona por el ancho
+   (aspect-ratio). En pantalla completa pasa a ocupar el alto
+   disponible directamente — igual que en Clasifica por Pasillos. ──── */
+
+body.om-pantalla-completa-activa .ji-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .ji-arena-wrap {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: unset;
+}
+
 .ji-arena {
     position: absolute;
     inset: 0;

@@ -5,6 +5,17 @@
  * las variables de color de cada una.
  */
 
+/* El viewport ya lleva "user-scalable=no", pero eso no basta en
+   todos los navegadores para desactivar el zoom por doble toque —
+   jugando rápido (tocar varias veces seguidas) algunos lo disparaban
+   igualmente, ampliando la página y rompiendo la partida. Esto lo
+   desactiva a nivel de body sin tocar el "touch-action" que cada
+   juego ya pone en su propia zona de dibujo/arrastre (más específico,
+   sigue ganando donde haga falta). */
+body {
+    touch-action: manipulation;
+}
+
 .om-pantalla-completa {
     position: fixed;
     right: calc(16px + env(safe-area-inset-right, 0px));

@@ -47,7 +47,10 @@
     }
 
     function sincronizar() {
-        document.body.classList.toggle(CLASE_ACTIVA, enPantallaCompleta());
+        const activo = enPantallaCompleta();
+        if (activo) moverOverlaysAMain();
+        else devolverOverlaysASuSitio();
+        document.body.classList.toggle(CLASE_ACTIVA, activo);
         actualizarBoton();
         // Algunos juegos recalculan tamaños en píxeles (p. ej. el
         // tablero de Encuentra la Pareja) cuando entra o sale de
@@ -126,22 +129,32 @@
         sincronizar();
     });
 
-    // El overlay de celebración (y el de compartir) vive fuera de
+    // El overlay de celebración y el de compartir viven fuera de
     // <main>, como el resto de los juegos de la suite. En pantalla
     // completa nativa, todo lo que no es descendiente del elemento en
     // fullscreen queda fuera de la "capa superior" del navegador y no
-    // se ve; en el modo simulado, el overlay de <main> (más alto en
-    // z-index) lo tapa igualmente. Así que en cuanto termina la
-    // partida salimos de pantalla completa automáticamente para que
-    // el resultado y el botón de compartir se vean con normalidad.
-    const overlayCelebracion = document.querySelector('[id$="-celebracion-overlay"]');
-    if (overlayCelebracion) {
-        const observador = new MutationObserver(() => {
-            if (!overlayCelebracion.hasAttribute('hidden') && enPantallaCompleta()) {
-                salirFullscreen();
-            }
+    // se ve; en el modo simulado, el <main> maximizado (más alto en
+    // z-index) lo tapa igualmente. En vez de salir de pantalla
+    // completa al terminar la partida — lo que rompía la sensación de
+    // partida continua — se "trasladan" esos overlays dentro de
+    // <main> mientras pantalla completa está activa (siguen siendo
+    // "position: fixed", así que no cambian de sitio en pantalla) y
+    // se devuelven a su posición original al salir.
+    const overlaysAMover = ['[id$="-celebracion-overlay"]', '[id$="-compartir-overlay"]']
+        .map((selector) => document.querySelector(selector))
+        .filter(Boolean)
+        .map((el) => ({ el, padre: el.parentNode, siguiente: el.nextSibling }));
+
+    function moverOverlaysAMain() {
+        overlaysAMover.forEach(({ el }) => {
+            if (el.parentNode !== main) main.appendChild(el);
         });
-        observador.observe(overlayCelebracion, { attributes: true, attributeFilter: ['hidden'] });
+    }
+
+    function devolverOverlaysASuSitio() {
+        overlaysAMover.forEach(({ el, padre, siguiente }) => {
+            if (el.parentNode === main) padre.insertBefore(el, siguiente);
+        });
     }
 
     sincronizar();

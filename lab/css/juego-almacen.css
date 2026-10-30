@@ -227,6 +227,21 @@ body {
     padding: 10px;
 }
 
+/* ── Pantalla completa ────────────────────────────────────────────────
+   La estantería tiene un alto fijo (filas de alto fijo, no depende
+   del ancho ni se puede "estirar" sin desvirtuar el tamaño de las
+   cajas), así que aquí solo se deja que la tarjeta crezca si sobra
+   espacio — sin "justify-content: center" ni "min-height: 0": esa
+   combinación, con contenido que no cabe del todo, puede dejar parte
+   recortada e inalcanzable por arriba en vez de simplemente requerir
+   scroll. */
+
+body.om-pantalla-completa-activa .ja-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
 .ja-estanteria {
     display: flex;
     flex-direction: column;

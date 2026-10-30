@@ -202,7 +202,22 @@
         tablero.style.height = Math.floor(alto) + 'px';
     }
 
-    window.addEventListener('resize', () => ajustarTableroAlEspacio());
+    // "resize" se dispara con cualquier cambio de tamaño de ventana
+    // (girar el móvil, pero también al salir/entrar el teclado, etc.)
+    // — se recalcula con un pequeño debounce para no recalcular de
+    // más si llegan varios seguidos. "orientationchange" es más
+    // específico para el giro de pantalla y en algunos navegadores va
+    // un paso por delante de "resize"; se reintenta pasado un
+    // instante por si el alto real tarda en asentarse tras girar.
+    let temporizadorResize = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(temporizadorResize);
+        temporizadorResize = setTimeout(() => ajustarTableroAlEspacio(), 120);
+    });
+    window.addEventListener('orientationchange', () => {
+        ajustarTableroAlEspacio();
+        setTimeout(() => ajustarTableroAlEspacio(), 300);
+    });
     // Disparado por lab/js/pantalla-completa.js al entrar/salir de
     // pantalla completa (un cambio de tamaño que "resize" no siempre
     // captura al instante, sobre todo al activar el modo simulado).
