@@ -331,6 +331,14 @@ body {
     border-color: var(--jm-gris-borde);
 }
 
+/* .jm-bote-color ya fija display:flex, que por especificidad de
+   origen de autor ganaría al display:none del atributo [hidden] del
+   navegador — sin esto, los botes ocultos por dificultad (ver
+   actualizarPaletaVisible en juego-mezcla.js) seguirían viéndose. */
+.jm-bote-color[hidden] {
+    display: none;
+}
+
 .jm-bote-color:active {
     transform: scale(0.94);
 }

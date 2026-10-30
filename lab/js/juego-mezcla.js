@@ -2,11 +2,10 @@
  * Mezcla de Colores — minijuego (lab/mezcla-colores.html)
  * Vanilla JS, sin dependencias.
  *
- * Mecánica: el jugador vierte "cazos" de pintura de una paleta fija
- * (los mismos colores de marca del sitio: rojo, amarillo, azul, verde,
- * blanco, negro) y el juego calcula la media ponderada de sus
- * cantidades en RGB — una aproximación sencilla a mezclar pintura,
- * suficiente para un juego casual sin modelar mezcla sustractiva real.
+ * Mecánica: el jugador vierte "cazos" de pintura de una paleta de
+ * colores y el juego calcula la media ponderada de sus cantidades en
+ * RGB — una aproximación sencilla a mezclar pintura, suficiente para
+ * un juego casual sin modelar mezcla sustractiva real.
  *
  * El color objetivo se genera igual: una receta secreta de cantidades
  * aleatorias de la MISMA paleta, nunca mostrada al jugador — solo el
@@ -21,11 +20,18 @@
 (function () {
     'use strict';
 
+    // Paleta completa — qué parte de ella está disponible en cada
+    // partida lo decide la dificultad (ver DIFICULTADES.coloresDisponibles
+    // más abajo), no se usan todos siempre.
     const PALETA = {
         rojo: { r: 217, g: 27, b: 27 },
+        naranja: { r: 232, g: 114, b: 12 },
         amarillo: { r: 241, g: 179, b: 0 },
-        azul: { r: 0, g: 109, b: 174 },
         verde: { r: 0, g: 135, b: 67 },
+        azul: { r: 0, g: 109, b: 174 },
+        morado: { r: 123, g: 45, b: 142 },
+        rosa: { r: 214, g: 51, b: 108 },
+        marron: { r: 107, g: 66, b: 38 },
         blanco: { r: 255, g: 255, b: 255 },
         negro: { r: 26, g: 26, b: 26 },
     };
@@ -33,16 +39,31 @@
     const DISTANCIA_MAXIMA = Math.sqrt(3 * 255 * 255);
 
     // ── Dificultad ───────────────────────────────────────────────────
-    // minColores/maxColores: cuántos colores distintos entran en la
+    // coloresDisponibles: qué botes de pintura puede usar el jugador —
+    // cuantos más colores para elegir, más fácil confundirse con uno
+    // parecido y más difícil dar con la combinación correcta.
+    // minColores/maxColores: cuántos de esos colores entran en la
     // receta secreta del objetivo — con más colores el resultado es
     // más "turbio" y difícil de adivinar a ojo.
     // maxVertidos: tope de cazos que puede verter el jugador (null =
     // sin límite) — con menos cazos hay menos margen para afinar la
     // proporción, así que toca acertar antes.
     const DIFICULTADES = {
-        facil: { nombre: 'Fácil', minColores: 1, maxColores: 2, maxVertidos: null },
-        medio: { nombre: 'Medio', minColores: 2, maxColores: 4, maxVertidos: 14 },
-        dificil: { nombre: 'Difícil', minColores: 3, maxColores: 6, maxVertidos: 9 },
+        facil: {
+            nombre: 'Fácil',
+            coloresDisponibles: ['rojo', 'amarillo', 'azul', 'blanco'],
+            minColores: 1, maxColores: 2, maxVertidos: null,
+        },
+        medio: {
+            nombre: 'Medio',
+            coloresDisponibles: ['rojo', 'amarillo', 'azul', 'verde', 'blanco', 'negro'],
+            minColores: 2, maxColores: 4, maxVertidos: 14,
+        },
+        dificil: {
+            nombre: 'Difícil',
+            coloresDisponibles: CLAVES_PALETA,
+            minColores: 3, maxColores: 6, maxVertidos: 9,
+        },
     };
 
     const estado = {
@@ -64,12 +85,14 @@
 
     function nuevoObjetivo() {
         // Receta secreta: entre minColores y maxColores colores
-        // distintos (según la dificultad), cada uno con una cantidad
-        // aleatoria — nunca se le muestra al jugador, solo el color
-        // resultante.
+        // distintos, elegidos SOLO de entre los disponibles en la
+        // dificultad actual (para que el objetivo sea siempre
+        // alcanzable con los botes que el jugador tiene a mano), cada
+        // uno con una cantidad aleatoria — nunca se le muestra al
+        // jugador, solo el color resultante.
         const cfg = DIFICULTADES[estado.dificultad];
         const nColores = cfg.minColores + Math.floor(Math.random() * (cfg.maxColores - cfg.minColores + 1));
-        const elegidos = mezclar(CLAVES_PALETA).slice(0, nColores);
+        const elegidos = mezclar(cfg.coloresDisponibles).slice(0, nColores);
 
         const receta = {};
         elegidos.forEach((clave) => {
@@ -195,7 +218,19 @@
 
     // ── Nueva partida ────────────────────────────────────────────────
 
+    // Muestra solo los botes de la paleta que tocan en esta dificultad
+    // (ver DIFICULTADES.coloresDisponibles) y oculta el resto — más
+    // colores para elegir es justo lo que hace más difícil la
+    // dificultad "Difícil".
+    function actualizarPaletaVisible() {
+        const disponibles = DIFICULTADES[estado.dificultad].coloresDisponibles;
+        document.querySelectorAll('.jm-bote-color').forEach((boton) => {
+            boton.hidden = !disponibles.includes(boton.dataset.color);
+        });
+    }
+
     function nuevaPartida() {
+        actualizarPaletaVisible();
         estado.objetivo = nuevoObjetivo();
         estado.cantidades = {};
         estado.historialVertidos = [];
