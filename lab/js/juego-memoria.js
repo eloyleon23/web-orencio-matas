@@ -202,33 +202,37 @@
         tablero.style.height = Math.floor(alto) + 'px';
     }
 
-    // "resize" se dispara con cualquier cambio de tamaño de ventana
-    // (girar el móvil, pero también al salir/entrar el teclado, etc.)
-    // — se recalcula con un pequeño debounce para no recalcular de
-    // más si llegan varios seguidos. "orientationchange" es más
-    // específico para el giro de pantalla y en algunos navegadores va
-    // un paso por delante de "resize"; se reintenta pasado un
-    // instante por si el alto real tarda en asentarse tras girar.
+    // Tras girar la pantalla (o entrar/salir de pantalla completa) hay
+    // que recalcular el tablero, pero el momento exacto en que el
+    // navegador ya tiene el alto real asentado varía mucho según el
+    // navegador: en algunos (sobre todo en pantalla completa
+    // simulada en iOS) ni "resize" ni "orientationchange" llegan a
+    // tiempo o con el valor definitivo a la primera. En vez de fiarlo
+    // todo a un único reintento con un retraso fijo, se reintenta
+    // varias veces a lo largo de 1,2s: un tamaño ya correcto se
+    // recalcula igual sin que se note, así que no hay coste real en
+    // insistir más de la cuenta.
+    function reajustarConReintentos() {
+        ajustarTableroAlEspacio();
+        [80, 200, 400, 700, 1100].forEach((ms) => setTimeout(() => ajustarTableroAlEspacio(), ms));
+    }
+
     let temporizadorResize = null;
     window.addEventListener('resize', () => {
         clearTimeout(temporizadorResize);
-        temporizadorResize = setTimeout(() => ajustarTableroAlEspacio(), 120);
+        temporizadorResize = setTimeout(reajustarConReintentos, 60);
     });
-    window.addEventListener('orientationchange', () => {
-        ajustarTableroAlEspacio();
-        setTimeout(() => ajustarTableroAlEspacio(), 300);
-    });
+    window.addEventListener('orientationchange', reajustarConReintentos);
+    // "visualViewport" refleja el tamaño visible real (descontando
+    // barra de direcciones, teclado, etc.) y en algunos navegadores
+    // móviles — sobre todo Safari en iOS — avisa de cambios de
+    // tamaño de forma más fiable que el "resize" de window.
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', reajustarConReintentos);
+    }
     // Disparado por lab/js/pantalla-completa.js al entrar/salir de
-    // pantalla completa (un cambio de tamaño que "resize" no siempre
-    // captura al instante, sobre todo al activar el modo simulado).
-    // Además de la llamada inmediata, se reintenta una vez pasado un
-    // instante por si el navegador tarda en asentar el alto real
-    // (p. ej. mientras colapsa su propia barra de direcciones): un
-    // tamaño ya correcto se recalcula igual sin que se note.
-    document.addEventListener('om-pantalla-completa-cambio', () => {
-        ajustarTableroAlEspacio();
-        setTimeout(() => ajustarTableroAlEspacio(), 350);
-    });
+    // pantalla completa.
+    document.addEventListener('om-pantalla-completa-cambio', reajustarConReintentos);
 
     // ── Voltear / comparar ───────────────────────────────────────────
 
