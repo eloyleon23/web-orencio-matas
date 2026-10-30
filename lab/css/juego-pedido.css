@@ -223,6 +223,20 @@ body {
     margin-bottom: 12px;
 }
 
+/* ── Pantalla completa ────────────────────────────────────────────────
+   El mostrador y la estantería de productos tienen alto fijo por
+   contenido, así que aquí solo se deja que la tarjeta crezca si sobra
+   espacio — sin "justify-content: center" ni "min-height: 0": esa
+   combinación, con contenido que no cabe del todo, puede dejar parte
+   recortada e inalcanzable por arriba en vez de simplemente requerir
+   scroll. */
+
+body.om-pantalla-completa-activa .jd-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
 .jd-mostrador {
     border-radius: 10px;
     background: linear-gradient(180deg, #fdfaf4, #f3eee1);

@@ -163,6 +163,21 @@ body {
     color: var(--jm-blanco);
 }
 
+/* ── Pantalla completa ────────────────────────────────────────────────
+   Los botes comparativos y la barra de progreso tienen alto fijo por
+   contenido (los botes de pintura para verter viven en .jm-controles,
+   ya incluido en pantalla completa), así que aquí solo se deja que la
+   tarjeta crezca si sobra espacio — sin "justify-content: center" ni
+   "min-height: 0": esa combinación, con contenido que no cabe del
+   todo, puede dejar parte recortada e inalcanzable por arriba en vez
+   de simplemente requerir scroll. */
+
+body.om-pantalla-completa-activa .jm-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
 .jm-comparacion {
     display: flex;
     align-items: center;

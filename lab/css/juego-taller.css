@@ -260,6 +260,41 @@ body {
     background: linear-gradient(to bottom, #eef1f4 0%, #eef1f4 72%, #d7dce1 72%, #d7dce1 100%);
 }
 
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa el lienzo se dimensiona por el ancho
+   (aspect-ratio 16/9). En pantalla completa el contenedor pasa a
+   ocupar el alto disponible, pero el CANVAS no puede simplemente
+   estirarse a esa forma: tiene una resolución de dibujo fija
+   (640×360) y forzar su CSS a otra proporción distorsionaría el
+   coche dibujado. Así que el contenedor se estira, pero el canvas se
+   mantiene centrado dentro con su proporción intacta (como
+   "object-fit: contain") — aprovecha más alto cuando lo hay sin
+   deformar el dibujo. ────────────────────────────────────────────── */
+
+body.om-pantalla-completa-activa .jt-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jt-lienzo-wrap {
+    flex: 1;
+    min-height: 0;
+    aspect-ratio: unset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef1f4;
+}
+
+body.om-pantalla-completa-activa #jt-canvas {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
 #jt-canvas {
     width: 100%;
     height: 100%;
