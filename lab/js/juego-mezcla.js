@@ -170,7 +170,6 @@
         document.getElementById('jm-boton-deshacer').disabled = estado.historialVertidos.length === 0;
         document.getElementById('jm-boton-vaciar').disabled = total === 0;
         document.getElementById('jm-boton-terminar').disabled = total === 0;
-        document.getElementById('jm-boton-compartir').disabled = total === 0;
         document.querySelectorAll('.jm-bote-color').forEach((boton) => {
             boton.disabled = alTope;
         });
@@ -327,17 +326,29 @@
 
         ctx.fillStyle = rgbACss(estado.objetivo);
         ctx.fillRect(60, 60, 220, 180);
-        ctx.fillStyle = rgbACss(mezcla);
-        ctx.fillRect(360, 60, 220, 180);
+        if (mezcla) {
+            ctx.fillStyle = rgbACss(mezcla);
+            ctx.fillRect(360, 60, 220, 180);
+        } else {
+            ctx.strokeStyle = '#c7c5c1';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.strokeRect(360, 60, 220, 180);
+            ctx.setLineDash([]);
+        }
 
         ctx.fillStyle = '#1a1a1a';
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('Objetivo', 170, 270);
-        ctx.fillText('Mi mezcla', 470, 270);
+        ctx.fillText(mezcla ? 'Mi mezcla' : 'Sin mezclar aún', 470, 270);
 
         ctx.font = 'bold 28px sans-serif';
-        ctx.fillText(pct + '% de parecido', w / 2, 320);
+        ctx.fillText(
+            mezcla ? pct + '% de parecido' : '¡Juega y consigue el color objetivo!',
+            w / 2,
+            320
+        );
     }
 
     async function compartir() {
