@@ -513,7 +513,13 @@
             o.el.classList.add('jz-obstaculo--golpeado');
             estado.puntosObjetos = Math.max(0, estado.puntosObjetos - PENALIZACION_OBSTACULO);
             mostrarFlotante('-' + PENALIZACION_OBSTACULO, estado.x, o.y - estado.cameraY, true);
-            estado.vy *= 0.35; // pequeño "rebote" al chocar, sin cortar el salto del todo
+            // No se toca estado.vy: frenar la velocidad vertical al
+            // chocar cortaba en seco el impulso del salto a mitad de
+            // trayectoria (sobre todo si se chocaba nada más saltar),
+            // haciendo que el jugador se quedara corto de la siguiente
+            // plataforma y cayera al vacío aunque el salto, a ojos del
+            // jugador, iba bien encaminado. El golpe solo debe doler en
+            // puntos, nunca sabotear la física del salto.
 
             jugadorEl.classList.add('jz-jugador--golpeado');
             setTimeout(() => jugadorEl.classList.remove('jz-jugador--golpeado'), 350);
