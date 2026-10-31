@@ -27,15 +27,15 @@
     const DIFICULTADES = {
         facil: {
             nombre: 'Fácil', anchoPlataforma: 26, gapYMin: 70, gapYMax: 105,
-            probabilidadPaquete: 0.4, probabilidadMovil: 0,
+            probabilidadPaquete: 0.4, probabilidadMovil: 0, probabilidadObstaculo: 0.08,
         },
         medio: {
             nombre: 'Medio', anchoPlataforma: 19, gapYMin: 90, gapYMax: 125,
-            probabilidadPaquete: 0.45, probabilidadMovil: 0.12,
+            probabilidadPaquete: 0.45, probabilidadMovil: 0.12, probabilidadObstaculo: 0.15,
         },
         dificil: {
             nombre: 'Difícil', anchoPlataforma: 13, gapYMin: 105, gapYMax: 145,
-            probabilidadPaquete: 0.5, probabilidadMovil: 0.26,
+            probabilidadPaquete: 0.5, probabilidadMovil: 0.26, probabilidadObstaculo: 0.22,
         },
     };
 
@@ -64,8 +64,35 @@
     // vez de paquetes de pedido, con más puntos que un paquete normal.
     const EMOJIS_BONUS = ['🧴', '🎨', '🖌️', '🧼', '🧽', '💐'];
 
+    // ── Hitos de altura: recompensa cada cierta distancia subida, para
+    // que la partida no se sienta plana cuanto más dura. ─────────────
+    const INTERVALO_HITO_M = 100; // cada cuántos metros se premia
+    const PUNTOS_POR_HITO = 50;
+
+    // ── Fondo según la altura: cada 500m cambia de "cielo", de la nave
+    // a pie de calle hasta el espacio — puramente decorativo, para que
+    // subir se note y no sea siempre la misma pantalla. ──────────────
+    const METROS_POR_CIELO = 500;
+    const CIELOS = [
+        'linear-gradient(180deg, #dce7f5 0%, #eef2f6 100%)', // nave, a pie de planta
+        'linear-gradient(180deg, #a9cdf0 0%, #d9ecfb 100%)', // altura media, cielo despejado
+        'linear-gradient(180deg, #f3b56a 0%, #fcd9a8 100%)', // atardecer
+        'linear-gradient(180deg, #7d5ba6 0%, #c58ec9 100%)', // anochecer
+        'linear-gradient(180deg, #1b2a4a 0%, #3c4f7d 100%)', // noche
+        'linear-gradient(180deg, #05050f 0%, #1a1a3a 100%)', // espacio
+    ];
+
+    // ── Obstáculos: barreras/estanterías que hay que esquivar saltando
+    // — no se puede aterrizar en ellas, solo restan puntos si se chocan
+    // al atravesarlas (no terminan la partida, para no sumar otra forma
+    // de morir encima de la caída al vacío). ─────────────────────────
+    const PENALIZACION_OBSTACULO = 15;
+    const ANCHO_OBSTACULO_MIN = 20;
+    const ANCHO_OBSTACULO_MAX = 36;
+
     // ── Avatares disponibles ─────────────────────────────────────────
     const CLAVE_AVATAR = 'om_salta_avatar';
+    const CLAVE_AVATAR_PERSONALIZADO = 'om_salta_avatar_personalizado';
     const AVATAR_PREDETERMINADO = '👷🏻‍♂️';
 
     function leerAvatarGuardado() {
@@ -84,6 +111,22 @@
         }
     }
 
+    function leerAvatarPersonalizadoGuardado() {
+        try {
+            return localStorage.getItem(CLAVE_AVATAR_PERSONALIZADO);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function guardarAvatarPersonalizado(avatar) {
+        try {
+            localStorage.setItem(CLAVE_AVATAR_PERSONALIZADO, avatar);
+        } catch (err) {
+            // localStorage no disponible — se ignora.
+        }
+    }
+
     const estado = {
         dificultad: 'medio',
         avatar: AVATAR_PREDETERMINADO,
@@ -99,6 +142,9 @@
         maxYGenerado: 0,
         plataformas: [], // {id, x, y, ancho, movil, rango, centro, velocidad, el, paquete}
         siguienteIdPlataforma: 1,
+        obstaculos: [], // {id, x, y, ancho, el, golpeado}
+        siguienteIdObstaculo: 1,
+        siguienteHitoM: INTERVALO_HITO_M,
         paquetesRecogidos: 0,
         puntos: 0,
         puntosObjetos: 0, // puntos acumulados por paquetes/bonus recogidos (puntos variables, no se recalculan desde un multiplicador fijo)
@@ -196,6 +242,30 @@
         return plataforma;
     }
 
+    // Obstáculos a mitad de camino entre una plataforma y la siguiente
+    // (justo por donde pasa el salto) — se saltan los primeros metros
+    // para dar un arranque tranquilo, sin nada que esquivar de golpe.
+    const ALTURA_SIN_OBSTACULOS = 250;
+
+    function crearObstaculo(y) {
+        const ancho = ANCHO_OBSTACULO_MIN + Math.random() * (ANCHO_OBSTACULO_MAX - ANCHO_OBSTACULO_MIN);
+        const xIzquierda = Math.random() * (100 - ancho);
+
+        const el = document.createElement('div');
+        el.className = 'jz-obstaculo';
+        el.style.left = xIzquierda + '%';
+        el.style.width = ancho + '%';
+        const icono = document.createElement('span');
+        icono.className = 'jz-obstaculo__icono';
+        icono.textContent = '🚧';
+        el.appendChild(icono);
+        mundo.appendChild(el);
+
+        const obstaculo = { id: estado.siguienteIdObstaculo++, x: xIzquierda, y, ancho, el, golpeado: false };
+        estado.obstaculos.push(obstaculo);
+        return obstaculo;
+    }
+
     function generarSiguientesPlataformas() {
         const cfg = cfgDificultad();
         const limite = estado.cameraY + zonaAltoPx * 1.6;
@@ -206,6 +276,11 @@
             const xIzquierda = Math.random() * (100 - ancho);
             const movil = Math.random() < cfg.probabilidadMovil;
             crearPlataforma(xIzquierda, y, ancho, movil);
+
+            if (y > ALTURA_SIN_OBSTACULOS && Math.random() < cfg.probabilidadObstaculo) {
+                crearObstaculo(estado.maxYGenerado + gap / 2);
+            }
+
             estado.maxYGenerado = y;
         }
     }
@@ -218,6 +293,13 @@
                 p.el.remove();
                 if (p.paquete) p.paquete.el.remove();
                 estado.plataformas.splice(i, 1);
+            }
+        }
+        for (let i = estado.obstaculos.length - 1; i >= 0; i--) {
+            const o = estado.obstaculos[i];
+            if (o.y < umbral) {
+                o.el.remove();
+                estado.obstaculos.splice(i, 1);
             }
         }
     }
@@ -253,6 +335,10 @@
             p.el.style.bottom = (p.y - estado.cameraY) + 'px';
             p.el.style.left = p.x + '%';
             if (p.paquete && !p.paquete.recogido) posicionarPaquete(p);
+        });
+
+        estado.obstaculos.forEach((o) => {
+            o.el.style.bottom = (o.y - estado.cameraY) + 'px';
         });
 
         // + ALTO_PLATAFORMA_PX: estado.y es la altura "lógica" de la
@@ -394,14 +480,72 @@
         });
     }
 
-    function mostrarFlotante(texto, xPct, yPx) {
+    function mostrarFlotante(texto, xPct, yPx, negativo) {
         const el = document.createElement('span');
-        el.className = 'jz-flotante';
+        el.className = 'jz-flotante' + (negativo ? ' jz-flotante--negativo' : '');
         el.textContent = texto;
         el.style.left = xPct + '%';
         el.style.bottom = yPx + 'px';
         zona.appendChild(el);
         setTimeout(() => el.remove(), 650);
+    }
+
+    // Los obstáculos no se pueden pisar ni terminan la partida al
+    // chocar — solo restan puntos una vez cada uno (golpeado=true),
+    // igual que al revés de recoger un paquete. Se detecta el choque
+    // comprobando si el tramo vertical recorrido este fotograma
+    // (entre el pie anterior y el actual, en cualquier dirección,
+    // subiendo o cayendo) atraviesa la altura del obstáculo, con
+    // solape en X contra el ancho del jugador.
+    function comprobarObstaculos(pieAnterior) {
+        const mitadJugador = ANCHO_JUGADOR_PCT / 2;
+        const izqJugador = estado.x - mitadJugador;
+        const derJugador = estado.x + mitadJugador;
+        const yMin = Math.min(pieAnterior, estado.y);
+        const yMax = Math.max(pieAnterior, estado.y);
+        estado.obstaculos.forEach((o) => {
+            if (o.golpeado) return;
+            if (o.y < yMin || o.y > yMax) return;
+            const solapaX = derJugador >= o.x && izqJugador <= o.x + o.ancho;
+            if (!solapaX) return;
+
+            o.golpeado = true;
+            o.el.classList.add('jz-obstaculo--golpeado');
+            estado.puntosObjetos = Math.max(0, estado.puntosObjetos - PENALIZACION_OBSTACULO);
+            mostrarFlotante('-' + PENALIZACION_OBSTACULO, estado.x, o.y - estado.cameraY, true);
+            estado.vy *= 0.35; // pequeño "rebote" al chocar, sin cortar el salto del todo
+
+            jugadorEl.classList.add('jz-jugador--golpeado');
+            setTimeout(() => jugadorEl.classList.remove('jz-jugador--golpeado'), 350);
+        });
+    }
+
+    // ── Hitos de altura y fondo según la altura ───────────────────────
+
+    let temporizadorLogro = null;
+    function mostrarLogro(texto) {
+        const el = document.getElementById('jz-logro');
+        el.textContent = texto;
+        el.hidden = false;
+        el.classList.remove('jz-logro--mostrar');
+        void el.offsetWidth; // fuerza el reinicio de la animación si ya estaba mostrándose
+        el.classList.add('jz-logro--mostrar');
+        clearTimeout(temporizadorLogro);
+        temporizadorLogro = setTimeout(() => { el.hidden = true; }, 1800);
+    }
+
+    function comprobarHitoAltura() {
+        const metros = Math.floor(estado.alturaMaxima / 10);
+        if (metros < estado.siguienteHitoM) return;
+        estado.puntosObjetos += PUNTOS_POR_HITO;
+        mostrarLogro('¡' + estado.siguienteHitoM + ' m! +' + PUNTOS_POR_HITO);
+        estado.siguienteHitoM += INTERVALO_HITO_M;
+    }
+
+    function actualizarCielo() {
+        const metros = Math.floor(estado.alturaMaxima / 10);
+        const indice = Math.min(Math.floor(metros / METROS_POR_CIELO), CIELOS.length - 1);
+        zona.style.background = CIELOS[indice];
     }
 
     function frame() {
@@ -443,7 +587,13 @@
         if (!estado.enSuelo) estado.plataformaActual = null;
         estado.fotogramasSinSuelo = estado.enSuelo ? 0 : estado.fotogramasSinSuelo + 1;
 
-        if (estado.y > estado.alturaMaxima) estado.alturaMaxima = estado.y;
+        comprobarObstaculos(pieAnterior);
+
+        if (estado.y > estado.alturaMaxima) {
+            estado.alturaMaxima = estado.y;
+            actualizarCielo();
+            comprobarHitoAltura();
+        }
 
         const objetivoCamara = estado.y - zonaAltoPx * UMBRAL_CAMARA;
         if (objetivoCamara > estado.cameraY) estado.cameraY = objetivoCamara;
@@ -520,9 +670,69 @@
         if (guardar) guardarAvatar(avatar);
     }
 
-    document.querySelectorAll('.jz-chip-avatar').forEach((boton) => {
+    // El botón "+" también lleva la clase base .jz-chip-avatar (para
+    // heredar el mismo estilo de chip), pero no tiene data-avatar — se
+    // excluye aquí para que no dispare elegirAvatar(undefined, ...); su
+    // propio comportamiento (abrir el selector) se añade más abajo.
+    document.querySelectorAll('.jz-chip-avatar:not(.jz-chip-avatar--anadir)').forEach((boton) => {
         boton.addEventListener('click', () => elegirAvatar(boton.dataset.avatar, true));
     });
+
+    // ── Avatar personalizado (cualquier emoji) ────────────────────────
+
+    const selectorAvatares = document.querySelector('.jz-selector-avatar');
+    const botonAnadirAvatar = document.getElementById('jz-boton-avatar-personalizado');
+    const overlayAvatar = document.getElementById('jz-avatar-overlay');
+    const inputAvatar = document.getElementById('jz-avatar-input');
+
+    function insertarChipAvatarPersonalizado(avatar) {
+        let chip = selectorAvatares.querySelector('.jz-chip-avatar[data-personalizado]');
+        if (!chip) {
+            chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'jz-chip-avatar';
+            chip.setAttribute('role', 'radio');
+            chip.setAttribute('aria-checked', 'false');
+            chip.dataset.personalizado = '1';
+            chip.addEventListener('click', () => elegirAvatar(chip.dataset.avatar, true));
+            selectorAvatares.insertBefore(chip, botonAnadirAvatar);
+        }
+        chip.dataset.avatar = avatar;
+        chip.textContent = avatar;
+        chip.title = 'Tu emoji';
+        chip.setAttribute('aria-label', 'Tu emoji personalizado');
+        return chip;
+    }
+
+    function abrirSelectorAvatarPersonalizado() {
+        inputAvatar.value = '';
+        overlayAvatar.hidden = false;
+        setTimeout(() => inputAvatar.focus(), 50);
+    }
+
+    function cerrarSelectorAvatarPersonalizado() {
+        overlayAvatar.hidden = true;
+    }
+
+    botonAnadirAvatar.addEventListener('click', abrirSelectorAvatarPersonalizado);
+    document.getElementById('jz-avatar-cerrar').addEventListener('click', cerrarSelectorAvatarPersonalizado);
+    overlayAvatar.addEventListener('click', (ev) => {
+        if (ev.target === overlayAvatar) cerrarSelectorAvatarPersonalizado();
+    });
+    document.getElementById('jz-avatar-usar').addEventListener('click', () => {
+        const valor = inputAvatar.value.trim();
+        if (!valor) return;
+        insertarChipAvatarPersonalizado(valor);
+        guardarAvatarPersonalizado(valor);
+        elegirAvatar(valor, true);
+        cerrarSelectorAvatarPersonalizado();
+    });
+
+    // Si ya había un emoji personalizado guardado, se restaura el chip
+    // ANTES de elegirAvatar() de abajo, para que pueda marcarse como
+    // activo si era el último elegido.
+    const avatarPersonalizadoGuardado = leerAvatarPersonalizadoGuardado();
+    if (avatarPersonalizadoGuardado) insertarChipAvatarPersonalizado(avatarPersonalizadoGuardado);
 
     elegirAvatar(leerAvatarGuardado() || AVATAR_PREDETERMINADO, false);
 
@@ -534,6 +744,8 @@
             if (p.paquete) p.paquete.el.remove();
         });
         estado.plataformas = [];
+        estado.obstaculos.forEach((o) => o.el.remove());
+        estado.obstaculos = [];
         zona.querySelectorAll('.jz-flotante').forEach((el) => el.remove());
     }
 
@@ -553,6 +765,8 @@
         estado.cameraY = 0;
         estado.maxYGenerado = 0;
         estado.siguienteIdPlataforma = 1;
+        estado.siguienteIdObstaculo = 1;
+        estado.siguienteHitoM = INTERVALO_HITO_M;
         estado.paquetesRecogidos = 0;
         estado.puntos = 0;
         estado.puntosObjetos = 0;
@@ -560,6 +774,7 @@
         estado.terminado = false;
         estado.jugando = true;
         estado.pausado = false;
+        zona.style.background = CIELOS[0];
 
         estado.plataformaActual = crearPlataforma(50 - ANCHO_PLATAFORMA_INICIAL / 2, 0, ANCHO_PLATAFORMA_INICIAL, false);
         estado.maxYGenerado = 0;

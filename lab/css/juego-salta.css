@@ -133,6 +133,30 @@
     background: #f1efe9;
 }
 
+.jz-chip-avatar--anadir {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #7a7d82;
+    border-style: dashed;
+}
+
+.jz-avatar-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 2rem;
+    text-align: center;
+    padding: 0.6rem;
+    border-radius: 12px;
+    border: 2px solid #d8d4cc;
+    margin-bottom: 1.2rem;
+}
+
+.jz-avatar-input:focus {
+    outline: none;
+    border-color: #1a1a1a;
+}
+
 /* Barra superior */
 
 .jz-barra-superior {
@@ -176,6 +200,10 @@
     aspect-ratio: 9 / 14;
     max-height: 68vh;
     background: linear-gradient(180deg, #dce7f5 0%, #eef2f6 100%);
+    /* El fondo cambia según la altura alcanzada (ver CIELOS en
+       juego-salta.js) — la transición suaviza el cambio de color en
+       vez de que salte de golpe. */
+    transition: background 1.6s ease;
     border-radius: 16px;
     overflow: hidden;
     box-shadow: inset 0 0 0 2px #e4e1d8;
@@ -270,6 +298,77 @@
     transform: translateX(-50%) scale(0.95, 1.08);
 }
 
+.jz-jugador--golpeado {
+    filter: drop-shadow(0 0 8px rgba(217, 27, 27, 0.9));
+}
+
+/* Obstáculos: barreras/estanterías que hay que esquivar saltando —
+   no se puede aterrizar en ellas, solo restan puntos si se chocan al
+   atravesarlas. Franjas de peligro para que se distingan a simple
+   vista de las plataformas (color madera). */
+.jz-obstaculo {
+    position: absolute;
+    height: 13px;
+    border-radius: 3px;
+    background: repeating-linear-gradient(
+        135deg,
+        #1a1a1a, #1a1a1a 8px,
+        #f0b300 8px, #f0b300 16px
+    );
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    overflow: visible;
+}
+
+.jz-obstaculo__icono {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.1rem;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.jz-obstaculo--golpeado {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Aviso de logro (hito de altura alcanzado) */
+
+.jz-logro {
+    position: absolute;
+    top: 14%;
+    left: 50%;
+    transform: translate(-50%, -10px);
+    background: rgba(26, 26, 26, 0.88);
+    color: #fff;
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    z-index: 6;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.jz-logro.jz-logro--mostrar {
+    animation: jz-logro-aparece 1.8s ease forwards;
+}
+
+@keyframes jz-logro-aparece {
+    0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, -10px) scale(1.08); }
+    25% { transform: translate(-50%, -10px) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -22px) scale(0.95); }
+}
+
 .jz-boton-reiniciar {
     position: absolute;
     top: 8px;
@@ -297,6 +396,10 @@
     pointer-events: none;
     animation: jz-flotar 0.65s ease-out forwards;
     z-index: 6;
+}
+
+.jz-flotante--negativo {
+    color: #d91b1b;
 }
 
 @keyframes jz-flotar {
