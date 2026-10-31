@@ -1,12 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <!--
   PoC de gamificación / captación comercial — "Clasifica por Pasillos".
-  Vive aislada en lab/, sin enlaces desde el navbar ni el footer del
-  sitio público: es una prueba de concepto, no una página de producción.
+  Enlazada desde la cabecera de todo el sitio como "Espacio Creativo"
+  (visible para usuarios con perfil normal; oculta para sesiones con
+  perfil profesional, igual que el resto de páginas de lab/ — ver
+  PAGINAS_EXCLUIDAS en assets/js/perfil-profesional.js).
   Juego general (no ligado a un área concreta): caen productos desde
   arriba y hay que tocar a qué área pertenecen (droguería, perfumería,
   pinturas o talleres) antes de que lleguen abajo.
@@ -14,15 +31,35 @@
   entra, enlazando al buscador sin filtrar.
 -->
 <meta name="robots" content="noindex, nofollow">
-<title>Clasifica por Pasillos — Laboratorio Orencio Matas</title>
+<title>Clasifica por Pasillos — Espacio Creativo | Orencio Matas</title>
 <meta name="description" content="Minijuego: toca a qué área pertenece cada producto que cae antes de que llegue abajo.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
 <link rel="stylesheet" href="css/juego-clasifica.css?v=20261030">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
+<!-- Google tag (gtag.js) -->
+<script>
+  // Ver nota en el bloque de Google Tag Manager: solo en el dominio
+  // oficial orenciomatas.es.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    var _gtagScript = document.createElement('script');
+    _gtagScript.async = true;
+    _gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y';
+    document.head.appendChild(_gtagScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HMM85HSJ4Y');
+  }
+</script>
+<link rel="stylesheet" href="css/invitacion-buscador.css?v=20261101">
 </head>
 <body>
 
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <header class="site-header" id="inicio">
   <div class="navbar" data-navbar>
     <div class="container navbar__inner">
@@ -61,6 +98,7 @@
           <li><a href="../centro-soluciones.html">Centro de Soluciones</a></li>
           <li><a href="../anuncios.html">Anuncios/Recursos</a></li>
           <li><a href="../profesionales.html">Profesionales</a></li>
+          <li data-oculto-perfil-profesional><a href="index.html">Espacio Creativo</a></li>
           <li><a href="../actualidad.html">Actualidad</a></li>
           <li><a href="../index.html#contacto">Contacto</a></li>
         </ul>
@@ -71,8 +109,8 @@
 </header>
 
 <header class="jf-header">
-    <a class="jf-header__volver" href="index.html">&larr; Minijuegos</a>
-    <p class="jf-header__etiqueta">Laboratorio — minijuego — prototipo</p>
+    <a class="jf-header__volver" href="index.html">&larr; Espacio Creativo</a>
+    <p class="jf-header__etiqueta">Espacio Creativo</p>
     <h1 class="jf-header__titulo"><span aria-hidden="true">📦</span> Clasifica por Pasillos</h1>
     <p class="jf-header__subtitulo">Toca a qué área pertenece cada producto que cae antes de que llegue abajo.</p>
 </header>
@@ -267,7 +305,7 @@
 </footer>
 
 <script src="../src/js/app.js?v=20260829"></script>
-<script src="js/estadisticas-juegos.js?v=20261101"></script>
+<script src="js/estadisticas-juegos.js?v=20261101c"></script>
 <script src="js/juego-clasifica.js?v=20261030"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
@@ -276,6 +314,6 @@
     // perfil-profesional.js para el redirect de páginas excluidas.
     window.OM_RUTA_RAIZ = '../';
 </script>
-<script src="../assets/js/perfil-profesional.js?v=20261024c"></script>
+<script src="../assets/js/perfil-profesional.js?v=20261101"></script>
 </body>
 </html>
