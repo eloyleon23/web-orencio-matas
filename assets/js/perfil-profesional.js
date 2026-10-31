@@ -426,6 +426,15 @@
       if (li) li.remove(); else a.remove();
     });
 
+    // 1b) Enlaces marcados a mano con data-oculto-perfil-profesional —
+    // para el hub de minijuegos "Espacio Creativo" (lab/index.html) no
+    // sirve el filtro por nombre de archivo de arriba: su archivo se
+    // llama "index.html", igual que la home pública, y añadirlo a
+    // PAGINAS_EXCLUIDAS ocultaría también el enlace "Inicio" en todas
+    // las páginas. Se marca el <li> de ese enlace a mano en cada página
+    // en vez de depender del nombre de archivo.
+    document.querySelectorAll('[data-oculto-perfil-profesional]').forEach((el) => el.remove());
+
     // 2) Distintivo "PROFESIONALES" junto al logotipo de la cabecera, y
     // un efecto visual diferencial en el propio logo (gotita cayendo +
     // línea recorriendo el contorno real de la gota, ver
