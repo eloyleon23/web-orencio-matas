@@ -85,6 +85,17 @@
         const rect = zona.getBoundingClientRect();
         zonaAnchoPx = rect.width || 1;
         zonaAltoPx = rect.height || 1;
+
+        // El tamaño de la caja de .jz-jugador es un % del ancho de la
+        // zona (variable según el dispositivo/pantalla completa), pero
+        // un emoji no escala solo con el ancho del contenedor — con un
+        // font-size fijo en CSS, en pantallas más anchas la caja crecía
+        // mucho más que el emoji y el operario quedaba "flotando" muy
+        // por encima de donde pisaba de verdad. Se fija aquí el tamaño
+        // exacto en px para que el glifo llene la caja en cualquier
+        // tamaño de pantalla.
+        const anchoJugadorPx = zonaAnchoPx * (ANCHO_JUGADOR_PCT / 100);
+        jugadorEl.style.fontSize = Math.round(anchoJugadorPx * 1.05) + 'px';
     }
 
     let temporizadorResize = null;
