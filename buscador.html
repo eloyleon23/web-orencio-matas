@@ -2513,6 +2513,32 @@
             opacity: 0;
             pointer-events: none;
         }
+        /* Botón para saltarse la pantalla de carga a demanda — SOLO en
+           preproducción por ahora (se muestra/oculta por JS según
+           window.OM_PREPRODUCCION, ver el script de control del splash
+           más abajo en el <body>; en producción el atributo "hidden"
+           del HTML se queda tal cual). Arriba a la derecha para no
+           competir visualmente con el logo centrado. */
+        .om-splash-cerrar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid rgba(15, 17, 21, 0.12);
+            background: var(--primary-white, #fff);
+            color: var(--primary-black, #1a1a1a);
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        }
+        .om-splash-cerrar:hover {
+            background: #f0efe9;
+        }
         .om-splash-logo {
             position: relative;
             display: inline-block;
@@ -4542,6 +4568,14 @@
      script tras perfil-profesional.js) cuando terminan a la vez la
      animación y la carga real de productos. -->
 <div id="om-splash-carga" aria-hidden="true">
+    <!-- Botón para saltarse el efecto de carga a demanda — de momento
+         solo en preproducción (ver script de control del splash, más
+         abajo, que lo muestra según window.OM_PREPRODUCCION). Oculto
+         por defecto en el HTML para que en producción no aparezca ni
+         un instante antes de que corra el JS. -->
+    <button type="button" id="om-splash-cerrar" class="om-splash-cerrar" aria-label="Cerrar pantalla de carga" hidden>
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
     <div class="om-splash-logo">
         <img src="./assets/logos/logo_calidad.svg" alt="" />
     </div>
@@ -6172,6 +6206,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         datosListos = true;
         cerrarSiToca_();
     };
+
+    // Botón para saltarse el efecto de carga a demanda, a petición de
+    // Eloy — de momento solo en preproducción (window.OM_PREPRODUCCION,
+    // ver assets/js/entorno.js), arriba a la derecha del splash. No
+    // espera a las dos condiciones de cerrarSiToca_(): el usuario ha
+    // pedido explícitamente no esperar, así que se cierra ya mismo
+    // (el catálogo sigue cargando de fondo igualmente).
+    if (window.OM_PREPRODUCCION) {
+        var botonCerrarSplash = document.getElementById('om-splash-cerrar');
+        if (botonCerrarSplash) {
+            botonCerrarSplash.hidden = false;
+            botonCerrarSplash.addEventListener('click', function () {
+                animLista = true;
+                datosListos = true;
+                cerrarSiToca_();
+            });
+        }
+    }
 
     // Red de seguridad: si por lo que sea nunca llega a invocarse
     // om_splash_datosListos_ (fallo inesperado fuera de los dos puntos de
