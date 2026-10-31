@@ -1,0 +1,816 @@
+/*
+ * Pinta el Coche — minijuego (lab/taller.html)
+ * Mobile-first, controles táctiles de al menos 44px.
+ */
+
+:root {
+    --jt-rojo: #d91b1b;
+    --jt-rojo-oscuro: #ad1515;
+    --jt-negro: #1a1a1a;
+    --jt-gris-texto: #52555a;
+    --jt-gris-borde: #e2e2e4;
+    --jt-gris-fondo: #f7f6f4;
+    --jt-blanco: #ffffff;
+    --jt-radio: 14px;
+    --jt-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jt-gris-fondo);
+    color: var(--jt-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jt-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jt-negro), var(--jt-rojo-oscuro));
+    color: var(--jt-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jt-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jt-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jt-header__volver:hover,
+.jt-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jt-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jt-header__etiqueta {
+    margin: 0 0 6px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #c7c7c9;
+}
+
+.jt-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jt-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: #d8d8da;
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jt-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jt-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jt-juego {
+    background: var(--jt-blanco);
+    border-radius: var(--jt-radio);
+    box-shadow: var(--jt-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jt-juego {
+        flex: 1 1 60%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jt-selector-modo {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jt-chip-modo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 56px;
+    padding: 8px 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jt-gris-borde);
+    background: var(--jt-blanco);
+    color: var(--jt-gris-texto);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jt-chip-modo__titulo {
+    white-space: nowrap;
+}
+
+.jt-chip-modo small {
+    font-size: 0.66rem;
+    font-weight: 500;
+    color: inherit;
+    opacity: 0.75;
+}
+
+.jt-chip-modo.is-activo {
+    background: var(--jt-rojo);
+    border-color: var(--jt-rojo);
+    color: var(--jt-blanco);
+}
+
+.jt-selector-modelo {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jt-chip-modelo {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jt-gris-borde);
+    background: var(--jt-blanco);
+    color: var(--jt-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jt-chip-modelo.is-activo {
+    background: var(--jt-negro);
+    border-color: var(--jt-negro);
+    color: var(--jt-blanco);
+}
+
+.jt-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.jt-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jt-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jt-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jt-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jt-gris-fondo);
+    overflow: hidden;
+}
+
+.jt-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jt-rojo), #e0564c);
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+.jt-lienzo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #eef1f4 0%, #eef1f4 72%, #d7dce1 72%, #d7dce1 100%);
+}
+
+/* Envoltorio fijo entre el wrap y el canvas: fuera de pantalla
+   completa es un simple paso a través (100%/100%, igual que antes de
+   que existiera). Existe para que, en pantalla completa, el que haga
+   "contain-fit" (encajar manteniendo proporción) sea ESTE div y no
+   el <canvas> directamente — ver el porqué más abajo. */
+.jt-lienzo-proporcion {
+    width: 100%;
+    height: 100%;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa el lienzo se dimensiona por el ancho
+   (aspect-ratio 16/9). En pantalla completa el contenedor pasa a
+   ocupar el alto disponible, pero el dibujo no puede simplemente
+   estirarse a esa forma sin deformar el coche — necesita un
+   "contain-fit" (como "object-fit: contain") que tanto encoja como
+   AGRANDE el lienzo hasta el mayor tamaño que quepa, manteniendo la
+   proporción 16:9.
+   Ese contain-fit NO puede aplicarse directamente al <canvas>: el
+   canvas redimensiona su propia resolución de dibujo (atributos
+   width/height) para que coincida con su tamaño en pantalla — ver
+   ajustarTamanoCanvas() en juego-taller.js — y "width/height: auto"
+   en un elemento con tamaño intrínseco propio (como el canvas) usa
+   ESE tamaño intrínseco tal cual en vez de crecer para llenar el
+   hueco disponible; tras encogerse una vez (p. ej. al girar a
+   horizontal), se quedaba pequeño para siempre aunque hubiera más
+   sitio al volver a vertical. Por eso el contain-fit se aplica a
+   ".jt-lienzo-proporcion" (un div sin tamaño propio: sí crece y
+   encoge con libertad) y el canvas simplemente lo rellena al
+   100%/100%, como fuera de pantalla completa. ──────────────────────── */
+
+body.om-pantalla-completa-activa .jt-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jt-lienzo-wrap {
+    flex: 1;
+    min-height: 0;
+    aspect-ratio: unset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef1f4;
+}
+
+/* El tamaño exacto (que quepa a la vez en ancho y alto, manteniendo
+   la proporción 16:9) lo calcula y fija en línea
+   ajustarCajaProporcion() en juego-taller.js — igual que con el
+   tablero de Encuentra la Pareja, porque CSS puro (aspect-ratio +
+   auto + max-width/max-height) no se resuelve de forma fiable aquí:
+   el canvas es un elemento "reemplazado" con tamaño intrínseco
+   propio (sus atributos width/height, que a su vez JS recalcula para
+   que coincidan con su tamaño en pantalla), así que cualquier
+   contenedor que intente autodimensionarse a partir de su contenido
+   hereda esa dependencia circular por mucho que se envuelva en más
+   capas de divs — el contenedor se queda pillado en el último
+   tamaño del canvas en vez de crecer cuando hay más sitio. Lo de
+   abajo es solo una red de seguridad para el instante antes de que
+   JS calcule el tamaño definitivo. */
+body.om-pantalla-completa-activa .jt-lienzo-proporcion {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+#jt-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.jt-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.6);
+    color: var(--jt-blanco);
+    font-size: 1.2rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+.jt-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jt-gris-texto);
+    text-align: center;
+}
+
+/* ── Partículas de pintura decorativas ──────────────────────────────── */
+
+.jt-particula {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.55;
+    animation: jt-particula-fade 0.5s ease-out forwards;
+}
+
+@keyframes jt-particula-fade {
+    from { transform: scale(0.4); opacity: 0.55; }
+    to { transform: scale(1.6); opacity: 0; }
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jt-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jt-controles {
+        flex: 1 1 40%;
+    }
+}
+
+.jt-grupo-control {
+    background: var(--jt-blanco);
+    border-radius: var(--jt-radio);
+    box-shadow: var(--jt-sombra);
+    padding: 14px;
+}
+
+.jt-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jt-selector-herramienta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.jt-boton-herramienta {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jt-gris-borde);
+    background: var(--jt-blanco);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--jt-gris-texto);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.jt-boton-herramienta__icono {
+    font-size: 1.3rem;
+}
+
+.jt-icono-pistola {
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: currentColor;
+}
+
+.jt-boton-herramienta.is-activo {
+    border-color: var(--jt-rojo);
+    color: var(--jt-rojo-oscuro);
+    background: #fdf1f0;
+}
+
+.jt-paleta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.jt-swatch {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--jt-blanco);
+    outline: 1.5px solid var(--jt-gris-borde);
+    background: var(--jt-swatch-color);
+    cursor: pointer;
+    padding: 0;
+    transition: outline-color 0.15s, transform 0.1s;
+}
+
+.jt-swatch.is-activo {
+    outline-color: var(--jt-rojo);
+    outline-width: 2.5px;
+    transform: scale(1.06);
+}
+
+.jt-swatch-personalizado {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1.5px dashed var(--jt-gris-borde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    color: var(--jt-gris-texto);
+    font-weight: 700;
+}
+
+.jt-swatch-personalizado input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.jt-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Historial / ranking de sesión ──────────────────────────────────── */
+
+.jt-historial__vacio {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #9a9da2;
+}
+
+.jt-historial__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.jt-historial__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--jt-gris-fondo);
+    font-size: 0.8rem;
+}
+
+.jt-historial__item.es-mejor {
+    background: #fdf1f0;
+    border: 1px solid #f3c9c6;
+    font-weight: 700;
+}
+
+.jt-historial__puesto {
+    color: #9a9da2;
+    font-variant-numeric: tabular-nums;
+    min-width: 1.4em;
+}
+
+.jt-historial__detalle {
+    flex: 1;
+    color: var(--jt-negro);
+}
+
+.jt-historial__fecha {
+    color: #9a9da2;
+    font-size: 0.72rem;
+    white-space: nowrap;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jt-boton-compartir,
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jt-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jt-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jt-boton-compartir {
+    background: var(--jt-negro);
+    color: var(--jt-blanco);
+}
+
+.jt-boton-compartir:hover {
+    background: #333;
+}
+
+.jt-boton-secundario {
+    background: var(--jt-gris-fondo);
+    color: var(--jt-negro);
+    border: 1.5px solid var(--jt-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jt-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jt-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jt-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jt-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jt-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jt-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jt-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jt-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jt-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jt-celebracion__stat {
+    margin: 0 0 4px;
+    font-size: 0.88rem;
+    color: var(--jt-gris-texto);
+    font-weight: 600;
+}
+
+.jt-celebracion__ranking {
+    margin: 0 0 14px;
+    font-size: 0.8rem;
+    color: var(--jt-rojo-oscuro);
+    font-weight: 700;
+    min-height: 1.2em;
+}
+
+.jt-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: linear-gradient(to bottom, #eef1f4 0%, #eef1f4 72%, #d7dce1 72%, #d7dce1 100%);
+}
+
+#jt-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jt-celebracion .jt-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jt-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jt-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jt-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jt-compartir-panel {
+    position: relative;
+    background: var(--jt-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jt-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jt-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jt-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jt-gris-texto);
+}
+
+.jt-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jt-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jt-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jt-rojo);
+    color: var(--jt-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jt-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jt-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jt-blanco);
+}
+
+.jt-boton-red--whatsapp { background: #25d366; }
+.jt-boton-red--x { background: #000000; }
+.jt-boton-red--facebook { background: #1877f2; }
+
+.jt-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jt-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jt-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jt-gris-texto);
+    text-align: center;
+}
+
+.jt-proveedores__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 620px) {
+    .jt-proveedores__grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+.jt-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jt-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}

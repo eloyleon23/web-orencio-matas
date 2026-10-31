@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<!-- Google Tag Manager -->
+<script>
+  // Analítica solo en el dominio oficial de producción (orenciomatas.es)
+  // — el tráfico de desarrollo/pruebas en GitHub Pages (rama main), en
+  // local o en cualquier otro dominio NO debe computar en las métricas
+  // oficiales, que reflejan solo lo publicado de verdad en IONOS.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TWX6NRXN');
+  }
+</script>
+<!-- End Google Tag Manager -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!--
+  PoC de gamificación / captación comercial — "Atrapa la Fragancia".
+  Enlazada desde la cabecera de todo el sitio como "Espacio Creativo"
+  (visible para usuarios con perfil normal; oculta para sesiones con
+  perfil profesional, igual que el resto de páginas de lab/ — ver
+  PAGINAS_EXCLUIDAS en assets/js/perfil-profesional.js).
+  Juego de perfumería: un frasco se mueve por abajo siguiendo el dedo
+  y hay que atrapar los ingredientes buenos que caen (flores, frutas,
+  gotas) esquivando los malos (humo, basura, mal olor).
+  Sección de marcas de perfumería que enlazan al buscador filtrado
+  por esa área.
+-->
+<meta name="robots" content="noindex, nofollow">
+<title>Atrapa la Fragancia — Espacio Creativo | Orencio Matas</title>
+<meta name="description" content="Minijuego: mueve el frasco para atrapar los ingredientes buenos y esquivar los malos.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../src/css/estilos.css?v=20261107">
+<link rel="stylesheet" href="css/juego-fragancia.css?v=20261101b">
+<link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
+<!-- Google tag (gtag.js) -->
+<script>
+  // Ver nota en el bloque de Google Tag Manager: solo en el dominio
+  // oficial orenciomatas.es.
+  if (window.location.hostname.replace(/^www\./,'') === 'orenciomatas.es') {
+    var _gtagScript = document.createElement('script');
+    _gtagScript.async = true;
+    _gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-HMM85HSJ4Y';
+    document.head.appendChild(_gtagScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HMM85HSJ4Y');
+  }
+</script>
+<link rel="stylesheet" href="css/invitacion-buscador.css?v=20261101">
+<link rel="stylesheet" href="css/compartir-juego.css?v=20261102">
+</head>
+<body>
+
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<header class="site-header" id="inicio">
+  <div class="navbar" data-navbar>
+    <div class="container navbar__inner">
+      <a class="navbar__logo" href="../index.html#inicio" aria-label="Ir al inicio">
+        <img class="navbar__logo-image" src="../assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
+      </a>
+
+      <button class="navbar__toggle" type="button" aria-label="Abrir menú de navegación" aria-controls="main-navigation" aria-expanded="false" data-menu-toggle>
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="navbar__nav" id="main-navigation" aria-label="Navegación principal" data-mobile-menu>
+        <ul class="navbar__menu">
+          <li><a href="../index.html#inicio">Inicio</a></li>
+          <li><a href="../empresa.html">Empresa</a></li>
+          <li><a href="../historia.html">Historia</a></li>
+          <li class="navbar__item--dropdown">
+            <a href="../productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
+            <ul class="navbar__submenu">
+            <li><a href="../buscador.html">Buscador</a></li>
+            <li class="navbar__item--dropdown">
+              <a href="../productos.html">Ver catálogos <span class="navbar__caret">&#9662;</span></a>
+              <ul class="navbar__submenu">
+                <li><a href="../catalogo_drogueria.html">Droguería</a></li>
+                <li><a href="../catalogo_perfumeria.html">Perfumería</a></li>
+                <li><a href="../catalogo_pinturas.html">Pinturas</a></li>
+                <li><a href="../catalogo_talleres.html">Talleres</a></li>
+              </ul>
+            </li>
+          </ul>
+          </li>
+          <li><a href="../escaparate-campanas.html">Exposición</a></li>
+          <li><a href="../servicios.html">Servicios</a></li>
+          <li><a href="../centro-soluciones.html">Centro de Soluciones</a></li>
+          <li><a href="../anuncios.html">Anuncios/Recursos</a></li>
+          <li><a href="../profesionales.html">Profesionales</a></li>
+          <li data-oculto-perfil-profesional><a href="index.html">Espacio Creativo</a></li>
+          <li><a href="../actualidad.html">Actualidad</a></li>
+          <li><a href="../index.html#contacto">Contacto</a></li>
+        </ul>
+        <a class="btn-primary navbar__cta" href="../index.html#contacto">CONTACTAR</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<header class="jg-header om-cabecera-juego">
+    <button type="button" class="om-compartir-juego-boton" aria-label="Compartir este juego" data-nombre-juego="Atrapa la Fragancia" data-emoji-juego="🌸">📤</button>
+    <a class="jg-header__volver" href="index.html">&larr; Espacio Creativo</a>
+    <p class="jg-header__etiqueta">Espacio Creativo</p>
+    <h1 class="jg-header__titulo"><span aria-hidden="true">🌸</span> Atrapa la Fragancia</h1>
+    <p class="jg-header__subtitulo">Mueve el frasco para atrapar los ingredientes buenos y esquivar los malos. ¡Diseña la fragancia perfecta!</p>
+</header>
+
+<main class="jg-main">
+
+    <section class="jg-juego" aria-label="Zona de juego">
+
+        <div class="jg-selector-dificultad om-oculto-en-pantalla-completa" role="radiogroup" aria-label="Nivel de dificultad">
+            <button type="button" class="jg-chip-dificultad" data-dificultad="facil" role="radio" aria-checked="false">
+                Fácil
+            </button>
+            <button type="button" class="jg-chip-dificultad is-activo" data-dificultad="medio" role="radio" aria-checked="true">
+                Medio
+            </button>
+            <button type="button" class="jg-chip-dificultad" data-dificultad="dificil" role="radio" aria-checked="false">
+                Difícil
+            </button>
+        </div>
+
+        <div class="jg-barra-superior">
+            <div class="jg-stat">
+                <span class="jg-stat__valor" id="jg-contador">0/20</span>
+                <span class="jg-stat__etiqueta">ingredientes</span>
+            </div>
+            <div class="jg-barra-progreso" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="jg-barra-progreso">
+                <div class="jg-barra-progreso__relleno" id="jg-barra-progreso-relleno"></div>
+            </div>
+            <div class="jg-stat">
+                <span class="jg-stat__valor" id="jg-tiempo">1:00</span>
+                <span class="jg-stat__etiqueta">tiempo</span>
+            </div>
+        </div>
+
+        <div class="jg-zona-wrap">
+            <div class="jg-zona" id="jg-zona" aria-label="Ingredientes cayendo">
+                <div class="jg-frasco" id="jg-frasco" aria-hidden="true">
+                    <div class="jg-frasco__tapon"></div>
+                    <div class="jg-frasco__cuello"></div>
+                    <div class="jg-frasco__cuerpo">
+                        <div class="jg-frasco__liquido" id="jg-frasco-liquido"></div>
+                        <div class="jg-frasco__brillo"></div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="jg-boton-reiniciar" id="jg-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
+                <span aria-hidden="true">↺</span>
+            </button>
+        </div>
+
+        <p class="jg-pista om-oculto-en-pantalla-completa" id="jg-pista">Mueve el dedo por la pantalla para desplazar el frasco</p>
+
+    </section>
+
+    <section class="jg-controles" aria-label="Puntuación">
+
+        <div class="jg-grupo-control">
+            <h2 class="jg-grupo-control__titulo">Puntuación</h2>
+            <div class="jg-marcador">
+                <div class="jg-stat">
+                    <span class="jg-stat__valor" id="jg-puntos">0</span>
+                    <span class="jg-stat__etiqueta">puntos</span>
+                </div>
+                <div class="jg-stat">
+                    <span class="jg-stat__valor" id="jg-combo">—</span>
+                    <span class="jg-stat__etiqueta">combo</span>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="jg-boton-compartir om-oculto-en-pantalla-completa" id="jg-boton-compartir">
+            Compartir mi resultado
+        </button>
+
+        <p class="jg-marca om-oculto-en-pantalla-completa">
+            Un minijuego de <strong>Orencio Matas y Hnos</strong> — más de 100 años distribuyendo droguería, perfumería, pinturas y suministros para automoción.
+        </p>
+    </section>
+
+</main>
+
+<section class="jg-proveedores" aria-labelledby="jg-proveedores-titulo">
+    <h2 id="jg-proveedores-titulo" class="jg-proveedores__titulo">Algunas de nuestras marcas de perfumería</h2>
+    <p class="jg-proveedores__subtitulo">Haz clic en un logo para ver la perfumería del catálogo.</p>
+    <div class="premium-providers jg-proveedores__grid" aria-label="Marcas de perfumería">
+        <a class="premium-provider-card" href="../buscador.html?area=perfumeria">
+            <img src="../assets/marcas/logo_alvarezgomez.png" alt="Álvarez Gómez" loading="lazy" />
+        </a>
+        <a class="premium-provider-card" href="../buscador.html?area=perfumeria">
+            <img src="../assets/marcas/logo_babaria.webp" alt="Babaria" loading="lazy" />
+        </a>
+        <a class="premium-provider-card" href="../buscador.html?area=perfumeria">
+            <img src="../assets/marcas/logo_industrias_beter.jpg" alt="Beter" loading="lazy" />
+        </a>
+    </div>
+</section>
+
+<!-- ───────────────── Celebración al terminar ───────────────── -->
+<div class="jg-celebracion-overlay" id="jg-celebracion-overlay" hidden>
+    <div class="jg-confeti" id="jg-confeti" aria-hidden="true"></div>
+    <div class="jg-celebracion" role="dialog" aria-modal="true" aria-labelledby="jg-celebracion-titulo">
+        <h2 id="jg-celebracion-titulo">¡Fragancia perfecta! 🌸</h2>
+        <p class="jg-celebracion__stat" id="jg-celebracion-stat">Reuniste todos los ingredientes</p>
+        <div class="jg-celebracion__lienzo-wrap">
+            <canvas id="jg-canvas-resultado"></canvas>
+        </div>
+        <button type="button" class="jg-boton-compartir" id="jg-boton-compartir-final">
+            Compartir mi resultado
+        </button>
+        <button type="button" class="jg-boton-secundario" id="jg-boton-jugar-de-nuevo">
+            Jugar de nuevo
+        </button>
+        <a class="jg-boton-secundario" href="index.html">
+            Cambiar de juego
+        </a>
+    </div>
+</div>
+
+<!-- ───────────────── Panel de compartir (enlaces directos) ───────────────── -->
+<div class="jg-compartir-overlay" id="jg-compartir-overlay" hidden>
+    <div class="jg-compartir-panel" role="dialog" aria-modal="true" aria-labelledby="jg-compartir-titulo">
+        <button type="button" class="jg-compartir-cerrar" id="jg-compartir-cerrar" aria-label="Cerrar">&times;</button>
+        <h2 id="jg-compartir-titulo">Comparte tu resultado</h2>
+        <p>Descarga la imagen y compártela donde quieras, o usa un acceso directo:</p>
+        <a class="jg-boton-descargar" id="jg-boton-descargar" download="atrapa-la-fragancia.png">Descargar imagen</a>
+        <div class="jg-redes">
+            <a class="jg-boton-red jg-boton-red--whatsapp" id="jg-enlace-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="jg-boton-red jg-boton-red--x" id="jg-enlace-x" target="_blank" rel="noopener">X</a>
+            <a class="jg-boton-red jg-boton-red--facebook" id="jg-enlace-facebook" target="_blank" rel="noopener">Facebook</a>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div class="site-footer__brand">
+      <a href="../index.html#inicio" aria-label="Ir al inicio">
+        <img src="../assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="190" height="64" />
+      </a>
+      <p>Más de 100 años ofreciendo soluciones profesionales en droguería, perfumería, pinturas y suministros para automoción.</p>
+      <div class="site-footer__social" aria-label="Redes sociales">
+        <a href="https://www.instagram.com/orenciomatas/" aria-label="Instagram">◎</a>
+      </div>
+    </div>
+
+    <nav class="site-footer__column" aria-label="Navegación del footer">
+      <h2>Navegación</h2>
+      <ul>
+        <li><a href="../index.html#inicio">Inicio</a></li>
+        <li><a href="../empresa.html">Empresa</a></li>
+        <li><a href="../historia.html">Historia</a></li>
+        <li><a href="../productos.html">Productos</a></li>
+        <li><a href="../escaparate-campanas.html">Exposición</a></li>
+        <li><a href="../centro-soluciones.html">Centro de Soluciones</a></li>
+        <li><a href="../anuncios.html">Anuncios/Recursos</a></li>
+        <li><a href="../profesionales.html">Profesionales</a></li>
+        <li><a href="../index.html#marcas">Marcas</a></li>
+        <li><a href="../index.html#contacto">Contacto</a></li>
+      </ul>
+    </nav>
+
+    <nav class="site-footer__column" aria-label="Servicios del footer">
+      <h2>Servicios</h2>
+      <ul>
+        <li><a href="../productos.html">Droguería profesional</a></li>
+        <li><a href="../productos.html">Pinturas carrocería</a></li>
+        <li><a href="../productos.html">Perfumería</a></li>
+        <li><a href="../productos.html">Suministros taller</a></li>
+        <li><a href="../productos.html">Maquinaria</a></li>
+        <li><a href="../productos.html">Distribución</a></li>
+      </ul>
+    </nav>
+
+    <div class="site-footer__column site-footer__contact">
+      <h2>Contacto rápido</h2>
+      <address>
+        <span>Av. Alfred Nobel, 2<br />13005 Ciudad Real</span>
+        <a href="tel:+34926221217">926 221 217</a>
+        <a href="mailto:correo@orenciomatas.es">correo@orenciomatas.es</a>
+        <span>Lunes a Viernes<br />9:00 – 14:00 y 16:30 – 19:30<br />Sábados: 9:00 – 14:00<br />Domingos: Cerrado</span>
+      </address>
+    </div>
+  </div>
+
+  <div class="site-footer__bottom">
+    <div class="container site-footer__bottom-inner">
+      <p>© 2026 Orencio Matas y Hnos, S.L. Todos los derechos reservados.</p>
+      <nav aria-label="Enlaces legales">
+        <a href="../politica-privacidad.html">Política de Privacidad</a>
+        <a href="../aviso-legal.html">Aviso Legal</a>
+        <a href="../politica-cookies.html">Cookies</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<script src="../src/js/app.js?v=20260829"></script>
+<script src="js/estadisticas-juegos.js?v=20261107"></script>
+<script src="js/compartir-juego.js?v=20261102"></script>
+<script src="js/juego-fragancia.js?v=20261105"></script>
+<script src="js/pantalla-completa.js?v=20261030d"></script>
+<script>
+    // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
+    // documentado en assets/js/mantenimiento.js y usado también por
+    // perfil-profesional.js para el redirect de páginas excluidas.
+    window.OM_RUTA_RAIZ = '../';
+</script>
+<script src="../assets/js/perfil-profesional.js?v=20261101d"></script>
+</body>
+</html>

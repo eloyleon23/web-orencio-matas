@@ -1,0 +1,744 @@
+/*
+ * Atrapa la Fragancia — minijuego (lab/fragancia.html)
+ * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
+ * que el resto de minijuegos del laboratorio, con la paleta REAL del
+ * sitio (ver src/css/estilos.css).
+ */
+
+:root {
+    --jg-rojo: #d91b1b;
+    --jg-rojo-oscuro: #ad1515;
+    --jg-rosa: #d91b6b;
+    --jg-negro: #1a1a1a;
+    --jg-gris-texto: #52555a;
+    --jg-gris-borde: #e2e2e4;
+    --jg-gris-fondo: #f7f6f4;
+    --jg-blanco: #ffffff;
+    --jg-verde: #1a8f4c;
+    --jg-radio: 14px;
+    --jg-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jg-gris-fondo);
+    color: var(--jg-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jg-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jg-negro), var(--jg-rosa));
+    color: var(--jg-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jg-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jg-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jg-header__volver:hover,
+.jg-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jg-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jg-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jg-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jg-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jg-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jg-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jg-juego {
+    background: var(--jg-blanco);
+    border-radius: var(--jg-radio);
+    box-shadow: var(--jg-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jg-juego {
+        flex: 1 1 62%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jg-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jg-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jg-gris-borde);
+    background: var(--jg-blanco);
+    color: var(--jg-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jg-chip-dificultad.is-activo {
+    background: var(--jg-negro);
+    border-color: var(--jg-negro);
+    color: var(--jg-blanco);
+}
+
+.jg-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.jg-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jg-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jg-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jg-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jg-gris-fondo);
+    overflow: hidden;
+}
+
+.jg-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jg-rosa), var(--jg-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+/* ── Zona de caída ───────────────────────────────────────────────────── */
+
+.jg-zona-wrap {
+    position: relative;
+}
+
+.jg-zona {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    max-height: 60vh;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #fdeef2, #f8dbe4);
+    touch-action: none;
+    cursor: grab;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa la zona se dimensiona por el ancho
+   (aspect-ratio 3/4, tope de 60vh) — igual técnica que Clasifica por
+   Pasillos. En pantalla completa pasa a ocupar el alto disponible
+   directamente. ──────────────────────────────────────────────────── */
+
+body.om-pantalla-completa-activa .jg-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jg-zona-wrap {
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jg-zona {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: unset;
+    max-height: none;
+}
+
+.jg-ingrediente {
+    position: absolute;
+    top: 0%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--jg-blanco);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    pointer-events: none;
+    font-size: 1.5rem;
+}
+
+.jg-ingrediente--malo {
+    background: #efe3e0;
+}
+
+.jg-ingrediente__icono {
+    line-height: 1;
+}
+
+.jg-frasco {
+    position: absolute;
+    bottom: 3%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 17%;
+    aspect-ratio: 2 / 3.3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: left 0.03s linear, filter 0.15s ease;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.28));
+}
+
+.jg-frasco__cuello {
+    width: 34%;
+    height: 13%;
+    background: rgba(255, 255, 255, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    flex-shrink: 0;
+}
+
+.jg-frasco__tapon {
+    width: 46%;
+    height: 7%;
+    background: #8a8f98;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.jg-frasco__cuerpo {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    background: rgba(255, 255, 255, 0.25);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.5), inset 0 -4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.jg-frasco__liquido {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 6%;
+    background: linear-gradient(180deg, #f6c445 0%, #e4392c 100%);
+    transition: height 0.3s ease, background 0.3s ease;
+}
+
+.jg-frasco__liquido::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.jg-frasco__brillo {
+    position: absolute;
+    top: 8%;
+    left: 14%;
+    width: 16%;
+    height: 34%;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    filter: blur(1.5px);
+    pointer-events: none;
+}
+
+.jg-frasco--acierto {
+    animation: jg-frasco-acierto 0.28s ease;
+}
+
+.jg-frasco--acierto .jg-frasco__liquido {
+    background: linear-gradient(180deg, #7cd9a0 0%, #2f9e6e 100%);
+}
+
+.jg-frasco--fallo {
+    animation: jg-frasco-fallo 0.28s ease;
+}
+
+.jg-frasco--fallo .jg-frasco__liquido {
+    background: linear-gradient(180deg, #e0867c 0%, #c0392b 100%);
+}
+
+@keyframes jg-frasco-acierto {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.18); filter: drop-shadow(0 3px 4px rgba(47, 158, 110, 0.6)); }
+}
+
+@keyframes jg-frasco-fallo {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    25% { transform: translateX(-50%) translateY(-4px); filter: drop-shadow(0 3px 4px rgba(217, 27, 27, 0.6)); }
+    75% { transform: translateX(-50%) translateY(4px); }
+}
+
+.jg-flotante {
+    position: absolute;
+    bottom: 16%;
+    transform: translateX(-50%);
+    font-weight: 800;
+    font-size: 1rem;
+    pointer-events: none;
+    animation: jg-flotar 0.65s ease-out forwards;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+.jg-flotante--bien { color: var(--jg-verde); }
+.jg-flotante--mal { color: var(--jg-rojo); }
+
+@keyframes jg-flotar {
+    0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-34px); }
+}
+
+.jg-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.65);
+    color: var(--jg-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.jg-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jg-gris-texto);
+    text-align: center;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jg-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jg-controles {
+        flex: 1 1 38%;
+    }
+}
+
+.jg-grupo-control {
+    background: var(--jg-blanco);
+    border-radius: var(--jg-radio);
+    box-shadow: var(--jg-sombra);
+    padding: 14px;
+}
+
+.jg-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jg-marcador {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+}
+
+.jg-marcador .jg-stat__valor {
+    font-size: 1.3rem;
+}
+
+.jg-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jg-boton-compartir,
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jg-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jg-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jg-boton-compartir {
+    background: var(--jg-negro);
+    color: var(--jg-blanco);
+}
+
+.jg-boton-compartir:hover {
+    background: #333;
+}
+
+.jg-boton-secundario {
+    background: var(--jg-gris-fondo);
+    color: var(--jg-negro);
+    border: 1.5px solid var(--jg-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jg-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jg-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jg-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jg-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jg-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jg-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jg-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jg-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jg-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jg-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jg-gris-texto);
+    font-weight: 600;
+}
+
+.jg-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdf4f7;
+}
+
+#jg-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jg-celebracion .jg-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jg-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jg-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jg-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jg-compartir-panel {
+    position: relative;
+    background: var(--jg-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jg-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jg-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jg-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jg-gris-texto);
+}
+
+.jg-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jg-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jg-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jg-rojo);
+    color: var(--jg-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jg-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jg-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jg-blanco);
+}
+
+.jg-boton-red--whatsapp { background: #25d366; }
+.jg-boton-red--x { background: #000000; }
+.jg-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas de perfumería ─────────────────────────────────────────── */
+
+.jg-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jg-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jg-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jg-gris-texto);
+    text-align: center;
+}
+
+.jg-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+@media (max-width: 420px) {
+    .jg-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 320px;
+    }
+}
+
+.jg-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jg-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}

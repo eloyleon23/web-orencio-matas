@@ -1,0 +1,549 @@
+/* La Estela de Color — estilos (lab/estela.html), prefijo jE / je- */
+
+.je-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem 1rem 3rem;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* Cabecera */
+
+.je-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, #1a1a1a, #5a2470);
+    color: #ffffff;
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.je-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.je-header__volver:hover,
+.je-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .je-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.je-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.je-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.je-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* Selector de dificultad */
+
+.je-selector-dificultad {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.je-chip-dificultad {
+    border: 2px solid #d8d4cc;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.45rem 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.je-chip-dificultad.is-activo {
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+}
+
+/* Barra superior */
+
+.je-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #fff;
+    border-radius: 14px;
+    padding: 0.8rem 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.je-barra-superior__stat {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.78rem;
+    color: #7a7d82;
+    min-width: 72px;
+}
+
+.je-barra-superior__stat strong {
+    font-size: 1.15rem;
+    color: #1a1a1a;
+}
+
+.je-barra-progreso-wrap {
+    flex: 1;
+    height: 10px;
+    background: #eceae4;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.je-barra-progreso-relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #d91b1b, #7b2d8e, #1e4b8f);
+    border-radius: 999px;
+    transition: width 0.25s ease;
+}
+
+.je-muestra-color {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #d8d4cc, 0 2px 6px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+    background: #d91b1b;
+    transition: background 0.2s;
+}
+
+/* Juego */
+
+.je-juego {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.je-zona-wrap {
+    position: relative;
+}
+
+.je-zona {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 100 / 130;
+    max-height: 68vh;
+    background: #f7f6f4;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 2px #e4e1d8;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.je-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.je-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 5;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.65);
+    color: #ffffff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* display sale de la regla base para no competir en especificidad
+   con la hoja de estilos del navegador para [hidden] (misma
+   especificidad que una clase sola) — con "display:flex" aquí, el
+   aviso de "Pausado" se quedaba visible todo el tiempo, también
+   jugando, porque ganaba siempre a [hidden]. Solo se muestra cuando
+   NO tiene el atributo hidden. */
+.je-pausado-indicador {
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 26, 26, 0.45);
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.je-pausado-indicador:not([hidden]) {
+    display: flex;
+}
+
+/* Control direccional (cruceta + jugar/pausa en el centro) */
+
+.je-control-direccional {
+    display: grid;
+    grid-template-columns: 54px 54px 54px;
+    grid-template-rows: 54px 54px 54px;
+    gap: 6px;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.je-control-boton {
+    border: 2px solid #d8d4cc;
+    background: #fff;
+    border-radius: 14px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.je-control-boton:active {
+    background: #f1efe9;
+}
+
+.je-control-boton:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.je-control-boton--arriba { grid-column: 2; grid-row: 1; }
+.je-control-boton--izquierda { grid-column: 1; grid-row: 2; }
+.je-control-boton--jugar-pausa {
+    grid-column: 2;
+    grid-row: 2;
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+    font-size: 1.3rem;
+}
+.je-control-boton--jugar-pausa:disabled {
+    background: #cfcac0;
+    border-color: #cfcac0;
+}
+.je-control-boton--derecha { grid-column: 3; grid-row: 2; }
+.je-control-boton--abajo { grid-column: 2; grid-row: 3; }
+
+.je-flotante {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1b8f4c;
+    pointer-events: none;
+    animation: je-flotar 0.65s ease-out forwards;
+    z-index: 6;
+}
+
+@keyframes je-flotar {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.85); }
+    100% { opacity: 0; transform: translate(-50%, -170%) scale(1.15); }
+}
+
+.je-pista {
+    text-align: center;
+    color: #7a7d82;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.je-marca {
+    text-align: center;
+    color: #a9ab9f;
+    font-size: 0.78rem;
+    margin: 0;
+}
+
+/* Botón compartir en controles */
+
+.je-controles {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.je-marcador {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    border-radius: 14px;
+    padding: 0.6rem 1.4rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.je-marcador__valor {
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.je-marcador__etiqueta {
+    font-size: 0.78rem;
+    color: #7a7d82;
+}
+
+.je-boton-compartir {
+    border: 2px solid #1a1a1a;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.5rem 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Proveedores */
+
+.je-proveedores {
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.je-proveedores__titulo {
+    font-size: 1.1rem;
+    margin: 0 0 0.3rem;
+}
+
+.je-proveedores__subtitulo {
+    color: #7a7d82;
+    font-size: 0.85rem;
+    margin: 0 0 1rem;
+}
+
+.je-proveedores__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+/* Overlays (celebración / compartir) — estructura compartida */
+
+.je-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 26, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+}
+
+.je-overlay[hidden] {
+    display: none;
+}
+
+.je-tarjeta-overlay {
+    background: #fff;
+    border-radius: 18px;
+    padding: 1.8rem 1.5rem;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+}
+
+.je-tarjeta-overlay h2 {
+    margin: 0 0 0.5rem;
+}
+
+.je-tarjeta-overlay p {
+    color: #52555a;
+    margin: 0 0 1.2rem;
+}
+
+.je-overlay__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+}
+
+.je-overlay__boton {
+    border-radius: 999px;
+    padding: 0.55rem 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+}
+
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.je-overlay__boton--secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.je-overlay__boton--secundario {
+    background: #fff;
+    color: #1a1a1a;
+}
+
+.je-overlay__cerrar {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+    border: none;
+    background: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #7a7d82;
+}
+
+.je-canvas-resultado {
+    width: 100%;
+    max-width: 320px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.je-redes {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.je-redes a {
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    background: #f1efe9;
+    color: #1a1a1a;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+/* Confeti */
+
+.je-confeti {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.je-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 8px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: je-caer-confeti;
+    animation-timing-function: ease-in;
+    animation-fill-mode: forwards;
+}
+
+@keyframes je-caer-confeti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(420px) rotate(260deg); opacity: 0; }
+}
+
+/* Pantalla completa */
+
+body.om-pantalla-completa-activa .je-main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    justify-content: stretch;
+}
+
+body.om-pantalla-completa-activa .je-juego {
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .je-zona-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+body.om-pantalla-completa-activa .je-zona {
+    flex: 1;
+    min-height: 0;
+    width: auto;
+    max-height: none;
+    aspect-ratio: unset;
+}
+
+@media (max-width: 480px) {
+    .je-barra-superior {
+        flex-wrap: wrap;
+    }
+
+    .je-barra-progreso-wrap {
+        order: 3;
+        flex-basis: 100%;
+    }
+}

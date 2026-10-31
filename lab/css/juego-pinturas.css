@@ -1,0 +1,685 @@
+/*
+ * Pinta tu Estancia — minijuego (lab/pinturas.html)
+ * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
+ * que juego-taller.css, con la paleta REAL del sitio (ver
+ * src/css/estilos.css), coherente con el resto de la web.
+ */
+
+:root {
+    --jp-rojo: #d91b1b;
+    --jp-rojo-oscuro: #ad1515;
+    --jp-negro: #1a1a1a;
+    --jp-gris-texto: #52555a;
+    --jp-gris-borde: #e2e2e4;
+    --jp-gris-fondo: #f7f6f4;
+    --jp-blanco: #ffffff;
+    --jp-radio: 14px;
+    --jp-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jp-gris-fondo);
+    color: var(--jp-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jp-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jp-negro), var(--jp-rojo-oscuro));
+    color: var(--jp-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jp-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jp-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jp-header__volver:hover,
+.jp-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jp-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jp-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jp-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jp-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jp-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jp-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jp-juego {
+    background: var(--jp-blanco);
+    border-radius: var(--jp-radio);
+    box-shadow: var(--jp-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jp-juego {
+        flex: 1 1 60%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jp-selector-estancia {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jp-chip-estancia {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jp-gris-borde);
+    background: var(--jp-blanco);
+    color: var(--jp-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jp-chip-estancia.is-activo {
+    background: var(--jp-negro);
+    border-color: var(--jp-negro);
+    color: var(--jp-blanco);
+}
+
+.jp-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.jp-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jp-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jp-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jp-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jp-gris-fondo);
+    overflow: hidden;
+}
+
+.jp-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jp-rojo), var(--jp-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+.jp-lienzo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1000 / 650;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fdfaf4;
+}
+
+/* Envoltorio fijo entre el wrap y el canvas — ver el porqué,
+   comentado, en juego-taller.css. */
+.jp-lienzo-proporcion {
+    width: 100%;
+    height: 100%;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado sin deformar el
+   dibujo — ver la misma técnica, comentada, en juego-taller.css ──── */
+
+body.om-pantalla-completa-activa .jp-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jp-lienzo-wrap {
+    flex: 1;
+    min-height: 0;
+    aspect-ratio: unset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* El tamaño exacto lo fija en línea JS (ajustarCajaProporcion en
+   juego-pinturas.js) — ver el porqué, comentado, en
+   juego-taller.css. Esto es solo la red de seguridad para el
+   instante antes de que JS calcule el tamaño definitivo. */
+body.om-pantalla-completa-activa .jp-lienzo-proporcion {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+#jp-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.jp-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.6);
+    color: var(--jp-blanco);
+    font-size: 1.2rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+.jp-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jp-gris-texto);
+    text-align: center;
+}
+
+/* ── Partículas de pintura decorativas ──────────────────────────────── */
+
+.jp-particula {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.55;
+    animation: jp-particula-fade 0.5s ease-out forwards;
+}
+
+@keyframes jp-particula-fade {
+    from { transform: scale(0.4); opacity: 0.55; }
+    to { transform: scale(1.6); opacity: 0; }
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jp-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jp-controles {
+        flex: 1 1 40%;
+    }
+}
+
+.jp-grupo-control {
+    background: var(--jp-blanco);
+    border-radius: var(--jp-radio);
+    box-shadow: var(--jp-sombra);
+    padding: 14px;
+}
+
+.jp-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jp-selector-herramienta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.jp-boton-herramienta {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jp-gris-borde);
+    background: var(--jp-blanco);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--jp-gris-texto);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.jp-boton-herramienta__icono {
+    font-size: 1.3rem;
+}
+
+.jp-icono-rodillo {
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: currentColor;
+}
+
+.jp-boton-herramienta.is-activo {
+    border-color: var(--jp-rojo);
+    color: var(--jp-rojo-oscuro);
+    background: #fdf1f0;
+}
+
+.jp-paleta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.jp-swatch {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--jp-blanco);
+    outline: 1.5px solid var(--jp-gris-borde);
+    background: var(--jp-swatch-color);
+    cursor: pointer;
+    padding: 0;
+    transition: outline-color 0.15s, transform 0.1s;
+}
+
+.jp-swatch.is-activo {
+    outline-color: var(--jp-rojo);
+    outline-width: 2.5px;
+    transform: scale(1.06);
+}
+
+.jp-swatch-personalizado {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1.5px dashed var(--jp-gris-borde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    color: var(--jp-gris-texto);
+    font-weight: 700;
+}
+
+.jp-swatch-personalizado input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.jp-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jp-boton-compartir,
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jp-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jp-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jp-boton-compartir {
+    background: var(--jp-negro);
+    color: var(--jp-blanco);
+}
+
+.jp-boton-compartir:hover {
+    background: #333;
+}
+
+.jp-boton-secundario {
+    background: var(--jp-gris-fondo);
+    color: var(--jp-negro);
+    border: 1.5px solid var(--jp-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jp-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jp-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jp-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jp-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jp-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jp-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jp-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jp-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jp-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jp-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jp-gris-texto);
+    font-weight: 600;
+}
+
+.jp-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jp-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jp-celebracion .jp-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jp-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jp-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jp-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jp-compartir-panel {
+    position: relative;
+    background: var(--jp-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jp-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jp-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jp-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jp-gris-texto);
+}
+
+.jp-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jp-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jp-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jp-rojo);
+    color: var(--jp-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jp-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jp-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jp-blanco);
+}
+
+.jp-boton-red--whatsapp { background: #25d366; }
+.jp-boton-red--x { background: #000000; }
+.jp-boton-red--facebook { background: #1877f2; }
+
+.jp-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jp-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jp-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jp-gris-texto);
+    text-align: center;
+}
+
+.jp-proveedores__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.jp-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jp-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}

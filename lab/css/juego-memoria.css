@@ -1,0 +1,668 @@
+/*
+ * Encuentra la Pareja — minijuego (lab/memoria.html)
+ * Mobile-first, controles táctiles de al menos 44px donde el tablero
+ * lo permite. Mismo esqueleto que el resto de minijuegos del
+ * laboratorio, con la paleta REAL del sitio (ver src/css/estilos.css).
+ */
+
+:root {
+    --jc-rojo: #d91b1b;
+    --jc-rojo-oscuro: #ad1515;
+    --jc-negro: #1a1a1a;
+    --jc-gris-texto: #52555a;
+    --jc-gris-borde: #e2e2e4;
+    --jc-gris-fondo: #f7f6f4;
+    --jc-blanco: #ffffff;
+    --jc-radio: 14px;
+    --jc-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jc-gris-fondo);
+    color: var(--jc-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jc-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jc-negro), var(--jc-rojo-oscuro));
+    color: var(--jc-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jc-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jc-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jc-header__volver:hover,
+.jc-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jc-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jc-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jc-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jc-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jc-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jc-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jc-juego {
+    background: var(--jc-blanco);
+    border-radius: var(--jc-radio);
+    box-shadow: var(--jc-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jc-juego {
+        flex: 1 1 64%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jc-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jc-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jc-gris-borde);
+    background: var(--jc-blanco);
+    color: var(--jc-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jc-chip-dificultad.is-activo {
+    background: var(--jc-negro);
+    border-color: var(--jc-negro);
+    color: var(--jc-blanco);
+}
+
+.jc-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.jc-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jc-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jc-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jc-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jc-gris-fondo);
+    overflow: hidden;
+}
+
+.jc-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jc-rojo), var(--jc-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+/* ── Tablero de cartas ───────────────────────────────────────────────── */
+
+.jc-tablero-wrap {
+    position: relative;
+}
+
+.jc-tablero {
+    display: grid;
+    gap: 8px;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa el tablero se dimensiona solo por el
+   ancho (cada carta es 1/1, así que la altura sale sola). En pantalla
+   completa eso dejaba mucho espacio vacío debajo en vertical y, peor,
+   en horizontal el tablero podía salir muchísimo más alto que la
+   pantalla (su ancho de sobra no tenía límite de altura). Aquí se
+   fija la altura al espacio disponible y se deja que el ancho salga
+   del aspect-ratio (columnas/filas, fijado por JS) — el navegador
+   calcula solo el mayor tablero cuadrado-por-carta que cabe en ambas
+   dimensiones a la vez. ───────────────────────────────────────────── */
+
+body.om-pantalla-completa-activa .jc-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jc-tablero-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* El tamaño exacto (que quepa a la vez en ancho y alto, manteniendo
+   las cartas cuadradas) lo calcula JS — ver ajustarTableroAlEspacio()
+   en juego-memoria.js — porque el ajuste de "aspect-ratio + auto +
+   max-width/max-height" de CSS no se resuelve de forma fiable en un
+   grid sin una base de tamaño propia. "width: 100%" aquí es solo la
+   red de seguridad para el instante antes de que JS calcule el
+   tamaño definitivo (o si por lo que sea no llega a hacerlo): sin
+   ancho propio, dentro de un contenedor con "align-items/
+   justify-content: center" que no estira a sus hijos, el tablero se
+   queda sin ninguna base de tamaño y se colapsa a un puñado de
+   píxeles — invisible. */
+body.om-pantalla-completa-activa .jc-tablero {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.jc-carta {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    perspective: 600px;
+}
+
+.jc-carta__cara {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    backface-visibility: hidden;
+    transition: transform 0.4s cubic-bezier(0.4, 0.1, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.jc-carta__cara--dorso {
+    background: var(--jc-dorso-gradiente, linear-gradient(135deg, var(--jc-negro), var(--jc-rojo-oscuro)));
+    transform: rotateY(0deg);
+}
+
+.jc-carta__marca-agua {
+    width: 52%;
+    height: 52%;
+    object-fit: contain;
+    opacity: 0.4;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.jc-carta__cara--frente {
+    background: var(--jc-blanco);
+    border: 1.5px solid var(--jc-gris-borde);
+    transform: rotateY(-180deg);
+    padding: 8%;
+}
+
+.jc-carta__cara--frente img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.jc-carta--volteada .jc-carta__cara--dorso,
+.jc-carta--encontrada .jc-carta__cara--dorso {
+    transform: rotateY(180deg);
+}
+
+.jc-carta--volteada .jc-carta__cara--frente,
+.jc-carta--encontrada .jc-carta__cara--frente {
+    transform: rotateY(0deg);
+}
+
+.jc-carta--encontrada .jc-carta__cara--frente {
+    border-color: #1a8f4c;
+    box-shadow: 0 0 0 2px rgba(26, 143, 76, 0.35);
+}
+
+/* La pareja de nuestro propio logo, al encontrarla, se distingue del
+   resto con un borde degradado con los mismos colores del dorso —
+   para que destaque frente a una pareja de marca cualquiera. */
+.jc-carta--propia.jc-carta--encontrada .jc-carta__cara--frente {
+    border: 3px solid transparent;
+    background-image: linear-gradient(var(--jc-blanco), var(--jc-blanco)),
+        linear-gradient(135deg, #e4392c, #f0932b, #f6c445, #2f9e6e, #1f6f8b);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.jc-boton-reiniciar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jc-negro);
+    color: var(--jc-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.jc-pista {
+    margin: 10px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jc-gris-texto);
+    text-align: center;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jc-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jc-controles {
+        flex: 1 1 36%;
+    }
+}
+
+.jc-grupo-control {
+    background: var(--jc-blanco);
+    border-radius: var(--jc-radio);
+    box-shadow: var(--jc-sombra);
+    padding: 14px;
+}
+
+.jc-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jc-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jc-boton-compartir,
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jc-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jc-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jc-boton-compartir {
+    background: var(--jc-negro);
+    color: var(--jc-blanco);
+}
+
+.jc-boton-compartir:hover {
+    background: #333;
+}
+
+.jc-boton-secundario {
+    background: var(--jc-gris-fondo);
+    color: var(--jc-negro);
+    border: 1.5px solid var(--jc-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jc-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jc-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jc-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jc-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jc-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jc-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jc-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jc-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jc-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jc-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jc-gris-texto);
+    font-weight: 600;
+}
+
+.jc-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jc-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jc-celebracion .jc-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jc-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jc-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jc-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jc-compartir-panel {
+    position: relative;
+    background: var(--jc-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jc-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jc-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jc-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jc-gris-texto);
+}
+
+.jc-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jc-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jc-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jc-rojo);
+    color: var(--jc-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jc-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jc-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jc-blanco);
+}
+
+.jc-boton-red--whatsapp { background: #25d366; }
+.jc-boton-red--x { background: #000000; }
+.jc-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas aleatorias (al buscador general, sin filtrar) ───────────── */
+
+.jc-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jc-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jc-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jc-gris-texto);
+    text-align: center;
+}
+
+.jc-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jc-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jc-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jc-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}

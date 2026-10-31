@@ -1,0 +1,236 @@
+/**
+ * Panel de estadísticas (solo preproducción) — botón flotante +
+ * modal con PIN de acceso + gráficas de barras nativas (sin
+ * librerías ni servicios externos). Ver lab/js/estadisticas-admin.js.
+ */
+
+.om-stats-boton-flotante {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    border: none;
+    background: #1a1a1a;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+.om-stats-boton-flotante:hover {
+    background: #2d2d2d;
+}
+
+.om-stats-boton-flotante__etiqueta {
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: #d91b1b;
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.om-stats-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 401;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 26, 26, 0.6);
+    padding: 1rem;
+}
+
+.om-stats-overlay[hidden] {
+    display: none;
+}
+
+.om-stats-panel {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.6rem;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    position: relative;
+}
+
+.om-stats-panel--ancho {
+    max-width: min(960px, 94vw);
+}
+
+.om-stats-panel__cerrar {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #f0efe9;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.om-stats-panel h2 {
+    margin: 0 0 0.6rem;
+    font-size: 1.15rem;
+}
+
+.om-stats-panel p {
+    margin: 0 0 1rem;
+    color: #5a5d62;
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+
+.om-stats-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    border: 2px solid #d8d4cc;
+    margin-bottom: 0.8rem;
+}
+
+.om-stats-input:focus {
+    outline: none;
+    border-color: #1a1a1a;
+}
+
+.om-stats-error {
+    color: #d91b1b;
+    font-size: 0.85rem;
+    margin: -0.4rem 0 0.8rem;
+    min-height: 1.1em;
+}
+
+.om-stats-boton {
+    display: block;
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border-radius: 999px;
+    border: none;
+    background: #1a1a1a;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-align: center;
+}
+
+.om-stats-boton:hover {
+    background: #2d2d2d;
+}
+
+.om-stats-boton--secundario {
+    background: #fff;
+    color: #1a1a1a;
+    border: 2px solid #d8d4cc;
+    margin-top: 0.6rem;
+}
+
+.om-stats-boton--secundario:hover {
+    background: #f6f5f1;
+}
+
+.om-stats-nota {
+    font-size: 0.78rem;
+    color: #8a8d92;
+    margin-top: 0.8rem;
+    margin-bottom: 0;
+}
+
+/* ── KPIs ──────────────────────────────────────────────────────── */
+
+.om-stats-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.6rem;
+    margin-bottom: 1.4rem;
+}
+
+.om-stats-kpi {
+    background: #f6f5f1;
+    border-radius: 12px;
+    padding: 0.8rem 0.9rem;
+    text-align: center;
+}
+
+.om-stats-kpi__valor {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    font-variant-numeric: proportional-nums;
+}
+
+.om-stats-kpi__etiqueta {
+    font-size: 0.75rem;
+    color: #5a5d62;
+    margin-top: 0.15rem;
+}
+
+/* ── Gráficas de barras clasificadas (ranked bars) ───────────────
+   Una sola serie por gráfica (una magnitud por juego), un único
+   color de marca — no hace falta leyenda ni paleta categórica. */
+
+.om-stats-grafico {
+    margin-bottom: 1.6rem;
+}
+
+.om-stats-grafico__titulo {
+    margin: 0 0 0.7rem;
+    font-size: 0.95rem;
+    color: #1a1a1a;
+}
+
+.om-stats-barra-fila {
+    display: grid;
+    grid-template-columns: minmax(90px, 32%) 1fr auto;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.45rem;
+}
+
+.om-stats-barra-fila__etiqueta {
+    font-size: 0.82rem;
+    color: #1a1a1a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.om-stats-barra-fila__pista {
+    background: #f0efe9;
+    border-radius: 4px;
+    height: 20px;
+    overflow: hidden;
+}
+
+.om-stats-barra-fila__barra {
+    height: 100%;
+    max-height: 20px;
+    background: #d91b1b;
+    border-radius: 0 4px 4px 0;
+    min-width: 6px;
+}
+
+.om-stats-barra-fila__valor {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    font-variant-numeric: tabular-nums;
+    min-width: 2.5em;
+    text-align: right;
+}

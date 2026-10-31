@@ -1,0 +1,701 @@
+/*
+ * Apila el Pedido — minijuego (lab/apila.html)
+ * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
+ * que el resto de minijuegos del laboratorio, con la paleta REAL del
+ * sitio (ver src/css/estilos.css).
+ */
+
+:root {
+    --jq-rojo: #d91b1b;
+    --jq-rojo-oscuro: #ad1515;
+    --jq-negro: #1a1a1a;
+    --jq-gris-texto: #52555a;
+    --jq-gris-borde: #e2e2e4;
+    --jq-gris-fondo: #f7f6f4;
+    --jq-blanco: #ffffff;
+    --jq-verde: #1a8f4c;
+    --jq-radio: 14px;
+    --jq-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jq-gris-fondo);
+    color: var(--jq-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jq-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jq-negro), var(--jq-rojo-oscuro));
+    color: var(--jq-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jq-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jq-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jq-header__volver:hover,
+.jq-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jq-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jq-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jq-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jq-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jq-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jq-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+.jq-juego {
+    background: var(--jq-blanco);
+    border-radius: var(--jq-radio);
+    box-shadow: var(--jq-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jq-juego {
+        flex: 1 1 62%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jq-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jq-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jq-gris-borde);
+    background: var(--jq-blanco);
+    color: var(--jq-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jq-chip-dificultad.is-activo {
+    background: var(--jq-negro);
+    border-color: var(--jq-negro);
+    color: var(--jq-blanco);
+}
+
+.jq-contenedor {
+    display: flex;
+    flex-direction: column;
+}
+
+.jq-objetivo {
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #fdf3e2;
+    border: 1.5px solid #f0d9a8;
+    color: var(--jq-negro);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.jq-objetivo strong {
+    font-weight: 800;
+}
+
+.jq-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.jq-barra-superior--euros {
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.jq-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 3.6rem;
+}
+
+.jq-stat__valor {
+    font-weight: 800;
+    font-size: 1.05rem;
+    white-space: nowrap;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.jq-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jq-stat--euros .jq-stat__valor { color: var(--jq-verde); }
+.jq-stat--combo .jq-stat__valor { color: var(--jq-rojo); }
+
+.jq-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jq-gris-fondo);
+    overflow: hidden;
+}
+
+.jq-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jq-rojo), var(--jq-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+.jq-pista {
+    margin: 0 2px 10px;
+    font-size: 0.78rem;
+    color: var(--jq-gris-texto);
+    text-align: center;
+}
+
+/* ── Escenario de la torre ───────────────────────────────────────────── */
+
+.jq-escenario {
+    position: relative;
+    height: 420px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #dfe9f3 0%, #c9d9e8 100%);
+    overflow: hidden;
+    touch-action: none;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ──────────────────
+   Fuera de pantalla completa el escenario tiene una altura fija
+   (420px). En pantalla completa eso dejaba mucho espacio vacío debajo
+   en vertical, y en horizontal (pantallas más bajas) hasta se salía
+   de lo que cabe en pantalla. Aquí pasa a ocupar el alto disponible;
+   la torre y la barra se siguen posicionando igual (son offsets desde
+   abajo, no dependen del alto exacto del contenedor). ─────────────── */
+
+body.om-pantalla-completa-activa .jq-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jq-contenedor {
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jq-escenario {
+    flex: 1;
+    height: auto;
+    min-height: 220px;
+}
+
+.jq-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 5;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.65);
+    color: var(--jq-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+.jq-torre {
+    position: absolute;
+    inset: 0;
+}
+
+/* "Cámara" que sigue a la torre: todas las capas y la barra viven
+   aquí dentro, ancladas por `bottom` a su fila real; al crecer la
+   torre por encima de lo que cabe en pantalla, este contenedor se
+   desplaza hacia abajo con una transición suave, así que las capas
+   antiguas se deslizan fuera de vista en vez de desaparecer de golpe. */
+.jq-pila-interior {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.28s ease;
+}
+
+.jq-pila-interior--sin-transicion {
+    transition: none;
+}
+
+.jq-capa {
+    position: absolute;
+    height: 32px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.jq-capa--perfecta {
+    box-shadow: 0 0 0 2px #f6c445 inset, 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.jq-capa__etiqueta {
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+    padding: 0 4px;
+}
+
+.jq-barra-movil {
+    position: absolute;
+    height: 32px;
+    border-radius: 4px;
+    background: var(--jq-rojo);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.jq-recorte {
+    position: absolute;
+    height: 32px;
+    border-radius: 3px;
+    opacity: 0.9;
+    animation: jq-caer-recorte 0.5s ease-in forwards;
+}
+
+@keyframes jq-caer-recorte {
+    to {
+        transform: translateY(120px) rotate(12deg);
+        opacity: 0;
+    }
+}
+
+.jq-ganancia-flotante {
+    position: absolute;
+    left: 50%;
+    z-index: 6;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--jq-verde);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6);
+    animation: jq-flotar 0.76s ease-out forwards;
+}
+
+@keyframes jq-flotar {
+    0% { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
+    100% { opacity: 0; transform: translate(-50%, -50%) translateY(-30px); }
+}
+
+.jq-insignia-perfecto {
+    position: absolute;
+    left: 50%;
+    z-index: 6;
+    background: #f6c445;
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 0.72rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: jq-perfecto-pop 0.65s ease-out forwards;
+}
+
+@keyframes jq-perfecto-pop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -50%) translateY(-18px) scale(1); }
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jq-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jq-controles {
+        flex: 1 1 38%;
+    }
+}
+
+.jq-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jq-boton,
+.jq-boton-compartir,
+.jq-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jq-boton-compartir,
+.jq-boton--primario {
+    background: var(--jq-negro);
+    color: var(--jq-blanco);
+}
+
+.jq-boton-compartir:hover {
+    background: #333;
+}
+
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jq-boton--secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jq-boton-secundario,
+.jq-boton--secundario {
+    background: var(--jq-gris-fondo);
+    color: var(--jq-negro);
+    border: 1.5px solid var(--jq-gris-borde);
+    margin-top: 10px;
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jq-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jq-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jq-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jq-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jq-caer-confeti;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jq-caer-confeti {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jq-celebracion-caja {
+    position: relative;
+    z-index: 1;
+    background: var(--jq-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jq-celebracion-titulo {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jq-celebracion-stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jq-gris-texto);
+    font-weight: 600;
+}
+
+#jq-canvas-resultado {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.jq-celebracion-botones {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jq-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jq-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jq-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jq-compartir-caja {
+    position: relative;
+    background: var(--jq-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+    text-align: left;
+}
+
+@media (min-width: 640px) {
+    .jq-compartir-caja {
+        border-radius: 16px;
+    }
+}
+
+.jq-compartir-caja h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jq-compartir-caja p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jq-gris-texto);
+}
+
+.jq-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jq-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #888;
+}
+
+.jq-compartir-enlaces {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.jq-compartir-enlace {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: var(--jq-blanco);
+    background: var(--jq-negro);
+}
+
+#jq-enlace-whatsapp { background: #25d366; }
+#jq-enlace-x { background: #000000; }
+#jq-enlace-facebook { background: #1877f2; }
+#jq-boton-descargar { background: var(--jq-rojo); }
+
+/* ── Marcas aleatorias (al buscador general, sin filtrar) ───────────── */
+
+.jq-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jq-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jq-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jq-gris-texto);
+    text-align: center;
+}
+
+.jq-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jq-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jq-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jq-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
