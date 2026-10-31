@@ -57,6 +57,7 @@
         moviendoIzquierda: false,
         moviendoDerecha: false,
         enSuelo: true,
+        plataformaActual: null, // la plataforma que pisa ahora mismo, para arrastrarlo si es móvil
         cameraY: 0,
         maxYGenerado: 0,
         plataformas: [], // {id, x, y, ancho, movil, rango, centro, velocidad, el, paquete}
@@ -182,11 +183,18 @@
     function actualizarPlataformasMoviles() {
         estado.plataformas.forEach((p) => {
             if (!p.movil) return;
+            const xAntes = p.x;
             p.fase += 0.018;
             p.x = p.centro + Math.sin(p.fase) * p.rango;
             if (p.x < 0) p.x = 0;
             if (p.x > 100 - p.ancho) p.x = 100 - p.ancho;
             p.el.style.left = p.x + '%';
+            // Si el operario está de pie sobre esta plataforma, se
+            // mueve con ella — si no, se quedaría clavado en el sitio
+            // mientras la plataforma se desliza por debajo.
+            if (estado.enSuelo && estado.plataformaActual === p) {
+                estado.x += p.x - xAntes;
+            }
             if (p.paquete && !p.paquete.recogido) posicionarPaquete(p);
         });
     }
@@ -242,6 +250,7 @@
         if (!estado.enSuelo) return;
         estado.vy = IMPULSO_SALTO;
         estado.enSuelo = false;
+        estado.plataformaActual = null;
     }
 
     document.getElementById('jz-boton-saltar').addEventListener('click', saltar);
@@ -343,6 +352,13 @@
         estado.vy -= GRAVEDAD;
         estado.y += estado.vy;
 
+        // Se reinicia cada fotograma y solo se vuelve a poner a true si
+        // el bucle de abajo encuentra una plataforma que lo sostenga
+        // — si no, se detecta aquí mismo que se ha caído de la
+        // plataforma (por ejemplo, al salirse del borde andando sin
+        // saltar), en vez de quedarse "en el suelo" a medias.
+        estado.enSuelo = false;
+
         if (estado.vy < 0) {
             for (let i = 0; i < estado.plataformas.length; i++) {
                 const p = estado.plataformas[i];
@@ -355,10 +371,12 @@
                     estado.y = p.y;
                     estado.vy = 0;
                     estado.enSuelo = true;
+                    estado.plataformaActual = p;
                     break;
                 }
             }
         }
+        if (!estado.enSuelo) estado.plataformaActual = null;
 
         if (estado.y > estado.alturaMaxima) estado.alturaMaxima = estado.y;
 
@@ -450,7 +468,7 @@
         estado.jugando = true;
         estado.pausado = false;
 
-        crearPlataforma(50 - ANCHO_PLATAFORMA_INICIAL / 2, 0, ANCHO_PLATAFORMA_INICIAL, false);
+        estado.plataformaActual = crearPlataforma(50 - ANCHO_PLATAFORMA_INICIAL / 2, 0, ANCHO_PLATAFORMA_INICIAL, false);
         estado.maxYGenerado = 0;
         generarSiguientesPlataformas();
 
