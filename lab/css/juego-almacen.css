@@ -464,6 +464,16 @@ body.om-pantalla-completa-activa .ja-juego {
 /* ── Botones de acción ──────────────────────────────────────────────── */
 
 .ja-boton-compartir,
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.ja-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
 .ja-boton-secundario {
     min-height: 50px;
     width: 100%;
