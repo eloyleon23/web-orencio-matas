@@ -35,7 +35,7 @@
 <meta name="description" content="Minijuego: salta de plataforma en plataforma recogiendo paquetes sin caerte.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
-<link rel="stylesheet" href="css/juego-salta.css?v=20261102">
+<link rel="stylesheet" href="css/juego-salta.css?v=20261103">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
 <!-- Google tag (gtag.js) -->
 <script>
@@ -140,6 +140,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" class="jz-chip-avatar" data-avatar="👷🏽‍♀️" role="radio" aria-checked="false" aria-label="Operaria, tono de piel medio" title="Operaria">👷🏽‍♀️</button>
             <button type="button" class="jz-chip-avatar" data-avatar="👷🏿‍♂️" role="radio" aria-checked="false" aria-label="Operario, tono de piel oscuro" title="Operario">👷🏿‍♂️</button>
             <button type="button" class="jz-chip-avatar" data-avatar="👷🏿‍♀️" role="radio" aria-checked="false" aria-label="Operaria, tono de piel oscuro" title="Operaria">👷🏿‍♀️</button>
+            <button type="button" class="jz-chip-avatar jz-chip-avatar--anadir" id="jz-boton-avatar-personalizado" aria-label="Elegir cualquier otro emoji" title="Elegir otro emoji">+</button>
         </div>
 
         <div class="jz-barra-superior">
@@ -162,6 +163,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="jz-mundo" id="jz-mundo"></div>
                 <div class="jz-jugador" id="jz-jugador" aria-hidden="true">👷</div>
                 <div class="jz-pausado-indicador" id="jz-pausado-indicador" hidden aria-hidden="true">⏸ Pausado</div>
+                <div class="jz-logro" id="jz-logro" hidden aria-live="polite"></div>
             </div>
             <button type="button" class="jz-boton-reiniciar" id="jz-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
                 <span aria-hidden="true">↺</span>
@@ -197,6 +199,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
 </main>
+
+<!-- ───────────────── Elegir avatar personalizado ───────────────── -->
+<div class="jz-overlay" id="jz-avatar-overlay" hidden>
+    <div class="jz-tarjeta-overlay" role="dialog" aria-modal="true" aria-labelledby="jz-avatar-titulo">
+        <button type="button" class="jz-overlay__cerrar" id="jz-avatar-cerrar" aria-label="Cerrar">&times;</button>
+        <h2 id="jz-avatar-titulo">Elige tu emoji</h2>
+        <p>Escribe o pega cualquier emoji — un animal, lo que quieras — para usarlo como tu avatar en el juego.</p>
+        <input type="text" id="jz-avatar-input" class="jz-avatar-input" maxlength="8" placeholder="🦊" autocomplete="off" aria-label="Escribe tu emoji">
+        <div class="jz-overlay__acciones">
+            <button type="button" class="jz-overlay__boton" id="jz-avatar-usar">Usar este emoji</button>
+        </div>
+    </div>
+</div>
 
 <section class="jz-proveedores" aria-labelledby="jz-proveedores-titulo">
     <h2 id="jz-proveedores-titulo" class="jz-proveedores__titulo">Algunas de nuestras marcas</h2>
@@ -307,7 +322,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="../src/js/app.js?v=20260829"></script>
 <script src="js/estadisticas-juegos.js?v=20261101c"></script>
 <script src="js/compartir-juego.js?v=20261102"></script>
-<script src="js/juego-salta.js?v=20261102"></script>
+<script src="js/juego-salta.js?v=20261103"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
