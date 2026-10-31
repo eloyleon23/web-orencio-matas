@@ -641,15 +641,15 @@ body.om-pantalla-completa-activa .jg-zona {
 }
 
 .jg-proveedores__grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    max-width: 720px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 480px;
     margin: 0 auto;
 }
 
-@media (max-width: 620px) {
+@media (max-width: 420px) {
     .jg-proveedores__grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        max-width: 420px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 320px;
     }
 }
 
