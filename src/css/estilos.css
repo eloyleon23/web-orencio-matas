@@ -220,7 +220,7 @@ ol {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
   min-height: 82px;
 }
 
@@ -231,9 +231,17 @@ ol {
    sobraba hueco visible a los lados de la cabecera mientras el propio
    menú iba apretado. Solo ensancha LA BARRA DE NAVEGACIÓN (selector más
    específico que .container a secas, para no afectar al ancho del
-   resto del contenido de ninguna página). */
+   resto del contenido de ninguna página).
+   Ampliado de 1440px a 1680px tras añadir "Espacio Creativo" al menú:
+   el conjunto logo + enlaces + botón CONTACTAR pasó a necesitar ~1778px
+   para caber en una sola fila sin desbordarse (bug real detectado: con
+   el tope en 1440px el botón CONTACTAR y los últimos enlaces quedaban
+   empujados fuera del borde derecho visible, con mucho más margen a la
+   izquierda que a la derecha). Junto con el gap reducido de abajo
+   (.navbar__menu), ya cabe de sobra en 1680px — ver el breakpoint del
+   menú de hamburguesa un poco más abajo, también reajustado a la vez. */
 .navbar .container {
-  width: min(100% - 40px, 1440px);
+  width: min(100% - 40px, 1680px);
 }
 
 .navbar__logo {
@@ -252,7 +260,7 @@ ol {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
   flex: 1 1 auto;
 }
 
@@ -260,7 +268,7 @@ ol {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 34px;
+  gap: 22px;
   flex: 1 1 auto;
   font-size: 0.94rem;
   font-weight: 700;
