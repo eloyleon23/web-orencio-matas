@@ -437,6 +437,7 @@ a.jp-boton-secundario {
     text-decoration: none;
 }
 
+.jp-boton-compartir,
 .jp-boton-secundario {
     min-height: 50px;
     width: 100%;

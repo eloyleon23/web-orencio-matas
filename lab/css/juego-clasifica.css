@@ -449,6 +449,7 @@ a.jf-boton-secundario {
     text-decoration: none;
 }
 
+.jf-boton-compartir,
 .jf-boton-secundario {
     min-height: 50px;
     width: 100%;

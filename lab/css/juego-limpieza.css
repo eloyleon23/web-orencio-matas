@@ -384,6 +384,7 @@ a.jl-boton-secundario {
     text-decoration: none;
 }
 
+.jl-boton-compartir,
 .jl-boton-secundario {
     min-height: 50px;
     width: 100%;

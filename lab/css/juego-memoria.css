@@ -411,6 +411,13 @@ a.jc-boton-secundario {
     text-decoration: none;
 }
 
+/* Bug real: esta regla solo incluía .jc-boton-secundario, dejando a
+   .jc-boton-compartir sin min-height/width/border-radius/font-size/
+   font-weight/cursor — el botón de compartir resultado quedaba sin
+   estilar (texto suelto sin forma de botón), aunque el primer bloque
+   de arriba ya lo agrupaba con a.jc-boton-secundario para el reset de
+   display/texto. */
+.jc-boton-compartir,
 .jc-boton-secundario {
     min-height: 50px;
     width: 100%;
