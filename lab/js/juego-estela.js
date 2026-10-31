@@ -1,10 +1,13 @@
 /**
  * La Estela de Color — minijuego (lab/estela.html)
  * Vanilla JS, sin dependencias. Una brocha se mueve sin parar por el
- * lienzo, pintando una estela. Mantén pulsado a un lado de la
- * pantalla para girar hacia allí. Al pasar sobre un bote de pigmento
- * tu color actual se mezcla con el suyo. No puedes chocar contra tu
- * propia estela ya seca ni salir del lienzo.
+ * lienzo en línea recta (arriba/abajo/izquierda/derecha), pintando una
+ * estela. Se toca la pantalla por encima, por debajo, a la izquierda
+ * o a la derecha de la brocha para que tome esa dirección — sin
+ * ángulos ni giros progresivos, el control es deliberadamente simple.
+ * Al pasar sobre un bote de pigmento tu color actual se mezcla con el
+ * suyo. No puedes chocar contra tu propia estela ya seca ni salir del
+ * lienzo.
  *
  * El movimiento y las colisiones viven en un espacio lógico fijo
  * (GW × GH, independiente del tamaño real en pantalla): así cambiar
@@ -26,15 +29,15 @@
     // ── Dificultad ───────────────────────────────────────────────────
     const DIFICULTADES = {
         facil: {
-            nombre: 'Fácil', velocidad: 0.80, velocidadGiro: 0.050, anchoLinea: 3.4,
+            nombre: 'Fácil', velocidad: 0.80, anchoLinea: 3.4,
             intervaloPigmento: 2600, maxPigmentos: 3, objetivoCobertura: 30,
         },
         medio: {
-            nombre: 'Medio', velocidad: 1.05, velocidadGiro: 0.062, anchoLinea: 2.8,
+            nombre: 'Medio', velocidad: 1.05, anchoLinea: 2.8,
             intervaloPigmento: 2200, maxPigmentos: 3, objetivoCobertura: 40,
         },
         dificil: {
-            nombre: 'Difícil', velocidad: 1.35, velocidadGiro: 0.078, anchoLinea: 2.2,
+            nombre: 'Difícil', velocidad: 1.35, anchoLinea: 2.2,
             intervaloPigmento: 1800, maxPigmentos: 4, objetivoCobertura: 50,
         },
     };
@@ -52,9 +55,9 @@
     // ── Estado ────────────────────────────────────────────────────────
     const estado = {
         dificultad: 'medio',
-        x: GW / 2, y: GH * 0.8, angulo: 0,
+        x: GW / 2, y: GH * 0.8,
+        dx: 0, dy: -1, // dirección actual: un vector cardinal unitario
         colorActual: COLOR_INICIAL.slice(),
-        girando: 0, // -1 izquierda, 0 recto, 1 derecha
         celdas: null, // Int32Array: fotograma en que se pintó cada celda, -1 = sin pintar
         celdasPintadas: 0,
         pigmentos: [],
@@ -145,33 +148,41 @@
         setTimeout(redimensionarCanvas, 350);
     });
 
-    // ── Controles: mantener pulsado a un lado para girar ──────────────
+    // ── Controles: tocar arriba/abajo/izquierda/derecha para dirigir ──
 
-    function alPulsar(ev) {
+    // Se fija la dirección según en qué cuadrante (respecto al centro
+    // del lienzo) se ha tocado: arriba, abajo, izquierda o derecha.
+    // No se permite invertir el sentido de golpe (p. ej. ir a la
+    // izquierda y tocar a la derecha) porque chocaría contra la
+    // propia estela en el acto — igual que en el clásico "snake".
+    function fijarDireccion(ndx, ndy) {
         if (estado.terminado || !estado.jugando) return;
-        const rect = zona.getBoundingClientRect();
-        const xPct = (ev.clientX - rect.left) / rect.width;
-        estado.girando = xPct < 0.5 ? -1 : 1;
+        if (ndx === -estado.dx && ndy === -estado.dy) return;
+        estado.dx = ndx;
+        estado.dy = ndy;
     }
-    function alSoltar() {
-        estado.girando = 0;
+
+    function direccionDesdeToque(ev) {
+        const rect = zona.getBoundingClientRect();
+        const dx = ev.clientX - (rect.left + rect.width / 2);
+        const dy = ev.clientY - (rect.top + rect.height / 2);
+        if (Math.abs(dx) > Math.abs(dy)) {
+            fijarDireccion(dx > 0 ? 1 : -1, 0);
+        } else {
+            fijarDireccion(0, dy > 0 ? 1 : -1);
+        }
     }
 
     zona.addEventListener('pointerdown', (ev) => {
         if (ev.target.closest('.je-boton-reiniciar')) return;
-        alPulsar(ev);
+        direccionDesdeToque(ev);
     });
-    zona.addEventListener('pointerup', alSoltar);
-    zona.addEventListener('pointercancel', alSoltar);
-    zona.addEventListener('pointerleave', alSoltar);
 
     document.addEventListener('keydown', (ev) => {
-        if (estado.terminado || !estado.jugando) return;
-        if (ev.key === 'ArrowLeft') estado.girando = -1;
-        else if (ev.key === 'ArrowRight') estado.girando = 1;
-    });
-    document.addEventListener('keyup', (ev) => {
-        if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') estado.girando = 0;
+        if (ev.key === 'ArrowLeft') fijarDireccion(-1, 0);
+        else if (ev.key === 'ArrowRight') fijarDireccion(1, 0);
+        else if (ev.key === 'ArrowUp') fijarDireccion(0, -1);
+        else if (ev.key === 'ArrowDown') fijarDireccion(0, 1);
     });
 
     // ── Pigmentos ────────────────────────────────────────────────────
@@ -254,10 +265,8 @@
         estado.fotograma++;
 
         const cfg = cfgDificultad();
-        estado.angulo += estado.girando * cfg.velocidadGiro;
-
-        const nx = estado.x + Math.sin(estado.angulo) * cfg.velocidad;
-        const ny = estado.y - Math.cos(estado.angulo) * cfg.velocidad;
+        const nx = estado.x + estado.dx * cfg.velocidad;
+        const ny = estado.y + estado.dy * cfg.velocidad;
 
         if (nx < 1 || nx > GW - 1 || ny < 1 || ny > GH - 1) {
             finalizarPartida(false);
@@ -335,8 +344,8 @@
 
         estado.x = GW / 2;
         estado.y = GH * 0.8;
-        estado.angulo = 0;
-        estado.girando = 0;
+        estado.dx = 0;
+        estado.dy = -1;
         estado.colorActual = COLOR_INICIAL.slice();
         estado.celdas = new Int32Array(GW * GH).fill(-1);
         estado.celdasPintadas = 0;
