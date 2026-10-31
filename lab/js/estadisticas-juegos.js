@@ -15,9 +15,12 @@
  * se muestra la modal. Requiere que la página cargue también
  * css/invitacion-buscador.css.
  *
- * Además, envía a Google Analytics (solo en producción, igual que el
- * resto del sitio — ver gtag en el <head> de cada página) tres
- * eventos para poder evaluar qué juegos enganchan de verdad:
+ * Además, envía (solo en producción, igual que el resto del sitio —
+ * ver gtag en el <head> de cada página) tres eventos para poder
+ * evaluar qué juegos enganchan de verdad, tanto a Google Analytics
+ * como al backend propio de Google Apps Script que alimenta las
+ * gráficas de la modal de estadísticas (lab/js/estadisticas-admin.js
+ * — ver scripts/estadisticas_juegos.gs para el propio backend):
  *   - "juego_inicio": cada vez que arranca una partida.
  *   - "juego_tiempo": el tiempo ACTIVO jugado en una partida (sin
  *     contar pausas ni ratos con la pestaña en segundo plano), al
@@ -40,9 +43,52 @@
     // preproducción/local, window.gtag no existe y estos envíos se
     // ignoran sin más, así que no hace falta repetir aquí la
     // comprobación de dominio.
+    function enProduccion_() {
+        return typeof window.gtag === 'function';
+    }
+
     function enviarEventoGA_(nombre, params) {
-        if (typeof window.gtag !== 'function') return;
+        if (!enProduccion_()) return;
         window.gtag('event', nombre, params);
+    }
+
+    // ── Envío de eventos al backend propio (hoja de cálculo) ─────────
+    // Alimenta las gráficas nativas de la modal de estadísticas (ver
+    // lab/js/estadisticas-admin.js) sin depender de ninguna
+    // herramienta externa. Ver scripts/estadisticas_juegos.gs para el
+    // backend y cómo desplegarlo.
+    //
+    // IMPORTANTE: esta URL tiene que ser una constante fija en el
+    // código (no algo configurable por navegador vía localStorage,
+    // como se intentó en un primer momento) — quien envía estos
+    // eventos es cualquier visitante jugando en PRODUCCIÓN
+    // (orenciomatas.es), mientras que la modal de administración solo
+    // se ve en PREPRODUCCIÓN (github.io): son dos orígenes distintos,
+    // cada uno con su propio localStorage, así que una URL guardada
+    // desde la modal en preproducción nunca llegaría a producción.
+    // Pégala aquí en cuanto despliegues el backend.
+    const URL_BACKEND_ESTADISTICAS = '';
+
+    // Mismo criterio de solo-producción que GA4; un fallo de red aquí
+    // nunca debe interrumpir la partida.
+    function enviarEventoBackend_(tipo, juego, segundos, motivo) {
+        if (!enProduccion_()) return;
+        const url = URL_BACKEND_ESTADISTICAS;
+        if (!url) return;
+        const payload = JSON.stringify({ accion: 'registrar_evento_juego', tipo, juego, segundos, motivo });
+        try {
+            if (navigator.sendBeacon) {
+                // text/plain evita el preflight CORS, igual que el resto
+                // de llamadas a Apps Script de este sitio — y sendBeacon
+                // es el mecanismo pensado para envíos justo al
+                // abandonar la página (pagehide).
+                navigator.sendBeacon(url, new Blob([payload], { type: 'text/plain;charset=utf-8' }));
+            } else {
+                fetch(url, { method: 'POST', body: payload, keepalive: true }).catch(() => {});
+            }
+        } catch (err) {
+            // Sin conexión, backend no configurado, etc. — se ignora.
+        }
     }
 
     // ── Tiempo activo jugado por partida ─────────────────────────────
@@ -63,11 +109,13 @@
     function cerrarSesionTiempo_(motivo) {
         if (!sesionTiempo.juego) return;
         if (sesionTiempo.segundosActivos >= 1) {
+            const motivoFinal = motivo || 'fin_partida';
             enviarEventoGA_('juego_tiempo', {
                 juego: sesionTiempo.juego,
                 segundos: sesionTiempo.segundosActivos,
-                motivo: motivo || 'fin_partida',
+                motivo: motivoFinal,
             });
+            enviarEventoBackend_('tiempo', sesionTiempo.juego, sesionTiempo.segundosActivos, motivoFinal);
         }
         sesionTiempo.juego = null;
     }
@@ -160,7 +208,9 @@
             // usuario acabe en el buscador. Se registra antes de
             // navegar, con el juego que estaba jugando en ese momento
             // como contexto (si lo hay).
-            enviarEventoGA_('conversion_buscador', { juego: sesionTiempo.juego || '(ninguno)' });
+            const juegoActual = sesionTiempo.juego || '(ninguno)';
+            enviarEventoGA_('conversion_buscador', { juego: juegoActual });
+            enviarEventoBackend_('conversion', juegoActual);
             window.location.href = '../buscador.html';
         });
 
@@ -204,6 +254,7 @@
         pausaManual = false;
         if (!intervaloTick) intervaloTick = setInterval(tickActivo_, 1000);
         enviarEventoGA_('juego_inicio', { juego: clave });
+        enviarEventoBackend_('inicio', clave);
 
         const totalDesdeInvitacion = leerEntero_(CLAVE_CONTADOR_INVITACION) + 1;
         if (totalDesdeInvitacion >= UMBRAL_INVITACION) {
@@ -220,5 +271,6 @@
         registrarPausa,
         registrarReanudacion,
         leerContadores,
+        URL_BACKEND_ESTADISTICAS,
     };
 })();
