@@ -55,19 +55,21 @@
     // ── Envío de eventos al backend propio (hoja de cálculo) ─────────
     // Alimenta las gráficas nativas de la modal de estadísticas (ver
     // lab/js/estadisticas-admin.js) sin depender de ninguna
-    // herramienta externa. Ver scripts/estadisticas_juegos.gs para el
-    // backend y cómo desplegarlo.
+    // herramienta externa. Las acciones "registrar_evento_juego" y
+    // "obtener_estadisticas_juegos" viven en el MISMO proyecto de
+    // Apps Script que ya usa panel_admin.html (scripts/
+    // apps_script_trigger.js, doPost) — por eso es la misma URL_BASE
+    // que panel_admin.html, no una nueva.
     //
-    // IMPORTANTE: esta URL tiene que ser una constante fija en el
-    // código (no algo configurable por navegador vía localStorage,
-    // como se intentó en un primer momento) — quien envía estos
-    // eventos es cualquier visitante jugando en PRODUCCIÓN
-    // (orenciomatas.es), mientras que la modal de administración solo
-    // se ve en PREPRODUCCIÓN (github.io): son dos orígenes distintos,
-    // cada uno con su propio localStorage, así que una URL guardada
-    // desde la modal en preproducción nunca llegaría a producción.
-    // Pégala aquí en cuanto despliegues el backend.
-    const URL_BACKEND_ESTADISTICAS = '';
+    // IMPORTANTE: tiene que ser una constante fija en el código (no
+    // algo configurable por navegador vía localStorage, como se
+    // intentó en un primer momento) — quien envía estos eventos es
+    // cualquier visitante jugando en PRODUCCIÓN (orenciomatas.es),
+    // mientras que la modal de administración solo se ve en
+    // PREPRODUCCIÓN (github.io): son dos orígenes distintos, cada uno
+    // con su propio localStorage, así que una URL guardada desde la
+    // modal en preproducción nunca llegaría a producción.
+    const URL_BACKEND_ESTADISTICAS = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec';
 
     // Mismo criterio de solo-producción que GA4; un fallo de red aquí
     // nunca debe interrumpir la partida.
