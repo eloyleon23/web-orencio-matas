@@ -1,0 +1,698 @@
+/*
+ * Dobla el Almacén — minijuego (lab/dobla-almacen.html)
+ * Mobile-first. Mismo esqueleto que el resto de minijuegos del
+ * laboratorio, con la paleta REAL del sitio (ver src/css/estilos.css).
+ */
+
+:root {
+    --jy-rojo: #d91b1b;
+    --jy-rojo-oscuro: #ad1515;
+    --jy-negro: #1a1a1a;
+    --jy-gris-texto: #52555a;
+    --jy-gris-borde: #e2e2e4;
+    --jy-gris-fondo: #f7f6f4;
+    --jy-blanco: #ffffff;
+    --jy-radio: 14px;
+    --jy-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jy-gris-fondo);
+    color: var(--jy-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jy-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jy-negro), var(--jy-rojo-oscuro));
+    color: var(--jy-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jy-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jy-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jy-header__volver:hover,
+.jy-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jy-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jy-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jy-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jy-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jy-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jy-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jy-juego {
+    background: var(--jy-blanco);
+    border-radius: var(--jy-radio);
+    box-shadow: var(--jy-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jy-juego {
+        flex: 1 1 64%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jy-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jy-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jy-gris-borde);
+    background: var(--jy-blanco);
+    color: var(--jy-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jy-chip-dificultad.is-activo {
+    background: var(--jy-negro);
+    border-color: var(--jy-negro);
+    color: var(--jy-blanco);
+}
+
+.jy-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.jy-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.jy-stat__valor {
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jy-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jy-boton-reiniciar {
+    margin-left: auto;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jy-negro);
+    color: var(--jy-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+/* ── Tablero ─────────────────────────────────────────────────────────── */
+/* Igual que en Triple Combo: fichas posicionadas de forma absoluta
+   (left/top en px, calculados por JS) para animar deslizamiento y
+   fusión con una simple transición, sin reordenar nodos del DOM. */
+
+.jy-tablero-wrap {
+    position: relative;
+}
+
+.jy-tablero {
+    position: relative;
+    width: 100%;
+    --jy-tam-ficha: 60px;
+    overflow: hidden;
+    touch-action: none;
+    border-radius: 10px;
+    background: #ded8c7;
+    margin: 0 auto;
+}
+
+.jy-ficha {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    transition: left 0.13s ease, top 0.13s ease;
+}
+
+.jy-ficha--nueva {
+    animation: jy-ficha-aparece 0.16s ease-out;
+}
+
+@keyframes jy-ficha-aparece {
+    0% { transform: scale(0.3); opacity: 0.4; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.jy-ficha--pop {
+    animation: jy-ficha-pop 0.16s ease-out;
+}
+
+@keyframes jy-ficha-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.14); }
+    100% { transform: scale(1); }
+}
+
+/* ── Hitos / logros (toast) ─────────────────────────────────────────
+   Mismo patrón ya usado en Salta y Reparte y Triple Combo: el
+   "display" vive en :not([hidden]), nunca en la regla base (mismo
+   bug de especificidad ya corregido varias veces en el sitio). */
+
+.jy-logro {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, -10px);
+    background: rgba(26, 26, 26, 0.88);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    z-index: 6;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.jy-logro:not([hidden]).jy-logro--mostrar {
+    animation: jy-logro-aparece 1.8s ease forwards;
+}
+
+@keyframes jy-logro-aparece {
+    0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, -10px) scale(1.08); }
+    25% { transform: translate(-50%, -10px) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -22px) scale(0.95); }
+}
+
+/* ── Pausa ───────────────────────────────────────────────────────────── */
+
+.jy-pausado-indicador {
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 26, 26, 0.45);
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 10px;
+}
+
+.jy-pausado-indicador:not([hidden]) {
+    display: flex;
+}
+
+.jy-pista {
+    margin: 10px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jy-gris-texto);
+    text-align: center;
+}
+
+/* ── Control direccional (cruceta + pausa en el centro) ─────────────── */
+
+.jy-control-direccional {
+    display: grid;
+    grid-template-columns: 54px 54px 54px;
+    grid-template-rows: 54px 54px 54px;
+    gap: 6px;
+    justify-content: center;
+    margin: 14px auto 0;
+}
+
+.jy-control-boton {
+    border: 2px solid var(--jy-gris-borde);
+    background: var(--jy-blanco);
+    border-radius: 14px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--jy-negro);
+    touch-action: manipulation;
+}
+
+.jy-control-boton:active {
+    background: #f1efe9;
+}
+
+.jy-boton-pausa {
+    border: none;
+    background: var(--jy-negro);
+    color: var(--jy-blanco);
+    border-radius: 14px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.jy-boton-pausa:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jy-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jy-controles {
+        flex: 1 1 36%;
+    }
+}
+
+.jy-grupo-control {
+    background: var(--jy-blanco);
+    border-radius: var(--jy-radio);
+    box-shadow: var(--jy-sombra);
+    padding: 14px;
+}
+
+.jy-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jy-ayuda {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--jy-gris-texto);
+    line-height: 1.5;
+}
+
+.jy-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jy-boton-compartir,
+a.jy-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jy-boton-compartir,
+.jy-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jy-boton-compartir {
+    background: var(--jy-negro);
+    color: var(--jy-blanco);
+}
+
+.jy-boton-compartir:hover {
+    background: #333;
+}
+
+.jy-boton-secundario {
+    background: var(--jy-gris-fondo);
+    color: var(--jy-negro);
+    border: 1.5px solid var(--jy-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jy-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jy-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jy-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jy-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jy-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jy-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jy-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jy-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jy-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jy-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jy-gris-texto);
+    font-weight: 600;
+}
+
+.jy-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jy-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jy-celebracion .jy-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jy-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jy-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jy-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jy-compartir-panel {
+    position: relative;
+    background: var(--jy-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jy-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jy-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jy-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jy-gris-texto);
+}
+
+.jy-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jy-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jy-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jy-rojo);
+    color: var(--jy-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jy-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jy-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jy-blanco);
+}
+
+.jy-boton-red--whatsapp { background: #25d366; }
+.jy-boton-red--x { background: #000000; }
+.jy-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas aleatorias (al buscador general, sin filtrar) ───────────── */
+
+.jy-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jy-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jy-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jy-gris-texto);
+    text-align: center;
+}
+
+.jy-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jy-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jy-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jy-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ─────────────────── */
+
+body.om-pantalla-completa-activa .jy-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jy-tablero-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.om-pantalla-completa-activa .jy-tablero {
+    max-width: 100%;
+    max-height: 100%;
+}
