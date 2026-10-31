@@ -58,9 +58,35 @@
     const COYOTE_FOTOGRAMAS = 9;
     const UMBRAL_CAMARA = 0.55; // fracción de la altura de la zona a la que se "pega" el jugador al subir
     const PUNTOS_POR_PAQUETE = 15;
+    const PUNTOS_POR_BONUS = 35;
+    const PROBABILIDAD_BONUS = 0.22; // de los recogibles que aparecen, qué fracción es un bonus en vez de un paquete
+    // Objetos bonus — productos de droguería, perfumería y pinturas en
+    // vez de paquetes de pedido, con más puntos que un paquete normal.
+    const EMOJIS_BONUS = ['🧴', '🎨', '🖌️', '🧼', '🧽', '💐'];
+
+    // ── Avatares disponibles ─────────────────────────────────────────
+    const CLAVE_AVATAR = 'om_salta_avatar';
+    const AVATAR_PREDETERMINADO = '👷🏻‍♂️';
+
+    function leerAvatarGuardado() {
+        try {
+            return localStorage.getItem(CLAVE_AVATAR);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function guardarAvatar(avatar) {
+        try {
+            localStorage.setItem(CLAVE_AVATAR, avatar);
+        } catch (err) {
+            // localStorage no disponible — se ignora, simplemente no se recuerda.
+        }
+    }
 
     const estado = {
         dificultad: 'medio',
+        avatar: AVATAR_PREDETERMINADO,
         x: 50, // % del ancho de la zona (centro del jugador)
         y: 0, // px del "mundo", pies del jugador
         vy: 0,
@@ -75,6 +101,7 @@
         siguienteIdPlataforma: 1,
         paquetesRecogidos: 0,
         puntos: 0,
+        puntosObjetos: 0, // puntos acumulados por paquetes/bonus recogidos (puntos variables, no se recalculan desde un multiplicador fijo)
         alturaMaxima: 0,
         terminado: false,
         jugando: false,
@@ -154,11 +181,15 @@
 
         const cfg = cfgDificultad();
         if (Math.random() < cfg.probabilidadPaquete) {
+            const esBonus = Math.random() < PROBABILIDAD_BONUS;
+            const emoji = esBonus ? EMOJIS_BONUS[Math.floor(Math.random() * EMOJIS_BONUS.length)] : '📦';
+            const puntos = esBonus ? PUNTOS_POR_BONUS : PUNTOS_POR_PAQUETE;
+
             const paqueteEl = document.createElement('div');
-            paqueteEl.className = 'jz-paquete';
-            paqueteEl.textContent = '📦';
+            paqueteEl.className = 'jz-paquete' + (esBonus ? ' jz-paquete--bonus' : '');
+            paqueteEl.textContent = emoji;
             mundo.appendChild(paqueteEl);
-            plataforma.paquete = { el: paqueteEl, recogido: false };
+            plataforma.paquete = { el: paqueteEl, recogido: false, puntos };
         }
 
         estado.plataformas.push(plataforma);
@@ -357,8 +388,8 @@
                 p.paquete.el.classList.add('jz-paquete--recogido');
                 setTimeout(() => p.paquete.el.remove(), 300);
                 estado.paquetesRecogidos++;
-                estado.puntos += PUNTOS_POR_PAQUETE;
-                mostrarFlotante('+' + PUNTOS_POR_PAQUETE, centroPaquete, p.y + 16 - estado.cameraY);
+                estado.puntosObjetos += p.paquete.puntos;
+                mostrarFlotante('+' + p.paquete.puntos, centroPaquete, p.y + 16 - estado.cameraY);
             }
         });
     }
@@ -443,7 +474,11 @@
     // ── Vista / progreso ─────────────────────────────────────────────
 
     function puntosTotales() {
-        return Math.floor(estado.alturaMaxima / 8) + estado.paquetesRecogidos * PUNTOS_POR_PAQUETE;
+        // Los puntos por objetos recogidos (paquetes o bonus, con
+        // valores distintos cada uno) ya se acumulan al recogerlos en
+        // estado.puntosObjetos — aquí solo se le suma la parte que sí
+        // cambia sola con el tiempo: la altura alcanzada.
+        return Math.floor(estado.alturaMaxima / 8) + estado.puntosObjetos;
     }
 
     function actualizarVista() {
@@ -468,6 +503,28 @@
             nuevaPartida();
         });
     });
+
+    // ── Avatar ───────────────────────────────────────────────────────
+    // Elegir avatar no reinicia la partida en curso — el cambio se ve
+    // al momento (el emoji del jugador se actualiza ya mismo) y, si
+    // se cae y se empieza de nuevo, ya sale con el avatar elegido.
+
+    function elegirAvatar(avatar, guardar) {
+        estado.avatar = avatar;
+        jugadorEl.textContent = avatar;
+        document.querySelectorAll('.jz-chip-avatar').forEach((b) => {
+            const activo = b.dataset.avatar === avatar;
+            b.classList.toggle('is-activo', activo);
+            b.setAttribute('aria-checked', String(activo));
+        });
+        if (guardar) guardarAvatar(avatar);
+    }
+
+    document.querySelectorAll('.jz-chip-avatar').forEach((boton) => {
+        boton.addEventListener('click', () => elegirAvatar(boton.dataset.avatar, true));
+    });
+
+    elegirAvatar(leerAvatarGuardado() || AVATAR_PREDETERMINADO, false);
 
     // ── Partida ──────────────────────────────────────────────────────
 
@@ -498,6 +555,7 @@
         estado.siguienteIdPlataforma = 1;
         estado.paquetesRecogidos = 0;
         estado.puntos = 0;
+        estado.puntosObjetos = 0;
         estado.alturaMaxima = 0;
         estado.terminado = false;
         estado.jugando = true;
