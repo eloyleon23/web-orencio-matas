@@ -6,13 +6,15 @@
  * (barras en HTML/CSS, sin librerías ni servicios externos) de uso
  * real de los minijuegos: partidas jugadas, tiempo medio jugado y
  * conversión al buscador, por juego — a partir de los datos que
- * agrega scripts/estadisticas_juegos.gs (ver también
+ * agrega la acción "obtener_estadisticas_juegos" de
+ * scripts/apps_script_trigger.js (el mismo backend de siempre, el
+ * que ya usa panel_admin.html — ver también
  * lab/js/estadisticas-juegos.js, que envía los eventos).
  *
- * El acceso pide el PIN — el MISMO PIN que ya usa panel_admin.html,
- * no uno nuevo: se manda tal cual al backend de estadísticas, que lo
- * valida reenviándolo al endpoint de panel_admin.html
- * (panel_validar_pin). Aquí nunca se guarda ni se compara ningún PIN.
+ * El acceso pide el PIN — el MISMO PIN que ya usa panel_admin.html
+ * (PANEL_PIN), no uno nuevo: se manda tal cual al backend, que lo
+ * valida con la misma función de siempre (verificarPin_). Aquí nunca
+ * se guarda ni se compara ningún PIN.
  */
 (function () {
     'use strict';
@@ -93,10 +95,10 @@
         const titulo = document.createElement('h2');
         titulo.textContent = 'Estadísticas de Espacio Creativo';
         const texto = document.createElement('p');
-        texto.textContent = 'Todavía no hay un backend de estadísticas desplegado. Despliega ' +
-            'scripts/estadisticas_juegos.gs como Web App en Google Apps Script (instrucciones ' +
-            'en la cabecera del propio archivo) y pega la URL resultante en la constante ' +
-            'URL_BACKEND_ESTADISTICAS de lab/js/estadisticas-juegos.js.';
+        texto.textContent = 'Falta la URL del backend. Comprueba la constante ' +
+            'URL_BACKEND_ESTADISTICAS en lab/js/estadisticas-juegos.js (debe ser la misma ' +
+            'URL_BASE que usa panel_admin.html) y que scripts/apps_script_trigger.js esté ' +
+            'desplegado con las acciones registrar_evento_juego / obtener_estadisticas_juegos.';
         panel.appendChild(titulo);
         panel.appendChild(texto);
     }

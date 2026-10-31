@@ -4296,6 +4296,23 @@ function doPost(e) {
       return procesarPanelValidarPin(data);
     }
 
+    // NUEVO — Estadísticas de Espacio Creativo (minijuegos de lab/). Ver
+    // lab/js/estadisticas-juegos.js (envía los eventos) y
+    // lab/js/estadisticas-admin.js (modal con las gráficas). Igual que el
+    // resto del panel: "registrar_evento_juego" no pide PIN (lo llama
+    // cualquier visitante jugando, como un evento de analítica
+    // cualquiera), "obtener_estadisticas_juegos" sí, con el mismo
+    // PANEL_PIN de siempre (verificarPin_).
+    if (accion === 'registrar_evento_juego') {
+      console.log('Acción: registrar_evento_juego');
+      return procesarRegistrarEventoJuego(data);
+    }
+
+    if (accion === 'obtener_estadisticas_juegos') {
+      console.log('Acción: obtener_estadisticas_juegos');
+      return procesarObtenerEstadisticasJuegos(data);
+    }
+
     if (accion === 'validar_pin_profesional') {
       console.log('Acción: validar_pin_profesional');
       return procesarValidarPinProfesional(data);
@@ -10566,7 +10583,10 @@ function generarExcelProductosSinImagen_() {
 // imagen, validar_imagen, dar_baja_producto, reactivar_producto,
 // marcar_sin_imagen) siguen SIN pin, a propósito. El PIN solo protege
 // las acciones NUEVAS de este panel (panel_ejecutar, panel_buscar_
-// producto, panel_guardar_producto, panel_validar_pin).
+// producto, panel_guardar_producto, panel_validar_pin,
+// obtener_estadisticas_juegos — ver más abajo. registrar_evento_juego,
+// en cambio, es deliberadamente SIN pin: la llama cualquier visitante
+// jugando en lab/, como un evento de analítica cualquiera).
 
 // Alerta segura: funciona igual que avisar_('Aviso', ) al
 // llamarla desde el menú de la Hoja, pero NO revienta cuando no hay
@@ -11007,6 +11027,104 @@ function procesarValidarPinProfesional(data) {
   const ok = verificarPinProfesional_(data.pin);
   return ContentService.createTextOutput(JSON.stringify({ success: ok }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ESTADÍSTICAS DE ESPACIO CREATIVO (minijuegos de lab/)
+// ══════════════════════════════════════════════════════════════════════
+// Una fila por evento — inicio de partida, tiempo activo jugado (ya sin
+// pausas ni ratos con la pestaña en segundo plano, calculado en el
+// cliente) y conversión al buscador — en una pestaña propia de esta
+// misma hoja de cálculo. obtenerEstadisticasJuegos_ las agrega por
+// juego para la modal de lab/index.html.
+
+const CABECERAS_ESTADISTICAS_JUEGOS_ = ['timestamp', 'tipo', 'juego', 'segundos', 'motivo'];
+
+function obtenerHojaEstadisticasJuegos_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('EstadisticasJuegos');
+  if (!sheet) {
+    sheet = ss.insertSheet('EstadisticasJuegos');
+    sheet.getRange(1, 1, 1, CABECERAS_ESTADISTICAS_JUEGOS_.length).setValues([CABECERAS_ESTADISTICAS_JUEGOS_]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function procesarRegistrarEventoJuego(data) {
+  try {
+    const sheet = obtenerHojaEstadisticasJuegos_();
+    sheet.appendRow([
+      new Date().toISOString(),
+      String(data.tipo || ''),
+      String(data.juego || ''),
+      data.segundos != null ? Number(data.segundos) : '',
+      String(data.motivo || ''),
+    ]);
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: String(err) }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function procesarObtenerEstadisticasJuegos(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const sheet = obtenerHojaEstadisticasJuegos_();
+    const filas = sheet.getDataRange().getValues();
+    filas.shift(); // cabecera
+
+    const porJuego = {}; // { juego: { partidas, sumaSegundos, muestrasSegundos, conversiones } }
+    function entradaJuego_(juego) {
+      if (!porJuego[juego]) {
+        porJuego[juego] = { partidas: 0, sumaSegundos: 0, muestrasSegundos: 0, conversiones: 0 };
+      }
+      return porJuego[juego];
+    }
+
+    filas.forEach((fila) => {
+      const tipo = fila[1];
+      const juego = fila[2] || '(desconocido)';
+      const segundos = fila[3];
+
+      if (tipo === 'inicio') {
+        entradaJuego_(juego).partidas += 1;
+      } else if (tipo === 'tiempo') {
+        const e = entradaJuego_(juego);
+        e.sumaSegundos += Number(segundos) || 0;
+        e.muestrasSegundos += 1;
+      } else if (tipo === 'conversion') {
+        entradaJuego_(juego).conversiones += 1;
+      }
+    });
+
+    const juegos = Object.keys(porJuego).map((juego) => {
+      const e = porJuego[juego];
+      return {
+        juego,
+        partidas: e.partidas,
+        tiempoMedioSegundos: e.muestrasSegundos > 0 ? Math.round(e.sumaSegundos / e.muestrasSegundos) : 0,
+        conversiones: e.conversiones,
+      };
+    });
+
+    const totalPartidas = juegos.reduce((acc, j) => acc + j.partidas, 0);
+    const totalConversiones = juegos.reduce((acc, j) => acc + j.conversiones, 0);
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      datos: { juegos, totalPartidas, totalConversiones, actualizado: new Date().toISOString() },
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: String(err) }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════
