@@ -46,6 +46,16 @@
     const ANCHO_JUGADOR_PCT = 11;
     const MARGEN_ATERRIZAJE_PCT = 2.5; // tolerancia extra al comprobar si el jugador pisa la plataforma
     const ALTO_PLATAFORMA_PX = 14; // debe coincidir con "height" de .jz-plataforma en el CSS
+    // "Coyote time": las plataformas pueden ser bastante estrechas (13%
+    // de ancho en difícil) y el jugador se mueve rápido — manteniendo
+    // pulsado un lado se sale del borde de la plataforma en bastante
+    // menos de medio segundo. Sin este margen, saltar() rechazaba el
+    // salto en cuanto el jugador dejaba de pisar nada, aunque hiciera
+    // solo un instante que se había salido del borde — el salto
+    // "no funcionaba" al mover y saltar casi a la vez. Con este margen
+    // sigue pudiendo saltar un pequeño número de fotogramas después de
+    // perder apoyo, como en la mayoría de plataformas.
+    const COYOTE_FOTOGRAMAS = 9;
     const UMBRAL_CAMARA = 0.55; // fracción de la altura de la zona a la que se "pega" el jugador al subir
     const PUNTOS_POR_PAQUETE = 15;
 
@@ -58,6 +68,7 @@
         moviendoDerecha: false,
         enSuelo: true,
         plataformaActual: null, // la plataforma que pisa ahora mismo, para arrastrarlo si es móvil
+        fotogramasSinSuelo: 0, // "coyote time": cuánto hace que se dejó de pisar una plataforma
         cameraY: 0,
         maxYGenerado: 0,
         plataformas: [], // {id, x, y, ancho, movil, rango, centro, velocidad, el, paquete}
@@ -247,10 +258,11 @@
 
     function saltar() {
         if (estado.terminado || !estado.jugando || estado.pausado) return;
-        if (!estado.enSuelo) return;
+        if (estado.fotogramasSinSuelo > COYOTE_FOTOGRAMAS) return;
         estado.vy = IMPULSO_SALTO;
         estado.enSuelo = false;
         estado.plataformaActual = null;
+        estado.fotogramasSinSuelo = COYOTE_FOTOGRAMAS + 1; // evita un segundo salto "de cortesía" inmediato
     }
 
     document.getElementById('jz-boton-saltar').addEventListener('click', saltar);
@@ -377,6 +389,7 @@
             }
         }
         if (!estado.enSuelo) estado.plataformaActual = null;
+        estado.fotogramasSinSuelo = estado.enSuelo ? 0 : estado.fotogramasSinSuelo + 1;
 
         if (estado.y > estado.alturaMaxima) estado.alturaMaxima = estado.y;
 
@@ -458,6 +471,7 @@
         estado.moviendoIzquierda = false;
         estado.moviendoDerecha = false;
         estado.enSuelo = true;
+        estado.fotogramasSinSuelo = 0;
         estado.cameraY = 0;
         estado.maxYGenerado = 0;
         estado.siguienteIdPlataforma = 1;
