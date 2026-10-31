@@ -403,6 +403,16 @@ body.om-pantalla-completa-activa .jm-juego {
     transition: background 0.15s, opacity 0.15s;
 }
 
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jm-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
 .jm-boton-secundario {
     background: var(--jm-gris-fondo);
     color: var(--jm-negro);

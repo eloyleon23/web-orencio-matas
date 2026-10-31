@@ -463,6 +463,16 @@ body.om-pantalla-completa-activa .jq-escenario {
     background: #333;
 }
 
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jq-boton--secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
 .jq-boton-secundario,
 .jq-boton--secundario {
     background: var(--jq-gris-fondo);

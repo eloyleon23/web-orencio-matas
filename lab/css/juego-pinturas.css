@@ -427,6 +427,16 @@ body.om-pantalla-completa-activa .jp-lienzo-proporcion {
 /* ── Botones de acción ──────────────────────────────────────────────── */
 
 .jp-boton-compartir,
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jp-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
 .jp-boton-secundario {
     min-height: 50px;
     width: 100%;

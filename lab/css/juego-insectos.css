@@ -361,6 +361,16 @@ body.om-pantalla-completa-activa .ji-arena-wrap {
 /* ── Botones de acción ──────────────────────────────────────────────── */
 
 .ji-boton-compartir,
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.ji-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
 .ji-boton-secundario {
     min-height: 50px;
     width: 100%;
