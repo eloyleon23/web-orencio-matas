@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!--
+  PoC de gamificación / captación comercial — "La Estela de Color".
+  Vive aislada en lab/, sin enlaces desde el navbar ni el footer del
+  sitio público: es una prueba de concepto, no una página de producción.
+  Juego de pinturas: una brocha se mueve sin parar pintando una estela;
+  recoger botes de pigmento mezcla el color actual. Objetivo: cubrir el
+  mayor % de lienzo posible sin chocar contra la propia estela ni salir
+  del lienzo.
+  Sección de marcas de pinturas que enlazan al buscador filtrado por
+  esa área (mismas marcas ya usadas en lab/pinturas.html).
+-->
+<meta name="robots" content="noindex, nofollow">
+<title>La Estela de Color — Laboratorio Orencio Matas</title>
+<meta name="description" content="Minijuego: guía la brocha, mezcla pigmentos y cubre el lienzo sin chocar contra tu propia estela.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
+<link rel="stylesheet" href="css/juego-estela.css?v=20261031">
+<link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
+</head>
+<body>
+
+<header class="site-header" id="inicio">
+  <div class="navbar" data-navbar>
+    <div class="container navbar__inner">
+      <a class="navbar__logo" href="../index.html#inicio" aria-label="Ir al inicio">
+        <img class="navbar__logo-image" src="../assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="180" height="60" />
+      </a>
+
+      <button class="navbar__toggle" type="button" aria-label="Abrir menú de navegación" aria-controls="main-navigation" aria-expanded="false" data-menu-toggle>
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="navbar__nav" id="main-navigation" aria-label="Navegación principal" data-mobile-menu>
+        <ul class="navbar__menu">
+          <li><a href="../index.html#inicio">Inicio</a></li>
+          <li><a href="../empresa.html">Empresa</a></li>
+          <li><a href="../historia.html">Historia</a></li>
+          <li class="navbar__item--dropdown">
+            <a href="../productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
+            <ul class="navbar__submenu">
+            <li><a href="../buscador.html">Buscador</a></li>
+            <li class="navbar__item--dropdown">
+              <a href="../productos.html">Ver catálogos <span class="navbar__caret">&#9662;</span></a>
+              <ul class="navbar__submenu">
+                <li><a href="../catalogo_drogueria.html">Droguería</a></li>
+                <li><a href="../catalogo_perfumeria.html">Perfumería</a></li>
+                <li><a href="../catalogo_pinturas.html">Pinturas</a></li>
+                <li><a href="../catalogo_talleres.html">Talleres</a></li>
+              </ul>
+            </li>
+          </ul>
+          </li>
+          <li><a href="../escaparate-campanas.html">Exposición</a></li>
+          <li><a href="../servicios.html">Servicios</a></li>
+          <li><a href="../centro-soluciones.html">Centro de Soluciones</a></li>
+          <li><a href="../anuncios.html">Anuncios/Recursos</a></li>
+          <li><a href="../profesionales.html">Profesionales</a></li>
+          <li><a href="../actualidad.html">Actualidad</a></li>
+          <li><a href="../index.html#contacto">Contacto</a></li>
+        </ul>
+        <a class="btn-primary navbar__cta" href="../index.html#contacto">CONTACTAR</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<header class="jg-header">
+    <a class="jg-header__volver" href="index.html">&larr; Minijuegos</a>
+    <p class="jg-header__etiqueta">Laboratorio — minijuego — prototipo</p>
+    <h1 class="jg-header__titulo"><span aria-hidden="true">🎨</span> La Estela de Color</h1>
+    <p class="jg-header__subtitulo">Guía la brocha, mezcla pigmentos y cubre el lienzo sin chocar contra tu propia estela.</p>
+</header>
+
+<main class="je-main">
+
+    <section class="je-juego" aria-label="Zona de juego">
+
+        <div class="je-selector-dificultad om-oculto-en-pantalla-completa" role="radiogroup" aria-label="Nivel de dificultad">
+            <button type="button" class="je-chip-dificultad" data-dificultad="facil" role="radio" aria-checked="false">
+                Fácil
+            </button>
+            <button type="button" class="je-chip-dificultad is-activo" data-dificultad="medio" role="radio" aria-checked="true">
+                Medio
+            </button>
+            <button type="button" class="je-chip-dificultad" data-dificultad="dificil" role="radio" aria-checked="false">
+                Difícil
+            </button>
+        </div>
+
+        <div class="je-barra-superior">
+            <div class="je-muestra-color" id="je-muestra-color" aria-hidden="true"></div>
+            <div class="je-barra-superior__stat">
+                <strong id="je-contador">0%/40%</strong>
+                <span>cubierto</span>
+            </div>
+            <div class="je-barra-progreso-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="je-barra-progreso">
+                <div class="je-barra-progreso-relleno" id="je-barra-progreso-relleno"></div>
+            </div>
+            <div class="je-barra-superior__stat">
+                <strong id="je-pigmentos">0</strong>
+                <span>pigmentos</span>
+            </div>
+        </div>
+
+        <div class="je-zona-wrap">
+            <div class="je-zona" id="je-zona" aria-label="Lienzo de pintura">
+                <canvas class="je-canvas" id="je-canvas"></canvas>
+            </div>
+            <button type="button" class="je-boton-reiniciar" id="je-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
+                <span aria-hidden="true">↺</span>
+            </button>
+        </div>
+
+        <p class="je-pista om-oculto-en-pantalla-completa" id="je-pista">Mantén pulsado a un lado de la pantalla para girar hacia allí. ¡No choques con tu propia estela!</p>
+
+    </section>
+
+    <section class="je-controles" aria-label="Puntuación">
+
+        <div class="je-grupo-control">
+            <h2 class="jg-grupo-control__titulo">Puntuación</h2>
+            <div class="jg-marcador">
+                <div class="jg-stat">
+                    <span class="jg-stat__valor" id="je-puntos">0</span>
+                    <span class="jg-stat__etiqueta">puntos</span>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="je-boton-compartir om-oculto-en-pantalla-completa" id="je-boton-compartir">
+            Compartir mi resultado
+        </button>
+
+        <p class="je-marca om-oculto-en-pantalla-completa">
+            Un minijuego de <strong>Orencio Matas y Hnos</strong> — más de 100 años distribuyendo droguería, perfumería, pinturas y suministros para automoción.
+        </p>
+    </section>
+
+</main>
+
+<section class="je-proveedores" aria-labelledby="je-proveedores-titulo">
+    <h2 id="je-proveedores-titulo" class="je-proveedores__titulo">Algunas de nuestras marcas de pinturas</h2>
+    <p class="je-proveedores__subtitulo">Haz clic en un logo para ver todo el catálogo de esa marca en el buscador.</p>
+    <div class="premium-providers je-proveedores__grid" aria-label="Marcas de pinturas">
+        <a class="premium-provider-card" href="../buscador.html?area=pinturas">
+            <img src="../assets/proveedores/LOGO-TITANPRO.png" alt="Titan Pro" loading="lazy" />
+        </a>
+        <a class="premium-provider-card" href="../buscador.html?area=pinturas">
+            <img src="../assets/proveedores/logo-titantech.jpg" alt="Titan Tech" loading="lazy" />
+        </a>
+    </div>
+</section>
+
+<!-- ───────────────── Celebración al terminar ───────────────── -->
+<div class="je-overlay" id="je-celebracion-overlay" hidden>
+    <div class="je-confeti" id="je-confeti" aria-hidden="true"></div>
+    <div class="je-tarjeta-overlay" role="dialog" aria-modal="true" aria-labelledby="je-celebracion-titulo">
+        <h2 id="je-celebracion-titulo">¡Lienzo cubierto! 🎨</h2>
+        <p id="je-celebracion-stat">Cubriste el lienzo</p>
+        <canvas class="je-canvas-resultado" id="je-canvas-resultado"></canvas>
+        <div class="je-overlay__acciones">
+            <button type="button" class="je-overlay__boton" id="je-boton-compartir-final">
+                Compartir mi resultado
+            </button>
+            <button type="button" class="je-overlay__boton je-overlay__boton--secundario" id="je-boton-jugar-de-nuevo">
+                Jugar de nuevo
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ───────────────── Panel de compartir (enlaces directos) ───────────────── -->
+<div class="je-overlay" id="je-compartir-overlay" hidden>
+    <div class="je-tarjeta-overlay" role="dialog" aria-modal="true" aria-labelledby="je-compartir-titulo">
+        <button type="button" class="je-overlay__cerrar" id="je-compartir-cerrar" aria-label="Cerrar">&times;</button>
+        <h2 id="je-compartir-titulo">Comparte tu resultado</h2>
+        <p>Descarga la imagen y compártela donde quieras, o usa un acceso directo:</p>
+        <div class="je-overlay__acciones">
+            <a class="je-overlay__boton" id="je-boton-descargar" download="la-estela-de-color.png">Descargar imagen</a>
+        </div>
+        <div class="je-redes">
+            <a id="je-enlace-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            <a id="je-enlace-x" target="_blank" rel="noopener">X</a>
+            <a id="je-enlace-facebook" target="_blank" rel="noopener">Facebook</a>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div class="site-footer__brand">
+      <a href="../index.html#inicio" aria-label="Ir al inicio">
+        <img src="../assets/logos/logo-orencio.png" alt="Orencio Matas y Hnos, S.L." width="190" height="64" />
+      </a>
+      <p>Más de 100 años ofreciendo soluciones profesionales en droguería, perfumería, pinturas y suministros para automoción.</p>
+      <div class="site-footer__social" aria-label="Redes sociales">
+        <a href="https://www.instagram.com/orenciomatas/" aria-label="Instagram">◎</a>
+      </div>
+    </div>
+
+    <nav class="site-footer__column" aria-label="Navegación del footer">
+      <h2>Navegación</h2>
+      <ul>
+        <li><a href="../index.html#inicio">Inicio</a></li>
+        <li><a href="../empresa.html">Empresa</a></li>
+        <li><a href="../historia.html">Historia</a></li>
+        <li><a href="../productos.html">Productos</a></li>
+        <li><a href="../escaparate-campanas.html">Exposición</a></li>
+        <li><a href="../centro-soluciones.html">Centro de Soluciones</a></li>
+        <li><a href="../anuncios.html">Anuncios/Recursos</a></li>
+        <li><a href="../profesionales.html">Profesionales</a></li>
+        <li><a href="../index.html#marcas">Marcas</a></li>
+        <li><a href="../index.html#contacto">Contacto</a></li>
+      </ul>
+    </nav>
+
+    <nav class="site-footer__column" aria-label="Servicios del footer">
+      <h2>Servicios</h2>
+      <ul>
+        <li><a href="../productos.html">Droguería profesional</a></li>
+        <li><a href="../productos.html">Pinturas carrocería</a></li>
+        <li><a href="../productos.html">Perfumería</a></li>
+        <li><a href="../productos.html">Suministros taller</a></li>
+        <li><a href="../productos.html">Maquinaria</a></li>
+        <li><a href="../productos.html">Distribución</a></li>
+      </ul>
+    </nav>
+
+    <div class="site-footer__column site-footer__contact">
+      <h2>Contacto rápido</h2>
+      <address>
+        <span>Av. Alfred Nobel, 2<br />13005 Ciudad Real</span>
+        <a href="tel:+34926221217">926 221 217</a>
+        <a href="mailto:correo@orenciomatas.es">correo@orenciomatas.es</a>
+        <span>Lunes a Viernes<br />9:00 – 14:00 y 16:30 – 19:30<br />Sábados: 9:00 – 14:00<br />Domingos: Cerrado</span>
+      </address>
+    </div>
+  </div>
+
+  <div class="site-footer__bottom">
+    <div class="container site-footer__bottom-inner">
+      <p>© 2026 Orencio Matas y Hnos, S.L. Todos los derechos reservados.</p>
+      <nav aria-label="Enlaces legales">
+        <a href="../politica-privacidad.html">Política de Privacidad</a>
+        <a href="../aviso-legal.html">Aviso Legal</a>
+        <a href="../politica-cookies.html">Cookies</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<script src="../src/js/app.js?v=20260829"></script>
+<script src="js/juego-estela.js?v=20261031"></script>
+<script src="js/pantalla-completa.js?v=20261030d"></script>
+<script>
+    // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
+    // documentado en assets/js/mantenimiento.js y usado también por
+    // perfil-profesional.js para el redirect de páginas excluidas.
+    window.OM_RUTA_RAIZ = '../';
+</script>
+<script src="../assets/js/perfil-profesional.js?v=20261024c"></script>
+</body>
+</html>
