@@ -35,7 +35,7 @@
 <meta name="description" content="Minijuego: salta de plataforma en plataforma recogiendo paquetes sin caerte.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
-<link rel="stylesheet" href="css/juego-salta.css?v=20261101e">
+<link rel="stylesheet" href="css/juego-salta.css?v=20261102">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
 <!-- Google tag (gtag.js) -->
 <script>
@@ -133,6 +133,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </div>
 
+        <div class="jz-selector-avatar om-oculto-en-pantalla-completa" role="radiogroup" aria-label="Elige tu operario">
+            <button type="button" class="jz-chip-avatar" data-avatar="👷🏻‍♂️" role="radio" aria-checked="false" aria-label="Operario, tono de piel claro" title="Operario">👷🏻‍♂️</button>
+            <button type="button" class="jz-chip-avatar" data-avatar="👷🏻‍♀️" role="radio" aria-checked="false" aria-label="Operaria, tono de piel claro" title="Operaria">👷🏻‍♀️</button>
+            <button type="button" class="jz-chip-avatar" data-avatar="👷🏽‍♂️" role="radio" aria-checked="false" aria-label="Operario, tono de piel medio" title="Operario">👷🏽‍♂️</button>
+            <button type="button" class="jz-chip-avatar" data-avatar="👷🏽‍♀️" role="radio" aria-checked="false" aria-label="Operaria, tono de piel medio" title="Operaria">👷🏽‍♀️</button>
+            <button type="button" class="jz-chip-avatar" data-avatar="👷🏿‍♂️" role="radio" aria-checked="false" aria-label="Operario, tono de piel oscuro" title="Operario">👷🏿‍♂️</button>
+            <button type="button" class="jz-chip-avatar" data-avatar="👷🏿‍♀️" role="radio" aria-checked="false" aria-label="Operaria, tono de piel oscuro" title="Operaria">👷🏿‍♀️</button>
+        </div>
+
         <div class="jz-barra-superior">
             <div class="jz-stat">
                 <strong id="jz-altura">0 m</strong>
@@ -140,7 +149,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <div class="jz-stat">
                 <strong id="jz-paquetes">0</strong>
-                <span>paquetes</span>
+                <span>objetos</span>
             </div>
             <div class="jz-stat">
                 <strong id="jz-puntos">0</strong>
@@ -298,7 +307,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="../src/js/app.js?v=20260829"></script>
 <script src="js/estadisticas-juegos.js?v=20261101c"></script>
 <script src="js/compartir-juego.js?v=20261102"></script>
-<script src="js/juego-salta.js?v=20261101f"></script>
+<script src="js/juego-salta.js?v=20261102"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
