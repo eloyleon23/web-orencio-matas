@@ -460,6 +460,7 @@
 
     function terminarPartida() {
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('limpieza');
 
         document.getElementById('jl-celebracion-stat').textContent =
             `Dejaste la superficie al ${estado.porcentaje}% de limpieza`;

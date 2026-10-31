@@ -673,6 +673,7 @@
 
     function terminarPartida() {
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('pinturas');
 
         document.getElementById('jp-celebracion-stat').textContent =
             `Pintaste el ${estado.porcentaje}% de la estancia`;

@@ -424,6 +424,7 @@
     function finalizarPartida(completado) {
         if (estado.terminado) return;
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('almacen');
         clearInterval(temporizadorCuentaAtras);
         limpiarPersonas();
 

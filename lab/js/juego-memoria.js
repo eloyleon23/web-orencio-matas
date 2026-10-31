@@ -372,6 +372,7 @@
     function finalizarPartida(completado) {
         if (estado.terminado) return;
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('memoria');
         clearInterval(temporizador);
 
         const cfg = cfgDificultad();

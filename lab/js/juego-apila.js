@@ -277,6 +277,7 @@
     function finalizarPartida(completado) {
         if (estado.terminado) return;
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('apila');
         estado.jugando = false;
         pararAnimacion();
 

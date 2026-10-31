@@ -273,6 +273,7 @@
     function finalizarPartida(limpiado) {
         if (estado.terminado) return;
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('insectos');
         estado.jugando = false;
         clearInterval(temporizadorCuentaAtras);
         clearInterval(temporizadorAparicion);
