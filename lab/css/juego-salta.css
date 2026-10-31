@@ -1,0 +1,513 @@
+/* Salta y Reparte — estilos (lab/salta.html), prefijo jZ / jz- */
+
+.jz-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, #1a1a1a, #1e4b8f);
+    color: #ffffff;
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jz-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jz-header__volver:hover,
+.jz-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jz-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jz-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jz-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jz-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+.jz-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem 1rem 3rem;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* Selector de dificultad */
+
+.jz-selector-dificultad {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.jz-chip-dificultad {
+    border: 2px solid #d8d4cc;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.45rem 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jz-chip-dificultad.is-activo {
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+}
+
+/* Barra superior */
+
+.jz-barra-superior {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    background: #fff;
+    border-radius: 14px;
+    padding: 0.8rem 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.jz-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.78rem;
+    color: #7a7d82;
+}
+
+.jz-stat strong {
+    font-size: 1.15rem;
+    color: #1a1a1a;
+}
+
+/* Juego */
+
+.jz-juego {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.jz-zona-wrap {
+    position: relative;
+}
+
+.jz-zona {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9 / 14;
+    max-height: 68vh;
+    background: linear-gradient(180deg, #dce7f5 0%, #eef2f6 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 2px #e4e1d8;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.jz-mundo {
+    position: absolute;
+    inset: 0;
+}
+
+.jz-plataforma {
+    position: absolute;
+    height: 14px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #c99a56, #a87638);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
+}
+
+.jz-plataforma--movil {
+    background: linear-gradient(180deg, #8fb6d9, #5c8fc2);
+}
+
+.jz-paquete {
+    position: absolute;
+    transform: translate(-50%, 50%);
+    font-size: 1.3rem;
+    line-height: 1;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.jz-paquete--recogido {
+    opacity: 0;
+    transform: translate(-50%, 50%) scale(1.5);
+}
+
+.jz-jugador {
+    position: absolute;
+    width: 11%;
+    aspect-ratio: 1 / 1.3;
+    transform: translate(-50%, 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-size: 2rem;
+    line-height: 1;
+    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3));
+    transition: transform 0.08s ease;
+}
+
+.jz-jugador--saltando {
+    transform: translate(-50%, 100%) scale(1.05);
+}
+
+.jz-jugador--cayendo {
+    transform: translate(-50%, 100%) scale(0.95, 1.08);
+}
+
+.jz-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 5;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.65);
+    color: #ffffff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.jz-flotante {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1b8f4c;
+    pointer-events: none;
+    animation: jz-flotar 0.65s ease-out forwards;
+    z-index: 6;
+}
+
+@keyframes jz-flotar {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.85); }
+    100% { opacity: 0; transform: translate(-50%, -170%) scale(1.15); }
+}
+
+.jz-pausado-indicador {
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 26, 26, 0.45);
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.jz-pausado-indicador:not([hidden]) {
+    display: flex;
+}
+
+.jz-pista {
+    text-align: center;
+    color: #7a7d82;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.jz-marca {
+    text-align: center;
+    color: #a9ab9f;
+    font-size: 0.78rem;
+    margin: 0;
+}
+
+/* Controles: mover + pausa + saltar */
+
+.jz-control-juego {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.jz-boton-mover,
+.jz-boton-pausa {
+    border: 2px solid #d8d4cc;
+    background: #fff;
+    border-radius: 14px;
+    width: 54px;
+    height: 54px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.jz-boton-mover:active {
+    background: #f1efe9;
+}
+
+.jz-boton-pausa:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.jz-control-separador {
+    flex: 1;
+    max-width: 2rem;
+}
+
+.jz-boton-saltar {
+    border: none;
+    border-radius: 999px;
+    background: #d91b1b;
+    color: #fff;
+    font-weight: 800;
+    font-size: 1.05rem;
+    padding: 0 1.8rem;
+    height: 54px;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(217, 27, 27, 0.35);
+    flex-shrink: 0;
+}
+
+.jz-boton-saltar:active {
+    background: #ad1515;
+}
+
+/* Botón compartir en controles */
+
+.jz-controles {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.jz-boton-compartir {
+    border: 2px solid #1a1a1a;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.5rem 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Proveedores */
+
+.jz-proveedores {
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.jz-proveedores__titulo {
+    font-size: 1.1rem;
+    margin: 0 0 0.3rem;
+}
+
+.jz-proveedores__subtitulo {
+    color: #7a7d82;
+    font-size: 0.85rem;
+    margin: 0 0 1rem;
+}
+
+.jz-proveedores__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+/* Overlays (celebración / compartir) — estructura compartida */
+
+.jz-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 26, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+}
+
+.jz-overlay[hidden] {
+    display: none;
+}
+
+.jz-tarjeta-overlay {
+    background: #fff;
+    border-radius: 18px;
+    padding: 1.8rem 1.5rem;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+}
+
+.jz-tarjeta-overlay h2 {
+    margin: 0 0 0.5rem;
+}
+
+.jz-tarjeta-overlay p {
+    color: #52555a;
+    margin: 0 0 1.2rem;
+}
+
+.jz-overlay__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+}
+
+.jz-overlay__boton {
+    border-radius: 999px;
+    padding: 0.55rem 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.jz-overlay__boton--secundario {
+    background: #fff;
+    color: #1a1a1a;
+}
+
+.jz-overlay__cerrar {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+    border: none;
+    background: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #7a7d82;
+}
+
+.jz-canvas-resultado {
+    width: 100%;
+    max-width: 320px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.jz-redes {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.jz-redes a {
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    background: #f1efe9;
+    color: #1a1a1a;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+/* Pantalla completa */
+
+body.om-pantalla-completa-activa .jz-main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    justify-content: stretch;
+}
+
+body.om-pantalla-completa-activa .jz-juego {
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jz-zona-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+body.om-pantalla-completa-activa .jz-zona {
+    flex: 1;
+    min-height: 0;
+    width: auto;
+    max-height: none;
+    aspect-ratio: unset;
+}
+
+@media (max-width: 420px) {
+    .jz-boton-mover,
+    .jz-boton-pausa {
+        width: 48px;
+        height: 48px;
+    }
+
+    .jz-boton-saltar {
+        padding: 0 1.3rem;
+        height: 48px;
+    }
+}
