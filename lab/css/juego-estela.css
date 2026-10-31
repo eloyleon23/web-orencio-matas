@@ -9,18 +9,76 @@
     margin: 0 auto;
 }
 
-.je-cabecera {
+/* Cabecera */
+
+.je-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, #1a1a1a, #5a2470);
+    color: #ffffff;
+    padding: 12px 20px 18px;
     text-align: center;
 }
 
-.je-cabecera__titulo {
-    font-size: clamp(1.6rem, 5vw, 2.2rem);
-    margin: 0 0 0.4rem;
+.je-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
 }
 
-.je-cabecera__subtitulo {
-    color: #52555a;
+.je-header__volver:hover,
+.je-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .je-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.je-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.je-header__titulo {
     margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.je-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
 }
 
 /* Selector de dificultad */
@@ -149,6 +207,72 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
+.je-pausado-indicador {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 26, 26, 0.45);
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    z-index: 4;
+    pointer-events: none;
+}
+
+/* Control direccional (cruceta + jugar/pausa en el centro) */
+
+.je-control-direccional {
+    display: grid;
+    grid-template-columns: 54px 54px 54px;
+    grid-template-rows: 54px 54px 54px;
+    gap: 6px;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.je-control-boton {
+    border: 2px solid #d8d4cc;
+    background: #fff;
+    border-radius: 14px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.je-control-boton:active {
+    background: #f1efe9;
+}
+
+.je-control-boton:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.je-control-boton--arriba { grid-column: 2; grid-row: 1; }
+.je-control-boton--izquierda { grid-column: 1; grid-row: 2; }
+.je-control-boton--jugar-pausa {
+    grid-column: 2;
+    grid-row: 2;
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+    font-size: 1.3rem;
+}
+.je-control-boton--jugar-pausa:disabled {
+    background: #cfcac0;
+    border-color: #cfcac0;
+}
+.je-control-boton--derecha { grid-column: 3; grid-row: 2; }
+.je-control-boton--abajo { grid-column: 2; grid-row: 3; }
+
 .je-flotante {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -183,7 +307,29 @@
 
 .je-controles {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.je-marcador {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    border-radius: 14px;
+    padding: 0.6rem 1.4rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.je-marcador__valor {
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.je-marcador__etiqueta {
+    font-size: 0.78rem;
+    color: #7a7d82;
 }
 
 .je-boton-compartir {

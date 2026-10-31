@@ -2,12 +2,15 @@
  * La Estela de Color — minijuego (lab/estela.html)
  * Vanilla JS, sin dependencias. Una brocha se mueve sin parar por el
  * lienzo en línea recta (arriba/abajo/izquierda/derecha), pintando una
- * estela. Se toca la pantalla por encima, por debajo, a la izquierda
- * o a la derecha de la brocha para que tome esa dirección — sin
- * ángulos ni giros progresivos, el control es deliberadamente simple.
+ * estela. Se dirige con los botones de flecha (o las flechas del
+ * teclado en PC) — sin tocar el lienzo directamente, que resultaba
+ * confuso. El botón central (⏸/▶) pausa y reanuda la partida en
+ * cualquier momento, ya que al ser un juego acumulativo puede alargarse.
  * Al pasar sobre un bote de pigmento tu color actual se mezcla con el
- * suyo. No puedes chocar contra tu propia estela ya seca ni salir del
- * lienzo.
+ * suyo; en dificultad media y difícil también aparecen botes de
+ * aguarrás/agua que, si se recogen, borran parte de la estela ya
+ * pintada. No puedes chocar contra tu propia estela ya seca ni salir
+ * del lienzo.
  *
  * El movimiento y las colisiones viven en un espacio lógico fijo
  * (GW × GH, independiente del tamaño real en pantalla): así cambiar
@@ -15,7 +18,12 @@
  * desincroniza el juego — solo hay que recalcular la escala de
  * dibujo, no la física. El trazado se guarda como una lista de
  * segmentos para poder redibujarlo entero si el canvas cambia de
- * tamaño.
+ * tamaño o si hay que recortar la cola (aguarrás).
+ *
+ * La partida no empieza sola: hay que pulsar "Jugar" (o "Continuar"
+ * si queda una partida en pausa de esta misma sesión, guardada en
+ * sessionStorage) para evitar que arranque de golpe sin que el
+ * jugador esté preparado.
  */
 (function () {
     'use strict';
@@ -25,20 +33,24 @@
     const GH = 130;
     const GRACIA_FRAMES = 42; // nº de fotogramas recientes exentos de autocolisión
     const RADIO_RECOGIDA = 4.2;
+    const CLAVE_SESION = 'om_estela_guardado';
 
     // ── Dificultad ───────────────────────────────────────────────────
     const DIFICULTADES = {
         facil: {
-            nombre: 'Fácil', velocidad: 0.80, anchoLinea: 3.4,
-            intervaloPigmento: 2600, maxPigmentos: 3, objetivoCobertura: 30,
+            nombre: 'Fácil', velocidad: 0.50, anchoLinea: 3.4,
+            intervaloPigmento: 2600, maxObjetos: 3, objetivoCobertura: 30,
+            probabilidadDisolvente: 0,
         },
         medio: {
-            nombre: 'Medio', velocidad: 1.05, anchoLinea: 2.8,
-            intervaloPigmento: 2200, maxPigmentos: 3, objetivoCobertura: 40,
+            nombre: 'Medio', velocidad: 0.72, anchoLinea: 2.8,
+            intervaloPigmento: 2200, maxObjetos: 3, objetivoCobertura: 40,
+            probabilidadDisolvente: 0.22,
         },
         dificil: {
             nombre: 'Difícil', velocidad: 1.35, anchoLinea: 2.2,
-            intervaloPigmento: 1800, maxPigmentos: 4, objetivoCobertura: 50,
+            intervaloPigmento: 1800, maxObjetos: 4, objetivoCobertura: 50,
+            probabilidadDisolvente: 0.32,
         },
     };
 
@@ -55,18 +67,20 @@
     // ── Estado ────────────────────────────────────────────────────────
     const estado = {
         dificultad: 'medio',
-        x: GW / 2, y: GH * 0.8,
-        dx: 0, dy: -1, // dirección actual: un vector cardinal unitario
+        x: GW / 2, y: 10,
+        dx: 0, dy: 1, // dirección actual: un vector cardinal unitario
         colorActual: COLOR_INICIAL.slice(),
         celdas: null, // Int32Array: fotograma en que se pintó cada celda, -1 = sin pintar
         celdasPintadas: 0,
-        pigmentos: [],
+        objetos: [], // botes de pigmento y de aguarrás/agua a recoger
         historialTrazos: [],
         puntos: 0,
         pigmentosRecogidos: 0,
         fotograma: 0,
         terminado: false,
         jugando: false,
+        pausado: false,
+        partidaIniciada: false,
     };
 
     let animacionId = null;
@@ -115,7 +129,7 @@
             ctx.lineTo(seg.x2 * escalaX, seg.y2 * escalaY);
             ctx.stroke();
         });
-        estado.pigmentos.forEach(dibujarPigmento);
+        estado.objetos.forEach((o) => (o.tipo === 'disolvente' ? dibujarDisolvente(o) : dibujarPigmento(o)));
     }
 
     function pintarSegmento(x1, y1, x2, y2, color) {
@@ -126,6 +140,20 @@
         ctx.moveTo(x1 * escalaX, y1 * escalaY);
         ctx.lineTo(x2 * escalaX, y2 * escalaY);
         ctx.stroke();
+    }
+
+    // Reconstruye el mapa de celdas pintadas (y su recuento) a partir
+    // del historial de trazos — se usa tras recortar la cola por un
+    // aguarrás, para que la colisión y el % de cobertura coincidan
+    // exactamente con lo que se ve en pantalla.
+    function recalcularCeldasDesdeHistorial() {
+        estado.celdas.fill(-1);
+        estado.celdasPintadas = 0;
+        estado.historialTrazos.forEach((seg) => {
+            const idx = idxCelda(seg.x2, seg.y2);
+            if (estado.celdas[idx] === -1) estado.celdasPintadas++;
+            estado.celdas[idx] = seg.fotograma;
+        });
     }
 
     let temporizadorResize = null;
@@ -148,12 +176,10 @@
         setTimeout(redimensionarCanvas, 350);
     });
 
-    // ── Controles: tocar arriba/abajo/izquierda/derecha para dirigir ──
+    // ── Controles: botones de flecha + flechas de teclado ─────────────
 
-    // Se fija la dirección según en qué cuadrante (respecto al centro
-    // del lienzo) se ha tocado: arriba, abajo, izquierda o derecha.
     // No se permite invertir el sentido de golpe (p. ej. ir a la
-    // izquierda y tocar a la derecha) porque chocaría contra la
+    // izquierda y pulsar a la derecha) porque chocaría contra la
     // propia estela en el acto — igual que en el clásico "snake".
     function fijarDireccion(ndx, ndy) {
         if (estado.terminado || !estado.jugando) return;
@@ -162,20 +188,15 @@
         estado.dy = ndy;
     }
 
-    function direccionDesdeToque(ev) {
-        const rect = zona.getBoundingClientRect();
-        const dx = ev.clientX - (rect.left + rect.width / 2);
-        const dy = ev.clientY - (rect.top + rect.height / 2);
-        if (Math.abs(dx) > Math.abs(dy)) {
-            fijarDireccion(dx > 0 ? 1 : -1, 0);
-        } else {
-            fijarDireccion(0, dy > 0 ? 1 : -1);
-        }
-    }
-
-    zona.addEventListener('pointerdown', (ev) => {
-        if (ev.target.closest('.je-boton-reiniciar')) return;
-        direccionDesdeToque(ev);
+    document.querySelectorAll('.je-control-boton[data-dir]').forEach((boton) => {
+        boton.addEventListener('click', () => {
+            const mapa = {
+                arriba: [0, -1], abajo: [0, 1],
+                izquierda: [-1, 0], derecha: [1, 0],
+            };
+            const vector = mapa[boton.dataset.dir];
+            if (vector) fijarDireccion(vector[0], vector[1]);
+        });
     });
 
     document.addEventListener('keydown', (ev) => {
@@ -183,9 +204,135 @@
         else if (ev.key === 'ArrowRight') fijarDireccion(1, 0);
         else if (ev.key === 'ArrowUp') fijarDireccion(0, -1);
         else if (ev.key === 'ArrowDown') fijarDireccion(0, 1);
+        else if (ev.key === ' ' || ev.key === 'Spacebar') {
+            ev.preventDefault();
+            alternarPausa();
+        }
     });
 
-    // ── Pigmentos ────────────────────────────────────────────────────
+    // ── Pausa / reanudar ──────────────────────────────────────────────
+
+    function actualizarBotonJugarPausa() {
+        const boton = document.getElementById('je-boton-jugar-pausa');
+        if (!boton) return;
+        const puedePausar = estado.jugando && !estado.terminado;
+        boton.disabled = !puedePausar;
+        boton.textContent = estado.pausado || !puedePausar ? '▶' : '⏸';
+        boton.setAttribute('aria-label', estado.pausado ? 'Reanudar' : 'Pausar');
+    }
+
+    function mostrarIndicadorPausa(mostrar) {
+        const el = document.getElementById('je-pausado-indicador');
+        if (el) el.hidden = !mostrar;
+    }
+
+    function pausar() {
+        if (!estado.jugando || estado.terminado || estado.pausado) return;
+        estado.pausado = true;
+        if (animacionId) cancelAnimationFrame(animacionId);
+        animacionId = null;
+        guardarEstado();
+        actualizarBotonJugarPausa();
+        mostrarIndicadorPausa(true);
+    }
+
+    function reanudar() {
+        if (!estado.jugando || estado.terminado || !estado.pausado) return;
+        estado.pausado = false;
+        mostrarIndicadorPausa(false);
+        actualizarBotonJugarPausa();
+        animacionId = requestAnimationFrame(frame);
+    }
+
+    function alternarPausa() {
+        if (estado.pausado) reanudar();
+        else pausar();
+    }
+
+    document.getElementById('je-boton-jugar-pausa').addEventListener('click', alternarPausa);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && estado.jugando && !estado.terminado && !estado.pausado) pausar();
+    });
+    window.addEventListener('pagehide', () => {
+        if (estado.jugando && !estado.terminado) guardarEstado();
+    });
+
+    // ── Guardado / reanudación de partida (sessionStorage) ────────────
+
+    function hayPartidaGuardada() {
+        try {
+            return !!sessionStorage.getItem(CLAVE_SESION);
+        } catch (err) {
+            return false;
+        }
+    }
+
+    function guardarEstado() {
+        try {
+            const datos = {
+                dificultad: estado.dificultad,
+                x: estado.x, y: estado.y, dx: estado.dx, dy: estado.dy,
+                colorActual: estado.colorActual,
+                celdas: Array.from(estado.celdas),
+                celdasPintadas: estado.celdasPintadas,
+                historialTrazos: estado.historialTrazos,
+                objetos: estado.objetos,
+                puntos: estado.puntos,
+                pigmentosRecogidos: estado.pigmentosRecogidos,
+                fotograma: estado.fotograma,
+            };
+            sessionStorage.setItem(CLAVE_SESION, JSON.stringify(datos));
+        } catch (err) {
+            // sessionStorage no disponible (modo privado, cuota, etc.) —
+            // se ignora sin interrumpir la partida.
+        }
+    }
+
+    function borrarEstadoGuardado() {
+        try {
+            sessionStorage.removeItem(CLAVE_SESION);
+        } catch (err) {
+            // noop
+        }
+    }
+
+    function cargarEstadoGuardado() {
+        try {
+            const datos = JSON.parse(sessionStorage.getItem(CLAVE_SESION));
+            if (!datos) return false;
+            estado.dificultad = datos.dificultad;
+            estado.x = datos.x;
+            estado.y = datos.y;
+            estado.dx = datos.dx;
+            estado.dy = datos.dy;
+            estado.colorActual = datos.colorActual;
+            estado.celdas = Int32Array.from(datos.celdas);
+            estado.celdasPintadas = datos.celdasPintadas;
+            estado.historialTrazos = datos.historialTrazos;
+            estado.objetos = datos.objetos;
+            estado.puntos = datos.puntos;
+            estado.pigmentosRecogidos = datos.pigmentosRecogidos;
+            estado.fotograma = datos.fotograma;
+            estado.terminado = false;
+            estado.jugando = true;
+            estado.partidaIniciada = true;
+            estado.pausado = true;
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    function aplicarChipDificultad(clave) {
+        document.querySelectorAll('.je-chip-dificultad').forEach((b) => {
+            const activo = b.dataset.dificultad === clave;
+            b.classList.toggle('is-activo', activo);
+            b.setAttribute('aria-checked', String(activo));
+        });
+    }
+
+    // ── Objetos: pigmentos y aguarrás/agua ────────────────────────────
 
     function dibujarPigmento(p) {
         const cx = p.x * escalaX;
@@ -205,10 +352,32 @@
         ctx.restore();
     }
 
-    function aparecerPigmento() {
-        if (estado.terminado || !estado.jugando) return;
+    function dibujarDisolvente(o) {
+        const cx = o.x * escalaX;
+        const cy = o.y * escalaY;
+        const r = RADIO_RECOGIDA * 0.62 * ((escalaX + escalaY) / 2);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#eef3f6';
+        ctx.shadowColor = 'rgba(0,0,0,0.25)';
+        ctx.shadowBlur = 4;
+        ctx.fill();
+        ctx.lineWidth = Math.max(1.5, r * 0.18);
+        ctx.strokeStyle = '#6b93a8';
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+        ctx.font = Math.max(8, r * 1.3) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('💧', cx, cy + r * 0.05);
+        ctx.restore();
+    }
+
+    function aparecerObjeto() {
+        if (estado.terminado || !estado.jugando || estado.pausado) return;
         const cfg = cfgDificultad();
-        if (estado.pigmentos.length >= cfg.maxPigmentos) return;
+        if (estado.objetos.length >= cfg.maxObjetos) return;
 
         let intentos = 0;
         let x, y;
@@ -221,8 +390,13 @@
             (Math.hypot(x - estado.x, y - estado.y) < 16 || estado.celdas[idxCelda(x, y)] !== -1)
         );
 
-        const pigmento = PIGMENTOS[Math.floor(Math.random() * PIGMENTOS.length)];
-        estado.pigmentos.push({ x, y, rgb: pigmento.rgb });
+        const esDisolvente = cfg.probabilidadDisolvente > 0 && Math.random() < cfg.probabilidadDisolvente;
+        if (esDisolvente) {
+            estado.objetos.push({ tipo: 'disolvente', x, y });
+        } else {
+            const pigmento = PIGMENTOS[Math.floor(Math.random() * PIGMENTOS.length)];
+            estado.objetos.push({ tipo: 'pigmento', x, y, rgb: pigmento.rgb });
+        }
         redibujarTodo();
     }
 
@@ -234,26 +408,41 @@
         ];
     }
 
+    function recogerPigmento(o) {
+        estado.colorActual = mezclarColor(estado.colorActual, o.rgb);
+        estado.pigmentosRecogidos++;
+        estado.puntos += 18;
+        mostrarFlotante('+18', o.x, o.y, '#1b8f4c');
+    }
+
+    function recogerDisolvente(o) {
+        const cantidadQuitar = Math.max(6, Math.round(estado.historialTrazos.length * 0.14));
+        estado.historialTrazos.splice(-cantidadQuitar);
+        recalcularCeldasDesdeHistorial();
+        redibujarTodo();
+        estado.puntos = Math.max(0, estado.puntos - 10);
+        mostrarFlotante('−pintura', o.x, o.y, '#d91b1b');
+    }
+
     function comprobarRecogida() {
-        for (let i = estado.pigmentos.length - 1; i >= 0; i--) {
-            const p = estado.pigmentos[i];
-            if (Math.hypot(p.x - estado.x, p.y - estado.y) <= RADIO_RECOGIDA) {
-                estado.colorActual = mezclarColor(estado.colorActual, p.rgb);
-                estado.pigmentos.splice(i, 1);
-                estado.pigmentosRecogidos++;
-                estado.puntos += 18;
-                mostrarFlotante('+18', p.x, p.y);
+        for (let i = estado.objetos.length - 1; i >= 0; i--) {
+            const o = estado.objetos[i];
+            if (Math.hypot(o.x - estado.x, o.y - estado.y) <= RADIO_RECOGIDA) {
+                if (o.tipo === 'disolvente') recogerDisolvente(o);
+                else recogerPigmento(o);
+                estado.objetos.splice(i, 1);
                 actualizarVista();
             }
         }
     }
 
-    function mostrarFlotante(texto, x, y) {
+    function mostrarFlotante(texto, x, y, color) {
         const el = document.createElement('span');
         el.className = 'je-flotante';
         el.textContent = texto;
         el.style.left = (x / GW * 100) + '%';
         el.style.top = (y / GH * 100) + '%';
+        if (color) el.style.color = color;
         zona.appendChild(el);
         setTimeout(() => el.remove(), 650);
     }
@@ -261,7 +450,7 @@
     // ── Bucle principal ──────────────────────────────────────────────
 
     function frame() {
-        if (estado.terminado || !estado.jugando) return;
+        if (estado.terminado || !estado.jugando || estado.pausado) return;
         estado.fotograma++;
 
         const cfg = cfgDificultad();
@@ -281,7 +470,10 @@
         }
 
         pintarSegmento(estado.x, estado.y, nx, ny, estado.colorActual);
-        estado.historialTrazos.push({ x1: estado.x, y1: estado.y, x2: nx, y2: ny, color: estado.colorActual.slice() });
+        estado.historialTrazos.push({
+            x1: estado.x, y1: estado.y, x2: nx, y2: ny,
+            color: estado.colorActual.slice(), fotograma: estado.fotograma,
+        });
 
         if (marcaPrevia === -1) estado.celdasPintadas++;
         estado.celdas[idx] = estado.fotograma;
@@ -325,48 +517,52 @@
     document.querySelectorAll('.je-chip-dificultad').forEach((boton) => {
         boton.addEventListener('click', () => {
             if (boton.classList.contains('is-activo')) return;
-            document.querySelectorAll('.je-chip-dificultad').forEach((b) => {
-                b.classList.remove('is-activo');
-                b.setAttribute('aria-checked', 'false');
-            });
-            boton.classList.add('is-activo');
-            boton.setAttribute('aria-checked', 'true');
+            aplicarChipDificultad(boton.dataset.dificultad);
             estado.dificultad = boton.dataset.dificultad;
-            nuevaPartida();
+            if (estado.partidaIniciada) empezarNueva();
         });
     });
 
     // ── Partida ──────────────────────────────────────────────────────
 
+    function limpiarZonaVisual() {
+        zona.querySelectorAll('.je-flotante').forEach((el) => el.remove());
+    }
+
     function nuevaPartida() {
         if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('estela');
         if (animacionId) cancelAnimationFrame(animacionId);
         clearInterval(temporizadorPigmento);
+        borrarEstadoGuardado();
 
         estado.x = GW / 2;
-        estado.y = GH * 0.8;
+        estado.y = 10;
         estado.dx = 0;
-        estado.dy = -1;
+        estado.dy = 1;
         estado.colorActual = COLOR_INICIAL.slice();
         estado.celdas = new Int32Array(GW * GH).fill(-1);
         estado.celdasPintadas = 0;
-        estado.pigmentos = [];
+        estado.objetos = [];
         estado.historialTrazos = [];
         estado.puntos = 0;
         estado.pigmentosRecogidos = 0;
         estado.fotograma = 0;
         estado.terminado = false;
         estado.jugando = true;
+        estado.pausado = false;
+        estado.partidaIniciada = true;
 
-        zona.querySelectorAll('.je-flotante').forEach((el) => el.remove());
+        limpiarZonaVisual();
         document.getElementById('je-celebracion-overlay').hidden = true;
         document.getElementById('je-pista').style.display = '';
+        mostrarIndicadorPausa(false);
+        actualizarBotonJugarPausa();
 
         redimensionarCanvas();
         actualizarVista();
 
-        temporizadorPigmento = setInterval(aparecerPigmento, cfgDificultad().intervaloPigmento);
-        aparecerPigmento();
+        temporizadorPigmento = setInterval(aparecerObjeto, cfgDificultad().intervaloPigmento);
+        aparecerObjeto();
         animacionId = requestAnimationFrame(frame);
     }
 
@@ -374,8 +570,12 @@
         if (estado.terminado) return;
         estado.terminado = true;
         estado.jugando = false;
+        estado.pausado = false;
         if (animacionId) cancelAnimationFrame(animacionId);
         clearInterval(temporizadorPigmento);
+        borrarEstadoGuardado();
+        mostrarIndicadorPausa(false);
+        actualizarBotonJugarPausa();
 
         const cfg = cfgDificultad();
         const coberturaPct = Math.min(100, Math.round((estado.celdasPintadas / (GW * GH)) * 100));
@@ -394,9 +594,42 @@
 
     document.getElementById('je-boton-reiniciar').addEventListener('click', (ev) => {
         ev.stopPropagation();
-        nuevaPartida();
+        empezarNueva();
     });
-    document.getElementById('je-boton-jugar-de-nuevo').addEventListener('click', nuevaPartida);
+    document.getElementById('je-boton-jugar-de-nuevo').addEventListener('click', empezarNueva);
+
+    // ── Pantalla de inicio: empezar o continuar ───────────────────────
+
+    function mostrarInicioOverlay(mostrar) {
+        document.getElementById('je-inicio-overlay').hidden = !mostrar;
+    }
+
+    function empezarNueva() {
+        mostrarInicioOverlay(false);
+        nuevaPartida();
+    }
+
+    function continuarGuardada() {
+        if (!cargarEstadoGuardado()) {
+            empezarNueva();
+            return;
+        }
+        mostrarInicioOverlay(false);
+        limpiarZonaVisual();
+        document.getElementById('je-celebracion-overlay').hidden = true;
+        document.getElementById('je-pista').style.display = '';
+        aplicarChipDificultad(estado.dificultad);
+
+        redimensionarCanvas();
+        actualizarVista();
+        actualizarBotonJugarPausa();
+        mostrarIndicadorPausa(true);
+
+        temporizadorPigmento = setInterval(aparecerObjeto, cfgDificultad().intervaloPigmento);
+    }
+
+    document.getElementById('je-boton-jugar').addEventListener('click', empezarNueva);
+    document.getElementById('je-boton-continuar').addEventListener('click', continuarGuardada);
 
     // ── Celebración final ────────────────────────────────────────────
 
@@ -495,6 +728,12 @@
     });
 
     // ── Arranque ─────────────────────────────────────────────────────
+    // No se entra en partida automáticamente: se muestra la pantalla
+    // de inicio con "Jugar" y, si hay una partida en pausa guardada
+    // en esta sesión, también "Continuar".
 
-    nuevaPartida();
+    estado.celdas = new Int32Array(GW * GH).fill(-1);
+    actualizarBotonJugarPausa();
+    document.getElementById('je-boton-continuar').hidden = !hayPartidaGuardada();
+    mostrarInicioOverlay(true);
 })();

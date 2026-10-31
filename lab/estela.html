@@ -19,7 +19,7 @@
 <meta name="description" content="Minijuego: guía la brocha, mezcla pigmentos y cubre el lienzo sin chocar contra tu propia estela.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
-<link rel="stylesheet" href="css/juego-estela.css?v=20261031">
+<link rel="stylesheet" href="css/juego-estela.css?v=20261101b">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
 </head>
 <body>
@@ -71,11 +71,11 @@
   </div>
 </header>
 
-<header class="jg-header">
-    <a class="jg-header__volver" href="index.html">&larr; Minijuegos</a>
-    <p class="jg-header__etiqueta">Laboratorio — minijuego — prototipo</p>
-    <h1 class="jg-header__titulo"><span aria-hidden="true">🎨</span> La Estela de Color</h1>
-    <p class="jg-header__subtitulo">Guía la brocha, mezcla pigmentos y cubre el lienzo sin chocar contra tu propia estela.</p>
+<header class="je-header">
+    <a class="je-header__volver" href="index.html">&larr; Minijuegos</a>
+    <p class="je-header__etiqueta">Laboratorio — minijuego — prototipo</p>
+    <h1 class="je-header__titulo"><span aria-hidden="true">🎨</span> La Estela de Color</h1>
+    <p class="je-header__subtitulo">Guía la brocha, mezcla pigmentos y cubre el lienzo sin chocar contra tu propia estela.</p>
 </header>
 
 <main class="je-main">
@@ -112,26 +112,30 @@
         <div class="je-zona-wrap">
             <div class="je-zona" id="je-zona" aria-label="Lienzo de pintura">
                 <canvas class="je-canvas" id="je-canvas"></canvas>
+                <div class="je-pausado-indicador" id="je-pausado-indicador" hidden aria-hidden="true">⏸ Pausado</div>
             </div>
             <button type="button" class="je-boton-reiniciar" id="je-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
                 <span aria-hidden="true">↺</span>
             </button>
         </div>
 
-        <p class="je-pista om-oculto-en-pantalla-completa" id="je-pista">Toca por encima, por debajo, a la izquierda o a la derecha de la brocha para cambiar de dirección. ¡No choques con tu propia estela!</p>
+        <div class="je-control-direccional" aria-label="Controles de dirección">
+            <button type="button" class="je-control-boton je-control-boton--arriba" data-dir="arriba" aria-label="Arriba">▲</button>
+            <button type="button" class="je-control-boton je-control-boton--izquierda" data-dir="izquierda" aria-label="Izquierda">◀</button>
+            <button type="button" class="je-control-boton je-control-boton--jugar-pausa" id="je-boton-jugar-pausa" aria-label="Pausar" disabled>⏸</button>
+            <button type="button" class="je-control-boton je-control-boton--derecha" data-dir="derecha" aria-label="Derecha">▶</button>
+            <button type="button" class="je-control-boton je-control-boton--abajo" data-dir="abajo" aria-label="Abajo">▼</button>
+        </div>
+
+        <p class="je-pista om-oculto-en-pantalla-completa" id="je-pista">Usa los botones de flecha (o las flechas del teclado en PC) para dirigir la brocha. El botón central pausa y reanuda la partida. ¡No choques con tu propia estela!</p>
 
     </section>
 
     <section class="je-controles" aria-label="Puntuación">
 
-        <div class="je-grupo-control">
-            <h2 class="jg-grupo-control__titulo">Puntuación</h2>
-            <div class="jg-marcador">
-                <div class="jg-stat">
-                    <span class="jg-stat__valor" id="je-puntos">0</span>
-                    <span class="jg-stat__etiqueta">puntos</span>
-                </div>
-            </div>
+        <div class="je-marcador">
+            <span class="je-marcador__valor" id="je-puntos">0</span>
+            <span class="je-marcador__etiqueta">puntos</span>
         </div>
 
         <button type="button" class="je-boton-compartir om-oculto-en-pantalla-completa" id="je-boton-compartir">
@@ -144,6 +148,18 @@
     </section>
 
 </main>
+
+<!-- ───────────────── Pantalla de inicio (jugar / continuar) ───────────────── -->
+<div class="je-overlay" id="je-inicio-overlay" hidden>
+    <div class="je-tarjeta-overlay" role="dialog" aria-modal="true" aria-labelledby="je-inicio-titulo">
+        <h2 id="je-inicio-titulo"><span aria-hidden="true">🎨</span> La Estela de Color</h2>
+        <p>Dirige la brocha con los botones de flecha, mezcla pigmentos y cubre el lienzo sin chocar contra tu propia estela. Puedes pausar en cualquier momento.</p>
+        <div class="je-overlay__acciones">
+            <button type="button" class="je-overlay__boton" id="je-boton-jugar">▶ Jugar</button>
+            <button type="button" class="je-overlay__boton je-overlay__boton--secundario" id="je-boton-continuar" hidden>Continuar partida</button>
+        </div>
+    </div>
+</div>
 
 <section class="je-proveedores" aria-labelledby="je-proveedores-titulo">
     <h2 id="je-proveedores-titulo" class="je-proveedores__titulo">Algunas de nuestras marcas de pinturas</h2>
@@ -258,7 +274,7 @@
 
 <script src="../src/js/app.js?v=20260829"></script>
 <script src="js/estadisticas-juegos.js?v=20261101"></script>
-<script src="js/juego-estela.js?v=20261101"></script>
+<script src="js/juego-estela.js?v=20261101b"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
