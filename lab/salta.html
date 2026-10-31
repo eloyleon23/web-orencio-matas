@@ -35,7 +35,7 @@
 <meta name="description" content="Minijuego: salta de plataforma en plataforma recogiendo paquetes sin caerte.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
-<link rel="stylesheet" href="css/juego-salta.css?v=20261101c">
+<link rel="stylesheet" href="css/juego-salta.css?v=20261101d">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
 <!-- Google tag (gtag.js) -->
 <script>
@@ -162,9 +162,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="jz-control-juego" aria-label="Controles del operario">
             <button type="button" class="jz-boton-mover" data-dir="-1" aria-label="Mover a la izquierda">◀&#xFE0E;</button>
             <button type="button" class="jz-boton-mover" data-dir="1" aria-label="Mover a la derecha">▶&#xFE0E;</button>
-            <button type="button" class="jz-boton-pausa" id="jz-boton-pausa" aria-label="Pausar" disabled>⏸&#xFE0E;</button>
             <span class="jz-control-separador" aria-hidden="true"></span>
             <button type="button" class="jz-boton-saltar" id="jz-boton-saltar">SALTAR</button>
+            <!-- A propósito el último botón de la fila, no SALTAR: el
+                 botón flotante de pantalla completa vive fijo en la
+                 esquina inferior derecha (ver .om-pantalla-completa en
+                 pantalla-completa.css) y se usa mucho menos a menudo
+                 que saltar, así que es mejor que quede cerca de él. -->
+            <button type="button" class="jz-boton-pausa" id="jz-boton-pausa" aria-label="Pausar" disabled>⏸&#xFE0E;</button>
         </div>
 
         <p class="jz-pista om-oculto-en-pantalla-completa" id="jz-pista">◀ ▶ para moverte, SALTAR para saltar (también funciona ↑ o la barra espaciadora), ⏸ para pausar.</p>

@@ -293,9 +293,34 @@
 
 .jz-control-juego {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
+    row-gap: 0.8rem;
+}
+
+/* En pantalla completa, .om-pantalla-completa-simulada quita el
+   padding lateral de <main> a propósito (para aprovechar toda la
+   pantalla) — pero eso deja la fila de controles pegada al borde,
+   justo donde flota fijo el botón de pantalla completa (ver
+   .om-pantalla-completa en pantalla-completa.css: 46px + 16px desde
+   la esquina). Se reserva ese hueco aquí; flex-wrap de arriba evita
+   que, si no cupiera algún botón en una sola fila, se recorte o se
+   amontone — pasaría a una segunda línea. */
+body.om-pantalla-completa-activa .jz-control-juego {
+    padding-right: calc(env(safe-area-inset-right, 0px) + 70px);
+}
+
+.jz-boton-mover,
+.jz-boton-pausa,
+.jz-boton-saltar {
+    /* Evita que el navegador intente reconocer gestos (zoom con dos
+       dedos, etc.) cuando se tocan varios de estos botones a la vez
+       — sin esto, mantener pulsado un botón de movimiento mientras se
+       toca SALTAR con otro dedo podía no registrar el segundo toque
+       en algunos navegadores móviles. */
+    touch-action: manipulation;
 }
 
 .jz-boton-mover,
