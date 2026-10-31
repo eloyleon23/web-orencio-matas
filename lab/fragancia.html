@@ -18,7 +18,7 @@
 <meta name="description" content="Minijuego: mueve el frasco para atrapar los ingredientes buenos y esquivar los malos.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20260829">
-<link rel="stylesheet" href="css/juego-fragancia.css?v=20261031">
+<link rel="stylesheet" href="css/juego-fragancia.css?v=20261101">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261030d">
 </head>
 <body>
@@ -109,7 +109,14 @@
 
         <div class="jg-zona-wrap">
             <div class="jg-zona" id="jg-zona" aria-label="Ingredientes cayendo">
-                <div class="jg-frasco" id="jg-frasco" aria-hidden="true">🧴</div>
+                <div class="jg-frasco" id="jg-frasco" aria-hidden="true">
+                    <div class="jg-frasco__tapon"></div>
+                    <div class="jg-frasco__cuello"></div>
+                    <div class="jg-frasco__cuerpo">
+                        <div class="jg-frasco__liquido" id="jg-frasco-liquido"></div>
+                        <div class="jg-frasco__brillo"></div>
+                    </div>
+                </div>
             </div>
             <button type="button" class="jg-boton-reiniciar" id="jg-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
                 <span aria-hidden="true">↺</span>
@@ -260,7 +267,7 @@
 </footer>
 
 <script src="../src/js/app.js?v=20260829"></script>
-<script src="js/juego-fragancia.js?v=20261031"></script>
+<script src="js/juego-fragancia.js?v=20261101"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
