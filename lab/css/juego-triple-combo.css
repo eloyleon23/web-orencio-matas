@@ -1,0 +1,705 @@
+/*
+ * Triple Combo — minijuego (lab/triple-combo.html)
+ * Mobile-first. Mismo esqueleto que el resto de minijuegos del
+ * laboratorio, con la paleta REAL del sitio (ver src/css/estilos.css).
+ */
+
+:root {
+    --jx-rojo: #d91b1b;
+    --jx-rojo-oscuro: #ad1515;
+    --jx-negro: #1a1a1a;
+    --jx-gris-texto: #52555a;
+    --jx-gris-borde: #e2e2e4;
+    --jx-gris-fondo: #f7f6f4;
+    --jx-blanco: #ffffff;
+    --jx-radio: 14px;
+    --jx-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jx-gris-fondo);
+    color: var(--jx-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jx-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jx-negro), var(--jx-rojo-oscuro));
+    color: var(--jx-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jx-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jx-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jx-header__volver:hover,
+.jx-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jx-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jx-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jx-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jx-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jx-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jx-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jx-juego {
+    background: var(--jx-blanco);
+    border-radius: var(--jx-radio);
+    box-shadow: var(--jx-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jx-juego {
+        flex: 1 1 64%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jx-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jx-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jx-gris-borde);
+    background: var(--jx-blanco);
+    color: var(--jx-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jx-chip-dificultad.is-activo {
+    background: var(--jx-negro);
+    border-color: var(--jx-negro);
+    color: var(--jx-blanco);
+}
+
+.jx-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.jx-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 50px;
+}
+
+.jx-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jx-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jx-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jx-gris-fondo);
+    overflow: hidden;
+}
+
+.jx-barra-progreso__relleno {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--jx-rojo), var(--jx-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.3s linear;
+}
+
+.jx-boton-pausa,
+.jx-boton-reiniciar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jx-negro);
+    color: var(--jx-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.jx-boton-pausa:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* ── Tablero ─────────────────────────────────────────────────────────── */
+/* Fichas posicionadas de forma absoluta (left/top en px, calculados por
+   JS en juego-triple-combo.js) en vez de CSS grid: así el intercambio
+   y la caída por gravedad se animan con una simple transición de
+   left/top, sin tener que reordenar nodos del DOM en cada resolución. */
+
+.jx-tablero-wrap {
+    position: relative;
+}
+
+.jx-tablero {
+    position: relative;
+    width: 100%;
+    /* La altura y el tamaño de ficha (--jx-tam-ficha) los fija JS según
+       columnas/filas de la dificultad activa y el ancho real
+       disponible — ver medirTablero() en juego-triple-combo.js. */
+    --jx-tam-ficha: 40px;
+    overflow: hidden;
+    touch-action: manipulation;
+    border-radius: 10px;
+    background: var(--jx-gris-fondo);
+    margin: 0 auto;
+}
+
+.jx-ficha {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--jx-blanco);
+    border: 1.5px solid var(--jx-gris-borde);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    padding: 0;
+    cursor: pointer;
+    user-select: none;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: left 0.16s ease, top 0.16s ease, transform 0.12s ease, opacity 0.12s ease;
+}
+
+.jx-ficha__emoji {
+    font-size: calc(var(--jx-tam-ficha, 40px) * 0.5);
+    line-height: 1;
+    pointer-events: none;
+}
+
+.jx-ficha--seleccionada {
+    border-color: var(--jx-rojo);
+    box-shadow: 0 0 0 2px rgba(217, 27, 27, 0.35);
+    transform: scale(1.08);
+}
+
+.jx-ficha--emparejando {
+    transform: scale(0.35);
+    opacity: 0;
+}
+
+.jx-ficha--nueva {
+    opacity: 0;
+}
+
+@keyframes jx-ficha-pop {
+    0% { transform: scale(0.6); opacity: 0.5; }
+    60% { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.jx-ficha--aparece {
+    animation: jx-ficha-pop 0.22s ease-out;
+}
+
+/* ── Logro / hito (toast) ───────────────────────────────────────────── */
+/* Mismo patrón que en Salta y Reparte (jz-logro): se muestra solo
+   cuando NO tiene "hidden" — no un simple "display: flex" en la regla
+   base, que perdería contra [hidden] por el mismo bug ya corregido en
+   La Estela de Color y en la pantalla de carga del buscador. */
+
+.jx-logro {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, -10px);
+    background: rgba(26, 26, 26, 0.88);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    z-index: 6;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.jx-logro:not([hidden]).jx-logro--mostrar {
+    animation: jx-logro-aparece 1.6s ease forwards;
+}
+
+@keyframes jx-logro-aparece {
+    0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, -10px) scale(1.08); }
+    25% { transform: translate(-50%, -10px) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -22px) scale(0.95); }
+}
+
+/* ── Pausa ───────────────────────────────────────────────────────────── */
+/* Mismo bug de especificidad ya corregido antes (La Estela de Color,
+   botón de cerrar la pantalla de carga del buscador): el "display" va
+   en un selector :not([hidden]) aparte, nunca en la regla base. */
+
+.jx-pausado-indicador {
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 26, 26, 0.45);
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 10px;
+}
+
+.jx-pausado-indicador:not([hidden]) {
+    display: flex;
+}
+
+.jx-pista {
+    margin: 10px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jx-gris-texto);
+    text-align: center;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jx-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jx-controles {
+        flex: 1 1 36%;
+    }
+}
+
+.jx-grupo-control {
+    background: var(--jx-blanco);
+    border-radius: var(--jx-radio);
+    box-shadow: var(--jx-sombra);
+    padding: 14px;
+}
+
+.jx-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.jx-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jx-boton-compartir,
+/* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
+   un <a>: a diferencia de <button> (inline-block por defecto), un
+   <a> es "inline" y por defecto ignora width/ignora el subrayado de
+   enlace — se corrige aquí sin tocar el estilo del <button>. */
+a.jx-boton-secundario {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+/* Bug ya visto y corregido en Encuentra la Pareja y otros 8 juegos:
+   esta regla tiene que incluir TAMBIÉN .jx-boton-compartir, si no se
+   queda sin min-height/width/border-radius/font-size/font-weight/
+   cursor y sale como texto suelto sin forma de botón. */
+.jx-boton-compartir,
+.jx-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.jx-boton-compartir {
+    background: var(--jx-negro);
+    color: var(--jx-blanco);
+}
+
+.jx-boton-compartir:hover {
+    background: #333;
+}
+
+.jx-boton-secundario {
+    background: var(--jx-gris-fondo);
+    color: var(--jx-negro);
+    border: 1.5px solid var(--jx-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jx-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jx-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jx-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jx-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jx-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jx-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jx-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jx-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jx-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jx-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jx-gris-texto);
+    font-weight: 600;
+}
+
+.jx-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jx-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jx-celebracion .jx-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jx-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jx-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jx-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jx-compartir-panel {
+    position: relative;
+    background: var(--jx-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jx-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jx-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jx-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jx-gris-texto);
+}
+
+.jx-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jx-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jx-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jx-rojo);
+    color: var(--jx-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jx-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jx-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jx-blanco);
+}
+
+.jx-boton-red--whatsapp { background: #25d366; }
+.jx-boton-red--x { background: #000000; }
+.jx-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas aleatorias (al buscador general, sin filtrar) ───────────── */
+
+.jx-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jx-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jx-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jx-gris-texto);
+    text-align: center;
+}
+
+.jx-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jx-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jx-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jx-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ─────────────────── */
+
+body.om-pantalla-completa-activa .jx-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jx-tablero-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.om-pantalla-completa-activa .jx-tablero {
+    max-width: 100%;
+    max-height: 100%;
+}
