@@ -239,6 +239,7 @@
     // ── Controles ────────────────────────────────────────────────────
 
     function alPulsarMover(ev) {
+        ev.preventDefault();
         const dir = ev.currentTarget.dataset.dir;
         if (dir === '-1') estado.moviendoIzquierda = true;
         else estado.moviendoDerecha = true;
@@ -249,8 +250,15 @@
         else estado.moviendoDerecha = false;
     }
 
+    // { passive: false } + preventDefault(): sin esto, en algunos
+    // navegadores móviles un segundo dedo tocando OTRO botón mientras
+    // ya hay un dedo pulsado en este (manteniendo el movimiento) podía
+    // hacer que el navegador interpretase ambos toques como el inicio
+    // de un gesto propio (desplazamiento, zoom) y se "comiera" el
+    // segundo toque en vez de entregarlo al botón — así que saltar()
+    // nunca llegaba a llamarse aunque pareciera que se había pulsado.
     document.querySelectorAll('.jz-boton-mover').forEach((boton) => {
-        boton.addEventListener('pointerdown', alPulsarMover);
+        boton.addEventListener('pointerdown', alPulsarMover, { passive: false });
         boton.addEventListener('pointerup', alSoltarMover);
         boton.addEventListener('pointercancel', alSoltarMover);
         boton.addEventListener('pointerleave', alSoltarMover);
@@ -265,7 +273,20 @@
         estado.fotogramasSinSuelo = COYOTE_FOTOGRAMAS + 1; // evita un segundo salto "de cortesía" inmediato
     }
 
-    document.getElementById('jz-boton-saltar').addEventListener('click', saltar);
+    const botonSaltar = document.getElementById('jz-boton-saltar');
+    // "pointerdown" en vez de (o además de) "click": responde en el
+    // instante del toque, sin esperar a un ciclo completo de
+    // pulsar+soltar sobre el mismo botón — más fiable cuando ya hay
+    // otro dedo pulsado en un botón de movimiento. Se deja también
+    // "click" para que funcione con teclado (Intro/Espacio con el
+    // botón enfocado); saltar() ya es seguro llamarlo dos veces
+    // seguidas (la segunda no hace nada, por el margen de coyote
+    // time ya consumido).
+    botonSaltar.addEventListener('pointerdown', (ev) => {
+        ev.preventDefault();
+        saltar();
+    }, { passive: false });
+    botonSaltar.addEventListener('click', saltar);
 
     document.addEventListener('keydown', (ev) => {
         if (ev.key === 'ArrowLeft') estado.moviendoIzquierda = true;
