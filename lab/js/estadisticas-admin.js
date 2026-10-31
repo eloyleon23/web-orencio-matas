@@ -1,29 +1,21 @@
 /**
  * Panel de estadísticas de Espacio Creativo — SOLO en preproducción
- * (GitHub Pages / local, nunca en orenciomatas.es), protegido por un
- * código de acceso simple.
+ * (GitHub Pages / local, nunca en orenciomatas.es).
  *
- * Importante: esto es un simple filtro frente a visitantes casuales,
- * NO seguridad real — el código vive en este JS, visible para
- * cualquiera que mire el código fuente de la página. No lo uses para
- * nada que de verdad necesite protegerse; si hiciera falta, habría
- * que moverlo a un backend con autenticación de verdad.
+ * Muestra un botón flotante que abre una modal con gráficas nativas
+ * (barras en HTML/CSS, sin librerías ni servicios externos) de uso
+ * real de los minijuegos: partidas jugadas, tiempo medio jugado y
+ * conversión al buscador, por juego — a partir de los datos que
+ * agrega scripts/estadisticas_juegos.gs (ver también
+ * lab/js/estadisticas-juegos.js, que envía los eventos).
  *
- * Muestra un botón flotante que abre una modal: primero pide el
- * código de acceso, y una vez correcto, un panel donde pegar la URL
- * de inserción ("Insertar informe") de un informe de Looker Studio
- * conectado a la propiedad de GA4 de orenciomatas.es — con los
- * eventos "juego_inicio", "juego_tiempo" y "conversion_buscador" que
- * envían los minijuegos (ver estadisticas-juegos.js). La URL elegida
- * se recuerda en este navegador (localStorage) para no tener que
- * volver a pegarla cada vez.
+ * El acceso pide el PIN — el MISMO PIN que ya usa panel_admin.html,
+ * no uno nuevo: se manda tal cual al backend de estadísticas, que lo
+ * valida reenviándolo al endpoint de panel_admin.html
+ * (panel_validar_pin). Aquí nunca se guarda ni se compara ningún PIN.
  */
 (function () {
     'use strict';
-
-    // Cambia este código por el que quieras usar.
-    const CODIGO_ACCESO = 'espacio-creativo-2026';
-    const CLAVE_URL_INFORME = 'om_stats_looker_url';
 
     function enProduccion() {
         return window.location.hostname.replace(/^www\./, '') === 'orenciomatas.es';
@@ -31,26 +23,35 @@
 
     if (enProduccion()) return; // Nunca se muestra en el sitio real.
 
-    function leerUrlInforme() {
-        try {
-            return localStorage.getItem(CLAVE_URL_INFORME) || '';
-        } catch (err) {
-            return '';
-        }
+    const NOMBRES_JUEGO = {
+        taller: 'Pinta el Coche',
+        pinturas: 'Pinta tu Estancia',
+        'mezcla-colores': 'Mezcla de Colores',
+        limpieza: 'Quita la Mancha',
+        insectos: 'Fuera Bichos',
+        almacen: 'Organiza el Almacén',
+        pedido: 'Despacha el Pedido',
+        memoria: 'Encuentra la Pareja',
+        clasifica: 'Clasifica por Pasillos',
+        apila: 'Apila el Pedido',
+        fragancia: 'Atrapa la Fragancia',
+        estela: 'La Estela de Color',
+        salta: 'Salta y Reparte',
+    };
+
+    function nombreJuego(clave) {
+        return NOMBRES_JUEGO[clave] || clave;
     }
 
-    function guardarUrlInforme(url) {
-        try {
-            localStorage.setItem(CLAVE_URL_INFORME, url);
-        } catch (err) {
-            // localStorage no disponible — se ignora, solo no se recuerda.
-        }
+    function formatearSegundos(s) {
+        if (s < 60) return s + ' s';
+        const min = Math.floor(s / 60);
+        const seg = s % 60;
+        return min + ' min' + (seg ? ' ' + seg + ' s' : '');
     }
 
-    // Solo se acepta un enlace de inserción de Looker Studio — evita
-    // poder cargar cualquier URL arbitraria dentro del iframe.
-    function urlInformeValida(url) {
-        return /^https:\/\/lookerstudio\.google\.com\/embed\//.test(url);
+    function urlBackend() {
+        return (window.OMEstadisticasJuegos && window.OMEstadisticasJuegos.URL_BACKEND_ESTADISTICAS) || '';
     }
 
     let overlayActual = null;
@@ -87,18 +88,37 @@
         return panel;
     }
 
+    function mostrarPanelSinConfigurar() {
+        const panel = crearOverlay(false);
+        const titulo = document.createElement('h2');
+        titulo.textContent = 'Estadísticas de Espacio Creativo';
+        const texto = document.createElement('p');
+        texto.textContent = 'Todavía no hay un backend de estadísticas desplegado. Despliega ' +
+            'scripts/estadisticas_juegos.gs como Web App en Google Apps Script (instrucciones ' +
+            'en la cabecera del propio archivo) y pega la URL resultante en la constante ' +
+            'URL_BACKEND_ESTADISTICAS de lab/js/estadisticas-juegos.js.';
+        panel.appendChild(titulo);
+        panel.appendChild(texto);
+    }
+
     function mostrarPanelCodigo() {
+        if (!urlBackend()) {
+            mostrarPanelSinConfigurar();
+            return;
+        }
+
         const panel = crearOverlay(false);
 
         const titulo = document.createElement('h2');
         titulo.textContent = 'Estadísticas de Espacio Creativo';
         const texto = document.createElement('p');
-        texto.textContent = 'Solo visible en preproducción. Introduce el código de acceso para ver el informe.';
+        texto.textContent = 'Solo visible en preproducción. Introduce el PIN (el mismo del Panel OM) para ver las estadísticas.';
 
         const input = document.createElement('input');
         input.type = 'password';
+        input.inputMode = 'numeric';
         input.className = 'om-stats-input';
-        input.placeholder = 'Código de acceso';
+        input.placeholder = 'PIN';
         input.autocomplete = 'off';
 
         const error = document.createElement('p');
@@ -110,13 +130,22 @@
         botonEntrar.textContent = 'Entrar';
 
         function intentarEntrar() {
-            if (input.value === CODIGO_ACCESO) {
-                mostrarPanelInforme();
-            } else {
-                error.textContent = 'Código incorrecto.';
-                input.value = '';
-                input.focus();
-            }
+            const pin = input.value.trim();
+            if (!pin) return;
+            error.textContent = '';
+            botonEntrar.disabled = true;
+            botonEntrar.textContent = 'Comprobando…';
+            cargarEstadisticas(pin)
+                .then((datos) => {
+                    mostrarPanelEstadisticas(datos, pin);
+                })
+                .catch((err) => {
+                    error.textContent = err.message || 'No se pudo comprobar el PIN.';
+                    botonEntrar.disabled = false;
+                    botonEntrar.textContent = 'Entrar';
+                    input.value = '';
+                    input.focus();
+                });
         }
 
         botonEntrar.addEventListener('click', intentarEntrar);
@@ -133,92 +162,157 @@
         setTimeout(() => input.focus(), 50);
     }
 
-    function mostrarPanelInforme() {
+    function cargarEstadisticas(pin) {
+        return fetch(urlBackend(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ accion: 'obtener_estadisticas_juegos', pin }),
+        })
+            .then((r) => r.json())
+            .then((d) => {
+                if (!d.success) throw new Error(d.error || 'PIN incorrecto.');
+                return d.datos;
+            })
+            .catch((err) => {
+                if (err instanceof Error && err.message) throw err;
+                throw new Error('Error de conexión con el backend de estadísticas.');
+            });
+    }
+
+    function crearTarjetaKpi(etiqueta, valor) {
+        const tarjeta = document.createElement('div');
+        tarjeta.className = 'om-stats-kpi';
+        const v = document.createElement('div');
+        v.className = 'om-stats-kpi__valor';
+        v.textContent = valor;
+        const e = document.createElement('div');
+        e.className = 'om-stats-kpi__etiqueta';
+        e.textContent = etiqueta;
+        tarjeta.appendChild(v);
+        tarjeta.appendChild(e);
+        return tarjeta;
+    }
+
+    // Gráfica de barras horizontales clasificadas (ranked bars): una
+    // fila por juego, una sola barra por fila (una magnitud, sin
+    // comparar series — no hace falta leyenda), ordenadas de mayor a
+    // menor, el valor impreso en la punta de la barra.
+    function crearGraficoBarras(titulo, filas, formatearValor) {
+        const seccion = document.createElement('section');
+        seccion.className = 'om-stats-grafico';
+
+        const h3 = document.createElement('h3');
+        h3.className = 'om-stats-grafico__titulo';
+        h3.textContent = titulo;
+        seccion.appendChild(h3);
+
+        if (!filas.length) {
+            const vacio = document.createElement('p');
+            vacio.className = 'om-stats-nota';
+            vacio.textContent = 'Todavía no hay datos suficientes.';
+            seccion.appendChild(vacio);
+            return seccion;
+        }
+
+        const maxValor = Math.max(1, ...filas.map((f) => f.valor));
+
+        filas.forEach((f) => {
+            const valorTexto = formatearValor(f.valor);
+
+            const fila = document.createElement('div');
+            fila.className = 'om-stats-barra-fila';
+            fila.setAttribute('role', 'img');
+            fila.setAttribute('aria-label', f.etiqueta + ': ' + valorTexto);
+
+            const etiqueta = document.createElement('span');
+            etiqueta.className = 'om-stats-barra-fila__etiqueta';
+            etiqueta.textContent = f.etiqueta;
+
+            const pista = document.createElement('div');
+            pista.className = 'om-stats-barra-fila__pista';
+            const barra = document.createElement('div');
+            barra.className = 'om-stats-barra-fila__barra';
+            barra.style.width = Math.max(2, Math.round((f.valor / maxValor) * 100)) + '%';
+            pista.appendChild(barra);
+
+            const valor = document.createElement('span');
+            valor.className = 'om-stats-barra-fila__valor';
+            valor.textContent = valorTexto;
+
+            fila.appendChild(etiqueta);
+            fila.appendChild(pista);
+            fila.appendChild(valor);
+            seccion.appendChild(fila);
+        });
+
+        return seccion;
+    }
+
+    function mostrarPanelEstadisticas(datos, pin) {
         const panel = crearOverlay(true);
-        const urlGuardada = leerUrlInforme();
 
         const titulo = document.createElement('h2');
         titulo.textContent = 'Estadísticas de Espacio Creativo';
-
-        if (urlGuardada && urlInformeValida(urlGuardada)) {
-            const envoltorio = document.createElement('div');
-            envoltorio.className = 'om-stats-iframe-envoltorio';
-            const iframe = document.createElement('iframe');
-            iframe.src = urlGuardada;
-            iframe.loading = 'lazy';
-            iframe.title = 'Informe de estadísticas de Espacio Creativo';
-            envoltorio.appendChild(iframe);
-
-            const botonCambiar = document.createElement('button');
-            botonCambiar.type = 'button';
-            botonCambiar.className = 'om-stats-boton om-stats-boton--secundario';
-            botonCambiar.textContent = 'Cambiar informe';
-            botonCambiar.addEventListener('click', () => mostrarPanelConfigurar());
-
-            panel.appendChild(titulo);
-            panel.appendChild(envoltorio);
-            panel.appendChild(botonCambiar);
-        } else {
-            mostrarPanelConfigurar(panel, titulo);
-        }
-    }
-
-    function mostrarPanelConfigurar(panelExistente, tituloExistente) {
-        const panel = panelExistente || crearOverlay(false);
-        panel.innerHTML = '';
-
-        const botonCerrar = document.createElement('button');
-        botonCerrar.type = 'button';
-        botonCerrar.className = 'om-stats-panel__cerrar';
-        botonCerrar.setAttribute('aria-label', 'Cerrar');
-        botonCerrar.innerHTML = '&times;';
-        botonCerrar.addEventListener('click', cerrarOverlay);
-        panel.appendChild(botonCerrar);
-
-        const titulo = tituloExistente || document.createElement('h2');
-        titulo.textContent = 'Informe de Looker Studio';
-
-        const texto = document.createElement('p');
-        texto.textContent = 'Pega aquí la URL de inserción (el enlace que empieza por ' +
-            'https://lookerstudio.google.com/embed/...) del informe conectado a GA4. ' +
-            'En Looker Studio: Compartir → Insertar informe → copiar el enlace.';
-
-        const input = document.createElement('input');
-        input.type = 'url';
-        input.className = 'om-stats-input';
-        input.placeholder = 'https://lookerstudio.google.com/embed/reporting/...';
-        input.value = leerUrlInforme();
-        input.autocomplete = 'off';
-
-        const error = document.createElement('p');
-        error.className = 'om-stats-error';
-
-        const botonGuardar = document.createElement('button');
-        botonGuardar.type = 'button';
-        botonGuardar.className = 'om-stats-boton';
-        botonGuardar.textContent = 'Guardar y ver informe';
-        botonGuardar.addEventListener('click', () => {
-            const url = input.value.trim();
-            if (!urlInformeValida(url)) {
-                error.textContent = 'Tiene que ser un enlace de inserción de Looker Studio (empieza por https://lookerstudio.google.com/embed/).';
-                return;
-            }
-            guardarUrlInforme(url);
-            mostrarPanelInforme();
-        });
-
-        const nota = document.createElement('p');
-        nota.className = 'om-stats-nota';
-        nota.textContent = 'Eventos enviados desde los juegos: juego_inicio, juego_tiempo (segundos activos jugados, sin pausas) y conversion_buscador (al aceptar ir al buscador).';
-
         panel.appendChild(titulo);
-        panel.appendChild(texto);
-        panel.appendChild(input);
-        panel.appendChild(error);
-        panel.appendChild(botonGuardar);
-        panel.appendChild(nota);
 
-        setTimeout(() => input.focus(), 50);
+        const juegos = (datos.juegos || []).slice();
+        const tasaConversion = datos.totalPartidas > 0
+            ? Math.round((datos.totalConversiones / datos.totalPartidas) * 100)
+            : 0;
+
+        const kpis = document.createElement('div');
+        kpis.className = 'om-stats-kpis';
+        kpis.appendChild(crearTarjetaKpi('Partidas totales', String(datos.totalPartidas || 0)));
+        kpis.appendChild(crearTarjetaKpi('Fueron al buscador', String(datos.totalConversiones || 0)));
+        kpis.appendChild(crearTarjetaKpi('Tasa de conversión', tasaConversion + '%'));
+        panel.appendChild(kpis);
+
+        // El objetivo real: tiempo medio jugado por partida, por
+        // juego — no solo quién entra, sino quién se queda jugando.
+        const filasTiempo = juegos
+            .filter((j) => j.tiempoMedioSegundos > 0)
+            .sort((a, b) => b.tiempoMedioSegundos - a.tiempoMedioSegundos)
+            .map((j) => ({ etiqueta: nombreJuego(j.juego), valor: j.tiempoMedioSegundos }));
+        panel.appendChild(crearGraficoBarras('Tiempo medio jugado por partida', filasTiempo, formatearSegundos));
+
+        // El objetivo de negocio: cuántos acaban yendo al buscador,
+        // por juego.
+        const filasConversion = juegos
+            .filter((j) => j.conversiones > 0)
+            .sort((a, b) => b.conversiones - a.conversiones)
+            .map((j) => ({ etiqueta: nombreJuego(j.juego), valor: j.conversiones }));
+        panel.appendChild(crearGraficoBarras('Conversión al buscador por juego', filasConversion, (v) => String(v)));
+
+        // Contexto: partidas jugadas — por sí solo no basta (ver
+        // tiempo medio arriba), pero ayuda a leer los otros dos.
+        const filasPartidas = juegos
+            .filter((j) => j.partidas > 0)
+            .sort((a, b) => b.partidas - a.partidas)
+            .map((j) => ({ etiqueta: nombreJuego(j.juego), valor: j.partidas }));
+        panel.appendChild(crearGraficoBarras('Partidas jugadas por juego', filasPartidas, (v) => String(v)));
+
+        if (datos.actualizado) {
+            const nota = document.createElement('p');
+            nota.className = 'om-stats-nota';
+            nota.textContent = 'Datos calculados al ' + new Date(datos.actualizado).toLocaleString('es-ES');
+            panel.appendChild(nota);
+        }
+
+        const botonActualizar = document.createElement('button');
+        botonActualizar.type = 'button';
+        botonActualizar.className = 'om-stats-boton om-stats-boton--secundario';
+        botonActualizar.textContent = 'Actualizar';
+        botonActualizar.addEventListener('click', () => {
+            botonActualizar.disabled = true;
+            botonActualizar.textContent = 'Actualizando…';
+            cargarEstadisticas(pin)
+                .then((d) => mostrarPanelEstadisticas(d, pin))
+                .catch(() => {
+                    botonActualizar.disabled = false;
+                    botonActualizar.textContent = 'Actualizar';
+                });
+        });
+        panel.appendChild(botonActualizar);
     }
 
     function crearBotonFlotante() {
