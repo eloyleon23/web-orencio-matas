@@ -253,6 +253,7 @@
     }
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('fragancia');
         clearInterval(temporizadorTurno);
         clearInterval(temporizadorAparicion);
         limpiarZona();

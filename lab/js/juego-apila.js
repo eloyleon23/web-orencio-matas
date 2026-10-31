@@ -254,6 +254,7 @@
     // ── Partida ──────────────────────────────────────────────────────
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('apila');
         pararAnimacion();
 
         barraAncho = ANCHO_INICIAL;

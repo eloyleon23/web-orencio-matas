@@ -409,6 +409,7 @@
     // ── Reiniciar / nueva partida ───────────────────────────────────
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('limpieza');
         estado.terminado = false;
         estado.porcentaje = 0;
         estado.ultimoPunto = null;
@@ -573,4 +574,5 @@
     }
 
     ajustarTamanoCanvas();
+    if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('limpieza');
 })();

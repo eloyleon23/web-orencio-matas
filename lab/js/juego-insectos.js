@@ -249,6 +249,7 @@
     }
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('insectos');
         clearInterval(temporizadorCuentaAtras);
         clearInterval(temporizadorAparicion);
         limpiarArena();

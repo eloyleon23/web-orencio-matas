@@ -275,6 +275,7 @@
     }
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('clasifica');
         clearInterval(temporizadorTurno);
         clearInterval(temporizadorAparicion);
         limpiarZona();

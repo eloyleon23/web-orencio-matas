@@ -349,6 +349,7 @@
     // ── Partida ──────────────────────────────────────────────────────
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('memoria');
         clearInterval(temporizador);
 
         const cfg = cfgDificultad();
