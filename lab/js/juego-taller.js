@@ -826,6 +826,7 @@
     // (se acabó la cuenta atrás del desafío sin llegar al 100%).
     function terminarPartida(motivo) {
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('taller');
         detenerCronometro();
 
         const entrada = {

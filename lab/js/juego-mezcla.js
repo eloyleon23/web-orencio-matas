@@ -287,6 +287,7 @@
     function terminarMezcla() {
         if (totalVertido() === 0 || estado.terminado) return;
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('mezcla-colores');
 
         const mezcla = mezclarDesdeCantidades(estado.cantidades);
         const pct = calcularParecido(mezcla, estado.objetivo);

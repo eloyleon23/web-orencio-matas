@@ -241,6 +241,7 @@
     function pausar() {
         if (!estado.jugando || estado.terminado || estado.pausado) return;
         estado.pausado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPausa();
         if (animacionId) cancelAnimationFrame(animacionId);
         animacionId = null;
         guardarEstado();
@@ -251,6 +252,7 @@
     function reanudar() {
         if (!estado.jugando || estado.terminado || !estado.pausado) return;
         estado.pausado = false;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarReanudacion();
         mostrarIndicadorPausa(false);
         actualizarBotonJugarPausa();
         animacionId = requestAnimationFrame(frame);
@@ -581,6 +583,7 @@
     function finalizarPartida(completado) {
         if (estado.terminado) return;
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('estela');
         estado.jugando = false;
         estado.pausado = false;
         if (animacionId) cancelAnimationFrame(animacionId);

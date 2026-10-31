@@ -299,6 +299,7 @@
     function finalizarPartida(completado) {
         if (estado.terminado) return;
         estado.terminado = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('clasifica');
         clearInterval(temporizadorTurno);
         clearInterval(temporizadorAparicion);
         limpiarZona();
