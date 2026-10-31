@@ -1,0 +1,592 @@
+/**
+ * Salta y Reparte — minijuego (lab/salta.html)
+ * Vanilla JS, sin dependencias. Estilo Doodle Jump / Flappy Bird: un
+ * operario de almacén salta de plataforma en plataforma hacia arriba
+ * recogiendo paquetes, sin caerse. Movimiento horizontal con botones
+ * ◀/▶, salto manual con un botón dedicado (no rebote automático al
+ * aterrizar) y botón de pausa — el juego puede alargarse bastante
+ * cuanto más alto se llega, así que conviene poder pausar.
+ *
+ * Física y plataformas en coordenadas propias: X en % del ancho de la
+ * zona (acotado, el eje horizontal es finito), Y en píxeles CSS reales
+ * del "mundo" (el eje vertical es, en la práctica, infinito — se van
+ * generando plataformas nuevas por encima y se eliminan las que
+ * quedan muy por debajo de la cámara). La cámara (desplazamiento
+ * vertical de la zona visible) solo sube, nunca baja, como en el
+ * Doodle Jump original.
+ */
+(function () {
+    'use strict';
+
+    // ── Dificultad ───────────────────────────────────────────────────
+    // anchoPlataforma: % del ancho de la zona que ocupa cada plataforma
+    // (más estrecha, más precisión hace falta). gapYMin/Max: separación
+    // vertical en px entre una plataforma y la siguiente (más grande,
+    // más difícil de alcanzar saltando). probabilidadMovil: fracción de
+    // plataformas que se mueven de lado a lado.
+    const DIFICULTADES = {
+        facil: {
+            nombre: 'Fácil', anchoPlataforma: 26, gapYMin: 70, gapYMax: 105,
+            probabilidadPaquete: 0.4, probabilidadMovil: 0,
+        },
+        medio: {
+            nombre: 'Medio', anchoPlataforma: 19, gapYMin: 90, gapYMax: 125,
+            probabilidadPaquete: 0.45, probabilidadMovil: 0.12,
+        },
+        dificil: {
+            nombre: 'Difícil', anchoPlataforma: 13, gapYMin: 105, gapYMax: 145,
+            probabilidadPaquete: 0.5, probabilidadMovil: 0.26,
+        },
+    };
+
+    const ANCHO_PLATAFORMA_INICIAL = 36;
+    const GRAVEDAD = 0.62; // px/fotograma^2, resta a la velocidad vertical cada fotograma
+    const IMPULSO_SALTO = 14.2; // px/fotograma, velocidad vertical al saltar
+    const VELOCIDAD_HORIZONTAL = 1.55; // % del ancho de la zona por fotograma
+    const ANCHO_JUGADOR_PCT = 11;
+    const MARGEN_ATERRIZAJE_PCT = 2.5; // tolerancia extra al comprobar si el jugador pisa la plataforma
+    const UMBRAL_CAMARA = 0.55; // fracción de la altura de la zona a la que se "pega" el jugador al subir
+    const PUNTOS_POR_PAQUETE = 15;
+
+    const estado = {
+        dificultad: 'medio',
+        x: 50, // % del ancho de la zona (centro del jugador)
+        y: 0, // px del "mundo", pies del jugador
+        vy: 0,
+        moviendoIzquierda: false,
+        moviendoDerecha: false,
+        enSuelo: true,
+        cameraY: 0,
+        maxYGenerado: 0,
+        plataformas: [], // {id, x, y, ancho, movil, rango, centro, velocidad, el, paquete}
+        siguienteIdPlataforma: 1,
+        paquetesRecogidos: 0,
+        puntos: 0,
+        alturaMaxima: 0,
+        terminado: false,
+        jugando: false,
+        pausado: false,
+    };
+
+    let animacionId = null;
+    let zonaAltoPx = 0;
+    let zonaAnchoPx = 0;
+
+    const zona = document.getElementById('jz-zona');
+    const mundo = document.getElementById('jz-mundo');
+    const jugadorEl = document.getElementById('jz-jugador');
+
+    function cfgDificultad() {
+        return DIFICULTADES[estado.dificultad];
+    }
+
+    function medirZona() {
+        const rect = zona.getBoundingClientRect();
+        zonaAnchoPx = rect.width || 1;
+        zonaAltoPx = rect.height || 1;
+    }
+
+    let temporizadorResize = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(temporizadorResize);
+        temporizadorResize = setTimeout(medirZona, 120);
+    });
+    window.addEventListener('orientationchange', () => {
+        medirZona();
+        setTimeout(medirZona, 300);
+    });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            clearTimeout(temporizadorResize);
+            temporizadorResize = setTimeout(medirZona, 120);
+        });
+    }
+    document.addEventListener('om-pantalla-completa-cambio', () => {
+        medirZona();
+        setTimeout(medirZona, 350);
+    });
+
+    // ── Plataformas ──────────────────────────────────────────────────
+
+    function crearPlataforma(xIzquierda, y, ancho, movil) {
+        const el = document.createElement('div');
+        el.className = 'jz-plataforma' + (movil ? ' jz-plataforma--movil' : '');
+        el.style.left = xIzquierda + '%';
+        el.style.width = ancho + '%';
+        mundo.appendChild(el);
+
+        const plataforma = {
+            id: estado.siguienteIdPlataforma++,
+            x: xIzquierda,
+            y,
+            ancho,
+            movil,
+            centro: xIzquierda,
+            rango: movil ? 10 + Math.random() * 12 : 0,
+            fase: Math.random() * Math.PI * 2,
+            el,
+            paquete: null,
+        };
+
+        const cfg = cfgDificultad();
+        if (Math.random() < cfg.probabilidadPaquete) {
+            const paqueteEl = document.createElement('div');
+            paqueteEl.className = 'jz-paquete';
+            paqueteEl.textContent = '📦';
+            mundo.appendChild(paqueteEl);
+            plataforma.paquete = { el: paqueteEl, recogido: false };
+        }
+
+        estado.plataformas.push(plataforma);
+        return plataforma;
+    }
+
+    function generarSiguientesPlataformas() {
+        const cfg = cfgDificultad();
+        const limite = estado.cameraY + zonaAltoPx * 1.6;
+        while (estado.maxYGenerado < limite) {
+            const gap = cfg.gapYMin + Math.random() * (cfg.gapYMax - cfg.gapYMin);
+            const y = estado.maxYGenerado + gap;
+            const ancho = cfg.anchoPlataforma;
+            const xIzquierda = Math.random() * (100 - ancho);
+            const movil = Math.random() < cfg.probabilidadMovil;
+            crearPlataforma(xIzquierda, y, ancho, movil);
+            estado.maxYGenerado = y;
+        }
+    }
+
+    function eliminarPlataformasLejanas() {
+        const umbral = estado.cameraY - 120;
+        for (let i = estado.plataformas.length - 1; i >= 0; i--) {
+            const p = estado.plataformas[i];
+            if (p.y < umbral) {
+                p.el.remove();
+                if (p.paquete) p.paquete.el.remove();
+                estado.plataformas.splice(i, 1);
+            }
+        }
+    }
+
+    function actualizarPlataformasMoviles() {
+        estado.plataformas.forEach((p) => {
+            if (!p.movil) return;
+            p.fase += 0.018;
+            p.x = p.centro + Math.sin(p.fase) * p.rango;
+            if (p.x < 0) p.x = 0;
+            if (p.x > 100 - p.ancho) p.x = 100 - p.ancho;
+            p.el.style.left = p.x + '%';
+            if (p.paquete && !p.paquete.recogido) posicionarPaquete(p);
+        });
+    }
+
+    function posicionarPaquete(p) {
+        p.paquete.el.style.left = (p.x + p.ancho / 2) + '%';
+        p.paquete.el.style.bottom = (p.y - estado.cameraY + 16) + 'px';
+    }
+
+    // ── Dibujado ─────────────────────────────────────────────────────
+
+    function dibujar() {
+        estado.plataformas.forEach((p) => {
+            p.el.style.bottom = (p.y - estado.cameraY) + 'px';
+            p.el.style.left = p.x + '%';
+            if (p.paquete && !p.paquete.recogido) posicionarPaquete(p);
+        });
+
+        jugadorEl.style.left = estado.x + '%';
+        jugadorEl.style.bottom = (estado.y - estado.cameraY) + 'px';
+        jugadorEl.classList.toggle('jz-jugador--cayendo', estado.vy < -2);
+        jugadorEl.classList.toggle('jz-jugador--saltando', estado.vy > 2);
+    }
+
+    // ── Controles ────────────────────────────────────────────────────
+
+    function alPulsarMover(ev) {
+        const dir = ev.currentTarget.dataset.dir;
+        if (dir === '-1') estado.moviendoIzquierda = true;
+        else estado.moviendoDerecha = true;
+    }
+    function alSoltarMover(ev) {
+        const dir = ev.currentTarget.dataset.dir;
+        if (dir === '-1') estado.moviendoIzquierda = false;
+        else estado.moviendoDerecha = false;
+    }
+
+    document.querySelectorAll('.jz-boton-mover').forEach((boton) => {
+        boton.addEventListener('pointerdown', alPulsarMover);
+        boton.addEventListener('pointerup', alSoltarMover);
+        boton.addEventListener('pointercancel', alSoltarMover);
+        boton.addEventListener('pointerleave', alSoltarMover);
+    });
+
+    function saltar() {
+        if (estado.terminado || !estado.jugando || estado.pausado) return;
+        if (!estado.enSuelo) return;
+        estado.vy = IMPULSO_SALTO;
+        estado.enSuelo = false;
+    }
+
+    document.getElementById('jz-boton-saltar').addEventListener('click', saltar);
+
+    document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'ArrowLeft') estado.moviendoIzquierda = true;
+        else if (ev.key === 'ArrowRight') estado.moviendoDerecha = true;
+        else if (ev.key === 'ArrowUp' || ev.key === ' ' || ev.key === 'Spacebar') {
+            ev.preventDefault();
+            saltar();
+        }
+    });
+    document.addEventListener('keyup', (ev) => {
+        if (ev.key === 'ArrowLeft') estado.moviendoIzquierda = false;
+        else if (ev.key === 'ArrowRight') estado.moviendoDerecha = false;
+    });
+
+    // ── Pausa ────────────────────────────────────────────────────────
+
+    function actualizarBotonPausa() {
+        const boton = document.getElementById('jz-boton-pausa');
+        const puedePausar = estado.jugando && !estado.terminado;
+        boton.disabled = !puedePausar;
+        boton.textContent = (estado.pausado || !puedePausar ? '▶' : '⏸') + '︎';
+        boton.setAttribute('aria-label', estado.pausado ? 'Reanudar' : 'Pausar');
+    }
+
+    function mostrarIndicadorPausa(mostrar) {
+        document.getElementById('jz-pausado-indicador').hidden = !mostrar;
+    }
+
+    function pausar() {
+        if (!estado.jugando || estado.terminado || estado.pausado) return;
+        estado.pausado = true;
+        if (animacionId) cancelAnimationFrame(animacionId);
+        animacionId = null;
+        actualizarBotonPausa();
+        mostrarIndicadorPausa(true);
+    }
+
+    function reanudar() {
+        if (!estado.jugando || estado.terminado || !estado.pausado) return;
+        estado.pausado = false;
+        mostrarIndicadorPausa(false);
+        actualizarBotonPausa();
+        animacionId = requestAnimationFrame(frame);
+    }
+
+    function alternarPausa() {
+        if (estado.pausado) reanudar();
+        else pausar();
+    }
+
+    document.getElementById('jz-boton-pausa').addEventListener('click', alternarPausa);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && estado.jugando && !estado.terminado && !estado.pausado) pausar();
+    });
+
+    // ── Bucle principal ──────────────────────────────────────────────
+
+    function comprobarRecogidaPaquetes() {
+        estado.plataformas.forEach((p) => {
+            if (!p.paquete || p.paquete.recogido) return;
+            const centroJugador = estado.x;
+            const centroPaquete = p.x + p.ancho / 2;
+            const distanciaX = Math.abs(centroJugador - centroPaquete);
+            const distanciaY = Math.abs(estado.y - (p.y + 16));
+            if (distanciaX <= ANCHO_JUGADOR_PCT && distanciaY <= 20) {
+                p.paquete.recogido = true;
+                p.paquete.el.classList.add('jz-paquete--recogido');
+                setTimeout(() => p.paquete.el.remove(), 300);
+                estado.paquetesRecogidos++;
+                estado.puntos += PUNTOS_POR_PAQUETE;
+                mostrarFlotante('+' + PUNTOS_POR_PAQUETE, centroPaquete, p.y + 16 - estado.cameraY);
+            }
+        });
+    }
+
+    function mostrarFlotante(texto, xPct, yPx) {
+        const el = document.createElement('span');
+        el.className = 'jz-flotante';
+        el.textContent = texto;
+        el.style.left = xPct + '%';
+        el.style.bottom = yPx + 'px';
+        zona.appendChild(el);
+        setTimeout(() => el.remove(), 650);
+    }
+
+    function frame() {
+        if (estado.terminado || !estado.jugando || estado.pausado) return;
+
+        if (estado.moviendoIzquierda) estado.x -= VELOCIDAD_HORIZONTAL;
+        if (estado.moviendoDerecha) estado.x += VELOCIDAD_HORIZONTAL;
+        if (estado.x < 0) estado.x += 100; // envuelve por los bordes, como el Doodle Jump original
+        if (estado.x > 100) estado.x -= 100;
+
+        const pieAnterior = estado.y;
+        estado.vy -= GRAVEDAD;
+        estado.y += estado.vy;
+
+        if (estado.vy < 0) {
+            for (let i = 0; i < estado.plataformas.length; i++) {
+                const p = estado.plataformas[i];
+                if (p.y > pieAnterior || p.y < estado.y) continue;
+                const mitadJugador = ANCHO_JUGADOR_PCT / 2;
+                const izqJugador = estado.x - mitadJugador;
+                const derJugador = estado.x + mitadJugador;
+                const solapa = derJugador >= (p.x - MARGEN_ATERRIZAJE_PCT) && izqJugador <= (p.x + p.ancho + MARGEN_ATERRIZAJE_PCT);
+                if (solapa) {
+                    estado.y = p.y;
+                    estado.vy = 0;
+                    estado.enSuelo = true;
+                    break;
+                }
+            }
+        }
+
+        if (estado.y > estado.alturaMaxima) estado.alturaMaxima = estado.y;
+
+        const objetivoCamara = estado.y - zonaAltoPx * UMBRAL_CAMARA;
+        if (objetivoCamara > estado.cameraY) estado.cameraY = objetivoCamara;
+
+        actualizarPlataformasMoviles();
+        comprobarRecogidaPaquetes();
+        generarSiguientesPlataformas();
+        eliminarPlataformasLejanas();
+        dibujar();
+
+        if (estado.y < estado.cameraY - 60) {
+            finalizarPartida();
+            return;
+        }
+
+        actualizarVista();
+        animacionId = requestAnimationFrame(frame);
+    }
+
+    // ── Vista / progreso ─────────────────────────────────────────────
+
+    function puntosTotales() {
+        return Math.floor(estado.alturaMaxima / 8) + estado.paquetesRecogidos * PUNTOS_POR_PAQUETE;
+    }
+
+    function actualizarVista() {
+        estado.puntos = puntosTotales();
+        document.getElementById('jz-altura').textContent = Math.floor(estado.alturaMaxima / 10) + ' m';
+        document.getElementById('jz-paquetes').textContent = String(estado.paquetesRecogidos);
+        document.getElementById('jz-puntos').textContent = String(estado.puntos);
+    }
+
+    // ── Dificultad ───────────────────────────────────────────────────
+
+    document.querySelectorAll('.jz-chip-dificultad').forEach((boton) => {
+        boton.addEventListener('click', () => {
+            if (boton.classList.contains('is-activo')) return;
+            document.querySelectorAll('.jz-chip-dificultad').forEach((b) => {
+                b.classList.remove('is-activo');
+                b.setAttribute('aria-checked', 'false');
+            });
+            boton.classList.add('is-activo');
+            boton.setAttribute('aria-checked', 'true');
+            estado.dificultad = boton.dataset.dificultad;
+            nuevaPartida();
+        });
+    });
+
+    // ── Partida ──────────────────────────────────────────────────────
+
+    function limpiarMundo() {
+        estado.plataformas.forEach((p) => {
+            p.el.remove();
+            if (p.paquete) p.paquete.el.remove();
+        });
+        estado.plataformas = [];
+        zona.querySelectorAll('.jz-flotante').forEach((el) => el.remove());
+    }
+
+    function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('salta');
+        if (animacionId) cancelAnimationFrame(animacionId);
+        limpiarMundo();
+        medirZona();
+
+        estado.x = 50;
+        estado.y = 0;
+        estado.vy = 0;
+        estado.moviendoIzquierda = false;
+        estado.moviendoDerecha = false;
+        estado.enSuelo = true;
+        estado.cameraY = 0;
+        estado.maxYGenerado = 0;
+        estado.siguienteIdPlataforma = 1;
+        estado.paquetesRecogidos = 0;
+        estado.puntos = 0;
+        estado.alturaMaxima = 0;
+        estado.terminado = false;
+        estado.jugando = true;
+        estado.pausado = false;
+
+        crearPlataforma(50 - ANCHO_PLATAFORMA_INICIAL / 2, 0, ANCHO_PLATAFORMA_INICIAL, false);
+        estado.maxYGenerado = 0;
+        generarSiguientesPlataformas();
+
+        document.getElementById('jz-celebracion-overlay').hidden = true;
+        document.getElementById('jz-pista').style.display = '';
+        mostrarIndicadorPausa(false);
+        actualizarBotonPausa();
+
+        dibujar();
+        actualizarVista();
+        animacionId = requestAnimationFrame(frame);
+    }
+
+    function finalizarPartida() {
+        if (estado.terminado) return;
+        estado.terminado = true;
+        estado.jugando = false;
+        estado.pausado = false;
+        if (animacionId) cancelAnimationFrame(animacionId);
+        mostrarIndicadorPausa(false);
+        actualizarBotonPausa();
+
+        const metros = Math.floor(estado.alturaMaxima / 10);
+        document.getElementById('jz-celebracion-titulo').textContent = '¡Te has caído!';
+        document.getElementById('jz-celebracion-stat').textContent =
+            `Subiste ${metros} m y recogiste ${estado.paquetesRecogidos} paquetes — ${estado.puntos} puntos`;
+
+        dibujarResultadoEnCanvas();
+        document.getElementById('jz-celebracion-overlay').hidden = false;
+    }
+
+    document.getElementById('jz-boton-reiniciar').addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        nuevaPartida();
+    });
+    document.getElementById('jz-boton-jugar-de-nuevo').addEventListener('click', nuevaPartida);
+
+    // ── Compartir ─────────────────────────────────────────────────────
+
+    const TEXTO_COMPARTIR = '¡He jugado a Salta y Reparte de Orencio Matas y Hnos! 🦘';
+    const URL_SITIO = window.location.href;
+
+    function dibujarResultadoEnCanvas() {
+        const canvasR = document.getElementById('jz-canvas-resultado');
+        const w = 640, h = 360;
+        canvasR.width = w;
+        canvasR.height = h;
+        const ctxR = canvasR.getContext('2d');
+        const metros = Math.floor(estado.alturaMaxima / 10);
+
+        ctxR.fillStyle = '#f2f6fb';
+        ctxR.fillRect(0, 0, w, h);
+        ctxR.fillStyle = '#1a1a1a';
+        ctxR.font = 'bold 26px sans-serif';
+        ctxR.textAlign = 'center';
+        ctxR.fillText('Salta y Reparte 🦘', w / 2, 80);
+
+        ctxR.font = 'bold 48px sans-serif';
+        ctxR.fillStyle = '#1e4b8f';
+        ctxR.fillText(metros + ' m', w / 2, 170);
+
+        ctxR.font = '20px sans-serif';
+        ctxR.fillStyle = '#52555a';
+        ctxR.fillText(`${estado.paquetesRecogidos} paquetes — ${estado.puntos} puntos — ${cfgDificultad().nombre}`, w / 2, 220);
+    }
+
+    async function compartir() {
+        dibujarResultadoEnCanvas();
+        const canvasR = document.getElementById('jz-canvas-resultado');
+        canvasR.toBlob(async (blob) => {
+            if (!blob) return abrirPanelCompartir(null);
+
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'salta-y-reparte.png', { type: 'image/png' })] })) {
+                try {
+                    await navigator.share({
+                        files: [new File([blob], 'salta-y-reparte.png', { type: 'image/png' })],
+                        title: 'Salta y Reparte — Orencio Matas y Hnos',
+                        text: TEXTO_COMPARTIR,
+                    });
+                    return;
+                } catch (err) {
+                    // Cancelado por el usuario u otro fallo — se cae al panel manual.
+                }
+            }
+            abrirPanelCompartir(blob);
+        }, 'image/png');
+    }
+
+    function abrirPanelCompartir(blob) {
+        const overlay = document.getElementById('jz-compartir-overlay');
+        const enlaceDescargar = document.getElementById('jz-boton-descargar');
+        const canvasR = document.getElementById('jz-canvas-resultado');
+
+        if (blob) {
+            enlaceDescargar.href = URL.createObjectURL(blob);
+        } else {
+            enlaceDescargar.href = canvasR.toDataURL('image/png');
+        }
+
+        const texto = encodeURIComponent(TEXTO_COMPARTIR + ' ' + URL_SITIO);
+        document.getElementById('jz-enlace-whatsapp').href = `https://wa.me/?text=${texto}`;
+        document.getElementById('jz-enlace-x').href = `https://twitter.com/intent/tweet?text=${texto}`;
+        document.getElementById('jz-enlace-facebook').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(URL_SITIO)}`;
+
+        overlay.hidden = false;
+    }
+
+    document.getElementById('jz-boton-compartir').addEventListener('click', compartir);
+    document.getElementById('jz-boton-compartir-final').addEventListener('click', compartir);
+    document.getElementById('jz-compartir-cerrar').addEventListener('click', () => {
+        document.getElementById('jz-compartir-overlay').hidden = true;
+    });
+    document.getElementById('jz-compartir-overlay').addEventListener('click', (ev) => {
+        if (ev.target.id === 'jz-compartir-overlay') ev.currentTarget.hidden = true;
+    });
+
+    // ── Marcas aleatorias (sin filtrar, al buscador general) ──────────
+
+    const LOGOS = [
+        '3m', 'akzonobel', 'alvarezgomez', 'ariel', 'arrixaca', 'asevi', 'babaria',
+        'baixens', 'caselli', 'cif', 'cisent', 'compo', 'elmilagrito', 'fairy',
+        'flower', 'gomacamps', 'industrias_beter', 'industrias_betik', 'jofel',
+        'kelsia', 'losdi', 'masso', 'mimosin', 'mora', 'muropapel', 'nespoli',
+        'pentrilo', 'polmeros_del_valls', 'renova', 'ressol', 'sika', 'thomil',
+        'vijusa', 'vileda', 'vinfer',
+    ];
+    const EXTENSIONES = {
+        ariel: 'jpg', arrixaca: 'jpg', asevi: 'jpg', babaria: 'webp', baixens: 'jpg',
+        caselli: 'jpg', cif: 'jpg', elmilagrito: 'png', fairy: 'jpg',
+        gomacamps: 'jpg', industrias_beter: 'jpg', industrias_betik: 'jpg',
+        kelsia: 'webp', losdi: 'jpg', masso: 'webp', mimosin: 'jpg',
+        muropapel: 'jpg', polmeros_del_valls: 'jpg', renova: 'svg', ressol: 'jpg',
+        thomil: 'png', vileda: 'jpg',
+    };
+
+    function rutaLogo(clave) {
+        return `../assets/marcas/logo_${clave}.${EXTENSIONES[clave] || 'png'}`;
+    }
+
+    function pintarMarcasAleatorias() {
+        const cont = document.getElementById('jz-proveedores-grid');
+        const barajadas = LOGOS.slice();
+        for (let i = barajadas.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [barajadas[i], barajadas[j]] = [barajadas[j], barajadas[i]];
+        }
+        cont.innerHTML = '';
+        barajadas.slice(0, 6).forEach((clave) => {
+            const a = document.createElement('a');
+            a.className = 'premium-provider-card';
+            a.href = '../buscador.html';
+            const img = document.createElement('img');
+            img.src = rutaLogo(clave);
+            img.alt = clave.replace(/_/g, ' ');
+            img.loading = 'lazy';
+            a.appendChild(img);
+            cont.appendChild(a);
+        });
+    }
+
+    // ── Arranque ─────────────────────────────────────────────────────
+
+    pintarMarcasAleatorias();
+    nuevaPartida();
+})();
