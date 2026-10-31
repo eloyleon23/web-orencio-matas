@@ -2518,14 +2518,33 @@
            window.OM_PREPRODUCCION, ver el script de control del splash
            más abajo en el <body>; en producción el atributo "hidden"
            del HTML se queda tal cual). Arriba a la derecha para no
-           competir visualmente con el logo centrado. */
+           competir visualmente con el logo centrado.
+           BUG REAL corregido: "display: flex" en el selector de base
+           (.om-splash-cerrar) tenía la MISMA especificidad que la regla
+           por defecto del navegador [hidden]{display:none}, y al estar
+           definida en la hoja de estilos del propio autor (que siempre
+           gana al agente de usuario, sea cual sea la especificidad), el
+           atributo "hidden" quedaba sin efecto — el botón era visible
+           (y pulsable) desde el primer fotograma, incluso en producción
+           y ANTES de que el script que engancha el evento "click" (más
+           abajo, tras cargar entorno.js/mantenimiento.js/perfil-
+           profesional.js) llegara a ejecutarse. Resultado: en
+           producción se veía pero nunca llegaba a funcionar, y en
+           preproducción el primer clic (o varios) caían en una ventana
+           muerta antes de que el listener estuviera enganchado — "no
+           reacciona a la primera, hay que darle varias veces". Mismo
+           tipo de bug ya corregido antes en el indicador de pausa de
+           La Estela de Color (juego-estela.css) — misma solución: el
+           "display" sale de la regla base y pasa a un selector
+           :not([hidden]), que si pierde el empate de especificidad con
+           la regla del navegador (misma especificidad, pero ahora SOLO
+           aplica cuando no está hidden, así que da igual quién gane). */
         .om-splash-cerrar {
             position: absolute;
             top: 20px;
             right: 20px;
             width: 40px;
             height: 40px;
-            display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
@@ -2535,6 +2554,9 @@
             font-size: 1.1rem;
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        }
+        .om-splash-cerrar:not([hidden]) {
+            display: flex;
         }
         .om-splash-cerrar:hover {
             background: #f0efe9;
