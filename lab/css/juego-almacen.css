@@ -474,6 +474,7 @@ a.ja-boton-secundario {
     text-decoration: none;
 }
 
+.ja-boton-compartir,
 .ja-boton-secundario {
     min-height: 50px;
     width: 100%;
