@@ -339,6 +339,7 @@
     // ── Partida ──────────────────────────────────────────────────────
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('estela');
         if (animacionId) cancelAnimationFrame(animacionId);
         clearInterval(temporizadorPigmento);
 

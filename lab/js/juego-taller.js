@@ -742,6 +742,7 @@
     // ── Reiniciar ────────────────────────────────────────────────────
 
     function reiniciarPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('taller');
         ctxPintura.clearRect(0, 0, capaPintura.width, capaPintura.height);
         ctxTrazo.clearRect(0, 0, capaTrazo.width, capaTrazo.height);
         estado.inicioTiempo = null;
@@ -959,4 +960,5 @@
     document.getElementById('jt-desafio-duracion').textContent = Math.round(DURACION_DESAFIO_MS / 1000);
     renderHistorial();
     cargarVehiculo(estado.vehiculo);
+    if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('taller');
 })();

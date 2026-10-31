@@ -287,6 +287,7 @@
     }
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('pedido');
         clearInterval(temporizadorTurno);
         pararTemporizadoresCliente();
 

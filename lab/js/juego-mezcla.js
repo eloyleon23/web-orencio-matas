@@ -229,6 +229,7 @@
     }
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('mezcla-colores');
         actualizarPaletaVisible();
         estado.objetivo = nuevoObjetivo();
         estado.cantidades = {};

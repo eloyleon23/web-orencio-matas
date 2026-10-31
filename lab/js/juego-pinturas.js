@@ -636,6 +636,7 @@
     // ── Reiniciar ────────────────────────────────────────────────────
 
     function reiniciarPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('pinturas');
         ctxPintura.clearRect(0, 0, capaPintura.width, capaPintura.height);
         ctxTrazo.clearRect(0, 0, capaTrazo.width, capaTrazo.height);
         estado.terminado = false;
@@ -790,4 +791,5 @@
     }
 
     cargarEstancia(estado.estancia);
+    if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('pinturas');
 })();

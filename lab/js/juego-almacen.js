@@ -402,6 +402,7 @@
     // ── Partida ──────────────────────────────────────────────────────
 
     function nuevaPartida() {
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('almacen');
         clearInterval(temporizadorCuentaAtras);
         limpiarPersonas();
 
