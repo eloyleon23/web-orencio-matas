@@ -290,22 +290,91 @@ body.om-pantalla-completa-activa .jg-zona {
     left: 50%;
     transform: translateX(-50%);
     width: 17%;
-    aspect-ratio: 2 / 3;
+    aspect-ratio: 2 / 3.3;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    font-size: 2.1rem;
     transition: left 0.03s linear, filter 0.15s ease;
     pointer-events: none;
-    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.25));
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.28));
+}
+
+.jg-frasco__cuello {
+    width: 34%;
+    height: 13%;
+    background: rgba(255, 255, 255, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    flex-shrink: 0;
+}
+
+.jg-frasco__tapon {
+    width: 46%;
+    height: 7%;
+    background: #8a8f98;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.jg-frasco__cuerpo {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    background: rgba(255, 255, 255, 0.25);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.5), inset 0 -4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.jg-frasco__liquido {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 6%;
+    background: linear-gradient(180deg, #f6c445 0%, #e4392c 100%);
+    transition: height 0.3s ease, background 0.3s ease;
+}
+
+.jg-frasco__liquido::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.jg-frasco__brillo {
+    position: absolute;
+    top: 8%;
+    left: 14%;
+    width: 16%;
+    height: 34%;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    filter: blur(1.5px);
+    pointer-events: none;
 }
 
 .jg-frasco--acierto {
     animation: jg-frasco-acierto 0.28s ease;
 }
 
+.jg-frasco--acierto .jg-frasco__liquido {
+    background: linear-gradient(180deg, #7cd9a0 0%, #2f9e6e 100%);
+}
+
 .jg-frasco--fallo {
     animation: jg-frasco-fallo 0.28s ease;
+}
+
+.jg-frasco--fallo .jg-frasco__liquido {
+    background: linear-gradient(180deg, #e0867c 0%, #c0392b 100%);
 }
 
 @keyframes jg-frasco-acierto {

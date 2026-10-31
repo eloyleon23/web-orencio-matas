@@ -36,19 +36,22 @@
         facil: {
             nombre: 'Fácil', tiempoTotal: 60, objetivo: 14, maxSimultaneos: 3,
             intervaloAparicion: 1400, duracionCaidaMin: 3400, duracionCaidaMax: 4300,
-            probabilidadMalo: 0.22, anchoFrasco: 22,
+            probabilidadMalo: 0.22, anchoFrasco: 30,
         },
         medio: {
             nombre: 'Medio', tiempoTotal: 60, objetivo: 20, maxSimultaneos: 4,
             intervaloAparicion: 950, duracionCaidaMin: 2500, duracionCaidaMax: 3300,
-            probabilidadMalo: 0.32, anchoFrasco: 17,
+            probabilidadMalo: 0.32, anchoFrasco: 24,
         },
         dificil: {
             nombre: 'Difícil', tiempoTotal: 65, objetivo: 28, maxSimultaneos: 6,
             intervaloAparicion: 650, duracionCaidaMin: 1700, duracionCaidaMax: 2500,
-            probabilidadMalo: 0.42, anchoFrasco: 13,
+            probabilidadMalo: 0.42, anchoFrasco: 19,
         },
     };
+
+    const NIVEL_INICIAL = 6;
+    const NIVEL_BAJADA_MALO = 9;
 
     // ── Estado ────────────────────────────────────────────────────────
     const estado = {
@@ -62,12 +65,14 @@
         tiempoRestante: 0,
         terminado: false,
         frascoX: 50,
+        nivelFrasco: NIVEL_INICIAL,
     };
 
     let temporizadorTurno = null;
     let temporizadorAparicion = null;
     const zona = document.getElementById('jg-zona');
     const frasco = document.getElementById('jg-frasco');
+    const liquido = document.getElementById('jg-frasco-liquido');
 
     function cfgDificultad() {
         return DIFICULTADES[estado.dificultad];
@@ -152,6 +157,8 @@
         estado.comboMaximo = Math.max(estado.comboMaximo, estado.combo);
         const ganancia = 10 + Math.floor(estado.combo / 3) * 2;
         estado.puntos += ganancia;
+        estado.nivelFrasco = Math.min(100, estado.nivelFrasco + 100 / cfgDificultad().objetivo);
+        actualizarNivelFrasco();
         destellarFrasco('jg-frasco--acierto');
         mostrarFlotante('+' + ganancia, 'jg-flotante--bien', x);
         comprobarVictoria();
@@ -161,8 +168,14 @@
         estado.capturadosMalos++;
         estado.combo = 0;
         estado.puntos = Math.max(0, estado.puntos - 6);
+        estado.nivelFrasco = Math.max(0, estado.nivelFrasco - NIVEL_BAJADA_MALO);
+        actualizarNivelFrasco();
         destellarFrasco('jg-frasco--fallo');
         mostrarFlotante('−6', 'jg-flotante--mal', x);
+    }
+
+    function actualizarNivelFrasco() {
+        if (liquido) liquido.style.height = Math.max(4, estado.nivelFrasco) + '%';
     }
 
     function destellarFrasco(clase) {
@@ -253,9 +266,11 @@
         estado.tiempoRestante = cfg.tiempoTotal;
         estado.terminado = false;
         estado.frascoX = 50;
+        estado.nivelFrasco = NIVEL_INICIAL;
 
         frasco.style.width = cfg.anchoFrasco + '%';
         frasco.style.left = '50%';
+        actualizarNivelFrasco();
 
         document.getElementById('jg-celebracion-overlay').hidden = true;
         document.getElementById('jg-pista').style.display = '';
