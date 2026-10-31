@@ -45,6 +45,7 @@
     const VELOCIDAD_HORIZONTAL = 1.55; // % del ancho de la zona por fotograma
     const ANCHO_JUGADOR_PCT = 11;
     const MARGEN_ATERRIZAJE_PCT = 2.5; // tolerancia extra al comprobar si el jugador pisa la plataforma
+    const ALTO_PLATAFORMA_PX = 14; // debe coincidir con "height" de .jz-plataforma en el CSS
     const UMBRAL_CAMARA = 0.55; // fracción de la altura de la zona a la que se "pega" el jugador al subir
     const PUNTOS_POR_PAQUETE = 15;
 
@@ -193,8 +194,14 @@
             if (p.paquete && !p.paquete.recogido) posicionarPaquete(p);
         });
 
+        // + ALTO_PLATAFORMA_PX: estado.y es la altura "lógica" de la
+        // plataforma (una línea sin grosor a efectos de colisión),
+        // pero la plataforma se dibuja con su superficie superior
+        // ALTO_PLATAFORMA_PX por encima de su propio "bottom" — sin
+        // sumarlo aquí, los pies del operario quedaban a la altura
+        // del borde INFERIOR de la plataforma, hundidos en ella.
         jugadorEl.style.left = estado.x + '%';
-        jugadorEl.style.bottom = (estado.y - estado.cameraY) + 'px';
+        jugadorEl.style.bottom = (estado.y - estado.cameraY + ALTO_PLATAFORMA_PX) + 'px';
         jugadorEl.classList.toggle('jz-jugador--cayendo', estado.vy < -2);
         jugadorEl.classList.toggle('jz-jugador--saltando', estado.vy > 2);
     }
@@ -353,7 +360,15 @@
         eliminarPlataformasLejanas();
         dibujar();
 
-        if (estado.y < estado.cameraY - 60) {
+        // Importante: la comprobación es relativa a la PANTALLA (y -
+        // cameraY, lo mismo que se usa para pintar "bottom"), no al
+        // valor bruto de cameraY — cameraY ya está medio-monitor por
+        // debajo del punto más alto alcanzado (ver UMBRAL_CAMARA), así
+        // que comparar estado.y directamente contra él dejaba caer al
+        // jugador bastante más de media pantalla fuera de la vista
+        // antes de terminar la partida.
+        const yEnPantalla = estado.y - estado.cameraY;
+        if (yEnPantalla < -60) {
             finalizarPartida();
             return;
         }

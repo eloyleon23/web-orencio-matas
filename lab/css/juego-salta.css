@@ -190,7 +190,13 @@
     position: absolute;
     width: 11%;
     aspect-ratio: 1 / 1.3;
-    transform: translate(-50%, 100%);
+    /* "bottom" ya coloca el borde inferior de la caja en estado.y -
+       cameraY; solo hace falta centrar en horizontal. Un translateY
+       extra aquí desplazaría la caja hacia abajo de su propia altura,
+       dejando al operario "hundido" bajo la línea de la plataforma
+       en vez de de pie encima. */
+    transform: translateX(-50%);
+    transform-origin: center bottom;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -201,11 +207,11 @@
 }
 
 .jz-jugador--saltando {
-    transform: translate(-50%, 100%) scale(1.05);
+    transform: translateX(-50%) scale(1.05);
 }
 
 .jz-jugador--cayendo {
-    transform: translate(-50%, 100%) scale(0.95, 1.08);
+    transform: translateX(-50%) scale(0.95, 1.08);
 }
 
 .jz-boton-reiniciar {
