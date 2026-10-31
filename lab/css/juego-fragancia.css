@@ -487,6 +487,7 @@ a.jg-boton-secundario {
     text-decoration: none;
 }
 
+.jg-boton-compartir,
 .jg-boton-secundario {
     min-height: 50px;
     width: 100%;

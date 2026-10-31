@@ -556,6 +556,7 @@ a.jt-boton-secundario {
     text-decoration: none;
 }
 
+.jt-boton-compartir,
 .jt-boton-secundario {
     min-height: 50px;
     width: 100%;

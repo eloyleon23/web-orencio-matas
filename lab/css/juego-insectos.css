@@ -371,6 +371,7 @@ a.ji-boton-secundario {
     text-decoration: none;
 }
 
+.ji-boton-compartir,
 .ji-boton-secundario {
     min-height: 50px;
     width: 100%;

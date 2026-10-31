@@ -233,7 +233,26 @@
             if (ev.target === overlay) overlay.remove();
         });
 
-        document.body.appendChild(overlay);
+        contenedorParaOverlay_().appendChild(overlay);
+    }
+
+    // En pantalla completa (nativa o simulada — ver lab/js/pantalla-
+    // completa.js) un overlay colgado de <body> no se ve: en
+    // fullscreen nativo, todo lo que no es descendiente del elemento
+    // en pantalla completa (<main>) queda fuera de la "capa superior"
+    // del navegador; en el modo simulado, el propio <main> maximizado
+    // tiene z-index más alto (400) que esta modal (300) y la tapa por
+    // encima. pantalla-completa.js ya resuelve esto para las modales
+    // de celebración/compartir "mudándolas" a <main> mientras dura la
+    // pantalla completa — pero esta modal se crea sobre la marcha
+    // (solo cada 8 partidas) y nunca pasa por ese mecanismo, así que
+    // hay que decidir el contenedor correcto en el momento de crearla.
+    function contenedorParaOverlay_() {
+        const main = document.querySelector('main');
+        if (!main) return document.body;
+        const enFullscreenNativo = (document.fullscreenElement || document.webkitFullscreenElement) === main;
+        const enFullscreenSimulado = main.classList.contains('om-pantalla-completa-simulada');
+        return (enFullscreenNativo || enFullscreenSimulado) ? main : document.body;
     }
 
     function registrarPartida(clave) {
