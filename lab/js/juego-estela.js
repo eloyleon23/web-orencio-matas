@@ -35,6 +35,15 @@
     const RADIO_RECOGIDA = 4.2;
     const CLAVE_SESION = 'om_estela_guardado';
 
+    // Arranca siempre desde una esquina (aquí, la superior izquierda)
+    // en vez del centro, para que el jugador tenga todo el lienzo por
+    // delante y pueda llegar a cubrirlo entero; empieza moviéndose
+    // hacia la derecha, pegada al borde superior.
+    const INICIO_X = 10;
+    const INICIO_Y = 10;
+    const INICIO_DX = 1;
+    const INICIO_DY = 0;
+
     // ── Dificultad ───────────────────────────────────────────────────
     const DIFICULTADES = {
         facil: {
@@ -67,8 +76,8 @@
     // ── Estado ────────────────────────────────────────────────────────
     const estado = {
         dificultad: 'medio',
-        x: GW / 2, y: 10,
-        dx: 0, dy: 1, // dirección actual: un vector cardinal unitario
+        x: INICIO_X, y: INICIO_Y,
+        dx: INICIO_DX, dy: INICIO_DY, // dirección actual: un vector cardinal unitario
         colorActual: COLOR_INICIAL.slice(),
         celdas: null, // Int32Array: fotograma en que se pintó cada celda, -1 = sin pintar
         celdasPintadas: 0,
@@ -217,7 +226,10 @@
         if (!boton) return;
         const puedePausar = estado.jugando && !estado.terminado;
         boton.disabled = !puedePausar;
-        boton.textContent = estado.pausado || !puedePausar ? '▶' : '⏸';
+        // El ︎ fuerza presentación de texto monocromo: sin él, iOS
+        // renderiza ▶ como un icono de "play" a color distinto del
+        // resto de botones de la cruceta (⏸ y ▲▼◀▶ sí quedan en texto).
+        boton.textContent = (estado.pausado || !puedePausar ? '▶' : '⏸') + '︎';
         boton.setAttribute('aria-label', estado.pausado ? 'Reanudar' : 'Pausar');
     }
 
@@ -535,10 +547,10 @@
         clearInterval(temporizadorPigmento);
         borrarEstadoGuardado();
 
-        estado.x = GW / 2;
-        estado.y = 10;
-        estado.dx = 0;
-        estado.dy = 1;
+        estado.x = INICIO_X;
+        estado.y = INICIO_Y;
+        estado.dx = INICIO_DX;
+        estado.dy = INICIO_DY;
         estado.colorActual = COLOR_INICIAL.slice();
         estado.celdas = new Int32Array(GW * GH).fill(-1);
         estado.celdasPintadas = 0;
