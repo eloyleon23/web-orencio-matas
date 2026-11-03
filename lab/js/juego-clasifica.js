@@ -28,7 +28,7 @@
         { icono: '💄', nombre: 'Maquillaje', area: 'perfumeria' },
         { icono: '🎨', nombre: 'Pintura de pared', area: 'pinturas' },
         { icono: '🖌️', nombre: 'Brocha', area: 'pinturas' },
-        { icono: '🧻', nombre: 'Rodillo', area: 'pinturas' },
+        { icono: '🖍️', nombre: 'Rodillo', area: 'pinturas' },
         { icono: '🪵', nombre: 'Barniz', area: 'pinturas' },
         { icono: '🟫', nombre: 'Lija', area: 'talleres' },
         { icono: '🫧', nombre: 'Pulimento', area: 'talleres' },
