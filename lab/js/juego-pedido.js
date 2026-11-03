@@ -330,6 +330,7 @@
             completado
                 ? `Atendiste a los ${cfg.clientesObjetivo} clientes — ${estado.puntos} puntos, combo máximo x${estado.comboMaximo}`
                 : `Atendiste a ${estado.clientesAtendidos}/${cfg.clientesObjetivo} clientes (${pct}%) — ${estado.puntos} puntos`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('pedido', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('jd-celebracion-overlay').hidden = false;

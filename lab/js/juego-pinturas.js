@@ -677,6 +677,7 @@
 
         document.getElementById('jp-celebracion-stat').textContent =
             `Pintaste el ${estado.porcentaje}% de la estancia`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('pinturas', { valor: estado.porcentaje, texto: estado.porcentaje + '%' });
 
         const resultado = document.getElementById('jp-canvas-resultado');
         resultado.width = lienzoVisible.width;

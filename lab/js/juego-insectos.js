@@ -288,6 +288,7 @@
             limpiado
                 ? `Despejaste todos los bichos en ${formatoTiempo(cfg.tiempoTotal - estado.tiempoRestante)}`
                 : `Despejaste el ${pct}% de los bichos (${estado.matados}/${cfg.totalInsectos})`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('insectos', { valor: pct, texto: pct + '%' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('ji-celebracion-overlay').hidden = false;

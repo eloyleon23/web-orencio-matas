@@ -601,6 +601,7 @@
             completado
                 ? `Cubriste el ${coberturaPct}% del lienzo — ${estado.puntos} puntos, ${estado.pigmentosRecogidos} pigmentos`
                 : `Cubriste el ${coberturaPct}%/${cfg.objetivoCobertura}% del lienzo — ${estado.puntos} puntos`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('estela', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('je-celebracion-overlay').hidden = false;

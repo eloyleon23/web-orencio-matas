@@ -291,6 +291,7 @@
             completado
                 ? `${capasColocadas} capas — ${estado.euros.toFixed(2).replace('.', ',')} € cargados, combo máximo x${estado.comboMaximo}`
                 : `${capasColocadas}/${cfg.objetivo} capas (${pct}%) — ${estado.euros.toFixed(2).replace('.', ',')} € cargados`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('apila', { valor: pct, texto: capasColocadas + ' capas' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('jq-celebracion-overlay').hidden = false;

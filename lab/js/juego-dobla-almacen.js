@@ -453,6 +453,7 @@
         document.getElementById('jy-celebracion-titulo').textContent = resultado.titulo;
         document.getElementById('jy-celebracion-stat').textContent =
             `${estado.puntos} puntos — mejor caja ${estado.mejorFicha} — ${cfgDificultad().nombre}`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('dobla-almacen', { valor: estado.puntos, texto: estado.puntos + ' puntos (caja ' + estado.mejorFicha + ')' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('jy-celebracion-overlay').hidden = false;

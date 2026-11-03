@@ -464,6 +464,7 @@
 
         document.getElementById('jl-celebracion-stat').textContent =
             `Dejaste la superficie al ${estado.porcentaje}% de limpieza`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('limpieza', { valor: estado.porcentaje, texto: estado.porcentaje + '%' });
 
         const resultado = document.getElementById('jl-canvas-resultado');
         resultado.width = lienzoVisible.width;

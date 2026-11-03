@@ -337,6 +337,7 @@
         if (estado.terminado) return;
         estado.terminado = true;
         if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('a-toda-cinta');
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('a-toda-cinta', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
         clearInterval(temporizadorTurno);
         clearInterval(temporizadorAparicion);
         limpiarZona();

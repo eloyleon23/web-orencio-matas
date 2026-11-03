@@ -294,6 +294,7 @@
 
         document.getElementById('jm-celebracion-titulo').textContent = mensajeParaPct(pct);
         document.getElementById('jm-celebracion-stat').textContent = `Un ${pct}% de parecido con el color objetivo`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('mezcla-colores', { valor: pct, texto: pct + '%' });
         document.getElementById('jm-resultado-objetivo').style.background = rgbACss(estado.objetivo);
         document.getElementById('jm-resultado-mezcla').style.background = rgbACss(mezcla);
 

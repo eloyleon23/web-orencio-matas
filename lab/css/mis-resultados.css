@@ -1,0 +1,44 @@
+/* "Tus resultados" — panel inyectado por lab/js/mejores-resultados.js
+   justo debajo de la cabecera de cada minijuego, con el mejor
+   resultado y el de la última partida guardados en este navegador.
+   Compartido por todos los juegos de lab/ — prefijo om- para no
+   chocar con las clases jX- de cada uno; colores planos (no usa las
+   variables --jx-*/--jk-* de cada juego, que no existen aquí). */
+
+.om-mis-resultados {
+    max-width: 1100px;
+    margin: 14px auto 0;
+    padding: 0 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+}
+
+.om-mis-resultados[hidden] {
+    display: none;
+}
+
+.om-mis-resultados__fila {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #52555a;
+    background: #f7f6f4;
+    border: 1px solid #e2e2e4;
+    border-radius: 999px;
+    padding: 6px 14px;
+}
+
+.om-mis-resultados__fila strong {
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
+.om-mis-resultados__fecha {
+    color: #8a8d92;
+}
+
+@media (min-width: 900px) {
+    .om-mis-resultados {
+        padding: 0 24px;
+    }
+}

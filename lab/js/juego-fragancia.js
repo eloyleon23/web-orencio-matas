@@ -298,6 +298,7 @@
             completado
                 ? `Reuniste los ${cfg.objetivo} ingredientes — ${estado.puntos} puntos, combo máximo x${estado.comboMaximo}`
                 : `Reuniste ${estado.capturadosBuenos}/${cfg.objetivo} ingredientes (${pct}%) — ${estado.puntos} puntos`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('fragancia', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('jg-celebracion-overlay').hidden = false;

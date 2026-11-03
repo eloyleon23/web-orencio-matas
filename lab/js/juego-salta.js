@@ -812,6 +812,7 @@
         document.getElementById('jz-celebracion-titulo').textContent = '¡Te has caído!';
         document.getElementById('jz-celebracion-stat').textContent =
             `Subiste ${metros} m y recogiste ${estado.paquetesRecogidos} paquetes — ${estado.puntos} puntos`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('salta', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('jz-celebracion-overlay').hidden = false;
