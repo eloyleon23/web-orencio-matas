@@ -146,7 +146,8 @@ body {
     margin-bottom: 10px;
 }
 
-.jx-chip-dificultad {
+.jx-chip-dificultad,
+.jx-chip-modo {
     flex: 1 1 calc(33.33% - 6px);
     min-height: 44px;
     display: flex;
@@ -164,7 +165,8 @@ body {
     transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.jx-chip-dificultad.is-activo {
+.jx-chip-dificultad.is-activo,
+.jx-chip-modo.is-activo {
     background: var(--jx-negro);
     border-color: var(--jx-negro);
     color: var(--jx-blanco);
@@ -370,6 +372,21 @@ body {
     font-size: 0.78rem;
     color: var(--jx-gris-texto);
     text-align: center;
+}
+
+.jx-objetivo-modo {
+    margin: 0 0 10px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--jx-gris-fondo);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--jx-gris-texto);
+    text-align: center;
+}
+
+.jx-objetivo-modo:not([hidden]) {
+    display: block;
 }
 
 /* ── Panel de controles ─────────────────────────────────────────────── */

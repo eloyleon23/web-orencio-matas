@@ -1,37 +1,43 @@
 /**
- * Triple Combo — minijuego (lab/triple-combo.html)
+ * Combina el Surtido — minijuego (lab/triple-combo.html)
  * Vanilla JS, sin dependencias. Match-3 clásico: toca una ficha y
  * luego una ficha vecina para intercambiarlas; si el intercambio
  * forma una línea de 3 o más productos iguales (en horizontal o
  * vertical) se eliminan, las de arriba caen por gravedad y se
  * rellenan los huecos — si eso genera una nueva línea sin que el
  * jugador haga nada, se encadena como combo (más puntos por cada
- * nivel de la cadena). Contrarreloj: la partida termina al agotarse
- * el tiempo, no por completar un objetivo — pensado para partidas
- * cortas y la tentación de "una más" para superar la puntuación
- * anterior.
+ * nivel de la cadena). Dos modos: contrarreloj (la partida termina
+ * al agotarse el tiempo) o meta de puntos (termina al alcanzar el
+ * objetivo, y la puntuación final es el tiempo tardado en
+ * conseguirlo). Según se avanza en puntos, se van introduciendo
+ * nuevos productos en juego para mantener la partida fresca.
  */
 (function () {
     'use strict';
 
-    // Iconos de producto como fichas — droguería, perfumería y
-    // pinturas, visualmente bien diferenciables entre sí.
-    const TOKENS = ['🧴', '🧼', '🧽', '🎨', '🖌️', '🪣'];
+    // Iconos de producto como fichas — droguería, perfumería,
+    // pinturas y distribución, visualmente bien diferenciables entre
+    // sí. Los 4 últimos se introducen progresivamente según avanza la
+    // partida (ver comprobarIntroduccionTipos).
+    const TOKENS = ['🧴', '🧼', '🧽', '🎨', '🖌️', '🪣', '📦', '🧺', '🚚', '🔧'];
 
     const DIFICULTADES = {
-        facil: { nombre: 'Fácil', columnas: 6, filas: 7, tipos: 4, tiempoTotal: 75 },
-        medio: { nombre: 'Medio', columnas: 7, filas: 8, tipos: 5, tiempoTotal: 60 },
-        dificil: { nombre: 'Difícil', columnas: 8, filas: 9, tipos: 6, tiempoTotal: 50 },
+        facil: { nombre: 'Fácil', columnas: 6, filas: 7, tipos: 4, tiposMax: 6, tiempoTotal: 75, objetivoPuntos: 400 },
+        medio: { nombre: 'Medio', columnas: 7, filas: 8, tipos: 5, tiposMax: 8, tiempoTotal: 60, objetivoPuntos: 600 },
+        dificil: { nombre: 'Difícil', columnas: 8, filas: 9, tipos: 6, tiposMax: 10, tiempoTotal: 50, objetivoPuntos: 850 },
     };
 
     const PUNTOS_POR_FICHA = 10;
     // Cada cuántos puntos se premia con un aviso — para que la partida
     // dé gratificación según se avanza, no solo al final.
     const INTERVALO_HITO_PUNTOS = 150;
+    // Cada cuántos puntos se desbloquea un nuevo producto en juego.
+    const INTERVALO_INTRODUCCION_TIPOS = 200;
     const GAP = 4; // separación visual entre fichas, en px
 
     const estado = {
         dificultad: 'medio',
+        modo: 'contrarreloj', // 'contrarreloj' | 'meta'
         columnas: 0,
         filas: 0,
         cuadricula: [], // cuadricula[fila][col] = { tipo, el } o null mientras se resuelve
@@ -40,8 +46,12 @@
         puntos: 0,
         mejorCombo: 1,
         siguienteHitoPuntos: INTERVALO_HITO_PUNTOS,
-        tiempoRestante: 0,
+        tiposActivos: 4,
+        siguienteIntroTipos: INTERVALO_INTRODUCCION_TIPOS,
+        tiempoRestante: 0, // modo contrarreloj: cuenta atrás
         tiempoTotal: 0,
+        tiempoTranscurrido: 0, // modo meta: cuenta hacia arriba
+        objetivoPuntos: 0,
         terminado: false,
         jugando: false,
         pausado: false,
@@ -158,7 +168,7 @@
     function reconstruirFichas() {
         tablero.innerHTML = '';
         const cfg = cfgDificultad();
-        const matriz = generarMatrizSinMatches(cfg.filas, cfg.columnas, cfg.tipos);
+        const matriz = generarMatrizSinMatches(cfg.filas, cfg.columnas, estado.tiposActivos);
         estado.cuadricula = matriz.map((filaArr) => filaArr.map((tipo) => {
             const el = crearFichaEl(tipo);
             tablero.appendChild(el);
@@ -269,6 +279,7 @@
     }
 
     function resolverCascada(nivelCombo) {
+        if (estado.terminado) return;
         const matches = encontrarTodosLosMatches();
 
         if (matches.length === 0) {
@@ -299,7 +310,9 @@
 
         estado.puntos += matches.length * PUNTOS_POR_FICHA * nivelCombo;
         comprobarHitoPuntos();
+        comprobarIntroduccionTipos();
         actualizarVista();
+        comprobarObjetivoMeta();
 
         if (nivelCombo >= 2) mostrarLogro('¡Combo x' + nivelCombo + '!');
 
@@ -318,7 +331,7 @@
             });
             aplicarGravedad();
             rellenarHuecos();
-            setTimeout(() => resolverCascada(nivelCombo + 1), 180);
+            if (!estado.terminado) setTimeout(() => resolverCascada(nivelCombo + 1), 180);
         }, 180);
     }
 
@@ -340,7 +353,6 @@
     }
 
     function rellenarHuecos() {
-        const cfg = cfgDificultad();
         for (let c = 0; c < estado.columnas; c++) {
             // Tras aplicarGravedad() los huecos de cada columna quedan
             // SIEMPRE contiguos desde la fila 0 — en cuanto se
@@ -348,7 +360,7 @@
             // encima en esa columna.
             for (let f = 0; f < estado.filas; f++) {
                 if (estado.cuadricula[f][c]) break;
-                const tipo = Math.floor(Math.random() * cfg.tipos);
+                const tipo = Math.floor(Math.random() * estado.tiposActivos);
                 const el = crearFichaEl(tipo);
                 el.classList.add('jx-ficha--nueva');
                 tablero.appendChild(el);
@@ -422,13 +434,38 @@
         estado.siguienteHitoPuntos += INTERVALO_HITO_PUNTOS;
     }
 
+    // Introduce un nuevo producto en juego cada cierto número de
+    // puntos, hasta el máximo de la dificultad actual — mantiene la
+    // partida dinámica en vez de jugarse siempre con el mismo puñado
+    // de fichas.
+    function comprobarIntroduccionTipos() {
+        const cfg = cfgDificultad();
+        if (estado.tiposActivos >= cfg.tiposMax) return;
+        if (estado.puntos < estado.siguienteIntroTipos) return;
+        estado.tiposActivos++;
+        estado.siguienteIntroTipos += INTERVALO_INTRODUCCION_TIPOS;
+        mostrarLogro('¡Nuevo producto: ' + TOKENS[estado.tiposActivos - 1] + '!');
+    }
+
+    function comprobarObjetivoMeta() {
+        if (estado.modo !== 'meta' || estado.terminado) return;
+        if (estado.puntos >= estado.objetivoPuntos) finalizarPartida();
+    }
+
     // ── Vista / progreso ─────────────────────────────────────────────
 
     function actualizarVista() {
         document.getElementById('jx-puntos').textContent = String(estado.puntos);
         document.getElementById('jx-mejor-combo').textContent = 'x' + estado.mejorCombo;
-        document.getElementById('jx-tiempo').textContent = formatoTiempo(estado.tiempoRestante);
-        const pct = estado.tiempoTotal > 0 ? Math.max(0, Math.round((estado.tiempoRestante / estado.tiempoTotal) * 100)) : 0;
+
+        let pct;
+        if (estado.modo === 'meta') {
+            document.getElementById('jx-tiempo').textContent = formatoTiempo(estado.tiempoTranscurrido);
+            pct = estado.objetivoPuntos > 0 ? Math.min(100, Math.round((estado.puntos / estado.objetivoPuntos) * 100)) : 0;
+        } else {
+            document.getElementById('jx-tiempo').textContent = formatoTiempo(estado.tiempoRestante);
+            pct = estado.tiempoTotal > 0 ? Math.max(0, Math.round((estado.tiempoRestante / estado.tiempoTotal) * 100)) : 0;
+        }
         document.getElementById('jx-barra-tiempo-relleno').style.width = pct + '%';
         document.getElementById('jx-barra-tiempo').setAttribute('aria-valuenow', String(pct));
     }
@@ -440,6 +477,11 @@
     }
 
     function tick() {
+        if (estado.modo === 'meta') {
+            estado.tiempoTranscurrido++;
+            actualizarVista();
+            return;
+        }
         estado.tiempoRestante--;
         actualizarVista();
         if (estado.tiempoRestante <= 0) finalizarPartida();
@@ -457,6 +499,22 @@
             boton.classList.add('is-activo');
             boton.setAttribute('aria-checked', 'true');
             estado.dificultad = boton.dataset.dificultad;
+            nuevaPartida();
+        });
+    });
+
+    // ── Modo de juego ────────────────────────────────────────────────
+
+    document.querySelectorAll('.jx-chip-modo').forEach((boton) => {
+        boton.addEventListener('click', () => {
+            if (boton.classList.contains('is-activo')) return;
+            document.querySelectorAll('.jx-chip-modo').forEach((b) => {
+                b.classList.remove('is-activo');
+                b.setAttribute('aria-checked', 'false');
+            });
+            boton.classList.add('is-activo');
+            boton.setAttribute('aria-checked', 'true');
+            estado.modo = boton.dataset.modo;
             nuevaPartida();
         });
     });
@@ -514,8 +572,12 @@
         estado.puntos = 0;
         estado.mejorCombo = 1;
         estado.siguienteHitoPuntos = INTERVALO_HITO_PUNTOS;
+        estado.tiposActivos = cfg.tipos;
+        estado.siguienteIntroTipos = INTERVALO_INTRODUCCION_TIPOS;
         estado.tiempoTotal = cfg.tiempoTotal;
         estado.tiempoRestante = cfg.tiempoTotal;
+        estado.tiempoTranscurrido = 0;
+        estado.objetivoPuntos = cfg.objetivoPuntos;
         estado.terminado = false;
         estado.jugando = true;
         estado.pausado = false;
@@ -526,6 +588,11 @@
         document.getElementById('jx-pista').style.display = '';
         mostrarIndicadorPausa(false);
         actualizarBotonPausa();
+
+        const esMeta = estado.modo === 'meta';
+        document.getElementById('jx-objetivo-modo').hidden = !esMeta;
+        document.getElementById('jx-objetivo-valor').textContent = String(cfg.objetivoPuntos);
+        document.getElementById('jx-etiqueta-tiempo').textContent = 'tiempo';
 
         construirTablero();
         actualizarVista();
@@ -550,10 +617,17 @@
         mostrarIndicadorPausa(false);
         actualizarBotonPausa();
 
-        const resultado = mensajeFinal(estado.puntos);
+        const esMeta = estado.modo === 'meta';
+        let resultado;
+        if (esMeta) {
+            resultado = { titulo: '¡Meta conseguida! 🎯', celebrar: true };
+        } else {
+            resultado = mensajeFinal(estado.puntos);
+        }
         document.getElementById('jx-celebracion-titulo').textContent = resultado.titulo;
-        document.getElementById('jx-celebracion-stat').textContent =
-            `${estado.puntos} puntos — mejor combo x${estado.mejorCombo} — ${cfgDificultad().nombre}`;
+        document.getElementById('jx-celebracion-stat').textContent = esMeta
+            ? `${estado.objetivoPuntos} puntos en ${formatoTiempo(estado.tiempoTranscurrido)} — mejor combo x${estado.mejorCombo} — ${cfgDificultad().nombre}`
+            : `${estado.puntos} puntos — mejor combo x${estado.mejorCombo} — ${cfgDificultad().nombre}`;
 
         dibujarResultadoEnCanvas();
         document.getElementById('jx-celebracion-overlay').hidden = false;
@@ -585,7 +659,7 @@
 
     // ── Compartir ─────────────────────────────────────────────────────
 
-    const TEXTO_COMPARTIR = '¡He jugado a Triple Combo de Orencio Matas y Hnos! 🧩';
+    const TEXTO_COMPARTIR = '¡He jugado a Combina el Surtido de Orencio Matas y Hnos! 🧩';
     const URL_SITIO = window.location.href;
 
     function dibujarResultadoEnCanvas() {
@@ -594,21 +668,27 @@
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
+        const esMeta = estado.modo === 'meta';
 
         ctx.fillStyle = '#f7f6f4';
         ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = '#1a1a1a';
         ctx.font = 'bold 26px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Triple Combo 🧩', w / 2, 90);
+        ctx.fillText('Combina el Surtido 🧩', w / 2, 90);
 
         ctx.font = 'bold 54px sans-serif';
         ctx.fillStyle = '#d91b1b';
-        ctx.fillText(String(estado.puntos), w / 2, 190);
+        ctx.fillText(esMeta ? formatoTiempo(estado.tiempoTranscurrido) : String(estado.puntos), w / 2, 190);
 
         ctx.font = '20px sans-serif';
         ctx.fillStyle = '#52555a';
-        ctx.fillText(`puntos — mejor combo x${estado.mejorCombo} — ${cfgDificultad().nombre}`, w / 2, 240);
+        ctx.fillText(
+            esMeta
+                ? `${estado.objetivoPuntos} puntos — mejor combo x${estado.mejorCombo} — ${cfgDificultad().nombre}`
+                : `puntos — mejor combo x${estado.mejorCombo} — ${cfgDificultad().nombre}`,
+            w / 2, 240
+        );
     }
 
     async function compartir() {
@@ -617,11 +697,11 @@
         canvas.toBlob(async (blob) => {
             if (!blob) return abrirPanelCompartir(null);
 
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'triple-combo.png', { type: 'image/png' })] })) {
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'combina-el-surtido.png', { type: 'image/png' })] })) {
                 try {
                     await navigator.share({
-                        files: [new File([blob], 'triple-combo.png', { type: 'image/png' })],
-                        title: 'Triple Combo — Orencio Matas y Hnos',
+                        files: [new File([blob], 'combina-el-surtido.png', { type: 'image/png' })],
+                        title: 'Combina el Surtido — Orencio Matas y Hnos',
                         text: TEXTO_COMPARTIR,
                     });
                     return;
