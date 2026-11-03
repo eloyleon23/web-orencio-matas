@@ -164,11 +164,14 @@
         setTimeout(() => input.focus(), 50);
     }
 
-    function cargarEstadisticas(pin) {
+    function cargarEstadisticas(pin, fechaInicio, fechaFin) {
+        const cuerpo = { accion: 'obtener_estadisticas_juegos', pin };
+        if (fechaInicio) cuerpo.fechaInicio = fechaInicio;
+        if (fechaFin) cuerpo.fechaFin = fechaFin;
         return fetch(urlBackend(), {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ accion: 'obtener_estadisticas_juegos', pin }),
+            body: JSON.stringify(cuerpo),
         })
             .then((r) => r.json())
             .then((d) => {
@@ -250,12 +253,88 @@
         return seccion;
     }
 
-    function mostrarPanelEstadisticas(datos, pin) {
+    // Filtro de fecha — { fechaInicio, fechaFin } en formato "YYYY-MM-DD"
+    // (el que dan los <input type="date">), o null/campos vacíos si no
+    // hay filtro activo (se muestra todo el histórico).
+    function mostrarPanelEstadisticas(datos, pin, filtro) {
         const panel = crearOverlay(true);
 
         const titulo = document.createElement('h2');
         titulo.textContent = 'Estadísticas de Espacio Creativo';
         panel.appendChild(titulo);
+
+        const filtroDiv = document.createElement('div');
+        filtroDiv.className = 'om-stats-filtro';
+
+        const campoInicio = document.createElement('label');
+        campoInicio.className = 'om-stats-filtro__campo';
+        campoInicio.textContent = 'Desde';
+        const inputInicio = document.createElement('input');
+        inputInicio.type = 'date';
+        inputInicio.className = 'om-stats-filtro__input';
+        inputInicio.value = (filtro && filtro.fechaInicio) || '';
+        campoInicio.appendChild(inputInicio);
+
+        const campoFin = document.createElement('label');
+        campoFin.className = 'om-stats-filtro__campo';
+        campoFin.textContent = 'Hasta';
+        const inputFin = document.createElement('input');
+        inputFin.type = 'date';
+        inputFin.className = 'om-stats-filtro__input';
+        inputFin.value = (filtro && filtro.fechaFin) || '';
+        campoFin.appendChild(inputFin);
+
+        const botonFiltrar = document.createElement('button');
+        botonFiltrar.type = 'button';
+        botonFiltrar.className = 'om-stats-boton om-stats-boton--secundario';
+        botonFiltrar.textContent = 'Filtrar';
+
+        const errorFiltro = document.createElement('p');
+        errorFiltro.className = 'om-stats-error';
+
+        function aplicarFiltro() {
+            const nuevoFiltro = { fechaInicio: inputInicio.value, fechaFin: inputFin.value };
+            if (nuevoFiltro.fechaInicio && nuevoFiltro.fechaFin && nuevoFiltro.fechaInicio > nuevoFiltro.fechaFin) {
+                errorFiltro.textContent = 'La fecha "desde" no puede ser posterior a "hasta".';
+                return;
+            }
+            errorFiltro.textContent = '';
+            botonFiltrar.disabled = true;
+            botonFiltrar.textContent = 'Filtrando…';
+            cargarEstadisticas(pin, nuevoFiltro.fechaInicio, nuevoFiltro.fechaFin)
+                .then((d) => mostrarPanelEstadisticas(d, pin, nuevoFiltro))
+                .catch((err) => {
+                    errorFiltro.textContent = err.message || 'No se pudo aplicar el filtro.';
+                    botonFiltrar.disabled = false;
+                    botonFiltrar.textContent = 'Filtrar';
+                });
+        }
+
+        botonFiltrar.addEventListener('click', aplicarFiltro);
+
+        filtroDiv.appendChild(campoInicio);
+        filtroDiv.appendChild(campoFin);
+        filtroDiv.appendChild(botonFiltrar);
+
+        if (filtro && (filtro.fechaInicio || filtro.fechaFin)) {
+            const botonQuitar = document.createElement('button');
+            botonQuitar.type = 'button';
+            botonQuitar.className = 'om-stats-boton om-stats-boton--secundario';
+            botonQuitar.textContent = 'Quitar filtro';
+            botonQuitar.addEventListener('click', () => {
+                botonQuitar.disabled = true;
+                cargarEstadisticas(pin)
+                    .then((d) => mostrarPanelEstadisticas(d, pin, null))
+                    .catch((err) => {
+                        errorFiltro.textContent = err.message || 'No se pudo quitar el filtro.';
+                        botonQuitar.disabled = false;
+                    });
+            });
+            filtroDiv.appendChild(botonQuitar);
+        }
+
+        panel.appendChild(filtroDiv);
+        panel.appendChild(errorFiltro);
 
         const juegos = (datos.juegos || []).slice();
         const tasaConversion = datos.totalPartidas > 0
@@ -307,8 +386,8 @@
         botonActualizar.addEventListener('click', () => {
             botonActualizar.disabled = true;
             botonActualizar.textContent = 'Actualizando…';
-            cargarEstadisticas(pin)
-                .then((d) => mostrarPanelEstadisticas(d, pin))
+            cargarEstadisticas(pin, filtro && filtro.fechaInicio, filtro && filtro.fechaFin)
+                .then((d) => mostrarPanelEstadisticas(d, pin, filtro))
                 .catch(() => {
                     botonActualizar.disabled = false;
                     botonActualizar.textContent = 'Actualizar';

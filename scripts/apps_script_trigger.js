@@ -11077,8 +11077,24 @@ function procesarObtenerEstadisticasJuegos(data) {
     }
 
     const sheet = obtenerHojaEstadisticasJuegos_();
-    const filas = sheet.getDataRange().getValues();
+    let filas = sheet.getDataRange().getValues();
     filas.shift(); // cabecera
+
+    // Filtro opcional por rango de fechas — llega como "YYYY-MM-DD"
+    // desde los <input type="date"> del panel (lab/js/estadisticas-admin.js).
+    // Los límites se interpretan en zona horaria local del script, de
+    // "Desde" 00:00:00 a "Hasta" 23:59:59.999 (ambos días incluidos).
+    const limiteInicio = data.fechaInicio ? new Date(data.fechaInicio + 'T00:00:00') : null;
+    const limiteFin = data.fechaFin ? new Date(data.fechaFin + 'T23:59:59.999') : null;
+    if ((limiteInicio && !isNaN(limiteInicio.getTime())) || (limiteFin && !isNaN(limiteFin.getTime()))) {
+      filas = filas.filter((fila) => {
+        const momento = new Date(fila[0]);
+        if (isNaN(momento.getTime())) return false;
+        if (limiteInicio && !isNaN(limiteInicio.getTime()) && momento < limiteInicio) return false;
+        if (limiteFin && !isNaN(limiteFin.getTime()) && momento > limiteFin) return false;
+        return true;
+      });
+    }
 
     const porJuego = {}; // { juego: { partidas, sumaSegundos, muestrasSegundos, conversiones } }
     function entradaJuego_(juego) {
