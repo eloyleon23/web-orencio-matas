@@ -419,7 +419,9 @@ body.om-pantalla-completa-activa .jc-tablero {
    <a> es "inline" y por defecto ignora width/ignora el subrayado de
    enlace — se corrige aquí sin tocar el estilo del <button>. */
 a.jc-boton-secundario {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     text-decoration: none;
 }
@@ -440,6 +442,10 @@ a.jc-boton-secundario {
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .jc-boton-compartir {

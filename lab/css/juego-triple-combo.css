@@ -433,7 +433,9 @@ body {
    <a> es "inline" y por defecto ignora width/ignora el subrayado de
    enlace — se corrige aquí sin tocar el estilo del <button>. */
 a.jx-boton-secundario {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     text-decoration: none;
 }
@@ -452,6 +454,10 @@ a.jx-boton-secundario {
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .jx-boton-compartir {
