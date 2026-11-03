@@ -443,7 +443,9 @@ body.om-pantalla-completa-activa .jp-lienzo-proporcion {
    <a> es "inline" y por defecto ignora width/ignora el subrayado de
    enlace — se corrige aquí sin tocar el estilo del <button>. */
 a.jp-boton-secundario {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     text-decoration: none;
 }
@@ -458,6 +460,10 @@ a.jp-boton-secundario {
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .jp-boton-compartir {

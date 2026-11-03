@@ -442,7 +442,9 @@ body {
 
 .jk-boton-compartir,
 a.jk-boton-secundario {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     text-decoration: none;
 }
@@ -457,6 +459,10 @@ a.jk-boton-secundario {
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .jk-boton-compartir {
