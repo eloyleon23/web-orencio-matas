@@ -33,7 +33,7 @@
         { clave: 'maquillaje', icono: '💄', nombre: 'Maquillaje' },
         { clave: 'pintura_pared', icono: '🎨', nombre: 'Pintura de pared' },
         { clave: 'brocha', icono: '🖌️', nombre: 'Brocha' },
-        { clave: 'rodillo', icono: '🧻', nombre: 'Rodillo' },
+        { clave: 'rodillo', icono: '🖍️', nombre: 'Rodillo' },
         { clave: 'spray_pintura', icono: '🧯', nombre: 'Spray de pintura' },
         { clave: 'barniz', icono: '🪵', nombre: 'Barniz para madera' },
         { clave: 'disolvente', icono: '⚗️', nombre: 'Disolvente' },
