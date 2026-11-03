@@ -242,6 +242,17 @@ body.om-pantalla-completa-activa .ja-juego {
     flex: 1;
 }
 
+/* En horizontal (.ja-main pasa a fila a partir de 900px) el "flex: 1"
+   de arriba resetea la base a 0%, ganándole por especificidad a la
+   regla responsive de más abajo que reparte el ancho 62%/38% con
+   .ja-controles. Se restaura esa base aquí también, a partir del
+   mismo punto de corte. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .ja-juego {
+        flex: 1 1 62%;
+    }
+}
+
 .ja-estanteria {
     display: flex;
     flex-direction: column;
@@ -469,7 +480,9 @@ body.om-pantalla-completa-activa .ja-juego {
    <a> es "inline" y por defecto ignora width/ignora el subrayado de
    enlace — se corrige aquí sin tocar el estilo del <button>. */
 a.ja-boton-secundario {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     text-decoration: none;
 }
@@ -484,6 +497,10 @@ a.ja-boton-secundario {
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .ja-boton-compartir {

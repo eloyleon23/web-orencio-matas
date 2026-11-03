@@ -384,6 +384,7 @@
             completado
                 ? `Encontraste las ${cfg.pares} parejas en ${estado.intentos} intentos`
                 : `Encontraste ${estado.parejasEncontradas}/${cfg.pares} parejas (${pct}%) en ${estado.intentos} intentos`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('memoria', { valor: pct, texto: pct + '% en ' + estado.intentos + ' intentos' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('jc-celebracion-overlay').hidden = false;

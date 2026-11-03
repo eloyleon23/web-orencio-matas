@@ -244,6 +244,19 @@ body.om-pantalla-completa-activa .jc-juego {
     min-height: 0;
 }
 
+/* En horizontal (.jc-main pasa a fila a partir de 900px) el "flex: 1"
+   de arriba resetea la base a 0%, ganándole por especificidad a la
+   regla responsive de más abajo que reparte el ancho 64%/36% con
+   .jc-controles — el resultado era un tablero diminuto y el panel de
+   puntuación ocupando la mayor parte de la pantalla. Aquí se
+   restaura esa base en pantalla completa también, solo a partir del
+   mismo punto de corte. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jc-juego {
+        flex: 1 1 64%;
+    }
+}
+
 body.om-pantalla-completa-activa .jc-tablero-wrap {
     flex: 1;
     min-height: 0;
@@ -406,7 +419,9 @@ body.om-pantalla-completa-activa .jc-tablero {
    <a> es "inline" y por defecto ignora width/ignora el subrayado de
    enlace — se corrige aquí sin tocar el estilo del <button>. */
 a.jc-boton-secundario {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     text-decoration: none;
 }
@@ -427,6 +442,10 @@ a.jc-boton-secundario {
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .jc-boton-compartir {

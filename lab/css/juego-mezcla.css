@@ -178,6 +178,17 @@ body.om-pantalla-completa-activa .jm-juego {
     flex: 1;
 }
 
+/* En horizontal (.jm-main pasa a fila a partir de 900px) el "flex: 1"
+   de arriba resetea la base a 0%, ganándole por especificidad a la
+   regla responsive de más abajo que reparte el ancho 55%/45% con
+   .jm-controles. Se restaura esa base aquí también, a partir del
+   mismo punto de corte. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jm-juego {
+        flex: 1 1 55%;
+    }
+}
+
 .jm-comparacion {
     display: flex;
     align-items: center;
@@ -401,6 +412,10 @@ body.om-pantalla-completa-activa .jm-juego {
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s, opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 /* "Cambiar de juego" reutiliza la clase del botón secundario, pero es
@@ -408,7 +423,9 @@ body.om-pantalla-completa-activa .jm-juego {
    <a> es "inline" y por defecto ignora width/ignora el subrayado de
    enlace — se corrige aquí sin tocar el estilo del <button>. */
 a.jm-boton-secundario {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     text-decoration: none;
 }

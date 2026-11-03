@@ -28,7 +28,7 @@
         { icono: '💄', nombre: 'Maquillaje', area: 'perfumeria' },
         { icono: '🎨', nombre: 'Pintura de pared', area: 'pinturas' },
         { icono: '🖌️', nombre: 'Brocha', area: 'pinturas' },
-        { icono: '🧻', nombre: 'Rodillo', area: 'pinturas' },
+        { icono: '🖍️', nombre: 'Rodillo', area: 'pinturas' },
         { icono: '🪵', nombre: 'Barniz', area: 'pinturas' },
         { icono: '🟫', nombre: 'Lija', area: 'talleres' },
         { icono: '🫧', nombre: 'Pulimento', area: 'talleres' },
@@ -313,6 +313,7 @@
             completado
                 ? `Clasificaste ${cfg.objetivo} productos — ${estado.puntos} puntos, combo máximo x${estado.comboMaximo}`
                 : `Clasificaste ${estado.capturados}/${cfg.objetivo} productos (${pct}%) — ${estado.puntos} puntos`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('clasifica', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('jf-celebracion-overlay').hidden = false;

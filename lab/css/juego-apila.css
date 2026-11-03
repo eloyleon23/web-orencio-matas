@@ -282,6 +282,17 @@ body.om-pantalla-completa-activa .jq-juego {
     min-height: 0;
 }
 
+/* En horizontal (.jq-main pasa a fila a partir de 900px) el "flex: 1"
+   de arriba resetea la base a 0%, ganándole por especificidad a la
+   regla responsive de más abajo que reparte el ancho 62%/38% con
+   .jq-controles. Se restaura esa base aquí también, a partir del
+   mismo punto de corte. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jq-juego {
+        flex: 1 1 62%;
+    }
+}
+
 body.om-pantalla-completa-activa .jq-contenedor {
     flex: 1;
     min-height: 0;
@@ -451,6 +462,10 @@ body.om-pantalla-completa-activa .jq-escenario {
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .jq-boton-compartir,
@@ -468,7 +483,9 @@ body.om-pantalla-completa-activa .jq-escenario {
    <a> es "inline" y por defecto ignora width/ignora el subrayado de
    enlace — se corrige aquí sin tocar el estilo del <button>. */
 a.jq-boton--secundario {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     text-decoration: none;
 }

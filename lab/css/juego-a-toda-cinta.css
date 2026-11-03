@@ -1,0 +1,742 @@
+/*
+ * A Toda Cinta — minijuego (lab/a-toda-cinta.html)
+ * Mobile-first. Mismo esqueleto que el resto de minijuegos del
+ * laboratorio, con la paleta REAL del sitio (ver src/css/estilos.css).
+ */
+
+:root {
+    --jk-rojo: #d91b1b;
+    --jk-rojo-oscuro: #ad1515;
+    --jk-negro: #1a1a1a;
+    --jk-gris-texto: #52555a;
+    --jk-gris-borde: #e2e2e4;
+    --jk-gris-fondo: #f7f6f4;
+    --jk-blanco: #ffffff;
+    --jk-radio: 14px;
+    --jk-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jk-gris-fondo);
+    color: var(--jk-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jk-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jk-negro), var(--jk-rojo-oscuro));
+    color: var(--jk-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jk-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jk-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jk-header__volver:hover,
+.jk-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jk-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jk-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jk-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jk-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jk-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jk-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jk-juego {
+    background: var(--jk-blanco);
+    border-radius: var(--jk-radio);
+    box-shadow: var(--jk-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jk-juego {
+        flex: 1 1 64%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jk-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jk-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jk-gris-borde);
+    background: var(--jk-blanco);
+    color: var(--jk-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jk-chip-dificultad.is-activo {
+    background: var(--jk-negro);
+    border-color: var(--jk-negro);
+    color: var(--jk-blanco);
+}
+
+/* ── Objetivo actual ─────────────────────────────────────────────────── */
+
+.jk-objetivo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--jk-gris-fondo);
+    border-radius: 999px;
+    padding: 8px 14px;
+    margin-bottom: 10px;
+    transition: background 0.2s ease;
+}
+
+.jk-objetivo__etiqueta {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--jk-gris-texto);
+}
+
+.jk-objetivo__icono {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.jk-objetivo__nombre {
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.jk-objetivo--cambiado {
+    animation: jk-objetivo-destello 0.5s ease;
+}
+
+@keyframes jk-objetivo-destello {
+    0% { background: var(--jk-gris-fondo); }
+    30% { background: #fde9b0; }
+    100% { background: var(--jk-gris-fondo); }
+}
+
+.jk-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.jk-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 50px;
+}
+
+.jk-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jk-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jk-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jk-gris-fondo);
+    overflow: hidden;
+}
+
+.jk-barra-progreso__relleno {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--jk-rojo), var(--jk-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.3s linear;
+}
+
+.jk-boton-reiniciar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jk-negro);
+    color: var(--jk-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+/* ── Cinta transportadora ────────────────────────────────────────────── */
+
+.jk-zona-wrap {
+    position: relative;
+}
+
+.jk-zona {
+    position: relative;
+    height: 300px;
+    border-radius: 10px;
+    background: repeating-linear-gradient(
+        -45deg,
+        #2b2d31,
+        #2b2d31 14px,
+        #35373c 14px,
+        #35373c 28px
+    );
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+@media (min-width: 900px) {
+    .jk-zona {
+        height: 380px;
+    }
+}
+
+.jk-carril {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: calc(100% / 3);
+    border-bottom: 2px dashed rgba(255, 255, 255, 0.12);
+}
+
+.jk-carril[data-carril="0"] { top: 0; }
+.jk-carril[data-carril="1"] { top: calc(100% / 3); }
+.jk-carril[data-carril="2"] { top: calc(200% / 3); border-bottom: none; }
+
+.jk-producto {
+    position: absolute;
+    width: 56px;
+    height: 56px;
+    margin-left: -28px;
+    margin-top: -28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.9rem;
+    background: var(--jk-blanco);
+    border-radius: 50%;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    user-select: none;
+}
+
+.jk-producto--acierto {
+    animation: jk-producto-acierto 0.3s ease forwards;
+    pointer-events: none;
+}
+
+@keyframes jk-producto-acierto {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+.jk-producto--fallo {
+    animation: jk-producto-fallo 0.3s ease forwards;
+    pointer-events: none;
+}
+
+@keyframes jk-producto-fallo {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3); }
+    100% { transform: scale(0.7) rotate(25deg); opacity: 0; box-shadow: 0 0 0 4px rgba(217, 27, 27, 0.6); }
+}
+
+.jk-flotante {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-weight: 800;
+    font-size: 1rem;
+    pointer-events: none;
+    animation: jk-flotar 0.6s ease-out forwards;
+    z-index: 6;
+}
+
+.jk-flotante--bien { color: #2bd97c; }
+.jk-flotante--mal { color: #ff6b6b; }
+
+@keyframes jk-flotar {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.85); }
+    100% { opacity: 0; transform: translate(-50%, -160%) scale(1.15); }
+}
+
+/* ── Hitos / logros (toast) ─────────────────────────────────────────
+   Mismo patrón ya usado en el resto de la suite: el "display" vive
+   en :not([hidden]), nunca en la regla base. */
+
+.jk-logro {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translate(-50%, -10px);
+    background: rgba(26, 26, 26, 0.9);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.92rem;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    z-index: 6;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.jk-logro:not([hidden]).jk-logro--mostrar {
+    animation: jk-logro-aparece 1.8s ease forwards;
+}
+
+@keyframes jk-logro-aparece {
+    0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, -10px) scale(1.08); }
+    25% { transform: translate(-50%, -10px) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -22px) scale(0.95); }
+}
+
+.jk-pista {
+    margin: 10px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jk-gris-texto);
+    text-align: center;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jk-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jk-controles {
+        flex: 1 1 36%;
+    }
+}
+
+.jk-grupo-control {
+    background: var(--jk-blanco);
+    border-radius: var(--jk-radio);
+    box-shadow: var(--jk-sombra);
+    padding: 14px;
+}
+
+.jk-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.jk-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jk-boton-compartir,
+a.jk-boton-secundario {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jk-boton-compartir,
+.jk-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.jk-boton-compartir {
+    background: var(--jk-negro);
+    color: var(--jk-blanco);
+}
+
+.jk-boton-compartir:hover {
+    background: #333;
+}
+
+.jk-boton-secundario {
+    background: var(--jk-gris-fondo);
+    color: var(--jk-negro);
+    border: 1.5px solid var(--jk-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jk-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jk-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jk-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jk-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jk-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jk-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jk-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jk-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jk-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jk-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jk-gris-texto);
+    font-weight: 600;
+}
+
+.jk-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jk-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jk-celebracion .jk-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jk-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jk-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jk-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jk-compartir-panel {
+    position: relative;
+    background: var(--jk-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jk-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jk-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jk-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jk-gris-texto);
+}
+
+.jk-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jk-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jk-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jk-rojo);
+    color: var(--jk-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jk-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jk-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jk-blanco);
+}
+
+.jk-boton-red--whatsapp { background: #25d366; }
+.jk-boton-red--x { background: #000000; }
+.jk-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas aleatorias (al buscador general, sin filtrar) ───────────── */
+
+.jk-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jk-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jk-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jk-gris-texto);
+    text-align: center;
+}
+
+.jk-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jk-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jk-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jk-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ─────────────────── */
+
+body.om-pantalla-completa-activa .jk-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* En horizontal (.jk-main pasa a fila a partir de 900px) el "flex: 1"
+   de arriba resetea la base a 0%, ganándole por especificidad a la
+   regla responsive de más abajo que reparte el ancho 64%/36% con
+   .jk-controles. Se restaura esa base aquí también, a partir del
+   mismo punto de corte. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jk-juego {
+        flex: 1 1 64%;
+    }
+}
+
+body.om-pantalla-completa-activa .jk-zona-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+body.om-pantalla-completa-activa .jk-zona {
+    flex: 1;
+    height: auto;
+}

@@ -33,7 +33,7 @@
         { clave: 'maquillaje', icono: '💄', nombre: 'Maquillaje' },
         { clave: 'pintura_pared', icono: '🎨', nombre: 'Pintura de pared' },
         { clave: 'brocha', icono: '🖌️', nombre: 'Brocha' },
-        { clave: 'rodillo', icono: '🧻', nombre: 'Rodillo' },
+        { clave: 'rodillo', icono: '🖍️', nombre: 'Rodillo' },
         { clave: 'spray_pintura', icono: '🧯', nombre: 'Spray de pintura' },
         { clave: 'barniz', icono: '🪵', nombre: 'Barniz para madera' },
         { clave: 'disolvente', icono: '⚗️', nombre: 'Disolvente' },
@@ -330,6 +330,7 @@
             completado
                 ? `Atendiste a los ${cfg.clientesObjetivo} clientes — ${estado.puntos} puntos, combo máximo x${estado.comboMaximo}`
                 : `Atendiste a ${estado.clientesAtendidos}/${cfg.clientesObjetivo} clientes (${pct}%) — ${estado.puntos} puntos`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('pedido', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('jd-celebracion-overlay').hidden = false;

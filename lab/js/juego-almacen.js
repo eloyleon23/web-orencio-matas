@@ -438,6 +438,7 @@
             completado
                 ? `Colocaste las ${cfg.totalCajas} cajas en ${formatoTiempo(cfg.tiempoTotal - estado.tiempoRestante)}`
                 : `Dejaste ${colocadas}/${cfg.totalCajas} cajas colocadas (${pct}%)`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('almacen', { valor: pct, texto: pct + '%' });
 
         dibujarResultadoEnCanvas();
         document.getElementById('ja-celebracion-overlay').hidden = false;
