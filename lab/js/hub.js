@@ -3,9 +3,12 @@
  * Vanilla JS, sin dependencias. Gestiona el botón de compartir la
  * propia página del hub (enlace directo, no una imagen generada: aquí
  * no hay nada que "pintar" o "mezclar" que mostrar) y ordena las
- * tarjetas de juegos según la frecuencia de juego registrada en
- * localStorage por estadisticas-juegos.js (los más jugados primero;
- * los nunca jugados mantienen su orden original al final).
+ * tarjetas de juegos por cuándo se jugó cada una por última vez (la
+ * fecha que guarda mejores-resultados.js en localStorage al terminar
+ * una partida): el último jugado primero, luego el resto del más
+ * reciente al más antiguo, y los nunca jugados al final manteniendo
+ * su orden original. Depende de que mejores-resultados.js se cargue
+ * ANTES que este script (ver el orden de <script> en lab/index.html).
  */
 (function () {
     'use strict';
@@ -13,34 +16,41 @@
     const TEXTO_COMPARTIR = '¡Prueba los minijuegos de Orencio Matas y Hnos! 🕹️';
     const URL_SITIO = window.location.href;
 
-    // ── Orden de las tarjetas por frecuencia de juego ─────────────────
+    // ── Orden de las tarjetas por última vez jugada ─────────────────
 
     function claveDesdeHref(href) {
         return (href || '').replace(/^.*\//, '').replace(/\.html$/, '');
     }
 
-    function ordenarTarjetasPorFrecuencia() {
-        if (!window.OMEstadisticasJuegos) return;
-        const contadores = window.OMEstadisticasJuegos.leerContadores();
+    function ordenarTarjetasPorUltimaJugada() {
+        if (!window.OMMejoresResultados) return;
 
         const rejilla = document.querySelector('.jh-grid');
         if (!rejilla) return;
 
         const tarjetas = Array.prototype.slice.call(rejilla.querySelectorAll('.jh-tarjeta'));
-        const conOrdenOriginal = tarjetas.map((tarjeta, indice) => ({
-            tarjeta,
-            indice,
-            veces: contadores[claveDesdeHref(tarjeta.getAttribute('href'))] || 0,
-        }));
+        const conOrdenOriginal = tarjetas.map((tarjeta, indice) => {
+            const datos = window.OMMejoresResultados.obtener(claveDesdeHref(tarjeta.getAttribute('href')));
+            return {
+                tarjeta,
+                indice,
+                momento: datos ? new Date(datos.fecha).getTime() : null,
+            };
+        });
 
-        const sinJugarNunca = conOrdenOriginal.every((item) => item.veces === 0);
-        if (sinJugarNunca) return;
+        const nadieJugoNunca = conOrdenOriginal.every((item) => item.momento === null);
+        if (nadieJugoNunca) return;
 
-        conOrdenOriginal.sort((a, b) => (b.veces - a.veces) || (a.indice - b.indice));
+        conOrdenOriginal.sort((a, b) => {
+            if (a.momento === null && b.momento === null) return a.indice - b.indice;
+            if (a.momento === null) return 1; // nunca jugado: al final
+            if (b.momento === null) return -1;
+            return b.momento - a.momento; // más reciente primero
+        });
         conOrdenOriginal.forEach((item) => rejilla.appendChild(item.tarjeta));
     }
 
-    ordenarTarjetasPorFrecuencia();
+    ordenarTarjetasPorUltimaJugada();
 
     async function compartir() {
         if (navigator.share) {
