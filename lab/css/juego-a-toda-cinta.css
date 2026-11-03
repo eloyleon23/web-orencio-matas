@@ -713,6 +713,17 @@ body.om-pantalla-completa-activa .jk-juego {
     min-height: 0;
 }
 
+/* En horizontal (.jk-main pasa a fila a partir de 900px) el "flex: 1"
+   de arriba resetea la base a 0%, ganándole por especificidad a la
+   regla responsive de más abajo que reparte el ancho 64%/36% con
+   .jk-controles. Se restaura esa base aquí también, a partir del
+   mismo punto de corte. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jk-juego {
+        flex: 1 1 64%;
+    }
+}
+
 body.om-pantalla-completa-activa .jk-zona-wrap {
     flex: 1;
     min-height: 0;
