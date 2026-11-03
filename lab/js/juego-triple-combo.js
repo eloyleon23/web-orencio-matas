@@ -628,6 +628,13 @@
         document.getElementById('jx-celebracion-stat').textContent = esMeta
             ? `${estado.objetivoPuntos} puntos en ${formatoTiempo(estado.tiempoTranscurrido)} — mejor combo x${estado.mejorCombo} — ${cfgDificultad().nombre}`
             : `${estado.puntos} puntos — mejor combo x${estado.mejorCombo} — ${cfgDificultad().nombre}`;
+        // El mejor resultado guardado solo compara partidas a contrarreloj
+        // (puntos, cuanto más alto mejor) — el modo meta termina siempre
+        // con el mismo número de puntos (el objetivo), así que no aporta
+        // una comparación real de "mejor resultado".
+        if (!esMeta && window.OMMejoresResultados) {
+            window.OMMejoresResultados.registrar('triple-combo', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
+        }
 
         dibujarResultadoEnCanvas();
         document.getElementById('jx-celebracion-overlay').hidden = false;

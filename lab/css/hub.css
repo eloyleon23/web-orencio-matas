@@ -142,6 +142,28 @@ a.jh-tarjeta:focus-visible {
     color: var(--jh-rojo);
 }
 
+/* Insignia con el mejor resultado guardado en este navegador — ver
+   lab/js/mejores-resultados.js, que la inserta sola, sin tocar este
+   HTML. Solo aparece en las tarjetas de juegos ya jugados antes. */
+.jh-tarjeta__resultado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: -8px 0 14px;
+    font-size: 0.74rem;
+}
+
+.jh-tarjeta__resultado-mejor {
+    font-weight: 700;
+    color: var(--jh-negro);
+}
+
+.jh-tarjeta__resultado-fecha {
+    color: var(--jh-gris-texto);
+    white-space: nowrap;
+}
+
 .jh-tarjeta--proximamente {
     opacity: 0.6;
 }

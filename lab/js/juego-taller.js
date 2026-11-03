@@ -856,6 +856,7 @@
         document.getElementById('jt-celebracion-ranking').textContent = posicion === 1
             ? '🏆 ¡Nuevo mejor resultado de la sesión, en este modo y modelo!'
             : `Puesto #${posicion} de ${filtrado.length} intentos (este modo y modelo).`;
+        if (window.OMMejoresResultados) window.OMMejoresResultados.registrar('taller', { valor: estado.porcentaje, texto: estado.porcentaje + '%' });
 
         renderHistorial();
 
