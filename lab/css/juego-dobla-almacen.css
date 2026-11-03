@@ -684,6 +684,17 @@ body.om-pantalla-completa-activa .jy-juego {
     min-height: 0;
 }
 
+/* En horizontal (.jy-main pasa a fila a partir de 900px) el "flex: 1"
+   de arriba resetea la base a 0%, ganándole por especificidad a la
+   regla responsive de más abajo que reparte el ancho 64%/36% con
+   .jy-controles. Se restaura esa base aquí también, a partir del
+   mismo punto de corte. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jy-juego {
+        flex: 1 1 64%;
+    }
+}
+
 body.om-pantalla-completa-activa .jy-tablero-wrap {
     flex: 1;
     min-height: 0;

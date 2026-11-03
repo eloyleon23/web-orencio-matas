@@ -241,6 +241,17 @@ body.om-pantalla-completa-activa .jl-juego {
     min-height: 0;
 }
 
+/* En horizontal (.jl-main pasa a fila a partir de 900px) el "flex: 1"
+   de arriba resetea la base a 0%, ganándole por especificidad a la
+   regla responsive de más abajo que reparte el ancho 60%/40% con
+   .jl-controles. Se restaura esa base aquí también, a partir del
+   mismo punto de corte. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jl-juego {
+        flex: 1 1 60%;
+    }
+}
+
 body.om-pantalla-completa-activa .jl-lienzo-wrap {
     flex: 1;
     min-height: 0;
