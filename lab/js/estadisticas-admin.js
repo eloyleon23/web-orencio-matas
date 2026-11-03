@@ -56,6 +56,17 @@
         return (window.OMEstadisticasJuegos && window.OMEstadisticasJuegos.URL_BACKEND_ESTADISTICAS) || '';
     }
 
+    // Pone/quita el estado de carga (spinner + texto + deshabilitado)
+    // en cualquier botón del panel mientras espera al backend.
+    function alternarCargando(boton, cargando, textoCargando, textoNormal) {
+        boton.disabled = cargando;
+        if (cargando) {
+            boton.innerHTML = '<span class="om-stats-spinner" aria-hidden="true"></span>' + textoCargando;
+        } else {
+            boton.textContent = textoNormal;
+        }
+    }
+
     let overlayActual = null;
 
     function cerrarOverlay() {
@@ -135,16 +146,14 @@
             const pin = input.value.trim();
             if (!pin) return;
             error.textContent = '';
-            botonEntrar.disabled = true;
-            botonEntrar.textContent = 'Comprobando…';
+            alternarCargando(botonEntrar, true, 'Comprobando…');
             cargarEstadisticas(pin)
                 .then((datos) => {
                     mostrarPanelEstadisticas(datos, pin);
                 })
                 .catch((err) => {
                     error.textContent = err.message || 'No se pudo comprobar el PIN.';
-                    botonEntrar.disabled = false;
-                    botonEntrar.textContent = 'Entrar';
+                    alternarCargando(botonEntrar, false, '', 'Entrar');
                     input.value = '';
                     input.focus();
                 });
@@ -299,14 +308,12 @@
                 return;
             }
             errorFiltro.textContent = '';
-            botonFiltrar.disabled = true;
-            botonFiltrar.textContent = 'Filtrando…';
+            alternarCargando(botonFiltrar, true, 'Filtrando…');
             cargarEstadisticas(pin, nuevoFiltro.fechaInicio, nuevoFiltro.fechaFin)
                 .then((d) => mostrarPanelEstadisticas(d, pin, nuevoFiltro))
                 .catch((err) => {
                     errorFiltro.textContent = err.message || 'No se pudo aplicar el filtro.';
-                    botonFiltrar.disabled = false;
-                    botonFiltrar.textContent = 'Filtrar';
+                    alternarCargando(botonFiltrar, false, '', 'Filtrar');
                 });
         }
 
@@ -322,12 +329,12 @@
             botonQuitar.className = 'om-stats-boton om-stats-boton--secundario';
             botonQuitar.textContent = 'Quitar filtro';
             botonQuitar.addEventListener('click', () => {
-                botonQuitar.disabled = true;
+                alternarCargando(botonQuitar, true, 'Quitando…');
                 cargarEstadisticas(pin)
                     .then((d) => mostrarPanelEstadisticas(d, pin, null))
                     .catch((err) => {
                         errorFiltro.textContent = err.message || 'No se pudo quitar el filtro.';
-                        botonQuitar.disabled = false;
+                        alternarCargando(botonQuitar, false, '', 'Quitar filtro');
                     });
             });
             filtroDiv.appendChild(botonQuitar);
@@ -384,13 +391,11 @@
         botonActualizar.className = 'om-stats-boton om-stats-boton--secundario';
         botonActualizar.textContent = 'Actualizar';
         botonActualizar.addEventListener('click', () => {
-            botonActualizar.disabled = true;
-            botonActualizar.textContent = 'Actualizando…';
+            alternarCargando(botonActualizar, true, 'Actualizando…');
             cargarEstadisticas(pin, filtro && filtro.fechaInicio, filtro && filtro.fechaFin)
                 .then((d) => mostrarPanelEstadisticas(d, pin, filtro))
                 .catch(() => {
-                    botonActualizar.disabled = false;
-                    botonActualizar.textContent = 'Actualizar';
+                    alternarCargando(botonActualizar, false, '', 'Actualizar');
                 });
         });
         panel.appendChild(botonActualizar);

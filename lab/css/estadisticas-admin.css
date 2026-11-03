@@ -145,6 +145,33 @@
     background: #f6f5f1;
 }
 
+/* Spinner de carga, para cualquier botón del panel mientras espera
+   respuesta del backend (filtrar, quitar filtro, actualizar, PIN). */
+.om-stats-spinner {
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    margin-right: 0.5em;
+    vertical-align: -0.15em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    opacity: 0.7;
+    animation: om-stats-girar 0.7s linear infinite;
+}
+
+@keyframes om-stats-girar {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.om-stats-boton:disabled,
+.om-stats-boton--secundario:disabled {
+    cursor: default;
+    opacity: 0.85;
+}
+
 .om-stats-filtro {
     display: flex;
     flex-wrap: wrap;
