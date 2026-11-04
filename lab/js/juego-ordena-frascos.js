@@ -6,8 +6,11 @@
  * mismo color arriba del todo. El nivel se resuelve cuando cada
  * frasco queda de un único color (o vacío). Sin límite de tiempo: el
  * reto es pensar el movimiento, no reaccionar rápido — a diferencia
- * del resto de la suite, que es casi toda contrarreloj/reflejos.
- * Dos temas elegibles (Perfumería/Pinturas), mismo juego por debajo.
+ * del resto de la suite, que es casi toda contrarreloj/reflejos. Un
+ * único modo de juego: los logos que aparecen en cada frasco
+ * alternan entre marcas de TODAS las áreas (ver LOGOS, más abajo) —
+ * a petición de Eloy, un selector de tema por área habría dejado
+ * fuera a las que no se eligieran, algo que no quería.
  */
 (function () {
     'use strict';
@@ -33,27 +36,7 @@
         { hex: '#c9a227', simbolo: '✖', nombre: 'Mostaza' },
     ];
 
-    const TEMAS = {
-        perfumeria: {
-            icono: '🧴',
-            titulo: 'Ordena los Frascos',
-            subtitulo: 'Vierte entre frascos de esencia hasta que cada uno quede de un solo color. Sin prisa: piensa el movimiento con calma.',
-            ayuda: 'Toca un frasco de esencia para elegirlo y toca otro para verter su contenido. Solo puedes verter sobre un frasco vacío o que tenga el mismo color arriba del todo. Consigue que cada frasco quede de un único color — cuantos menos movimientos uses, mejor puntuación.',
-            unidad: 'frasco',
-            unidadPlural: 'frascos',
-        },
-        pinturas: {
-            icono: '🎨',
-            titulo: 'Ordena los Botes',
-            subtitulo: 'Vierte entre botes de pintura hasta que cada uno quede de un solo color. Sin prisa: piensa el movimiento con calma.',
-            ayuda: 'Toca un bote de pintura para elegirlo y toca otro para verter su contenido. Solo puedes verter sobre un bote vacío o que tenga el mismo color arriba del todo. Consigue que cada bote quede de un único color — cuantos menos movimientos uses, mejor puntuación.',
-            unidad: 'bote',
-            unidadPlural: 'botes',
-        },
-    };
-
     const estado = {
-        tema: 'perfumeria',
         nivelIndex: 0, // 0-based, índice dentro de NIVELES
         tubos: [], // tubos[i] = array de índices de color, de abajo arriba
         marcasNivel: [], // marcasNivel[colorIdx] = slug de marca para ese color EN ESTE nivel (ver construirNivel)
@@ -68,10 +51,6 @@
 
     const tablero = document.getElementById('jo-tablero');
     const tableroWrap = document.querySelector('.jo-tablero-wrap');
-
-    function cfgTema() {
-        return TEMAS[estado.tema];
-    }
 
     // ── Tamaño de los frascos en pantalla completa ──────────────────────
     // Fuera de pantalla completa se usa el tamaño fijo por defecto de
@@ -341,8 +320,8 @@
         });
         el.classList.toggle('is-resuelto', tuboResuelto(tubo) && tubo.length > 0);
         el.setAttribute('aria-label', tubo.length === 0
-            ? `${cfgTema().unidad} vacío`
-            : `${cfgTema().unidad} con ${tubo.length} unidades, arriba ${COLORES[tubo[tubo.length - 1]].nombre}`);
+            ? 'frasco vacío'
+            : `frasco con ${tubo.length} unidades, arriba ${COLORES[tubo[tubo.length - 1]].nombre}`);
     }
 
     function renderTablero() {
@@ -462,42 +441,6 @@
         return Math.max(20, 200 - movimientosUsados * 8);
     }
 
-    // ── Tema ─────────────────────────────────────────────────────────
-
-    function aplicarTemaEnVista() {
-        const cfg = cfgTema();
-        document.getElementById('jo-header-icono').textContent = cfg.icono;
-        document.getElementById('jo-header-titulo-texto').textContent = cfg.titulo;
-        document.getElementById('jo-header-subtitulo').textContent = cfg.subtitulo;
-        document.getElementById('jo-ayuda').textContent = cfg.ayuda;
-        // Cambia también la FORMA del recipiente (ver juego-ordena-frascos.css):
-        // frasco de cuello estrecho para Perfumería, bote cilíndrico con
-        // tapa metálica para Pinturas — para que el cambio de tema se note
-        // de verdad y no sea solo un cambio de texto.
-        tablero.dataset.tema = estado.tema;
-        // No filtra marcas por tema (ver pintarMarcas) — solo aprovecha
-        // el cambio de tema para barajarlas de nuevo.
-        pintarMarcas();
-        document.querySelectorAll('.om-compartir-juego-boton').forEach((b) => {
-            b.dataset.nombreJuego = cfg.titulo;
-            b.dataset.emojiJuego = cfg.icono;
-        });
-    }
-
-    document.querySelectorAll('.jo-chip-tema').forEach((boton) => {
-        boton.addEventListener('click', () => {
-            if (boton.classList.contains('is-activo')) return;
-            document.querySelectorAll('.jo-chip-tema').forEach((b) => {
-                b.classList.remove('is-activo');
-                b.setAttribute('aria-checked', 'false');
-            });
-            boton.classList.add('is-activo');
-            boton.setAttribute('aria-checked', 'true');
-            estado.tema = boton.dataset.tema;
-            aplicarTemaEnVista();
-            nuevaPartida();
-        });
-    });
 
     // ── Vista ────────────────────────────────────────────────────────
 
@@ -579,8 +522,6 @@
         if (window.OMMejoresResultados) {
             window.OMMejoresResultados.registrar('ordena-frascos', { valor: estado.puntos, texto: estado.puntos + ' puntos' });
         }
-        document.getElementById('jo-boton-centro-soluciones').href =
-            estado.tema === 'pinturas' ? '../centro-soluciones.html#pinturas' : '../centro-soluciones.html#perfumeria';
 
         dibujarResultadoEnCanvas();
         document.getElementById('jo-celebracion-overlay').hidden = false;
@@ -620,14 +561,13 @@
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
-        const cfg = cfgTema();
 
         ctx.fillStyle = '#f7f6f4';
         ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = '#1a1a1a';
         ctx.font = 'bold 26px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`${cfg.titulo} ${cfg.icono}`, w / 2, 90);
+        ctx.fillText('Ordena los Frascos 🧪', w / 2, 90);
 
         ctx.font = 'bold 54px sans-serif';
         ctx.fillStyle = '#d91b1b';
@@ -640,8 +580,7 @@
 
     async function compartir() {
         dibujarResultadoEnCanvas();
-        const cfg = cfgTema();
-        const textoCompartir = `¡He jugado a ${cfg.titulo} de Orencio Matas y Hnos! ${cfg.icono}`;
+        const textoCompartir = '¡He jugado a Ordena los Frascos de Orencio Matas y Hnos! 🧪';
         const canvas = document.getElementById('jo-canvas-resultado');
         canvas.toBlob(async (blob) => {
             if (!blob) return abrirPanelCompartir(null, textoCompartir);
@@ -650,7 +589,7 @@
                 try {
                     await navigator.share({
                         files: [new File([blob], 'ordena-frascos.png', { type: 'image/png' })],
-                        title: cfg.titulo + ' — Orencio Matas y Hnos',
+                        title: 'Ordena los Frascos — Orencio Matas y Hnos',
                         text: textoCompartir,
                     });
                     return;
@@ -690,14 +629,14 @@
         if (ev.target.id === 'jo-compartir-overlay') ev.currentTarget.hidden = true;
     });
 
-    // ── Marcas (todas, sin filtrar por tema) ─────────────────────────────
-    // A petición de Eloy: la primera versión filtraba las marcas por el
-    // tema elegido (Perfumería/Pinturas) — pero "no poner el resto
-    // sería discriminatorio": el selector de tema solo cambia la FORMA
-    // del envase (ver TEMAS/aplicarTemaEnVista), ya no filtra marcas.
-    // Se muestran TODAS las que tenemos, alternando entre ellas tanto
-    // en la insignia de cada bloque de color (ver actualizarFrascoEl)
-    // como en la sección "Algunas de nuestras marcas" de abajo.
+    // ── Marcas (todas, sin modos ni filtros por área) ────────────────────
+    // A petición de Eloy: un selector de tema por área habría dejado
+    // fuera a las que no se eligieran — "no poner el resto sería
+    // discriminatorio". Un único modo de juego, con un único diseño de
+    // frasco (ver juego-ordena-frascos.css), y TODAS las marcas que
+    // tenemos alternando entre ellas tanto en la insignia de cada
+    // bloque de color (ver actualizarFrascoEl) como en la sección
+    // "Algunas de nuestras marcas" de abajo.
     //
     // La lista sigue viniendo de catálogo real, no inventada — filtrando
     // data/productos.json por marca y comprobando en qué área(s)
@@ -765,9 +704,7 @@
     }
 
     // ── Arranque ─────────────────────────────────────────────────────
-    // aplicarTemaEnVista() ya pinta las marcas del tema inicial (ver su
-    // llamada a pintarMarcas()), no hace falta repetirlo aquí.
 
-    aplicarTemaEnVista();
+    pintarMarcas();
     nuevaPartida();
 })();
