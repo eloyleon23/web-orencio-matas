@@ -29,16 +29,18 @@
    el wrapper del header) — sin
    esto, las páginas que cargan ESTE archivo (empresa/historia/
    productos/buscador/servicios/actualidad/catalogo_talleres) se quedan
-   con el ancho de navbar antiguo (1200px, el de ".container" genérico
-   de arriba) mientras el resto del sitio ya usa 1440px, y la cabecera
-   "salta" de ancho — y por tanto de posición, ya que sigue centrada
-   pero dentro de un hueco distinto — al navegar de una página a otra.
-   Bug real reportado por Eloy: "si pinchas en Empresa... desplaza todo
-   el menú hacia la derecha". Mismo criterio que el comentario de
-   arriba de este archivo: cualquier cambio en el navbar de estilos.css
-   debe replicarse aquí también. */
+   con un ancho de navbar distinto al del resto del sitio, y la
+   cabecera "salta" de ancho — y por tanto de posición, ya que sigue
+   centrada pero dentro de un hueco distinto — al navegar de una página
+   a otra. Bug real reportado por Eloy: "si pinchas en Empresa... se
+   desplaza todo el menú hacia la derecha" (y de nuevo, tras subir
+   estilos.css a 1680px sin replicarlo aquí: "hay que revisar las
+   cabeceras de menú... para que estén con el mismo ancho y margen de
+   Inicio"). Mismo criterio que el comentario de arriba de este
+   archivo: cualquier cambio en el navbar de estilos.css debe
+   replicarse aquí también. */
 .navbar-wrapper .container {
-  width: min(100% - 40px, 1440px);
+  width: min(100% - 40px, 1680px);
 }
 
 @media (max-width: 767px) {
@@ -63,7 +65,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
   min-height: 82px;
   position: relative;
 }
@@ -86,15 +88,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
   flex: 1 1 auto;
 }
 
+/* gap de 22px (no 34px) — igual que ".navbar__menu" en estilos.css,
+   reducido junto con la subida de ".navbar .container" a 1680px (ver
+   el comentario de ese ancho más arriba) para que quepa de sobra el
+   menú completo (con "Espacio Creativo") en una sola fila. */
 .navbar__menu {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 34px;
+  gap: 22px;
   flex: 1 1 auto;
   list-style: none;
   margin: 0;
