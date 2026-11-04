@@ -41,3 +41,36 @@ RedirectMatch 301 ^/defaultsite(/?.*)$ /$1
         Header set Cache-Control "no-cache, must-revalidate"
     </FilesMatch>
 </IfModule>
+
+# Comprimir las respuestas de texto (HTML/CSS/JS/JSON/SVG/fuentes de
+# texto) con gzip — bug real detectado con pruebas de carga del
+# buscador: IONOS no comprimía NADA (ni siquiera el CSS), a
+# diferencia de GitHub Pages (preproducción), que sí lo hace por
+# defecto. El caso más grave es data/productos.json: 4.4 MB tal
+# cual, frente a ~540 KB comprimido (el mismo archivo, mismo
+# contenido, en GitHub Pages) — un 88% menos. En una conexión
+# móvil normal (~1.6 Mbps simulados) eso se traduce en muchos
+# segundos de diferencia solo en esa descarga, antes de que el
+# buscador pueda pintar ni un producto. Se aplica también al
+# propio buscador.html (935 KB sin comprimir) y al resto de
+# catálogos JSON (productos_talleres.json, etc.). Las imágenes de
+# producto (ya comprimidas como JPEG/WEBP) no se ven afectadas ni
+# falta que lo estén — mod_deflate no las toca.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/plain
+    AddOutputFilterByType DEFLATE text/javascript application/javascript application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE application/xml text/xml application/rss+xml
+    AddOutputFilterByType DEFLATE font/ttf font/otf application/vnd.ms-fontobject
+</IfModule>
+
+# Evita que un proxy/caché intermedio sirva la variante sin
+# comprimir a un cliente que sí la admite (o viceversa) — depende
+# de la cabecera Accept-Encoding de cada petición, así que cada
+# variante debe cachearse por separado.
+<IfModule mod_headers.c>
+    <IfModule mod_deflate.c>
+        Header append Vary Accept-Encoding
+    </IfModule>
+</IfModule>
