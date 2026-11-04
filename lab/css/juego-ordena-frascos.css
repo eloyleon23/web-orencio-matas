@@ -345,6 +345,14 @@ body {
     width: 62%;
     aspect-ratio: 1;
     border-radius: 50%;
+    /* Bug real reportado ("con los logos parecen huevos"): varios
+       logos (Pentrilo, Masso...) traen su propio fondo a sangre
+       completa, a diferencia de los que tienen fondo blanco o
+       transparente — sin "overflow: hidden" ese fondo cuadrado del
+       logo sobresalía por las esquinas del círculo blanco (que solo
+       recorta visualmente si de verdad recorta el contenido), dando
+       una silueta deformada ni redonda ni cuadrada. */
+    overflow: hidden;
     background: rgba(255, 255, 255, 0.95);
     display: flex;
     align-items: center;
