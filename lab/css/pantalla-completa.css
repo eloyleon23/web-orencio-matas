@@ -46,21 +46,33 @@ body {
 
 /* ── Pantalla completa nativa (Fullscreen API) ──────────────────────── */
 
-/* A propósito NO se tocan display/flex-direction/max-width/margin ni
+/* A propósito NO se tocan display/flex-direction/margin ni
    align-items aquí: cada juego ya define eso en su propio <main>
-   (columna en móvil, fila a partir de 900px, max-width centrado), y
-   es exactamente el layout responsive que también queremos en
-   pantalla completa — incluido el caso horizontal. Forzar aquí un
-   "align-items: center" (como hacía esta regla antes) encogía la zona
-   de juego a su ancho de contenido en vez de estirarla al 100%, que
-   es lo que la hacía verse diminuta en Fuera Bichos y Organiza el
-   Almacén. Lo único que pantalla completa necesita añadir es que el
-   <main> ocupe toda la pantalla, pueda hacer scroll y respete el
-   notch/la zona del gesto de inicio. */
+   (columna en móvil, fila a partir de 900px), y es exactamente el
+   layout responsive que también queremos en pantalla completa —
+   incluido el caso horizontal. Forzar aquí un "align-items: center"
+   (como hacía esta regla antes) encogía la zona de juego a su ancho
+   de contenido en vez de estirarla al 100%, que es lo que la hacía
+   verse diminuta en Fuera Bichos y Organiza el Almacén.
+
+   "max-width" SÍ se anula aquí (a "none"): cada <main> trae su propio
+   max-width centrado (1100px normalmente) para que el contenido no se
+   estire demasiado en el uso normal de la página — pero en pantalla
+   completa ese mismo límite dejaba el fondo fijo sin cubrir toda la
+   pantalla, con la cabecera normal del sitio asomando por los lados en
+   monitores anchos, y de paso desaprovechaba el ancho real. Sin
+   "!important": algún juego (p. ej. Salta y Reparte, donde el tamaño
+   del personaje depende directamente del ancho de la zona) necesita
+   mantener su propio límite incluso en pantalla completa, y lo
+   consigue con una regla más específica que esta. Lo único que
+   pantalla completa necesita añadir aquí es que el <main> ocupe toda
+   la pantalla, pueda hacer scroll y respete el notch/la zona del
+   gesto de inicio. */
 
 main:fullscreen,
 main:-webkit-full-screen {
     width: 100%;
+    max-width: none;
     height: 100%;
     overflow-y: auto;
     background: #f7f6f4;
@@ -79,6 +91,7 @@ main:-webkit-full-screen {
     inset: 0 !important;
     z-index: 400 !important;
     width: 100vw !important;
+    max-width: none;
     /* 100vh se queda corto en móvil porque cuenta la barra de
        direcciones; 100dvh ("dynamic viewport height") se ajusta a la
        altura visible real y la sustituye en los navegadores que la

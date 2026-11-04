@@ -727,6 +727,7 @@ body.om-pantalla-completa-activa .jk-juego {
 @media (min-width: 900px) {
     body.om-pantalla-completa-activa .jk-juego {
         flex: 1 1 64%;
+        align-self: stretch;
     }
 }
 

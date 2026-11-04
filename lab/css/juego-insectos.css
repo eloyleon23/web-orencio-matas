@@ -245,6 +245,7 @@ body.om-pantalla-completa-activa .ji-juego {
 @media (min-width: 900px) {
     body.om-pantalla-completa-activa .ji-juego {
         flex: 1 1 60%;
+        align-self: stretch;
     }
 }
 

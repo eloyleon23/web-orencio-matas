@@ -256,6 +256,29 @@ body.om-pantalla-completa-activa .jg-juego {
 @media (min-width: 900px) {
     body.om-pantalla-completa-activa .jg-juego {
         flex: 1 1 62%;
+        align-self: stretch;
+    }
+}
+
+/* El <main> en sí se queda a 100vw (lo necesita el fondo fijo de
+   pantalla completa para cubrir toda la pantalla — ver
+   pantalla-completa.css); lo que se limita es el contenido interior.
+   El ancho del frasco se calcula como un % del ancho de la zona (ver
+   anchoFrasco en juego-fragancia.js), así que sin este límite, en una
+   pantalla ancha la zona (y con ella el frasco) crecía hasta verse
+   enorme. Se centra el conjunto con el mismo ancho máximo que tiene
+   fuera de pantalla completa (1100px repartidos 62%/38%). */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jg-main {
+        justify-content: center;
+    }
+
+    body.om-pantalla-completa-activa .jg-juego {
+        max-width: 638px;
+    }
+
+    body.om-pantalla-completa-activa .jg-controles {
+        max-width: 392px;
     }
 }
 

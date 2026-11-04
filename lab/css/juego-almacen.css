@@ -240,6 +240,7 @@ body.om-pantalla-completa-activa .ja-juego {
     display: flex;
     flex-direction: column;
     flex: 1;
+    justify-content: center;
 }
 
 /* En horizontal (.ja-main pasa a fila a partir de 900px) el "flex: 1"
@@ -250,6 +251,7 @@ body.om-pantalla-completa-activa .ja-juego {
 @media (min-width: 900px) {
     body.om-pantalla-completa-activa .ja-juego {
         flex: 1 1 62%;
+        align-self: stretch;
     }
 }
 

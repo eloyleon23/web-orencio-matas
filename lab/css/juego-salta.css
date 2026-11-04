@@ -671,18 +671,35 @@ a.jz-overlay__boton--secundario {
 
 /* Pantalla completa */
 
+/* El <main> en sí se queda a 100vw (lo necesita el fondo fijo de
+   pantalla completa para cubrir toda la pantalla — ver
+   pantalla-completa.css); lo que se limita es el contenido interior,
+   centrado con align-items. El ancho del operario se calcula como un
+   % del ancho de la zona (ver medirZona() en juego-salta.js) — en una
+   pantalla ancha, estirar la zona a todo el ancho real (hasta 1920px
+   o más) hacía que el operario creciera proporcionalmente y se viera
+   enorme, así que la zona mantiene el mismo tope de 720px que fuera
+   de pantalla completa. Lo que sí aprovecha la pantalla completa es
+   el alto (flex:1), que es lo que de verdad da más espacio de juego
+   vertical en un juego de saltar hacia arriba. */
 body.om-pantalla-completa-activa .jz-main {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    max-width: 100%;
-    justify-content: stretch;
+    align-items: center;
 }
 
 body.om-pantalla-completa-activa .jz-juego {
     flex: 1;
     min-height: 0;
+    width: 100%;
+    max-width: 720px;
+}
+
+body.om-pantalla-completa-activa .jz-controles {
+    width: 100%;
+    max-width: 720px;
 }
 
 body.om-pantalla-completa-activa .jz-zona-wrap {
