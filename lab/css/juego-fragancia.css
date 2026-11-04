@@ -248,13 +248,6 @@ body.om-pantalla-completa-activa .jg-juego {
     min-height: 0;
 }
 
-/* El "align-items: flex-start" de .jg-main en horizontal hace que .jg-juego (y todo lo que cuelga de él con flex:1) se quede a altura de contenido en vez de estirarse a la pantalla completa — colapsando a 0 en los juegos que miden su zona con getBoundingClientRect() en vez de fijar un tamaño en píxeles por JS. Se corrige solo en pantalla completa, sin tocar el layout normal de dos columnas. */
-@media (min-width: 900px) {
-    body.om-pantalla-completa-activa .jg-main {
-        align-items: stretch;
-    }
-}
-
 /* En horizontal (.jg-main pasa a fila a partir de 900px) el "flex: 1"
    de arriba resetea la base a 0%, ganándole por especificidad a la
    regla responsive de más abajo que reparte el ancho 62%/38% con
@@ -263,6 +256,29 @@ body.om-pantalla-completa-activa .jg-juego {
 @media (min-width: 900px) {
     body.om-pantalla-completa-activa .jg-juego {
         flex: 1 1 62%;
+        align-self: stretch;
+    }
+}
+
+/* El <main> en sí se queda a 100vw (lo necesita el fondo fijo de
+   pantalla completa para cubrir toda la pantalla — ver
+   pantalla-completa.css); lo que se limita es el contenido interior.
+   El ancho del frasco se calcula como un % del ancho de la zona (ver
+   anchoFrasco en juego-fragancia.js), así que sin este límite, en una
+   pantalla ancha la zona (y con ella el frasco) crecía hasta verse
+   enorme. Se centra el conjunto con el mismo ancho máximo que tiene
+   fuera de pantalla completa (1100px repartidos 62%/38%). */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jg-main {
+        justify-content: center;
+    }
+
+    body.om-pantalla-completa-activa .jg-juego {
+        max-width: 638px;
+    }
+
+    body.om-pantalla-completa-activa .jg-controles {
+        max-width: 392px;
     }
 }
 
