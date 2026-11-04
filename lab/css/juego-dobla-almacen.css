@@ -690,6 +690,13 @@ body.om-pantalla-completa-activa .jy-juego {
     min-height: 0;
 }
 
+/* El "align-items: flex-start" de .jy-main en horizontal hace que .jy-juego (y todo lo que cuelga de él con flex:1) se quede a altura de contenido en vez de estirarse a la pantalla completa — colapsando a 0 en los juegos que miden su zona con getBoundingClientRect() en vez de fijar un tamaño en píxeles por JS. Se corrige solo en pantalla completa, sin tocar el layout normal de dos columnas. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jy-main {
+        align-items: stretch;
+    }
+}
+
 /* En horizontal (.jy-main pasa a fila a partir de 900px) el "flex: 1"
    de arriba resetea la base a 0%, ganándole por especificidad a la
    regla responsive de más abajo que reparte el ancho 64%/36% con

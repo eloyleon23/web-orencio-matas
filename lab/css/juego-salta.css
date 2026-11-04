@@ -671,12 +671,20 @@ a.jz-overlay__boton--secundario {
 
 /* Pantalla completa */
 
+/* max-width se mantiene en 720px (igual que fuera de pantalla
+   completa) a propósito: el tamaño del operario se calcula como un %
+   del ancho de la zona (ver medirZona() en juego-salta.js) — en una
+   pantalla ancha, estirar la zona a todo el ancho real (hasta 1920px
+   o más) hacía that el operario creciera proporcionalmente y se
+   viera enorme. Lo que sí aprovecha la pantalla completa es el alto
+   (flex:1), que es lo que de verdad da más espacio de juego vertical
+   en un juego de saltar hacia arriba. */
 body.om-pantalla-completa-activa .jz-main {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    max-width: 100%;
+    max-width: 720px;
     justify-content: stretch;
 }
 
