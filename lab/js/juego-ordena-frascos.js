@@ -456,6 +456,7 @@
         // tapa metálica para Pinturas — para que el cambio de tema se note
         // de verdad y no sea solo un cambio de texto.
         tablero.dataset.tema = estado.tema;
+        pintarMarcasDelTema();
         document.querySelectorAll('.om-compartir-juego-boton').forEach((b) => {
             b.dataset.nombreJuego = cfg.titulo;
             b.dataset.emojiJuego = cfg.icono;
@@ -659,23 +660,25 @@
         if (ev.target.id === 'jo-compartir-overlay') ev.currentTarget.hidden = true;
     });
 
-    // ── Marcas aleatorias (sin filtrar, al buscador general) ──────────
-
-    const LOGOS = [
-        '3m', 'akzonobel', 'alvarezgomez', 'ariel', 'arrixaca', 'asevi', 'babaria',
-        'baixens', 'caselli', 'cif', 'cisent', 'compo', 'elmilagrito', 'fairy',
-        'flower', 'gomacamps', 'industrias_beter', 'industrias_betik', 'jofel',
-        'kelsia', 'losdi', 'masso', 'mimosin', 'mora', 'muropapel', 'nespoli',
-        'pentrilo', 'polmeros_del_valls', 'renova', 'ressol', 'sika', 'thomil',
-        'vijusa', 'vileda', 'vinfer',
-    ];
+    // ── Marcas por tema (reales del catálogo, no genéricas) ─────────────
+    // A petición de Eloy: con la sección de marcas mostrando logos al
+    // azar de TODO el catálogo (droguería/talleres incluidos), el
+    // selector de tema no se notaba aquí — ni rastro de perfumería o
+    // pinturas en concreto. Cada lista se ha obtenido filtrando
+    // data/productos.json por área ("perfumeria"/"pinturas") y
+    // comprobando qué marcas de ese catálogo real tienen de verdad
+    // productos ahí (no es una lista inventada): p. ej. "jofel" aparece
+    // en perfumería por su jabón de espuma, "kelsia" en pinturas por
+    // sus aguarrases y alcoholes, "nespoli" por sus rodillos — ver el
+    // análisis que dio estas listas en el PR. Solo marcas con bastantes
+    // apariciones reales y con logo ya disponible en assets/marcas/.
+    const LOGOS_POR_TEMA = {
+        perfumeria: ['babaria', 'alvarezgomez', 'industrias_beter', 'jofel', 'asevi', 'renova', 'ressol'],
+        pinturas: ['pentrilo', 'baixens', 'mora', 'kelsia', 'nespoli', 'sika'],
+    };
     const EXTENSIONES = {
-        ariel: 'jpg', arrixaca: 'jpg', asevi: 'jpg', babaria: 'webp', baixens: 'jpg',
-        caselli: 'jpg', cif: 'jpg', elmilagrito: 'png', fairy: 'jpg',
-        gomacamps: 'jpg', industrias_beter: 'jpg', industrias_betik: 'jpg',
-        kelsia: 'webp', losdi: 'jpg', masso: 'webp', mimosin: 'jpg',
-        muropapel: 'jpg', polmeros_del_valls: 'jpg', renova: 'svg', ressol: 'jpg',
-        thomil: 'png', vileda: 'jpg',
+        asevi: 'jpg', babaria: 'webp', baixens: 'jpg', industrias_beter: 'jpg',
+        kelsia: 'webp', renova: 'svg', ressol: 'jpg',
     };
 
     function rutaLogo(clave) {
@@ -691,11 +694,12 @@
         return copia;
     }
 
-    function pintarMarcasAleatorias() {
+    function pintarMarcasDelTema() {
         const cont = document.getElementById('jo-proveedores-grid');
-        const barajadas = mezclarLogos(LOGOS);
+        const logos = LOGOS_POR_TEMA[estado.tema] || [];
+        const barajadas = mezclarLogos(logos);
         cont.innerHTML = '';
-        barajadas.slice(0, 6).forEach((clave) => {
+        barajadas.forEach((clave) => {
             const a = document.createElement('a');
             a.className = 'premium-provider-card';
             a.href = '../buscador.html';
@@ -709,8 +713,9 @@
     }
 
     // ── Arranque ─────────────────────────────────────────────────────
+    // aplicarTemaEnVista() ya pinta las marcas del tema inicial (ver su
+    // llamada a pintarMarcasDelTema()), no hace falta repetirlo aquí.
 
     aplicarTemaEnVista();
-    pintarMarcasAleatorias();
     nuevaPartida();
 })();
