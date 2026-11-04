@@ -213,10 +213,41 @@ def main():
         '    <FilesMatch "\\.(html|json)$">\n'
         '        Header set Cache-Control "no-cache, must-revalidate"\n'
         '    </FilesMatch>\n'
+        '</IfModule>\n\n'
+        '# Comprimir las respuestas de texto (HTML/CSS/JS/JSON/SVG/fuentes de\n'
+        '# texto) con gzip — bug real detectado con pruebas de carga del\n'
+        '# buscador: IONOS no comprimía NADA (ni siquiera el CSS), a\n'
+        '# diferencia de GitHub Pages (preproducción), que sí lo hace por\n'
+        '# defecto. El caso más grave es data/productos.json: 4.4 MB tal\n'
+        '# cual, frente a ~540 KB comprimido (el mismo archivo, mismo\n'
+        '# contenido, en GitHub Pages) — un 88% menos. En una conexión\n'
+        '# móvil normal (~1.6 Mbps simulados) eso se traduce en muchos\n'
+        '# segundos de diferencia solo en esa descarga, antes de que el\n'
+        '# buscador pueda pintar ni un producto. Se aplica también al\n'
+        '# propio buscador.html (935 KB sin comprimir) y al resto de\n'
+        '# catálogos JSON (productos_talleres.json, etc.). Las imágenes de\n'
+        '# producto (ya comprimidas como JPEG/WEBP) no se ven afectadas ni\n'
+        '# falta que lo estén — mod_deflate no las toca.\n'
+        '<IfModule mod_deflate.c>\n'
+        '    AddOutputFilterByType DEFLATE text/html text/css text/plain\n'
+        '    AddOutputFilterByType DEFLATE text/javascript application/javascript application/x-javascript\n'
+        '    AddOutputFilterByType DEFLATE application/json\n'
+        '    AddOutputFilterByType DEFLATE image/svg+xml\n'
+        '    AddOutputFilterByType DEFLATE application/xml text/xml application/rss+xml\n'
+        '    AddOutputFilterByType DEFLATE font/ttf font/otf application/vnd.ms-fontobject\n'
+        '</IfModule>\n\n'
+        '# Evita que un proxy/caché intermedio sirva la variante sin\n'
+        '# comprimir a un cliente que sí la admite (o viceversa) — depende\n'
+        '# de la cabecera Accept-Encoding de cada petición, así que cada\n'
+        '# variante debe cachearse por separado.\n'
+        '<IfModule mod_headers.c>\n'
+        '    <IfModule mod_deflate.c>\n'
+        '        Header append Vary Accept-Encoding\n'
+        '    </IfModule>\n'
         '</IfModule>\n',
         encoding='utf-8'
     )
-    print('✓ .htaccess: redirección de /defaultsite a raíz y Cache-Control (no-cache en HTML/JSON) añadidos.')
+    print('✓ .htaccess: redirección de /defaultsite a raíz, Cache-Control (no-cache en HTML/JSON) y compresión gzip (mod_deflate) añadidos.')
 
     # Fallback por si .htaccess no se lee o /defaultsite pide
     # explícitamente una página de índice: redirigir con meta-refresh
