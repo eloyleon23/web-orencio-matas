@@ -7376,6 +7376,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // producto con la promoción... cuando accedes desde el buscador y
     // buscas el producto, sí carga". abrirProductoDesdeURL() espera a
     // esta misma promesa antes de abrir el modal (ver más abajo).
+    // "let" (no "const") y declarada AQUÍ, antes de esta primera
+    // llamada: cargarCampanasEscaparate_ la lee de forma síncrona nada
+    // más entrar (dedupe de peticiones solapadas, ver su definición más
+    // abajo) y esta es la llamada más temprana de todo el archivo —
+    // si la variable se declarara solo junto a la función (más abajo en
+    // el archivo), esta llamada de aquí fallaría con "Cannot access
+    // 'cargarCampanasEnVuelo_' before initialization" (temporal dead
+    // zone: un "let" no se inicializa hasta que su propia sentencia se
+    // ejecuta, a diferencia de una function declaration, que sí está
+    // disponible desde el principio por hoisting).
+    let cargarCampanasEnVuelo_ = null;
     const campanasEscaparateCargadas_ = cargarCampanasEscaparate_();
 
     cargarProductosPrincipales();
@@ -8477,23 +8488,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
     }
 
-    async function cargarDestacados_() {
-        try {
-            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_destacados');
-            const datos = await resp.json();
-            destacadosDatos_ = {
-                activo: !!datos.activo,
-                fechaFin: datos.fechaFin || '',
-                productos: Array.isArray(datos.productos) ? datos.productos : [],
-            };
-        } catch (e) {
-            console.error('cargarDestacados_: error cargando la sección Destacados', e);
-            destacadosDatos_ = { activo: false, fechaFin: '', productos: [] };
-        }
-        renderDestacados_();
-        if ($('destacados-vista-principal') && $('destacados-vista-principal').style.display !== 'none') {
-            destacadosRenderizarListadoGestion_();
-        }
+    // actualizarModulosDescubrimiento_() puede dispararse varias veces en
+    // segundos durante la carga inicial (primer pintado instantáneo,
+    // reconciliación en vivo, catálogos adicionales en segundo plano —
+    // ver sus llamadas) y cada una llamaba aquí, disparando una petición
+    // a Apps Script por cada una (3 peticiones idénticas en segundos,
+    // medido con pruebas de carga reales). Esta promesa "en vuelo"
+    // colapsa esas llamadas solapadas en UNA sola petición real — las
+    // llamadas que lleguen mientras ya hay una en curso esperan y
+    // reciben el mismo resultado, en vez de disparar otra. Una vez
+    // resuelta se limpia (null), así que una llamada POSTERIOR de
+    // verdad (p. ej. la comprobación periódica cada 5 min) sigue
+    // pidiendo datos en vivo con total normalidad — esto no es una
+    // caché con caducidad, solo evita trabajo duplicado simultáneo.
+    let cargarDestacadosEnVuelo_ = null;
+    function cargarDestacados_() {
+        if (cargarDestacadosEnVuelo_) return cargarDestacadosEnVuelo_;
+        cargarDestacadosEnVuelo_ = (async () => {
+            try {
+                const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_destacados');
+                const datos = await resp.json();
+                destacadosDatos_ = {
+                    activo: !!datos.activo,
+                    fechaFin: datos.fechaFin || '',
+                    productos: Array.isArray(datos.productos) ? datos.productos : [],
+                };
+            } catch (e) {
+                console.error('cargarDestacados_: error cargando la sección Destacados', e);
+                destacadosDatos_ = { activo: false, fechaFin: '', productos: [] };
+            }
+            renderDestacados_();
+            if ($('destacados-vista-principal') && $('destacados-vista-principal').style.display !== 'none') {
+                destacadosRenderizarListadoGestion_();
+            }
+        })().finally(() => { cargarDestacadosEnVuelo_ = null; });
+        return cargarDestacadosEnVuelo_;
     }
 
     function destacadosProductosVigentes_() {
@@ -8553,7 +8582,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return hoy >= new Date(c.fechaInicio + 'T00:00:00') && hoy <= new Date(c.fechaFin + 'T23:59:59');
     }
 
-    async function cargarCampanasEscaparate_() {
+    // Misma dedupe que cargarDestacados_ (ver su comentario) — colapsa
+    // llamadas solapadas en UNA sola petición real, sin convertirse en
+    // una caché con caducidad: sigue "en vivo" para cualquier llamada
+    // que no se solape con una ya en curso, que es justo lo que pide el
+    // comentario de más arriba sobre esta función. "cargarCampanasEnVuelo_"
+    // se declara arriba, junto a la primera llamada (ver su comentario
+    // ahí) — no aquí, por un problema real de temporal dead zone.
+    function cargarCampanasEscaparate_() {
+        if (cargarCampanasEnVuelo_) return cargarCampanasEnVuelo_;
+        cargarCampanasEnVuelo_ = cargarCampanasEscaparateInterno_()
+            .finally(() => { cargarCampanasEnVuelo_ = null; });
+        return cargarCampanasEnVuelo_;
+    }
+
+    async function cargarCampanasEscaparateInterno_() {
         try {
             const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_campanas', { cache: 'no-store' });
             const datos = await resp.json();
