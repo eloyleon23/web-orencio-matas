@@ -139,37 +139,6 @@ body {
     }
 }
 
-.jo-selector-tema {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.jo-chip-tema {
-    flex: 1 1 calc(50% - 4px);
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 6px;
-    border-radius: 10px;
-    border: 1.5px solid var(--jo-gris-borde);
-    background: var(--jo-blanco);
-    color: var(--jo-gris-texto);
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.jo-chip-tema.is-activo {
-    background: var(--jo-negro);
-    border-color: var(--jo-negro);
-    color: var(--jo-blanco);
-}
-
 .jo-barra-superior {
     display: flex;
     align-items: center;
@@ -290,37 +259,6 @@ body {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-4px); }
     75% { transform: translateX(4px); }
-}
-
-/* ── Tema Pinturas: bote cilíndrico con tapa, en vez de frasco de
-   cuello estrecho ────────────────────────────────────────────────────
-   A petición de Eloy tras probar el juego: el selector de tema solo
-   cambiaba texto/icono, los recipientes se veían idénticos entre
-   Perfumería y Pinturas. Aquí sí cambia la FORMA: sin cuello, con las
-   cuatro esquinas redondeadas igual (como un bote real) y una tapa
-   metálica (franja rayada en diagonal) en vez de la muesca estrecha
-   del frasco. El color de selección/resuelto (is-seleccionado,
-   is-resuelto) sigue aplicando igual, vía la propiedad "border-color"
-   normal — no hace falta repetirlo aquí. */
-.jo-tablero[data-tema="pinturas"] .jo-frasco {
-    border-radius: 8px;
-    border-top: 3px solid var(--jo-negro);
-}
-
-.jo-tablero[data-tema="pinturas"] .jo-frasco::before {
-    display: none;
-}
-
-.jo-tablero[data-tema="pinturas"] .jo-frasco::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 15%;
-    background: repeating-linear-gradient(135deg, #9a9da2, #9a9da2 4px, #b7bac0 4px, #b7bac0 8px);
-    border-bottom: 2px solid var(--jo-negro);
-    pointer-events: none;
 }
 
 .jo-segmento {
