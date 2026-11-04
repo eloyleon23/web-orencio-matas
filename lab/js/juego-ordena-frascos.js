@@ -382,6 +382,11 @@
         document.getElementById('jo-header-titulo-texto').textContent = cfg.titulo;
         document.getElementById('jo-header-subtitulo').textContent = cfg.subtitulo;
         document.getElementById('jo-ayuda').textContent = cfg.ayuda;
+        // Cambia también la FORMA del recipiente (ver juego-ordena-frascos.css):
+        // frasco de cuello estrecho para Perfumería, bote cilíndrico con
+        // tapa metálica para Pinturas — para que el cambio de tema se note
+        // de verdad y no sea solo un cambio de texto.
+        tablero.dataset.tema = estado.tema;
         document.querySelectorAll('.om-compartir-juego-boton').forEach((b) => {
             b.dataset.nombreJuego = cfg.titulo;
             b.dataset.emojiJuego = cfg.icono;
