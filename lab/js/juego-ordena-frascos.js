@@ -311,12 +311,32 @@
     function actualizarFrascoEl(el, indiceTubo) {
         const tubo = estado.tubos[indiceTubo];
         el.innerHTML = '';
+        const logos = LOGOS_POR_TEMA[estado.tema] || [];
         tubo.forEach((colorIdx) => {
             const seg = document.createElement('div');
             seg.className = 'jo-segmento';
             const color = COLORES[colorIdx];
             seg.style.background = color.hex;
-            seg.textContent = color.simbolo;
+            // A petición de Eloy: un logo real de marca (no el símbolo
+            // abstracto de antes) en cada bloque de color, para que se
+            // vea mientras se juega — ver LOGOS_POR_TEMA más abajo. Hay
+            // más colores (hasta 8, niveles difíciles) que marcas
+            // confirmadas por tema (7 en perfumería, 6 en pinturas — ver
+            // el porqué junto a LOGOS_POR_TEMA), así que se repite
+            // alguna marca en los niveles con más colores; no afecta a
+            // la resolución del puzzle, que sigue basándose en el color
+            // de fondo de cada bloque, no en el logo.
+            if (logos.length) {
+                const marca = logos[colorIdx % logos.length];
+                const insignia = document.createElement('span');
+                insignia.className = 'jo-segmento__logo';
+                const img = document.createElement('img');
+                img.src = rutaLogo(marca);
+                img.alt = '';
+                img.loading = 'lazy';
+                insignia.appendChild(img);
+                seg.appendChild(insignia);
+            }
             seg.title = color.nombre;
             el.appendChild(seg);
         });
@@ -661,17 +681,21 @@
     });
 
     // ── Marcas por tema (reales del catálogo, no genéricas) ─────────────
-    // A petición de Eloy: con la sección de marcas mostrando logos al
-    // azar de TODO el catálogo (droguería/talleres incluidos), el
-    // selector de tema no se notaba aquí — ni rastro de perfumería o
-    // pinturas en concreto. Cada lista se ha obtenido filtrando
-    // data/productos.json por área ("perfumeria"/"pinturas") y
-    // comprobando qué marcas de ese catálogo real tienen de verdad
-    // productos ahí (no es una lista inventada): p. ej. "jofel" aparece
-    // en perfumería por su jabón de espuma, "kelsia" en pinturas por
-    // sus aguarrases y alcoholes, "nespoli" por sus rodillos — ver el
-    // análisis que dio estas listas en el PR. Solo marcas con bastantes
-    // apariciones reales y con logo ya disponible en assets/marcas/.
+    // Se usa en dos sitios: la sección "Algunas de nuestras marcas" de
+    // abajo, y la insignia de logo dentro de cada bloque de color del
+    // tablero (ver actualizarFrascoEl más arriba) — a petición de Eloy,
+    // para que se vean marcas nuestras mientras se juega, no solo al
+    // terminar. Antes la sección de marcas mostraba logos al azar de
+    // TODO el catálogo (droguería/talleres incluidos), así que el
+    // selector de tema no se notaba ahí en absoluto. Cada lista se ha
+    // obtenido filtrando data/productos.json por área
+    // ("perfumeria"/"pinturas") y comprobando qué marcas de ese
+    // catálogo real tienen de verdad productos ahí (no es una lista
+    // inventada): p. ej. "jofel" aparece en perfumería por su jabón de
+    // espuma, "kelsia" en pinturas por sus aguarrases y alcoholes,
+    // "nespoli" por sus rodillos — ver el análisis que dio estas listas
+    // en el PR. Solo marcas con bastantes apariciones reales y con
+    // logo ya disponible en assets/marcas/.
     const LOGOS_POR_TEMA = {
         perfumeria: ['babaria', 'alvarezgomez', 'industrias_beter', 'jofel', 'asevi', 'renova', 'ressol'],
         pinturas: ['pentrilo', 'baixens', 'mora', 'kelsia', 'nespoli', 'sika'],
