@@ -328,9 +328,36 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.85);
     transition: background 0.12s ease;
+}
+
+/* Insignia con el logo de marca dentro de cada bloque de color — a
+   petición de Eloy, para que se vean marcas reales de Orencio Matas
+   mientras se juega (antes solo había un símbolo abstracto). El
+   círculo blanco de fondo es necesario: los logos no están pensados
+   para verse sobre un color saturado cualquiera, y sin él algunos
+   quedaban ilegibles encima de ciertos colores del tablero. El
+   tamaño es un % del propio bloque (no px fijos), así que escala
+   solo al cambiar --jo-ancho-frasco (vista normal/pantalla
+   completa — ver medirTablero() en juego-ordena-frascos.js), sin
+   necesitar ningún cálculo nuevo aquí. */
+.jo-segmento__logo {
+    width: 62%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+
+.jo-segmento__logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .jo-segmento--entrando {
