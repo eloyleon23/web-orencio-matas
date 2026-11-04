@@ -73,6 +73,8 @@
     const zona = document.getElementById('jg-zona');
     const frasco = document.getElementById('jg-frasco');
     const liquido = document.getElementById('jg-frasco-liquido');
+    const frascoCuello = frasco.querySelector('.jg-frasco__cuello');
+    const frascoCuerpo = frasco.querySelector('.jg-frasco__cuerpo');
 
     function cfgDificultad() {
         return DIFICULTADES[estado.dificultad];
@@ -123,29 +125,51 @@
             el.style.top = '86%';
         });
 
-        const entrada = { el, x, esMalo };
+        const entrada = { el, x, esMalo, inicio: performance.now(), duracion };
         estado.cayendo.push(entrada);
-        entrada.temporizador = setTimeout(() => comprobarCaptura(entrada), duracion);
+        entrada.frame = requestAnimationFrame(() => vigilarCaida(entrada));
     }
 
     function quitarEntrada(entrada) {
-        clearTimeout(entrada.temporizador);
+        cancelAnimationFrame(entrada.frame);
         estado.cayendo = estado.cayendo.filter((e) => e !== entrada);
         entrada.el.remove();
     }
 
-    // Se comprueba en el instante en que el ingrediente llega abajo: si
-    // el frasco está justo debajo en ese momento, se atrapa — igual que
-    // un juego de atrapar clásico, sin necesitar un bucle de colisión
-    // continuo.
+    // Se comprueba en cada frame si el ingrediente ya solapa visualmente
+    // con la boca/cuerpo del frasco (no con el tapón, que es sólo
+    // decorativo) — así el atrapado se hace efectivo en cuanto entra en
+    // el frasco, no sólo cuando llega al líquido del fondo. Si llega
+    // abajo sin haber entrado nunca en el frasco, se pierde sin efecto.
+    function vigilarCaida(entrada) {
+        const elRect = entrada.el.getBoundingClientRect();
+        const cuelloRect = frascoCuello.getBoundingClientRect();
+        const cuerpoRect = frascoCuerpo.getBoundingClientRect();
+        const zonaTop = Math.min(cuelloRect.top, cuerpoRect.top);
+        const zonaLeft = Math.min(cuelloRect.left, cuerpoRect.left);
+        const zonaRight = Math.max(cuelloRect.right, cuerpoRect.right);
+        const centroX = (elRect.left + elRect.right) / 2;
+        const haEntrado = elRect.bottom >= zonaTop && centroX >= zonaLeft && centroX <= zonaRight;
+
+        if (haEntrado) {
+            comprobarCaptura(entrada);
+            return;
+        }
+
+        if (performance.now() - entrada.inicio >= entrada.duracion) {
+            quitarEntrada(entrada);
+            return;
+        }
+
+        entrada.frame = requestAnimationFrame(() => vigilarCaida(entrada));
+    }
+
     function comprobarCaptura(entrada) {
-        const margen = cfgDificultad().anchoFrasco / 2 + 3;
-        const dentro = Math.abs(entrada.x - estado.frascoX) <= margen;
         quitarEntrada(entrada);
 
-        if (dentro && !entrada.esMalo) {
+        if (!entrada.esMalo) {
             capturarBueno(entrada.x);
-        } else if (dentro && entrada.esMalo) {
+        } else {
             capturarMalo(entrada.x);
         }
         actualizarVista();
