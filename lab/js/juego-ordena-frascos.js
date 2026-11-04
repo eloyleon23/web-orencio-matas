@@ -56,6 +56,7 @@
         tema: 'perfumeria',
         nivelIndex: 0, // 0-based, índice dentro de NIVELES
         tubos: [], // tubos[i] = array de índices de color, de abajo arriba
+        marcasNivel: [], // marcasNivel[colorIdx] = slug de marca para ese color EN ESTE nivel (ver construirNivel)
         seleccion: null,
         movimientos: 0,
         movimientosPorNivel: 0,
@@ -311,7 +312,6 @@
     function actualizarFrascoEl(el, indiceTubo) {
         const tubo = estado.tubos[indiceTubo];
         el.innerHTML = '';
-        const logos = LOGOS_POR_TEMA[estado.tema] || [];
         tubo.forEach((colorIdx) => {
             const seg = document.createElement('div');
             seg.className = 'jo-segmento';
@@ -319,15 +319,14 @@
             seg.style.background = color.hex;
             // A petición de Eloy: un logo real de marca (no el símbolo
             // abstracto de antes) en cada bloque de color, para que se
-            // vea mientras se juega — ver LOGOS_POR_TEMA más abajo. Hay
-            // más colores (hasta 8, niveles difíciles) que marcas
-            // confirmadas por tema (7 en perfumería, 6 en pinturas — ver
-            // el porqué junto a LOGOS_POR_TEMA), así que se repite
-            // alguna marca en los niveles con más colores; no afecta a
+            // vea mientras se juega — elegida al azar por nivel entre
+            // TODAS las marcas que tenemos (ver estado.marcasNivel en
+            // construirNivel y LOGOS más abajo), sin filtrar por tema
+            // ("no poner el resto sería discriminatorio"). No afecta a
             // la resolución del puzzle, que sigue basándose en el color
             // de fondo de cada bloque, no en el logo.
-            if (logos.length) {
-                const marca = logos[colorIdx % logos.length];
+            if (estado.marcasNivel[colorIdx]) {
+                const marca = estado.marcasNivel[colorIdx];
                 const insignia = document.createElement('span');
                 insignia.className = 'jo-segmento__logo';
                 const img = document.createElement('img');
@@ -476,7 +475,9 @@
         // tapa metálica para Pinturas — para que el cambio de tema se note
         // de verdad y no sea solo un cambio de texto.
         tablero.dataset.tema = estado.tema;
-        pintarMarcasDelTema();
+        // No filtra marcas por tema (ver pintarMarcas) — solo aprovecha
+        // el cambio de tema para barajarlas de nuevo.
+        pintarMarcas();
         document.querySelectorAll('.om-compartir-juego-boton').forEach((b) => {
             b.dataset.nombreJuego = cfg.titulo;
             b.dataset.emojiJuego = cfg.icono;
@@ -509,7 +510,16 @@
     // ── Partida ──────────────────────────────────────────────────────
 
     function construirNivel() {
-        estado.tubos = generarNivel(NIVELES[estado.nivelIndex]);
+        const numColores = NIVELES[estado.nivelIndex];
+        estado.tubos = generarNivel(numColores);
+        // Una marca distinta por color, elegida al azar entre TODAS las
+        // que tenemos (ver LOGOS, más abajo) — no solo las 8 primeras
+        // de la lista: se baraja de nuevo en cada nivel, así que a lo
+        // largo de una partida (y de una partida a otra) se ven marcas
+        // distintas, no siempre las mismas. Como LOGOS tiene de sobra
+        // (36) para el máximo de colores de un nivel (8), nunca hace
+        // falta repetir ninguna dentro del mismo nivel.
+        estado.marcasNivel = mezclarLogos(LOGOS).slice(0, numColores);
         estado.movimientosPorNivel = 0;
         estado.seleccion = null;
         renderTablero();
@@ -680,32 +690,51 @@
         if (ev.target.id === 'jo-compartir-overlay') ev.currentTarget.hidden = true;
     });
 
-    // ── Marcas por tema (reales del catálogo, no genéricas) ─────────────
-    // Se usa en dos sitios: la sección "Algunas de nuestras marcas" de
-    // abajo, y la insignia de logo dentro de cada bloque de color del
-    // tablero (ver actualizarFrascoEl más arriba) — a petición de Eloy,
-    // para que se vean marcas nuestras mientras se juega, no solo al
-    // terminar. Antes la sección de marcas mostraba logos al azar de
-    // TODO el catálogo (droguería/talleres incluidos), así que el
-    // selector de tema no se notaba ahí en absoluto. Cada lista se ha
-    // obtenido filtrando data/productos.json por área
-    // ("perfumeria"/"pinturas") y comprobando qué marcas de ese
-    // catálogo real tienen de verdad productos ahí (no es una lista
-    // inventada): p. ej. "jofel" aparece en perfumería por su jabón de
-    // espuma, "kelsia" en pinturas por sus aguarrases y alcoholes,
-    // "nespoli" por sus rodillos — ver el análisis que dio estas listas
-    // en el PR. Solo marcas con bastantes apariciones reales y con
-    // logo ya disponible en assets/marcas/.
-    const LOGOS_POR_TEMA = {
-        perfumeria: ['babaria', 'alvarezgomez', 'industrias_beter', 'jofel', 'asevi', 'renova', 'ressol'],
-        pinturas: ['pentrilo', 'baixens', 'mora', 'kelsia', 'nespoli', 'sika'],
-    };
+    // ── Marcas (todas, sin filtrar por tema) ─────────────────────────────
+    // A petición de Eloy: la primera versión filtraba las marcas por el
+    // tema elegido (Perfumería/Pinturas) — pero "no poner el resto
+    // sería discriminatorio": el selector de tema solo cambia la FORMA
+    // del envase (ver TEMAS/aplicarTemaEnVista), ya no filtra marcas.
+    // Se muestran TODAS las que tenemos, alternando entre ellas tanto
+    // en la insignia de cada bloque de color (ver actualizarFrascoEl)
+    // como en la sección "Algunas de nuestras marcas" de abajo.
+    //
+    // La lista sigue viniendo de catálogo real, no inventada — filtrando
+    // data/productos.json por marca y comprobando en qué área(s)
+    // aparece de verdad (ver el análisis del PR): ningún nombre de
+    // aquí es talleres-exclusivo (esa área usa sus propios catálogos de
+    // proveedor — Glasurit/Besa/Baslac/Zaphiro — fuera de esta lista).
+    // Dos correcciones de Eloy sobre el reparto inicial por tema:
+    // "thomil y kelsia son de Droguería" (no de Pinturas, donde habían
+    // quedado por error) y se añaden tres marcas de pintura reales que
+    // faltaban — Akzonobel, 3M y Titan (TitanPro/TitanTech son líneas
+    // de la misma marca Titan, confirmado en el catálogo: hay
+    // productos "TITAN", "TITANPRO" y "TITANTECH" distintos bajo el
+    // mismo fabricante — un único logo para los tres).
+    const LOGOS = [
+        '3m', 'akzonobel', 'alvarezgomez', 'ariel', 'arrixaca', 'asevi', 'babaria',
+        'baixens', 'caselli', 'cif', 'cisent', 'compo', 'elmilagrito', 'fairy',
+        'flower', 'gomacamps', 'industrias_beter', 'industrias_betik', 'jofel',
+        'kelsia', 'losdi', 'masso', 'mimosin', 'mora', 'muropapel', 'nespoli',
+        'pentrilo', 'polmeros_del_valls', 'renova', 'ressol', 'sika', 'thomil',
+        'titan', 'vijusa', 'vileda', 'vinfer',
+    ];
     const EXTENSIONES = {
-        asevi: 'jpg', babaria: 'webp', baixens: 'jpg', industrias_beter: 'jpg',
-        kelsia: 'webp', renova: 'svg', ressol: 'jpg',
+        ariel: 'jpg', arrixaca: 'jpg', asevi: 'jpg', babaria: 'webp', baixens: 'jpg',
+        caselli: 'jpg', cif: 'jpg', elmilagrito: 'png', fairy: 'jpg',
+        gomacamps: 'jpg', industrias_beter: 'jpg', industrias_betik: 'jpg',
+        kelsia: 'webp', losdi: 'jpg', masso: 'webp', mimosin: 'jpg',
+        muropapel: 'jpg', polmeros_del_valls: 'jpg', renova: 'svg', ressol: 'jpg',
+        thomil: 'png', vileda: 'jpg',
     };
+    // Titan vive en una carpeta distinta (assets/proveedores/, junto a
+    // las marcas de Talleres) con un nombre de archivo que no sigue el
+    // patrón logo_<clave>.<ext> del resto — ruta completa aparte en
+    // vez de forzarla dentro de rutaLogo().
+    const RUTA_LOGO_TITAN = '../assets/proveedores/LOGO-TITANPRO.png';
 
     function rutaLogo(clave) {
+        if (clave === 'titan') return RUTA_LOGO_TITAN;
         return `../assets/marcas/logo_${clave}.${EXTENSIONES[clave] || 'png'}`;
     }
 
@@ -718,12 +747,11 @@
         return copia;
     }
 
-    function pintarMarcasDelTema() {
+    function pintarMarcas() {
         const cont = document.getElementById('jo-proveedores-grid');
-        const logos = LOGOS_POR_TEMA[estado.tema] || [];
-        const barajadas = mezclarLogos(logos);
+        const barajadas = mezclarLogos(LOGOS);
         cont.innerHTML = '';
-        barajadas.forEach((clave) => {
+        barajadas.slice(0, 9).forEach((clave) => {
             const a = document.createElement('a');
             a.className = 'premium-provider-card';
             a.href = '../buscador.html';
@@ -738,7 +766,7 @@
 
     // ── Arranque ─────────────────────────────────────────────────────
     // aplicarTemaEnVista() ya pinta las marcas del tema inicial (ver su
-    // llamada a pintarMarcasDelTema()), no hace falta repetirlo aquí.
+    // llamada a pintarMarcas()), no hace falta repetirlo aquí.
 
     aplicarTemaEnVista();
     nuevaPartida();
