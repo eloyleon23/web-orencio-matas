@@ -178,6 +178,16 @@ body.om-pantalla-completa-activa .jm-juego {
     flex: 1;
 }
 
+/* El "align-items: flex-start" de .jm-main en horizontal hace que
+   .jm-juego se quede a altura de contenido en vez de estirarse a la
+   pantalla completa. Se corrige solo en pantalla completa, sin tocar
+   el layout normal de dos columnas. */
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jm-main {
+        align-items: stretch;
+    }
+}
+
 /* En horizontal (.jm-main pasa a fila a partir de 900px) el "flex: 1"
    de arriba resetea la base a 0%, ganándole por especificidad a la
    regla responsive de más abajo que reparte el ancho 55%/45% con

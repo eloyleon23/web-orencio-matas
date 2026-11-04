@@ -68,21 +68,21 @@ body {
 }
 
 .jh-main {
-    max-width: 820px;
+    max-width: 1680px;
     margin: 0 auto;
     padding: 28px 20px 60px;
 }
 
+/* Tantas columnas como quepan sin forzar scroll horizontal, cada
+   tarjeta con un ancho mínimo cómodo de leer — se adapta solo al
+   ancho disponible (móvil = 1 columna, escritorio ancho = 4-5), sin
+   necesidad de puntos de corte fijos. El orden de las tarjetas (más
+   reciente primero) lo decide hub.js reordenando el DOM; el grid
+   simplemente las coloca de izquierda a derecha, fila a fila. */
 .jh-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 16px;
-}
-
-@media (min-width: 620px) {
-    .jh-grid {
-        grid-template-columns: 1fr 1fr;
-    }
 }
 
 .jh-tarjeta {
