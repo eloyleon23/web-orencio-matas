@@ -66,10 +66,79 @@
     };
 
     const tablero = document.getElementById('jo-tablero');
+    const tableroWrap = document.querySelector('.jo-tablero-wrap');
 
     function cfgTema() {
         return TEMAS[estado.tema];
     }
+
+    // ── Tamaño de los frascos en pantalla completa ──────────────────────
+    // Fuera de pantalla completa se usa el tamaño fijo por defecto de
+    // juego-ordena-frascos.css (--jo-ancho-frasco/--jo-alto-frasco sin
+    // definir). En pantalla completa, donde SÍ hay mucho más alto
+    // disponible, se mide y se agranda — ver el comentario largo en
+    // ese mismo bloque del CSS sobre el bug que esto corrige.
+    const RELACION_ALTO_ANCHO = 3.3;
+    const ANCHO_MIN_PANTALLA_COMPLETA = 64;
+    const ANCHO_MAX_PANTALLA_COMPLETA = 150;
+
+    const GAP_TABLERO = 14; // debe coincidir con "gap" de .jo-tablero en el CSS
+
+    // Calcula el mayor ancho de frasco (entre el mínimo y el máximo)
+    // que, dado el número de frascos del nivel, cabe en el espacio
+    // disponible SIN desbordar — probando de mayor a menor y, para
+    // cada candidato, calculando cuántas columnas entran por fila
+    // (flex-wrap) y por tanto cuántas filas resultarían, no solo si
+    // cabe una única fila. Sin esto, un candidato que obliga a 2 filas
+    // podía seguir pareciendo "cabe" si solo se miraba el alto de una
+    // fila, desbordando la zona real (bug real: en una pantalla de
+    // 1366×700 los frascos se salían por arriba y por abajo).
+    function calcularAnchoFrasco(n, anchoDisp, altoDisp) {
+        for (let ancho = ANCHO_MAX_PANTALLA_COMPLETA; ancho >= ANCHO_MIN_PANTALLA_COMPLETA; ancho -= 2) {
+            const alto = ancho * RELACION_ALTO_ANCHO;
+            const columnas = Math.max(1, Math.floor((anchoDisp + GAP_TABLERO) / (ancho + GAP_TABLERO)));
+            const filas = Math.ceil(n / columnas);
+            const altoNecesario = filas * alto + (filas - 1) * GAP_TABLERO;
+            if (altoNecesario <= altoDisp) return ancho;
+        }
+        return ANCHO_MIN_PANTALLA_COMPLETA;
+    }
+
+    function medirTablero() {
+        if (!tableroWrap) return;
+        const enPantallaCompleta = document.body.classList.contains('om-pantalla-completa-activa');
+
+        if (!enPantallaCompleta) {
+            tablero.style.removeProperty('--jo-ancho-frasco');
+            tablero.style.removeProperty('--jo-alto-frasco');
+            return;
+        }
+
+        // Pequeño margen de seguridad (padding del propio tablero,
+        // redondeos) para no quedarse justo al límite.
+        const altoDisp = Math.floor(tableroWrap.clientHeight * 0.94);
+        const anchoDisp = Math.floor(tableroWrap.clientWidth * 0.96);
+        if (!altoDisp || !anchoDisp) {
+            requestAnimationFrame(medirTablero);
+            return;
+        }
+        const n = estado.tubos.length || 1;
+        const ancho = calcularAnchoFrasco(n, anchoDisp, altoDisp);
+        const alto = Math.round(ancho * RELACION_ALTO_ANCHO);
+        tablero.style.setProperty('--jo-ancho-frasco', ancho + 'px');
+        tablero.style.setProperty('--jo-alto-frasco', alto + 'px');
+    }
+
+    let temporizadorResizeTablero = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(temporizadorResizeTablero);
+        temporizadorResizeTablero = setTimeout(medirTablero, 60);
+    });
+    window.addEventListener('orientationchange', () => setTimeout(medirTablero, 150));
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => setTimeout(medirTablero, 60));
+    }
+    document.addEventListener('om-pantalla-completa-cambio', () => setTimeout(medirTablero, 60));
 
     // ── Generación de niveles (garantizada resoluble) ───────────────────
     // Se genera un reparto aleatorio de colores en los frascos y se
@@ -424,6 +493,7 @@
         estado.seleccion = null;
         renderTablero();
         actualizarVista();
+        medirTablero();
     }
 
     function nivelResuelto() {

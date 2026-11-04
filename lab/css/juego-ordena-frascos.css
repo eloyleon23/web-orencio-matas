@@ -219,7 +219,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 260px;
+    min-height: 300px;
 }
 
 .jo-tablero {
@@ -236,8 +236,8 @@ body {
 .jo-frasco {
     display: flex;
     flex-direction: column-reverse;
-    width: 52px;
-    height: 180px;
+    width: var(--jo-ancho-frasco, 64px);
+    height: var(--jo-alto-frasco, 220px);
     border-radius: 0 0 14px 14px;
     border: 3px solid var(--jo-negro);
     border-top: none;
@@ -700,14 +700,22 @@ a.jo-boton-secundario {
 /* ── Pantalla completa: aprovechar el alto liberado ───────────────────
    El <main> en sí se queda a 100vw (lo necesita el fondo fijo de
    pantalla completa para cubrir toda la pantalla — ver
-   pantalla-completa.css); solo la zona de juego usa el alto extra. A
-   diferencia de Atrapa la Fragancia o Salta, aquí NO hace falta topar
-   un ancho máximo: los frascos tienen un ancho fijo en px (52px) y se
-   reparten en fila con flex-wrap, así que una zona más ancha solo
-   reparte mejor el mismo número de frascos del mismo tamaño — nunca
-   los agranda (no hay ningún elemento dimensionado como % del ancho
-   de la zona, el mismo problema que sí afectaba a esos otros dos
-   juegos). */
+   pantalla-completa.css); la zona de juego usa el alto extra.
+
+   A diferencia de Atrapa la Fragancia o Salta y Reparte (donde el
+   elemento clave se dimensionaba como % del ANCHO de la zona, y por
+   eso había que TOPAR un ancho máximo para que no se viera enorme en
+   pantalla ancha), aquí el bug era justo el contrario: los frascos
+   tenían un tamaño fijo en px que NUNCA crecía, así que en pantalla
+   completa (con mucho más alto disponible) se quedaban exactamente
+   igual de pequeños que en la vista normal — bug real reportado:
+   "en pantalla completa se ve muy pequeño los frascos para jugar".
+   Se corrige con el mismo patrón que Dobla el Almacén (medirTablero()
+   en juego-ordena-frascos.js): en pantalla completa, JS mide el alto
+   real disponible y fija --jo-ancho-frasco/--jo-alto-frasco en
+   consecuencia (con un tope máximo para que tampoco se pase); fuera
+   de pantalla completa esas variables no se tocan y se usa el valor
+   por defecto de abajo. */
 
 body.om-pantalla-completa-activa .jo-juego {
     display: flex;
