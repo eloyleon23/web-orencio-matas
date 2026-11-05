@@ -36,7 +36,7 @@
 <meta name="description" content="Minijuego: guía la brocha, mezcla pigmentos y cubre el lienzo sin chocar contra tu propia estela.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20261107">
-<link rel="stylesheet" href="css/juego-estela.css?v=20261101d">
+<link rel="stylesheet" href="css/juego-estela.css?v=20261113">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261104">
 <!-- Google tag (gtag.js) -->
 <script>
@@ -154,6 +154,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="je-zona" id="je-zona" aria-label="Lienzo de pintura">
                 <canvas class="je-canvas" id="je-canvas"></canvas>
                 <div class="je-pausado-indicador" id="je-pausado-indicador" hidden aria-hidden="true">⏸ Pausado</div>
+                <div class="je-cuenta-atras" id="je-cuenta-atras" role="status" aria-live="assertive" hidden>
+                    <span id="je-cuenta-atras-numero">3</span>
+                </div>
             </div>
             <button type="button" class="je-boton-reiniciar" id="je-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
                 <span aria-hidden="true">↺</span>
@@ -323,7 +326,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="js/estadisticas-juegos.js?v=20261108"></script>
 <script src="js/compartir-juego.js?v=20261102"></script>
 <script src="js/mejores-resultados.js?v=20261110"></script>
-<script src="js/juego-estela.js?v=20261105"></script>
+<script src="js/juego-estela.js?v=20261113"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ

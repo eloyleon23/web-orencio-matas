@@ -444,7 +444,7 @@
             boton.classList.add('is-activo');
             boton.setAttribute('aria-checked', 'true');
             estado.dificultad = boton.dataset.dificultad;
-            nuevaPartida();
+            empezarNueva();
         });
     });
 
@@ -473,6 +473,8 @@
         clearInterval(temporizadorJugador);
         clearInterval(temporizadorFantasmas);
         clearTimeout(temporizadorAsustada);
+        clearInterval(temporizadorCuentaAtras);
+        document.getElementById('jn-cuenta-atras').hidden = true;
         ocultarBono();
 
         estado.rejilla = clonarLaberinto();
@@ -488,7 +490,7 @@
         estado.comboMaximo = 0;
         estado.terminado = false;
         estado.jugando = true;
-        estado.pausado = false;
+        estado.pausado = true; // hasta que acabe la cuenta atrás inicial
 
         construirDom();
         actualizarPosicionesDom();
@@ -498,11 +500,52 @@
         document.getElementById('jn-celebracion-overlay').hidden = true;
         document.getElementById('jn-pista').style.display = '';
 
-        const cfg = cfgDificultad();
-        temporizadorJugador = setInterval(tickJugador, cfg.tickJugador);
-        temporizadorFantasmas = setInterval(tickFantasmas, cfg.tickFantasma);
-
         ajustarLaberintoAlEspacio();
+
+        mostrarCuentaAtras(() => {
+            // El corral se mide desde "ahora": si se recalculara al
+            // crear los fantasmas, los ~3s de cuenta atrás ya se
+            // habrían comido buena parte (o toda) la espera prevista.
+            const ahora = performance.now();
+            estado.fantasmas.forEach((f, i) => {
+                f.tiempoSalida = ahora + ESPERA_SALIDA_MS + i * ESPERA_SALIDA_ESCALON_MS;
+            });
+            estado.pausado = false;
+            const cfg = cfgDificultad();
+            temporizadorJugador = setInterval(tickJugador, cfg.tickJugador);
+            temporizadorFantasmas = setInterval(tickFantasmas, cfg.tickFantasma);
+        });
+    }
+
+    // ── Cuenta atrás antes de empezar a moverse ───────────────────────
+
+    let temporizadorCuentaAtras = null;
+
+    function mostrarCuentaAtras(alTerminar) {
+        clearInterval(temporizadorCuentaAtras);
+        const el = document.getElementById('jn-cuenta-atras');
+        const elNumero = document.getElementById('jn-cuenta-atras-numero');
+        let n = 3;
+
+        function pintar() {
+            elNumero.textContent = String(n);
+            elNumero.style.animation = 'none';
+            void elNumero.offsetWidth;
+            elNumero.style.animation = '';
+        }
+
+        el.hidden = false;
+        pintar();
+        temporizadorCuentaAtras = setInterval(() => {
+            n--;
+            if (n <= 0) {
+                clearInterval(temporizadorCuentaAtras);
+                el.hidden = true;
+                alTerminar();
+                return;
+            }
+            pintar();
+        }, 1000);
     }
 
     function mensajeFinal(gano, vidas) {
@@ -519,6 +562,8 @@
         clearInterval(temporizadorJugador);
         clearInterval(temporizadorFantasmas);
         clearTimeout(temporizadorAsustada);
+        clearInterval(temporizadorCuentaAtras);
+        document.getElementById('jn-cuenta-atras').hidden = true;
         ocultarBono();
 
         const resultado = mensajeFinal(gano, estado.vidas);
@@ -534,11 +579,23 @@
         if (resultado.celebrar) lanzarConfeti();
     }
 
+    // ── Pantalla de inicio: el usuario decide cuándo empezar ──────────
+
+    function mostrarInicioOverlay(mostrar) {
+        document.getElementById('jn-inicio-overlay').hidden = !mostrar;
+    }
+
+    function empezarNueva() {
+        mostrarInicioOverlay(false);
+        nuevaPartida();
+    }
+
+    document.getElementById('jn-boton-jugar').addEventListener('click', empezarNueva);
     document.getElementById('jn-boton-reiniciar').addEventListener('click', (ev) => {
         ev.stopPropagation();
-        nuevaPartida();
+        empezarNueva();
     });
-    document.getElementById('jn-boton-jugar-de-nuevo').addEventListener('click', nuevaPartida);
+    document.getElementById('jn-boton-jugar-de-nuevo').addEventListener('click', empezarNueva);
 
     // ── Celebración final ────────────────────────────────────────────
 
@@ -718,7 +775,10 @@
     window.addEventListener('resize', () => ajustarLaberintoAlEspacio());
 
     // ── Arranque ─────────────────────────────────────────────────────
+    // No se entra en partida automáticamente: se muestra la pantalla
+    // de inicio con "Jugar" y es el usuario quien decide cuándo
+    // empezar (igual que en La Estela de Color).
 
     pintarMarcasAleatorias();
-    nuevaPartida();
+    mostrarInicioOverlay(true);
 })();

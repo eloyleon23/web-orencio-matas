@@ -547,6 +547,8 @@
         if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('estela');
         if (animacionId) cancelAnimationFrame(animacionId);
         clearInterval(temporizadorPigmento);
+        clearInterval(temporizadorCuentaAtras);
+        document.getElementById('je-cuenta-atras').hidden = true;
         borrarEstadoGuardado();
 
         estado.x = INICIO_X;
@@ -562,7 +564,7 @@
         estado.pigmentosRecogidos = 0;
         estado.fotograma = 0;
         estado.terminado = false;
-        estado.jugando = true;
+        estado.jugando = false; // hasta que acabe la cuenta atrás inicial
         estado.pausado = false;
         estado.partidaIniciada = true;
 
@@ -575,9 +577,44 @@
         redimensionarCanvas();
         actualizarVista();
 
-        temporizadorPigmento = setInterval(aparecerObjeto, cfgDificultad().intervaloPigmento);
-        aparecerObjeto();
-        animacionId = requestAnimationFrame(frame);
+        mostrarCuentaAtras(() => {
+            estado.jugando = true;
+            actualizarBotonJugarPausa();
+            temporizadorPigmento = setInterval(aparecerObjeto, cfgDificultad().intervaloPigmento);
+            aparecerObjeto();
+            animacionId = requestAnimationFrame(frame);
+        });
+    }
+
+    // ── Cuenta atrás antes de empezar a moverse ───────────────────────
+
+    let temporizadorCuentaAtras = null;
+
+    function mostrarCuentaAtras(alTerminar) {
+        clearInterval(temporizadorCuentaAtras);
+        const el = document.getElementById('je-cuenta-atras');
+        const elNumero = document.getElementById('je-cuenta-atras-numero');
+        let n = 3;
+
+        function pintar() {
+            elNumero.textContent = String(n);
+            elNumero.style.animation = 'none';
+            void elNumero.offsetWidth;
+            elNumero.style.animation = '';
+        }
+
+        el.hidden = false;
+        pintar();
+        temporizadorCuentaAtras = setInterval(() => {
+            n--;
+            if (n <= 0) {
+                clearInterval(temporizadorCuentaAtras);
+                el.hidden = true;
+                alTerminar();
+                return;
+            }
+            pintar();
+        }, 1000);
     }
 
     function finalizarPartida(completado) {
@@ -588,6 +625,8 @@
         estado.pausado = false;
         if (animacionId) cancelAnimationFrame(animacionId);
         clearInterval(temporizadorPigmento);
+        clearInterval(temporizadorCuentaAtras);
+        document.getElementById('je-cuenta-atras').hidden = true;
         borrarEstadoGuardado();
         mostrarIndicadorPausa(false);
         actualizarBotonJugarPausa();
