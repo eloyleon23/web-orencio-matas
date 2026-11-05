@@ -309,7 +309,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 1.35rem;
     transform: translate(-50%, -50%);
     pointer-events: none;
     will-change: left, top;
@@ -317,7 +317,7 @@ body {
 }
 
 .jn-jugador {
-    font-size: 1.15rem;
+    font-size: 1.6rem;
     z-index: 3;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
     /* Ver nota de .jn-fantasma: duración real fijada por JS. */
