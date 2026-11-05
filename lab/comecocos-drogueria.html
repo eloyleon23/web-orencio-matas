@@ -37,7 +37,7 @@
 <meta name="description" content="Minijuego tipo comecocos: recorre los pasillos del almacén recogiendo productos y esquiva las manchas que te persiguen.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20261107">
-<link rel="stylesheet" href="css/juego-comecocos.css?v=20261113">
+<link rel="stylesheet" href="css/juego-comecocos.css?v=20261114">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261104">
 <!-- Google tag (gtag.js) -->
 <script>
@@ -162,11 +162,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="jn-cuenta-atras" id="jn-cuenta-atras" role="status" aria-live="assertive" hidden>
                 <span id="jn-cuenta-atras-numero">3</span>
             </div>
+            <div class="jn-pausado-indicador" id="jn-pausado-indicador" hidden aria-hidden="true">⏸ Pausado</div>
         </div>
 
         <div class="jn-dpad" aria-label="Controles de dirección">
             <button type="button" class="jn-dpad__boton jn-dpad__boton--arriba" data-dir="arriba" aria-label="Arriba">▲</button>
             <button type="button" class="jn-dpad__boton jn-dpad__boton--izquierda" data-dir="izquierda" aria-label="Izquierda">◀</button>
+            <button type="button" class="jn-dpad__boton jn-dpad__boton--pausa" id="jn-boton-pausa" aria-label="Pausar" disabled>⏸&#xFE0E;</button>
             <button type="button" class="jn-dpad__boton jn-dpad__boton--derecha" data-dir="derecha" aria-label="Derecha">▶</button>
             <button type="button" class="jn-dpad__boton jn-dpad__boton--abajo" data-dir="abajo" aria-label="Abajo">▼</button>
         </div>
@@ -324,7 +326,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="js/estadisticas-juegos.js?v=20261108"></script>
 <script src="js/compartir-juego.js?v=20261102"></script>
 <script src="js/mejores-resultados.js?v=20261110"></script>
-<script src="js/juego-comecocos.js?v=20261113"></script>
+<script src="js/juego-comecocos.js?v=20261114"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ

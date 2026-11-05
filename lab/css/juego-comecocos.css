@@ -450,7 +450,7 @@ body {
 .jn-dpad {
     display: grid;
     grid-template-columns: repeat(3, 54px);
-    grid-template-rows: repeat(2, 54px);
+    grid-template-rows: repeat(3, 54px);
     gap: 6px;
     justify-content: center;
     margin: 4px auto 0;
@@ -477,7 +477,40 @@ body {
 .jn-dpad__boton--arriba { grid-column: 2; grid-row: 1; }
 .jn-dpad__boton--izquierda { grid-column: 1; grid-row: 2; }
 .jn-dpad__boton--derecha { grid-column: 3; grid-row: 2; }
-.jn-dpad__boton--abajo { grid-column: 2; grid-row: 2; }
+.jn-dpad__boton--abajo { grid-column: 2; grid-row: 3; }
+
+.jn-dpad__boton--pausa {
+    grid-column: 2;
+    grid-row: 2;
+    background: var(--jn-negro);
+    color: var(--jn-blanco);
+    border-color: var(--jn-negro);
+    font-size: 1.2rem;
+}
+
+.jn-dpad__boton--pausa:disabled {
+    background: var(--jn-gris-borde);
+    border-color: var(--jn-gris-borde);
+    cursor: default;
+}
+
+.jn-pausado-indicador {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(11, 33, 66, 0.6);
+    color: var(--jn-blanco);
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-radius: 10px;
+}
+
+.jn-pausado-indicador:not([hidden]) {
+    display: flex;
+}
 
 .jn-pista {
     margin: 8px 2px 0;

@@ -86,6 +86,15 @@
         terminado: false,
         jugando: false,
         pausado: false,
+        // Pausa manual (botón ⏸ de los controles), independiente de
+        // "pausado" — ese otro flag ya se usa para pausas automáticas
+        // y breves (cuenta atrás inicial, parón tras perder una vida)
+        // que no deben reactivarse solas si el jugador ha pausado él
+        // mismo. Ver pausarManual()/reanudarManual().
+        pausaManual: false,
+        enCuentaAtras: false,
+        finAsustadaEn: null,
+        bonoPausaRestanteMs: null,
     };
 
     // Tiempo que una mancha recién aparecida (o que acaba de "morir" y
@@ -173,13 +182,18 @@
             if (f.activo) f.asustado = true;
         });
         actualizarClasesFantasmas();
+        activarTemporizadorAsustada(cfgDificultad().duracionAsustada);
+    }
+
+    function activarTemporizadorAsustada(duracionMs) {
         clearTimeout(temporizadorAsustada);
-        const duracion = cfgDificultad().duracionAsustada;
+        estado.finAsustadaEn = performance.now() + duracionMs;
         temporizadorAsustada = setTimeout(() => {
+            estado.finAsustadaEn = null;
             estado.fantasmas.forEach((f) => { f.asustado = false; });
             actualizarClasesFantasmas();
-        }, duracion);
-        iniciarCuentaRegresivaBono(duracion);
+        }, duracionMs);
+        iniciarCuentaRegresivaBono(duracionMs);
     }
 
     // ── Aviso de modo bonus (cuenta atrás de manchas vulnerables) ─────
@@ -208,11 +222,14 @@
 
     function ocultarBono() {
         clearInterval(temporizadorCuentaBono);
+        clearTimeout(temporizadorAsustada);
+        estado.finAsustadaEn = null;
+        estado.bonoPausaRestanteMs = null;
         document.getElementById('jn-bonus').hidden = true;
     }
 
     function tickJugador() {
-        if (estado.pausado || estado.terminado) return;
+        if (estado.pausado || estado.pausaManual || estado.terminado) return;
         const j = estado.jugador;
         if (j.dirDeseada && puedeMover(j, j.dirDeseada)) j.dirActual = j.dirDeseada;
         if (j.dirActual && puedeMover(j, j.dirActual)) {
@@ -259,7 +276,7 @@
     }
 
     function tickFantasmas() {
-        if (estado.pausado || estado.terminado) return;
+        if (estado.pausado || estado.pausaManual || estado.terminado) return;
         estado.fantasmas.forEach((f) => {
             if (!f.activo) return;
             if (f.asustado) {
@@ -426,10 +443,72 @@
         estado.jugador.dirDeseada = dir;
     });
 
-    document.querySelectorAll('.jn-dpad__boton').forEach((boton) => {
+    document.querySelectorAll('.jn-dpad__boton[data-dir]').forEach((boton) => {
         boton.addEventListener('click', () => {
             estado.jugador.dirDeseada = boton.dataset.dir;
         });
+    });
+
+    // ── Pausa manual ───────────────────────────────────────────────────
+    // Independiente de estado.pausado (pausas automáticas breves: la
+    // cuenta atrás inicial y el parón tras perder una vida), para que
+    // una no interfiera con la otra — ver el comentario en `estado`.
+
+    function actualizarBotonPausa() {
+        const boton = document.getElementById('jn-boton-pausa');
+        const puedePausar = estado.jugando && !estado.terminado && !estado.enCuentaAtras;
+        boton.disabled = !puedePausar;
+        boton.textContent = (estado.pausaManual || !puedePausar ? '▶' : '⏸') + '︎';
+        boton.setAttribute('aria-label', estado.pausaManual ? 'Reanudar' : 'Pausar');
+    }
+
+    function mostrarIndicadorPausa(mostrar) {
+        document.getElementById('jn-pausado-indicador').hidden = !mostrar;
+    }
+
+    function pausarManual() {
+        if (!estado.jugando || estado.terminado || estado.enCuentaAtras || estado.pausaManual) return;
+        estado.pausaManual = true;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPausa();
+
+        // El modo bonus (manchas vulnerables) usa temporizadores reales
+        // (setTimeout/setInterval) que no se enteran por sí solos de
+        // que el juego está en pausa — sin esto, el tiempo de bonus
+        // seguiría agotándose en segundo plano mientras todo parece
+        // congelado en pantalla.
+        if (estado.finAsustadaEn !== null) {
+            estado.bonoPausaRestanteMs = Math.max(0, estado.finAsustadaEn - performance.now());
+            clearTimeout(temporizadorAsustada);
+            clearInterval(temporizadorCuentaBono);
+        }
+
+        actualizarBotonPausa();
+        mostrarIndicadorPausa(true);
+    }
+
+    function reanudarManual() {
+        if (!estado.jugando || estado.terminado || !estado.pausaManual) return;
+        estado.pausaManual = false;
+        if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarReanudacion();
+
+        if (estado.bonoPausaRestanteMs !== null) {
+            activarTemporizadorAsustada(estado.bonoPausaRestanteMs);
+            estado.bonoPausaRestanteMs = null;
+        }
+
+        actualizarBotonPausa();
+        mostrarIndicadorPausa(false);
+    }
+
+    function alternarPausaManual() {
+        if (estado.pausaManual) reanudarManual();
+        else pausarManual();
+    }
+
+    document.getElementById('jn-boton-pausa').addEventListener('click', alternarPausaManual);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && estado.jugando && !estado.terminado && !estado.pausaManual && !estado.enCuentaAtras) pausarManual();
     });
 
     // ── Dificultad ───────────────────────────────────────────────────
@@ -491,6 +570,10 @@
         estado.terminado = false;
         estado.jugando = true;
         estado.pausado = true; // hasta que acabe la cuenta atrás inicial
+        estado.pausaManual = false;
+        estado.enCuentaAtras = true;
+        mostrarIndicadorPausa(false);
+        actualizarBotonPausa();
 
         construirDom();
         actualizarPosicionesDom();
@@ -511,6 +594,8 @@
                 f.tiempoSalida = ahora + ESPERA_SALIDA_MS + i * ESPERA_SALIDA_ESCALON_MS;
             });
             estado.pausado = false;
+            estado.enCuentaAtras = false;
+            actualizarBotonPausa();
             const cfg = cfgDificultad();
             temporizadorJugador = setInterval(tickJugador, cfg.tickJugador);
             temporizadorFantasmas = setInterval(tickFantasmas, cfg.tickFantasma);
@@ -558,6 +643,9 @@
         if (estado.terminado) return;
         estado.terminado = true;
         estado.jugando = false;
+        estado.pausaManual = false;
+        mostrarIndicadorPausa(false);
+        actualizarBotonPausa();
         if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('comecocos-drogueria');
         clearInterval(temporizadorJugador);
         clearInterval(temporizadorFantasmas);

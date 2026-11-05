@@ -199,37 +199,78 @@ body {
     justify-content: center;
     gap: 14px;
     width: 100%;
-    padding: 10px;
+    /* Más margen arriba que a los lados: ahí es donde vive el cuello
+       del frasco (::before/::after, por encima de su propio borde) y
+       donde se desplaza al seleccionarlo (translateY) — con el
+       "padding: 10px" de antes (igual en los 4 lados) ese cuello y el
+       frasco levantado quedaban pegados al borde superior del
+       tablero, dando sensación de frasco "cortado". */
+    padding: 36px 10px 10px;
 }
 
 .jo-frasco {
-    display: flex;
-    flex-direction: column-reverse;
     width: var(--jo-ancho-frasco, 64px);
     height: var(--jo-alto-frasco, 220px);
     border-radius: 0 0 14px 14px;
     border: 3px solid var(--jo-negro);
     border-top: none;
     background: var(--jo-gris-fondo);
-    overflow: hidden;
     cursor: pointer;
     touch-action: manipulation;
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     position: relative;
 }
 
-.jo-frasco::before {
-    /* "cuello" del frasco: una muesca encima, parte del mismo borde */
+/* El cuerpo interior es quien recorta los colores a las esquinas
+   redondeadas de abajo (overflow: hidden) — ese recorte NO puede
+   vivir en .jo-frasco directamente, porque se comería también el
+   cuello/hombro de abajo (::before/::after, por encima de su propio
+   borde): es justo el efecto de frasco "cortado" que se veía antes.
+   Ver crearFrascoEl()/actualizarFrascoEl() en juego-ordena-frascos.js,
+   que ahora anida los segmentos de color dentro de este div en vez
+   de directamente en .jo-frasco. */
+.jo-frasco__cuerpo {
+    display: flex;
+    flex-direction: column-reverse;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    overflow: hidden;
+}
+
+/* Silueta de botella de dos escalones (hombro + cuello) en vez de una
+   única muesca estrecha: más margen por encima para que se note que
+   hay "algo" ahí (antes casi no sobresalía) y más parecido a un
+   frasco/botella real sin complicar el marcado con más divs ni
+   recurrir a clip-path (que recortaría también los bordes laterales
+   en diagonal, dando un trazo raro). */
+.jo-frasco::after {
+    /* "hombro": escalón ancho, justo encima del cuerpo */
     content: '';
     position: absolute;
-    top: -11px;
     left: 50%;
+    bottom: 100%;
     transform: translateX(-50%);
-    width: 22px;
-    height: 10px;
+    width: 58%;
+    height: 9px;
     border: 3px solid var(--jo-negro);
     border-bottom: none;
-    border-radius: 6px 6px 0 0;
+    border-radius: 8px 8px 0 0;
+    background: var(--jo-gris-fondo);
+}
+
+.jo-frasco::before {
+    /* "cuello": escalón más estrecho, encima del hombro */
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 9px);
+    transform: translateX(-50%);
+    width: 32%;
+    height: 11px;
+    border: 3px solid var(--jo-negro);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
     background: var(--jo-gris-fondo);
 }
 
@@ -243,7 +284,8 @@ body {
     transform: translateY(-6px);
 }
 
-.jo-frasco.is-seleccionado::before {
+.jo-frasco.is-seleccionado::before,
+.jo-frasco.is-seleccionado::after {
     border-color: var(--jo-rojo);
 }
 
