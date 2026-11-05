@@ -116,6 +116,12 @@
     let temporizadorFantasmas = null;
     let temporizadorAsustada = null;
     let temporizadorCuentaBono = null;
+    // Momento del último refresco visual del jugador — ver el uso en
+    // actualizarPosicionesDom() para calcular la duración real de la
+    // transición CSS cuando un giro se adelanta al turno normal
+    // (intentarGiroInmediato), en vez de darle siempre la duración
+    // completa del turno aunque hayan pasado solo unos pocos ms.
+    let ultimoMovJugadorVisualEn = 0;
     const laberinto = document.getElementById('jn-laberinto');
     const elJugador = document.createElement('div');
     elJugador.className = 'jn-jugador';
@@ -416,7 +422,23 @@
         const ahora = performance.now();
 
         const j = estado.jugador;
-        elJugador.style.transitionDuration = cfg.tickJugador + 'ms';
+        // Cuando un giro se adelanta al turno normal (intentarGiroInmediato
+        // — p. ej. invertir el sentido justo después de girar), el hueco
+        // real hasta el movimiento anterior es MENOR que el turno
+        // completo. Darle a la transición la duración completa del turno
+        // de todas formas hacía que el deslizamiento en curso se
+        // interrumpiera a mitad de camino y el nuevo arrancara desde ahí
+        // con otra duración completa — el giro se notaba más lento
+        // cuanto más rápido se invertía. Se acorta la duración al hueco
+        // real transcurrido (con un mínimo para que no se note un salto
+        // brusco) para que el deslizamiento siempre termine justo a
+        // tiempo para el siguiente movimiento, se haya adelantado o no.
+        const huecoJugador = ahora - ultimoMovJugadorVisualEn;
+        const duracionJugador = ultimoMovJugadorVisualEn
+            ? Math.max(40, Math.min(cfg.tickJugador, huecoJugador))
+            : cfg.tickJugador;
+        ultimoMovJugadorVisualEn = ahora;
+        elJugador.style.transitionDuration = duracionJugador + 'ms';
         elJugador.style.left = ((j.c + 0.5) / COLS) * 100 + '%';
         elJugador.style.top = ((j.r + 0.5) / ROWS) * 100 + '%';
         elJugador.classList.toggle('jn-jugador--izquierda', j.dirActual === 'izquierda');
@@ -591,6 +613,7 @@
         clearInterval(temporizadorCuentaAtras);
         document.getElementById('jn-cuenta-atras').hidden = true;
         ocultarBono();
+        ultimoMovJugadorVisualEn = 0;
 
         estado.rejilla = clonarLaberinto();
         estado.jugador.r = INICIO_JUGADOR.r;
