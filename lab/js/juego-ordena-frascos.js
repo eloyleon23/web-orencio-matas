@@ -19,8 +19,15 @@
     const VACIOS = 2; // frascos vacíos de margen en cada nivel
 
     // Progresión de dificultad: más colores (y por tanto más frascos,
-    // colores + VACIOS) en cada nivel de la partida.
-    const NIVELES = [4, 4, 5, 5, 6, 6];
+    // colores + VACIOS) en cada nivel de la partida. Bug real
+    // reportado: "los seis niveles son relativamente fáciles" — se
+    // añaden 3 niveles más por encima de la dificultad anterior (que
+    // topaba en 6 colores/8 frascos) hasta 7 y 8 colores/9-10
+    // frascos, tal y como ya preveía la propuesta original de este
+    // juego. Son los dos tramos más difíciles verificados en las
+    // pruebas de generación de niveles (hasta 15ms, igual de rápido
+    // que el resto — ver generarNivel más abajo).
+    const NIVELES = [4, 4, 5, 5, 6, 6, 7, 7, 8];
 
     // 8 colores bien diferenciables, cada uno con un símbolo propio
     // (no solo el tono) para que el juego siga siendo jugable sin
@@ -503,9 +510,14 @@
         construirNivel();
     }
 
+    // Umbrales escalados junto con NIVELES (eran 1000/750 cuando la
+    // partida tenía 6 niveles como máximo) — con 9 niveles el máximo
+    // teórico de puntos también sube, así que se suben en la misma
+    // proporción (×1.5) para que sigan representando un resultado
+    // igual de exigente, no más fácil de alcanzar por tener más niveles.
     function mensajeFinal(puntos) {
-        if (puntos >= 1000) return { titulo: '¡Nariz perfecta! 🏆', celebrar: true };
-        if (puntos >= 750) return { titulo: '¡Muy buena partida! 🎉', celebrar: true };
+        if (puntos >= 1500) return { titulo: '¡Nariz perfecta! 🏆', celebrar: true };
+        if (puntos >= 1125) return { titulo: '¡Muy buena partida! 🎉', celebrar: true };
         return { titulo: '¡Partida completa!', celebrar: false };
     }
 
