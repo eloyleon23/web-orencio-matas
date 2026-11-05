@@ -219,12 +219,26 @@
         boton.addEventListener('click', alPulsar);
     });
 
+    // Elementos donde Espacio/Intro ya tienen su propio significado
+    // nativo (activar el botón enfocado) — si el foco está en uno de
+    // ellos, se les deja hacer lo suyo en vez de interceptarlo aquí
+    // para pausar (si no, tabular hasta "Jugar" y pulsar Intro, por
+    // ejemplo, dejaría de funcionar).
+    function enfocoElementoInteractivo() {
+        const activo = document.activeElement;
+        return !!activo && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(activo.tagName);
+    }
+
     document.addEventListener('keydown', (ev) => {
-        if (ev.key === 'ArrowLeft') fijarDireccion(-1, 0);
-        else if (ev.key === 'ArrowRight') fijarDireccion(1, 0);
-        else if (ev.key === 'ArrowUp') fijarDireccion(0, -1);
-        else if (ev.key === 'ArrowDown') fijarDireccion(0, 1);
-        else if (ev.key === ' ' || ev.key === 'Spacebar') {
+        // preventDefault en las flechas: sin esto, además de mover la
+        // brocha, el navegador hace scroll de la página en esa misma
+        // dirección (comportamiento por defecto de las flechas) — la
+        // pantalla se desplazaba a la vez que se jugaba.
+        if (ev.key === 'ArrowLeft') { ev.preventDefault(); fijarDireccion(-1, 0); }
+        else if (ev.key === 'ArrowRight') { ev.preventDefault(); fijarDireccion(1, 0); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); fijarDireccion(0, -1); }
+        else if (ev.key === 'ArrowDown') { ev.preventDefault(); fijarDireccion(0, 1); }
+        else if ((ev.key === ' ' || ev.key === 'Spacebar' || ev.key === 'Enter') && !enfocoElementoInteractivo()) {
             ev.preventDefault();
             alternarPausa();
         }
