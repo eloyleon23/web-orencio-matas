@@ -273,32 +273,58 @@ body {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
+/* Los productos sueltos (pellets) ya no son un simple punto: una
+   mini silueta de botella (cuerpo + cuello, el mismo lenguaje visual
+   que los frascos de "Ordena los Frascos") en vez de un círculo liso
+   — se lee como "un producto", no como un punto abstracto, y al ser
+   dos rectángulos (no un emoji) se ve nítida a cualquier tamaño,
+   hasta en las celdas diminutas de la vista normal. */
 .jn-celda--pellet::after {
     content: '';
     position: absolute;
-    inset: 0;
-    margin: auto;
-    width: 16%;
-    height: 16%;
-    border-radius: 50%;
+    left: 50%;
+    bottom: 36%;
+    transform: translateX(-50%);
+    width: 30%;
+    height: 32%;
+    border-radius: 1px 1px 2px 2px;
     background: #ffd56b;
 }
 
-.jn-celda--power::after {
+.jn-celda--pellet::before {
     content: '';
+    position: absolute;
+    left: 50%;
+    bottom: calc(36% + 32% - 1px);
+    transform: translateX(-50%);
+    width: 14%;
+    height: 10%;
+    border-radius: 1px 1px 0 0;
+    background: #ffd56b;
+}
+
+/* El spray desinfectante (power pellet) sí es grande de sobra para
+   que se lea como lo que es — el mismo emoji que ya se usa en el
+   aviso de "¡Manchas vulnerables!" (ver .jn-bonus__icono), así no
+   hay que adivinar qué hace: se ve literalmente el bote. */
+.jn-celda--power::after {
+    content: '🧴';
     position: absolute;
     inset: 0;
     margin: auto;
-    width: 44%;
-    height: 44%;
-    border-radius: 50%;
-    background: #ffd56b;
+    width: 60%;
+    height: 60%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    line-height: 1;
     animation: jn-power-pulso 0.9s ease-in-out infinite;
 }
 
 @keyframes jn-power-pulso {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.55; transform: scale(0.8); }
+    50% { opacity: 0.55; transform: scale(0.82); }
 }
 
 .jn-jugador,
@@ -337,6 +363,32 @@ body {
        valor es solo el resultado por defecto antes de que JS lo
        sobrescriba. */
     transition: left 0.22s linear, top 0.22s linear, opacity 0.2s ease;
+}
+
+/* Antes cada mancha era literalmente un emoji de círculo de color
+   (🟣🟢🟠🔵) — un punto de color sin más significado. Ahora todas
+   comparten un icono de verdad (una gota, de mancha líquida) sobre
+   una insignia circular de color, que es quien aporta la variedad
+   visual entre manchas — mismo patrón que las insignias de marca de
+   "Ordena los Frascos" (ver .jo-segmento__logo). */
+.jn-fantasma__icono {
+    width: 88%;
+    height: 88%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68em;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.jn-fantasma--0 .jn-fantasma__icono { background: #8b5cf6; }
+.jn-fantasma--1 .jn-fantasma__icono { background: #22c55e; }
+.jn-fantasma--2 .jn-fantasma__icono { background: #f97316; }
+.jn-fantasma--3 .jn-fantasma__icono { background: #3b82f6; }
+
+.jn-fantasma--asustada .jn-fantasma__icono {
+    background: #6b7a94;
 }
 
 .jn-fantasma--asustada {

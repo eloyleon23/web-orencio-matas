@@ -40,7 +40,13 @@
     const SPAWNS_FANTASMA = [
         { r: 7, c: 8 }, { r: 7, c: 10 }, { r: 7, c: 9 }, { r: 7, c: 9 },
     ];
-    const MANCHAS = ['🟣', '🟢', '🟠', '🔵'];
+    // Antes cada mancha era un emoji de círculo de color sin más
+    // significado (🟣🟢🟠🔵) — ahora todas comparten un icono real de
+    // mancha líquida; la variedad de color la aporta la insignia
+    // circular de fondo (ver .jn-fantasma__icono y .jn-fantasma--0..3
+    // en juego-comecocos.css), no el icono en sí.
+    const NUM_COLORES_MANCHA = 4;
+    const ICONO_MANCHA = '💧';
     const EMOJI_ASUSTADA = '💦';
     const EMOJI_JUGADOR = '🛒';
 
@@ -534,14 +540,14 @@
         const ahora = performance.now();
         return SPAWNS_FANTASMA.slice(0, cfg.fantasmas).map((spawn, i) => {
             const el = document.createElement('div');
-            el.className = 'jn-fantasma';
-            el.innerHTML = `<span aria-hidden="true">${MANCHAS[i % MANCHAS.length]}</span>`;
+            el.className = 'jn-fantasma jn-fantasma--' + (i % NUM_COLORES_MANCHA);
+            el.innerHTML = `<span class="jn-fantasma__icono" aria-hidden="true">${ICONO_MANCHA}</span>`;
             return {
                 r: spawn.r, c: spawn.c, spawnR: spawn.r, spawnC: spawn.c,
                 dirActual: null, asustado: false, saltoAsustado: false,
                 saliendo: true, tiempoSalida: ahora + ESPERA_SALIDA_MS + i * ESPERA_SALIDA_ESCALON_MS,
                 activo: true, oculta: false,
-                icono: MANCHAS[i % MANCHAS.length], el,
+                icono: ICONO_MANCHA, el,
             };
         });
     }
