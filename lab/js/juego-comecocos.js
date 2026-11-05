@@ -247,6 +247,24 @@
         comprobarVictoria();
     }
 
+    // El movimiento avanza por turnos, a ritmo fijo (temporizadorJugador,
+    // más abajo) — sin esto, un giro pulsado justo después de un turno
+    // tenía que esperar casi un ciclo entero (hasta 300ms en fácil)
+    // antes de notarse, lo que se sentía como retardo entre los
+    // controles y el carrito. Al pulsar una dirección que YA es
+    // válida en el acto, se da el paso de inmediato y se reinicia el
+    // temporizador desde ese instante, en vez de esperar al siguiente
+    // turno ya en marcha — el ritmo entre pasos sigue siendo el mismo
+    // a partir de ahí, solo cambia cuándo empieza a contar.
+    function intentarGiroInmediato() {
+        if (!estado.jugando || estado.terminado || estado.pausado || estado.pausaManual || estado.enCuentaAtras) return;
+        const j = estado.jugador;
+        if (!j.dirDeseada || !puedeMover(j, j.dirDeseada)) return;
+        clearInterval(temporizadorJugador);
+        tickJugador();
+        temporizadorJugador = setInterval(tickJugador, cfgDificultad().tickJugador);
+    }
+
     // ── Fantasmas ────────────────────────────────────────────────────
 
     function pasoSalida(f) {
@@ -447,12 +465,24 @@
         if (!dir) return;
         if (ev.key.indexOf('Arrow') === 0) ev.preventDefault();
         estado.jugador.dirDeseada = dir;
+        intentarGiroInmediato();
     });
 
+    // "pointerdown" además de "click" (y no solo "click"): responde en
+    // el instante del toque en vez de esperar a que se complete el
+    // ciclo pulsar+soltar sobre el botón — mismo patrón ya usado en
+    // los botones de mover de Salta y Reparte. "click" se mantiene
+    // para que los botones sigan funcionando con teclado (Intro/
+    // Espacio con el botón enfocado); llamar dos veces seguidas a
+    // esto es inofensivo, solo fija la misma dirección otra vez.
     document.querySelectorAll('.jn-dpad__boton[data-dir]').forEach((boton) => {
-        boton.addEventListener('click', () => {
+        function alPulsar(ev) {
+            if (ev.type === 'pointerdown') ev.preventDefault();
             estado.jugador.dirDeseada = boton.dataset.dir;
-        });
+            intentarGiroInmediato();
+        }
+        boton.addEventListener('pointerdown', alPulsar, { passive: false });
+        boton.addEventListener('click', alPulsar);
     });
 
     // ── Pausa manual ───────────────────────────────────────────────────
