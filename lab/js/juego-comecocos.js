@@ -266,6 +266,24 @@
         if (!estado.jugando || estado.terminado || estado.pausado || estado.pausaManual || estado.enCuentaAtras) return;
         const j = estado.jugador;
         if (!j.dirDeseada || !puedeMover(j, j.dirDeseada)) return;
+
+        // Si ya ha pasado un hueco decente desde el último movimiento,
+        // se adelanta este (ver más abajo). Si NO (p. ej. varios
+        // cambios de dirección seguidos en un tecleo rápido, como
+        // invertir el sentido dos veces casi del tirón), NO se fuerza
+        // otro adelanto: basta con haber dejado la dirección ya
+        // guardada en dirDeseada — el turno ya programado (que el
+        // primer adelanto de la ráfaga acaba de reiniciar) la recogerá
+        // enseguida de todas formas. Sin este límite, cada cambio de
+        // dirección de la ráfaga disparaba su propio adelanto con una
+        // transición CSS cada vez más corta (ver actualizarPosicionesDom),
+        // y el resultado eran saltos bruscos en vez de un deslizamiento
+        // uniforme — justo el efecto de ir "a trompicones" al girar de
+        // un lado a otro rápido.
+        const UMBRAL_ADELANTO = 0.5; // fracción mínima del turno ya transcurrida
+        const haceCuanto = performance.now() - ultimoMovJugadorVisualEn;
+        if (ultimoMovJugadorVisualEn && haceCuanto < cfgDificultad().tickJugador * UMBRAL_ADELANTO) return;
+
         clearInterval(temporizadorJugador);
         tickJugador();
         temporizadorJugador = setInterval(tickJugador, cfgDificultad().tickJugador);
