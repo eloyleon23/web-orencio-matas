@@ -519,7 +519,22 @@
         w: 'arriba', s: 'abajo', a: 'izquierda', d: 'derecha',
         W: 'arriba', S: 'abajo', A: 'izquierda', D: 'derecha',
     };
+    // Elementos donde Espacio/Intro ya tienen su propio significado
+    // nativo (activar el botón enfocado) — si el foco está en uno de
+    // ellos, se les deja hacer lo suyo en vez de interceptarlo aquí
+    // para pausar (si no, tabular hasta "Jugar" y pulsar Intro, por
+    // ejemplo, dejaría de funcionar).
+    function enfocoElementoInteractivo() {
+        const activo = document.activeElement;
+        return !!activo && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(activo.tagName);
+    }
+
     document.addEventListener('keydown', (ev) => {
+        if ((ev.key === ' ' || ev.key === 'Spacebar' || ev.key === 'Enter') && !enfocoElementoInteractivo()) {
+            ev.preventDefault();
+            alternarPausaManual();
+            return;
+        }
         const dir = MAPA_TECLAS[ev.key];
         if (!dir) return;
         if (ev.key.indexOf('Arrow') === 0) ev.preventDefault();
