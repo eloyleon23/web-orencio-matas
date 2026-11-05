@@ -197,15 +197,26 @@
         estado.dy = ndy;
     }
 
+    const MAPA_DIRECCIONES = {
+        arriba: [0, -1], abajo: [0, 1],
+        izquierda: [-1, 0], derecha: [1, 0],
+    };
+
+    // "pointerdown" además de "click" (y no solo "click"): gira en el
+    // instante del toque en vez de esperar a que se complete el ciclo
+    // pulsar+soltar sobre el botón — mismo patrón ya usado en los
+    // botones de mover de Salta y Reparte. "click" se mantiene para
+    // que los botones sigan funcionando con teclado (Intro/Espacio
+    // con el botón enfocado); fijarDireccion() ya es segura de llamar
+    // dos veces seguidas, solo fija el mismo vector otra vez.
     document.querySelectorAll('.je-control-boton[data-dir]').forEach((boton) => {
-        boton.addEventListener('click', () => {
-            const mapa = {
-                arriba: [0, -1], abajo: [0, 1],
-                izquierda: [-1, 0], derecha: [1, 0],
-            };
-            const vector = mapa[boton.dataset.dir];
+        function alPulsar(ev) {
+            if (ev.type === 'pointerdown') ev.preventDefault();
+            const vector = MAPA_DIRECCIONES[boton.dataset.dir];
             if (vector) fijarDireccion(vector[0], vector[1]);
-        });
+        }
+        boton.addEventListener('pointerdown', alPulsar, { passive: false });
+        boton.addEventListener('click', alPulsar);
     });
 
     document.addEventListener('keydown', (ev) => {
