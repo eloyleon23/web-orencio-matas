@@ -37,7 +37,7 @@
 <meta name="description" content="Minijuego tipo comecocos: recorre los pasillos del almacén recogiendo productos y esquiva las manchas que te persiguen.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20261107">
-<link rel="stylesheet" href="css/juego-comecocos.css?v=20261110">
+<link rel="stylesheet" href="css/juego-comecocos.css?v=20261111">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261104">
 <!-- Google tag (gtag.js) -->
 <script>
@@ -154,6 +154,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" class="jn-boton-reiniciar" id="jn-boton-reiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">
                 <span aria-hidden="true">↺</span>
             </button>
+            <div class="jn-bonus" id="jn-bonus" role="status" hidden>
+                <span class="jn-bonus__icono" aria-hidden="true">🧴</span>
+                <span class="jn-bonus__texto">¡Manchas vulnerables!</span>
+                <span class="jn-bonus__contador" id="jn-bonus-contador">8</span>
+            </div>
         </div>
 
         <div class="jn-dpad om-oculto-en-pantalla-completa" aria-label="Controles de dirección">
@@ -306,7 +311,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="js/estadisticas-juegos.js?v=20261108"></script>
 <script src="js/compartir-juego.js?v=20261102"></script>
 <script src="js/mejores-resultados.js?v=20261110"></script>
-<script src="js/juego-comecocos.js?v=20261110"></script>
+<script src="js/juego-comecocos.js?v=20261111"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ

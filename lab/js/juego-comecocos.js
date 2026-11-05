@@ -88,9 +88,19 @@
         pausado: false,
     };
 
+    // Tiempo que una mancha recién aparecida (o que acaba de "morir" y
+    // reaparece) se queda visible y quieta en el corral antes de
+    // ponerse en marcha hacia la puerta — así no salen de golpe en
+    // cuanto arranca la partida. ESPERA_SALIDA_ESCALON además escalona
+    // la salida inicial de varias manchas para que no abandonen el
+    // corral todas a la vez.
+    const ESPERA_SALIDA_MS = 1500;
+    const ESPERA_SALIDA_ESCALON_MS = 1100;
+
     let temporizadorJugador = null;
     let temporizadorFantasmas = null;
     let temporizadorAsustada = null;
+    let temporizadorCuentaBono = null;
     const laberinto = document.getElementById('jn-laberinto');
     const elJugador = document.createElement('div');
     elJugador.className = 'jn-jugador';
@@ -164,10 +174,41 @@
         });
         actualizarClasesFantasmas();
         clearTimeout(temporizadorAsustada);
+        const duracion = cfgDificultad().duracionAsustada;
         temporizadorAsustada = setTimeout(() => {
             estado.fantasmas.forEach((f) => { f.asustado = false; });
             actualizarClasesFantasmas();
-        }, cfgDificultad().duracionAsustada);
+        }, duracion);
+        iniciarCuentaRegresivaBono(duracion);
+    }
+
+    // ── Aviso de modo bonus (cuenta atrás de manchas vulnerables) ─────
+
+    function iniciarCuentaRegresivaBono(duracionMs) {
+        clearInterval(temporizadorCuentaBono);
+        const fin = performance.now() + duracionMs;
+        const elBono = document.getElementById('jn-bonus');
+        const elContador = document.getElementById('jn-bonus-contador');
+        elBono.hidden = false;
+        elBono.classList.remove('jn-bonus--aviso');
+
+        function tick() {
+            const restante = fin - performance.now();
+            if (restante <= 0) {
+                elBono.hidden = true;
+                clearInterval(temporizadorCuentaBono);
+                return;
+            }
+            elContador.textContent = String(Math.ceil(restante / 1000));
+            elBono.classList.toggle('jn-bonus--aviso', restante <= 2000);
+        }
+        tick();
+        temporizadorCuentaBono = setInterval(tick, 100);
+    }
+
+    function ocultarBono() {
+        clearInterval(temporizadorCuentaBono);
+        document.getElementById('jn-bonus').hidden = true;
     }
 
     function tickJugador() {
@@ -226,6 +267,7 @@
                 if (!f.saltoAsustado) return; // la mitad de rápido mientras huye
             }
             if (f.saliendo) {
+                if (performance.now() < f.tiempoSalida) return; // sigue quieta en el corral
                 const dir = pasoSalida(f);
                 if (dir) { f.dirActual = dir; aplicarMov(f, dir); }
                 if (f.r <= 5) f.saliendo = false;
@@ -256,6 +298,7 @@
         f.dirActual = null;
         f.asustado = false;
         f.saliendo = true;
+        f.tiempoSalida = performance.now() + ESPERA_SALIDA_MS;
         f.activo = true;
         f.oculta = false;
         actualizarPosicionesDom();
@@ -296,15 +339,17 @@
         estado.jugador.c = INICIO_JUGADOR.c;
         estado.jugador.dirActual = null;
         estado.jugador.dirDeseada = null;
-        estado.fantasmas.forEach((f) => {
+        estado.fantasmas.forEach((f, i) => {
             f.r = f.spawnR;
             f.c = f.spawnC;
             f.dirActual = null;
             f.asustado = false;
             f.saliendo = true;
+            f.tiempoSalida = performance.now() + ESPERA_SALIDA_MS + i * ESPERA_SALIDA_ESCALON_MS;
             f.activo = true;
             f.oculta = false;
         });
+        ocultarBono();
         actualizarPosicionesDom();
         actualizarClasesFantasmas();
     }
@@ -318,14 +363,28 @@
     // ── Vista ────────────────────────────────────────────────────────
 
     function actualizarPosicionesDom() {
+        // La duración de la transición CSS se iguala aquí al intervalo
+        // real de turno de cada entidad (ver cfgDificultad) para que el
+        // deslizamiento entre celdas dure exactamente lo mismo que el
+        // turno — sin eso, un turno de p.ej. 220ms con una transición
+        // fija de 150ms deja un hueco de 70ms "parado" en cada celda,
+        // que es justo el efecto de ir a trompicones. Una mancha
+        // asustada se mueve la mitad de rápido (ver tickFantasmas), así
+        // que su transición dura el doble del turno.
+        const cfg = cfgDificultad();
+        const ahora = performance.now();
+
         const j = estado.jugador;
+        elJugador.style.transitionDuration = cfg.tickJugador + 'ms';
         elJugador.style.left = ((j.c + 0.5) / COLS) * 100 + '%';
         elJugador.style.top = ((j.r + 0.5) / ROWS) * 100 + '%';
         elJugador.classList.toggle('jn-jugador--izquierda', j.dirActual === 'izquierda');
 
         estado.fantasmas.forEach((f) => {
+            f.el.style.transitionDuration = (f.asustado ? cfg.tickFantasma * 2 : cfg.tickFantasma) + 'ms';
             f.el.style.left = ((f.c + 0.5) / COLS) * 100 + '%';
             f.el.style.top = ((f.r + 0.5) / ROWS) * 100 + '%';
+            f.el.classList.toggle('jn-fantasma--esperando', f.saliendo && ahora < f.tiempoSalida);
         });
     }
 
@@ -393,6 +452,7 @@
 
     function crearFantasmas() {
         const cfg = cfgDificultad();
+        const ahora = performance.now();
         return SPAWNS_FANTASMA.slice(0, cfg.fantasmas).map((spawn, i) => {
             const el = document.createElement('div');
             el.className = 'jn-fantasma';
@@ -400,7 +460,8 @@
             return {
                 r: spawn.r, c: spawn.c, spawnR: spawn.r, spawnC: spawn.c,
                 dirActual: null, asustado: false, saltoAsustado: false,
-                saliendo: true, activo: true, oculta: false,
+                saliendo: true, tiempoSalida: ahora + ESPERA_SALIDA_MS + i * ESPERA_SALIDA_ESCALON_MS,
+                activo: true, oculta: false,
                 icono: MANCHAS[i % MANCHAS.length], el,
             };
         });
@@ -412,6 +473,7 @@
         clearInterval(temporizadorJugador);
         clearInterval(temporizadorFantasmas);
         clearTimeout(temporizadorAsustada);
+        ocultarBono();
 
         estado.rejilla = clonarLaberinto();
         estado.jugador.r = INICIO_JUGADOR.r;
@@ -457,6 +519,7 @@
         clearInterval(temporizadorJugador);
         clearInterval(temporizadorFantasmas);
         clearTimeout(temporizadorAsustada);
+        ocultarBono();
 
         const resultado = mensajeFinal(gano, estado.vidas);
         document.getElementById('jn-celebracion-titulo').textContent = resultado.titulo;
