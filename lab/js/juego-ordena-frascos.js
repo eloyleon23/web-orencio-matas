@@ -291,13 +291,23 @@
         el.dataset.indice = String(indiceTubo);
         el.setAttribute('role', 'button');
         el.setAttribute('tabindex', '0');
+        // El "cuerpo" interior es quien recorta los colores a las
+        // esquinas redondeadas de abajo (overflow: hidden) — si ese
+        // recorte viviera en .jo-frasco directamente, se comería
+        // también el cuello del frasco (::before, por encima del
+        // propio borde), que es justo el efecto de frasco "cortado"
+        // reportado. Ver juego-ordena-frascos.css.
+        const cuerpo = document.createElement('div');
+        cuerpo.className = 'jo-frasco__cuerpo';
+        el.appendChild(cuerpo);
         actualizarFrascoEl(el, indiceTubo);
         return el;
     }
 
     function actualizarFrascoEl(el, indiceTubo) {
         const tubo = estado.tubos[indiceTubo];
-        el.innerHTML = '';
+        const cuerpo = el.querySelector('.jo-frasco__cuerpo');
+        cuerpo.innerHTML = '';
         tubo.forEach((colorIdx) => {
             const seg = document.createElement('div');
             seg.className = 'jo-segmento';
@@ -323,7 +333,7 @@
                 seg.appendChild(insignia);
             }
             seg.title = color.nombre;
-            el.appendChild(seg);
+            cuerpo.appendChild(seg);
         });
         el.classList.toggle('is-resuelto', tuboResuelto(tubo) && tubo.length > 0);
         el.setAttribute('aria-label', tubo.length === 0
