@@ -346,23 +346,24 @@ body {
     font-size: 1.6rem;
     z-index: 3;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
-    /* Ver nota de .jn-fantasma: duración real fijada por JS. */
-    transition: left 0.22s linear, top 0.22s linear;
 }
 
 .jn-jugador--izquierda {
     transform: translate(-50%, -50%) scaleX(-1);
 }
 
+/* Sin transición en left/top: la posición ya se recalcula a mano en
+   cada fotograma (requestAnimationFrame, ver avanzarJugador()/
+   avanzarFantasmas() en juego-comecocos.js) a partir de una posición
+   continua, no de saltos discretos de celda en celda — el propio
+   movimiento fotograma a fotograma ya es el "suavizado", así que una
+   transición CSS por encima solo introduciría su propio retraso
+   (y, si no encajaba exactamente con el ritmo real del movimiento,
+   el efecto "a trompicones" ya visto con el diseño anterior). La
+   transición de "opacity" sí se mantiene, para que una mancha cazada
+   se desvanezca con suavidad al ocultarse. */
 .jn-fantasma {
-    /* La duración real la fija JS en cada movimiento (igualada al
-       intervalo de turno de la dificultad activa — ver
-       actualizarPosicionesDom() en juego-comecocos.js) para que el
-       deslizamiento dure exactamente lo mismo que el turno y no haya
-       un hueco de "parón" entre un movimiento y el siguiente. Este
-       valor es solo el resultado por defecto antes de que JS lo
-       sobrescriba. */
-    transition: left 0.22s linear, top 0.22s linear, opacity 0.2s ease;
+    transition: opacity 0.2s ease;
 }
 
 /* Antes cada mancha era literalmente un emoji de círculo de color

@@ -1,16 +1,37 @@
 /**
  * Comecocos de Droguería — minijuego (lab/comecocos-drogueria.html)
- * Vanilla JS, sin dependencias. Comecocos clásico de movimiento por
- * rejilla (no continuo): el carrito recorre los pasillos de un
- * almacén recogiendo productos (pellets) mientras le persiguen unas
- * "manchas" (fantasmas). El spray desinfectante (power pellet) las
- * vuelve vulnerables unos segundos — se pueden cazar para puntos
- * extra, igual que en el Pac-Man original.
+ * Vanilla JS, sin dependencias. Comecocos clásico: el carrito recorre
+ * los pasillos de un almacén recogiendo productos (pellets) mientras
+ * le persiguen unas "manchas" (fantasmas). El spray desinfectante
+ * (power pellet) las vuelve vulnerables unos segundos — se pueden
+ * cazar para puntos extra, igual que en el Pac-Man original.
  *
  * El laberinto es una rejilla fija de 19x15 (ver MAZE más abajo,
  * generada y verificada por conectividad con un script aparte antes
  * de incrustarla aquí — todas las celdas transitables pertenecen a
  * una única componente conexa, así que no hay pellets inalcanzables).
+ *
+ * MOVIMIENTO: cada entidad tiene una celda "de referencia" (r, c,
+ * siempre enteros — la última celda que ha terminado de cruzar, la
+ * que se usa para mirar paredes/pellets/colisiones) y una posición
+ * visual continua (posR, posC, con decimales) que avanza cada
+ * fotograma (requestAnimationFrame) a velocidad constante en la
+ * dirección activa. Al completar el cruce de una celda entera, (r, c)
+ * salta a la nueva celda y se decide la siguiente dirección — ahí
+ * entra en juego la dirección deseada (dirDeseada, la que el jugador
+ * acaba de pulsar) si ya es válida desde esa celda.
+ *
+ * Esto reemplaza un diseño anterior por turnos a ritmo fijo (un
+ * setInterval moviendo una celda entera de golpe, con la animación
+ * CSS intentando igualar esa cadencia): funcionaba pero cada ajuste
+ * para un caso (retardo al girar, retardo al invertir el sentido)
+ * rompía otro (trompicones al invertir varias veces seguidas), porque
+ * la duración de la transición CSS y el ritmo real de turnos tenían
+ * que coincidir exactamente y cualquier adelanto los desincronizaba.
+ * Con posición continua no hace falta hacer encajar nada: la
+ * dirección se puede cambiar (o invertir) en cualquier instante y el
+ * dibujado en pantalla, al venir de la posición real fotograma a
+ * fotograma, es uniforme siempre, se gire cuando se gire.
  */
 (function () {
     'use strict';
@@ -82,7 +103,7 @@
         dificultad: 'medio',
         rejilla: [],
         celdasDom: [],
-        jugador: { r: 0, c: 0, dirActual: null, dirDeseada: null },
+        jugador: { r: 0, c: 0, posR: 0, posC: 0, dirActual: null, dirDeseada: null },
         fantasmas: [],
         vidas: VIDAS_INICIALES,
         comidos: 0,
@@ -112,16 +133,8 @@
     const ESPERA_SALIDA_MS = 1500;
     const ESPERA_SALIDA_ESCALON_MS = 1100;
 
-    let temporizadorJugador = null;
-    let temporizadorFantasmas = null;
     let temporizadorAsustada = null;
     let temporizadorCuentaBono = null;
-    // Momento del último refresco visual del jugador — ver el uso en
-    // actualizarPosicionesDom() para calcular la duración real de la
-    // transición CSS cuando un giro se adelanta al turno normal
-    // (intentarGiroInmediato), en vez de darle siempre la duración
-    // completa del turno aunque hayan pasado solo unos pocos ms.
-    let ultimoMovJugadorVisualEn = 0;
     const laberinto = document.getElementById('jn-laberinto');
     const elJugador = document.createElement('div');
     elJugador.className = 'jn-jugador';
@@ -163,12 +176,6 @@
         const nr = entidad.r + v.dr, nc = entidad.c + v.dc;
         if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return false;
         return estado.rejilla[nr][nc] !== '#';
-    }
-
-    function aplicarMov(entidad, dir) {
-        const v = VECTORES[dir];
-        entidad.r += v.dr;
-        entidad.c += v.dc;
     }
 
     // ── Jugador ──────────────────────────────────────────────────────
@@ -240,53 +247,42 @@
         document.getElementById('jn-bonus').hidden = true;
     }
 
-    function tickJugador() {
-        if (estado.pausado || estado.pausaManual || estado.terminado) return;
+    // Avanza al jugador un fotograma (dt en ms). La dirección deseada
+    // (dirDeseada, la última tecla/botón pulsado) se aplica en el acto
+    // en dos casos: al invertir el sentido exacto (retroceder por la
+    // misma línea, válido en cualquier punto) y al arrancar desde
+    // parado — en cualquier otro caso (girar 90°) solo tiene sentido
+    // al terminar de cruzar una celda, momento en el que sí se
+    // comprueba. Así no hace falta ningún "adelanto" artificial ni
+    // ninguna cuenta para evitarlo: la dirección simplemente se mira
+    // en el instante exacto en que cada cambio es geométricamente
+    // posible, ni antes ni después.
+    function avanzarJugador(dt) {
         const j = estado.jugador;
-        if (j.dirDeseada && puedeMover(j, j.dirDeseada)) j.dirActual = j.dirDeseada;
-        if (j.dirActual && puedeMover(j, j.dirActual)) {
-            aplicarMov(j, j.dirActual);
-            comerEnCelda(j.r, j.c);
+
+        if (j.dirActual && j.dirDeseada === OPUESTA[j.dirActual] && puedeMover(j, j.dirDeseada)) {
+            j.dirActual = j.dirDeseada;
+        } else if (!j.dirActual && j.dirDeseada && puedeMover(j, j.dirDeseada)) {
+            j.dirActual = j.dirDeseada;
         }
-        actualizarPosicionesDom();
-        comprobarColisiones();
-        comprobarVictoria();
-    }
 
-    // El movimiento avanza por turnos, a ritmo fijo (temporizadorJugador,
-    // más abajo) — sin esto, un giro pulsado justo después de un turno
-    // tenía que esperar casi un ciclo entero (hasta 300ms en fácil)
-    // antes de notarse, lo que se sentía como retardo entre los
-    // controles y el carrito. Al pulsar una dirección que YA es
-    // válida en el acto, se da el paso de inmediato y se reinicia el
-    // temporizador desde ese instante, en vez de esperar al siguiente
-    // turno ya en marcha — el ritmo entre pasos sigue siendo el mismo
-    // a partir de ahí, solo cambia cuándo empieza a contar.
-    function intentarGiroInmediato() {
-        if (!estado.jugando || estado.terminado || estado.pausado || estado.pausaManual || estado.enCuentaAtras) return;
-        const j = estado.jugador;
-        if (!j.dirDeseada || !puedeMover(j, j.dirDeseada)) return;
+        if (!j.dirActual) return;
 
-        // Si ya ha pasado un hueco decente desde el último movimiento,
-        // se adelanta este (ver más abajo). Si NO (p. ej. varios
-        // cambios de dirección seguidos en un tecleo rápido, como
-        // invertir el sentido dos veces casi del tirón), NO se fuerza
-        // otro adelanto: basta con haber dejado la dirección ya
-        // guardada en dirDeseada — el turno ya programado (que el
-        // primer adelanto de la ráfaga acaba de reiniciar) la recogerá
-        // enseguida de todas formas. Sin este límite, cada cambio de
-        // dirección de la ráfaga disparaba su propio adelanto con una
-        // transición CSS cada vez más corta (ver actualizarPosicionesDom),
-        // y el resultado eran saltos bruscos en vez de un deslizamiento
-        // uniforme — justo el efecto de ir "a trompicones" al girar de
-        // un lado a otro rápido.
-        const UMBRAL_ADELANTO = 0.5; // fracción mínima del turno ya transcurrida
-        const haceCuanto = performance.now() - ultimoMovJugadorVisualEn;
-        if (ultimoMovJugadorVisualEn && haceCuanto < cfgDificultad().tickJugador * UMBRAL_ADELANTO) return;
+        const v = VECTORES[j.dirActual];
+        const velocidad = 1 / cfgDificultad().tickJugador; // celdas por ms
+        j.posR += v.dr * velocidad * dt;
+        j.posC += v.dc * velocidad * dt;
 
-        clearInterval(temporizadorJugador);
-        tickJugador();
-        temporizadorJugador = setInterval(tickJugador, cfgDificultad().tickJugador);
+        if (Math.abs(j.posR - j.r) >= 1 || Math.abs(j.posC - j.c) >= 1) {
+            j.r += v.dr;
+            j.c += v.dc;
+            j.posR = j.r;
+            j.posC = j.c;
+            comerEnCelda(j.r, j.c);
+
+            if (j.dirDeseada && puedeMover(j, j.dirDeseada)) j.dirActual = j.dirDeseada;
+            else if (!puedeMover(j, j.dirActual)) j.dirActual = null;
+        }
     }
 
     // ── Fantasmas ────────────────────────────────────────────────────
@@ -323,26 +319,39 @@
         return mejor || filtrados[0];
     }
 
-    function tickFantasmas() {
-        if (estado.pausado || estado.pausaManual || estado.terminado) return;
+    // Misma idea que avanzarJugador: posición continua, decisión de
+    // rumbo (pasoSalida/elegirDireccion) solo al completar el cruce de
+    // una celda (o al arrancar sin dirección todavía). Asustada, una
+    // mancha va a mitad de velocidad — antes se simulaba saltándose un
+    // turno de cada dos (saltoAsustado), aquí es, directamente, la
+    // mitad de rápido, sin el microparón que eso dejaba.
+    function avanzarFantasmas(dt, ahora) {
         estado.fantasmas.forEach((f) => {
             if (!f.activo) return;
-            if (f.asustado) {
-                f.saltoAsustado = !f.saltoAsustado;
-                if (!f.saltoAsustado) return; // la mitad de rápido mientras huye
+            if (f.saliendo && ahora < f.tiempoSalida) return; // sigue quieta en el corral
+
+            if (!f.dirActual) {
+                const dir = f.saliendo ? pasoSalida(f) : elegirDireccion(f);
+                if (!dir) return;
+                f.dirActual = dir;
             }
-            if (f.saliendo) {
-                if (performance.now() < f.tiempoSalida) return; // sigue quieta en el corral
-                const dir = pasoSalida(f);
-                if (dir) { f.dirActual = dir; aplicarMov(f, dir); }
-                if (f.r <= 5) f.saliendo = false;
-            } else {
-                const dir = elegirDireccion(f);
-                if (dir) { f.dirActual = dir; aplicarMov(f, dir); }
+
+            const velocidadBase = 1 / cfgDificultad().tickFantasma;
+            const velocidad = f.asustado ? velocidadBase * 0.5 : velocidadBase;
+            const v = VECTORES[f.dirActual];
+            f.posR += v.dr * velocidad * dt;
+            f.posC += v.dc * velocidad * dt;
+
+            if (Math.abs(f.posR - f.r) >= 1 || Math.abs(f.posC - f.c) >= 1) {
+                f.r += v.dr;
+                f.c += v.dc;
+                f.posR = f.r;
+                f.posC = f.c;
+
+                if (f.saliendo && f.r <= 5) f.saliendo = false;
+                f.dirActual = f.saliendo ? pasoSalida(f) : elegirDireccion(f);
             }
         });
-        actualizarPosicionesDom();
-        comprobarColisiones();
     }
 
     function comerFantasma(f) {
@@ -360,6 +369,8 @@
     function respawnFantasma(f) {
         f.r = f.spawnR;
         f.c = f.spawnC;
+        f.posR = f.spawnR;
+        f.posC = f.spawnC;
         f.dirActual = null;
         f.asustado = false;
         f.saliendo = true;
@@ -371,15 +382,22 @@
     }
 
     // ── Colisiones y vidas ───────────────────────────────────────────
+    // Por distancia continua (no por coincidencia exacta de celda):
+    // con posición continua dos entidades que se cruzan de frente
+    // podrían, en teoría, "pasar una al lado de la otra" entre dos
+    // fotogramas sin que (r, c) llegase a coincidir nunca exactamente.
 
     function comprobarColisiones() {
-        if (estado.terminado || estado.pausado) return;
+        if (estado.terminado || estado.pausado || estado.pausaManual) return;
         const j = estado.jugador;
         for (const f of estado.fantasmas) {
-            if (!f.activo || f.r !== j.r || f.c !== j.c) continue;
-            if (f.asustado) comerFantasma(f);
-            else perderVida();
-            return;
+            if (!f.activo) continue;
+            const dist = Math.hypot(f.posR - j.posR, f.posC - j.posC);
+            if (dist < 0.5) {
+                if (f.asustado) comerFantasma(f);
+                else perderVida();
+                return;
+            }
         }
     }
 
@@ -402,11 +420,15 @@
     function resetPosiciones() {
         estado.jugador.r = INICIO_JUGADOR.r;
         estado.jugador.c = INICIO_JUGADOR.c;
+        estado.jugador.posR = INICIO_JUGADOR.r;
+        estado.jugador.posC = INICIO_JUGADOR.c;
         estado.jugador.dirActual = null;
         estado.jugador.dirDeseada = null;
         estado.fantasmas.forEach((f, i) => {
             f.r = f.spawnR;
             f.c = f.spawnC;
+            f.posR = f.spawnR;
+            f.posC = f.spawnC;
             f.dirActual = null;
             f.asustado = false;
             f.saliendo = true;
@@ -428,43 +450,15 @@
     // ── Vista ────────────────────────────────────────────────────────
 
     function actualizarPosicionesDom() {
-        // La duración de la transición CSS se iguala aquí al intervalo
-        // real de turno de cada entidad (ver cfgDificultad) para que el
-        // deslizamiento entre celdas dure exactamente lo mismo que el
-        // turno — sin eso, un turno de p.ej. 220ms con una transición
-        // fija de 150ms deja un hueco de 70ms "parado" en cada celda,
-        // que es justo el efecto de ir a trompicones. Una mancha
-        // asustada se mueve la mitad de rápido (ver tickFantasmas), así
-        // que su transición dura el doble del turno.
-        const cfg = cfgDificultad();
-        const ahora = performance.now();
-
         const j = estado.jugador;
-        // Cuando un giro se adelanta al turno normal (intentarGiroInmediato
-        // — p. ej. invertir el sentido justo después de girar), el hueco
-        // real hasta el movimiento anterior es MENOR que el turno
-        // completo. Darle a la transición la duración completa del turno
-        // de todas formas hacía que el deslizamiento en curso se
-        // interrumpiera a mitad de camino y el nuevo arrancara desde ahí
-        // con otra duración completa — el giro se notaba más lento
-        // cuanto más rápido se invertía. Se acorta la duración al hueco
-        // real transcurrido (con un mínimo para que no se note un salto
-        // brusco) para que el deslizamiento siempre termine justo a
-        // tiempo para el siguiente movimiento, se haya adelantado o no.
-        const huecoJugador = ahora - ultimoMovJugadorVisualEn;
-        const duracionJugador = ultimoMovJugadorVisualEn
-            ? Math.max(40, Math.min(cfg.tickJugador, huecoJugador))
-            : cfg.tickJugador;
-        ultimoMovJugadorVisualEn = ahora;
-        elJugador.style.transitionDuration = duracionJugador + 'ms';
-        elJugador.style.left = ((j.c + 0.5) / COLS) * 100 + '%';
-        elJugador.style.top = ((j.r + 0.5) / ROWS) * 100 + '%';
+        elJugador.style.left = ((j.posC + 0.5) / COLS) * 100 + '%';
+        elJugador.style.top = ((j.posR + 0.5) / ROWS) * 100 + '%';
         elJugador.classList.toggle('jn-jugador--izquierda', j.dirActual === 'izquierda');
 
+        const ahora = performance.now();
         estado.fantasmas.forEach((f) => {
-            f.el.style.transitionDuration = (f.asustado ? cfg.tickFantasma * 2 : cfg.tickFantasma) + 'ms';
-            f.el.style.left = ((f.c + 0.5) / COLS) * 100 + '%';
-            f.el.style.top = ((f.r + 0.5) / ROWS) * 100 + '%';
+            f.el.style.left = ((f.posC + 0.5) / COLS) * 100 + '%';
+            f.el.style.top = ((f.posR + 0.5) / ROWS) * 100 + '%';
             f.el.classList.toggle('jn-fantasma--esperando', f.saliendo && ahora < f.tiempoSalida);
         });
     }
@@ -493,6 +487,31 @@
         if (estado.comidos >= TOTAL_COLECTABLES) finalizarPartida(true);
     }
 
+    // ── Bucle principal ──────────────────────────────────────────────
+    // Un único requestAnimationFrame, siempre en marcha: cada fotograma
+    // decide si hay algo que mover según el estado (en cuenta atrás,
+    // en pausa o con la partida ya terminada, sencillamente no hace
+    // nada ese fotograma). No hace falta arrancar ni parar temporizadores
+    // en ningún otro punto del código.
+
+    let ultimoFrameEn = null;
+
+    function bucle(ahora) {
+        if (ultimoFrameEn === null) ultimoFrameEn = ahora;
+        const dt = Math.min(50, ahora - ultimoFrameEn); // tope por si la pestaña estuvo en 2º plano
+        ultimoFrameEn = ahora;
+
+        if (estado.jugando && !estado.terminado && !estado.pausado && !estado.pausaManual) {
+            avanzarJugador(dt);
+            avanzarFantasmas(dt, ahora);
+            actualizarPosicionesDom();
+            comprobarColisiones();
+            comprobarVictoria();
+        }
+
+        requestAnimationFrame(bucle);
+    }
+
     // ── Dirección (teclado y D-pad) ──────────────────────────────────
 
     const MAPA_TECLAS = {
@@ -505,7 +524,6 @@
         if (!dir) return;
         if (ev.key.indexOf('Arrow') === 0) ev.preventDefault();
         estado.jugador.dirDeseada = dir;
-        intentarGiroInmediato();
     });
 
     // "pointerdown" además de "click" (y no solo "click"): responde en
@@ -519,7 +537,6 @@
         function alPulsar(ev) {
             if (ev.type === 'pointerdown') ev.preventDefault();
             estado.jugador.dirDeseada = boton.dataset.dir;
-            intentarGiroInmediato();
         }
         boton.addEventListener('pointerdown', alPulsar, { passive: false });
         boton.addEventListener('click', alPulsar);
@@ -613,8 +630,9 @@
             el.className = 'jn-fantasma jn-fantasma--' + (i % NUM_COLORES_MANCHA);
             el.innerHTML = `<span class="jn-fantasma__icono" aria-hidden="true">${ICONO_MANCHA}</span>`;
             return {
-                r: spawn.r, c: spawn.c, spawnR: spawn.r, spawnC: spawn.c,
-                dirActual: null, asustado: false, saltoAsustado: false,
+                r: spawn.r, c: spawn.c, posR: spawn.r, posC: spawn.c,
+                spawnR: spawn.r, spawnC: spawn.c,
+                dirActual: null, asustado: false,
                 saliendo: true, tiempoSalida: ahora + ESPERA_SALIDA_MS + i * ESPERA_SALIDA_ESCALON_MS,
                 activo: true, oculta: false,
                 icono: ICONO_MANCHA, el,
@@ -625,17 +643,16 @@
     function nuevaPartida() {
         if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('comecocos-drogueria');
 
-        clearInterval(temporizadorJugador);
-        clearInterval(temporizadorFantasmas);
         clearTimeout(temporizadorAsustada);
         clearInterval(temporizadorCuentaAtras);
         document.getElementById('jn-cuenta-atras').hidden = true;
         ocultarBono();
-        ultimoMovJugadorVisualEn = 0;
 
         estado.rejilla = clonarLaberinto();
         estado.jugador.r = INICIO_JUGADOR.r;
         estado.jugador.c = INICIO_JUGADOR.c;
+        estado.jugador.posR = INICIO_JUGADOR.r;
+        estado.jugador.posC = INICIO_JUGADOR.c;
         estado.jugador.dirActual = null;
         estado.jugador.dirDeseada = null;
         estado.fantasmas = crearFantasmas();
@@ -673,9 +690,6 @@
             estado.pausado = false;
             estado.enCuentaAtras = false;
             actualizarBotonPausa();
-            const cfg = cfgDificultad();
-            temporizadorJugador = setInterval(tickJugador, cfg.tickJugador);
-            temporizadorFantasmas = setInterval(tickFantasmas, cfg.tickFantasma);
         });
     }
 
@@ -724,8 +738,6 @@
         mostrarIndicadorPausa(false);
         actualizarBotonPausa();
         if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarFinPartida('comecocos-drogueria');
-        clearInterval(temporizadorJugador);
-        clearInterval(temporizadorFantasmas);
         clearTimeout(temporizadorAsustada);
         clearInterval(temporizadorCuentaAtras);
         document.getElementById('jn-cuenta-atras').hidden = true;
@@ -946,4 +958,5 @@
 
     pintarMarcasAleatorias();
     mostrarInicioOverlay(true);
+    requestAnimationFrame(bucle);
 })();
