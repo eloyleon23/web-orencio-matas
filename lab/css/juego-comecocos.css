@@ -1,0 +1,768 @@
+/*
+ * Comecocos de Droguería — minijuego (lab/comecocos-drogueria.html)
+ * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
+ * que el resto de minijuegos del laboratorio, con la paleta REAL del
+ * sitio (ver src/css/estilos.css), en tono azul/verde para distinguirlo
+ * del resto (rojo en Corta y Esquiva, etc.).
+ */
+
+:root {
+    --jn-azul: #1f6fb2;
+    --jn-azul-oscuro: #144d7d;
+    --jn-negro: #1a1a1a;
+    --jn-gris-texto: #52555a;
+    --jn-gris-borde: #e2e2e4;
+    --jn-gris-fondo: #f7f6f4;
+    --jn-blanco: #ffffff;
+    --jn-verde: #1a8f4c;
+    --jn-pared: #15396b;
+    --jn-pasillo: #0b2142;
+    --jn-radio: 14px;
+    --jn-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jn-gris-fondo);
+    color: var(--jn-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jn-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jn-negro), var(--jn-azul-oscuro));
+    color: var(--jn-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jn-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jn-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jn-header__volver:hover,
+.jn-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jn-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jn-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jn-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jn-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jn-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jn-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jn-juego {
+    background: var(--jn-blanco);
+    border-radius: var(--jn-radio);
+    box-shadow: var(--jn-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jn-juego {
+        flex: 1 1 62%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jn-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jn-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jn-gris-borde);
+    background: var(--jn-blanco);
+    color: var(--jn-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jn-chip-dificultad.is-activo {
+    background: var(--jn-negro);
+    border-color: var(--jn-negro);
+    color: var(--jn-blanco);
+}
+
+.jn-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.jn-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jn-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jn-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jn-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jn-gris-fondo);
+    overflow: hidden;
+}
+
+.jn-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jn-azul), var(--jn-azul-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+.jn-vidas {
+    display: flex;
+    gap: 2px;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    filter: grayscale(0);
+    transition: filter 0.15s ease;
+}
+
+.jn-vidas span.jn-vida--perdida {
+    filter: grayscale(1);
+    opacity: 0.3;
+}
+
+/* ── Laberinto ───────────────────────────────────────────────────────── */
+
+.jn-laberinto-wrap {
+    position: relative;
+}
+
+/* El laberinto tiene 19 columnas x 15 filas (rejilla fija definida en
+   JS). Fuera de pantalla completa basta con dimensionar por el ancho
+   (aspect-ratio 19/15, tope de 60vh) — igual que Corta y Esquiva y
+   Clasifica por Pasillos. En pantalla completa el ancho/alto exactos
+   los calcula JS (ver ajustarLaberintoAlEspacio en juego-comecocos.js):
+   aquí, a diferencia de Corta y Esquiva, SÍ hace falta porque el
+   laberinto es una rejilla de celdas de pared/pasillo sin tamaño
+   propio (no hay ítems de tamaño fijo en px que absorban el ajuste) —
+   el mismo caso que Memoria con sus cartas.
+*/
+.jn-laberinto {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 19 / 15;
+    max-height: 60vh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(19, 1fr);
+    grid-template-rows: repeat(15, 1fr);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--jn-pasillo);
+    outline: none;
+}
+
+.jn-celda {
+    position: relative;
+}
+
+.jn-celda--pared {
+    background: var(--jn-pared);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.jn-celda--pellet::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 16%;
+    height: 16%;
+    border-radius: 50%;
+    background: #ffd56b;
+}
+
+.jn-celda--power::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 44%;
+    height: 44%;
+    border-radius: 50%;
+    background: #ffd56b;
+    animation: jn-power-pulso 0.9s ease-in-out infinite;
+}
+
+@keyframes jn-power-pulso {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.8); }
+}
+
+.jn-jugador,
+.jn-fantasma {
+    position: absolute;
+    width: calc(100% / 19);
+    height: calc(100% / 15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    will-change: left, top;
+    z-index: 2;
+}
+
+.jn-jugador {
+    font-size: 1.15rem;
+    z-index: 3;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    transition: left 0.15s linear, top 0.15s linear;
+}
+
+.jn-jugador--izquierda {
+    transform: translate(-50%, -50%) scaleX(-1);
+}
+
+.jn-fantasma {
+    transition: left 0.15s linear, top 0.15s linear, opacity 0.2s ease;
+}
+
+.jn-fantasma--asustada {
+    animation: jn-fantasma-asustada 0.4s ease-in-out infinite;
+}
+
+@keyframes jn-fantasma-asustada {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(0.85); }
+}
+
+.jn-fantasma--oculta {
+    opacity: 0;
+}
+
+.jn-laberinto.jn-laberinto--golpe::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(217, 27, 27, 0.3);
+    animation: jn-laberinto-golpe 0.3s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes jn-laberinto-golpe {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.jn-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 4;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.65);
+    color: var(--jn-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+/* ── Controles direccionales (D-pad) ──────────────────────────────────── */
+
+.jn-dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(2, 54px);
+    gap: 6px;
+    justify-content: center;
+    margin: 4px auto 0;
+}
+
+.jn-dpad__boton {
+    min-height: 44px;
+    min-width: 44px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jn-gris-borde);
+    background: var(--jn-blanco);
+    color: var(--jn-negro);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.jn-dpad__boton:active {
+    background: var(--jn-gris-fondo);
+}
+
+.jn-dpad__boton--arriba { grid-column: 2; grid-row: 1; }
+.jn-dpad__boton--izquierda { grid-column: 1; grid-row: 2; }
+.jn-dpad__boton--derecha { grid-column: 3; grid-row: 2; }
+.jn-dpad__boton--abajo { grid-column: 2; grid-row: 2; }
+
+.jn-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jn-gris-texto);
+    text-align: center;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jn-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jn-controles {
+        flex: 1 1 38%;
+    }
+}
+
+.jn-grupo-control {
+    background: var(--jn-blanco);
+    border-radius: var(--jn-radio);
+    box-shadow: var(--jn-sombra);
+    padding: 14px;
+}
+
+.jn-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jn-marcador {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+}
+
+.jn-marcador .jn-stat__valor {
+    font-size: 1.3rem;
+}
+
+.jn-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jn-boton-compartir,
+a.jn-boton-secundario {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jn-boton-compartir,
+.jn-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.jn-boton-compartir {
+    background: var(--jn-negro);
+    color: var(--jn-blanco);
+}
+
+.jn-boton-compartir:hover {
+    background: #333;
+}
+
+.jn-boton-secundario {
+    background: var(--jn-gris-fondo);
+    color: var(--jn-negro);
+    border: 1.5px solid var(--jn-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jn-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jn-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jn-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jn-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jn-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jn-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jn-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jn-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jn-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jn-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jn-gris-texto);
+    font-weight: 600;
+}
+
+.jn-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jn-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jn-celebracion .jn-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jn-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jn-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jn-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jn-compartir-panel {
+    position: relative;
+    background: var(--jn-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jn-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jn-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jn-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jn-gris-texto);
+}
+
+.jn-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jn-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jn-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jn-azul);
+    color: var(--jn-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jn-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jn-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jn-blanco);
+}
+
+.jn-boton-red--whatsapp { background: #25d366; }
+.jn-boton-red--x { background: #000000; }
+.jn-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas aleatorias (al buscador general, sin filtrar) ───────────── */
+
+.jn-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jn-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jn-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jn-gris-texto);
+    text-align: center;
+}
+
+.jn-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jn-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jn-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jn-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ───────────────────
+   Igual que Memoria: el laberinto es una rejilla de celdas sin tamaño
+   propio, así que "aspect-ratio + auto + max-width/height" no resuelve
+   de forma fiable el mayor tamaño que cabe a la vez en ancho y alto —
+   el tamaño exacto en px lo calcula JS (ajustarLaberintoAlEspacio en
+   juego-comecocos.js). Aquí solo se prepara el contenedor flexible con
+   alto definido para que JS pueda medirlo. */
+
+body.om-pantalla-completa-activa .jn-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jn-juego {
+        flex: 1 1 62%;
+        align-self: stretch;
+    }
+}
+
+body.om-pantalla-completa-activa .jn-laberinto-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.om-pantalla-completa-activa .jn-laberinto {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+}
