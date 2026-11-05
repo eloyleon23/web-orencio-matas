@@ -1,0 +1,710 @@
+/*
+ * Corta y Esquiva — minijuego (lab/corta-esquiva.html)
+ * Mobile-first, controles táctiles de al menos 44px. Mismo esqueleto
+ * que el resto de minijuegos del laboratorio, con la paleta REAL del
+ * sitio (ver src/css/estilos.css).
+ */
+
+:root {
+    --jr-rojo: #d91b1b;
+    --jr-rojo-oscuro: #ad1515;
+    --jr-negro: #1a1a1a;
+    --jr-gris-texto: #52555a;
+    --jr-gris-borde: #e2e2e4;
+    --jr-gris-fondo: #f7f6f4;
+    --jr-blanco: #ffffff;
+    --jr-verde: #1a8f4c;
+    --jr-radio: 14px;
+    --jr-sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--jr-gris-fondo);
+    color: var(--jr-negro);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────── */
+
+.jr-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(120deg, var(--jr-negro), var(--jr-rojo-oscuro));
+    color: var(--jr-blanco);
+    padding: 12px 20px 18px;
+    text-align: center;
+}
+
+.jr-header__volver {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--jr-blanco);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.jr-header__volver:hover,
+.jr-header__volver:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+    .jr-header__volver {
+        padding: 0 10px;
+        font-size: 0.7rem;
+    }
+}
+
+.jr-header__etiqueta {
+    margin: 0 0 6px;
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.jr-header__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jr-header__subtitulo {
+    margin: 8px auto 0;
+    max-width: 480px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.4;
+}
+
+/* ── Layout principal ───────────────────────────────────────────────── */
+
+.jr-main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 36px;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jr-main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 22px 24px 60px;
+        gap: 22px;
+    }
+}
+
+/* ── Zona de juego ───────────────────────────────────────────────────── */
+
+.jr-juego {
+    background: var(--jr-blanco);
+    border-radius: var(--jr-radio);
+    box-shadow: var(--jr-sombra);
+    padding: 12px;
+}
+
+@media (min-width: 900px) {
+    .jr-juego {
+        flex: 1 1 62%;
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.jr-selector-dificultad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.jr-chip-dificultad {
+    flex: 1 1 calc(33.33% - 6px);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--jr-gris-borde);
+    background: var(--jr-blanco);
+    color: var(--jr-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.jr-chip-dificultad.is-activo {
+    background: var(--jr-negro);
+    border-color: var(--jr-negro);
+    color: var(--jr-blanco);
+}
+
+.jr-barra-superior {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.jr-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 54px;
+}
+
+.jr-stat__valor {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.jr-stat__etiqueta {
+    font-size: 0.62rem;
+    color: #9a9da2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.jr-barra-progreso {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--jr-gris-fondo);
+    overflow: hidden;
+}
+
+.jr-barra-progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--jr-rojo), var(--jr-rojo-oscuro));
+    border-radius: 6px;
+    transition: width 0.18s ease;
+}
+
+.jr-vidas {
+    display: flex;
+    gap: 2px;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    filter: grayscale(0);
+    transition: filter 0.15s ease;
+}
+
+.jr-vidas span.jr-vida--perdida {
+    filter: grayscale(1);
+    opacity: 0.3;
+}
+
+/* ── Zona de juego (productos saltando) ──────────────────────────────── */
+
+.jr-zona-wrap {
+    position: relative;
+}
+
+.jr-zona {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    max-height: 60vh;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #f3f1ec, #e7e3d8);
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.jr-item {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    margin-left: -25px;
+    margin-top: -25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--jr-blanco);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+    font-size: 1.7rem;
+    pointer-events: none;
+    will-change: left, top;
+}
+
+.jr-item--malo {
+    background: #efe3e0;
+}
+
+.jr-item--cortado {
+    animation: jr-item-cortado 0.22s ease-out forwards;
+}
+
+@keyframes jr-item-cortado {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* Rastro del deslizado — pequeños puntos que se desvanecen, dejados
+   según se mueve el dedo/ratón mientras se corta (ver juego-corta-
+   esquiva.js). Más barato y más consistente con el resto del sitio
+   (basado en DOM, no canvas) que un trazo continuo. */
+.jr-rastro-punto {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    margin-top: -7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+    pointer-events: none;
+    animation: jr-rastro-desvanece 0.35s ease-out forwards;
+}
+
+@keyframes jr-rastro-desvanece {
+    0% { opacity: 0.9; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.3); }
+}
+
+.jr-flotante {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    font-weight: 800;
+    font-size: 1.1rem;
+    pointer-events: none;
+    animation: jr-flotante-sube 0.65s ease-out forwards;
+    z-index: 5;
+}
+
+.jr-flotante--bien { color: var(--jr-verde); }
+.jr-flotante--mal { color: var(--jr-rojo); }
+
+@keyframes jr-flotante-sube {
+    0% { opacity: 1; transform: translate(-50%, -50%); }
+    100% { opacity: 0; transform: translate(-50%, calc(-50% - 34px)); }
+}
+
+.jr-zona.jr-zona--golpe::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(217, 27, 27, 0.28);
+    animation: jr-zona-golpe 0.3s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes jr-zona-golpe {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.jr-boton-reiniciar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 26, 26, 0.65);
+    color: var(--jr-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.jr-pista {
+    margin: 8px 2px 0;
+    font-size: 0.78rem;
+    color: var(--jr-gris-texto);
+    text-align: center;
+}
+
+/* ── Panel de controles ─────────────────────────────────────────────── */
+
+.jr-controles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 900px) {
+    .jr-controles {
+        flex: 1 1 38%;
+    }
+}
+
+.jr-grupo-control {
+    background: var(--jr-blanco);
+    border-radius: var(--jr-radio);
+    box-shadow: var(--jr-sombra);
+    padding: 14px;
+}
+
+.jr-grupo-control__titulo {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.jr-marcador {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+}
+
+.jr-marcador .jr-stat__valor {
+    font-size: 1.3rem;
+}
+
+.jr-marca {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #9a9da2;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* ── Botones de acción ──────────────────────────────────────────────── */
+
+.jr-boton-compartir,
+a.jr-boton-secundario {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jr-boton-compartir,
+.jr-boton-secundario {
+    min-height: 50px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.jr-boton-compartir {
+    background: var(--jr-negro);
+    color: var(--jr-blanco);
+}
+
+.jr-boton-compartir:hover {
+    background: #333;
+}
+
+.jr-boton-secundario {
+    background: var(--jr-gris-fondo);
+    color: var(--jr-negro);
+    border: 1.5px solid var(--jr-gris-borde);
+}
+
+/* ── Celebración final ──────────────────────────────────────────────── */
+
+.jr-celebracion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.jr-celebracion-overlay[hidden] {
+    display: none;
+}
+
+.jr-confeti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.jr-confeti-pieza {
+    position: absolute;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    opacity: 0.9;
+    animation-name: jr-caer;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes jr-caer {
+    to {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0.2;
+    }
+}
+
+.jr-celebracion {
+    position: relative;
+    z-index: 1;
+    background: var(--jr-blanco);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.jr-celebracion h2 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.jr-celebracion__stat {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    color: var(--jr-gris-texto);
+    font-weight: 600;
+}
+
+.jr-celebracion__lienzo-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #fdfaf4;
+}
+
+#jr-canvas-resultado {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jr-celebracion .jr-boton-secundario {
+    margin-top: 10px;
+}
+
+/* ── Panel de compartir ─────────────────────────────────────────────── */
+
+.jr-compartir-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 250;
+}
+
+.jr-compartir-overlay[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .jr-compartir-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+}
+
+.jr-compartir-panel {
+    position: relative;
+    background: var(--jr-blanco);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+    .jr-compartir-panel {
+        border-radius: 16px;
+    }
+}
+
+.jr-compartir-panel h2 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+}
+
+.jr-compartir-panel p {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    color: var(--jr-gris-texto);
+}
+
+.jr-compartir-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jr-gris-fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.jr-boton-descargar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 12px;
+    background: var(--jr-rojo);
+    color: var(--jr-blanco);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 14px;
+}
+
+.jr-redes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.jr-boton-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--jr-blanco);
+}
+
+.jr-boton-red--whatsapp { background: #25d366; }
+.jr-boton-red--x { background: #000000; }
+.jr-boton-red--facebook { background: #1877f2; }
+
+/* ── Marcas aleatorias (al buscador general, sin filtrar) ───────────── */
+
+.jr-proveedores {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 16px 48px;
+}
+
+.jr-proveedores__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.jr-proveedores__subtitulo {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: var(--jr-gris-texto);
+    text-align: center;
+}
+
+.jr-proveedores__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .jr-proveedores__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 380px;
+    }
+}
+
+.jr-proveedores__grid .premium-provider-card {
+    min-height: 90px;
+    padding: 14px;
+}
+
+.jr-proveedores__grid .premium-provider-card img {
+    max-width: 100%;
+    max-height: 56px;
+    object-fit: contain;
+}
+
+/* ── Pantalla completa: aprovechar el alto liberado ───────────────────
+   Igual que Clasifica por Pasillos/Fuera Bichos: fuera de pantalla
+   completa la zona se dimensiona por el ancho (aspect-ratio 3/4, tope
+   de 60vh); en pantalla completa pasa a ocupar el alto disponible
+   directamente. Los productos (.jr-item) tienen un tamaño FIJO en px
+   (50px), no un % del ancho de la zona, así que no heredan el bug de
+   "elemento enorme en pantalla ancha" que sí afectó en su día a
+   Atrapa la Fragancia/Salta y Reparte — no hace falta ningún tope de
+   ancho máximo aquí. */
+
+body.om-pantalla-completa-activa .jr-juego {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+@media (min-width: 900px) {
+    body.om-pantalla-completa-activa .jr-juego {
+        flex: 1 1 62%;
+        align-self: stretch;
+    }
+}
+
+body.om-pantalla-completa-activa .jr-zona-wrap {
+    flex: 1;
+    min-height: 0;
+}
+
+body.om-pantalla-completa-activa .jr-zona {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: unset;
+    max-height: none;
+}

@@ -197,23 +197,48 @@
         estado.dy = ndy;
     }
 
+    const MAPA_DIRECCIONES = {
+        arriba: [0, -1], abajo: [0, 1],
+        izquierda: [-1, 0], derecha: [1, 0],
+    };
+
+    // "pointerdown" además de "click" (y no solo "click"): gira en el
+    // instante del toque en vez de esperar a que se complete el ciclo
+    // pulsar+soltar sobre el botón — mismo patrón ya usado en los
+    // botones de mover de Salta y Reparte. "click" se mantiene para
+    // que los botones sigan funcionando con teclado (Intro/Espacio
+    // con el botón enfocado); fijarDireccion() ya es segura de llamar
+    // dos veces seguidas, solo fija el mismo vector otra vez.
     document.querySelectorAll('.je-control-boton[data-dir]').forEach((boton) => {
-        boton.addEventListener('click', () => {
-            const mapa = {
-                arriba: [0, -1], abajo: [0, 1],
-                izquierda: [-1, 0], derecha: [1, 0],
-            };
-            const vector = mapa[boton.dataset.dir];
+        function alPulsar(ev) {
+            if (ev.type === 'pointerdown') ev.preventDefault();
+            const vector = MAPA_DIRECCIONES[boton.dataset.dir];
             if (vector) fijarDireccion(vector[0], vector[1]);
-        });
+        }
+        boton.addEventListener('pointerdown', alPulsar, { passive: false });
+        boton.addEventListener('click', alPulsar);
     });
 
+    // Elementos donde Espacio/Intro ya tienen su propio significado
+    // nativo (activar el botón enfocado) — si el foco está en uno de
+    // ellos, se les deja hacer lo suyo en vez de interceptarlo aquí
+    // para pausar (si no, tabular hasta "Jugar" y pulsar Intro, por
+    // ejemplo, dejaría de funcionar).
+    function enfocoElementoInteractivo() {
+        const activo = document.activeElement;
+        return !!activo && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(activo.tagName);
+    }
+
     document.addEventListener('keydown', (ev) => {
-        if (ev.key === 'ArrowLeft') fijarDireccion(-1, 0);
-        else if (ev.key === 'ArrowRight') fijarDireccion(1, 0);
-        else if (ev.key === 'ArrowUp') fijarDireccion(0, -1);
-        else if (ev.key === 'ArrowDown') fijarDireccion(0, 1);
-        else if (ev.key === ' ' || ev.key === 'Spacebar') {
+        // preventDefault en las flechas: sin esto, además de mover la
+        // brocha, el navegador hace scroll de la página en esa misma
+        // dirección (comportamiento por defecto de las flechas) — la
+        // pantalla se desplazaba a la vez que se jugaba.
+        if (ev.key === 'ArrowLeft') { ev.preventDefault(); fijarDireccion(-1, 0); }
+        else if (ev.key === 'ArrowRight') { ev.preventDefault(); fijarDireccion(1, 0); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); fijarDireccion(0, -1); }
+        else if (ev.key === 'ArrowDown') { ev.preventDefault(); fijarDireccion(0, 1); }
+        else if ((ev.key === ' ' || ev.key === 'Spacebar' || ev.key === 'Enter') && !enfocoElementoInteractivo()) {
             ev.preventDefault();
             alternarPausa();
         }
@@ -547,6 +572,8 @@
         if (window.OMEstadisticasJuegos) window.OMEstadisticasJuegos.registrarPartida('estela');
         if (animacionId) cancelAnimationFrame(animacionId);
         clearInterval(temporizadorPigmento);
+        clearInterval(temporizadorCuentaAtras);
+        document.getElementById('je-cuenta-atras').hidden = true;
         borrarEstadoGuardado();
 
         estado.x = INICIO_X;
@@ -562,7 +589,7 @@
         estado.pigmentosRecogidos = 0;
         estado.fotograma = 0;
         estado.terminado = false;
-        estado.jugando = true;
+        estado.jugando = false; // hasta que acabe la cuenta atrás inicial
         estado.pausado = false;
         estado.partidaIniciada = true;
 
@@ -575,9 +602,44 @@
         redimensionarCanvas();
         actualizarVista();
 
-        temporizadorPigmento = setInterval(aparecerObjeto, cfgDificultad().intervaloPigmento);
-        aparecerObjeto();
-        animacionId = requestAnimationFrame(frame);
+        mostrarCuentaAtras(() => {
+            estado.jugando = true;
+            actualizarBotonJugarPausa();
+            temporizadorPigmento = setInterval(aparecerObjeto, cfgDificultad().intervaloPigmento);
+            aparecerObjeto();
+            animacionId = requestAnimationFrame(frame);
+        });
+    }
+
+    // ── Cuenta atrás antes de empezar a moverse ───────────────────────
+
+    let temporizadorCuentaAtras = null;
+
+    function mostrarCuentaAtras(alTerminar) {
+        clearInterval(temporizadorCuentaAtras);
+        const el = document.getElementById('je-cuenta-atras');
+        const elNumero = document.getElementById('je-cuenta-atras-numero');
+        let n = 3;
+
+        function pintar() {
+            elNumero.textContent = String(n);
+            elNumero.style.animation = 'none';
+            void elNumero.offsetWidth;
+            elNumero.style.animation = '';
+        }
+
+        el.hidden = false;
+        pintar();
+        temporizadorCuentaAtras = setInterval(() => {
+            n--;
+            if (n <= 0) {
+                clearInterval(temporizadorCuentaAtras);
+                el.hidden = true;
+                alTerminar();
+                return;
+            }
+            pintar();
+        }, 1000);
     }
 
     function finalizarPartida(completado) {
@@ -588,6 +650,8 @@
         estado.pausado = false;
         if (animacionId) cancelAnimationFrame(animacionId);
         clearInterval(temporizadorPigmento);
+        clearInterval(temporizadorCuentaAtras);
+        document.getElementById('je-cuenta-atras').hidden = true;
         borrarEstadoGuardado();
         mostrarIndicadorPausa(false);
         actualizarBotonJugarPausa();
