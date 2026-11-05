@@ -37,7 +37,7 @@
 <meta name="description" content="Minijuego tipo comecocos: recorre los pasillos del almacén recogiendo productos y esquiva las manchas que te persiguen.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../src/css/estilos.css?v=20261107">
-<link rel="stylesheet" href="css/juego-comecocos.css?v=20261112">
+<link rel="stylesheet" href="css/juego-comecocos.css?v=20261113">
 <link rel="stylesheet" href="css/pantalla-completa.css?v=20261104">
 <!-- Google tag (gtag.js) -->
 <script>
@@ -159,6 +159,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <span class="jn-bonus__texto">¡Manchas vulnerables!</span>
                 <span class="jn-bonus__contador" id="jn-bonus-contador">8</span>
             </div>
+            <div class="jn-cuenta-atras" id="jn-cuenta-atras" role="status" aria-live="assertive" hidden>
+                <span id="jn-cuenta-atras-numero">3</span>
+            </div>
         </div>
 
         <div class="jn-dpad om-oculto-en-pantalla-completa" aria-label="Controles de dirección">
@@ -198,6 +201,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
 </main>
+
+<div class="jn-overlay" id="jn-inicio-overlay" hidden>
+    <div class="jn-tarjeta-overlay" role="dialog" aria-modal="true" aria-labelledby="jn-inicio-titulo">
+        <h2 id="jn-inicio-titulo"><span aria-hidden="true">🛒</span> Comecocos de Droguería</h2>
+        <p>Mueve el carrito con las flechas, el teclado WASD o los botones. Recoge todos los productos esquivando las manchas — el spray grande las vuelve vulnerables unos segundos para que las puedas cazar.</p>
+        <div class="jn-overlay__acciones">
+            <button type="button" class="jn-overlay__boton" id="jn-boton-jugar">▶ Jugar</button>
+        </div>
+    </div>
+</div>
 
 <section class="jn-proveedores" aria-labelledby="jn-proveedores-titulo">
     <h2 id="jn-proveedores-titulo" class="jn-proveedores__titulo">Algunas de nuestras marcas</h2>
@@ -311,7 +324,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="js/estadisticas-juegos.js?v=20261108"></script>
 <script src="js/compartir-juego.js?v=20261102"></script>
 <script src="js/mejores-resultados.js?v=20261110"></script>
-<script src="js/juego-comecocos.js?v=20261111"></script>
+<script src="js/juego-comecocos.js?v=20261113"></script>
 <script src="js/pantalla-completa.js?v=20261030d"></script>
 <script>
     // Página fuera de la raíz del sitio: ver convenio de OM_RUTA_RAIZ
