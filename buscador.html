@@ -3468,6 +3468,17 @@
            .modal-editar-ficha-* para la caja y los campos; aquí solo lo
            específico de la vista previa y las acciones de descarga. */
         .modal-etiqueta-box { max-width: 640px; }
+        /* Esta modal es bastante alta (tamaño, texto personalizado,
+           acciones...) y en móvil, si el aviso de cookies (z-index: 9999,
+           fijo abajo — ver src/js/analytics-consent.js) todavía no se ha
+           aceptado/rechazado, queda POR ENCIMA tapando sus botones de
+           PNG/PDF/Cerrar sin que se note — clics que no hacen nada en
+           apariencia. Confirmado así en Chrome móvil, reportado por Eloy.
+           El resto de modales del sitio comparten el mismo z-index base
+           (1000) y podrían tener el mismo problema si llegan a ocupar
+           tanto alto, pero el arreglo se acota aquí, a la única modal
+           donde se ha confirmado el problema. */
+        #modal-etiqueta-overlay { z-index: 10000; }
         .modal-etiqueta-layout {
             display: flex;
             gap: 20px;
@@ -3523,6 +3534,18 @@
         @media (max-width: 480px) {
             .modal-etiqueta-acciones { flex-wrap: wrap; }
             .modal-etiqueta-acciones button { flex: 1 1 100%; }
+        }
+        /* "Cerrar" debajo de PNG/PDF (no en la misma fila) — a petición
+           de Eloy, para que las acciones de generar queden primero y
+           cerrar sea claramente secundario. */
+        .modal-etiqueta-btn-cerrar {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
         }
         .modal-etiqueta-campo-doble {
             display: flex;
@@ -5709,7 +5732,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             se generan en una hoja DIN A4 lista para imprimir y recortar.
         </p>
         <div class="modal-editar-ficha-acciones modal-etiqueta-acciones">
-            <button type="button" id="modal-etiqueta-cancelar" class="modal-editar-ficha-cancelar">Cerrar</button>
             <button type="button" id="modal-etiqueta-descargar-png" class="modal-editar-ficha-cancelar modal-etiqueta-btn-png">
                 <i class="fa-solid fa-image"></i> PNG
             </button>
@@ -5717,6 +5739,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <i class="fa-solid fa-file-pdf"></i> <span id="modal-etiqueta-descargar-pdf-texto">PDF</span>
             </button>
         </div>
+        <button type="button" id="modal-etiqueta-cancelar" class="modal-editar-ficha-cancelar modal-etiqueta-btn-cerrar">Cerrar</button>
     </div>
 </div>
 
@@ -15928,13 +15951,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return `etiqueta-${slug || 'producto'}`;
     }
 
-    function descargarComoArchivo_(dataUrl, nombreArchivo) {
+    // Acepta un Blob o una data: URL — con Blob crea una URL temporal
+    // (revocada después de un segundo, tiempo de sobra para que el
+    // navegador haya iniciado la descarga) y la usa en vez de la propia
+    // data: URL. A petición de Eloy, tras comprobar que el PNG no se
+    // descargaba en Chrome móvil: un enlace <a download href="data:...">
+    // con un PNG grande en base64 no es fiable en navegadores móviles
+    // (Chrome Android incluido) — jsPDF, que sí funcionaba bien ahí, usa
+    // internamente este mismo patrón de Blob + URL.createObjectURL.
+    function descargarComoArchivo_(dataUrlOBlob, nombreArchivo) {
+        const esBlob = dataUrlOBlob instanceof Blob;
+        const url = esBlob ? URL.createObjectURL(dataUrlOBlob) : dataUrlOBlob;
         const a = document.createElement('a');
-        a.href = dataUrl;
+        a.href = url;
         a.download = nombreArchivo;
         document.body.appendChild(a);
         a.click();
         a.remove();
+        if (esBlob) setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // canvas.toBlob es asíncrono (basado en callback) — se envuelve en
+    // una promesa para poder usarlo con await, igual que el resto de
+    // esta función.
+    function etiquetaCanvasABlob_(canvas) {
+        return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), 'image/png'));
     }
 
     // Solo disponible con 1 etiqueta (ver actualizarBotonesEtiqueta_,
@@ -15948,7 +15989,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const btn = $('modal-etiqueta-descargar-png');
         const textoOriginal = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
         try {
             const datos = datosEtiquetaParaProducto_(p);
             const [logo, barcode, qr] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr)]);
@@ -15960,7 +16001,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, {
                 logo, barcode, qr, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
             });
-            descargarComoArchivo_(canvas.toDataURL('image/png'), `${etiquetaNombreArchivoBase_(p)}.png`);
+            const blob = await etiquetaCanvasABlob_(canvas);
+            if (!blob) throw new Error('canvas.toBlob devolvió null');
+            descargarComoArchivo_(blob, `${etiquetaNombreArchivoBase_(p)}.png`);
         } catch (e) {
             console.error('Error al generar la etiqueta en PNG:', e);
             mostrarToast('No se ha podido generar la etiqueta en PNG.', 'error');
