@@ -3482,8 +3482,15 @@
             gap: 6px;
         }
         .modal-etiqueta-preview {
-            width: 260px;
-            height: 187px;
+            /* El tamaño real (atributos width/height del <canvas>) lo fija
+               actualizarVistaPreviaEtiqueta_ según el ancho/alto en mm
+               elegidos — aquí solo se acota el tamaño EN PANTALLA,
+               preservando su proporción real (object-fit: contain no
+               aplica a <canvas>, por eso max-width/max-height + auto). */
+            max-width: 280px;
+            max-height: 220px;
+            width: auto;
+            height: auto;
             border-radius: 6px;
             background: #fff;
             box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
@@ -3516,6 +3523,51 @@
         @media (max-width: 480px) {
             .modal-etiqueta-acciones { flex-wrap: wrap; }
             .modal-etiqueta-acciones button { flex: 1 1 100%; }
+        }
+        .modal-etiqueta-campo-doble {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-etiqueta-campo-doble .modal-editar-ficha-campo { flex: 1; margin: 0; }
+        .modal-etiqueta-nota-tamano {
+            margin: -4px 0 0;
+            font-size: 0.74rem;
+        }
+        .modal-etiqueta-subtitulo {
+            margin: 18px 0 10px;
+            font-size: 0.86rem;
+            font-weight: 800;
+            color: var(--dark);
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .modal-etiqueta-texto-personalizado .modal-editar-ficha-campo { margin-bottom: 12px; }
+        .modal-etiqueta-texto-controles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .modal-etiqueta-texto-controles .modal-editar-ficha-campo { flex: 1 1 110px; margin: 0; }
+        .modal-etiqueta-texto-controles input[type="color"] {
+            width: 100%;
+            height: 38px;
+            padding: 3px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .modal-etiqueta-texto-estilo {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: var(--dark);
+        }
+        .modal-etiqueta-texto-estilo label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
         }
 
         /* Bloque "Información adicional" en el detalle del producto —
@@ -5560,7 +5612,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="modal-etiqueta-layout">
             <div class="modal-etiqueta-preview-wrap">
-                <canvas id="modal-etiqueta-preview" class="modal-etiqueta-preview" width="930" height="670"></canvas>
+                <canvas id="modal-etiqueta-preview" class="modal-etiqueta-preview"></canvas>
                 <p class="modal-etiqueta-preview-caption">Vista previa de una etiqueta</p>
             </div>
             <div class="modal-etiqueta-controles">
@@ -5568,6 +5620,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <label for="modal-etiqueta-cantidad">Número de etiquetas</label>
                     <input type="number" id="modal-etiqueta-cantidad" min="1" max="200" step="1" value="1" autocomplete="off">
                 </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-ancho">Ancho (mm)</label>
+                        <input type="number" id="modal-etiqueta-ancho" min="25" max="190" step="1" value="93" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-alto">Alto (mm)</label>
+                        <input type="number" id="modal-etiqueta-alto" min="25" max="277" step="1" value="67" autocomplete="off">
+                    </div>
+                </div>
+                <p class="modal-editar-ficha-nota modal-etiqueta-nota-tamano">
+                    Máximo 190x277mm — el espacio útil de un folio DIN A4 con margen.
+                </p>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiqueta-detalle">Detalle (opcional)</label>
                     <select id="modal-etiqueta-detalle">
@@ -5591,6 +5656,50 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <p id="modal-etiqueta-sin-codigo-aviso" class="modal-editar-ficha-error" style="display:none;">
                     Este producto no tiene una referencia válida para generar el código de barras — la etiqueta se imprimirá sin él.
                 </p>
+            </div>
+        </div>
+
+        <!-- Texto personalizado — independiente del "Detalle" (que es el
+             chip de la esquina): un texto libre que se puede colocar en
+             cualquiera de las 9 posiciones de la etiqueta (combinando
+             alineación horizontal y vertical), con su propio tamaño,
+             estilo y color. -->
+        <div class="modal-etiqueta-texto-personalizado">
+            <h4 class="modal-etiqueta-subtitulo">Texto personalizado (opcional)</h4>
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiqueta-texto">Texto</label>
+                <input type="text" id="modal-etiqueta-texto" maxlength="60" placeholder="p. ej. Hasta fin de existencias" autocomplete="off">
+            </div>
+            <div class="modal-etiqueta-texto-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-texto-tamano">Tamaño (pt)</label>
+                    <input type="number" id="modal-etiqueta-texto-tamano" min="4" max="60" step="1" value="10" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-texto-alinh">Horizontal</label>
+                    <select id="modal-etiqueta-texto-alinh">
+                        <option value="izquierda">Izquierda</option>
+                        <option value="centro" selected>Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-texto-alinv">Vertical</label>
+                    <select id="modal-etiqueta-texto-alinv">
+                        <option value="arriba">Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo" selected>Abajo</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-texto-color">Color</label>
+                    <input type="color" id="modal-etiqueta-texto-color" value="#1e293b">
+                </div>
+            </div>
+            <div class="modal-etiqueta-texto-estilo">
+                <label><input type="checkbox" id="modal-etiqueta-texto-negrita"> Negrita</label>
+                <label><input type="checkbox" id="modal-etiqueta-texto-cursiva"> Cursiva</label>
+                <label><input type="checkbox" id="modal-etiqueta-texto-subrayado"> Subrayado</label>
             </div>
         </div>
 
@@ -15071,16 +15180,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const ETIQUETA_COLOR_RED_ = [211, 47, 47];
     const ETIQUETA_COLOR_BORDE_ = [203, 213, 225];
     const ETIQUETA_COLOR_SEPARADOR_ = [226, 232, 240];
-    // Tamaño de cada etiqueta en mm — 2 columnas x 4 filas por hoja A4
-    // (10mm de margen de hoja, 4/3mm de separación entre etiquetas),
-    // igual proporción que el modelo en PDF/XLSX que pasó Eloy.
-    const ETIQUETA_W_MM_ = 93;
-    const ETIQUETA_H_MM_ = 67;
+    // Tamaño de etiqueta por defecto en mm (93x67 = el modelo original,
+    // 2 columnas x 4 filas en A4) — a petición de Eloy, 06/11/2026, ahora
+    // es configurable desde la modal (ver modal-etiqueta-ancho/alto),
+    // acotado al espacio útil de un folio DIN A4 con el margen de hoja
+    // de abajo. La rejilla de la hoja (cuántas caben por página) se
+    // recalcula en cada generación según el tamaño elegido — ver
+    // etiquetaRejillaPara_.
+    const ETIQUETA_W_DEFECTO_MM_ = 93;
+    const ETIQUETA_H_DEFECTO_MM_ = 67;
+    const ETIQUETA_TAMANO_MIN_MM_ = 25;
     const ETIQUETA_PAGINA_MARGEN_MM_ = 10;
     const ETIQUETA_PAGINA_GAP_COL_MM_ = 4;
     const ETIQUETA_PAGINA_GAP_FILA_MM_ = 3;
-    const ETIQUETA_PAGINA_COLS_ = 2;
-    const ETIQUETA_PAGINA_FILAS_ = 4;
+    const ETIQUETA_PAGINA_ANCHO_UTIL_MM_ = 210 - 2 * ETIQUETA_PAGINA_MARGEN_MM_;
+    const ETIQUETA_PAGINA_ALTO_UTIL_MM_ = 297 - 2 * ETIQUETA_PAGINA_MARGEN_MM_;
     const ETIQUETA_CANTIDAD_MAXIMA_ = 200;
 
     let productoEtiquetaActual_ = null;
@@ -15218,13 +15332,105 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return lineas;
     }
 
+    // Texto personalizado (ver etiquetaTextoPersonalizadoActual_) sobre
+    // el <canvas> — se coloca en una de las 9 posiciones posibles
+    // (combinación de alinH x alinV) dentro del área de contenido de la
+    // etiqueta, con su propio tamaño (en pt, convertido a px con el
+    // mismo px-por-mm real que el resto del dibujo, para que coincida
+    // exactamente con el tamaño que saldría en el PDF), estilo y color.
+    // No se intenta evitar que se solape con el resto del contenido —
+    // la vista previa en vivo ya deja ver el resultado antes de generar
+    // nada.
+    function dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, pxPorMm, cfg) {
+        if (!cfg) return;
+        const sizePx = Math.max(4, Math.round(cfg.tamanoPt * 0.35278 * pxPorMm));
+        const estilo = `${cfg.cursiva ? 'italic ' : ''}${cfg.negrita ? 'bold ' : ''}${sizePx}px Arial, sans-serif`;
+        ctx.font = estilo;
+        ctx.fillStyle = cfg.color;
+
+        const maxW = w - 2 * pad;
+        const lineas = etiquetaEnvolverTextoCanvas_(ctx, cfg.texto, maxW, 4);
+        const lineHeight = sizePx * 1.25;
+        const bloqueAlto = lineas.length * lineHeight;
+
+        let startY;
+        if (cfg.alinV === 'arriba') startY = pad + sizePx * 0.85;
+        else if (cfg.alinV === 'abajo') startY = h - pad - bloqueAlto + sizePx * 0.85;
+        else startY = (h - bloqueAlto) / 2 + sizePx * 0.85;
+
+        let x, align;
+        if (cfg.alinH === 'izquierda') { x = pad; align = 'left'; }
+        else if (cfg.alinH === 'derecha') { x = w - pad; align = 'right'; }
+        else { x = w / 2; align = 'center'; }
+
+        ctx.textAlign = align;
+        lineas.forEach((linea, i) => {
+            const y = startY + i * lineHeight;
+            ctx.fillText(linea, x, y);
+            if (cfg.subrayado) {
+                const lw = ctx.measureText(linea).width;
+                const lx0 = align === 'left' ? x : align === 'right' ? x - lw : x - lw / 2;
+                ctx.strokeStyle = cfg.color;
+                ctx.lineWidth = Math.max(1, sizePx * 0.06);
+                ctx.beginPath();
+                ctx.moveTo(lx0, y + sizePx * 0.15);
+                ctx.lineTo(lx0 + lw, y + sizePx * 0.15);
+                ctx.stroke();
+            }
+        });
+        ctx.textAlign = 'left';
+    }
+
+    // Misma idea que dibujarTextoPersonalizadoCanvas_ pero con jsPDF
+    // (mm/pt nativos, nada que convertir).
+    function dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, wMM, hMM, pad, cfg) {
+        if (!cfg) return;
+        const estilo = cfg.negrita && cfg.cursiva ? 'bolditalic' : cfg.negrita ? 'bold' : cfg.cursiva ? 'italic' : 'normal';
+        doc.setFont('helvetica', estilo);
+        doc.setFontSize(cfg.tamanoPt);
+        const rgb = etiquetaHexARgb_(cfg.color);
+        doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+
+        const maxW = wMM - 2 * pad;
+        const lineas = doc.splitTextToSize(cfg.texto, maxW).slice(0, 4);
+        const tamanoMM = cfg.tamanoPt * 0.3528;
+        const lineHeightMM = tamanoMM * 1.25;
+        const bloqueAlto = lineas.length * lineHeightMM;
+
+        let startY;
+        if (cfg.alinV === 'arriba') startY = yMM + pad + tamanoMM * 0.85;
+        else if (cfg.alinV === 'abajo') startY = yMM + hMM - pad - bloqueAlto + tamanoMM * 0.85;
+        else startY = yMM + (hMM - bloqueAlto) / 2 + tamanoMM * 0.85;
+
+        let x, align;
+        if (cfg.alinH === 'izquierda') { x = xMM + pad; align = 'left'; }
+        else if (cfg.alinH === 'derecha') { x = xMM + wMM - pad; align = 'right'; }
+        else { x = xMM + wMM / 2; align = 'center'; }
+
+        lineas.forEach((linea, i) => {
+            const y = startY + i * lineHeightMM;
+            doc.text(linea, x, y, { align });
+            if (cfg.subrayado) {
+                const lw = doc.getTextWidth(linea);
+                const lx0 = align === 'left' ? x : align === 'right' ? x - lw : x - lw / 2;
+                doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
+                doc.setLineWidth(Math.max(0.15, tamanoMM * 0.06));
+                doc.line(lx0, y + tamanoMM * 0.15, lx0 + lw, y + tamanoMM * 0.15);
+            }
+        });
+    }
+
     // Dibuja UNA etiqueta sobre un <canvas> 2D en el rectángulo [x,y,w,h]
     // (en px) — compartido por la vista previa del modal y la
     // exportación a PNG, que solo cambian la resolución del canvas para
     // que el PNG salga nítido en impresión.
-    function dibujarEtiquetaEnCanvas_(ctx, x, y, w, h, datos, opts) {
-        const mm = w / ETIQUETA_W_MM_; // px por mm a esta resolución
+    function dibujarEtiquetaEnCanvas_(ctx, x, y, w, h, wMM, hMM, datos, opts) {
+        const mm = w / wMM; // px por mm REAL a esta resolución (w px representan wMM mm)
         const pad = 3.5 * mm;
+        // Margen extra a la izquierda SOLO para el nombre del producto,
+        // a petición de Eloy (06/11/2026) — el resto de elementos sigue
+        // arrancando en pad.
+        const nombreMargenIzq = 2 * mm;
         const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
 
         ctx.save();
@@ -15238,8 +15444,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth);
         ctx.setLineDash([]);
 
+        // Logo un poco más grande que el original (9mm → 11mm), a
+        // petición de Eloy.
         if (opts.logo && opts.logo.img) {
-            const lh = 9 * mm;
+            const lh = 11 * mm;
             const lw = lh * (opts.logo.width / opts.logo.height);
             ctx.drawImage(opts.logo.img, pad, pad, lw, lh);
         }
@@ -15263,13 +15471,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.textBaseline = 'alphabetic';
         }
 
-        const nombreY0 = pad + 9 * mm + 3 * mm;
+        const nombreX = pad + nombreMargenIzq;
+        const nombreY0 = pad + 11 * mm + 3 * mm;
         ctx.fillStyle = rgb(ETIQUETA_COLOR_DARK_);
         ctx.font = `bold ${Math.round(3.5 * mm)}px Arial, sans-serif`;
-        const nombreMaxW = w - 2 * pad;
+        const nombreMaxW = w - pad - nombreX;
         const lineasNombre = etiquetaEnvolverTextoCanvas_(ctx, datos.nombre, nombreMaxW, 2);
         const lineHeight = 4.3 * mm;
-        lineasNombre.forEach((linea, i) => ctx.fillText(linea, pad, nombreY0 + i * lineHeight));
+        lineasNombre.forEach((linea, i) => ctx.fillText(linea, nombreX, nombreY0 + i * lineHeight));
 
         const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5 * mm;
         ctx.strokeStyle = rgb(ETIQUETA_COLOR_SEPARADOR_);
@@ -15279,18 +15488,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         ctx.lineTo(w - pad, sepY);
         ctx.stroke();
 
+        // El precio va centrado horizontalmente (a petición de Eloy) —
+        // el desglose "Base/IVA Incl." y el "-XX%" de descuento se
+        // quedan arriba a la derecha, como antes.
         let precioY = sepY + 6 * mm;
         if (datos.promo) {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
             ctx.font = `${Math.round(3.2 * mm)}px Arial, sans-serif`;
             const origTxt = etiquetaFormatoEuros_(datos.promo.original);
-            ctx.fillText(origTxt, pad, precioY);
+            ctx.textAlign = 'center';
+            ctx.fillText(origTxt, w / 2, precioY);
+            ctx.textAlign = 'left';
             const origW = ctx.measureText(origTxt).width;
             ctx.strokeStyle = rgb(ETIQUETA_COLOR_MUTED_);
             ctx.lineWidth = Math.max(1, 0.35 * mm);
             ctx.beginPath();
-            ctx.moveTo(pad, precioY - 1.1 * mm);
-            ctx.lineTo(pad + origW, precioY - 1.1 * mm);
+            ctx.moveTo(w / 2 - origW / 2, precioY - 1.1 * mm);
+            ctx.lineTo(w / 2 + origW / 2, precioY - 1.1 * mm);
             ctx.stroke();
 
             if (datos.promo.pct) {
@@ -15304,12 +15518,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             precioY += 8 * mm;
             ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
             ctx.font = `bold ${Math.round(8 * mm)}px Arial, sans-serif`;
-            ctx.fillText(etiquetaFormatoEuros_(datos.promo.promo), pad, precioY);
+            ctx.textAlign = 'center';
+            ctx.fillText(etiquetaFormatoEuros_(datos.promo.promo), w / 2, precioY);
+            ctx.textAlign = 'left';
 
             if (datos.promo.promoSin) {
                 ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
                 ctx.font = `${Math.round(2.6 * mm)}px Arial, sans-serif`;
-                ctx.fillText(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, pad, precioY + 4 * mm);
+                ctx.textAlign = 'center';
+                ctx.fillText(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, w / 2, precioY + 4 * mm);
+                ctx.textAlign = 'left';
             }
         } else if (datos.con !== null) {
             if (datos.sin !== null) {
@@ -15322,11 +15540,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
             ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
             ctx.font = `bold ${Math.round(8 * mm)}px Arial, sans-serif`;
-            ctx.fillText(etiquetaFormatoEuros_(datos.con), pad, precioY + 4 * mm);
+            ctx.textAlign = 'center';
+            ctx.fillText(etiquetaFormatoEuros_(datos.con), w / 2, precioY + 4 * mm);
+            ctx.textAlign = 'left';
         } else {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
             ctx.font = `italic ${Math.round(3.2 * mm)}px Arial, sans-serif`;
-            ctx.fillText('Consultar precio', pad, precioY + 2 * mm);
+            ctx.textAlign = 'center';
+            ctx.fillText('Consultar precio', w / 2, precioY + 2 * mm);
+            ctx.textAlign = 'left';
         }
 
         if (opts.barcode && opts.barcode.img) {
@@ -15344,6 +15566,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.textAlign = 'left';
         }
 
+        dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, mm, opts.textoPersonalizado);
+
         ctx.restore();
     }
 
@@ -15354,8 +15578,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // porque jsPDF mide el texto con su propio motor, distinto del de
     // Canvas2D — intentar compartir una única lista de instrucciones
     // habría dado saltos de línea ligeramente distintos entre ambas.
-    function dibujarEtiquetaEnPDF_(doc, xMM, yMM, datos, opts) {
-        const W = ETIQUETA_W_MM_, H = ETIQUETA_H_MM_, PAD = 3.5;
+    function dibujarEtiquetaEnPDF_(doc, xMM, yMM, wMM, hMM, datos, opts) {
+        const W = wMM, H = hMM, PAD = 3.5;
+        // Margen extra a la izquierda SOLO para el nombre del producto,
+        // igual que en dibujarEtiquetaEnCanvas_.
+        const NOMBRE_MARGEN_IZQ = 2;
         const setColor = (fn, c) => doc[fn](c[0], c[1], c[2]);
 
         setColor('setDrawColor', ETIQUETA_COLOR_BORDE_);
@@ -15364,8 +15591,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.rect(xMM + 0.3, yMM + 0.3, W - 0.6, H - 0.6);
         doc.setLineDashPattern([], 0);
 
+        // Logo un poco más grande que el original (9mm → 11mm), a
+        // petición de Eloy.
         if (opts.logo) {
-            const lh = 9, lw = lh * (opts.logo.width / opts.logo.height);
+            const lh = 11, lw = lh * (opts.logo.width / opts.logo.height);
             doc.addImage(opts.logo.dataUrl, 'PNG', xMM + PAD, yMM + PAD, lw, lh);
         }
 
@@ -15384,31 +15613,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.text(texto, bx + bw / 2, by + bh / 2 + 1.1, { align: 'center' });
         }
 
-        const nombreY0 = yMM + PAD + 9 + 3;
+        const nombreX = xMM + PAD + NOMBRE_MARGEN_IZQ;
+        const nombreY0 = yMM + PAD + 11 + 3;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10.5);
         setColor('setTextColor', ETIQUETA_COLOR_DARK_);
-        const nombreMaxW = W - 2 * PAD;
+        const nombreMaxW = xMM + W - PAD - nombreX;
         const lineasNombre = doc.splitTextToSize(datos.nombre || '', nombreMaxW).slice(0, 2);
         const lineHeight = 4.3;
-        lineasNombre.forEach((linea, i) => doc.text(linea, xMM + PAD, nombreY0 + i * lineHeight));
+        lineasNombre.forEach((linea, i) => doc.text(linea, nombreX, nombreY0 + i * lineHeight));
 
         const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5;
         setColor('setDrawColor', ETIQUETA_COLOR_SEPARADOR_);
         doc.setLineWidth(0.25);
         doc.line(xMM + PAD, sepY, xMM + W - PAD, sepY);
 
+        // El precio va centrado horizontalmente (a petición de Eloy) —
+        // el desglose "Base/IVA Incl." y el "-XX%" de descuento se
+        // quedan arriba a la derecha, como antes.
+        const centroX = xMM + W / 2;
         let precioY = sepY + 6;
         if (datos.promo) {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9.5);
             setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
             const origTxt = etiquetaFormatoEuros_(datos.promo.original);
-            doc.text(origTxt, xMM + PAD, precioY);
+            doc.text(origTxt, centroX, precioY, { align: 'center' });
             const origW = doc.getTextWidth(origTxt);
             setColor('setDrawColor', ETIQUETA_COLOR_MUTED_);
             doc.setLineWidth(0.3);
-            doc.line(xMM + PAD, precioY - 1.2, xMM + PAD + origW, precioY - 1.2);
+            doc.line(centroX - origW / 2, precioY - 1.2, centroX + origW / 2, precioY - 1.2);
 
             if (datos.promo.pct) {
                 doc.setFont('helvetica', 'bold');
@@ -15421,13 +15655,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(23);
             setColor('setTextColor', ETIQUETA_COLOR_RED_);
-            doc.text(etiquetaFormatoEuros_(datos.promo.promo), xMM + PAD, precioY);
+            doc.text(etiquetaFormatoEuros_(datos.promo.promo), centroX, precioY, { align: 'center' });
 
             if (datos.promo.promoSin) {
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(7.5);
                 setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-                doc.text(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, xMM + PAD, precioY + 4);
+                doc.text(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, centroX, precioY + 4, { align: 'center' });
             }
         } else if (datos.con !== null) {
             if (datos.sin !== null) {
@@ -15440,12 +15674,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(23);
             setColor('setTextColor', ETIQUETA_COLOR_RED_);
-            doc.text(etiquetaFormatoEuros_(datos.con), xMM + PAD, precioY + 4);
+            doc.text(etiquetaFormatoEuros_(datos.con), centroX, precioY + 4, { align: 'center' });
         } else {
             doc.setFont('helvetica', 'italic');
             doc.setFontSize(9.5);
             setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-            doc.text('Consultar precio', xMM + PAD, precioY + 2);
+            doc.text('Consultar precio', centroX, precioY + 2, { align: 'center' });
         }
 
         if (opts.barcode) {
@@ -15459,8 +15693,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-            doc.text(`Ref: ${datos.ref}`, xMM + W / 2, yMM + H - PAD - 2, { align: 'center' });
+            doc.text(`Ref: ${datos.ref}`, centroX, yMM + H - PAD - 2, { align: 'center' });
         }
+
+        dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, W, H, PAD, opts.textoPersonalizado);
     }
 
     function etiquetaDetalleTextoActual_() {
@@ -15474,6 +15710,57 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const valor = parseInt($('modal-etiqueta-cantidad').value, 10);
         if (!Number.isFinite(valor) || valor < 1) return 1;
         return Math.min(ETIQUETA_CANTIDAD_MAXIMA_, valor);
+    }
+
+    // Ancho/alto de la etiqueta elegidos por quien la genera — acotados
+    // SIEMPRE al espacio útil de un folio DIN A4 (ver
+    // ETIQUETA_PAGINA_ANCHO_UTIL_MM_/ALTO_UTIL_MM_) y a un mínimo
+    // razonable para que el contenido (nombre, precio, código de
+    // barras) siga teniendo sitio — a petición de Eloy, 06/11/2026.
+    function etiquetaTamanoActual_() {
+        const wInput = parseFloat($('modal-etiqueta-ancho').value);
+        const hInput = parseFloat($('modal-etiqueta-alto').value);
+        const w = Math.min(ETIQUETA_PAGINA_ANCHO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(wInput) ? wInput : ETIQUETA_W_DEFECTO_MM_));
+        const h = Math.min(ETIQUETA_PAGINA_ALTO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(hInput) ? hInput : ETIQUETA_H_DEFECTO_MM_));
+        return { w, h };
+    }
+
+    // Cuántas etiquetas de tamaño w x h caben por hoja A4, en rejilla
+    // (columnas x filas) — se recalcula para cada generación en vez de
+    // asumir siempre 2x4, ya que el tamaño ahora es configurable.
+    function etiquetaRejillaPara_(w, h) {
+        const cols = Math.max(1, Math.floor((ETIQUETA_PAGINA_ANCHO_UTIL_MM_ + ETIQUETA_PAGINA_GAP_COL_MM_) / (w + ETIQUETA_PAGINA_GAP_COL_MM_)));
+        const filas = Math.max(1, Math.floor((ETIQUETA_PAGINA_ALTO_UTIL_MM_ + ETIQUETA_PAGINA_GAP_FILA_MM_) / (h + ETIQUETA_PAGINA_GAP_FILA_MM_)));
+        return { cols, filas };
+    }
+
+    // "#rrggbb"/"#rgb" → [r,g,b] (0-255) — para los setTextColor/
+    // setDrawColor de jsPDF, que no aceptan strings CSS como el <canvas>.
+    function etiquetaHexARgb_(hex) {
+        let limpio = (hex || '#1e293b').replace('#', '');
+        if (limpio.length === 3) limpio = limpio.split('').map((c) => c + c).join('');
+        const num = parseInt(limpio, 16);
+        if (!isFinite(num)) return [30, 41, 59];
+        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+
+    // Lee el texto personalizado (independiente del chip "Detalle") y
+    // toda su configuración de estilo — null si el campo está vacío, así
+    // que quien dibuja la etiqueta simplemente omite este bloque entero.
+    function etiquetaTextoPersonalizadoActual_() {
+        const texto = ($('modal-etiqueta-texto').value || '').trim();
+        if (!texto) return null;
+        const tamanoPt = parseFloat($('modal-etiqueta-texto-tamano').value);
+        return {
+            texto,
+            tamanoPt: (isFinite(tamanoPt) && tamanoPt > 0) ? tamanoPt : 10,
+            alinH: $('modal-etiqueta-texto-alinh').value || 'centro',
+            alinV: $('modal-etiqueta-texto-alinv').value || 'abajo',
+            negrita: $('modal-etiqueta-texto-negrita').checked,
+            cursiva: $('modal-etiqueta-texto-cursiva').checked,
+            subrayado: $('modal-etiqueta-texto-subrayado').checked,
+            color: $('modal-etiqueta-texto-color').value || '#1e293b',
+        };
     }
 
     function actualizarAvisosEtiqueta_(datos) {
@@ -15495,6 +15782,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // así que se comprueba que el producto siga siendo el mismo antes
     // de pintar, por si el modal se cerró/reabrió con otro de por medio
     // mientras cargaban.
+    // Resolución fija de la vista previa, en px por mm REAL (igual para
+    // cualquier tamaño de etiqueta elegido) — el <canvas> cambia de
+    // tamaño (atributos width/height) según el ancho/alto en mm, pero
+    // siempre a esta misma densidad, así el zoom relativo no cambia al
+    // tocar el tamaño.
+    const ETIQUETA_PREVIEW_PXMM_ = 10;
+
     async function actualizarVistaPreviaEtiqueta_() {
         const p = productoEtiquetaActual_;
         if (!p) return;
@@ -15502,10 +15796,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         actualizarAvisosEtiqueta_(datos);
         const [logo, barcode] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref)]);
         if (productoEtiquetaActual_ !== p) return;
+        const { w, h } = etiquetaTamanoActual_();
         const canvas = $('modal-etiqueta-preview');
+        canvas.width = Math.round(w * ETIQUETA_PREVIEW_PXMM_);
+        canvas.height = Math.round(h * ETIQUETA_PREVIEW_PXMM_);
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, datos, { logo, barcode, detalleTexto: etiquetaDetalleTextoActual_() });
+        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, {
+            logo, barcode, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+        });
     }
 
     function abrirModalEtiquetaPrecio_(p) {
@@ -15516,9 +15815,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         productoEtiquetaActual_ = p;
         $('modal-etiqueta-nombre').textContent = `${p.nombre} (Ref: ${p.ref})`;
         $('modal-etiqueta-cantidad').value = 1;
+        $('modal-etiqueta-ancho').value = ETIQUETA_W_DEFECTO_MM_;
+        $('modal-etiqueta-alto').value = ETIQUETA_H_DEFECTO_MM_;
         $('modal-etiqueta-detalle').value = '';
         $('modal-etiqueta-detalle-otro').value = '';
         $('modal-etiqueta-detalle-otro-fila').style.display = 'none';
+        $('modal-etiqueta-texto').value = '';
+        $('modal-etiqueta-texto-tamano').value = 10;
+        $('modal-etiqueta-texto-alinh').value = 'centro';
+        $('modal-etiqueta-texto-alinv').value = 'abajo';
+        $('modal-etiqueta-texto-negrita').checked = false;
+        $('modal-etiqueta-texto-cursiva').checked = false;
+        $('modal-etiqueta-texto-subrayado').checked = false;
+        $('modal-etiqueta-texto-color').value = '#1e293b';
         actualizarBotonesEtiqueta_();
         actualizarVistaPreviaEtiqueta_();
         $('modal-etiqueta-overlay').classList.add('activo');
@@ -15559,11 +15868,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             const datos = datosEtiquetaParaProducto_(p);
             const [logo, barcode] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref)]);
+            const { w, h } = etiquetaTamanoActual_();
             const PXMM = 12;
             const canvas = document.createElement('canvas');
-            canvas.width = ETIQUETA_W_MM_ * PXMM;
-            canvas.height = ETIQUETA_H_MM_ * PXMM;
-            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, datos, { logo, barcode, detalleTexto: etiquetaDetalleTextoActual_() });
+            canvas.width = Math.round(w * PXMM);
+            canvas.height = Math.round(h * PXMM);
+            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, {
+                logo, barcode, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+            });
             descargarComoArchivo_(canvas.toDataURL('image/png'), `${etiquetaNombreArchivoBase_(p)}.png`);
         } catch (e) {
             console.error('Error al generar la etiqueta en PNG:', e);
@@ -15593,28 +15905,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             const datos = datosEtiquetaParaProducto_(p);
             const [logo, barcode] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref)]);
-            const opts = { logo, barcode, detalleTexto: etiquetaDetalleTextoActual_() };
+            const opts = { logo, barcode, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_() };
+            const { w, h } = etiquetaTamanoActual_();
             const { jsPDF } = window.jspdf;
 
             if (cantidad === 1) {
-                // orientation: 'l' explícito — si no, jsPDF intercambia
-                // ancho/alto del array "format" para que la página salga
-                // siempre en vertical, y la etiqueta (más ancha que alta)
-                // saldría girada 90°.
-                const doc = new jsPDF({ unit: 'mm', format: [ETIQUETA_W_MM_, ETIQUETA_H_MM_], orientation: 'l', compress: true });
-                dibujarEtiquetaEnPDF_(doc, 0, 0, datos, opts);
+                // orientation explícito según cuál lado sea mayor — si no,
+                // jsPDF intercambia ancho/alto del array "format" para que
+                // la página salga siempre en el mismo sentido por defecto,
+                // y la etiqueta podría salir girada 90°.
+                const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: w >= h ? 'l' : 'p', compress: true });
+                dibujarEtiquetaEnPDF_(doc, 0, 0, w, h, datos, opts);
                 doc.save(`${etiquetaNombreArchivoBase_(p)}.pdf`);
             } else {
                 const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-                const porPagina = ETIQUETA_PAGINA_COLS_ * ETIQUETA_PAGINA_FILAS_;
+                const { cols, filas } = etiquetaRejillaPara_(w, h);
+                const porPagina = cols * filas;
                 for (let i = 0; i < cantidad; i++) {
                     const enPagina = i % porPagina;
                     if (i > 0 && enPagina === 0) doc.addPage();
-                    const col = enPagina % ETIQUETA_PAGINA_COLS_;
-                    const fila = Math.floor(enPagina / ETIQUETA_PAGINA_COLS_);
-                    const x = ETIQUETA_PAGINA_MARGEN_MM_ + col * (ETIQUETA_W_MM_ + ETIQUETA_PAGINA_GAP_COL_MM_);
-                    const y = ETIQUETA_PAGINA_MARGEN_MM_ + fila * (ETIQUETA_H_MM_ + ETIQUETA_PAGINA_GAP_FILA_MM_);
-                    dibujarEtiquetaEnPDF_(doc, x, y, datos, opts);
+                    const col = enPagina % cols;
+                    const fila = Math.floor(enPagina / cols);
+                    const x = ETIQUETA_PAGINA_MARGEN_MM_ + col * (w + ETIQUETA_PAGINA_GAP_COL_MM_);
+                    const y = ETIQUETA_PAGINA_MARGEN_MM_ + fila * (h + ETIQUETA_PAGINA_GAP_FILA_MM_);
+                    dibujarEtiquetaEnPDF_(doc, x, y, w, h, datos, opts);
                 }
                 doc.save(`${etiquetaNombreArchivoBase_(p)}-x${cantidad}.pdf`);
             }
@@ -17844,6 +18158,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         actualizarVistaPreviaEtiqueta_();
     });
     $('modal-etiqueta-detalle-otro').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    $('modal-etiqueta-ancho').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    $('modal-etiqueta-alto').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    // Texto personalizado — cualquier cambio de texto, tamaño,
+    // alineación, estilo o color repinta la vista previa al instante.
+    ['modal-etiqueta-texto', 'modal-etiqueta-texto-tamano'].forEach((id) => {
+        $(id).addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    });
+    ['modal-etiqueta-texto-alinh', 'modal-etiqueta-texto-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    });
+    ['modal-etiqueta-texto-negrita', 'modal-etiqueta-texto-cursiva', 'modal-etiqueta-texto-subrayado'].forEach((id) => {
+        $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    });
+    $('modal-etiqueta-texto-color').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
     $('modal-etiqueta-descargar-png').addEventListener('click', descargarEtiquetaPng_);
     $('modal-etiqueta-descargar-pdf').addEventListener('click', descargarEtiquetasPdf_);
     }
