@@ -15488,9 +15488,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const mm = w / wMM; // px por mm REAL a esta resolución (w px representan wMM mm)
         const pad = 3.5 * mm;
         // Margen extra a la izquierda SOLO para el nombre del producto,
-        // a petición de Eloy (06/11/2026) — el resto de elementos sigue
+        // a petición de Eloy (06/11/2026, ampliado el 07/11/2026 para
+        // separarlo más del logo) — el resto de elementos sigue
         // arrancando en pad.
-        const nombreMargenIzq = 2 * mm;
+        const nombreMargenIzq = 7 * mm;
         const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
 
         ctx.save();
@@ -15577,7 +15578,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
             precioY += 8 * mm;
             ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
-            ctx.font = `bold ${Math.round(8 * mm)}px Arial, sans-serif`;
+            ctx.font = `bold ${Math.round(11 * mm)}px Arial, sans-serif`;
             ctx.textAlign = 'center';
             ctx.fillText(etiquetaFormatoEuros_(datos.promo.promo), w / 2, precioY);
             ctx.textAlign = 'left';
@@ -15599,7 +15600,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ctx.textAlign = 'left';
             }
             ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
-            ctx.font = `bold ${Math.round(8 * mm)}px Arial, sans-serif`;
+            ctx.font = `bold ${Math.round(11 * mm)}px Arial, sans-serif`;
             ctx.textAlign = 'center';
             ctx.fillText(etiquetaFormatoEuros_(datos.con), w / 2, precioY + 4 * mm);
             ctx.textAlign = 'left';
@@ -15654,7 +15655,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const W = wMM, H = hMM, PAD = 3.5;
         // Margen extra a la izquierda SOLO para el nombre del producto,
         // igual que en dibujarEtiquetaEnCanvas_.
-        const NOMBRE_MARGEN_IZQ = 2;
+        const NOMBRE_MARGEN_IZQ = 7;
         const setColor = (fn, c) => doc[fn](c[0], c[1], c[2]);
 
         setColor('setDrawColor', ETIQUETA_COLOR_BORDE_);
@@ -15725,7 +15726,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
             precioY += 8;
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(23);
+            doc.setFontSize(31);
             setColor('setTextColor', ETIQUETA_COLOR_RED_);
             doc.text(etiquetaFormatoEuros_(datos.promo.promo), centroX, precioY, { align: 'center' });
 
@@ -15744,7 +15745,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 if (datos.ivaPct !== null) doc.text(`IVA Incl. (${datos.ivaPct}%)`, xMM + W - PAD, precioY + 1, { align: 'right' });
             }
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(23);
+            doc.setFontSize(31);
             setColor('setTextColor', ETIQUETA_COLOR_RED_);
             doc.text(etiquetaFormatoEuros_(datos.con), centroX, precioY + 4, { align: 'center' });
         } else {
