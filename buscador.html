@@ -6420,10 +6420,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <!-- Etiquetas de precio para tienda (solo preproducción, ver
-     window.MOSTRAR_ETIQUETA_PRECIO) — genera el código de barras de la
-     referencia 100% en el navegador, sin pasar por ningún backend
-     propio, igual que el resto de exportaciones de esta página. -->
+     window.MOSTRAR_ETIQUETA_PRECIO) — genera el código de barras y el
+     QR de la referencia 100% en el navegador, sin pasar por ningún
+     backend propio, igual que el resto de exportaciones de esta
+     página. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="./src/js/app.js?v=20260829"></script>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'buscador'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
@@ -15200,6 +15202,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     let productoEtiquetaActual_ = null;
     let etiquetaLogoCache_ = null;    // { dataUrl, width, height, img } — se carga una sola vez
     let etiquetaBarcodeCache_ = null; // { ref, dataUrl, width, height, img } — se recalcula solo si cambia la ref
+    let etiquetaQrCache_ = null;      // { url, dataUrl, width, height, img } — se recalcula solo si cambia la URL
 
     function configurarEtiquetaPrecio_(p) {
         const boton = $('modal-producto-etiqueta-precio');
@@ -15230,7 +15233,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 promo = { original: info.original, promo: info.promo, promoSin: info.promoSin, pct: info.pct };
             }
         }
-        return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo };
+        // URL para buscar el producto directamente en la web a partir de
+        // su referencia — reutiliza urlCompartirProducto (más arriba en
+        // este archivo, ya usada por el botón "Compartir" de la ficha):
+        // la página actual + ?ref=<referencia>, que el propio buscador ya
+        // sabe detectar y abrir automáticamente el detalle de ese
+        // producto (ver abrirProductoDesdeURL) — ningún enlace ni lógica
+        // nueva, el QR solo codifica ese mismo enlace.
+        const urlQr = urlCompartirProducto(p);
+        return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo, urlQr };
     }
 
     function etiquetaFormatoEuros_(valor) {
@@ -15290,6 +15301,55 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const img = new Image();
             img.onload = () => { etiquetaBarcodeCache_ = Object.assign({ ref }, resultado, { img }); resolve(etiquetaBarcodeCache_); };
             img.onerror = () => { etiquetaBarcodeCache_ = null; resolve(null); };
+            img.src = resultado.dataUrl;
+        });
+    }
+
+    // QR que enlaza a la URL de "compartir" del producto (ver
+    // datosEtiquetaParaProducto_/urlCompartirProducto) — a petición de
+    // Eloy, 06/11/2026: escaneándolo se abre el buscador con ese
+    // producto ya localizado, sin teclear nada. Se dibuja a mano módulo
+    // a módulo sobre un <canvas> (createDataURL de la librería da GIF,
+    // que jsPDF no admite) en vez de usar createDataURL directamente.
+    function generarQrDataUrl_(texto) {
+        if (!texto || typeof qrcode === 'undefined') return null;
+        try {
+            const qr = qrcode(0, 'M'); // 0 = elige automáticamente la versión más pequeña que quepa
+            qr.addData(texto);
+            qr.make();
+            const cuenta = qr.getModuleCount();
+            const celda = 8;   // px por módulo a esta resolución base
+            const margen = 2;  // módulos de margen blanco ("quiet zone")
+            const lado = (cuenta + margen * 2) * celda;
+            const canvas = document.createElement('canvas');
+            canvas.width = lado;
+            canvas.height = lado;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, lado, lado);
+            ctx.fillStyle = '#000000';
+            for (let fila = 0; fila < cuenta; fila++) {
+                for (let col = 0; col < cuenta; col++) {
+                    if (qr.isDark(fila, col)) ctx.fillRect((col + margen) * celda, (fila + margen) * celda, celda, celda);
+                }
+            }
+            return { dataUrl: canvas.toDataURL('image/png'), width: lado, height: lado };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Igual que etiquetaBarcodePara_ pero para el QR — se recalcula solo
+    // cuando cambia la URL (que depende de la referencia).
+    function etiquetaQrPara_(url) {
+        if (!url) return Promise.resolve(null);
+        if (etiquetaQrCache_ && etiquetaQrCache_.url === url) return Promise.resolve(etiquetaQrCache_);
+        const resultado = generarQrDataUrl_(url);
+        if (!resultado) { etiquetaQrCache_ = null; return Promise.resolve(null); }
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => { etiquetaQrCache_ = Object.assign({ url }, resultado, { img }); resolve(etiquetaQrCache_); };
+            img.onerror = () => { etiquetaQrCache_ = null; resolve(null); };
             img.src = resultado.dataUrl;
         });
     }
@@ -15551,19 +15611,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.textAlign = 'left';
         }
 
+        // QR para buscar el producto en la web (ver datosEtiquetaParaProducto_)
+        // a la derecha, y el código de barras ocupando el resto del
+        // ancho disponible a su izquierda — mismo alto máximo (15mm)
+        // para que ambos queden alineados por abajo.
+        const maxBH = 15 * mm;
+        const tieneQr = !!(opts.qr && opts.qr.img);
+        const qrLado = tieneQr ? maxBH : 0;
+        const huecoQr = tieneQr ? qrLado + 3 * mm : 0;
+
         if (opts.barcode && opts.barcode.img) {
-            const maxBW = w - 2 * pad;
-            const maxBH = 15 * mm;
+            const maxBW = w - 2 * pad - huecoQr;
             const escala = Math.min(maxBW / opts.barcode.width, maxBH / opts.barcode.height);
             const bw = opts.barcode.width * escala;
             const bh = opts.barcode.height * escala;
-            ctx.drawImage(opts.barcode.img, (w - bw) / 2, h - pad - bh, bw, bh);
+            ctx.drawImage(opts.barcode.img, pad + (maxBW - bw) / 2, h - pad - bh, bw, bh);
         } else if (datos.ref) {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
             ctx.font = `${Math.round(2.8 * mm)}px Arial, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText(`Ref: ${datos.ref}`, w / 2, h - pad - 2 * mm);
+            ctx.fillText(`Ref: ${datos.ref}`, pad + (w - 2 * pad - huecoQr) / 2, h - pad - 2 * mm);
             ctx.textAlign = 'left';
+        }
+
+        if (tieneQr) {
+            ctx.drawImage(opts.qr.img, w - pad - qrLado, h - pad - qrLado, qrLado, qrLado);
         }
 
         dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, mm, opts.textoPersonalizado);
@@ -15682,18 +15754,29 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.text('Consultar precio', centroX, precioY + 2, { align: 'center' });
         }
 
+        // QR para buscar el producto en la web a la derecha, código de
+        // barras a su izquierda ocupando el resto del ancho — mismo alto
+        // máximo (15mm) que el canvas, para que coincidan.
+        const maxBH = 15;
+        const tieneQr = !!opts.qr;
+        const qrLado = tieneQr ? maxBH : 0;
+        const huecoQr = tieneQr ? qrLado + 3 : 0;
+
         if (opts.barcode) {
-            const maxBW = W - 2 * PAD;
-            const maxBH = 15;
+            const maxBW = W - 2 * PAD - huecoQr;
             const aspecto = opts.barcode.width / opts.barcode.height;
             let bw = maxBW, bh = bw / aspecto;
             if (bh > maxBH) { bh = maxBH; bw = bh * aspecto; }
-            doc.addImage(opts.barcode.dataUrl, 'PNG', xMM + (W - bw) / 2, yMM + H - PAD - bh, bw, bh);
+            doc.addImage(opts.barcode.dataUrl, 'PNG', xMM + PAD + (maxBW - bw) / 2, yMM + H - PAD - bh, bw, bh);
         } else if (datos.ref) {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-            doc.text(`Ref: ${datos.ref}`, centroX, yMM + H - PAD - 2, { align: 'center' });
+            doc.text(`Ref: ${datos.ref}`, xMM + PAD + (W - 2 * PAD - huecoQr) / 2, yMM + H - PAD - 2, { align: 'center' });
+        }
+
+        if (tieneQr) {
+            doc.addImage(opts.qr.dataUrl, 'PNG', xMM + W - PAD - qrLado, yMM + H - PAD - qrLado, qrLado, qrLado);
         }
 
         dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, W, H, PAD, opts.textoPersonalizado);
@@ -15794,7 +15877,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!p) return;
         const datos = datosEtiquetaParaProducto_(p);
         actualizarAvisosEtiqueta_(datos);
-        const [logo, barcode] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref)]);
+        const [logo, barcode, qr] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr)]);
         if (productoEtiquetaActual_ !== p) return;
         const { w, h } = etiquetaTamanoActual_();
         const canvas = $('modal-etiqueta-preview');
@@ -15803,7 +15886,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, {
-            logo, barcode, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+            logo, barcode, qr, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
         });
     }
 
@@ -15867,14 +15950,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         try {
             const datos = datosEtiquetaParaProducto_(p);
-            const [logo, barcode] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref)]);
+            const [logo, barcode, qr] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr)]);
             const { w, h } = etiquetaTamanoActual_();
             const PXMM = 12;
             const canvas = document.createElement('canvas');
             canvas.width = Math.round(w * PXMM);
             canvas.height = Math.round(h * PXMM);
             dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, {
-                logo, barcode, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+                logo, barcode, qr, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
             });
             descargarComoArchivo_(canvas.toDataURL('image/png'), `${etiquetaNombreArchivoBase_(p)}.png`);
         } catch (e) {
@@ -15904,8 +15987,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
         try {
             const datos = datosEtiquetaParaProducto_(p);
-            const [logo, barcode] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref)]);
-            const opts = { logo, barcode, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_() };
+            const [logo, barcode, qr] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr)]);
+            const opts = { logo, barcode, qr, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_() };
             const { w, h } = etiquetaTamanoActual_();
             const { jsPDF } = window.jspdf;
 
