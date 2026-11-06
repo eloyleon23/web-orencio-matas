@@ -3564,6 +3564,16 @@
             padding-top: 14px;
             border-top: 1px solid var(--border);
         }
+        .modal-etiqueta-imagen-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+            color: var(--dark);
+            cursor: pointer;
+        }
+        .modal-etiqueta-imagen .modal-etiqueta-texto-controles { margin-top: 12px; }
+        .modal-etiqueta-imagen #modal-etiqueta-sin-imagen-aviso { margin-top: 10px; }
         .modal-etiqueta-texto-personalizado .modal-editar-ficha-campo { margin-bottom: 12px; }
         .modal-etiqueta-texto-controles {
             display: flex;
@@ -5680,6 +5690,38 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     Este producto no tiene una referencia válida para generar el código de barras — la etiqueta se imprimirá sin él.
                 </p>
             </div>
+        </div>
+
+        <!-- Imagen del producto — opcional (checkbox), con la misma
+             rejilla de 9 posiciones (horizontal x vertical) que el texto
+             personalizado de más abajo, para colocarla donde mejor
+             encaje en cada tamaño de etiqueta. -->
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Imagen del producto</h4>
+            <label class="modal-etiqueta-imagen-check">
+                <input type="checkbox" id="modal-etiqueta-imagen-incluir"> Incluir la imagen del producto
+            </label>
+            <div class="modal-etiqueta-texto-controles" id="modal-etiqueta-imagen-controles" style="display:none;">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-imagen-alinh">Horizontal</label>
+                    <select id="modal-etiqueta-imagen-alinh">
+                        <option value="izquierda">Izquierda</option>
+                        <option value="centro">Centro</option>
+                        <option value="derecha" selected>Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-imagen-alinv">Vertical</label>
+                    <select id="modal-etiqueta-imagen-alinv">
+                        <option value="arriba" selected>Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo">Abajo</option>
+                    </select>
+                </div>
+            </div>
+            <p id="modal-etiqueta-sin-imagen-aviso" class="modal-editar-ficha-error" style="display:none;">
+                Este producto no tiene una foto propia — la etiqueta se generará sin imagen.
+            </p>
         </div>
 
         <!-- Texto personalizado — independiente del "Detalle" (que es el
@@ -15226,6 +15268,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     let etiquetaLogoCache_ = null;    // { dataUrl, width, height, img } — se carga una sola vez
     let etiquetaBarcodeCache_ = null; // { ref, dataUrl, width, height, img } — se recalcula solo si cambia la ref
     let etiquetaQrCache_ = null;      // { url, dataUrl, width, height, img } — se recalcula solo si cambia la URL
+    let etiquetaImagenCache_ = null;  // { ref, dataUrl, width, height, img } — se recalcula solo si cambia el producto
 
     function configurarEtiquetaPrecio_(p) {
         const boton = $('modal-producto-etiqueta-precio');
@@ -15377,6 +15420,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
+    // Foto real del producto (opcional, ver checkbox "Incluir la imagen
+    // del producto") — reutiliza urlImagenProductoFolletoDestacados_ y
+    // cargarImagenFolletoDestacadosConReintento_ (ambas más arriba en
+    // este archivo, ya usadas por el folleto de Destacados en PDF) en
+    // vez de urlImagenProducto/cargarImagenComoDataURL_: esas fotos
+    // vienen de Google Drive, y el dominio que usa urlImagenProducto
+    // (drive.google.com/thumbnail) no admite CORS — el <canvas> quedaría
+    // "contaminado" y toDataURL()/toBlob() lanzarían un error de
+    // seguridad. googleusercontent.com sí lo admite, que es justo el
+    // problema que ya resolvió el folleto de Destacados. Si el producto
+    // no tiene foto propia (o falla la carga), resuelve null — la
+    // etiqueta se dibuja igual, sin ese bloque, nunca se bloquea por
+    // esto.
+    function etiquetaImagenProducto_(p) {
+        const ref = (p.ref || '').toString().trim();
+        if (!ref) return Promise.resolve(null);
+        if (etiquetaImagenCache_ && etiquetaImagenCache_.ref === ref) return Promise.resolve(etiquetaImagenCache_);
+        const url = urlImagenProductoFolletoDestacados_(p, 500);
+        if (!url) { etiquetaImagenCache_ = null; return Promise.resolve(null); }
+        return cargarImagenFolletoDestacadosConReintento_(url).then((resultado) => {
+            if (!resultado) { etiquetaImagenCache_ = null; return null; }
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => { etiquetaImagenCache_ = Object.assign({ ref }, resultado, { img }); resolve(etiquetaImagenCache_); };
+                img.onerror = () => { etiquetaImagenCache_ = null; resolve(null); };
+                img.src = resultado.dataUrl;
+            });
+        });
+    }
+
     function etiquetaRoundRectCanvas_(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
@@ -15501,6 +15574,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 doc.line(lx0, y + tamanoMM * 0.15, lx0 + lw, y + tamanoMM * 0.15);
             }
         });
+    }
+
+    // Tamaño (mm) del recuadro cuadrado donde se ajusta la imagen del
+    // producto, manteniendo su proporción (equivalente a "object-fit:
+    // contain") — mismo valor para el <canvas> y el PDF.
+    const ETIQUETA_IMAGEN_BOX_MM_ = 18;
+
+    // Imagen del producto (ver etiquetaImagenProducto_/checkbox "Incluir
+    // la imagen del producto") sobre el <canvas> — se coloca en una de
+    // las 9 posiciones posibles (alinH x alinV), igual que el texto
+    // personalizado, dentro de un recuadro cuadrado fijo.
+    function dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, imagen, config) {
+        if (!imagen || !imagen.img || !config) return;
+        const box = ETIQUETA_IMAGEN_BOX_MM_ * mm;
+        const bx = config.alinH === 'izquierda' ? pad : config.alinH === 'derecha' ? w - pad - box : (w - box) / 2;
+        const by = config.alinV === 'arriba' ? pad : config.alinV === 'abajo' ? h - pad - box : (h - box) / 2;
+        const escala = Math.min(box / imagen.width, box / imagen.height);
+        const iw = imagen.width * escala, ih = imagen.height * escala;
+        ctx.drawImage(imagen.img, bx + (box - iw) / 2, by + (box - ih) / 2, iw, ih);
+    }
+
+    // Misma idea que dibujarImagenProductoCanvas_ pero con jsPDF (mm
+    // nativos). El dataUrl de la foto es JPEG (ver
+    // cargarImagenFolletoDestacados_, reutilizada por
+    // etiquetaImagenProducto_), no PNG.
+    function dibujarImagenProductoPDF_(doc, xMM, yMM, wMM, hMM, pad, imagen, config) {
+        if (!imagen || !config) return;
+        const BOX = ETIQUETA_IMAGEN_BOX_MM_;
+        const bx = config.alinH === 'izquierda' ? xMM + pad : config.alinH === 'derecha' ? xMM + wMM - pad - BOX : xMM + (wMM - BOX) / 2;
+        const by = config.alinV === 'arriba' ? yMM + pad : config.alinV === 'abajo' ? yMM + hMM - pad - BOX : yMM + (hMM - BOX) / 2;
+        const escala = Math.min(BOX / imagen.width, BOX / imagen.height);
+        const iw = imagen.width * escala, ih = imagen.height * escala;
+        doc.addImage(imagen.dataUrl, 'JPEG', bx + (BOX - iw) / 2, by + (BOX - ih) / 2, iw, ih);
     }
 
     // Dibuja UNA etiqueta sobre un <canvas> 2D en el rectángulo [x,y,w,h]
@@ -15662,6 +15768,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.drawImage(opts.qr.img, w - pad - qrLado, h - pad - qrLado, qrLado, qrLado);
         }
 
+        dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, opts.imagen, opts.imagenConfig);
         dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, mm, opts.textoPersonalizado);
 
         ctx.restore();
@@ -15803,6 +15910,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.addImage(opts.qr.dataUrl, 'PNG', xMM + W - PAD - qrLado, yMM + H - PAD - qrLado, qrLado, qrLado);
         }
 
+        dibujarImagenProductoPDF_(doc, xMM, yMM, W, H, PAD, opts.imagen, opts.imagenConfig);
         dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, W, H, PAD, opts.textoPersonalizado);
     }
 
@@ -15872,7 +15980,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function actualizarAvisosEtiqueta_(datos) {
         $('modal-etiqueta-promo-aviso').style.display = datos.promo ? '' : 'none';
-        $('modal-etiqueta-sin-codigo-aviso').style.display = datos.ref ? 'none' : '';
+        $('modal-etiqueta-sin-codigo-aviso').style.display = datos.ref ? 'none' : 'block';
+    }
+
+    // null si el checkbox "Incluir la imagen del producto" está
+    // desmarcado — en ese caso ni siquiera se intenta cargar la imagen
+    // (ver llamadas a etiquetaImagenProducto_ más abajo).
+    function etiquetaImagenConfigActual_() {
+        const checkbox = $('modal-etiqueta-imagen-incluir');
+        if (!checkbox || !checkbox.checked) return null;
+        return {
+            alinH: $('modal-etiqueta-imagen-alinh').value || 'derecha',
+            alinV: $('modal-etiqueta-imagen-alinv').value || 'arriba',
+        };
     }
 
     function actualizarBotonesEtiqueta_() {
@@ -15901,8 +16021,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!p) return;
         const datos = datosEtiquetaParaProducto_(p);
         actualizarAvisosEtiqueta_(datos);
-        const [logo, barcode, qr] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr)]);
+        const imagenConfig = etiquetaImagenConfigActual_();
+        const [logo, barcode, qr, imagen] = await Promise.all([
+            etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
+            imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
+        ]);
         if (productoEtiquetaActual_ !== p) return;
+        $('modal-etiqueta-sin-imagen-aviso').style.display = (imagenConfig && !imagen) ? 'block' : 'none';
         const { w, h } = etiquetaTamanoActual_();
         const canvas = $('modal-etiqueta-preview');
         canvas.width = Math.round(w * ETIQUETA_PREVIEW_PXMM_);
@@ -15910,7 +16035,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, {
-            logo, barcode, qr, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+            logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
         });
     }
 
@@ -15927,6 +16052,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-etiqueta-detalle').value = '';
         $('modal-etiqueta-detalle-otro').value = '';
         $('modal-etiqueta-detalle-otro-fila').style.display = 'none';
+        $('modal-etiqueta-imagen-incluir').checked = false;
+        $('modal-etiqueta-imagen-controles').style.display = 'none';
+        $('modal-etiqueta-imagen-alinh').value = 'derecha';
+        $('modal-etiqueta-imagen-alinv').value = 'arriba';
+        $('modal-etiqueta-sin-imagen-aviso').style.display = 'none';
         $('modal-etiqueta-texto').value = '';
         $('modal-etiqueta-texto-tamano').value = 10;
         $('modal-etiqueta-texto-alinh').value = 'centro';
@@ -15992,14 +16122,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
         try {
             const datos = datosEtiquetaParaProducto_(p);
-            const [logo, barcode, qr] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr)]);
+            const imagenConfig = etiquetaImagenConfigActual_();
+            const [logo, barcode, qr, imagen] = await Promise.all([
+                etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
+                imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
+            ]);
             const { w, h } = etiquetaTamanoActual_();
             const PXMM = 12;
             const canvas = document.createElement('canvas');
             canvas.width = Math.round(w * PXMM);
             canvas.height = Math.round(h * PXMM);
             dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, {
-                logo, barcode, qr, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+                logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
             });
             const blob = await etiquetaCanvasABlob_(canvas);
             if (!blob) throw new Error('canvas.toBlob devolvió null');
@@ -16031,8 +16165,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
         try {
             const datos = datosEtiquetaParaProducto_(p);
-            const [logo, barcode, qr] = await Promise.all([etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr)]);
-            const opts = { logo, barcode, qr, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_() };
+            const imagenConfig = etiquetaImagenConfigActual_();
+            const [logo, barcode, qr, imagen] = await Promise.all([
+                etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
+                imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
+            ]);
+            const opts = { logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_() };
             const { w, h } = etiquetaTamanoActual_();
             const { jsPDF } = window.jspdf;
 
@@ -18287,6 +18425,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('modal-etiqueta-detalle-otro').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
     $('modal-etiqueta-ancho').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
     $('modal-etiqueta-alto').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    // Imagen del producto — el checkbox muestra/oculta los selectores de
+    // posición y, como la carga real de la foto puede tardar (red), solo
+    // se intenta cuando está marcado (ver etiquetaImagenConfigActual_).
+    $('modal-etiqueta-imagen-incluir').addEventListener('change', () => {
+        const incluir = $('modal-etiqueta-imagen-incluir').checked;
+        $('modal-etiqueta-imagen-controles').style.display = incluir ? '' : 'none';
+        if (!incluir) $('modal-etiqueta-sin-imagen-aviso').style.display = 'none';
+        actualizarVistaPreviaEtiqueta_();
+    });
+    ['modal-etiqueta-imagen-alinh', 'modal-etiqueta-imagen-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    });
     // Texto personalizado — cualquier cambio de texto, tamaño,
     // alineación, estilo o color repinta la vista previa al instante.
     ['modal-etiqueta-texto', 'modal-etiqueta-texto-tamano'].forEach((id) => {
