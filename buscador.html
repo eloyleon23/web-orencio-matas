@@ -5758,6 +5758,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </label>
             <div class="modal-etiqueta-texto-controles" id="modal-etiqueta-imagen-controles" style="display:none;">
                 <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-imagen-tamano">Tamaño (mm)</label>
+                    <input type="number" id="modal-etiqueta-imagen-tamano" min="8" max="100" step="1" value="18" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
                     <label for="modal-etiqueta-imagen-alinh">Horizontal</label>
                     <select id="modal-etiqueta-imagen-alinh">
                         <option value="izquierda">Izquierda</option>
@@ -5927,6 +5931,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <input type="checkbox" id="modal-etiquetas-lista-imagen-incluir"> Incluir la imagen del producto
             </label>
             <div class="modal-etiqueta-texto-controles" id="modal-etiquetas-lista-imagen-controles" style="display:none;">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-imagen-tamano">Tamaño (mm)</label>
+                    <input type="number" id="modal-etiquetas-lista-imagen-tamano" min="8" max="100" step="1" value="18" autocomplete="off">
+                </div>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiquetas-lista-imagen-alinh">Horizontal</label>
                     <select id="modal-etiquetas-lista-imagen-alinh">
@@ -15811,18 +15819,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
     }
 
-    // Tamaño (mm) del recuadro cuadrado donde se ajusta la imagen del
-    // producto, manteniendo su proporción (equivalente a "object-fit:
-    // contain") — mismo valor para el <canvas> y el PDF.
-    const ETIQUETA_IMAGEN_BOX_MM_ = 18;
+    // Tamaño (mm) por defecto del recuadro cuadrado donde se ajusta la
+    // imagen del producto, manteniendo su proporción (equivalente a
+    // "object-fit: contain") — el tamaño real es config.tamanoMM (campo
+    // "Tamaño (mm)" junto a la posición), este valor solo se usa si por
+    // lo que sea no llega informado.
+    const ETIQUETA_IMAGEN_BOX_MM_DEFECTO_ = 18;
 
     // Imagen del producto (ver etiquetaImagenProducto_/checkbox "Incluir
     // la imagen del producto") sobre el <canvas> — se coloca en una de
     // las 9 posiciones posibles (alinH x alinV), igual que el texto
-    // personalizado, dentro de un recuadro cuadrado fijo.
+    // personalizado, dentro de un recuadro cuadrado de tamaño elegible
+    // (config.tamanoMM).
     function dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, imagen, config) {
         if (!imagen || !imagen.img || !config) return;
-        const box = ETIQUETA_IMAGEN_BOX_MM_ * mm;
+        const box = (config.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_) * mm;
         const bx = config.alinH === 'izquierda' ? pad : config.alinH === 'derecha' ? w - pad - box : (w - box) / 2;
         const by = config.alinV === 'arriba' ? pad : config.alinV === 'abajo' ? h - pad - box : (h - box) / 2;
         const escala = Math.min(box / imagen.width, box / imagen.height);
@@ -15836,7 +15847,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // etiquetaImagenProducto_), no PNG.
     function dibujarImagenProductoPDF_(doc, xMM, yMM, wMM, hMM, pad, imagen, config) {
         if (!imagen || !config) return;
-        const BOX = ETIQUETA_IMAGEN_BOX_MM_;
+        const BOX = config.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_;
         const bx = config.alinH === 'izquierda' ? xMM + pad : config.alinH === 'derecha' ? xMM + wMM - pad - BOX : xMM + (wMM - BOX) / 2;
         const by = config.alinV === 'arriba' ? yMM + pad : config.alinV === 'abajo' ? yMM + hMM - pad - BOX : yMM + (hMM - BOX) / 2;
         const escala = Math.min(BOX / imagen.width, BOX / imagen.height);
@@ -16228,7 +16239,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function etiquetaImagenConfigActual_() {
         const checkbox = $('modal-etiqueta-imagen-incluir');
         if (!checkbox || !checkbox.checked) return null;
+        const tamanoMM = parseFloat($('modal-etiqueta-imagen-tamano').value);
         return {
+            tamanoMM: (isFinite(tamanoMM) && tamanoMM > 0) ? tamanoMM : ETIQUETA_IMAGEN_BOX_MM_DEFECTO_,
             alinH: $('modal-etiqueta-imagen-alinh').value || 'derecha',
             alinV: $('modal-etiqueta-imagen-alinv').value || 'arriba',
         };
@@ -16293,6 +16306,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-etiqueta-detalle-otro-fila').style.display = 'none';
         $('modal-etiqueta-imagen-incluir').checked = false;
         $('modal-etiqueta-imagen-controles').style.display = 'none';
+        $('modal-etiqueta-imagen-tamano').value = ETIQUETA_IMAGEN_BOX_MM_DEFECTO_;
         $('modal-etiqueta-imagen-alinh').value = 'derecha';
         $('modal-etiqueta-imagen-alinv').value = 'arriba';
         $('modal-etiqueta-sin-imagen-aviso').style.display = 'none';
@@ -16470,6 +16484,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             detalle: '',
             detalleOtro: '',
             imagenIncluir: false,
+            imagenTamano: 18,
             imagenAlinH: 'derecha',
             imagenAlinV: 'arriba',
             texto: '',
@@ -16495,11 +16510,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function etiquetasListaLeerFormularioActual_() {
         const cantidad = parseInt($('modal-etiquetas-lista-cantidad').value, 10);
         const textoTamano = parseFloat($('modal-etiquetas-lista-texto-tamano').value);
+        const imagenTamano = parseFloat($('modal-etiquetas-lista-imagen-tamano').value);
         return {
             cantidad: Math.min(ETIQUETA_CANTIDAD_MAXIMA_, Math.max(1, Number.isFinite(cantidad) ? cantidad : 1)),
             detalle: $('modal-etiquetas-lista-detalle').value,
             detalleOtro: $('modal-etiquetas-lista-detalle-otro').value,
             imagenIncluir: $('modal-etiquetas-lista-imagen-incluir').checked,
+            imagenTamano: (isFinite(imagenTamano) && imagenTamano > 0) ? imagenTamano : 18,
             imagenAlinH: $('modal-etiquetas-lista-imagen-alinh').value,
             imagenAlinV: $('modal-etiquetas-lista-imagen-alinv').value,
             texto: $('modal-etiquetas-lista-texto').value,
@@ -16520,6 +16537,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-etiquetas-lista-detalle-otro-fila').style.display = cfg.detalle === '__otro__' ? '' : 'none';
         $('modal-etiquetas-lista-imagen-incluir').checked = cfg.imagenIncluir;
         $('modal-etiquetas-lista-imagen-controles').style.display = cfg.imagenIncluir ? '' : 'none';
+        $('modal-etiquetas-lista-imagen-tamano').value = cfg.imagenTamano;
         $('modal-etiquetas-lista-imagen-alinh').value = cfg.imagenAlinH;
         $('modal-etiquetas-lista-imagen-alinv').value = cfg.imagenAlinV;
         $('modal-etiquetas-lista-sin-imagen-aviso').style.display = 'none';
@@ -16542,7 +16560,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cfg = etiquetasListaConfigs_[idx];
         const datos = datosEtiquetaParaProducto_(p);
         const detalleTexto = cfg.detalle === '__otro__' ? cfg.detalleOtro.trim() : cfg.detalle;
-        const imagenConfig = cfg.imagenIncluir ? { alinH: cfg.imagenAlinH, alinV: cfg.imagenAlinV } : null;
+        const imagenConfig = cfg.imagenIncluir ? { tamanoMM: cfg.imagenTamano, alinH: cfg.imagenAlinH, alinV: cfg.imagenAlinV } : null;
         const textoLimpio = cfg.texto.trim();
         const textoPersonalizado = textoLimpio ? {
             texto: textoLimpio, tamanoPt: cfg.textoTamano, alinH: cfg.textoAlinH, alinV: cfg.textoAlinV,
@@ -18963,6 +18981,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!incluir) $('modal-etiqueta-sin-imagen-aviso').style.display = 'none';
         actualizarVistaPreviaEtiqueta_();
     });
+    $('modal-etiqueta-imagen-tamano').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
     ['modal-etiqueta-imagen-alinh', 'modal-etiqueta-imagen-alinv'].forEach((id) => {
         $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
     });
@@ -19014,6 +19033,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-etiquetas-lista-imagen-controles').style.display = $('modal-etiquetas-lista-imagen-incluir').checked ? '' : 'none';
         etiquetasListaActualizarConfigActual_();
     });
+    $('modal-etiquetas-lista-imagen-tamano').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
     ['modal-etiquetas-lista-imagen-alinh', 'modal-etiquetas-lista-imagen-alinv'].forEach((id) => {
         $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
     });
