@@ -14608,6 +14608,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const imgEl = $('modal-producto-img');
         imgEl.style.display = 'none';
         imgEl.removeAttribute('src');
+        // "loading=lazy" (puesto en el HTML para no descargar la foto si
+        // el usuario nunca abre la ficha) decide si cargar la imagen según
+        // si está cerca del viewport, no según su "display" — con el
+        // <img> oculto (display:none) el navegador no la considera nunca
+        // "cerca" y no llegaría a cargarla. Aquí ya se sabe que el
+        // usuario ha abierto la ficha, así que se fuerza "eager".
+        imgEl.loading = 'eager';
         imgEl.onload = () => { if (tieneImagen) imgEl.style.display = 'block'; };
         imgEl.onerror = () => mostrarSinImagenModal(p);
         imgEl.alt = escapeHtml(p.nombre);
