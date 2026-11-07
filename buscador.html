@@ -2807,6 +2807,19 @@
             object-fit: contain;
             border-radius: 8px;
         }
+        /* Se muestra mientras la foto del producto está descargándose
+           (el <img> permanece oculto hasta su "onload", para que no se
+           vea un instante la foto del producto anterior — ver
+           abrirModalProducto) y así el hueco no se queda en blanco ese
+           segundo o dos. Dentro del botón ".modal-producto-imagen-ampliar"
+           (no del contenedor ".modal-producto-imagen", que puede ser
+           mucho más alto que la foto real por el grid a dos columnas)
+           para que el centrado flex del botón lo deje bien centrado sobre
+           el hueco visible de la imagen. */
+        .modal-producto-img-spinner {
+            font-size: 2rem;
+            color: var(--text-muted, #94a3b8);
+        }
         /* Botón que envuelve la imagen principal del modal de detalle
            para ampliarla — mismo mecanismo que el asistente de
            imágenes (icono siempre visible, no solo al :hover, para que
@@ -3463,6 +3476,200 @@
         .modal-editar-ficha-cancelar { background: var(--light); color: var(--dark); border: 1px solid var(--border) !important; }
         .modal-editar-ficha-guardar { background: var(--blue); color: #fff; }
         .modal-editar-ficha-guardar:disabled { opacity: 0.6; cursor: default; }
+
+        /* Modal "Imprimir etiqueta de precio" — reutiliza .modal-producto-box/
+           .modal-editar-ficha-* para la caja y los campos; aquí solo lo
+           específico de la vista previa y las acciones de descarga. */
+        .modal-etiqueta-box { max-width: 640px; }
+        /* Esta modal es bastante alta (tamaño, texto personalizado,
+           acciones...) y en móvil, si el aviso de cookies (z-index: 9999,
+           fijo abajo — ver src/js/analytics-consent.js) todavía no se ha
+           aceptado/rechazado, queda POR ENCIMA tapando sus botones de
+           PNG/PDF/Cerrar sin que se note — clics que no hacen nada en
+           apariencia. Confirmado así en Chrome móvil, reportado por Eloy.
+           El resto de modales del sitio comparten el mismo z-index base
+           (1000) y podrían tener el mismo problema si llegan a ocupar
+           tanto alto, pero el arreglo se acota aquí, a la única modal
+           donde se ha confirmado el problema. */
+        #modal-etiqueta-overlay { z-index: 10000; }
+        /* Esta modal se abre DESDE DENTRO de la de la lista de la compra
+           (#modal-lista-compra-overlay), que se queda abierta debajo —
+           misma clase .modal-overlay, mismo z-index base (1000), pero al
+           estar más abajo en el DOM pintaría POR ENCIMA de todas formas
+           y se comería sus clics (confirmado con Playwright: el
+           paginador no respondía). z-index aún mayor que el de arriba,
+           para quedar también por encima de ella. */
+        #modal-etiquetas-lista-overlay { z-index: 10001; }
+        .modal-etiqueta-layout {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .modal-etiqueta-preview-wrap {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .modal-etiqueta-preview {
+            /* El tamaño real (atributos width/height del <canvas>) lo fija
+               actualizarVistaPreviaEtiqueta_ según el ancho/alto en mm
+               elegidos — aquí solo se acota el tamaño EN PANTALLA,
+               preservando su proporción real (object-fit: contain no
+               aplica a <canvas>, por eso max-width/max-height + auto). */
+            max-width: 280px;
+            max-height: 220px;
+            width: auto;
+            height: auto;
+            border-radius: 6px;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
+        }
+        .modal-etiqueta-preview-caption {
+            margin: 0;
+            font-size: 0.74rem;
+            color: var(--muted);
+        }
+        .modal-etiqueta-controles {
+            flex: 1 1 220px;
+            min-width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .modal-etiqueta-controles .modal-editar-ficha-campo { margin: 0; }
+        .modal-etiqueta-promo-aviso {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #92400e;
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: 8px 10px;
+            line-height: 1.4;
+        }
+        .modal-etiqueta-acciones { align-items: center; }
+        .modal-etiqueta-btn-png { flex: 0.7; }
+        @media (max-width: 480px) {
+            .modal-etiqueta-acciones { flex-wrap: wrap; }
+            .modal-etiqueta-acciones button { flex: 1 1 100%; }
+        }
+        /* "Cerrar" debajo de PNG/PDF (no en la misma fila) — a petición
+           de Eloy, para que las acciones de generar queden primero y
+           cerrar sea claramente secundario. */
+        .modal-etiqueta-btn-cerrar {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        /* Paginador de la modal "Imprimir etiquetas de la lista de la
+           compra" — un producto por página, en el orden en que se
+           añadieron. */
+        .modal-etiquetas-lista-paginador {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 2px 0 14px;
+        }
+        .modal-etiquetas-lista-nav {
+            flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--light);
+            color: var(--dark);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .modal-etiquetas-lista-nav:disabled { opacity: 0.4; cursor: default; }
+        .modal-etiquetas-lista-nav:not(:disabled):hover { background: #e5e7eb; }
+        .modal-etiquetas-lista-paginador-centro {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+        }
+        .modal-etiquetas-lista-posicion {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .modal-etiquetas-lista-selector {
+            max-width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        .modal-etiquetas-lista-tamano { margin-top: 18px; }
+        .modal-etiqueta-campo-doble {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-etiqueta-campo-doble .modal-editar-ficha-campo { flex: 1; margin: 0; }
+        .modal-etiqueta-nota-tamano {
+            margin: -4px 0 0;
+            font-size: 0.74rem;
+        }
+        .modal-etiqueta-subtitulo {
+            margin: 18px 0 10px;
+            font-size: 0.86rem;
+            font-weight: 800;
+            color: var(--dark);
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .modal-etiqueta-imagen-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+            color: var(--dark);
+            cursor: pointer;
+        }
+        .modal-etiqueta-imagen .modal-etiqueta-texto-controles { margin-top: 12px; }
+        .modal-etiqueta-imagen #modal-etiqueta-sin-imagen-aviso { margin-top: 10px; }
+        .modal-etiqueta-texto-personalizado .modal-editar-ficha-campo { margin-bottom: 12px; }
+        .modal-etiqueta-texto-controles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .modal-etiqueta-texto-controles .modal-editar-ficha-campo { flex: 1 1 110px; margin: 0; }
+        .modal-etiqueta-texto-controles input[type="color"] {
+            width: 100%;
+            height: 38px;
+            padding: 3px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .modal-etiqueta-texto-estilo {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: var(--dark);
+        }
+        .modal-etiqueta-texto-estilo label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
 
         /* Bloque "Información adicional" en el detalle del producto —
            visible siempre (producción incluida) cuando hay contenido. */
@@ -5154,6 +5361,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <span id="modal-producto-destacado-chip" class="destacado-chip" style="display:none;"></span>
                 <button type="button" class="modal-producto-imagen-ampliar" id="modal-producto-imagen-ampliar" aria-label="Ampliar imagen">
                     <img id="modal-producto-img" src="" alt="" loading="lazy">
+                    <span id="modal-producto-img-spinner" class="modal-producto-img-spinner" style="display:none;" aria-hidden="true">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                    </span>
                     <span class="modal-producto-imagen-ampliar-icono"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
                 </button>
                 <div id="modal-producto-sin-imagen" class="sin-imagen-fabricante sin-imagen-fabricante--modal" style="display:none;">
@@ -5245,6 +5455,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <button type="button" id="modal-producto-editar-envase" class="modal-producto-reportar" style="display:none; width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
                     <i class="fa-solid fa-pen"></i>
                     Editar formato de envase
+                </button>
+                <!-- Solo preproducción (ver window.MOSTRAR_ETIQUETA_PRECIO) -->
+                <button type="button" id="modal-producto-etiqueta-precio" class="modal-producto-reportar" style="display:none; width:100%; margin-top:8px; padding: 10px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-tag"></i>
+                    Imprimir etiqueta de precio
                 </button>
                 <p class="modal-producto-disclaimer">
                     <i class="fa-solid fa-circle-info"></i>
@@ -5484,6 +5699,334 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="modal-editar-envase-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
             <button type="button" id="modal-editar-envase-guardar" class="modal-editar-ficha-guardar">Guardar</button>
         </div>
+    </div>
+</div>
+
+<!-- Modal "Imprimir etiqueta de precio" — solo preproducción (ver
+     window.MOSTRAR_ETIQUETA_PRECIO). Todo el dibujo (vista previa,
+     PNG, PDF) se hace en el propio navegador con <canvas>/jsPDF/
+     JsBarcode, sin ninguna petición al backend. -->
+<div class="modal-overlay" id="modal-etiqueta-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box modal-etiqueta-box">
+        <button class="modal-producto-cerrar" id="modal-etiqueta-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-tag"></i> Imprimir etiqueta de precio</h3>
+        <p id="modal-etiqueta-nombre" class="modal-editar-ficha-nombre"></p>
+
+        <div class="modal-etiqueta-layout">
+            <div class="modal-etiqueta-preview-wrap">
+                <canvas id="modal-etiqueta-preview" class="modal-etiqueta-preview"></canvas>
+                <p class="modal-etiqueta-preview-caption">Vista previa de una etiqueta</p>
+            </div>
+            <div class="modal-etiqueta-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-cantidad">Número de etiquetas</label>
+                    <input type="number" id="modal-etiqueta-cantidad" min="1" max="200" step="1" value="1" autocomplete="off">
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-ancho">Ancho (mm)</label>
+                        <input type="number" id="modal-etiqueta-ancho" min="25" max="190" step="1" value="93" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-alto">Alto (mm)</label>
+                        <input type="number" id="modal-etiqueta-alto" min="25" max="277" step="1" value="67" autocomplete="off">
+                    </div>
+                </div>
+                <p class="modal-editar-ficha-nota modal-etiqueta-nota-tamano">
+                    Máximo 190x277mm — el espacio útil de un folio DIN A4 con margen.
+                </p>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-detalle">Detalle (opcional)</label>
+                    <select id="modal-etiqueta-detalle">
+                        <option value="">Ninguno</option>
+                        <option value="OFERTA">Oferta</option>
+                        <option value="3X2">3x2</option>
+                        <option value="2X1">2x1</option>
+                        <option value="LIQUIDACIÓN">Liquidación</option>
+                        <option value="NUEVO">Nuevo</option>
+                        <option value="__otro__">Personalizado…</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo" id="modal-etiqueta-detalle-otro-fila" style="display:none;">
+                    <label for="modal-etiqueta-detalle-otro">Texto del detalle</label>
+                    <input type="text" id="modal-etiqueta-detalle-otro" maxlength="12" placeholder="p. ej. PACK" autocomplete="off">
+                </div>
+                <p id="modal-etiqueta-promo-aviso" class="modal-etiqueta-promo-aviso" style="display:none;">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Este producto está en promoción: la etiqueta mostrará el precio en oferta con el normal tachado.
+                </p>
+                <p id="modal-etiqueta-sin-codigo-aviso" class="modal-editar-ficha-error" style="display:none;">
+                    Este producto no tiene una referencia válida para generar el código de barras — la etiqueta se imprimirá sin él.
+                </p>
+            </div>
+        </div>
+
+        <!-- Imagen del producto — opcional (checkbox), con la misma
+             rejilla de 9 posiciones (horizontal x vertical) que el texto
+             personalizado de más abajo, para colocarla donde mejor
+             encaje en cada tamaño de etiqueta. -->
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Imagen del producto</h4>
+            <label class="modal-etiqueta-imagen-check">
+                <input type="checkbox" id="modal-etiqueta-imagen-incluir"> Incluir la imagen del producto
+            </label>
+            <div class="modal-etiqueta-texto-controles" id="modal-etiqueta-imagen-controles" style="display:none;">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-imagen-tamano">Tamaño (mm)</label>
+                    <input type="number" id="modal-etiqueta-imagen-tamano" min="8" max="100" step="1" value="18" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-imagen-alinh">Horizontal</label>
+                    <select id="modal-etiqueta-imagen-alinh">
+                        <option value="izquierda" selected>Izquierda</option>
+                        <option value="centro">Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-imagen-alinv">Vertical</label>
+                    <select id="modal-etiqueta-imagen-alinv">
+                        <option value="arriba">Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo" selected>Abajo</option>
+                    </select>
+                </div>
+            </div>
+            <p id="modal-etiqueta-sin-imagen-aviso" class="modal-editar-ficha-error" style="display:none;">
+                Este producto no tiene una foto propia — la etiqueta se generará sin imagen.
+            </p>
+        </div>
+
+        <!-- Texto personalizado — independiente del "Detalle" (que es el
+             chip de la esquina): un texto libre que se puede colocar en
+             cualquiera de las 9 posiciones de la etiqueta (combinando
+             alineación horizontal y vertical), con su propio tamaño,
+             estilo y color. -->
+        <div class="modal-etiqueta-texto-personalizado">
+            <h4 class="modal-etiqueta-subtitulo">Texto personalizado (opcional)</h4>
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiqueta-texto">Texto</label>
+                <input type="text" id="modal-etiqueta-texto" maxlength="60" placeholder="p. ej. Hasta fin de existencias" autocomplete="off">
+            </div>
+            <div class="modal-etiqueta-texto-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-texto-tamano">Tamaño (pt)</label>
+                    <input type="number" id="modal-etiqueta-texto-tamano" min="4" max="60" step="1" value="10" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-texto-alinh">Horizontal</label>
+                    <select id="modal-etiqueta-texto-alinh">
+                        <option value="izquierda">Izquierda</option>
+                        <option value="centro" selected>Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-texto-alinv">Vertical</label>
+                    <select id="modal-etiqueta-texto-alinv">
+                        <option value="arriba">Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo" selected>Abajo</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-texto-color">Color</label>
+                    <input type="color" id="modal-etiqueta-texto-color" value="#1e293b">
+                </div>
+            </div>
+            <div class="modal-etiqueta-texto-estilo">
+                <label><input type="checkbox" id="modal-etiqueta-texto-negrita"> Negrita</label>
+                <label><input type="checkbox" id="modal-etiqueta-texto-cursiva"> Cursiva</label>
+                <label><input type="checkbox" id="modal-etiqueta-texto-subrayado"> Subrayado</label>
+            </div>
+        </div>
+
+        <p class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-circle-info"></i>
+            Con 1 etiqueta puedes descargarla suelta, en PNG o PDF. Con varias,
+            se generan en una hoja DIN A4 lista para imprimir y recortar.
+        </p>
+        <div class="modal-editar-ficha-acciones modal-etiqueta-acciones">
+            <button type="button" id="modal-etiqueta-descargar-png" class="modal-editar-ficha-cancelar modal-etiqueta-btn-png">
+                <i class="fa-solid fa-image"></i> PNG
+            </button>
+            <button type="button" id="modal-etiqueta-descargar-pdf" class="modal-editar-ficha-guardar">
+                <i class="fa-solid fa-file-pdf"></i> <span id="modal-etiqueta-descargar-pdf-texto">PDF</span>
+            </button>
+        </div>
+        <button type="button" id="modal-etiqueta-cancelar" class="modal-editar-ficha-cancelar modal-etiqueta-btn-cerrar">Cerrar</button>
+    </div>
+</div>
+
+<!-- Modal "Imprimir etiquetas" de la lista de la compra — solo
+     preproducción (ver window.MOSTRAR_ETIQUETA_PRECIO). Mismo formulario
+     que la modal de una sola etiqueta (modal-etiqueta-overlay), con un
+     paginado para recorrer cada producto de la lista de la compra, en
+     el orden en que se añadieron. El tamaño de etiqueta (ancho/alto) es
+     el único campo compartido por todo el lote —todas las etiquetas del
+     PDF final salen en el mismo tamaño, tiene que ser así para que
+     quepan en la misma rejilla de la hoja A4—; cantidad, detalle,
+     imagen y texto personalizado son propios de cada producto y se
+     recuerdan al cambiar de página. -->
+<div class="modal-overlay" id="modal-etiquetas-lista-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box modal-etiqueta-box">
+        <button class="modal-producto-cerrar" id="modal-etiquetas-lista-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-tag"></i> Imprimir etiquetas de la lista de la compra</h3>
+
+        <div class="modal-etiquetas-lista-paginador">
+            <button type="button" id="modal-etiquetas-lista-anterior" class="modal-etiquetas-lista-nav" aria-label="Producto anterior">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="modal-etiquetas-lista-paginador-centro">
+                <span class="modal-etiquetas-lista-posicion" id="modal-etiquetas-lista-posicion"></span>
+                <select id="modal-etiquetas-lista-selector" class="modal-etiquetas-lista-selector"></select>
+            </div>
+            <button type="button" id="modal-etiquetas-lista-siguiente" class="modal-etiquetas-lista-nav" aria-label="Producto siguiente">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div class="modal-etiqueta-layout">
+            <div class="modal-etiqueta-preview-wrap">
+                <canvas id="modal-etiquetas-lista-preview" class="modal-etiqueta-preview"></canvas>
+                <p class="modal-etiqueta-preview-caption">Vista previa de este producto</p>
+            </div>
+            <div class="modal-etiqueta-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-cantidad">Número de etiquetas de este producto</label>
+                    <input type="number" id="modal-etiquetas-lista-cantidad" min="1" max="200" step="1" value="1" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-detalle">Detalle (opcional)</label>
+                    <select id="modal-etiquetas-lista-detalle">
+                        <option value="">Ninguno</option>
+                        <option value="OFERTA">Oferta</option>
+                        <option value="3X2">3x2</option>
+                        <option value="2X1">2x1</option>
+                        <option value="LIQUIDACIÓN">Liquidación</option>
+                        <option value="NUEVO">Nuevo</option>
+                        <option value="__otro__">Personalizado…</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo" id="modal-etiquetas-lista-detalle-otro-fila" style="display:none;">
+                    <label for="modal-etiquetas-lista-detalle-otro">Texto del detalle</label>
+                    <input type="text" id="modal-etiquetas-lista-detalle-otro" maxlength="12" placeholder="p. ej. PACK" autocomplete="off">
+                </div>
+                <p id="modal-etiquetas-lista-promo-aviso" class="modal-etiqueta-promo-aviso" style="display:none;">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Este producto está en promoción: la etiqueta mostrará el precio en oferta con el normal tachado.
+                </p>
+                <p id="modal-etiquetas-lista-sin-codigo-aviso" class="modal-editar-ficha-error" style="display:none;">
+                    Este producto no tiene una referencia válida para generar el código de barras — la etiqueta se imprimirá sin él.
+                </p>
+            </div>
+        </div>
+
+        <div class="modal-etiqueta-campo-doble modal-etiquetas-lista-tamano">
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-ancho">Ancho (mm) — para todo el lote</label>
+                <input type="number" id="modal-etiquetas-lista-ancho" min="25" max="190" step="1" value="93" autocomplete="off">
+            </div>
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-alto">Alto (mm) — para todo el lote</label>
+                <input type="number" id="modal-etiquetas-lista-alto" min="25" max="277" step="1" value="67" autocomplete="off">
+            </div>
+        </div>
+        <p class="modal-editar-ficha-nota modal-etiqueta-nota-tamano">
+            Máximo 190x277mm — el espacio útil de un folio DIN A4 con margen. Se aplica a
+            todas las etiquetas del lote, para que quepan juntas en la misma hoja.
+        </p>
+
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Imagen de este producto</h4>
+            <label class="modal-etiqueta-imagen-check">
+                <input type="checkbox" id="modal-etiquetas-lista-imagen-incluir"> Incluir la imagen del producto
+            </label>
+            <div class="modal-etiqueta-texto-controles" id="modal-etiquetas-lista-imagen-controles" style="display:none;">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-imagen-tamano">Tamaño (mm)</label>
+                    <input type="number" id="modal-etiquetas-lista-imagen-tamano" min="8" max="100" step="1" value="18" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-imagen-alinh">Horizontal</label>
+                    <select id="modal-etiquetas-lista-imagen-alinh">
+                        <option value="izquierda" selected>Izquierda</option>
+                        <option value="centro">Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-imagen-alinv">Vertical</label>
+                    <select id="modal-etiquetas-lista-imagen-alinv">
+                        <option value="arriba">Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo" selected>Abajo</option>
+                    </select>
+                </div>
+            </div>
+            <p id="modal-etiquetas-lista-sin-imagen-aviso" class="modal-editar-ficha-error" style="display:none;">
+                Este producto no tiene una foto propia — la etiqueta se generará sin imagen.
+            </p>
+        </div>
+
+        <div class="modal-etiqueta-texto-personalizado">
+            <h4 class="modal-etiqueta-subtitulo">Texto personalizado de este producto (opcional)</h4>
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-texto">Texto</label>
+                <input type="text" id="modal-etiquetas-lista-texto" maxlength="60" placeholder="p. ej. Hasta fin de existencias" autocomplete="off">
+            </div>
+            <div class="modal-etiqueta-texto-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-texto-tamano">Tamaño (pt)</label>
+                    <input type="number" id="modal-etiquetas-lista-texto-tamano" min="4" max="60" step="1" value="10" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-texto-alinh">Horizontal</label>
+                    <select id="modal-etiquetas-lista-texto-alinh">
+                        <option value="izquierda">Izquierda</option>
+                        <option value="centro" selected>Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-texto-alinv">Vertical</label>
+                    <select id="modal-etiquetas-lista-texto-alinv">
+                        <option value="arriba">Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo" selected>Abajo</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-texto-color">Color</label>
+                    <input type="color" id="modal-etiquetas-lista-texto-color" value="#1e293b">
+                </div>
+            </div>
+            <div class="modal-etiqueta-texto-estilo">
+                <label><input type="checkbox" id="modal-etiquetas-lista-texto-negrita"> Negrita</label>
+                <label><input type="checkbox" id="modal-etiquetas-lista-texto-cursiva"> Cursiva</label>
+                <label><input type="checkbox" id="modal-etiquetas-lista-texto-subrayado"> Subrayado</label>
+            </div>
+        </div>
+
+        <p class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-circle-info"></i>
+            Con un solo producto y 1 etiqueta puedes descargarla suelta, en PNG o PDF.
+            En cualquier otro caso, se genera un PDF con el número de etiquetas de cada
+            producto, en el orden en que se añadieron a la lista, en una hoja DIN A4.
+        </p>
+        <div class="modal-editar-ficha-acciones modal-etiqueta-acciones">
+            <button type="button" id="modal-etiquetas-lista-descargar-png" class="modal-editar-ficha-cancelar modal-etiqueta-btn-png">
+                <i class="fa-solid fa-image"></i> PNG
+            </button>
+            <button type="button" id="modal-etiquetas-lista-descargar-pdf" class="modal-editar-ficha-guardar">
+                <i class="fa-solid fa-file-pdf"></i> <span id="modal-etiquetas-lista-descargar-pdf-texto">PDF</span>
+            </button>
+        </div>
+        <button type="button" id="modal-etiquetas-lista-cancelar" class="modal-editar-ficha-cancelar modal-etiqueta-btn-cerrar">Cerrar</button>
     </div>
 </div>
 
@@ -5964,6 +6507,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="btn-lista-compra-correo" class="btn-lista-compra-correo">
                 <i class="fa-solid fa-envelope"></i> Compartir por correo
             </button>
+            <!-- Solo preproducción (ver window.MOSTRAR_ETIQUETA_PRECIO) -->
+            <button type="button" id="btn-lista-compra-etiquetas" class="btn-lista-compra-pdf" style="display:none;">
+                <i class="fa-solid fa-tag"></i> Imprimir etiquetas
+            </button>
             <button type="button" id="btn-lista-compra-vaciar" class="btn-lista-compra-vaciar">
                 <i class="fa-solid fa-broom"></i> Vaciar la lista
             </button>
@@ -6186,6 +6733,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      sin romper el resto de la funcionalidad. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<!-- Etiquetas de precio para tienda (solo preproducción, ver
+     window.MOSTRAR_ETIQUETA_PRECIO) — genera el código de barras y el
+     QR de la referencia 100% en el navegador, sin pasar por ningún
+     backend propio, igual que el resto de exportaciones de esta
+     página. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="./src/js/app.js?v=20260829"></script>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'buscador'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
@@ -6320,6 +6874,12 @@ window.MOSTRAR_EDITAR_FICHA_TECNICA = window.OM_PREPRODUCCION;
 window.MOSTRAR_EDITAR_INFO_ADICIONAL = window.OM_PREPRODUCCION;
 window.MOSTRAR_EDITAR_ENVASE = window.OM_PREPRODUCCION;
 window.MOSTRAR_EDITAR_SUBFAMILIA = window.OM_PREPRODUCCION;
+// Botón "Imprimir etiqueta de precio" (y su modal) del detalle del
+// producto — a petición de Eloy, 06/11/2026: generar etiquetas para la
+// tienda desde el propio buscador, siempre 100% en el navegador (sin
+// backend) y, de momento, solo en preproducción, igual que el resto de
+// acciones administrativas de esta ficha.
+window.MOSTRAR_ETIQUETA_PRECIO = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_PANEL_ANALITICA = window.OM_PREPRODUCCION;
@@ -6403,6 +6963,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-editar-envase-overlay', window.MOSTRAR_EDITAR_ENVASE);
     eliminarSiRestringido_('modal-producto-editar-subfamilia', window.MOSTRAR_EDITAR_SUBFAMILIA);
     eliminarSiRestringido_('modal-editar-subfamilia-overlay', window.MOSTRAR_EDITAR_SUBFAMILIA);
+    eliminarSiRestringido_('modal-producto-etiqueta-precio', window.MOSTRAR_ETIQUETA_PRECIO);
+    eliminarSiRestringido_('modal-etiqueta-overlay', window.MOSTRAR_ETIQUETA_PRECIO);
+    eliminarSiRestringido_('btn-lista-compra-etiquetas', window.MOSTRAR_ETIQUETA_PRECIO);
+    eliminarSiRestringido_('modal-etiquetas-lista-overlay', window.MOSTRAR_ETIQUETA_PRECIO);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
         const btnGD = document.getElementById('btn-gestionar-destacados');
         if (btnGD) btnGD.classList.add('visible');
@@ -6514,6 +7078,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // producto superpuesto.
     function mostrarSinImagenModal(p) {
         $('modal-producto-img').style.display = 'none';
+        $('modal-producto-img-spinner').style.display = 'none';
         const cont = $('modal-producto-sin-imagen');
         const src = (p.area === 'talleres' && p.fabricante && LOGOS_FABRICANTE[p.fabricante])
             ? LOGOS_FABRICANTE[p.fabricante]
@@ -12940,13 +13505,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // — se ocultan en vez de dejarlos ahí sin hacer nada al
             // pulsarlos. "Eliminar la lista" se mantiene, es la forma de
             // deshacerse de una lista vacía que ya no se quiere.
-            ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-vaciar'].forEach(id => $(id).style.display = 'none');
+            // btn-lista-compra-etiquetas puede no existir en el DOM (se
+            // elimina en producción, ver window.MOSTRAR_ETIQUETA_PRECIO) —
+            // de ahí la comprobación antes de tocar su estilo.
+            ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
             return;
         }
         grid.style.display = '';
         vacia.style.display = 'none';
         notasWrap.style.display = '';
-        ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-vaciar'].forEach(id => $(id).style.display = '');
+        ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = ''; });
 
         grid.innerHTML = '';
         listaCompraOrdenada_().forEach(p => grid.appendChild(crearTarjetaListaCompraModal_(p)));
@@ -13628,6 +14196,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-lista-compra-pdf').addEventListener('click', exportarListaCompraPDF_);
         $('btn-lista-compra-whatsapp').addEventListener('click', compartirListaCompraWhatsapp_);
         $('btn-lista-compra-correo').addEventListener('click', compartirListaCompraCorreo_);
+        // Solo preproducción — el botón se elimina del DOM en producción
+        // (ver window.MOSTRAR_ETIQUETA_PRECIO), de ahí la comprobación.
+        if ($('btn-lista-compra-etiquetas')) {
+            $('btn-lista-compra-etiquetas').addEventListener('click', abrirModalEtiquetasLista_);
+        }
 
         $('modal-producto-lista-btn').addEventListener('click', alPulsarBotonListaCompraProducto_);
         $('modal-producto-lista-unidades-menos').addEventListener('click', () => alCambiarUnidadesProducto_(-1));
@@ -14042,10 +14615,38 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const imgSrc = urlImagenProducto(p, 800) || '';
         const tieneImagen = !!imgSrc;
 
-        $('modal-producto-img').style.display = tieneImagen ? 'block' : 'none';
-        $('modal-producto-img').src = imgSrc;
-        $('modal-producto-img').alt = escapeHtml(p.nombre);
-        $('modal-producto-img').onerror = () => mostrarSinImagenModal(p);
+        // Se oculta y se vacía el <img> ANTES de asignarle la nueva URL:
+        // si no, el navegador sigue pintando la foto del producto
+        // anterior (el bitmap ya decodificado) hasta que la nueva
+        // termine de descargarse, y durante ese segundo o dos se ve la
+        // imagen equivocada. Solo se vuelve a mostrar cuando la nueva
+        // foto ya ha cargado (onload) o, si falla, cuando
+        // mostrarSinImagenModal la sustituye por el logo genérico.
+        const imgEl = $('modal-producto-img');
+        const spinnerEl = $('modal-producto-img-spinner');
+        imgEl.style.display = 'none';
+        imgEl.removeAttribute('src');
+        // Spinner mientras se descarga la foto (ver más abajo, onload/
+        // onerror) — así el hueco no se queda en blanco ese segundo o dos
+        // que tarda en llegar, solo si realmente hay foto que cargar.
+        spinnerEl.style.display = tieneImagen ? 'flex' : 'none';
+        // "loading=lazy" (puesto en el HTML para no descargar la foto si
+        // el usuario nunca abre la ficha) decide si cargar la imagen según
+        // si está cerca del viewport, no según su "display" — con el
+        // <img> oculto (display:none) el navegador no la considera nunca
+        // "cerca" y no llegaría a cargarla. Aquí ya se sabe que el
+        // usuario ha abierto la ficha, así que se fuerza "eager".
+        imgEl.loading = 'eager';
+        imgEl.onload = () => {
+            spinnerEl.style.display = 'none';
+            if (tieneImagen) imgEl.style.display = 'block';
+        };
+        imgEl.onerror = () => {
+            spinnerEl.style.display = 'none';
+            mostrarSinImagenModal(p);
+        };
+        imgEl.alt = escapeHtml(p.nombre);
+        imgEl.src = imgSrc;
 
         // El botón que envuelve la imagen solo tiene sentido si hay una
         // foto real que ampliar (con el logo/nombre genérico de "sin
@@ -14304,6 +14905,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         configurarInfoAdicional(p);
         configurarEnvase(p);
         configurarEditarSubfamilia(p);
+        configurarEtiquetaPrecio_(p);
         // Oculta también la fila que las envuelve cuando ninguno de los dos
         // botones aplica (evita un hueco vacío, p.ej. en brochas o lijas) —
         // salvo en preproducción, que la deja visible siempre que esté el
@@ -14914,6 +15516,1286 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!boton) return; // eliminado del DOM en producción
         boton.style.display = 'inline-flex';
         boton.onclick = () => abrirModalEditarFichaTecnica(p);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Etiqueta de precio para tienda — solo preproducción (ver
+    // window.MOSTRAR_ETIQUETA_PRECIO), a petición de Eloy, 06/11/2026.
+    // Genera una etiqueta imprimible con el icono del logo (sin el
+    // texto de la empresa), el nombre, el precio con/sin IVA —con el
+    // precio normal tachado si el producto está en promoción vigente—,
+    // la referencia y su código de barras. Todo se dibuja en el propio
+    // navegador: <canvas> 2D + JsBarcode para la vista previa y el PNG,
+    // jsPDF para el PDF (suelto o en hoja DIN A4 en rejilla de 2x4,
+    // igual que el modelo de referencia que pasó Eloy) — ninguna
+    // petición a un backend propio, para no incurrir en coste alguno.
+    const ETIQUETA_LOGO_URL_ = './assets/logos/logo_transparente.png';
+    const ETIQUETA_COLOR_DARK_ = [30, 41, 59];
+    const ETIQUETA_COLOR_MUTED_ = [100, 116, 139];
+    const ETIQUETA_COLOR_RED_ = [211, 47, 47];
+    const ETIQUETA_COLOR_BORDE_ = [203, 213, 225];
+    const ETIQUETA_COLOR_SEPARADOR_ = [226, 232, 240];
+    // Tamaño de etiqueta por defecto en mm (93x67 = el modelo original,
+    // 2 columnas x 4 filas en A4) — a petición de Eloy, 06/11/2026, ahora
+    // es configurable desde la modal (ver modal-etiqueta-ancho/alto),
+    // acotado al espacio útil de un folio DIN A4 con el margen de hoja
+    // de abajo. La rejilla de la hoja (cuántas caben por página) se
+    // recalcula en cada generación según el tamaño elegido — ver
+    // etiquetaRejillaPara_.
+    const ETIQUETA_W_DEFECTO_MM_ = 93;
+    const ETIQUETA_H_DEFECTO_MM_ = 67;
+    const ETIQUETA_TAMANO_MIN_MM_ = 25;
+    const ETIQUETA_PAGINA_MARGEN_MM_ = 10;
+    const ETIQUETA_PAGINA_GAP_COL_MM_ = 4;
+    const ETIQUETA_PAGINA_GAP_FILA_MM_ = 3;
+    const ETIQUETA_PAGINA_ANCHO_UTIL_MM_ = 210 - 2 * ETIQUETA_PAGINA_MARGEN_MM_;
+    const ETIQUETA_PAGINA_ALTO_UTIL_MM_ = 297 - 2 * ETIQUETA_PAGINA_MARGEN_MM_;
+    const ETIQUETA_CANTIDAD_MAXIMA_ = 200;
+
+    let productoEtiquetaActual_ = null;
+    let etiquetaLogoCache_ = null;    // { dataUrl, width, height, img } — se carga una sola vez
+    let etiquetaBarcodeCache_ = null; // { ref, dataUrl, width, height, img } — se recalcula solo si cambia la ref
+    let etiquetaQrCache_ = null;      // { url, dataUrl, width, height, img } — se recalcula solo si cambia la URL
+    let etiquetaImagenCache_ = null;  // { ref, dataUrl, width, height, img } — se recalcula solo si cambia el producto
+
+    function configurarEtiquetaPrecio_(p) {
+        const boton = $('modal-producto-etiqueta-precio');
+        if (!boton) return; // eliminado del DOM en producción
+        boton.style.display = 'block';
+        boton.onclick = () => abrirModalEtiquetaPrecio_(p);
+    }
+
+    // Precio para la etiqueta: SIEMPRE el PVP público, nunca el precio al
+    // por mayor del perfil profesional (precioAMostrar_) — la etiqueta es
+    // para colocar en la tienda de cara al público, con independencia de
+    // quién la esté generando — con la misma promoción vigente
+    // (Destacados o campaña de escaparate) que ya se ve en la ficha y en
+    // las tarjetas, reutilizando destacadoEfectivoPara_/
+    // calcularPrecioDestacado_ sin duplicar esa lógica.
+    function datosEtiquetaParaProducto_(p) {
+        const conRaw = (p.precio_con != null && p.precio_con !== '') ? parseFloat(p.precio_con.toString().replace(',', '.')) : NaN;
+        const sinRaw = (p.precio_sin != null && p.precio_sin !== '') ? parseFloat(p.precio_sin.toString().replace(',', '.')) : NaN;
+        const con = (isFinite(conRaw) && conRaw > 0) ? conRaw : null;
+        const sin = (isFinite(sinRaw) && sinRaw > 0) ? sinRaw : null;
+        const ivaPct = (con !== null && sin !== null) ? Math.round((con / sin - 1) * 100) : null;
+
+        let promo = null;
+        const d = destacadoEfectivoPara_(p.ref);
+        if (d) {
+            const info = calcularPrecioDestacado_(p, d);
+            if (info.original !== null && info.promo !== null) {
+                promo = { original: info.original, promo: info.promo, promoSin: info.promoSin, pct: info.pct };
+            }
+        }
+        // URL para buscar el producto directamente en la web a partir de
+        // su referencia — reutiliza urlCompartirProducto (más arriba en
+        // este archivo, ya usada por el botón "Compartir" de la ficha):
+        // la página actual + ?ref=<referencia>, que el propio buscador ya
+        // sabe detectar y abrir automáticamente el detalle de ese
+        // producto (ver abrirProductoDesdeURL) — ningún enlace ni lógica
+        // nueva, el QR solo codifica ese mismo enlace.
+        const urlQr = urlCompartirProducto(p);
+        return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo, urlQr };
+    }
+
+    function etiquetaFormatoEuros_(valor) {
+        return valor.toFixed(2).replace('.', ',') + ' €';
+    }
+
+    // Elige el formato de código de barras más adecuado según la
+    // referencia — la mayoría son EAN-13 reales (ver el modelo que pasó
+    // Eloy), pero nunca se asume: si JsBarcode rechaza el formato
+    // "ideal" (p.ej. dígito de control inválido para EAN-13), se cae a
+    // CODE128, que acepta cualquier texto sin restricciones.
+    function generarBarcodeDataUrl_(valor) {
+        const limpio = (valor || '').toString().trim();
+        if (!limpio || typeof JsBarcode === 'undefined') return null;
+        const intentos = [];
+        if (/^\d{13}$/.test(limpio)) intentos.push('EAN13');
+        if (/^\d{12}$/.test(limpio)) intentos.push('UPC');
+        if (/^\d{8}$/.test(limpio)) intentos.push('EAN8');
+        intentos.push('CODE128');
+        for (const formato of intentos) {
+            try {
+                const canvas = document.createElement('canvas');
+                JsBarcode(canvas, limpio, { format: formato, displayValue: true, fontSize: 26, height: 72, margin: 6, textMargin: 3 });
+                return { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height };
+            } catch (e) { /* prueba el siguiente formato */ }
+        }
+        return null;
+    }
+
+    // Carga el icono del logo (sin el texto de la empresa) una sola vez,
+    // reutilizando cargarImagenComoDataURL_ (más abajo en este archivo,
+    // ya usado por el PDF de Destacados) — devuelve también un <img>
+    // precargado, necesario para dibujar en el <canvas> de la vista
+    // previa/PNG (jsPDF solo necesita el dataURL).
+    function etiquetaLogo_() {
+        if (etiquetaLogoCache_) return Promise.resolve(etiquetaLogoCache_);
+        return cargarImagenComoDataURL_(ETIQUETA_LOGO_URL_).then((info) => {
+            if (!info) return null;
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => { etiquetaLogoCache_ = { dataUrl: info.dataUrl, width: info.width, height: info.height, img }; resolve(etiquetaLogoCache_); };
+                img.onerror = () => resolve(null);
+                img.src = info.dataUrl;
+            });
+        });
+    }
+
+    // Igual que etiquetaLogo_ pero para el código de barras de la
+    // referencia actual — se recalcula solo cuando cambia la referencia,
+    // nunca en cada pulsación de los controles de cantidad/detalle.
+    function etiquetaBarcodePara_(ref) {
+        if (!ref) return Promise.resolve(null);
+        if (etiquetaBarcodeCache_ && etiquetaBarcodeCache_.ref === ref) return Promise.resolve(etiquetaBarcodeCache_);
+        const resultado = generarBarcodeDataUrl_(ref);
+        if (!resultado) { etiquetaBarcodeCache_ = null; return Promise.resolve(null); }
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => { etiquetaBarcodeCache_ = Object.assign({ ref }, resultado, { img }); resolve(etiquetaBarcodeCache_); };
+            img.onerror = () => { etiquetaBarcodeCache_ = null; resolve(null); };
+            img.src = resultado.dataUrl;
+        });
+    }
+
+    // QR que enlaza a la URL de "compartir" del producto (ver
+    // datosEtiquetaParaProducto_/urlCompartirProducto) — a petición de
+    // Eloy, 06/11/2026: escaneándolo se abre el buscador con ese
+    // producto ya localizado, sin teclear nada. Se dibuja a mano módulo
+    // a módulo sobre un <canvas> (createDataURL de la librería da GIF,
+    // que jsPDF no admite) en vez de usar createDataURL directamente.
+    function generarQrDataUrl_(texto) {
+        if (!texto || typeof qrcode === 'undefined') return null;
+        try {
+            const qr = qrcode(0, 'M'); // 0 = elige automáticamente la versión más pequeña que quepa
+            qr.addData(texto);
+            qr.make();
+            const cuenta = qr.getModuleCount();
+            const celda = 8;   // px por módulo a esta resolución base
+            const margen = 2;  // módulos de margen blanco ("quiet zone")
+            const lado = (cuenta + margen * 2) * celda;
+            const canvas = document.createElement('canvas');
+            canvas.width = lado;
+            canvas.height = lado;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, lado, lado);
+            ctx.fillStyle = '#000000';
+            for (let fila = 0; fila < cuenta; fila++) {
+                for (let col = 0; col < cuenta; col++) {
+                    if (qr.isDark(fila, col)) ctx.fillRect((col + margen) * celda, (fila + margen) * celda, celda, celda);
+                }
+            }
+            return { dataUrl: canvas.toDataURL('image/png'), width: lado, height: lado };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Igual que etiquetaBarcodePara_ pero para el QR — se recalcula solo
+    // cuando cambia la URL (que depende de la referencia).
+    function etiquetaQrPara_(url) {
+        if (!url) return Promise.resolve(null);
+        if (etiquetaQrCache_ && etiquetaQrCache_.url === url) return Promise.resolve(etiquetaQrCache_);
+        const resultado = generarQrDataUrl_(url);
+        if (!resultado) { etiquetaQrCache_ = null; return Promise.resolve(null); }
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => { etiquetaQrCache_ = Object.assign({ url }, resultado, { img }); resolve(etiquetaQrCache_); };
+            img.onerror = () => { etiquetaQrCache_ = null; resolve(null); };
+            img.src = resultado.dataUrl;
+        });
+    }
+
+    // Foto real del producto (opcional, ver checkbox "Incluir la imagen
+    // del producto") — reutiliza urlImagenProductoFolletoDestacados_ y
+    // cargarImagenFolletoDestacadosConReintento_ (ambas más arriba en
+    // este archivo, ya usadas por el folleto de Destacados en PDF) en
+    // vez de urlImagenProducto/cargarImagenComoDataURL_: esas fotos
+    // vienen de Google Drive, y el dominio que usa urlImagenProducto
+    // (drive.google.com/thumbnail) no admite CORS — el <canvas> quedaría
+    // "contaminado" y toDataURL()/toBlob() lanzarían un error de
+    // seguridad. googleusercontent.com sí lo admite, que es justo el
+    // problema que ya resolvió el folleto de Destacados. Si el producto
+    // no tiene foto propia (o falla la carga), resuelve null — la
+    // etiqueta se dibuja igual, sin ese bloque, nunca se bloquea por
+    // esto.
+    function etiquetaImagenProducto_(p) {
+        const ref = (p.ref || '').toString().trim();
+        if (!ref) return Promise.resolve(null);
+        if (etiquetaImagenCache_ && etiquetaImagenCache_.ref === ref) return Promise.resolve(etiquetaImagenCache_);
+        const url = urlImagenProductoFolletoDestacados_(p, 500);
+        if (!url) { etiquetaImagenCache_ = null; return Promise.resolve(null); }
+        return cargarImagenFolletoDestacadosConReintento_(url).then((resultado) => {
+            if (!resultado) { etiquetaImagenCache_ = null; return null; }
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => { etiquetaImagenCache_ = Object.assign({ ref }, resultado, { img }); resolve(etiquetaImagenCache_); };
+                img.onerror = () => { etiquetaImagenCache_ = null; resolve(null); };
+                img.src = resultado.dataUrl;
+            });
+        });
+    }
+
+    function etiquetaRoundRectCanvas_(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+
+    // Envuelve un texto a como mucho maxLineas líneas, midiéndolo con el
+    // propio contexto 2D (ya con la fuente aplicada por quien llama) —
+    // recorta con "…" si no cabe entero en el espacio disponible.
+    function etiquetaEnvolverTextoCanvas_(ctx, texto, maxWidth, maxLineas) {
+        const palabras = (texto || '').split(/\s+/).filter(Boolean);
+        const lineas = [];
+        let actual = '';
+        for (const palabra of palabras) {
+            const prueba = actual ? actual + ' ' + palabra : palabra;
+            if (ctx.measureText(prueba).width <= maxWidth || !actual) {
+                actual = prueba;
+            } else {
+                lineas.push(actual);
+                actual = palabra;
+                if (lineas.length === maxLineas) break;
+            }
+        }
+        if (actual && lineas.length < maxLineas) lineas.push(actual);
+        if (lineas.length > maxLineas) lineas.length = maxLineas;
+        const textoColocado = lineas.join(' ').length;
+        if (textoColocado < texto.trim().length && lineas.length === maxLineas) {
+            let ultima = lineas[maxLineas - 1];
+            while (ultima.length > 1 && ctx.measureText(ultima + '…').width > maxWidth) ultima = ultima.slice(0, -1);
+            lineas[maxLineas - 1] = ultima + '…';
+        }
+        return lineas;
+    }
+
+    // Texto personalizado (ver etiquetaTextoPersonalizadoActual_) sobre
+    // el <canvas> — se coloca en una de las 9 posiciones posibles
+    // (combinación de alinH x alinV) dentro del área de contenido de la
+    // etiqueta, con su propio tamaño (en pt, convertido a px con el
+    // mismo px-por-mm real que el resto del dibujo, para que coincida
+    // exactamente con el tamaño que saldría en el PDF), estilo y color.
+    // No se intenta evitar que se solape con el resto del contenido —
+    // la vista previa en vivo ya deja ver el resultado antes de generar
+    // nada.
+    function dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, pxPorMm, cfg) {
+        if (!cfg) return;
+        const sizePx = Math.max(4, Math.round(cfg.tamanoPt * 0.35278 * pxPorMm));
+        const estilo = `${cfg.cursiva ? 'italic ' : ''}${cfg.negrita ? 'bold ' : ''}${sizePx}px Arial, sans-serif`;
+        ctx.font = estilo;
+        ctx.fillStyle = cfg.color;
+
+        const maxW = w - 2 * pad;
+        const lineas = etiquetaEnvolverTextoCanvas_(ctx, cfg.texto, maxW, 4);
+        const lineHeight = sizePx * 1.25;
+        const bloqueAlto = lineas.length * lineHeight;
+
+        let startY;
+        if (cfg.alinV === 'arriba') startY = pad + sizePx * 0.85;
+        else if (cfg.alinV === 'abajo') startY = h - pad - bloqueAlto + sizePx * 0.85;
+        else startY = (h - bloqueAlto) / 2 + sizePx * 0.85;
+
+        let x, align;
+        if (cfg.alinH === 'izquierda') { x = pad; align = 'left'; }
+        else if (cfg.alinH === 'derecha') { x = w - pad; align = 'right'; }
+        else { x = w / 2; align = 'center'; }
+
+        ctx.textAlign = align;
+        lineas.forEach((linea, i) => {
+            const y = startY + i * lineHeight;
+            ctx.fillText(linea, x, y);
+            if (cfg.subrayado) {
+                const lw = ctx.measureText(linea).width;
+                const lx0 = align === 'left' ? x : align === 'right' ? x - lw : x - lw / 2;
+                ctx.strokeStyle = cfg.color;
+                ctx.lineWidth = Math.max(1, sizePx * 0.06);
+                ctx.beginPath();
+                ctx.moveTo(lx0, y + sizePx * 0.15);
+                ctx.lineTo(lx0 + lw, y + sizePx * 0.15);
+                ctx.stroke();
+            }
+        });
+        ctx.textAlign = 'left';
+    }
+
+    // Misma idea que dibujarTextoPersonalizadoCanvas_ pero con jsPDF
+    // (mm/pt nativos, nada que convertir).
+    function dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, wMM, hMM, pad, cfg) {
+        if (!cfg) return;
+        const estilo = cfg.negrita && cfg.cursiva ? 'bolditalic' : cfg.negrita ? 'bold' : cfg.cursiva ? 'italic' : 'normal';
+        doc.setFont('helvetica', estilo);
+        doc.setFontSize(cfg.tamanoPt);
+        const rgb = etiquetaHexARgb_(cfg.color);
+        doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+
+        const maxW = wMM - 2 * pad;
+        const lineas = doc.splitTextToSize(cfg.texto, maxW).slice(0, 4);
+        const tamanoMM = cfg.tamanoPt * 0.3528;
+        const lineHeightMM = tamanoMM * 1.25;
+        const bloqueAlto = lineas.length * lineHeightMM;
+
+        let startY;
+        if (cfg.alinV === 'arriba') startY = yMM + pad + tamanoMM * 0.85;
+        else if (cfg.alinV === 'abajo') startY = yMM + hMM - pad - bloqueAlto + tamanoMM * 0.85;
+        else startY = yMM + (hMM - bloqueAlto) / 2 + tamanoMM * 0.85;
+
+        let x, align;
+        if (cfg.alinH === 'izquierda') { x = xMM + pad; align = 'left'; }
+        else if (cfg.alinH === 'derecha') { x = xMM + wMM - pad; align = 'right'; }
+        else { x = xMM + wMM / 2; align = 'center'; }
+
+        lineas.forEach((linea, i) => {
+            const y = startY + i * lineHeightMM;
+            doc.text(linea, x, y, { align });
+            if (cfg.subrayado) {
+                const lw = doc.getTextWidth(linea);
+                const lx0 = align === 'left' ? x : align === 'right' ? x - lw : x - lw / 2;
+                doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
+                doc.setLineWidth(Math.max(0.15, tamanoMM * 0.06));
+                doc.line(lx0, y + tamanoMM * 0.15, lx0 + lw, y + tamanoMM * 0.15);
+            }
+        });
+    }
+
+    // Tamaño (mm) por defecto del recuadro cuadrado donde se ajusta la
+    // imagen del producto, manteniendo su proporción (equivalente a
+    // "object-fit: contain") — el tamaño real es config.tamanoMM (campo
+    // "Tamaño (mm)" junto a la posición), este valor solo se usa si por
+    // lo que sea no llega informado.
+    const ETIQUETA_IMAGEN_BOX_MM_DEFECTO_ = 18;
+
+    // Imagen del producto (ver etiquetaImagenProducto_/checkbox "Incluir
+    // la imagen del producto") sobre el <canvas> — se coloca en una de
+    // las 9 posiciones posibles (alinH x alinV), igual que el texto
+    // personalizado, dentro de un recuadro cuadrado de tamaño elegible
+    // (config.tamanoMM).
+    function dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, imagen, config) {
+        if (!imagen || !imagen.img || !config) return;
+        const box = (config.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_) * mm;
+        const bx = config.alinH === 'izquierda' ? pad : config.alinH === 'derecha' ? w - pad - box : (w - box) / 2;
+        const by = config.alinV === 'arriba' ? pad : config.alinV === 'abajo' ? h - pad - box : (h - box) / 2;
+        const escala = Math.min(box / imagen.width, box / imagen.height);
+        const iw = imagen.width * escala, ih = imagen.height * escala;
+        ctx.drawImage(imagen.img, bx + (box - iw) / 2, by + (box - ih) / 2, iw, ih);
+    }
+
+    // Misma idea que dibujarImagenProductoCanvas_ pero con jsPDF (mm
+    // nativos). El dataUrl de la foto es JPEG (ver
+    // cargarImagenFolletoDestacados_, reutilizada por
+    // etiquetaImagenProducto_), no PNG.
+    function dibujarImagenProductoPDF_(doc, xMM, yMM, wMM, hMM, pad, imagen, config) {
+        if (!imagen || !config) return;
+        const BOX = config.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_;
+        const bx = config.alinH === 'izquierda' ? xMM + pad : config.alinH === 'derecha' ? xMM + wMM - pad - BOX : xMM + (wMM - BOX) / 2;
+        const by = config.alinV === 'arriba' ? yMM + pad : config.alinV === 'abajo' ? yMM + hMM - pad - BOX : yMM + (hMM - BOX) / 2;
+        const escala = Math.min(BOX / imagen.width, BOX / imagen.height);
+        const iw = imagen.width * escala, ih = imagen.height * escala;
+        doc.addImage(imagen.dataUrl, 'JPEG', bx + (BOX - iw) / 2, by + (BOX - ih) / 2, iw, ih);
+    }
+
+    // Dibuja UNA etiqueta sobre un <canvas> 2D en el rectángulo [x,y,w,h]
+    // (en px) — compartido por la vista previa del modal y la
+    // exportación a PNG, que solo cambian la resolución del canvas para
+    // que el PNG salga nítido en impresión.
+    function dibujarEtiquetaEnCanvas_(ctx, x, y, w, h, wMM, hMM, datos, opts) {
+        const mm = w / wMM; // px por mm REAL a esta resolución (w px representan wMM mm)
+        const pad = 3.5 * mm;
+        // Margen extra a la izquierda SOLO para el nombre del producto,
+        // a petición de Eloy (06/11/2026, ampliado el 07/11/2026 para
+        // separarlo más del logo) — el resto de elementos sigue
+        // arrancando en pad.
+        const nombreMargenIzq = 7 * mm;
+        const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = rgb(ETIQUETA_COLOR_BORDE_);
+        ctx.lineWidth = Math.max(1, 0.3 * mm);
+        ctx.setLineDash([1.2 * mm, 1 * mm]);
+        ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth);
+        ctx.setLineDash([]);
+
+        // Logo un poco más grande que el original (9mm → 11mm), a
+        // petición de Eloy.
+        if (opts.logo && opts.logo.img) {
+            const lh = 11 * mm;
+            const lw = lh * (opts.logo.width / opts.logo.height);
+            ctx.drawImage(opts.logo.img, pad, pad, lw, lh);
+        }
+
+        if (opts.detalleTexto) {
+            const texto = opts.detalleTexto.toUpperCase();
+            ctx.font = `bold ${Math.round(3.6 * mm)}px Arial, sans-serif`;
+            const txtW = ctx.measureText(texto).width;
+            const bw = Math.max(18 * mm, txtW + 7 * mm);
+            const bh = 6.4 * mm;
+            const bx = w - pad - bw;
+            const by = pad - 0.5 * mm;
+            ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
+            etiquetaRoundRectCanvas_(ctx, bx, by, bw, bh, bh / 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(texto, bx + bw / 2, by + bh / 2 + 0.2 * mm);
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+        }
+
+        const nombreX = pad + nombreMargenIzq;
+        const nombreY0 = pad + 11 * mm + 3 * mm;
+        ctx.fillStyle = rgb(ETIQUETA_COLOR_DARK_);
+        ctx.font = `bold ${Math.round(3.5 * mm)}px Arial, sans-serif`;
+        const nombreMaxW = w - pad - nombreX;
+        const lineasNombre = etiquetaEnvolverTextoCanvas_(ctx, datos.nombre, nombreMaxW, 2);
+        const lineHeight = 4.3 * mm;
+        lineasNombre.forEach((linea, i) => ctx.fillText(linea, nombreX, nombreY0 + i * lineHeight));
+
+        const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5 * mm;
+        ctx.strokeStyle = rgb(ETIQUETA_COLOR_SEPARADOR_);
+        ctx.lineWidth = Math.max(1, 0.25 * mm);
+        ctx.beginPath();
+        ctx.moveTo(pad, sepY);
+        ctx.lineTo(w - pad, sepY);
+        ctx.stroke();
+
+        // El precio va centrado horizontalmente (a petición de Eloy) —
+        // el desglose "Base/IVA Incl." y el "-XX%" de descuento se
+        // quedan arriba a la derecha, como antes.
+        let precioY = sepY + 6 * mm;
+        if (datos.promo) {
+            ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+            ctx.font = `${Math.round(3.2 * mm)}px Arial, sans-serif`;
+            const origTxt = etiquetaFormatoEuros_(datos.promo.original);
+            ctx.textAlign = 'center';
+            ctx.fillText(origTxt, w / 2, precioY);
+            ctx.textAlign = 'left';
+            const origW = ctx.measureText(origTxt).width;
+            ctx.strokeStyle = rgb(ETIQUETA_COLOR_MUTED_);
+            ctx.lineWidth = Math.max(1, 0.35 * mm);
+            ctx.beginPath();
+            ctx.moveTo(w / 2 - origW / 2, precioY - 1.1 * mm);
+            ctx.lineTo(w / 2 + origW / 2, precioY - 1.1 * mm);
+            ctx.stroke();
+
+            if (datos.promo.pct) {
+                ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
+                ctx.font = `bold ${Math.round(3 * mm)}px Arial, sans-serif`;
+                ctx.textAlign = 'right';
+                ctx.fillText(`-${datos.promo.pct}%`, w - pad, precioY);
+                ctx.textAlign = 'left';
+            }
+
+            precioY += 8 * mm;
+            ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
+            ctx.font = `bold ${Math.round(11 * mm)}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(etiquetaFormatoEuros_(datos.promo.promo), w / 2, precioY);
+            ctx.textAlign = 'left';
+
+            if (datos.promo.promoSin) {
+                ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+                ctx.font = `${Math.round(2.6 * mm)}px Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, w / 2, precioY + 4 * mm);
+                ctx.textAlign = 'left';
+            }
+        } else if (datos.con !== null) {
+            if (datos.sin !== null) {
+                ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+                ctx.font = `${Math.round(2.6 * mm)}px Arial, sans-serif`;
+                ctx.textAlign = 'right';
+                ctx.fillText(`Base: ${etiquetaFormatoEuros_(datos.sin)}`, w - pad, precioY - 3 * mm);
+                if (datos.ivaPct !== null) ctx.fillText(`IVA Incl. (${datos.ivaPct}%)`, w - pad, precioY + 1 * mm);
+                ctx.textAlign = 'left';
+            }
+            ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
+            ctx.font = `bold ${Math.round(11 * mm)}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(etiquetaFormatoEuros_(datos.con), w / 2, precioY + 4 * mm);
+            ctx.textAlign = 'left';
+        } else {
+            ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+            ctx.font = `italic ${Math.round(3.2 * mm)}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Consultar precio', w / 2, precioY + 2 * mm);
+            ctx.textAlign = 'left';
+        }
+
+        // QR para buscar el producto en la web (ver datosEtiquetaParaProducto_)
+        // a la derecha, y el código de barras ocupando el resto del
+        // ancho disponible a su izquierda — mismo alto máximo (15mm)
+        // para que ambos queden alineados por abajo.
+        const maxBH = 15 * mm;
+        const tieneQr = !!(opts.qr && opts.qr.img);
+        const qrLado = tieneQr ? maxBH : 0;
+        const huecoQr = tieneQr ? qrLado + 3 * mm : 0;
+
+        if (opts.barcode && opts.barcode.img) {
+            const maxBW = w - 2 * pad - huecoQr;
+            const escala = Math.min(maxBW / opts.barcode.width, maxBH / opts.barcode.height);
+            const bw = opts.barcode.width * escala;
+            const bh = opts.barcode.height * escala;
+            ctx.drawImage(opts.barcode.img, pad + (maxBW - bw) / 2, h - pad - bh, bw, bh);
+        } else if (datos.ref) {
+            ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+            ctx.font = `${Math.round(2.8 * mm)}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(`Ref: ${datos.ref}`, pad + (w - 2 * pad - huecoQr) / 2, h - pad - 2 * mm);
+            ctx.textAlign = 'left';
+        }
+
+        if (tieneQr) {
+            ctx.drawImage(opts.qr.img, w - pad - qrLado, h - pad - qrLado, qrLado, qrLado);
+        }
+
+        dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, opts.imagen, opts.imagenConfig);
+        dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, mm, opts.textoPersonalizado);
+
+        ctx.restore();
+    }
+
+    // Misma etiqueta que dibujarEtiquetaEnCanvas_, pero con las
+    // primitivas de jsPDF (mm reales, no px) — usada tanto para la
+    // etiqueta suelta como para cada celda de la hoja A4. Se mantiene
+    // como función independiente (en vez de reutilizar la del canvas)
+    // porque jsPDF mide el texto con su propio motor, distinto del de
+    // Canvas2D — intentar compartir una única lista de instrucciones
+    // habría dado saltos de línea ligeramente distintos entre ambas.
+    function dibujarEtiquetaEnPDF_(doc, xMM, yMM, wMM, hMM, datos, opts) {
+        const W = wMM, H = hMM, PAD = 3.5;
+        // Margen extra a la izquierda SOLO para el nombre del producto,
+        // igual que en dibujarEtiquetaEnCanvas_.
+        const NOMBRE_MARGEN_IZQ = 7;
+        const setColor = (fn, c) => doc[fn](c[0], c[1], c[2]);
+
+        setColor('setDrawColor', ETIQUETA_COLOR_BORDE_);
+        doc.setLineWidth(0.25);
+        doc.setLineDashPattern([1.2, 1], 0);
+        doc.rect(xMM + 0.3, yMM + 0.3, W - 0.6, H - 0.6);
+        doc.setLineDashPattern([], 0);
+
+        // Logo un poco más grande que el original (9mm → 11mm), a
+        // petición de Eloy.
+        if (opts.logo) {
+            const lh = 11, lw = lh * (opts.logo.width / opts.logo.height);
+            doc.addImage(opts.logo.dataUrl, 'PNG', xMM + PAD, yMM + PAD, lw, lh);
+        }
+
+        if (opts.detalleTexto) {
+            const texto = opts.detalleTexto.toUpperCase();
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            const txtW = doc.getTextWidth(texto);
+            const bw = Math.max(18, txtW + 7);
+            const bh = 6.4;
+            const bx = xMM + W - PAD - bw;
+            const by = yMM + PAD - 0.5;
+            setColor('setFillColor', ETIQUETA_COLOR_RED_);
+            doc.roundedRect(bx, by, bw, bh, bh / 2, bh / 2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(texto, bx + bw / 2, by + bh / 2 + 1.1, { align: 'center' });
+        }
+
+        const nombreX = xMM + PAD + NOMBRE_MARGEN_IZQ;
+        const nombreY0 = yMM + PAD + 11 + 3;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        setColor('setTextColor', ETIQUETA_COLOR_DARK_);
+        const nombreMaxW = xMM + W - PAD - nombreX;
+        const lineasNombre = doc.splitTextToSize(datos.nombre || '', nombreMaxW).slice(0, 2);
+        const lineHeight = 4.3;
+        lineasNombre.forEach((linea, i) => doc.text(linea, nombreX, nombreY0 + i * lineHeight));
+
+        const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5;
+        setColor('setDrawColor', ETIQUETA_COLOR_SEPARADOR_);
+        doc.setLineWidth(0.25);
+        doc.line(xMM + PAD, sepY, xMM + W - PAD, sepY);
+
+        // El precio va centrado horizontalmente (a petición de Eloy) —
+        // el desglose "Base/IVA Incl." y el "-XX%" de descuento se
+        // quedan arriba a la derecha, como antes.
+        const centroX = xMM + W / 2;
+        let precioY = sepY + 6;
+        if (datos.promo) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.5);
+            setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+            const origTxt = etiquetaFormatoEuros_(datos.promo.original);
+            doc.text(origTxt, centroX, precioY, { align: 'center' });
+            const origW = doc.getTextWidth(origTxt);
+            setColor('setDrawColor', ETIQUETA_COLOR_MUTED_);
+            doc.setLineWidth(0.3);
+            doc.line(centroX - origW / 2, precioY - 1.2, centroX + origW / 2, precioY - 1.2);
+
+            if (datos.promo.pct) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                setColor('setTextColor', ETIQUETA_COLOR_RED_);
+                doc.text(`-${datos.promo.pct}%`, xMM + W - PAD, precioY, { align: 'right' });
+            }
+
+            precioY += 8;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(31);
+            setColor('setTextColor', ETIQUETA_COLOR_RED_);
+            doc.text(etiquetaFormatoEuros_(datos.promo.promo), centroX, precioY, { align: 'center' });
+
+            if (datos.promo.promoSin) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+                doc.text(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, centroX, precioY + 4, { align: 'center' });
+            }
+        } else if (datos.con !== null) {
+            if (datos.sin !== null) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+                doc.text(`Base: ${etiquetaFormatoEuros_(datos.sin)}`, xMM + W - PAD, precioY - 3, { align: 'right' });
+                if (datos.ivaPct !== null) doc.text(`IVA Incl. (${datos.ivaPct}%)`, xMM + W - PAD, precioY + 1, { align: 'right' });
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(31);
+            setColor('setTextColor', ETIQUETA_COLOR_RED_);
+            doc.text(etiquetaFormatoEuros_(datos.con), centroX, precioY + 4, { align: 'center' });
+        } else {
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(9.5);
+            setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+            doc.text('Consultar precio', centroX, precioY + 2, { align: 'center' });
+        }
+
+        // QR para buscar el producto en la web a la derecha, código de
+        // barras a su izquierda ocupando el resto del ancho — mismo alto
+        // máximo (15mm) que el canvas, para que coincidan.
+        const maxBH = 15;
+        const tieneQr = !!opts.qr;
+        const qrLado = tieneQr ? maxBH : 0;
+        const huecoQr = tieneQr ? qrLado + 3 : 0;
+
+        if (opts.barcode) {
+            const maxBW = W - 2 * PAD - huecoQr;
+            const aspecto = opts.barcode.width / opts.barcode.height;
+            let bw = maxBW, bh = bw / aspecto;
+            if (bh > maxBH) { bh = maxBH; bw = bh * aspecto; }
+            doc.addImage(opts.barcode.dataUrl, 'PNG', xMM + PAD + (maxBW - bw) / 2, yMM + H - PAD - bh, bw, bh);
+        } else if (datos.ref) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+            doc.text(`Ref: ${datos.ref}`, xMM + PAD + (W - 2 * PAD - huecoQr) / 2, yMM + H - PAD - 2, { align: 'center' });
+        }
+
+        if (tieneQr) {
+            doc.addImage(opts.qr.dataUrl, 'PNG', xMM + W - PAD - qrLado, yMM + H - PAD - qrLado, qrLado, qrLado);
+        }
+
+        dibujarImagenProductoPDF_(doc, xMM, yMM, W, H, PAD, opts.imagen, opts.imagenConfig);
+        dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, W, H, PAD, opts.textoPersonalizado);
+    }
+
+    function etiquetaDetalleTextoActual_() {
+        const select = $('modal-etiqueta-detalle');
+        if (!select) return '';
+        if (select.value === '__otro__') return ($('modal-etiqueta-detalle-otro').value || '').trim();
+        return select.value;
+    }
+
+    function etiquetaCantidadActual_() {
+        const valor = parseInt($('modal-etiqueta-cantidad').value, 10);
+        if (!Number.isFinite(valor) || valor < 1) return 1;
+        return Math.min(ETIQUETA_CANTIDAD_MAXIMA_, valor);
+    }
+
+    // Ancho/alto de la etiqueta elegidos por quien la genera — acotados
+    // SIEMPRE al espacio útil de un folio DIN A4 (ver
+    // ETIQUETA_PAGINA_ANCHO_UTIL_MM_/ALTO_UTIL_MM_) y a un mínimo
+    // razonable para que el contenido (nombre, precio, código de
+    // barras) siga teniendo sitio — a petición de Eloy, 06/11/2026.
+    // idAncho/idAlto permiten reutilizar esta misma lectura/acotado desde
+    // la modal de lote de la lista de la compra (modal-etiquetas-lista-*),
+    // que tiene sus propios campos de ancho/alto — por defecto, los de
+    // la modal de una sola etiqueta.
+    function etiquetaTamanoActual_(idAncho, idAlto) {
+        const wInput = parseFloat($(idAncho || 'modal-etiqueta-ancho').value);
+        const hInput = parseFloat($(idAlto || 'modal-etiqueta-alto').value);
+        const w = Math.min(ETIQUETA_PAGINA_ANCHO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(wInput) ? wInput : ETIQUETA_W_DEFECTO_MM_));
+        const h = Math.min(ETIQUETA_PAGINA_ALTO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(hInput) ? hInput : ETIQUETA_H_DEFECTO_MM_));
+        return { w, h };
+    }
+
+    // Cuántas etiquetas de tamaño w x h caben por hoja A4, en rejilla
+    // (columnas x filas) — se recalcula para cada generación en vez de
+    // asumir siempre 2x4, ya que el tamaño ahora es configurable.
+    function etiquetaRejillaPara_(w, h) {
+        const cols = Math.max(1, Math.floor((ETIQUETA_PAGINA_ANCHO_UTIL_MM_ + ETIQUETA_PAGINA_GAP_COL_MM_) / (w + ETIQUETA_PAGINA_GAP_COL_MM_)));
+        const filas = Math.max(1, Math.floor((ETIQUETA_PAGINA_ALTO_UTIL_MM_ + ETIQUETA_PAGINA_GAP_FILA_MM_) / (h + ETIQUETA_PAGINA_GAP_FILA_MM_)));
+        return { cols, filas };
+    }
+
+    // "#rrggbb"/"#rgb" → [r,g,b] (0-255) — para los setTextColor/
+    // setDrawColor de jsPDF, que no aceptan strings CSS como el <canvas>.
+    function etiquetaHexARgb_(hex) {
+        let limpio = (hex || '#1e293b').replace('#', '');
+        if (limpio.length === 3) limpio = limpio.split('').map((c) => c + c).join('');
+        const num = parseInt(limpio, 16);
+        if (!isFinite(num)) return [30, 41, 59];
+        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+
+    // Lee el texto personalizado (independiente del chip "Detalle") y
+    // toda su configuración de estilo — null si el campo está vacío, así
+    // que quien dibuja la etiqueta simplemente omite este bloque entero.
+    function etiquetaTextoPersonalizadoActual_() {
+        const texto = ($('modal-etiqueta-texto').value || '').trim();
+        if (!texto) return null;
+        const tamanoPt = parseFloat($('modal-etiqueta-texto-tamano').value);
+        return {
+            texto,
+            tamanoPt: (isFinite(tamanoPt) && tamanoPt > 0) ? tamanoPt : 10,
+            alinH: $('modal-etiqueta-texto-alinh').value || 'centro',
+            alinV: $('modal-etiqueta-texto-alinv').value || 'abajo',
+            negrita: $('modal-etiqueta-texto-negrita').checked,
+            cursiva: $('modal-etiqueta-texto-cursiva').checked,
+            subrayado: $('modal-etiqueta-texto-subrayado').checked,
+            color: $('modal-etiqueta-texto-color').value || '#1e293b',
+        };
+    }
+
+    function actualizarAvisosEtiqueta_(datos) {
+        $('modal-etiqueta-promo-aviso').style.display = datos.promo ? '' : 'none';
+        $('modal-etiqueta-sin-codigo-aviso').style.display = datos.ref ? 'none' : 'block';
+    }
+
+    // null si el checkbox "Incluir la imagen del producto" está
+    // desmarcado — en ese caso ni siquiera se intenta cargar la imagen
+    // (ver llamadas a etiquetaImagenProducto_ más abajo).
+    function etiquetaImagenConfigActual_() {
+        const checkbox = $('modal-etiqueta-imagen-incluir');
+        if (!checkbox || !checkbox.checked) return null;
+        const tamanoMM = parseFloat($('modal-etiqueta-imagen-tamano').value);
+        return {
+            tamanoMM: (isFinite(tamanoMM) && tamanoMM > 0) ? tamanoMM : ETIQUETA_IMAGEN_BOX_MM_DEFECTO_,
+            alinH: $('modal-etiqueta-imagen-alinh').value || 'izquierda',
+            alinV: $('modal-etiqueta-imagen-alinv').value || 'abajo',
+        };
+    }
+
+    function actualizarBotonesEtiqueta_() {
+        const cantidad = etiquetaCantidadActual_();
+        const esUna = cantidad === 1;
+        $('modal-etiqueta-descargar-png').style.display = esUna ? '' : 'none';
+        $('modal-etiqueta-descargar-pdf-texto').textContent = esUna ? 'PDF' : `PDF (${cantidad} etiquetas)`;
+    }
+
+    // Repinta la vista previa del modal con el estado actual de los
+    // controles — llamada al abrir el modal y en cada cambio de
+    // cantidad/detalle. El logo y el código de barras se cargan de
+    // forma asíncrona (una sola vez cada uno, ver las cachés de arriba),
+    // así que se comprueba que el producto siga siendo el mismo antes
+    // de pintar, por si el modal se cerró/reabrió con otro de por medio
+    // mientras cargaban.
+    // Resolución fija de la vista previa, en px por mm REAL (igual para
+    // cualquier tamaño de etiqueta elegido) — el <canvas> cambia de
+    // tamaño (atributos width/height) según el ancho/alto en mm, pero
+    // siempre a esta misma densidad, así el zoom relativo no cambia al
+    // tocar el tamaño.
+    const ETIQUETA_PREVIEW_PXMM_ = 10;
+
+    async function actualizarVistaPreviaEtiqueta_() {
+        const p = productoEtiquetaActual_;
+        if (!p) return;
+        const datos = datosEtiquetaParaProducto_(p);
+        actualizarAvisosEtiqueta_(datos);
+        const imagenConfig = etiquetaImagenConfigActual_();
+        const [logo, barcode, qr, imagen] = await Promise.all([
+            etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
+            imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
+        ]);
+        if (productoEtiquetaActual_ !== p) return;
+        $('modal-etiqueta-sin-imagen-aviso').style.display = (imagenConfig && !imagen) ? 'block' : 'none';
+        const { w, h } = etiquetaTamanoActual_();
+        const canvas = $('modal-etiqueta-preview');
+        canvas.width = Math.round(w * ETIQUETA_PREVIEW_PXMM_);
+        canvas.height = Math.round(h * ETIQUETA_PREVIEW_PXMM_);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, {
+            logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+        });
+    }
+
+    function abrirModalEtiquetaPrecio_(p) {
+        // Red de seguridad además del botón ya eliminado del DOM en
+        // producción (mismo patrón que el resto de modales de
+        // administración de esta ficha).
+        if (!window.MOSTRAR_ETIQUETA_PRECIO) return;
+        productoEtiquetaActual_ = p;
+        $('modal-etiqueta-nombre').textContent = `${p.nombre} (Ref: ${p.ref})`;
+        $('modal-etiqueta-cantidad').value = 1;
+        $('modal-etiqueta-ancho').value = ETIQUETA_W_DEFECTO_MM_;
+        $('modal-etiqueta-alto').value = ETIQUETA_H_DEFECTO_MM_;
+        $('modal-etiqueta-detalle').value = '';
+        $('modal-etiqueta-detalle-otro').value = '';
+        $('modal-etiqueta-detalle-otro-fila').style.display = 'none';
+        $('modal-etiqueta-imagen-incluir').checked = false;
+        $('modal-etiqueta-imagen-controles').style.display = 'none';
+        $('modal-etiqueta-imagen-tamano').value = ETIQUETA_IMAGEN_BOX_MM_DEFECTO_;
+        $('modal-etiqueta-imagen-alinh').value = 'izquierda';
+        $('modal-etiqueta-imagen-alinv').value = 'abajo';
+        $('modal-etiqueta-sin-imagen-aviso').style.display = 'none';
+        $('modal-etiqueta-texto').value = '';
+        $('modal-etiqueta-texto-tamano').value = 10;
+        $('modal-etiqueta-texto-alinh').value = 'centro';
+        $('modal-etiqueta-texto-alinv').value = 'abajo';
+        $('modal-etiqueta-texto-negrita').checked = false;
+        $('modal-etiqueta-texto-cursiva').checked = false;
+        $('modal-etiqueta-texto-subrayado').checked = false;
+        $('modal-etiqueta-texto-color').value = '#1e293b';
+        actualizarBotonesEtiqueta_();
+        actualizarVistaPreviaEtiqueta_();
+        $('modal-etiqueta-overlay').classList.add('activo');
+    }
+
+    function cerrarModalEtiquetaPrecio_() {
+        $('modal-etiqueta-overlay').classList.remove('activo');
+        productoEtiquetaActual_ = null;
+    }
+
+    function etiquetaNombreArchivoBase_(p) {
+        const slug = (p.ref || p.nombre || 'producto').toString().trim().toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        return `etiqueta-${slug || 'producto'}`;
+    }
+
+    // Acepta un Blob o una data: URL — con Blob crea una URL temporal
+    // (revocada después de un segundo, tiempo de sobra para que el
+    // navegador haya iniciado la descarga) y la usa en vez de la propia
+    // data: URL. A petición de Eloy, tras comprobar que el PNG no se
+    // descargaba en Chrome móvil: un enlace <a download href="data:...">
+    // con un PNG grande en base64 no es fiable en navegadores móviles
+    // (Chrome Android incluido) — jsPDF, que sí funcionaba bien ahí, usa
+    // internamente este mismo patrón de Blob + URL.createObjectURL.
+    function descargarComoArchivo_(dataUrlOBlob, nombreArchivo) {
+        const esBlob = dataUrlOBlob instanceof Blob;
+        const url = esBlob ? URL.createObjectURL(dataUrlOBlob) : dataUrlOBlob;
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nombreArchivo;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        if (esBlob) setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // canvas.toBlob es asíncrono (basado en callback) — se envuelve en
+    // una promesa para poder usarlo con await, igual que el resto de
+    // esta función.
+    function etiquetaCanvasABlob_(canvas) {
+        return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), 'image/png'));
+    }
+
+    // Solo disponible con 1 etiqueta (ver actualizarBotonesEtiqueta_,
+    // que oculta este botón con cantidad > 1) — se genera a una
+    // resolución bastante más alta que la vista previa (12px/mm, unos
+    // 300ppp) para que salga nítida impresa, en vez de reescalar el
+    // propio <canvas> de la vista previa.
+    async function descargarEtiquetaPng_() {
+        const p = productoEtiquetaActual_;
+        if (!p) return;
+        const btn = $('modal-etiqueta-descargar-png');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+        try {
+            const datos = datosEtiquetaParaProducto_(p);
+            const imagenConfig = etiquetaImagenConfigActual_();
+            const [logo, barcode, qr, imagen] = await Promise.all([
+                etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
+                imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
+            ]);
+            const { w, h } = etiquetaTamanoActual_();
+            const PXMM = 12;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(w * PXMM);
+            canvas.height = Math.round(h * PXMM);
+            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, {
+                logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+            });
+            const blob = await etiquetaCanvasABlob_(canvas);
+            if (!blob) throw new Error('canvas.toBlob devolvió null');
+            descargarComoArchivo_(blob, `${etiquetaNombreArchivoBase_(p)}.png`);
+        } catch (e) {
+            console.error('Error al generar la etiqueta en PNG:', e);
+            mostrarToast('No se ha podido generar la etiqueta en PNG.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    // Con 1 etiqueta genera un PDF suelto del tamaño exacto de la
+    // etiqueta (para imprimirla directamente, sin hoja A4 de por
+    // medio); con varias, una hoja A4 en rejilla de 2x4, con tantas
+    // páginas como haga falta.
+    async function descargarEtiquetasPdf_() {
+        const p = productoEtiquetaActual_;
+        if (!p) return;
+        if (typeof window.jspdf === 'undefined') {
+            mostrarToast('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+            return;
+        }
+        const cantidad = etiquetaCantidadActual_();
+        const btn = $('modal-etiqueta-descargar-pdf');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+        try {
+            const datos = datosEtiquetaParaProducto_(p);
+            const imagenConfig = etiquetaImagenConfigActual_();
+            const [logo, barcode, qr, imagen] = await Promise.all([
+                etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
+                imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
+            ]);
+            const opts = { logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_() };
+            const { w, h } = etiquetaTamanoActual_();
+            const { jsPDF } = window.jspdf;
+
+            if (cantidad === 1) {
+                // orientation explícito según cuál lado sea mayor — si no,
+                // jsPDF intercambia ancho/alto del array "format" para que
+                // la página salga siempre en el mismo sentido por defecto,
+                // y la etiqueta podría salir girada 90°.
+                const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: w >= h ? 'l' : 'p', compress: true });
+                dibujarEtiquetaEnPDF_(doc, 0, 0, w, h, datos, opts);
+                doc.save(`${etiquetaNombreArchivoBase_(p)}.pdf`);
+            } else {
+                const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+                const { cols, filas } = etiquetaRejillaPara_(w, h);
+                const porPagina = cols * filas;
+                for (let i = 0; i < cantidad; i++) {
+                    const enPagina = i % porPagina;
+                    if (i > 0 && enPagina === 0) doc.addPage();
+                    const col = enPagina % cols;
+                    const fila = Math.floor(enPagina / cols);
+                    const x = ETIQUETA_PAGINA_MARGEN_MM_ + col * (w + ETIQUETA_PAGINA_GAP_COL_MM_);
+                    const y = ETIQUETA_PAGINA_MARGEN_MM_ + fila * (h + ETIQUETA_PAGINA_GAP_FILA_MM_);
+                    dibujarEtiquetaEnPDF_(doc, x, y, w, h, datos, opts);
+                }
+                doc.save(`${etiquetaNombreArchivoBase_(p)}-x${cantidad}.pdf`);
+            }
+        } catch (e) {
+            console.error('Error al generar las etiquetas en PDF:', e);
+            mostrarToast('No se ha podido generar el PDF de etiquetas.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Etiquetas de precio para TODA la lista de la compra — solo
+    // preproducción (ver window.MOSTRAR_ETIQUETA_PRECIO), a petición de
+    // Eloy, 07/11/2026. Mismo formulario que la etiqueta de un solo
+    // producto (reutiliza datosEtiquetaParaProducto_, etiquetaLogo_,
+    // etiquetaBarcodePara_, etiquetaQrPara_, etiquetaImagenProducto_,
+    // dibujarEtiquetaEnCanvas_/PDF_ — nada de eso se duplica), pero con
+    // un paginador: una página por producto de la lista, en el MISMO
+    // orden en que se añadieron (listaCompraProductos_, nunca
+    // listaCompraOrdenada_, que los reordena por área/familia). Cantidad,
+    // detalle, imagen y texto personalizado son propios de cada
+    // producto y se recuerdan al cambiar de página; el tamaño de
+    // etiqueta (ancho/alto) es el único campo compartido por todo el
+    // lote, porque todas las etiquetas del PDF final tienen que
+    // encajar juntas en la misma rejilla de la hoja A4.
+    let etiquetasListaProductos_ = [];  // snapshot de listaCompraProductos_() al abrir, en orden añadido
+    let etiquetasListaConfigs_ = [];    // array paralelo: la config de cada producto (ver etiquetasListaConfigDefecto_)
+    let etiquetasListaPagina_ = 0;
+
+    function etiquetasListaConfigDefecto_() {
+        return {
+            cantidad: 1,
+            detalle: '',
+            detalleOtro: '',
+            imagenIncluir: false,
+            imagenTamano: 18,
+            imagenAlinH: 'izquierda',
+            imagenAlinV: 'abajo',
+            texto: '',
+            textoTamano: 10,
+            textoAlinH: 'centro',
+            textoAlinV: 'abajo',
+            textoNegrita: false,
+            textoCursiva: false,
+            textoSubrayado: false,
+            textoColor: '#1e293b',
+        };
+    }
+
+    function etiquetasListaTamanoActual_() {
+        return etiquetaTamanoActual_('modal-etiquetas-lista-ancho', 'modal-etiquetas-lista-alto');
+    }
+
+    // Lee el formulario TAL CUAL está ahora mismo en pantalla — se llama
+    // en cada cambio de cualquier campo (ver el wiring de eventos más
+    // abajo), nunca solo al cambiar de página, para que generar el PDF
+    // sin haber "salido" del campo todavía recoja igualmente el último
+    // valor.
+    function etiquetasListaLeerFormularioActual_() {
+        const cantidad = parseInt($('modal-etiquetas-lista-cantidad').value, 10);
+        const textoTamano = parseFloat($('modal-etiquetas-lista-texto-tamano').value);
+        const imagenTamano = parseFloat($('modal-etiquetas-lista-imagen-tamano').value);
+        return {
+            cantidad: Math.min(ETIQUETA_CANTIDAD_MAXIMA_, Math.max(1, Number.isFinite(cantidad) ? cantidad : 1)),
+            detalle: $('modal-etiquetas-lista-detalle').value,
+            detalleOtro: $('modal-etiquetas-lista-detalle-otro').value,
+            imagenIncluir: $('modal-etiquetas-lista-imagen-incluir').checked,
+            imagenTamano: (isFinite(imagenTamano) && imagenTamano > 0) ? imagenTamano : 18,
+            imagenAlinH: $('modal-etiquetas-lista-imagen-alinh').value,
+            imagenAlinV: $('modal-etiquetas-lista-imagen-alinv').value,
+            texto: $('modal-etiquetas-lista-texto').value,
+            textoTamano: (isFinite(textoTamano) && textoTamano > 0) ? textoTamano : 10,
+            textoAlinH: $('modal-etiquetas-lista-texto-alinh').value,
+            textoAlinV: $('modal-etiquetas-lista-texto-alinv').value,
+            textoNegrita: $('modal-etiquetas-lista-texto-negrita').checked,
+            textoCursiva: $('modal-etiquetas-lista-texto-cursiva').checked,
+            textoSubrayado: $('modal-etiquetas-lista-texto-subrayado').checked,
+            textoColor: $('modal-etiquetas-lista-texto-color').value || '#1e293b',
+        };
+    }
+
+    function etiquetasListaEscribirFormulario_(cfg) {
+        $('modal-etiquetas-lista-cantidad').value = cfg.cantidad;
+        $('modal-etiquetas-lista-detalle').value = cfg.detalle;
+        $('modal-etiquetas-lista-detalle-otro').value = cfg.detalleOtro;
+        $('modal-etiquetas-lista-detalle-otro-fila').style.display = cfg.detalle === '__otro__' ? '' : 'none';
+        $('modal-etiquetas-lista-imagen-incluir').checked = cfg.imagenIncluir;
+        $('modal-etiquetas-lista-imagen-controles').style.display = cfg.imagenIncluir ? '' : 'none';
+        $('modal-etiquetas-lista-imagen-tamano').value = cfg.imagenTamano;
+        $('modal-etiquetas-lista-imagen-alinh').value = cfg.imagenAlinH;
+        $('modal-etiquetas-lista-imagen-alinv').value = cfg.imagenAlinV;
+        $('modal-etiquetas-lista-sin-imagen-aviso').style.display = 'none';
+        $('modal-etiquetas-lista-texto').value = cfg.texto;
+        $('modal-etiquetas-lista-texto-tamano').value = cfg.textoTamano;
+        $('modal-etiquetas-lista-texto-alinh').value = cfg.textoAlinH;
+        $('modal-etiquetas-lista-texto-alinv').value = cfg.textoAlinV;
+        $('modal-etiquetas-lista-texto-negrita').checked = cfg.textoNegrita;
+        $('modal-etiquetas-lista-texto-cursiva').checked = cfg.textoCursiva;
+        $('modal-etiquetas-lista-texto-subrayado').checked = cfg.textoSubrayado;
+        $('modal-etiquetas-lista-texto-color').value = cfg.textoColor;
+    }
+
+    // Construye datos+opts para el producto del índice dado — mismo par
+    // que consume dibujarEtiquetaEnCanvas_/dibujarEtiquetaEnPDF_ en la
+    // etiqueta de un solo producto, a partir de la config propia de ese
+    // producto (ver etiquetasListaConfigs_).
+    async function etiquetasListaDatosYOpts_(idx) {
+        const p = etiquetasListaProductos_[idx];
+        const cfg = etiquetasListaConfigs_[idx];
+        const datos = datosEtiquetaParaProducto_(p);
+        const detalleTexto = cfg.detalle === '__otro__' ? cfg.detalleOtro.trim() : cfg.detalle;
+        const imagenConfig = cfg.imagenIncluir ? { tamanoMM: cfg.imagenTamano, alinH: cfg.imagenAlinH, alinV: cfg.imagenAlinV } : null;
+        const textoLimpio = cfg.texto.trim();
+        const textoPersonalizado = textoLimpio ? {
+            texto: textoLimpio, tamanoPt: cfg.textoTamano, alinH: cfg.textoAlinH, alinV: cfg.textoAlinV,
+            negrita: cfg.textoNegrita, cursiva: cfg.textoCursiva, subrayado: cfg.textoSubrayado, color: cfg.textoColor,
+        } : null;
+        const [logo, barcode, qr, imagen] = await Promise.all([
+            etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
+            imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
+        ]);
+        return { datos, opts: { logo, barcode, qr, imagen, imagenConfig, detalleTexto, textoPersonalizado } };
+    }
+
+    function etiquetasListaTotalEtiquetas_() {
+        return etiquetasListaConfigs_.reduce((acc, c) => acc + c.cantidad, 0);
+    }
+
+    function etiquetasListaActualizarBotones_() {
+        const n = etiquetasListaProductos_.length;
+        const total = etiquetasListaTotalEtiquetas_();
+        const esUna = n === 1 && total === 1;
+        $('modal-etiquetas-lista-descargar-png').style.display = esUna ? '' : 'none';
+        $('modal-etiquetas-lista-descargar-pdf-texto').textContent = esUna ? 'PDF' : `PDF (${total} etiqueta${total === 1 ? '' : 's'})`;
+    }
+
+    function etiquetasListaActualizarPaginador_() {
+        const n = etiquetasListaProductos_.length;
+        $('modal-etiquetas-lista-posicion').textContent = `Producto ${etiquetasListaPagina_ + 1} de ${n}`;
+        $('modal-etiquetas-lista-anterior').disabled = etiquetasListaPagina_ === 0;
+        $('modal-etiquetas-lista-siguiente').disabled = etiquetasListaPagina_ === n - 1;
+        $('modal-etiquetas-lista-selector').value = String(etiquetasListaPagina_);
+    }
+
+    // Repinta la vista previa de la página actual — misma defensa que
+    // actualizarVistaPreviaEtiqueta_: si el usuario cambia de página (o
+    // de cantidad de etiquetas, que también repinta) mientras cargaban
+    // el logo/código de barras/QR/imagen de ESTE producto, se descarta
+    // el resultado si para entonces ya no es la página activa.
+    async function actualizarVistaPreviaEtiquetasLista_() {
+        const idx = etiquetasListaPagina_;
+        if (!etiquetasListaProductos_[idx]) return;
+        const { datos, opts } = await etiquetasListaDatosYOpts_(idx);
+        if (etiquetasListaPagina_ !== idx) return;
+        $('modal-etiquetas-lista-promo-aviso').style.display = datos.promo ? 'block' : 'none';
+        $('modal-etiquetas-lista-sin-codigo-aviso').style.display = datos.ref ? 'none' : 'block';
+        $('modal-etiquetas-lista-sin-imagen-aviso').style.display = (opts.imagenConfig && !opts.imagen) ? 'block' : 'none';
+        const { w, h } = etiquetasListaTamanoActual_();
+        const canvas = $('modal-etiquetas-lista-preview');
+        canvas.width = Math.round(w * ETIQUETA_PREVIEW_PXMM_);
+        canvas.height = Math.round(h * ETIQUETA_PREVIEW_PXMM_);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, opts);
+    }
+
+    function etiquetasListaCargarPagina_(idx) {
+        etiquetasListaPagina_ = idx;
+        etiquetasListaEscribirFormulario_(etiquetasListaConfigs_[idx]);
+        etiquetasListaActualizarPaginador_();
+        actualizarVistaPreviaEtiquetasLista_();
+    }
+
+    function etiquetasListaIrAPagina_(idx) {
+        if (idx < 0 || idx >= etiquetasListaProductos_.length || idx === etiquetasListaPagina_) return;
+        etiquetasListaCargarPagina_(idx);
+    }
+
+    // Cualquier cambio en el formulario de la página actual se guarda al
+    // instante en su config (en vez de solo al cambiar de página) y
+    // repinta la vista previa — mismo patrón que la etiqueta de un solo
+    // producto.
+    function etiquetasListaActualizarConfigActual_() {
+        etiquetasListaConfigs_[etiquetasListaPagina_] = etiquetasListaLeerFormularioActual_();
+        etiquetasListaActualizarBotones_();
+        actualizarVistaPreviaEtiquetasLista_();
+    }
+
+    function abrirModalEtiquetasLista_() {
+        if (!window.MOSTRAR_ETIQUETA_PRECIO) return;
+        // listaCompraProductos_() ya está en orden de añadido (nunca el
+        // orden de listaCompraOrdenada_, que los reordena por área/
+        // familia/subfamilia/nombre para mostrarlos en pantalla) — se
+        // copia con slice() para que la paginación no se mueva de debajo
+        // de los pies si la lista cambia mientras la modal está abierta.
+        const productos = listaCompraProductos_().slice();
+        if (!productos.length) return;
+        etiquetasListaProductos_ = productos;
+        etiquetasListaConfigs_ = productos.map(() => etiquetasListaConfigDefecto_());
+        etiquetasListaPagina_ = 0;
+        $('modal-etiquetas-lista-ancho').value = ETIQUETA_W_DEFECTO_MM_;
+        $('modal-etiquetas-lista-alto').value = ETIQUETA_H_DEFECTO_MM_;
+
+        const selector = $('modal-etiquetas-lista-selector');
+        selector.innerHTML = productos.map((p, i) => `<option value="${i}">${i + 1}. ${escapeHtml(p.nombre)}</option>`).join('');
+
+        etiquetasListaCargarPagina_(0);
+        etiquetasListaActualizarBotones_();
+        $('modal-etiquetas-lista-overlay').classList.add('activo');
+    }
+
+    function cerrarModalEtiquetasLista_() {
+        $('modal-etiquetas-lista-overlay').classList.remove('activo');
+        etiquetasListaProductos_ = [];
+        etiquetasListaConfigs_ = [];
+    }
+
+    // Con un único producto y 1 sola etiqueta en todo el lote, se
+    // comporta exactamente como "Imprimir etiqueta de precio" de un solo
+    // producto (PNG o PDF suelto). En cualquier otro caso, genera un
+    // único PDF en hoja A4 con el número de etiquetas de cada producto,
+    // en el orden en que se añadieron a la lista, rellenando la rejilla
+    // de forma continua (no se empieza página nueva al cambiar de
+    // producto).
+    async function descargarEtiquetasListaPdf_() {
+        if (!etiquetasListaProductos_.length) return;
+        if (typeof window.jspdf === 'undefined') {
+            mostrarToast('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+            return;
+        }
+        const btn = $('modal-etiquetas-lista-descargar-pdf');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+        try {
+            const { w, h } = etiquetasListaTamanoActual_();
+            const { jsPDF } = window.jspdf;
+            const total = etiquetasListaTotalEtiquetas_();
+
+            if (etiquetasListaProductos_.length === 1 && total === 1) {
+                const { datos, opts } = await etiquetasListaDatosYOpts_(0);
+                const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: w >= h ? 'l' : 'p', compress: true });
+                dibujarEtiquetaEnPDF_(doc, 0, 0, w, h, datos, opts);
+                doc.save(`${etiquetaNombreArchivoBase_(etiquetasListaProductos_[0])}.pdf`);
+                return;
+            }
+
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+            const { cols, filas } = etiquetaRejillaPara_(w, h);
+            const porPagina = cols * filas;
+            let i = 0; // índice de etiqueta dentro de la rejilla, continuo entre productos
+            for (let idxProducto = 0; idxProducto < etiquetasListaProductos_.length; idxProducto++) {
+                const { datos, opts } = await etiquetasListaDatosYOpts_(idxProducto);
+                const cantidad = etiquetasListaConfigs_[idxProducto].cantidad;
+                for (let copia = 0; copia < cantidad; copia++) {
+                    const enPagina = i % porPagina;
+                    if (i > 0 && enPagina === 0) doc.addPage();
+                    const col = enPagina % cols;
+                    const fila = Math.floor(enPagina / cols);
+                    const x = ETIQUETA_PAGINA_MARGEN_MM_ + col * (w + ETIQUETA_PAGINA_GAP_COL_MM_);
+                    const y = ETIQUETA_PAGINA_MARGEN_MM_ + fila * (h + ETIQUETA_PAGINA_GAP_FILA_MM_);
+                    dibujarEtiquetaEnPDF_(doc, x, y, w, h, datos, opts);
+                    i++;
+                }
+            }
+            doc.save(`etiquetas-lista-compra-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`);
+        } catch (e) {
+            console.error('Error al generar las etiquetas de la lista en PDF:', e);
+            mostrarToast('No se ha podido generar el PDF de etiquetas.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    // Solo visible (ver etiquetasListaActualizarBotones_) con un único
+    // producto y 1 sola etiqueta — mismo caso que el PDF suelto de
+    // arriba, mismo patrón que descargarEtiquetaPng_.
+    async function descargarEtiquetasListaPng_() {
+        if (!etiquetasListaProductos_.length) return;
+        const btn = $('modal-etiquetas-lista-descargar-png');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+        try {
+            const { datos, opts } = await etiquetasListaDatosYOpts_(0);
+            const { w, h } = etiquetasListaTamanoActual_();
+            const PXMM = 12;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(w * PXMM);
+            canvas.height = Math.round(h * PXMM);
+            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, opts);
+            const blob = await etiquetaCanvasABlob_(canvas);
+            if (!blob) throw new Error('canvas.toBlob devolvió null');
+            descargarComoArchivo_(blob, `${etiquetaNombreArchivoBase_(etiquetasListaProductos_[0])}.png`);
+        } catch (e) {
+            console.error('Error al generar la etiqueta en PNG:', e);
+            mostrarToast('No se ha podido generar la etiqueta en PNG.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -17112,6 +18994,108 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('modal-editar-envase-tipo').addEventListener('change', () => {
         $('modal-editar-envase-tipo-otro-fila').style.display = $('modal-editar-envase-tipo').value === '__otro__' ? '' : 'none';
     });
+    }
+
+    // Event listeners de la modal "Imprimir etiqueta de precio" — el
+    // modal se elimina del DOM si MOSTRAR_ETIQUETA_PRECIO está
+    // desactivado (producción), igual que el resto de modales de
+    // administración. Cantidad/detalle repintan la vista previa en
+    // cada cambio, sin ninguna petición de red de por medio.
+    if ($('modal-etiqueta-overlay')) {
+    $('modal-etiqueta-cerrar').addEventListener('click', cerrarModalEtiquetaPrecio_);
+    $('modal-etiqueta-cancelar').addEventListener('click', cerrarModalEtiquetaPrecio_);
+    $('modal-etiqueta-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-etiqueta-overlay') cerrarModalEtiquetaPrecio_();
+    });
+    $('modal-etiqueta-cantidad').addEventListener('input', () => {
+        actualizarBotonesEtiqueta_();
+    });
+    $('modal-etiqueta-detalle').addEventListener('change', () => {
+        $('modal-etiqueta-detalle-otro-fila').style.display = $('modal-etiqueta-detalle').value === '__otro__' ? '' : 'none';
+        actualizarVistaPreviaEtiqueta_();
+    });
+    $('modal-etiqueta-detalle-otro').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    $('modal-etiqueta-ancho').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    $('modal-etiqueta-alto').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    // Imagen del producto — el checkbox muestra/oculta los selectores de
+    // posición y, como la carga real de la foto puede tardar (red), solo
+    // se intenta cuando está marcado (ver etiquetaImagenConfigActual_).
+    $('modal-etiqueta-imagen-incluir').addEventListener('change', () => {
+        const incluir = $('modal-etiqueta-imagen-incluir').checked;
+        $('modal-etiqueta-imagen-controles').style.display = incluir ? '' : 'none';
+        if (!incluir) $('modal-etiqueta-sin-imagen-aviso').style.display = 'none';
+        actualizarVistaPreviaEtiqueta_();
+    });
+    $('modal-etiqueta-imagen-tamano').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    ['modal-etiqueta-imagen-alinh', 'modal-etiqueta-imagen-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    });
+    // Texto personalizado — cualquier cambio de texto, tamaño,
+    // alineación, estilo o color repinta la vista previa al instante.
+    ['modal-etiqueta-texto', 'modal-etiqueta-texto-tamano'].forEach((id) => {
+        $(id).addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    });
+    ['modal-etiqueta-texto-alinh', 'modal-etiqueta-texto-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    });
+    ['modal-etiqueta-texto-negrita', 'modal-etiqueta-texto-cursiva', 'modal-etiqueta-texto-subrayado'].forEach((id) => {
+        $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    });
+    $('modal-etiqueta-texto-color').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    $('modal-etiqueta-descargar-png').addEventListener('click', descargarEtiquetaPng_);
+    $('modal-etiqueta-descargar-pdf').addEventListener('click', descargarEtiquetasPdf_);
+    }
+
+    // Event listeners de la modal "Imprimir etiquetas de la lista de la
+    // compra" — el modal se elimina del DOM si MOSTRAR_ETIQUETA_PRECIO
+    // está desactivado (producción), igual que el resto de modales de
+    // administración. Cualquier cambio en el formulario de la página
+    // actual repinta la vista previa al instante (ver
+    // etiquetasListaActualizarConfigActual_); ancho/alto son los únicos
+    // campos compartidos por todo el lote, así que solo repintan, sin
+    // tocar la config de ningún producto.
+    if ($('modal-etiquetas-lista-overlay')) {
+    $('modal-etiquetas-lista-cerrar').addEventListener('click', cerrarModalEtiquetasLista_);
+    $('modal-etiquetas-lista-cancelar').addEventListener('click', cerrarModalEtiquetasLista_);
+    $('modal-etiquetas-lista-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-etiquetas-lista-overlay') cerrarModalEtiquetasLista_();
+    });
+    $('modal-etiquetas-lista-anterior').addEventListener('click', () => etiquetasListaIrAPagina_(etiquetasListaPagina_ - 1));
+    $('modal-etiquetas-lista-siguiente').addEventListener('click', () => etiquetasListaIrAPagina_(etiquetasListaPagina_ + 1));
+    $('modal-etiquetas-lista-selector').addEventListener('change', (e) => etiquetasListaIrAPagina_(parseInt(e.target.value, 10)));
+
+    $('modal-etiquetas-lista-ancho').addEventListener('input', () => actualizarVistaPreviaEtiquetasLista_());
+    $('modal-etiquetas-lista-alto').addEventListener('input', () => actualizarVistaPreviaEtiquetasLista_());
+
+    $('modal-etiquetas-lista-cantidad').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    $('modal-etiquetas-lista-detalle').addEventListener('change', () => {
+        $('modal-etiquetas-lista-detalle-otro-fila').style.display = $('modal-etiquetas-lista-detalle').value === '__otro__' ? '' : 'none';
+        etiquetasListaActualizarConfigActual_();
+    });
+    $('modal-etiquetas-lista-detalle-otro').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+
+    $('modal-etiquetas-lista-imagen-incluir').addEventListener('change', () => {
+        $('modal-etiquetas-lista-imagen-controles').style.display = $('modal-etiquetas-lista-imagen-incluir').checked ? '' : 'none';
+        etiquetasListaActualizarConfigActual_();
+    });
+    $('modal-etiquetas-lista-imagen-tamano').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    ['modal-etiquetas-lista-imagen-alinh', 'modal-etiquetas-lista-imagen-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    });
+
+    ['modal-etiquetas-lista-texto', 'modal-etiquetas-lista-texto-tamano'].forEach((id) => {
+        $(id).addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    });
+    ['modal-etiquetas-lista-texto-alinh', 'modal-etiquetas-lista-texto-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    });
+    ['modal-etiquetas-lista-texto-negrita', 'modal-etiquetas-lista-texto-cursiva', 'modal-etiquetas-lista-texto-subrayado'].forEach((id) => {
+        $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    });
+    $('modal-etiquetas-lista-texto-color').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+
+    $('modal-etiquetas-lista-descargar-png').addEventListener('click', descargarEtiquetasListaPng_);
+    $('modal-etiquetas-lista-descargar-pdf').addEventListener('click', descargarEtiquetasListaPdf_);
     }
 
     // Event listeners de la modal de relacionados — el modal se elimina
