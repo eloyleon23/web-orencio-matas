@@ -891,8 +891,21 @@
             width: 38px; height: 38px; border-radius: 50%; font-size: 1.15rem; flex-shrink: 0;
             background: var(--dark); color: var(--yellow);
         }
-        /* Móvil: una sola fila con scroll horizontal (gesto táctil natural
-           de deslizar), igual que el resto de módulos de descubrimiento. */
+        /* Una sola fila con scroll horizontal (gesto táctil natural de
+           deslizar en móvil, rueda/arrastre en escritorio) SIEMPRE, sea
+           cual sea el ancho de pantalla — igual que el resto de módulos
+           de descubrimiento. Antes, a partir de 881px (que en este sitio
+           no distingue tablet de escritorio grande, es el único punto de
+           corte "no-móvil" que hay) las tarjetas pasaban a envolver en
+           varias filas con scroll VERTICAL — en una tablet, donde no cabe
+           ni de lejos toda la fila, eso dejaba un bloque recortado y con
+           scroll vertical en vez de la fila deslizable de siempre (bug
+           real reportado por Eloy: "en tablet aparecen con scroll
+           vertical cuando quiero que se muestren siempre con scroll
+           horizontal, como en móvil y PC"). En pantallas muy anchas apenas
+           se notaba porque solían caber todas las tarjetas sin necesidad
+           de deslizar — pero el diseño en sí dependía del ancho
+           disponible, no era intencionadamente distinto en tablet. */
         .seccion-destacados__lista {
             display: flex; gap: 14px; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px;
             scroll-snap-type: x proximity;
@@ -904,20 +917,6 @@
         }
         @media (min-width: 881px) {
             .seccion-destacados__lista > .producto-card { flex-basis: 200px; }
-            /* Escritorio: en vez de una única fila horizontal (que obliga a
-               hacer scroll para ver el segundo producto aunque sobre
-               espacio a los lados), las tarjetas se van colocando en
-               filas hasta llenar el ancho disponible; solo cuando hay
-               tantas filas que no caben verticalmente aparece scroll
-               (vertical) — así el bloque crece con el contenido en vez de
-               tener siempre el ancho fijo de la columna de resultados. */
-            .seccion-destacados__lista {
-                flex-wrap: wrap;
-                overflow-x: hidden;
-                overflow-y: auto;
-                max-height: 500px;
-                scroll-snap-type: y proximity;
-            }
         }
         .destacado-chip {
             display: inline-flex; align-items: center; gap: 4px;
