@@ -3479,6 +3479,14 @@
            tanto alto, pero el arreglo se acota aquí, a la única modal
            donde se ha confirmado el problema. */
         #modal-etiqueta-overlay { z-index: 10000; }
+        /* Esta modal se abre DESDE DENTRO de la de la lista de la compra
+           (#modal-lista-compra-overlay), que se queda abierta debajo —
+           misma clase .modal-overlay, mismo z-index base (1000), pero al
+           estar más abajo en el DOM pintaría POR ENCIMA de todas formas
+           y se comería sus clics (confirmado con Playwright: el
+           paginador no respondía). z-index aún mayor que el de arriba,
+           para quedar también por encima de ella. */
+        #modal-etiquetas-lista-overlay { z-index: 10001; }
         .modal-etiqueta-layout {
             display: flex;
             gap: 20px;
@@ -3547,6 +3555,53 @@
             font-weight: 700;
             cursor: pointer;
         }
+        /* Paginador de la modal "Imprimir etiquetas de la lista de la
+           compra" — un producto por página, en el orden en que se
+           añadieron. */
+        .modal-etiquetas-lista-paginador {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 2px 0 14px;
+        }
+        .modal-etiquetas-lista-nav {
+            flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--light);
+            color: var(--dark);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .modal-etiquetas-lista-nav:disabled { opacity: 0.4; cursor: default; }
+        .modal-etiquetas-lista-nav:not(:disabled):hover { background: #e5e7eb; }
+        .modal-etiquetas-lista-paginador-centro {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+        }
+        .modal-etiquetas-lista-posicion {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .modal-etiquetas-lista-selector {
+            max-width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        .modal-etiquetas-lista-tamano { margin-top: 18px; }
         .modal-etiqueta-campo-doble {
             display: flex;
             gap: 10px;
@@ -5785,6 +5840,172 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Modal "Imprimir etiquetas" de la lista de la compra — solo
+     preproducción (ver window.MOSTRAR_ETIQUETA_PRECIO). Mismo formulario
+     que la modal de una sola etiqueta (modal-etiqueta-overlay), con un
+     paginado para recorrer cada producto de la lista de la compra, en
+     el orden en que se añadieron. El tamaño de etiqueta (ancho/alto) es
+     el único campo compartido por todo el lote —todas las etiquetas del
+     PDF final salen en el mismo tamaño, tiene que ser así para que
+     quepan en la misma rejilla de la hoja A4—; cantidad, detalle,
+     imagen y texto personalizado son propios de cada producto y se
+     recuerdan al cambiar de página. -->
+<div class="modal-overlay" id="modal-etiquetas-lista-overlay">
+    <div class="modal-producto-box modal-editar-ficha-box modal-etiqueta-box">
+        <button class="modal-producto-cerrar" id="modal-etiquetas-lista-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-tag"></i> Imprimir etiquetas de la lista de la compra</h3>
+
+        <div class="modal-etiquetas-lista-paginador">
+            <button type="button" id="modal-etiquetas-lista-anterior" class="modal-etiquetas-lista-nav" aria-label="Producto anterior">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="modal-etiquetas-lista-paginador-centro">
+                <span class="modal-etiquetas-lista-posicion" id="modal-etiquetas-lista-posicion"></span>
+                <select id="modal-etiquetas-lista-selector" class="modal-etiquetas-lista-selector"></select>
+            </div>
+            <button type="button" id="modal-etiquetas-lista-siguiente" class="modal-etiquetas-lista-nav" aria-label="Producto siguiente">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div class="modal-etiqueta-layout">
+            <div class="modal-etiqueta-preview-wrap">
+                <canvas id="modal-etiquetas-lista-preview" class="modal-etiqueta-preview"></canvas>
+                <p class="modal-etiqueta-preview-caption">Vista previa de este producto</p>
+            </div>
+            <div class="modal-etiqueta-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-cantidad">Número de etiquetas de este producto</label>
+                    <input type="number" id="modal-etiquetas-lista-cantidad" min="1" max="200" step="1" value="1" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-detalle">Detalle (opcional)</label>
+                    <select id="modal-etiquetas-lista-detalle">
+                        <option value="">Ninguno</option>
+                        <option value="OFERTA">Oferta</option>
+                        <option value="3X2">3x2</option>
+                        <option value="2X1">2x1</option>
+                        <option value="LIQUIDACIÓN">Liquidación</option>
+                        <option value="NUEVO">Nuevo</option>
+                        <option value="__otro__">Personalizado…</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo" id="modal-etiquetas-lista-detalle-otro-fila" style="display:none;">
+                    <label for="modal-etiquetas-lista-detalle-otro">Texto del detalle</label>
+                    <input type="text" id="modal-etiquetas-lista-detalle-otro" maxlength="12" placeholder="p. ej. PACK" autocomplete="off">
+                </div>
+                <p id="modal-etiquetas-lista-promo-aviso" class="modal-etiqueta-promo-aviso" style="display:none;">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Este producto está en promoción: la etiqueta mostrará el precio en oferta con el normal tachado.
+                </p>
+                <p id="modal-etiquetas-lista-sin-codigo-aviso" class="modal-editar-ficha-error" style="display:none;">
+                    Este producto no tiene una referencia válida para generar el código de barras — la etiqueta se imprimirá sin él.
+                </p>
+            </div>
+        </div>
+
+        <div class="modal-etiqueta-campo-doble modal-etiquetas-lista-tamano">
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-ancho">Ancho (mm) — para todo el lote</label>
+                <input type="number" id="modal-etiquetas-lista-ancho" min="25" max="190" step="1" value="93" autocomplete="off">
+            </div>
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-alto">Alto (mm) — para todo el lote</label>
+                <input type="number" id="modal-etiquetas-lista-alto" min="25" max="277" step="1" value="67" autocomplete="off">
+            </div>
+        </div>
+        <p class="modal-editar-ficha-nota modal-etiqueta-nota-tamano">
+            Máximo 190x277mm — el espacio útil de un folio DIN A4 con margen. Se aplica a
+            todas las etiquetas del lote, para que quepan juntas en la misma hoja.
+        </p>
+
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Imagen de este producto</h4>
+            <label class="modal-etiqueta-imagen-check">
+                <input type="checkbox" id="modal-etiquetas-lista-imagen-incluir"> Incluir la imagen del producto
+            </label>
+            <div class="modal-etiqueta-texto-controles" id="modal-etiquetas-lista-imagen-controles" style="display:none;">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-imagen-alinh">Horizontal</label>
+                    <select id="modal-etiquetas-lista-imagen-alinh">
+                        <option value="izquierda">Izquierda</option>
+                        <option value="centro">Centro</option>
+                        <option value="derecha" selected>Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-imagen-alinv">Vertical</label>
+                    <select id="modal-etiquetas-lista-imagen-alinv">
+                        <option value="arriba" selected>Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo">Abajo</option>
+                    </select>
+                </div>
+            </div>
+            <p id="modal-etiquetas-lista-sin-imagen-aviso" class="modal-editar-ficha-error" style="display:none;">
+                Este producto no tiene una foto propia — la etiqueta se generará sin imagen.
+            </p>
+        </div>
+
+        <div class="modal-etiqueta-texto-personalizado">
+            <h4 class="modal-etiqueta-subtitulo">Texto personalizado de este producto (opcional)</h4>
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-texto">Texto</label>
+                <input type="text" id="modal-etiquetas-lista-texto" maxlength="60" placeholder="p. ej. Hasta fin de existencias" autocomplete="off">
+            </div>
+            <div class="modal-etiqueta-texto-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-texto-tamano">Tamaño (pt)</label>
+                    <input type="number" id="modal-etiquetas-lista-texto-tamano" min="4" max="60" step="1" value="10" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-texto-alinh">Horizontal</label>
+                    <select id="modal-etiquetas-lista-texto-alinh">
+                        <option value="izquierda">Izquierda</option>
+                        <option value="centro" selected>Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-texto-alinv">Vertical</label>
+                    <select id="modal-etiquetas-lista-texto-alinv">
+                        <option value="arriba">Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo" selected>Abajo</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-texto-color">Color</label>
+                    <input type="color" id="modal-etiquetas-lista-texto-color" value="#1e293b">
+                </div>
+            </div>
+            <div class="modal-etiqueta-texto-estilo">
+                <label><input type="checkbox" id="modal-etiquetas-lista-texto-negrita"> Negrita</label>
+                <label><input type="checkbox" id="modal-etiquetas-lista-texto-cursiva"> Cursiva</label>
+                <label><input type="checkbox" id="modal-etiquetas-lista-texto-subrayado"> Subrayado</label>
+            </div>
+        </div>
+
+        <p class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-circle-info"></i>
+            Con un solo producto y 1 etiqueta puedes descargarla suelta, en PNG o PDF.
+            En cualquier otro caso, se genera un PDF con el número de etiquetas de cada
+            producto, en el orden en que se añadieron a la lista, en una hoja DIN A4.
+        </p>
+        <div class="modal-editar-ficha-acciones modal-etiqueta-acciones">
+            <button type="button" id="modal-etiquetas-lista-descargar-png" class="modal-editar-ficha-cancelar modal-etiqueta-btn-png">
+                <i class="fa-solid fa-image"></i> PNG
+            </button>
+            <button type="button" id="modal-etiquetas-lista-descargar-pdf" class="modal-editar-ficha-guardar">
+                <i class="fa-solid fa-file-pdf"></i> <span id="modal-etiquetas-lista-descargar-pdf-texto">PDF</span>
+            </button>
+        </div>
+        <button type="button" id="modal-etiquetas-lista-cancelar" class="modal-editar-ficha-cancelar modal-etiqueta-btn-cerrar">Cerrar</button>
+    </div>
+</div>
+
 <!-- Modal "Editar información adicional" (texto enriquecido) — solo preproducción -->
 <div class="modal-overlay" id="modal-editar-info-overlay">
     <div class="modal-producto-box modal-editar-ficha-box modal-editar-info-box">
@@ -6262,6 +6483,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="btn-lista-compra-correo" class="btn-lista-compra-correo">
                 <i class="fa-solid fa-envelope"></i> Compartir por correo
             </button>
+            <!-- Solo preproducción (ver window.MOSTRAR_ETIQUETA_PRECIO) -->
+            <button type="button" id="btn-lista-compra-etiquetas" class="btn-lista-compra-pdf" style="display:none;">
+                <i class="fa-solid fa-tag"></i> Imprimir etiquetas
+            </button>
             <button type="button" id="btn-lista-compra-vaciar" class="btn-lista-compra-vaciar">
                 <i class="fa-solid fa-broom"></i> Vaciar la lista
             </button>
@@ -6716,6 +6941,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     eliminarSiRestringido_('modal-editar-subfamilia-overlay', window.MOSTRAR_EDITAR_SUBFAMILIA);
     eliminarSiRestringido_('modal-producto-etiqueta-precio', window.MOSTRAR_ETIQUETA_PRECIO);
     eliminarSiRestringido_('modal-etiqueta-overlay', window.MOSTRAR_ETIQUETA_PRECIO);
+    eliminarSiRestringido_('btn-lista-compra-etiquetas', window.MOSTRAR_ETIQUETA_PRECIO);
+    eliminarSiRestringido_('modal-etiquetas-lista-overlay', window.MOSTRAR_ETIQUETA_PRECIO);
     if (window.MOSTRAR_GESTION_DESTACADOS) {
         const btnGD = document.getElementById('btn-gestionar-destacados');
         if (btnGD) btnGD.classList.add('visible');
@@ -13253,13 +13480,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // — se ocultan en vez de dejarlos ahí sin hacer nada al
             // pulsarlos. "Eliminar la lista" se mantiene, es la forma de
             // deshacerse de una lista vacía que ya no se quiere.
-            ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-vaciar'].forEach(id => $(id).style.display = 'none');
+            // btn-lista-compra-etiquetas puede no existir en el DOM (se
+            // elimina en producción, ver window.MOSTRAR_ETIQUETA_PRECIO) —
+            // de ahí la comprobación antes de tocar su estilo.
+            ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
             return;
         }
         grid.style.display = '';
         vacia.style.display = 'none';
         notasWrap.style.display = '';
-        ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-vaciar'].forEach(id => $(id).style.display = '');
+        ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = ''; });
 
         grid.innerHTML = '';
         listaCompraOrdenada_().forEach(p => grid.appendChild(crearTarjetaListaCompraModal_(p)));
@@ -13941,6 +14171,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-lista-compra-pdf').addEventListener('click', exportarListaCompraPDF_);
         $('btn-lista-compra-whatsapp').addEventListener('click', compartirListaCompraWhatsapp_);
         $('btn-lista-compra-correo').addEventListener('click', compartirListaCompraCorreo_);
+        // Solo preproducción — el botón se elimina del DOM en producción
+        // (ver window.MOSTRAR_ETIQUETA_PRECIO), de ahí la comprobación.
+        if ($('btn-lista-compra-etiquetas')) {
+            $('btn-lista-compra-etiquetas').addEventListener('click', abrirModalEtiquetasLista_);
+        }
 
         $('modal-producto-lista-btn').addEventListener('click', alPulsarBotonListaCompraProducto_);
         $('modal-producto-lista-unidades-menos').addEventListener('click', () => alCambiarUnidadesProducto_(-1));
@@ -15932,9 +16167,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ETIQUETA_PAGINA_ANCHO_UTIL_MM_/ALTO_UTIL_MM_) y a un mínimo
     // razonable para que el contenido (nombre, precio, código de
     // barras) siga teniendo sitio — a petición de Eloy, 06/11/2026.
-    function etiquetaTamanoActual_() {
-        const wInput = parseFloat($('modal-etiqueta-ancho').value);
-        const hInput = parseFloat($('modal-etiqueta-alto').value);
+    // idAncho/idAlto permiten reutilizar esta misma lectura/acotado desde
+    // la modal de lote de la lista de la compra (modal-etiquetas-lista-*),
+    // que tiene sus propios campos de ancho/alto — por defecto, los de
+    // la modal de una sola etiqueta.
+    function etiquetaTamanoActual_(idAncho, idAlto) {
+        const wInput = parseFloat($(idAncho || 'modal-etiqueta-ancho').value);
+        const hInput = parseFloat($(idAlto || 'modal-etiqueta-alto').value);
         const w = Math.min(ETIQUETA_PAGINA_ANCHO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(wInput) ? wInput : ETIQUETA_W_DEFECTO_MM_));
         const h = Math.min(ETIQUETA_PAGINA_ALTO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(hInput) ? hInput : ETIQUETA_H_DEFECTO_MM_));
         return { w, h };
@@ -16200,6 +16439,296 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         } catch (e) {
             console.error('Error al generar las etiquetas en PDF:', e);
             mostrarToast('No se ha podido generar el PDF de etiquetas.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Etiquetas de precio para TODA la lista de la compra — solo
+    // preproducción (ver window.MOSTRAR_ETIQUETA_PRECIO), a petición de
+    // Eloy, 07/11/2026. Mismo formulario que la etiqueta de un solo
+    // producto (reutiliza datosEtiquetaParaProducto_, etiquetaLogo_,
+    // etiquetaBarcodePara_, etiquetaQrPara_, etiquetaImagenProducto_,
+    // dibujarEtiquetaEnCanvas_/PDF_ — nada de eso se duplica), pero con
+    // un paginador: una página por producto de la lista, en el MISMO
+    // orden en que se añadieron (listaCompraProductos_, nunca
+    // listaCompraOrdenada_, que los reordena por área/familia). Cantidad,
+    // detalle, imagen y texto personalizado son propios de cada
+    // producto y se recuerdan al cambiar de página; el tamaño de
+    // etiqueta (ancho/alto) es el único campo compartido por todo el
+    // lote, porque todas las etiquetas del PDF final tienen que
+    // encajar juntas en la misma rejilla de la hoja A4.
+    let etiquetasListaProductos_ = [];  // snapshot de listaCompraProductos_() al abrir, en orden añadido
+    let etiquetasListaConfigs_ = [];    // array paralelo: la config de cada producto (ver etiquetasListaConfigDefecto_)
+    let etiquetasListaPagina_ = 0;
+
+    function etiquetasListaConfigDefecto_() {
+        return {
+            cantidad: 1,
+            detalle: '',
+            detalleOtro: '',
+            imagenIncluir: false,
+            imagenAlinH: 'derecha',
+            imagenAlinV: 'arriba',
+            texto: '',
+            textoTamano: 10,
+            textoAlinH: 'centro',
+            textoAlinV: 'abajo',
+            textoNegrita: false,
+            textoCursiva: false,
+            textoSubrayado: false,
+            textoColor: '#1e293b',
+        };
+    }
+
+    function etiquetasListaTamanoActual_() {
+        return etiquetaTamanoActual_('modal-etiquetas-lista-ancho', 'modal-etiquetas-lista-alto');
+    }
+
+    // Lee el formulario TAL CUAL está ahora mismo en pantalla — se llama
+    // en cada cambio de cualquier campo (ver el wiring de eventos más
+    // abajo), nunca solo al cambiar de página, para que generar el PDF
+    // sin haber "salido" del campo todavía recoja igualmente el último
+    // valor.
+    function etiquetasListaLeerFormularioActual_() {
+        const cantidad = parseInt($('modal-etiquetas-lista-cantidad').value, 10);
+        const textoTamano = parseFloat($('modal-etiquetas-lista-texto-tamano').value);
+        return {
+            cantidad: Math.min(ETIQUETA_CANTIDAD_MAXIMA_, Math.max(1, Number.isFinite(cantidad) ? cantidad : 1)),
+            detalle: $('modal-etiquetas-lista-detalle').value,
+            detalleOtro: $('modal-etiquetas-lista-detalle-otro').value,
+            imagenIncluir: $('modal-etiquetas-lista-imagen-incluir').checked,
+            imagenAlinH: $('modal-etiquetas-lista-imagen-alinh').value,
+            imagenAlinV: $('modal-etiquetas-lista-imagen-alinv').value,
+            texto: $('modal-etiquetas-lista-texto').value,
+            textoTamano: (isFinite(textoTamano) && textoTamano > 0) ? textoTamano : 10,
+            textoAlinH: $('modal-etiquetas-lista-texto-alinh').value,
+            textoAlinV: $('modal-etiquetas-lista-texto-alinv').value,
+            textoNegrita: $('modal-etiquetas-lista-texto-negrita').checked,
+            textoCursiva: $('modal-etiquetas-lista-texto-cursiva').checked,
+            textoSubrayado: $('modal-etiquetas-lista-texto-subrayado').checked,
+            textoColor: $('modal-etiquetas-lista-texto-color').value || '#1e293b',
+        };
+    }
+
+    function etiquetasListaEscribirFormulario_(cfg) {
+        $('modal-etiquetas-lista-cantidad').value = cfg.cantidad;
+        $('modal-etiquetas-lista-detalle').value = cfg.detalle;
+        $('modal-etiquetas-lista-detalle-otro').value = cfg.detalleOtro;
+        $('modal-etiquetas-lista-detalle-otro-fila').style.display = cfg.detalle === '__otro__' ? '' : 'none';
+        $('modal-etiquetas-lista-imagen-incluir').checked = cfg.imagenIncluir;
+        $('modal-etiquetas-lista-imagen-controles').style.display = cfg.imagenIncluir ? '' : 'none';
+        $('modal-etiquetas-lista-imagen-alinh').value = cfg.imagenAlinH;
+        $('modal-etiquetas-lista-imagen-alinv').value = cfg.imagenAlinV;
+        $('modal-etiquetas-lista-sin-imagen-aviso').style.display = 'none';
+        $('modal-etiquetas-lista-texto').value = cfg.texto;
+        $('modal-etiquetas-lista-texto-tamano').value = cfg.textoTamano;
+        $('modal-etiquetas-lista-texto-alinh').value = cfg.textoAlinH;
+        $('modal-etiquetas-lista-texto-alinv').value = cfg.textoAlinV;
+        $('modal-etiquetas-lista-texto-negrita').checked = cfg.textoNegrita;
+        $('modal-etiquetas-lista-texto-cursiva').checked = cfg.textoCursiva;
+        $('modal-etiquetas-lista-texto-subrayado').checked = cfg.textoSubrayado;
+        $('modal-etiquetas-lista-texto-color').value = cfg.textoColor;
+    }
+
+    // Construye datos+opts para el producto del índice dado — mismo par
+    // que consume dibujarEtiquetaEnCanvas_/dibujarEtiquetaEnPDF_ en la
+    // etiqueta de un solo producto, a partir de la config propia de ese
+    // producto (ver etiquetasListaConfigs_).
+    async function etiquetasListaDatosYOpts_(idx) {
+        const p = etiquetasListaProductos_[idx];
+        const cfg = etiquetasListaConfigs_[idx];
+        const datos = datosEtiquetaParaProducto_(p);
+        const detalleTexto = cfg.detalle === '__otro__' ? cfg.detalleOtro.trim() : cfg.detalle;
+        const imagenConfig = cfg.imagenIncluir ? { alinH: cfg.imagenAlinH, alinV: cfg.imagenAlinV } : null;
+        const textoLimpio = cfg.texto.trim();
+        const textoPersonalizado = textoLimpio ? {
+            texto: textoLimpio, tamanoPt: cfg.textoTamano, alinH: cfg.textoAlinH, alinV: cfg.textoAlinV,
+            negrita: cfg.textoNegrita, cursiva: cfg.textoCursiva, subrayado: cfg.textoSubrayado, color: cfg.textoColor,
+        } : null;
+        const [logo, barcode, qr, imagen] = await Promise.all([
+            etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
+            imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
+        ]);
+        return { datos, opts: { logo, barcode, qr, imagen, imagenConfig, detalleTexto, textoPersonalizado } };
+    }
+
+    function etiquetasListaTotalEtiquetas_() {
+        return etiquetasListaConfigs_.reduce((acc, c) => acc + c.cantidad, 0);
+    }
+
+    function etiquetasListaActualizarBotones_() {
+        const n = etiquetasListaProductos_.length;
+        const total = etiquetasListaTotalEtiquetas_();
+        const esUna = n === 1 && total === 1;
+        $('modal-etiquetas-lista-descargar-png').style.display = esUna ? '' : 'none';
+        $('modal-etiquetas-lista-descargar-pdf-texto').textContent = esUna ? 'PDF' : `PDF (${total} etiqueta${total === 1 ? '' : 's'})`;
+    }
+
+    function etiquetasListaActualizarPaginador_() {
+        const n = etiquetasListaProductos_.length;
+        $('modal-etiquetas-lista-posicion').textContent = `Producto ${etiquetasListaPagina_ + 1} de ${n}`;
+        $('modal-etiquetas-lista-anterior').disabled = etiquetasListaPagina_ === 0;
+        $('modal-etiquetas-lista-siguiente').disabled = etiquetasListaPagina_ === n - 1;
+        $('modal-etiquetas-lista-selector').value = String(etiquetasListaPagina_);
+    }
+
+    // Repinta la vista previa de la página actual — misma defensa que
+    // actualizarVistaPreviaEtiqueta_: si el usuario cambia de página (o
+    // de cantidad de etiquetas, que también repinta) mientras cargaban
+    // el logo/código de barras/QR/imagen de ESTE producto, se descarta
+    // el resultado si para entonces ya no es la página activa.
+    async function actualizarVistaPreviaEtiquetasLista_() {
+        const idx = etiquetasListaPagina_;
+        if (!etiquetasListaProductos_[idx]) return;
+        const { datos, opts } = await etiquetasListaDatosYOpts_(idx);
+        if (etiquetasListaPagina_ !== idx) return;
+        $('modal-etiquetas-lista-promo-aviso').style.display = datos.promo ? 'block' : 'none';
+        $('modal-etiquetas-lista-sin-codigo-aviso').style.display = datos.ref ? 'none' : 'block';
+        $('modal-etiquetas-lista-sin-imagen-aviso').style.display = (opts.imagenConfig && !opts.imagen) ? 'block' : 'none';
+        const { w, h } = etiquetasListaTamanoActual_();
+        const canvas = $('modal-etiquetas-lista-preview');
+        canvas.width = Math.round(w * ETIQUETA_PREVIEW_PXMM_);
+        canvas.height = Math.round(h * ETIQUETA_PREVIEW_PXMM_);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, opts);
+    }
+
+    function etiquetasListaCargarPagina_(idx) {
+        etiquetasListaPagina_ = idx;
+        etiquetasListaEscribirFormulario_(etiquetasListaConfigs_[idx]);
+        etiquetasListaActualizarPaginador_();
+        actualizarVistaPreviaEtiquetasLista_();
+    }
+
+    function etiquetasListaIrAPagina_(idx) {
+        if (idx < 0 || idx >= etiquetasListaProductos_.length || idx === etiquetasListaPagina_) return;
+        etiquetasListaCargarPagina_(idx);
+    }
+
+    // Cualquier cambio en el formulario de la página actual se guarda al
+    // instante en su config (en vez de solo al cambiar de página) y
+    // repinta la vista previa — mismo patrón que la etiqueta de un solo
+    // producto.
+    function etiquetasListaActualizarConfigActual_() {
+        etiquetasListaConfigs_[etiquetasListaPagina_] = etiquetasListaLeerFormularioActual_();
+        etiquetasListaActualizarBotones_();
+        actualizarVistaPreviaEtiquetasLista_();
+    }
+
+    function abrirModalEtiquetasLista_() {
+        if (!window.MOSTRAR_ETIQUETA_PRECIO) return;
+        // listaCompraProductos_() ya está en orden de añadido (nunca el
+        // orden de listaCompraOrdenada_, que los reordena por área/
+        // familia/subfamilia/nombre para mostrarlos en pantalla) — se
+        // copia con slice() para que la paginación no se mueva de debajo
+        // de los pies si la lista cambia mientras la modal está abierta.
+        const productos = listaCompraProductos_().slice();
+        if (!productos.length) return;
+        etiquetasListaProductos_ = productos;
+        etiquetasListaConfigs_ = productos.map(() => etiquetasListaConfigDefecto_());
+        etiquetasListaPagina_ = 0;
+        $('modal-etiquetas-lista-ancho').value = ETIQUETA_W_DEFECTO_MM_;
+        $('modal-etiquetas-lista-alto').value = ETIQUETA_H_DEFECTO_MM_;
+
+        const selector = $('modal-etiquetas-lista-selector');
+        selector.innerHTML = productos.map((p, i) => `<option value="${i}">${i + 1}. ${escapeHtml(p.nombre)}</option>`).join('');
+
+        etiquetasListaCargarPagina_(0);
+        etiquetasListaActualizarBotones_();
+        $('modal-etiquetas-lista-overlay').classList.add('activo');
+    }
+
+    function cerrarModalEtiquetasLista_() {
+        $('modal-etiquetas-lista-overlay').classList.remove('activo');
+        etiquetasListaProductos_ = [];
+        etiquetasListaConfigs_ = [];
+    }
+
+    // Con un único producto y 1 sola etiqueta en todo el lote, se
+    // comporta exactamente como "Imprimir etiqueta de precio" de un solo
+    // producto (PNG o PDF suelto). En cualquier otro caso, genera un
+    // único PDF en hoja A4 con el número de etiquetas de cada producto,
+    // en el orden en que se añadieron a la lista, rellenando la rejilla
+    // de forma continua (no se empieza página nueva al cambiar de
+    // producto).
+    async function descargarEtiquetasListaPdf_() {
+        if (!etiquetasListaProductos_.length) return;
+        if (typeof window.jspdf === 'undefined') {
+            mostrarToast('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+            return;
+        }
+        const btn = $('modal-etiquetas-lista-descargar-pdf');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+        try {
+            const { w, h } = etiquetasListaTamanoActual_();
+            const { jsPDF } = window.jspdf;
+            const total = etiquetasListaTotalEtiquetas_();
+
+            if (etiquetasListaProductos_.length === 1 && total === 1) {
+                const { datos, opts } = await etiquetasListaDatosYOpts_(0);
+                const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: w >= h ? 'l' : 'p', compress: true });
+                dibujarEtiquetaEnPDF_(doc, 0, 0, w, h, datos, opts);
+                doc.save(`${etiquetaNombreArchivoBase_(etiquetasListaProductos_[0])}.pdf`);
+                return;
+            }
+
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+            const { cols, filas } = etiquetaRejillaPara_(w, h);
+            const porPagina = cols * filas;
+            let i = 0; // índice de etiqueta dentro de la rejilla, continuo entre productos
+            for (let idxProducto = 0; idxProducto < etiquetasListaProductos_.length; idxProducto++) {
+                const { datos, opts } = await etiquetasListaDatosYOpts_(idxProducto);
+                const cantidad = etiquetasListaConfigs_[idxProducto].cantidad;
+                for (let copia = 0; copia < cantidad; copia++) {
+                    const enPagina = i % porPagina;
+                    if (i > 0 && enPagina === 0) doc.addPage();
+                    const col = enPagina % cols;
+                    const fila = Math.floor(enPagina / cols);
+                    const x = ETIQUETA_PAGINA_MARGEN_MM_ + col * (w + ETIQUETA_PAGINA_GAP_COL_MM_);
+                    const y = ETIQUETA_PAGINA_MARGEN_MM_ + fila * (h + ETIQUETA_PAGINA_GAP_FILA_MM_);
+                    dibujarEtiquetaEnPDF_(doc, x, y, w, h, datos, opts);
+                    i++;
+                }
+            }
+            doc.save(`etiquetas-lista-compra-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`);
+        } catch (e) {
+            console.error('Error al generar las etiquetas de la lista en PDF:', e);
+            mostrarToast('No se ha podido generar el PDF de etiquetas.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    // Solo visible (ver etiquetasListaActualizarBotones_) con un único
+    // producto y 1 sola etiqueta — mismo caso que el PDF suelto de
+    // arriba, mismo patrón que descargarEtiquetaPng_.
+    async function descargarEtiquetasListaPng_() {
+        if (!etiquetasListaProductos_.length) return;
+        const btn = $('modal-etiquetas-lista-descargar-png');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+        try {
+            const { datos, opts } = await etiquetasListaDatosYOpts_(0);
+            const { w, h } = etiquetasListaTamanoActual_();
+            const PXMM = 12;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(w * PXMM);
+            canvas.height = Math.round(h * PXMM);
+            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, opts);
+            const blob = await etiquetaCanvasABlob_(canvas);
+            if (!blob) throw new Error('canvas.toBlob devolvió null');
+            descargarComoArchivo_(blob, `${etiquetaNombreArchivoBase_(etiquetasListaProductos_[0])}.png`);
+        } catch (e) {
+            console.error('Error al generar la etiqueta en PNG:', e);
+            mostrarToast('No se ha podido generar la etiqueta en PNG.', 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = textoOriginal;
@@ -18451,6 +18980,57 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('modal-etiqueta-texto-color').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
     $('modal-etiqueta-descargar-png').addEventListener('click', descargarEtiquetaPng_);
     $('modal-etiqueta-descargar-pdf').addEventListener('click', descargarEtiquetasPdf_);
+    }
+
+    // Event listeners de la modal "Imprimir etiquetas de la lista de la
+    // compra" — el modal se elimina del DOM si MOSTRAR_ETIQUETA_PRECIO
+    // está desactivado (producción), igual que el resto de modales de
+    // administración. Cualquier cambio en el formulario de la página
+    // actual repinta la vista previa al instante (ver
+    // etiquetasListaActualizarConfigActual_); ancho/alto son los únicos
+    // campos compartidos por todo el lote, así que solo repintan, sin
+    // tocar la config de ningún producto.
+    if ($('modal-etiquetas-lista-overlay')) {
+    $('modal-etiquetas-lista-cerrar').addEventListener('click', cerrarModalEtiquetasLista_);
+    $('modal-etiquetas-lista-cancelar').addEventListener('click', cerrarModalEtiquetasLista_);
+    $('modal-etiquetas-lista-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-etiquetas-lista-overlay') cerrarModalEtiquetasLista_();
+    });
+    $('modal-etiquetas-lista-anterior').addEventListener('click', () => etiquetasListaIrAPagina_(etiquetasListaPagina_ - 1));
+    $('modal-etiquetas-lista-siguiente').addEventListener('click', () => etiquetasListaIrAPagina_(etiquetasListaPagina_ + 1));
+    $('modal-etiquetas-lista-selector').addEventListener('change', (e) => etiquetasListaIrAPagina_(parseInt(e.target.value, 10)));
+
+    $('modal-etiquetas-lista-ancho').addEventListener('input', () => actualizarVistaPreviaEtiquetasLista_());
+    $('modal-etiquetas-lista-alto').addEventListener('input', () => actualizarVistaPreviaEtiquetasLista_());
+
+    $('modal-etiquetas-lista-cantidad').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    $('modal-etiquetas-lista-detalle').addEventListener('change', () => {
+        $('modal-etiquetas-lista-detalle-otro-fila').style.display = $('modal-etiquetas-lista-detalle').value === '__otro__' ? '' : 'none';
+        etiquetasListaActualizarConfigActual_();
+    });
+    $('modal-etiquetas-lista-detalle-otro').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+
+    $('modal-etiquetas-lista-imagen-incluir').addEventListener('change', () => {
+        $('modal-etiquetas-lista-imagen-controles').style.display = $('modal-etiquetas-lista-imagen-incluir').checked ? '' : 'none';
+        etiquetasListaActualizarConfigActual_();
+    });
+    ['modal-etiquetas-lista-imagen-alinh', 'modal-etiquetas-lista-imagen-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    });
+
+    ['modal-etiquetas-lista-texto', 'modal-etiquetas-lista-texto-tamano'].forEach((id) => {
+        $(id).addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    });
+    ['modal-etiquetas-lista-texto-alinh', 'modal-etiquetas-lista-texto-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    });
+    ['modal-etiquetas-lista-texto-negrita', 'modal-etiquetas-lista-texto-cursiva', 'modal-etiquetas-lista-texto-subrayado'].forEach((id) => {
+        $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    });
+    $('modal-etiquetas-lista-texto-color').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+
+    $('modal-etiquetas-lista-descargar-png').addEventListener('click', descargarEtiquetasListaPng_);
+    $('modal-etiquetas-lista-descargar-pdf').addEventListener('click', descargarEtiquetasListaPdf_);
     }
 
     // Event listeners de la modal de relacionados — el modal se elimina
