@@ -15903,7 +15903,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const tieneImagen = !!(opts.imagen && opts.imagen.img && opts.imagenConfig);
         const imgCfg = opts.imagenConfig;
         const imgBox = tieneImagen ? (imgCfg.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_) * mm : 0;
+        // Gap horizontal junto al logo (imagen "arriba" a la izquierda) —
+        // más holgado porque ahí sí sobra sitio normalmente.
         const imgGap = 2.5 * mm;
+        // Gap vertical entre la imagen y el precio/separador en "centro"/
+        // "abajo" — deliberadamente ajustado, porque en una etiqueta
+        // pequeña cada mm cuenta para que la imagen pueda ocupar el
+        // tamaño pedido en vez de quedarse achicada sin motivo.
+        const imgGapV = 1.2 * mm;
 
         ctx.save();
         ctx.translate(x, y);
@@ -15925,15 +15932,48 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.drawImage(opts.logo.img, pad, pad, logoW, lh);
         }
 
+        // Se mide cuántas líneas ocupará el nombre ANTES de decidir cuánto
+        // puede crecer la imagen "arriba" (ver más abajo): el ancho
+        // disponible para el nombre no depende de esa decisión, así que
+        // puede calcularse ya — y así se sabe cuánto hueco necesita el
+        // resto del contenido (nombre + separador + precio) para no dejar
+        // que la imagen empuje el nombre tan abajo que acabe invadiendo el
+        // código de barras/QR.
+        const nombreX = pad + nombreMargenIzq;
+        ctx.font = `bold ${Math.round(3.5 * mm)}px Arial, sans-serif`;
+        const nombreMaxW = w - pad - nombreX;
+        const lineasNombre = etiquetaEnvolverTextoCanvas_(ctx, datos.nombre, nombreMaxW, 2);
+        const lineHeight = 4.3 * mm;
+
+        // Alto máximo de la fila de código de barras/QR (ver más abajo),
+        // calculado ya aquí porque las tres posiciones de la imagen
+        // necesitan saber dónde empieza esa fila para no invadirla.
+        const maxBH = 15 * mm;
+        const rowTopY = h - pad - maxBH;
+
+        // Alto aproximado que ocupa el bloque de precio por debajo de su
+        // punto de arranque (precioY0) — con dígitos no hay descendentes,
+        // así que es solo una estimación conservadora para saber cuánto
+        // hueco le queda realmente disponible a la imagen en cualquiera
+        // de las tres posiciones sin invadirlo.
+        const precioAltoAprox = (datos.promo ? 14 : (datos.con !== null ? 6 : 3)) * mm;
+
         // Imagen "arriba": comparte la fila de cabecera con el logo —
         // si va a la izquierda, se coloca a continuación del logo (nunca
         // encima); si es más alta que el logo, el nombre se empuja hacia
-        // abajo lo necesario (ver nombreY0, más abajo).
-        const imgArribaAltura = (tieneImagen && imgCfg.alinV === 'arriba') ? imgBox : 0;
+        // abajo lo necesario (ver nombreY0, más abajo) — pero solo hasta
+        // donde quepa sin que el nombre+separador+precio acaben invadiendo
+        // el código de barras/QR, anclado al borde inferior.
+        let imgArribaAltura = 0;
+        if (tieneImagen && imgCfg.alinV === 'arriba') {
+            const necesarioTrasNombre = lineasNombre.length * lineHeight + 1.5 * mm + 6 * mm + precioAltoAprox;
+            const imgArribaMax = Math.max(11 * mm, rowTopY - pad - 3 * mm - necesarioTrasNombre);
+            imgArribaAltura = Math.min(imgBox, imgArribaMax);
+        }
         if (imgArribaAltura) {
             const x0 = imgCfg.alinH === 'izquierda' ? pad + logoW + imgGap : pad;
-            const bx = etiquetaImagenBx_(imgCfg.alinH, x0, w - pad, imgBox);
-            dibujarImagenEnCajaCanvas_(ctx, bx, pad, imgBox, opts.imagen);
+            const bx = etiquetaImagenBx_(imgCfg.alinH, x0, w - pad, imgArribaAltura);
+            dibujarImagenEnCajaCanvas_(ctx, bx, pad, imgArribaAltura, opts.imagen);
         }
 
         if (opts.detalleTexto) {
@@ -15955,13 +15995,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.textBaseline = 'alphabetic';
         }
 
-        const nombreX = pad + nombreMargenIzq;
         const nombreY0 = pad + Math.max(11 * mm, imgArribaAltura) + 3 * mm;
         ctx.fillStyle = rgb(ETIQUETA_COLOR_DARK_);
         ctx.font = `bold ${Math.round(3.5 * mm)}px Arial, sans-serif`;
-        const nombreMaxW = w - pad - nombreX;
-        const lineasNombre = etiquetaEnvolverTextoCanvas_(ctx, datos.nombre, nombreMaxW, 2);
-        const lineHeight = 4.3 * mm;
         lineasNombre.forEach((linea, i) => ctx.fillText(linea, nombreX, nombreY0 + i * lineHeight));
 
         const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5 * mm;
@@ -15972,32 +16008,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         ctx.lineTo(w - pad, sepY);
         ctx.stroke();
 
-        // Alto máximo de la fila de código de barras/QR (ver más abajo),
-        // calculado ya aquí porque tanto la imagen "centro" como la
-        // "abajo" necesitan saber dónde empieza esa fila para no invadirla.
-        const maxBH = 15 * mm;
-        const rowTopY = h - pad - maxBH;
-
-        // Alto aproximado que ocupa el bloque de precio por debajo de su
-        // punto de arranque (precioY0) — con dígitos no hay descendentes,
-        // así que es solo una estimación conservadora para saber cuánto
-        // hueco le queda realmente disponible a la imagen en "centro"/
-        // "abajo" sin invadirlo.
-        const precioAltoAprox = (datos.promo ? 14 : (datos.con !== null ? 6 : 3)) * mm;
-
         // Imagen "centro": se inserta como su propia fila justo debajo
         // del separador, empujando el precio hacia abajo — y si no cabe
         // entera junto con el precio antes de llegar al código de
         // barras/QR, se encoge lo justo para que nunca se superpongan.
+        //
+        // OJO: el "precioY0" de abajo es solo el punto de referencia a
+        // partir del cual se dibuja el precio — el texto "Base:/IVA
+        // Incl." (si hay precio sin IVA) y la línea del precio tachado
+        // (si hay promoción) se dibujan POR ENCIMA de ese punto, no por
+        // debajo, así que el hueco que deja la imagen antes de esa
+        // referencia tiene que ser mayor que el simple "imgGapV" — si no,
+        // la imagen pisa esas líneas aunque en apariencia "quepa todo".
         let precioY0 = sepY + 6 * mm;
         if (tieneImagen && imgCfg.alinV === 'centro') {
-            const imgY = sepY + imgGap;
-            const espacioDisponible = rowTopY - imgY - imgGap - precioAltoAprox;
+            const precioMargenSuperior = (
+                datos.promo ? 3 : (datos.con !== null ? (datos.sin !== null ? 5.5 : 4.5) : 1)
+            ) * mm;
+            const gapTrasImagen = Math.max(imgGapV, precioMargenSuperior);
+            const imgY = sepY + imgGapV;
+            const espacioDisponible = rowTopY - imgY - gapTrasImagen - precioAltoAprox;
             const imgBoxReal = Math.max(0, Math.min(imgBox, espacioDisponible));
             if (imgBoxReal > 4 * mm) {
                 const bx = etiquetaImagenBx_(imgCfg.alinH, pad, w - pad, imgBoxReal);
                 dibujarImagenEnCajaCanvas_(ctx, bx, imgY, imgBoxReal, opts.imagen);
-                precioY0 = imgY + imgBoxReal + 5 * mm;
+                precioY0 = imgY + imgBoxReal + gapTrasImagen;
             }
         }
 
@@ -16078,10 +16113,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // el precio y esa fila, se encoge para no superponerse con
         // ninguno de los dos (igual que la imagen "centro", más arriba).
         if (tieneImagen && imgCfg.alinV === 'abajo') {
-            const espacioDisponible = rowTopY - (precioY0 + precioAltoAprox) - imgGap;
+            const espacioDisponible = rowTopY - (precioY0 + precioAltoAprox) - imgGapV;
             const imgBoxReal = Math.max(0, Math.min(imgBox, espacioDisponible));
             if (imgBoxReal > 4 * mm) {
-                const imgY = rowTopY - imgGap - imgBoxReal;
+                const imgY = rowTopY - imgGapV - imgBoxReal;
                 const bx = etiquetaImagenBx_(imgCfg.alinH, pad, w - pad, imgBoxReal);
                 dibujarImagenEnCajaCanvas_(ctx, bx, imgY, imgBoxReal, opts.imagen);
             }
@@ -16131,7 +16166,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const tieneImagen = !!(opts.imagen && opts.imagen.dataUrl && opts.imagenConfig);
         const imgCfg = opts.imagenConfig;
         const imgBox = tieneImagen ? (imgCfg.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_) : 0;
+        // Gap horizontal junto al logo (imagen "arriba" a la izquierda) —
+        // más holgado porque ahí sí sobra sitio normalmente.
         const imgGap = 2.5;
+        // Gap vertical entre la imagen y el precio/separador en "centro"/
+        // "abajo" — deliberadamente ajustado, porque en una etiqueta
+        // pequeña cada mm cuenta para que la imagen pueda ocupar el
+        // tamaño pedido en vez de quedarse achicada sin motivo.
+        const imgGapV = 1.2;
 
         setColor('setDrawColor', ETIQUETA_COLOR_BORDE_);
         doc.setLineWidth(0.25);
@@ -16148,11 +16190,49 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.addImage(opts.logo.dataUrl, 'PNG', xMM + PAD, yMM + PAD, logoW, lh);
         }
 
-        const imgArribaAltura = (tieneImagen && imgCfg.alinV === 'arriba') ? imgBox : 0;
+        // Se mide cuántas líneas ocupará el nombre ANTES de decidir cuánto
+        // puede crecer la imagen "arriba" (ver más abajo) — el ancho
+        // disponible para el nombre no depende de esa decisión, así que
+        // puede calcularse ya, y así se sabe cuánto hueco necesita el
+        // resto del contenido (nombre + separador + precio) para no dejar
+        // que la imagen empuje el nombre tan abajo que acabe invadiendo el
+        // código de barras/QR.
+        const nombreX = xMM + PAD + NOMBRE_MARGEN_IZQ;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        const nombreMaxW = xMM + W - PAD - nombreX;
+        const lineasNombre = doc.splitTextToSize(datos.nombre || '', nombreMaxW).slice(0, 2);
+        const lineHeight = 4.3;
+
+        // Alto máximo de la fila de código de barras/QR (ver más abajo),
+        // calculado ya aquí porque las tres posiciones de la imagen
+        // necesitan saber dónde empieza esa fila para no invadirla.
+        const maxBH = 15;
+        const rowTopY = yMM + H - PAD - maxBH;
+
+        // Alto aproximado que ocupa el bloque de precio por debajo de su
+        // punto de arranque (precioY0) — con dígitos no hay descendentes,
+        // así que es solo una estimación conservadora para saber cuánto
+        // hueco le queda realmente disponible a la imagen en cualquiera de
+        // las tres posiciones sin invadirlo.
+        const precioAltoAprox = datos.promo ? 14 : (datos.con !== null ? 6 : 3);
+
+        // Imagen "arriba": comparte la fila de cabecera con el logo —
+        // si va a la izquierda, se coloca a continuación del logo (nunca
+        // encima); si es más alta que el logo, el nombre se empuja hacia
+        // abajo lo necesario (ver nombreY0, más abajo) — pero solo hasta
+        // donde quepa sin que el nombre+separador+precio acaben invadiendo
+        // el código de barras/QR, anclado al borde inferior.
+        let imgArribaAltura = 0;
+        if (tieneImagen && imgCfg.alinV === 'arriba') {
+            const necesarioTrasNombre = lineasNombre.length * lineHeight + 1.5 + 6 + precioAltoAprox;
+            const imgArribaMax = Math.max(11, rowTopY - (yMM + PAD) - 3 - necesarioTrasNombre);
+            imgArribaAltura = Math.min(imgBox, imgArribaMax);
+        }
         if (imgArribaAltura) {
             const x0 = imgCfg.alinH === 'izquierda' ? xMM + PAD + logoW + imgGap : xMM + PAD;
-            const bx = etiquetaImagenBx_(imgCfg.alinH, x0, xMM + W - PAD, imgBox);
-            dibujarImagenEnCajaPDF_(doc, bx, yMM + PAD, imgBox, opts.imagen);
+            const bx = etiquetaImagenBx_(imgCfg.alinH, x0, xMM + W - PAD, imgArribaAltura);
+            dibujarImagenEnCajaPDF_(doc, bx, yMM + PAD, imgArribaAltura, opts.imagen);
         }
 
         if (opts.detalleTexto) {
@@ -16170,14 +16250,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.text(texto, bx + bw / 2, by + bh / 2 + 1.1, { align: 'center' });
         }
 
-        const nombreX = xMM + PAD + NOMBRE_MARGEN_IZQ;
         const nombreY0 = yMM + PAD + Math.max(11, imgArribaAltura) + 3;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10.5);
         setColor('setTextColor', ETIQUETA_COLOR_DARK_);
-        const nombreMaxW = xMM + W - PAD - nombreX;
-        const lineasNombre = doc.splitTextToSize(datos.nombre || '', nombreMaxW).slice(0, 2);
-        const lineHeight = 4.3;
         lineasNombre.forEach((linea, i) => doc.text(linea, nombreX, nombreY0 + i * lineHeight));
 
         const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5;
@@ -16185,32 +16261,29 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.setLineWidth(0.25);
         doc.line(xMM + PAD, sepY, xMM + W - PAD, sepY);
 
-        // Alto máximo de la fila de código de barras/QR (ver más abajo),
-        // calculado ya aquí porque tanto la imagen "centro" como la
-        // "abajo" necesitan saber dónde empieza esa fila para no invadirla.
-        const maxBH = 15;
-        const rowTopY = yMM + H - PAD - maxBH;
-
-        // Alto aproximado que ocupa el bloque de precio por debajo de su
-        // punto de arranque (precioY0) — con dígitos no hay descendentes,
-        // así que es solo una estimación conservadora para saber cuánto
-        // hueco le queda realmente disponible a la imagen en "centro"/
-        // "abajo" sin invadirlo.
-        const precioAltoAprox = datos.promo ? 14 : (datos.con !== null ? 6 : 3);
-
         // Imagen "centro": se inserta como su propia fila justo debajo
         // del separador, empujando el precio hacia abajo — y si no cabe
         // entera junto con el precio antes de llegar al código de
         // barras/QR, se encoge lo justo para que nunca se superpongan.
+        //
+        // OJO: el "precioY0" de abajo es solo el punto de referencia a
+        // partir del cual se dibuja el precio — el texto "Base:/IVA
+        // Incl." (si hay precio sin IVA) y la línea del precio tachado
+        // (si hay promoción) se dibujan POR ENCIMA de ese punto, no por
+        // debajo, así que el hueco que deja la imagen antes de esa
+        // referencia tiene que ser mayor que el simple "imgGapV" — si no,
+        // la imagen pisa esas líneas aunque en apariencia "quepa todo".
         let precioY0 = sepY + 6;
         if (tieneImagen && imgCfg.alinV === 'centro') {
-            const imgY = sepY + imgGap;
-            const espacioDisponible = rowTopY - imgY - imgGap - precioAltoAprox;
+            const precioMargenSuperior = datos.promo ? 3 : (datos.con !== null ? (datos.sin !== null ? 5.5 : 4.5) : 1);
+            const gapTrasImagen = Math.max(imgGapV, precioMargenSuperior);
+            const imgY = sepY + imgGapV;
+            const espacioDisponible = rowTopY - imgY - gapTrasImagen - precioAltoAprox;
             const imgBoxReal = Math.max(0, Math.min(imgBox, espacioDisponible));
             if (imgBoxReal > 4) {
                 const bx = etiquetaImagenBx_(imgCfg.alinH, xMM + PAD, xMM + W - PAD, imgBoxReal);
                 dibujarImagenEnCajaPDF_(doc, bx, imgY, imgBoxReal, opts.imagen);
-                precioY0 = imgY + imgBoxReal + 5;
+                precioY0 = imgY + imgBoxReal + gapTrasImagen;
             }
         }
 
@@ -16281,10 +16354,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // encoge para no superponerse con ninguno de los dos (igual que
         // la imagen "centro", más arriba).
         if (tieneImagen && imgCfg.alinV === 'abajo') {
-            const espacioDisponible = rowTopY - (precioY0 + precioAltoAprox) - imgGap;
+            const espacioDisponible = rowTopY - (precioY0 + precioAltoAprox) - imgGapV;
             const imgBoxReal = Math.max(0, Math.min(imgBox, espacioDisponible));
             if (imgBoxReal > 4) {
-                const imgY = rowTopY - imgGap - imgBoxReal;
+                const imgY = rowTopY - imgGapV - imgBoxReal;
                 const bx = etiquetaImagenBx_(imgCfg.alinH, xMM + PAD, xMM + W - PAD, imgBoxReal);
                 dibujarImagenEnCajaPDF_(doc, bx, imgY, imgBoxReal, opts.imagen);
             }
