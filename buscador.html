@@ -14598,10 +14598,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const imgSrc = urlImagenProducto(p, 800) || '';
         const tieneImagen = !!imgSrc;
 
-        $('modal-producto-img').style.display = tieneImagen ? 'block' : 'none';
-        $('modal-producto-img').src = imgSrc;
-        $('modal-producto-img').alt = escapeHtml(p.nombre);
-        $('modal-producto-img').onerror = () => mostrarSinImagenModal(p);
+        // Se oculta y se vacía el <img> ANTES de asignarle la nueva URL:
+        // si no, el navegador sigue pintando la foto del producto
+        // anterior (el bitmap ya decodificado) hasta que la nueva
+        // termine de descargarse, y durante ese segundo o dos se ve la
+        // imagen equivocada. Solo se vuelve a mostrar cuando la nueva
+        // foto ya ha cargado (onload) o, si falla, cuando
+        // mostrarSinImagenModal la sustituye por el logo genérico.
+        const imgEl = $('modal-producto-img');
+        imgEl.style.display = 'none';
+        imgEl.removeAttribute('src');
+        imgEl.onload = () => { if (tieneImagen) imgEl.style.display = 'block'; };
+        imgEl.onerror = () => mostrarSinImagenModal(p);
+        imgEl.alt = escapeHtml(p.nombre);
+        imgEl.src = imgSrc;
 
         // El botón que envuelve la imagen solo tiene sentido si hay una
         // foto real que ampliar (con el logo/nombre genérico de "sin
