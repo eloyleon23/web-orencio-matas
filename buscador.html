@@ -5726,17 +5726,59 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
                 <div class="modal-etiqueta-campo-doble">
                     <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-papel">Tamaño de papel</label>
+                        <select id="modal-etiqueta-papel">
+                            <option value="">Personalizado</option>
+                            <option value="A4">A4 (210x297mm)</option>
+                            <option value="A5">A5 (148x210mm)</option>
+                            <option value="A6">A6 (105x148mm)</option>
+                            <option value="A7">A7 (74x105mm)</option>
+                            <option value="A8">A8 (52x74mm)</option>
+                        </select>
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-orientacion">Orientación</label>
+                        <select id="modal-etiqueta-orientacion">
+                            <option value="vertical">Vertical</option>
+                            <option value="horizontal">Horizontal</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
                         <label for="modal-etiqueta-ancho">Ancho (mm)</label>
-                        <input type="number" id="modal-etiqueta-ancho" min="25" max="190" step="1" value="93" autocomplete="off">
+                        <input type="number" id="modal-etiqueta-ancho" min="25" max="297" step="1" value="93" autocomplete="off">
                     </div>
                     <div class="modal-editar-ficha-campo">
                         <label for="modal-etiqueta-alto">Alto (mm)</label>
-                        <input type="number" id="modal-etiqueta-alto" min="25" max="277" step="1" value="67" autocomplete="off">
+                        <input type="number" id="modal-etiqueta-alto" min="25" max="297" step="1" value="67" autocomplete="off">
                     </div>
                 </div>
                 <p class="modal-editar-ficha-nota modal-etiqueta-nota-tamano">
-                    Máximo 190x277mm — el espacio útil de un folio DIN A4 con margen.
+                    Máximo 297x297mm — el tamaño de un folio DIN A4. Con más de 1 etiqueta, se
+                    imprimen en rejilla sobre hojas A4 reales, así que solo cabrá una por hoja si
+                    la etiqueta ya ocupa casi todo el folio.
                 </p>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-margen-sup">Margen superior (mm)</label>
+                        <input type="number" id="modal-etiqueta-margen-sup" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-margen-inf">Margen inferior (mm)</label>
+                        <input type="number" id="modal-etiqueta-margen-inf" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-margen-izq">Margen izquierdo (mm)</label>
+                        <input type="number" id="modal-etiqueta-margen-izq" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-margen-der">Margen derecho (mm)</label>
+                        <input type="number" id="modal-etiqueta-margen-der" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                </div>
                 <div class="modal-etiqueta-campo-doble">
                     <div class="modal-editar-ficha-campo">
                         <label for="modal-etiqueta-nombre-tamano">Tamaño nombre (mm)</label>
@@ -5770,6 +5812,53 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <p id="modal-etiqueta-sin-codigo-aviso" class="modal-editar-ficha-error" style="display:none;">
                     Este producto no tiene una referencia válida para generar el código de barras — la etiqueta se imprimirá sin él.
                 </p>
+            </div>
+        </div>
+
+        <!-- Logo de la empresa — siempre visible (a diferencia de la
+             imagen del producto y el QR, no tiene checkbox), con tamaño
+             y las mismas 9 posiciones configurables. -->
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Logo</h4>
+            <div class="modal-etiqueta-texto-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-logo-tamano">Tamaño (mm)</label>
+                    <input type="number" id="modal-etiqueta-logo-tamano" min="5" max="100" step="1" value="11" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-logo-alinh">Horizontal</label>
+                    <select id="modal-etiqueta-logo-alinh">
+                        <option value="izquierda" selected>Izquierda</option>
+                        <option value="centro">Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-logo-alinv">Vertical</label>
+                    <select id="modal-etiqueta-logo-alinv">
+                        <option value="arriba" selected>Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo">Abajo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Código QR — opcional (checkbox, activado por defecto), SIEMPRE
+             a la derecha, arriba o abajo (a petición de Eloy). -->
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Código QR</h4>
+            <label class="modal-etiqueta-imagen-check">
+                <input type="checkbox" id="modal-etiqueta-qr-incluir" checked> Incluir código QR
+            </label>
+            <div class="modal-etiqueta-texto-controles" id="modal-etiqueta-qr-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-qr-alinv">Posición (siempre a la derecha)</label>
+                    <select id="modal-etiqueta-qr-alinv">
+                        <option value="abajo" selected>Abajo (con el código de barras)</option>
+                        <option value="arriba">Arriba</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -5920,6 +6009,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <input type="number" id="modal-etiquetas-lista-precio-tamano" min="4" max="80" step="0.5" value="11" autocomplete="off">
                     </div>
                 </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-margen-sup">Margen superior (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-margen-sup" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-margen-inf">Margen inferior (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-margen-inf" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-margen-izq">Margen izquierdo (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-margen-izq" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-margen-der">Margen derecho (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-margen-der" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                </div>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiquetas-lista-detalle">Detalle (opcional)</label>
                     <select id="modal-etiquetas-lista-detalle">
@@ -5948,18 +6057,80 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="modal-etiqueta-campo-doble modal-etiquetas-lista-tamano">
             <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-papel">Tamaño de papel — para todo el lote</label>
+                <select id="modal-etiquetas-lista-papel">
+                    <option value="">Personalizado</option>
+                    <option value="A4">A4 (210x297mm)</option>
+                    <option value="A5">A5 (148x210mm)</option>
+                    <option value="A6">A6 (105x148mm)</option>
+                    <option value="A7">A7 (74x105mm)</option>
+                    <option value="A8">A8 (52x74mm)</option>
+                </select>
+            </div>
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-orientacion">Orientación</label>
+                <select id="modal-etiquetas-lista-orientacion">
+                    <option value="vertical">Vertical</option>
+                    <option value="horizontal">Horizontal</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-etiqueta-campo-doble modal-etiquetas-lista-tamano">
+            <div class="modal-editar-ficha-campo">
                 <label for="modal-etiquetas-lista-ancho">Ancho (mm) — para todo el lote</label>
-                <input type="number" id="modal-etiquetas-lista-ancho" min="25" max="190" step="1" value="93" autocomplete="off">
+                <input type="number" id="modal-etiquetas-lista-ancho" min="25" max="297" step="1" value="93" autocomplete="off">
             </div>
             <div class="modal-editar-ficha-campo">
                 <label for="modal-etiquetas-lista-alto">Alto (mm) — para todo el lote</label>
-                <input type="number" id="modal-etiquetas-lista-alto" min="25" max="277" step="1" value="67" autocomplete="off">
+                <input type="number" id="modal-etiquetas-lista-alto" min="25" max="297" step="1" value="67" autocomplete="off">
             </div>
         </div>
         <p class="modal-editar-ficha-nota modal-etiqueta-nota-tamano">
-            Máximo 190x277mm — el espacio útil de un folio DIN A4 con margen. Se aplica a
-            todas las etiquetas del lote, para que quepan juntas en la misma hoja.
+            Máximo 297x297mm — el tamaño de un folio DIN A4. Se aplica a todas las etiquetas
+            del lote, para que quepan juntas en la misma hoja.
         </p>
+
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Logo</h4>
+            <div class="modal-etiqueta-texto-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-logo-tamano">Tamaño (mm)</label>
+                    <input type="number" id="modal-etiquetas-lista-logo-tamano" min="5" max="100" step="1" value="11" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-logo-alinh">Horizontal</label>
+                    <select id="modal-etiquetas-lista-logo-alinh">
+                        <option value="izquierda" selected>Izquierda</option>
+                        <option value="centro">Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-logo-alinv">Vertical</label>
+                    <select id="modal-etiquetas-lista-logo-alinv">
+                        <option value="arriba" selected>Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo">Abajo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Código QR</h4>
+            <label class="modal-etiqueta-imagen-check">
+                <input type="checkbox" id="modal-etiquetas-lista-qr-incluir" checked> Incluir código QR
+            </label>
+            <div class="modal-etiqueta-texto-controles" id="modal-etiquetas-lista-qr-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-qr-alinv">Posición (siempre a la derecha)</label>
+                    <select id="modal-etiquetas-lista-qr-alinv">
+                        <option value="abajo" selected>Abajo (con el código de barras)</option>
+                        <option value="arriba">Arriba</option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
         <div class="modal-etiqueta-imagen">
             <h4 class="modal-etiqueta-subtitulo">Imagen de este producto</h4>
@@ -15565,12 +15736,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const ETIQUETA_W_DEFECTO_MM_ = 93;
     const ETIQUETA_H_DEFECTO_MM_ = 67;
     const ETIQUETA_TAMANO_MIN_MM_ = 25;
+    // Techo del tamaño de una etiqueta individual — el folio DIN A4
+    // completo (210x297mm), para poder elegir el preset "A4" tal cual
+    // (ver ETIQUETA_PAPEL_TAMANOS_MM_) incluso para una sola etiqueta
+    // suelta, cuyo PDF es una página de ese tamaño exacto sin ningún
+    // folio de por medio. Con más de una etiqueta por lote, cada una
+    // sigue imprimiéndose en rejilla sobre hojas A4 reales con margen
+    // (ver ETIQUETA_PAGINA_ANCHO_UTIL_MM_/ALTO_UTIL_MM_, más abajo) —
+    // ambos límites son independientes a propósito.
+    const ETIQUETA_TAMANO_MAX_MM_ = 297;
     const ETIQUETA_PAGINA_MARGEN_MM_ = 10;
     const ETIQUETA_PAGINA_GAP_COL_MM_ = 4;
     const ETIQUETA_PAGINA_GAP_FILA_MM_ = 3;
     const ETIQUETA_PAGINA_ANCHO_UTIL_MM_ = 210 - 2 * ETIQUETA_PAGINA_MARGEN_MM_;
     const ETIQUETA_PAGINA_ALTO_UTIL_MM_ = 297 - 2 * ETIQUETA_PAGINA_MARGEN_MM_;
     const ETIQUETA_CANTIDAD_MAXIMA_ = 200;
+
+    // Tamaños estándar de papel (mm, siempre en orientación vertical —
+    // "Orientación" los intercambia) para el selector "Tamaño de papel".
+    const ETIQUETA_PAPEL_TAMANOS_MM_ = {
+        A4: { w: 210, h: 297 },
+        A5: { w: 148, h: 210 },
+        A6: { w: 105, h: 148 },
+        A7: { w: 74, h: 105 },
+        A8: { w: 52, h: 74 },
+    };
 
     let productoEtiquetaActual_ = null;
     let etiquetaLogoCache_ = null;    // { dataUrl, width, height, img } — se carga una sola vez
@@ -15833,27 +16023,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // (siempre anclada abajo del todo) para que el texto libre no se
     // solape con ella — a petición de Eloy: "el texto libre si se indica
     // abajo tiene que quedar por encima del código de barras".
-    function dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, pxPorMm, cfg, limiteInferior) {
+    function dibujarTextoPersonalizadoCanvas_(ctx, w, h, padL, padR, padT, padB, pxPorMm, cfg, limiteInferior) {
         if (!cfg) return;
-        const limite = limiteInferior !== undefined ? limiteInferior : h - pad;
+        const limite = limiteInferior !== undefined ? limiteInferior : h - padB;
         const sizePx = Math.max(4, Math.round(cfg.tamanoPt * 0.35278 * pxPorMm));
         const estilo = `${cfg.cursiva ? 'italic ' : ''}${cfg.negrita ? 'bold ' : ''}${sizePx}px Arial, sans-serif`;
         ctx.font = estilo;
         ctx.fillStyle = cfg.color;
 
-        const maxW = w - 2 * pad;
+        const maxW = w - padL - padR;
         const lineas = etiquetaEnvolverTextoCanvas_(ctx, cfg.texto, maxW, 4);
         const lineHeight = sizePx * 1.25;
         const bloqueAlto = lineas.length * lineHeight;
 
         let startY;
-        if (cfg.alinV === 'arriba') startY = pad + sizePx * 0.85;
+        if (cfg.alinV === 'arriba') startY = padT + sizePx * 0.85;
         else if (cfg.alinV === 'abajo') startY = limite - bloqueAlto + sizePx * 0.85;
         else startY = (h - bloqueAlto) / 2 + sizePx * 0.85;
 
         let x, align;
-        if (cfg.alinH === 'izquierda') { x = pad; align = 'left'; }
-        else if (cfg.alinH === 'derecha') { x = w - pad; align = 'right'; }
+        if (cfg.alinH === 'izquierda') { x = padL; align = 'left'; }
+        else if (cfg.alinH === 'derecha') { x = w - padR; align = 'right'; }
         else { x = w / 2; align = 'center'; }
 
         ctx.textAlign = align;
@@ -15877,29 +16067,29 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Misma idea que dibujarTextoPersonalizadoCanvas_ pero con jsPDF
     // (mm/pt nativos, nada que convertir) — mismo "limiteInferior" (en mm
     // aquí) para que "abajo" no se solape con el código de barras/QR.
-    function dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, wMM, hMM, pad, cfg, limiteInferior) {
+    function dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, wMM, hMM, padL, padR, padT, padB, cfg, limiteInferior) {
         if (!cfg) return;
-        const limite = limiteInferior !== undefined ? limiteInferior : yMM + hMM - pad;
+        const limite = limiteInferior !== undefined ? limiteInferior : yMM + hMM - padB;
         const estilo = cfg.negrita && cfg.cursiva ? 'bolditalic' : cfg.negrita ? 'bold' : cfg.cursiva ? 'italic' : 'normal';
         doc.setFont('helvetica', estilo);
         doc.setFontSize(cfg.tamanoPt);
         const rgb = etiquetaHexARgb_(cfg.color);
         doc.setTextColor(rgb[0], rgb[1], rgb[2]);
 
-        const maxW = wMM - 2 * pad;
+        const maxW = wMM - padL - padR;
         const lineas = doc.splitTextToSize(cfg.texto, maxW).slice(0, 4);
         const tamanoMM = cfg.tamanoPt * 0.3528;
         const lineHeightMM = tamanoMM * 1.25;
         const bloqueAlto = lineas.length * lineHeightMM;
 
         let startY;
-        if (cfg.alinV === 'arriba') startY = yMM + pad + tamanoMM * 0.85;
+        if (cfg.alinV === 'arriba') startY = yMM + padT + tamanoMM * 0.85;
         else if (cfg.alinV === 'abajo') startY = limite - bloqueAlto + tamanoMM * 0.85;
         else startY = yMM + (hMM - bloqueAlto) / 2 + tamanoMM * 0.85;
 
         let x, align;
-        if (cfg.alinH === 'izquierda') { x = xMM + pad; align = 'left'; }
-        else if (cfg.alinH === 'derecha') { x = xMM + wMM - pad; align = 'right'; }
+        if (cfg.alinH === 'izquierda') { x = xMM + padL; align = 'left'; }
+        else if (cfg.alinH === 'derecha') { x = xMM + wMM - padR; align = 'right'; }
         else { x = xMM + wMM / 2; align = 'center'; }
 
         lineas.forEach((linea, i) => {
@@ -15927,11 +16117,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // las 9 posiciones posibles (alinH x alinV), igual que el texto
     // personalizado, dentro de un recuadro cuadrado de tamaño elegible
     // (config.tamanoMM).
-    function dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, imagen, config) {
+    function dibujarImagenProductoCanvas_(ctx, w, h, padL, padR, padT, padB, mm, imagen, config) {
         if (!imagen || !imagen.img || !config) return;
         const box = (config.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_) * mm;
-        const bx = config.alinH === 'izquierda' ? pad : config.alinH === 'derecha' ? w - pad - box : (w - box) / 2;
-        const by = config.alinV === 'arriba' ? pad : config.alinV === 'abajo' ? h - pad - box : (h - box) / 2;
+        const bx = config.alinH === 'izquierda' ? padL : config.alinH === 'derecha' ? w - padR - box : (w - box) / 2;
+        const by = config.alinV === 'arriba' ? padT : config.alinV === 'abajo' ? h - padB - box : (h - box) / 2;
         const escala = Math.min(box / imagen.width, box / imagen.height);
         const iw = imagen.width * escala, ih = imagen.height * escala;
         ctx.drawImage(imagen.img, bx + (box - iw) / 2, by + (box - ih) / 2, iw, ih);
@@ -15941,11 +16131,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // nativos). El dataUrl de la foto es JPEG (ver
     // cargarImagenFolletoDestacados_, reutilizada por
     // etiquetaImagenProducto_), no PNG.
-    function dibujarImagenProductoPDF_(doc, xMM, yMM, wMM, hMM, pad, imagen, config) {
+    function dibujarImagenProductoPDF_(doc, xMM, yMM, wMM, hMM, padL, padR, padT, padB, imagen, config) {
         if (!imagen || !config) return;
         const BOX = config.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_;
-        const bx = config.alinH === 'izquierda' ? xMM + pad : config.alinH === 'derecha' ? xMM + wMM - pad - BOX : xMM + (wMM - BOX) / 2;
-        const by = config.alinV === 'arriba' ? yMM + pad : config.alinV === 'abajo' ? yMM + hMM - pad - BOX : yMM + (hMM - BOX) / 2;
+        const bx = config.alinH === 'izquierda' ? xMM + padL : config.alinH === 'derecha' ? xMM + wMM - padR - BOX : xMM + (wMM - BOX) / 2;
+        const by = config.alinV === 'arriba' ? yMM + padT : config.alinV === 'abajo' ? yMM + hMM - padB - BOX : yMM + (hMM - BOX) / 2;
         const escala = Math.min(BOX / imagen.width, BOX / imagen.height);
         const iw = imagen.width * escala, ih = imagen.height * escala;
         doc.addImage(imagen.dataUrl, 'JPEG', bx + (BOX - iw) / 2, by + (BOX - ih) / 2, iw, ih);
@@ -15957,12 +16147,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // que el PNG salga nítido en impresión.
     function dibujarEtiquetaEnCanvas_(ctx, x, y, w, h, wMM, hMM, datos, opts) {
         const mm = w / wMM; // px por mm REAL a esta resolución (w px representan wMM mm)
-        const pad = 3.5 * mm;
-        // Margen extra a la izquierda SOLO para el nombre del producto,
-        // a petición de Eloy (06/11/2026, ampliado el 07/11/2026 para
-        // separarlo más del logo) — el resto de elementos sigue
-        // arrancando en pad.
-        const nombreMargenIzq = 7 * mm;
+        // Márgenes configurables por lado (campos "Margen superior/
+        // inferior/izquierdo/derecho (mm)") — a petición de Eloy, para
+        // poder editar la etiqueta con más libertad. 3.5mm en los cuatro
+        // lados es el margen de siempre, así que sin tocar los campos el
+        // resultado es idéntico a antes.
+        const padL = (opts.margenIzqMM != null ? opts.margenIzqMM : 3.5) * mm;
+        const padR = (opts.margenDerMM != null ? opts.margenDerMM : 3.5) * mm;
+        const padT = (opts.margenSupMM != null ? opts.margenSupMM : 3.5) * mm;
+        const padB = (opts.margenInfMM != null ? opts.margenInfMM : 3.5) * mm;
         const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
 
         // Tamaño del nombre y del precio, configurables (campos "Tamaño
@@ -15980,6 +16173,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const nombreFactor = nombreTamanoMM / 3.5;
         const precioFactor = precioTamanoMM / 11;
 
+        // Tamaño y posición del logo, configurables (campos "Tamaño
+        // logo (mm)" y las 9 posiciones de siempre) — 11mm arriba a la
+        // izquierda es el valor de siempre, así que sin tocar los campos
+        // el resultado es idéntico a antes. Solo cuando el logo está
+        // "arriba" reserva hueco de cabecera para el nombre (si además
+        // está a la izquierda, el nombre también gana el margen extra de
+        // siempre para no pegarse a él) — en cualquier otra posición
+        // (centro/abajo) el logo flota igual que la imagen del producto
+        // o el texto personalizado, sin desplazar nada más.
+        const logoTamanoMM = (opts.logoTamanoMM && opts.logoTamanoMM > 0) ? opts.logoTamanoMM : 11;
+        const logoAlinH = opts.logoAlinH || 'izquierda';
+        const logoAlinV = opts.logoAlinV || 'arriba';
+        const logoCabeceraAlturaMM = logoAlinV === 'arriba' ? logoTamanoMM : 0;
+        const nombreMargenIzq = (logoAlinV === 'arriba' && logoAlinH === 'izquierda') ? 7 * mm : 0;
+
         ctx.save();
         ctx.translate(x, y);
 
@@ -15991,12 +16199,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth);
         ctx.setLineDash([]);
 
-        // Logo un poco más grande que el original (9mm → 11mm), a
-        // petición de Eloy.
         if (opts.logo && opts.logo.img) {
-            const lh = 11 * mm;
+            const lh = logoTamanoMM * mm;
             const lw = lh * (opts.logo.width / opts.logo.height);
-            ctx.drawImage(opts.logo.img, pad, pad, lw, lh);
+            const lx = logoAlinH === 'izquierda' ? padL : logoAlinH === 'derecha' ? w - padR - lw : (w - lw) / 2;
+            const ly = logoAlinV === 'arriba' ? padT : logoAlinV === 'abajo' ? h - padB - lh : (h - lh) / 2;
+            ctx.drawImage(opts.logo.img, lx, ly, lw, lh);
         }
 
         if (opts.detalleTexto) {
@@ -16005,8 +16213,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const txtW = ctx.measureText(texto).width;
             const bw = Math.max(18 * mm, txtW + 7 * mm);
             const bh = 6.4 * mm;
-            const bx = w - pad - bw;
-            const by = pad - 0.5 * mm;
+            const bx = w - padR - bw;
+            const by = padT - 0.5 * mm;
             ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
             etiquetaRoundRectCanvas_(ctx, bx, by, bw, bh, bh / 2);
             ctx.fill();
@@ -16018,17 +16226,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.textBaseline = 'alphabetic';
         }
 
-        const nombreX = pad + nombreMargenIzq;
+        const nombreX = padL + nombreMargenIzq;
         // El hueco tras el logo (antes fijo, "+3mm") escala con el
         // propio tamaño del nombre: ese margen es, en realidad, el
         // ascenso del texto en línea base (≈0.85×tamaño de fuente) —
         // con un nombre grande (p.ej. en un cartel a tamaño A4) un hueco
         // fijo de 3mm se queda corto y el texto acaba invadiendo el
-        // logo por arriba.
-        const nombreY0 = pad + 11 * mm + nombreTamanoMM * 0.85 * mm;
+        // logo por arriba. logoCabeceraAlturaMM es 0 si el logo no está
+        // "arriba" (ver más arriba), así que el nombre simplemente
+        // arranca en el margen superior en ese caso.
+        const nombreY0 = padT + logoCabeceraAlturaMM * mm + nombreTamanoMM * 0.85 * mm;
         ctx.fillStyle = rgb(ETIQUETA_COLOR_DARK_);
         ctx.font = `bold ${Math.round(nombreTamanoMM * mm)}px Arial, sans-serif`;
-        const nombreMaxW = w - pad - nombreX;
+        const nombreMaxW = w - padR - nombreX;
         const lineasNombre = etiquetaEnvolverTextoCanvas_(ctx, datos.nombre, nombreMaxW, 2);
         const lineHeight = nombreTamanoMM * 1.25 * mm;
         lineasNombre.forEach((linea, i) => ctx.fillText(linea, nombreX, nombreY0 + i * lineHeight));
@@ -16037,8 +16247,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         ctx.strokeStyle = rgb(ETIQUETA_COLOR_SEPARADOR_);
         ctx.lineWidth = Math.max(1, 0.25 * mm);
         ctx.beginPath();
-        ctx.moveTo(pad, sepY);
-        ctx.lineTo(w - pad, sepY);
+        ctx.moveTo(padL, sepY);
+        ctx.lineTo(w - padR, sepY);
         ctx.stroke();
 
         // El precio va centrado horizontalmente (a petición de Eloy) —
@@ -16066,7 +16276,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
                 ctx.font = `bold ${Math.round(3 * precioFactor * mm)}px Arial, sans-serif`;
                 ctx.textAlign = 'right';
-                ctx.fillText(`-${datos.promo.pct}%`, w - pad, precioY);
+                ctx.fillText(`-${datos.promo.pct}%`, w - padR, precioY);
                 ctx.textAlign = 'left';
             }
 
@@ -16099,7 +16309,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 // "Base:/IVA Incl." de la esquina — en vez de dejar que se
                 // solapen, ese desglose se apila en su propia línea
                 // encima del precio cuando no queda hueco lateral.
-                const huecoDerecha = (w - pad) - (w / 2 + precioAncho / 2) - 2 * mm;
+                const huecoDerecha = (w - padR) - (w / 2 + precioAncho / 2) - 2 * mm;
                 apilarArriba = huecoDerecha < anchoCol;
             }
             if (datos.sin !== null) {
@@ -16112,8 +16322,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     precioY += 4 * precioFactor * mm;
                 } else {
                     ctx.textAlign = 'right';
-                    ctx.fillText(baseTxt, w - pad, precioY - 3 * precioFactor * mm);
-                    if (ivaTxt) ctx.fillText(ivaTxt, w - pad, precioY + 1 * precioFactor * mm);
+                    ctx.fillText(baseTxt, w - padR, precioY - 3 * precioFactor * mm);
+                    if (ivaTxt) ctx.fillText(ivaTxt, w - padR, precioY + 1 * precioFactor * mm);
                     ctx.textAlign = 'left';
                 }
             }
@@ -16130,35 +16340,41 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.textAlign = 'left';
         }
 
-        // QR para buscar el producto en la web (ver datosEtiquetaParaProducto_)
-        // a la derecha, y el código de barras ocupando el resto del
-        // ancho disponible a su izquierda — mismo alto máximo (15mm)
-        // para que ambos queden alineados por abajo.
+        // Código de barras siempre abajo a la izquierda, ocupando el
+        // ancho disponible — mismo alto máximo (15mm) de siempre. El QR
+        // (ver datosEtiquetaParaProducto_) es opcional (checkbox
+        // "Incluir QR", activado por defecto) y, cuando está activo, va
+        // SIEMPRE a la derecha, arriba o abajo según se elija
+        // ("Posición QR") — si va abajo comparte fila con el código de
+        // barras (como siempre); si va arriba, el código de barras pasa
+        // a usar todo el ancho, ya que no hay que dejarle hueco.
         const maxBH = 15 * mm;
-        const tieneQr = !!(opts.qr && opts.qr.img);
+        const tieneQr = !!(opts.qr && opts.qr.img) && opts.qrIncluir !== false;
+        const qrAlinV = opts.qrAlinV === 'arriba' ? 'arriba' : 'abajo';
         const qrLado = tieneQr ? maxBH : 0;
-        const huecoQr = tieneQr ? qrLado + 3 * mm : 0;
+        const huecoQr = (tieneQr && qrAlinV === 'abajo') ? qrLado + 3 * mm : 0;
 
         if (opts.barcode && opts.barcode.img) {
-            const maxBW = w - 2 * pad - huecoQr;
+            const maxBW = w - padL - padR - huecoQr;
             const escala = Math.min(maxBW / opts.barcode.width, maxBH / opts.barcode.height);
             const bw = opts.barcode.width * escala;
             const bh = opts.barcode.height * escala;
-            ctx.drawImage(opts.barcode.img, pad + (maxBW - bw) / 2, h - pad - bh, bw, bh);
+            ctx.drawImage(opts.barcode.img, padL + (maxBW - bw) / 2, h - padB - bh, bw, bh);
         } else if (datos.ref) {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
             ctx.font = `${Math.round(2.8 * mm)}px Arial, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText(`Ref: ${datos.ref}`, pad + (w - 2 * pad - huecoQr) / 2, h - pad - 2 * mm);
+            ctx.fillText(`Ref: ${datos.ref}`, padL + (w - padL - padR - huecoQr) / 2, h - padB - 2 * mm);
             ctx.textAlign = 'left';
         }
 
         if (tieneQr) {
-            ctx.drawImage(opts.qr.img, w - pad - qrLado, h - pad - qrLado, qrLado, qrLado);
+            const qrY = qrAlinV === 'arriba' ? padT : h - padB - qrLado;
+            ctx.drawImage(opts.qr.img, w - padR - qrLado, qrY, qrLado, qrLado);
         }
 
-        dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, opts.imagen, opts.imagenConfig);
-        dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, mm, opts.textoPersonalizado, h - pad - maxBH - 2 * mm);
+        dibujarImagenProductoCanvas_(ctx, w, h, padL, padR, padT, padB, mm, opts.imagen, opts.imagenConfig);
+        dibujarTextoPersonalizadoCanvas_(ctx, w, h, padL, padR, padT, padB, mm, opts.textoPersonalizado, h - padB - maxBH - 2 * mm);
 
         ctx.restore();
     }
@@ -16171,11 +16387,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Canvas2D — intentar compartir una única lista de instrucciones
     // habría dado saltos de línea ligeramente distintos entre ambas.
     function dibujarEtiquetaEnPDF_(doc, xMM, yMM, wMM, hMM, datos, opts) {
-        const W = wMM, H = hMM, PAD = 3.5;
-        // Margen extra a la izquierda SOLO para el nombre del producto,
-        // igual que en dibujarEtiquetaEnCanvas_.
-        const NOMBRE_MARGEN_IZQ = 7;
+        const W = wMM, H = hMM;
         const setColor = (fn, c) => doc[fn](c[0], c[1], c[2]);
+
+        // Márgenes configurables por lado — ver el mismo comentario en
+        // dibujarEtiquetaEnCanvas_.
+        const padL = opts.margenIzqMM != null ? opts.margenIzqMM : 3.5;
+        const padR = opts.margenDerMM != null ? opts.margenDerMM : 3.5;
+        const padT = opts.margenSupMM != null ? opts.margenSupMM : 3.5;
+        const padB = opts.margenInfMM != null ? opts.margenInfMM : 3.5;
 
         // Tamaño del nombre y del precio — ver el mismo comentario en
         // dibujarEtiquetaEnCanvas_. 10.5pt/31pt son los tamaños de
@@ -16186,17 +16406,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const nombreFactor = nombreTamanoMM / 3.5;
         const precioFactor = precioTamanoMM / 11;
 
+        // Tamaño y posición del logo — ver el mismo comentario en
+        // dibujarEtiquetaEnCanvas_.
+        const logoTamanoMM = (opts.logoTamanoMM && opts.logoTamanoMM > 0) ? opts.logoTamanoMM : 11;
+        const logoAlinH = opts.logoAlinH || 'izquierda';
+        const logoAlinV = opts.logoAlinV || 'arriba';
+        const logoCabeceraAlturaMM = logoAlinV === 'arriba' ? logoTamanoMM : 0;
+        const NOMBRE_MARGEN_IZQ = (logoAlinV === 'arriba' && logoAlinH === 'izquierda') ? 7 : 0;
+
         setColor('setDrawColor', ETIQUETA_COLOR_BORDE_);
         doc.setLineWidth(0.25);
         doc.setLineDashPattern([1.2, 1], 0);
         doc.rect(xMM + 0.3, yMM + 0.3, W - 0.6, H - 0.6);
         doc.setLineDashPattern([], 0);
 
-        // Logo un poco más grande que el original (9mm → 11mm), a
-        // petición de Eloy.
         if (opts.logo) {
-            const lh = 11, lw = lh * (opts.logo.width / opts.logo.height);
-            doc.addImage(opts.logo.dataUrl, 'PNG', xMM + PAD, yMM + PAD, lw, lh);
+            const lh = logoTamanoMM, lw = lh * (opts.logo.width / opts.logo.height);
+            const lx = logoAlinH === 'izquierda' ? xMM + padL : logoAlinH === 'derecha' ? xMM + W - padR - lw : xMM + (W - lw) / 2;
+            const ly = logoAlinV === 'arriba' ? yMM + padT : logoAlinV === 'abajo' ? yMM + H - padB - lh : yMM + (H - lh) / 2;
+            doc.addImage(opts.logo.dataUrl, 'PNG', lx, ly, lw, lh);
         }
 
         if (opts.detalleTexto) {
@@ -16206,21 +16434,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const txtW = doc.getTextWidth(texto);
             const bw = Math.max(18, txtW + 7);
             const bh = 6.4;
-            const bx = xMM + W - PAD - bw;
-            const by = yMM + PAD - 0.5;
+            const bx = xMM + W - padR - bw;
+            const by = yMM + padT - 0.5;
             setColor('setFillColor', ETIQUETA_COLOR_RED_);
             doc.roundedRect(bx, by, bw, bh, bh / 2, bh / 2, 'F');
             doc.setTextColor(255, 255, 255);
             doc.text(texto, bx + bw / 2, by + bh / 2 + 1.1, { align: 'center' });
         }
 
-        const nombreX = xMM + PAD + NOMBRE_MARGEN_IZQ;
+        const nombreX = xMM + padL + NOMBRE_MARGEN_IZQ;
         // Ver el mismo comentario en dibujarEtiquetaEnCanvas_.
-        const nombreY0 = yMM + PAD + 11 + nombreTamanoMM * 0.85;
+        const nombreY0 = yMM + padT + logoCabeceraAlturaMM + nombreTamanoMM * 0.85;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10.5 * nombreFactor);
         setColor('setTextColor', ETIQUETA_COLOR_DARK_);
-        const nombreMaxW = xMM + W - PAD - nombreX;
+        const nombreMaxW = xMM + W - padR - nombreX;
         const lineasNombre = doc.splitTextToSize(datos.nombre || '', nombreMaxW).slice(0, 2);
         const lineHeight = 4.3 * nombreFactor;
         lineasNombre.forEach((linea, i) => doc.text(linea, nombreX, nombreY0 + i * lineHeight));
@@ -16228,7 +16456,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5;
         setColor('setDrawColor', ETIQUETA_COLOR_SEPARADOR_);
         doc.setLineWidth(0.25);
-        doc.line(xMM + PAD, sepY, xMM + W - PAD, sepY);
+        doc.line(xMM + padL, sepY, xMM + W - padR, sepY);
 
         // El precio va centrado horizontalmente (a petición de Eloy) —
         // el desglose "Base/IVA Incl." y el "-XX%" de descuento se
@@ -16250,7 +16478,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(9 * precioFactor);
                 setColor('setTextColor', ETIQUETA_COLOR_RED_);
-                doc.text(`-${datos.promo.pct}%`, xMM + W - PAD, precioY, { align: 'right' });
+                doc.text(`-${datos.promo.pct}%`, xMM + W - padR, precioY, { align: 'right' });
             }
 
             precioY += 8 * precioFactor;
@@ -16278,7 +16506,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 doc.setFontSize(7.5 * precioFactor);
                 const anchoCol = Math.max(doc.getTextWidth(baseTxt), ivaTxt ? doc.getTextWidth(ivaTxt) : 0);
                 // Ver el mismo comentario en dibujarEtiquetaEnCanvas_.
-                const huecoDerecha = (xMM + W - PAD) - (centroX + precioAncho / 2) - 2;
+                const huecoDerecha = (xMM + W - padR) - (centroX + precioAncho / 2) - 2;
                 apilarArriba = huecoDerecha < anchoCol;
             }
             if (datos.sin !== null) {
@@ -16289,8 +16517,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     doc.text(ivaTxt ? `${baseTxt}   ·   ${ivaTxt}` : baseTxt, centroX, precioY - 1 * precioFactor, { align: 'center' });
                     precioY += 4 * precioFactor;
                 } else {
-                    doc.text(baseTxt, xMM + W - PAD, precioY - 3 * precioFactor, { align: 'right' });
-                    if (ivaTxt) doc.text(ivaTxt, xMM + W - PAD, precioY + 1 * precioFactor, { align: 'right' });
+                    doc.text(baseTxt, xMM + W - padR, precioY - 3 * precioFactor, { align: 'right' });
+                    if (ivaTxt) doc.text(ivaTxt, xMM + W - padR, precioY + 1 * precioFactor, { align: 'right' });
                 }
             }
             doc.setFont('helvetica', 'bold');
@@ -16304,33 +16532,35 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.text('Consultar precio', centroX, precioY + 2 * precioFactor, { align: 'center' });
         }
 
-        // QR para buscar el producto en la web a la derecha, código de
-        // barras a su izquierda ocupando el resto del ancho — mismo alto
-        // máximo (15mm) que el canvas, para que coincidan.
+        // Código de barras siempre abajo a la izquierda; QR opcional,
+        // siempre a la derecha, arriba o abajo — ver el mismo comentario
+        // en dibujarEtiquetaEnCanvas_.
         const maxBH = 15;
-        const tieneQr = !!opts.qr;
+        const tieneQr = !!opts.qr && opts.qrIncluir !== false;
+        const qrAlinV = opts.qrAlinV === 'arriba' ? 'arriba' : 'abajo';
         const qrLado = tieneQr ? maxBH : 0;
-        const huecoQr = tieneQr ? qrLado + 3 : 0;
+        const huecoQr = (tieneQr && qrAlinV === 'abajo') ? qrLado + 3 : 0;
 
         if (opts.barcode) {
-            const maxBW = W - 2 * PAD - huecoQr;
+            const maxBW = W - padL - padR - huecoQr;
             const aspecto = opts.barcode.width / opts.barcode.height;
             let bw = maxBW, bh = bw / aspecto;
             if (bh > maxBH) { bh = maxBH; bw = bh * aspecto; }
-            doc.addImage(opts.barcode.dataUrl, 'PNG', xMM + PAD + (maxBW - bw) / 2, yMM + H - PAD - bh, bw, bh);
+            doc.addImage(opts.barcode.dataUrl, 'PNG', xMM + padL + (maxBW - bw) / 2, yMM + H - padB - bh, bw, bh);
         } else if (datos.ref) {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-            doc.text(`Ref: ${datos.ref}`, xMM + PAD + (W - 2 * PAD - huecoQr) / 2, yMM + H - PAD - 2, { align: 'center' });
+            doc.text(`Ref: ${datos.ref}`, xMM + padL + (W - padL - padR - huecoQr) / 2, yMM + H - padB - 2, { align: 'center' });
         }
 
         if (tieneQr) {
-            doc.addImage(opts.qr.dataUrl, 'PNG', xMM + W - PAD - qrLado, yMM + H - PAD - qrLado, qrLado, qrLado);
+            const qrY = qrAlinV === 'arriba' ? yMM + padT : yMM + H - padB - qrLado;
+            doc.addImage(opts.qr.dataUrl, 'PNG', xMM + W - padR - qrLado, qrY, qrLado, qrLado);
         }
 
-        dibujarImagenProductoPDF_(doc, xMM, yMM, W, H, PAD, opts.imagen, opts.imagenConfig);
-        dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, W, H, PAD, opts.textoPersonalizado, yMM + H - PAD - maxBH - 2);
+        dibujarImagenProductoPDF_(doc, xMM, yMM, W, H, padL, padR, padT, padB, opts.imagen, opts.imagenConfig);
+        dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, W, H, padL, padR, padT, padB, opts.textoPersonalizado, yMM + H - padB - maxBH - 2);
     }
 
     function etiquetaDetalleTextoActual_() {
@@ -16358,8 +16588,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function etiquetaTamanoActual_(idAncho, idAlto) {
         const wInput = parseFloat($(idAncho || 'modal-etiqueta-ancho').value);
         const hInput = parseFloat($(idAlto || 'modal-etiqueta-alto').value);
-        const w = Math.min(ETIQUETA_PAGINA_ANCHO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(wInput) ? wInput : ETIQUETA_W_DEFECTO_MM_));
-        const h = Math.min(ETIQUETA_PAGINA_ALTO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(hInput) ? hInput : ETIQUETA_H_DEFECTO_MM_));
+        const w = Math.min(ETIQUETA_TAMANO_MAX_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(wInput) ? wInput : ETIQUETA_W_DEFECTO_MM_));
+        const h = Math.min(ETIQUETA_TAMANO_MAX_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(hInput) ? hInput : ETIQUETA_H_DEFECTO_MM_));
         return { w, h };
     }
 
@@ -16420,6 +16650,83 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         };
     }
 
+    // Lee los 4 campos de margen (por lado) — como con el tamaño de
+    // nombre/precio, siempre devuelve un valor válido (3.5mm en los
+    // cuatro lados, el margen de siempre) en vez de null, ya que los
+    // márgenes siempre se aplican.
+    function etiquetaMargenesActual_(idSup, idInf, idIzq, idDer) {
+        const leer = (id, defecto) => {
+            const input = $(id);
+            const valor = input ? parseFloat(input.value) : NaN;
+            return (isFinite(valor) && valor >= 0) ? valor : defecto;
+        };
+        return {
+            margenSupMM: leer(idSup || 'modal-etiqueta-margen-sup', 3.5),
+            margenInfMM: leer(idInf || 'modal-etiqueta-margen-inf', 3.5),
+            margenIzqMM: leer(idIzq || 'modal-etiqueta-margen-izq', 3.5),
+            margenDerMM: leer(idDer || 'modal-etiqueta-margen-der', 3.5),
+        };
+    }
+
+    // Tamaño y posición del logo — igual que etiquetaMargenesActual_,
+    // siempre devuelve un valor válido (11mm arriba a la izquierda, el
+    // de siempre), ya que el logo siempre se dibuja.
+    function etiquetaLogoConfigActual_(idTamano, idAlinH, idAlinV) {
+        const tamanoInput = $(idTamano || 'modal-etiqueta-logo-tamano');
+        const tamanoMM = tamanoInput ? parseFloat(tamanoInput.value) : NaN;
+        return {
+            logoTamanoMM: (isFinite(tamanoMM) && tamanoMM > 0) ? tamanoMM : 11,
+            logoAlinH: ($(idAlinH || 'modal-etiqueta-logo-alinh') || {}).value || 'izquierda',
+            logoAlinV: ($(idAlinV || 'modal-etiqueta-logo-alinv') || {}).value || 'arriba',
+        };
+    }
+
+    // Checkbox "Incluir código QR" (activado por defecto) + su posición
+    // vertical — SIEMPRE a la derecha, a petición de Eloy, así que no
+    // hay alineación horizontal que leer.
+    function etiquetaQrConfigActual_(idIncluir, idAlinV) {
+        const checkbox = $(idIncluir || 'modal-etiqueta-qr-incluir');
+        return {
+            qrIncluir: checkbox ? checkbox.checked : true,
+            qrAlinV: ($(idAlinV || 'modal-etiqueta-qr-alinv') || {}).value || 'abajo',
+        };
+    }
+
+    // Agrupa la lectura de márgenes + logo + QR + tamaño de nombre/precio
+    // en una sola llamada — se repite igual en los 4 sitios que generan
+    // una etiqueta (vista previa, PNG y PDF de la suelta, y el lote de
+    // la lista de la compra), así que evita leer los mismos campos 4
+    // veces por separado en cada uno. idsExtra (opcional) permite pasar
+    // los ids específicos de la modal de lote, que son distintos.
+    function etiquetaOptsComunesActual_(idsExtra) {
+        const ids = idsExtra || {};
+        const tamanosTexto = etiquetaNombrePrecioTamanosActual_(ids.nombreTamano, ids.precioTamano);
+        const margenes = etiquetaMargenesActual_(ids.margenSup, ids.margenInf, ids.margenIzq, ids.margenDer);
+        const logoConfig = etiquetaLogoConfigActual_(ids.logoTamano, ids.logoAlinH, ids.logoAlinV);
+        const qrConfig = etiquetaQrConfigActual_(ids.qrIncluir, ids.qrAlinV);
+        return {
+            nombreTamanoMM: tamanosTexto.nombreTamanoMM, precioTamanoMM: tamanosTexto.precioTamanoMM,
+            margenSupMM: margenes.margenSupMM, margenInfMM: margenes.margenInfMM,
+            margenIzqMM: margenes.margenIzqMM, margenDerMM: margenes.margenDerMM,
+            logoTamanoMM: logoConfig.logoTamanoMM, logoAlinH: logoConfig.logoAlinH, logoAlinV: logoConfig.logoAlinV,
+            qrIncluir: qrConfig.qrIncluir, qrAlinV: qrConfig.qrAlinV,
+        };
+    }
+
+    // Aplica un tamaño de papel estándar (ETIQUETA_PAPEL_TAMANOS_MM_) a
+    // los campos ancho/alto, según la orientación elegida — llamada al
+    // cambiar el selector "Tamaño de papel" o "Orientación". Si
+    // "Tamaño de papel" está en "Personalizado" (valor vacío), no hace
+    // nada: ancho/alto se quedan tal cual el usuario los haya dejado.
+    function etiquetaAplicarPapel_(idPapel, idOrientacion, idAncho, idAlto) {
+        const papel = $(idPapel).value;
+        if (!papel || !ETIQUETA_PAPEL_TAMANOS_MM_[papel]) return;
+        const { w, h } = ETIQUETA_PAPEL_TAMANOS_MM_[papel];
+        const horizontal = $(idOrientacion).value === 'horizontal';
+        $(idAncho).value = horizontal ? h : w;
+        $(idAlto).value = horizontal ? w : h;
+    }
+
     function actualizarAvisosEtiqueta_(datos) {
         $('modal-etiqueta-promo-aviso').style.display = datos.promo ? '' : 'none';
         $('modal-etiqueta-sin-codigo-aviso').style.display = datos.ref ? 'none' : 'block';
@@ -16466,7 +16773,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const datos = datosEtiquetaParaProducto_(p);
         actualizarAvisosEtiqueta_(datos);
         const imagenConfig = etiquetaImagenConfigActual_();
-        const tamanosTexto = etiquetaNombrePrecioTamanosActual_();
+        const opts = etiquetaOptsComunesActual_();
         const [logo, barcode, qr, imagen] = await Promise.all([
             etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
             imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
@@ -16479,10 +16786,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         canvas.height = Math.round(h * ETIQUETA_PREVIEW_PXMM_);
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, {
+        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, Object.assign({
             logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
-            nombreTamanoMM: tamanosTexto.nombreTamanoMM, precioTamanoMM: tamanosTexto.precioTamanoMM,
-        });
+        }, opts));
     }
 
     function abrirModalEtiquetaPrecio_(p) {
@@ -16493,10 +16799,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         productoEtiquetaActual_ = p;
         $('modal-etiqueta-nombre').textContent = `${p.nombre} (Ref: ${p.ref})`;
         $('modal-etiqueta-cantidad').value = 1;
+        $('modal-etiqueta-papel').value = '';
+        $('modal-etiqueta-orientacion').value = 'vertical';
         $('modal-etiqueta-ancho').value = ETIQUETA_W_DEFECTO_MM_;
         $('modal-etiqueta-alto').value = ETIQUETA_H_DEFECTO_MM_;
+        $('modal-etiqueta-margen-sup').value = 3.5;
+        $('modal-etiqueta-margen-inf').value = 3.5;
+        $('modal-etiqueta-margen-izq').value = 3.5;
+        $('modal-etiqueta-margen-der').value = 3.5;
         $('modal-etiqueta-nombre-tamano').value = 3.5;
         $('modal-etiqueta-precio-tamano').value = 11;
+        $('modal-etiqueta-logo-tamano').value = 11;
+        $('modal-etiqueta-logo-alinh').value = 'izquierda';
+        $('modal-etiqueta-logo-alinv').value = 'arriba';
+        $('modal-etiqueta-qr-incluir').checked = true;
+        $('modal-etiqueta-qr-alinv').value = 'abajo';
         $('modal-etiqueta-detalle').value = '';
         $('modal-etiqueta-detalle-otro').value = '';
         $('modal-etiqueta-detalle-otro-fila').style.display = 'none';
@@ -16572,7 +16889,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             const datos = datosEtiquetaParaProducto_(p);
             const imagenConfig = etiquetaImagenConfigActual_();
-            const tamanosTexto = etiquetaNombrePrecioTamanosActual_();
+            const opts0 = etiquetaOptsComunesActual_();
             const [logo, barcode, qr, imagen] = await Promise.all([
                 etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
                 imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
@@ -16582,10 +16899,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const canvas = document.createElement('canvas');
             canvas.width = Math.round(w * PXMM);
             canvas.height = Math.round(h * PXMM);
-            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, {
+            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, Object.assign({
                 logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
-                nombreTamanoMM: tamanosTexto.nombreTamanoMM, precioTamanoMM: tamanosTexto.precioTamanoMM,
-            });
+            }, opts0));
             const blob = await etiquetaCanvasABlob_(canvas);
             if (!blob) throw new Error('canvas.toBlob devolvió null');
             descargarComoArchivo_(blob, `${etiquetaNombreArchivoBase_(p)}.png`);
@@ -16617,15 +16933,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             const datos = datosEtiquetaParaProducto_(p);
             const imagenConfig = etiquetaImagenConfigActual_();
-            const tamanosTexto = etiquetaNombrePrecioTamanosActual_();
+            const opts0 = etiquetaOptsComunesActual_();
             const [logo, barcode, qr, imagen] = await Promise.all([
                 etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
                 imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
             ]);
-            const opts = {
+            const opts = Object.assign({
                 logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
-                nombreTamanoMM: tamanosTexto.nombreTamanoMM, precioTamanoMM: tamanosTexto.precioTamanoMM,
-            };
+            }, opts0);
             const { w, h } = etiquetaTamanoActual_();
             const { jsPDF } = window.jspdf;
 
@@ -16685,6 +17000,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             cantidad: 1,
             nombreTamano: 3.5,
             precioTamano: 11,
+            margenSup: 3.5,
+            margenInf: 3.5,
+            margenIzq: 3.5,
+            margenDer: 3.5,
+            logoTamano: 11,
+            logoAlinH: 'izquierda',
+            logoAlinV: 'arriba',
+            qrIncluir: true,
+            qrAlinV: 'abajo',
             detalle: '',
             detalleOtro: '',
             imagenIncluir: false,
@@ -16717,10 +17041,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const precioTamano = parseFloat($('modal-etiquetas-lista-precio-tamano').value);
         const textoTamano = parseFloat($('modal-etiquetas-lista-texto-tamano').value);
         const imagenTamano = parseFloat($('modal-etiquetas-lista-imagen-tamano').value);
+        const margenes = etiquetaMargenesActual_(
+            'modal-etiquetas-lista-margen-sup', 'modal-etiquetas-lista-margen-inf',
+            'modal-etiquetas-lista-margen-izq', 'modal-etiquetas-lista-margen-der'
+        );
+        const logoConfig = etiquetaLogoConfigActual_(
+            'modal-etiquetas-lista-logo-tamano', 'modal-etiquetas-lista-logo-alinh', 'modal-etiquetas-lista-logo-alinv'
+        );
+        const qrConfig = etiquetaQrConfigActual_('modal-etiquetas-lista-qr-incluir', 'modal-etiquetas-lista-qr-alinv');
         return {
             cantidad: Math.min(ETIQUETA_CANTIDAD_MAXIMA_, Math.max(1, Number.isFinite(cantidad) ? cantidad : 1)),
             nombreTamano: (isFinite(nombreTamano) && nombreTamano > 0) ? nombreTamano : 3.5,
             precioTamano: (isFinite(precioTamano) && precioTamano > 0) ? precioTamano : 11,
+            margenSup: margenes.margenSupMM,
+            margenInf: margenes.margenInfMM,
+            margenIzq: margenes.margenIzqMM,
+            margenDer: margenes.margenDerMM,
+            logoTamano: logoConfig.logoTamanoMM,
+            logoAlinH: logoConfig.logoAlinH,
+            logoAlinV: logoConfig.logoAlinV,
+            qrIncluir: qrConfig.qrIncluir,
+            qrAlinV: qrConfig.qrAlinV,
             detalle: $('modal-etiquetas-lista-detalle').value,
             detalleOtro: $('modal-etiquetas-lista-detalle-otro').value,
             imagenIncluir: $('modal-etiquetas-lista-imagen-incluir').checked,
@@ -16742,6 +17083,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-etiquetas-lista-cantidad').value = cfg.cantidad;
         $('modal-etiquetas-lista-nombre-tamano').value = cfg.nombreTamano;
         $('modal-etiquetas-lista-precio-tamano').value = cfg.precioTamano;
+        $('modal-etiquetas-lista-margen-sup').value = cfg.margenSup;
+        $('modal-etiquetas-lista-margen-inf').value = cfg.margenInf;
+        $('modal-etiquetas-lista-margen-izq').value = cfg.margenIzq;
+        $('modal-etiquetas-lista-margen-der').value = cfg.margenDer;
+        $('modal-etiquetas-lista-logo-tamano').value = cfg.logoTamano;
+        $('modal-etiquetas-lista-logo-alinh').value = cfg.logoAlinH;
+        $('modal-etiquetas-lista-logo-alinv').value = cfg.logoAlinV;
+        $('modal-etiquetas-lista-qr-incluir').checked = cfg.qrIncluir;
+        $('modal-etiquetas-lista-qr-alinv').value = cfg.qrAlinV;
         $('modal-etiquetas-lista-detalle').value = cfg.detalle;
         $('modal-etiquetas-lista-detalle-otro').value = cfg.detalleOtro;
         $('modal-etiquetas-lista-detalle-otro-fila').style.display = cfg.detalle === '__otro__' ? '' : 'none';
@@ -16785,6 +17135,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             opts: {
                 logo, barcode, qr, imagen, imagenConfig, detalleTexto, textoPersonalizado,
                 nombreTamanoMM: cfg.nombreTamano, precioTamanoMM: cfg.precioTamano,
+                margenSupMM: cfg.margenSup, margenInfMM: cfg.margenInf, margenIzqMM: cfg.margenIzq, margenDerMM: cfg.margenDer,
+                logoTamanoMM: cfg.logoTamano, logoAlinH: cfg.logoAlinH, logoAlinV: cfg.logoAlinV,
+                qrIncluir: cfg.qrIncluir, qrAlinV: cfg.qrAlinV,
             },
         };
     }
@@ -16865,6 +17218,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         etiquetasListaProductos_ = productos;
         etiquetasListaConfigs_ = productos.map(() => etiquetasListaConfigDefecto_());
         etiquetasListaPagina_ = 0;
+        $('modal-etiquetas-lista-papel').value = '';
+        $('modal-etiquetas-lista-orientacion').value = 'vertical';
         $('modal-etiquetas-lista-ancho').value = ETIQUETA_W_DEFECTO_MM_;
         $('modal-etiquetas-lista-alto').value = ETIQUETA_H_DEFECTO_MM_;
 
@@ -19186,10 +19541,40 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         actualizarVistaPreviaEtiqueta_();
     });
     $('modal-etiqueta-detalle-otro').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
-    $('modal-etiqueta-ancho').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
-    $('modal-etiqueta-alto').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    // Tamaño de papel/orientación: rellenan ancho/alto con el preset
+    // elegido y repintan — si el usuario edita ancho/alto a mano
+    // después, el selector vuelve a "Personalizado" (ya no reflejaría
+    // el preset con fidelidad).
+    $('modal-etiqueta-papel').addEventListener('change', () => {
+        etiquetaAplicarPapel_('modal-etiqueta-papel', 'modal-etiqueta-orientacion', 'modal-etiqueta-ancho', 'modal-etiqueta-alto');
+        actualizarVistaPreviaEtiqueta_();
+    });
+    $('modal-etiqueta-orientacion').addEventListener('change', () => {
+        etiquetaAplicarPapel_('modal-etiqueta-papel', 'modal-etiqueta-orientacion', 'modal-etiqueta-ancho', 'modal-etiqueta-alto');
+        actualizarVistaPreviaEtiqueta_();
+    });
+    $('modal-etiqueta-ancho').addEventListener('input', () => {
+        $('modal-etiqueta-papel').value = '';
+        actualizarVistaPreviaEtiqueta_();
+    });
+    $('modal-etiqueta-alto').addEventListener('input', () => {
+        $('modal-etiqueta-papel').value = '';
+        actualizarVistaPreviaEtiqueta_();
+    });
+    ['modal-etiqueta-margen-sup', 'modal-etiqueta-margen-inf', 'modal-etiqueta-margen-izq', 'modal-etiqueta-margen-der'].forEach((id) => {
+        $(id).addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    });
     $('modal-etiqueta-nombre-tamano').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
     $('modal-etiqueta-precio-tamano').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    // Logo — siempre visible, sin checkbox.
+    $('modal-etiqueta-logo-tamano').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    ['modal-etiqueta-logo-alinh', 'modal-etiqueta-logo-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    });
+    // Código QR — checkbox (activado por defecto) + posición vertical
+    // (siempre a la derecha).
+    $('modal-etiqueta-qr-incluir').addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    $('modal-etiqueta-qr-alinv').addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
     // Imagen del producto — el checkbox muestra/oculta los selectores de
     // posición y, como la carga real de la foto puede tardar (red), solo
     // se intenta cuando está marcado (ver etiquetaImagenConfigActual_).
@@ -19237,12 +19622,35 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('modal-etiquetas-lista-siguiente').addEventListener('click', () => etiquetasListaIrAPagina_(etiquetasListaPagina_ + 1));
     $('modal-etiquetas-lista-selector').addEventListener('change', (e) => etiquetasListaIrAPagina_(parseInt(e.target.value, 10)));
 
-    $('modal-etiquetas-lista-ancho').addEventListener('input', () => actualizarVistaPreviaEtiquetasLista_());
-    $('modal-etiquetas-lista-alto').addEventListener('input', () => actualizarVistaPreviaEtiquetasLista_());
+    $('modal-etiquetas-lista-papel').addEventListener('change', () => {
+        etiquetaAplicarPapel_('modal-etiquetas-lista-papel', 'modal-etiquetas-lista-orientacion', 'modal-etiquetas-lista-ancho', 'modal-etiquetas-lista-alto');
+        actualizarVistaPreviaEtiquetasLista_();
+    });
+    $('modal-etiquetas-lista-orientacion').addEventListener('change', () => {
+        etiquetaAplicarPapel_('modal-etiquetas-lista-papel', 'modal-etiquetas-lista-orientacion', 'modal-etiquetas-lista-ancho', 'modal-etiquetas-lista-alto');
+        actualizarVistaPreviaEtiquetasLista_();
+    });
+    $('modal-etiquetas-lista-ancho').addEventListener('input', () => {
+        $('modal-etiquetas-lista-papel').value = '';
+        actualizarVistaPreviaEtiquetasLista_();
+    });
+    $('modal-etiquetas-lista-alto').addEventListener('input', () => {
+        $('modal-etiquetas-lista-papel').value = '';
+        actualizarVistaPreviaEtiquetasLista_();
+    });
 
     $('modal-etiquetas-lista-cantidad').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
     $('modal-etiquetas-lista-nombre-tamano').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
     $('modal-etiquetas-lista-precio-tamano').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    ['modal-etiquetas-lista-margen-sup', 'modal-etiquetas-lista-margen-inf', 'modal-etiquetas-lista-margen-izq', 'modal-etiquetas-lista-margen-der'].forEach((id) => {
+        $(id).addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    });
+    $('modal-etiquetas-lista-logo-tamano').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    ['modal-etiquetas-lista-logo-alinh', 'modal-etiquetas-lista-logo-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    });
+    $('modal-etiquetas-lista-qr-incluir').addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    $('modal-etiquetas-lista-qr-alinv').addEventListener('change', () => etiquetasListaActualizarConfigActual_());
     $('modal-etiquetas-lista-detalle').addEventListener('change', () => {
         $('modal-etiquetas-lista-detalle-otro-fila').style.display = $('modal-etiquetas-lista-detalle').value === '__otro__' ? '' : 'none';
         etiquetasListaActualizarConfigActual_();
