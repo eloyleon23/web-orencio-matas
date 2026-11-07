@@ -15573,17 +15573,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // las tarjetas, reutilizando destacadoEfectivoPara_/
     // calcularPrecioDestacado_ sin duplicar esa lógica.
     function datosEtiquetaParaProducto_(p) {
-        const conRaw = (p.precio_con != null && p.precio_con !== '') ? parseFloat(p.precio_con.toString().replace(',', '.')) : NaN;
-        const sinRaw = (p.precio_sin != null && p.precio_sin !== '') ? parseFloat(p.precio_sin.toString().replace(',', '.')) : NaN;
-        const con = (isFinite(conRaw) && conRaw > 0) ? conRaw : null;
-        const sin = (isFinite(sinRaw) && sinRaw > 0) ? sinRaw : null;
+        // Reutiliza precioEfectivoParaLista_ — la misma función que usan
+        // la lista de la compra, su PDF y el texto para compartir — en
+        // vez de leer precio_con/precio_sin directamente: si no, en el
+        // perfil profesional la etiqueta salía siempre con el PVP
+        // público en vez del precio al por mayor confirmado (bug real
+        // reportado por Eloy: "en modo profesional saca el precio normal
+        // y no el precio mayor"), y un producto destacado con descuento
+        // tampoco se aplicaba.
+        const efectivo = precioEfectivoParaLista_(p);
+        // Mientras el precio al por mayor todavía no se ha confirmado
+        // contra la fuente en vivo (ver preciosMayorConfirmados_), nunca
+        // se cae al PVP público como si fuera el correcto — se trata
+        // igual que "sin precio" (la etiqueta sale con "Consultar
+        // precio"), igual que el resto de sitios que llaman a esta
+        // función.
+        const con = (efectivo && !efectivo.pending && efectivo.con != null) ? efectivo.con : null;
+        const sin = (efectivo && !efectivo.pending && efectivo.sin != null) ? efectivo.sin : null;
         const ivaPct = (con !== null && sin !== null) ? Math.round((con / sin - 1) * 100) : null;
 
+        // precioEfectivoParaLista_ ya devuelve el precio FINAL (con/sin)
+        // rebajado cuando el producto está destacado — para la etiqueta
+        // además hace falta el precio ORIGINAL tachado encima, así que
+        // se recalcula con calcularPrecioDestacado_ (la misma fuente que
+        // usa precioEfectivoParaLista_ por debajo), aplicando el precio
+        // mayorista o el público según corresponda (efectivo.esMayor).
         let promo = null;
-        const d = destacadoEfectivoPara_(p.ref);
-        if (d) {
-            const info = calcularPrecioDestacado_(p, d);
-            if (info.original !== null && info.promo !== null) {
+        if (efectivo && !efectivo.pending && efectivo.destacado) {
+            const info = calcularPrecioDestacado_(p, efectivo.destacado);
+            if (efectivo.esMayor) {
+                if (info.originalMayor !== null && info.promoMayor !== null) {
+                    promo = { original: info.originalMayor, promo: info.promoMayor, promoSin: info.promoMayorSin, pct: info.pct };
+                }
+            } else if (info.original !== null && info.promo !== null) {
                 promo = { original: info.original, promo: info.promo, promoSin: info.promoSin, pct: info.pct };
             }
         }
