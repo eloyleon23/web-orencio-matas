@@ -16048,7 +16048,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // debajo, así que el hueco que deja la imagen antes de esa
         // referencia tiene que ser mayor que el simple "imgGapV" — si no,
         // la imagen pisa esas líneas aunque en apariencia "quepa todo".
-        let precioY0 = sepY + 6 * mm;
+        // El hueco entre el separador y el precio es más ancho (6mm) por
+        // estética cuando no hay imagen que necesite aprovecharlo — pero
+        // si hay una imagen en "centro"/"abajo" que tiene que encogerse
+        // para caber, se reduce a 4mm para darle algo más de margen de
+        // maniobra (en una etiqueta pequeña cada mm cuenta).
+        const gapSepPrecio = (tieneImagen && (imgCfg.alinV === 'centro' || imgCfg.alinV === 'abajo')) ? 4 * mm : 6 * mm;
+        let precioY0 = sepY + gapSepPrecio;
         if (tieneImagen && imgCfg.alinV === 'centro') {
             const precioMargenSuperior = (
                 datos.promo ? 3 : (datos.con !== null ? (datos.sin !== null ? 5.5 : 4.5) : 1)
@@ -16301,7 +16307,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // debajo, así que el hueco que deja la imagen antes de esa
         // referencia tiene que ser mayor que el simple "imgGapV" — si no,
         // la imagen pisa esas líneas aunque en apariencia "quepa todo".
-        let precioY0 = sepY + 6;
+        // El hueco entre el separador y el precio es más ancho (6mm) por
+        // estética cuando no hay imagen que necesite aprovecharlo — pero
+        // si hay una imagen en "centro"/"abajo" que tiene que encogerse
+        // para caber, se reduce a 4mm para darle algo más de margen de
+        // maniobra (en una etiqueta pequeña cada mm cuenta).
+        const gapSepPrecio = (tieneImagen && (imgCfg.alinV === 'centro' || imgCfg.alinV === 'abajo')) ? 4 : 6;
+        let precioY0 = sepY + gapSepPrecio;
         if (tieneImagen && imgCfg.alinV === 'centro') {
             const precioMargenSuperior = datos.promo ? 3 : (datos.con !== null ? (datos.sin !== null ? 5.5 : 4.5) : 1);
             const gapTrasImagen = Math.max(imgGapV, precioMargenSuperior);
