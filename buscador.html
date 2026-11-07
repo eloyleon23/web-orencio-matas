@@ -2807,6 +2807,19 @@
             object-fit: contain;
             border-radius: 8px;
         }
+        /* Se muestra mientras la foto del producto está descargándose
+           (el <img> permanece oculto hasta su "onload", para que no se
+           vea un instante la foto del producto anterior — ver
+           abrirModalProducto) y así el hueco no se queda en blanco ese
+           segundo o dos. Dentro del botón ".modal-producto-imagen-ampliar"
+           (no del contenedor ".modal-producto-imagen", que puede ser
+           mucho más alto que la foto real por el grid a dos columnas)
+           para que el centrado flex del botón lo deje bien centrado sobre
+           el hueco visible de la imagen. */
+        .modal-producto-img-spinner {
+            font-size: 2rem;
+            color: var(--text-muted, #94a3b8);
+        }
         /* Botón que envuelve la imagen principal del modal de detalle
            para ampliarla — mismo mecanismo que el asistente de
            imágenes (icono siempre visible, no solo al :hover, para que
@@ -5348,6 +5361,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <span id="modal-producto-destacado-chip" class="destacado-chip" style="display:none;"></span>
                 <button type="button" class="modal-producto-imagen-ampliar" id="modal-producto-imagen-ampliar" aria-label="Ampliar imagen">
                     <img id="modal-producto-img" src="" alt="" loading="lazy">
+                    <span id="modal-producto-img-spinner" class="modal-producto-img-spinner" style="display:none;" aria-hidden="true">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                    </span>
                     <span class="modal-producto-imagen-ampliar-icono"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
                 </button>
                 <div id="modal-producto-sin-imagen" class="sin-imagen-fabricante sin-imagen-fabricante--modal" style="display:none;">
@@ -7062,6 +7078,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // producto superpuesto.
     function mostrarSinImagenModal(p) {
         $('modal-producto-img').style.display = 'none';
+        $('modal-producto-img-spinner').style.display = 'none';
         const cont = $('modal-producto-sin-imagen');
         const src = (p.area === 'talleres' && p.fabricante && LOGOS_FABRICANTE[p.fabricante])
             ? LOGOS_FABRICANTE[p.fabricante]
@@ -14606,8 +14623,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // foto ya ha cargado (onload) o, si falla, cuando
         // mostrarSinImagenModal la sustituye por el logo genérico.
         const imgEl = $('modal-producto-img');
+        const spinnerEl = $('modal-producto-img-spinner');
         imgEl.style.display = 'none';
         imgEl.removeAttribute('src');
+        // Spinner mientras se descarga la foto (ver más abajo, onload/
+        // onerror) — así el hueco no se queda en blanco ese segundo o dos
+        // que tarda en llegar, solo si realmente hay foto que cargar.
+        spinnerEl.style.display = tieneImagen ? 'flex' : 'none';
         // "loading=lazy" (puesto en el HTML para no descargar la foto si
         // el usuario nunca abre la ficha) decide si cargar la imagen según
         // si está cerca del viewport, no según su "display" — con el
@@ -14615,8 +14637,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // "cerca" y no llegaría a cargarla. Aquí ya se sabe que el
         // usuario ha abierto la ficha, así que se fuerza "eager".
         imgEl.loading = 'eager';
-        imgEl.onload = () => { if (tieneImagen) imgEl.style.display = 'block'; };
-        imgEl.onerror = () => mostrarSinImagenModal(p);
+        imgEl.onload = () => {
+            spinnerEl.style.display = 'none';
+            if (tieneImagen) imgEl.style.display = 'block';
+        };
+        imgEl.onerror = () => {
+            spinnerEl.style.display = 'none';
+            mostrarSinImagenModal(p);
+        };
         imgEl.alt = escapeHtml(p.nombre);
         imgEl.src = imgSrc;
 
