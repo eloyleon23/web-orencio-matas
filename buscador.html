@@ -5780,17 +5780,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiqueta-imagen-alinh">Horizontal</label>
                     <select id="modal-etiqueta-imagen-alinh">
-                        <option value="izquierda">Izquierda</option>
+                        <option value="izquierda" selected>Izquierda</option>
                         <option value="centro">Centro</option>
-                        <option value="derecha" selected>Derecha</option>
+                        <option value="derecha">Derecha</option>
                     </select>
                 </div>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiqueta-imagen-alinv">Vertical</label>
                     <select id="modal-etiqueta-imagen-alinv">
-                        <option value="arriba" selected>Arriba</option>
+                        <option value="arriba">Arriba</option>
                         <option value="centro">Centro</option>
-                        <option value="abajo">Abajo</option>
+                        <option value="abajo" selected>Abajo</option>
                     </select>
                 </div>
             </div>
@@ -5954,17 +5954,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiquetas-lista-imagen-alinh">Horizontal</label>
                     <select id="modal-etiquetas-lista-imagen-alinh">
-                        <option value="izquierda">Izquierda</option>
+                        <option value="izquierda" selected>Izquierda</option>
                         <option value="centro">Centro</option>
-                        <option value="derecha" selected>Derecha</option>
+                        <option value="derecha">Derecha</option>
                     </select>
                 </div>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiquetas-lista-imagen-alinv">Vertical</label>
                     <select id="modal-etiquetas-lista-imagen-alinv">
-                        <option value="arriba" selected>Arriba</option>
+                        <option value="arriba">Arriba</option>
                         <option value="centro">Centro</option>
-                        <option value="abajo">Abajo</option>
+                        <option value="abajo" selected>Abajo</option>
                     </select>
                 </div>
             </div>
@@ -16287,8 +16287,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const tamanoMM = parseFloat($('modal-etiqueta-imagen-tamano').value);
         return {
             tamanoMM: (isFinite(tamanoMM) && tamanoMM > 0) ? tamanoMM : ETIQUETA_IMAGEN_BOX_MM_DEFECTO_,
-            alinH: $('modal-etiqueta-imagen-alinh').value || 'derecha',
-            alinV: $('modal-etiqueta-imagen-alinv').value || 'arriba',
+            alinH: $('modal-etiqueta-imagen-alinh').value || 'izquierda',
+            alinV: $('modal-etiqueta-imagen-alinv').value || 'abajo',
         };
     }
 
@@ -16352,8 +16352,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('modal-etiqueta-imagen-incluir').checked = false;
         $('modal-etiqueta-imagen-controles').style.display = 'none';
         $('modal-etiqueta-imagen-tamano').value = ETIQUETA_IMAGEN_BOX_MM_DEFECTO_;
-        $('modal-etiqueta-imagen-alinh').value = 'derecha';
-        $('modal-etiqueta-imagen-alinv').value = 'arriba';
+        $('modal-etiqueta-imagen-alinh').value = 'izquierda';
+        $('modal-etiqueta-imagen-alinv').value = 'abajo';
         $('modal-etiqueta-sin-imagen-aviso').style.display = 'none';
         $('modal-etiqueta-texto').value = '';
         $('modal-etiqueta-texto-tamano').value = 10;
@@ -16530,8 +16530,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             detalleOtro: '',
             imagenIncluir: false,
             imagenTamano: 18,
-            imagenAlinH: 'derecha',
-            imagenAlinV: 'arriba',
+            imagenAlinH: 'izquierda',
+            imagenAlinV: 'abajo',
             texto: '',
             textoTamano: 10,
             textoAlinH: 'centro',
