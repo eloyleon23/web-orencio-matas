@@ -8620,6 +8620,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
         $('f-texto').addEventListener('keydown', (e) => {
             if (e.key === 'Escape') ocultarSugerencias();
+            // A petición de Eloy: al pulsar Intro (o el salto de línea del
+            // teclado virtual del móvil, que dispara el mismo evento con
+            // key === 'Enter') se oculta el desplegable de sugerencias
+            // para que el usuario vea ya los resultados, en vez de tener
+            // que cerrarlo él mismo tocando fuera. Se quita también el
+            // foco del campo — mismo patrón que abrirProductoUnicoTrasBusqueda:
+            // en móvil retrae el teclado virtual, dejando más hueco en
+            // pantalla para ver los resultados de inmediato.
+            if (e.key === 'Enter') {
+                ocultarSugerencias();
+                $('f-texto').blur();
+            }
         });
         $('sugerencias-busqueda').addEventListener('click', (e) => {
             const item = e.target.closest('.sugerencia-item');
