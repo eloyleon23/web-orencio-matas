@@ -960,6 +960,22 @@
         @media (min-width: 1300px) {
             .modal-producto-box.modal-temporada-ver-todos-box { max-width: 1450px; }
         }
+        #temporada-ver-todos-titulo {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+        }
+        #temporada-ver-todos-titulo-texto { flex: 1; min-width: 0; }
+        /* Compartir una temporada — a petición de Eloy: que el enlace
+           lleve directamente a esa sección y a esa modal (ver
+           urlCompartirTemporada_/abrirTemporadaDesdeURL_, mismo patrón
+           que ya existe para compartir un producto con ?ref=). */
+        .temporada-ver-todos-compartir {
+            flex-shrink: 0; border: 1px solid var(--border); background: #fff;
+            border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+            color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .temporada-ver-todos-compartir:hover { background: var(--light); color: var(--dark); border-color: #cbd5e1; }
+        .temporada-ver-todos-compartir.copiado { background: #dcfce7; border-color: #86efac; color: #166534; }
         .temporada-ver-todos-vigencia { color: var(--muted); font-size: 0.85rem; margin: -6px 0 14px; }
         .temporada-ver-todos-buscar {
             width: 100%; padding: 9px 12px; margin-bottom: 16px;
@@ -7164,7 +7180,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
             <i class="fa-solid fa-xmark"></i>
         </button>
-        <h3 id="temporada-ver-todos-titulo"><i class="fa-solid fa-snowflake"></i> <span id="temporada-ver-todos-titulo-texto">Productos de temporada</span></h3>
+        <h3 id="temporada-ver-todos-titulo">
+            <span id="temporada-ver-todos-titulo-icono"><i class="fa-solid fa-snowflake"></i></span>
+            <span id="temporada-ver-todos-titulo-texto">Productos de temporada</span>
+            <button type="button" id="temporada-ver-todos-compartir" class="temporada-ver-todos-compartir" title="Compartir esta temporada">
+                <i class="fa-solid fa-share-from-square"></i> Compartir
+            </button>
+        </h3>
         <p id="temporada-ver-todos-vigencia" class="temporada-ver-todos-vigencia"></p>
         <input type="text" id="temporada-ver-todos-buscar" class="temporada-ver-todos-buscar" placeholder="Buscar por nombre o referencia entre estos productos...">
         <div id="temporada-ver-todos-scroll" class="temporada-ver-todos-scroll">
@@ -7216,6 +7238,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <h4 id="temporadas-editor-titulo">Nueva temporada</h4>
                 <label for="temporadas-editor-nombre">Nombre</label>
                 <input type="text" id="temporadas-editor-nombre" placeholder="Ej: Invierno y Navidad 2026">
+                <label for="temporadas-editor-emoji">Emoticono (se muestra junto al nombre, en el buscador y en la modal)</label>
+                <input type="text" id="temporadas-editor-emoji" placeholder="❄️" maxlength="8" style="max-width:120px;">
                 <label><input type="checkbox" id="temporadas-editor-permanente"> Permanente (ignora las fechas, solo manda "Activa")</label>
                 <label for="temporadas-editor-fecha-inicio">Fecha de inicio</label>
                 <input type="date" id="temporadas-editor-fecha-inicio">
@@ -8487,14 +8511,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // abierto?" de abajo (que decide si robar el foco a la barra de
         // búsqueda) vea el resultado FINAL, no el de a mitad de abrir.
         await abrirProductoDesdeURL();
+        // Mismo patrón que ?ref= (enlace a un producto), pero para
+        // ?temporada=<id> — ver abrirTemporadaDesdeURL_.
+        await abrirTemporadaDesdeURL_();
         // A petición de Eloy: al entrar o recargar la página, el foco del
         // teclado se pone automáticamente en la barra de búsqueda — muy
         // útil con el lector de códigos de barras, que "escribe"
         // directamente donde esté el foco sin tener que tocar antes la
-        // pantalla. Si ?ref= ya abrió el modal de un producto (enlace
+        // pantalla. Si ?ref= o ?temporada= ya abrieron un modal (enlace
         // compartido), se respeta esa vista y no se le quita el foco —
-        // el usuario probablemente quiere ver ese producto, no buscar.
-        if (!$('modal-producto-overlay').classList.contains('activo')) {
+        // el usuario probablemente quiere verlo, no buscar.
+        if (!$('modal-producto-overlay').classList.contains('activo') && !$('temporada-ver-todos-overlay').classList.contains('activo')) {
             $('f-texto').focus();
         }
     }
@@ -10396,10 +10423,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         bloques.forEach(({ temporada, productos }) => {
             const bloque = document.createElement('div');
             bloque.className = 'seccion-destacados temporada-bloque';
+            bloque.dataset.temporadaId = temporada.id;
             bloque.innerHTML = `
                 <div class="seccion-destacados__cabecera">
                     <p class="seccion-destacados__titulo seccion-temporada__titulo-clicable" role="button" tabindex="0">
-                        <span class="seccion-destacados__icono"><i class="fa-solid fa-snowflake"></i></span>
+                        <span class="seccion-destacados__icono">${temporada.emoji ? escapeHtml(temporada.emoji) : '<i class="fa-solid fa-snowflake"></i>'}</span>
                         <span>${escapeHtml(temporada.nombre)}</span>
                         <i class="fa-solid fa-chevron-right seccion-temporada__flecha"></i>
                     </p>
@@ -10501,7 +10529,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const productos = productosDeTemporada_(t);
         if (!productos.length) return;
         temporadaModalProductosBase_ = productos;
+        $('temporada-ver-todos-titulo-icono').innerHTML = t.emoji ? escapeHtml(t.emoji) : '<i class="fa-solid fa-snowflake"></i>';
         $('temporada-ver-todos-titulo-texto').textContent = t.nombre || 'Productos de temporada';
+        configurarBotonCompartirTemporada_(t);
 
         $('temporada-ver-todos-vigencia').textContent = t.permanente
             ? 'Disponible todo el año'
@@ -10525,6 +10555,66 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         $('temporada-ver-todos-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+
+        // Deja también situada en pantalla la sección/bloque de esta
+        // temporada (si ya está pintado) — a petición de Eloy: poder
+        // "acceder directamente a esa sección y modal" desde un enlace
+        // compartido, no solo a la modal.
+        const bloqueDom = document.querySelector(`.temporada-bloque[data-temporada-id="${temporadaId}"]`);
+        if (bloqueDom) bloqueDom.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Construye y comparte el enlace de una temporada (mismo patrón que
+    // urlCompartirProducto/compartirProducto): la página actual + el
+    // parámetro ?temporada=<id>. Al abrir ese enlace, el buscador
+    // detecta el parámetro y abre automáticamente esta misma modal (ver
+    // abrirTemporadaDesdeURL_).
+    function urlCompartirTemporada_(t) {
+        const base = window.location.origin + window.location.pathname;
+        return `${base}?temporada=${encodeURIComponent(t.id)}`;
+    }
+
+    function configurarBotonCompartirTemporada_(t) {
+        const boton = $('temporada-ver-todos-compartir');
+        boton.classList.remove('copiado');
+        boton.innerHTML = '<i class="fa-solid fa-share-from-square"></i> Compartir';
+        boton.onclick = () => compartirTemporada_(t);
+    }
+
+    async function compartirTemporada_(t) {
+        const url = urlCompartirTemporada_(t);
+        const boton = $('temporada-ver-todos-compartir');
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: t.nombre, text: `${t.nombre} — Orencio Matas y Hnos`, url: url });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return; // el usuario canceló el diálogo nativo
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(url);
+            boton.classList.add('copiado');
+            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Copiado!';
+            setTimeout(() => configurarBotonCompartirTemporada_(t), 2200);
+        } catch (e) {
+            window.prompt('Copia este enlace para compartir esta temporada:', url);
+        }
+    }
+
+    // Si la URL incluye ?temporada=<id>, abre directamente su modal "ver
+    // todos" al cargar la página (enlaces "compartir temporada") — mismo
+    // patrón que abrirProductoDesdeURL con ?ref=. Limpia el parámetro al
+    // terminar para que recargar o navegar no lo vuelva a abrir.
+    async function abrirTemporadaDesdeURL_() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('temporada');
+        if (!id) return;
+        if (!temporadasDatos_.length) await cargarTemporadas_();
+        renderTemporada_();
+        abrirModalTemporada_(id);
+        const limpia = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', limpia);
     }
 
     function cerrarModalTemporadaVerTodos_() {
@@ -10618,7 +10708,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const rango = t.permanente ? 'Permanente' : ((t.fechaInicio && t.fechaFin) ? `${t.fechaInicio} → ${t.fechaFin}` : 'Sin fechas');
             fila.innerHTML = `
                 <div class="destacados-item-info">
-                    <div class="nombre">${escapeHtml(t.nombre)}${vigente ? ' <span style="color:var(--green);font-weight:700;">● vigente ahora</span>' : ''}</div>
+                    <div class="nombre">${t.emoji ? escapeHtml(t.emoji) + ' ' : ''}${escapeHtml(t.nombre)}${vigente ? ' <span style="color:var(--green);font-weight:700;">● vigente ahora</span>' : ''}</div>
                     <div class="detalle">${escapeHtml(rango)} · ${(t.familias || []).length} familia(s) · ${(t.referencias || []).length} producto(s)</div>
                 </div>
                 <div class="destacados-item-acciones">
@@ -10675,6 +10765,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const t = id ? temporadasDatos_.find(x => x.id === id) : null;
         $('temporadas-editor-titulo').textContent = t ? 'Editar temporada' : 'Nueva temporada';
         $('temporadas-editor-nombre').value = t ? t.nombre : '';
+        $('temporadas-editor-emoji').value = t ? (t.emoji || '') : '';
         $('temporadas-editor-permanente').checked = t ? !!t.permanente : false;
         $('temporadas-editor-fecha-inicio').value = t ? t.fechaInicio : '';
         $('temporadas-editor-fecha-fin').value = t ? t.fechaFin : '';
@@ -10704,6 +10795,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     async function temporadaGuardarMeta_() {
         const nombre = $('temporadas-editor-nombre').value.trim();
+        const emoji = $('temporadas-editor-emoji').value.trim();
         const permanente = $('temporadas-editor-permanente').checked;
         const fechaInicio = $('temporadas-editor-fecha-inicio').value;
         const fechaFin = $('temporadas-editor-fecha-fin').value;
@@ -10729,7 +10821,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const resp = await temporadaFetchPost_({
                 accion: 'guardar_temporada', pin: temporadaPin_,
                 id: temporadaEditandoId_ || undefined,
-                nombre: nombre, permanente: permanente, fechaInicio: fechaInicio, fechaFin: fechaFin, activa: activa,
+                nombre: nombre, emoji: emoji, permanente: permanente, fechaInicio: fechaInicio, fechaFin: fechaFin, activa: activa,
                 orden: orden,
             });
             if (!resp || !resp.success) {
