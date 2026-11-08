@@ -2245,6 +2245,27 @@
             display: block;
             color: #cbd5e1;
         }
+        /* Aviso de "resultados aproximados" — cuando la búsqueda literal
+           no encuentra nada pero sí hay productos parecidos (ver
+           buscarCoincidenciasAproximadas_ en el JS): nunca se deja al
+           usuario con la pantalla en blanco sin ninguna alternativa. */
+        .aviso-aproximados {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 0 0 14px;
+            font-size: 0.9rem;
+        }
+        .aviso-aproximados i {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .aviso-aproximados strong { color: #78350f; }
         .icono-ia-producto {
             display: inline-block;
             width: 1.1em;
@@ -5271,6 +5292,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
+        <div id="aviso-aproximados" class="aviso-aproximados" style="display:none;">
+            <i class="fa-solid fa-circle-info"></i>
+            <span id="aviso-aproximados-texto"></span>
+        </div>
         <div id="contenedor-resultados" style="display:none;"></div>
 
         <div id="sin-resultados" class="sin-resultados" style="display:none;">
@@ -7285,6 +7310,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     let FAMILIAS_ORDEN = {}; // {familia: orden}
     let SUBFAMILIAS_ORDEN = {}; // {familia: {subfamilia: orden}}
     let resultadosActuales = []; // tras aplicar filtros
+    // true cuando resultadosActuales viene del fallback de coincidencias
+    // aproximadas (ver buscarCoincidenciasAproximadas_) porque la
+    // búsqueda estricta no encontró nada — renderResultados() usa esto
+    // para mostrar el aviso correspondiente en vez de tratarlos como
+    // resultados exactos.
+    let resultadosSonAproximados_ = false;
+    let terminoAproximado_ = null;
 
     // Bug real MUY GRAVE reportado por Eloy: "al acceder en modo
     // profesional los productos destacados que deberían tener precio de
@@ -7664,6 +7696,60 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const b = normalizar(busqueda).replace(/[^a-z0-9]/g, '');
         if (!b) return true;
         return r.includes(b);
+    }
+
+    // ── Fallback de coincidencias aproximadas ──────────────────────────
+    // A petición explícita de Eloy, tras comprobar con datos reales de
+    // búsquedas en producción que muchísimos términos normales y
+    // corrientes (marcas y productos que SÍ están en el catálogo, con
+    // decenas de coincidencias) daban "0 resultados" por culpa de la
+    // exigencia estricta de coincide() de que TODAS las palabras de la
+    // búsqueda encajen: una sola palabra que no encaja (sinónimo,
+    // variante, errata demasiado grande para la tolerancia de una
+    // palabra corta) tira la búsqueda entera a cero, aunque el resto de
+    // palabras sí identifiquen claramente un producto real.
+    //
+    // Este fallback SOLO se usa cuando la búsqueda estricta (coincide(),
+    // sin tocar) no ha encontrado NADA — nunca sustituye ni reordena una
+    // búsqueda que sí dio resultados, así que no hay ningún riesgo de
+    // reintroducir el caso ya resuelto en su día ("fairy" encontrando
+    // colonias solo por compartir la palabra "aire"): aquí no se exige
+    // relevancia estricta porque la alternativa real es dejar al usuario
+    // con la pantalla en blanco, sin ninguna pista de por dónde seguir.
+    //
+    // Puntúa por Nº de palabras de la búsqueda que encuentran alguna
+    // coincidencia (exacta o con la misma tolerancia a erratas de
+    // palabraCoincide) en nombre/familia/subfamilia del producto, y
+    // devuelve los mejor puntuados — con al menos 1 palabra coincidente,
+    // no hace falta que coincidan todas. `pasaFiltrosNoTexto` es la
+    // misma combinación de filtros activos (área, familia, precio...)
+    // que ya aplicó la búsqueda estricta, para que el fallback respete
+    // exactamente los mismos filtros, solo relajando el texto.
+    const LIMITE_APROXIMADOS_ = 36;
+    function buscarCoincidenciasAproximadas_(texto, pasaFiltrosNoTexto) {
+        // Longitud mínima 4 (no 3, a diferencia del resto del buscador):
+        // aquí se puntúa por "al menos una palabra coincide" en vez de
+        // exigir todas, así que una palabra corta sola (p.ej. "no", que
+        // por inclusión de substring "coincide" con cualquier palabra
+        // que la contenga, como "normal" o "abono") puntuaría productos
+        // completamente ajenos a la búsqueda real — caso real detectado
+        // probando con una búsqueda sin sentido ("no existe") que sin
+        // este mínimo devolvía 36 productos aleatorios en vez de caer,
+        // correctamente, en el "sin resultados" de siempre.
+        const palabrasBusqueda = normalizar(texto).split(/\s+/).filter(Boolean)
+            .filter(w => w.length >= 4 && !PALABRAS_IGNORADAS_SUGERENCIA.has(w));
+        if (!palabrasBusqueda.length) return [];
+
+        const puntuados = [];
+        TODOS.forEach(p => {
+            if (!pasaFiltrosNoTexto(p)) return;
+            const textoProducto = normalizar(`${p.nombre || ''} ${p.familia || ''} ${p.subfamilia || ''}`);
+            const palabrasTexto = textoProducto.split(/\s+/).filter(Boolean);
+            const coincidencias = palabrasBusqueda.filter(w => palabraCoincide(w, palabrasTexto)).length;
+            if (coincidencias > 0) puntuados.push({ producto: p, coincidencias });
+        });
+        puntuados.sort((a, b) => b.coincidencias - a.coincidencias);
+        return puntuados.slice(0, LIMITE_APROXIMADOS_).map(r => r.producto);
     }
 
     // ── Cargar productos.json — vía el Web App de Apps Script, que sirve
@@ -11538,6 +11624,67 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return true;
         });
 
+        // ── Fallback de coincidencias aproximadas ──────────────────────
+        // Si hay texto de búsqueda y la coincidencia ESTRICTA de arriba
+        // no ha encontrado NADA, no se deja al usuario con la pantalla
+        // en blanco (petición explícita de Eloy, tras comprobar con
+        // búsquedas reales que muchos términos con decenas de
+        // coincidencias reales en el catálogo daban 0 resultados) — se
+        // relaja la exigencia a "al menos una palabra coincide", sobre
+        // el MISMO conjunto ya filtrado por el resto de filtros activos
+        // (área, familia, precio...), para no mostrar nada que el
+        // usuario ya hubiera excluido a propósito. `resultadosEstrictosN_`
+        // guarda el recuento REAL de la búsqueda estricta (0 en este
+        // caso) para la analítica, aunque a partir de aquí
+        // resultadosActuales pase a contener los aproximados — así los
+        // paneles que miden "búsquedas sin resultado" (p.ej.
+        // mv_busquedas_sin_resultado_7d en Supabase) siguen reflejando
+        // la realidad, aunque la pantalla del usuario ya no se quede vacía.
+        const resultadosEstrictosN_ = resultadosActuales.length;
+        resultadosSonAproximados_ = false;
+        terminoAproximado_ = null;
+        if (texto && resultadosActuales.length === 0) {
+            const aproximados = buscarCoincidenciasAproximadas_(texto, (p) => {
+                if (!estaActivoEnCatalogo_(p)) return false;
+                if (refsMarcaActiva_ && !refsMarcaActiva_.has(p.ref)) return false;
+                if (!productoCoincideConAreas(p, areasSel)) return false;
+                if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
+                if (familias.length && !familias.includes(p.familia)) return false;
+                if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
+                if (tallaSel.length && !tallaSel.includes(p.variante_talla)) return false;
+                if (granoSel.length && !granoSel.includes(p.variante_grano)) return false;
+                if (colorSel.length && !colorSel.includes(p.variante_color)) return false;
+                if (medidaSel.length && !medidaSel.includes(p.variante_medida)) return false;
+                if (volumenSel.length && !volumenSel.includes(p.variante_volumen)) return false;
+                if (microasSel.length && !microasSel.includes(p.variante_micras)) return false;
+                if (otrosSel.length && !otrosSel.includes(p.variante)) return false;
+                if (soloOferta && !p.oferta) return false;
+                if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
+                if (soloTieneImagen && !tieneImagenAsociada(p)) return false;
+                if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
+                if (soloProductosSinImagen && p.img) return false;
+                if (acabadosSel.length) {
+                    const acabadosProd = acabadoDeProducto(p);
+                    if (!acabadosSel.some(a => acabadosProd.includes(a))) return false;
+                }
+                if (formatosSel.length) {
+                    const fmt = formatoDeProducto(p);
+                    if (!fmt || !formatosSel.includes(fmt)) return false;
+                }
+                if (!isNaN(pMin) || !isNaN(pMax)) {
+                    const precio = parseFloat((p.precio_con || '0').replace(',', '.'));
+                    if (!isNaN(pMin) && precio < pMin) return false;
+                    if (!isNaN(pMax) && precio > pMax) return false;
+                }
+                return true;
+            });
+            if (aproximados.length) {
+                resultadosActuales = aproximados;
+                resultadosSonAproximados_ = true;
+                terminoAproximado_ = texto;
+            }
+        }
+
         // Precarga/recalculo del rango de fechas — solo mientras el
         // usuario no lo haya tocado a mano (petición explícita: "que
         // vengan precargados con la fecha de inicio menor de los
@@ -11661,7 +11808,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 price_min: isNaN(pMin) ? null : pMin,
                 price_max: isNaN(pMax) ? null : pMax,
                 sort_by: orden || null,
-                result_count: resultadosActuales.length,
+                // El recuento ESTRICTO (0 si se ha activado el fallback de
+                // aproximados), no resultadosActuales.length — para que
+                // mv_busquedas_sin_resultado_7d y el resto de paneles de
+                // analítica sigan reflejando la realidad de la búsqueda
+                // literal aunque la pantalla del usuario ya no se quede
+                // vacía (ver el fallback más arriba, en el propio
+                // aplicarFiltros()).
+                result_count: resultadosEstrictosN_,
             });
         } else if (Date.now() - ultimaInteraccionFiltroMs_ < VENTANA_INTERACCION_FILTRO_MS) {
             registrarFiltroAplicadoEnDiferido_({
@@ -11868,10 +12022,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const sinResultados = $('sin-resultados');
         const seccionIA = $('ia-producto-seccion');
         const btnMas = $('btn-cargar-mas');
+        const avisoAproximados = $('aviso-aproximados');
 
         if (resultadosActuales.length === 0) {
             cont.innerHTML = '';
             btnMas.style.display = 'none';
+            if (avisoAproximados) avisoAproximados.style.display = 'none';
 
             const textoActual = $('f-texto').value.trim();
 
@@ -11934,6 +12090,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         terminoIAActivo = null;
         seccionIA.style.display = 'none';
         sinResultados.style.display = 'none';
+
+        // Aviso de "esto no es una coincidencia exacta" cuando
+        // resultadosActuales viene del fallback de aproximados (ver
+        // buscarCoincidenciasAproximadas_) — para no hacer pasar
+        // productos solo parecidos por una búsqueda exacta, lo cual
+        // confundiría más de lo que ayuda.
+        if (avisoAproximados) {
+            if (resultadosSonAproximados_ && terminoAproximado_) {
+                $('aviso-aproximados-texto').innerHTML =
+                    `No hay coincidencias exactas para <strong>"${escapeHtml(terminoAproximado_)}"</strong> — te mostramos los productos más parecidos.`;
+                avisoAproximados.style.display = '';
+            } else {
+                avisoAproximados.style.display = 'none';
+            }
+        }
 
         const grupos = agruparResultados(resultadosActuales);
 
@@ -15376,8 +15547,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // igual que por defecto.
         if (pendientes['f-area-opciones']) {
             document.querySelectorAll('#f-area-opciones input').forEach(input => { input.checked = false; });
+            marcar('f-area-opciones');
+            // Si el valor de "area" en la URL (enlace viejo, área
+            // renombrada, typo) no coincide con NINGUNA casilla real, nos
+            // quedamos con las 6.812+ casillas desmarcadas — y sin
+            // ninguna área marcada, el buscador no interpreta eso como
+            // "sin filtro" sino como "solo productos sin área asignada"
+            // (ver productoCoincideConAreas), que hoy son CERO en todo el
+            // catálogo. El resultado real: cualquier búsqueda posterior
+            // da 0 resultados para siempre, sin ningún aviso, para
+            // cualquiera que abra ese enlace — bug real detectado
+            // analizando búsquedas reales sin resultados en producción.
+            // Si ninguna casilla ha quedado marcada tras intentarlo, se
+            // revierte a "todas marcadas" (el mismo estado que si la URL
+            // no trajera ningún parámetro de área).
+            if (!document.querySelector('#f-area-opciones input:checked')) {
+                document.querySelectorAll('#f-area-opciones input').forEach(input => { input.checked = true; });
+            }
+        } else {
+            marcar('f-area-opciones');
         }
-        marcar('f-area-opciones');
         actualizarTextoBotonArea();
 
         renderFabricanteTaller(); // crea checkboxes de fabricante (según el área ya puesta)
