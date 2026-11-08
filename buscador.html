@@ -891,8 +891,21 @@
             width: 38px; height: 38px; border-radius: 50%; font-size: 1.15rem; flex-shrink: 0;
             background: var(--dark); color: var(--yellow);
         }
-        /* Móvil: una sola fila con scroll horizontal (gesto táctil natural
-           de deslizar), igual que el resto de módulos de descubrimiento. */
+        /* Una sola fila con scroll horizontal (gesto táctil natural de
+           deslizar en móvil, rueda/arrastre en escritorio) SIEMPRE, sea
+           cual sea el ancho de pantalla — igual que el resto de módulos
+           de descubrimiento. Antes, a partir de 881px (que en este sitio
+           no distingue tablet de escritorio grande, es el único punto de
+           corte "no-móvil" que hay) las tarjetas pasaban a envolver en
+           varias filas con scroll VERTICAL — en una tablet, donde no cabe
+           ni de lejos toda la fila, eso dejaba un bloque recortado y con
+           scroll vertical en vez de la fila deslizable de siempre (bug
+           real reportado por Eloy: "en tablet aparecen con scroll
+           vertical cuando quiero que se muestren siempre con scroll
+           horizontal, como en móvil y PC"). En pantallas muy anchas apenas
+           se notaba porque solían caber todas las tarjetas sin necesidad
+           de deslizar — pero el diseño en sí dependía del ancho
+           disponible, no era intencionadamente distinto en tablet. */
         .seccion-destacados__lista {
             display: flex; gap: 14px; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px;
             scroll-snap-type: x proximity;
@@ -904,21 +917,98 @@
         }
         @media (min-width: 881px) {
             .seccion-destacados__lista > .producto-card { flex-basis: 200px; }
-            /* Escritorio: en vez de una única fila horizontal (que obliga a
-               hacer scroll para ver el segundo producto aunque sobre
-               espacio a los lados), las tarjetas se van colocando en
-               filas hasta llenar el ancho disponible; solo cuando hay
-               tantas filas que no caben verticalmente aparece scroll
-               (vertical) — así el bloque crece con el contenido en vez de
-               tener siempre el ancho fijo de la columna de resultados. */
-            .seccion-destacados__lista {
-                flex-wrap: wrap;
-                overflow-x: hidden;
-                overflow-y: auto;
-                max-height: 500px;
-                scroll-snap-type: y proximity;
-            }
         }
+
+        /* Productos de temporada — a diferencia de Destacados, la regla de
+           margen/fondo de ese bloque está específicamente ligada a su ID
+           (#destacados.seccion-destacados), así que un bloque de
+           temporada no la heredaba pese a compartir la clase — se
+           quedaba sin ningún margen respecto al siguiente bloque. Se usa
+           una clase (.temporada-bloque) y no un ID porque ahora cada
+           temporada vigente genera su PROPIO bloque dinámicamente — con
+           varias temporadas a la vez puede haber más de uno al mismo
+           tiempo, uno seguido de otro con su propio margen inferior,
+           igual que Destacados. */
+        .temporada-bloque.seccion-destacados { margin: 0 0 22px; }
+
+        /* Productos de temporada — título clicable (abre el modal "ver
+           todos") y la propia modal con scroll + chips de búsqueda al
+           final. */
+        .seccion-temporada__titulo-clicable {
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .seccion-temporada__flecha {
+            font-size: 0.8rem; color: var(--muted);
+            transition: transform 0.15s ease;
+        }
+        .seccion-temporada__titulo-clicable:hover .seccion-temporada__flecha { transform: translateX(3px); }
+        /* .modal-producto-box.modal-temporada-ver-todos-box (dos clases)
+           a propósito: .modal-producto-box define más abajo en el mismo
+           fichero su propio max-width:900px/width:90%, y al tener la
+           misma especificidad una sola clase, gana quien aparezca último
+           en el CSS — así que un simple ".modal-temporada-ver-todos-box"
+           aquí arriba no bastaba para imponerse. */
+        .modal-producto-box.modal-temporada-ver-todos-box {
+            max-width: 1100px;
+            width: 95%;
+            display: flex;
+            flex-direction: column;
+            max-height: 92vh;
+            padding: 28px;
+        }
+        @media (min-width: 1300px) {
+            .modal-producto-box.modal-temporada-ver-todos-box { max-width: 1450px; }
+        }
+        #temporada-ver-todos-titulo {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+        }
+        #temporada-ver-todos-titulo-texto { flex: 1; min-width: 0; }
+        /* Compartir una temporada — a petición de Eloy: que el enlace
+           lleve directamente a esa sección y a esa modal (ver
+           urlCompartirTemporada_/abrirTemporadaDesdeURL_, mismo patrón
+           que ya existe para compartir un producto con ?ref=). */
+        .temporada-ver-todos-compartir {
+            flex-shrink: 0; border: 1px solid var(--border); background: #fff;
+            border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+            color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .temporada-ver-todos-compartir:hover { background: var(--light); color: var(--dark); border-color: #cbd5e1; }
+        .temporada-ver-todos-compartir.copiado { background: #dcfce7; border-color: #86efac; color: #166534; }
+        .temporada-ver-todos-vigencia { color: var(--muted); font-size: 0.85rem; margin: -6px 0 14px; }
+        .temporada-ver-todos-buscar {
+            width: 100%; padding: 9px 12px; margin-bottom: 16px;
+            border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem;
+        }
+        .temporada-ver-todos-scroll {
+            overflow-y: auto;
+            padding: 4px 16px 16px 4px;
+        }
+        .temporada-ver-todos-grid-grupo { margin-bottom: 28px; }
+        .temporada-ver-todos-fin {
+            text-align: center;
+            padding: 24px 10px 10px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .temporada-chips-busqueda {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+            margin-top: 12px;
+        }
+        .temporada-chips-busqueda button {
+            border: 1px solid var(--border);
+            background: var(--light);
+            color: var(--dark);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .temporada-chips-busqueda button:hover { background: #e8f1fc; border-color: #a9cdf2; }
+
         .destacado-chip {
             display: inline-flex; align-items: center; gap: 4px;
             font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
@@ -944,7 +1034,10 @@
         }
 
         /* ── Modal "Gestionar destacados" ─────────────────────────────── */
-        .modal-destacados-box { max-width: 760px; max-height: 88vh; overflow-y: auto; padding: 28px; }
+        .modal-destacados-box { max-width: 760px; max-height: 88vh; overflow-y: auto; overflow-x: hidden; padding: 28px; }
+        @media (max-width: 480px) {
+            .modal-destacados-box { padding: 18px; }
+        }
         .modal-destacados-box h3 { margin: 0 0 14px; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
         .modal-destacados-box h4 { margin: 18px 0 8px; font-size: 0.95rem; font-weight: 800; color: var(--dark); }
         .destacados-vista-pin { max-width: 340px; margin: 0 auto; text-align: center; }
@@ -964,8 +1057,18 @@
         .destacados-config-global label, .destacados-editor label {
             display: block; font-size: 0.85rem; font-weight: 600; color: var(--dark); margin: 10px 0 4px;
         }
-        .destacados-config-global input[type="checkbox"], .destacados-editor input[type="checkbox"] { margin-right: 6px; }
-        .destacados-config-global input[type="datetime-local"], .destacados-editor input, .destacados-editor select {
+        .destacados-config-global input[type="checkbox"], .destacados-editor input[type="checkbox"] {
+            margin-right: 6px;
+            /* Explícito a propósito: la regla de abajo (pensada para
+               inputs de texto/fecha) no excluía los checkboxes por tipo,
+               así que también les aplicaba width:100%+padding+borde —
+               un checkbox nativo estirado a todo el ancho del formulario,
+               con la marca renderizada en el centro de ese hueco enorme
+               en vez de pegada a su etiqueta (bug real reportado: "los
+               checks de activar están alineados en medio de la modal"). */
+            width: auto; padding: 0; border: none; flex: 0 0 auto;
+        }
+        .destacados-config-global input[type="datetime-local"], .destacados-editor input:not([type="checkbox"]), .destacados-editor select {
             width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem;
         }
         .destacados-config-estado { margin-left: 10px; font-size: 0.82rem; color: var(--green); }
@@ -986,14 +1089,89 @@
         .destacados-buscador-controles { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
         .destacados-buscador-controles input[type="text"] { flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
         .destacados-buscador-controles select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
-        .destacados-buscar-resultados { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .destacados-buscar-resultados {
+            max-height: 200px; overflow-y: auto; overflow-x: hidden;
+            display: flex; flex-direction: column; gap: 4px;
+            overscroll-behavior: contain;
+        }
         .destacados-buscar-item {
             display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer;
         }
+        /* Gestión de Productos de temporada — checklist de familias y
+           chips de referencias concretas (ver #temporadas-items-bloque). */
+        .temporadas-familias-filtro {
+            width: 100%; padding: 8px 10px; margin-bottom: 8px;
+            border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem;
+        }
+        .temporadas-familias-lista {
+            display: flex; flex-direction: column; gap: 10px;
+            max-height: 260px; overflow-y: auto; overflow-x: hidden;
+            padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+        }
+        .temporadas-familias-grupo-titulo {
+            font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: .3px; color: var(--muted); margin: 0 0 2px;
+        }
+        .temporadas-familias-grupo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .temporadas-familias-grupo-items { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+        /* white-space normal (no nowrap) + min-width:0 a propósito: con
+           nombres de familia largos, "nowrap" obligaba a esa etiqueta a
+           salirse del ancho del contenedor — y al no caber, el listado
+           quedaba también desplazable en horizontal (un "overflow-y:auto"
+           sin overflow-x explícito se convierte en "overflow-x:auto" por
+           la propia especificación CSS en cuanto hay contenido que se
+           sale). Bug real reportado por Eloy: al hacer scroll vertical con
+           el dedo en móvil, el listado se movía también a los lados. */
+        .temporadas-familias-lista label {
+            display: flex !important; align-items: flex-start; gap: 5px;
+            font-size: 0.82rem !important; font-weight: 500 !important;
+            margin: 0 !important; white-space: normal;
+            max-width: 100%; min-width: 0;
+        }
+        .temporadas-familias-lista label input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; }
+        .temporadas-separador { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .temporadas-items-estado { margin-left: 8px; font-size: 0.78rem; color: var(--muted); font-weight: 400; }
+        .temporadas-chips {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            margin-bottom: 8px;
+            min-height: 28px;
+        }
+        /* Estilo "deshabilitado" a propósito (petición de Eloy): estos
+           chips representan productos YA añadidos a la temporada, no una
+           acción pendiente — fondo/texto apagados en vez del aspecto
+           llamativo de un elemento clicable, y con su propia miniatura
+           (antes solo se veía el nombre) para poder reconocer el
+           producto de un vistazo sin tener que leerlo entero. */
+        .temporadas-chip {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--light); border: 1px solid var(--border);
+            border-radius: 20px; padding: 4px 6px 4px 6px;
+            font-size: 0.78rem; font-weight: 500; color: var(--muted);
+            opacity: 0.85;
+        }
+        .temporadas-chip img {
+            width: 26px; height: 26px; border-radius: 50%;
+            object-fit: cover; flex-shrink: 0; background: var(--border);
+            filter: grayscale(35%);
+        }
+        .temporadas-chip button {
+            border: none; background: #fff; color: var(--muted);
+            width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; flex-shrink: 0;
+        }
+        .temporadas-chip button:hover { background: var(--red); color: #fff; }
         .destacados-buscar-item:hover { background: var(--light); }
         .destacados-buscar-item img { width: 32px; height: 32px; object-fit: cover; border-radius: 5px; background: var(--light); }
         .destacados-buscar-item .nombre { font-size: 0.82rem; font-weight: 600; flex: 1; }
         .destacados-buscar-item .ya-incluido { font-size: 0.72rem; color: var(--green); font-weight: 700; }
+        /* Modificador "ya incluido" — solo en el buscador de productos de
+           Temporada (no toca Destacados, que usa la misma clase base),
+           para que un producto ya añadido se note de un vistazo dentro
+           de una lista de resultados que mezcla incluidos y no incluidos,
+           más allá de la pequeña etiqueta de texto. */
+        .destacados-buscar-item--incluido { opacity: 0.55; background: var(--light); }
+        .destacados-buscar-item--incluido img { filter: grayscale(70%); }
         .destacados-ver-producto {
             flex-shrink: 0; border: 1px solid var(--border); background: #fff; border-radius: 6px;
             padding: 4px 9px; font-size: 0.74rem; font-weight: 600; color: var(--blue); cursor: pointer;
@@ -1004,7 +1182,16 @@
         .destacados-editor { border-top: 1px solid var(--border); margin-top: 18px; padding-top: 14px; }
         .destacados-editor-producto-nombre { font-weight: 700; margin-bottom: 4px; }
         .destacados-editor-error { color: var(--red); font-size: 0.82rem; min-height: 18px; }
-        .destacados-editor-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+        /* flex-wrap:wrap — a petición de Eloy: en móvil, con 3 botones
+           ("Eliminar temporada"/"Cancelar"/"Guardar temporada") en una
+           sola fila sin espacio para los tres, el último se quedaba
+           literalmente fuera del modal en vez de verse. Afecta también a
+           Destacados y Campañas, que comparten esta misma clase. */
+        .destacados-editor-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+        @media (max-width: 480px) {
+            .destacados-editor-acciones { justify-content: stretch; }
+            .destacados-editor-acciones button { flex: 1 1 auto; }
+        }
 
         /* ── Vista previa de producto (modal pequeño, dentro de la gestión
            de Destacados) ────────────────────────────────────────────────
@@ -2246,6 +2433,28 @@
             display: block;
             color: #cbd5e1;
         }
+        /* Aviso de "resultados aproximados" — cuando la búsqueda literal
+           no encuentra nada pero sí hay productos parecidos (ver
+           buscarCoincidenciasAproximadas_ en el JS): nunca se deja al
+           usuario con la pantalla en blanco sin ninguna alternativa. */
+        .aviso-aproximados {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 0 0 14px;
+            font-size: 0.9rem;
+        }
+        .aviso-aproximados i {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .aviso-aproximados strong { color: #78350f; }
         .icono-ia-producto {
             display: inline-block;
             width: 1.1em;
@@ -2283,6 +2492,23 @@
         }
         .btn-preguntar-ia-producto:disabled { opacity: 0.7; cursor: default; transform: none; }
         .btn-preguntar-ia-producto .icono-ia-producto { width: 1.3em; height: 1.3em; }
+        /* Variante compacta para el aviso de "productos parecidos"
+           (.aviso-aproximados): el botón grande de arriba está pensado
+           para el bloque centrado de "sin resultados", no para encajar
+           en línea dentro de un aviso pequeño junto al texto. */
+        .btn-preguntar-ia-producto--aproximados {
+            margin: 0 0 0 auto;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            box-shadow: none;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .btn-preguntar-ia-producto--aproximados .icono-ia-producto { width: 1.1em; height: 1.1em; }
+        @media (max-width: 600px) {
+            .btn-preguntar-ia-producto--aproximados { margin-left: 0; width: 100%; }
+        }
         .ia-producto-mensaje-aviso {
             max-width: 480px;
             margin: 16px auto 0;
@@ -5178,6 +5404,57 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
+        <!-- Botón de gestión de "Productos de temporada" FUERA de
+             #seccion-temporada a propósito — mismo motivo que
+             btn-panel-analitica más arriba: la sección se oculta entera
+             cuando no tiene contenido real (ver
+             actualizarVisibilidadModulosDescubrimiento_), y este botón
+             debe seguir accesible pase lo que pase — de hecho MÁS
+             crítico aquí que en Destacados: una temporada nueva siempre
+             empieza sin ningún producto todavía, así que si el botón
+             viviera dentro de la sección, no habría forma de abrir la
+             gestión para crear la primera. Protegido por el mismo PIN
+             de administración (verificarPin_ en Apps Script); oculto y
+             eliminado del DOM en producción (ver
+             window.MOSTRAR_GESTION_TEMPORADAS más abajo). -->
+        <div class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
+            <button type="button" id="btn-gestionar-temporadas" class="btn-destacados-accion btn-destacados-editar" title="Gestionar productos de temporada" aria-label="Gestionar productos de temporada">
+                <i class="fa-solid fa-pen-to-square"></i> <span>Gestionar productos de temporada</span>
+            </button>
+        </div>
+        <!-- Productos de temporada — a petición de Eloy: priorizar
+             productos a la entrada del buscador según la época del año,
+             yendo "por adelantado" (p.ej. en noviembre ya con
+             invierno/Navidad). Completamente separado de Destacados: sin
+             descuento ni promoción, solo una selección aleatoria de los
+             productos de cada temporada vigente ahora mismo.
+
+             Cada temporada vigente es su PROPIO bloque independiente,
+             uno seguido de otro en el orden que decida el gestor (campo
+             "orden") — a petición de Eloy: con dos temporadas vigentes a
+             la vez, antes se fusionaban en un único bloque/modal
+             mezclando sus productos, aunque no tuvieran relación entre
+             sí. Los bloques se generan dinámicamente en
+             #temporadas-bloques-contenedor (ver renderTemporada_),
+             porque su número varía según cuántas temporadas estén
+             vigentes a la vez. Clic en un producto → ficha de detalle
+             (crearTarjeta ya lo hace). Clic en el bloque/título → modal
+             con TODOS los productos de ESA temporada en concreto, nunca
+             mezclados con los de otra (ver abrirModalTemporada_). -->
+        <div id="temporadas-bloques-contenedor">
+            <div class="seccion-destacados temporada-bloque">
+                <div class="seccion-destacados__cabecera">
+                    <p class="seccion-destacados__titulo">
+                        <span class="seccion-destacados__icono"><i class="fa-solid fa-snowflake"></i></span>
+                        <span>Productos de temporada</span>
+                    </p>
+                </div>
+                <div class="seccion-destacados__lista">
+                    <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Fase 2 de analítica de búsquedas: términos más buscados en los
              últimos 7 días (ver supabase/02_fase2_vistas_agregadas.sql).
              Solo se muestra con contenido real que cumpla el volumen
@@ -5272,6 +5549,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
+        <div id="aviso-aproximados" class="aviso-aproximados" style="display:none;">
+            <i class="fa-solid fa-circle-info"></i>
+            <span id="aviso-aproximados-texto"></span>
+            <button type="button" id="btn-preguntar-ia-aproximados" class="btn-preguntar-ia-producto btn-preguntar-ia-producto--aproximados" style="display:none;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> ¿No es esto? Prueba con la IA</button>
+        </div>
         <div id="contenedor-resultados" style="display:none;"></div>
 
         <div id="sin-resultados" class="sin-resultados" style="display:none;">
@@ -5280,8 +5562,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <p>No se han encontrado productos con estos filtros.<br>Prueba a ampliar la búsqueda.</p>
             </div>
             <button type="button" id="btn-preguntar-ia-producto" class="btn-preguntar-ia-producto" style="display:none;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA</button>
-            <p id="ia-producto-mensaje" class="ia-producto-mensaje-aviso" style="display:none;"></p>
         </div>
+        <!-- Fuera de #sin-resultados a propósito: preguntarIAProducto()
+             puede invocarse tanto desde ahí como desde el botón de
+             #aviso-aproximados (productos parecidos) — si este mensaje
+             viviera dentro de #sin-resultados, quedaría invisible
+             (display:none heredado del contenedor) cuando se muestra
+             desde el segundo caso. -->
+        <p id="ia-producto-mensaje" class="ia-producto-mensaje-aviso" style="display:none;"></p>
 
         <div id="ia-producto-seccion" style="display:none;">
             <div class="ia-producto-aviso">
@@ -5348,8 +5636,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      vivo, nunca visible, solo decodifica la imagen que se le pasa. -->
 <div id="scanner-archivo-wrap" style="position:absolute; left:-9999px; top:-9999px; width:2000px; height:2000px;"></div>
 
-<!-- Modal detalle de producto -->
-<div class="modal-overlay" id="modal-producto-overlay">
+<!-- Modal detalle de producto — z-index explícito por encima del resto de
+     modales de base (1000, como el de "ver todos" de temporada/destacados):
+     bug real reportado por Eloy: al clicar un producto dentro de la modal
+     "ver todos" de temporada, el detalle SÍ se abría (se le añadía la
+     clase "activo"), pero al compartir el mismo z-index base y venir
+     ANTES en el DOM que esa otra modal, quedaba pintado por detrás y
+     totalmente oculto — parecía que el clic "no hacía nada". -->
+<div class="modal-overlay" id="modal-producto-overlay" style="z-index: 1500;">
     <div class="modal-producto-box" id="modal-producto-box">
         <div class="modal-producto-cerrar-sticky">
             <button class="modal-producto-cerrar" id="modal-producto-cerrar">
@@ -5726,17 +6020,69 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
                 <div class="modal-etiqueta-campo-doble">
                     <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-papel">Tamaño de papel</label>
+                        <select id="modal-etiqueta-papel">
+                            <option value="">Personalizado</option>
+                            <option value="A4">A4 (210x297mm)</option>
+                            <option value="A5">A5 (148x210mm)</option>
+                            <option value="A6">A6 (105x148mm)</option>
+                            <option value="A7">A7 (74x105mm)</option>
+                            <option value="A8">A8 (52x74mm)</option>
+                        </select>
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-orientacion">Orientación</label>
+                        <select id="modal-etiqueta-orientacion">
+                            <option value="vertical">Vertical</option>
+                            <option value="horizontal">Horizontal</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
                         <label for="modal-etiqueta-ancho">Ancho (mm)</label>
-                        <input type="number" id="modal-etiqueta-ancho" min="25" max="190" step="1" value="93" autocomplete="off">
+                        <input type="number" id="modal-etiqueta-ancho" min="25" max="297" step="1" value="93" autocomplete="off">
                     </div>
                     <div class="modal-editar-ficha-campo">
                         <label for="modal-etiqueta-alto">Alto (mm)</label>
-                        <input type="number" id="modal-etiqueta-alto" min="25" max="277" step="1" value="67" autocomplete="off">
+                        <input type="number" id="modal-etiqueta-alto" min="25" max="297" step="1" value="67" autocomplete="off">
                     </div>
                 </div>
                 <p class="modal-editar-ficha-nota modal-etiqueta-nota-tamano">
-                    Máximo 190x277mm — el espacio útil de un folio DIN A4 con margen.
+                    Máximo 297x297mm — el tamaño de un folio DIN A4. Con más de 1 etiqueta, se
+                    imprimen en rejilla sobre hojas A4 reales, así que solo cabrá una por hoja si
+                    la etiqueta ya ocupa casi todo el folio.
                 </p>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-margen-sup">Margen superior (mm)</label>
+                        <input type="number" id="modal-etiqueta-margen-sup" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-margen-inf">Margen inferior (mm)</label>
+                        <input type="number" id="modal-etiqueta-margen-inf" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-margen-izq">Margen izquierdo (mm)</label>
+                        <input type="number" id="modal-etiqueta-margen-izq" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-margen-der">Margen derecho (mm)</label>
+                        <input type="number" id="modal-etiqueta-margen-der" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-nombre-tamano">Tamaño nombre (mm)</label>
+                        <input type="number" id="modal-etiqueta-nombre-tamano" min="2" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiqueta-precio-tamano">Tamaño precio (mm)</label>
+                        <input type="number" id="modal-etiqueta-precio-tamano" min="4" max="80" step="0.5" value="11" autocomplete="off">
+                    </div>
+                </div>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiqueta-detalle">Detalle (opcional)</label>
                     <select id="modal-etiqueta-detalle">
@@ -5760,6 +6106,53 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <p id="modal-etiqueta-sin-codigo-aviso" class="modal-editar-ficha-error" style="display:none;">
                     Este producto no tiene una referencia válida para generar el código de barras — la etiqueta se imprimirá sin él.
                 </p>
+            </div>
+        </div>
+
+        <!-- Logo de la empresa — siempre visible (a diferencia de la
+             imagen del producto y el QR, no tiene checkbox), con tamaño
+             y las mismas 9 posiciones configurables. -->
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Logo</h4>
+            <div class="modal-etiqueta-texto-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-logo-tamano">Tamaño (mm)</label>
+                    <input type="number" id="modal-etiqueta-logo-tamano" min="5" max="100" step="1" value="11" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-logo-alinh">Horizontal</label>
+                    <select id="modal-etiqueta-logo-alinh">
+                        <option value="izquierda" selected>Izquierda</option>
+                        <option value="centro">Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-logo-alinv">Vertical</label>
+                    <select id="modal-etiqueta-logo-alinv">
+                        <option value="arriba" selected>Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo">Abajo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Código QR — opcional (checkbox, activado por defecto), SIEMPRE
+             a la derecha, arriba o abajo (a petición de Eloy). -->
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Código QR</h4>
+            <label class="modal-etiqueta-imagen-check">
+                <input type="checkbox" id="modal-etiqueta-qr-incluir" checked> Incluir código QR
+            </label>
+            <div class="modal-etiqueta-texto-controles" id="modal-etiqueta-qr-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiqueta-qr-alinv">Posición (siempre a la derecha)</label>
+                    <select id="modal-etiqueta-qr-alinv">
+                        <option value="abajo" selected>Abajo (con el código de barras)</option>
+                        <option value="arriba">Arriba</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -5900,6 +6293,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <label for="modal-etiquetas-lista-cantidad">Número de etiquetas de este producto</label>
                     <input type="number" id="modal-etiquetas-lista-cantidad" min="1" max="200" step="1" value="1" autocomplete="off">
                 </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-nombre-tamano">Tamaño nombre (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-nombre-tamano" min="2" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-precio-tamano">Tamaño precio (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-precio-tamano" min="4" max="80" step="0.5" value="11" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-margen-sup">Margen superior (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-margen-sup" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-margen-inf">Margen inferior (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-margen-inf" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-etiqueta-campo-doble">
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-margen-izq">Margen izquierdo (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-margen-izq" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                    <div class="modal-editar-ficha-campo">
+                        <label for="modal-etiquetas-lista-margen-der">Margen derecho (mm)</label>
+                        <input type="number" id="modal-etiquetas-lista-margen-der" min="0" max="40" step="0.5" value="3.5" autocomplete="off">
+                    </div>
+                </div>
                 <div class="modal-editar-ficha-campo">
                     <label for="modal-etiquetas-lista-detalle">Detalle (opcional)</label>
                     <select id="modal-etiquetas-lista-detalle">
@@ -5928,18 +6351,80 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="modal-etiqueta-campo-doble modal-etiquetas-lista-tamano">
             <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-papel">Tamaño de papel — para todo el lote</label>
+                <select id="modal-etiquetas-lista-papel">
+                    <option value="">Personalizado</option>
+                    <option value="A4">A4 (210x297mm)</option>
+                    <option value="A5">A5 (148x210mm)</option>
+                    <option value="A6">A6 (105x148mm)</option>
+                    <option value="A7">A7 (74x105mm)</option>
+                    <option value="A8">A8 (52x74mm)</option>
+                </select>
+            </div>
+            <div class="modal-editar-ficha-campo">
+                <label for="modal-etiquetas-lista-orientacion">Orientación</label>
+                <select id="modal-etiquetas-lista-orientacion">
+                    <option value="vertical">Vertical</option>
+                    <option value="horizontal">Horizontal</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-etiqueta-campo-doble modal-etiquetas-lista-tamano">
+            <div class="modal-editar-ficha-campo">
                 <label for="modal-etiquetas-lista-ancho">Ancho (mm) — para todo el lote</label>
-                <input type="number" id="modal-etiquetas-lista-ancho" min="25" max="190" step="1" value="93" autocomplete="off">
+                <input type="number" id="modal-etiquetas-lista-ancho" min="25" max="297" step="1" value="93" autocomplete="off">
             </div>
             <div class="modal-editar-ficha-campo">
                 <label for="modal-etiquetas-lista-alto">Alto (mm) — para todo el lote</label>
-                <input type="number" id="modal-etiquetas-lista-alto" min="25" max="277" step="1" value="67" autocomplete="off">
+                <input type="number" id="modal-etiquetas-lista-alto" min="25" max="297" step="1" value="67" autocomplete="off">
             </div>
         </div>
         <p class="modal-editar-ficha-nota modal-etiqueta-nota-tamano">
-            Máximo 190x277mm — el espacio útil de un folio DIN A4 con margen. Se aplica a
-            todas las etiquetas del lote, para que quepan juntas en la misma hoja.
+            Máximo 297x297mm — el tamaño de un folio DIN A4. Se aplica a todas las etiquetas
+            del lote, para que quepan juntas en la misma hoja.
         </p>
+
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Logo</h4>
+            <div class="modal-etiqueta-texto-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-logo-tamano">Tamaño (mm)</label>
+                    <input type="number" id="modal-etiquetas-lista-logo-tamano" min="5" max="100" step="1" value="11" autocomplete="off">
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-logo-alinh">Horizontal</label>
+                    <select id="modal-etiquetas-lista-logo-alinh">
+                        <option value="izquierda" selected>Izquierda</option>
+                        <option value="centro">Centro</option>
+                        <option value="derecha">Derecha</option>
+                    </select>
+                </div>
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-logo-alinv">Vertical</label>
+                    <select id="modal-etiquetas-lista-logo-alinv">
+                        <option value="arriba" selected>Arriba</option>
+                        <option value="centro">Centro</option>
+                        <option value="abajo">Abajo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-etiqueta-imagen">
+            <h4 class="modal-etiqueta-subtitulo">Código QR</h4>
+            <label class="modal-etiqueta-imagen-check">
+                <input type="checkbox" id="modal-etiquetas-lista-qr-incluir" checked> Incluir código QR
+            </label>
+            <div class="modal-etiqueta-texto-controles" id="modal-etiquetas-lista-qr-controles">
+                <div class="modal-editar-ficha-campo">
+                    <label for="modal-etiquetas-lista-qr-alinv">Posición (siempre a la derecha)</label>
+                    <select id="modal-etiquetas-lista-qr-alinv">
+                        <option value="abajo" selected>Abajo (con el código de barras)</option>
+                        <option value="arriba">Arriba</option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
         <div class="modal-etiqueta-imagen">
             <h4 class="modal-etiqueta-subtitulo">Imagen de este producto</h4>
@@ -6680,6 +7165,118 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- "Ver todos" los productos de temporada — modal con scroll (se va
+     cargando más según el usuario baja, ver temporadaObservarScroll_ /
+     temporadaCargarMasEnModal_), terminando en unas opciones de
+     búsqueda (una por cada familia incluida en la(s) temporada(s)
+     vigente(s)) para volver directo al buscador ya filtrado por esa
+     familia — sin recargar la página y sin el efecto de entrada (ver
+     temporadaIrABusquedaPorFamilia_, que llama a
+     revelarCabeceraResultados() de inmediato, el mismo mecanismo que ya
+     usa el resto del sitio para saltarse ese efecto al navegar
+     internamente). -->
+<div class="modal-overlay" id="temporada-ver-todos-overlay">
+    <div class="modal-producto-box modal-temporada-ver-todos-box" role="dialog" aria-modal="true" aria-labelledby="temporada-ver-todos-titulo">
+        <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 id="temporada-ver-todos-titulo">
+            <span id="temporada-ver-todos-titulo-icono"><i class="fa-solid fa-snowflake"></i></span>
+            <span id="temporada-ver-todos-titulo-texto">Productos de temporada</span>
+            <button type="button" id="temporada-ver-todos-compartir" class="temporada-ver-todos-compartir" title="Compartir esta temporada">
+                <i class="fa-solid fa-share-from-square"></i> Compartir
+            </button>
+        </h3>
+        <p id="temporada-ver-todos-vigencia" class="temporada-ver-todos-vigencia"></p>
+        <input type="text" id="temporada-ver-todos-buscar" class="temporada-ver-todos-buscar" placeholder="Buscar por nombre o referencia entre estos productos...">
+        <div id="temporada-ver-todos-scroll" class="temporada-ver-todos-scroll">
+            <div id="temporada-ver-todos-grid"></div>
+            <div id="temporada-ver-todos-fin" class="temporada-ver-todos-fin" style="display:none;">
+                <p>Has visto todos los productos de esta temporada. ¿Quieres seguir explorando?</p>
+                <div id="temporada-ver-todos-chips" class="temporada-chips-busqueda"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gestión de "Productos de temporada" — a petición explícita de Eloy,
+     COMPLETAMENTE SEPARADA de Destacados (hoja propia "Temporadas" en
+     Apps Script, sin ningún campo de descuento/promoción): solo
+     prioriza qué productos se enseñan antes al entrar al buscador según
+     la época del año, pudiendo ir "por adelantado" (cada temporada
+     tiene su propio rango de fechas, independiente de cuándo empieza de
+     verdad la estación). Mismo patrón de PIN + listado + formulario que
+     el resto de paneles de gestión (reutiliza las clases CSS
+     .destacados-* ya existentes para el aspecto visual — eso es solo
+     estilo compartido, no mezcla ningún dato ni lógica con el sistema
+     de Destacados). El botón que la abre solo existe en preproducción
+     (ver window.MOSTRAR_GESTION_TEMPORADAS más abajo). -->
+<div class="modal-overlay" id="temporadas-modal-overlay">
+    <div class="modal-producto-box modal-destacados-box" role="dialog" aria-modal="true" aria-labelledby="temporadas-modal-titulo">
+        <button class="modal-producto-cerrar" id="temporadas-modal-cerrar" aria-label="Cerrar gestión de productos de temporada">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 id="temporadas-modal-titulo"><i class="fa-solid fa-snowflake"></i> Productos de temporada</h3>
+
+        <div id="temporadas-vista-pin" class="destacados-vista-pin">
+            <p>Introduce el PIN de administración para gestionar los productos de temporada.</p>
+            <input type="password" id="temporadas-pin-input" inputmode="numeric" autocomplete="off" placeholder="PIN">
+            <label class="destacados-pin-recordar"><input type="checkbox" id="temporadas-pin-recordar"> Recordar en este dispositivo</label>
+            <p id="temporadas-pin-error" class="destacados-pin-error"></p>
+            <button type="button" id="temporadas-pin-entrar" class="destacados-btn-primario">Entrar</button>
+        </div>
+
+        <div id="temporadas-vista-principal" style="display:none;">
+            <section class="destacados-listado">
+                <h4>Temporadas (<span id="temporadas-listado-total">0</span>)</h4>
+                <p class="destacados-hint">Cada temporada tiene su propio rango de fechas — puedes crearla con antelación (p. ej. que empiece a mostrarse en noviembre para una campaña de invierno/Navidad) y asociarle familias completas o productos concretos. Se muestran en el buscador de forma aleatoria.</p>
+                <div id="temporadas-listado-lista" class="destacados-listado-lista"></div>
+                <button type="button" id="temporadas-nueva-btn" class="destacados-btn-primario" style="margin-top:10px;">+ Nueva temporada</button>
+            </section>
+
+            <div id="temporadas-editor" class="destacados-editor" style="display:none;">
+                <h4 id="temporadas-editor-titulo">Nueva temporada</h4>
+                <label for="temporadas-editor-nombre">Nombre</label>
+                <input type="text" id="temporadas-editor-nombre" placeholder="Ej: Invierno y Navidad 2026">
+                <label for="temporadas-editor-emoji">Emoticono (se muestra junto al nombre, en el buscador y en la modal)</label>
+                <input type="text" id="temporadas-editor-emoji" placeholder="❄️" maxlength="8" style="max-width:120px;">
+                <label><input type="checkbox" id="temporadas-editor-permanente"> Permanente (ignora las fechas, solo manda "Activa")</label>
+                <label for="temporadas-editor-fecha-inicio">Fecha de inicio</label>
+                <input type="date" id="temporadas-editor-fecha-inicio">
+                <label for="temporadas-editor-fecha-fin">Fecha de fin</label>
+                <input type="date" id="temporadas-editor-fecha-fin">
+                <label><input type="checkbox" id="temporadas-editor-activa" checked> Activa</label>
+                <p id="temporadas-editor-error" class="destacados-editor-error"></p>
+                <div class="destacados-editor-acciones">
+                    <button type="button" id="temporadas-editor-eliminar" class="destacados-btn-secundario" style="color:var(--red);display:none;">Eliminar temporada</button>
+                    <button type="button" id="temporadas-editor-cancelar" class="destacados-btn-secundario">Cancelar</button>
+                    <button type="button" id="temporadas-editor-guardar" class="destacados-btn-primario">Guardar temporada</button>
+                </div>
+
+                <!-- Solo visible editando una temporada ya creada (hace
+                     falta su id para poder guardar items) — al crear una
+                     nueva, primero se guardan sus datos y luego se
+                     reabre ya con este bloque disponible. -->
+                <div id="temporadas-items-bloque" style="display:none; margin-top:18px; border-top:1px solid var(--border); padding-top:14px;">
+                    <h4>Familias incluidas <span id="temporadas-familias-estado" class="temporadas-items-estado"></span></h4>
+                    <p class="destacados-hint">Marca las familias completas que quieras incluir en esta temporada.</p>
+                    <input type="text" id="temporadas-familias-filtro" class="temporadas-familias-filtro" placeholder="Filtrar familias...">
+                    <div id="temporadas-familias-lista" class="temporadas-familias-lista"></div>
+
+                    <h4 class="temporadas-separador">Productos concretos incluidos (<span id="temporadas-referencias-total">0</span>) <span id="temporadas-referencias-estado" class="temporadas-items-estado"></span></h4>
+                    <div id="temporadas-referencias-chips" class="temporadas-chips"></div>
+                    <div class="destacados-buscador-controles">
+                        <input type="text" id="temporadas-buscar-texto" placeholder="Buscar producto por nombre o referencia para añadir...">
+                        <select id="temporadas-buscar-area"><option value="">Todas las áreas</option></select>
+                        <select id="temporadas-buscar-familia"><option value="">Todas las familias</option></select>
+                    </div>
+                    <div id="temporadas-buscar-resultados" class="destacados-buscar-resultados"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Panel propio de analítica — rankings de búsquedas, productos vistos
      y bloques/marcas pulsadas, a partir de la hoja EventosAnaliticos
      (ver registrar_evento / obtener_resumen_analitica en Apps Script).
@@ -6881,6 +7478,10 @@ window.MOSTRAR_EDITAR_SUBFAMILIA = window.OM_PREPRODUCCION;
 // acciones administrativas de esta ficha.
 window.MOSTRAR_ETIQUETA_PRECIO = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
+// Gestión de "Productos de temporada" — a petición de Eloy, separada
+// de Destacados (ver el bloque de Apps Script correspondiente): mismo
+// criterio de visibilidad, solo en preproducción.
+window.MOSTRAR_GESTION_TEMPORADAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_PANEL_ANALITICA = window.OM_PREPRODUCCION;
 
@@ -6974,6 +7575,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         eliminarSiRestringido_('btn-gestionar-destacados', window.MOSTRAR_GESTION_DESTACADOS);
         eliminarSiRestringido_('modal-destacados-overlay', window.MOSTRAR_GESTION_DESTACADOS);
         eliminarSiRestringido_('destacados-preview-overlay', window.MOSTRAR_GESTION_DESTACADOS);
+    }
+    if (window.MOSTRAR_GESTION_TEMPORADAS) {
+        const btnGT = document.getElementById('btn-gestionar-temporadas');
+        if (btnGT) btnGT.classList.add('visible');
+    } else {
+        eliminarSiRestringido_('btn-gestionar-temporadas', window.MOSTRAR_GESTION_TEMPORADAS);
+        eliminarSiRestringido_('temporadas-modal-overlay', window.MOSTRAR_GESTION_TEMPORADAS);
     }
     if (window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS) {
         const btnBC = document.getElementById('btn-gestionar-bloques-categorias');
@@ -7095,6 +7703,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     let FAMILIAS_ORDEN = {}; // {familia: orden}
     let SUBFAMILIAS_ORDEN = {}; // {familia: {subfamilia: orden}}
     let resultadosActuales = []; // tras aplicar filtros
+    // true cuando resultadosActuales viene del fallback de coincidencias
+    // aproximadas (ver buscarCoincidenciasAproximadas_) porque la
+    // búsqueda estricta no encontró nada — renderResultados() usa esto
+    // para mostrar el aviso correspondiente en vez de tratarlos como
+    // resultados exactos.
+    let resultadosSonAproximados_ = false;
+    let terminoAproximado_ = null;
 
     // Bug real MUY GRAVE reportado por Eloy: "al acceder en modo
     // profesional los productos destacados que deberían tener precio de
@@ -7243,6 +7858,60 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         revest: 'revestimiento',
         efect: 'efecto',
         prof: 'profesional',
+        concent: 'concentrado',
+        acond: 'acondicionador',
+    };
+
+    // Sinónimos reales del catálogo — distinto de ABREVIATURAS_CATALOGO
+    // de arriba (que expande una forma CORTA a su forma LARGA, cuando
+    // una es substring/abreviatura de la otra). Aquí las dos palabras
+    // son completamente distintas en texto, sin ninguna relación de
+    // abreviatura, así que ningún fuzzy matching las acerca nunca —
+    // palabraCoincide() las consulta como formas alternativas
+    // igualmente válidas. Caso real que motivó esto: Eloy buscó
+    // "pintura antioxidante" y no encontró nada, aunque el catálogo
+    // tiene 232 productos Oxiron bajo la subfamilia real "Oxiron
+    // anticorrosión"/"Pinturas anticorrosión" — el término que la gente
+    // busca ("antioxidante") no es el término que usa el catálogo
+    // ("anticorrosión"), y la distancia de edición entre ambas palabras
+    // es demasiado grande para que la tolerancia a erratas las acerque
+    // por sí sola. Cada entrada, verificada contra el catálogo real
+    // antes de añadirla, igual que ABREVIATURAS_CATALOGO.
+    const SINONIMOS_CATALOGO = {
+        antioxidante: ['anticorrosion', 'antioxido'],
+        // Ampliado a petición de Eloy ("amplía el diccionario a partir
+        // de los productos y sus distintas posibilidades de nombrado"):
+        // cada entrada de aquí abajo se ha contrastado contra el
+        // catálogo real — comprobando que la palabra de la izquierda da
+        // 0 (o muy pocos) resultados hoy, y que la de la derecha
+        // identifica productos realmente relevantes que el catálogo
+        // nombra con un término distinto al que usaría un cliente.
+        bombilla: ['lampara'],       // el catálogo solo usa "lámpara" (término de proveedor/industria), nunca "bombilla" — 0 productos con "bombilla" en el nombre, 38 con "lámpara" que SÍ son bombillas normales (LED, esféricas, estándar...)
+        friegaplatos: ['lavavajillas'], // sinónimo coloquial muy habitual en España — el catálogo solo dice "lavavajillas"
+        bateria: ['pila'],           // para pilas sueltas (linterna, mando...) el catálogo dice siempre "pila", nunca "batería" (que si aparece, es para baterías recargables de herramientas, un producto distinto)
+        dentifrico: ['dental'],      // el catálogo dice "pasta dental", nunca "pasta de dientes" ni "dentífrico"
+        carrocero: ['enmascarar'],   // "cinta carrocero" (término de taller) = "cinta enmascarar" en el catálogo
+        cuchilla: ['hojas'],         // maquinillas de afeitar: el catálogo las agrupa como "HOJAS Y MAQUINAS AFEITAR" — "cuchilla" en el catálogo se usa para hojas de rascador, no de afeitar, así que esto además amplía el término ambiguo a ambos sentidos
+        veneno: ['raticida', 'insecticida'], // "veneno para ratas/cucarachas" es como mucha gente lo pide — el catálogo nunca usa la palabra "veneno", solo los nombres técnicos de familia
+        // Segunda ronda (mismo criterio, verificado de nuevo contra el catálogo real):
+        rimel: ['mascara'],          // término muy habitual en España para el "MASCARA PEST." (máscara de pestañas) de maquillaje — el catálogo nunca dice "rimel"
+        pintalabios: ['labios'],     // el catálogo nombra estos productos como "BRILLO LABIOS"/"PERFILADOR LABIOS", nunca "pintalabios"
+        kleenex: ['panuelos'],       // marca genérica habitual para pañuelos de papel — el catálogo solo dice "pañuelos" (PAÑUELOS GOMA-CAMPS FACIALES, etc.)
+        coche: ['vehiculo'],         // sinónimo exacto — "ACABADO DE VEHICULOS" (limpiador llantas, pulimento...) no dice "coche", y viceversa "AMBIENT.COCHE" no dice "vehículo": conjuntos de productos reales distintos y complementarios, ninguno se encontraba desde el término del otro
+        vehiculo: ['coche'],
+        // Tercera ronda ("intensivo" a petición de Eloy — barrido
+        // sistemático por familias/subfamilias de droguería, perfumería,
+        // higiene y talleres, cada candidato verificado contra el
+        // catálogo real antes de añadirlo):
+        colutorio: ['bucal'],        // término de farmacia para el enjuague bucal — el catálogo dice "ANTISEPT.BUCAL"/"ENJUAGUE BUCAL", nunca "colutorio"
+        hilo: ['seda'],              // "hilo dental" es como la mayoría lo pide — el catálogo dice "SEDA DENTAL"
+        antitranspirante: ['desodorante'], // en España se usa indistintamente de "desodorante" para el mismo tipo de producto (roll-on, spray...) — el catálogo nunca dice "antitranspirante"
+        // Cuarta ronda (mismo criterio, barrido de más familias: piscinas,
+        // protección personal, menaje, varios):
+        alguicida: ['antialgas'],    // forma técnica/farmacia — el catálogo dice "ANTIALGAS" (ASTRALPOOL ANTIALGAS, MPL ANTIALGAS)
+        algicida: ['antialgas'],     // variante ortográfica de "alguicida", mismo caso
+        mechero: ['encendedor'],     // sinónimo coloquial muy habitual — el catálogo solo dice "encendedor"
+        naftalina: ['polilla'],      // término clásico para antipolillas — el catálogo nombra estos productos por "polilla" (ANTIPOLILLAS Y S/G ROPAS), nunca "naftalina"
     };
 
     function normalizar(txt) {
@@ -7405,6 +8074,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ¿Coincide esta palabra de búsqueda con alguna palabra del texto,
     // de forma exacta o tolerando alguna errata razonable?
     function palabraCoincide(pBusqueda, palabrasTexto) {
+        if (coincideUnaPalabra_(pBusqueda, palabrasTexto)) return true;
+        // Sinónimos reales (ver SINONIMOS_CATALOGO) — palabras sin
+        // ninguna relación de erratas/abreviatura, así que nunca las
+        // encontraría la tolerancia a erratas de arriba por sí sola.
+        // Puramente ADITIVO: solo añade coincidencias nuevas, nunca
+        // quita ninguna de las que ya funcionaban (coincideUnaPalabra_
+        // sin tocar).
+        const sinonimos = SINONIMOS_CATALOGO[pBusqueda];
+        if (sinonimos) return sinonimos.some(s => coincideUnaPalabra_(s, palabrasTexto));
+        return false;
+    }
+    function coincideUnaPalabra_(pBusqueda, palabrasTexto) {
         if (palabrasTexto.some(pTexto => pTexto.includes(pBusqueda))) return true;
         if (pBusqueda.length <= 3) return false; // sin tolerancia para palabras muy cortas
         const maxErr = maxErroresPermitidos(pBusqueda.length);
@@ -7474,6 +8155,60 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const b = normalizar(busqueda).replace(/[^a-z0-9]/g, '');
         if (!b) return true;
         return r.includes(b);
+    }
+
+    // ── Fallback de coincidencias aproximadas ──────────────────────────
+    // A petición explícita de Eloy, tras comprobar con datos reales de
+    // búsquedas en producción que muchísimos términos normales y
+    // corrientes (marcas y productos que SÍ están en el catálogo, con
+    // decenas de coincidencias) daban "0 resultados" por culpa de la
+    // exigencia estricta de coincide() de que TODAS las palabras de la
+    // búsqueda encajen: una sola palabra que no encaja (sinónimo,
+    // variante, errata demasiado grande para la tolerancia de una
+    // palabra corta) tira la búsqueda entera a cero, aunque el resto de
+    // palabras sí identifiquen claramente un producto real.
+    //
+    // Este fallback SOLO se usa cuando la búsqueda estricta (coincide(),
+    // sin tocar) no ha encontrado NADA — nunca sustituye ni reordena una
+    // búsqueda que sí dio resultados, así que no hay ningún riesgo de
+    // reintroducir el caso ya resuelto en su día ("fairy" encontrando
+    // colonias solo por compartir la palabra "aire"): aquí no se exige
+    // relevancia estricta porque la alternativa real es dejar al usuario
+    // con la pantalla en blanco, sin ninguna pista de por dónde seguir.
+    //
+    // Puntúa por Nº de palabras de la búsqueda que encuentran alguna
+    // coincidencia (exacta o con la misma tolerancia a erratas de
+    // palabraCoincide) en nombre/familia/subfamilia del producto, y
+    // devuelve los mejor puntuados — con al menos 1 palabra coincidente,
+    // no hace falta que coincidan todas. `pasaFiltrosNoTexto` es la
+    // misma combinación de filtros activos (área, familia, precio...)
+    // que ya aplicó la búsqueda estricta, para que el fallback respete
+    // exactamente los mismos filtros, solo relajando el texto.
+    const LIMITE_APROXIMADOS_ = 36;
+    function buscarCoincidenciasAproximadas_(texto, pasaFiltrosNoTexto) {
+        // Longitud mínima 4 (no 3, a diferencia del resto del buscador):
+        // aquí se puntúa por "al menos una palabra coincide" en vez de
+        // exigir todas, así que una palabra corta sola (p.ej. "no", que
+        // por inclusión de substring "coincide" con cualquier palabra
+        // que la contenga, como "normal" o "abono") puntuaría productos
+        // completamente ajenos a la búsqueda real — caso real detectado
+        // probando con una búsqueda sin sentido ("no existe") que sin
+        // este mínimo devolvía 36 productos aleatorios en vez de caer,
+        // correctamente, en el "sin resultados" de siempre.
+        const palabrasBusqueda = normalizar(texto).split(/\s+/).filter(Boolean)
+            .filter(w => w.length >= 4 && !PALABRAS_IGNORADAS_SUGERENCIA.has(w));
+        if (!palabrasBusqueda.length) return [];
+
+        const puntuados = [];
+        TODOS.forEach(p => {
+            if (!pasaFiltrosNoTexto(p)) return;
+            const textoProducto = normalizar(`${p.nombre || ''} ${p.familia || ''} ${p.subfamilia || ''}`);
+            const palabrasTexto = textoProducto.split(/\s+/).filter(Boolean);
+            const coincidencias = palabrasBusqueda.filter(w => palabraCoincide(w, palabrasTexto)).length;
+            if (coincidencias > 0) puntuados.push({ producto: p, coincidencias });
+        });
+        puntuados.sort((a, b) => b.coincidencias - a.coincidencias);
+        return puntuados.slice(0, LIMITE_APROXIMADOS_).map(r => r.producto);
     }
 
     // ── Cargar productos.json — vía el Web App de Apps Script, que sirve
@@ -7776,14 +8511,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // abierto?" de abajo (que decide si robar el foco a la barra de
         // búsqueda) vea el resultado FINAL, no el de a mitad de abrir.
         await abrirProductoDesdeURL();
+        // Mismo patrón que ?ref= (enlace a un producto), pero para
+        // ?temporada=<id> — ver abrirTemporadaDesdeURL_.
+        await abrirTemporadaDesdeURL_();
         // A petición de Eloy: al entrar o recargar la página, el foco del
         // teclado se pone automáticamente en la barra de búsqueda — muy
         // útil con el lector de códigos de barras, que "escribe"
         // directamente donde esté el foco sin tener que tocar antes la
-        // pantalla. Si ?ref= ya abrió el modal de un producto (enlace
+        // pantalla. Si ?ref= o ?temporada= ya abrieron un modal (enlace
         // compartido), se respeta esa vista y no se le quita el foco —
-        // el usuario probablemente quiere ver ese producto, no buscar.
-        if (!$('modal-producto-overlay').classList.contains('activo')) {
+        // el usuario probablemente quiere verlo, no buscar.
+        if (!$('modal-producto-overlay').classList.contains('activo') && !$('temporada-ver-todos-overlay').classList.contains('activo')) {
             $('f-texto').focus();
         }
     }
@@ -8259,6 +8997,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
         $('f-texto').addEventListener('keydown', (e) => {
             if (e.key === 'Escape') ocultarSugerencias();
+            // A petición de Eloy: al pulsar Intro (o el salto de línea del
+            // teclado virtual del móvil, que dispara el mismo evento con
+            // key === 'Enter') se oculta el desplegable de sugerencias
+            // para que el usuario vea ya los resultados, en vez de tener
+            // que cerrarlo él mismo tocando fuera. Se quita también el
+            // foco del campo — mismo patrón que abrirProductoUnicoTrasBusqueda:
+            // en móvil retrae el teclado virtual, dejando más hueco en
+            // pantalla para ver los resultados de inmediato.
+            if (e.key === 'Enter') {
+                ocultarSugerencias();
+                $('f-texto').blur();
+            }
         });
         $('sugerencias-busqueda').addEventListener('click', (e) => {
             const item = e.target.closest('.sugerencia-item');
@@ -8363,6 +9113,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
+        $('btn-preguntar-ia-aproximados').addEventListener('click', () => preguntarIAProducto(false, $('btn-preguntar-ia-aproximados')));
         $('btn-ia-producto-otra-vez').addEventListener('click', () => preguntarIAProducto(true));
         $('btn-compartir-resultados').addEventListener('click', compartirResultados);
         $('btn-cerrar-disclaimer').addEventListener('click', ocultarDisclaimerPrecios);
@@ -8849,6 +9600,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // tras aceptar el banner de "hay una versión más reciente".
     function actualizarModulosDescubrimiento_() {
         cargarDestacados_();
+        cargarTemporadas_().then(renderTemporada_);
         cargarNovedades_();
         cargarMasBuscados_();
         cargarMarcasMasBuscadas_();
@@ -8917,7 +9669,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     const modulosDescubrimientoCacheInicial_ = leerCacheEstadoModulosDescubrimiento_();
     const modulosDescubrimientoConContenido_ = {};
-    ['destacados', 'masBuscados', 'novedades', 'marcas', 'categorias', 'vistos'].forEach(clave => {
+    ['destacados', 'temporada', 'masBuscados', 'novedades', 'marcas', 'categorias', 'vistos'].forEach(clave => {
         const cacheado = modulosDescubrimientoCacheInicial_[clave];
         modulosDescubrimientoConContenido_[clave] = (cacheado === 'vacio' || cacheado === 'con-contenido') ? cacheado : 'cargando';
     });
@@ -8953,6 +9705,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const oculto = hayFiltroActivo_();
         const visible_ = (estado) => estado !== 'vacio' && !oculto;
         if ($('destacados')) $('destacados').style.display = visible_(modulosDescubrimientoConContenido_.destacados) ? '' : 'none';
+        if ($('temporadas-bloques-contenedor')) $('temporadas-bloques-contenedor').style.display = visible_(modulosDescubrimientoConContenido_.temporada) ? '' : 'none';
         $('mas-buscados').style.display = visible_(modulosDescubrimientoConContenido_.masBuscados) ? '' : 'none';
         $('novedades').style.display = visible_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
@@ -9582,6 +10335,781 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('destacados-preview-overlay').addEventListener('click', (e) => { if (e.target.id === 'destacados-preview-overlay') destacadosCerrarPreview_(); });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && $('destacados-preview-overlay').classList.contains('activo')) destacadosCerrarPreview_();
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // PRODUCTOS DE TEMPORADA — a petición de Eloy: priorizar productos a
+    // la entrada del buscador según la época del año, yendo "por
+    // adelantado" (p.ej. en noviembre ya con invierno/Navidad). A
+    // propósito SEPARADO de Destacados (hoja "Temporadas" propia en
+    // Apps Script, sin ningún campo de descuento/promoción) — solo
+    // reutiliza las clases CSS .destacados-* para el aspecto visual del
+    // panel de gestión. Mismo patrón de carga que Campañas
+    // (cargarCampanasEscaparateInterno_): se reutiliza DIRECTAMENTE
+    // campanaActivaHoy_() para decidir qué temporada está vigente hoy,
+    // porque la forma de los datos es idéntica
+    // (activa/permanente/fechaInicio/fechaFin).
+    // ══════════════════════════════════════════════════════════════════
+    let temporadasDatos_ = [];
+
+    async function cargarTemporadas_() {
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_temporadas', { cache: 'no-store' });
+            const datos = await resp.json();
+            temporadasDatos_ = Array.isArray(datos.temporadas) ? datos.temporadas : [];
+        } catch (e) {
+            console.error('cargarTemporadas_: error cargando temporadas', e);
+            temporadasDatos_ = [];
+        }
+    }
+
+    function temporadasVigentesAhora_() {
+        return temporadasDatos_.filter(campanaActivaHoy_);
+    }
+
+    // Expande una temporada (familias + referencias) contra el catálogo
+    // actual (TODOS), devolviendo los productos reales (activos en
+    // catálogo) que incluye, sin duplicados dentro de la propia
+    // temporada.
+    function productosDeTemporada_(temporada) {
+        const refsVistas = new Set();
+        const productos = [];
+        const familiasSet = new Set((temporada.familias || []).map(f => f.toLowerCase()));
+        if (familiasSet.size) {
+            TODOS.forEach(p => {
+                if (!estaActivoEnCatalogo_(p)) return;
+                if (!p.familia || !familiasSet.has(p.familia.toLowerCase())) return;
+                if (refsVistas.has(p.ref)) return;
+                refsVistas.add(p.ref);
+                productos.push(p);
+            });
+        }
+        (temporada.referencias || []).forEach(ref => {
+            if (refsVistas.has(ref)) return;
+            const p = TODOS.find(x => String(x.ref) === String(ref));
+            if (!p || !estaActivoEnCatalogo_(p)) return;
+            refsVistas.add(ref);
+            productos.push(p);
+        });
+        return productos;
+    }
+
+    const MAX_TARJETAS_TEMPORADA_ = 18;
+
+    // Cada temporada vigente es su PROPIO bloque, independiente del
+    // resto (petición explícita de Eloy: "cada temporada añadida sea un
+    // bloque en el buscador una seguida de la otra... que cada una abra
+    // una modal independiente ya que la idea es incluir productos de
+    // temporada pero que pueda no tener relación unos con otros"). Antes
+    // se combinaban todas las vigentes en un único pool/bloque/modal
+    // (poolTemporadaActual_, eliminada) — con dos temporadas vigentes a
+    // la vez, se veían fusionadas como si fueran una sola.
+    function renderTemporada_() {
+        const cont = $('temporadas-bloques-contenedor');
+        if (!cont) return; // defensivo: HTML aún no montado
+        const bloques = temporadasVigentesAhora_()
+            .slice()
+            .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+            .map(t => ({ temporada: t, productos: productosDeTemporada_(t) }))
+            .filter(b => b.productos.length);
+
+        cont.innerHTML = '';
+        if (!bloques.length) {
+            modulosDescubrimientoConContenido_.temporada = 'vacio';
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
+        bloques.forEach(({ temporada, productos }) => {
+            const bloque = document.createElement('div');
+            bloque.className = 'seccion-destacados temporada-bloque';
+            bloque.dataset.temporadaId = temporada.id;
+            bloque.innerHTML = `
+                <div class="seccion-destacados__cabecera">
+                    <p class="seccion-destacados__titulo seccion-temporada__titulo-clicable" role="button" tabindex="0">
+                        <span class="seccion-destacados__icono">${temporada.emoji ? escapeHtml(temporada.emoji) : '<i class="fa-solid fa-snowflake"></i>'}</span>
+                        <span>${escapeHtml(temporada.nombre)}</span>
+                        <i class="fa-solid fa-chevron-right seccion-temporada__flecha"></i>
+                    </p>
+                </div>
+                <div class="seccion-destacados__lista"></div>
+            `;
+            const lista = bloque.querySelector('.seccion-destacados__lista');
+            // Aleatorio a propósito (petición de Eloy: "se mostrarán de
+            // manera aleatoria esos productos de temporada") — se
+            // rebaraja cada vez que se recalculan los módulos de
+            // descubrimiento, no solo una vez por sesión.
+            barajar_(productos).slice(0, MAX_TARJETAS_TEMPORADA_).forEach(p => lista.appendChild(crearTarjeta(p)));
+            const abrir = () => abrirModalTemporada_(temporada.id);
+            const titulo = bloque.querySelector('.seccion-temporada__titulo-clicable');
+            titulo.addEventListener('click', abrir);
+            titulo.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } });
+            cont.appendChild(bloque);
+        });
+        modulosDescubrimientoConContenido_.temporada = 'con-contenido';
+        actualizarVisibilidadModulosDescubrimiento_();
+    }
+
+    // ── Modal "ver todos" — agrupado por familia (petición de Eloy), con
+    // scroll infinito por GRUPOS (no por producto suelto): reutiliza
+    // agruparPorFamilia() tal cual (la misma que usa el buscador
+    // principal), solo que aquí se reordenan los productos de cada
+    // familia al azar (sigue siendo "aleatorio" dentro del agrupado). ──
+    let temporadaModalProductosBase_ = []; // sin agrupar, para el filtro de texto
+    let temporadaModalGrupos_ = [];
+    let temporadaModalGruposMostrados_ = 0;
+    const TEMPORADA_MODAL_GRUPOS_LOTE_ = 3;
+
+    function temporadaFormatearFecha_(iso) {
+        if (!iso || iso.indexOf('-') === -1) return iso || '';
+        return iso.split('-').reverse().join('/');
+    }
+
+    function temporadaRenderizarGrupoEnModal_(grupo) {
+        const cont = $('temporada-ver-todos-grid');
+        const bloque = document.createElement('div');
+        bloque.className = 'familia-seccion temporada-ver-todos-grid-grupo';
+        bloque.innerHTML = `<h3 class="familia-titulo">${escapeHtml(grupo.nombre)} <span class="count">${grupo.productos.length}</span></h3><div class="grid-productos"></div>`;
+        const grid = bloque.querySelector('.grid-productos');
+        grupo.productos.forEach(p => grid.appendChild(crearTarjeta(p)));
+        cont.appendChild(bloque);
+    }
+
+    function temporadaCargarMasEnModal_() {
+        const siguientes = temporadaModalGrupos_.slice(temporadaModalGruposMostrados_, temporadaModalGruposMostrados_ + TEMPORADA_MODAL_GRUPOS_LOTE_);
+        siguientes.forEach(temporadaRenderizarGrupoEnModal_);
+        temporadaModalGruposMostrados_ += siguientes.length;
+        if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) {
+            $('temporada-ver-todos-fin').style.display = '';
+        }
+    }
+
+    function temporadaObservarScroll_(e) {
+        const el = e.target;
+        if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) return; // ya está todo cargado
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+            temporadaCargarMasEnModal_();
+        }
+    }
+
+    // Filtro de texto/referencia dentro del propio modal — solo sobre los
+    // productos YA incluidos en la(s) temporada(s) vigente(s), no sobre
+    // todo el catálogo (a petición de Eloy: "solo los productos añadidos
+    // a la temporada"). Al vaciar el filtro, vuelve al scroll infinito
+    // agrupado y aleatorio de siempre; con texto, se muestran TODOS los
+    // grupos que coincidan de golpe (conjunto ya acotado, no hace falta
+    // paginar).
+    function temporadaModalFiltrarYRenderizar_() {
+        const texto = ($('temporada-ver-todos-buscar').value || '').trim();
+        const cont = $('temporada-ver-todos-grid');
+        cont.innerHTML = '';
+        $('temporada-ver-todos-fin').style.display = 'none';
+        if (!texto) {
+            temporadaModalGrupos_ = agruparPorFamilia(temporadaModalProductosBase_).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
+            temporadaModalGruposMostrados_ = 0;
+            temporadaCargarMasEnModal_();
+            return;
+        }
+        const filtrados = esBusquedaNumerica(texto)
+            ? temporadaModalProductosBase_.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+            : temporadaModalProductosBase_.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+        if (!filtrados.length) {
+            cont.innerHTML = '<p class="destacados-hint" style="text-align:center;">Sin resultados en esta temporada.</p>';
+            return;
+        }
+        agruparPorFamilia(filtrados).forEach(temporadaRenderizarGrupoEnModal_);
+    }
+
+    // Siempre acotada a UNA temporada concreta (nunca mezclada con otras
+    // vigentes a la vez) — petición explícita de Eloy, ver el comentario
+    // en renderTemporada_.
+    function abrirModalTemporada_(temporadaId) {
+        const t = temporadasDatos_.find(x => x.id === temporadaId);
+        if (!t) return;
+        const productos = productosDeTemporada_(t);
+        if (!productos.length) return;
+        temporadaModalProductosBase_ = productos;
+        $('temporada-ver-todos-titulo-icono').innerHTML = t.emoji ? escapeHtml(t.emoji) : '<i class="fa-solid fa-snowflake"></i>';
+        $('temporada-ver-todos-titulo-texto').textContent = t.nombre || 'Productos de temporada';
+        configurarBotonCompartirTemporada_(t);
+
+        $('temporada-ver-todos-vigencia').textContent = t.permanente
+            ? 'Disponible todo el año'
+            : `Del ${temporadaFormatearFecha_(t.fechaInicio)} al ${temporadaFormatearFecha_(t.fechaFin)}`;
+
+        $('temporada-ver-todos-buscar').value = '';
+        temporadaModalFiltrarYRenderizar_();
+
+        // Opciones de búsqueda al final del scroll: una por cada familia
+        // de ESTA temporada — al clicar, vuelve al buscador ya filtrado
+        // por esa familia.
+        const contChips = $('temporada-ver-todos-chips');
+        contChips.innerHTML = '';
+        (t.familias || []).slice().sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })).forEach(familia => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = 'Ver todo "' + familia + '"';
+            btn.addEventListener('click', () => temporadaIrABusquedaPorFamilia_(familia));
+            contChips.appendChild(btn);
+        });
+
+        $('temporada-ver-todos-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+
+        // Deja también situada en pantalla la sección/bloque de esta
+        // temporada (si ya está pintado) — a petición de Eloy: poder
+        // "acceder directamente a esa sección y modal" desde un enlace
+        // compartido, no solo a la modal.
+        const bloqueDom = document.querySelector(`.temporada-bloque[data-temporada-id="${temporadaId}"]`);
+        if (bloqueDom) bloqueDom.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Construye y comparte el enlace de una temporada (mismo patrón que
+    // urlCompartirProducto/compartirProducto): la página actual + el
+    // parámetro ?temporada=<id>. Al abrir ese enlace, el buscador
+    // detecta el parámetro y abre automáticamente esta misma modal (ver
+    // abrirTemporadaDesdeURL_).
+    function urlCompartirTemporada_(t) {
+        const base = window.location.origin + window.location.pathname;
+        return `${base}?temporada=${encodeURIComponent(t.id)}`;
+    }
+
+    function configurarBotonCompartirTemporada_(t) {
+        const boton = $('temporada-ver-todos-compartir');
+        boton.classList.remove('copiado');
+        boton.innerHTML = '<i class="fa-solid fa-share-from-square"></i> Compartir';
+        boton.onclick = () => compartirTemporada_(t);
+    }
+
+    async function compartirTemporada_(t) {
+        const url = urlCompartirTemporada_(t);
+        const boton = $('temporada-ver-todos-compartir');
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: t.nombre, text: `${t.nombre} — Orencio Matas y Hnos`, url: url });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return; // el usuario canceló el diálogo nativo
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(url);
+            boton.classList.add('copiado');
+            boton.innerHTML = '<i class="fa-solid fa-check"></i> ¡Copiado!';
+            setTimeout(() => configurarBotonCompartirTemporada_(t), 2200);
+        } catch (e) {
+            window.prompt('Copia este enlace para compartir esta temporada:', url);
+        }
+    }
+
+    // Si la URL incluye ?temporada=<id>, abre directamente su modal "ver
+    // todos" al cargar la página (enlaces "compartir temporada") — mismo
+    // patrón que abrirProductoDesdeURL con ?ref=. Limpia el parámetro al
+    // terminar para que recargar o navegar no lo vuelva a abrir.
+    async function abrirTemporadaDesdeURL_() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('temporada');
+        if (!id) return;
+        if (!temporadasDatos_.length) await cargarTemporadas_();
+        renderTemporada_();
+        abrirModalTemporada_(id);
+        const limpia = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', limpia);
+    }
+
+    function cerrarModalTemporadaVerTodos_() {
+        $('temporada-ver-todos-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    // Vuelve al buscador principal ya filtrado por esta familia — SIN
+    // recargar la página y SIN el efecto de entrada de los resultados
+    // (petición explícita de Eloy). Mismo mecanismo que ya usa el resto
+    // del sitio para saltarse ese efecto al navegar internamente
+    // (seleccionarSugerencia, codigoDetectado...): llamar a
+    // revelarCabeceraResultados() de inmediato, antes de esperar a
+    // ninguna interacción real del usuario.
+    function temporadaIrABusquedaPorFamilia_(familia) {
+        cerrarModalTemporadaVerTodos_();
+        refsMarcaActiva_ = null;
+        $('f-texto').value = familia;
+        revelarCabeceraResultados();
+        actualizarIconosBuscador();
+        resetPaginacion();
+        aplicarFiltros();
+        $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ── POST compartido para las acciones de escritura de Temporadas —
+    // mismo patrón (y mismo motivo: reintento ante una posible
+    // redirección transitoria a doGet) que destacadosFetchPost_, pero
+    // sin reutilizarla tal cual para mantener los dos sistemas
+    // independientes de verdad. ──
+    async function temporadaFetchPost_(payload) {
+        for (let intento = 0; intento < 2; intento++) {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+            });
+            const d = await resp.json();
+            if (d.success !== undefined || intento === 1) return d;
+            console.warn('temporadaFetchPost_: respuesta sin "success" (posible redirección a doGet) — reintentando...', d);
+        }
+    }
+
+    // ── Gestión (PIN + listado + formulario) ────────────────────────────
+    let temporadaPin_ = null;
+    let temporadaEditandoId_ = null; // id de la temporada abierta en el formulario, o null si es nueva
+
+    function temporadaGuardarPinLocal_(pin, recordar) {
+        if (recordar) { try { localStorage.setItem('omTemporadasPin', pin); } catch (e) {} }
+    }
+
+    async function temporadaValidarPinYArrancar_(pin) {
+        $('temporadas-pin-error').textContent = '';
+        const btn = $('temporadas-pin-entrar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Comprobando...';
+        try {
+            const d = await temporadaFetchPost_({ accion: 'panel_validar_pin', pin: pin });
+            if (d.success) {
+                temporadaPin_ = pin;
+                $('temporadas-vista-pin').style.display = 'none';
+                $('temporadas-vista-principal').style.display = '';
+                await cargarTemporadas_();
+                temporadaRenderizarListado_();
+            } else {
+                $('temporadas-pin-error').textContent = 'PIN incorrecto.';
+                try { localStorage.removeItem('omTemporadasPin'); } catch (e) {}
+            }
+        } catch (e) {
+            $('temporadas-pin-error').textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    function temporadaRenderizarListado_() {
+        const cont = $('temporadas-listado-lista');
+        $('temporadas-listado-total').textContent = temporadasDatos_.length;
+        cont.innerHTML = '';
+        if (!temporadasDatos_.length) {
+            cont.innerHTML = '<p class="destacados-hint">Todavía no hay ninguna temporada creada.</p>';
+            return;
+        }
+        const ordenadas = temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+        ordenadas.forEach((t, i) => {
+            const vigente = campanaActivaHoy_(t);
+            const fila = document.createElement('div');
+            fila.className = 'destacados-item' + (t.activa ? '' : ' destacados-item--inactivo');
+            const rango = t.permanente ? 'Permanente' : ((t.fechaInicio && t.fechaFin) ? `${t.fechaInicio} → ${t.fechaFin}` : 'Sin fechas');
+            fila.innerHTML = `
+                <div class="destacados-item-info">
+                    <div class="nombre">${t.emoji ? escapeHtml(t.emoji) + ' ' : ''}${escapeHtml(t.nombre)}${vigente ? ' <span style="color:var(--green);font-weight:700;">● vigente ahora</span>' : ''}</div>
+                    <div class="detalle">${escapeHtml(rango)} · ${(t.familias || []).length} familia(s) · ${(t.referencias || []).length} producto(s)</div>
+                </div>
+                <div class="destacados-item-acciones">
+                    <button type="button" class="temporada-mover-btn" data-dir="arriba" title="Subir" ${i === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                    <button type="button" class="temporada-mover-btn" data-dir="abajo" title="Bajar" ${i === ordenadas.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+                    <button type="button" class="temporada-editar-btn" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                </div>
+            `;
+            fila.querySelectorAll('.temporada-mover-btn').forEach(btn => {
+                btn.addEventListener('click', () => temporadaMoverOrden_(t.id, btn.dataset.dir));
+            });
+            fila.querySelector('.temporada-editar-btn').addEventListener('click', () => temporadaAbrirEditor_(t.id));
+            cont.appendChild(fila);
+        });
+    }
+
+    // Reordena las temporadas — petición explícita de Eloy: "una seguida
+    // de la otra en el orden en el que el usuario desde el gestor
+    // decida". guardar_temporada ya acepta "orden" (ver Apps Script),
+    // así que no hace falta ninguna acción nueva en el backend: basta
+    // con reasignar un orden secuencial 0..n-1 a TODAS las temporadas
+    // tras el intercambio, para que quede un criterio estable sin
+    // huecos ni empates (muchas temporadas nuevas se crean con orden 0
+    // por defecto, y con varias en empate el resultado de ordenar por
+    // "orden" no sería predecible).
+    async function temporadaMoverOrden_(id, direccion) {
+        const lista = temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+        const idx = lista.findIndex(x => x.id === id);
+        const destino = direccion === 'arriba' ? idx - 1 : idx + 1;
+        if (idx === -1 || destino < 0 || destino >= lista.length) return;
+        const tmp = lista[idx];
+        lista[idx] = lista[destino];
+        lista[destino] = tmp;
+
+        const botones = [...document.querySelectorAll('.temporada-mover-btn')];
+        botones.forEach(b => b.disabled = true);
+        try {
+            for (let i = 0; i < lista.length; i++) {
+                const t = lista[i];
+                await temporadaFetchPost_({
+                    accion: 'guardar_temporada', pin: temporadaPin_, id: t.id,
+                    nombre: t.nombre, permanente: t.permanente, fechaInicio: t.fechaInicio, fechaFin: t.fechaFin,
+                    activa: t.activa, orden: i,
+                });
+            }
+            await temporadaRecargarListadoAdmin_();
+        } finally {
+            botones.forEach(b => b.disabled = false);
+        }
+    }
+
+    function temporadaAbrirEditor_(id) {
+        temporadaEditandoId_ = id || null;
+        const t = id ? temporadasDatos_.find(x => x.id === id) : null;
+        $('temporadas-editor-titulo').textContent = t ? 'Editar temporada' : 'Nueva temporada';
+        $('temporadas-editor-nombre').value = t ? t.nombre : '';
+        $('temporadas-editor-emoji').value = t ? (t.emoji || '') : '';
+        $('temporadas-editor-permanente').checked = t ? !!t.permanente : false;
+        $('temporadas-editor-fecha-inicio').value = t ? t.fechaInicio : '';
+        $('temporadas-editor-fecha-fin').value = t ? t.fechaFin : '';
+        $('temporadas-editor-activa').checked = t ? t.activa !== false : true;
+        $('temporadas-editor-error').textContent = '';
+        $('temporadas-editor-eliminar').style.display = t ? '' : 'none';
+        $('temporadas-editor').style.display = '';
+        if (t) {
+            $('temporadas-items-bloque').style.display = '';
+            $('temporadas-familias-filtro').value = '';
+            temporadaRenderizarFamiliasChecklist_(t);
+            temporadaRenderizarReferenciasChips_(t);
+            $('temporadas-buscar-texto').value = '';
+            $('temporadas-buscar-area').value = '';
+            temporadaPoblarSelectoresAreaFamilia_();
+            $('temporadas-buscar-resultados').innerHTML = '';
+        } else {
+            $('temporadas-items-bloque').style.display = 'none';
+        }
+        $('temporadas-editor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function temporadaCerrarEditor_() {
+        $('temporadas-editor').style.display = 'none';
+        temporadaEditandoId_ = null;
+    }
+
+    async function temporadaGuardarMeta_() {
+        const nombre = $('temporadas-editor-nombre').value.trim();
+        const emoji = $('temporadas-editor-emoji').value.trim();
+        const permanente = $('temporadas-editor-permanente').checked;
+        const fechaInicio = $('temporadas-editor-fecha-inicio').value;
+        const fechaFin = $('temporadas-editor-fecha-fin').value;
+        const activa = $('temporadas-editor-activa').checked;
+        if (!nombre || (!permanente && (!fechaInicio || !fechaFin))) {
+            $('temporadas-editor-error').textContent = 'Faltan campos obligatorios: nombre, y fecha de inicio/fin salvo que sea permanente.';
+            return;
+        }
+        const btn = $('temporadas-editor-guardar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        // El orden se manda siempre explícito, tanto al editar como al
+        // crear — si no, el backend lo deja en 0 por defecto (ver
+        // procesarGuardarTemporada), y cada vez que se editaran solo los
+        // metadatos de una temporada ya reordenada (nombre, fechas...)
+        // se le reseteaba el orden sin querer, deshaciendo lo que el
+        // gestor hubiera decidido en temporadaMoverOrden_. Al crear una
+        // nueva, se coloca al final de la lista actual por defecto.
+        const existente = temporadaEditandoId_ ? temporadasDatos_.find(x => x.id === temporadaEditandoId_) : null;
+        const orden = existente ? (existente.orden || 0) : (Math.max(-1, ...temporadasDatos_.map(t => t.orden || 0)) + 1);
+        try {
+            const resp = await temporadaFetchPost_({
+                accion: 'guardar_temporada', pin: temporadaPin_,
+                id: temporadaEditandoId_ || undefined,
+                nombre: nombre, emoji: emoji, permanente: permanente, fechaInicio: fechaInicio, fechaFin: fechaFin, activa: activa,
+                orden: orden,
+            });
+            if (!resp || !resp.success) {
+                $('temporadas-editor-error').textContent = (resp && resp.error) || 'Error al guardar.';
+                return;
+            }
+            const idGuardado = resp.id || temporadaEditandoId_;
+            await temporadaRecargarListadoAdmin_();
+            temporadaAbrirEditor_(idGuardado);
+        } catch (e) {
+            $('temporadas-editor-error').textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    async function temporadaEliminar_() {
+        if (!temporadaEditandoId_) return;
+        if (!window.confirm('¿Eliminar esta temporada? Esta acción no se puede deshacer.')) return;
+        const btn = $('temporadas-editor-eliminar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Eliminando...';
+        try {
+            const resp = await temporadaFetchPost_({ accion: 'eliminar_temporada', pin: temporadaPin_, id: temporadaEditandoId_ });
+            if (resp && resp.success) {
+                temporadaCerrarEditor_();
+                await temporadaRecargarListadoAdmin_();
+            } else {
+                $('temporadas-editor-error').textContent = (resp && resp.error) || 'Error al eliminar.';
+            }
+        } finally {
+            if (document.body.contains(btn)) { btn.disabled = false; btn.innerHTML = textoOriginal; }
+        }
+    }
+
+    async function temporadaRecargarListadoAdmin_() {
+        await cargarTemporadas_();
+        temporadaRenderizarListado_();
+        renderTemporada_(); // refresca también la sección pública al instante, sin esperar a la próxima recarga
+    }
+
+    // Agrupadas por área (petición de Eloy) — una familia se asigna al
+    // área donde aparece más productos suyos, por si alguna familia
+    // tuviese productos repartidos en más de un área.
+    function temporadaMapaFamiliasPorArea_() {
+        const conteoPorFamilia = {}; // familia -> {area -> n}
+        TODOS.forEach(p => {
+            if (!p.familia) return;
+            if (!conteoPorFamilia[p.familia]) conteoPorFamilia[p.familia] = {};
+            const area = p.area || '';
+            conteoPorFamilia[p.familia][area] = (conteoPorFamilia[p.familia][area] || 0) + 1;
+        });
+        const porArea = {};
+        Object.keys(conteoPorFamilia).forEach(familia => {
+            const areas = conteoPorFamilia[familia];
+            const areaPrincipal = Object.keys(areas).sort((a, b) => areas[b] - areas[a])[0];
+            if (!porArea[areaPrincipal]) porArea[areaPrincipal] = [];
+            porArea[areaPrincipal].push(familia);
+        });
+        return porArea;
+    }
+
+    function temporadaRenderizarFamiliasChecklist_(t) {
+        const cont = $('temporadas-familias-lista');
+        const mapa = temporadaMapaFamiliasPorArea_();
+        const incluidas = new Set(t.familias || []);
+        const areasOrdenadas = Object.keys(mapa).sort((a, b) => (AREAS_NOMBRE[a] || a).localeCompare(AREAS_NOMBRE[b] || b, 'es', { sensitivity: 'base' }));
+        cont.innerHTML = areasOrdenadas.map(area => {
+            const familias = mapa[area].slice().sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+            return `<div class="temporadas-familias-grupo" data-filtro-grupo="${escapeHtml((AREAS_NOMBRE[area] || area).toLowerCase())}">
+                <p class="temporadas-familias-grupo-titulo">${escapeHtml(AREAS_NOMBRE[area] || area || 'Sin área')}</p>
+                <div class="temporadas-familias-grupo-items">
+                    ${familias.map(f => `<label data-filtro-texto="${escapeHtml(f.toLowerCase())}"><input type="checkbox" value="${escapeHtml(f)}" ${incluidas.has(f) ? 'checked' : ''}> ${escapeHtml(f)}</label>`).join('')}
+                </div>
+            </div>`;
+        }).join('');
+        cont.querySelectorAll('input[type="checkbox"]').forEach(inp => {
+            inp.addEventListener('change', temporadaGuardarFamiliasDesdeChecklist_);
+        });
+        temporadaFiltrarFamilias_();
+    }
+
+    function temporadaFiltrarFamilias_() {
+        const texto = ($('temporadas-familias-filtro').value || '').trim().toLowerCase();
+        document.querySelectorAll('#temporadas-familias-lista .temporadas-familias-grupo').forEach(grupo => {
+            let algunaVisible = false;
+            grupo.querySelectorAll('label').forEach(label => {
+                const coincide = !texto || (label.dataset.filtroTexto || '').includes(texto);
+                label.style.display = coincide ? '' : 'none';
+                if (coincide) algunaVisible = true;
+            });
+            grupo.style.display = algunaVisible ? '' : 'none';
+        });
+    }
+
+    async function temporadaGuardarFamiliasDesdeChecklist_() {
+        if (!temporadaEditandoId_) return;
+        const familias = [...document.querySelectorAll('#temporadas-familias-lista input:checked')].map(i => i.value);
+        const estado = $('temporadas-familias-estado');
+        estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        try {
+            const resp = await temporadaFetchPost_({ accion: 'actualizar_items_temporada', pin: temporadaPin_, id: temporadaEditandoId_, familias: familias });
+            if (resp && resp.success) {
+                const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+                if (t) t.familias = familias;
+                temporadaRenderizarListado_();
+                renderTemporada_();
+            }
+        } finally {
+            estado.innerHTML = '';
+        }
+    }
+
+    function temporadaRenderizarReferenciasChips_(t) {
+        const cont = $('temporadas-referencias-chips');
+        $('temporadas-referencias-total').textContent = (t.referencias || []).length;
+        cont.innerHTML = '';
+        (t.referencias || []).forEach(ref => {
+            const p = TODOS.find(x => String(x.ref) === String(ref));
+            const urlImg = p ? urlImagenProducto(p, 40) : '';
+            const chip = document.createElement('span');
+            chip.className = 'temporadas-chip';
+            chip.innerHTML = `
+                ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:26px;height:26px;border-radius:50%;background:var(--border);flex-shrink:0;"></div>'}
+                ${escapeHtml(p ? p.nombre : ('Ref: ' + ref))}
+                <button type="button" title="Quitar"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            chip.querySelector('button').addEventListener('click', () => temporadaQuitarReferencia_(ref));
+            cont.appendChild(chip);
+        });
+    }
+
+    async function temporadaGuardarReferencias_(referencias) {
+        if (!temporadaEditandoId_) return;
+        const estado = $('temporadas-referencias-estado');
+        estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        try {
+            const resp = await temporadaFetchPost_({ accion: 'actualizar_items_temporada', pin: temporadaPin_, id: temporadaEditandoId_, referencias: referencias });
+            if (resp && resp.success) {
+                const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+                if (t) t.referencias = referencias;
+                temporadaRenderizarReferenciasChips_(t);
+                temporadaRenderizarListado_();
+                renderTemporada_();
+                // Sin esto, la fila recién añadida/quitada en el buscador
+                // de resultados se quedaba "congelada" con el estado
+                // anterior (sin el estilo deshabilitado de "ya incluido")
+                // hasta que el usuario volvía a teclear algo.
+                temporadaBuscarYRenderizar_();
+            }
+        } finally {
+            estado.innerHTML = '';
+        }
+    }
+
+    function temporadaQuitarReferencia_(ref) {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t) return;
+        temporadaGuardarReferencias_((t.referencias || []).filter(r => r !== ref));
+    }
+
+    function temporadaAnadirReferencia_(ref) {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t || (t.referencias || []).includes(ref)) return;
+        temporadaGuardarReferencias_((t.referencias || []).concat([ref]));
+    }
+
+    // Filtros de área/familia para el buscador de productos concretos —
+    // mismo patrón que destacadosPoblarSelectoresAreaFamilia_/
+    // destacadosActualizarSelectorFamilias_.
+    function temporadaPoblarSelectoresAreaFamilia_() {
+        const selArea = $('temporadas-buscar-area');
+        const areasPresentes = Array.from(new Set(TODOS.map(p => p.area).filter(Boolean))).sort();
+        selArea.innerHTML = '<option value="">Todas las áreas</option>' +
+            areasPresentes.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(AREAS_NOMBRE[a] || a)}</option>`).join('');
+        temporadaActualizarSelectorFamilias_();
+    }
+
+    function temporadaActualizarSelectorFamilias_() {
+        const area = $('temporadas-buscar-area').value;
+        const selFamilia = $('temporadas-buscar-familia');
+        const base = area ? TODOS.filter(p => p.area === area) : TODOS;
+        const familias = Array.from(new Set(base.map(p => p.familia).filter(Boolean))).sort();
+        selFamilia.innerHTML = '<option value="">Todas las familias</option>' +
+            familias.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    }
+
+    function temporadaBuscarYRenderizar_() {
+        const texto = ($('temporadas-buscar-texto').value || '').trim();
+        const area = $('temporadas-buscar-area').value;
+        const familia = $('temporadas-buscar-familia').value;
+        const cont = $('temporadas-buscar-resultados');
+        if (!texto && !area && !familia) { cont.innerHTML = ''; return; }
+        if (!temporadaEditandoId_) { cont.innerHTML = ''; return; }
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        const refsYaIncluidas = new Set(t ? (t.referencias || []) : []);
+        let resultados = TODOS.filter(p => estaActivoEnCatalogo_(p));
+        if (area) resultados = resultados.filter(p => p.area === area);
+        if (familia) resultados = resultados.filter(p => p.familia === familia);
+        if (texto) {
+            resultados = esBusquedaNumerica(texto)
+                ? resultados.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+        }
+        resultados = resultados.slice(0, 40);
+        if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
+        // Se conserva la posición de scroll al volver a pintar la lista
+        // (bug real reportado por Eloy: al añadir productos uno tras
+        // otro, cont.innerHTML se reconstruía entera cada vez y el
+        // scroll volvía arriba de golpe, obligando a bajar de nuevo para
+        // seguir añadiendo — cada vez más tedioso cuantos más productos
+        // se añadían). El orden de resultados no cambia entre
+        // reconstrucciones para el mismo texto/área/familia (incluir o
+        // no un producto no afecta al filtrado ni al orden), así que
+        // restaurar el mismo scrollTop deja la vista exactamente donde
+        // estaba.
+        const scrollPrevio = cont.scrollTop;
+        cont.innerHTML = '';
+        resultados.forEach(p => {
+            const yaIncluido = refsYaIncluidas.has(p.ref);
+            const urlImg = urlImagenProducto(p, 60);
+            const fila = document.createElement('div');
+            fila.className = 'destacados-buscar-item' + (yaIncluido ? ' destacados-buscar-item--incluido' : '');
+            fila.innerHTML = `
+                ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
+                <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
+                ${yaIncluido ? '<span class="ya-incluido">Ya incluido</span>' : ''}
+            `;
+            if (yaIncluido) { fila.style.cursor = 'default'; } else { fila.addEventListener('click', () => temporadaAnadirReferencia_(p.ref)); }
+            cont.appendChild(fila);
+        });
+        cont.scrollTop = scrollPrevio;
+    }
+
+    function abrirModalGestionTemporadas_() {
+        $('temporadas-modal-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+        temporadaCerrarEditor_();
+        const pinGuardado = (() => { try { return localStorage.getItem('omTemporadasPin'); } catch (e) { return null; } })();
+        if (pinGuardado) {
+            temporadaValidarPinYArrancar_(pinGuardado);
+        } else {
+            $('temporadas-vista-pin').style.display = '';
+            $('temporadas-vista-principal').style.display = 'none';
+        }
+    }
+
+    function cerrarModalGestionTemporadas_() {
+        $('temporadas-modal-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    // ── Listeners del modal público "ver todos" (siempre presentes) ──
+    // El título clicable que lo abre ya no es un elemento fijo del HTML:
+    // cada bloque de temporada (uno por temporada vigente) se genera
+    // dinámicamente en renderTemporada_, que ahí mismo le añade su
+    // propio listener acotado a esa temporada en concreto.
+    $('temporada-ver-todos-cerrar').addEventListener('click', cerrarModalTemporadaVerTodos_);
+    $('temporada-ver-todos-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporada-ver-todos-overlay') cerrarModalTemporadaVerTodos_(); });
+    $('temporada-ver-todos-scroll').addEventListener('scroll', temporadaObservarScroll_);
+    $('temporada-ver-todos-buscar').addEventListener('input', temporadaModalFiltrarYRenderizar_);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && $('temporada-ver-todos-overlay').classList.contains('activo')) cerrarModalTemporadaVerTodos_();
+    });
+
+    // ── Listeners del panel de gestión (solo existen en preproducción) ──
+    if ($('btn-gestionar-temporadas')) {
+        $('btn-gestionar-temporadas').addEventListener('click', abrirModalGestionTemporadas_);
+        $('temporadas-pin-entrar').addEventListener('click', () => {
+            const pin = $('temporadas-pin-input').value.trim();
+            temporadaGuardarPinLocal_(pin, $('temporadas-pin-recordar').checked);
+            temporadaValidarPinYArrancar_(pin);
+        });
+        $('temporadas-pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('temporadas-pin-entrar').click(); });
+        $('temporadas-nueva-btn').addEventListener('click', () => temporadaAbrirEditor_(null));
+        $('temporadas-editor-cancelar').addEventListener('click', temporadaCerrarEditor_);
+        $('temporadas-editor-guardar').addEventListener('click', temporadaGuardarMeta_);
+        $('temporadas-editor-eliminar').addEventListener('click', temporadaEliminar_);
+        $('temporadas-familias-filtro').addEventListener('input', temporadaFiltrarFamilias_);
+        $('temporadas-buscar-texto').addEventListener('input', temporadaBuscarYRenderizar_);
+        $('temporadas-buscar-area').addEventListener('change', () => { temporadaActualizarSelectorFamilias_(); temporadaBuscarYRenderizar_(); });
+        $('temporadas-buscar-familia').addEventListener('change', temporadaBuscarYRenderizar_);
+        $('temporadas-modal-cerrar').addEventListener('click', cerrarModalGestionTemporadas_);
+        $('temporadas-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporadas-modal-overlay') cerrarModalGestionTemporadas_(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('temporadas-modal-overlay').classList.contains('activo')) cerrarModalGestionTemporadas_();
         });
     }
 
@@ -11335,7 +12863,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     // sugerencia de categoría no encontraría nada.
                     const enFamilia    = coincide(p.familia, texto);
                     const enSubfamilia = coincide(p.subfamilia, texto);
-                    if (!enNombre && !enRef && !enFamilia && !enSubfamilia) return false;
+                    let coincideTexto = enNombre || enRef || enFamilia || enSubfamilia;
+                    // Fallback para búsquedas de varias palabras: cada
+                    // campo se comprueba por separado arriba (exige
+                    // TODAS las palabras DENTRO del mismo campo), así
+                    // que una búsqueda como "pintura antioxidante" no
+                    // encuentra nada si "pintura" está en la familia
+                    // (p.ej. "PINTURAS TITAN") y la palabra específica
+                    // solo en la subfamilia ("Oxiron anticorrosión") —
+                    // ningún campo por separado tiene las dos. Se
+                    // comprueba aquí la unión de nombre+familia+
+                    // subfamilia como un único texto, SOLO cuando
+                    // ningún campo por separado ha encontrado nada —
+                    // nunca quita coincidencias que ya funcionaban, solo
+                    // añade las que se repartían entre varios campos.
+                    if (!coincideTexto && texto.trim().includes(' ')) {
+                        coincideTexto = coincide(`${p.nombre || ''} ${p.familia || ''} ${p.subfamilia || ''}`, texto);
+                    }
+                    if (!coincideTexto) return false;
                 }
             }
 
@@ -11347,6 +12892,67 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
             return true;
         });
+
+        // ── Fallback de coincidencias aproximadas ──────────────────────
+        // Si hay texto de búsqueda y la coincidencia ESTRICTA de arriba
+        // no ha encontrado NADA, no se deja al usuario con la pantalla
+        // en blanco (petición explícita de Eloy, tras comprobar con
+        // búsquedas reales que muchos términos con decenas de
+        // coincidencias reales en el catálogo daban 0 resultados) — se
+        // relaja la exigencia a "al menos una palabra coincide", sobre
+        // el MISMO conjunto ya filtrado por el resto de filtros activos
+        // (área, familia, precio...), para no mostrar nada que el
+        // usuario ya hubiera excluido a propósito. `resultadosEstrictosN_`
+        // guarda el recuento REAL de la búsqueda estricta (0 en este
+        // caso) para la analítica, aunque a partir de aquí
+        // resultadosActuales pase a contener los aproximados — así los
+        // paneles que miden "búsquedas sin resultado" (p.ej.
+        // mv_busquedas_sin_resultado_7d en Supabase) siguen reflejando
+        // la realidad, aunque la pantalla del usuario ya no se quede vacía.
+        const resultadosEstrictosN_ = resultadosActuales.length;
+        resultadosSonAproximados_ = false;
+        terminoAproximado_ = null;
+        if (texto && resultadosActuales.length === 0) {
+            const aproximados = buscarCoincidenciasAproximadas_(texto, (p) => {
+                if (!estaActivoEnCatalogo_(p)) return false;
+                if (refsMarcaActiva_ && !refsMarcaActiva_.has(p.ref)) return false;
+                if (!productoCoincideConAreas(p, areasSel)) return false;
+                if (fabricantesSel.length && !fabricantesSel.includes(p.fabricante)) return false;
+                if (familias.length && !familias.includes(p.familia)) return false;
+                if (subfamilias.length && !subfamilias.includes(p.subfamilia)) return false;
+                if (tallaSel.length && !tallaSel.includes(p.variante_talla)) return false;
+                if (granoSel.length && !granoSel.includes(p.variante_grano)) return false;
+                if (colorSel.length && !colorSel.includes(p.variante_color)) return false;
+                if (medidaSel.length && !medidaSel.includes(p.variante_medida)) return false;
+                if (volumenSel.length && !volumenSel.includes(p.variante_volumen)) return false;
+                if (microasSel.length && !microasSel.includes(p.variante_micras)) return false;
+                if (otrosSel.length && !otrosSel.includes(p.variante)) return false;
+                if (soloOferta && !p.oferta) return false;
+                if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
+                if (soloTieneImagen && !tieneImagenAsociada(p)) return false;
+                if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
+                if (soloProductosSinImagen && p.img) return false;
+                if (acabadosSel.length) {
+                    const acabadosProd = acabadoDeProducto(p);
+                    if (!acabadosSel.some(a => acabadosProd.includes(a))) return false;
+                }
+                if (formatosSel.length) {
+                    const fmt = formatoDeProducto(p);
+                    if (!fmt || !formatosSel.includes(fmt)) return false;
+                }
+                if (!isNaN(pMin) || !isNaN(pMax)) {
+                    const precio = parseFloat((p.precio_con || '0').replace(',', '.'));
+                    if (!isNaN(pMin) && precio < pMin) return false;
+                    if (!isNaN(pMax) && precio > pMax) return false;
+                }
+                return true;
+            });
+            if (aproximados.length) {
+                resultadosActuales = aproximados;
+                resultadosSonAproximados_ = true;
+                terminoAproximado_ = texto;
+            }
+        }
 
         // Precarga/recalculo del rango de fechas — solo mientras el
         // usuario no lo haya tocado a mano (petición explícita: "que
@@ -11471,7 +13077,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 price_min: isNaN(pMin) ? null : pMin,
                 price_max: isNaN(pMax) ? null : pMax,
                 sort_by: orden || null,
-                result_count: resultadosActuales.length,
+                // El recuento ESTRICTO (0 si se ha activado el fallback de
+                // aproximados), no resultadosActuales.length — para que
+                // mv_busquedas_sin_resultado_7d y el resto de paneles de
+                // analítica sigan reflejando la realidad de la búsqueda
+                // literal aunque la pantalla del usuario ya no se quede
+                // vacía (ver el fallback más arriba, en el propio
+                // aplicarFiltros()).
+                result_count: resultadosEstrictosN_,
             });
         } else if (Date.now() - ultimaInteraccionFiltroMs_ < VENTANA_INTERACCION_FILTRO_MS) {
             registrarFiltroAplicadoEnDiferido_({
@@ -11678,27 +13291,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const sinResultados = $('sin-resultados');
         const seccionIA = $('ia-producto-seccion');
         const btnMas = $('btn-cargar-mas');
+        const avisoAproximados = $('aviso-aproximados');
+        const textoActual = $('f-texto').value.trim();
+
+        // Si ya hay resultados de IA vigentes para ESTE MISMO texto de
+        // búsqueda, se mantienen tal cual — a petición de Eloy:
+        // "faltaría mantener los resultados que ha devuelto la IA hasta
+        // que el usuario limpie los filtros o introduzca otro criterio
+        // de búsqueda". Esto cubre cualquier motivo por el que
+        // renderResultados() se vuelva a ejecutar sin que el propio
+        // usuario haya cambiado nada (p. ej. tras cerrar el modal de
+        // detalle de un producto). Va ANTES de mirar
+        // resultadosActuales.length a propósito: la IA puede haberse
+        // pedido tanto desde "sin resultados" (length 0) como desde el
+        // aviso de "productos parecidos" (length > 0, ver más abajo) —
+        // en ambos casos, si ya hay una respuesta de IA vigente para
+        // este texto, sustituye a lo que fuera a mostrarse.
+        if (terminoIAActivo !== null && terminoIAActivo === textoActual) {
+            mostrarContadorIA($('ia-producto-resultados').children.length);
+            cont.innerHTML = '';
+            btnMas.style.display = 'none';
+            if (avisoAproximados) avisoAproximados.style.display = 'none';
+            sinResultados.style.display = 'none';
+            seccionIA.style.display = '';
+            return;
+        }
 
         if (resultadosActuales.length === 0) {
             cont.innerHTML = '';
             btnMas.style.display = 'none';
-
-            const textoActual = $('f-texto').value.trim();
-
-            // Si ya hay resultados de IA vigentes para ESTE MISMO texto
-            // de búsqueda, se mantienen tal cual — a petición de Eloy:
-            // "faltaría mantener los resultados que ha devuelto la IA
-            // hasta que el usuario limpie los filtros o introduzca otro
-            // criterio de búsqueda". Esto cubre cualquier motivo por el
-            // que renderResultados() se vuelva a ejecutar sin que el
-            // propio usuario haya cambiado nada (p. ej. tras cerrar el
-            // modal de detalle de un producto).
-            if (terminoIAActivo !== null && terminoIAActivo === textoActual) {
-                mostrarContadorIA($('ia-producto-resultados').children.length);
-                sinResultados.style.display = 'none';
-                seccionIA.style.display = '';
-                return;
-            }
+            if (avisoAproximados) avisoAproximados.style.display = 'none';
 
             // Texto distinto del que tenían los resultados de IA (o no
             // había ninguno vigente) — se limpian y se vuelve al estado
@@ -11739,11 +13361,50 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         restaurarContadorEstandar(resultadosActuales.length);
         // Resultados normales encontrados — cualquier estado de IA de
         // una búsqueda anterior queda obsoleto, incluida una petición
-        // que pudiera seguir en marcha.
+        // que pudiera seguir en marcha. Se reinicia igual que en la
+        // rama de "sin resultados" (terminosPreviosIA/refsExcluidosIA
+        // incluidos, no solo terminoIAActivo) — si no, una búsqueda
+        // nueva que SÍ encuentra productos normales podía arrastrar
+        // referencias ya excluidas de un intento de IA anterior para un
+        // texto totalmente distinto. Bug real reportado: el mensaje "La
+        // IA no ha encontrado ninguna alternativa distinta a lo ya
+        // mostrado" se quedaba visible para siempre al seguir buscando,
+        // porque #ia-producto-mensaje nunca se ocultaba en esta rama.
         if (cancelarPeticionIAProductoEnCurso) cancelarPeticionIAProductoEnCurso();
         terminoIAActivo = null;
+        terminosPreviosIA = [];
+        refsExcluidosIA = [];
         seccionIA.style.display = 'none';
         sinResultados.style.display = 'none';
+        $('ia-producto-mensaje').style.display = 'none';
+
+        // Aviso de "esto no es una coincidencia exacta" cuando
+        // resultadosActuales viene del fallback de aproximados (ver
+        // buscarCoincidenciasAproximadas_) — para no hacer pasar
+        // productos solo parecidos por una búsqueda exacta, lo cual
+        // confundiría más de lo que ayuda. Incluye además su propio
+        // botón "Preguntar a la IA" (a petición de Eloy: "si no es lo
+        // que está buscando, que con la IA le pueda ayudar a mejorar
+        // los resultados") — mismo flujo que el de "sin resultados"
+        // (ver preguntarIAProducto), solo que aquí SÍ hay productos de
+        // por medio, por eso necesita su propio botón en vez de
+        // reutilizar el de #sin-resultados (oculto en este caso).
+        if (avisoAproximados) {
+            if (resultadosSonAproximados_ && terminoAproximado_) {
+                $('aviso-aproximados-texto').innerHTML =
+                    `No hay coincidencias exactas para <strong>"${escapeHtml(terminoAproximado_)}"</strong> — te mostramos los productos más parecidos.`;
+                avisoAproximados.style.display = '';
+                const btnIAAprox = $('btn-preguntar-ia-aproximados');
+                if (btnIAAprox) {
+                    const iaDisponible = !window.IADisponibilidad || window.IADisponibilidad.estaDisponible();
+                    btnIAAprox.style.display = iaDisponible ? '' : 'none';
+                    btnIAAprox.disabled = false;
+                    btnIAAprox.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> ¿No es esto? Prueba con la IA';
+                }
+            } else {
+                avisoAproximados.style.display = 'none';
+            }
+        }
 
         const grupos = agruparResultados(resultadosActuales);
 
@@ -14388,10 +16049,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return () => { clearInterval(intervalo); elCancelar.onclick = null; };
     }
 
-    function preguntarIAProducto(esOtraVez) {
+    // btnOrigen: qué botón disparó esta petición — el de "sin
+    // resultados" (por defecto, comportamiento de siempre) o el nuevo
+    // de "productos parecidos" (#btn-preguntar-ia-aproximados, ver
+    // #aviso-aproximados) — para que se deshabilite/oculte el botón
+    // correcto mientras la IA trabaja, sea cual sea el punto de
+    // entrada. No afecta al flujo "otra vez" (btnOtraVez), que sigue
+    // siendo siempre el mismo botón de #ia-producto-seccion.
+    function preguntarIAProducto(esOtraVez, btnOrigen) {
         const texto = $('f-texto').value.trim();
         if (!texto) return;
-        const btn = $('btn-preguntar-ia-producto');
+        const btn = btnOrigen || $('btn-preguntar-ia-producto');
         const btnOtraVez = $('btn-ia-producto-otra-vez');
         const mensajeIA = $('ia-producto-mensaje');
         const seccionIA = $('ia-producto-seccion');
@@ -14553,6 +16221,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               mostrarContadorIA(resultadosIA.children.length);
               mensajeIA.style.display = 'none';
               $('sin-resultados').style.display = 'none';
+              // Si esta petición venía del aviso de "productos
+              // parecidos" (#aviso-aproximados), #contenedor-resultados
+              // todavía tiene las tarjetas de ese fallback — sin
+              // vaciarlo se quedarían apiladas encima/debajo de los
+              // resultados de IA. En el flujo de "sin resultados" de
+              // siempre esto es un no-op (ya estaba vacío).
+              $('contenedor-resultados').innerHTML = '';
+              const avisoAproximadosEl = $('aviso-aproximados');
+              if (avisoAproximadosEl) avisoAproximadosEl.style.display = 'none';
               seccionIA.style.display = '';
               registrarResultadoIA_(productos.length);
           })
@@ -15186,8 +16863,26 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // igual que por defecto.
         if (pendientes['f-area-opciones']) {
             document.querySelectorAll('#f-area-opciones input').forEach(input => { input.checked = false; });
+            marcar('f-area-opciones');
+            // Si el valor de "area" en la URL (enlace viejo, área
+            // renombrada, typo) no coincide con NINGUNA casilla real, nos
+            // quedamos con las 6.812+ casillas desmarcadas — y sin
+            // ninguna área marcada, el buscador no interpreta eso como
+            // "sin filtro" sino como "solo productos sin área asignada"
+            // (ver productoCoincideConAreas), que hoy son CERO en todo el
+            // catálogo. El resultado real: cualquier búsqueda posterior
+            // da 0 resultados para siempre, sin ningún aviso, para
+            // cualquiera que abra ese enlace — bug real detectado
+            // analizando búsquedas reales sin resultados en producción.
+            // Si ninguna casilla ha quedado marcada tras intentarlo, se
+            // revierte a "todas marcadas" (el mismo estado que si la URL
+            // no trajera ningún parámetro de área).
+            if (!document.querySelector('#f-area-opciones input:checked')) {
+                document.querySelectorAll('#f-area-opciones input').forEach(input => { input.checked = true; });
+            }
+        } else {
+            marcar('f-area-opciones');
         }
-        marcar('f-area-opciones');
         actualizarTextoBotonArea();
 
         renderFabricanteTaller(); // crea checkboxes de fabricante (según el área ya puesta)
@@ -15545,12 +17240,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const ETIQUETA_W_DEFECTO_MM_ = 93;
     const ETIQUETA_H_DEFECTO_MM_ = 67;
     const ETIQUETA_TAMANO_MIN_MM_ = 25;
+    // Techo del tamaño de una etiqueta individual — el folio DIN A4
+    // completo (210x297mm), para poder elegir el preset "A4" tal cual
+    // (ver ETIQUETA_PAPEL_TAMANOS_MM_) incluso para una sola etiqueta
+    // suelta, cuyo PDF es una página de ese tamaño exacto sin ningún
+    // folio de por medio. Con más de una etiqueta por lote, cada una
+    // sigue imprimiéndose en rejilla sobre hojas A4 reales con margen
+    // (ver ETIQUETA_PAGINA_ANCHO_UTIL_MM_/ALTO_UTIL_MM_, más abajo) —
+    // ambos límites son independientes a propósito.
+    const ETIQUETA_TAMANO_MAX_MM_ = 297;
     const ETIQUETA_PAGINA_MARGEN_MM_ = 10;
     const ETIQUETA_PAGINA_GAP_COL_MM_ = 4;
     const ETIQUETA_PAGINA_GAP_FILA_MM_ = 3;
     const ETIQUETA_PAGINA_ANCHO_UTIL_MM_ = 210 - 2 * ETIQUETA_PAGINA_MARGEN_MM_;
     const ETIQUETA_PAGINA_ALTO_UTIL_MM_ = 297 - 2 * ETIQUETA_PAGINA_MARGEN_MM_;
     const ETIQUETA_CANTIDAD_MAXIMA_ = 200;
+
+    // Tamaños estándar de papel (mm, siempre en orientación vertical —
+    // "Orientación" los intercambia) para el selector "Tamaño de papel".
+    const ETIQUETA_PAPEL_TAMANOS_MM_ = {
+        A4: { w: 210, h: 297 },
+        A5: { w: 148, h: 210 },
+        A6: { w: 105, h: 148 },
+        A7: { w: 74, h: 105 },
+        A8: { w: 52, h: 74 },
+    };
 
     let productoEtiquetaActual_ = null;
     let etiquetaLogoCache_ = null;    // { dataUrl, width, height, img } — se carga una sola vez
@@ -15573,17 +17287,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // las tarjetas, reutilizando destacadoEfectivoPara_/
     // calcularPrecioDestacado_ sin duplicar esa lógica.
     function datosEtiquetaParaProducto_(p) {
-        const conRaw = (p.precio_con != null && p.precio_con !== '') ? parseFloat(p.precio_con.toString().replace(',', '.')) : NaN;
-        const sinRaw = (p.precio_sin != null && p.precio_sin !== '') ? parseFloat(p.precio_sin.toString().replace(',', '.')) : NaN;
-        const con = (isFinite(conRaw) && conRaw > 0) ? conRaw : null;
-        const sin = (isFinite(sinRaw) && sinRaw > 0) ? sinRaw : null;
+        // Reutiliza precioEfectivoParaLista_ — la misma función que usan
+        // la lista de la compra, su PDF y el texto para compartir — en
+        // vez de leer precio_con/precio_sin directamente: si no, en el
+        // perfil profesional la etiqueta salía siempre con el PVP
+        // público en vez del precio al por mayor confirmado (bug real
+        // reportado por Eloy: "en modo profesional saca el precio normal
+        // y no el precio mayor"), y un producto destacado con descuento
+        // tampoco se aplicaba.
+        const efectivo = precioEfectivoParaLista_(p);
+        // Mientras el precio al por mayor todavía no se ha confirmado
+        // contra la fuente en vivo (ver preciosMayorConfirmados_), nunca
+        // se cae al PVP público como si fuera el correcto — se trata
+        // igual que "sin precio" (la etiqueta sale con "Consultar
+        // precio"), igual que el resto de sitios que llaman a esta
+        // función.
+        const con = (efectivo && !efectivo.pending && efectivo.con != null) ? efectivo.con : null;
+        const sin = (efectivo && !efectivo.pending && efectivo.sin != null) ? efectivo.sin : null;
         const ivaPct = (con !== null && sin !== null) ? Math.round((con / sin - 1) * 100) : null;
 
+        // precioEfectivoParaLista_ ya devuelve el precio FINAL (con/sin)
+        // rebajado cuando el producto está destacado — para la etiqueta
+        // además hace falta el precio ORIGINAL tachado encima, así que
+        // se recalcula con calcularPrecioDestacado_ (la misma fuente que
+        // usa precioEfectivoParaLista_ por debajo), aplicando el precio
+        // mayorista o el público según corresponda (efectivo.esMayor).
         let promo = null;
-        const d = destacadoEfectivoPara_(p.ref);
-        if (d) {
-            const info = calcularPrecioDestacado_(p, d);
-            if (info.original !== null && info.promo !== null) {
+        if (efectivo && !efectivo.pending && efectivo.destacado) {
+            const info = calcularPrecioDestacado_(p, efectivo.destacado);
+            if (efectivo.esMayor) {
+                if (info.originalMayor !== null && info.promoMayor !== null) {
+                    promo = { original: info.originalMayor, promo: info.promoMayor, promoSin: info.promoMayorSin, pct: info.pct };
+                }
+            } else if (info.original !== null && info.promo !== null) {
                 promo = { original: info.original, promo: info.promo, promoSin: info.promoSin, pct: info.pct };
             }
         }
@@ -15785,26 +17521,33 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // No se intenta evitar que se solape con el resto del contenido —
     // la vista previa en vivo ya deja ver el resultado antes de generar
     // nada.
-    function dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, pxPorMm, cfg) {
+    // limiteInferior (px, opcional): hasta dónde puede bajar el bloque de
+    // texto en "abajo" — por defecto h-pad (el borde de la etiqueta), pero
+    // quien llama pasa el borde superior de la fila de código de barras/QR
+    // (siempre anclada abajo del todo) para que el texto libre no se
+    // solape con ella — a petición de Eloy: "el texto libre si se indica
+    // abajo tiene que quedar por encima del código de barras".
+    function dibujarTextoPersonalizadoCanvas_(ctx, w, h, padL, padR, padT, padB, pxPorMm, cfg, limiteInferior) {
         if (!cfg) return;
+        const limite = limiteInferior !== undefined ? limiteInferior : h - padB;
         const sizePx = Math.max(4, Math.round(cfg.tamanoPt * 0.35278 * pxPorMm));
         const estilo = `${cfg.cursiva ? 'italic ' : ''}${cfg.negrita ? 'bold ' : ''}${sizePx}px Arial, sans-serif`;
         ctx.font = estilo;
         ctx.fillStyle = cfg.color;
 
-        const maxW = w - 2 * pad;
+        const maxW = w - padL - padR;
         const lineas = etiquetaEnvolverTextoCanvas_(ctx, cfg.texto, maxW, 4);
         const lineHeight = sizePx * 1.25;
         const bloqueAlto = lineas.length * lineHeight;
 
         let startY;
-        if (cfg.alinV === 'arriba') startY = pad + sizePx * 0.85;
-        else if (cfg.alinV === 'abajo') startY = h - pad - bloqueAlto + sizePx * 0.85;
+        if (cfg.alinV === 'arriba') startY = padT + sizePx * 0.85;
+        else if (cfg.alinV === 'abajo') startY = limite - bloqueAlto + sizePx * 0.85;
         else startY = (h - bloqueAlto) / 2 + sizePx * 0.85;
 
         let x, align;
-        if (cfg.alinH === 'izquierda') { x = pad; align = 'left'; }
-        else if (cfg.alinH === 'derecha') { x = w - pad; align = 'right'; }
+        if (cfg.alinH === 'izquierda') { x = padL; align = 'left'; }
+        else if (cfg.alinH === 'derecha') { x = w - padR; align = 'right'; }
         else { x = w / 2; align = 'center'; }
 
         ctx.textAlign = align;
@@ -15826,29 +17569,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // Misma idea que dibujarTextoPersonalizadoCanvas_ pero con jsPDF
-    // (mm/pt nativos, nada que convertir).
-    function dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, wMM, hMM, pad, cfg) {
+    // (mm/pt nativos, nada que convertir) — mismo "limiteInferior" (en mm
+    // aquí) para que "abajo" no se solape con el código de barras/QR.
+    function dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, wMM, hMM, padL, padR, padT, padB, cfg, limiteInferior) {
         if (!cfg) return;
+        const limite = limiteInferior !== undefined ? limiteInferior : yMM + hMM - padB;
         const estilo = cfg.negrita && cfg.cursiva ? 'bolditalic' : cfg.negrita ? 'bold' : cfg.cursiva ? 'italic' : 'normal';
         doc.setFont('helvetica', estilo);
         doc.setFontSize(cfg.tamanoPt);
         const rgb = etiquetaHexARgb_(cfg.color);
         doc.setTextColor(rgb[0], rgb[1], rgb[2]);
 
-        const maxW = wMM - 2 * pad;
+        const maxW = wMM - padL - padR;
         const lineas = doc.splitTextToSize(cfg.texto, maxW).slice(0, 4);
         const tamanoMM = cfg.tamanoPt * 0.3528;
         const lineHeightMM = tamanoMM * 1.25;
         const bloqueAlto = lineas.length * lineHeightMM;
 
         let startY;
-        if (cfg.alinV === 'arriba') startY = yMM + pad + tamanoMM * 0.85;
-        else if (cfg.alinV === 'abajo') startY = yMM + hMM - pad - bloqueAlto + tamanoMM * 0.85;
+        if (cfg.alinV === 'arriba') startY = yMM + padT + tamanoMM * 0.85;
+        else if (cfg.alinV === 'abajo') startY = limite - bloqueAlto + tamanoMM * 0.85;
         else startY = yMM + (hMM - bloqueAlto) / 2 + tamanoMM * 0.85;
 
         let x, align;
-        if (cfg.alinH === 'izquierda') { x = xMM + pad; align = 'left'; }
-        else if (cfg.alinH === 'derecha') { x = xMM + wMM - pad; align = 'right'; }
+        if (cfg.alinH === 'izquierda') { x = xMM + padL; align = 'left'; }
+        else if (cfg.alinH === 'derecha') { x = xMM + wMM - padR; align = 'right'; }
         else { x = xMM + wMM / 2; align = 'center'; }
 
         lineas.forEach((linea, i) => {
@@ -15876,11 +17621,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // las 9 posiciones posibles (alinH x alinV), igual que el texto
     // personalizado, dentro de un recuadro cuadrado de tamaño elegible
     // (config.tamanoMM).
-    function dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, imagen, config) {
+    function dibujarImagenProductoCanvas_(ctx, w, h, padL, padR, padT, padB, mm, imagen, config) {
         if (!imagen || !imagen.img || !config) return;
         const box = (config.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_) * mm;
-        const bx = config.alinH === 'izquierda' ? pad : config.alinH === 'derecha' ? w - pad - box : (w - box) / 2;
-        const by = config.alinV === 'arriba' ? pad : config.alinV === 'abajo' ? h - pad - box : (h - box) / 2;
+        const bx = config.alinH === 'izquierda' ? padL : config.alinH === 'derecha' ? w - padR - box : (w - box) / 2;
+        const by = config.alinV === 'arriba' ? padT : config.alinV === 'abajo' ? h - padB - box : (h - box) / 2;
         const escala = Math.min(box / imagen.width, box / imagen.height);
         const iw = imagen.width * escala, ih = imagen.height * escala;
         ctx.drawImage(imagen.img, bx + (box - iw) / 2, by + (box - ih) / 2, iw, ih);
@@ -15890,11 +17635,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // nativos). El dataUrl de la foto es JPEG (ver
     // cargarImagenFolletoDestacados_, reutilizada por
     // etiquetaImagenProducto_), no PNG.
-    function dibujarImagenProductoPDF_(doc, xMM, yMM, wMM, hMM, pad, imagen, config) {
+    function dibujarImagenProductoPDF_(doc, xMM, yMM, wMM, hMM, padL, padR, padT, padB, imagen, config) {
         if (!imagen || !config) return;
         const BOX = config.tamanoMM || ETIQUETA_IMAGEN_BOX_MM_DEFECTO_;
-        const bx = config.alinH === 'izquierda' ? xMM + pad : config.alinH === 'derecha' ? xMM + wMM - pad - BOX : xMM + (wMM - BOX) / 2;
-        const by = config.alinV === 'arriba' ? yMM + pad : config.alinV === 'abajo' ? yMM + hMM - pad - BOX : yMM + (hMM - BOX) / 2;
+        const bx = config.alinH === 'izquierda' ? xMM + padL : config.alinH === 'derecha' ? xMM + wMM - padR - BOX : xMM + (wMM - BOX) / 2;
+        const by = config.alinV === 'arriba' ? yMM + padT : config.alinV === 'abajo' ? yMM + hMM - padB - BOX : yMM + (hMM - BOX) / 2;
         const escala = Math.min(BOX / imagen.width, BOX / imagen.height);
         const iw = imagen.width * escala, ih = imagen.height * escala;
         doc.addImage(imagen.dataUrl, 'JPEG', bx + (BOX - iw) / 2, by + (BOX - ih) / 2, iw, ih);
@@ -15906,13 +17651,46 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // que el PNG salga nítido en impresión.
     function dibujarEtiquetaEnCanvas_(ctx, x, y, w, h, wMM, hMM, datos, opts) {
         const mm = w / wMM; // px por mm REAL a esta resolución (w px representan wMM mm)
-        const pad = 3.5 * mm;
-        // Margen extra a la izquierda SOLO para el nombre del producto,
-        // a petición de Eloy (06/11/2026, ampliado el 07/11/2026 para
-        // separarlo más del logo) — el resto de elementos sigue
-        // arrancando en pad.
-        const nombreMargenIzq = 7 * mm;
+        // Márgenes configurables por lado (campos "Margen superior/
+        // inferior/izquierdo/derecho (mm)") — a petición de Eloy, para
+        // poder editar la etiqueta con más libertad. 3.5mm en los cuatro
+        // lados es el margen de siempre, así que sin tocar los campos el
+        // resultado es idéntico a antes.
+        const padL = (opts.margenIzqMM != null ? opts.margenIzqMM : 3.5) * mm;
+        const padR = (opts.margenDerMM != null ? opts.margenDerMM : 3.5) * mm;
+        const padT = (opts.margenSupMM != null ? opts.margenSupMM : 3.5) * mm;
+        const padB = (opts.margenInfMM != null ? opts.margenInfMM : 3.5) * mm;
         const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
+
+        // Tamaño del nombre y del precio, configurables (campos "Tamaño
+        // nombre (mm)"/"Tamaño precio (mm)") — a petición de Eloy: en una
+        // etiqueta grande tipo cartel (hasta A4), el tamaño fijo de
+        // siempre (3.5mm/11mm) se quedaba desproporcionadamente pequeño.
+        // Los valores por defecto (3.5/11) son los que tenía siempre la
+        // etiqueta, así que con los campos sin tocar el resultado es
+        // idéntico a antes — nombreFactor/precioFactor escalan TODO el
+        // bloque correspondiente (interlineado, líneas de apoyo del
+        // precio como "Base:/IVA Incl.", el tachado de promoción...) en
+        // la misma proporción, para que no se descuadre al agrandarlo.
+        const nombreTamanoMM = (opts.nombreTamanoMM && opts.nombreTamanoMM > 0) ? opts.nombreTamanoMM : 3.5;
+        const precioTamanoMM = (opts.precioTamanoMM && opts.precioTamanoMM > 0) ? opts.precioTamanoMM : 11;
+        const nombreFactor = nombreTamanoMM / 3.5;
+        const precioFactor = precioTamanoMM / 11;
+
+        // Tamaño y posición del logo, configurables (campos "Tamaño
+        // logo (mm)" y las 9 posiciones de siempre) — 11mm arriba a la
+        // izquierda es el valor de siempre, así que sin tocar los campos
+        // el resultado es idéntico a antes. Solo cuando el logo está
+        // "arriba" reserva hueco de cabecera para el nombre (si además
+        // está a la izquierda, el nombre también gana el margen extra de
+        // siempre para no pegarse a él) — en cualquier otra posición
+        // (centro/abajo) el logo flota igual que la imagen del producto
+        // o el texto personalizado, sin desplazar nada más.
+        const logoTamanoMM = (opts.logoTamanoMM && opts.logoTamanoMM > 0) ? opts.logoTamanoMM : 11;
+        const logoAlinH = opts.logoAlinH || 'izquierda';
+        const logoAlinV = opts.logoAlinV || 'arriba';
+        const logoCabeceraAlturaMM = logoAlinV === 'arriba' ? logoTamanoMM : 0;
+        const nombreMargenIzq = (logoAlinV === 'arriba' && logoAlinH === 'izquierda') ? 7 * mm : 0;
 
         ctx.save();
         ctx.translate(x, y);
@@ -15925,12 +17703,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth);
         ctx.setLineDash([]);
 
-        // Logo un poco más grande que el original (9mm → 11mm), a
-        // petición de Eloy.
         if (opts.logo && opts.logo.img) {
-            const lh = 11 * mm;
+            const lh = logoTamanoMM * mm;
             const lw = lh * (opts.logo.width / opts.logo.height);
-            ctx.drawImage(opts.logo.img, pad, pad, lw, lh);
+            const lx = logoAlinH === 'izquierda' ? padL : logoAlinH === 'derecha' ? w - padR - lw : (w - lw) / 2;
+            const ly = logoAlinV === 'arriba' ? padT : logoAlinV === 'abajo' ? h - padB - lh : (h - lh) / 2;
+            ctx.drawImage(opts.logo.img, lx, ly, lw, lh);
         }
 
         if (opts.detalleTexto) {
@@ -15939,8 +17717,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const txtW = ctx.measureText(texto).width;
             const bw = Math.max(18 * mm, txtW + 7 * mm);
             const bh = 6.4 * mm;
-            const bx = w - pad - bw;
-            const by = pad - 0.5 * mm;
+            const bx = w - padR - bw;
+            const by = padT - 0.5 * mm;
             ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
             etiquetaRoundRectCanvas_(ctx, bx, by, bw, bh, bh / 2);
             ctx.fill();
@@ -15952,115 +17730,155 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ctx.textBaseline = 'alphabetic';
         }
 
-        const nombreX = pad + nombreMargenIzq;
-        const nombreY0 = pad + 11 * mm + 3 * mm;
+        const nombreX = padL + nombreMargenIzq;
+        // El hueco tras el logo (antes fijo, "+3mm") escala con el
+        // propio tamaño del nombre: ese margen es, en realidad, el
+        // ascenso del texto en línea base (≈0.85×tamaño de fuente) —
+        // con un nombre grande (p.ej. en un cartel a tamaño A4) un hueco
+        // fijo de 3mm se queda corto y el texto acaba invadiendo el
+        // logo por arriba. logoCabeceraAlturaMM es 0 si el logo no está
+        // "arriba" (ver más arriba), así que el nombre simplemente
+        // arranca en el margen superior en ese caso.
+        const nombreY0 = padT + logoCabeceraAlturaMM * mm + nombreTamanoMM * 0.85 * mm;
         ctx.fillStyle = rgb(ETIQUETA_COLOR_DARK_);
-        ctx.font = `bold ${Math.round(3.5 * mm)}px Arial, sans-serif`;
-        const nombreMaxW = w - pad - nombreX;
+        ctx.font = `bold ${Math.round(nombreTamanoMM * mm)}px Arial, sans-serif`;
+        const nombreMaxW = w - padR - nombreX;
         const lineasNombre = etiquetaEnvolverTextoCanvas_(ctx, datos.nombre, nombreMaxW, 2);
-        const lineHeight = 4.3 * mm;
+        const lineHeight = nombreTamanoMM * 1.25 * mm;
         lineasNombre.forEach((linea, i) => ctx.fillText(linea, nombreX, nombreY0 + i * lineHeight));
 
         const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5 * mm;
         ctx.strokeStyle = rgb(ETIQUETA_COLOR_SEPARADOR_);
         ctx.lineWidth = Math.max(1, 0.25 * mm);
         ctx.beginPath();
-        ctx.moveTo(pad, sepY);
-        ctx.lineTo(w - pad, sepY);
+        ctx.moveTo(padL, sepY);
+        ctx.lineTo(w - padR, sepY);
         ctx.stroke();
 
         // El precio va centrado horizontalmente (a petición de Eloy) —
         // el desglose "Base/IVA Incl." y el "-XX%" de descuento se
-        // quedan arriba a la derecha, como antes.
-        let precioY = sepY + 6 * mm;
+        // quedan arriba a la derecha, como antes. Todo este bloque se
+        // escala con precioFactor (ver más arriba) según el "Tamaño
+        // precio (mm)" elegido.
+        let precioY = sepY + 6 * precioFactor * mm;
         if (datos.promo) {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
-            ctx.font = `${Math.round(3.2 * mm)}px Arial, sans-serif`;
+            ctx.font = `${Math.round(3.2 * precioFactor * mm)}px Arial, sans-serif`;
             const origTxt = etiquetaFormatoEuros_(datos.promo.original);
             ctx.textAlign = 'center';
             ctx.fillText(origTxt, w / 2, precioY);
             ctx.textAlign = 'left';
             const origW = ctx.measureText(origTxt).width;
             ctx.strokeStyle = rgb(ETIQUETA_COLOR_MUTED_);
-            ctx.lineWidth = Math.max(1, 0.35 * mm);
+            ctx.lineWidth = Math.max(1, 0.35 * precioFactor * mm);
             ctx.beginPath();
-            ctx.moveTo(w / 2 - origW / 2, precioY - 1.1 * mm);
-            ctx.lineTo(w / 2 + origW / 2, precioY - 1.1 * mm);
+            ctx.moveTo(w / 2 - origW / 2, precioY - 1.1 * precioFactor * mm);
+            ctx.lineTo(w / 2 + origW / 2, precioY - 1.1 * precioFactor * mm);
             ctx.stroke();
 
             if (datos.promo.pct) {
                 ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
-                ctx.font = `bold ${Math.round(3 * mm)}px Arial, sans-serif`;
+                ctx.font = `bold ${Math.round(3 * precioFactor * mm)}px Arial, sans-serif`;
                 ctx.textAlign = 'right';
-                ctx.fillText(`-${datos.promo.pct}%`, w - pad, precioY);
+                ctx.fillText(`-${datos.promo.pct}%`, w - padR, precioY);
                 ctx.textAlign = 'left';
             }
 
-            precioY += 8 * mm;
+            precioY += 8 * precioFactor * mm;
             ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
-            ctx.font = `bold ${Math.round(11 * mm)}px Arial, sans-serif`;
+            ctx.font = `bold ${Math.round(precioTamanoMM * mm)}px Arial, sans-serif`;
             ctx.textAlign = 'center';
             ctx.fillText(etiquetaFormatoEuros_(datos.promo.promo), w / 2, precioY);
             ctx.textAlign = 'left';
 
             if (datos.promo.promoSin) {
                 ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
-                ctx.font = `${Math.round(2.6 * mm)}px Arial, sans-serif`;
+                ctx.font = `${Math.round(2.6 * precioFactor * mm)}px Arial, sans-serif`;
                 ctx.textAlign = 'center';
-                ctx.fillText(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, w / 2, precioY + 4 * mm);
+                ctx.fillText(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, w / 2, precioY + 4 * precioFactor * mm);
                 ctx.textAlign = 'left';
             }
         } else if (datos.con !== null) {
+            const precioTxt = etiquetaFormatoEuros_(datos.con);
+            ctx.font = `bold ${Math.round(precioTamanoMM * mm)}px Arial, sans-serif`;
+            const precioAncho = ctx.measureText(precioTxt).width;
+            let baseTxt = '', ivaTxt = '', apilarArriba = false;
+            if (datos.sin !== null) {
+                baseTxt = `Base: ${etiquetaFormatoEuros_(datos.sin)}`;
+                ivaTxt = datos.ivaPct !== null ? `IVA Incl. (${datos.ivaPct}%)` : '';
+                ctx.font = `${Math.round(2.6 * precioFactor * mm)}px Arial, sans-serif`;
+                const anchoCol = Math.max(ctx.measureText(baseTxt).width, ivaTxt ? ctx.measureText(ivaTxt).width : 0);
+                // Con un "Tamaño precio" grande, el número centrado puede
+                // crecer tanto que invada el hueco reservado al desglose
+                // "Base:/IVA Incl." de la esquina — en vez de dejar que se
+                // solapen, ese desglose se apila en su propia línea
+                // encima del precio cuando no queda hueco lateral.
+                const huecoDerecha = (w - padR) - (w / 2 + precioAncho / 2) - 2 * mm;
+                apilarArriba = huecoDerecha < anchoCol;
+            }
             if (datos.sin !== null) {
                 ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
-                ctx.font = `${Math.round(2.6 * mm)}px Arial, sans-serif`;
-                ctx.textAlign = 'right';
-                ctx.fillText(`Base: ${etiquetaFormatoEuros_(datos.sin)}`, w - pad, precioY - 3 * mm);
-                if (datos.ivaPct !== null) ctx.fillText(`IVA Incl. (${datos.ivaPct}%)`, w - pad, precioY + 1 * mm);
-                ctx.textAlign = 'left';
+                ctx.font = `${Math.round(2.6 * precioFactor * mm)}px Arial, sans-serif`;
+                if (apilarArriba) {
+                    ctx.textAlign = 'center';
+                    ctx.fillText(ivaTxt ? `${baseTxt}   ·   ${ivaTxt}` : baseTxt, w / 2, precioY - 1 * precioFactor * mm);
+                    ctx.textAlign = 'left';
+                    precioY += 4 * precioFactor * mm;
+                } else {
+                    ctx.textAlign = 'right';
+                    ctx.fillText(baseTxt, w - padR, precioY - 3 * precioFactor * mm);
+                    if (ivaTxt) ctx.fillText(ivaTxt, w - padR, precioY + 1 * precioFactor * mm);
+                    ctx.textAlign = 'left';
+                }
             }
             ctx.fillStyle = rgb(ETIQUETA_COLOR_RED_);
-            ctx.font = `bold ${Math.round(11 * mm)}px Arial, sans-serif`;
+            ctx.font = `bold ${Math.round(precioTamanoMM * mm)}px Arial, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText(etiquetaFormatoEuros_(datos.con), w / 2, precioY + 4 * mm);
+            ctx.fillText(precioTxt, w / 2, precioY + 4 * precioFactor * mm);
             ctx.textAlign = 'left';
         } else {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
-            ctx.font = `italic ${Math.round(3.2 * mm)}px Arial, sans-serif`;
+            ctx.font = `italic ${Math.round(3.2 * precioFactor * mm)}px Arial, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText('Consultar precio', w / 2, precioY + 2 * mm);
+            ctx.fillText('Consultar precio', w / 2, precioY + 2 * precioFactor * mm);
             ctx.textAlign = 'left';
         }
 
-        // QR para buscar el producto en la web (ver datosEtiquetaParaProducto_)
-        // a la derecha, y el código de barras ocupando el resto del
-        // ancho disponible a su izquierda — mismo alto máximo (15mm)
-        // para que ambos queden alineados por abajo.
+        // Código de barras siempre abajo a la izquierda, ocupando el
+        // ancho disponible — mismo alto máximo (15mm) de siempre. El QR
+        // (ver datosEtiquetaParaProducto_) es opcional (checkbox
+        // "Incluir QR", activado por defecto) y, cuando está activo, va
+        // SIEMPRE a la derecha, arriba o abajo según se elija
+        // ("Posición QR") — si va abajo comparte fila con el código de
+        // barras (como siempre); si va arriba, el código de barras pasa
+        // a usar todo el ancho, ya que no hay que dejarle hueco.
         const maxBH = 15 * mm;
-        const tieneQr = !!(opts.qr && opts.qr.img);
+        const tieneQr = !!(opts.qr && opts.qr.img) && opts.qrIncluir !== false;
+        const qrAlinV = opts.qrAlinV === 'arriba' ? 'arriba' : 'abajo';
         const qrLado = tieneQr ? maxBH : 0;
-        const huecoQr = tieneQr ? qrLado + 3 * mm : 0;
+        const huecoQr = (tieneQr && qrAlinV === 'abajo') ? qrLado + 3 * mm : 0;
 
         if (opts.barcode && opts.barcode.img) {
-            const maxBW = w - 2 * pad - huecoQr;
+            const maxBW = w - padL - padR - huecoQr;
             const escala = Math.min(maxBW / opts.barcode.width, maxBH / opts.barcode.height);
             const bw = opts.barcode.width * escala;
             const bh = opts.barcode.height * escala;
-            ctx.drawImage(opts.barcode.img, pad + (maxBW - bw) / 2, h - pad - bh, bw, bh);
+            ctx.drawImage(opts.barcode.img, padL + (maxBW - bw) / 2, h - padB - bh, bw, bh);
         } else if (datos.ref) {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
             ctx.font = `${Math.round(2.8 * mm)}px Arial, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText(`Ref: ${datos.ref}`, pad + (w - 2 * pad - huecoQr) / 2, h - pad - 2 * mm);
+            ctx.fillText(`Ref: ${datos.ref}`, padL + (w - padL - padR - huecoQr) / 2, h - padB - 2 * mm);
             ctx.textAlign = 'left';
         }
 
         if (tieneQr) {
-            ctx.drawImage(opts.qr.img, w - pad - qrLado, h - pad - qrLado, qrLado, qrLado);
+            const qrY = qrAlinV === 'arriba' ? padT : h - padB - qrLado;
+            ctx.drawImage(opts.qr.img, w - padR - qrLado, qrY, qrLado, qrLado);
         }
 
-        dibujarImagenProductoCanvas_(ctx, w, h, pad, mm, opts.imagen, opts.imagenConfig);
-        dibujarTextoPersonalizadoCanvas_(ctx, w, h, pad, mm, opts.textoPersonalizado);
+        dibujarImagenProductoCanvas_(ctx, w, h, padL, padR, padT, padB, mm, opts.imagen, opts.imagenConfig);
+        dibujarTextoPersonalizadoCanvas_(ctx, w, h, padL, padR, padT, padB, mm, opts.textoPersonalizado, h - padB - maxBH - 2 * mm);
 
         ctx.restore();
     }
@@ -16073,11 +17891,32 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Canvas2D — intentar compartir una única lista de instrucciones
     // habría dado saltos de línea ligeramente distintos entre ambas.
     function dibujarEtiquetaEnPDF_(doc, xMM, yMM, wMM, hMM, datos, opts) {
-        const W = wMM, H = hMM, PAD = 3.5;
-        // Margen extra a la izquierda SOLO para el nombre del producto,
-        // igual que en dibujarEtiquetaEnCanvas_.
-        const NOMBRE_MARGEN_IZQ = 7;
+        const W = wMM, H = hMM;
         const setColor = (fn, c) => doc[fn](c[0], c[1], c[2]);
+
+        // Márgenes configurables por lado — ver el mismo comentario en
+        // dibujarEtiquetaEnCanvas_.
+        const padL = opts.margenIzqMM != null ? opts.margenIzqMM : 3.5;
+        const padR = opts.margenDerMM != null ? opts.margenDerMM : 3.5;
+        const padT = opts.margenSupMM != null ? opts.margenSupMM : 3.5;
+        const padB = opts.margenInfMM != null ? opts.margenInfMM : 3.5;
+
+        // Tamaño del nombre y del precio — ver el mismo comentario en
+        // dibujarEtiquetaEnCanvas_. 10.5pt/31pt son los tamaños de
+        // siempre para nombreTamanoMM=3.5/precioTamanoMM=11 (sin tocar
+        // los campos, el resultado es idéntico a antes).
+        const nombreTamanoMM = (opts.nombreTamanoMM && opts.nombreTamanoMM > 0) ? opts.nombreTamanoMM : 3.5;
+        const precioTamanoMM = (opts.precioTamanoMM && opts.precioTamanoMM > 0) ? opts.precioTamanoMM : 11;
+        const nombreFactor = nombreTamanoMM / 3.5;
+        const precioFactor = precioTamanoMM / 11;
+
+        // Tamaño y posición del logo — ver el mismo comentario en
+        // dibujarEtiquetaEnCanvas_.
+        const logoTamanoMM = (opts.logoTamanoMM && opts.logoTamanoMM > 0) ? opts.logoTamanoMM : 11;
+        const logoAlinH = opts.logoAlinH || 'izquierda';
+        const logoAlinV = opts.logoAlinV || 'arriba';
+        const logoCabeceraAlturaMM = logoAlinV === 'arriba' ? logoTamanoMM : 0;
+        const NOMBRE_MARGEN_IZQ = (logoAlinV === 'arriba' && logoAlinH === 'izquierda') ? 7 : 0;
 
         setColor('setDrawColor', ETIQUETA_COLOR_BORDE_);
         doc.setLineWidth(0.25);
@@ -16085,11 +17924,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         doc.rect(xMM + 0.3, yMM + 0.3, W - 0.6, H - 0.6);
         doc.setLineDashPattern([], 0);
 
-        // Logo un poco más grande que el original (9mm → 11mm), a
-        // petición de Eloy.
         if (opts.logo) {
-            const lh = 11, lw = lh * (opts.logo.width / opts.logo.height);
-            doc.addImage(opts.logo.dataUrl, 'PNG', xMM + PAD, yMM + PAD, lw, lh);
+            const lh = logoTamanoMM, lw = lh * (opts.logo.width / opts.logo.height);
+            const lx = logoAlinH === 'izquierda' ? xMM + padL : logoAlinH === 'derecha' ? xMM + W - padR - lw : xMM + (W - lw) / 2;
+            const ly = logoAlinV === 'arriba' ? yMM + padT : logoAlinV === 'abajo' ? yMM + H - padB - lh : yMM + (H - lh) / 2;
+            doc.addImage(opts.logo.dataUrl, 'PNG', lx, ly, lw, lh);
         }
 
         if (opts.detalleTexto) {
@@ -16099,110 +17938,133 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const txtW = doc.getTextWidth(texto);
             const bw = Math.max(18, txtW + 7);
             const bh = 6.4;
-            const bx = xMM + W - PAD - bw;
-            const by = yMM + PAD - 0.5;
+            const bx = xMM + W - padR - bw;
+            const by = yMM + padT - 0.5;
             setColor('setFillColor', ETIQUETA_COLOR_RED_);
             doc.roundedRect(bx, by, bw, bh, bh / 2, bh / 2, 'F');
             doc.setTextColor(255, 255, 255);
             doc.text(texto, bx + bw / 2, by + bh / 2 + 1.1, { align: 'center' });
         }
 
-        const nombreX = xMM + PAD + NOMBRE_MARGEN_IZQ;
-        const nombreY0 = yMM + PAD + 11 + 3;
+        const nombreX = xMM + padL + NOMBRE_MARGEN_IZQ;
+        // Ver el mismo comentario en dibujarEtiquetaEnCanvas_.
+        const nombreY0 = yMM + padT + logoCabeceraAlturaMM + nombreTamanoMM * 0.85;
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.5);
+        doc.setFontSize(10.5 * nombreFactor);
         setColor('setTextColor', ETIQUETA_COLOR_DARK_);
-        const nombreMaxW = xMM + W - PAD - nombreX;
+        const nombreMaxW = xMM + W - padR - nombreX;
         const lineasNombre = doc.splitTextToSize(datos.nombre || '', nombreMaxW).slice(0, 2);
-        const lineHeight = 4.3;
+        const lineHeight = 4.3 * nombreFactor;
         lineasNombre.forEach((linea, i) => doc.text(linea, nombreX, nombreY0 + i * lineHeight));
 
         const sepY = nombreY0 + lineasNombre.length * lineHeight + 1.5;
         setColor('setDrawColor', ETIQUETA_COLOR_SEPARADOR_);
         doc.setLineWidth(0.25);
-        doc.line(xMM + PAD, sepY, xMM + W - PAD, sepY);
+        doc.line(xMM + padL, sepY, xMM + W - padR, sepY);
 
         // El precio va centrado horizontalmente (a petición de Eloy) —
         // el desglose "Base/IVA Incl." y el "-XX%" de descuento se
         // quedan arriba a la derecha, como antes.
         const centroX = xMM + W / 2;
-        let precioY = sepY + 6;
+        let precioY = sepY + 6 * precioFactor;
         if (datos.promo) {
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9.5);
+            doc.setFontSize(9.5 * precioFactor);
             setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
             const origTxt = etiquetaFormatoEuros_(datos.promo.original);
             doc.text(origTxt, centroX, precioY, { align: 'center' });
             const origW = doc.getTextWidth(origTxt);
             setColor('setDrawColor', ETIQUETA_COLOR_MUTED_);
-            doc.setLineWidth(0.3);
-            doc.line(centroX - origW / 2, precioY - 1.2, centroX + origW / 2, precioY - 1.2);
+            doc.setLineWidth(0.3 * precioFactor);
+            doc.line(centroX - origW / 2, precioY - 1.2 * precioFactor, centroX + origW / 2, precioY - 1.2 * precioFactor);
 
             if (datos.promo.pct) {
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9);
+                doc.setFontSize(9 * precioFactor);
                 setColor('setTextColor', ETIQUETA_COLOR_RED_);
-                doc.text(`-${datos.promo.pct}%`, xMM + W - PAD, precioY, { align: 'right' });
+                doc.text(`-${datos.promo.pct}%`, xMM + W - padR, precioY, { align: 'right' });
             }
 
-            precioY += 8;
+            precioY += 8 * precioFactor;
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(31);
+            doc.setFontSize(31 * precioFactor);
             setColor('setTextColor', ETIQUETA_COLOR_RED_);
             doc.text(etiquetaFormatoEuros_(datos.promo.promo), centroX, precioY, { align: 'center' });
 
             if (datos.promo.promoSin) {
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7.5);
+                doc.setFontSize(7.5 * precioFactor);
                 setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-                doc.text(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, centroX, precioY + 4, { align: 'center' });
+                doc.text(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, centroX, precioY + 4 * precioFactor, { align: 'center' });
             }
         } else if (datos.con !== null) {
+            const precioTxt = etiquetaFormatoEuros_(datos.con);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(31 * precioFactor);
+            const precioAncho = doc.getTextWidth(precioTxt);
+            let baseTxt = '', ivaTxt = '', apilarArriba = false;
+            if (datos.sin !== null) {
+                baseTxt = `Base: ${etiquetaFormatoEuros_(datos.sin)}`;
+                ivaTxt = datos.ivaPct !== null ? `IVA Incl. (${datos.ivaPct}%)` : '';
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5 * precioFactor);
+                const anchoCol = Math.max(doc.getTextWidth(baseTxt), ivaTxt ? doc.getTextWidth(ivaTxt) : 0);
+                // Ver el mismo comentario en dibujarEtiquetaEnCanvas_.
+                const huecoDerecha = (xMM + W - padR) - (centroX + precioAncho / 2) - 2;
+                apilarArriba = huecoDerecha < anchoCol;
+            }
             if (datos.sin !== null) {
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7.5);
+                doc.setFontSize(7.5 * precioFactor);
                 setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-                doc.text(`Base: ${etiquetaFormatoEuros_(datos.sin)}`, xMM + W - PAD, precioY - 3, { align: 'right' });
-                if (datos.ivaPct !== null) doc.text(`IVA Incl. (${datos.ivaPct}%)`, xMM + W - PAD, precioY + 1, { align: 'right' });
+                if (apilarArriba) {
+                    doc.text(ivaTxt ? `${baseTxt}   ·   ${ivaTxt}` : baseTxt, centroX, precioY - 1 * precioFactor, { align: 'center' });
+                    precioY += 4 * precioFactor;
+                } else {
+                    doc.text(baseTxt, xMM + W - padR, precioY - 3 * precioFactor, { align: 'right' });
+                    if (ivaTxt) doc.text(ivaTxt, xMM + W - padR, precioY + 1 * precioFactor, { align: 'right' });
+                }
             }
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(31);
+            doc.setFontSize(31 * precioFactor);
             setColor('setTextColor', ETIQUETA_COLOR_RED_);
-            doc.text(etiquetaFormatoEuros_(datos.con), centroX, precioY + 4, { align: 'center' });
+            doc.text(precioTxt, centroX, precioY + 4 * precioFactor, { align: 'center' });
         } else {
             doc.setFont('helvetica', 'italic');
-            doc.setFontSize(9.5);
+            doc.setFontSize(9.5 * precioFactor);
             setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-            doc.text('Consultar precio', centroX, precioY + 2, { align: 'center' });
+            doc.text('Consultar precio', centroX, precioY + 2 * precioFactor, { align: 'center' });
         }
 
-        // QR para buscar el producto en la web a la derecha, código de
-        // barras a su izquierda ocupando el resto del ancho — mismo alto
-        // máximo (15mm) que el canvas, para que coincidan.
+        // Código de barras siempre abajo a la izquierda; QR opcional,
+        // siempre a la derecha, arriba o abajo — ver el mismo comentario
+        // en dibujarEtiquetaEnCanvas_.
         const maxBH = 15;
-        const tieneQr = !!opts.qr;
+        const tieneQr = !!opts.qr && opts.qrIncluir !== false;
+        const qrAlinV = opts.qrAlinV === 'arriba' ? 'arriba' : 'abajo';
         const qrLado = tieneQr ? maxBH : 0;
-        const huecoQr = tieneQr ? qrLado + 3 : 0;
+        const huecoQr = (tieneQr && qrAlinV === 'abajo') ? qrLado + 3 : 0;
 
         if (opts.barcode) {
-            const maxBW = W - 2 * PAD - huecoQr;
+            const maxBW = W - padL - padR - huecoQr;
             const aspecto = opts.barcode.width / opts.barcode.height;
             let bw = maxBW, bh = bw / aspecto;
             if (bh > maxBH) { bh = maxBH; bw = bh * aspecto; }
-            doc.addImage(opts.barcode.dataUrl, 'PNG', xMM + PAD + (maxBW - bw) / 2, yMM + H - PAD - bh, bw, bh);
+            doc.addImage(opts.barcode.dataUrl, 'PNG', xMM + padL + (maxBW - bw) / 2, yMM + H - padB - bh, bw, bh);
         } else if (datos.ref) {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
-            doc.text(`Ref: ${datos.ref}`, xMM + PAD + (W - 2 * PAD - huecoQr) / 2, yMM + H - PAD - 2, { align: 'center' });
+            doc.text(`Ref: ${datos.ref}`, xMM + padL + (W - padL - padR - huecoQr) / 2, yMM + H - padB - 2, { align: 'center' });
         }
 
         if (tieneQr) {
-            doc.addImage(opts.qr.dataUrl, 'PNG', xMM + W - PAD - qrLado, yMM + H - PAD - qrLado, qrLado, qrLado);
+            const qrY = qrAlinV === 'arriba' ? yMM + padT : yMM + H - padB - qrLado;
+            doc.addImage(opts.qr.dataUrl, 'PNG', xMM + W - padR - qrLado, qrY, qrLado, qrLado);
         }
 
-        dibujarImagenProductoPDF_(doc, xMM, yMM, W, H, PAD, opts.imagen, opts.imagenConfig);
-        dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, W, H, PAD, opts.textoPersonalizado);
+        dibujarImagenProductoPDF_(doc, xMM, yMM, W, H, padL, padR, padT, padB, opts.imagen, opts.imagenConfig);
+        dibujarTextoPersonalizadoPDF_(doc, xMM, yMM, W, H, padL, padR, padT, padB, opts.textoPersonalizado, yMM + H - padB - maxBH - 2);
     }
 
     function etiquetaDetalleTextoActual_() {
@@ -16230,8 +18092,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function etiquetaTamanoActual_(idAncho, idAlto) {
         const wInput = parseFloat($(idAncho || 'modal-etiqueta-ancho').value);
         const hInput = parseFloat($(idAlto || 'modal-etiqueta-alto').value);
-        const w = Math.min(ETIQUETA_PAGINA_ANCHO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(wInput) ? wInput : ETIQUETA_W_DEFECTO_MM_));
-        const h = Math.min(ETIQUETA_PAGINA_ALTO_UTIL_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(hInput) ? hInput : ETIQUETA_H_DEFECTO_MM_));
+        const w = Math.min(ETIQUETA_TAMANO_MAX_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(wInput) ? wInput : ETIQUETA_W_DEFECTO_MM_));
+        const h = Math.min(ETIQUETA_TAMANO_MAX_MM_, Math.max(ETIQUETA_TAMANO_MIN_MM_, isFinite(hInput) ? hInput : ETIQUETA_H_DEFECTO_MM_));
         return { w, h };
     }
 
@@ -16271,6 +18133,102 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             subrayado: $('modal-etiqueta-texto-subrayado').checked,
             color: $('modal-etiqueta-texto-color').value || '#1e293b',
         };
+    }
+
+    // Lee los campos "Tamaño nombre (mm)"/"Tamaño precio (mm)" — idAncho/
+    // idPrecio permiten reutilizar esta misma lectura desde la modal de
+    // lote de la lista de la compra (sus propios campos por producto),
+    // igual que etiquetaTamanoActual_ con el ancho/alto de la etiqueta.
+    // Devuelve siempre un valor válido (3.5/11 por defecto, los mismos
+    // tamaños de siempre) — nunca null, a diferencia de
+    // etiquetaTextoPersonalizadoActual_/etiquetaImagenConfigActual_, que
+    // sí pueden "no aplicar": el nombre y el precio siempre se dibujan.
+    function etiquetaNombrePrecioTamanosActual_(idNombre, idPrecio) {
+        const nombreInput = $(idNombre || 'modal-etiqueta-nombre-tamano');
+        const precioInput = $(idPrecio || 'modal-etiqueta-precio-tamano');
+        const nombreTamanoMM = nombreInput ? parseFloat(nombreInput.value) : NaN;
+        const precioTamanoMM = precioInput ? parseFloat(precioInput.value) : NaN;
+        return {
+            nombreTamanoMM: (isFinite(nombreTamanoMM) && nombreTamanoMM > 0) ? nombreTamanoMM : 3.5,
+            precioTamanoMM: (isFinite(precioTamanoMM) && precioTamanoMM > 0) ? precioTamanoMM : 11,
+        };
+    }
+
+    // Lee los 4 campos de margen (por lado) — como con el tamaño de
+    // nombre/precio, siempre devuelve un valor válido (3.5mm en los
+    // cuatro lados, el margen de siempre) en vez de null, ya que los
+    // márgenes siempre se aplican.
+    function etiquetaMargenesActual_(idSup, idInf, idIzq, idDer) {
+        const leer = (id, defecto) => {
+            const input = $(id);
+            const valor = input ? parseFloat(input.value) : NaN;
+            return (isFinite(valor) && valor >= 0) ? valor : defecto;
+        };
+        return {
+            margenSupMM: leer(idSup || 'modal-etiqueta-margen-sup', 3.5),
+            margenInfMM: leer(idInf || 'modal-etiqueta-margen-inf', 3.5),
+            margenIzqMM: leer(idIzq || 'modal-etiqueta-margen-izq', 3.5),
+            margenDerMM: leer(idDer || 'modal-etiqueta-margen-der', 3.5),
+        };
+    }
+
+    // Tamaño y posición del logo — igual que etiquetaMargenesActual_,
+    // siempre devuelve un valor válido (11mm arriba a la izquierda, el
+    // de siempre), ya que el logo siempre se dibuja.
+    function etiquetaLogoConfigActual_(idTamano, idAlinH, idAlinV) {
+        const tamanoInput = $(idTamano || 'modal-etiqueta-logo-tamano');
+        const tamanoMM = tamanoInput ? parseFloat(tamanoInput.value) : NaN;
+        return {
+            logoTamanoMM: (isFinite(tamanoMM) && tamanoMM > 0) ? tamanoMM : 11,
+            logoAlinH: ($(idAlinH || 'modal-etiqueta-logo-alinh') || {}).value || 'izquierda',
+            logoAlinV: ($(idAlinV || 'modal-etiqueta-logo-alinv') || {}).value || 'arriba',
+        };
+    }
+
+    // Checkbox "Incluir código QR" (activado por defecto) + su posición
+    // vertical — SIEMPRE a la derecha, a petición de Eloy, así que no
+    // hay alineación horizontal que leer.
+    function etiquetaQrConfigActual_(idIncluir, idAlinV) {
+        const checkbox = $(idIncluir || 'modal-etiqueta-qr-incluir');
+        return {
+            qrIncluir: checkbox ? checkbox.checked : true,
+            qrAlinV: ($(idAlinV || 'modal-etiqueta-qr-alinv') || {}).value || 'abajo',
+        };
+    }
+
+    // Agrupa la lectura de márgenes + logo + QR + tamaño de nombre/precio
+    // en una sola llamada — se repite igual en los 4 sitios que generan
+    // una etiqueta (vista previa, PNG y PDF de la suelta, y el lote de
+    // la lista de la compra), así que evita leer los mismos campos 4
+    // veces por separado en cada uno. idsExtra (opcional) permite pasar
+    // los ids específicos de la modal de lote, que son distintos.
+    function etiquetaOptsComunesActual_(idsExtra) {
+        const ids = idsExtra || {};
+        const tamanosTexto = etiquetaNombrePrecioTamanosActual_(ids.nombreTamano, ids.precioTamano);
+        const margenes = etiquetaMargenesActual_(ids.margenSup, ids.margenInf, ids.margenIzq, ids.margenDer);
+        const logoConfig = etiquetaLogoConfigActual_(ids.logoTamano, ids.logoAlinH, ids.logoAlinV);
+        const qrConfig = etiquetaQrConfigActual_(ids.qrIncluir, ids.qrAlinV);
+        return {
+            nombreTamanoMM: tamanosTexto.nombreTamanoMM, precioTamanoMM: tamanosTexto.precioTamanoMM,
+            margenSupMM: margenes.margenSupMM, margenInfMM: margenes.margenInfMM,
+            margenIzqMM: margenes.margenIzqMM, margenDerMM: margenes.margenDerMM,
+            logoTamanoMM: logoConfig.logoTamanoMM, logoAlinH: logoConfig.logoAlinH, logoAlinV: logoConfig.logoAlinV,
+            qrIncluir: qrConfig.qrIncluir, qrAlinV: qrConfig.qrAlinV,
+        };
+    }
+
+    // Aplica un tamaño de papel estándar (ETIQUETA_PAPEL_TAMANOS_MM_) a
+    // los campos ancho/alto, según la orientación elegida — llamada al
+    // cambiar el selector "Tamaño de papel" o "Orientación". Si
+    // "Tamaño de papel" está en "Personalizado" (valor vacío), no hace
+    // nada: ancho/alto se quedan tal cual el usuario los haya dejado.
+    function etiquetaAplicarPapel_(idPapel, idOrientacion, idAncho, idAlto) {
+        const papel = $(idPapel).value;
+        if (!papel || !ETIQUETA_PAPEL_TAMANOS_MM_[papel]) return;
+        const { w, h } = ETIQUETA_PAPEL_TAMANOS_MM_[papel];
+        const horizontal = $(idOrientacion).value === 'horizontal';
+        $(idAncho).value = horizontal ? h : w;
+        $(idAlto).value = horizontal ? w : h;
     }
 
     function actualizarAvisosEtiqueta_(datos) {
@@ -16319,6 +18277,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const datos = datosEtiquetaParaProducto_(p);
         actualizarAvisosEtiqueta_(datos);
         const imagenConfig = etiquetaImagenConfigActual_();
+        const opts = etiquetaOptsComunesActual_();
         const [logo, barcode, qr, imagen] = await Promise.all([
             etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
             imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
@@ -16331,9 +18290,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         canvas.height = Math.round(h * ETIQUETA_PREVIEW_PXMM_);
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, {
+        dibujarEtiquetaEnCanvas_(ctx, 0, 0, canvas.width, canvas.height, w, h, datos, Object.assign({
             logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
-        });
+        }, opts));
     }
 
     function abrirModalEtiquetaPrecio_(p) {
@@ -16344,8 +18303,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         productoEtiquetaActual_ = p;
         $('modal-etiqueta-nombre').textContent = `${p.nombre} (Ref: ${p.ref})`;
         $('modal-etiqueta-cantidad').value = 1;
+        $('modal-etiqueta-papel').value = '';
+        $('modal-etiqueta-orientacion').value = 'vertical';
         $('modal-etiqueta-ancho').value = ETIQUETA_W_DEFECTO_MM_;
         $('modal-etiqueta-alto').value = ETIQUETA_H_DEFECTO_MM_;
+        $('modal-etiqueta-margen-sup').value = 3.5;
+        $('modal-etiqueta-margen-inf').value = 3.5;
+        $('modal-etiqueta-margen-izq').value = 3.5;
+        $('modal-etiqueta-margen-der').value = 3.5;
+        $('modal-etiqueta-nombre-tamano').value = 3.5;
+        $('modal-etiqueta-precio-tamano').value = 11;
+        $('modal-etiqueta-logo-tamano').value = 11;
+        $('modal-etiqueta-logo-alinh').value = 'izquierda';
+        $('modal-etiqueta-logo-alinv').value = 'arriba';
+        $('modal-etiqueta-qr-incluir').checked = true;
+        $('modal-etiqueta-qr-alinv').value = 'abajo';
         $('modal-etiqueta-detalle').value = '';
         $('modal-etiqueta-detalle-otro').value = '';
         $('modal-etiqueta-detalle-otro-fila').style.display = 'none';
@@ -16421,6 +18393,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             const datos = datosEtiquetaParaProducto_(p);
             const imagenConfig = etiquetaImagenConfigActual_();
+            const opts0 = etiquetaOptsComunesActual_();
             const [logo, barcode, qr, imagen] = await Promise.all([
                 etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
                 imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
@@ -16430,9 +18403,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const canvas = document.createElement('canvas');
             canvas.width = Math.round(w * PXMM);
             canvas.height = Math.round(h * PXMM);
-            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, {
+            dibujarEtiquetaEnCanvas_(canvas.getContext('2d'), 0, 0, canvas.width, canvas.height, w, h, datos, Object.assign({
                 logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
-            });
+            }, opts0));
             const blob = await etiquetaCanvasABlob_(canvas);
             if (!blob) throw new Error('canvas.toBlob devolvió null');
             descargarComoArchivo_(blob, `${etiquetaNombreArchivoBase_(p)}.png`);
@@ -16464,11 +18437,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         try {
             const datos = datosEtiquetaParaProducto_(p);
             const imagenConfig = etiquetaImagenConfigActual_();
+            const opts0 = etiquetaOptsComunesActual_();
             const [logo, barcode, qr, imagen] = await Promise.all([
                 etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
                 imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
             ]);
-            const opts = { logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_() };
+            const opts = Object.assign({
+                logo, barcode, qr, imagen, imagenConfig, detalleTexto: etiquetaDetalleTextoActual_(), textoPersonalizado: etiquetaTextoPersonalizadoActual_(),
+            }, opts0);
             const { w, h } = etiquetaTamanoActual_();
             const { jsPDF } = window.jspdf;
 
@@ -16526,6 +18502,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function etiquetasListaConfigDefecto_() {
         return {
             cantidad: 1,
+            nombreTamano: 3.5,
+            precioTamano: 11,
+            margenSup: 3.5,
+            margenInf: 3.5,
+            margenIzq: 3.5,
+            margenDer: 3.5,
+            logoTamano: 11,
+            logoAlinH: 'izquierda',
+            logoAlinV: 'arriba',
+            qrIncluir: true,
+            qrAlinV: 'abajo',
             detalle: '',
             detalleOtro: '',
             imagenIncluir: false,
@@ -16554,10 +18541,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // valor.
     function etiquetasListaLeerFormularioActual_() {
         const cantidad = parseInt($('modal-etiquetas-lista-cantidad').value, 10);
+        const nombreTamano = parseFloat($('modal-etiquetas-lista-nombre-tamano').value);
+        const precioTamano = parseFloat($('modal-etiquetas-lista-precio-tamano').value);
         const textoTamano = parseFloat($('modal-etiquetas-lista-texto-tamano').value);
         const imagenTamano = parseFloat($('modal-etiquetas-lista-imagen-tamano').value);
+        const margenes = etiquetaMargenesActual_(
+            'modal-etiquetas-lista-margen-sup', 'modal-etiquetas-lista-margen-inf',
+            'modal-etiquetas-lista-margen-izq', 'modal-etiquetas-lista-margen-der'
+        );
+        const logoConfig = etiquetaLogoConfigActual_(
+            'modal-etiquetas-lista-logo-tamano', 'modal-etiquetas-lista-logo-alinh', 'modal-etiquetas-lista-logo-alinv'
+        );
+        const qrConfig = etiquetaQrConfigActual_('modal-etiquetas-lista-qr-incluir', 'modal-etiquetas-lista-qr-alinv');
         return {
             cantidad: Math.min(ETIQUETA_CANTIDAD_MAXIMA_, Math.max(1, Number.isFinite(cantidad) ? cantidad : 1)),
+            nombreTamano: (isFinite(nombreTamano) && nombreTamano > 0) ? nombreTamano : 3.5,
+            precioTamano: (isFinite(precioTamano) && precioTamano > 0) ? precioTamano : 11,
+            margenSup: margenes.margenSupMM,
+            margenInf: margenes.margenInfMM,
+            margenIzq: margenes.margenIzqMM,
+            margenDer: margenes.margenDerMM,
+            logoTamano: logoConfig.logoTamanoMM,
+            logoAlinH: logoConfig.logoAlinH,
+            logoAlinV: logoConfig.logoAlinV,
+            qrIncluir: qrConfig.qrIncluir,
+            qrAlinV: qrConfig.qrAlinV,
             detalle: $('modal-etiquetas-lista-detalle').value,
             detalleOtro: $('modal-etiquetas-lista-detalle-otro').value,
             imagenIncluir: $('modal-etiquetas-lista-imagen-incluir').checked,
@@ -16577,6 +18585,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function etiquetasListaEscribirFormulario_(cfg) {
         $('modal-etiquetas-lista-cantidad').value = cfg.cantidad;
+        $('modal-etiquetas-lista-nombre-tamano').value = cfg.nombreTamano;
+        $('modal-etiquetas-lista-precio-tamano').value = cfg.precioTamano;
+        $('modal-etiquetas-lista-margen-sup').value = cfg.margenSup;
+        $('modal-etiquetas-lista-margen-inf').value = cfg.margenInf;
+        $('modal-etiquetas-lista-margen-izq').value = cfg.margenIzq;
+        $('modal-etiquetas-lista-margen-der').value = cfg.margenDer;
+        $('modal-etiquetas-lista-logo-tamano').value = cfg.logoTamano;
+        $('modal-etiquetas-lista-logo-alinh').value = cfg.logoAlinH;
+        $('modal-etiquetas-lista-logo-alinv').value = cfg.logoAlinV;
+        $('modal-etiquetas-lista-qr-incluir').checked = cfg.qrIncluir;
+        $('modal-etiquetas-lista-qr-alinv').value = cfg.qrAlinV;
         $('modal-etiquetas-lista-detalle').value = cfg.detalle;
         $('modal-etiquetas-lista-detalle-otro').value = cfg.detalleOtro;
         $('modal-etiquetas-lista-detalle-otro-fila').style.display = cfg.detalle === '__otro__' ? '' : 'none';
@@ -16615,7 +18634,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             etiquetaLogo_(), etiquetaBarcodePara_(datos.ref), etiquetaQrPara_(datos.urlQr),
             imagenConfig ? etiquetaImagenProducto_(p) : Promise.resolve(null),
         ]);
-        return { datos, opts: { logo, barcode, qr, imagen, imagenConfig, detalleTexto, textoPersonalizado } };
+        return {
+            datos,
+            opts: {
+                logo, barcode, qr, imagen, imagenConfig, detalleTexto, textoPersonalizado,
+                nombreTamanoMM: cfg.nombreTamano, precioTamanoMM: cfg.precioTamano,
+                margenSupMM: cfg.margenSup, margenInfMM: cfg.margenInf, margenIzqMM: cfg.margenIzq, margenDerMM: cfg.margenDer,
+                logoTamanoMM: cfg.logoTamano, logoAlinH: cfg.logoAlinH, logoAlinV: cfg.logoAlinV,
+                qrIncluir: cfg.qrIncluir, qrAlinV: cfg.qrAlinV,
+            },
+        };
     }
 
     function etiquetasListaTotalEtiquetas_() {
@@ -16694,6 +18722,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         etiquetasListaProductos_ = productos;
         etiquetasListaConfigs_ = productos.map(() => etiquetasListaConfigDefecto_());
         etiquetasListaPagina_ = 0;
+        $('modal-etiquetas-lista-papel').value = '';
+        $('modal-etiquetas-lista-orientacion').value = 'vertical';
         $('modal-etiquetas-lista-ancho').value = ETIQUETA_W_DEFECTO_MM_;
         $('modal-etiquetas-lista-alto').value = ETIQUETA_H_DEFECTO_MM_;
 
@@ -19015,8 +21045,40 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         actualizarVistaPreviaEtiqueta_();
     });
     $('modal-etiqueta-detalle-otro').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
-    $('modal-etiqueta-ancho').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
-    $('modal-etiqueta-alto').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    // Tamaño de papel/orientación: rellenan ancho/alto con el preset
+    // elegido y repintan — si el usuario edita ancho/alto a mano
+    // después, el selector vuelve a "Personalizado" (ya no reflejaría
+    // el preset con fidelidad).
+    $('modal-etiqueta-papel').addEventListener('change', () => {
+        etiquetaAplicarPapel_('modal-etiqueta-papel', 'modal-etiqueta-orientacion', 'modal-etiqueta-ancho', 'modal-etiqueta-alto');
+        actualizarVistaPreviaEtiqueta_();
+    });
+    $('modal-etiqueta-orientacion').addEventListener('change', () => {
+        etiquetaAplicarPapel_('modal-etiqueta-papel', 'modal-etiqueta-orientacion', 'modal-etiqueta-ancho', 'modal-etiqueta-alto');
+        actualizarVistaPreviaEtiqueta_();
+    });
+    $('modal-etiqueta-ancho').addEventListener('input', () => {
+        $('modal-etiqueta-papel').value = '';
+        actualizarVistaPreviaEtiqueta_();
+    });
+    $('modal-etiqueta-alto').addEventListener('input', () => {
+        $('modal-etiqueta-papel').value = '';
+        actualizarVistaPreviaEtiqueta_();
+    });
+    ['modal-etiqueta-margen-sup', 'modal-etiqueta-margen-inf', 'modal-etiqueta-margen-izq', 'modal-etiqueta-margen-der'].forEach((id) => {
+        $(id).addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    });
+    $('modal-etiqueta-nombre-tamano').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    $('modal-etiqueta-precio-tamano').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    // Logo — siempre visible, sin checkbox.
+    $('modal-etiqueta-logo-tamano').addEventListener('input', () => actualizarVistaPreviaEtiqueta_());
+    ['modal-etiqueta-logo-alinh', 'modal-etiqueta-logo-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    });
+    // Código QR — checkbox (activado por defecto) + posición vertical
+    // (siempre a la derecha).
+    $('modal-etiqueta-qr-incluir').addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
+    $('modal-etiqueta-qr-alinv').addEventListener('change', () => actualizarVistaPreviaEtiqueta_());
     // Imagen del producto — el checkbox muestra/oculta los selectores de
     // posición y, como la carga real de la foto puede tardar (red), solo
     // se intenta cuando está marcado (ver etiquetaImagenConfigActual_).
@@ -19064,10 +21126,35 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('modal-etiquetas-lista-siguiente').addEventListener('click', () => etiquetasListaIrAPagina_(etiquetasListaPagina_ + 1));
     $('modal-etiquetas-lista-selector').addEventListener('change', (e) => etiquetasListaIrAPagina_(parseInt(e.target.value, 10)));
 
-    $('modal-etiquetas-lista-ancho').addEventListener('input', () => actualizarVistaPreviaEtiquetasLista_());
-    $('modal-etiquetas-lista-alto').addEventListener('input', () => actualizarVistaPreviaEtiquetasLista_());
+    $('modal-etiquetas-lista-papel').addEventListener('change', () => {
+        etiquetaAplicarPapel_('modal-etiquetas-lista-papel', 'modal-etiquetas-lista-orientacion', 'modal-etiquetas-lista-ancho', 'modal-etiquetas-lista-alto');
+        actualizarVistaPreviaEtiquetasLista_();
+    });
+    $('modal-etiquetas-lista-orientacion').addEventListener('change', () => {
+        etiquetaAplicarPapel_('modal-etiquetas-lista-papel', 'modal-etiquetas-lista-orientacion', 'modal-etiquetas-lista-ancho', 'modal-etiquetas-lista-alto');
+        actualizarVistaPreviaEtiquetasLista_();
+    });
+    $('modal-etiquetas-lista-ancho').addEventListener('input', () => {
+        $('modal-etiquetas-lista-papel').value = '';
+        actualizarVistaPreviaEtiquetasLista_();
+    });
+    $('modal-etiquetas-lista-alto').addEventListener('input', () => {
+        $('modal-etiquetas-lista-papel').value = '';
+        actualizarVistaPreviaEtiquetasLista_();
+    });
 
     $('modal-etiquetas-lista-cantidad').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    $('modal-etiquetas-lista-nombre-tamano').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    $('modal-etiquetas-lista-precio-tamano').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    ['modal-etiquetas-lista-margen-sup', 'modal-etiquetas-lista-margen-inf', 'modal-etiquetas-lista-margen-izq', 'modal-etiquetas-lista-margen-der'].forEach((id) => {
+        $(id).addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    });
+    $('modal-etiquetas-lista-logo-tamano').addEventListener('input', () => etiquetasListaActualizarConfigActual_());
+    ['modal-etiquetas-lista-logo-alinh', 'modal-etiquetas-lista-logo-alinv'].forEach((id) => {
+        $(id).addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    });
+    $('modal-etiquetas-lista-qr-incluir').addEventListener('change', () => etiquetasListaActualizarConfigActual_());
+    $('modal-etiquetas-lista-qr-alinv').addEventListener('change', () => etiquetasListaActualizarConfigActual_());
     $('modal-etiquetas-lista-detalle').addEventListener('change', () => {
         $('modal-etiquetas-lista-detalle-otro-fila').style.display = $('modal-etiquetas-lista-detalle').value === '__otro__' ? '' : 'none';
         etiquetasListaActualizarConfigActual_();

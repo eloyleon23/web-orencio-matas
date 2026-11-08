@@ -1,25 +1,25 @@
 {
-  "generado": "2026-10-28T16:20:21.863459Z",
+  "generado": "2026-11-08T11:16:54.430949Z",
   "catalogos": {
     "drogueria": {
       "archivo": "catalogo_drogueria_mayor.pdf",
-      "paginas": 138,
-      "productos": 1972
+      "paginas": 139,
+      "productos": 1994
     },
     "perfumeria": {
       "archivo": "catalogo_perfumeria_mayor.pdf",
-      "paginas": 113,
-      "productos": 1592
+      "paginas": 114,
+      "productos": 1615
     },
     "pinturas": {
       "archivo": "catalogo_pinturas_mayor.pdf",
-      "paginas": 161,
-      "productos": 2382
+      "paginas": 162,
+      "productos": 2384
     },
     "talleres": {
       "archivo": "catalogo_talleres_mayor.pdf",
       "paginas": 62,
-      "productos": 866
+      "productos": 883
     }
   }
 }
