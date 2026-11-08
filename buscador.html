@@ -1069,7 +1069,11 @@
         .destacados-buscador-controles { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
         .destacados-buscador-controles input[type="text"] { flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
         .destacados-buscador-controles select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
-        .destacados-buscar-resultados { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .destacados-buscar-resultados {
+            max-height: 200px; overflow-y: auto; overflow-x: hidden;
+            display: flex; flex-direction: column; gap: 4px;
+            overscroll-behavior: contain;
+        }
         .destacados-buscar-item {
             display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer;
         }
@@ -1112,11 +1116,23 @@
             margin-bottom: 8px;
             min-height: 28px;
         }
+        /* Estilo "deshabilitado" a propósito (petición de Eloy): estos
+           chips representan productos YA añadidos a la temporada, no una
+           acción pendiente — fondo/texto apagados en vez del aspecto
+           llamativo de un elemento clicable, y con su propia miniatura
+           (antes solo se veía el nombre) para poder reconocer el
+           producto de un vistazo sin tener que leerlo entero. */
         .temporadas-chip {
-            display: inline-flex; align-items: center; gap: 6px;
+            display: inline-flex; align-items: center; gap: 8px;
             background: var(--light); border: 1px solid var(--border);
-            border-radius: 20px; padding: 4px 6px 4px 12px;
-            font-size: 0.78rem; font-weight: 600; color: var(--dark);
+            border-radius: 20px; padding: 4px 6px 4px 6px;
+            font-size: 0.78rem; font-weight: 500; color: var(--muted);
+            opacity: 0.85;
+        }
+        .temporadas-chip img {
+            width: 26px; height: 26px; border-radius: 50%;
+            object-fit: cover; flex-shrink: 0; background: var(--border);
+            filter: grayscale(35%);
         }
         .temporadas-chip button {
             border: none; background: #fff; color: var(--muted);
@@ -1129,6 +1145,13 @@
         .destacados-buscar-item img { width: 32px; height: 32px; object-fit: cover; border-radius: 5px; background: var(--light); }
         .destacados-buscar-item .nombre { font-size: 0.82rem; font-weight: 600; flex: 1; }
         .destacados-buscar-item .ya-incluido { font-size: 0.72rem; color: var(--green); font-weight: 700; }
+        /* Modificador "ya incluido" — solo en el buscador de productos de
+           Temporada (no toca Destacados, que usa la misma clase base),
+           para que un producto ya añadido se note de un vistazo dentro
+           de una lista de resultados que mezcla incluidos y no incluidos,
+           más allá de la pequeña etiqueta de texto. */
+        .destacados-buscar-item--incluido { opacity: 0.55; background: var(--light); }
+        .destacados-buscar-item--incluido img { filter: grayscale(70%); }
         .destacados-ver-producto {
             flex-shrink: 0; border: 1px solid var(--border); background: #fff; border-radius: 6px;
             padding: 4px 9px; font-size: 0.74rem; font-weight: 600; color: var(--blue); cursor: pointer;
@@ -10756,9 +10779,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cont.innerHTML = '';
         (t.referencias || []).forEach(ref => {
             const p = TODOS.find(x => String(x.ref) === String(ref));
+            const urlImg = p ? urlImagenProducto(p, 40) : '';
             const chip = document.createElement('span');
             chip.className = 'temporadas-chip';
-            chip.innerHTML = `${escapeHtml(p ? p.nombre : ('Ref: ' + ref))} <button type="button" title="Quitar"><i class="fa-solid fa-xmark"></i></button>`;
+            chip.innerHTML = `
+                ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:26px;height:26px;border-radius:50%;background:var(--border);flex-shrink:0;"></div>'}
+                ${escapeHtml(p ? p.nombre : ('Ref: ' + ref))}
+                <button type="button" title="Quitar"><i class="fa-solid fa-xmark"></i></button>
+            `;
             chip.querySelector('button').addEventListener('click', () => temporadaQuitarReferencia_(ref));
             cont.appendChild(chip);
         });
@@ -10776,6 +10804,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 temporadaRenderizarReferenciasChips_(t);
                 temporadaRenderizarListado_();
                 renderTemporada_();
+                // Sin esto, la fila recién añadida/quitada en el buscador
+                // de resultados se quedaba "congelada" con el estado
+                // anterior (sin el estilo deshabilitado de "ya incluido")
+                // hasta que el usuario volvía a teclear algo.
+                temporadaBuscarYRenderizar_();
             }
         } finally {
             estado.innerHTML = '';
@@ -10833,12 +10866,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         resultados = resultados.slice(0, 40);
         if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
+        // Se conserva la posición de scroll al volver a pintar la lista
+        // (bug real reportado por Eloy: al añadir productos uno tras
+        // otro, cont.innerHTML se reconstruía entera cada vez y el
+        // scroll volvía arriba de golpe, obligando a bajar de nuevo para
+        // seguir añadiendo — cada vez más tedioso cuantos más productos
+        // se añadían). El orden de resultados no cambia entre
+        // reconstrucciones para el mismo texto/área/familia (incluir o
+        // no un producto no afecta al filtrado ni al orden), así que
+        // restaurar el mismo scrollTop deja la vista exactamente donde
+        // estaba.
+        const scrollPrevio = cont.scrollTop;
         cont.innerHTML = '';
         resultados.forEach(p => {
             const yaIncluido = refsYaIncluidas.has(p.ref);
             const urlImg = urlImagenProducto(p, 60);
             const fila = document.createElement('div');
-            fila.className = 'destacados-buscar-item';
+            fila.className = 'destacados-buscar-item' + (yaIncluido ? ' destacados-buscar-item--incluido' : '');
             fila.innerHTML = `
                 ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
                 <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
@@ -10847,6 +10891,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (yaIncluido) { fila.style.cursor = 'default'; } else { fila.addEventListener('click', () => temporadaAnadirReferencia_(p.ref)); }
             cont.appendChild(fila);
         });
+        cont.scrollTop = scrollPrevio;
     }
 
     function abrirModalGestionTemporadas_() {
