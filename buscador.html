@@ -7524,6 +7524,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         carrocero: ['enmascarar'],   // "cinta carrocero" (término de taller) = "cinta enmascarar" en el catálogo
         cuchilla: ['hojas'],         // maquinillas de afeitar: el catálogo las agrupa como "HOJAS Y MAQUINAS AFEITAR" — "cuchilla" en el catálogo se usa para hojas de rascador, no de afeitar, así que esto además amplía el término ambiguo a ambos sentidos
         veneno: ['raticida', 'insecticida'], // "veneno para ratas/cucarachas" es como mucha gente lo pide — el catálogo nunca usa la palabra "veneno", solo los nombres técnicos de familia
+        // Segunda ronda (mismo criterio, verificado de nuevo contra el catálogo real):
+        rimel: ['mascara'],          // término muy habitual en España para el "MASCARA PEST." (máscara de pestañas) de maquillaje — el catálogo nunca dice "rimel"
+        pintalabios: ['labios'],     // el catálogo nombra estos productos como "BRILLO LABIOS"/"PERFILADOR LABIOS", nunca "pintalabios"
+        kleenex: ['panuelos'],       // marca genérica habitual para pañuelos de papel — el catálogo solo dice "pañuelos" (PAÑUELOS GOMA-CAMPS FACIALES, etc.)
+        coche: ['vehiculo'],         // sinónimo exacto — "ACABADO DE VEHICULOS" (limpiador llantas, pulimento...) no dice "coche", y viceversa "AMBIENT.COCHE" no dice "vehículo": conjuntos de productos reales distintos y complementarios, ninguno se encontraba desde el término del otro
+        vehiculo: ['coche'],
     };
 
     function normalizar(txt) {
