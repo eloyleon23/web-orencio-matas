@@ -9954,8 +9954,20 @@ function revisarCorreoListadoProductos() {
       const mensajeError = 'El correo del CRM ("' + ultimoMensaje.getSubject() + '", ' + ultimoMensaje.getDate() +
         ') no traía ningún adjunto .xlsx/.xls reconocible.';
       console.error(mensajeError);
-      enviarResumenSincronizacionCRM_({ error: mensajeError });
-      marcarHilosComoProcesados_();
+      // enviarResumenSincronizacionCRM_() y el marcado van SIEMPRE juntos,
+      // dentro del mismo try: si el envío/registro del aviso falla (p.ej.
+      // cuota diaria de correo de Apps Script agotada, o un error al
+      // escribir en Configuracion), el correo queda SIN marcar, para que
+      // la próxima ejecución lo reintente — en vez de quedar marcado
+      // "procesado" sin ningún rastro real de qué pasó, que es justo el
+      // bug que se reportó (ver más abajo, en el catch general, el mismo
+      // razonamiento con más detalle).
+      try {
+        enviarResumenSincronizacionCRM_({ error: mensajeError });
+        marcarHilosComoProcesados_();
+      } catch (errNotif) {
+        console.error('No se pudo enviar/registrar el aviso de correo sin adjunto — el correo queda SIN marcar para reintentar en la próxima ejecución:', errNotif);
+      }
       notificarErrorCriticoCRM_(
         'Correo del CRM sin adjunto válido',
         'revisarCorreoListadoProductos() ha encontrado un correo del CRM pero no ha podido sincronizar:\n\n' + mensajeError
@@ -9964,8 +9976,24 @@ function revisarCorreoListadoProductos() {
     }
 
     const resultado = procesarListadoProductosExcel_(excel);
-    enviarResumenSincronizacionCRM_(resultado);
-    marcarHilosComoProcesados_();
+    // Igual que arriba: enviarResumenSincronizacionCRM_() y el marcado
+    // van juntos — si el aviso falla, el correo queda SIN marcar (la
+    // sincronización en sí YA se ha completado y escrito en
+    // RegistroProductos/Productos; reintentarla al día siguiente con el
+    // mismo listado es inofensivo, es un volcado completo cada vez, no
+    // incremental).
+    try {
+      enviarResumenSincronizacionCRM_(resultado);
+      marcarHilosComoProcesados_();
+    } catch (errNotif) {
+      console.error('La sincronización se completó pero no se pudo enviar/registrar el resumen — el correo queda SIN marcar para reintentar la notificación en la próxima ejecución:', errNotif);
+      notificarErrorCriticoCRM_(
+        'Sincronización realizada pero sin poder notificarla',
+        'procesarListadoProductosExcel_() ha terminado correctamente, pero enviarResumenSincronizacionCRM_() ha fallado al avisar/registrar el resultado:\n\n' +
+        errNotif.message + (errNotif.stack ? '\n\n' + errNotif.stack : '')
+      );
+      return { huboCorreo: true, exito: true, resultado: resultado, avisoFallido: true };
+    }
 
     // Postproceso no crítico (reevaluar áreas/subfamilias, regenerar
     // caché) — DESPUÉS de notificar y marcar como procesado, ver
@@ -9993,21 +10021,36 @@ function revisarCorreoListadoProductos() {
     return { huboCorreo: true, exito: true, resultado: resultado };
   } catch (err) {
     console.error('Error procesando el listado de productos del CRM:', err);
+    let avisoEnviado = false;
     try {
       enviarResumenSincronizacionCRM_({ error: err.message });
+      avisoEnviado = true;
     } catch (errEnvio) {
       console.error('Además, no se pudo enviar/registrar el aviso del fallo anterior:', errEnvio);
     }
-    // Aquí SÍ se marca como procesado aunque haya fallado: es un error ya
-    // capturado y notificado (p.ej. cabecera del Excel incorrecta), así
-    // que reintentarlo mañana con el mismo correo roto solo repetiría el
-    // mismo fallo cada día — hace falta que alguien lo revise y, si
-    // procede, pida un listado nuevo. Distinto del caso de arriba (tiempo
-    // de ejecución agotado), que nunca llega a este catch.
-    try {
-      if (hilos && etiqueta) hilos.forEach(hilo => hilo.addLabel(etiqueta));
-    } catch (errEtiqueta) {
-      console.error('Además, no se pudo marcar el correo como procesado tras el fallo:', errEtiqueta);
+    // Solo se marca como procesado si el aviso de fallo se ha podido
+    // enviar Y registrar de verdad (enviarResumenSincronizacionCRM_
+    // escribe primero en Configuracion y manda el correo después — ver
+    // esa función — así que si no ha lanzado excepción, ambas cosas han
+    // ocurrido). Es un error ya capturado y notificado (p.ej. cabecera
+    // del Excel incorrecta), así que reintentarlo mañana con el mismo
+    // correo roto solo repetiría el mismo fallo cada día — hace falta que
+    // alguien lo revise y, si procede, pida un listado nuevo.
+    //
+    // Si NI SIQUIERA el aviso de fallo se ha podido enviar (p.ej. cuota
+    // diaria de correo de Apps Script agotada), es justo el bug que se
+    // reportó: el correo quedaba marcado "procesado" sin un solo rastro
+    // de qué había pasado (ni correo, ni fecha en Configuracion). Ahora,
+    // en ese caso, el correo queda SIN marcar — la próxima ejecución
+    // (disparador diario o botón manual) lo reintenta desde cero.
+    if (avisoEnviado) {
+      try {
+        if (hilos && etiqueta) hilos.forEach(hilo => hilo.addLabel(etiqueta));
+      } catch (errEtiqueta) {
+        console.error('Además, no se pudo marcar el correo como procesado tras el fallo:', errEtiqueta);
+      }
+    } else {
+      console.error('El correo queda SIN marcar como procesado: no se ha podido confirmar el envío/registro del aviso de fallo — se reintentará en la próxima ejecución.');
     }
     notificarErrorCriticoCRM_(
       'Sincronización de productos FALLIDA',
