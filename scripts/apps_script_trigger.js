@@ -9900,6 +9900,25 @@ function configurarTriggerRevisionCorreoProductos() {
 // (el listado es un volcado completo cada vez, no incremental — los
 // correos más antiguos sin procesar quedan superados) y manda el resumen.
 function revisarCorreoListadoProductos() {
+  // Protegido con LockService: esta función la puede disparar tanto el
+  // trigger diario (7h) como el botón manual del menú/panel — si ambas
+  // llegan a solaparse (alguien pulsa el botón justo cuando el
+  // automático está corriendo), sin este bloqueo las dos podrían ver el
+  // mismo correo sin la etiqueta de "procesado" todavía (que ahora se
+  // aplica al final, no al principio — ver más abajo) y procesarlo EN
+  // PARALELO: dos llamadas simultáneas a clearContent()+setValues() sobre
+  // RegistroProductos podrían entrelazarse y dejar la hoja con datos
+  // mezclados, además de duplicar el correo de resumen y el disparo de
+  // los catálogos. Con el bloqueo, la segunda ejecución simplemente se
+  // retira sin hacer nada (no es un error: la primera ya se está
+  // encargando de ese mismo correo) en vez de esperar varios minutos a
+  // que la primera termine para repetir el mismo trabajo.
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    console.log('revisarCorreoListadoProductos: ya hay otra ejecución en curso (no se ha podido obtener el bloqueo en 5s) — se omite esta pasada.');
+    return { huboCorreo: false, bloqueado: true };
+  }
+
   // Todo el cuerpo va envuelto en un try/catch general — antes solo la
   // parte de procesarListadoProductosExcel_() estaba protegida, así que
   // un fallo en la búsqueda/etiquetado de Gmail (p.ej. un hilo ya
@@ -10011,13 +10030,46 @@ function revisarCorreoListadoProductos() {
     // también cualquier imagen de producto actualizada ese mismo día
     // desde el buscador, ya que la generación lee el estado actual
     // completo de todos los productos, no solo lo que cambió hoy.
-    dispararWorkflow();
+    //
+    // Envuelto en su propio try/catch: en este punto la sincronización de
+    // productos YA ha terminado y notificado con éxito (resumen enviado,
+    // correo marcado, fecha registrada en Configuracion) — si
+    // UrlFetchApp.fetch lanzara una excepción real (fallo de red/timeout;
+    // una respuesta HTTP de error normal ya está controlada aparte con
+    // muteHttpExceptions), sin este aislamiento esa excepción se
+    // propagaría hasta el catch general de más abajo, que mandaría un
+    // correo "FALLIDA" y SOBREESCRIBIRÍA en Configuracion el resumen
+    // correcto con uno de fallo — una falsa alarma justo cuando la
+    // sincronización de productos en sí fue bien y solo el disparo de los
+    // catálogos tuvo un problema puntual.
+    try {
+      dispararWorkflow();
+    } catch (errWorkflow) {
+      console.error('No se pudo disparar la generación de catálogos tras la sincronización del CRM (la sincronización de productos sí se completó correctamente):', errWorkflow);
+      notificarErrorCriticoCRM_(
+        'Catálogos no regenerados tras sincronizar el CRM',
+        'La sincronización de productos del CRM se completó correctamente, pero no se pudo disparar la generación automática de catálogos (dispararWorkflow):\n\n' +
+        errWorkflow.message + (errWorkflow.stack ? '\n\n' + errWorkflow.stack : '') +
+        '\n\nPuedes generarlos a mano con "🔄 Generar catálogos ahora" en el menú.'
+      );
+    }
     // Igual para el catálogo al por mayor — proceso totalmente
     // independiente del anterior (archivos y manifiesto propios, ver
     // bloque "CATÁLOGOS PDF AL POR MAYOR"), pero que debe regenerarse en
     // los mismos momentos: cada vez que de verdad ha llegado un listado
-    // nuevo del CRM con precios/productos actualizados.
-    dispararWorkflowCatalogosMayor_();
+    // nuevo del CRM con precios/productos actualizados. Mismo
+    // aislamiento que arriba y por el mismo motivo.
+    try {
+      dispararWorkflowCatalogosMayor_();
+    } catch (errWorkflowMayor) {
+      console.error('No se pudo disparar la generación de catálogos al por mayor tras la sincronización del CRM (la sincronización de productos sí se completó correctamente):', errWorkflowMayor);
+      notificarErrorCriticoCRM_(
+        'Catálogos al por mayor no regenerados tras sincronizar el CRM',
+        'La sincronización de productos del CRM se completó correctamente, pero no se pudo disparar la generación automática de catálogos al por mayor (dispararWorkflowCatalogosMayor_):\n\n' +
+        errWorkflowMayor.message + (errWorkflowMayor.stack ? '\n\n' + errWorkflowMayor.stack : '') +
+        '\n\nPuedes generarlos a mano con "🔄 Generar catálogos al por mayor ahora" en el menú.'
+      );
+    }
     return { huboCorreo: true, exito: true, resultado: resultado };
   } catch (err) {
     console.error('Error procesando el listado de productos del CRM:', err);
@@ -10058,6 +10110,8 @@ function revisarCorreoListadoProductos() {
       (err.stack ? '\n\n' + err.stack : '')
     );
     return { huboCorreo: true, exito: false, mensaje: err.message };
+  } finally {
+    lock.releaseLock();
   }
 }
 
