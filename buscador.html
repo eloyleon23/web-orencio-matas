@@ -1014,7 +1014,10 @@
         }
 
         /* ── Modal "Gestionar destacados" ─────────────────────────────── */
-        .modal-destacados-box { max-width: 760px; max-height: 88vh; overflow-y: auto; padding: 28px; }
+        .modal-destacados-box { max-width: 760px; max-height: 88vh; overflow-y: auto; overflow-x: hidden; padding: 28px; }
+        @media (max-width: 480px) {
+            .modal-destacados-box { padding: 18px; }
+        }
         .modal-destacados-box h3 { margin: 0 0 14px; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
         .modal-destacados-box h4 { margin: 18px 0 8px; font-size: 0.95rem; font-weight: 800; color: var(--dark); }
         .destacados-vista-pin { max-width: 340px; margin: 0 auto; text-align: center; }
@@ -1078,20 +1081,30 @@
         }
         .temporadas-familias-lista {
             display: flex; flex-direction: column; gap: 10px;
-            max-height: 260px; overflow-y: auto;
+            max-height: 260px; overflow-y: auto; overflow-x: hidden;
             padding: 10px; border: 1px solid var(--border); border-radius: 8px;
         }
         .temporadas-familias-grupo-titulo {
             font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
             letter-spacing: .3px; color: var(--muted); margin: 0 0 2px;
         }
-        .temporadas-familias-grupo { display: flex; flex-direction: column; gap: 6px; }
+        .temporadas-familias-grupo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
         .temporadas-familias-grupo-items { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+        /* white-space normal (no nowrap) + min-width:0 a propósito: con
+           nombres de familia largos, "nowrap" obligaba a esa etiqueta a
+           salirse del ancho del contenedor — y al no caber, el listado
+           quedaba también desplazable en horizontal (un "overflow-y:auto"
+           sin overflow-x explícito se convierte en "overflow-x:auto" por
+           la propia especificación CSS en cuanto hay contenido que se
+           sale). Bug real reportado por Eloy: al hacer scroll vertical con
+           el dedo en móvil, el listado se movía también a los lados. */
         .temporadas-familias-lista label {
-            display: flex !important; align-items: center; gap: 5px;
+            display: flex !important; align-items: flex-start; gap: 5px;
             font-size: 0.82rem !important; font-weight: 500 !important;
-            margin: 0 !important; white-space: nowrap;
+            margin: 0 !important; white-space: normal;
+            max-width: 100%; min-width: 0;
         }
+        .temporadas-familias-lista label input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; }
         .temporadas-separador { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); }
         .temporadas-items-estado { margin-left: 8px; font-size: 0.78rem; color: var(--muted); font-weight: 400; }
         .temporadas-chips {
@@ -1126,7 +1139,16 @@
         .destacados-editor { border-top: 1px solid var(--border); margin-top: 18px; padding-top: 14px; }
         .destacados-editor-producto-nombre { font-weight: 700; margin-bottom: 4px; }
         .destacados-editor-error { color: var(--red); font-size: 0.82rem; min-height: 18px; }
-        .destacados-editor-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+        /* flex-wrap:wrap — a petición de Eloy: en móvil, con 3 botones
+           ("Eliminar temporada"/"Cancelar"/"Guardar temporada") en una
+           sola fila sin espacio para los tres, el último se quedaba
+           literalmente fuera del modal en vez de verse. Afecta también a
+           Destacados y Campañas, que comparten esta misma clase. */
+        .destacados-editor-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+        @media (max-width: 480px) {
+            .destacados-editor-acciones { justify-content: stretch; }
+            .destacados-editor-acciones button { flex: 1 1 auto; }
+        }
 
         /* ── Vista previa de producto (modal pequeño, dentro de la gestión
            de Destacados) ────────────────────────────────────────────────
