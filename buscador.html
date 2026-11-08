@@ -7490,6 +7490,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         revest: 'revestimiento',
         efect: 'efecto',
         prof: 'profesional',
+        concent: 'concentrado',
     };
 
     // Sinónimos reales del catálogo — distinto de ABREVIATURAS_CATALOGO
@@ -7509,6 +7510,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // antes de añadirla, igual que ABREVIATURAS_CATALOGO.
     const SINONIMOS_CATALOGO = {
         antioxidante: ['anticorrosion', 'antioxido'],
+        // Ampliado a petición de Eloy ("amplía el diccionario a partir
+        // de los productos y sus distintas posibilidades de nombrado"):
+        // cada entrada de aquí abajo se ha contrastado contra el
+        // catálogo real — comprobando que la palabra de la izquierda da
+        // 0 (o muy pocos) resultados hoy, y que la de la derecha
+        // identifica productos realmente relevantes que el catálogo
+        // nombra con un término distinto al que usaría un cliente.
+        bombilla: ['lampara'],       // el catálogo solo usa "lámpara" (término de proveedor/industria), nunca "bombilla" — 0 productos con "bombilla" en el nombre, 38 con "lámpara" que SÍ son bombillas normales (LED, esféricas, estándar...)
+        friegaplatos: ['lavavajillas'], // sinónimo coloquial muy habitual en España — el catálogo solo dice "lavavajillas"
+        bateria: ['pila'],           // para pilas sueltas (linterna, mando...) el catálogo dice siempre "pila", nunca "batería" (que si aparece, es para baterías recargables de herramientas, un producto distinto)
+        dentifrico: ['dental'],      // el catálogo dice "pasta dental", nunca "pasta de dientes" ni "dentífrico"
+        carrocero: ['enmascarar'],   // "cinta carrocero" (término de taller) = "cinta enmascarar" en el catálogo
+        cuchilla: ['hojas'],         // maquinillas de afeitar: el catálogo las agrupa como "HOJAS Y MAQUINAS AFEITAR" — "cuchilla" en el catálogo se usa para hojas de rascador, no de afeitar, así que esto además amplía el término ambiguo a ambos sentidos
+        veneno: ['raticida', 'insecticida'], // "veneno para ratas/cucarachas" es como mucha gente lo pide — el catálogo nunca usa la palabra "veneno", solo los nombres técnicos de familia
     };
 
     function normalizar(txt) {
