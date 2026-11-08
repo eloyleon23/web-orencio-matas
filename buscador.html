@@ -5561,8 +5561,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      vivo, nunca visible, solo decodifica la imagen que se le pasa. -->
 <div id="scanner-archivo-wrap" style="position:absolute; left:-9999px; top:-9999px; width:2000px; height:2000px;"></div>
 
-<!-- Modal detalle de producto -->
-<div class="modal-overlay" id="modal-producto-overlay">
+<!-- Modal detalle de producto — z-index explícito por encima del resto de
+     modales de base (1000, como el de "ver todos" de temporada/destacados):
+     bug real reportado por Eloy: al clicar un producto dentro de la modal
+     "ver todos" de temporada, el detalle SÍ se abría (se le añadía la
+     clase "activo"), pero al compartir el mismo z-index base y venir
+     ANTES en el DOM que esa otra modal, quedaba pintado por detrás y
+     totalmente oculto — parecía que el clic "no hacía nada". -->
+<div class="modal-overlay" id="modal-producto-overlay" style="z-index: 1500;">
     <div class="modal-producto-box" id="modal-producto-box">
         <div class="modal-producto-cerrar-sticky">
             <button class="modal-producto-cerrar" id="modal-producto-cerrar">
