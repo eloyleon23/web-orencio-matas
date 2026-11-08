@@ -7538,6 +7538,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         colutorio: ['bucal'],        // término de farmacia para el enjuague bucal — el catálogo dice "ANTISEPT.BUCAL"/"ENJUAGUE BUCAL", nunca "colutorio"
         hilo: ['seda'],              // "hilo dental" es como la mayoría lo pide — el catálogo dice "SEDA DENTAL"
         antitranspirante: ['desodorante'], // en España se usa indistintamente de "desodorante" para el mismo tipo de producto (roll-on, spray...) — el catálogo nunca dice "antitranspirante"
+        // Cuarta ronda (mismo criterio, barrido de más familias: piscinas,
+        // protección personal, menaje, varios):
+        alguicida: ['antialgas'],    // forma técnica/farmacia — el catálogo dice "ANTIALGAS" (ASTRALPOOL ANTIALGAS, MPL ANTIALGAS)
+        algicida: ['antialgas'],     // variante ortográfica de "alguicida", mismo caso
+        mechero: ['encendedor'],     // sinónimo coloquial muy habitual — el catálogo solo dice "encendedor"
+        naftalina: ['polilla'],      // término clásico para antipolillas — el catálogo nombra estos productos por "polilla" (ANTIPOLILLAS Y S/G ROPAS), nunca "naftalina"
     };
 
     function normalizar(txt) {
