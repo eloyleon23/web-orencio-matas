@@ -921,11 +921,15 @@
 
         /* Productos de temporada — a diferencia de Destacados, la regla de
            margen/fondo de ese bloque está específicamente ligada a su ID
-           (#destacados.seccion-destacados), así que #seccion-temporada no
-           la heredaba pese a compartir la clase — se quedaba sin ningún
-           margen respecto al siguiente bloque. Se añade aquí su propio
-           margen inferior, igual que Destacados. */
-        #seccion-temporada.seccion-destacados { margin: 0 0 22px; }
+           (#destacados.seccion-destacados), así que un bloque de
+           temporada no la heredaba pese a compartir la clase — se
+           quedaba sin ningún margen respecto al siguiente bloque. Se usa
+           una clase (.temporada-bloque) y no un ID porque ahora cada
+           temporada vigente genera su PROPIO bloque dinámicamente — con
+           varias temporadas a la vez puede haber más de uno al mismo
+           tiempo, uno seguido de otro con su propio margen inferior,
+           igual que Destacados. */
+        .temporada-bloque.seccion-destacados { margin: 0 0 22px; }
 
         /* Productos de temporada — título clicable (abre el modal "ver
            todos") y la propia modal con scroll + chips de búsqueda al
@@ -5407,21 +5411,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              yendo "por adelantado" (p.ej. en noviembre ya con
              invierno/Navidad). Completamente separado de Destacados: sin
              descuento ni promoción, solo una selección aleatoria de los
-             productos de la(s) temporada(s) vigente(s) ahora mismo (ver
-             renderTemporada_). Clic en un producto → ficha de detalle
+             productos de cada temporada vigente ahora mismo.
+
+             Cada temporada vigente es su PROPIO bloque independiente,
+             uno seguido de otro en el orden que decida el gestor (campo
+             "orden") — a petición de Eloy: con dos temporadas vigentes a
+             la vez, antes se fusionaban en un único bloque/modal
+             mezclando sus productos, aunque no tuvieran relación entre
+             sí. Los bloques se generan dinámicamente en
+             #temporadas-bloques-contenedor (ver renderTemporada_),
+             porque su número varía según cuántas temporadas estén
+             vigentes a la vez. Clic en un producto → ficha de detalle
              (crearTarjeta ya lo hace). Clic en el bloque/título → modal
-             con TODOS los productos de temporada (ver
-             abrirModalTemporada_). -->
-        <div id="seccion-temporada" class="seccion-destacados">
-            <div class="seccion-destacados__cabecera">
-                <p class="seccion-destacados__titulo seccion-temporada__titulo-clicable" id="temporada-titulo-abrir" role="button" tabindex="0">
-                    <span class="seccion-destacados__icono"><i class="fa-solid fa-snowflake"></i></span>
-                    <span id="temporada-titulo-texto">Productos de temporada</span>
-                    <i class="fa-solid fa-chevron-right seccion-temporada__flecha"></i>
-                </p>
-            </div>
-            <div id="temporada-lista" class="seccion-destacados__lista">
-                <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+             con TODOS los productos de ESA temporada en concreto, nunca
+             mezclados con los de otra (ver abrirModalTemporada_). -->
+        <div id="temporadas-bloques-contenedor">
+            <div class="seccion-destacados temporada-bloque">
+                <div class="seccion-destacados__cabecera">
+                    <p class="seccion-destacados__titulo">
+                        <span class="seccion-destacados__icono"><i class="fa-solid fa-snowflake"></i></span>
+                        <span>Productos de temporada</span>
+                    </p>
+                </div>
+                <div class="seccion-destacados__lista">
+                    <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+                </div>
             </div>
         </div>
 
@@ -9664,7 +9678,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const oculto = hayFiltroActivo_();
         const visible_ = (estado) => estado !== 'vacio' && !oculto;
         if ($('destacados')) $('destacados').style.display = visible_(modulosDescubrimientoConContenido_.destacados) ? '' : 'none';
-        if ($('seccion-temporada')) $('seccion-temporada').style.display = visible_(modulosDescubrimientoConContenido_.temporada) ? '' : 'none';
+        if ($('temporadas-bloques-contenedor')) $('temporadas-bloques-contenedor').style.display = visible_(modulosDescubrimientoConContenido_.temporada) ? '' : 'none';
         $('mas-buscados').style.display = visible_(modulosDescubrimientoConContenido_.masBuscados) ? '' : 'none';
         $('novedades').style.display = visible_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
@@ -10354,50 +10368,56 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return productos;
     }
 
-    // Combina todas las temporadas vigentes ahora mismo: productos (sin
-    // duplicar entre temporadas distintas), nombres de las temporadas
-    // (para el título) y familias involucradas (para las "opciones de
-    // búsqueda" al final del modal "ver todos").
-    function poolTemporadaActual_() {
-        const vigentes = temporadasVigentesAhora_();
-        const refsVistas = new Set();
-        const productos = [];
-        const familias = new Set();
-        vigentes.forEach(t => {
-            (t.familias || []).forEach(f => familias.add(f));
-            productosDeTemporada_(t).forEach(p => {
-                if (refsVistas.has(p.ref)) return;
-                refsVistas.add(p.ref);
-                productos.push(p);
-            });
-        });
-        return {
-            productos: productos,
-            nombres: vigentes.map(t => t.nombre).filter(Boolean),
-            familias: [...familias].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })),
-        };
-    }
-
     const MAX_TARJETAS_TEMPORADA_ = 18;
 
+    // Cada temporada vigente es su PROPIO bloque, independiente del
+    // resto (petición explícita de Eloy: "cada temporada añadida sea un
+    // bloque en el buscador una seguida de la otra... que cada una abra
+    // una modal independiente ya que la idea es incluir productos de
+    // temporada pero que pueda no tener relación unos con otros"). Antes
+    // se combinaban todas las vigentes en un único pool/bloque/modal
+    // (poolTemporadaActual_, eliminada) — con dos temporadas vigentes a
+    // la vez, se veían fusionadas como si fueran una sola.
     function renderTemporada_() {
-        if (!$('temporada-lista')) return; // defensivo: HTML aún no montado
-        const pool = poolTemporadaActual_();
-        const cont = $('temporada-lista');
+        const cont = $('temporadas-bloques-contenedor');
+        if (!cont) return; // defensivo: HTML aún no montado
+        const bloques = temporadasVigentesAhora_()
+            .slice()
+            .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+            .map(t => ({ temporada: t, productos: productosDeTemporada_(t) }))
+            .filter(b => b.productos.length);
+
         cont.innerHTML = '';
-        if (!pool.productos.length) {
+        if (!bloques.length) {
             modulosDescubrimientoConContenido_.temporada = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
-        // Aleatorio a propósito (petición de Eloy: "se mostrarán de
-        // manera aleatoria esos productos de temporada") — se rebaraja
-        // cada vez que se recalculan los módulos de descubrimiento
-        // (carga inicial, reconciliación con la fuente en vivo,
-        // catálogos adicionales...), no solo una vez por sesión.
-        const muestra = barajar_(pool.productos).slice(0, MAX_TARJETAS_TEMPORADA_);
-        muestra.forEach(p => cont.appendChild(crearTarjeta(p)));
-        $('temporada-titulo-texto').textContent = pool.nombres.length ? pool.nombres.join(' · ') : 'Productos de temporada';
+        bloques.forEach(({ temporada, productos }) => {
+            const bloque = document.createElement('div');
+            bloque.className = 'seccion-destacados temporada-bloque';
+            bloque.innerHTML = `
+                <div class="seccion-destacados__cabecera">
+                    <p class="seccion-destacados__titulo seccion-temporada__titulo-clicable" role="button" tabindex="0">
+                        <span class="seccion-destacados__icono"><i class="fa-solid fa-snowflake"></i></span>
+                        <span>${escapeHtml(temporada.nombre)}</span>
+                        <i class="fa-solid fa-chevron-right seccion-temporada__flecha"></i>
+                    </p>
+                </div>
+                <div class="seccion-destacados__lista"></div>
+            `;
+            const lista = bloque.querySelector('.seccion-destacados__lista');
+            // Aleatorio a propósito (petición de Eloy: "se mostrarán de
+            // manera aleatoria esos productos de temporada") — se
+            // rebaraja cada vez que se recalculan los módulos de
+            // descubrimiento, no solo una vez por sesión.
+            barajar_(productos).slice(0, MAX_TARJETAS_TEMPORADA_).forEach(p => lista.appendChild(crearTarjeta(p)));
+            const abrir = () => abrirModalTemporada_(temporada.id);
+            const titulo = bloque.querySelector('.seccion-temporada__titulo-clicable');
+            titulo.addEventListener('click', abrir);
+            titulo.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } });
+            cont.appendChild(bloque);
+        });
         modulosDescubrimientoConContenido_.temporada = 'con-contenido';
         actualizarVisibilidadModulosDescubrimiento_();
     }
@@ -10472,29 +10492,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         agruparPorFamilia(filtrados).forEach(temporadaRenderizarGrupoEnModal_);
     }
 
-    function abrirModalTemporada_() {
-        const vigentes = temporadasVigentesAhora_();
-        const pool = poolTemporadaActual_();
-        if (!pool.productos.length) return;
-        temporadaModalProductosBase_ = pool.productos;
-        $('temporada-ver-todos-titulo-texto').textContent = pool.nombres.length ? pool.nombres.join(' · ') : 'Productos de temporada';
+    // Siempre acotada a UNA temporada concreta (nunca mezclada con otras
+    // vigentes a la vez) — petición explícita de Eloy, ver el comentario
+    // en renderTemporada_.
+    function abrirModalTemporada_(temporadaId) {
+        const t = temporadasDatos_.find(x => x.id === temporadaId);
+        if (!t) return;
+        const productos = productosDeTemporada_(t);
+        if (!productos.length) return;
+        temporadaModalProductosBase_ = productos;
+        $('temporada-ver-todos-titulo-texto').textContent = t.nombre || 'Productos de temporada';
 
-        // Fecha(s) de validez — una línea por temporada vigente cuando hay
-        // varias combinadas (petición de Eloy: "añade la fecha de validez
-        // de la temporada").
-        $('temporada-ver-todos-vigencia').textContent = vigentes.map(t =>
-            t.permanente ? `${t.nombre}: disponible todo el año` : `${t.nombre}: del ${temporadaFormatearFecha_(t.fechaInicio)} al ${temporadaFormatearFecha_(t.fechaFin)}`
-        ).join(' · ');
+        $('temporada-ver-todos-vigencia').textContent = t.permanente
+            ? 'Disponible todo el año'
+            : `Del ${temporadaFormatearFecha_(t.fechaInicio)} al ${temporadaFormatearFecha_(t.fechaFin)}`;
 
         $('temporada-ver-todos-buscar').value = '';
         temporadaModalFiltrarYRenderizar_();
 
         // Opciones de búsqueda al final del scroll: una por cada familia
-        // incluida en la(s) temporada(s) vigente(s) — al clicar, vuelve
-        // al buscador ya filtrado por esa familia.
+        // de ESTA temporada — al clicar, vuelve al buscador ya filtrado
+        // por esa familia.
         const contChips = $('temporada-ver-todos-chips');
         contChips.innerHTML = '';
-        pool.familias.forEach(familia => {
+        (t.familias || []).slice().sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })).forEach(familia => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = 'Ver todo "' + familia + '"';
@@ -10589,7 +10610,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             cont.innerHTML = '<p class="destacados-hint">Todavía no hay ninguna temporada creada.</p>';
             return;
         }
-        temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0)).forEach(t => {
+        const ordenadas = temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+        ordenadas.forEach((t, i) => {
             const vigente = campanaActivaHoy_(t);
             const fila = document.createElement('div');
             fila.className = 'destacados-item' + (t.activa ? '' : ' destacados-item--inactivo');
@@ -10600,12 +10622,52 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     <div class="detalle">${escapeHtml(rango)} · ${(t.familias || []).length} familia(s) · ${(t.referencias || []).length} producto(s)</div>
                 </div>
                 <div class="destacados-item-acciones">
+                    <button type="button" class="temporada-mover-btn" data-dir="arriba" title="Subir" ${i === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                    <button type="button" class="temporada-mover-btn" data-dir="abajo" title="Bajar" ${i === ordenadas.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
                     <button type="button" class="temporada-editar-btn" title="Editar"><i class="fa-solid fa-pen"></i></button>
                 </div>
             `;
+            fila.querySelectorAll('.temporada-mover-btn').forEach(btn => {
+                btn.addEventListener('click', () => temporadaMoverOrden_(t.id, btn.dataset.dir));
+            });
             fila.querySelector('.temporada-editar-btn').addEventListener('click', () => temporadaAbrirEditor_(t.id));
             cont.appendChild(fila);
         });
+    }
+
+    // Reordena las temporadas — petición explícita de Eloy: "una seguida
+    // de la otra en el orden en el que el usuario desde el gestor
+    // decida". guardar_temporada ya acepta "orden" (ver Apps Script),
+    // así que no hace falta ninguna acción nueva en el backend: basta
+    // con reasignar un orden secuencial 0..n-1 a TODAS las temporadas
+    // tras el intercambio, para que quede un criterio estable sin
+    // huecos ni empates (muchas temporadas nuevas se crean con orden 0
+    // por defecto, y con varias en empate el resultado de ordenar por
+    // "orden" no sería predecible).
+    async function temporadaMoverOrden_(id, direccion) {
+        const lista = temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+        const idx = lista.findIndex(x => x.id === id);
+        const destino = direccion === 'arriba' ? idx - 1 : idx + 1;
+        if (idx === -1 || destino < 0 || destino >= lista.length) return;
+        const tmp = lista[idx];
+        lista[idx] = lista[destino];
+        lista[destino] = tmp;
+
+        const botones = [...document.querySelectorAll('.temporada-mover-btn')];
+        botones.forEach(b => b.disabled = true);
+        try {
+            for (let i = 0; i < lista.length; i++) {
+                const t = lista[i];
+                await temporadaFetchPost_({
+                    accion: 'guardar_temporada', pin: temporadaPin_, id: t.id,
+                    nombre: t.nombre, permanente: t.permanente, fechaInicio: t.fechaInicio, fechaFin: t.fechaFin,
+                    activa: t.activa, orden: i,
+                });
+            }
+            await temporadaRecargarListadoAdmin_();
+        } finally {
+            botones.forEach(b => b.disabled = false);
+        }
     }
 
     function temporadaAbrirEditor_(id) {
@@ -10654,11 +10716,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const textoOriginal = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        // El orden se manda siempre explícito, tanto al editar como al
+        // crear — si no, el backend lo deja en 0 por defecto (ver
+        // procesarGuardarTemporada), y cada vez que se editaran solo los
+        // metadatos de una temporada ya reordenada (nombre, fechas...)
+        // se le reseteaba el orden sin querer, deshaciendo lo que el
+        // gestor hubiera decidido en temporadaMoverOrden_. Al crear una
+        // nueva, se coloca al final de la lista actual por defecto.
+        const existente = temporadaEditandoId_ ? temporadasDatos_.find(x => x.id === temporadaEditandoId_) : null;
+        const orden = existente ? (existente.orden || 0) : (Math.max(-1, ...temporadasDatos_.map(t => t.orden || 0)) + 1);
         try {
             const resp = await temporadaFetchPost_({
                 accion: 'guardar_temporada', pin: temporadaPin_,
                 id: temporadaEditandoId_ || undefined,
                 nombre: nombre, permanente: permanente, fechaInicio: fechaInicio, fechaFin: fechaFin, activa: activa,
+                orden: orden,
             });
             if (!resp || !resp.success) {
                 $('temporadas-editor-error').textContent = (resp && resp.error) || 'Error al guardar.';
@@ -10913,8 +10985,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Listeners del modal público "ver todos" (siempre presentes) ──
-    $('temporada-titulo-abrir').addEventListener('click', abrirModalTemporada_);
-    $('temporada-titulo-abrir').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModalTemporada_(); } });
+    // El título clicable que lo abre ya no es un elemento fijo del HTML:
+    // cada bloque de temporada (uno por temporada vigente) se genera
+    // dinámicamente en renderTemporada_, que ahí mismo le añade su
+    // propio listener acotado a esa temporada en concreto.
     $('temporada-ver-todos-cerrar').addEventListener('click', cerrarModalTemporadaVerTodos_);
     $('temporada-ver-todos-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporada-ver-todos-overlay') cerrarModalTemporadaVerTodos_(); });
     $('temporada-ver-todos-scroll').addEventListener('scroll', temporadaObservarScroll_);
