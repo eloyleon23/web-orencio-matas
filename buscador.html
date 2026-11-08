@@ -7492,6 +7492,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         prof: 'profesional',
     };
 
+    // Sinónimos reales del catálogo — distinto de ABREVIATURAS_CATALOGO
+    // de arriba (que expande una forma CORTA a su forma LARGA, cuando
+    // una es substring/abreviatura de la otra). Aquí las dos palabras
+    // son completamente distintas en texto, sin ninguna relación de
+    // abreviatura, así que ningún fuzzy matching las acerca nunca —
+    // palabraCoincide() las consulta como formas alternativas
+    // igualmente válidas. Caso real que motivó esto: Eloy buscó
+    // "pintura antioxidante" y no encontró nada, aunque el catálogo
+    // tiene 232 productos Oxiron bajo la subfamilia real "Oxiron
+    // anticorrosión"/"Pinturas anticorrosión" — el término que la gente
+    // busca ("antioxidante") no es el término que usa el catálogo
+    // ("anticorrosión"), y la distancia de edición entre ambas palabras
+    // es demasiado grande para que la tolerancia a erratas las acerque
+    // por sí sola. Cada entrada, verificada contra el catálogo real
+    // antes de añadirla, igual que ABREVIATURAS_CATALOGO.
+    const SINONIMOS_CATALOGO = {
+        antioxidante: ['anticorrosion', 'antioxido'],
+    };
+
     function normalizar(txt) {
         const base = (txt || '').toString()
             .toLowerCase()
@@ -7652,6 +7671,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // ¿Coincide esta palabra de búsqueda con alguna palabra del texto,
     // de forma exacta o tolerando alguna errata razonable?
     function palabraCoincide(pBusqueda, palabrasTexto) {
+        if (coincideUnaPalabra_(pBusqueda, palabrasTexto)) return true;
+        // Sinónimos reales (ver SINONIMOS_CATALOGO) — palabras sin
+        // ninguna relación de erratas/abreviatura, así que nunca las
+        // encontraría la tolerancia a erratas de arriba por sí sola.
+        // Puramente ADITIVO: solo añade coincidencias nuevas, nunca
+        // quita ninguna de las que ya funcionaban (coincideUnaPalabra_
+        // sin tocar).
+        const sinonimos = SINONIMOS_CATALOGO[pBusqueda];
+        if (sinonimos) return sinonimos.some(s => coincideUnaPalabra_(s, palabrasTexto));
+        return false;
+    }
+    function coincideUnaPalabra_(pBusqueda, palabrasTexto) {
         if (palabrasTexto.some(pTexto => pTexto.includes(pBusqueda))) return true;
         if (pBusqueda.length <= 3) return false; // sin tolerancia para palabras muy cortas
         const maxErr = maxErroresPermitidos(pBusqueda.length);
@@ -11637,7 +11668,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     // sugerencia de categoría no encontraría nada.
                     const enFamilia    = coincide(p.familia, texto);
                     const enSubfamilia = coincide(p.subfamilia, texto);
-                    if (!enNombre && !enRef && !enFamilia && !enSubfamilia) return false;
+                    let coincideTexto = enNombre || enRef || enFamilia || enSubfamilia;
+                    // Fallback para búsquedas de varias palabras: cada
+                    // campo se comprueba por separado arriba (exige
+                    // TODAS las palabras DENTRO del mismo campo), así
+                    // que una búsqueda como "pintura antioxidante" no
+                    // encuentra nada si "pintura" está en la familia
+                    // (p.ej. "PINTURAS TITAN") y la palabra específica
+                    // solo en la subfamilia ("Oxiron anticorrosión") —
+                    // ningún campo por separado tiene las dos. Se
+                    // comprueba aquí la unión de nombre+familia+
+                    // subfamilia como un único texto, SOLO cuando
+                    // ningún campo por separado ha encontrado nada —
+                    // nunca quita coincidencias que ya funcionaban, solo
+                    // añade las que se repartían entre varios campos.
+                    if (!coincideTexto && texto.trim().includes(' ')) {
+                        coincideTexto = coincide(`${p.nombre || ''} ${p.familia || ''} ${p.subfamilia || ''}`, texto);
+                    }
+                    if (!coincideTexto) return false;
                 }
             }
 
@@ -12118,11 +12166,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         restaurarContadorEstandar(resultadosActuales.length);
         // Resultados normales encontrados — cualquier estado de IA de
         // una búsqueda anterior queda obsoleto, incluida una petición
-        // que pudiera seguir en marcha.
+        // que pudiera seguir en marcha. Se reinicia igual que en la
+        // rama de "sin resultados" (terminosPreviosIA/refsExcluidosIA
+        // incluidos, no solo terminoIAActivo) — si no, una búsqueda
+        // nueva que SÍ encuentra productos normales podía arrastrar
+        // referencias ya excluidas de un intento de IA anterior para un
+        // texto totalmente distinto. Bug real reportado: el mensaje "La
+        // IA no ha encontrado ninguna alternativa distinta a lo ya
+        // mostrado" se quedaba visible para siempre al seguir buscando,
+        // porque #ia-producto-mensaje nunca se ocultaba en esta rama.
         if (cancelarPeticionIAProductoEnCurso) cancelarPeticionIAProductoEnCurso();
         terminoIAActivo = null;
+        terminosPreviosIA = [];
+        refsExcluidosIA = [];
         seccionIA.style.display = 'none';
         sinResultados.style.display = 'none';
+        $('ia-producto-mensaje').style.display = 'none';
 
         // Aviso de "esto no es una coincidencia exacta" cuando
         // resultadosActuales viene del fallback de aproximados (ver
