@@ -918,6 +918,52 @@
         @media (min-width: 881px) {
             .seccion-destacados__lista > .producto-card { flex-basis: 200px; }
         }
+
+        /* Productos de temporada — título clicable (abre el modal "ver
+           todos") y la propia modal con scroll + chips de búsqueda al
+           final. */
+        .seccion-temporada__titulo-clicable {
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .seccion-temporada__flecha {
+            font-size: 0.8rem; color: var(--muted);
+            transition: transform 0.15s ease;
+        }
+        .seccion-temporada__titulo-clicable:hover .seccion-temporada__flecha { transform: translateX(3px); }
+        .modal-temporada-ver-todos-box {
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        }
+        .temporada-ver-todos-scroll {
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .temporada-ver-todos-fin {
+            text-align: center;
+            padding: 24px 10px 10px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .temporada-chips-busqueda {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+            margin-top: 12px;
+        }
+        .temporada-chips-busqueda button {
+            border: 1px solid var(--border);
+            background: var(--light);
+            color: var(--dark);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .temporada-chips-busqueda button:hover { background: #e8f1fc; border-color: #a9cdf2; }
+
         .destacado-chip {
             display: inline-flex; align-items: center; gap: 4px;
             font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
@@ -989,6 +1035,36 @@
         .destacados-buscar-item {
             display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer;
         }
+        /* Gestión de Productos de temporada — checklist de familias y
+           chips de referencias concretas (ver #temporadas-items-bloque). */
+        .temporadas-familias-lista {
+            display: flex; flex-wrap: wrap; gap: 6px 14px;
+            max-height: 180px; overflow-y: auto;
+            padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+        }
+        .temporadas-familias-lista label {
+            display: flex !important; align-items: center; gap: 5px;
+            font-size: 0.82rem !important; font-weight: 500 !important;
+            margin: 0 !important; white-space: nowrap;
+        }
+        .temporadas-chips {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            margin-bottom: 8px;
+            min-height: 28px;
+        }
+        .temporadas-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--light); border: 1px solid var(--border);
+            border-radius: 20px; padding: 4px 6px 4px 12px;
+            font-size: 0.78rem; font-weight: 600; color: var(--dark);
+        }
+        .temporadas-chip button {
+            border: none; background: #fff; color: var(--muted);
+            width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; flex-shrink: 0;
+        }
+        .temporadas-chip button:hover { background: var(--red); color: #fff; }
         .destacados-buscar-item:hover { background: var(--light); }
         .destacados-buscar-item img { width: 32px; height: 32px; object-fit: cover; border-radius: 5px; background: var(--light); }
         .destacados-buscar-item .nombre { font-size: 0.82rem; font-weight: 600; flex: 1; }
@@ -5216,6 +5292,47 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
+        <!-- Botón de gestión de "Productos de temporada" FUERA de
+             #seccion-temporada a propósito — mismo motivo que
+             btn-panel-analitica más arriba: la sección se oculta entera
+             cuando no tiene contenido real (ver
+             actualizarVisibilidadModulosDescubrimiento_), y este botón
+             debe seguir accesible pase lo que pase — de hecho MÁS
+             crítico aquí que en Destacados: una temporada nueva siempre
+             empieza sin ningún producto todavía, así que si el botón
+             viviera dentro de la sección, no habría forma de abrir la
+             gestión para crear la primera. Protegido por el mismo PIN
+             de administración (verificarPin_ en Apps Script); oculto y
+             eliminado del DOM en producción (ver
+             window.MOSTRAR_GESTION_TEMPORADAS más abajo). -->
+        <div class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
+            <button type="button" id="btn-gestionar-temporadas" class="btn-destacados-accion btn-destacados-editar" title="Gestionar productos de temporada" aria-label="Gestionar productos de temporada">
+                <i class="fa-solid fa-pen-to-square"></i> <span>Gestionar productos de temporada</span>
+            </button>
+        </div>
+        <!-- Productos de temporada — a petición de Eloy: priorizar
+             productos a la entrada del buscador según la época del año,
+             yendo "por adelantado" (p.ej. en noviembre ya con
+             invierno/Navidad). Completamente separado de Destacados: sin
+             descuento ni promoción, solo una selección aleatoria de los
+             productos de la(s) temporada(s) vigente(s) ahora mismo (ver
+             renderTemporada_). Clic en un producto → ficha de detalle
+             (crearTarjeta ya lo hace). Clic en el bloque/título → modal
+             con TODOS los productos de temporada (ver
+             abrirModalTemporada_). -->
+        <div id="seccion-temporada" class="seccion-destacados">
+            <div class="seccion-destacados__cabecera">
+                <p class="seccion-destacados__titulo seccion-temporada__titulo-clicable" id="temporada-titulo-abrir" role="button" tabindex="0">
+                    <span class="seccion-destacados__icono"><i class="fa-solid fa-snowflake"></i></span>
+                    <span id="temporada-titulo-texto">Productos de temporada</span>
+                    <i class="fa-solid fa-chevron-right seccion-temporada__flecha"></i>
+                </p>
+            </div>
+            <div id="temporada-lista" class="seccion-destacados__lista">
+                <div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div><div class="om-skeleton om-skeleton--tarjeta"></div>
+            </div>
+        </div>
+
         <!-- Fase 2 de analítica de búsquedas: términos más buscados en los
              últimos 7 días (ver supabase/02_fase2_vistas_agregadas.sql).
              Solo se muestra con contenido real que cumpla el volumen
@@ -6920,6 +7037,103 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- "Ver todos" los productos de temporada — modal con scroll (se va
+     cargando más según el usuario baja, ver temporadaObservarScroll_ /
+     temporadaCargarMasEnModal_), terminando en unas opciones de
+     búsqueda (una por cada familia incluida en la(s) temporada(s)
+     vigente(s)) para volver directo al buscador ya filtrado por esa
+     familia — sin recargar la página y sin el efecto de entrada (ver
+     temporadaIrABusquedaPorFamilia_, que llama a
+     revelarCabeceraResultados() de inmediato, el mismo mecanismo que ya
+     usa el resto del sitio para saltarse ese efecto al navegar
+     internamente). -->
+<div class="modal-overlay" id="temporada-ver-todos-overlay">
+    <div class="modal-producto-box modal-temporada-ver-todos-box" role="dialog" aria-modal="true" aria-labelledby="temporada-ver-todos-titulo">
+        <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 id="temporada-ver-todos-titulo"><i class="fa-solid fa-snowflake"></i> <span id="temporada-ver-todos-titulo-texto">Productos de temporada</span></h3>
+        <div id="temporada-ver-todos-scroll" class="temporada-ver-todos-scroll">
+            <div id="temporada-ver-todos-grid" class="grid-productos"></div>
+            <div id="temporada-ver-todos-fin" class="temporada-ver-todos-fin" style="display:none;">
+                <p>Has visto todos los productos de esta temporada. ¿Quieres seguir explorando?</p>
+                <div id="temporada-ver-todos-chips" class="temporada-chips-busqueda"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gestión de "Productos de temporada" — a petición explícita de Eloy,
+     COMPLETAMENTE SEPARADA de Destacados (hoja propia "Temporadas" en
+     Apps Script, sin ningún campo de descuento/promoción): solo
+     prioriza qué productos se enseñan antes al entrar al buscador según
+     la época del año, pudiendo ir "por adelantado" (cada temporada
+     tiene su propio rango de fechas, independiente de cuándo empieza de
+     verdad la estación). Mismo patrón de PIN + listado + formulario que
+     el resto de paneles de gestión (reutiliza las clases CSS
+     .destacados-* ya existentes para el aspecto visual — eso es solo
+     estilo compartido, no mezcla ningún dato ni lógica con el sistema
+     de Destacados). El botón que la abre solo existe en preproducción
+     (ver window.MOSTRAR_GESTION_TEMPORADAS más abajo). -->
+<div class="modal-overlay" id="temporadas-modal-overlay">
+    <div class="modal-producto-box modal-destacados-box" role="dialog" aria-modal="true" aria-labelledby="temporadas-modal-titulo">
+        <button class="modal-producto-cerrar" id="temporadas-modal-cerrar" aria-label="Cerrar gestión de productos de temporada">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 id="temporadas-modal-titulo"><i class="fa-solid fa-snowflake"></i> Productos de temporada</h3>
+
+        <div id="temporadas-vista-pin" class="destacados-vista-pin">
+            <p>Introduce el PIN de administración para gestionar los productos de temporada.</p>
+            <input type="password" id="temporadas-pin-input" inputmode="numeric" autocomplete="off" placeholder="PIN">
+            <label class="destacados-pin-recordar"><input type="checkbox" id="temporadas-pin-recordar"> Recordar en este dispositivo</label>
+            <p id="temporadas-pin-error" class="destacados-pin-error"></p>
+            <button type="button" id="temporadas-pin-entrar" class="destacados-btn-primario">Entrar</button>
+        </div>
+
+        <div id="temporadas-vista-principal" style="display:none;">
+            <section class="destacados-listado">
+                <h4>Temporadas (<span id="temporadas-listado-total">0</span>)</h4>
+                <p class="destacados-hint">Cada temporada tiene su propio rango de fechas — puedes crearla con antelación (p. ej. que empiece a mostrarse en noviembre para una campaña de invierno/Navidad) y asociarle familias completas o productos concretos. Se muestran en el buscador de forma aleatoria.</p>
+                <div id="temporadas-listado-lista" class="destacados-listado-lista"></div>
+                <button type="button" id="temporadas-nueva-btn" class="destacados-btn-primario" style="margin-top:10px;">+ Nueva temporada</button>
+            </section>
+
+            <div id="temporadas-editor" class="destacados-editor" style="display:none;">
+                <h4 id="temporadas-editor-titulo">Nueva temporada</h4>
+                <label for="temporadas-editor-nombre">Nombre</label>
+                <input type="text" id="temporadas-editor-nombre" placeholder="Ej: Invierno y Navidad 2026">
+                <label><input type="checkbox" id="temporadas-editor-permanente"> Permanente (ignora las fechas, solo manda "Activa")</label>
+                <label for="temporadas-editor-fecha-inicio">Fecha de inicio</label>
+                <input type="date" id="temporadas-editor-fecha-inicio">
+                <label for="temporadas-editor-fecha-fin">Fecha de fin</label>
+                <input type="date" id="temporadas-editor-fecha-fin">
+                <label><input type="checkbox" id="temporadas-editor-activa" checked> Activa</label>
+                <p id="temporadas-editor-error" class="destacados-editor-error"></p>
+                <div class="destacados-editor-acciones">
+                    <button type="button" id="temporadas-editor-eliminar" class="destacados-btn-secundario" style="color:var(--red);display:none;">Eliminar temporada</button>
+                    <button type="button" id="temporadas-editor-cancelar" class="destacados-btn-secundario">Cancelar</button>
+                    <button type="button" id="temporadas-editor-guardar" class="destacados-btn-primario">Guardar temporada</button>
+                </div>
+
+                <!-- Solo visible editando una temporada ya creada (hace
+                     falta su id para poder guardar items) — al crear una
+                     nueva, primero se guardan sus datos y luego se
+                     reabre ya con este bloque disponible. -->
+                <div id="temporadas-items-bloque" style="display:none; margin-top:18px; border-top:1px solid var(--border); padding-top:14px;">
+                    <h4>Familias incluidas</h4>
+                    <p class="destacados-hint">Marca las familias completas que quieras incluir en esta temporada.</p>
+                    <div id="temporadas-familias-lista" class="temporadas-familias-lista"></div>
+
+                    <h4 style="margin-top:16px;">Productos concretos incluidos (<span id="temporadas-referencias-total">0</span>)</h4>
+                    <div id="temporadas-referencias-chips" class="temporadas-chips"></div>
+                    <input type="text" id="temporadas-buscar-texto" placeholder="Buscar producto por nombre o referencia para añadir...">
+                    <div id="temporadas-buscar-resultados" class="destacados-buscar-resultados"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Panel propio de analítica — rankings de búsquedas, productos vistos
      y bloques/marcas pulsadas, a partir de la hoja EventosAnaliticos
      (ver registrar_evento / obtener_resumen_analitica en Apps Script).
@@ -7121,6 +7335,10 @@ window.MOSTRAR_EDITAR_SUBFAMILIA = window.OM_PREPRODUCCION;
 // acciones administrativas de esta ficha.
 window.MOSTRAR_ETIQUETA_PRECIO = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_DESTACADOS = window.OM_PREPRODUCCION;
+// Gestión de "Productos de temporada" — a petición de Eloy, separada
+// de Destacados (ver el bloque de Apps Script correspondiente): mismo
+// criterio de visibilidad, solo en preproducción.
+window.MOSTRAR_GESTION_TEMPORADAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS = window.OM_PREPRODUCCION;
 window.MOSTRAR_PANEL_ANALITICA = window.OM_PREPRODUCCION;
 
@@ -7214,6 +7432,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         eliminarSiRestringido_('btn-gestionar-destacados', window.MOSTRAR_GESTION_DESTACADOS);
         eliminarSiRestringido_('modal-destacados-overlay', window.MOSTRAR_GESTION_DESTACADOS);
         eliminarSiRestringido_('destacados-preview-overlay', window.MOSTRAR_GESTION_DESTACADOS);
+    }
+    if (window.MOSTRAR_GESTION_TEMPORADAS) {
+        const btnGT = document.getElementById('btn-gestionar-temporadas');
+        if (btnGT) btnGT.classList.add('visible');
+    } else {
+        eliminarSiRestringido_('btn-gestionar-temporadas', window.MOSTRAR_GESTION_TEMPORADAS);
+        eliminarSiRestringido_('temporadas-modal-overlay', window.MOSTRAR_GESTION_TEMPORADAS);
     }
     if (window.MOSTRAR_GESTION_BLOQUES_CATEGORIAS) {
         const btnBC = document.getElementById('btn-gestionar-bloques-categorias');
@@ -9229,6 +9454,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // tras aceptar el banner de "hay una versión más reciente".
     function actualizarModulosDescubrimiento_() {
         cargarDestacados_();
+        cargarTemporadas_().then(renderTemporada_);
         cargarNovedades_();
         cargarMasBuscados_();
         cargarMarcasMasBuscadas_();
@@ -9297,7 +9523,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     const modulosDescubrimientoCacheInicial_ = leerCacheEstadoModulosDescubrimiento_();
     const modulosDescubrimientoConContenido_ = {};
-    ['destacados', 'masBuscados', 'novedades', 'marcas', 'categorias', 'vistos'].forEach(clave => {
+    ['destacados', 'temporada', 'masBuscados', 'novedades', 'marcas', 'categorias', 'vistos'].forEach(clave => {
         const cacheado = modulosDescubrimientoCacheInicial_[clave];
         modulosDescubrimientoConContenido_[clave] = (cacheado === 'vacio' || cacheado === 'con-contenido') ? cacheado : 'cargando';
     });
@@ -9333,6 +9559,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const oculto = hayFiltroActivo_();
         const visible_ = (estado) => estado !== 'vacio' && !oculto;
         if ($('destacados')) $('destacados').style.display = visible_(modulosDescubrimientoConContenido_.destacados) ? '' : 'none';
+        if ($('seccion-temporada')) $('seccion-temporada').style.display = visible_(modulosDescubrimientoConContenido_.temporada) ? '' : 'none';
         $('mas-buscados').style.display = visible_(modulosDescubrimientoConContenido_.masBuscados) ? '' : 'none';
         $('novedades').style.display = visible_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
@@ -9962,6 +10189,479 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('destacados-preview-overlay').addEventListener('click', (e) => { if (e.target.id === 'destacados-preview-overlay') destacadosCerrarPreview_(); });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && $('destacados-preview-overlay').classList.contains('activo')) destacadosCerrarPreview_();
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // PRODUCTOS DE TEMPORADA — a petición de Eloy: priorizar productos a
+    // la entrada del buscador según la época del año, yendo "por
+    // adelantado" (p.ej. en noviembre ya con invierno/Navidad). A
+    // propósito SEPARADO de Destacados (hoja "Temporadas" propia en
+    // Apps Script, sin ningún campo de descuento/promoción) — solo
+    // reutiliza las clases CSS .destacados-* para el aspecto visual del
+    // panel de gestión. Mismo patrón de carga que Campañas
+    // (cargarCampanasEscaparateInterno_): se reutiliza DIRECTAMENTE
+    // campanaActivaHoy_() para decidir qué temporada está vigente hoy,
+    // porque la forma de los datos es idéntica
+    // (activa/permanente/fechaInicio/fechaFin).
+    // ══════════════════════════════════════════════════════════════════
+    let temporadasDatos_ = [];
+
+    async function cargarTemporadas_() {
+        try {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL + '?accion=obtener_temporadas', { cache: 'no-store' });
+            const datos = await resp.json();
+            temporadasDatos_ = Array.isArray(datos.temporadas) ? datos.temporadas : [];
+        } catch (e) {
+            console.error('cargarTemporadas_: error cargando temporadas', e);
+            temporadasDatos_ = [];
+        }
+    }
+
+    function temporadasVigentesAhora_() {
+        return temporadasDatos_.filter(campanaActivaHoy_);
+    }
+
+    // Expande una temporada (familias + referencias) contra el catálogo
+    // actual (TODOS), devolviendo los productos reales (activos en
+    // catálogo) que incluye, sin duplicados dentro de la propia
+    // temporada.
+    function productosDeTemporada_(temporada) {
+        const refsVistas = new Set();
+        const productos = [];
+        const familiasSet = new Set((temporada.familias || []).map(f => f.toLowerCase()));
+        if (familiasSet.size) {
+            TODOS.forEach(p => {
+                if (!estaActivoEnCatalogo_(p)) return;
+                if (!p.familia || !familiasSet.has(p.familia.toLowerCase())) return;
+                if (refsVistas.has(p.ref)) return;
+                refsVistas.add(p.ref);
+                productos.push(p);
+            });
+        }
+        (temporada.referencias || []).forEach(ref => {
+            if (refsVistas.has(ref)) return;
+            const p = TODOS.find(x => String(x.ref) === String(ref));
+            if (!p || !estaActivoEnCatalogo_(p)) return;
+            refsVistas.add(ref);
+            productos.push(p);
+        });
+        return productos;
+    }
+
+    // Combina todas las temporadas vigentes ahora mismo: productos (sin
+    // duplicar entre temporadas distintas), nombres de las temporadas
+    // (para el título) y familias involucradas (para las "opciones de
+    // búsqueda" al final del modal "ver todos").
+    function poolTemporadaActual_() {
+        const vigentes = temporadasVigentesAhora_();
+        const refsVistas = new Set();
+        const productos = [];
+        const familias = new Set();
+        vigentes.forEach(t => {
+            (t.familias || []).forEach(f => familias.add(f));
+            productosDeTemporada_(t).forEach(p => {
+                if (refsVistas.has(p.ref)) return;
+                refsVistas.add(p.ref);
+                productos.push(p);
+            });
+        });
+        return {
+            productos: productos,
+            nombres: vigentes.map(t => t.nombre).filter(Boolean),
+            familias: [...familias].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })),
+        };
+    }
+
+    const MAX_TARJETAS_TEMPORADA_ = 18;
+
+    function renderTemporada_() {
+        if (!$('temporada-lista')) return; // defensivo: HTML aún no montado
+        const pool = poolTemporadaActual_();
+        const cont = $('temporada-lista');
+        cont.innerHTML = '';
+        if (!pool.productos.length) {
+            modulosDescubrimientoConContenido_.temporada = 'vacio';
+            actualizarVisibilidadModulosDescubrimiento_();
+            return;
+        }
+        // Aleatorio a propósito (petición de Eloy: "se mostrarán de
+        // manera aleatoria esos productos de temporada") — se rebaraja
+        // cada vez que se recalculan los módulos de descubrimiento
+        // (carga inicial, reconciliación con la fuente en vivo,
+        // catálogos adicionales...), no solo una vez por sesión.
+        const muestra = barajar_(pool.productos).slice(0, MAX_TARJETAS_TEMPORADA_);
+        muestra.forEach(p => cont.appendChild(crearTarjeta(p)));
+        $('temporada-titulo-texto').textContent = pool.nombres.length ? pool.nombres.join(' · ') : 'Productos de temporada';
+        modulosDescubrimientoConContenido_.temporada = 'con-contenido';
+        actualizarVisibilidadModulosDescubrimiento_();
+    }
+
+    // ── Modal "ver todos" (con scroll, se va cargando más según se baja) ──
+    let temporadaModalProductos_ = [];
+    let temporadaModalMostrados_ = 0;
+    const TEMPORADA_MODAL_LOTE_ = 24;
+
+    function temporadaCargarMasEnModal_() {
+        const grid = $('temporada-ver-todos-grid');
+        const siguienteLote = temporadaModalProductos_.slice(temporadaModalMostrados_, temporadaModalMostrados_ + TEMPORADA_MODAL_LOTE_);
+        siguienteLote.forEach(p => grid.appendChild(crearTarjeta(p)));
+        temporadaModalMostrados_ += siguienteLote.length;
+        if (temporadaModalMostrados_ >= temporadaModalProductos_.length) {
+            $('temporada-ver-todos-fin').style.display = '';
+        }
+    }
+
+    function temporadaObservarScroll_(e) {
+        const el = e.target;
+        if (temporadaModalMostrados_ >= temporadaModalProductos_.length) return; // ya está todo cargado
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+            temporadaCargarMasEnModal_();
+        }
+    }
+
+    function abrirModalTemporada_() {
+        const pool = poolTemporadaActual_();
+        if (!pool.productos.length) return;
+        temporadaModalProductos_ = barajar_(pool.productos);
+        temporadaModalMostrados_ = 0;
+        $('temporada-ver-todos-titulo-texto').textContent = pool.nombres.length ? pool.nombres.join(' · ') : 'Productos de temporada';
+        $('temporada-ver-todos-grid').innerHTML = '';
+        $('temporada-ver-todos-fin').style.display = 'none';
+
+        // Opciones de búsqueda al final del scroll: una por cada familia
+        // incluida en la(s) temporada(s) vigente(s) — al clicar, vuelve
+        // al buscador ya filtrado por esa familia.
+        const contChips = $('temporada-ver-todos-chips');
+        contChips.innerHTML = '';
+        pool.familias.forEach(familia => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = 'Ver todo "' + familia + '"';
+            btn.addEventListener('click', () => temporadaIrABusquedaPorFamilia_(familia));
+            contChips.appendChild(btn);
+        });
+
+        temporadaCargarMasEnModal_();
+        $('temporada-ver-todos-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+    }
+
+    function cerrarModalTemporadaVerTodos_() {
+        $('temporada-ver-todos-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    // Vuelve al buscador principal ya filtrado por esta familia — SIN
+    // recargar la página y SIN el efecto de entrada de los resultados
+    // (petición explícita de Eloy). Mismo mecanismo que ya usa el resto
+    // del sitio para saltarse ese efecto al navegar internamente
+    // (seleccionarSugerencia, codigoDetectado...): llamar a
+    // revelarCabeceraResultados() de inmediato, antes de esperar a
+    // ninguna interacción real del usuario.
+    function temporadaIrABusquedaPorFamilia_(familia) {
+        cerrarModalTemporadaVerTodos_();
+        refsMarcaActiva_ = null;
+        $('f-texto').value = familia;
+        revelarCabeceraResultados();
+        actualizarIconosBuscador();
+        resetPaginacion();
+        aplicarFiltros();
+        $('f-texto').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ── POST compartido para las acciones de escritura de Temporadas —
+    // mismo patrón (y mismo motivo: reintento ante una posible
+    // redirección transitoria a doGet) que destacadosFetchPost_, pero
+    // sin reutilizarla tal cual para mantener los dos sistemas
+    // independientes de verdad. ──
+    async function temporadaFetchPost_(payload) {
+        for (let intento = 0; intento < 2; intento++) {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+            });
+            const d = await resp.json();
+            if (d.success !== undefined || intento === 1) return d;
+            console.warn('temporadaFetchPost_: respuesta sin "success" (posible redirección a doGet) — reintentando...', d);
+        }
+    }
+
+    // ── Gestión (PIN + listado + formulario) ────────────────────────────
+    let temporadaPin_ = null;
+    let temporadaEditandoId_ = null; // id de la temporada abierta en el formulario, o null si es nueva
+
+    function temporadaGuardarPinLocal_(pin, recordar) {
+        if (recordar) { try { localStorage.setItem('omTemporadasPin', pin); } catch (e) {} }
+    }
+
+    async function temporadaValidarPinYArrancar_(pin) {
+        $('temporadas-pin-error').textContent = '';
+        const btn = $('temporadas-pin-entrar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Comprobando...';
+        try {
+            const d = await temporadaFetchPost_({ accion: 'panel_validar_pin', pin: pin });
+            if (d.success) {
+                temporadaPin_ = pin;
+                $('temporadas-vista-pin').style.display = 'none';
+                $('temporadas-vista-principal').style.display = '';
+                await cargarTemporadas_();
+                temporadaRenderizarListado_();
+            } else {
+                $('temporadas-pin-error').textContent = 'PIN incorrecto.';
+                try { localStorage.removeItem('omTemporadasPin'); } catch (e) {}
+            }
+        } catch (e) {
+            $('temporadas-pin-error').textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    function temporadaRenderizarListado_() {
+        const cont = $('temporadas-listado-lista');
+        $('temporadas-listado-total').textContent = temporadasDatos_.length;
+        cont.innerHTML = '';
+        if (!temporadasDatos_.length) {
+            cont.innerHTML = '<p class="destacados-hint">Todavía no hay ninguna temporada creada.</p>';
+            return;
+        }
+        temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0)).forEach(t => {
+            const vigente = campanaActivaHoy_(t);
+            const fila = document.createElement('div');
+            fila.className = 'destacados-item' + (t.activa ? '' : ' destacados-item--inactivo');
+            const rango = t.permanente ? 'Permanente' : ((t.fechaInicio && t.fechaFin) ? `${t.fechaInicio} → ${t.fechaFin}` : 'Sin fechas');
+            fila.innerHTML = `
+                <div class="destacados-item-info">
+                    <div class="nombre">${escapeHtml(t.nombre)}${vigente ? ' <span style="color:var(--green);font-weight:700;">● vigente ahora</span>' : ''}</div>
+                    <div class="detalle">${escapeHtml(rango)} · ${(t.familias || []).length} familia(s) · ${(t.referencias || []).length} producto(s)</div>
+                </div>
+                <div class="destacados-item-acciones">
+                    <button type="button" class="temporada-editar-btn" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                </div>
+            `;
+            fila.querySelector('.temporada-editar-btn').addEventListener('click', () => temporadaAbrirEditor_(t.id));
+            cont.appendChild(fila);
+        });
+    }
+
+    function temporadaAbrirEditor_(id) {
+        temporadaEditandoId_ = id || null;
+        const t = id ? temporadasDatos_.find(x => x.id === id) : null;
+        $('temporadas-editor-titulo').textContent = t ? 'Editar temporada' : 'Nueva temporada';
+        $('temporadas-editor-nombre').value = t ? t.nombre : '';
+        $('temporadas-editor-permanente').checked = t ? !!t.permanente : false;
+        $('temporadas-editor-fecha-inicio').value = t ? t.fechaInicio : '';
+        $('temporadas-editor-fecha-fin').value = t ? t.fechaFin : '';
+        $('temporadas-editor-activa').checked = t ? t.activa !== false : true;
+        $('temporadas-editor-error').textContent = '';
+        $('temporadas-editor-eliminar').style.display = t ? '' : 'none';
+        $('temporadas-editor').style.display = '';
+        if (t) {
+            $('temporadas-items-bloque').style.display = '';
+            temporadaRenderizarFamiliasChecklist_(t);
+            temporadaRenderizarReferenciasChips_(t);
+            $('temporadas-buscar-texto').value = '';
+            $('temporadas-buscar-resultados').innerHTML = '';
+        } else {
+            $('temporadas-items-bloque').style.display = 'none';
+        }
+        $('temporadas-editor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function temporadaCerrarEditor_() {
+        $('temporadas-editor').style.display = 'none';
+        temporadaEditandoId_ = null;
+    }
+
+    async function temporadaGuardarMeta_() {
+        const nombre = $('temporadas-editor-nombre').value.trim();
+        const permanente = $('temporadas-editor-permanente').checked;
+        const fechaInicio = $('temporadas-editor-fecha-inicio').value;
+        const fechaFin = $('temporadas-editor-fecha-fin').value;
+        const activa = $('temporadas-editor-activa').checked;
+        if (!nombre || (!permanente && (!fechaInicio || !fechaFin))) {
+            $('temporadas-editor-error').textContent = 'Faltan campos obligatorios: nombre, y fecha de inicio/fin salvo que sea permanente.';
+            return;
+        }
+        const btn = $('temporadas-editor-guardar');
+        btn.disabled = true;
+        try {
+            const resp = await temporadaFetchPost_({
+                accion: 'guardar_temporada', pin: temporadaPin_,
+                id: temporadaEditandoId_ || undefined,
+                nombre: nombre, permanente: permanente, fechaInicio: fechaInicio, fechaFin: fechaFin, activa: activa,
+            });
+            if (!resp || !resp.success) {
+                $('temporadas-editor-error').textContent = (resp && resp.error) || 'Error al guardar.';
+                return;
+            }
+            const idGuardado = resp.id || temporadaEditandoId_;
+            await temporadaRecargarListadoAdmin_();
+            temporadaAbrirEditor_(idGuardado);
+        } catch (e) {
+            $('temporadas-editor-error').textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function temporadaEliminar_() {
+        if (!temporadaEditandoId_) return;
+        if (!window.confirm('¿Eliminar esta temporada? Esta acción no se puede deshacer.')) return;
+        const resp = await temporadaFetchPost_({ accion: 'eliminar_temporada', pin: temporadaPin_, id: temporadaEditandoId_ });
+        if (resp && resp.success) {
+            temporadaCerrarEditor_();
+            await temporadaRecargarListadoAdmin_();
+        } else {
+            $('temporadas-editor-error').textContent = (resp && resp.error) || 'Error al eliminar.';
+        }
+    }
+
+    async function temporadaRecargarListadoAdmin_() {
+        await cargarTemporadas_();
+        temporadaRenderizarListado_();
+        renderTemporada_(); // refresca también la sección pública al instante, sin esperar a la próxima recarga
+    }
+
+    function temporadaRenderizarFamiliasChecklist_(t) {
+        const cont = $('temporadas-familias-lista');
+        const familias = [...new Set(TODOS.map(p => p.familia).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+        const incluidas = new Set(t.familias || []);
+        cont.innerHTML = familias.map(f => `<label><input type="checkbox" value="${escapeHtml(f)}" ${incluidas.has(f) ? 'checked' : ''}> ${escapeHtml(f)}</label>`).join('');
+        cont.querySelectorAll('input[type="checkbox"]').forEach(inp => {
+            inp.addEventListener('change', temporadaGuardarFamiliasDesdeChecklist_);
+        });
+    }
+
+    async function temporadaGuardarFamiliasDesdeChecklist_() {
+        if (!temporadaEditandoId_) return;
+        const familias = [...document.querySelectorAll('#temporadas-familias-lista input:checked')].map(i => i.value);
+        const resp = await temporadaFetchPost_({ accion: 'actualizar_items_temporada', pin: temporadaPin_, id: temporadaEditandoId_, familias: familias });
+        if (resp && resp.success) {
+            const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+            if (t) t.familias = familias;
+            temporadaRenderizarListado_();
+            renderTemporada_();
+        }
+    }
+
+    function temporadaRenderizarReferenciasChips_(t) {
+        const cont = $('temporadas-referencias-chips');
+        $('temporadas-referencias-total').textContent = (t.referencias || []).length;
+        cont.innerHTML = '';
+        (t.referencias || []).forEach(ref => {
+            const p = TODOS.find(x => String(x.ref) === String(ref));
+            const chip = document.createElement('span');
+            chip.className = 'temporadas-chip';
+            chip.innerHTML = `${escapeHtml(p ? p.nombre : ('Ref: ' + ref))} <button type="button" title="Quitar"><i class="fa-solid fa-xmark"></i></button>`;
+            chip.querySelector('button').addEventListener('click', () => temporadaQuitarReferencia_(ref));
+            cont.appendChild(chip);
+        });
+    }
+
+    async function temporadaGuardarReferencias_(referencias) {
+        if (!temporadaEditandoId_) return;
+        const resp = await temporadaFetchPost_({ accion: 'actualizar_items_temporada', pin: temporadaPin_, id: temporadaEditandoId_, referencias: referencias });
+        if (resp && resp.success) {
+            const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+            if (t) t.referencias = referencias;
+            temporadaRenderizarReferenciasChips_(t);
+            temporadaRenderizarListado_();
+            renderTemporada_();
+        }
+    }
+
+    function temporadaQuitarReferencia_(ref) {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t) return;
+        temporadaGuardarReferencias_((t.referencias || []).filter(r => r !== ref));
+    }
+
+    function temporadaAnadirReferencia_(ref) {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t || (t.referencias || []).includes(ref)) return;
+        temporadaGuardarReferencias_((t.referencias || []).concat([ref]));
+    }
+
+    function temporadaBuscarYRenderizar_() {
+        const texto = ($('temporadas-buscar-texto').value || '').trim();
+        const cont = $('temporadas-buscar-resultados');
+        if (!texto || !temporadaEditandoId_) { cont.innerHTML = ''; return; }
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        const refsYaIncluidas = new Set(t ? (t.referencias || []) : []);
+        let resultados = TODOS.filter(p => estaActivoEnCatalogo_(p));
+        resultados = esBusquedaNumerica(texto)
+            ? resultados.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+            : resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+        resultados = resultados.slice(0, 40);
+        if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
+        cont.innerHTML = '';
+        resultados.forEach(p => {
+            const yaIncluido = refsYaIncluidas.has(p.ref);
+            const urlImg = urlImagenProducto(p, 60);
+            const fila = document.createElement('div');
+            fila.className = 'destacados-buscar-item';
+            fila.innerHTML = `
+                ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
+                <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
+                ${yaIncluido ? '<span class="ya-incluido">Ya incluido</span>' : ''}
+            `;
+            if (yaIncluido) { fila.style.cursor = 'default'; } else { fila.addEventListener('click', () => temporadaAnadirReferencia_(p.ref)); }
+            cont.appendChild(fila);
+        });
+    }
+
+    function abrirModalGestionTemporadas_() {
+        $('temporadas-modal-overlay').classList.add('activo');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+        temporadaCerrarEditor_();
+        const pinGuardado = (() => { try { return localStorage.getItem('omTemporadasPin'); } catch (e) { return null; } })();
+        if (pinGuardado) {
+            temporadaValidarPinYArrancar_(pinGuardado);
+        } else {
+            $('temporadas-vista-pin').style.display = '';
+            $('temporadas-vista-principal').style.display = 'none';
+        }
+    }
+
+    function cerrarModalGestionTemporadas_() {
+        $('temporadas-modal-overlay').classList.remove('activo');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    // ── Listeners del modal público "ver todos" (siempre presentes) ──
+    $('temporada-titulo-abrir').addEventListener('click', abrirModalTemporada_);
+    $('temporada-titulo-abrir').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModalTemporada_(); } });
+    $('temporada-ver-todos-cerrar').addEventListener('click', cerrarModalTemporadaVerTodos_);
+    $('temporada-ver-todos-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporada-ver-todos-overlay') cerrarModalTemporadaVerTodos_(); });
+    $('temporada-ver-todos-scroll').addEventListener('scroll', temporadaObservarScroll_);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && $('temporada-ver-todos-overlay').classList.contains('activo')) cerrarModalTemporadaVerTodos_();
+    });
+
+    // ── Listeners del panel de gestión (solo existen en preproducción) ──
+    if ($('btn-gestionar-temporadas')) {
+        $('btn-gestionar-temporadas').addEventListener('click', abrirModalGestionTemporadas_);
+        $('temporadas-pin-entrar').addEventListener('click', () => {
+            const pin = $('temporadas-pin-input').value.trim();
+            temporadaGuardarPinLocal_(pin, $('temporadas-pin-recordar').checked);
+            temporadaValidarPinYArrancar_(pin);
+        });
+        $('temporadas-pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('temporadas-pin-entrar').click(); });
+        $('temporadas-nueva-btn').addEventListener('click', () => temporadaAbrirEditor_(null));
+        $('temporadas-editor-cancelar').addEventListener('click', temporadaCerrarEditor_);
+        $('temporadas-editor-guardar').addEventListener('click', temporadaGuardarMeta_);
+        $('temporadas-editor-eliminar').addEventListener('click', temporadaEliminar_);
+        $('temporadas-buscar-texto').addEventListener('input', temporadaBuscarYRenderizar_);
+        $('temporadas-modal-cerrar').addEventListener('click', cerrarModalGestionTemporadas_);
+        $('temporadas-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporadas-modal-overlay') cerrarModalGestionTemporadas_(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('temporadas-modal-overlay').classList.contains('activo')) cerrarModalGestionTemporadas_();
         });
     }
 

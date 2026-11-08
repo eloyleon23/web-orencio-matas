@@ -3931,6 +3931,18 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Productos de temporada — misma caché en Drive que Campañas (ver
+    // regenerarCacheTemporadasDesdeSheet_). Devuelve TODAS las
+    // temporadas (activas, inactivas, pasadas y futuras): el cliente es
+    // quien decide cuáles están vigentes HOY (fechaInicio/fechaFin +
+    // activa/permanente), igual que ya hace con Campañas — así el
+    // gestor también puede ver/editar las que todavía no han empezado o
+    // ya han terminado.
+    if (accion === 'obtener_temporadas') {
+      return ContentService.createTextOutput(JSON.stringify(leerCacheTemporadas_()))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     // Sección "Destacados" del buscador — misma caché en Drive que
     // obtener_campanas (ver regenerarCacheDestacadosDesdeSheet_), con la
     // configuración global (activo/fecha fin) leída al vuelo desde
@@ -4114,6 +4126,24 @@ function doPost(e) {
     if (accion === 'eliminar_campana') {
       console.log('Acción: eliminar_campana');
       return procesarEliminarCampana(data);
+    }
+
+    // NUEVO — Productos de temporada (independiente de Destacados/
+    // Campañas, sin descuento ni promoción asociada — solo prioriza qué
+    // productos se enseñan antes al entrar al buscador).
+    if (accion === 'guardar_temporada') {
+      console.log('Acción: guardar_temporada');
+      return procesarGuardarTemporada(data);
+    }
+
+    if (accion === 'actualizar_items_temporada') {
+      console.log('Acción: actualizar_items_temporada');
+      return procesarActualizarItemsTemporada(data);
+    }
+
+    if (accion === 'eliminar_temporada') {
+      console.log('Acción: eliminar_temporada');
+      return procesarEliminarTemporada(data);
     }
 
     // NUEVO — Sección "Destacados" del buscador. A diferencia de
@@ -8178,6 +8208,296 @@ function procesarGuardarConfigDestacados(data) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error('Error en procesarGuardarConfigDestacados:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PRODUCTOS DE TEMPORADA (a petición de Eloy: priorizar productos a la
+// entrada del buscador según la época del año, yendo por adelantado —
+// p.ej. en noviembre ya mostrar invierno/navidad, en primavera limpieza/
+// insecticidas/pinturas, en verano piscinas, en otoño chimenea/limpieza).
+// ══════════════════════════════════════════════════════════════════════
+// A propósito, SEPARADO de Destacados: Eloy pidió explícitamente no
+// mezclarlo porque los productos de temporada no llevan descuento ni
+// ninguna promoción asociada — es pura priorización de qué enseñar antes,
+// sin ningún campo de precio/promo de por medio. Misma arquitectura que
+// Campañas (hoja propia + caché JSON en Drive regenerada de forma
+// SÍNCRONA tras cada escritura, para que la misma URL de Apps Script
+// sirva datos ya preparados en cualquier hosting sin redesplegar nada):
+// cada fila es una "Temporada" con su propio rango de fechas (para poder
+// ir "por adelantado": la fecha de inicio puede ser bastante antes de que
+// la estación empiece de verdad) y dos listas separadas por comas —
+// "familias" (categorías completas) y "referencias" (productos
+// concretos) — exactamente como ya hace la columna "areas"/"productos" de
+// Campañas, sin necesidad de JSON ni de una segunda hoja: cada fila ya es
+// autocontenida.
+const CABECERAS_TEMPORADAS_ = ['id', 'nombre', 'fecha_inicio', 'fecha_fin', 'activa', 'permanente', 'familias', 'referencias', 'orden', 'fecha_creacion', 'fecha_actualizacion'];
+
+function obtenerHojaTemporadas_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Temporadas');
+  if (!sheet) {
+    sheet = ss.insertSheet('Temporadas');
+    sheet.getRange(1, 1, 1, CABECERAS_TEMPORADAS_.length).setValues([CABECERAS_TEMPORADAS_]);
+    sheet.setFrozenRows(1);
+    return sheet;
+  }
+  // Mismo patrón de migración ligera que obtenerHojaCampanas_/obtenerHojaDestacados_.
+  const cabecerasActuales = sheet.getLastColumn() > 0
+    ? sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => h.toString().toLowerCase().trim().replace(/\s+/g, '_'))
+    : [];
+  const faltantes = CABECERAS_TEMPORADAS_.filter(h => cabecerasActuales.indexOf(h) === -1);
+  if (faltantes.length) {
+    sheet.getRange(1, sheet.getLastColumn() + 1, 1, faltantes.length).setValues([faltantes]);
+    console.log('Hoja Temporadas: columnas añadidas por migración automática:', JSON.stringify(faltantes));
+  }
+  return sheet;
+}
+
+function leerTemporadas_() {
+  const sheet = obtenerHojaTemporadas_();
+  const datos = sheet.getDataRange().getValues();
+  if (datos.length < 2) return [];
+  const COL = mapaCabeceras_(datos[0]);
+  const partirLista = (val) => (val || '').toString().split(',').map(s => s.trim()).filter(Boolean);
+
+  const temporadas = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    const id = (fila[COL['id']] || '').toString().trim();
+    if (!id) continue; // fila en blanco
+    const ordenNum = parseInt((fila[COL['orden']] || '').toString(), 10);
+    temporadas.push({
+      id: id,
+      nombre: (fila[COL['nombre']] || '').toString(),
+      fechaInicio: formatearFechaISO_(fila[COL['fecha_inicio']]),
+      fechaFin: formatearFechaISO_(fila[COL['fecha_fin']]),
+      // 'activa' independiente de las fechas, mismo criterio que
+      // Campañas: permite preparar una temporada con antelación y
+      // decidir aparte cuándo se deja ver, sin depender de si su rango
+      // de fechas ya ha empezado.
+      activa: (fila[COL['activa']] || '').toString().trim().toLowerCase() !== 'no',
+      permanente: (fila[COL['permanente']] || '').toString().trim().toLowerCase() === 'si',
+      familias: partirLista(fila[COL['familias']]),
+      referencias: partirLista(fila[COL['referencias']]),
+      orden: isFinite(ordenNum) ? ordenNum : 0,
+      fechaCreacion: (fila[COL['fecha_creacion']] || '').toString(),
+      fechaActualizacion: (fila[COL['fecha_actualizacion']] || '').toString(),
+    });
+  }
+  return temporadas;
+}
+
+// ── Caché de Temporadas en Drive ────────────────────────────────────────
+// Mismo patrón exacto que la caché de Campañas (ver más arriba, mismo
+// porqué: que funcione igual en IONOS/GitHub Pages sin redesplegar nada).
+const NOMBRE_ARCHIVO_TEMPORADAS_CACHE = 'temporadas_cache.json';
+
+function obtenerArchivoTemporadasCache_() {
+  const archivos = DriveApp.getFilesByName(NOMBRE_ARCHIVO_TEMPORADAS_CACHE);
+  if (archivos.hasNext()) {
+    return archivos.next();
+  }
+  const blobVacio = Utilities.newBlob('{"temporadas":[]}', 'application/json', NOMBRE_ARCHIVO_TEMPORADAS_CACHE);
+  const archivo = DriveApp.createFile(blobVacio);
+  archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  console.log('Archivo de caché de temporadas creado en Drive:', archivo.getId());
+  return archivo;
+}
+
+function leerCacheTemporadas_() {
+  try {
+    const archivo = obtenerArchivoTemporadasCache_();
+    const contenido = archivo.getBlob().getDataAsString('UTF-8');
+    return JSON.parse(contenido);
+  } catch (e) {
+    console.error('leerCacheTemporadas_: error leyendo la caché, devolviendo estructura vacía:', e);
+    return { temporadas: [] };
+  }
+}
+
+function guardarCacheTemporadas_(datos) {
+  const archivo = obtenerArchivoTemporadasCache_();
+  archivo.setContent(JSON.stringify(datos));
+}
+
+function regenerarCacheTemporadasDesdeSheet_() {
+  const temporadas = leerTemporadas_();
+  const payload = {
+    generado: new Date().toISOString(),
+    total: temporadas.length,
+    temporadas: temporadas,
+  };
+  const lock = LockService.getScriptLock();
+  try {
+    lock.tryLock(15000);
+    guardarCacheTemporadas_(payload);
+  } finally {
+    lock.releaseLock();
+  }
+  console.log(`regenerarCacheTemporadasDesdeSheet_: ${temporadas.length} temporadas regeneradas y guardadas en la caché de Drive.`);
+  return payload;
+}
+
+// Crea o actualiza los METADATOS de una temporada (nombre, fechas,
+// activa, permanente) — las listas de familias/referencias se gestionan
+// aparte con procesarActualizarItemsTemporada, igual que Campañas separa
+// procesarGuardarCampana de procesarActualizarProductosCampana: así
+// añadir/quitar un único ítem desde el gestor no obliga a reenviar ni
+// arriesgar el resto de los datos de la temporada.
+function procesarGuardarTemporada(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    console.log('procesarGuardarTemporada iniciado:', data);
+
+    const nombre = (data.nombre || '').toString().trim();
+    const fechaInicio = (data.fechaInicio || '').toString().trim();
+    const fechaFin = (data.fechaFin || '').toString().trim();
+    const permanente = data.permanente === true;
+    if (!nombre || (!permanente && (!fechaInicio || !fechaFin))) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Faltan campos obligatorios: nombre, y fecha de inicio/fin salvo que sea permanente.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const activa = data.activa === false ? 'no' : 'si';
+    const ordenNum = parseInt((data.orden || '').toString(), 10);
+    const orden = isFinite(ordenNum) ? ordenNum : 0;
+
+    const sheet = obtenerHojaTemporadas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    const ahoraISO = new Date().toISOString();
+
+    const idExistente = (data.id || '').toString().trim();
+    let filaIdx = -1;
+    if (idExistente) {
+      for (let i = 1; i < datos.length; i++) {
+        if ((datos[i][COL['id']] || '').toString().trim() === idExistente) { filaIdx = i; break; }
+      }
+    }
+
+    if (filaIdx === -1) {
+      const id = 'temporada-' + new Date().getTime();
+      const fila = new Array(CABECERAS_TEMPORADAS_.length).fill('');
+      fila[COL['id']] = id;
+      fila[COL['nombre']] = nombre;
+      fila[COL['fecha_inicio']] = fechaInicio;
+      fila[COL['fecha_fin']] = fechaFin;
+      fila[COL['activa']] = activa;
+      fila[COL['permanente']] = permanente ? 'si' : 'no';
+      fila[COL['familias']] = '';
+      fila[COL['referencias']] = '';
+      fila[COL['orden']] = orden;
+      fila[COL['fecha_creacion']] = ahoraISO;
+      fila[COL['fecha_actualizacion']] = ahoraISO;
+      sheet.getRange(sheet.getLastRow() + 1, 1, 1, CABECERAS_TEMPORADAS_.length).setValues([fila]);
+      console.log('Temporada creada:', id);
+      regenerarCacheTemporadasDesdeSheet_();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, id: id }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['nombre'] + 1).setValue(nombre);
+    sheet.getRange(filaNum, COL['fecha_inicio'] + 1).setValue(fechaInicio);
+    sheet.getRange(filaNum, COL['fecha_fin'] + 1).setValue(fechaFin);
+    sheet.getRange(filaNum, COL['activa'] + 1).setValue(activa);
+    sheet.getRange(filaNum, COL['permanente'] + 1).setValue(permanente ? 'si' : 'no');
+    sheet.getRange(filaNum, COL['orden'] + 1).setValue(orden);
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
+    console.log('Temporada actualizada:', idExistente);
+    regenerarCacheTemporadasDesdeSheet_();
+    return ContentService.createTextOutput(JSON.stringify({ success: true, id: idExistente }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarGuardarTemporada:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Reemplaza POR COMPLETO las listas de familias y/o referencias de una
+// temporada — el cliente manda siempre el array final ya con el
+// añadido/quitado aplicado (mismo patrón que procesarActualizarProductosCampana).
+// Solo se toca la lista que venga informada en la petición (familias y/o
+// referencias son independientes); si alguna no viene, se deja tal cual
+// estaba.
+function procesarActualizarItemsTemporada(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    console.log('procesarActualizarItemsTemporada iniciado:', data);
+
+    const id = (data.id || '').toString().trim();
+    if (!id) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta el id de la temporada.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const sheet = obtenerHojaTemporadas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    let filaIdx = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) { filaIdx = i; break; }
+    }
+    if (filaIdx === -1) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Temporada no encontrada.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const filaNum = filaIdx + 1;
+    if (Array.isArray(data.familias)) {
+      sheet.getRange(filaNum, COL['familias'] + 1).setValue(data.familias.map(f => f.toString().trim()).filter(Boolean).join(', '));
+    }
+    if (Array.isArray(data.referencias)) {
+      sheet.getRange(filaNum, COL['referencias'] + 1).setValue(data.referencias.map(r => r.toString().trim()).filter(Boolean).join(', '));
+    }
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
+    console.log('Items de temporada actualizados:', id);
+    regenerarCacheTemporadasDesdeSheet_();
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarActualizarItemsTemporada:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function procesarEliminarTemporada(data) {
+  try {
+    if (!verificarPin_(data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'PIN incorrecto o no configurado.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    console.log('procesarEliminarTemporada iniciado:', data);
+
+    const id = (data.id || '').toString().trim();
+    if (!id) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Falta el id de la temporada.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const sheet = obtenerHojaTemporadas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    for (let i = 1; i < datos.length; i++) {
+      if ((datos[i][COL['id']] || '').toString().trim() === id) {
+        sheet.deleteRow(i + 1);
+        console.log('Temporada eliminada:', id);
+        regenerarCacheTemporadasDesdeSheet_();
+        return ContentService.createTextOutput(JSON.stringify({ success: true }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Temporada no encontrada.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarEliminarTemporada:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
