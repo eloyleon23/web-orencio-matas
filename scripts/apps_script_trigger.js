@@ -8233,7 +8233,7 @@ function procesarGuardarConfigDestacados(data) {
 // concretos) — exactamente como ya hace la columna "areas"/"productos" de
 // Campañas, sin necesidad de JSON ni de una segunda hoja: cada fila ya es
 // autocontenida.
-const CABECERAS_TEMPORADAS_ = ['id', 'nombre', 'fecha_inicio', 'fecha_fin', 'activa', 'permanente', 'familias', 'referencias', 'orden', 'fecha_creacion', 'fecha_actualizacion'];
+const CABECERAS_TEMPORADAS_ = ['id', 'nombre', 'emoji', 'fecha_inicio', 'fecha_fin', 'activa', 'permanente', 'familias', 'referencias', 'orden', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaTemporadas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -8272,6 +8272,7 @@ function leerTemporadas_() {
     temporadas.push({
       id: id,
       nombre: (fila[COL['nombre']] || '').toString(),
+      emoji: (fila[COL['emoji']] || '').toString().trim(),
       fechaInicio: formatearFechaISO_(fila[COL['fecha_inicio']]),
       fechaFin: formatearFechaISO_(fila[COL['fecha_fin']]),
       // 'activa' independiente de las fechas, mismo criterio que
@@ -8356,6 +8357,7 @@ function procesarGuardarTemporada(data) {
     console.log('procesarGuardarTemporada iniciado:', data);
 
     const nombre = (data.nombre || '').toString().trim();
+    const emoji = (data.emoji || '').toString().trim();
     const fechaInicio = (data.fechaInicio || '').toString().trim();
     const fechaFin = (data.fechaFin || '').toString().trim();
     const permanente = data.permanente === true;
@@ -8385,6 +8387,7 @@ function procesarGuardarTemporada(data) {
       const fila = new Array(CABECERAS_TEMPORADAS_.length).fill('');
       fila[COL['id']] = id;
       fila[COL['nombre']] = nombre;
+      fila[COL['emoji']] = emoji;
       fila[COL['fecha_inicio']] = fechaInicio;
       fila[COL['fecha_fin']] = fechaFin;
       fila[COL['activa']] = activa;
@@ -8403,6 +8406,7 @@ function procesarGuardarTemporada(data) {
 
     const filaNum = filaIdx + 1;
     sheet.getRange(filaNum, COL['nombre'] + 1).setValue(nombre);
+    sheet.getRange(filaNum, COL['emoji'] + 1).setValue(emoji);
     sheet.getRange(filaNum, COL['fecha_inicio'] + 1).setValue(fechaInicio);
     sheet.getRange(filaNum, COL['fecha_fin'] + 1).setValue(fechaFin);
     sheet.getRange(filaNum, COL['activa'] + 1).setValue(activa);
