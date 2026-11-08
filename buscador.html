@@ -1066,7 +1066,11 @@
         .destacados-buscador-controles { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
         .destacados-buscador-controles input[type="text"] { flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
         .destacados-buscador-controles select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
-        .destacados-buscar-resultados { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .destacados-buscar-resultados {
+            max-height: 200px; overflow-y: auto; overflow-x: hidden;
+            display: flex; flex-direction: column; gap: 4px;
+            overscroll-behavior: contain;
+        }
         .destacados-buscar-item {
             display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer;
         }
@@ -10840,6 +10844,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         resultados = resultados.slice(0, 40);
         if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
+        // Se conserva la posición de scroll al volver a pintar la lista
+        // (bug real reportado por Eloy: al añadir productos uno tras
+        // otro, cont.innerHTML se reconstruía entera cada vez y el
+        // scroll volvía arriba de golpe, obligando a bajar de nuevo para
+        // seguir añadiendo — cada vez más tedioso cuantos más productos
+        // se añadían). El orden de resultados no cambia entre
+        // reconstrucciones para el mismo texto/área/familia (incluir o
+        // no un producto no afecta al filtrado ni al orden), así que
+        // restaurar el mismo scrollTop deja la vista exactamente donde
+        // estaba.
+        const scrollPrevio = cont.scrollTop;
         cont.innerHTML = '';
         resultados.forEach(p => {
             const yaIncluido = refsYaIncluidas.has(p.ref);
@@ -10854,6 +10869,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             if (yaIncluido) { fila.style.cursor = 'default'; } else { fila.addEventListener('click', () => temporadaAnadirReferencia_(p.ref)); }
             cont.appendChild(fila);
         });
+        cont.scrollTop = scrollPrevio;
     }
 
     function abrirModalGestionTemporadas_() {
