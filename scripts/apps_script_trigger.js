@@ -9909,23 +9909,41 @@ function revisarCorreoListadoProductos() {
   // y, sobre todo, sin registrar la fecha/resumen del intento en
   // Configuracion), dejando la fecha de "última sincronización" congelada
   // aunque en Gmail pareciera que ya se había procesado.
+  //
+  // hilos/etiqueta se declaran aquí fuera (no dentro del try) para que el
+  // catch pueda alcanzarlos también — ver el porqué más abajo, junto al
+  // catch.
+  let hilos = null;
+  let etiqueta = null;
   try {
     const query = `from:${CORREO_CRM_REMITENTE} subject:"${CORREO_CRM_ASUNTO}" -label:${CORREO_CRM_ETIQUETA}`;
-    const hilos = GmailApp.search(query, 0, 10);
+    hilos = GmailApp.search(query, 0, 10);
 
     if (hilos.length === 0) {
       console.log('No hay correos nuevos de listado de productos del CRM.');
       return { huboCorreo: false };
     }
 
-    let etiqueta = GmailApp.getUserLabelByName(CORREO_CRM_ETIQUETA);
+    etiqueta = GmailApp.getUserLabelByName(CORREO_CRM_ETIQUETA);
     if (!etiqueta) etiqueta = GmailApp.createLabel(CORREO_CRM_ETIQUETA);
 
-    // Gmail devuelve los hilos más recientes primero. Se etiquetan TODOS
-    // los encontrados como procesados (para no repetir trabajo si se han
-    // acumulado varios), pero solo se sincroniza con el más reciente.
+    // Gmail devuelve los hilos más recientes primero; solo se sincroniza
+    // con el más reciente. IMPORTANTE: la etiqueta de "procesados" ya NO
+    // se aplica aquí, al encontrarlos, sino al final de cada camino que
+    // termina en una notificación real (éxito o error ya notificado) —
+    // ver marcarHilosComoProcesados_() más abajo. Antes se aplicaba aquí
+    // mismo, antes de hacer nada: si la sincronización se alargaba lo
+    // suficiente como para que Apps Script agotara su tiempo máximo de
+    // ejecución (lo cual mata la ejecución en seco, sin pasar por ningún
+    // catch), el correo quedaba marcado como "procesado" sin que se
+    // hubiera sincronizado nada ni enviado ningún aviso ni actualizado la
+    // fecha en Configuracion — un fallo totalmente silencioso del que no
+    // había forma de recuperarse salvo quitando la etiqueta a mano en
+    // Gmail. Con el marcado al final, ese caso concreto queda SIN marcar,
+    // así que el disparador diario lo vuelve a intentar solo al día
+    // siguiente.
     const hiloMasReciente = hilos[0];
-    hilos.forEach(hilo => hilo.addLabel(etiqueta));
+    const marcarHilosComoProcesados_ = () => hilos.forEach(hilo => hilo.addLabel(etiqueta));
 
     const mensajes = hiloMasReciente.getMessages();
     const ultimoMensaje = mensajes[mensajes.length - 1];
@@ -9937,6 +9955,7 @@ function revisarCorreoListadoProductos() {
         ') no traía ningún adjunto .xlsx/.xls reconocible.';
       console.error(mensajeError);
       enviarResumenSincronizacionCRM_({ error: mensajeError });
+      marcarHilosComoProcesados_();
       notificarErrorCriticoCRM_(
         'Correo del CRM sin adjunto válido',
         'revisarCorreoListadoProductos() ha encontrado un correo del CRM pero no ha podido sincronizar:\n\n' + mensajeError
@@ -9946,6 +9965,13 @@ function revisarCorreoListadoProductos() {
 
     const resultado = procesarListadoProductosExcel_(excel);
     enviarResumenSincronizacionCRM_(resultado);
+    marcarHilosComoProcesados_();
+
+    // Postproceso no crítico (reevaluar áreas/subfamilias, regenerar
+    // caché) — DESPUÉS de notificar y marcar como procesado, ver
+    // completarPostprocesoSincronizacionCRM_() para el motivo.
+    completarPostprocesoSincronizacionCRM_();
+
     // Regenerar los catálogos PDF automáticamente tras una sincronización
     // real del CRM — a petición explícita de Eloy: los PDF, a diferencia
     // de los datos del buscador, no son "en vivo" por sí solos, son un
@@ -9971,6 +9997,17 @@ function revisarCorreoListadoProductos() {
       enviarResumenSincronizacionCRM_({ error: err.message });
     } catch (errEnvio) {
       console.error('Además, no se pudo enviar/registrar el aviso del fallo anterior:', errEnvio);
+    }
+    // Aquí SÍ se marca como procesado aunque haya fallado: es un error ya
+    // capturado y notificado (p.ej. cabecera del Excel incorrecta), así
+    // que reintentarlo mañana con el mismo correo roto solo repetiría el
+    // mismo fallo cada día — hace falta que alguien lo revise y, si
+    // procede, pida un listado nuevo. Distinto del caso de arriba (tiempo
+    // de ejecución agotado), que nunca llega a este catch.
+    try {
+      if (hilos && etiqueta) hilos.forEach(hilo => hilo.addLabel(etiqueta));
+    } catch (errEtiqueta) {
+      console.error('Además, no se pudo marcar el correo como procesado tras el fallo:', errEtiqueta);
     }
     notificarErrorCriticoCRM_(
       'Sincronización de productos FALLIDA',
@@ -10085,22 +10122,49 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
   const resultado = sincronizarRegistroProductos({ enviarResumenPorCorreo: false });
   resultado.totalRegistrados = filasDatos.length;
 
-  // 6) Reevaluar áreas y clasificar subfamilias — a petición del usuario,
-  // para que los productos nuevos/actualizados por el CRM queden bien
-  // encajados sin depender de lanzarlo a mano después. Ambas funciones
-  // son seguras para ejecutarse aquí:
-  //  - reevaluarAreasProductos(): usa toast() en vez de alert() (no
-  //    revienta en un contexto sin interfaz), y su lógica (tabla curada
-  //    FamiliaProductos.Area + mayoría dinámica por familia + reglas
-  //    explícitas de talleres/higiene de manos) validada contra el
-  //    catálogo completo real: 99,95% de coincidencia con la
-  //    clasificación actual, sin ninguna regresión.
-  //  - clasificarSubfamiliasConIA(): solo rellena subfamilias VACÍAS
-  //    (salta cualquier producto que ya tenga algo puesto), así que
-  //    nunca pisa una subfamilia ya asignada a mano.
-  // No bloquean el resto del flujo si fallaran — el disparador
-  // programado y las ejecuciones manuales desde el menú siguen ahí
-  // como red de seguridad.
+  // Los pasos 6-7 (reevaluar áreas/subfamilias, regenerar caché) se han
+  // movido a completarPostprocesoSincronizacionCRM_(), que se llama desde
+  // revisarCorreoListadoProductos() DESPUÉS de enviar el correo de resumen
+  // y marcar el correo como procesado — ver el comentario de esa función
+  // para el motivo (un postproceso lento no debe poder dejar la
+  // sincronización real sin notificar).
+  return resultado;
+}
+
+// Postproceso NO crítico tras una sincronización real del CRM: reevaluar
+// áreas, clasificar subfamilias con IA y regenerar la caché del buscador.
+// Separado de procesarListadoProductosExcel_() a propósito, para que se
+// ejecute DESPUÉS de haber enviado el correo de resumen y marcado el
+// correo del CRM como procesado (ver revisarCorreoListadoProductos) — así,
+// si este postproceso es lento o llega a agotar el tiempo máximo de
+// ejecución de Apps Script (lo cual NO es un error capturable: el script
+// se interrumpe en seco, sin pasar por ningún catch), la sincronización
+// real ya ha quedado notificada y registrada igualmente. Antes todo esto
+// iba dentro de procesarListadoProductosExcel_(), ANTES de notificar —
+// si cualquiera de estos pasos se alargaba lo suficiente como para que
+// Apps Script matara la ejecución, el correo quedaba marcado como
+// "procesado" (la etiqueta se aplicaba al principio, antes de todo) sin
+// que se hubiera enviado ningún correo de resultado ni actualizado la
+// fecha de última sincronización — exactamente el síntoma reportado
+// ("ya estaba marcado como procesado pero no ha hecho nada, ni OK ni
+// ERROR, ni ha actualizado la fecha").
+//
+// Cada paso va protegido con su propio try/catch — ninguno bloquea a los
+// demás ni al resto del flujo si fallara; el disparador programado y las
+// ejecuciones manuales desde el menú siguen ahí como red de seguridad.
+//  - reevaluarAreasProductos(): usa toast() en vez de alert() (no
+//    revienta en un contexto sin interfaz), y su lógica (tabla curada
+//    FamiliaProductos.Area + mayoría dinámica por familia + reglas
+//    explícitas de talleres/higiene de manos) validada contra el
+//    catálogo completo real: 99,95% de coincidencia con la
+//    clasificación actual, sin ninguna regresión.
+//  - clasificarSubfamiliasConIA(): solo rellena subfamilias VACÍAS
+//    (salta cualquier producto que ya tenga algo puesto), así que
+//    nunca pisa una subfamilia ya asignada a mano.
+//  - regenerarCacheCompletaDesdeSheet_(): se hace DESPUÉS de reevaluar
+//    áreas/subfamilias, para que el JSON exportado ya lleve los valores
+//    correctos.
+function completarPostprocesoSincronizacionCRM_() {
   try {
     reevaluarAreasProductos();
   } catch (err) {
@@ -10111,21 +10175,11 @@ function procesarListadoProductosExcel_(archivoAdjunto) {
   } catch (err) {
     console.error('No se pudo clasificar subfamilias tras la sincronización del CRM:', err);
   }
-
-  // 7) Regenerar la caché completa que sirve al buscador — una
-  // sincronización del CRM puede añadir o modificar muchos productos de
-  // golpe, así que tiene sentido regenerar del todo aquí en vez de
-  // esperar al siguiente disparo programado (hasta 1 hora). Se hace
-  // DESPUÉS de reevaluar áreas/subfamilias, para que el JSON exportado
-  // ya lleve los valores correctos. No bloquea el resto del flujo si
-  // fallara — el disparador programado lo corregirá de todas formas.
   try {
     regenerarCacheCompletaDesdeSheet_();
   } catch (err) {
     console.error('No se pudo regenerar la caché tras la sincronización del CRM (se corregirá con el disparador programado):', err);
   }
-
-  return resultado;
 }
 
 // Envía el correo de resumen de la sincronización.
