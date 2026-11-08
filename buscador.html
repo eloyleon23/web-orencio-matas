@@ -7491,6 +7491,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         efect: 'efecto',
         prof: 'profesional',
         concent: 'concentrado',
+        acond: 'acondicionador',
     };
 
     // Sinónimos reales del catálogo — distinto de ABREVIATURAS_CATALOGO
@@ -7530,6 +7531,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         kleenex: ['panuelos'],       // marca genérica habitual para pañuelos de papel — el catálogo solo dice "pañuelos" (PAÑUELOS GOMA-CAMPS FACIALES, etc.)
         coche: ['vehiculo'],         // sinónimo exacto — "ACABADO DE VEHICULOS" (limpiador llantas, pulimento...) no dice "coche", y viceversa "AMBIENT.COCHE" no dice "vehículo": conjuntos de productos reales distintos y complementarios, ninguno se encontraba desde el término del otro
         vehiculo: ['coche'],
+        // Tercera ronda ("intensivo" a petición de Eloy — barrido
+        // sistemático por familias/subfamilias de droguería, perfumería,
+        // higiene y talleres, cada candidato verificado contra el
+        // catálogo real antes de añadirlo):
+        colutorio: ['bucal'],        // término de farmacia para el enjuague bucal — el catálogo dice "ANTISEPT.BUCAL"/"ENJUAGUE BUCAL", nunca "colutorio"
+        hilo: ['seda'],              // "hilo dental" es como la mayoría lo pide — el catálogo dice "SEDA DENTAL"
+        antitranspirante: ['desodorante'], // en España se usa indistintamente de "desodorante" para el mismo tipo de producto (roll-on, spray...) — el catálogo nunca dice "antitranspirante"
     };
 
     function normalizar(txt) {
