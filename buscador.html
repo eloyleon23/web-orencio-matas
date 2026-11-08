@@ -2252,6 +2252,7 @@
         .aviso-aproximados {
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
             gap: 10px;
             background: #fffbeb;
             border: 1px solid #fde68a;
@@ -2303,6 +2304,23 @@
         }
         .btn-preguntar-ia-producto:disabled { opacity: 0.7; cursor: default; transform: none; }
         .btn-preguntar-ia-producto .icono-ia-producto { width: 1.3em; height: 1.3em; }
+        /* Variante compacta para el aviso de "productos parecidos"
+           (.aviso-aproximados): el botón grande de arriba está pensado
+           para el bloque centrado de "sin resultados", no para encajar
+           en línea dentro de un aviso pequeño junto al texto. */
+        .btn-preguntar-ia-producto--aproximados {
+            margin: 0 0 0 auto;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            box-shadow: none;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .btn-preguntar-ia-producto--aproximados .icono-ia-producto { width: 1.1em; height: 1.1em; }
+        @media (max-width: 600px) {
+            .btn-preguntar-ia-producto--aproximados { margin-left: 0; width: 100%; }
+        }
         .ia-producto-mensaje-aviso {
             max-width: 480px;
             margin: 16px auto 0;
@@ -5295,6 +5313,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="aviso-aproximados" class="aviso-aproximados" style="display:none;">
             <i class="fa-solid fa-circle-info"></i>
             <span id="aviso-aproximados-texto"></span>
+            <button type="button" id="btn-preguntar-ia-aproximados" class="btn-preguntar-ia-producto btn-preguntar-ia-producto--aproximados" style="display:none;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> ¿No es esto? Prueba con la IA</button>
         </div>
         <div id="contenedor-resultados" style="display:none;"></div>
 
@@ -5304,8 +5323,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <p>No se han encontrado productos con estos filtros.<br>Prueba a ampliar la búsqueda.</p>
             </div>
             <button type="button" id="btn-preguntar-ia-producto" class="btn-preguntar-ia-producto" style="display:none;"><img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> Preguntar a la IA</button>
-            <p id="ia-producto-mensaje" class="ia-producto-mensaje-aviso" style="display:none;"></p>
         </div>
+        <!-- Fuera de #sin-resultados a propósito: preguntarIAProducto()
+             puede invocarse tanto desde ahí como desde el botón de
+             #aviso-aproximados (productos parecidos) — si este mensaje
+             viviera dentro de #sin-resultados, quedaría invisible
+             (display:none heredado del contenedor) cuando se muestra
+             desde el segundo caso. -->
+        <p id="ia-producto-mensaje" class="ia-producto-mensaje-aviso" style="display:none;"></p>
 
         <div id="ia-producto-seccion" style="display:none;">
             <div class="ia-producto-aviso">
@@ -8639,6 +8664,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
+        $('btn-preguntar-ia-aproximados').addEventListener('click', () => preguntarIAProducto(false, $('btn-preguntar-ia-aproximados')));
         $('btn-ia-producto-otra-vez').addEventListener('click', () => preguntarIAProducto(true));
         $('btn-compartir-resultados').addEventListener('click', compartirResultados);
         $('btn-cerrar-disclaimer').addEventListener('click', ocultarDisclaimerPrecios);
@@ -12023,28 +12049,35 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const seccionIA = $('ia-producto-seccion');
         const btnMas = $('btn-cargar-mas');
         const avisoAproximados = $('aviso-aproximados');
+        const textoActual = $('f-texto').value.trim();
+
+        // Si ya hay resultados de IA vigentes para ESTE MISMO texto de
+        // búsqueda, se mantienen tal cual — a petición de Eloy:
+        // "faltaría mantener los resultados que ha devuelto la IA hasta
+        // que el usuario limpie los filtros o introduzca otro criterio
+        // de búsqueda". Esto cubre cualquier motivo por el que
+        // renderResultados() se vuelva a ejecutar sin que el propio
+        // usuario haya cambiado nada (p. ej. tras cerrar el modal de
+        // detalle de un producto). Va ANTES de mirar
+        // resultadosActuales.length a propósito: la IA puede haberse
+        // pedido tanto desde "sin resultados" (length 0) como desde el
+        // aviso de "productos parecidos" (length > 0, ver más abajo) —
+        // en ambos casos, si ya hay una respuesta de IA vigente para
+        // este texto, sustituye a lo que fuera a mostrarse.
+        if (terminoIAActivo !== null && terminoIAActivo === textoActual) {
+            mostrarContadorIA($('ia-producto-resultados').children.length);
+            cont.innerHTML = '';
+            btnMas.style.display = 'none';
+            if (avisoAproximados) avisoAproximados.style.display = 'none';
+            sinResultados.style.display = 'none';
+            seccionIA.style.display = '';
+            return;
+        }
 
         if (resultadosActuales.length === 0) {
             cont.innerHTML = '';
             btnMas.style.display = 'none';
             if (avisoAproximados) avisoAproximados.style.display = 'none';
-
-            const textoActual = $('f-texto').value.trim();
-
-            // Si ya hay resultados de IA vigentes para ESTE MISMO texto
-            // de búsqueda, se mantienen tal cual — a petición de Eloy:
-            // "faltaría mantener los resultados que ha devuelto la IA
-            // hasta que el usuario limpie los filtros o introduzca otro
-            // criterio de búsqueda". Esto cubre cualquier motivo por el
-            // que renderResultados() se vuelva a ejecutar sin que el
-            // propio usuario haya cambiado nada (p. ej. tras cerrar el
-            // modal de detalle de un producto).
-            if (terminoIAActivo !== null && terminoIAActivo === textoActual) {
-                mostrarContadorIA($('ia-producto-resultados').children.length);
-                sinResultados.style.display = 'none';
-                seccionIA.style.display = '';
-                return;
-            }
 
             // Texto distinto del que tenían los resultados de IA (o no
             // había ninguno vigente) — se limpian y se vuelve al estado
@@ -12095,12 +12128,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // resultadosActuales viene del fallback de aproximados (ver
         // buscarCoincidenciasAproximadas_) — para no hacer pasar
         // productos solo parecidos por una búsqueda exacta, lo cual
-        // confundiría más de lo que ayuda.
+        // confundiría más de lo que ayuda. Incluye además su propio
+        // botón "Preguntar a la IA" (a petición de Eloy: "si no es lo
+        // que está buscando, que con la IA le pueda ayudar a mejorar
+        // los resultados") — mismo flujo que el de "sin resultados"
+        // (ver preguntarIAProducto), solo que aquí SÍ hay productos de
+        // por medio, por eso necesita su propio botón en vez de
+        // reutilizar el de #sin-resultados (oculto en este caso).
         if (avisoAproximados) {
             if (resultadosSonAproximados_ && terminoAproximado_) {
                 $('aviso-aproximados-texto').innerHTML =
                     `No hay coincidencias exactas para <strong>"${escapeHtml(terminoAproximado_)}"</strong> — te mostramos los productos más parecidos.`;
                 avisoAproximados.style.display = '';
+                const btnIAAprox = $('btn-preguntar-ia-aproximados');
+                if (btnIAAprox) {
+                    const iaDisponible = !window.IADisponibilidad || window.IADisponibilidad.estaDisponible();
+                    btnIAAprox.style.display = iaDisponible ? '' : 'none';
+                    btnIAAprox.disabled = false;
+                    btnIAAprox.innerHTML = '<img src="assets/logos/apple-touch-icon.png" alt="IA" class="icono-ia-producto"> ¿No es esto? Prueba con la IA';
+                }
             } else {
                 avisoAproximados.style.display = 'none';
             }
@@ -14749,10 +14795,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return () => { clearInterval(intervalo); elCancelar.onclick = null; };
     }
 
-    function preguntarIAProducto(esOtraVez) {
+    // btnOrigen: qué botón disparó esta petición — el de "sin
+    // resultados" (por defecto, comportamiento de siempre) o el nuevo
+    // de "productos parecidos" (#btn-preguntar-ia-aproximados, ver
+    // #aviso-aproximados) — para que se deshabilite/oculte el botón
+    // correcto mientras la IA trabaja, sea cual sea el punto de
+    // entrada. No afecta al flujo "otra vez" (btnOtraVez), que sigue
+    // siendo siempre el mismo botón de #ia-producto-seccion.
+    function preguntarIAProducto(esOtraVez, btnOrigen) {
         const texto = $('f-texto').value.trim();
         if (!texto) return;
-        const btn = $('btn-preguntar-ia-producto');
+        const btn = btnOrigen || $('btn-preguntar-ia-producto');
         const btnOtraVez = $('btn-ia-producto-otra-vez');
         const mensajeIA = $('ia-producto-mensaje');
         const seccionIA = $('ia-producto-seccion');
@@ -14914,6 +14967,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
               mostrarContadorIA(resultadosIA.children.length);
               mensajeIA.style.display = 'none';
               $('sin-resultados').style.display = 'none';
+              // Si esta petición venía del aviso de "productos
+              // parecidos" (#aviso-aproximados), #contenedor-resultados
+              // todavía tiene las tarjetas de ese fallback — sin
+              // vaciarlo se quedarían apiladas encima/debajo de los
+              // resultados de IA. En el flujo de "sin resultados" de
+              // siempre esto es un no-op (ya estaba vacío).
+              $('contenedor-resultados').innerHTML = '';
+              const avisoAproximadosEl = $('aviso-aproximados');
+              if (avisoAproximadosEl) avisoAproximadosEl.style.display = 'none';
               seccionIA.style.display = '';
               registrarResultadoIA_(productos.length);
           })
