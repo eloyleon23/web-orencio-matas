@@ -948,12 +948,23 @@
            fichero su propio max-width:900px/width:90%, y al tener la
            misma especificidad una sola clase, gana quien aparezca último
            en el CSS — así que un simple ".modal-temporada-ver-todos-box"
-           aquí arriba no bastaba para imponerse. */
+           aquí arriba no bastaba para imponerse.
+           Deliberadamente SIN display:flex/flex-direction:column: se
+           probó esa variante (cabecera/filtros fijos arriba y solo la
+           rejilla de productos con su propio scroll) y, con el panel de
+           selección y el carrusel de "Destacados y novedades" añadidos
+           encima, el hueco que le quedaba a la rejilla se volvía
+           minúsculo e inutilizable — bug real reportado por Eloy: "no
+           permite bajar hacia abajo del todo de la temporada". En su
+           lugar se usa el MISMO patrón que .modal-destacados-box (la
+           modal de Destacados, con carruseles igual de grandes): toda la
+           modal es un único bloque con overflow-y:auto heredado de
+           .modal-producto-box, sin ningún hijo con su propio scroll —
+           así siempre hay sitio de sobra y el scroll nunca se queda
+           atascado contra un hijo demasiado pequeño. */
         .modal-producto-box.modal-temporada-ver-todos-box {
             max-width: 1100px;
             width: 95%;
-            display: flex;
-            flex-direction: column;
             max-height: 92vh;
             padding: 28px;
         }
@@ -1021,32 +1032,7 @@
             border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem;
         }
         .temporada-ver-todos-scroll {
-            overflow-y: auto;
-            padding: 4px 16px 16px 4px;
-            /* El contenedor de la modal (.modal-producto-box.modal-
-               temporada-ver-todos-box) es flex-column con max-height:92vh.
-               Sin min-height:0 aquí y sin fijar flex-shrink:0 en el resto
-               de bloques de arriba (cabecera, folleto, selección,
-               destacados, chips, filtros, buscador), el navegador reparte
-               el "shrink" entre TODOS los hijos de forma impredecible en
-               vez de recortar solo este — con el panel de selección y los
-               destacados/novedades añadidos encima, este div (el único
-               que debe tener scroll propio) terminaba aplastado a un
-               puñado de píxeles, sin poder hacer scroll para ver el resto
-               de productos — bug real reportado por Eloy. Con
-               flex-shrink:0 en el resto (ver regla de abajo) y
-               min-height:0 aquí, es este div el que absorbe TODO el
-               recorte cuando la modal llega a su max-height, convirtiéndose
-               así en la única zona con scroll. */
-            flex: 1 1 auto;
-            min-height: 0;
-        }
-        /* Todo lo que no sea la lista de productos (cabecera, botones de
-           folleto, panel de selección, destacados/novedades, chips de
-           familia, filtros, buscador) nunca debe encogerse — ver el
-           comentario de .temporada-ver-todos-scroll, justo arriba. */
-        .modal-temporada-ver-todos-box > *:not(.temporada-ver-todos-scroll):not(.modal-producto-cerrar) {
-            flex-shrink: 0;
+            padding: 4px 4px 16px;
         }
         .temporada-ver-todos-grid-grupo { margin-bottom: 28px; }
         .temporada-ver-todos-fin {
@@ -7312,7 +7298,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      usa el resto del sitio para saltarse ese efecto al navegar
      internamente). -->
 <div class="modal-overlay" id="temporada-ver-todos-overlay">
-    <div class="modal-producto-box modal-temporada-ver-todos-box" role="dialog" aria-modal="true" aria-labelledby="temporada-ver-todos-titulo">
+    <div class="modal-producto-box modal-temporada-ver-todos-box" id="temporada-ver-todos-box" role="dialog" aria-modal="true" aria-labelledby="temporada-ver-todos-titulo">
         <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
             <i class="fa-solid fa-xmark"></i>
         </button>
@@ -11067,6 +11053,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!productos.length) return;
         temporadaModalProductosBase_ = productos;
         temporadaModalTemporadaActual_ = t;
+        // La modal entera es ahora el elemento con scroll (ver el
+        // comentario de .modal-producto-box.modal-temporada-ver-todos-box)
+        // y persiste en el DOM entre aperturas — sin esto, reabrir la
+        // modal (o cambiar de temporada) podía dejarla donde se había
+        // quedado la vez anterior en vez de empezar arriba del todo.
+        $('temporada-ver-todos-box').scrollTop = 0;
         $('temporada-ver-todos-titulo-icono').innerHTML = t.emoji ? escapeHtml(t.emoji) : '<i class="fa-solid fa-snowflake"></i>';
         $('temporada-ver-todos-titulo-texto').textContent = t.nombre || 'Productos de temporada';
         configurarBotonCompartirTemporada_(t);
@@ -12144,7 +12136,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // propio listener acotado a esa temporada en concreto.
     $('temporada-ver-todos-cerrar').addEventListener('click', cerrarModalTemporadaVerTodos_);
     $('temporada-ver-todos-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporada-ver-todos-overlay') cerrarModalTemporadaVerTodos_(); });
-    $('temporada-ver-todos-scroll').addEventListener('scroll', temporadaObservarScroll_);
+    // El scroll ahora ocurre en la modal entera (ver el comentario junto a
+    // .modal-producto-box.modal-temporada-ver-todos-box), no en un div
+    // interior aparte — así que el scroll infinito observa ese elemento.
+    $('temporada-ver-todos-box').addEventListener('scroll', temporadaObservarScroll_);
     $('temporada-ver-todos-buscar').addEventListener('input', temporadaModalFiltrarYRenderizar_);
     $('temporada-ver-todos-pdf').addEventListener('click', temporadaDescargarPdf_);
     $('temporada-ver-todos-compartir-pdf').addEventListener('click', temporadaCompartirPdf_);
