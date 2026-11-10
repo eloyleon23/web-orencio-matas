@@ -1000,6 +1000,17 @@
         }
         .temporada-ver-todos-folleto-acciones button:hover { background: var(--light); }
         .temporada-ver-todos-folleto-acciones button:disabled { opacity: 0.6; cursor: default; }
+        .temporada-ver-todos-subtitulo {
+            font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: .3px;
+            color: var(--muted); margin: 4px 0 8px; display: flex; align-items: center; gap: 6px;
+        }
+        .temporada-ver-todos-subtitulo i { color: var(--yellow); }
+        /* Chips de familia (accesos directos) — mismo estilo base que
+           .temporada-chips-busqueda, con un estado "activo" propio para
+           la familia filtrada ahora mismo. */
+        #temporada-ver-todos-familias-chips button.activo {
+            background: var(--red); border-color: var(--red); color: #fff;
+        }
         .temporada-ver-todos-vigencia { color: var(--muted); font-size: 0.85rem; margin: -6px 0 14px; }
         .temporada-ver-todos-buscar {
             width: 100%; padding: 9px 12px; margin-bottom: 16px;
@@ -7296,8 +7307,48 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="temporada-ver-todos-pdf"><i class="fa-solid fa-file-pdf"></i> Descargar folleto</button>
             <button type="button" id="temporada-ver-todos-compartir-pdf"><i class="fa-solid fa-share-nodes"></i> Compartir folleto</button>
         </div>
-        <input type="text" id="temporada-ver-todos-buscar" class="temporada-ver-todos-buscar" placeholder="Buscar por nombre o referencia entre estos productos...">
+
+        <!-- Destacados y novedades de ESTA temporada — a petición
+             explícita de Eloy, para ayudar a decidir rápido sin tener
+             que mirar todo el catálogo de la temporada. Se oculta sola
+             si no hay nada que mostrar (ver temporadaRenderizarDestacadosNovedades_). -->
+        <div id="temporada-ver-todos-destacados-wrap" style="display:none;">
+            <p class="temporada-ver-todos-subtitulo"><i class="fa-solid fa-star"></i> Destacados y novedades de esta temporada</p>
+            <div id="temporada-ver-todos-destacados-lista" class="seccion-destacados__lista" style="margin-bottom:14px;"></div>
+        </div>
+
+        <!-- Accesos directos por familia — clic filtra la vista de abajo
+             por esa familia (vuelve a pulsarse/clic en "Todas" para
+             quitar el filtro). -->
+        <div id="temporada-ver-todos-familias-chips" class="temporada-chips-busqueda" style="justify-content:flex-start; margin-top:0;"></div>
+
+        <!-- Filtros: marca, presupuesto y ordenación — a petición
+             explícita de Eloy ("selecciones por presupuesto, tipo de
+             regalo, marca o formato", "ordenación por precio, relevancia
+             y otros criterios"). La marca se detecta por nombre, igual
+             que en "Marcas más buscadas" (detectarMarcaAsistente) — no
+             hay un campo de marca en el catálogo. -->
+        <div class="destacados-buscador-controles" style="margin-top:10px;">
+            <select id="temporada-ver-todos-marca"><option value="">Todas las marcas</option></select>
+            <input type="number" id="temporada-ver-todos-precio-min" placeholder="Precio mín. €" min="0" step="0.5" style="max-width:120px;">
+            <input type="number" id="temporada-ver-todos-precio-max" placeholder="Precio máx. €" min="0" step="0.5" style="max-width:120px;">
+            <select id="temporada-ver-todos-orden">
+                <option value="relevancia">Ordenar: relevancia</option>
+                <option value="precio-asc">Precio: menor a mayor</option>
+                <option value="precio-desc">Precio: mayor a menor</option>
+                <option value="novedad">Novedades primero</option>
+            </select>
+        </div>
+        <p id="temporada-ver-todos-filtros-activos" class="destacados-hint" style="display:none; margin:6px 0 0;"></p>
+
+        <input type="text" id="temporada-ver-todos-buscar" class="temporada-ver-todos-buscar" placeholder="Buscar por nombre, referencia o marca entre estos productos...">
         <div id="temporada-ver-todos-scroll" class="temporada-ver-todos-scroll">
+            <div id="temporada-ver-todos-estado-vacio" class="lista-compra-vacia" style="display:none; padding:24px 10px;">
+                <i class="fa-solid fa-magnifying-glass" style="font-size:2rem;"></i>
+                <h4>Sin resultados con estos filtros</h4>
+                <p>Prueba a quitar algún filtro o a cambiar el texto de búsqueda.</p>
+                <button type="button" id="temporada-ver-todos-limpiar-filtros-vacio" class="destacados-btn-secundario">Limpiar filtros</button>
+            </div>
             <div id="temporada-ver-todos-grid"></div>
             <div id="temporada-ver-todos-fin" class="temporada-ver-todos-fin" style="display:none;">
                 <p>Has visto todos los productos de esta temporada. ¿Quieres seguir explorando?</p>
@@ -10583,6 +10634,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // familia al azar (sigue siendo "aleatorio" dentro del agrupado). ──
     let temporadaModalProductosBase_ = []; // sin agrupar, para el filtro de texto
     let temporadaModalTemporadaActual_ = null; // la temporada abierta ahora mismo en la modal "ver todos" (para el folleto)
+    // Filtros propios de la modal "ver todos" — a petición de Eloy:
+    // "funcionalidades que ayuden a comerciales y clientes a seleccionar
+    // productos de las temporadas activas" (accesos directos por
+    // familia, marca, presupuesto, ordenación). Se reinician cada vez
+    // que se abre la modal (ver abrirModalTemporada_).
+    let temporadaModalFiltroFamilia_ = '';
+    let temporadaModalFiltroMarca_ = '';
+    let temporadaModalPrecioMin_ = null;
+    let temporadaModalPrecioMax_ = null;
+    let temporadaModalOrden_ = 'relevancia';
     let temporadaModalGrupos_ = [];
     let temporadaModalGruposMostrados_ = 0;
     const TEMPORADA_MODAL_GRUPOS_LOTE_ = 3;
@@ -10651,43 +10712,177 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
     }
 
-    // Filtro de texto/referencia dentro del propio modal — solo sobre los
+    // Filtro de texto/referencia/marca + familia/marca/presupuesto +
+    // ordenación, todo dentro del propio modal — solo sobre los
     // productos YA incluidos en la(s) temporada(s) vigente(s), no sobre
     // todo el catálogo (a petición de Eloy: "solo los productos añadidos
-    // a la temporada"). Al vaciar el filtro, vuelve al scroll infinito
-    // agrupado y aleatorio de siempre; con texto, se muestran TODOS los
-    // grupos que coincidan de golpe (conjunto ya acotado, no hace falta
-    // paginar).
-    // Productos actualmente en pantalla en la modal "ver todos", según el
-    // filtro de texto del propio buscador de ahí — reutilizada tanto
-    // para pintar el grid como para el folleto PDF, que así genera
-    // siempre exactamente lo que se está viendo (petición de Eloy:
-    // "poder generar un folleto a partir de los productos filtrados").
+    // a la temporada"). Reutilizada tanto para pintar el grid como para
+    // el folleto PDF, que así genera siempre exactamente lo que se está
+    // viendo (petición de Eloy: "poder generar un folleto a partir de
+    // los productos filtrados").
     function temporadaModalProductosFiltrados_() {
-        const texto = ($('temporada-ver-todos-buscar').value || '').trim();
-        if (!texto) return temporadaModalProductosBase_;
-        return esBusquedaNumerica(texto)
-            ? temporadaModalProductosBase_.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
-            : temporadaModalProductosBase_.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+        const texto = ($('temporada-ver-todos-buscar').value || '').trim().toLowerCase();
+        let lista = temporadaModalProductosBase_;
+        if (temporadaModalFiltroFamilia_) lista = lista.filter(p => p.familia === temporadaModalFiltroFamilia_);
+        if (temporadaModalFiltroMarca_) lista = lista.filter(p => detectarMarcaAsistente(p.nombre) === temporadaModalFiltroMarca_);
+        if (temporadaModalPrecioMin_ != null || temporadaModalPrecioMax_ != null) {
+            lista = lista.filter(p => {
+                const info = precioAMostrar_(p);
+                if (!info || info.pending || info.con == null) return false;
+                if (temporadaModalPrecioMin_ != null && info.con < temporadaModalPrecioMin_) return false;
+                if (temporadaModalPrecioMax_ != null && info.con > temporadaModalPrecioMax_) return false;
+                return true;
+            });
+        }
+        if (texto) {
+            lista = esBusquedaNumerica(texto)
+                ? lista.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : lista.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto) || (detectarMarcaAsistente(p.nombre) || '').toLowerCase().includes(texto));
+        }
+        return lista;
+    }
+
+    function temporadaModalHayFiltrosActivos_() {
+        return !!(temporadaModalFiltroFamilia_ || temporadaModalFiltroMarca_
+            || temporadaModalPrecioMin_ != null || temporadaModalPrecioMax_ != null
+            || ($('temporada-ver-todos-buscar').value || '').trim());
+    }
+
+    function temporadaModalActualizarIndicadorFiltros_() {
+        const activos = [];
+        if (temporadaModalFiltroFamilia_) activos.push('Familia: ' + temporadaModalFiltroFamilia_);
+        if (temporadaModalFiltroMarca_) activos.push('Marca: ' + temporadaModalFiltroMarca_);
+        if (temporadaModalPrecioMin_ != null) activos.push('Desde ' + temporadaModalPrecioMin_ + ' €');
+        if (temporadaModalPrecioMax_ != null) activos.push('Hasta ' + temporadaModalPrecioMax_ + ' €');
+        const el = $('temporada-ver-todos-filtros-activos');
+        if (!activos.length) { el.style.display = 'none'; return; }
+        el.style.display = '';
+        el.innerHTML = `Filtros activos: ${escapeHtml(activos.join(' · '))} — <a href="#" id="temporada-ver-todos-limpiar-filtros-link">Limpiar filtros</a>`;
+        $('temporada-ver-todos-limpiar-filtros-link').addEventListener('click', (e) => { e.preventDefault(); temporadaModalLimpiarFiltros_(); });
+    }
+
+    function temporadaModalLimpiarFiltros_() {
+        temporadaModalFiltroFamilia_ = '';
+        temporadaModalFiltroMarca_ = '';
+        temporadaModalPrecioMin_ = null;
+        temporadaModalPrecioMax_ = null;
+        $('temporada-ver-todos-buscar').value = '';
+        $('temporada-ver-todos-marca').value = '';
+        $('temporada-ver-todos-precio-min').value = '';
+        $('temporada-ver-todos-precio-max').value = '';
+        temporadaRenderizarChipsFamilias_();
+        temporadaModalFiltrarYRenderizar_();
+    }
+
+    // Lista plana (sin agrupar por familia) — usada cuando hay una
+    // ordenación explícita por precio o novedad: agrupar por familia
+    // mezclaría el criterio de orden pedido con el de cada grupo.
+    function temporadaRenderizarListaPlanaEnModal_(productos) {
+        const cont = $('temporada-ver-todos-grid');
+        const grid = document.createElement('div');
+        grid.className = 'grid-productos';
+        productos.forEach(p => grid.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
+        cont.appendChild(grid);
     }
 
     function temporadaModalFiltrarYRenderizar_() {
         const filtrados = temporadaModalProductosFiltrados_();
-        const texto = ($('temporada-ver-todos-buscar').value || '').trim();
         const cont = $('temporada-ver-todos-grid');
         cont.innerHTML = '';
         $('temporada-ver-todos-fin').style.display = 'none';
-        if (!texto) {
+        temporadaModalActualizarIndicadorFiltros_();
+
+        $('temporada-ver-todos-estado-vacio').style.display = filtrados.length ? 'none' : '';
+        if (!filtrados.length) return;
+
+        // Ordenación explícita (precio/novedad): lista plana, sin
+        // agrupar ni paginar por scroll — ya es un conjunto acotado por
+        // los filtros, no hace falta.
+        if (temporadaModalOrden_ === 'precio-asc' || temporadaModalOrden_ === 'precio-desc') {
+            const conPrecio = filtrados
+                .map(p => ({ p, precio: (precioAMostrar_(p) || {}).con }))
+                .filter(x => x.precio != null);
+            conPrecio.sort((a, b) => temporadaModalOrden_ === 'precio-asc' ? a.precio - b.precio : b.precio - a.precio);
+            temporadaRenderizarListaPlanaEnModal_(conPrecio.map(x => x.p));
+            $('temporada-ver-todos-fin').style.display = '';
+            return;
+        }
+        if (temporadaModalOrden_ === 'novedad') {
+            const ordenados = filtrados.slice().sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta));
+            temporadaRenderizarListaPlanaEnModal_(ordenados);
+            $('temporada-ver-todos-fin').style.display = '';
+            return;
+        }
+
+        // Relevancia (por defecto): agrupado por familia, aleatorio
+        // dentro de cada grupo. Sin ningún filtro activo, con scroll
+        // infinito por grupos; con algún filtro, todos los grupos que
+        // coincidan de golpe (conjunto ya acotado, no hace falta paginar).
+        if (!temporadaModalHayFiltrosActivos_()) {
             temporadaModalGrupos_ = agruparPorFamilia(filtrados).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
             temporadaModalGruposMostrados_ = 0;
             temporadaCargarMasEnModal_();
             return;
         }
-        if (!filtrados.length) {
-            cont.innerHTML = '<p class="destacados-hint" style="text-align:center;">Sin resultados en esta temporada.</p>';
-            return;
-        }
         agruparPorFamilia(filtrados).forEach(temporadaRenderizarGrupoEnModal_);
+    }
+
+    // ── Accesos directos por familia, selector de marca y destacados/
+    // novedades de la temporada — a petición explícita de Eloy:
+    // "funcionalidades que ayuden a comerciales y clientes a seleccionar
+    // productos de las temporadas activas". ──
+    function temporadaRenderizarChipsFamilias_() {
+        const cont = $('temporada-ver-todos-familias-chips');
+        const familias = [...new Set(temporadaModalProductosBase_.map(p => p.familia).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+        cont.innerHTML = '';
+        const chipTodas = document.createElement('button');
+        chipTodas.type = 'button';
+        chipTodas.textContent = 'Todas';
+        chipTodas.className = temporadaModalFiltroFamilia_ ? '' : 'activo';
+        chipTodas.addEventListener('click', () => {
+            temporadaModalFiltroFamilia_ = '';
+            temporadaRenderizarChipsFamilias_();
+            temporadaModalFiltrarYRenderizar_();
+        });
+        cont.appendChild(chipTodas);
+        familias.forEach(familia => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.textContent = familia;
+            chip.className = (temporadaModalFiltroFamilia_ === familia) ? 'activo' : '';
+            chip.addEventListener('click', () => {
+                temporadaModalFiltroFamilia_ = (temporadaModalFiltroFamilia_ === familia) ? '' : familia;
+                temporadaRenderizarChipsFamilias_();
+                temporadaModalFiltrarYRenderizar_();
+            });
+            cont.appendChild(chip);
+        });
+    }
+
+    async function temporadaPoblarSelectorMarca_() {
+        await cargarMapaMarcasAsistente();
+        const marcas = [...new Set(temporadaModalProductosBase_.map(p => detectarMarcaAsistente(p.nombre)).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+        const sel = $('temporada-ver-todos-marca');
+        sel.innerHTML = '<option value="">Todas las marcas</option>' +
+            marcas.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+    }
+
+    const MAX_TEMPORADA_DESTACADOS_NOVEDADES_ = 8;
+    function temporadaRenderizarDestacadosNovedades_() {
+        const wrap = $('temporada-ver-todos-destacados-wrap');
+        const cont = $('temporada-ver-todos-destacados-lista');
+        cont.innerHTML = '';
+        const destacados = temporadaModalProductosBase_.filter(p => destacadoEfectivoPara_(p.ref));
+        const refsUsadas = new Set(destacados.map(p => p.ref));
+        const novedades = temporadaModalProductosBase_
+            .filter(p => !refsUsadas.has(p.ref) && parseFecha(p.fecha_alta) > 0)
+            .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta));
+        const muestra = destacados.concat(novedades).slice(0, MAX_TEMPORADA_DESTACADOS_NOVEDADES_);
+        if (!muestra.length) { wrap.style.display = 'none'; return; }
+        wrap.style.display = '';
+        muestra.forEach(p => cont.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
     }
 
     // Siempre acotada a UNA temporada concreta (nunca mezclada con otras
@@ -10708,7 +10903,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ? 'Disponible todo el año'
             : `Del ${temporadaFormatearFecha_(t.fechaInicio)} al ${temporadaFormatearFecha_(t.fechaFin)}`;
 
+        // Filtros/orden siempre reiniciados al (re)abrir una temporada —
+        // los de la anterior no deben "arrastrarse" a esta.
+        temporadaModalFiltroFamilia_ = '';
+        temporadaModalFiltroMarca_ = '';
+        temporadaModalPrecioMin_ = null;
+        temporadaModalPrecioMax_ = null;
+        temporadaModalOrden_ = 'relevancia';
         $('temporada-ver-todos-buscar').value = '';
+        $('temporada-ver-todos-precio-min').value = '';
+        $('temporada-ver-todos-precio-max').value = '';
+        $('temporada-ver-todos-orden').value = 'relevancia';
+        temporadaRenderizarChipsFamilias_();
+        temporadaPoblarSelectorMarca_().then(() => { $('temporada-ver-todos-marca').value = ''; });
+        temporadaRenderizarDestacadosNovedades_();
         temporadaModalFiltrarYRenderizar_();
 
         // Opciones de búsqueda al final del scroll: una por cada familia
@@ -11649,6 +11857,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('temporada-ver-todos-buscar').addEventListener('input', temporadaModalFiltrarYRenderizar_);
     $('temporada-ver-todos-pdf').addEventListener('click', temporadaDescargarPdf_);
     $('temporada-ver-todos-compartir-pdf').addEventListener('click', temporadaCompartirPdf_);
+    $('temporada-ver-todos-marca').addEventListener('change', (e) => {
+        temporadaModalFiltroMarca_ = e.target.value;
+        temporadaModalFiltrarYRenderizar_();
+    });
+    $('temporada-ver-todos-precio-min').addEventListener('input', debounce((e) => {
+        const v = parseFloat(e.target.value);
+        temporadaModalPrecioMin_ = isFinite(v) && e.target.value !== '' ? v : null;
+        temporadaModalFiltrarYRenderizar_();
+    }, 300));
+    $('temporada-ver-todos-precio-max').addEventListener('input', debounce((e) => {
+        const v = parseFloat(e.target.value);
+        temporadaModalPrecioMax_ = isFinite(v) && e.target.value !== '' ? v : null;
+        temporadaModalFiltrarYRenderizar_();
+    }, 300));
+    $('temporada-ver-todos-orden').addEventListener('change', (e) => {
+        temporadaModalOrden_ = e.target.value;
+        temporadaModalFiltrarYRenderizar_();
+    });
+    $('temporada-ver-todos-limpiar-filtros-vacio').addEventListener('click', temporadaModalLimpiarFiltros_);
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && $('temporada-ver-todos-overlay').classList.contains('activo')) cerrarModalTemporadaVerTodos_();
     });
