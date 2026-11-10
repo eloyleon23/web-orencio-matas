@@ -11295,7 +11295,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // vía agruparPorFamilia), pero SIN barajar_ dentro de cada
             // grupo — aquí los productos van también por nombre, para
             // un orden de catálogo predecible en vez de aleatorio.
-            const gruposFamilia_ = agruparPorFamilia(filtrados).map(g => ({
+            const gruposFamilia_ = agruparPorFamilia(filtrados, true).map(g => ({
                 nombre: g.nombre,
                 productos: g.productos.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' })),
             }));
@@ -11324,7 +11324,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // infinito por grupos; con algún filtro, todos los grupos que
         // coincidan de golpe (conjunto ya acotado, no hace falta paginar).
         if (!temporadaModalHayFiltrosActivos_()) {
-            temporadaModalGrupos_ = agruparPorFamilia(filtrados).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
+            temporadaModalGrupos_ = agruparPorFamilia(filtrados, true).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
             temporadaModalGruposMostrados_ = 0;
             // Por si quedaba una tanda anterior todavía construyéndose
             // (p.ej. el usuario cambió de filtro/orden a media carga): sin
@@ -11335,7 +11335,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             temporadaCargarMasEnModal_();
             return;
         }
-        temporadaRenderizarGruposSecuencial_(agruparPorFamilia(filtrados));
+        temporadaRenderizarGruposSecuencial_(agruparPorFamilia(filtrados, true));
     }
 
     // ── Accesos directos por familia, selector de marca y destacados/
@@ -14679,7 +14679,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return arr;
     }
 
-    function agruparPorFamilia(lista) {
+    function agruparPorFamilia(lista, omitirSubgrupos) {
         const grupos = {};
         lista.forEach(p => {
             const fam = p.familia || 'Sin clasificar';
@@ -14694,6 +14694,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         return nombresFamilias.map(nombre => {
             const productosFamilia = grupos[nombre];
+
+            // La modal de temporada solo necesita nombre+productos por
+            // familia (nunca lee subgrupos) — nos ahorramos agrupar por
+            // subfamilia y el ordenarProductos() de cada una (coste real
+            // detectado al perfilar el scroll "a trompicones" en móvil).
+            if (omitirSubgrupos) {
+                return { nombre, productos: productosFamilia, subgrupos: [] };
+            }
 
             // Subagrupar por subfamilia
             const subgruposMap = {};
