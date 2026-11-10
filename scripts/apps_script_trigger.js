@@ -1186,8 +1186,45 @@ function reevaluarAreasProductos() {
   );
 }
 
+// Listar la carpeta de imágenes con DriveApp.getFiles()/.hasNext()/.next()
+// es MUY lento con miles de archivos (cada .next() es, por debajo, una
+// llamada HTTP propia) — con el catálogo actual (10.000+ productos, una
+// imagen cada uno) este escaneo por sí solo podía consumir varios
+// minutos, y era la causa real de "Se ha superado el tiempo máximo de
+// ejecución" en sincronizarRegistroProductos (que llama a esta función
+// una vez por ejecución). Se sustituye por el servicio avanzado de
+// Drive API (Drive.Files.list, v3 — ya habilitado en este proyecto,
+// usado también en procesarListadoProductosExcel_/leerExcelAdjunto_),
+// que trae los archivos en páginas de hasta 1000 de una sola llamada en
+// vez de uno a uno: con el mismo catálogo, unas pocas llamadas en vez
+// de miles. Si el servicio avanzado no estuviera habilitado por algún
+// motivo, cae automáticamente al método antiguo (más lento pero
+// funcional) en vez de fallar del todo.
 function cargarCacheImagenes_() {
   const cache = {};
+  try {
+    if (typeof Drive !== 'undefined' && Drive.Files && typeof Drive.Files.list === 'function') {
+      let pageToken = null;
+      do {
+        const resp = Drive.Files.list({
+          q: `'${DRIVE_IMAGENES_ID}' in parents and trashed = false`,
+          fields: 'nextPageToken, files(id, name)',
+          pageSize: 1000,
+          pageToken: pageToken || undefined,
+        });
+        (resp.files || []).forEach(file => {
+          const ean = file.name.replace(/\.[^.]+$/, '');
+          cache[ean] = file.id;
+        });
+        pageToken = resp.nextPageToken || null;
+      } while (pageToken);
+      return cache;
+    }
+  } catch (err) {
+    console.warn('cargarCacheImagenes_: fallo con el servicio avanzado de Drive, cayendo al método antiguo: ' + err.message);
+  }
+
+  // Alternativa (lenta) — DriveApp clásico, sin el servicio avanzado.
   try {
     const folder = DriveApp.getFolderById(DRIVE_IMAGENES_ID);
     const files  = folder.getFiles();
@@ -2064,9 +2101,20 @@ function deshabilitarProductosSinFoto() {
 
   let deshabilitados = 0, noEncontrados = 0, saltados = 0;
 
+  // Igual que en sincronizarRegistroProductos: todo se muta en memoria
+  // (prodData directamente, y columnas Procesado/Error de RegistroProductos
+  // aparte) y se escribe en UNA sola llamada al final de cada hoja, en vez
+  // de un setValue() por cada producto a deshabilitar — con cientos de
+  // productos nuevos sin foto en un mismo listado, esto era antes
+  // suficiente para agotar el tiempo máximo de ejecución junto al escaneo
+  // de imágenes de sincronizarRegistroProductos (ver cargarCacheImagenes_).
+  const colProcesadoIdx = REGCOL['Procesado'];
+  const colErrorIdx     = REGCOL['Error'];
+  const regProcesado = regData.map(fila => colProcesadoIdx !== undefined ? fila[colProcesadoIdx] : '');
+  const regErrorCol   = regData.map(fila => colErrorIdx     !== undefined ? fila[colErrorIdx]     : '');
+
   for (let i = 0; i < regData.length; i++) {
-    const fila   = regData[i];
-    const rowNum = i + 2;
+    const fila = regData[i];
 
     const tieneFoto = REGCOL['TieneFoto']  !== undefined ? fila[REGCOL['TieneFoto']].toString().trim().toLowerCase()  : '';
     const procesado = REGCOL['Procesado']  !== undefined ? fila[REGCOL['Procesado']].toString().trim().toLowerCase()  : '';
@@ -2080,25 +2128,27 @@ function deshabilitarProductosSinFoto() {
     const idx = prodIndex[ean];
     if (idx === undefined) {
       noEncontrados++;
-      if (REGCOL['Error'] !== undefined)
-        sheetReg.getRange(rowNum, REGCOL['Error']+1).setValue('No encontrado en Productos');
+      if (colErrorIdx !== undefined) regErrorCol[i] = 'No encontrado en Productos';
       continue;
     }
 
-    // Deshabilitar en Productos
-    sheetProd.getRange(idx+2, colIncluir+1).setValue('no');
+    // Deshabilitar en Productos (en memoria; se escribe todo junto al final)
+    prodData[idx][colIncluir] = 'no';
 
     // Marcar en RegistroProductos como deshabilitado
-    if (REGCOL['Procesado'] !== undefined)
-      sheetReg.getRange(rowNum, REGCOL['Procesado']+1).setValue('deshabilitado');
+    if (colProcesadoIdx !== undefined) regProcesado[i] = 'deshabilitado';
 
     deshabilitados++;
+  }
 
-    if (deshabilitados % 100 === 0) {
-      SpreadsheetApp.flush();
-      SpreadsheetApp.getActiveSpreadsheet()
-        .toast(`Deshabilitando... ${deshabilitados} productos`, '⛔ En proceso', 5);
-    }
+  if (prodData.length > 0) {
+    sheetProd.getRange(2, 1, prodData.length, prodHeaders.length).setValues(prodData);
+  }
+  if (colProcesadoIdx !== undefined) {
+    sheetReg.getRange(2, colProcesadoIdx + 1, regProcesado.length, 1).setValues(regProcesado.map(v => [v]));
+  }
+  if (colErrorIdx !== undefined) {
+    sheetReg.getRange(2, colErrorIdx + 1, regErrorCol.length, 1).setValues(regErrorCol.map(v => [v]));
   }
 
   SpreadsheetApp.flush();
@@ -10204,8 +10254,25 @@ const COLUMNAS_CRM_EXCEL = ['CodigoEAN', 'DescripcionArticulo', 'PrecioMayorSinI
 // periódico con la configuración actual de esta función. Si ya existe uno
 // para revisarCorreoListadoProductos, se borra y se vuelve a crear — así,
 // para cambiar la frecuencia más adelante basta con editar esta función
-// (por ejemplo el .atHour(7) de abajo) y volver a ejecutarla, sin tener
-// que borrar el trigger a mano desde Activadores.
+// (por ejemplo el .everyHours(2) de abajo) y volver a ejecutarla, sin
+// tener que borrar el trigger a mano desde Activadores.
+//
+// Antes se ejecutaba UNA sola vez al día (.everyDays(1).atHour(7)) — si
+// esa única pasada agotaba el tiempo máximo de ejecución de Apps Script
+// (6 minutos; el catálogo había crecido lo suficiente como para que el
+// escaneo de imágenes de cargarCacheImagenes_() por sí solo pudiera
+// consumirlos, ver esa función), el correo del CRM se quedaba SIN
+// marcar como procesado (a propósito, ver el comentario junto a
+// marcarHilosComoProcesados_ en revisarCorreoListadoProductos) pero no
+// se reintentaba hasta el día siguiente a esa misma hora — "sigue
+// fallando... por tiempo excedido" se repetía indefinidamente si cada
+// intento tardaba aproximadamente lo mismo. Pasar a varias ejecuciones
+// al día (cada 2h, las 24h) deja que un intento fallido se reintente
+// solo, el mismo día, unas horas después — sin tocar la lógica de
+// sincronización en sí: revisarCorreoListadoProductos() ya es segura de
+// llamar repetidas veces (LockService evita que se solapen dos a la
+// vez, y si no hay ningún correo nuevo sin procesar simplemente no hace
+// nada, así que las pasadas "de más" en un día normal son gratis).
 function configurarTriggerRevisionCorreoProductos() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'revisarCorreoListadoProductos')
@@ -10213,10 +10280,9 @@ function configurarTriggerRevisionCorreoProductos() {
 
   ScriptApp.newTrigger('revisarCorreoListadoProductos')
     .timeBased()
-    .everyDays(1)
-    .atHour(7) // franja horaria de ejecución (Apps Script no garantiza el minuto exacto); ajustar según cuándo suele llegar el correo del CRM
+    .everyHours(2)
     .create();
-  console.log('Trigger creado: revisarCorreoListadoProductos se ejecutará una vez al día, en la franja de las 7h.');
+  console.log('Trigger creado: revisarCorreoListadoProductos se ejecutará cada 2 horas (reintenta sola el mismo día si una pasada falla o agota el tiempo).');
 }
 
 // Función que ejecuta el disparador periódico. Busca correos del CRM sin
