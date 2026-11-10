@@ -1000,6 +1000,10 @@
         }
         .temporada-ver-todos-folleto-acciones button:hover { background: var(--light); }
         .temporada-ver-todos-folleto-acciones button:disabled { opacity: 0.6; cursor: default; }
+        .temporada-ver-todos-seleccion-panel {
+            margin: 10px 0 14px; padding: 10px 12px; background: var(--light);
+            border: 1px solid var(--border); border-radius: 8px;
+        }
         .temporada-ver-todos-subtitulo {
             font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: .3px;
             color: var(--muted); margin: 4px 0 8px; display: flex; align-items: center; gap: 6px;
@@ -7308,6 +7312,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="temporada-ver-todos-compartir-pdf"><i class="fa-solid fa-share-nodes"></i> Compartir folleto</button>
         </div>
 
+        <!-- Selección propia dentro de la temporada — a petición
+             explícita de Eloy: "generar un folleto a partir de una lista
+             de selección que el usuario vaya marcando". Reutiliza la
+             MISMA marca (el botón "+"/check de cada tarjeta, ya ligado a
+             la Lista de la compra) en vez de un mecanismo de marcado
+             aparte — "seleccionar" un producto aquí es añadirlo a esa
+             misma lista. "Limpiar selección" solo quita los productos DE
+             ESTA TEMPORADA (nunca toca el resto de tu lista si tuviera
+             productos de otras páginas). -->
+        <div class="temporada-ver-todos-seleccion-panel">
+            <p class="destacados-hint" style="margin:0 0 6px;">
+                <strong><span id="temporada-ver-todos-seleccion-contador">0</span></strong> producto(s) marcado(s) de esta temporada en tu selección.
+            </p>
+            <div class="temporada-ver-todos-folleto-acciones">
+                <button type="button" id="temporada-ver-todos-seleccion-anadir-todos"><i class="fa-solid fa-layer-group"></i> Añadir todos los visibles</button>
+                <button type="button" id="temporada-ver-todos-seleccion-limpiar"><i class="fa-solid fa-eraser"></i> Limpiar selección</button>
+                <button type="button" id="temporada-ver-todos-seleccion-pdf" disabled><i class="fa-solid fa-file-pdf"></i> Folleto de mi selección</button>
+                <button type="button" id="temporada-ver-todos-seleccion-compartir-pdf" disabled><i class="fa-solid fa-share-nodes"></i> Compartir folleto de selección</button>
+            </div>
+        </div>
+
         <!-- Destacados y novedades de ESTA temporada — a petición
              explícita de Eloy, para ayudar a decidir rápido sin tener
              que mirar todo el catálogo de la temporada. Se oculta sola
@@ -10703,6 +10728,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
             listaCompraActualizarUI_();
             actualizarBoton_();
+            temporadaModalActualizarPanelSeleccion_();
         });
         card.appendChild(btn);
         return card;
@@ -10784,6 +10810,66 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('temporada-ver-todos-precio-min').value = '';
         $('temporada-ver-todos-precio-max').value = '';
         temporadaRenderizarChipsFamilias_();
+        temporadaModalFiltrarYRenderizar_();
+    }
+
+    // ── Selección propia de la temporada (marcar productos para el
+    // folleto) — a petición explícita de Eloy: "poder generar un
+    // folleto a partir de una lista de selección que el usuario vaya
+    // marcando, así como limpiar seleccionados... y el añadir a la
+    // lista todos". "Marcar" un producto es añadirlo a la MISMA Lista
+    // de la compra de siempre (ver temporadaCrearTarjetaConSeleccion_),
+    // así que la selección de esta temporada es, sencillamente, el
+    // subconjunto de sus propios productos que ya están en esa lista. ──
+    function temporadaModalProductosSeleccionados_() {
+        return temporadaModalProductosBase_.filter(p => listaCompraTiene_(p.ref));
+    }
+
+    function temporadaModalActualizarPanelSeleccion_() {
+        const n = temporadaModalProductosSeleccionados_().length;
+        $('temporada-ver-todos-seleccion-contador').textContent = n;
+        $('temporada-ver-todos-seleccion-pdf').disabled = n === 0;
+        $('temporada-ver-todos-seleccion-compartir-pdf').disabled = n === 0;
+        $('temporada-ver-todos-seleccion-limpiar').disabled = n === 0;
+    }
+
+    // Añade TODOS los productos actualmente visibles (según el filtro/
+    // orden activo en ese momento, no toda la temporada) a la Lista de
+    // la compra de un golpe — los que ya estuvieran se saltan solos.
+    function temporadaModalAnadirTodosVisibles_() {
+        const visibles = temporadaModalProductosFiltrados_();
+        if (!visibles.length) return;
+        let añadidos = 0;
+        visibles.forEach(p => { if (listaCompraAnadir_(p) === 'ok') añadidos++; });
+        listaCompraActualizarUI_();
+        temporadaModalActualizarVistaTrasCambioSeleccion_();
+        mostrarToast(añadidos ? `Añadidos ${añadidos} producto(s) a tu selección.` : 'Ya tenías todos los productos visibles en tu selección.');
+    }
+
+    // Solo quita de la Lista de la compra los productos DE ESTA
+    // TEMPORADA — nunca toca el resto de la lista si tuviera productos
+    // añadidos desde otras páginas/temporadas.
+    function temporadaModalLimpiarSeleccion_() {
+        const seleccionados = temporadaModalProductosSeleccionados_();
+        if (!seleccionados.length) return;
+        pedirConfirmacionListaCompra_(
+            '¿Limpiar la selección de esta temporada?',
+            `Se quitarán de tu lista de la compra los ${seleccionados.length} producto(s) marcados de "${(temporadaModalTemporadaActual_ && temporadaModalTemporadaActual_.nombre) || 'esta temporada'}". El resto de tu lista (si tuviera productos de otras páginas) no se toca.`,
+            () => {
+                seleccionados.forEach(p => listaCompraEliminarProducto_(p.ref));
+                listaCompraActualizarUI_();
+                temporadaModalActualizarVistaTrasCambioSeleccion_();
+                mostrarToast('Selección de esta temporada vaciada.');
+            }
+        );
+    }
+
+    // Tras un cambio masivo de selección (añadir/limpiar todos), hay que
+    // refrescar tanto el panel (contador/botones) como el check de cada
+    // tarjeta ya pintada — repintar la vista entera es lo más simple y
+    // fiable, ya filtrada/ordenada igual que estaba.
+    function temporadaModalActualizarVistaTrasCambioSeleccion_() {
+        temporadaModalActualizarPanelSeleccion_();
         temporadaModalFiltrarYRenderizar_();
     }
 
@@ -10948,6 +11034,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         temporadaRenderizarChipsFamilias_();
         temporadaPoblarSelectorMarca_().then(() => { $('temporada-ver-todos-marca').value = ''; });
         temporadaRenderizarDestacadosNovedades_();
+        temporadaModalActualizarPanelSeleccion_();
         temporadaModalFiltrarYRenderizar_();
 
         // Opciones de búsqueda al final del scroll: una por cada familia
@@ -11199,13 +11286,19 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
     }
 
-    async function construirDocumentoPdfTemporada_(onProgreso) {
+    // soloSeleccion=true: el folleto se genera SOLO con los productos de
+    // esta temporada que el usuario ya ha marcado (ver
+    // temporadaModalProductosSeleccionados_), ignorando el filtro/orden
+    // activo en ese momento — a petición explícita de Eloy: "generar un
+    // folleto a partir de una lista de selección que el usuario vaya
+    // marcando".
+    async function construirDocumentoPdfTemporada_(onProgreso, soloSeleccion) {
         if (typeof window.jspdf === 'undefined') return null;
         // Nunca con el precio al por mayor todavía sin confirmar — mismo
         // motivo que construirDocumentoPdfDestacados_.
         if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) return 'pendiente';
         const t = temporadaModalTemporadaActual_;
-        const productos = temporadaModalProductosFiltrados_();
+        const productos = soloSeleccion ? temporadaModalProductosSeleccionados_() : temporadaModalProductosFiltrados_();
         if (!t || !productos.length) return null;
 
         const { jsPDF } = window.jspdf;
@@ -11229,7 +11322,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9.5);
             doc.setTextColor(30, 33, 37);
-            doc.text((t.nombre || 'PRODUCTOS DE TEMPORADA').toUpperCase(), contentRight, 12, { align: 'right' });
+            doc.text((t.nombre || 'PRODUCTOS DE TEMPORADA').toUpperCase() + (soloSeleccion ? ' — SELECCIÓN' : ''), contentRight, 12, { align: 'right' });
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(120, 123, 130);
@@ -11294,34 +11387,38 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return doc;
     }
 
-    function temporadaNombreArchivoPdf_() {
+    function temporadaNombreArchivoPdf_(soloSeleccion) {
         const t = temporadaModalTemporadaActual_;
         const slug = (t && t.nombre ? t.nombre : 'temporada').toLowerCase()
             .normalize('NFD').replace(/[̀-ͯ]/g, '')
             .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        return `${slug || 'temporada'}-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
+        return `${slug || 'temporada'}${soloSeleccion ? '-seleccion' : ''}-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
     }
 
     let temporadaFolletoGenerando_ = false;
-    async function temporadaEjecutarAccionFolleto_(btnPulsado, accion) {
+    async function temporadaEjecutarAccionFolleto_(btnPulsado, soloSeleccion, accion) {
         if (temporadaFolletoGenerando_) return;
-        if (!temporadaModalProductosFiltrados_().length) {
-            mostrarToast('No hay productos que mostrar en el folleto con el filtro actual.', 'error');
+        const hayProductos = soloSeleccion ? temporadaModalProductosSeleccionados_().length : temporadaModalProductosFiltrados_().length;
+        if (!hayProductos) {
+            mostrarToast(soloSeleccion
+                ? 'Tu selección de esta temporada está vacía — marca algún producto primero.'
+                : 'No hay productos que mostrar en el folleto con el filtro actual.', 'error');
             return;
         }
         temporadaFolletoGenerando_ = true;
-        const btnPdf = $('temporada-ver-todos-pdf'), btnCompartir = $('temporada-ver-todos-compartir-pdf');
+        const botonesAfectados = soloSeleccion
+            ? [$('temporada-ver-todos-seleccion-pdf'), $('temporada-ver-todos-seleccion-compartir-pdf')]
+            : [$('temporada-ver-todos-pdf'), $('temporada-ver-todos-compartir-pdf')];
         const textoPulsadoOriginal = btnPulsado.innerHTML;
         const fijarEstado = (texto) => { btnPulsado.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`; };
-        btnPdf.disabled = true;
-        btnCompartir.disabled = true;
+        botonesAfectados.forEach(b => { b.disabled = true; });
         fijarEstado('Preparando…');
         try {
             const doc = await construirDocumentoPdfTemporada_((completadas, total, restantesMs) => {
                 fijarEstado(completadas < total
                     ? `Generando… (${completadas}/${total}, ~${Math.max(1, Math.round(restantesMs / 1000))}s)`
                     : 'Componiendo folleto…');
-            });
+            }, soloSeleccion);
             if (doc === 'pendiente') {
                 mostrarToast('Todavía se está confirmando el precio profesional, espera unos segundos y vuelve a intentarlo.', 'error');
                 return;
@@ -11337,33 +11434,54 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         } finally {
             temporadaFolletoGenerando_ = false;
             btnPulsado.innerHTML = textoPulsadoOriginal;
-            btnPdf.disabled = false;
-            btnCompartir.disabled = false;
+            // Los botones de "mi selección" solo se reactivan si sigue
+            // habiendo algo seleccionado — temporadaModalActualizarPanelSeleccion_
+            // ya decide eso; para los del folleto general, siempre.
+            if (soloSeleccion) temporadaModalActualizarPanelSeleccion_();
+            else botonesAfectados.forEach(b => { b.disabled = false; });
         }
     }
 
     function temporadaDescargarPdf_() {
-        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-pdf'), async (doc) => {
-            doc.save(temporadaNombreArchivoPdf_());
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-pdf'), false, async (doc) => {
+            doc.save(temporadaNombreArchivoPdf_(false));
         });
     }
 
     function temporadaCompartirPdf_() {
-        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-compartir-pdf'), async (doc) => {
-            const blob = doc.output('blob');
-            const file = new File([blob], temporadaNombreArchivoPdf_(), { type: 'application/pdf' });
-            const t = temporadaModalTemporadaActual_;
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({ files: [file], title: t ? t.nombre : 'Productos de temporada', text: (t ? t.nombre : 'Productos de temporada') + ' — Orencio Matas y Hnos' });
-                    return;
-                } catch (e) {
-                    if (e && e.name === 'AbortError') return;
-                }
-            }
-            doc.save(temporadaNombreArchivoPdf_());
-            mostrarToast('Tu navegador no permite compartir archivos directamente — se ha descargado el PDF, puedes adjuntarlo a mano.');
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-compartir-pdf'), false, async (doc) => {
+            await temporadaCompartirODescargarDoc_(doc, false);
         });
+    }
+
+    function temporadaDescargarPdfSeleccion_() {
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-seleccion-pdf'), true, async (doc) => {
+            doc.save(temporadaNombreArchivoPdf_(true));
+        });
+    }
+
+    function temporadaCompartirPdfSeleccion_() {
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-seleccion-compartir-pdf'), true, async (doc) => {
+            await temporadaCompartirODescargarDoc_(doc, true);
+        });
+    }
+
+    async function temporadaCompartirODescargarDoc_(doc, soloSeleccion) {
+        const blob = doc.output('blob');
+        const nombreArchivo = temporadaNombreArchivoPdf_(soloSeleccion);
+        const file = new File([blob], nombreArchivo, { type: 'application/pdf' });
+        const t = temporadaModalTemporadaActual_;
+        const titulo = (t ? t.nombre : 'Productos de temporada') + (soloSeleccion ? ' — Selección' : '');
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file], title: titulo, text: titulo + ' — Orencio Matas y Hnos' });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+        doc.save(nombreArchivo);
+        mostrarToast('Tu navegador no permite compartir archivos directamente — se ha descargado el PDF, puedes adjuntarlo a mano.');
     }
 
     // Vuelve al buscador principal ya filtrado por esta familia — SIN
@@ -11907,6 +12025,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         temporadaModalFiltrarYRenderizar_();
     });
     $('temporada-ver-todos-limpiar-filtros-vacio').addEventListener('click', temporadaModalLimpiarFiltros_);
+    $('temporada-ver-todos-seleccion-anadir-todos').addEventListener('click', temporadaModalAnadirTodosVisibles_);
+    $('temporada-ver-todos-seleccion-limpiar').addEventListener('click', temporadaModalLimpiarSeleccion_);
+    $('temporada-ver-todos-seleccion-pdf').addEventListener('click', temporadaDescargarPdfSeleccion_);
+    $('temporada-ver-todos-seleccion-compartir-pdf').addEventListener('click', temporadaCompartirPdfSeleccion_);
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && $('temporada-ver-todos-overlay').classList.contains('activo')) cerrarModalTemporadaVerTodos_();
     });
