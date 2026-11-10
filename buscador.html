@@ -8157,7 +8157,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         naftalina: ['polilla'],      // término clásico para antipolillas — el catálogo nombra estos productos por "polilla" (ANTIPOLILLAS Y S/G ROPAS), nunca "naftalina"
     };
 
+    // Memorizada por cadena de entrada — normalizar() es una función
+    // pura (mismo texto, mismo resultado siempre) pero nada barata
+    // (normalize('NFD') + split + recorrido de palabras contra el
+    // diccionario de abreviaturas), y coincide() la llama DOS veces en
+    // cada comparación (campo del producto Y término de búsqueda). Con
+    // ~9.500 productos y varias búsquedas fuzzy por producto (nombre,
+    // ref, familia, subfamilia), el mismo nombre de producto se
+    // normalizaba una y otra vez para cada término distinto — bug real
+    // de rendimiento reportado por Eloy ("necesito que trabajemos mas en
+    // rendimiento"). Memorizar por valor de entrada evita recalcular lo
+    // mismo dos veces, tanto aquí como en cualquier otro sitio del código
+    // que ya reutiliza normalizar() (sugerencias, etiquetas, etc.).
+    const normalizarCache_ = new Map();
     function normalizar(txt) {
+        const clave = txt == null ? '' : String(txt);
+        const cacheado = normalizarCache_.get(clave);
+        if (cacheado !== undefined) return cacheado;
+        const resultado = normalizarSinCache_(clave);
+        // Límite de seguridad para que la caché no crezca sin fin en una
+        // sesión muy larga con búsquedas muy variadas.
+        if (normalizarCache_.size > 20000) normalizarCache_.clear();
+        normalizarCache_.set(clave, resultado);
+        return resultado;
+    }
+    function normalizarSinCache_(txt) {
         const base = (txt || '').toString()
             .toLowerCase()
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -8278,7 +8302,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Distancia de Levenshtein para fuzzy matching ──
+    // Memorizada por par de palabras: son textos cortos (palabras
+    // sueltas, no frases) que se repiten muchísimo entre comparaciones
+    // distintas — el mismo par (p.ej. una palabra de búsqueda contra
+    // "spray", "crema", una marca...) vuelve a aparecer en cientos de
+    // productos del catálogo. Función pura (mismo par, mismo resultado
+    // siempre), así que memorizar es siempre seguro.
+    const levenshteinCache_ = new Map();
     function levenshtein(a, b) {
+        const clave = a + '\u0001' + b;
+        const cacheado = levenshteinCache_.get(clave);
+        if (cacheado !== undefined) return cacheado;
+        const resultado = levenshteinSinCache_(a, b);
+        if (levenshteinCache_.size > 20000) levenshteinCache_.clear();
+        levenshteinCache_.set(clave, resultado);
+        return resultado;
+    }
+    function levenshteinSinCache_(a, b) {
         const matrix = [];
         for (let i = 0; i <= b.length; i++) {
             matrix[i] = [i];
@@ -12422,9 +12462,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
           .catch(() => []); // sin esto, los módulos siguen sin mostrarse — el buscador sigue funcionando igual
     }
 
+    // requestIdleCallback (con setTimeout de respaldo en Safari, que no lo
+    // implementa): este módulo es caro incluso ya optimizado (recorre el
+    // catálogo activo con fuzzy matching por cada término) — a petición
+    // de Eloy de seguir mejorando el rendimiento, se aplaza a que el
+    // navegador tenga un hueco libre en vez de competir por el hilo
+    // principal justo cuando el catálogo termina de cargar, que es
+    // también cuando el usuario puede estar ya interactuando con la
+    // página (p. ej. abriendo la modal de una temporada).
+    function enHuecoLibre_(fn) {
+        if (window.requestIdleCallback) requestIdleCallback(fn, { timeout: 2000 });
+        else setTimeout(fn, 300);
+    }
+
     function cargarMasBuscados_() {
         if (!TODOS.length) return;
-        obtenerTerminosMasBuscados_().then(renderMasBuscados_);
+        enHuecoLibre_(() => obtenerTerminosMasBuscados_().then(renderMasBuscados_));
     }
 
     // ── Módulo "🏆 Marcas más buscadas" ──────────────────────────────────
@@ -12563,8 +12616,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function cargarMarcasMasBuscadas_() {
         if (!TODOS.length) return;
-        Promise.all([obtenerTerminosMasBuscados_(), cargarMapaMarcasAsistente()])
-          .then(([terminos]) => renderMarcasMasBuscadas_(terminos));
+        enHuecoLibre_(() => {
+            Promise.all([obtenerTerminosMasBuscados_(), cargarMapaMarcasAsistente()])
+              .then(([terminos]) => renderMarcasMasBuscadas_(terminos));
+        });
     }
 
     // ── Módulo "🆕 Novedades" ────────────────────────────────────────────
