@@ -1021,6 +1021,20 @@
         #temporada-ver-todos-familias-chips button.activo {
             background: var(--red); border-color: var(--red); color: #fff;
         }
+        /* Aviso de filtros activos — a petición explícita de Eloy: "si
+           hay filtros, sombrea o añade un estilo a limpiar filtros para
+           que el usuario lo identifique rápidamente". Antes era un
+           simple texto discreto (.destacados-hint); ahora un aviso con
+           fondo propio, igual de visible que el resto de avisos del
+           sitio, con "Limpiar filtros" destacado como acción clara. */
+        .temporada-ver-todos-filtros-activos {
+            font-size: 0.8rem; margin: 8px 0 0; padding: 8px 12px;
+            background: #fff7e6; border: 1px solid var(--yellow); border-radius: 8px;
+            color: var(--dark); display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+        }
+        .temporada-ver-todos-filtros-activos a {
+            font-weight: 800; color: var(--red); text-decoration: underline; white-space: nowrap;
+        }
         .temporada-ver-todos-vigencia { color: var(--muted); font-size: 0.85rem; margin: -6px 0 14px; }
         .temporada-ver-todos-buscar {
             width: 100%; padding: 9px 12px; margin-bottom: 16px;
@@ -7357,9 +7371,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <i class="fa-solid fa-arrow-up"></i>
     </button>
     <div class="modal-producto-box modal-temporada-ver-todos-box" id="temporada-ver-todos-box" role="dialog" aria-modal="true" aria-labelledby="temporada-ver-todos-titulo">
-        <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+        <!-- Sticky (mismo patrón que modal-producto-box/modal-detalle-
+             bloque-box): desde que la modal entera es el contenedor con
+             scroll (ver el comentario de .modal-producto-box.modal-
+             temporada-ver-todos-box), un botón "position:absolute" normal
+             se queda arriba del todo y desaparece de la vista nada más
+             bajar un poco — a petición explícita de Eloy: "quiero que el
+             botón de cerrar esté siempre a mano ya que ahora mismo se
+             queda ocultado arriba". -->
+        <div class="modal-producto-cerrar-sticky">
+            <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
         <h3 id="temporada-ver-todos-titulo">
             <span id="temporada-ver-todos-titulo-icono"><i class="fa-solid fa-snowflake"></i></span>
             <span id="temporada-ver-todos-titulo-texto">Productos de temporada</span>
@@ -7426,7 +7450,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <option value="novedad">Novedades primero</option>
             </select>
         </div>
-        <p id="temporada-ver-todos-filtros-activos" class="destacados-hint" style="display:none; margin:6px 0 0;"></p>
+        <p id="temporada-ver-todos-filtros-activos" class="temporada-ver-todos-filtros-activos" style="display:none;"></p>
 
         <input type="text" id="temporada-ver-todos-buscar" class="temporada-ver-todos-buscar" placeholder="Buscar por nombre, referencia o marca entre estos productos...">
         <div id="temporada-ver-todos-scroll" class="temporada-ver-todos-scroll">
@@ -10991,7 +11015,10 @@ if (window.OM_PREPRODUCCION) {
     // productos de las temporadas activas" (accesos directos por
     // familia, marca, presupuesto, ordenación). Se reinician cada vez
     // que se abre la modal (ver abrirModalTemporada_).
-    let temporadaModalFiltroFamilia_ = '';
+    // Conjunto de familias activas (vacío = todas) — a petición explícita
+    // de Eloy: "que se pueda seleccionar múltiples familias y no solo
+    // una como hasta ahora". Antes era un único string.
+    let temporadaModalFiltrosFamilia_ = new Set();
     let temporadaModalFiltroMarca_ = '';
     let temporadaModalPrecioMin_ = null;
     let temporadaModalPrecioMax_ = null;
@@ -11186,7 +11213,7 @@ if (window.OM_PREPRODUCCION) {
     function temporadaModalProductosFiltrados_() {
         const texto = ($('temporada-ver-todos-buscar').value || '').trim().toLowerCase();
         let lista = temporadaModalProductosBase_;
-        if (temporadaModalFiltroFamilia_) lista = lista.filter(p => p.familia === temporadaModalFiltroFamilia_);
+        if (temporadaModalFiltrosFamilia_.size) lista = lista.filter(p => temporadaModalFiltrosFamilia_.has(p.familia));
         if (temporadaModalFiltroMarca_) lista = lista.filter(p => detectarMarcaAsistente(p.nombre) === temporadaModalFiltroMarca_);
         if (temporadaModalPrecioMin_ != null || temporadaModalPrecioMax_ != null) {
             lista = lista.filter(p => {
@@ -11237,26 +11264,26 @@ if (window.OM_PREPRODUCCION) {
     }
 
     function temporadaModalHayFiltrosActivos_() {
-        return !!(temporadaModalFiltroFamilia_ || temporadaModalFiltroMarca_
+        return !!(temporadaModalFiltrosFamilia_.size || temporadaModalFiltroMarca_
             || temporadaModalPrecioMin_ != null || temporadaModalPrecioMax_ != null
             || ($('temporada-ver-todos-buscar').value || '').trim());
     }
 
     function temporadaModalActualizarIndicadorFiltros_() {
         const activos = [];
-        if (temporadaModalFiltroFamilia_) activos.push('Familia: ' + temporadaModalFiltroFamilia_);
+        if (temporadaModalFiltrosFamilia_.size) activos.push('Familia: ' + [...temporadaModalFiltrosFamilia_].join(', '));
         if (temporadaModalFiltroMarca_) activos.push('Marca: ' + temporadaModalFiltroMarca_);
         if (temporadaModalPrecioMin_ != null) activos.push('Desde ' + temporadaModalPrecioMin_ + ' €');
         if (temporadaModalPrecioMax_ != null) activos.push('Hasta ' + temporadaModalPrecioMax_ + ' €');
         const el = $('temporada-ver-todos-filtros-activos');
         if (!activos.length) { el.style.display = 'none'; return; }
         el.style.display = '';
-        el.innerHTML = `Filtros activos: ${escapeHtml(activos.join(' · '))} — <a href="#" id="temporada-ver-todos-limpiar-filtros-link">Limpiar filtros</a>`;
+        el.innerHTML = `<i class="fa-solid fa-filter"></i> Filtros activos: ${escapeHtml(activos.join(' · '))} — <a href="#" id="temporada-ver-todos-limpiar-filtros-link">Limpiar filtros</a>`;
         $('temporada-ver-todos-limpiar-filtros-link').addEventListener('click', (e) => { e.preventDefault(); temporadaModalLimpiarFiltros_(); });
     }
 
     function temporadaModalLimpiarFiltros_() {
-        temporadaModalFiltroFamilia_ = '';
+        temporadaModalFiltrosFamilia_.clear();
         temporadaModalFiltroMarca_ = '';
         temporadaModalPrecioMin_ = null;
         temporadaModalPrecioMax_ = null;
@@ -11413,7 +11440,11 @@ if (window.OM_PREPRODUCCION) {
     // ── Accesos directos por familia, selector de marca y destacados/
     // novedades de la temporada — a petición explícita de Eloy:
     // "funcionalidades que ayuden a comerciales y clientes a seleccionar
-    // productos de las temporadas activas". ──
+    // productos de las temporadas activas". Selección MÚLTIPLE de
+    // familias (a petición explícita de Eloy: "que se pueda seleccionar
+    // múltiples familias y no solo una como hasta ahora") — cada chip de
+    // familia se activa/desactiva de forma independiente (como una lista
+    // de checkboxes), "Todas" las desmarca todas de golpe. ──
     function temporadaRenderizarChipsFamilias_() {
         const cont = $('temporada-ver-todos-familias-chips');
         const familias = [...new Set(temporadaModalProductosBase_.map(p => p.familia).filter(Boolean))]
@@ -11422,9 +11453,9 @@ if (window.OM_PREPRODUCCION) {
         const chipTodas = document.createElement('button');
         chipTodas.type = 'button';
         chipTodas.textContent = 'Todas';
-        chipTodas.className = temporadaModalFiltroFamilia_ ? '' : 'activo';
+        chipTodas.className = temporadaModalFiltrosFamilia_.size ? '' : 'activo';
         chipTodas.addEventListener('click', () => {
-            temporadaModalFiltroFamilia_ = '';
+            temporadaModalFiltrosFamilia_.clear();
             temporadaRenderizarChipsFamilias_();
             temporadaModalFiltrarYRenderizar_();
         });
@@ -11433,9 +11464,10 @@ if (window.OM_PREPRODUCCION) {
             const chip = document.createElement('button');
             chip.type = 'button';
             chip.textContent = familia;
-            chip.className = (temporadaModalFiltroFamilia_ === familia) ? 'activo' : '';
+            chip.className = temporadaModalFiltrosFamilia_.has(familia) ? 'activo' : '';
             chip.addEventListener('click', () => {
-                temporadaModalFiltroFamilia_ = (temporadaModalFiltroFamilia_ === familia) ? '' : familia;
+                if (temporadaModalFiltrosFamilia_.has(familia)) temporadaModalFiltrosFamilia_.delete(familia);
+                else temporadaModalFiltrosFamilia_.add(familia);
                 temporadaRenderizarChipsFamilias_();
                 temporadaModalFiltrarYRenderizar_();
             });
@@ -11478,7 +11510,7 @@ if (window.OM_PREPRODUCCION) {
 
         // Filtros/orden siempre reiniciados al (re)abrir una temporada —
         // los de la anterior no deben "arrastrarse" a esta.
-        temporadaModalFiltroFamilia_ = '';
+        temporadaModalFiltrosFamilia_.clear();
         temporadaModalFiltroMarca_ = '';
         temporadaModalPrecioMin_ = null;
         temporadaModalPrecioMax_ = null;
