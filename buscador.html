@@ -16654,6 +16654,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return `${base}?ref=${encodeURIComponent(p.ref)}`;
     }
 
+    // Misma URL de compartir, pero SIEMPRE con el dominio de producción
+    // (orenciomatas.es), nunca el de preproducción/GitHub Pages desde el
+    // que se haya generado — a petición explícita de Eloy: el QR de una
+    // etiqueta de producto es algo físico que se imprime y queda pegado
+    // en una estantería; si se genera desde preproducción (como ya pasa
+    // al probar/gestionar etiquetas ahí), el QR debe seguir llevando al
+    // cliente real que lo escanee a la web pública de verdad, nunca a la
+    // URL de pruebas de GitHub Pages. Usada SOLO para el QR impreso en
+    // las etiquetas (ver etiquetaQrPara_) — el botón "Compartir" de la
+    // ficha de producto sigue usando urlCompartirProducto tal cual, con
+    // el dominio desde el que se esté navegando en cada momento.
+    function urlCompartirProductoProduccion_(p) {
+        return `https://orenciomatas.es/buscador.html?ref=${encodeURIComponent(p.ref)}`;
+    }
+
     function configurarBotonCompartir(p) {
         const boton = $('modal-producto-compartir');
         boton.classList.remove('copiado');
@@ -17324,13 +17339,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
         // URL para buscar el producto directamente en la web a partir de
-        // su referencia — reutiliza urlCompartirProducto (más arriba en
-        // este archivo, ya usada por el botón "Compartir" de la ficha):
-        // la página actual + ?ref=<referencia>, que el propio buscador ya
-        // sabe detectar y abrir automáticamente el detalle de ese
-        // producto (ver abrirProductoDesdeURL) — ningún enlace ni lógica
-        // nueva, el QR solo codifica ese mismo enlace.
-        const urlQr = urlCompartirProducto(p);
+        // su referencia — urlCompartirProductoProduccion_ (más arriba en
+        // este archivo) en vez de urlCompartirProducto a propósito: el QR
+        // de una etiqueta impresa debe llevar SIEMPRE al dominio de
+        // producción (orenciomatas.es), nunca al de preproducción desde
+        // el que se haya generado la etiqueta (bug real reportado por
+        // Eloy). El resto es igual: ?ref=<referencia>, que el propio
+        // buscador ya sabe detectar y abrir automáticamente (ver
+        // abrirProductoDesdeURL).
+        const urlQr = urlCompartirProductoProduccion_(p);
         return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo, urlQr };
     }
 
