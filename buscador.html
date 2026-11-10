@@ -8894,7 +8894,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             renderAtributosTaller();
             renderAtributosPintura();
             aplicarFiltros(); // Actualizar resultados con los nuevos productos
-            actualizarModulosDescubrimiento_(); // TODOS ha cambiado (nuevos catálogos de proveedor) — ver el porqué junto a su definición
+            actualizarModulosDescubrimiento_(true); // TODOS ha cambiado (nuevos catálogos de proveedor) — ver el porqué junto a su definición; soloRepintar: Destacados/Temporadas/Campañas no cambian por esto, solo el catálogo
             // TODOS ya está completo (catálogo principal + proveedores de
             // Talleres): ahora sí se puede comprobar con seguridad que los
             // productos de la lista de la compra sigan activos, sin falsos
@@ -8910,6 +8910,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     async function cargarProductosPrincipales() {
         let primerPintadoHecho = false;
+
+        // La petición EN VIVO a Apps Script (la lenta: puede tardar varios
+        // segundos) se lanza YA, en paralelo con el pintado instantáneo de
+        // abajo, en vez de esperar a que ese pintado termine del todo
+        // (incluido el arranque de los módulos de portada) para ni
+        // siquiera EMPEZAR a pedirla — antes esperaba su turno detrás del
+        // "await" del JSON estático, perdiendo varios segundos de
+        // solapamiento gratis. A petición explícita de Eloy: "la carga
+        // sea practicamente instantánea sin perder la actualización de
+        // los productos evitando cachear" — el pintado instantáneo sigue
+        // igual de rápido, pero la corrección en vivo llega antes al
+        // arrancar su petición de red desde el primer instante.
+        const peticionEnVivo_ = fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' })
+            .catch(e => { console.warn('No se pudo cargar la fuente en vivo de Apps Script:', e); return null; });
 
         // 1) Pintado instantáneo desde el JSON estático del despliegue
         //    (rápido gracias a la caché HTTP normal del navegador).
@@ -8932,15 +8946,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             console.warn('No se pudo cargar el JSON estático de productos:', e);
         }
 
-        // 2) Reconciliar de inmediato con la fuente EN VIVO de Apps
-        //    Script — así una imagen actualizada por cualquier persona
-        //    (incluida la propia, tras recargar la página) se corrige a
-        //    los pocos segundos de cargar, sin esperar a ningún
-        //    despliegue. Si el primer pintado ha fallado, esta pasa a
-        //    ser directamente la fuente principal.
+        // 2) Reconciliar con la respuesta en vivo de Apps Script que ya
+        //    se lanzó en paralelo arriba (puede incluso haber llegado ya)
+        //    — así una imagen actualizada por cualquier persona (incluida
+        //    la propia, tras recargar la página) se corrige a los pocos
+        //    segundos de cargar, sin esperar a ningún despliegue. Si el
+        //    primer pintado ha fallado, esta pasa a ser directamente la
+        //    fuente principal.
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
-            if (resp.ok) {
+            const resp = await peticionEnVivo_;
+            if (resp && resp.ok) {
                 const texto = await resp.text();
                 const hash = await calcularHash(texto);
                 // Se comprueba ANTES de aplicar el hash/reconciliación de
@@ -8954,7 +8969,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     if (primerPintadoHecho) {
                         reconciliarConTextoEnVivo(texto);
                         aplicarFiltros();
-                        actualizarModulosDescubrimiento_(); // corrige los módulos si la reconciliación cambió algo (p.ej. una imagen)
+                        // soloRepintar=true: Destacados/Temporadas/Campañas
+                        // ya se pidieron en el primer actualizarModulosDescubrimiento_()
+                        // de hace unos segundos — lo único que cambió aquí es
+                        // el catálogo, así que basta con repintar esos tres
+                        // módulos con los datos que ya se cargaron, sin
+                        // repetir sus peticiones a Apps Script.
+                        actualizarModulosDescubrimiento_(true);
                     } else {
                         poblarDesdeTexto(texto);
                         await mostrarResultadosPorPrimeraVez();
@@ -8973,7 +8994,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     // compra si están abiertas en ese momento. Bug real
                     // MUY GRAVE reportado por Eloy, ver preciosMayorConfirmados_.
                     aplicarFiltros();
-                    actualizarModulosDescubrimiento_();
+                    actualizarModulosDescubrimiento_(true); // soloRepintar: solo cambió el precio al por mayor confirmado, no Destacados/Temporadas/Campañas
                     repintarPendientesPrecioMayor_();
                 }
             }
@@ -9085,7 +9106,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // no se veía reflejada en la lista hasta el siguiente cambio
             // de filtro o el sondeo periódico (hasta 5 minutos después).
             aplicarFiltros();
-            actualizarModulosDescubrimiento_();
+            actualizarModulosDescubrimiento_(true); // soloRepintar: esta resincronización solo toca el catálogo (ver el comentario de la función)
         } catch (e) {
             // Si falla, no pasa nada: el próximo sondeo periódico lo comprobará igual
         }
@@ -9946,9 +9967,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // tras la reconciliación inicial, tras cargar catálogos adicionales
     // en segundo plano, tras re-sincronizar tras una acción propia, y
     // tras aceptar el banner de "hay una versión más reciente".
-    function actualizarModulosDescubrimiento_() {
-        cargarDestacados_();
-        cargarTemporadas_().then(renderTemporada_);
+    // soloRepintar=true — a petición explícita de Eloy: "revisar las
+    // peticiones que se hacen en la carga del buscador, ver si se hacen
+    // peticiones duplicadas". Esta función se llama DOS veces en cada
+    // carga de página (ver cargarProductosPrincipales): una nada más
+    // pintar con el JSON estático, y otra justo después al reconciliar
+    // con la fuente EN VIVO de Apps Script — pero entre esas dos
+    // llamadas, a los pocos segundos una de otra, lo único que cambia de
+    // verdad es el CATÁLOGO (TODOS); los propios datos de Destacados,
+    // Temporadas y Campañas de escaparate (cada uno con su propio
+    // endpoint) casi nunca cambian en esa ventana tan corta. Aun así, la
+    // función siempre volvía a pedirlos los dos, duplicando sin
+    // necesidad las peticiones a obtener_destacados, obtener_temporadas y
+    // obtener_campanas EN CADA CARGA DE PÁGINA. Con soloRepintar=true se
+    // repintan esos tres módulos con los datos que YA se cargaron la
+    // primera vez (destacadosDatos_/temporadasDatos_/campanasEscaparate_,
+    // variables de módulo que no se vacían entre llamadas), reflejando el
+    // catálogo ya corregido sin repetir la petición de red. Los que no
+    // dependen de una petición propia (Novedades/Últimos vistos, puramente
+    // locales; Bloques de categorías, que ya cachea su propia respuesta en
+    // bloquesCategoriasCache_) se recalculan igual en los dos casos, sin
+    // coste de red añadido.
+    let primeraCargaCampanasReutilizada_ = false;
+    function actualizarModulosDescubrimiento_(soloRepintar) {
+        if (soloRepintar) {
+            renderDestacados_();
+            renderTemporada_();
+        } else {
+            cargarDestacados_();
+            cargarTemporadas_().then(renderTemporada_);
+        }
         cargarNovedades_();
         // cargarMasBuscados_()/cargarMarcasMasBuscadas_() desactivadas —
         // ver el comentario junto a modulosDescubrimientoConContenido_.masBuscados.
@@ -9959,8 +10007,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // afectan al grid general (ver crearTarjeta/destacadoEfectivoPara_
         // más abajo) — si ya había algo pintado antes de que esta carga
         // termine, hay que repintarlo para que las tarjetas ya visibles
-        // reflejen la promoción en cuanto llega.
-        cargarCampanasEscaparate_().then(() => { if (TODOS.length) aplicarFiltros(); });
+        // reflejen la promoción en cuanto llega. Con soloRepintar no hace
+        // falta ni eso: aplicarFiltros() ya se llama aparte justo después
+        // de reconciliar el catálogo (ver cargarProductosPrincipales).
+        if (!soloRepintar) {
+            // La primera vez, se reutiliza la MISMA petición ya lanzada al
+            // arrancar el script (campanasEscaparateCargadas_, ver su
+            // definición — existe para que abrirProductoDesdeURL() no
+            // tenga que esperar a este punto) en vez de lanzar una
+            // SEGUNDA petición a obtener_campanas casi en el mismo
+            // instante: para cuando esta función llega a ejecutarse (tras
+            // el pintado instantáneo del JSON estático), el guardado de
+            // peticiones solapadas de cargarCampanasEscaparate_ ya no
+            // sirve de nada porque la primera petición suele haber
+            // terminado. Las llamadas siguientes (p.ej. "Actualizar
+            // ahora") si vuelven a pedir datos frescos de verdad.
+            const promesaCampanas_ = primeraCargaCampanasReutilizada_ ? cargarCampanasEscaparate_() : campanasEscaparateCargadas_;
+            primeraCargaCampanasReutilizada_ = true;
+            promesaCampanas_.then(() => { if (TODOS.length) aplicarFiltros(); });
+        }
     }
 
     // A petición de Eloy: con filtros/búsqueda activos, estos módulos solo
