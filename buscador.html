@@ -9847,7 +9847,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // nada a que llegue o no — si SUPABASE_URL/SUPABASE_ANON_KEY no
     // están configuradas todavía, o la petición falla, simplemente no
     // pasa nada (ver registro `.catch(() => {})`).
+    // Registro de analítica de búsquedas DESACTIVADO TEMPORALMENTE — a
+    // petición explícita de Eloy: "bloquea que se registren las búsquedas
+    // para no ralentizar y así con ello mejorar el rendimiento. Mas
+    // adelante se valorara el como mejorarlo y reactivarlo". Con las
+    // secciones que leían estos datos ("Más buscados esta semana"/
+    // "Marcas más buscadas") ya ocultas, bloquear el registro no quita
+    // ninguna funcionalidad visible ahora mismo — para reactivarlo basta
+    // con volver a poner esta constante a true.
+    const ANALITICA_BUSQUEDAS_ACTIVA_ = false;
     function registrarEventoBusqueda_(eventType, datos) {
+        if (!ANALITICA_BUSQUEDAS_ACTIVA_) return;
         const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
         if (!url || !key) return;
         const fila = Object.assign({
