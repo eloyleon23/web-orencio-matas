@@ -5049,6 +5049,44 @@
                 backdrop-filter: blur(2px);
             }
         }
+        /* Mismo botón/estilo que #btn-subir-arriba, pero propio de la
+           modal de temporada (ver el comentario junto a su HTML) — se
+           muestra con la misma clase .visible y la misma regla de móvil. */
+        #temporada-ver-todos-subir-arriba {
+            display: none;
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 4100;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: var(--dark);
+            color: #fff;
+            font-size: 1.1rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .2s, transform .2s, background .15s;
+        }
+        #temporada-ver-todos-subir-arriba.visible { display: flex; opacity: 1; transform: translateY(0); }
+        #temporada-ver-todos-subir-arriba:hover { background: var(--blue); }
+        @media (max-width: 640px) {
+            #temporada-ver-todos-subir-arriba {
+                right: 14px;
+                bottom: 14px;
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+                background: rgba(30, 41, 59, 0.72);
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+                backdrop-filter: blur(2px);
+            }
+        }
 
     </style>
 <!-- Google tag (gtag.js) -->
@@ -7313,6 +7351,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      usa el resto del sitio para saltarse ese efecto al navegar
      internamente). -->
 <div class="modal-overlay" id="temporada-ver-todos-overlay">
+    <!-- Botón flotante "subir arriba" propio de esta modal — a petición
+         explícita de Eloy: el botón flotante del sitio (#btn-subir-arriba)
+         se oculta mientras cualquier modal está abierta (ver
+         .oculto-por-modal) porque hace scroll en `window`, no dentro de
+         la modal, así que aquí hace falta uno propio que haga scroll en
+         #temporada-ver-todos-box (el elemento con scroll real, ver el
+         comentario de .modal-producto-box.modal-temporada-ver-todos-box). -->
+    <button type="button" id="temporada-ver-todos-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
     <div class="modal-producto-box modal-temporada-ver-todos-box" id="temporada-ver-todos-box" role="dialog" aria-modal="true" aria-labelledby="temporada-ver-todos-titulo">
         <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
             <i class="fa-solid fa-xmark"></i>
@@ -9891,8 +9939,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         cargarDestacados_();
         cargarTemporadas_().then(renderTemporada_);
         cargarNovedades_();
-        cargarMasBuscados_();
-        cargarMarcasMasBuscadas_();
+        // cargarMasBuscados_()/cargarMarcasMasBuscadas_() desactivadas —
+        // ver el comentario junto a modulosDescubrimientoConContenido_.masBuscados.
         cargarBloquesCategorias_();
         cargarUltimosVistos_();
         // A diferencia de los módulos de arriba (secciones propias,
@@ -9962,6 +10010,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cacheado = modulosDescubrimientoCacheInicial_[clave];
         modulosDescubrimientoConContenido_[clave] = (cacheado === 'vacio' || cacheado === 'con-contenido') ? cacheado : 'cargando';
     });
+    // "Más buscados esta semana" y "Marcas más buscadas" desactivadas a
+    // petición explícita de Eloy: "no tenemos un volumen [de búsquedas]
+    // para hacer que los usuarios acaben guiándose por esas secciones.
+    // Además tenemos otras secciones más importantes que ayudan mucho
+    // más" — se fuerza 'vacio' siempre (nunca se muestran, aunque
+    // quedara cacheado 'con-contenido' de una visita anterior) y no se
+    // vuelve a llamar a cargarMasBuscados_/cargarMarcasMasBuscadas_, así
+    // que tampoco se recorre el catálogo para resolverlas (de paso, el
+    // mayor cuello de botella de rendimiento identificado en la modal de
+    // temporada desaparece del todo en vez de solo mitigarse).
+    modulosDescubrimientoConContenido_.masBuscados = 'vacio';
+    modulosDescubrimientoConContenido_.marcas = 'vacio';
 
     function hayFiltroActivo_() {
         if ($('f-texto').value.trim()) return true;
@@ -10812,7 +10872,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // pero cada tanda individual es más barata y dejan hueco de sobra
     // para que el navegador atienda al scroll entre tanda y tanda).
     const TEMPORADA_TARJETAS_POR_TANDA_ = 12;
-    function temporadaAnadirTarjetasEnTandas_(grid, productos, indiceInicial, alTerminar) {
+    // "Generación" de la vista actual de la modal: se incrementa cada vez
+    // que temporadaModalFiltrarYRenderizar_ vuelve a pintar desde cero
+    // (cambio de filtro/orden/búsqueda). Cada cadena de tandas en curso
+    // lleva consigo el valor vigente en el momento en que arrancó y lo
+    // comprueba antes de seguir — si ya no coincide con la generación
+    // actual, se para sin más. Bug real reportado por Eloy: "al clicar un
+    // chip de familia no filtra el listado… siguen apareciendo más
+    // productos de otras familias" — sin esto, una cadena de tandas
+    // todavía en curso de la vista ANTERIOR (p.ej. "relevancia" sin
+    // filtrar, cargando sus grupos en segundo plano) seguía añadiendo sus
+    // propios grupos al grid incluso después de limpiarlo y repintarlo ya
+    // filtrado, porque cada tanda vuelve a buscar el contenedor por su id
+    // en vez de guardar una referencia fija.
+    let temporadaRenderGeneracion_ = 0;
+    function temporadaAnadirTarjetasEnTandas_(grid, productos, indiceInicial, alTerminar, generacion) {
+        if (generacion !== temporadaRenderGeneracion_) return;
         const fin = Math.min(indiceInicial + TEMPORADA_TARJETAS_POR_TANDA_, productos.length);
         const frag = document.createDocumentFragment();
         for (let i = indiceInicial; i < fin; i++) {
@@ -10820,7 +10895,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         grid.appendChild(frag);
         if (fin < productos.length) {
-            requestAnimationFrame(() => temporadaAnadirTarjetasEnTandas_(grid, productos, fin, alTerminar));
+            requestAnimationFrame(() => temporadaAnadirTarjetasEnTandas_(grid, productos, fin, alTerminar, generacion));
         } else if (alTerminar) {
             alTerminar();
         }
@@ -10831,14 +10906,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // usa temporadaCargarMasEnModal_ para no lanzar la siguiente tanda de
     // grupos hasta que la anterior haya terminado de verdad — ver el
     // comentario junto a temporadaCargandoMasGrupos_, más abajo.
-    function temporadaRenderizarGrupoEnModal_(grupo, alTerminar) {
+    function temporadaRenderizarGrupoEnModal_(grupo, alTerminar, generacion) {
+        if (generacion !== temporadaRenderGeneracion_) return;
         const cont = $('temporada-ver-todos-grid');
         const bloque = document.createElement('div');
         bloque.className = 'familia-seccion temporada-ver-todos-grid-grupo';
         bloque.innerHTML = `<h3 class="familia-titulo">${escapeHtml(grupo.nombre)} <span class="count">${grupo.productos.length}</span></h3><div class="grid-productos"></div>`;
         const grid = bloque.querySelector('.grid-productos');
         cont.appendChild(bloque);
-        temporadaAnadirTarjetasEnTandas_(grid, grupo.productos, 0, alTerminar);
+        temporadaAnadirTarjetasEnTandas_(grid, grupo.productos, 0, alTerminar, generacion);
     }
 
     // Renderiza varios grupos UNO DETRÁS DE OTRO (nunca a la vez): llamar
@@ -10851,12 +10927,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // grupos, anulando en la práctica el reparto en tandas. Bug real
     // reportado por Eloy: "sigue sin ir fluido […] en un pc o móvil con
     // bajas características apenas funcionará".
-    function temporadaRenderizarGruposSecuencial_(grupos, alTerminarTodos, indice) {
+    function temporadaRenderizarGruposSecuencial_(grupos, alTerminarTodos, indice, generacion) {
+        if (generacion === undefined) generacion = temporadaRenderGeneracion_;
+        if (generacion !== temporadaRenderGeneracion_) return;
         indice = indice || 0;
         if (indice >= grupos.length) { if (alTerminarTodos) alTerminarTodos(); return; }
         temporadaRenderizarGrupoEnModal_(grupos[indice], () => {
-            temporadaRenderizarGruposSecuencial_(grupos, alTerminarTodos, indice + 1);
-        });
+            temporadaRenderizarGruposSecuencial_(grupos, alTerminarTodos, indice + 1, generacion);
+        }, generacion);
     }
 
     // Tarjeta normal (crearTarjeta, sin tocarla) + un botón propio de
@@ -11110,10 +11188,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const grid = document.createElement('div');
         grid.className = 'grid-productos';
         cont.appendChild(grid);
-        temporadaAnadirTarjetasEnTandas_(grid, productos, 0);
+        temporadaAnadirTarjetasEnTandas_(grid, productos, 0, null, temporadaRenderGeneracion_);
     }
 
     function temporadaModalFiltrarYRenderizar_() {
+        // Invalida cualquier cadena de tandas todavía en curso de la
+        // vista anterior — ver el comentario junto a
+        // temporadaRenderGeneracion_, más arriba.
+        temporadaRenderGeneracion_++;
         const filtrados = temporadaModalProductosFiltrados_();
         const cont = $('temporada-ver-todos-grid');
         cont.innerHTML = '';
@@ -12335,6 +12417,24 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // .modal-producto-box.modal-temporada-ver-todos-box), no en un div
     // interior aparte — así que el scroll infinito observa ese elemento.
     $('temporada-ver-todos-box').addEventListener('scroll', temporadaObservarScroll_);
+    // Botón flotante "subir arriba" propio de la modal — a petición
+    // explícita de Eloy. Mismo throttle por requestAnimationFrame que el
+    // botón equivalente del sitio (ver actualizarVisibilidadBotonSubir).
+    (() => {
+        const btn = $('temporada-ver-todos-subir-arriba');
+        const box = $('temporada-ver-todos-box');
+        let ticking = false;
+        const actualizar = () => {
+            btn.classList.toggle('visible', box.scrollTop > 400);
+            ticking = false;
+        };
+        box.addEventListener('scroll', () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(actualizar);
+        });
+        btn.addEventListener('click', () => box.scrollTo({ top: 0, behavior: 'smooth' }));
+    })();
     $('temporada-ver-todos-buscar').addEventListener('input', temporadaModalFiltrarYRenderizar_);
     $('temporada-ver-todos-pdf').addEventListener('click', temporadaDescargarPdf_);
     $('temporada-ver-todos-compartir-pdf').addEventListener('click', temporadaCompartirPdf_);
