@@ -976,6 +976,30 @@
         }
         .temporada-ver-todos-compartir:hover { background: var(--light); color: var(--dark); border-color: #cbd5e1; }
         .temporada-ver-todos-compartir.copiado { background: #dcfce7; border-color: #86efac; color: #166534; }
+        /* Botón "añadir a mi selección" sobre cada tarjeta — ver
+           temporadaCrearTarjetaConSeleccion_. Esquina inferior derecha
+           (no choca con el chip de destacado, que va arriba a la
+           izquierda, ni con el precio, que va al pie del texto). */
+        .temporada-anadir-seleccion-btn {
+            position: absolute; bottom: 8px; right: 8px; z-index: 3;
+            width: 34px; height: 34px; border-radius: 50%; border: none;
+            background: rgba(255,255,255,0.95); color: var(--red);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
+            transition: background 0.15s, color 0.15s, transform 0.15s;
+        }
+        .temporada-anadir-seleccion-btn:hover { background: var(--red); color: #fff; transform: scale(1.08); }
+        .temporada-anadir-seleccion-btn--hecho { background: var(--green) !important; color: #fff !important; }
+        .temporada-ver-todos-folleto-acciones {
+            display: flex; gap: 8px; flex-wrap: wrap; margin: -4px 0 14px;
+        }
+        .temporada-ver-todos-folleto-acciones button {
+            flex: 1; min-width: 140px; border: 1px solid var(--border); background: #fff;
+            color: var(--dark); border-radius: 8px; padding: 8px 12px; font-size: 0.82rem;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .temporada-ver-todos-folleto-acciones button:hover { background: var(--light); }
+        .temporada-ver-todos-folleto-acciones button:disabled { opacity: 0.6; cursor: default; }
         .temporada-ver-todos-vigencia { color: var(--muted); font-size: 0.85rem; margin: -6px 0 14px; }
         .temporada-ver-todos-buscar {
             width: 100%; padding: 9px 12px; margin-bottom: 16px;
@@ -7196,6 +7220,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </h3>
         <p id="temporada-ver-todos-vigencia" class="temporada-ver-todos-vigencia"></p>
+        <!-- Folleto PDF de la temporada (o de lo que esté filtrado ahora
+             mismo en el buscador de aquí abajo) — mismo motor que el
+             folleto de Destacados (construirDocumentoPdfDestacados_),
+             reutilizado para no duplicar la generación con jsPDF: logo,
+             dirección y horario en cabecera/pie, precio según el perfil
+             (público o profesional al por mayor) y la promoción de
+             Destacados si alguno de los productos también la tuviera. -->
+        <div class="temporada-ver-todos-folleto-acciones">
+            <button type="button" id="temporada-ver-todos-pdf"><i class="fa-solid fa-file-pdf"></i> Descargar folleto</button>
+            <button type="button" id="temporada-ver-todos-compartir-pdf"><i class="fa-solid fa-share-nodes"></i> Compartir folleto</button>
+        </div>
         <input type="text" id="temporada-ver-todos-buscar" class="temporada-ver-todos-buscar" placeholder="Buscar por nombre o referencia entre estos productos...">
         <div id="temporada-ver-todos-scroll" class="temporada-ver-todos-scroll">
             <div id="temporada-ver-todos-grid"></div>
@@ -10459,7 +10494,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // manera aleatoria esos productos de temporada") — se
             // rebaraja cada vez que se recalculan los módulos de
             // descubrimiento, no solo una vez por sesión.
-            barajar_(productos).slice(0, MAX_TARJETAS_TEMPORADA_).forEach(p => lista.appendChild(crearTarjeta(p)));
+            barajar_(productos).slice(0, MAX_TARJETAS_TEMPORADA_).forEach(p => lista.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
             const abrir = () => abrirModalTemporada_(temporada.id);
             const titulo = bloque.querySelector('.seccion-temporada__titulo-clicable');
             titulo.addEventListener('click', abrir);
@@ -10476,6 +10511,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // principal), solo que aquí se reordenan los productos de cada
     // familia al azar (sigue siendo "aleatorio" dentro del agrupado). ──
     let temporadaModalProductosBase_ = []; // sin agrupar, para el filtro de texto
+    let temporadaModalTemporadaActual_ = null; // la temporada abierta ahora mismo en la modal "ver todos" (para el folleto)
     let temporadaModalGrupos_ = [];
     let temporadaModalGruposMostrados_ = 0;
     const TEMPORADA_MODAL_GRUPOS_LOTE_ = 3;
@@ -10491,8 +10527,40 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         bloque.className = 'familia-seccion temporada-ver-todos-grid-grupo';
         bloque.innerHTML = `<h3 class="familia-titulo">${escapeHtml(grupo.nombre)} <span class="count">${grupo.productos.length}</span></h3><div class="grid-productos"></div>`;
         const grid = bloque.querySelector('.grid-productos');
-        grupo.productos.forEach(p => grid.appendChild(crearTarjeta(p)));
+        grupo.productos.forEach(p => grid.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
         cont.appendChild(bloque);
+    }
+
+    // Tarjeta normal (crearTarjeta, sin tocarla) + un botón propio de
+    // "añadir a mi selección" encima — a petición de Eloy: "el comercial
+    // debería poder construir una selección de productos sin tener que
+    // repetir búsquedas ni abrir continuamente distintas fichas". Reutiliza
+    // DIRECTAMENTE la Lista de la compra ya existente en todo el sitio
+    // (listaCompraAnadir_/listaCompraState_, ver más abajo) en vez de un
+    // carrito aparte — mismos productos, mismo PDF, mismo "compartir" que
+    // ya tiene ese sistema, "compatible con el sistema existente" tal
+    // como se pidió explícitamente.
+    function temporadaCrearTarjetaConSeleccion_(p) {
+        const card = crearTarjeta(p);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'temporada-anadir-seleccion-btn';
+        btn.title = 'Añadir a mi selección';
+        btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i>';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // no abrir la ficha del producto al pulsar el botón
+            const resultado = listaCompraAnadir_(p);
+            listaCompraActualizarUI_();
+            btn.classList.add('temporada-anadir-seleccion-btn--hecho');
+            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+            if (resultado === 'duplicado') mostrarToast('Ya estaba en tu selección.');
+            setTimeout(() => {
+                btn.classList.remove('temporada-anadir-seleccion-btn--hecho');
+                btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i>';
+            }, 1600);
+        });
+        card.appendChild(btn);
+        return card;
     }
 
     function temporadaCargarMasEnModal_() {
@@ -10519,20 +10587,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // agrupado y aleatorio de siempre; con texto, se muestran TODOS los
     // grupos que coincidan de golpe (conjunto ya acotado, no hace falta
     // paginar).
+    // Productos actualmente en pantalla en la modal "ver todos", según el
+    // filtro de texto del propio buscador de ahí — reutilizada tanto
+    // para pintar el grid como para el folleto PDF, que así genera
+    // siempre exactamente lo que se está viendo (petición de Eloy:
+    // "poder generar un folleto a partir de los productos filtrados").
+    function temporadaModalProductosFiltrados_() {
+        const texto = ($('temporada-ver-todos-buscar').value || '').trim();
+        if (!texto) return temporadaModalProductosBase_;
+        return esBusquedaNumerica(texto)
+            ? temporadaModalProductosBase_.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+            : temporadaModalProductosBase_.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+    }
+
     function temporadaModalFiltrarYRenderizar_() {
+        const filtrados = temporadaModalProductosFiltrados_();
         const texto = ($('temporada-ver-todos-buscar').value || '').trim();
         const cont = $('temporada-ver-todos-grid');
         cont.innerHTML = '';
         $('temporada-ver-todos-fin').style.display = 'none';
         if (!texto) {
-            temporadaModalGrupos_ = agruparPorFamilia(temporadaModalProductosBase_).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
+            temporadaModalGrupos_ = agruparPorFamilia(filtrados).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
             temporadaModalGruposMostrados_ = 0;
             temporadaCargarMasEnModal_();
             return;
         }
-        const filtrados = esBusquedaNumerica(texto)
-            ? temporadaModalProductosBase_.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
-            : temporadaModalProductosBase_.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
         if (!filtrados.length) {
             cont.innerHTML = '<p class="destacados-hint" style="text-align:center;">Sin resultados en esta temporada.</p>';
             return;
@@ -10549,6 +10628,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const productos = productosDeTemporada_(t);
         if (!productos.length) return;
         temporadaModalProductosBase_ = productos;
+        temporadaModalTemporadaActual_ = t;
         $('temporada-ver-todos-titulo-icono').innerHTML = t.emoji ? escapeHtml(t.emoji) : '<i class="fa-solid fa-snowflake"></i>';
         $('temporada-ver-todos-titulo-texto').textContent = t.nombre || 'Productos de temporada';
         configurarBotonCompartirTemporada_(t);
@@ -10640,6 +10720,340 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalTemporadaVerTodos_() {
         $('temporada-ver-todos-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── FOLLETO PDF DE TEMPORADA ─────────────────────────────────────────
+    // A petición de Eloy: "poder generar un folleto a partir de los
+    // productos filtrados en la temporada a la que el usuario ha
+    // accedido... tendrá sentido comercial y deberá tener en cuenta el
+    // perfil (normal o profesional)". Reutiliza el MISMO motor que el
+    // folleto de Destacados (cargarImagenComoDataURL_/
+    // cargarImagenesFolletoDestacadosEnTandas_/urlImagenProductoFolletoDestacados_/
+    // LISTA_COMPRA_EMPRESA_/DESTACADOS_PDF_COLOR_ACCENT_) en vez de montar
+    // uno nuevo: misma cabecera con logo, mismo pie con dirección/horario/
+    // web, mismo criterio de precio según perfil (precioAMostrar_/
+    // preciosMayorConfirmados_) — solo cambia qué productos entran y el
+    // título. Si alguno de los productos tiene también una promoción de
+    // Destacados vigente (destacadoEfectivoPara_), se indica igual que en
+    // el folleto de Destacados — un producto puede estar en una temporada
+    // y en Destacados a la vez, son sistemas independientes.
+    // ══════════════════════════════════════════════════════════════════
+
+    // Versión recortada de dibujarTarjetaDestacadoPdf_: la mayoría de
+    // productos de una temporada NO tendrán un destacado asociado (a
+    // diferencia del folleto de Destacados, donde SIEMPRE lo hay), así
+    // que aquí "d" puede ser null — se cubre con un objeto vacío para
+    // calcularPrecioDestacado_ (que sí espera siempre un objeto) y se
+    // omite el chip/banner de promoción cuando no hay destacado real.
+    function dibujarTarjetaTemporadaPdf_(doc, x, y, w, h, foto, p) {
+        const d = destacadoEfectivoPara_(p.ref);
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 228, 232);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
+
+        const precioInfo = precioAMostrar_(p);
+        const esMayor = !!(precioInfo && precioInfo.esMayor);
+        const mapaChip = {
+            oferta: ['OFERTA', [0, 135, 67]],
+            oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
+            liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
+        };
+        const chipEntrada = (d && d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
+        const colorFranja = chipEntrada ? chipEntrada[1] : [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b];
+        doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
+        doc.roundedRect(x, y, w, 3, 3, 3, 'F');
+        doc.rect(x, y + 1.5, w, 1.5, 'F');
+
+        const pad = 5;
+        const imgBoxH = h * 0.48;
+        const imgBoxY = y + 3 + pad * 0.6;
+        if (foto) {
+            const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
+            const dw = foto.width * escala, dh = foto.height * escala;
+            doc.addImage(foto.dataUrl, 'JPEG', x + (w - dw) / 2, imgBoxY + (imgBoxH - dh) / 2, dw, dh);
+        } else {
+            doc.setFillColor(248, 249, 250);
+            doc.rect(x + pad, imgBoxY, w - pad * 2, imgBoxH, 'F');
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8.5);
+            doc.setTextColor(170, 173, 180);
+            doc.text('Sin imagen', x + w / 2, imgBoxY + imgBoxH / 2, { align: 'center' });
+        }
+
+        if (chipEntrada) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            const txt = chipEntrada[0];
+            const tw = doc.getTextWidth(txt) + 7, th = 6.6;
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(x + pad + 0.5, imgBoxY + 2.5, tw, th, 1.8, 1.8, 'F');
+            doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
+            doc.roundedRect(x + pad, imgBoxY + 2, tw, th, 1.8, 1.8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(txt, x + pad + tw / 2, imgBoxY + 2 + th / 2 + 1.1, { align: 'center' });
+        }
+
+        let ty = imgBoxY + imgBoxH + 7;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(30, 33, 37);
+        const nombreLineas = doc.splitTextToSize(p.nombre || p.ref, w - pad * 2).slice(0, 2);
+        doc.text(nombreLineas, x + pad, ty);
+        ty += nombreLineas.length * 4.2 + 1.5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.2);
+        doc.setTextColor(140, 143, 150);
+        doc.text(`Ref: ${p.ref}`, x + pad, ty);
+        ty += 5.5;
+
+        const dCalc = calcularPrecioDestacado_(p, d || {});
+        const dibujarPrecio_ = (original, promo, pct) => {
+            if (original === null) {
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(8.5);
+                doc.setTextColor(150, 153, 160);
+                doc.text('Consultar precio y disponibilidad', x + pad, ty);
+                ty += 7;
+                return;
+            }
+            if (promo !== null) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(170, 173, 180);
+                const origTxt = `${original.toFixed(2).replace('.', ',')} €`;
+                doc.text(origTxt, x + pad, ty);
+                const wOrig = doc.getTextWidth(origTxt);
+                doc.setDrawColor(170, 173, 180);
+                doc.setLineWidth(0.3);
+                doc.line(x + pad, ty - 1.2, x + pad + wOrig, ty - 1.2);
+                ty += 7;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(19);
+                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+                const promoTxt = `${promo.toFixed(2).replace('.', ',')} €`;
+                doc.text(promoTxt, x + pad, ty);
+                if (pct) {
+                    const wPromo = doc.getTextWidth(promoTxt);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    const pctTxt = `-${pct}%`;
+                    const wPct = doc.getTextWidth(pctTxt) + 4.6;
+                    doc.setFillColor(217, 27, 27);
+                    doc.roundedRect(x + pad + wPromo + 3, ty - 5.2, wPct, 6.2, 1.6, 1.6, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(pctTxt, x + pad + wPromo + 3 + wPct / 2, ty - 1.1, { align: 'center' });
+                }
+                ty += 5;
+            } else {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(19);
+                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+                doc.text(`${original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
+                ty += 7;
+            }
+        };
+        if (esMayor) {
+            dibujarPrecio_(dCalc.originalMayor, dCalc.promoMayor, dCalc.pct);
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7.2);
+            doc.setTextColor(150, 153, 160);
+            doc.text('Precio profesional (al por mayor)', x + pad, ty);
+            ty += 7;
+        } else {
+            dibujarPrecio_(dCalc.original, dCalc.promo, dCalc.pct);
+        }
+
+        if (!esMayor && d && d.textoPromocion) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            const maxTextW = w - pad * 2 - 10;
+            const todasLasLineas = doc.splitTextToSize(d.textoPromocion.toUpperCase(), maxTextW);
+            const lineasPromo = todasLasLineas.slice(0, 2);
+            if (todasLasLineas.length > 2) {
+                let ultima = lineasPromo[1];
+                while (doc.getTextWidth(ultima + '…') > maxTextW && ultima.length > 1) ultima = ultima.slice(0, -1);
+                lineasPromo[1] = ultima + '…';
+            }
+            const lineH = 4.2;
+            const thPromo = lineasPromo.length * lineH + 3.2;
+            const twPromo = Math.max(...lineasPromo.map(l => doc.getTextWidth(l))) + 9;
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(x + pad + 0.6, ty + 0.6, twPromo, thPromo, 2.2, 2.2, 'F');
+            doc.setFillColor(241, 179, 0);
+            doc.roundedRect(x + pad, ty, twPromo, thPromo, 2.2, 2.2, 'F');
+            doc.setTextColor(26, 26, 26);
+            lineasPromo.forEach((linea, i) => doc.text(linea, x + pad + twPromo / 2, ty + 3.3 + i * lineH, { align: 'center' }));
+        }
+    }
+
+    async function construirDocumentoPdfTemporada_(onProgreso) {
+        if (typeof window.jspdf === 'undefined') return null;
+        // Nunca con el precio al por mayor todavía sin confirmar — mismo
+        // motivo que construirDocumentoPdfDestacados_.
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) return 'pendiente';
+        const t = temporadaModalTemporadaActual_;
+        const productos = temporadaModalProductosFiltrados_();
+        if (!t || !productos.length) return null;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const pageW = 210, margin = 14;
+        const headerBottomY = 30, footerTopY = 272;
+        const contentRight = pageW - margin;
+        const contentWidth = contentRight - margin;
+        const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+
+        const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+        const vigenciaTxt = t.permanente ? 'Disponible todo el año' : `Válido del ${temporadaFormatearFecha_(t.fechaInicio)} al ${temporadaFormatearFecha_(t.fechaFin)}`;
+
+        function dibujarCabecera() {
+            doc.setFillColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.rect(0, 0, pageW, 3, 'F');
+            if (logo) {
+                const logoH = 11, logoW = logoH * (logo.width / logo.height);
+                doc.addImage(logo.dataUrl, 'PNG', margin, 8, logoW, logoH);
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text((t.nombre || 'PRODUCTOS DE TEMPORADA').toUpperCase(), contentRight, 12, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(120, 123, 130);
+            doc.text(
+                (esProfesionalFolleto ? 'Precios profesionales (al por mayor) · ' : '') + vigenciaTxt,
+                contentRight, 17, { align: 'right' }
+            );
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
+        }
+
+        function dibujarPie(numPagina, totalPaginas) {
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, footerTopY, contentRight, footerTopY);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text(LISTA_COMPRA_EMPRESA_.nombre, margin, footerTopY + 6);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(110, 113, 120);
+            doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
+            doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(150, 153, 160);
+            doc.text(`Página ${numPagina} de ${totalPaginas}`, contentRight, footerTopY + 14.5, { align: 'right' });
+        }
+
+        const itemsFotos = productos.map(p => ({ url: urlImagenProductoFolletoDestacados_(p) }));
+        const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
+
+        const colGap = 8, rowGap = 8;
+        const colW = (contentWidth - colGap) / 2;
+        const cardH = 114;
+        const filasPorPagina = Math.max(1, Math.floor((footerTopY - headerBottomY - 6 + rowGap) / (cardH + rowGap)));
+        const porPagina = filasPorPagina * 2;
+
+        productos.forEach((p, i) => {
+            const indiceEnPagina = i % porPagina;
+            if (indiceEnPagina === 0) {
+                if (i > 0) doc.addPage();
+                dibujarCabecera();
+            }
+            const fila = Math.floor(indiceEnPagina / 2);
+            const col = indiceEnPagina % 2;
+            const x = margin + col * (colW + colGap);
+            const y = headerBottomY + 6 + fila * (cardH + rowGap);
+            dibujarTarjetaTemporadaPdf_(doc, x, y, colW, cardH, fotos[i], p);
+        });
+
+        const totalPaginas = doc.internal.getNumberOfPages();
+        for (let pag = 1; pag <= totalPaginas; pag++) {
+            doc.setPage(pag);
+            dibujarPie(pag, totalPaginas);
+        }
+        return doc;
+    }
+
+    function temporadaNombreArchivoPdf_() {
+        const t = temporadaModalTemporadaActual_;
+        const slug = (t && t.nombre ? t.nombre : 'temporada').toLowerCase()
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        return `${slug || 'temporada'}-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
+    }
+
+    let temporadaFolletoGenerando_ = false;
+    async function temporadaEjecutarAccionFolleto_(btnPulsado, accion) {
+        if (temporadaFolletoGenerando_) return;
+        if (!temporadaModalProductosFiltrados_().length) {
+            mostrarToast('No hay productos que mostrar en el folleto con el filtro actual.', 'error');
+            return;
+        }
+        temporadaFolletoGenerando_ = true;
+        const btnPdf = $('temporada-ver-todos-pdf'), btnCompartir = $('temporada-ver-todos-compartir-pdf');
+        const textoPulsadoOriginal = btnPulsado.innerHTML;
+        const fijarEstado = (texto) => { btnPulsado.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`; };
+        btnPdf.disabled = true;
+        btnCompartir.disabled = true;
+        fijarEstado('Preparando…');
+        try {
+            const doc = await construirDocumentoPdfTemporada_((completadas, total, restantesMs) => {
+                fijarEstado(completadas < total
+                    ? `Generando… (${completadas}/${total}, ~${Math.max(1, Math.round(restantesMs / 1000))}s)`
+                    : 'Componiendo folleto…');
+            });
+            if (doc === 'pendiente') {
+                mostrarToast('Todavía se está confirmando el precio profesional, espera unos segundos y vuelve a intentarlo.', 'error');
+                return;
+            }
+            if (!doc) {
+                mostrarToast('No se ha podido generar el folleto. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+                return;
+            }
+            await accion(doc);
+        } catch (e) {
+            console.error('Error generando el folleto de temporada:', e);
+            mostrarToast('No se ha podido generar el folleto. Inténtalo de nuevo.', 'error');
+        } finally {
+            temporadaFolletoGenerando_ = false;
+            btnPulsado.innerHTML = textoPulsadoOriginal;
+            btnPdf.disabled = false;
+            btnCompartir.disabled = false;
+        }
+    }
+
+    function temporadaDescargarPdf_() {
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-pdf'), async (doc) => {
+            doc.save(temporadaNombreArchivoPdf_());
+        });
+    }
+
+    function temporadaCompartirPdf_() {
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-compartir-pdf'), async (doc) => {
+            const blob = doc.output('blob');
+            const file = new File([blob], temporadaNombreArchivoPdf_(), { type: 'application/pdf' });
+            const t = temporadaModalTemporadaActual_;
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: t ? t.nombre : 'Productos de temporada', text: (t ? t.nombre : 'Productos de temporada') + ' — Orencio Matas y Hnos' });
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return;
+                }
+            }
+            doc.save(temporadaNombreArchivoPdf_());
+            mostrarToast('Tu navegador no permite compartir archivos directamente — se ha descargado el PDF, puedes adjuntarlo a mano.');
+        });
     }
 
     // Vuelve al buscador principal ya filtrado por esta familia — SIN
@@ -11162,6 +11576,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     $('temporada-ver-todos-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporada-ver-todos-overlay') cerrarModalTemporadaVerTodos_(); });
     $('temporada-ver-todos-scroll').addEventListener('scroll', temporadaObservarScroll_);
     $('temporada-ver-todos-buscar').addEventListener('input', temporadaModalFiltrarYRenderizar_);
+    $('temporada-ver-todos-pdf').addEventListener('click', temporadaDescargarPdf_);
+    $('temporada-ver-todos-compartir-pdf').addEventListener('click', temporadaCompartirPdf_);
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && $('temporada-ver-todos-overlay').classList.contains('activo')) cerrarModalTemporadaVerTodos_();
     });
