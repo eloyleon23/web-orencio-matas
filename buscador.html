@@ -3050,6 +3050,21 @@
             overflow-y: auto;
             position: relative;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            /* Abrir una modal NUNCA bloquea el scroll de la página de
+               detrás (no se toca document.body.style.overflow en
+               ninguna modal de producto/temporada/destacados). Sin
+               overscroll-behavior:contain, al llegar con la rueda del
+               ratón al final del propio scroll de la modal, el resto
+               del gesto se "encadena" y sigue haciendo scroll en la
+               página de detrás — en la modal de temporada eso disparaba
+               de paso el scroll infinito del buscador principal
+               (cargarMasFamilias(), ligado a window.addEventListener
+               ('scroll', ...)), que repintaba más tarjetas y recalculaba
+               marcas (detectarMarcaAsistente) de la página oculta tras
+               la modal — trabajo pesado e invisible para el usuario que
+               se notaba como el scroll yendo "a trompicones" dentro de
+               la propia modal. Bug real reportado por Eloy. */
+            overscroll-behavior: contain;
         }
         .modal-producto-cerrar-sticky {
             position: sticky;
@@ -7876,8 +7891,28 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Si la foto de un producto falla al cargar (URL rota, imagen borrada
     // en Drive...), en vez de dejar un hueco roto se aplica el mismo
     // tratamiento que un producto sin imagen desde el principio.
+    // Mapa ref→producto, reconstruido perezosamente solo cuando TODOS
+    // cambia de referencia (recarga de catálogo) — bug real de
+    // rendimiento reportado por Eloy: "va a trompicones, no va fluido" al
+    // hacer scroll en la modal de temporada. Con familias grandes (p.ej.
+    // "Colonias Hombre", con cientos de productos) y algún producto sin
+    // imagen válida, cada fallo de carga disparaba manejarErrorImagenProducto_,
+    // que hacía TODOS.find(...) — un recorrido completo de TODO el
+    // catálogo (miles de productos) por cada imagen rota. Varias de esas
+    // búsquedas en ráfaga mientras se hace scroll bloqueaban el hilo
+    // principal el tiempo suficiente para notarse como tirones.
+    let todosMapaCache_ = null;
+    let todosMapaCacheDe_ = null; // la referencia de TODOS para la que se construyó el mapa
+    function productoPorRefRapido_(ref) {
+        if (todosMapaCacheDe_ !== TODOS) {
+            todosMapaCache_ = new Map(TODOS.map(p => [String(p.ref), p]));
+            todosMapaCacheDe_ = TODOS;
+        }
+        return todosMapaCache_.get(String(ref));
+    }
+
     function manejarErrorImagenProducto(imgEl, ref) {
-        const p = TODOS.find(x => String(x.ref) === String(ref));
+        const p = productoPorRefRapido_(ref);
         imgEl.parentElement.innerHTML = p
             ? sinImagenFabricanteHtml(p)
             : '<span class="producto-sin-img">Sin imagen</span>';
@@ -10690,14 +10725,36 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return iso.split('-').reverse().join('/');
     }
 
+    // Construir TODAS las tarjetas de golpe (algunas familias de una
+    // temporada grande, p.ej. "Colonias Hombre", tienen cientos de
+    // productos) bloqueaba el hilo principal el tiempo suficiente como
+    // para que el scroll se notara "a trompicones" justo al cargar cada
+    // tanda — bug real reportado por Eloy. En vez de eso, se construyen
+    // en tandas pequeñas repartidas en varios fotogramas
+    // (requestAnimationFrame): el resultado final en el DOM es
+    // exactamente el mismo, pero el navegador puede seguir pintando/
+    // atendiendo al scroll entre tanda y tanda en vez de congelarse.
+    const TEMPORADA_TARJETAS_POR_TANDA_ = 24;
+    function temporadaAnadirTarjetasEnTandas_(grid, productos, indiceInicial) {
+        const fin = Math.min(indiceInicial + TEMPORADA_TARJETAS_POR_TANDA_, productos.length);
+        const frag = document.createDocumentFragment();
+        for (let i = indiceInicial; i < fin; i++) {
+            frag.appendChild(temporadaCrearTarjetaConSeleccion_(productos[i]));
+        }
+        grid.appendChild(frag);
+        if (fin < productos.length) {
+            requestAnimationFrame(() => temporadaAnadirTarjetasEnTandas_(grid, productos, fin));
+        }
+    }
+
     function temporadaRenderizarGrupoEnModal_(grupo) {
         const cont = $('temporada-ver-todos-grid');
         const bloque = document.createElement('div');
         bloque.className = 'familia-seccion temporada-ver-todos-grid-grupo';
         bloque.innerHTML = `<h3 class="familia-titulo">${escapeHtml(grupo.nombre)} <span class="count">${grupo.productos.length}</span></h3><div class="grid-productos"></div>`;
         const grid = bloque.querySelector('.grid-productos');
-        grupo.productos.forEach(p => grid.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
         cont.appendChild(bloque);
+        temporadaAnadirTarjetasEnTandas_(grid, grupo.productos, 0);
     }
 
     // Tarjeta normal (crearTarjeta, sin tocarla) + un botón propio de
@@ -10921,8 +10978,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cont = $('temporada-ver-todos-grid');
         const grid = document.createElement('div');
         grid.className = 'grid-productos';
-        productos.forEach(p => grid.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
         cont.appendChild(grid);
+        temporadaAnadirTarjetasEnTandas_(grid, productos, 0);
     }
 
     function temporadaModalFiltrarYRenderizar_() {
@@ -22601,14 +22658,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return mapaMarcasAsistente;
     }
 
+    // Caché de los patrones ya compilados, construida una sola vez (a
+    // partir de mapaMarcasAsistente, que a su vez solo se carga una vez
+    // por sesión — ver cargarMapaMarcasAsistente). Antes, detectarMarcaAsistente
+    // reconstruía Object.keys(...).sort(...) Y COMPILABA UN "new RegExp"
+    // por cada una de las ~65 marcas EN CADA LLAMADA — con cientos de
+    // productos (p.ej. una temporada grande con varias familias de
+    // perfumería) eso eran miles de regex nuevos por cada apertura de la
+    // modal de temporada, bloqueando el hilo principal más de un segundo
+    // de golpe — bug real de rendimiento reportado por Eloy: "va a
+    // trompicones, no va fluido".
+    let marcasAsistenteRegexCache_ = null;
     function detectarMarcaAsistente(nombre) {
         if (!mapaMarcasAsistente) return null;
+        if (!marcasAsistenteRegexCache_) {
+            marcasAsistenteRegexCache_ = Object.keys(mapaMarcasAsistente)
+                .sort((a, b) => b.length - a.length)
+                .map(m => ({ marca: m, regex: new RegExp(`\\b${m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`) }));
+        }
         const n = sinAcentosAsistente(nombre).replace(/^\./, '').trim();
-        const marcas = Object.keys(mapaMarcasAsistente).sort((a, b) => b.length - a.length);
-        for (const m of marcas) {
-            if (new RegExp(`\\b${m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(n)) {
-                return m;
-            }
+        for (const { marca, regex } of marcasAsistenteRegexCache_) {
+            if (regex.test(n)) return marca;
         }
         return null;
     }
