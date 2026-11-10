@@ -10000,14 +10000,46 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // posterior de actualizarModulosDescubrimiento_() solo vuelve a
     // RESOLVER esos mismos términos contra el TODOS más reciente, sin
     // repetir la petición de red.
-    function productosQueCoincidenConTexto_(texto) {
-        const activos = TODOS.filter(p => estaActivoEnCatalogo_(p));
-        if (esBusquedaNumerica(texto)) {
-            return activos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto));
+    // Dos cachés, ambas invalidadas solo cuando TODOS cambia de
+    // referencia (recarga de catálogo) — bug real de rendimiento
+    // reportado por Eloy ("en un pc o móvil con bajas características
+    // apenas funcionará"): "Más buscados" y "Marcas más buscadas" llaman
+    // a esta función una vez POR CADA término (5-10 términos típicos), y
+    // cada llamada repetía TODOS.filter(...) desde cero para calcular
+    // "activos" (idéntico en las dos llamadas) Y volvía a recorrer el
+    // catálogo entero con coincide()/levenshtein — con dos secciones
+    // llamando a los MISMOS términos por separado, el catálogo completo
+    // se recorría el doble de veces de las necesarias. Ahora "activos" se
+    // calcula una sola vez, y el resultado por término se memoriza (los
+    // términos son un puñado y siempre los mismos dentro de la misma
+    // carga de página), así que el recorrido caro por catálogo + fuzzy
+    // matching se hace como mucho UNA vez por término, nunca una vez por
+    // término Y por sección que lo use.
+    let catalogoActivoCache_ = null;
+    let catalogoActivoCacheDe_ = null;
+    function productosActivosCache_() {
+        if (catalogoActivoCacheDe_ !== TODOS) {
+            catalogoActivoCache_ = TODOS.filter(p => estaActivoEnCatalogo_(p));
+            catalogoActivoCacheDe_ = TODOS;
         }
-        return activos.filter(p =>
-            coincide(p.nombre, texto) || coincide(p.ref, texto) ||
-            coincide(p.familia, texto) || coincide(p.subfamilia, texto));
+        return catalogoActivoCache_;
+    }
+    let coincidenConTextoCache_ = null;
+    let coincidenConTextoCacheDe_ = null;
+    function productosQueCoincidenConTexto_(texto) {
+        if (coincidenConTextoCacheDe_ !== TODOS) {
+            coincidenConTextoCache_ = new Map();
+            coincidenConTextoCacheDe_ = TODOS;
+        }
+        if (coincidenConTextoCache_.has(texto)) return coincidenConTextoCache_.get(texto);
+        const activos = productosActivosCache_();
+        const resultado = esBusquedaNumerica(texto)
+            ? activos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+            : activos.filter(p =>
+                coincide(p.nombre, texto) || coincide(p.ref, texto) ||
+                coincide(p.familia, texto) || coincide(p.subfamilia, texto));
+        coincidenConTextoCache_.set(texto, resultado);
+        return resultado;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -10734,8 +10766,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // (requestAnimationFrame): el resultado final en el DOM es
     // exactamente el mismo, pero el navegador puede seguir pintando/
     // atendiendo al scroll entre tanda y tanda en vez de congelarse.
-    const TEMPORADA_TARJETAS_POR_TANDA_ = 24;
-    function temporadaAnadirTarjetasEnTandas_(grid, productos, indiceInicial) {
+    // 12 (no 24): en un equipo de gama baja, incluso 24 tarjetas por
+    // fotograma pueden superar los ~16ms de presupuesto de un frame —
+    // mejor repartir en más tandas más pequeñas (algo más lento en total,
+    // pero cada tanda individual es más barata y dejan hueco de sobra
+    // para que el navegador atienda al scroll entre tanda y tanda).
+    const TEMPORADA_TARJETAS_POR_TANDA_ = 12;
+    function temporadaAnadirTarjetasEnTandas_(grid, productos, indiceInicial, alTerminar) {
         const fin = Math.min(indiceInicial + TEMPORADA_TARJETAS_POR_TANDA_, productos.length);
         const frag = document.createDocumentFragment();
         for (let i = indiceInicial; i < fin; i++) {
@@ -10743,18 +10780,43 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         grid.appendChild(frag);
         if (fin < productos.length) {
-            requestAnimationFrame(() => temporadaAnadirTarjetasEnTandas_(grid, productos, fin));
+            requestAnimationFrame(() => temporadaAnadirTarjetasEnTandas_(grid, productos, fin, alTerminar));
+        } else if (alTerminar) {
+            alTerminar();
         }
     }
 
-    function temporadaRenderizarGrupoEnModal_(grupo) {
+    // alTerminar (opcional) — avisa cuando ESTE grupo ha terminado de
+    // construir todas sus tarjetas (puede tardar varios fotogramas). Lo
+    // usa temporadaCargarMasEnModal_ para no lanzar la siguiente tanda de
+    // grupos hasta que la anterior haya terminado de verdad — ver el
+    // comentario junto a temporadaCargandoMasGrupos_, más abajo.
+    function temporadaRenderizarGrupoEnModal_(grupo, alTerminar) {
         const cont = $('temporada-ver-todos-grid');
         const bloque = document.createElement('div');
         bloque.className = 'familia-seccion temporada-ver-todos-grid-grupo';
         bloque.innerHTML = `<h3 class="familia-titulo">${escapeHtml(grupo.nombre)} <span class="count">${grupo.productos.length}</span></h3><div class="grid-productos"></div>`;
         const grid = bloque.querySelector('.grid-productos');
         cont.appendChild(bloque);
-        temporadaAnadirTarjetasEnTandas_(grid, grupo.productos, 0);
+        temporadaAnadirTarjetasEnTandas_(grid, grupo.productos, 0, alTerminar);
+    }
+
+    // Renderiza varios grupos UNO DETRÁS DE OTRO (nunca a la vez): llamar
+    // a temporadaRenderizarGrupoEnModal_ en bucle con .forEach lanzaba
+    // TODAS las cadenas de tandas de todos los grupos a la vez, en
+    // paralelo — cada una metiendo sus propias TEMPORADA_TARJETAS_POR_TANDA_
+    // tarjetas en el MISMO fotograma, así que con 2-3 familias grandes
+    // cargándose de golpe (p.ej. el lote de 3 grupos del scroll infinito)
+    // el trabajo por fotograma volvía a multiplicarse por el número de
+    // grupos, anulando en la práctica el reparto en tandas. Bug real
+    // reportado por Eloy: "sigue sin ir fluido […] en un pc o móvil con
+    // bajas características apenas funcionará".
+    function temporadaRenderizarGruposSecuencial_(grupos, alTerminarTodos, indice) {
+        indice = indice || 0;
+        if (indice >= grupos.length) { if (alTerminarTodos) alTerminarTodos(); return; }
+        temporadaRenderizarGrupoEnModal_(grupos[indice], () => {
+            temporadaRenderizarGruposSecuencial_(grupos, alTerminarTodos, indice + 1);
+        });
     }
 
     // Tarjeta normal (crearTarjeta, sin tocarla) + un botón propio de
@@ -10801,21 +10863,50 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return card;
     }
 
+    // true mientras la tanda de grupos en curso TODAVÍA se está
+    // construyendo (puede tardar varios fotogramas, ver
+    // temporadaAnadirTarjetasEnTandas_). Sin este guardado, un solo gesto
+    // de scroll podía disparar temporadaCargarMasEnModal_ varias veces
+    // seguidas antes de que el DOM llegara a crecer (scrollHeight tarda
+    // en reflejar las tarjetas que todavía se están construyendo en
+    // fotogramas futuros), "vaciando" de golpe TODOS los grupos restantes
+    // en vez de 3 en 3 — tantas cadenas de tandas corriendo a la vez
+    // volvían a juntar, fotograma a fotograma, el mismo trabajo pesado
+    // que se quería repartir. Bug real reportado por Eloy: "sigue sin ir
+    // fluido […] en un pc o móvil con bajas características apenas
+    // funcionará".
+    let temporadaCargandoMasGrupos_ = false;
     function temporadaCargarMasEnModal_() {
+        if (temporadaCargandoMasGrupos_) return;
         const siguientes = temporadaModalGrupos_.slice(temporadaModalGruposMostrados_, temporadaModalGruposMostrados_ + TEMPORADA_MODAL_GRUPOS_LOTE_);
-        siguientes.forEach(temporadaRenderizarGrupoEnModal_);
+        if (!siguientes.length) return;
+        temporadaCargandoMasGrupos_ = true;
         temporadaModalGruposMostrados_ += siguientes.length;
-        if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) {
-            $('temporada-ver-todos-fin').style.display = '';
-        }
+        temporadaRenderizarGruposSecuencial_(siguientes, () => {
+            temporadaCargandoMasGrupos_ = false;
+            if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) {
+                $('temporada-ver-todos-fin').style.display = '';
+            }
+        });
     }
 
+    // Throttle vía requestAnimationFrame — mismo patrón que el scroll
+    // infinito del buscador principal (ver el comentario junto a
+    // cargarMasFamilias): sin esto, un solo gesto de scroll dispara
+    // decenas de eventos 'scroll' en rápida sucesión, cada uno
+    // comprobando la posición de golpe.
+    let temporadaScrollTicking_ = false;
     function temporadaObservarScroll_(e) {
+        if (temporadaScrollTicking_) return;
+        temporadaScrollTicking_ = true;
         const el = e.target;
-        if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) return; // ya está todo cargado
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
-            temporadaCargarMasEnModal_();
-        }
+        requestAnimationFrame(() => {
+            temporadaScrollTicking_ = false;
+            if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) return; // ya está todo cargado
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+                temporadaCargarMasEnModal_();
+            }
+        });
     }
 
     // Filtro de texto/referencia/marca + familia/marca/presupuesto +
@@ -11006,10 +11097,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // vía agruparPorFamilia), pero SIN barajar_ dentro de cada
             // grupo — aquí los productos van también por nombre, para
             // un orden de catálogo predecible en vez de aleatorio.
-            agruparPorFamilia(filtrados).map(g => ({
+            const gruposFamilia_ = agruparPorFamilia(filtrados).map(g => ({
                 nombre: g.nombre,
                 productos: g.productos.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' })),
-            })).forEach(temporadaRenderizarGrupoEnModal_);
+            }));
+            temporadaRenderizarGruposSecuencial_(gruposFamilia_);
             $('temporada-ver-todos-fin').style.display = '';
             return;
         }
@@ -11036,10 +11128,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!temporadaModalHayFiltrosActivos_()) {
             temporadaModalGrupos_ = agruparPorFamilia(filtrados).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
             temporadaModalGruposMostrados_ = 0;
+            // Por si quedaba una tanda anterior todavía construyéndose
+            // (p.ej. el usuario cambió de filtro/orden a media carga): sin
+            // esto, el guardado de temporadaCargarMasEnModal_ bloquearía
+            // también esta llamada nueva y la modal se quedaría sin
+            // cargar nada.
+            temporadaCargandoMasGrupos_ = false;
             temporadaCargarMasEnModal_();
             return;
         }
-        agruparPorFamilia(filtrados).forEach(temporadaRenderizarGrupoEnModal_);
+        temporadaRenderizarGruposSecuencial_(agruparPorFamilia(filtrados));
     }
 
     // ── Accesos directos por familia, selector de marca y destacados/
@@ -12264,6 +12362,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const MAX_TARJETAS_MAS_BUSCADOS = 10;
     const MAX_PRODUCTOS_POR_TERMINO = 2; // para que un único término muy genérico no acapare toda la fila
 
+    // Resolver cada término contra el catálogo (productosQueCoincidenConTexto_)
+    // es caro (recorre el catálogo entero con fuzzy matching) — con los
+    // 5-20 términos típicos, resolverlos todos en el mismo bucle síncrono
+    // bloqueaba el hilo principal varios segundos de golpe en equipos
+    // lentos — bug real de rendimiento reportado por Eloy: "en un pc o
+    // móvil con bajas características apenas funcionará". Se reparte en
+    // un término por fotograma (requestAnimationFrame) — el resultado
+    // final es idéntico, pero el navegador puede atender scroll/pintado
+    // entre término y término en vez de congelarse.
     function renderMasBuscados_(terminos) {
         if (!TODOS.length || !terminos.length) {
             modulosDescubrimientoConContenido_.masBuscados = 'vacio';
@@ -12272,23 +12379,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         const refsUsadas = new Set();
         const productos = [];
-        for (const t of terminos) {
-            if (productos.length >= MAX_TARJETAS_MAS_BUSCADOS) break;
-            const coincidencias = productosQueCoincidenConTexto_(t.query_normalized)
+        const procesarTermino_ = (indice) => {
+            if (indice >= terminos.length || productos.length >= MAX_TARJETAS_MAS_BUSCADOS) {
+                terminarMasBuscados_();
+                return;
+            }
+            const coincidencias = productosQueCoincidenConTexto_(terminos[indice].query_normalized)
                 .filter(p => !refsUsadas.has(p.ref))
                 .slice(0, MAX_PRODUCTOS_POR_TERMINO);
             coincidencias.forEach(p => { refsUsadas.add(p.ref); productos.push(p); });
-        }
-        if (!productos.length) {
-            modulosDescubrimientoConContenido_.masBuscados = 'vacio';
+            requestAnimationFrame(() => procesarTermino_(indice + 1));
+        };
+        const terminarMasBuscados_ = () => {
+            if (!productos.length) {
+                modulosDescubrimientoConContenido_.masBuscados = 'vacio';
+                actualizarVisibilidadModulosDescubrimiento_();
+                return;
+            }
+            const cont = $('mas-buscados-lista');
+            cont.innerHTML = '';
+            productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
+            modulosDescubrimientoConContenido_.masBuscados = 'con-contenido';
             actualizarVisibilidadModulosDescubrimiento_();
-            return;
-        }
-        const cont = $('mas-buscados-lista');
-        cont.innerHTML = '';
-        productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
-        modulosDescubrimientoConContenido_.masBuscados = 'con-contenido';
-        actualizarVisibilidadModulosDescubrimiento_();
+        };
+        procesarTermino_(0);
     }
 
     // Petición compartida: "más buscados" y "marcas más buscadas" parten
@@ -12333,6 +12447,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // un término cuenta como mucho una vez por marca, para que un
     // término con 50 SKUs de la misma marca no la infle de más.
     const MAX_MARCAS_MAS_BUSCADAS = 8;
+    // Mismo motivo y mismo reparto en requestAnimationFrame que
+    // renderMasBuscados_ (ver su comentario): resolver cada término
+    // contra el catálogo es caro, y este módulo lo hacía en el mismo
+    // bucle síncrono para TODOS los términos de golpe.
     function renderMarcasMasBuscadas_(terminos) {
         if (!TODOS.length || !terminos.length) {
             modulosDescubrimientoConContenido_.marcas = 'vacio';
@@ -12340,7 +12458,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
         const sesionesPorMarca = new Map();
-        terminos.forEach(t => {
+        const procesarTermino_ = (indice) => {
+            if (indice >= terminos.length) {
+                terminarMarcasMasBuscadas_();
+                return;
+            }
+            const t = terminos[indice];
             const marcasDeEsteTermino = new Set();
             productosQueCoincidenConTexto_(t.query_normalized).forEach(p => {
                 const marca = detectarMarcaAsistente(p.nombre);
@@ -12349,53 +12472,57 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             marcasDeEsteTermino.forEach(marca => {
                 sesionesPorMarca.set(marca, (sesionesPorMarca.get(marca) || 0) + (t.sesiones_unicas || 0));
             });
-        });
-        if (!sesionesPorMarca.size) {
-            modulosDescubrimientoConContenido_.marcas = 'vacio';
-            actualizarVisibilidadModulosDescubrimiento_();
-            return;
-        }
-
-        const marcasOrdenadas = [...sesionesPorMarca.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, MAX_MARCAS_MAS_BUSCADAS)
-            .map(([marca]) => marca);
-
-        const cont = $('marcas-buscadas-lista');
-        cont.innerHTML = '';
-        marcasOrdenadas.forEach(marca => {
-            // Productos reales de esta marca — de aquí salen tanto la
-            // miniatura (logo del fabricante si existe, si no la foto de
-            // uno de sus productos) como el área/familia a aplicar al
-            // filtrar, para no mezclar resultados de otras áreas que
-            // coincidan por casualidad con el mismo nombre de marca.
-            const productosMarca = TODOS.filter(p => detectarMarcaAsistente(p.nombre) === marca);
-            const areas = new Set(productosMarca.map(p => p.area).filter(Boolean));
-            const familias = new Set(productosMarca.map(p => p.familia).filter(Boolean));
-            const areaUnica = areas.size === 1 ? [...areas][0] : null;
-            const familiaUnica = familias.size === 1 ? [...familias][0] : null;
-
-            const logoFabricante = LOGOS_FABRICANTE[marca];
-            const productoConFoto = productosMarca.find(p => urlImagenProducto(p, 80));
-
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'marcas-buscadas__chip' + (logoFabricante ? ' marcas-buscadas__chip--solo-logo' : '');
-            chip.setAttribute('aria-label', `Filtrar por ${marca}`);
-            if (logoFabricante) {
-                chip.innerHTML = `<img class="marcas-buscadas__chip-logo" src="${logoFabricante}" alt="${escapeHtml(marca)}">`;
-            } else {
-                const fotoHtml = productoConFoto
-                    ? `<img class="marcas-buscadas__chip-foto" src="${urlImagenProducto(productoConFoto, 80)}" alt="" loading="lazy">`
-                    : `<span class="marcas-buscadas__chip-foto"></span>`;
-                chip.innerHTML = `${fotoHtml}<span>${escapeHtml(marca)}</span>`;
+            requestAnimationFrame(() => procesarTermino_(indice + 1));
+        };
+        const terminarMarcasMasBuscadas_ = () => {
+            if (!sesionesPorMarca.size) {
+                modulosDescubrimientoConContenido_.marcas = 'vacio';
+                actualizarVisibilidadModulosDescubrimiento_();
+                return;
             }
-            const refsMarca = productosMarca.map(p => p.ref);
-            chip.onclick = () => aplicarFiltroMarca_(marca, areaUnica, familiaUnica, refsMarca);
-            cont.appendChild(chip);
-        });
-        modulosDescubrimientoConContenido_.marcas = 'con-contenido';
-        actualizarVisibilidadModulosDescubrimiento_();
+
+            const marcasOrdenadas = [...sesionesPorMarca.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, MAX_MARCAS_MAS_BUSCADAS)
+                .map(([marca]) => marca);
+
+            const cont = $('marcas-buscadas-lista');
+            cont.innerHTML = '';
+            marcasOrdenadas.forEach(marca => {
+                // Productos reales de esta marca — de aquí salen tanto la
+                // miniatura (logo del fabricante si existe, si no la foto de
+                // uno de sus productos) como el área/familia a aplicar al
+                // filtrar, para no mezclar resultados de otras áreas que
+                // coincidan por casualidad con el mismo nombre de marca.
+                const productosMarca = TODOS.filter(p => detectarMarcaAsistente(p.nombre) === marca);
+                const areas = new Set(productosMarca.map(p => p.area).filter(Boolean));
+                const familias = new Set(productosMarca.map(p => p.familia).filter(Boolean));
+                const areaUnica = areas.size === 1 ? [...areas][0] : null;
+                const familiaUnica = familias.size === 1 ? [...familias][0] : null;
+
+                const logoFabricante = LOGOS_FABRICANTE[marca];
+                const productoConFoto = productosMarca.find(p => urlImagenProducto(p, 80));
+
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'marcas-buscadas__chip' + (logoFabricante ? ' marcas-buscadas__chip--solo-logo' : '');
+                chip.setAttribute('aria-label', `Filtrar por ${marca}`);
+                if (logoFabricante) {
+                    chip.innerHTML = `<img class="marcas-buscadas__chip-logo" src="${logoFabricante}" alt="${escapeHtml(marca)}">`;
+                } else {
+                    const fotoHtml = productoConFoto
+                        ? `<img class="marcas-buscadas__chip-foto" src="${urlImagenProducto(productoConFoto, 80)}" alt="" loading="lazy">`
+                        : `<span class="marcas-buscadas__chip-foto"></span>`;
+                    chip.innerHTML = `${fotoHtml}<span>${escapeHtml(marca)}</span>`;
+                }
+                const refsMarca = productosMarca.map(p => p.ref);
+                chip.onclick = () => aplicarFiltroMarca_(marca, areaUnica, familiaUnica, refsMarca);
+                cont.appendChild(chip);
+            });
+            modulosDescubrimientoConContenido_.marcas = 'con-contenido';
+            actualizarVisibilidadModulosDescubrimiento_();
+        };
+        procesarTermino_(0);
     }
 
     // Clic en un chip de "Marcas más buscadas": restringe el resultado a
