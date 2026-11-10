@@ -7334,6 +7334,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <input type="number" id="temporada-ver-todos-precio-max" placeholder="Precio máx. €" min="0" step="0.5" style="max-width:120px;">
             <select id="temporada-ver-todos-orden">
                 <option value="relevancia">Ordenar: relevancia</option>
+                <option value="nombre">Nombre (A-Z)</option>
+                <option value="familia">Familia (A-Z)</option>
                 <option value="precio-asc">Precio: menor a mayor</option>
                 <option value="precio-desc">Precio: mayor a menor</option>
                 <option value="novedad">Novedades primero</option>
@@ -10677,19 +10679,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'temporada-anadir-seleccion-btn';
-        btn.title = 'Añadir a mi selección';
-        btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i>';
+        // El check verde refleja SIEMPRE el estado real (¿está ya en mi
+        // selección, sí o no?), no una animación que desaparece sola —
+        // bug real reportado por Eloy: "se marca en verde pero no se
+        // mantiene el check verde". Ahora es un interruptor: un segundo
+        // clic quita el producto de la selección y vuelve al icono de
+        // "+".
+        const actualizarBoton_ = () => {
+            const yaEsta = listaCompraTiene_(p.ref);
+            btn.classList.toggle('temporada-anadir-seleccion-btn--hecho', yaEsta);
+            btn.innerHTML = yaEsta ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-cart-plus"></i>';
+            btn.title = yaEsta ? 'Ya está en tu selección — clic para quitarlo' : 'Añadir a mi selección';
+        };
+        actualizarBoton_();
         btn.addEventListener('click', (e) => {
             e.stopPropagation(); // no abrir la ficha del producto al pulsar el botón
-            const resultado = listaCompraAnadir_(p);
+            if (listaCompraTiene_(p.ref)) {
+                listaCompraEliminarProducto_(p.ref);
+                mostrarToast('Quitado de tu selección.');
+            } else {
+                const resultado = listaCompraAnadir_(p);
+                if (resultado === 'duplicado') mostrarToast('Ya estaba en tu selección.');
+            }
             listaCompraActualizarUI_();
-            btn.classList.add('temporada-anadir-seleccion-btn--hecho');
-            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-            if (resultado === 'duplicado') mostrarToast('Ya estaba en tu selección.');
-            setTimeout(() => {
-                btn.classList.remove('temporada-anadir-seleccion-btn--hecho');
-                btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i>';
-            }, 1600);
+            actualizarBoton_();
         });
         card.appendChild(btn);
         return card;
@@ -10795,9 +10808,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('temporada-ver-todos-estado-vacio').style.display = filtrados.length ? 'none' : '';
         if (!filtrados.length) return;
 
-        // Ordenación explícita (precio/novedad): lista plana, sin
-        // agrupar ni paginar por scroll — ya es un conjunto acotado por
-        // los filtros, no hace falta.
+        // Ordenación explícita (nombre/familia/precio/novedad): lista
+        // plana o agrupada sin aleatorizar, sin paginar por scroll — ya
+        // es un conjunto acotado por los filtros, no hace falta.
+        if (temporadaModalOrden_ === 'nombre') {
+            const ordenados = filtrados.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }));
+            temporadaRenderizarListaPlanaEnModal_(ordenados);
+            $('temporada-ver-todos-fin').style.display = '';
+            return;
+        }
+        if (temporadaModalOrden_ === 'familia') {
+            // Mismo agrupado por familia que "relevancia" (alfabético,
+            // vía agruparPorFamilia), pero SIN barajar_ dentro de cada
+            // grupo — aquí los productos van también por nombre, para
+            // un orden de catálogo predecible en vez de aleatorio.
+            agruparPorFamilia(filtrados).map(g => ({
+                nombre: g.nombre,
+                productos: g.productos.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' })),
+            })).forEach(temporadaRenderizarGrupoEnModal_);
+            $('temporada-ver-todos-fin').style.display = '';
+            return;
+        }
         if (temporadaModalOrden_ === 'precio-asc' || temporadaModalOrden_ === 'precio-desc') {
             const conPrecio = filtrados
                 .map(p => ({ p, precio: (precioAMostrar_(p) || {}).con }))
