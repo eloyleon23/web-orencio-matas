@@ -7774,6 +7774,92 @@ window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 console.log('Configuración cargada');
 console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_URL ? 'Sí' : 'No');
 
+// ── Diagnóstico visible temporal de rendimiento (solo preprod) ──────────
+// A petición de Eloy: reporta que, tras dejar la pestaña abierta varios
+// minutos sin tocar nada, el scroll de la modal de temporada pasa de ir
+// "a trompicones" a ir fluido — indicio de que algo sigue de fondo
+// ralentizando el hilo principal justo tras la carga, y que termina por
+// sí solo pasado ese rato. No tiene acceso a las herramientas de
+// desarrollador del móvil donde lo prueba, así que un registro solo en
+// consola no serviría de nada — en su lugar, un pequeño recuadro VISIBLE
+// en pantalla (solo en preprod) con: segundos desde la carga, peticiones
+// de red relevantes todavía en curso y su nombre, y el tiempo total
+// acumulado de bloqueos largos del hilo principal (>150ms). Así puede
+// simplemente mirar el móvil mientras espera y decirnos qué marca el
+// recuadro justo cuando el scroll pasa de ir mal a ir bien. Un botón "×"
+// lo cierra si molesta; no cambia nada del comportamiento real de la
+// página, y nunca aparece en producción (IONOS).
+if (window.OM_PREPRODUCCION) {
+    (function() {
+        const panel = document.createElement('div');
+        panel.id = 'om-diag-rendimiento';
+        panel.style.cssText = 'position:fixed;bottom:8px;left:8px;z-index:999999;background:rgba(15,23,42,0.88);color:#e2e8f0;font:11px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:280px;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
+        panel.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;"><strong>⏱ Diagnóstico (preprod)</strong><span id="om-diag-cerrar" style="cursor:pointer;opacity:0.7;">✕</span></div><div id="om-diag-cuerpo">Iniciando…</div>';
+        document.body.appendChild(panel);
+        panel.querySelector('#om-diag-cerrar').addEventListener('click', () => panel.remove());
+
+        const peticionesEnCurso_ = new Set();
+        let bloqueosTotalMs_ = 0;
+        let bloqueosCuenta_ = 0;
+        let bloqueoMaximoMs_ = 0;
+
+        const etiqueta_ = (url) => {
+            if (url.includes('accion=obtener_productos')) return 'productos (en vivo)';
+            if (url.includes('accion=obtener_destacados')) return 'destacados';
+            if (url.includes('accion=obtener_temporadas')) return 'temporadas';
+            if (url.includes('accion=obtener_campanas')) return 'campañas escaparate';
+            if (url.includes('accion=obtener_bloques_categorias')) return 'bloques categorías';
+            if (url.includes('script.google.com')) return 'apps script (otra acción)';
+            if (url.includes('/data/productos.json')) return 'productos (estático)';
+            if (url.includes('/data/productos_talleres.json')) return 'talleres';
+            if (url.includes('/data/productos_glasurit.json')) return 'glasurit';
+            if (url.includes('/data/productos_besa.json')) return 'besa';
+            if (url.includes('/data/productos_baslac.json')) return 'baslac';
+            if (url.includes('lh3.googleusercontent.com')) return null; // imágenes: demasiado ruido para este recuadro
+            return null;
+        };
+        const fetchOriginal_ = window.fetch.bind(window);
+        window.fetch = function (recurso, opciones) {
+            const url = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
+            const nombre = etiqueta_(url);
+            if (!nombre) return fetchOriginal_(recurso, opciones);
+            const marca = nombre + '#' + Math.random();
+            peticionesEnCurso_.add(marca);
+            const terminar = () => peticionesEnCurso_.delete(marca);
+            return fetchOriginal_(recurso, opciones).then(
+                (resp) => { terminar(); return resp; },
+                (err) => { terminar(); throw err; }
+            );
+        };
+
+        if (window.PerformanceObserver) {
+            try {
+                const po = new PerformanceObserver((lista) => {
+                    lista.getEntries().forEach((entrada) => {
+                        if (entrada.duration < 150) return; // solo bloqueos realmente notables
+                        bloqueosTotalMs_ += entrada.duration;
+                        bloqueosCuenta_++;
+                        bloqueoMaximoMs_ = Math.max(bloqueoMaximoMs_, entrada.duration);
+                    });
+                });
+                po.observe({ entryTypes: ['longtask'] });
+            } catch (e) { /* Long Tasks API no disponible: el recuadro sigue funcionando sin esa fila */ }
+        }
+
+        const cuerpo = panel.querySelector('#om-diag-cuerpo');
+        const idRefresco_ = setInterval(() => {
+            const segundos = Math.round(performance.now() / 1000);
+            const nombresEnCurso = [...peticionesEnCurso_].map(m => m.split('#')[0]);
+            cuerpo.innerHTML = `${segundos}s desde la carga<br>`
+                + `Peticiones en curso: ${nombresEnCurso.length ? nombresEnCurso.join(', ') : '(ninguna)'}<br>`
+                + `Bloqueos &gt;150ms: ${bloqueosCuenta_} (máx ${Math.round(bloqueoMaximoMs_)}ms, total ${Math.round(bloqueosTotalMs_)}ms)`;
+            // Se detiene solo tras 10 minutos, para no dejar nada corriendo
+            // indefinidamente en una pestaña que se quede abierta horas.
+            if (segundos >= 600) clearInterval(idRefresco_);
+        }, 1000);
+    })();
+}
+
 (function() {
     // ── Endurecer la restricción de administración: eliminar del DOM,
     //    no solo ocultar con CSS ──
