@@ -7427,7 +7427,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              que en "Marcas más buscadas" (detectarMarcaAsistente) — no
              hay un campo de marca en el catálogo. -->
         <div class="destacados-buscador-controles" style="margin-top:10px;">
-            <select id="temporada-ver-todos-marca"><option value="">Todas las marcas</option></select>
+            <!-- oculto mientras se desactiva temporalmente el filtro de marca (ver el comentario en abrirModalTemporada_) -->
+            <select id="temporada-ver-todos-marca" style="display:none;"><option value="">Todas las marcas</option></select>
             <input type="number" id="temporada-ver-todos-precio-min" placeholder="Precio mín. €" min="0" step="0.5" style="max-width:120px;">
             <input type="number" id="temporada-ver-todos-precio-max" placeholder="Precio máx. €" min="0" step="0.5" style="max-width:120px;">
             <select id="temporada-ver-todos-orden">
@@ -11366,7 +11367,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('temporada-ver-todos-precio-max').value = '';
         $('temporada-ver-todos-orden').value = 'relevancia';
         temporadaRenderizarChipsFamilias_();
-        temporadaPoblarSelectorMarca_().then(() => { $('temporada-ver-todos-marca').value = ''; });
+        // Filtro de marca DESACTIVADO TEMPORALMENTE — a petición
+        // explícita de Eloy, para ir descartando extras uno a uno
+        // mientras se localiza qué sigue yendo "a trompicones" en móvil
+        // dentro de esta modal. temporadaPoblarSelectorMarca_() llama a
+        // detectarMarcaAsistente(p.nombre) para CADA producto de la
+        // temporada en el momento de abrir la modal — candidato real a
+        // coste notable con temporadas grandes. Para reactivarlo: quitar
+        // este comentario y la línea de abajo, y quitar `display:none` del
+        // <select id="temporada-ver-todos-marca"> en el HTML.
+        // temporadaPoblarSelectorMarca_().then(() => { $('temporada-ver-todos-marca').value = ''; });
         temporadaRenderizarDestacadosNovedades_();
         temporadaModalActualizarPanelSeleccion_();
         temporadaModalFiltrarYRenderizar_();
