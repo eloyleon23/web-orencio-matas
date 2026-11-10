@@ -1362,6 +1362,16 @@
         .modal-lista-compra-aviso-envase i { margin-top: 1px; }
         .modal-lista-compra-cuerpo { padding: 20px; }
         .lista-compra-notas { margin-top: 18px; }
+        .lista-compra-propuesta {
+            margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
+        }
+        .lista-compra-propuesta label {
+            display: block; font-weight: 700; color: var(--dark); font-size: 0.92rem; margin-bottom: 8px;
+        }
+        .lista-compra-propuesta-tipo {
+            width: 100%; max-width: 360px; padding: 8px 10px; margin-bottom: 8px;
+            border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem;
+        }
         .lista-compra-notas label {
             display: flex; align-items: center; gap: 6px; font-size: 0.85rem;
             font-weight: 700; color: var(--dark); margin-bottom: 6px;
@@ -7013,6 +7023,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     placeholder="Horario preferido de recogida, alguna indicación sobre el pedido…"></textarea>
                 <span class="lista-compra-notas-contador" id="lista-compra-notas-contador">0 / 500</span>
             </div>
+            <!-- Compartir la lista como un enlace que abre en el navegador
+                 de quien lo reciba (no solo un PDF adjunto) — a petición
+                 explícita: "compartir la propuesta mediante un enlace que
+                 funcione para el destinatario". Ver guardarYCompartirPropuesta_.
+                 "Tipo" es solo una etiqueta informativa (no cambia ningún
+                 cálculo): distingue una selección orientativa de un
+                 presupuesto que el propio comercial ya ha revisado. NUNCA
+                 es un pedido real — el sistema sigue sin stock, pagos ni
+                 procesamiento de pedidos, igual que el resto de la Lista
+                 de la compra; confirmar un pedido de verdad sigue
+                 requiriendo contactar con la tienda. -->
+            <div class="lista-compra-propuesta" id="lista-compra-propuesta-wrap">
+                <label for="lista-compra-propuesta-tipo">
+                    <i class="fa-solid fa-link"></i> Compartir como propuesta (enlace)
+                </label>
+                <select id="lista-compra-propuesta-tipo" class="lista-compra-propuesta-tipo">
+                    <option value="orientativa">Selección orientativa (sin confirmar)</option>
+                    <option value="confirmada">Presupuesto confirmado por el comercial</option>
+                </select>
+                <p class="destacados-hint" style="margin:4px 0 8px;">
+                    El enlace lo puede abrir cualquiera que lo reciba y muestra siempre los precios actuales
+                    del catálogo según su propio perfil (público o profesional) — nunca precios congelados del
+                    momento en que se compartió. No es un pedido confirmado ni una reserva de stock.
+                </p>
+                <button type="button" id="btn-lista-compra-propuesta-compartir" class="destacados-btn-primario">
+                    <i class="fa-solid fa-share-from-square"></i> Guardar y compartir enlace
+                </button>
+                <p id="lista-compra-propuesta-resultado" class="destacados-hint" style="margin-top:8px;"></p>
+            </div>
         </div>
         <div class="modal-lista-compra-acciones" id="modal-lista-compra-acciones">
             <button type="button" id="btn-lista-compra-pdf" class="btn-lista-compra-pdf">
@@ -7034,6 +7073,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="btn-lista-compra-eliminar" class="btn-lista-compra-eliminar">
                 <i class="fa-solid fa-trash"></i> Eliminar la lista
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal "Propuesta recibida" — se abre sola al entrar con un enlace
+     ?propuesta=<id> (ver abrirPropuestaDesdeURL_). Solo lleva
+     referencias/cantidades guardadas en Apps Script (nunca precios): los
+     precios y nombres se resuelven siempre aquí, en vivo, contra el
+     catálogo y el perfil (público/profesional) de quien la ABRE — nunca
+     los que vio quien la compartió. Pública a propósito (sin PIN), igual
+     que compartir un producto o una temporada. -->
+<div class="modal-overlay" id="propuesta-recibida-overlay">
+    <div class="modal-box" style="max-width:560px;" role="dialog" aria-modal="true" aria-labelledby="propuesta-recibida-titulo">
+        <h3 id="propuesta-recibida-titulo"><i class="fa-solid fa-file-invoice"></i> Propuesta recibida</h3>
+        <p id="propuesta-recibida-tipo" class="destacados-hint" style="font-weight:700;"></p>
+        <div id="propuesta-recibida-lista" style="max-height:40vh; overflow-y:auto; margin:10px 0;"></div>
+        <p id="propuesta-recibida-total" style="font-weight:800; font-size:1.05rem; margin:8px 0;"></p>
+        <p id="propuesta-recibida-notas" class="destacados-hint" style="display:none;"></p>
+        <p id="propuesta-recibida-avisos" class="destacados-hint"></p>
+        <p class="destacados-hint">
+            Los precios mostrados son los actuales del catálogo, según tu propio perfil — no es un pedido
+            confirmado ni una reserva de stock. Para confirmar un pedido real, contacta con la tienda.
+        </p>
+        <div class="modal-acciones">
+            <button type="button" id="propuesta-recibida-cerrar" class="modal-cancelar">Cerrar</button>
+            <button type="button" id="propuesta-recibida-cargar" class="modal-enviar">Cargar en mi lista de la compra</button>
         </div>
     </div>
 </div>
@@ -8569,14 +8634,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Mismo patrón que ?ref= (enlace a un producto), pero para
         // ?temporada=<id> — ver abrirTemporadaDesdeURL_.
         await abrirTemporadaDesdeURL_();
+        // Igual, para ?propuesta=<id> (enlace a una propuesta comercial
+        // compartida) — ver abrirPropuestaDesdeURL_.
+        await abrirPropuestaDesdeURL_();
         // A petición de Eloy: al entrar o recargar la página, el foco del
         // teclado se pone automáticamente en la barra de búsqueda — muy
         // útil con el lector de códigos de barras, que "escribe"
         // directamente donde esté el foco sin tener que tocar antes la
-        // pantalla. Si ?ref= o ?temporada= ya abrieron un modal (enlace
-        // compartido), se respeta esa vista y no se le quita el foco —
-        // el usuario probablemente quiere verlo, no buscar.
-        if (!$('modal-producto-overlay').classList.contains('activo') && !$('temporada-ver-todos-overlay').classList.contains('activo')) {
+        // pantalla. Si ?ref=, ?temporada= o ?propuesta= ya abrieron un
+        // modal (enlace compartido), se respeta esa vista y no se le
+        // quita el foco — el usuario probablemente quiere verlo, no
+        // buscar.
+        if (!$('modal-producto-overlay').classList.contains('activo')
+            && !$('temporada-ver-todos-overlay').classList.contains('activo')
+            && !$('propuesta-recibida-overlay').classList.contains('activo')) {
             $('f-texto').focus();
         }
     }
@@ -15137,8 +15208,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // Igual que avisosMostrados: campo añadido después de la v2
             // original, se sanea aparte sin forzar otro bump de versión.
             const notas = typeof data.notas === 'string' ? data.notas.slice(0, LISTA_COMPRA_NOTAS_MAX_) : '';
+            // Igual que notas/avisosMostrados: campo añadido después de la
+            // v2 original (id de la última propuesta guardada en Apps
+            // Script para esta lista, ver guardarYCompartirPropuesta_ — así
+            // volver a compartir actualiza el MISMO enlace en vez de crear
+            // uno nuevo cada vez), se sanea aparte sin forzar otro bump de
+            // versión.
+            const propuestaId = typeof data.propuestaId === 'string' ? data.propuestaId : null;
             const productos = data.productos.map(listaCompraSanear_).filter(Boolean);
-            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos, notas };
+            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos, notas, propuestaId };
         } catch (e) {
             return null;
         }
@@ -15169,7 +15247,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraProductoPorRef_(ref) { return listaCompraProductos_().find(p => p.ref === ref) || null; }
 
     function listaCompraCrear_() {
-        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [], notas: '' };
+        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [], notas: '', propuestaId: null };
         listaCompraPersistir_();
     }
 
@@ -15432,6 +15510,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         listaCompraState_.creado = Date.now();
         listaCompraState_.avisosMostrados = [];
         listaCompraState_.notas = '';
+        // Igual que las notas: el enlace de propuesta ya compartido era de
+        // ESTA lista, no tendría sentido que un futuro "compartir" sobre
+        // una lista vaciada y reconstruida siguiera actualizando en
+        // silencio un enlace que alguien ya pueda tener guardado.
+        listaCompraState_.propuestaId = null;
         listaCompraPersistir_();
     }
 
@@ -16245,6 +16328,188 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         mostrarToast('Se ha abierto tu programa de correo. Si quieres adjuntar también el PDF, expórtalo con el botón de al lado.');
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    // ── PROPUESTA COMERCIAL (compartir la Lista de la compra por enlace) ──
+    // A petición explícita: "compartir la propuesta mediante un enlace
+    // que funcione para el destinatario". Guarda en Apps Script solo
+    // referencias/cantidades/tipo/notas — NUNCA precios (ver el bloque
+    // "PROPUESTAS COMERCIALES" en scripts/apps_script_trigger.js para el
+    // porqué). Volver a compartir la MISMA lista actualiza el mismo
+    // enlace (listaCompraState_.propuestaId) en vez de crear uno nuevo
+    // cada vez; "Vaciar la lista" lo reinicia (ver listaCompraVaciar_).
+    // ══════════════════════════════════════════════════════════════════
+    async function propuestaFetchPost_(payload) {
+        for (let intento = 0; intento < 2; intento++) {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+            });
+            const d = await resp.json();
+            if (d.success !== undefined || intento === 1) return d;
+            console.warn('propuestaFetchPost_: respuesta sin "success" (posible redirección a doGet) — reintentando...', d);
+        }
+    }
+
+    function urlCompartirPropuesta_(id) {
+        const base = window.location.origin + window.location.pathname;
+        return `${base}?propuesta=${encodeURIComponent(id)}`;
+    }
+
+    async function guardarYCompartirPropuesta_() {
+        if (!listaCompraExiste_() || !listaCompraProductos_().length) {
+            mostrarToast('Tu lista está vacía — añade algún producto antes de compartirla.', 'error');
+            return;
+        }
+        const btn = $('btn-lista-compra-propuesta-compartir');
+        const resultadoEl = $('lista-compra-propuesta-resultado');
+        const tipo = $('lista-compra-propuesta-tipo').value === 'confirmada' ? 'confirmada' : 'orientativa';
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        resultadoEl.textContent = '';
+        try {
+            const productos = listaCompraProductos_().map(p => ({
+                ref: p.ref, unidades: p.unidades, modoCompra: p.modoCompra, cantidadEnvases: p.cantidadEnvases,
+            }));
+            const resp = await propuestaFetchPost_({
+                accion: 'guardar_propuesta',
+                id: listaCompraState_.propuestaId || undefined,
+                tipo: tipo, productos: productos, notas: listaCompraNotas_(),
+            });
+            if (!resp || !resp.success) {
+                resultadoEl.textContent = (resp && resp.error) || 'No se ha podido guardar la propuesta. Inténtalo de nuevo.';
+                return;
+            }
+            listaCompraState_.propuestaId = resp.id;
+            listaCompraPersistir_();
+            const url = urlCompartirPropuesta_(resp.id);
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: 'Propuesta — Orencio Matas y Hnos', text: 'Esta es la selección de productos que te propongo:', url: url });
+                    resultadoEl.textContent = '✓ Enlace compartido.';
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return; // cancelado a propósito
+                }
+            }
+            try {
+                await navigator.clipboard.writeText(url);
+                resultadoEl.textContent = '✓ Enlace copiado al portapapeles: ' + url;
+            } catch (e) {
+                window.prompt('Copia este enlace para compartir la propuesta:', url);
+            }
+        } catch (e) {
+            resultadoEl.textContent = 'Error de conexión al guardar la propuesta.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    // Si la URL incluye ?propuesta=<id>, la carga y muestra en un modal
+    // propio al arrancar la página — mismo patrón que abrirProductoDesdeURL/
+    // abrirTemporadaDesdeURL_ (?ref=/?temporada=), limpiando el parámetro
+    // al terminar. Los precios/nombres se resuelven SIEMPRE aquí, contra
+    // TODOS (el catálogo ya cargado) y el perfil de quien abre el enlace
+    // — nunca lo que vio quien la compartió — así que un producto
+    // descatalogado o con el precio cambiado desde entonces se refleja
+    // correctamente, sin ningún dato obsoleto guardado en el servidor.
+    async function abrirPropuestaDesdeURL_() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('propuesta');
+        if (!id) return;
+        try {
+            const resp = await fetch(`${window.GOOGLE_APPS_SCRIPT_URL}?accion=obtener_propuesta&id=${encodeURIComponent(id)}`, { cache: 'no-store' });
+            const datos = await resp.json();
+            if (!datos || !datos.success || !datos.propuesta) {
+                mostrarToast('Esta propuesta ya no está disponible.', 'error');
+            } else {
+                mostrarPropuestaRecibida_(datos.propuesta);
+            }
+        } catch (e) {
+            mostrarToast('No se ha podido cargar la propuesta compartida.', 'error');
+        }
+        const limpia = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', limpia);
+    }
+
+    let propuestaRecibidaActual_ = null;
+
+    function mostrarPropuestaRecibida_(propuesta) {
+        propuestaRecibidaActual_ = propuesta;
+        $('propuesta-recibida-tipo').textContent = propuesta.tipo === 'confirmada'
+            ? '✓ Presupuesto confirmado por nuestro equipo'
+            : 'Selección orientativa (sin confirmar)';
+        $('propuesta-recibida-notas').style.display = propuesta.notas ? '' : 'none';
+        $('propuesta-recibida-notas').textContent = propuesta.notas ? ('Observaciones: ' + propuesta.notas) : '';
+
+        const cont = $('propuesta-recibida-lista');
+        cont.innerHTML = '';
+        let total = 0;
+        let encontrados = 0;
+        const noEncontrados = [];
+        (propuesta.productos || []).forEach(item => {
+            const p = TODOS.find(x => String(x.ref) === String(item.ref));
+            if (!p) { noEncontrados.push(item.ref); return; }
+            encontrados++;
+            const precioInfo = precioAMostrar_(p);
+            const unidades = Math.max(1, parseInt(item.unidades, 10) || 1);
+            const cantidadTexto = (item.modoCompra === 'envase' && item.cantidadEnvases > 1)
+                ? `${item.cantidadEnvases} caja(s)/envase(s) · ${unidades} ud.`
+                : `${unidades} ud.`;
+            let precioTexto = 'Pendiente de confirmar';
+            if (precioInfo && !precioInfo.pending && precioInfo.con != null) {
+                const subtotal = precioInfo.con * unidades;
+                total += subtotal;
+                precioTexto = `${precioInfo.con.toFixed(2).replace('.', ',')} € / ud. — ${subtotal.toFixed(2).replace('.', ',')} €`;
+            }
+            const fila = document.createElement('div');
+            fila.style.cssText = 'display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.88rem;';
+            fila.innerHTML = `
+                <span style="flex:1;">${escapeHtml(p.nombre)} <span style="color:var(--muted);">· Ref: ${escapeHtml(p.ref)} · ${escapeHtml(cantidadTexto)}</span></span>
+                <span style="white-space:nowrap;font-weight:600;">${escapeHtml(precioTexto)}</span>
+            `;
+            cont.appendChild(fila);
+        });
+
+        $('propuesta-recibida-total').textContent = encontrados
+            ? `Total estimado: ${total.toFixed(2).replace('.', ',')} €`
+            : '';
+        $('propuesta-recibida-avisos').textContent = noEncontrados.length
+            ? `${noEncontrados.length} producto(s) de la propuesta ya no están disponibles en el catálogo (ref: ${noEncontrados.join(', ')}).`
+            : '';
+
+        $('propuesta-recibida-overlay').classList.add('activo');
+    }
+
+    function cerrarPropuestaRecibida_() {
+        $('propuesta-recibida-overlay').classList.remove('activo');
+    }
+
+    // Fusiona (no sustituye) la propuesta recibida con la lista de la
+    // compra propia de quien la abre — si ya tenía productos guardados,
+    // se respetan; los de la propuesta se añaden (o se dejan como
+    // estaban si ya los tenía). Igual que listaCompraAnadir_, resuelto
+    // contra el catálogo actual, nunca contra datos guardados.
+    function cargarPropuestaEnListaCompra_() {
+        if (!propuestaRecibidaActual_) return;
+        let añadidos = 0;
+        (propuestaRecibidaActual_.productos || []).forEach(item => {
+            const p = TODOS.find(x => String(x.ref) === String(item.ref));
+            if (!p) return;
+            if (listaCompraTiene_(p.ref)) return;
+            const productoConCantidad = Object.assign({}, p, {
+                unidades: item.unidades, modoCompra: item.modoCompra, cantidadEnvases: item.cantidadEnvases,
+            });
+            if (listaCompraAnadir_(productoConCantidad) === 'ok') añadidos++;
+        });
+        listaCompraActualizarUI_();
+        cerrarPropuestaRecibida_();
+        mostrarToast(añadidos ? `Añadidos ${añadidos} producto(s) a tu lista de la compra.` : 'Ya tenías todos estos productos en tu lista.');
+        abrirModalListaCompra_();
+    }
+
     // ── Wiring de toda la funcionalidad ────────────────────────────────
     function inicializarListaCompra_() {
         listaCompraState_ = listaCompraCargarDeStorage_();
@@ -16295,6 +16560,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             listaCompraCrear_();
             mostrarToast(`Lista de la compra creada. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
             listaCompraActualizarUI_();
+        });
+
+        $('btn-lista-compra-propuesta-compartir').addEventListener('click', guardarYCompartirPropuesta_);
+        $('propuesta-recibida-cerrar').addEventListener('click', cerrarPropuestaRecibida_);
+        $('propuesta-recibida-cargar').addEventListener('click', cargarPropuestaEnListaCompra_);
+        $('propuesta-recibida-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'propuesta-recibida-overlay') cerrarPropuestaRecibida_();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('propuesta-recibida-overlay').classList.contains('activo')) cerrarPropuestaRecibida_();
         });
 
         $('modal-lista-compra-cerrar').addEventListener('click', cerrarModalListaCompra_);

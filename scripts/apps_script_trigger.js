@@ -4018,6 +4018,20 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Propuesta comercial compartida por enlace (?propuesta=<id> en
+    // buscador.html) — ver el bloque "PROPUESTAS COMERCIALES" más abajo.
+    // Pública a propósito (sin PIN): solo lleva referencias y cantidades,
+    // nunca precios.
+    if (accion === 'obtener_propuesta') {
+      const propuesta = obtenerPropuestaPorId_((e.parameter && e.parameter.id || '').toString().trim());
+      if (!propuesta) {
+        return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Propuesta no encontrada.' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: true, propuesta: propuesta }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     // Sección "Destacados" del buscador — misma caché en Drive que
     // obtener_campanas (ver regenerarCacheDestacadosDesdeSheet_), con la
     // configuración global (activo/fecha fin) leída al vuelo desde
@@ -4219,6 +4233,14 @@ function doPost(e) {
     if (accion === 'eliminar_temporada') {
       console.log('Acción: eliminar_temporada');
       return procesarEliminarTemporada(data);
+    }
+
+    // Guardar/actualizar una propuesta comercial (enlace para compartir
+    // la Lista de la compra) — ver el bloque "PROPUESTAS COMERCIALES".
+    // Sin PIN a propósito, igual que su lectura en doGet.
+    if (accion === 'guardar_propuesta') {
+      console.log('Acción: guardar_propuesta');
+      return procesarGuardarPropuesta(data);
     }
 
     // NUEVO — Sección "Destacados" del buscador. A diferencia de
@@ -8580,6 +8602,131 @@ function procesarEliminarTemporada(data) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ── PROPUESTAS COMERCIALES (enlace para compartir la Lista de la compra) ──
+// A petición explícita de Eloy: "Compartir la propuesta mediante un
+// enlace que funcione para el destinatario" — hasta ahora la Lista de
+// la compra (ver buscador.html) solo se podía compartir como PDF
+// adjunto o como texto por WhatsApp/correo, nunca como un enlace real
+// que el destinatario pudiera abrir en el navegador.
+//
+// Diseño deliberadamente simple: solo se guarda QUÉ productos y QUÉ
+// cantidades (más un "tipo" informativo y notas de texto) — NUNCA
+// precios. Los precios se recalculan siempre en el navegador de quien
+// abre el enlace, contra el catálogo y el perfil (público/profesional)
+// de ESE visitante en ESE momento — nunca los que vio quien lo compartió.
+// Esto es a la vez más simple (no hay que decidir qué pasa si cambia un
+// precio después de compartir: siempre se ve el actual) y más seguro
+// (nunca se filtra un precio al por mayor a través de una propuesta
+// guardada, aunque el enlace lo abra alguien sin sesión profesional).
+//
+// Sin PIN a propósito: una propuesta solo es una lista de referencias y
+// cantidades (sin datos personales ni precios), pensada para compartirse
+// libremente por WhatsApp/correo — mismo nivel de apertura que ya tienen
+// los enlaces de compartir producto (?ref=) o temporada (?temporada=).
+// ══════════════════════════════════════════════════════════════════════
+const CABECERAS_PROPUESTAS_ = ['id', 'tipo', 'productos_json', 'notas', 'fecha_creacion', 'fecha_actualizacion'];
+
+function obtenerHojaPropuestas_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('PropuestasComerciales');
+  if (!sheet) {
+    sheet = ss.insertSheet('PropuestasComerciales');
+    sheet.getRange(1, 1, 1, CABECERAS_PROPUESTAS_.length).setValues([CABECERAS_PROPUESTAS_]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+// Guarda (o actualiza, si data.id ya existe) una propuesta comercial.
+// data.productos: array de {ref, unidades, modoCompra, cantidadEnvases} —
+// el mismo formato ya usado por la Lista de la compra en el cliente, sin
+// precios ni nombres (se resuelven siempre en vivo al leerla).
+function procesarGuardarPropuesta(data) {
+  try {
+    const productos = Array.isArray(data.productos) ? data.productos : [];
+    if (!productos.length) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'La propuesta no tiene ningún producto.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const tipo = (data.tipo === 'confirmada') ? 'confirmada' : 'orientativa';
+    const notas = (data.notas || '').toString().trim().slice(0, 500);
+    const productosJson = JSON.stringify(productos.map(p => ({
+      ref: (p.ref || '').toString().trim(),
+      unidades: Math.max(1, parseInt(p.unidades, 10) || 1),
+      modoCompra: p.modoCompra === 'envase' ? 'envase' : 'unidad',
+      cantidadEnvases: Math.max(1, parseInt(p.cantidadEnvases, 10) || 1),
+    })).filter(p => p.ref));
+
+    const sheet = obtenerHojaPropuestas_();
+    const datos = sheet.getDataRange().getValues();
+    const COL = mapaCabeceras_(datos[0]);
+    const ahoraISO = new Date().toISOString();
+
+    const idExistente = (data.id || '').toString().trim();
+    let filaIdx = -1;
+    if (idExistente) {
+      for (let i = 1; i < datos.length; i++) {
+        if ((datos[i][COL['id']] || '').toString().trim() === idExistente) { filaIdx = i; break; }
+      }
+    }
+
+    if (filaIdx === -1) {
+      const id = 'propuesta-' + new Date().getTime();
+      const fila = new Array(CABECERAS_PROPUESTAS_.length).fill('');
+      fila[COL['id']] = id;
+      fila[COL['tipo']] = tipo;
+      fila[COL['productos_json']] = productosJson;
+      fila[COL['notas']] = notas;
+      fila[COL['fecha_creacion']] = ahoraISO;
+      fila[COL['fecha_actualizacion']] = ahoraISO;
+      sheet.getRange(sheet.getLastRow() + 1, 1, 1, CABECERAS_PROPUESTAS_.length).setValues([fila]);
+      console.log('Propuesta comercial creada:', id);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, id: id }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const filaNum = filaIdx + 1;
+    sheet.getRange(filaNum, COL['tipo'] + 1).setValue(tipo);
+    sheet.getRange(filaNum, COL['productos_json'] + 1).setValue(productosJson);
+    sheet.getRange(filaNum, COL['notas'] + 1).setValue(notas);
+    sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(ahoraISO);
+    console.log('Propuesta comercial actualizada:', idExistente);
+    return ContentService.createTextOutput(JSON.stringify({ success: true, id: idExistente }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error('Error en procesarGuardarPropuesta:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Lectura directa de la hoja (sin caché en Drive, a diferencia de
+// Temporadas/Campañas/Destacados): una propuesta se busca por su id
+// exacto, nunca se necesita la lista completa, así que no compensa
+// mantener una caché que habría que regenerar en cada guardado.
+function obtenerPropuestaPorId_(id) {
+  const sheet = obtenerHojaPropuestas_();
+  const datos = sheet.getDataRange().getValues();
+  if (datos.length < 2) return null;
+  const COL = mapaCabeceras_(datos[0]);
+  for (let i = 1; i < datos.length; i++) {
+    if ((datos[i][COL['id']] || '').toString().trim() === id) {
+      let productos = [];
+      try { productos = JSON.parse(datos[i][COL['productos_json']] || '[]'); } catch (e) { productos = []; }
+      return {
+        id: id,
+        tipo: (datos[i][COL['tipo']] || 'orientativa').toString(),
+        productos: productos,
+        notas: (datos[i][COL['notas']] || '').toString(),
+        fechaCreacion: (datos[i][COL['fecha_creacion']] || '').toString(),
+        fechaActualizacion: (datos[i][COL['fecha_actualizacion']] || '').toString(),
+      };
+    }
+  }
+  return null;
 }
 
 // ── Procesar dar de baja un producto ──────────────────────────────────────
