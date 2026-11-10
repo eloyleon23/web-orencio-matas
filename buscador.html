@@ -11174,7 +11174,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // que aquí "d" puede ser null — se cubre con un objeto vacío para
     // calcularPrecioDestacado_ (que sí espera siempre un objeto) y se
     // omite el chip/banner de promoción cuando no hay destacado real.
-    function dibujarTarjetaTemporadaPdf_(doc, x, y, w, h, foto, p) {
+    function dibujarTarjetaTemporadaPdf_(doc, x, y, w, h, foto, p, colorAccent) {
         const d = destacadoEfectivoPara_(p.ref);
         doc.setFillColor(255, 255, 255);
         doc.setDrawColor(226, 228, 232);
@@ -11189,7 +11189,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
         };
         const chipEntrada = (d && d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
-        const colorFranja = chipEntrada ? chipEntrada[1] : [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b];
+        const colorFranja = chipEntrada ? chipEntrada[1] : colorAccent;
         doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
         doc.roundedRect(x, y, w, 2.5, 2.5, 2.5, 'F');
         doc.rect(x, y + 1.3, w, 1.2, 'F');
@@ -11275,7 +11275,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                 ty += 5.4;
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(13.5);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+                doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
                 const promoTxt = `${promo.toFixed(2).replace('.', ',')} €`;
                 doc.text(promoTxt, x + pad, ty);
                 if (pct) {
@@ -11293,7 +11293,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             } else {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(13.5);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+                doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
                 doc.text(`${original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
                 ty += 5.6;
             }
@@ -11356,6 +11356,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
     }
 
+    // Emoticono de la temporada (campo "emoji" del editor de temporadas)
+    // rasterizado a PNG para poder incrustarlo en el PDF — jsPDF con las
+    // fuentes estándar (helvetica) no sabe dibujar emoji, así que se
+    // delega en el <canvas> del propio navegador (igual que
+    // generarQrDataUrl_ para el QR), que sí renderiza emoji en color.
+    function generarEmojiDataUrl_(emoji) {
+        if (!emoji) return null;
+        try {
+            const tam = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = tam;
+            canvas.height = tam;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, tam, tam);
+            ctx.font = `${Math.round(tam * 0.82)}px "Noto Color Emoji", "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, tam / 2, tam / 2 + tam * 0.04);
+            return { dataUrl: canvas.toDataURL('image/png'), width: tam, height: tam };
+        } catch (e) {
+            return null;
+        }
+    }
+
     // soloSeleccion=true: el folleto se genera SOLO con los productos de
     // esta temporada que el usuario ya ha marcado (ver
     // temporadaModalProductosSeleccionados_), ignorando el FILTRO activo
@@ -11383,12 +11407,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const contentRight = pageW - margin;
         const contentWidth = contentRight - margin;
         const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+        // Color de marca del folleto según el perfil que lo genera — azul
+        // para el profesional (precio al por mayor), el rojo de marca de
+        // siempre para el normal (PVP) — a petición explícita de Eloy,
+        // para distinguir de un vistazo qué tipo de precio lleva cada
+        // folleto. Mismo azul que ya se usa para el chip "OPORTUNIDAD".
+        const colorAccent = esProfesionalFolleto ? [25, 118, 210] : [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b];
+        const textoTipoPrecio = esProfesionalFolleto ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)';
 
         const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+        const emojiImg = generarEmojiDataUrl_(t.emoji);
         const vigenciaTxt = t.permanente ? 'Disponible todo el año' : `Válido del ${temporadaFormatearFecha_(t.fechaInicio)} al ${temporadaFormatearFecha_(t.fechaFin)}`;
 
         function dibujarCabecera() {
-            doc.setFillColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.setFillColor(colorAccent[0], colorAccent[1], colorAccent[2]);
             doc.rect(0, 0, pageW, 3, 'F');
             if (logo) {
                 const logoH = 11, logoW = logoH * (logo.width / logo.height);
@@ -11397,14 +11429,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9.5);
             doc.setTextColor(30, 33, 37);
-            doc.text((t.nombre || 'PRODUCTOS DE TEMPORADA').toUpperCase() + (soloSeleccion ? ' — SELECCIÓN' : ''), contentRight, 12, { align: 'right' });
+            // El emoticono de la temporada se dibuja justo a la izquierda
+            // del título — a petición explícita de Eloy: "incluye también
+            // el emoticono seleccionado para la temporada".
+            const tituloTxt = (t.nombre || 'PRODUCTOS DE TEMPORADA').toUpperCase() + (soloSeleccion ? ' — SELECCIÓN' : '');
+            doc.text(tituloTxt, contentRight, 12, { align: 'right' });
+            if (emojiImg) {
+                const tituloW = doc.getTextWidth(tituloTxt);
+                const emojiSize = 5;
+                doc.addImage(emojiImg.dataUrl, 'PNG', contentRight - tituloW - emojiSize - 2, 12 - emojiSize * 0.72, emojiSize, emojiSize);
+            }
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(120, 123, 130);
-            doc.text(
-                (esProfesionalFolleto ? 'Precios profesionales (al por mayor) · ' : '') + vigenciaTxt,
-                contentRight, 17, { align: 'right' }
-            );
+            doc.text(`${textoTipoPrecio} · ${vigenciaTxt}`, contentRight, 17, { align: 'right' });
             doc.setDrawColor(226, 228, 232);
             doc.setLineWidth(0.3);
             doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
@@ -11424,7 +11462,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
             doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
             doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.6);
@@ -11456,7 +11494,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const col = indiceEnPagina % numCols;
             const x = margin + col * (colW + colGap);
             const y = headerBottomY + 6 + fila * (cardH + rowGap);
-            dibujarTarjetaTemporadaPdf_(doc, x, y, colW, cardH, fotos[i], p);
+            dibujarTarjetaTemporadaPdf_(doc, x, y, colW, cardH, fotos[i], p, colorAccent);
         });
 
         const totalPaginas = doc.internal.getNumberOfPages();
