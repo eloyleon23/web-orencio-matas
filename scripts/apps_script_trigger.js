@@ -358,7 +358,41 @@ function sincronizarRegistroProductos(opciones) {
   const regProcesado = regData.map(fila => colProcesadoIdx !== undefined ? fila[colProcesadoIdx] : '');
   const regErrorCol   = regData.map(fila => colErrorIdx     !== undefined ? fila[colErrorIdx]     : '');
 
+  // Guarda el estado actual de prodData/regProcesado/regErrorCol en lote
+  // (misma escritura que antes solo se hacía una vez, al final del
+  // todo) — factorizada aparte para poder llamarla tanto al terminar el
+  // bucle como PERIÓDICAMENTE durante él (ver el porqué más abajo, en
+  // el propio bucle).
+  const guardarProgresoEnLote_ = () => {
+    if (prodData.length > 0) {
+      sheetProd.getRange(2, 1, prodData.length, prodHeaderRow.length).setValues(prodData);
+    }
+    if (colProcesadoIdx !== undefined) {
+      sheetReg.getRange(2, colProcesadoIdx + 1, regProcesado.length, 1).setValues(regProcesado.map(v => [v]));
+    }
+    if (colErrorIdx !== undefined) {
+      sheetReg.getRange(2, colErrorIdx + 1, regErrorCol.length, 1).setValues(regErrorCol.map(v => [v]));
+    }
+    SpreadsheetApp.flush();
+  };
+
+  // Guardado periódico cada 1000 filas (no solo al terminar el bucle
+  // entero) — a petición explícita de Eloy: si una tanda es tan grande
+  // que, pese al resto de mejoras de esta misma revisión (ver
+  // cargarCacheImagenes_), una ejecución SIGUE agotando el tiempo
+  // máximo de Apps Script a mitad del bucle, este guardado periódico es
+  // lo único que de verdad preserva lo ya procesado — el tiempo máximo
+  // MATA la ejecución en seco (ni siquiera pasa por ningún catch), así
+  // que sin esto el guardado único de después del bucle nunca llegaba a
+  // ejecutarse y se perdía el 100% del trabajo de esa pasada. Con esto,
+  // la siguiente ejecución (el disparador cada 2h) solo tiene que
+  // continuar con las filas que quedaron sin marcar ('si'/error) en vez
+  // de repetir desde cero las que ya se guardaron — ver también
+  // procesarListadoProductosExcel_, que ya NO borra RegistroProductos
+  // si detecta que sigue siendo el mismo correo todavía a medias.
   for (let i = 0; i < regData.length; i++) {
+    if (i > 0 && i % 1000 === 0) guardarProgresoEnLote_();
+
     const fila = regData[i];
     const procesado = colProcesadoIdx !== undefined ? (regProcesado[i] || '').toString().trim() : '';
     const errorPrev  = colErrorIdx     !== undefined ? (regErrorCol[i]   || '').toString().trim() : '';
@@ -494,18 +528,9 @@ function sincronizarRegistroProductos(opciones) {
     }
   }
 
-  // ── Escritura en lote (el paso que de verdad evita el timeout) ──
-  if (prodData.length > 0) {
-    sheetProd.getRange(2, 1, prodData.length, prodHeaderRow.length).setValues(prodData);
-  }
-  if (colProcesadoIdx !== undefined) {
-    sheetReg.getRange(2, colProcesadoIdx + 1, regProcesado.length, 1).setValues(regProcesado.map(v => [v]));
-  }
-  if (colErrorIdx !== undefined) {
-    sheetReg.getRange(2, colErrorIdx + 1, regErrorCol.length, 1).setValues(regErrorCol.map(v => [v]));
-  }
-
-  SpreadsheetApp.flush();
+  // ── Escritura en lote final (el guardado periódico de arriba ya ha ido
+  // dejando a salvo lo procesado hasta ahora; esta es la última tanda) ──
+  guardarProgresoEnLote_();
   SpreadsheetApp.getActiveSpreadsheet().toast(
     `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Reactivados: ${reactivados} | Saltados: ${saltados} | Errores: ${errores}`,
     '📥 Sincronización completada', 8
@@ -10285,10 +10310,21 @@ function configurarTriggerRevisionCorreoProductos() {
   console.log('Trigger creado: revisarCorreoListadoProductos se ejecutará cada 2 horas (reintenta sola el mismo día si una pasada falla o agota el tiempo).');
 }
 
+// Clave en la hoja Configuracion (ver escribirConfiguracion_/leerConfiguracion_)
+// con el id del hilo de Gmail que se está sincronizando ahora mismo, si
+// lo hay — permite que una ejecución que se corta a medias por tiempo
+// máximo se CONTINÚE en la siguiente pasada en vez de reiniciarse desde
+// cero (ver el comentario junto a continuarSiMismoHilo, más abajo).
+const CLAVE_CRM_SYNC_HILO_EN_CURSO_ = 'crm_sync_hilo_en_curso';
+
 // Función que ejecuta el disparador periódico. Busca correos del CRM sin
 // procesar todavía (etiqueta CORREO_CRM_ETIQUETA), procesa el más reciente
-// (el listado es un volcado completo cada vez, no incremental — los
-// correos más antiguos sin procesar quedan superados) y manda el resumen.
+// (los correos más antiguos sin procesar quedan superados) y manda el
+// resumen. Normalmente es un volcado completo del Excel cada vez; la
+// única excepción es cuando se detecta que el intento anterior de ESTE
+// MISMO correo se cortó a medias por tiempo máximo — ahí se continúa
+// sobre lo ya guardado en vez de volver a volcarlo entero (ver
+// continuarSiMismoHilo más abajo).
 function revisarCorreoListadoProductos() {
   // Protegido con LockService: esta función la puede disparar tanto el
   // trigger diario (7h) como el botón manual del menú/panel — si ambas
@@ -10321,9 +10357,11 @@ function revisarCorreoListadoProductos() {
   //
   // hilos/etiqueta se declaran aquí fuera (no dentro del try) para que el
   // catch pueda alcanzarlos también — ver el porqué más abajo, junto al
-  // catch.
+  // catch. limpiarHiloEnCurso_ igual, por el mismo motivo (el catch
+  // también necesita poder limpiar la marca de "hilo en curso").
   let hilos = null;
   let etiqueta = null;
+  const limpiarHiloEnCurso_ = () => escribirConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, '', '');
   try {
     const query = `from:${CORREO_CRM_REMITENTE} subject:"${CORREO_CRM_ASUNTO}" -label:${CORREO_CRM_ETIQUETA}`;
     hilos = GmailApp.search(query, 0, 10);
@@ -10354,6 +10392,22 @@ function revisarCorreoListadoProductos() {
     const hiloMasReciente = hilos[0];
     const marcarHilosComoProcesados_ = () => hilos.forEach(hilo => hilo.addLabel(etiqueta));
 
+    // Detecta si este es el MISMO correo que una ejecución anterior ya
+    // empezó a sincronizar pero no llegó a completar (timeout a medias:
+    // nunca se etiquetó como procesado, así que el disparador siguiente
+    // lo vuelve a encontrar aquí) — en ese caso se continúa sobre el
+    // progreso ya guardado en RegistroProductos en vez de volver a
+    // convertir y volcar el Excel de cero (ver procesarListadoProductosExcel_
+    // y el guardado periódico de sincronizarRegistroProductos). Se marca
+    // ANTES de empezar, no después: si ESTA ejecución también se corta a
+    // medias, la marca ya ha quedado grabada para que la siguiente sepa
+    // continuar, en vez de depender de que esta llegue a terminar para
+    // registrarlo.
+    const idHiloActual = hiloMasReciente.getId();
+    const continuarSiMismoHilo = leerConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, '') === idHiloActual;
+    escribirConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, idHiloActual,
+      'Id del hilo de Gmail que se está sincronizando ahora mismo (CRM) — si una ejecución se corta a medias por tiempo máximo, la siguiente pasada (cada 2h) continúa en vez de volver a empezar de cero. Se vacía al terminar con éxito o con un error ya notificado.');
+
     const mensajes = hiloMasReciente.getMessages();
     const ultimoMensaje = mensajes[mensajes.length - 1];
     const adjuntos = ultimoMensaje.getAttachments();
@@ -10374,6 +10428,7 @@ function revisarCorreoListadoProductos() {
       try {
         enviarResumenSincronizacionCRM_({ error: mensajeError });
         marcarHilosComoProcesados_();
+        limpiarHiloEnCurso_(); // no se llegó a tocar RegistroProductos, nada que continuar
       } catch (errNotif) {
         console.error('No se pudo enviar/registrar el aviso de correo sin adjunto — el correo queda SIN marcar para reintentar en la próxima ejecución:', errNotif);
       }
@@ -10384,18 +10439,20 @@ function revisarCorreoListadoProductos() {
       return { huboCorreo: true, exito: false, mensaje: mensajeError };
     }
 
-    const resultado = procesarListadoProductosExcel_(excel);
+    const resultado = procesarListadoProductosExcel_(excel, { continuarSiMismoHilo: continuarSiMismoHilo });
     // Igual que arriba: enviarResumenSincronizacionCRM_() y el marcado
     // van juntos — si el aviso falla, el correo queda SIN marcar (la
     // sincronización en sí YA se ha completado y escrito en
-    // RegistroProductos/Productos; reintentarla al día siguiente con el
-    // mismo listado es inofensivo, es un volcado completo cada vez, no
-    // incremental).
+    // RegistroProductos/Productos; reintentarla con el mismo listado es
+    // inofensiva gracias a continuarSiMismoHilo: no se repite nada que ya
+    // estuviera guardado).
     try {
       enviarResumenSincronizacionCRM_(resultado);
       marcarHilosComoProcesados_();
+      limpiarHiloEnCurso_(); // sincronización realmente terminada, nada que continuar
     } catch (errNotif) {
       console.error('La sincronización se completó pero no se pudo enviar/registrar el resumen — el correo queda SIN marcar para reintentar la notificación en la próxima ejecución:', errNotif);
+      limpiarHiloEnCurso_(); // la sincronización en sí SÍ terminó bien; solo falla el aviso
       notificarErrorCriticoCRM_(
         'Sincronización realizada pero sin poder notificarla',
         'procesarListadoProductosExcel_() ha terminado correctamente, pero enviarResumenSincronizacionCRM_() ha fallado al avisar/registrar el resultado:\n\n' +
@@ -10488,10 +10545,18 @@ function revisarCorreoListadoProductos() {
     if (avisoEnviado) {
       try {
         if (hilos && etiqueta) hilos.forEach(hilo => hilo.addLabel(etiqueta));
+        limpiarHiloEnCurso_(); // se abandona este correo (ya avisado), no tiene sentido "continuarlo" si volviera a aparecer
       } catch (errEtiqueta) {
         console.error('Además, no se pudo marcar el correo como procesado tras el fallo:', errEtiqueta);
       }
     } else {
+      // Se deja el marcador de "hilo en curso" TAL CUAL (sin limpiar) a
+      // propósito: si el fallo fue un timeout a mitad de
+      // sincronizarRegistroProductos (el caso que NO pasa por aquí, ver
+      // más abajo, pero si fue cualquier OTRA excepción real después de
+      // haber empezado a tocar RegistroProductos), lo más seguro es que
+      // la siguiente pasada CONTINÚE sobre lo ya guardado en vez de
+      // volver a convertir y volcar el Excel de cero.
       console.error('El correo queda SIN marcar como procesado: no se ha podido confirmar el envío/registro del aviso de fallo — se reintentará en la próxima ejecución.');
     }
     notificarErrorCriticoCRM_(
@@ -10535,10 +10600,30 @@ function revisarCorreoListadoProductosManual() {
 // Convierte el Excel adjunto en una Sheet temporal para poder leerlo,
 // vuelca su contenido en RegistroProductos (limpiando antes la
 // sincronización anterior) y ejecuta sincronizarRegistroProductos().
-function procesarListadoProductosExcel_(archivoAdjunto) {
+// opciones.continuarSiMismoHilo = true: el correo que ha encontrado
+// revisarCorreoListadoProductos() es EL MISMO que ya se empezó a
+// sincronizar en un intento anterior que no llegó a completarse (quedó
+// sin etiquetar como procesado) — en vez de volver a convertir el Excel
+// y volcarlo de cero sobre RegistroProductos (lo que BORRARÍA el
+// progreso ya guardado de ese intento anterior, ver el guardado
+// periódico en sincronizarRegistroProductos), se continúa directamente
+// sobre lo que ya hay: las filas ya marcadas 'si'/con error se saltan
+// solas (ver el propio bucle de sincronizarRegistroProductos), así que
+// solo queda procesar lo que faltaba. archivoAdjunto puede venir null
+// en este caso — no hace falta volver a leerlo ni convertirlo.
+function procesarListadoProductosExcel_(archivoAdjunto, opciones) {
+  const continuarSiMismoHilo = !!(opciones && opciones.continuarSiMismoHilo);
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetReg = ss.getSheetByName('RegistroProductos');
   if (!sheetReg) throw new Error('No existe la hoja "RegistroProductos".');
+
+  if (continuarSiMismoHilo) {
+    const filasYaCargadas = Math.max(sheetReg.getLastRow() - 1, 0);
+    console.log('procesarListadoProductosExcel_: continuando una sincronización a medias del mismo correo (' + filasYaCargadas + ' filas ya en RegistroProductos) — no se vuelve a convertir ni volcar el Excel.');
+    const resultado = sincronizarRegistroProductos({ enviarResumenPorCorreo: false });
+    resultado.totalRegistrados = filasYaCargadas;
+    return resultado;
+  }
 
   // 1) Convertir el Excel en una Google Sheet temporal para poder leerlo
   //    (requiere el servicio avanzado "Drive API" activado en el proyecto).
