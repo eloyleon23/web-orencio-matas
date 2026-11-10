@@ -1015,11 +1015,6 @@
             margin: 10px 0 14px; padding: 10px 12px; background: var(--light);
             border: 1px solid var(--border); border-radius: 8px;
         }
-        .temporada-ver-todos-subtitulo {
-            font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: .3px;
-            color: var(--muted); margin: 4px 0 8px; display: flex; align-items: center; gap: 6px;
-        }
-        .temporada-ver-todos-subtitulo i { color: var(--yellow); }
         /* Chips de familia (accesos directos) — mismo estilo base que
            .temporada-chips-busqueda, con un estado "activo" propio para
            la familia filtrada ahora mismo. */
@@ -7406,15 +7401,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
-        <!-- Destacados y novedades de ESTA temporada — a petición
-             explícita de Eloy, para ayudar a decidir rápido sin tener
-             que mirar todo el catálogo de la temporada. Se oculta sola
-             si no hay nada que mostrar (ver temporadaRenderizarDestacadosNovedades_). -->
-        <div id="temporada-ver-todos-destacados-wrap" style="display:none;">
-            <p class="temporada-ver-todos-subtitulo"><i class="fa-solid fa-star"></i> Destacados y novedades de esta temporada</p>
-            <div id="temporada-ver-todos-destacados-lista" class="seccion-destacados__lista" style="margin-bottom:14px;"></div>
-        </div>
-
         <!-- Accesos directos por familia — clic filtra la vista de abajo
              por esa familia (vuelve a pulsarse/clic en "Todas" para
              quitar el filtro). -->
@@ -11466,22 +11452,6 @@ if (window.OM_PREPRODUCCION) {
             marcas.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
     }
 
-    const MAX_TEMPORADA_DESTACADOS_NOVEDADES_ = 8;
-    function temporadaRenderizarDestacadosNovedades_() {
-        const wrap = $('temporada-ver-todos-destacados-wrap');
-        const cont = $('temporada-ver-todos-destacados-lista');
-        cont.innerHTML = '';
-        const destacados = temporadaModalProductosBase_.filter(p => destacadoEfectivoPara_(p.ref));
-        const refsUsadas = new Set(destacados.map(p => p.ref));
-        const novedades = temporadaModalProductosBase_
-            .filter(p => !refsUsadas.has(p.ref) && parseFecha(p.fecha_alta) > 0)
-            .sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta));
-        const muestra = destacados.concat(novedades).slice(0, MAX_TEMPORADA_DESTACADOS_NOVEDADES_);
-        if (!muestra.length) { wrap.style.display = 'none'; return; }
-        wrap.style.display = '';
-        muestra.forEach(p => cont.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
-    }
-
     // Siempre acotada a UNA temporada concreta (nunca mezclada con otras
     // vigentes a la vez) — petición explícita de Eloy, ver el comentario
     // en renderTemporada_.
@@ -11528,7 +11498,6 @@ if (window.OM_PREPRODUCCION) {
         // este comentario y la línea de abajo, y quitar `display:none` del
         // <select id="temporada-ver-todos-marca"> en el HTML.
         // temporadaPoblarSelectorMarca_().then(() => { $('temporada-ver-todos-marca').value = ''; });
-        temporadaRenderizarDestacadosNovedades_();
         temporadaModalActualizarPanelSeleccion_();
         temporadaModalFiltrarYRenderizar_();
 
