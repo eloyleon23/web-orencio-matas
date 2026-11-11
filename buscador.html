@@ -11398,6 +11398,24 @@ if (window.OM_PREPRODUCCION) {
     // familia al azar (sigue siendo "aleatorio" dentro del agrupado). ──
     let temporadaModalProductosBase_ = []; // sin agrupar, para el filtro de texto
     let temporadaModalTemporadaActual_ = null; // la temporada abierta ahora mismo en la modal "ver todos" (para el folleto)
+
+    // Registro de todos los botones "añadir a mi selección" actualmente
+    // pintados (preview de la portada + modal "ver todos"), para poder
+    // refrescar su check verde cuando la lista cambia DESDE OTRO SITIO
+    // (vaciar/eliminar la lista entera desde su propia modal, o quitar un
+    // producto desde allí) — bug real reportado por Eloy: "si añades
+    // productos a la lista de la compra y eliminas la lista se quedan
+    // marcados los productos de la temporada que se añadieron". Se
+    // depura solo (filter por btn.isConnected) cada vez que se usa, así
+    // que no hace falta "desregistrar" nada al cerrar/repintar la modal.
+    let temporadaSeleccionBotonesSync_ = [];
+    function temporadaSeleccionSincronizarBotones_() {
+        temporadaSeleccionBotonesSync_ = temporadaSeleccionBotonesSync_.filter(({ btn, actualizar }) => {
+            if (!btn.isConnected) return false;
+            actualizar();
+            return true;
+        });
+    }
     // Filtros propios de la modal "ver todos" — a petición de Eloy:
     // "funcionalidades que ayuden a comerciales y clientes a seleccionar
     // productos de las temporadas activas" (accesos directos por
@@ -11527,6 +11545,7 @@ if (window.OM_PREPRODUCCION) {
             btn.title = yaEsta ? 'Ya está en tu selección — clic para quitarlo' : 'Añadir a mi selección';
         };
         actualizarBoton_();
+        temporadaSeleccionBotonesSync_.push({ btn, actualizar: actualizarBoton_ });
         btn.addEventListener('click', (e) => {
             e.stopPropagation(); // no abrir la ficha del producto al pulsar el botón
             if (listaCompraTiene_(p.ref)) {
@@ -17395,6 +17414,7 @@ if (window.OM_PREPRODUCCION) {
         if ($('modal-lista-compra-overlay').classList.contains('activo')) renderModalListaCompra_();
         actualizarBotonListaCompraEnModalProducto_();
         actualizarBotonFlotanteListaCompra_();
+        temporadaSeleccionSincronizarBotones_();
     }
 
     // Botón flotante de acceso rápido — visible siempre que exista una
