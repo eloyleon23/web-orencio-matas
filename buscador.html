@@ -2876,6 +2876,7 @@
         }
         .om-splash-logo {
             position: relative;
+            z-index: 2;
             display: inline-block;
             width: min(42vw, 260px);
             /* Mismo ratio real del SVG (ver viewBox="5100 3300 2150 2650" en
@@ -3008,6 +3009,121 @@
             .om-splash-logo::before,
             .om-splash-logo .om-gota-trazo-splash { display: none; }
             .om-splash-logo img { clip-path: none; animation: none; }
+        }
+
+        /* ── Efecto estacional de la pantalla de carga (petición de Eloy:
+           "en función de la estación del año... otro pequeño efecto
+           adicional... que vaya cambiando durante el año") — un pequeño
+           detalle decorativo DETRÁS del logo (ver z-index:2 en
+           .om-splash-logo más arriba), generado por JS según el mes
+           actual (ver estacionActualSplash_, en el script de control del
+           splash): hojas cayendo en otoño, copos en invierno, flores
+           brotando del borde inferior en primavera, sol + gotas de
+           piscina en verano. Las partículas en sí son elementos <span>
+           creados por JS (uno por "om-splash-particula", con su emoji
+           dentro) — aquí solo el contenedor y las animaciones. Se omite
+           del todo con prefers-reduced-motion (ver el JS: ni siquiera se
+           crean los elementos). */
+        #om-splash-estacional {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .om-splash-particula {
+            position: absolute;
+            pointer-events: none;
+            will-change: transform, opacity;
+            animation-duration: var(--om-splash-duracion, 8s);
+            animation-delay: var(--om-splash-retraso, 0s);
+            animation-iteration-count: infinite;
+            line-height: 1;
+        }
+        /* Otoño: hojas cayendo con balanceo lateral y giro. */
+        .om-splash-particula--hoja {
+            top: -10%;
+            animation-name: om-splash-hoja-cae;
+            animation-timing-function: ease-in;
+        }
+        @keyframes om-splash-hoja-cae {
+            0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+            8%   { opacity: 0.9; }
+            50%  { transform: translateY(60vh) translateX(22px) rotate(170deg); }
+            92%  { opacity: 0.9; }
+            100% { transform: translateY(125vh) translateX(-14px) rotate(320deg); opacity: 0; }
+        }
+        /* Invierno: copos cayendo, más lentos y rectos que las hojas. */
+        .om-splash-particula--copo {
+            top: -10%;
+            animation-name: om-splash-copo-cae;
+            animation-timing-function: linear;
+        }
+        @keyframes om-splash-copo-cae {
+            0%   { transform: translateY(0) translateX(0); opacity: 0; }
+            10%  { opacity: 0.85; }
+            50%  { transform: translateY(58vh) translateX(12px); }
+            90%  { opacity: 0.85; }
+            100% { transform: translateY(122vh) translateX(-8px); opacity: 0; }
+        }
+        /* Primavera: flores brotando del borde inferior (una sola vez,
+           con un balanceo suave que continúa después). */
+        .om-splash-particula--flor {
+            /* Positivo (no negativo): el reposo final (translateY(0) del
+             * keyframe) debe quedar DENTRO de la pantalla — el propio
+             * translateY(30px → 0) ya es el recorrido de "brotar" desde
+             * justo por debajo. Con bottom negativo aquí, el reposo
+             * quedaba entero fuera de la vista (bug real, visto en la
+             * captura de prueba: ninguna flor llegaba a verse). */
+            bottom: 4%;
+            animation-name: om-splash-flor-brota, om-splash-flor-balanceo;
+            animation-duration: 1.1s, 2.6s;
+            animation-iteration-count: 1, infinite;
+            animation-fill-mode: both, none;
+            animation-timing-function: cubic-bezier(.3, 1.4, .5, 1), ease-in-out;
+        }
+        @keyframes om-splash-flor-brota {
+            0%   { transform: translateY(30px) scale(0.2) rotate(-6deg); opacity: 0; }
+            65%  { transform: translateY(-4px) scale(1.08) rotate(3deg); opacity: 1; }
+            100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes om-splash-flor-balanceo {
+            0%, 100% { transform: rotate(-3deg); }
+            50%      { transform: rotate(3deg); }
+        }
+        /* Verano: sol fijo (pulso suave) + gotas de "piscina" subiendo
+           como burbujas — a petición explícita de Eloy: "en verano sol y
+           agua de piscina". */
+        .om-splash-sol {
+            /* Centrado arriba (ni esquina izquierda, que en preprod tapa
+             * el recuadro de diagnóstico de rendimiento, ni derecha,
+             * donde está el botón de cerrar el splash) — por encima del
+             * logo, sin tocarlo (logo centrado verticalmente, el sol
+             * siempre queda por encima de su borde superior real). */
+            position: absolute;
+            top: 16%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.3rem;
+            animation: om-splash-sol-pulso 2.6s ease-in-out infinite;
+        }
+        @keyframes om-splash-sol-pulso {
+            0%, 100% { transform: translateX(-50%) scale(1); filter: drop-shadow(0 0 6px rgba(255, 193, 7, 0.55)); }
+            50%      { transform: translateX(-50%) scale(1.1); filter: drop-shadow(0 0 16px rgba(255, 193, 7, 0.85)); }
+        }
+        .om-splash-particula--gota {
+            bottom: -6%;
+            animation-name: om-splash-gota-flota;
+            animation-timing-function: ease-in-out;
+        }
+        @keyframes om-splash-gota-flota {
+            0%   { transform: translateY(0) scale(0.7); opacity: 0; }
+            15%  { opacity: 0.9; }
+            85%  { opacity: 0.9; }
+            100% { transform: translateY(-72vh) scale(1); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .om-splash-particula, .om-splash-sol { display: none; }
         }
 
         /* Modal solicitud catálogo */
@@ -5217,6 +5333,11 @@
     <button type="button" id="om-splash-cerrar" class="om-splash-cerrar" aria-label="Cerrar pantalla de carga" hidden>
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
     </button>
+    <!-- Efecto estacional (ver CSS .om-splash-particula/#om-splash-estacional
+         y el JS de control del splash, más abajo) — vacío hasta que ese
+         script lo rellena; queda detrás del logo (z-index:1 contra
+         z-index:2 de .om-splash-logo). -->
+    <div id="om-splash-estacional" aria-hidden="true"></div>
     <div class="om-splash-logo">
         <img src="./assets/logos/logo_calidad.svg" alt="" />
     </div>
@@ -7789,6 +7910,71 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             animLista = true;
             cerrarSiToca_();
         }, 4700);
+
+        crearEfectoEstacionalSplash_();
+    }
+
+    // ── Efecto estacional de la pantalla de carga — a petición explícita
+    // de Eloy: "en función de la estación del año... otro pequeño efecto
+    // adicional... que vaya cambiando durante el año". Estaciones
+    // meteorológicas (no astronómicas, más sencillas e intuitivas):
+    // diciembre-febrero invierno, marzo-mayo primavera, junio-agosto
+    // verano, septiembre-noviembre otoño. Solo se llama cuando NO hay
+    // prefers-reduced-motion (ver el "if" de más arriba) — con esa
+    // preferencia activada, ni siquiera se crean las partículas.
+    function estacionActualSplash_() {
+        var mes = new Date().getMonth(); // 0 = enero
+        if (mes === 11 || mes <= 1) return 'invierno';
+        if (mes <= 4) return 'primavera';
+        if (mes <= 7) return 'verano';
+        return 'otono';
+    }
+
+    // Una partícula <span> con el emoji indicado, posición horizontal
+    // aleatoria, tamaño dentro del rango dado y un "retraso" NEGATIVO
+    // aleatorio (hasta -duración): así, en vez de que todas arranquen a
+    // la vez desde el principio del bucle (se verían "en fila"), cada
+    // una entra ya a mitad de su propio recorrido — efecto mucho más
+    // natural, como si llevaran un rato cayendo/flotando.
+    function crearParticulaSplash_(contenedor, clase, emoji, tamMin, tamMax, duracionMin, duracionMax) {
+        var el = document.createElement('span');
+        el.className = 'om-splash-particula ' + clase;
+        el.textContent = emoji;
+        el.setAttribute('aria-hidden', 'true');
+        var duracion = duracionMin + Math.random() * (duracionMax - duracionMin);
+        el.style.left = Math.round(Math.random() * 94) + '%';
+        el.style.fontSize = (tamMin + Math.random() * (tamMax - tamMin)).toFixed(2) + 'rem';
+        el.style.setProperty('--om-splash-duracion', duracion.toFixed(2) + 's');
+        el.style.setProperty('--om-splash-retraso', (-Math.random() * duracion).toFixed(2) + 's');
+        contenedor.appendChild(el);
+        return el;
+    }
+
+    function crearEfectoEstacionalSplash_() {
+        var contenedor = document.getElementById('om-splash-estacional');
+        if (!contenedor) return;
+        var estacion = estacionActualSplash_();
+        if (estacion === 'otono') {
+            for (var i = 0; i < 9; i++) crearParticulaSplash_(contenedor, 'om-splash-particula--hoja', '🍂', 1.1, 1.8, 5, 9);
+        } else if (estacion === 'invierno') {
+            for (var j = 0; j < 12; j++) crearParticulaSplash_(contenedor, 'om-splash-particula--copo', '❄️', 0.8, 1.4, 7, 13);
+        } else if (estacion === 'primavera') {
+            var floresEmoji = ['🌼', '🌷'];
+            for (var k = 0; k < 7; k++) {
+                var flor = crearParticulaSplash_(contenedor, 'om-splash-particula--flor', floresEmoji[k % 2], 1.3, 1.9, 1, 1);
+                // El brote es una animación de ENTRADA (no un bucle que
+                // cae/flota), así que el reparto natural se consigue con
+                // un retraso de entrada POSITIVO y escalonado, no negativo.
+                flor.style.setProperty('--om-splash-retraso', (k * 0.18).toFixed(2) + 's');
+            }
+        } else { // verano
+            var sol = document.createElement('span');
+            sol.className = 'om-splash-sol';
+            sol.textContent = '☀️';
+            sol.setAttribute('aria-hidden', 'true');
+            contenedor.appendChild(sol);
+            for (var m = 0; m < 6; m++) crearParticulaSplash_(contenedor, 'om-splash-particula--gota', '💧', 1, 1.5, 4, 7);
+        }
     }
 })();
 </script>
