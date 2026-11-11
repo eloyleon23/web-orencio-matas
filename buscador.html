@@ -3293,6 +3293,13 @@
         .modal-producto-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            /* align-items:start evita que la columna de la imagen se
+               estire para igualar la altura de la columna de info
+               (que puede ser mucho más alta si la descripción es
+               larga) — si se estira, la foto queda centrada dentro de
+               ese hueco alargado y aparece por debajo del viewport
+               inicial al abrir la ficha, en vez de arriba. */
+            align-items: start;
             gap: 0;
         }
         .modal-producto-imagen {
@@ -8511,6 +8518,45 @@ if (window.OM_PREPRODUCCION) {
     // EN VIVO ya autenticada con el PIN.
     let preciosMayorConfirmados_ = !window.OM_SESION_PROFESIONAL_ACTIVA;
 
+    // Debe coincidir EXACTAMENTE con VERSION_BACKEND en
+    // scripts/apps_script_trigger.js — ver comprobarValidezBackendProfesional_
+    // más abajo y el aviso junto a esa constante, tras un incidente real:
+    // el Apps Script tiene VARIAS implementaciones de "Aplicación web", y
+    // "Nueva versión" se aplicó a una distinta de la que de verdad sirve
+    // esta URL — el código en el editor ya era correcto, pero el PIN
+    // profesional nunca llegó a validarse de verdad en el Web App en
+    // vivo, sin ningún error visible: el precio de mayor simplemente no
+    // aparecía, como si el profesional no tuviera sesión.
+    const VERSION_BACKEND_ESPERADA_ = '2026-11-11-validacion-pin-profesional';
+
+    // Se llama una sola vez, justo tras la primera respuesta EN VIVO de
+    // Apps Script (ver cargarProductosPrincipales) — comprueba dos cosas
+    // que antes fallaban en silencio:
+    //   1. Sesión profesional activa pero el servidor dice que el PIN NO
+    //      es válido (o ni siquiera incluye el campo, backend
+    //      desactualizado) — antes esto se veía IDÉNTICO a "este producto
+    //      no tiene precio de mayor configurado", sin forma de
+    //      distinguirlos. Ahora se avisa explícitamente.
+    //   2. version_backend no coincide con la esperada aquí — señal de
+    //      que el Web App en vivo no está ejecutando el último código
+    //      desplegado (típicamente, se editó la implementación
+    //      equivocada). Nunca se muestra a público general: el aviso solo
+    //      tiene sentido para quien pueda hacer algo al respecto, así que
+    //      se limita a cuando hay sesión profesional activa.
+    function comprobarValidezBackendProfesional_(texto) {
+        if (!window.OM_SESION_PROFESIONAL_ACTIVA) return;
+        let datos;
+        try { datos = JSON.parse(texto); } catch (e) { return; }
+        if (datos.pin_valido !== true) {
+            mostrarToast('Tu sesión profesional no se ha podido validar en el servidor: estás viendo el precio normal, no el de mayor. Vuelve a entrar tu PIN o contacta con soporte.', 'error');
+            return; // si el PIN no es válido, un aviso de versión aparte no aporta nada más
+        }
+        if (datos.version_backend && datos.version_backend !== VERSION_BACKEND_ESPERADA_) {
+            console.warn('Backend de Apps Script desactualizado: esperaba la versión "' + VERSION_BACKEND_ESPERADA_ + '", el servidor en vivo responde "' + datos.version_backend + '". Puede que el precio de mayor u otras validaciones recientes no estén activas todavía en producción.');
+            mostrarToast('Aviso interno: el servidor en vivo no parece tener la última versión desplegada (revisa las implementaciones de Apps Script).', 'error');
+        }
+    }
+
     // Refs exactas a las que restringir el resultado cuando el filtro
     // activo viene de un chip de "Marcas más buscadas" (ver
     // aplicarFiltroMarca_) — null en cualquier otro caso. Necesario
@@ -9440,6 +9486,7 @@ if (window.OM_PREPRODUCCION) {
             const resp = await peticionEnVivo_;
             if (resp && resp.ok) {
                 const texto = await resp.text();
+                comprobarValidezBackendProfesional_(texto);
                 const hash = await calcularHash(texto);
                 // Se comprueba ANTES de aplicar el hash/reconciliación de
                 // abajo: esta es la primera respuesta ya autenticada con
@@ -12104,7 +12151,14 @@ if (window.OM_PREPRODUCCION) {
             oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
             liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
         };
-        const chipEntrada = (d && d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
+        // Chip/banner de promoción SIEMPRE visibles, con o sin sesión
+        // profesional — son informativos sobre el producto en sí, igual
+        // que ya hace la propia tarjeta en la web (ver
+        // construirContenidoTarjeta_, "ya se mostraban igual en perfil
+        // profesional, fix anterior de Eloy"). Bug real reportado por
+        // Eloy: el folleto se había quedado atrás respecto a ese fix —
+        // seguía ocultándolos aquí con sesión profesional activa.
+        const chipEntrada = (d && d.tipoDestacado) ? mapaChip[d.tipoDestacado] : null;
         const colorFranja = chipEntrada ? chipEntrada[1] : colorAccent;
         doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
         doc.roundedRect(x, y, w, 2.5, 2.5, 2.5, 'F');
@@ -12239,7 +12293,7 @@ if (window.OM_PREPRODUCCION) {
             dibujarPrecio_(dCalc.original, dCalc.promo, dCalc.pct, dCalc.promo !== null ? dCalc.promoSin : (precioInfo && precioInfo.sin));
         }
 
-        if (!esMayor && d && d.textoPromocion) {
+        if (d && d.textoPromocion) {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(7.5);
             // Deja sitio al QR de la esquina inferior derecha (ver más
@@ -16319,6 +16373,7 @@ if (window.OM_PREPRODUCCION) {
         card.dataset.ref = p.ref;
         card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
         card.innerHTML = construirContenidoTarjeta_(p, { destacado: d });
+        anadirBotonListaCompraATarjeta_(card, p);
         return card;
     }
 
@@ -16441,7 +16496,10 @@ if (window.OM_PREPRODUCCION) {
             oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
             liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
         };
-        const chipEntrada = (d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
+        // Igual que en dibujarTarjetaTemporadaPdf_: el chip/banner es
+        // informativo y se muestra con o sin sesión profesional, igual
+        // que la propia tarjeta en la web.
+        const chipEntrada = d.tipoDestacado ? mapaChip[d.tipoDestacado] : null;
 
         // Franja de color superior — mismo color que el chip (o el rojo de
         // marca si no hay chip) a modo de "cabecera" de la tarjeta, para
@@ -16602,7 +16660,7 @@ if (window.OM_PREPRODUCCION) {
         // resalte tanto o más que el precio en modo chip"). Hasta 2 líneas
         // dentro del propio chip (antes se recortaba en silencio a la
         // primera línea sin más, cortando el texto a medias).
-        if (!esMayor && d.textoPromocion) {
+        if (d.textoPromocion) {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
             const maxTextW = w - pad * 2 - 10;
