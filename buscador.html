@@ -3126,13 +3126,22 @@
         /* A petición explícita de Eloy: "el efecto [del agua] sea como
            el de las hojas de otoño" — en vez de burbujas subiendo, las
            gotas caen igual que las hojas (mismo zigzag lateral), solo
-           que sin el giro (una gota no rota como una hoja). */
+           que sin el giro (una gota no rota como una hoja).
+           "-estacional" en el nombre a propósito: "om-splash-gota-cae"
+           a secas YA EXISTE (la gota que cae del propio logo, ver
+           .om-splash-logo::before más arriba) — reutilizar ese mismo
+           nombre aquí REDEFINÍA ese @keyframes por completo (dos
+           @keyframes con el mismo nombre no se combinan, el segundo
+           que aparece en la hoja de estilos gana para TODOS los usos
+           de ese nombre), rompiendo la animación de la propia gota del
+           logo sin tocarla directamente — bug real reportado por Eloy:
+           "te has cargado el efecto de la gota caer del logo". */
         .om-splash-particula--gota {
             top: -10%;
-            animation-name: om-splash-gota-cae;
+            animation-name: om-splash-gota-cae-estacional;
             animation-timing-function: ease-in;
         }
-        @keyframes om-splash-gota-cae {
+        @keyframes om-splash-gota-cae-estacional {
             0%   { transform: translateY(0) translateX(0); opacity: 0; }
             8%   { opacity: 0.9; }
             20%  { transform: translateY(23vh) translateX(-30px); }
