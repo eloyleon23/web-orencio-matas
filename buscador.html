@@ -971,6 +971,18 @@
         @media (min-width: 1300px) {
             .modal-producto-box.modal-temporada-ver-todos-box { max-width: 1450px; }
         }
+        /* El botón de cerrar (dentro de .modal-producto-cerrar-sticky, ver
+           ese comentario) se posiciona con right/top relativos a esta caja
+           — pero aquí, a diferencia del modal de detalle de producto
+           (sin padding propio), la caja SÍ tiene padding:28px, así que el
+           botón quedaba 28px más adentro de lo esperado y parecía "más
+           centrado" de lo que debería — a petición explícita de Eloy:
+           "hay que llevarlo más al margen de la modal". Un margen
+           negativo igual al padding saca de nuevo la esquina del botón
+           hasta el borde real de la caja. */
+        .modal-temporada-ver-todos-box .modal-producto-cerrar-sticky {
+            margin: -28px -28px 0 0;
+        }
         #temporada-ver-todos-titulo {
             display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
         }
@@ -1434,6 +1446,7 @@
         .modal-lista-compra-acciones button:active { transform: translateY(1px); }
         .modal-lista-compra-acciones button:hover { filter: brightness(1.06); }
         .btn-lista-compra-pdf { background: #fef3c7; color: #92400e; }
+        .btn-lista-compra-folleto { background: #ede9fe; color: #5b21b6; }
         .btn-lista-compra-whatsapp { background: #25D366; color: #fff; }
         .btn-lista-compra-correo { background: var(--blue); color: #fff; }
         .btn-lista-compra-vaciar { background: var(--light); color: var(--muted); }
@@ -5096,6 +5109,53 @@
                 backdrop-filter: blur(2px);
             }
         }
+        /* Botón flotante de acceso rápido a la Lista de la compra — a
+           petición explícita de Eloy: "un botón flotante siempre que
+           haya una lista de la compra creada... el color del botón en
+           rojo". En la esquina opuesta a #btn-subir-arriba (izquierda en
+           vez de derecha) para que nunca compita ni se solape con él ni
+           con el de la modal de temporada — "el botón no interferirá con
+           otros botones flotantes". En escritorio, icono + texto; en
+           móvil, solo el icono (mismo criterio de .oculto-por-modal que
+           el resto de botones flotantes, para ocultarse mientras hay
+           alguna modal abierta, incluida la suya propia). */
+        #btn-lista-compra-flotante {
+            display: none;
+            position: fixed;
+            left: 22px;
+            bottom: 22px;
+            z-index: 4000;
+            align-items: center;
+            gap: 9px;
+            border: none;
+            border-radius: 999px;
+            background: var(--red);
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            padding: 13px 20px 13px 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            transition: filter .15s, transform .1s;
+        }
+        #btn-lista-compra-flotante.visible { display: flex; }
+        #btn-lista-compra-flotante.oculto-por-modal { display: none !important; }
+        #btn-lista-compra-flotante:hover { filter: brightness(1.08); }
+        #btn-lista-compra-flotante:active { transform: translateY(1px); }
+        #btn-lista-compra-flotante i { font-size: 1.05rem; }
+        @media (max-width: 640px) {
+            #btn-lista-compra-flotante {
+                left: 14px;
+                bottom: 14px;
+                width: 46px;
+                height: 46px;
+                padding: 0;
+                border-radius: 50%;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            }
+            #btn-lista-compra-flotante .btn-lista-compra-flotante-texto { display: none; }
+        }
 
     </style>
 <!-- Google tag (gtag.js) -->
@@ -5173,6 +5233,15 @@
 </div>
 <button id="btn-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
     <i class="fa-solid fa-arrow-up"></i>
+</button>
+<!-- Acceso flotante rápido a la Lista de la compra — a petición
+     explícita de Eloy, ver el comentario de #btn-lista-compra-flotante
+     en el CSS. Visible siempre que exista una lista (independiente del
+     scroll, a diferencia de #btn-subir-arriba), se oculta sola si la
+     lista se vacía/elimina (ver actualizarBotonFlotanteListaCompra_). -->
+<button type="button" id="btn-lista-compra-flotante" title="Lista de la compra" aria-label="Abrir lista de la compra">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <span class="btn-lista-compra-flotante-texto">Lista de la compra</span>
 </button>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
@@ -7144,6 +7213,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="btn-lista-compra-pdf" class="btn-lista-compra-pdf">
                 <i class="fa-solid fa-file-pdf"></i> Exportar a PDF
             </button>
+            <!-- Folleto con fotos, precio y QR por producto — mismo motor
+                 que el folleto de Destacados/Temporada (dibujarTarjetaTemporadaPdf_),
+                 a petición explícita de Eloy: "la misma funcionalidad que
+                 se ha añadido para generar el folleto... tal y como esta
+                 ya en temporadas". Convive con "Exportar a PDF" de arriba
+                 (la tabla con subtotales/IVA): esta es una alternativa
+                 visual, no un reemplazo. -->
+            <button type="button" id="btn-lista-compra-folleto-pdf" class="btn-lista-compra-folleto">
+                <i class="fa-solid fa-images"></i> Folleto con fotos
+            </button>
+            <button type="button" id="btn-lista-compra-folleto-compartir" class="btn-lista-compra-folleto">
+                <i class="fa-solid fa-share-nodes"></i> Compartir folleto
+            </button>
             <button type="button" id="btn-lista-compra-whatsapp" class="btn-lista-compra-whatsapp">
                 <i class="fa-brands fa-whatsapp"></i> Compartir por WhatsApp
             </button>
@@ -7803,7 +7885,11 @@ if (window.OM_PREPRODUCCION) {
     (function() {
         const panel = document.createElement('div');
         panel.id = 'om-diag-rendimiento';
-        panel.style.cssText = 'position:fixed;bottom:8px;left:8px;z-index:999999;background:rgba(15,23,42,0.88);color:#e2e8f0;font:11px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:280px;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
+        // top (no bottom-left): esa esquina la ocupa ahora el botón
+        // flotante real de la Lista de la compra (ver #btn-lista-compra-flotante)
+        // — este recuadro, al ser solo temporal/diagnóstico, no debe
+        // competir con él ni taparlo.
+        panel.style.cssText = 'position:fixed;top:8px;left:8px;z-index:999999;background:rgba(15,23,42,0.88);color:#e2e8f0;font:11px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:280px;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
         panel.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;"><strong>⏱ Diagnóstico (preprod)</strong><span id="om-diag-cerrar" style="cursor:pointer;opacity:0.7;">✕</span></div><div id="om-diag-cuerpo">Iniciando…</div>';
         document.body.appendChild(panel);
         panel.querySelector('#om-diag-cerrar').addEventListener('click', () => panel.remove());
@@ -10840,6 +10926,7 @@ if (window.OM_PREPRODUCCION) {
     function abrirModalDestacados_() {
         $('modal-destacados-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         const pinGuardado = (() => { try { return localStorage.getItem('omDestacadosPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
             destacadosValidarPinYArrancar_(pinGuardado);
@@ -10856,6 +10943,7 @@ if (window.OM_PREPRODUCCION) {
         destacadosCerrarEditor_();
         $('modal-destacados-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-destacados')) {
@@ -11548,6 +11636,7 @@ if (window.OM_PREPRODUCCION) {
 
         $('temporada-ver-todos-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
 
         // Deja también situada en pantalla la sección/bloque de esta
         // temporada (si ya está pintado) — a petición de Eloy: poder
@@ -11613,6 +11702,7 @@ if (window.OM_PREPRODUCCION) {
     function cerrarModalTemporadaVerTodos_() {
         $('temporada-ver-todos-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -11632,6 +11722,33 @@ if (window.OM_PREPRODUCCION) {
     // el folleto de Destacados — un producto puede estar en una temporada
     // y en Destacados a la vez, son sistemas independientes.
     // ══════════════════════════════════════════════════════════════════
+
+    // Marca de agua muy sutil con el logo de la empresa, de fondo en cada
+    // página de cualquier folleto con fotos (Destacados/Temporada/Lista
+    // de la compra) — a petición explícita de Eloy: "una marca de agua
+    // con el logo de la empresa... muy sutil para que no interfiera en
+    // los productos". Se dibuja SIEMPRE antes que la cabecera y las
+    // tarjetas de esa página (ambas opacas): así solo queda visible en
+    // los márgenes y huecos entre tarjetas, nunca por encima de ningún
+    // producto. Opacidad vía GState, nativo de jsPDF 2.x (sin plugin
+    // adicional) — si por lo que sea no estuviera disponible, se omite
+    // en silencio y el folleto se genera igual, solo sin marca de agua.
+    function dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, pageH) {
+        if (!logo) return;
+        try {
+            const anchoMarca = pageW * 0.55;
+            const altoMarca = anchoMarca * (logo.height / logo.width);
+            const x = (pageW - anchoMarca) / 2;
+            const y = (pageH - altoMarca) / 2;
+            doc.saveGraphicsState();
+            doc.setGState(new doc.GState({ opacity: 0.045 }));
+            doc.addImage(logo.dataUrl, 'PNG', x, y, anchoMarca, altoMarca);
+            doc.restoreGraphicsState();
+        } catch (e) {
+            // Sin marca de agua en este navegador/versión de jsPDF — nunca
+            // debe romper la generación del folleto por esto.
+        }
+    }
 
     // Versión recortada de dibujarTarjetaDestacadoPdf_: la mayoría de
     // productos de una temporada NO tendrán un destacado asociado (a
@@ -11663,7 +11780,14 @@ if (window.OM_PREPRODUCCION) {
         // por página, así que paddings, tamaños de letra e imagen se
         // reducen respecto a la versión original de 4/página.
         const pad = 3.2;
-        const imgBoxH = h * 0.36;
+        // 0.36 → 0.42 — a petición explícita de Eloy: "se pueden hacer
+        // más grandes las imágenes ya que cada bloque tiene mucho espacio
+        // entre el importe y el QR". El resto del texto (nombre, ref,
+        // precio) ocupa siempre la misma altura fija, así que ese hueco
+        // sobrante de abajo es justo lo que se gana aquí dándole más
+        // espacio a la imagen — sin pasarse, para que siga quedando sitio
+        // de sobra para el banner de promoción cuando lo hay.
+        const imgBoxH = h * 0.42;
         const imgBoxY = y + 2.5 + pad * 0.5;
         if (foto) {
             const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
@@ -11872,12 +11996,13 @@ if (window.OM_PREPRODUCCION) {
         const contentRight = pageW - margin;
         const contentWidth = contentRight - margin;
         const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
-        // Color de marca del folleto según el perfil que lo genera — azul
-        // para el profesional (precio al por mayor), el rojo de marca de
-        // siempre para el normal (PVP) — a petición explícita de Eloy,
-        // para distinguir de un vistazo qué tipo de precio lleva cada
-        // folleto. Mismo azul que ya se usa para el chip "OPORTUNIDAD".
-        const colorAccent = esProfesionalFolleto ? [25, 118, 210] : [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b];
+        // Color de marca del folleto según el perfil que lo genera — rojo
+        // de marca de siempre para el profesional (precio al por mayor),
+        // azul para el normal (PVP) — a petición explícita de Eloy (ajuste
+        // sobre el criterio anterior, invertido), para distinguir de un
+        // vistazo qué tipo de precio lleva cada folleto. Mismo azul que ya
+        // se usa para el chip "OPORTUNIDAD".
+        const colorAccent = esProfesionalFolleto ? [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b] : [25, 118, 210];
         const textoTipoPrecio = esProfesionalFolleto ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)';
 
         const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
@@ -11953,6 +12078,11 @@ if (window.OM_PREPRODUCCION) {
             const indiceEnPagina = i % porPagina;
             if (indiceEnPagina === 0) {
                 if (i > 0) doc.addPage();
+                // Antes que la cabecera (opaca) y las tarjetas (opacas):
+                // así la marca de agua solo queda visible en los huecos
+                // entre tarjetas y márgenes, nunca por encima de ningún
+                // producto — a petición explícita de Eloy.
+                dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, 297);
                 dibujarCabecera();
             }
             const fila = Math.floor(indiceEnPagina / numCols);
@@ -12563,6 +12693,7 @@ if (window.OM_PREPRODUCCION) {
     function abrirModalGestionTemporadas_() {
         $('temporadas-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         temporadaCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omTemporadasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -12576,6 +12707,7 @@ if (window.OM_PREPRODUCCION) {
     function cerrarModalGestionTemporadas_() {
         $('temporadas-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     // ── Listeners del modal público "ver todos" (siempre presentes) ──
@@ -13602,6 +13734,7 @@ if (window.OM_PREPRODUCCION) {
     function bcAbrirModal_() {
         $('bc-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         bcCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omBloquesCategoriasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -13616,6 +13749,7 @@ if (window.OM_PREPRODUCCION) {
         bcCerrarEditor_();
         $('bc-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-bloques-categorias')) {
@@ -13787,6 +13921,7 @@ if (window.OM_PREPRODUCCION) {
     function paAbrirModal_() {
         $('pa-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('pa-vista-pin').style.display = 'block';
         $('pa-vista-principal').style.display = 'none';
         $('pa-pin-input').value = '';
@@ -13802,6 +13937,7 @@ if (window.OM_PREPRODUCCION) {
     function paCerrarModal_() {
         $('pa-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-panel-analitica')) {
@@ -14333,6 +14469,7 @@ if (window.OM_PREPRODUCCION) {
         backdrop.classList.add('visible');
         document.body.style.overflow = 'hidden';
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
 
         // Igual que al escribir en el buscador: más espacio libre, y el
         // icono del botón se invierte para indicar que el panel está abierto
@@ -14362,6 +14499,7 @@ if (window.OM_PREPRODUCCION) {
         $('filtros-backdrop').classList.remove('visible');
         document.body.style.overflow = '';
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-abrir-filtros-movil').classList.remove('activo');
         $('btn-limpiar-arriba').classList.remove('clicable');
     }
@@ -16019,6 +16157,10 @@ if (window.OM_PREPRODUCCION) {
             const indiceEnPagina = i % porPagina;
             if (indiceEnPagina === 0) {
                 if (i > 0) doc.addPage();
+                // Antes que la cabecera y las tarjetas (ambas opacas) —
+                // a petición explícita de Eloy: marca de agua sutil que
+                // nunca tape ningún producto.
+                dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, 297);
                 dibujarCabecera();
             }
             const fila = Math.floor(indiceEnPagina / 2);
@@ -16762,6 +16904,15 @@ if (window.OM_PREPRODUCCION) {
         actualizarPosicionBloqueListaCompra_(hayFiltroActivo_());
         if ($('modal-lista-compra-overlay').classList.contains('activo')) renderModalListaCompra_();
         actualizarBotonListaCompraEnModalProducto_();
+        actualizarBotonFlotanteListaCompra_();
+    }
+
+    // Botón flotante de acceso rápido — visible siempre que exista una
+    // lista (listaCompraExiste_(), mismo criterio que renderBloqueListaCompra_,
+    // no "cantidad > 0": una lista recién creada pero aún vacía también
+    // cuenta como "creada").
+    function actualizarBotonFlotanteListaCompra_() {
+        $('btn-lista-compra-flotante').classList.toggle('visible', listaCompraExiste_());
     }
 
     // ── Modal de gestión ─────────────────────────────────────────────
@@ -16791,13 +16942,13 @@ if (window.OM_PREPRODUCCION) {
             // btn-lista-compra-etiquetas puede no existir en el DOM (se
             // elimina en producción, ver window.MOSTRAR_ETIQUETA_PRECIO) —
             // de ahí la comprobación antes de tocar su estilo.
-            ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
+            ['btn-lista-compra-pdf', 'btn-lista-compra-folleto-pdf', 'btn-lista-compra-folleto-compartir', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
             return;
         }
         grid.style.display = '';
         vacia.style.display = 'none';
         notasWrap.style.display = '';
-        ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = ''; });
+        ['btn-lista-compra-pdf', 'btn-lista-compra-folleto-pdf', 'btn-lista-compra-folleto-compartir', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = ''; });
 
         grid.innerHTML = '';
         listaCompraOrdenada_().forEach(p => grid.appendChild(crearTarjetaListaCompraModal_(p)));
@@ -16820,9 +16971,13 @@ if (window.OM_PREPRODUCCION) {
         if (!listaCompraExiste_()) return; // puede haber caducado en la comprobación anterior
         renderModalListaCompra_();
         $('modal-lista-compra-overlay').classList.add('activo');
+        // Sin sentido mostrar el propio botón flotante de acceso rápido
+        // mientras la modal que abre ya está abierta.
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
     }
     function cerrarModalListaCompra_() {
         $('modal-lista-compra-overlay').classList.remove('activo');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     // ── Confirmación genérica (Vaciar / Eliminar lista) ───────────────
@@ -17244,6 +17399,186 @@ if (window.OM_PREPRODUCCION) {
         }
         doc.save(listaCompraNombreArchivoPdf_());
         enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'pdf' });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── FOLLETO PDF DE LA LISTA DE LA COMPRA (con fotos, precio y QR) ───
+    // Mismo motor que el folleto de Destacados/Temporada
+    // (dibujarTarjetaTemporadaPdf_, cargarImagenesFolletoDestacadosEnTandas_,
+    // misma marca de agua con el logo vía dibujarMarcaDeAguaFolletoPdf_) —
+    // a petición explícita de Eloy: "la misma funcionalidad que se ha
+    // añadido para generar el folleto quiero que la incluyas en la modal
+    // de la lista de la compra tal y como esta ya en temporadas".
+    // Convive con "Exportar a PDF" de arriba (construirDocumentoPdfListaCompra_,
+    // la tabla con subtotales/IVA, que no se toca): esta es una
+    // alternativa visual con foto y QR por producto, no un reemplazo.
+    // ══════════════════════════════════════════════════════════════════
+    async function construirDocumentoPdfListaCompraFolleto_(onProgreso) {
+        if (typeof window.jspdf === 'undefined') return null;
+        // Nunca con el precio al por mayor todavía sin confirmar — mismo
+        // motivo que construirDocumentoPdfTemporada_.
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) return 'pendiente';
+        const productos = listaCompraOrdenada_();
+        if (!productos.length) return null;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const pageW = 210, margin = 14;
+        const headerBottomY = 30, footerTopY = 272;
+        const contentRight = pageW - margin;
+        const contentWidth = contentRight - margin;
+        const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+        // Mismo criterio de color que el folleto de temporada: rojo de
+        // marca para el profesional, azul para el normal (PVP).
+        const colorAccent = esProfesionalFolleto ? [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b] : [25, 118, 210];
+        const textoTipoPrecio = esProfesionalFolleto ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)';
+
+        const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+
+        function dibujarCabecera() {
+            doc.setFillColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+            doc.rect(0, 0, pageW, 3, 'F');
+            if (logo) {
+                const logoH = 11, logoW = logoH * (logo.width / logo.height);
+                doc.addImage(logo.dataUrl, 'PNG', margin, 8, logoW, logoH);
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text('MI LISTA DE LA COMPRA', contentRight, 12, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(120, 123, 130);
+            doc.text(`${textoTipoPrecio} · Generado el ${listaCompraFechaFormateada_()}`, contentRight, 17, { align: 'right' });
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
+        }
+
+        function dibujarPie(numPagina, totalPaginas) {
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, footerTopY, contentRight, footerTopY);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text(LISTA_COMPRA_EMPRESA_.nombre, margin, footerTopY + 6);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(110, 113, 120);
+            doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
+            doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+            doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(150, 153, 160);
+            doc.text(`Página ${numPagina} de ${totalPaginas}`, contentRight, footerTopY + 14.5, { align: 'right' });
+        }
+
+        const itemsFotos = productos.map(p => ({ url: urlImagenProductoFolletoDestacados_(p) }));
+        const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
+
+        const numCols = 3, numFilas = 3;
+        const colGap = 6, rowGap = 6;
+        const colW = (contentWidth - colGap * (numCols - 1)) / numCols;
+        const cardH = (footerTopY - headerBottomY - 6 - rowGap * (numFilas - 1)) / numFilas;
+        const porPagina = numCols * numFilas;
+
+        productos.forEach((p, i) => {
+            const indiceEnPagina = i % porPagina;
+            if (indiceEnPagina === 0) {
+                if (i > 0) doc.addPage();
+                // La marca de agua se dibuja ANTES que la cabecera y las
+                // tarjetas (que son opacas) — así solo queda visible en
+                // los huecos entre tarjetas y márgenes, nunca por encima
+                // de ningún producto.
+                dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, 297);
+                dibujarCabecera();
+            }
+            const fila = Math.floor(indiceEnPagina / numCols);
+            const col = indiceEnPagina % numCols;
+            const x = margin + col * (colW + colGap);
+            const y = headerBottomY + 6 + fila * (cardH + rowGap);
+            dibujarTarjetaTemporadaPdf_(doc, x, y, colW, cardH, fotos[i], p, colorAccent);
+        });
+
+        const totalPaginas = doc.internal.getNumberOfPages();
+        for (let pag = 1; pag <= totalPaginas; pag++) {
+            doc.setPage(pag);
+            dibujarPie(pag, totalPaginas);
+        }
+        return doc;
+    }
+
+    function listaCompraFolletoNombreArchivoPdf_() {
+        return `folleto-lista-de-la-compra-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
+    }
+
+    let listaCompraFolletoGenerando_ = false;
+    async function listaCompraEjecutarAccionFolleto_(btnPulsado, accion) {
+        if (listaCompraFolletoGenerando_) return;
+        if (!listaCompraOrdenada_().length) {
+            mostrarToast('Tu lista de la compra está vacía — añade algún producto primero.', 'error');
+            return;
+        }
+        listaCompraFolletoGenerando_ = true;
+        const botonesAfectados = [$('btn-lista-compra-folleto-pdf'), $('btn-lista-compra-folleto-compartir')];
+        const textoPulsadoOriginal = btnPulsado.innerHTML;
+        const fijarEstado = (texto) => { btnPulsado.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`; };
+        botonesAfectados.forEach(b => { b.disabled = true; });
+        fijarEstado('Preparando…');
+        try {
+            const doc = await construirDocumentoPdfListaCompraFolleto_((completadas, total, restantesMs) => {
+                fijarEstado(completadas < total
+                    ? `Generando… (${completadas}/${total}, ~${Math.max(1, Math.round(restantesMs / 1000))}s)`
+                    : 'Componiendo folleto…');
+            });
+            if (doc === 'pendiente') {
+                mostrarToast('Todavía se está confirmando el precio profesional, espera unos segundos y vuelve a intentarlo.', 'error');
+                return;
+            }
+            if (!doc) {
+                mostrarToast('No se ha podido generar el folleto. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+                return;
+            }
+            await accion(doc);
+        } catch (e) {
+            console.error('Error generando el folleto de la lista de la compra:', e);
+            mostrarToast('No se ha podido generar el folleto. Inténtalo de nuevo.', 'error');
+        } finally {
+            listaCompraFolletoGenerando_ = false;
+            btnPulsado.innerHTML = textoPulsadoOriginal;
+            botonesAfectados.forEach(b => { b.disabled = false; });
+        }
+    }
+
+    function listaCompraDescargarFolletoPdf_() {
+        return listaCompraEjecutarAccionFolleto_($('btn-lista-compra-folleto-pdf'), async (doc) => {
+            doc.save(listaCompraFolletoNombreArchivoPdf_());
+            enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'folleto_pdf' });
+        });
+    }
+
+    function listaCompraCompartirFolletoPdf_() {
+        return listaCompraEjecutarAccionFolleto_($('btn-lista-compra-folleto-compartir'), async (doc) => {
+            const blob = doc.output('blob');
+            const nombreArchivo = listaCompraFolletoNombreArchivoPdf_();
+            const file = new File([blob], nombreArchivo, { type: 'application/pdf' });
+            const titulo = 'Mi lista de la compra — Orencio Matas y Hnos';
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: titulo, text: titulo });
+                    enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'folleto_compartido' });
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return;
+                }
+            }
+            doc.save(nombreArchivo);
+            mostrarToast('Tu navegador no permite compartir archivos directamente — se ha descargado el PDF, puedes adjuntarlo a mano.');
+        });
     }
 
     // Devuelve el PDF ya generado como File (para adjuntarlo vía Web
@@ -17669,6 +18004,8 @@ if (window.OM_PREPRODUCCION) {
         });
 
         $('btn-lista-compra-pdf').addEventListener('click', exportarListaCompraPDF_);
+        $('btn-lista-compra-folleto-pdf').addEventListener('click', listaCompraDescargarFolletoPdf_);
+        $('btn-lista-compra-folleto-compartir').addEventListener('click', listaCompraCompartirFolletoPdf_);
         $('btn-lista-compra-whatsapp').addEventListener('click', compartirListaCompraWhatsapp_);
         $('btn-lista-compra-correo').addEventListener('click', compartirListaCompraCorreo_);
         // Solo preproducción — el botón se elimina del DOM en producción
@@ -18417,6 +18754,7 @@ if (window.OM_PREPRODUCCION) {
 
         $('modal-producto-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
 
         // A petición de Eloy: "si clico en un producto sugerido... si le
         // das atrás te saca del buscador. Debería ir al producto del que
@@ -22043,6 +22381,7 @@ if (window.OM_PREPRODUCCION) {
     function cerrarModalProducto() {
         $('modal-producto-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         // Si se llegó aquí con un ?ref= en la URL (por haber navegado por
         // productos del listado o sugeridos dentro del modal), se limpia
         // sin crear ni quitar ninguna entrada de historial — un cierre
@@ -24195,6 +24534,9 @@ if (window.OM_PREPRODUCCION) {
         mostrarCabeceraBuscador();
     });
     actualizarVisibilidadBotonSubir();
+
+    $('btn-lista-compra-flotante').addEventListener('click', () => abrirModalListaCompra_());
+    actualizarBotonFlotanteListaCompra_();
 })();
 </script>
     <!-- Contenedor de notificaciones toast -->
