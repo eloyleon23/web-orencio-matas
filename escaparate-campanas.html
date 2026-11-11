@@ -745,6 +745,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'escaparate'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
 <script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<!-- Mismo bug de orden de scripts corregido en escaparate.html (ver su
+     comentario): perfil-profesional.js vivía al final del todo, después
+     del <script> principal — aquí no afecta a ningún precio (esta
+     página solo lista campañas, no carga productos), pero sí a cuándo
+     se aplica el menú/redirección de perfil profesional, así que se
+     corrige igual por consistencia. -->
+<script src="./assets/js/perfil-profesional.js?v=20261101d"></script>
 <script>
 (function(){
   "use strict";
@@ -1637,6 +1644,5 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </script>
     <script src="./src/js/app.js?v=20260829"></script>
     <script src="./src/js/analytics-consent.js?v=20260829"></script>
-      <script src="./assets/js/perfil-profesional.js?v=20261101d"></script>
 </body>
 </html>
