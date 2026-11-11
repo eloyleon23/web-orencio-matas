@@ -12105,6 +12105,30 @@ if (window.OM_PREPRODUCCION) {
     // y en Destacados a la vez, son sistemas independientes.
     // ══════════════════════════════════════════════════════════════════
 
+    // Disclaimers legales al pie de CUALQUIER folleto en PDF (Destacados,
+    // Temporada, Lista de la compra en sus dos formatos) — a petición
+    // explícita de Eloy, iguales para cualquier perfil (normal o
+    // profesional): ningún folleto es un compromiso de stock, imagen ni
+    // precio exactos. "anchoMax" es el ancho disponible (contentWidth de
+    // cada folleto); devuelve el alto en mm realmente consumido, para que
+    // el llamador reserve justo ese hueco (normalmente 2 líneas con el
+    // texto actual, pero no se asume un número fijo por si el texto
+    // cambia más adelante).
+    const TEXTOS_DISCLAIMER_FOLLETO_ = [
+        'Productos sujetos a disponibilidad.',
+        'La imagen mostrada puede no coincidir exactamente con el producto real.',
+        'Los precios pueden variar.',
+    ];
+    function dibujarDisclaimerFolleto_(doc, xCentro, y, anchoMax) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(6);
+        doc.setTextColor(160, 163, 170);
+        const lineas = doc.splitTextToSize(TEXTOS_DISCLAIMER_FOLLETO_.join('  ·  '), anchoMax);
+        const lineH = 2.6;
+        lineas.forEach((linea, i) => doc.text(linea, xCentro, y + i * lineH, { align: 'center' }));
+        return lineas.length * lineH;
+    }
+
     // Marca de agua muy sutil con el logo de la empresa, de fondo en cada
     // página de cualquier folleto con fotos (Destacados/Temporada/Lista
     // de la compra) — a petición explícita de Eloy: "una marca de agua
@@ -12381,7 +12405,10 @@ if (window.OM_PREPRODUCCION) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
         const pageW = 210, margin = 14;
-        const headerBottomY = 30, footerTopY = 272;
+        // footerTopY 8mm más arriba que antes (264, no 272) — a petición
+        // explícita de Eloy: hueco reservado para el disclaimer legal
+        // (disponibilidad/imagen/precio), ver dibujarDisclaimerFolleto_.
+        const headerBottomY = 30, footerTopY = 264;
         const contentRight = pageW - margin;
         const contentWidth = contentRight - margin;
         const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
@@ -12428,6 +12455,7 @@ if (window.OM_PREPRODUCCION) {
         }
 
         function dibujarPie(numPagina, totalPaginas) {
+            dibujarDisclaimerFolleto_(doc, (margin + contentRight) / 2, footerTopY - 6, contentWidth);
             doc.setDrawColor(226, 228, 232);
             doc.setLineWidth(0.3);
             doc.line(margin, footerTopY, contentRight, footerTopY);
@@ -16727,7 +16755,10 @@ if (window.OM_PREPRODUCCION) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
         const pageW = 210, margin = 14;
-        const headerBottomY = 30, footerTopY = 272;
+        // footerTopY 8mm más arriba que antes (264, no 272) — a petición
+        // explícita de Eloy: hueco reservado para el disclaimer legal
+        // (disponibilidad/imagen/precio), ver dibujarDisclaimerFolleto_.
+        const headerBottomY = 30, footerTopY = 264;
         const contentRight = pageW - margin;
         const contentWidth = contentRight - margin;
         const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
@@ -16758,6 +16789,7 @@ if (window.OM_PREPRODUCCION) {
         }
 
         function dibujarPie(numPagina, totalPaginas) {
+            dibujarDisclaimerFolleto_(doc, (margin + contentRight) / 2, footerTopY - 6, contentWidth);
             doc.setDrawColor(226, 228, 232);
             doc.setLineWidth(0.3);
             doc.line(margin, footerTopY, contentRight, footerTopY);
@@ -17841,6 +17873,18 @@ if (window.OM_PREPRODUCCION) {
         const dibujarPie = (datos) => {
             const alturaPagina = doc.internal.pageSize.getHeight();
             const anchoPagina = doc.internal.pageSize.getWidth();
+            // Disclaimer legal (disponibilidad/imagen/precio) — a petición
+            // explícita de Eloy, igual en todos los folletos del sitio (ver
+            // dibujarDisclaimerFolleto_, usado por los folletos en mm; aquí
+            // el documento está en puntos, así que se dibuja a mano con el
+            // mismo texto). margin.bottom:50pt de autoTable ya deja hueco
+            // de sobra para estas líneas, por encima del pie habitual.
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(6.5);
+            doc.setTextColor(160);
+            const lineasDisclaimer = doc.splitTextToSize(TEXTOS_DISCLAIMER_FOLLETO_.join('  ·  '), anchoPagina - 60);
+            lineasDisclaimer.forEach((linea, i) => doc.text(linea, anchoPagina / 2, alturaPagina - 34 + i * 8, { align: 'center' }));
+            doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.5);
             doc.setTextColor(120);
             doc.text(pieTexto, anchoPagina / 2, alturaPagina - 18, { align: 'center', maxWidth: anchoPagina - 60 });
@@ -18102,7 +18146,10 @@ if (window.OM_PREPRODUCCION) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
         const pageW = 210, margin = 14;
-        const headerBottomY = 30, footerTopY = 272;
+        // footerTopY 8mm más arriba que antes (264, no 272) — a petición
+        // explícita de Eloy: hueco reservado para el disclaimer legal
+        // (disponibilidad/imagen/precio), ver dibujarDisclaimerFolleto_.
+        const headerBottomY = 30, footerTopY = 264;
         const contentRight = pageW - margin;
         const contentWidth = contentRight - margin;
         const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
@@ -18134,6 +18181,7 @@ if (window.OM_PREPRODUCCION) {
         }
 
         function dibujarPie(numPagina, totalPaginas) {
+            dibujarDisclaimerFolleto_(doc, (margin + contentRight) / 2, footerTopY - 6, contentWidth);
             doc.setDrawColor(226, 228, 232);
             doc.setLineWidth(0.3);
             doc.line(margin, footerTopY, contentRight, footerTopY);
