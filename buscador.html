@@ -12144,7 +12144,14 @@ if (window.OM_PREPRODUCCION) {
             oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
             liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
         };
-        const chipEntrada = (d && d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
+        // Chip/banner de promoción SIEMPRE visibles, con o sin sesión
+        // profesional — son informativos sobre el producto en sí, igual
+        // que ya hace la propia tarjeta en la web (ver
+        // construirContenidoTarjeta_, "ya se mostraban igual en perfil
+        // profesional, fix anterior de Eloy"). Bug real reportado por
+        // Eloy: el folleto se había quedado atrás respecto a ese fix —
+        // seguía ocultándolos aquí con sesión profesional activa.
+        const chipEntrada = (d && d.tipoDestacado) ? mapaChip[d.tipoDestacado] : null;
         const colorFranja = chipEntrada ? chipEntrada[1] : colorAccent;
         doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
         doc.roundedRect(x, y, w, 2.5, 2.5, 2.5, 'F');
@@ -12279,7 +12286,7 @@ if (window.OM_PREPRODUCCION) {
             dibujarPrecio_(dCalc.original, dCalc.promo, dCalc.pct, dCalc.promo !== null ? dCalc.promoSin : (precioInfo && precioInfo.sin));
         }
 
-        if (!esMayor && d && d.textoPromocion) {
+        if (d && d.textoPromocion) {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(7.5);
             // Deja sitio al QR de la esquina inferior derecha (ver más
@@ -16482,7 +16489,10 @@ if (window.OM_PREPRODUCCION) {
             oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
             liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
         };
-        const chipEntrada = (d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
+        // Igual que en dibujarTarjetaTemporadaPdf_: el chip/banner es
+        // informativo y se muestra con o sin sesión profesional, igual
+        // que la propia tarjeta en la web.
+        const chipEntrada = d.tipoDestacado ? mapaChip[d.tipoDestacado] : null;
 
         // Franja de color superior — mismo color que el chip (o el rojo de
         // marca si no hay chip) a modo de "cabecera" de la tarjeta, para
@@ -16643,7 +16653,7 @@ if (window.OM_PREPRODUCCION) {
         // resalte tanto o más que el precio en modo chip"). Hasta 2 líneas
         // dentro del propio chip (antes se recortaba en silencio a la
         // primera línea sin más, cortando el texto a medias).
-        if (!esMayor && d.textoPromocion) {
+        if (d.textoPromocion) {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
             const maxTextW = w - pad * 2 - 10;
