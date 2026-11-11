@@ -1,3 +1,18 @@
+// Versión de ESTE backend — súbela (fecha + algo descriptivo) cada vez
+// que cambies algo relevante aquí y crees una NUEVA implementación. A
+// petición explícita de Eloy, tras un incidente real: existían VARIAS
+// implementaciones de "Aplicación web" para este mismo proyecto y "Nueva
+// versión" se aplicó a una distinta de la que de verdad usa la web en
+// producción (su URL es fija, ver PRODUCTOS_REMOTO_URL_BASE en
+// buscador.html) — el código del editor ya tenía la validación de PIN
+// correcta, pero el Web App en vivo seguía ejecutando una versión mucho
+// más antigua, sin forma de notarlo desde fuera: el precio de mayor
+// simplemente no llegaba nunca, para nadie, sin ningún error visible.
+// Viaja en la respuesta de obtener_productos (ver version_backend) para
+// que buscador.html pueda avisar si lo que ve en vivo no es lo último
+// que se desplegó — ver comprobarVersionBackend_ en buscador.html.
+const VERSION_BACKEND = '2026-11-11-validacion-pin-profesional';
+
 // ── Configuración ──────────────────────────────────────────────────────────
 const GITHUB_TOKEN        = 'TU_GITHUB_TOKEN_AQUI';
 const REPO_OWNER          = 'eloyleon23';
@@ -3983,14 +3998,23 @@ function doGet(e) {
       // a unos pocos KB. Sin "refs", se comporta exactamente igual que
       // antes (devuelve todo), así que buscador.html y Centro de
       // Soluciones no se ven afectados.
+      // version_backend/pin_valido: viajan SIEMPRE, incluso sin PIN en la
+      // petición (ahí pin_valido es simplemente false, el caso normal
+      // para cualquier visitante público) — ver el aviso junto a
+      // VERSION_BACKEND arriba del todo del archivo. El cliente
+      // (buscador.html, comprobarVersionBackend_) es quien decide si
+      // avisar o no: solo le importa cuando hay sesión profesional
+      // activa Y pin_valido sale false pese a ello, o cuando
+      // version_backend no es la que esperaba.
+      const metaRespuesta_ = { pin_valido: pinProfesionalOk, version_backend: VERSION_BACKEND };
       const refsParam = (e.parameter && e.parameter.refs || '').toString().trim();
       if (refsParam) {
         const refsSet = new Set(refsParam.split(',').map(r => r.trim()).filter(Boolean));
         const filtrados = quitarPrecioMayor_((datos.productos || []).filter(p => refsSet.has(p.ref)));
-        return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, { productos: filtrados })))
+        return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, metaRespuesta_, { productos: filtrados })))
           .setMimeType(ContentService.MimeType.JSON);
       }
-      return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, { productos: quitarPrecioMayor_(datos.productos || []) })))
+      return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, metaRespuesta_, { productos: quitarPrecioMayor_(datos.productos || []) })))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
