@@ -5417,7 +5417,7 @@
      scroll, a diferencia de #btn-subir-arriba), se oculta sola si la
      lista se vacía/elimina (ver actualizarBotonFlotanteListaCompra_). -->
 <button type="button" id="btn-lista-compra-flotante" title="Lista de la compra" aria-label="Abrir lista de la compra">
-    <i class="fa-solid fa-cart-shopping"></i>
+    <i class="fa-solid fa-clipboard-list"></i>
     <span class="btn-lista-compra-flotante-texto">Lista de la compra</span>
 </button>
 <!-- Google Tag Manager (noscript) -->
@@ -5895,7 +5895,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              Si todavía no existe ninguna lista, se muestra en su lugar el
              botón para crearla. -->
         <button type="button" id="btn-crear-lista-compra" class="btn-crear-lista-compra" style="display:none;">
-            <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
+            <i class="fa-solid fa-clipboard-list"></i> Lista de la compra
         </button>
         <div id="ancla-lista-compra-abajo"></div>
 
@@ -6084,7 +6084,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                      la ficha y cada vez que cambia la lista. -->
                 <div class="modal-producto-lista-fila">
                     <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
-                        <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
+                        <i class="fa-solid fa-square-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
                     </button>
                     <!-- Selector de unidades (mínimo 1, sin máximo), solo visible mientras
                          el producto ya está en la lista — ver
@@ -7284,7 +7284,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <i class="fa-solid fa-xmark"></i>
         </button>
         <div style="text-align:center; padding: 8px 4px 20px;">
-            <i class="fa-solid fa-cart-shopping" style="font-size: 2rem; color: var(--red); margin-bottom: 12px;"></i>
+            <i class="fa-solid fa-clipboard-list" style="font-size: 2rem; color: var(--red); margin-bottom: 12px;"></i>
             <h3 style="margin:0 0 10px;font-size:1.05rem;color:#1f2937;">¿Sigues con tu lista de la compra?</h3>
             <p id="aviso-validez-lista-compra-mensaje" style="margin: 0; color: #4b5563; font-size: 0.9rem; line-height: 1.5;"></p>
         </div>
@@ -7312,7 +7312,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-lista-compra-cabecera">
             <div class="modal-lista-compra-cabecera-fila">
                 <h3 class="modal-lista-compra-titulo" id="modal-lista-compra-titulo-texto">
-                    <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
+                    <i class="fa-solid fa-clipboard-list"></i> Lista de la compra
                 </h3>
                 <div class="modal-lista-compra-resumen">
                     <span class="modal-lista-compra-contador" id="modal-lista-compra-contador">0 / 24 productos</span>
@@ -7337,7 +7337,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <div class="modal-lista-compra-cuerpo">
             <div id="lista-compra-vacia" class="lista-compra-vacia" style="display:none;">
-                <i class="fa-solid fa-cart-shopping"></i>
+                <i class="fa-solid fa-clipboard-list"></i>
                 <h4>Tu lista de la compra está vacía</h4>
                 <p>Guarda aquí los productos que te interesen para consultarlos más adelante, sin compromiso de compra.</p>
                 <ul>
@@ -11523,7 +11523,7 @@ if (window.OM_PREPRODUCCION) {
         const actualizarBoton_ = () => {
             const yaEsta = listaCompraTiene_(p.ref);
             btn.classList.toggle('temporada-anadir-seleccion-btn--hecho', yaEsta);
-            btn.innerHTML = yaEsta ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-cart-plus"></i>';
+            btn.innerHTML = yaEsta ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-square-plus"></i>';
             btn.title = yaEsta ? 'Ya está en tu selección — clic para quitarlo' : 'Añadir a mi selección';
         };
         actualizarBoton_();
@@ -14382,7 +14382,7 @@ if (window.OM_PREPRODUCCION) {
                     ['fa-box-open', 'Productos vistos', r.totalProductosVistos],
                     ['fa-layer-group', 'Bloques pulsados', r.totalBloquesClick],
                     ['fa-tags', 'Marcas pulsadas', r.totalMarcasClick],
-                    ['fa-cart-shopping', 'Usos de la lista de la compra', r.totalListaCompraUsada],
+                    ['fa-clipboard-list', 'Usos de la lista de la compra', r.totalListaCompraUsada],
                     ['fa-file-export', 'Listas exportadas/compartidas', r.totalListaCompraExportada],
                 ].map(([icono, etiqueta, total]) => `
                     <div style="background:var(--light);border-radius:10px;padding:10px;text-align:center;">
@@ -17348,7 +17348,7 @@ if (window.OM_PREPRODUCCION) {
             bloque.innerHTML = `
                 <span class="categoria-bloque__lupa" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <div class="bloque-lista-compra__cabecera">
-                    <p class="bloque-lista-compra__titulo"><i class="fa-solid fa-cart-shopping"></i> Lista de la compra</p>
+                    <p class="bloque-lista-compra__titulo"><i class="fa-solid fa-clipboard-list"></i> Lista de la compra</p>
                     <span class="bloque-lista-compra__contador" id="lista-compra-contador-bloque"></span>
                 </div>
                 <div class="bloque-lista-compra__carrusel" id="lista-compra-carrusel"></div>
