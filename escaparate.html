@@ -4447,9 +4447,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
       const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
       const pageW = 210, pageH = 297, margin = 14;
-      const headerBottomY = 34, footerTopY = 272;
+      // footerTopY 8mm más arriba que antes (264, no 272) — a petición
+      // explícita de Eloy: hueco reservado para el disclaimer legal
+      // (disponibilidad/imagen/precio), ver dibujarDisclaimerFolletoEscaparate_.
+      const headerBottomY = 34, footerTopY = 264;
       const contentRight = pageW - margin;
       const contentWidth = contentRight - margin;
+      // A petición explícita de Eloy: el folleto debe indicar si lleva
+      // precio profesional (al por mayor) o de venta al público, igual
+      // que ya hacen los folletos del buscador (precioMayorEscaparate_ ya
+      // decide el PRECIO dibujado más abajo; esto es solo la etiqueta).
+      const esProfesionalFolleto = !!(window.PerfilProfesional && window.PerfilProfesional.sesionActiva());
+      const textoTipoPrecioFolleto = esProfesionalFolleto ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)';
 
       // Silueta de hoja (apuntando hacia arriba en su espacio local, con
       // tallo y nervio central) para el fondo de otoño — antes se
@@ -4568,13 +4577,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8.5);
         doc.setTextColor(120, 123, 130);
-        doc.text('orenciomatas.es', contentRight, 18, { align:'right' });
+        doc.text(`${textoTipoPrecioFolleto} · orenciomatas.es`, contentRight, 18, { align:'right' });
         doc.setDrawColor(226, 228, 232);
         doc.setLineWidth(0.3);
         doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
       }
 
+      // Disclaimers legales al pie del folleto — a petición explícita de
+      // Eloy, igual en cualquier folleto del sitio (ver el mismo texto en
+      // buscador.html, dibujarDisclaimerFolleto_) e igual para cualquier
+      // perfil, normal o profesional.
+      function dibujarDisclaimerFolletoEscaparate_(y){
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(6);
+        doc.setTextColor(160, 163, 170);
+        const textoDisclaimer = [
+          'Productos sujetos a disponibilidad.',
+          'La imagen mostrada puede no coincidir exactamente con el producto real.',
+          'Los precios pueden variar.',
+        ].join('  ·  ');
+        const lineas = doc.splitTextToSize(textoDisclaimer, contentWidth);
+        lineas.forEach((linea, i) => doc.text(linea, (margin + contentRight) / 2, y + i * 2.6, { align:'center' }));
+      }
+
       function dibujarPie(numPagina, totalPaginas){
+        dibujarDisclaimerFolletoEscaparate_(footerTopY - 6);
         doc.setDrawColor(226, 228, 232);
         doc.setLineWidth(0.3);
         doc.line(margin, footerTopY, contentRight, footerTopY);
