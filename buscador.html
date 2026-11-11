@@ -5696,6 +5696,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <strong id="num-resultados">—</strong> resultados
             </div>
             <div class="resultados-header__acciones">
+                <!-- Añadir todos los resultados filtrados a la lista de la
+                     compra de un golpe — a petición explícita de Eloy, para
+                     que un comercial o un cliente de tienda pueda generar un
+                     folleto con justo los productos que ha filtrado. Oculto
+                     si solo hay filtro de área (ver actualizarBotonAnadirResultadosLista_):
+                     para ese caso ya existe la descarga del catálogo
+                     completo de esa área (enlaces del pie de página), así
+                     que este botón no aporta nada ahí. -->
+                <button type="button" class="btn-solicitar-catalogo" id="btn-anadir-resultados-lista" disabled style="display: none;">
+                    <i class="fa-solid fa-square-plus"></i> <span id="btn-anadir-resultados-lista-texto">Añadir todos a mi lista</span>
+                </button>
                 <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled style="display: none;">
                     <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
                 </button>
@@ -5744,7 +5755,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              Mismo patrón de botón+PIN que el resto de gestión, oculto y
              eliminado del DOM en producción (ver
              window.MOSTRAR_PANEL_ANALITICA). -->
-        <div class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
+        <div id="panel-analitica-cabecera" class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
             <button type="button" id="btn-panel-analitica" class="btn-destacados-accion btn-destacados-editar" title="Ver estadísticas de uso" aria-label="Ver estadísticas de uso">
                 <i class="fa-solid fa-chart-line"></i> <span>Estadísticas</span>
             </button>
@@ -5792,7 +5803,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              de administración (verificarPin_ en Apps Script); oculto y
              eliminado del DOM en producción (ver
              window.MOSTRAR_GESTION_TEMPORADAS más abajo). -->
-        <div class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
+        <div id="gestionar-temporadas-cabecera" class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
             <button type="button" id="btn-gestionar-temporadas" class="btn-destacados-accion btn-destacados-editar" title="Gestionar productos de temporada" aria-label="Gestionar productos de temporada">
                 <i class="fa-solid fa-pen-to-square"></i> <span>Gestionar productos de temporada</span>
             </button>
@@ -9942,6 +9953,7 @@ if (window.OM_PREPRODUCCION) {
         });
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
+        $('btn-anadir-resultados-lista').addEventListener('click', anadirResultadosFiltradosALista_);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
         $('btn-preguntar-ia-aproximados').addEventListener('click', () => preguntarIAProducto(false, $('btn-preguntar-ia-aproximados')));
         $('btn-ia-producto-otra-vez').addEventListener('click', () => preguntarIAProducto(true));
@@ -10570,10 +10582,11 @@ if (window.OM_PREPRODUCCION) {
     modulosDescubrimientoConContenido_.masBuscados = 'vacio';
     modulosDescubrimientoConContenido_.marcas = 'vacio';
 
-    function hayFiltroActivo_() {
+    // Cualquier filtro activo QUE NO SEA el de área — factorizado aparte
+    // de hayFiltroActivo_ para que soloFiltroDeArea_ (ver su definición)
+    // pueda reutilizar exactamente el mismo criterio sin duplicarlo.
+    function hayFiltroDistintoDeArea_() {
         if ($('f-texto').value.trim()) return true;
-        const totalAreas = document.querySelectorAll('#f-area-opciones input').length;
-        if (areasSeleccionadas().length !== totalAreas) return true; // incluye "ninguna marcada"
         if (familiasSeleccionadas().length || subfamiliasSeleccionadas().length) return true;
         if (fabricantesTallerSeleccionados().length) return true;
         if ($('f-precio-min').value || $('f-precio-max').value) return true;
@@ -10588,6 +10601,23 @@ if (window.OM_PREPRODUCCION) {
         if ($('f-orden').value) return true;
         if (fechaFiltroTocado) return true; // auto-precargada no cuenta; solo si el usuario la tocó de verdad
         return false;
+    }
+    function hayFiltroDeArea_() {
+        const totalAreas = document.querySelectorAll('#f-area-opciones input').length;
+        return areasSeleccionadas().length !== totalAreas; // incluye "ninguna marcada"
+    }
+    function hayFiltroActivo_() {
+        return hayFiltroDeArea_() || hayFiltroDistintoDeArea_();
+    }
+    // true si el ÚNICO filtro aplicado es el de área — a petición
+    // explícita de Eloy: en ese caso el botón de "añadir todos los
+    // resultados a mi lista" (ver actualizarBotonAnadirResultadosLista_)
+    // se oculta, porque para descargar el catálogo completo de un área
+    // ya existen los enlaces del pie de página (catalogo_perfumeria.html,
+    // etc.) — este botón solo aporta algo cuando hay un filtro MÁS
+    // específico que una simple área.
+    function soloFiltroDeArea_() {
+        return hayFiltroDeArea_() && !hayFiltroDistintoDeArea_();
     }
 
     // modulosDescubrimientoConContenido_.* puede valer 'cargando' (aún no
@@ -10607,6 +10637,16 @@ if (window.OM_PREPRODUCCION) {
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
         $('categorias-descubrimiento-seccion').style.display = visible_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
         if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visible_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
+        // Botones de gestión en preproducción (Estadísticas / Gestionar
+        // productos de temporada): viven FUERA de sus secciones a
+        // propósito (ver sus comentarios en el HTML, para seguir
+        // accesibles aunque la sección esté vacía) — pero eso mismo hacía
+        // que, con un filtro aplicado y las secciones de alrededor ya
+        // ocultas, quedaran los dos pegados y solapados entre sí. Bug
+        // real reportado por Eloy: se ocultan igual que el resto de
+        // módulos de descubrimiento, solo visibles con filtros limpios.
+        if ($('panel-analitica-cabecera')) $('panel-analitica-cabecera').style.display = oculto ? 'none' : '';
+        if ($('gestionar-temporadas-cabecera')) $('gestionar-temporadas-cabecera').style.display = oculto ? 'none' : '';
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
@@ -15540,9 +15580,34 @@ if (window.OM_PREPRODUCCION) {
         $('resultados-count').innerHTML = `<strong>${n}</strong> resultados sugeridos por IA`;
     }
 
+    // Visible solo con resultados Y con algún filtro más específico que
+    // el de área (ver soloFiltroDeArea_) — se recalcula en cada
+    // renderResultados(), igual que btn-solicitar.
+    function actualizarBotonAnadirResultadosLista_() {
+        const btn = $('btn-anadir-resultados-lista');
+        if (!btn) return;
+        const visible = hayFiltroActivo_() && !soloFiltroDeArea_() && resultadosActuales.length > 0;
+        btn.style.display = visible ? '' : 'none';
+        btn.disabled = !visible;
+    }
+
+    // Añade TODOS los resultados actualmente filtrados a la Lista de la
+    // compra de un golpe — a petición explícita de Eloy, para que un
+    // comercial o un cliente de tienda pueda generar un folleto con
+    // justo los productos que ha filtrado (los que ya estuvieran en la
+    // lista se saltan solos, igual que temporadaModalAnadirTodosVisibles_).
+    function anadirResultadosFiltradosALista_() {
+        if (!resultadosActuales.length) return;
+        let añadidos = 0;
+        resultadosActuales.forEach(p => { if (listaCompraAnadir_(p) === 'ok') añadidos++; });
+        listaCompraActualizarUI_();
+        mostrarToast(añadidos ? `Añadidos ${añadidos} producto(s) a tu lista de la compra.` : 'Ya tenías todos estos productos en tu lista de la compra.');
+    }
+
     // ── Renderizar resultados (con paginación de 12 en 12 aprox) ──
     function renderResultados() {
         $('btn-solicitar').disabled = resultadosActuales.length === 0;
+        actualizarBotonAnadirResultadosLista_();
 
         const cont = $('contenedor-resultados');
         const sinResultados = $('sin-resultados');
