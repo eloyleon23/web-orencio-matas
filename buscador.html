@@ -1056,9 +1056,19 @@
             padding: 4px 4px 16px;
         }
         .temporada-ver-todos-grid-grupo { margin-bottom: 28px; }
+        /* padding-bottom generoso a propósito: en móvil, el gesto de
+           scroll que revela este bloque (y sus chips de familia) suele
+           terminar justo sobre el propio botón — y un touchend que es el
+           final de un scroll/arrastre NO dispara un "click" en ningún
+           navegador (se necesita un toque aparte, ya quieto, para eso).
+           Eloy reportó justo este síntoma: "se necesita darle dos veces
+           para que te lleve al filtro". Alejando el final real del
+           scroll (más espacio después de los chips) el gesto de "bajar
+           hasta el final" suele terminar más abajo, ya pasado el botón,
+           así que el primer toque sobre él casi siempre llega quieto. */
         .temporada-ver-todos-fin {
             text-align: center;
-            padding: 24px 10px 10px;
+            padding: 24px 10px 70px;
             color: var(--muted);
             font-size: 0.9rem;
         }
@@ -5407,7 +5417,7 @@
      scroll, a diferencia de #btn-subir-arriba), se oculta sola si la
      lista se vacía/elimina (ver actualizarBotonFlotanteListaCompra_). -->
 <button type="button" id="btn-lista-compra-flotante" title="Lista de la compra" aria-label="Abrir lista de la compra">
-    <i class="fa-solid fa-cart-shopping"></i>
+    <i class="fa-solid fa-clipboard-list"></i>
     <span class="btn-lista-compra-flotante-texto">Lista de la compra</span>
 </button>
 <!-- Google Tag Manager (noscript) -->
@@ -5686,6 +5696,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <strong id="num-resultados">—</strong> resultados
             </div>
             <div class="resultados-header__acciones">
+                <!-- Añadir todos los resultados filtrados a la lista de la
+                     compra de un golpe — a petición explícita de Eloy, para
+                     que un comercial o un cliente de tienda pueda generar un
+                     folleto con justo los productos que ha filtrado. Oculto
+                     si solo hay filtro de área (ver actualizarBotonAnadirResultadosLista_):
+                     para ese caso ya existe la descarga del catálogo
+                     completo de esa área (enlaces del pie de página), así
+                     que este botón no aporta nada ahí. -->
+                <button type="button" class="btn-solicitar-catalogo" id="btn-anadir-resultados-lista" disabled style="display: none;">
+                    <i class="fa-solid fa-square-plus"></i> <span id="btn-anadir-resultados-lista-texto">Añadir todos a mi lista</span>
+                </button>
                 <button class="btn-solicitar-catalogo" id="btn-solicitar" disabled style="display: none;">
                     <i class="fa-solid fa-file-pdf"></i> Solicitar catálogo de estos resultados
                 </button>
@@ -5734,7 +5755,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              Mismo patrón de botón+PIN que el resto de gestión, oculto y
              eliminado del DOM en producción (ver
              window.MOSTRAR_PANEL_ANALITICA). -->
-        <div class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
+        <div id="panel-analitica-cabecera" class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
             <button type="button" id="btn-panel-analitica" class="btn-destacados-accion btn-destacados-editar" title="Ver estadísticas de uso" aria-label="Ver estadísticas de uso">
                 <i class="fa-solid fa-chart-line"></i> <span>Estadísticas</span>
             </button>
@@ -5782,7 +5803,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              de administración (verificarPin_ en Apps Script); oculto y
              eliminado del DOM en producción (ver
              window.MOSTRAR_GESTION_TEMPORADAS más abajo). -->
-        <div class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
+        <div id="gestionar-temporadas-cabecera" class="seccion-destacados__cabecera" style="justify-content:flex-end;padding:0;margin-bottom:0;">
             <button type="button" id="btn-gestionar-temporadas" class="btn-destacados-accion btn-destacados-editar" title="Gestionar productos de temporada" aria-label="Gestionar productos de temporada">
                 <i class="fa-solid fa-pen-to-square"></i> <span>Gestionar productos de temporada</span>
             </button>
@@ -5885,7 +5906,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
              Si todavía no existe ninguna lista, se muestra en su lugar el
              botón para crearla. -->
         <button type="button" id="btn-crear-lista-compra" class="btn-crear-lista-compra" style="display:none;">
-            <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
+            <i class="fa-solid fa-clipboard-list"></i> Lista de la compra
         </button>
         <div id="ancla-lista-compra-abajo"></div>
 
@@ -6074,7 +6095,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                      la ficha y cada vez que cambia la lista. -->
                 <div class="modal-producto-lista-fila">
                     <button type="button" id="modal-producto-lista-btn" class="modal-producto-lista-btn">
-                        <i class="fa-solid fa-cart-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
+                        <i class="fa-solid fa-square-plus"></i> <span id="modal-producto-lista-btn-texto">Añadir a la lista de la compra</span>
                     </button>
                     <!-- Selector de unidades (mínimo 1, sin máximo), solo visible mientras
                          el producto ya está en la lista — ver
@@ -7274,7 +7295,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <i class="fa-solid fa-xmark"></i>
         </button>
         <div style="text-align:center; padding: 8px 4px 20px;">
-            <i class="fa-solid fa-cart-shopping" style="font-size: 2rem; color: var(--red); margin-bottom: 12px;"></i>
+            <i class="fa-solid fa-clipboard-list" style="font-size: 2rem; color: var(--red); margin-bottom: 12px;"></i>
             <h3 style="margin:0 0 10px;font-size:1.05rem;color:#1f2937;">¿Sigues con tu lista de la compra?</h3>
             <p id="aviso-validez-lista-compra-mensaje" style="margin: 0; color: #4b5563; font-size: 0.9rem; line-height: 1.5;"></p>
         </div>
@@ -7302,7 +7323,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="modal-lista-compra-cabecera">
             <div class="modal-lista-compra-cabecera-fila">
                 <h3 class="modal-lista-compra-titulo" id="modal-lista-compra-titulo-texto">
-                    <i class="fa-solid fa-cart-shopping"></i> Lista de la compra
+                    <i class="fa-solid fa-clipboard-list"></i> Lista de la compra
                 </h3>
                 <div class="modal-lista-compra-resumen">
                     <span class="modal-lista-compra-contador" id="modal-lista-compra-contador">0 / 24 productos</span>
@@ -7327,7 +7348,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <div class="modal-lista-compra-cuerpo">
             <div id="lista-compra-vacia" class="lista-compra-vacia" style="display:none;">
-                <i class="fa-solid fa-cart-shopping"></i>
+                <i class="fa-solid fa-clipboard-list"></i>
                 <h4>Tu lista de la compra está vacía</h4>
                 <p>Guarda aquí los productos que te interesen para consultarlos más adelante, sin compromiso de compra.</p>
                 <ul>
@@ -7802,6 +7823,41 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <select id="temporadas-buscar-familia"><option value="">Todas las familias</option></select>
                     </div>
                     <div id="temporadas-buscar-resultados" class="destacados-buscar-resultados"></div>
+
+                    <!-- Productos excluidos — a petición explícita de Eloy:
+                         "si se añaden [productos] desde una familia y hay
+                         productos que no queremos incluir, lo suyo es
+                         tener una lista de excluidos igual que tenemos la
+                         lista de productos individuales a añadir". Se
+                         aplica siempre al final (ver productosDeTemporada_),
+                         por encima de familias Y de productos concretos
+                         incluidos — para poder excluir un producto aunque
+                         esté también en la lista de incluidos a propósito
+                         (evita que un alta manual "revierta" la exclusión
+                         sin querer). Mismo patrón exacto (chips, alta
+                         masiva, buscador) que "Productos concretos
+                         incluidos" de arriba. -->
+                    <h4 class="temporadas-separador">Productos excluidos (<span id="temporadas-excluidas-total">0</span>) <span id="temporadas-excluidas-estado" class="temporadas-items-estado"></span></h4>
+                    <p class="destacados-hint">Productos que NUNCA deben aparecer en esta temporada, aunque pertenezcan a una familia incluida arriba.</p>
+                    <div id="temporadas-excluidas-chips" class="temporadas-chips"></div>
+                    <div class="temporadas-referencias-masivo">
+                        <button type="button" id="temporadas-excluidas-masivo-btn" class="destacados-btn-secundario">+ Excluir varias referencias de golpe</button>
+                        <div id="temporadas-excluidas-masivo-bloque" class="temporadas-referencias-masivo-bloque" style="display:none;">
+                            <p class="destacados-hint">Pega una lista de referencias separadas por coma y espacio (ej: REF001, REF002, REF003) — se añaden a las ya excluidas, sin tocarlas.</p>
+                            <textarea id="temporadas-excluidas-masivo-texto" rows="3" placeholder="REF001, REF002, REF003..."></textarea>
+                            <div class="destacados-editor-acciones">
+                                <button type="button" id="temporadas-excluidas-masivo-cancelar" class="destacados-btn-secundario">Cancelar</button>
+                                <button type="button" id="temporadas-excluidas-masivo-confirmar" class="destacados-btn-primario">Excluir referencias</button>
+                            </div>
+                            <p id="temporadas-excluidas-masivo-resultado" class="destacados-hint"></p>
+                        </div>
+                    </div>
+                    <div class="destacados-buscador-controles">
+                        <input type="text" id="temporadas-excluir-buscar-texto" placeholder="Buscar producto por nombre o referencia para excluir...">
+                        <select id="temporadas-excluir-buscar-area"><option value="">Todas las áreas</option></select>
+                        <select id="temporadas-excluir-buscar-familia"><option value="">Todas las familias</option></select>
+                    </div>
+                    <div id="temporadas-excluir-buscar-resultados" class="destacados-buscar-resultados"></div>
                 </div>
             </div>
         </div>
@@ -9897,6 +9953,7 @@ if (window.OM_PREPRODUCCION) {
         });
         $('btn-cargar-mas').addEventListener('click', cargarMasFamilias);
         $('btn-solicitar').addEventListener('click', abrirModalSolicitud);
+        $('btn-anadir-resultados-lista').addEventListener('click', anadirResultadosFiltradosALista_);
         $('btn-preguntar-ia-producto').addEventListener('click', () => preguntarIAProducto(false));
         $('btn-preguntar-ia-aproximados').addEventListener('click', () => preguntarIAProducto(false, $('btn-preguntar-ia-aproximados')));
         $('btn-ia-producto-otra-vez').addEventListener('click', () => preguntarIAProducto(true));
@@ -10525,10 +10582,11 @@ if (window.OM_PREPRODUCCION) {
     modulosDescubrimientoConContenido_.masBuscados = 'vacio';
     modulosDescubrimientoConContenido_.marcas = 'vacio';
 
-    function hayFiltroActivo_() {
+    // Cualquier filtro activo QUE NO SEA el de área — factorizado aparte
+    // de hayFiltroActivo_ para que soloFiltroDeArea_ (ver su definición)
+    // pueda reutilizar exactamente el mismo criterio sin duplicarlo.
+    function hayFiltroDistintoDeArea_() {
         if ($('f-texto').value.trim()) return true;
-        const totalAreas = document.querySelectorAll('#f-area-opciones input').length;
-        if (areasSeleccionadas().length !== totalAreas) return true; // incluye "ninguna marcada"
         if (familiasSeleccionadas().length || subfamiliasSeleccionadas().length) return true;
         if (fabricantesTallerSeleccionados().length) return true;
         if ($('f-precio-min').value || $('f-precio-max').value) return true;
@@ -10543,6 +10601,23 @@ if (window.OM_PREPRODUCCION) {
         if ($('f-orden').value) return true;
         if (fechaFiltroTocado) return true; // auto-precargada no cuenta; solo si el usuario la tocó de verdad
         return false;
+    }
+    function hayFiltroDeArea_() {
+        const totalAreas = document.querySelectorAll('#f-area-opciones input').length;
+        return areasSeleccionadas().length !== totalAreas; // incluye "ninguna marcada"
+    }
+    function hayFiltroActivo_() {
+        return hayFiltroDeArea_() || hayFiltroDistintoDeArea_();
+    }
+    // true si el ÚNICO filtro aplicado es el de área — a petición
+    // explícita de Eloy: en ese caso el botón de "añadir todos los
+    // resultados a mi lista" (ver actualizarBotonAnadirResultadosLista_)
+    // se oculta, porque para descargar el catálogo completo de un área
+    // ya existen los enlaces del pie de página (catalogo_perfumeria.html,
+    // etc.) — este botón solo aporta algo cuando hay un filtro MÁS
+    // específico que una simple área.
+    function soloFiltroDeArea_() {
+        return hayFiltroDeArea_() && !hayFiltroDistintoDeArea_();
     }
 
     // modulosDescubrimientoConContenido_.* puede valer 'cargando' (aún no
@@ -10562,6 +10637,16 @@ if (window.OM_PREPRODUCCION) {
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
         $('categorias-descubrimiento-seccion').style.display = visible_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
         if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visible_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
+        // Botones de gestión en preproducción (Estadísticas / Gestionar
+        // productos de temporada): viven FUERA de sus secciones a
+        // propósito (ver sus comentarios en el HTML, para seguir
+        // accesibles aunque la sección esté vacía) — pero eso mismo hacía
+        // que, con un filtro aplicado y las secciones de alrededor ya
+        // ocultas, quedaran los dos pegados y solapados entre sí. Bug
+        // real reportado por Eloy: se ocultan igual que el resto de
+        // módulos de descubrimiento, solo visibles con filtros limpios.
+        if ($('panel-analitica-cabecera')) $('panel-analitica-cabecera').style.display = oculto ? 'none' : '';
+        if ($('gestionar-temporadas-cabecera')) $('gestionar-temporadas-cabecera').style.display = oculto ? 'none' : '';
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
@@ -11277,6 +11362,17 @@ if (window.OM_PREPRODUCCION) {
             refsVistas.add(ref);
             productos.push(p);
         });
+        // Exclusiones — a petición explícita de Eloy: "si se añaden
+        // [productos] desde una familia y hay productos que no queremos
+        // incluir, lo suyo es tener una lista de excluidos". Se aplica
+        // siempre AL FINAL, por encima de familias Y de referencias
+        // sueltas (incluso si un ref estuviera en ambas listas a la vez,
+        // la exclusión gana) — así un producto marcado como excluido
+        // "de base no aparece en la temporada definida".
+        if ((temporada.excluidas || []).length) {
+            const excluidasSet = new Set(temporada.excluidas.map(r => String(r)));
+            return productos.filter(p => !excluidasSet.has(String(p.ref)));
+        }
         return productos;
     }
 
@@ -11342,6 +11438,24 @@ if (window.OM_PREPRODUCCION) {
     // familia al azar (sigue siendo "aleatorio" dentro del agrupado). ──
     let temporadaModalProductosBase_ = []; // sin agrupar, para el filtro de texto
     let temporadaModalTemporadaActual_ = null; // la temporada abierta ahora mismo en la modal "ver todos" (para el folleto)
+
+    // Registro de todos los botones "añadir a mi selección" actualmente
+    // pintados (preview de la portada + modal "ver todos"), para poder
+    // refrescar su check verde cuando la lista cambia DESDE OTRO SITIO
+    // (vaciar/eliminar la lista entera desde su propia modal, o quitar un
+    // producto desde allí) — bug real reportado por Eloy: "si añades
+    // productos a la lista de la compra y eliminas la lista se quedan
+    // marcados los productos de la temporada que se añadieron". Se
+    // depura solo (filter por btn.isConnected) cada vez que se usa, así
+    // que no hace falta "desregistrar" nada al cerrar/repintar la modal.
+    let temporadaSeleccionBotonesSync_ = [];
+    function temporadaSeleccionSincronizarBotones_() {
+        temporadaSeleccionBotonesSync_ = temporadaSeleccionBotonesSync_.filter(({ btn, actualizar }) => {
+            if (!btn.isConnected) return false;
+            actualizar();
+            return true;
+        });
+    }
     // Filtros propios de la modal "ver todos" — a petición de Eloy:
     // "funcionalidades que ayuden a comerciales y clientes a seleccionar
     // productos de las temporadas activas" (accesos directos por
@@ -11467,10 +11581,11 @@ if (window.OM_PREPRODUCCION) {
         const actualizarBoton_ = () => {
             const yaEsta = listaCompraTiene_(p.ref);
             btn.classList.toggle('temporada-anadir-seleccion-btn--hecho', yaEsta);
-            btn.innerHTML = yaEsta ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-cart-plus"></i>';
+            btn.innerHTML = yaEsta ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-square-plus"></i>';
             btn.title = yaEsta ? 'Ya está en tu selección — clic para quitarlo' : 'Añadir a mi selección';
         };
         actualizarBoton_();
+        temporadaSeleccionBotonesSync_.push({ btn, actualizar: actualizarBoton_ });
         btn.addEventListener('click', (e) => {
             e.stopPropagation(); // no abrir la ficha del producto al pulsar el botón
             if (listaCompraTiene_(p.ref)) {
@@ -11866,11 +11981,20 @@ if (window.OM_PREPRODUCCION) {
         temporadaModalFiltrarYRenderizar_();
 
         // Opciones de búsqueda al final del scroll: una por cada familia
-        // de ESTA temporada — al clicar, vuelve al buscador ya filtrado
-        // por esa familia.
+        // REALMENTE presente en esta temporada — al clicar, vuelve al
+        // buscador ya filtrado por esa familia. A partir de los propios
+        // productos (temporadaModalProductosBase_, ya resuelto arriba
+        // contra familias+referencias-excluidas), no solo de t.familias:
+        // una temporada creada SOLO con productos concretos (sin marcar
+        // ninguna familia completa, p.ej. "Prepárate para el invierno")
+        // se quedaba sin ningún acceso directo al final — bug real
+        // reportado por Eloy ("no hay nada, ninguna familia por la que
+        // filtrar"). Con esto, las familias de esos productos sueltos
+        // también aparecen.
         const contChips = $('temporada-ver-todos-chips');
         contChips.innerHTML = '';
-        (t.familias || []).slice().sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })).forEach(familia => {
+        const familiasPresentes = [...new Set(temporadaModalProductosBase_.map(p => p.familia).filter(Boolean))];
+        familiasPresentes.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })).forEach(familia => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = 'Ver todo "' + familia + '"';
@@ -12528,7 +12652,7 @@ if (window.OM_PREPRODUCCION) {
             fila.innerHTML = `
                 <div class="destacados-item-info">
                     <div class="nombre">${t.emoji ? escapeHtml(t.emoji) + ' ' : ''}${escapeHtml(t.nombre)}${vigente ? ' <span style="color:var(--green);font-weight:700;">● vigente ahora</span>' : ''}</div>
-                    <div class="detalle">${escapeHtml(rango)} · ${(t.familias || []).length} familia(s) · ${(t.referencias || []).length} producto(s)</div>
+                    <div class="detalle">${escapeHtml(rango)} · ${(t.familias || []).length} familia(s) · ${(t.referencias || []).length} producto(s)${(t.excluidas || []).length ? ` · ${t.excluidas.length} excluido(s)` : ''}</div>
                 </div>
                 <div class="destacados-item-acciones">
                     <button type="button" class="temporada-mover-btn" data-dir="arriba" title="Subir" ${i === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
@@ -12604,6 +12728,15 @@ if (window.OM_PREPRODUCCION) {
             $('temporadas-referencias-masivo-bloque').style.display = 'none';
             $('temporadas-referencias-masivo-texto').value = '';
             $('temporadas-referencias-masivo-resultado').textContent = '';
+
+            temporadaRenderizarExcluidasChips_(t);
+            $('temporadas-excluir-buscar-texto').value = '';
+            $('temporadas-excluir-buscar-area').value = '';
+            temporadaPoblarSelectoresAreaFamiliaExcluir_();
+            $('temporadas-excluir-buscar-resultados').innerHTML = '';
+            $('temporadas-excluidas-masivo-bloque').style.display = 'none';
+            $('temporadas-excluidas-masivo-texto').value = '';
+            $('temporadas-excluidas-masivo-resultado').textContent = '';
         } else {
             $('temporadas-items-bloque').style.display = 'none';
         }
@@ -12867,6 +13000,165 @@ if (window.OM_PREPRODUCCION) {
         }
     }
 
+    // ── Productos excluidos — mismo patrón exacto que "Productos
+    // concretos incluidos" de arriba (chips, alta masiva, buscador),
+    // pero para la lista de exclusión (ver el comentario en
+    // productosDeTemporada_). ──
+    function temporadaRenderizarExcluidasChips_(t) {
+        const cont = $('temporadas-excluidas-chips');
+        $('temporadas-excluidas-total').textContent = (t.excluidas || []).length;
+        cont.innerHTML = '';
+        (t.excluidas || []).forEach(ref => {
+            const p = TODOS.find(x => String(x.ref) === String(ref));
+            const urlImg = p ? urlImagenProducto(p, 40) : '';
+            const chip = document.createElement('span');
+            chip.className = 'temporadas-chip';
+            chip.innerHTML = `
+                ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:26px;height:26px;border-radius:50%;background:var(--border);flex-shrink:0;"></div>'}
+                ${escapeHtml(p ? p.nombre : ('Ref: ' + ref))}
+                <button type="button" title="Quitar"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            chip.querySelector('button').addEventListener('click', () => temporadaQuitarExcluida_(ref));
+            cont.appendChild(chip);
+        });
+    }
+
+    async function temporadaGuardarExcluidas_(excluidas) {
+        if (!temporadaEditandoId_) return;
+        const estado = $('temporadas-excluidas-estado');
+        estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        try {
+            const resp = await temporadaFetchPost_({ accion: 'actualizar_items_temporada', pin: temporadaPin_, id: temporadaEditandoId_, excluidas: excluidas });
+            if (resp && resp.success) {
+                const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+                if (t) t.excluidas = excluidas;
+                temporadaRenderizarExcluidasChips_(t);
+                temporadaRenderizarListado_();
+                renderTemporada_();
+                temporadaBuscarExcluirYRenderizar_();
+            }
+        } finally {
+            estado.innerHTML = '';
+        }
+    }
+
+    function temporadaQuitarExcluida_(ref) {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t) return;
+        temporadaGuardarExcluidas_((t.excluidas || []).filter(r => r !== ref));
+    }
+
+    function temporadaAnadirExcluida_(ref) {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t || (t.excluidas || []).includes(ref)) return;
+        temporadaGuardarExcluidas_((t.excluidas || []).concat([ref]));
+    }
+
+    // Alta masiva de exclusiones — mismo mecanismo que
+    // temporadaAnadirReferenciasMasivo_, a petición explícita de Eloy:
+    // "la opción de poder añadir una lista de referencias separadas por
+    // coma y espacio para excluidos".
+    async function temporadaAnadirExcluidasMasivo_() {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        const resultadoEl = $('temporadas-excluidas-masivo-resultado');
+        if (!t) { resultadoEl.textContent = 'Guarda primero la temporada antes de excluir productos.'; return; }
+
+        const refsPegadas = ($('temporadas-excluidas-masivo-texto').value || '')
+            .split(',').map(s => s.trim()).filter(Boolean);
+        if (!refsPegadas.length) { resultadoEl.textContent = 'Pega al menos una referencia.'; return; }
+
+        const yaExcluidas = new Set((t.excluidas || []).map(r => String(r)));
+        const nuevas = [];
+        const repetidas = [];
+        const noEncontradas = [];
+        const vistasEnEstaTanda = new Set();
+        refsPegadas.forEach(ref => {
+            const producto = TODOS.find(p => String(p.ref).toUpperCase() === ref.toUpperCase());
+            if (!producto) { noEncontradas.push(ref); return; }
+            const refReal = String(producto.ref);
+            if (yaExcluidas.has(refReal) || vistasEnEstaTanda.has(refReal)) { repetidas.push(ref); return; }
+            vistasEnEstaTanda.add(refReal);
+            nuevas.push(refReal);
+        });
+
+        if (!nuevas.length) {
+            resultadoEl.textContent = 'Ninguna referencia nueva que excluir.' +
+                (noEncontradas.length ? ' No encontradas en el catálogo: ' + noEncontradas.join(', ') + '.' : '') +
+                (repetidas.length ? ' Ya excluidas: ' + repetidas.join(', ') + '.' : '');
+            return;
+        }
+
+        const btn = $('temporadas-excluidas-masivo-confirmar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Excluyendo...';
+        try {
+            await temporadaGuardarExcluidas_((t.excluidas || []).concat(nuevas));
+            let mensaje = `✓ Excluidas ${nuevas.length} referencia(s) nueva(s).`;
+            if (repetidas.length) mensaje += ` Ya estaban excluidas (sin duplicar): ${repetidas.join(', ')}.`;
+            if (noEncontradas.length) mensaje += ` No encontradas en el catálogo: ${noEncontradas.join(', ')}.`;
+            resultadoEl.textContent = mensaje;
+            $('temporadas-excluidas-masivo-texto').value = '';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    function temporadaPoblarSelectoresAreaFamiliaExcluir_() {
+        const selArea = $('temporadas-excluir-buscar-area');
+        const areasPresentes = Array.from(new Set(TODOS.map(p => p.area).filter(Boolean))).sort();
+        selArea.innerHTML = '<option value="">Todas las áreas</option>' +
+            areasPresentes.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(AREAS_NOMBRE[a] || a)}</option>`).join('');
+        temporadaActualizarSelectorFamiliasExcluir_();
+    }
+
+    function temporadaActualizarSelectorFamiliasExcluir_() {
+        const area = $('temporadas-excluir-buscar-area').value;
+        const selFamilia = $('temporadas-excluir-buscar-familia');
+        const base = area ? TODOS.filter(p => p.area === area) : TODOS;
+        const familias = Array.from(new Set(base.map(p => p.familia).filter(Boolean))).sort();
+        selFamilia.innerHTML = '<option value="">Todas las familias</option>' +
+            familias.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    }
+
+    function temporadaBuscarExcluirYRenderizar_() {
+        const texto = ($('temporadas-excluir-buscar-texto').value || '').trim();
+        const area = $('temporadas-excluir-buscar-area').value;
+        const familia = $('temporadas-excluir-buscar-familia').value;
+        const cont = $('temporadas-excluir-buscar-resultados');
+        if (!texto && !area && !familia) { cont.innerHTML = ''; return; }
+        if (!temporadaEditandoId_) { cont.innerHTML = ''; return; }
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        const refsYaExcluidas = new Set(t ? (t.excluidas || []) : []);
+        let resultados = TODOS.filter(p => estaActivoEnCatalogo_(p));
+        if (area) resultados = resultados.filter(p => p.area === area);
+        if (familia) resultados = resultados.filter(p => p.familia === familia);
+        if (texto) {
+            resultados = esBusquedaNumerica(texto)
+                ? resultados.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+        }
+        resultados = resultados.slice(0, 40);
+        if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
+        const scrollPrevio = cont.scrollTop;
+        cont.innerHTML = '';
+        resultados.forEach(p => {
+            const yaExcluido = refsYaExcluidas.has(p.ref);
+            const urlImg = urlImagenProducto(p, 60);
+            const fila = document.createElement('div');
+            fila.className = 'destacados-buscar-item' + (yaExcluido ? ' destacados-buscar-item--incluido' : '');
+            fila.innerHTML = `
+                ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
+                <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
+                ${yaExcluido ? '<span class="ya-incluido">Ya excluido</span>' : ''}
+            `;
+            if (yaExcluido) { fila.style.cursor = 'default'; } else { fila.addEventListener('click', () => temporadaAnadirExcluida_(p.ref)); }
+            cont.appendChild(fila);
+        });
+        cont.scrollTop = scrollPrevio;
+    }
+
     // Filtros de área/familia para el buscador de productos concretos —
     // mismo patrón que destacadosPoblarSelectoresAreaFamilia_/
     // destacadosActualizarSelectorFamilias_.
@@ -13040,6 +13332,19 @@ if (window.OM_PREPRODUCCION) {
             $('temporadas-referencias-masivo-resultado').textContent = '';
         });
         $('temporadas-referencias-masivo-confirmar').addEventListener('click', temporadaAnadirReferenciasMasivo_);
+        $('temporadas-excluir-buscar-texto').addEventListener('input', temporadaBuscarExcluirYRenderizar_);
+        $('temporadas-excluir-buscar-area').addEventListener('change', () => { temporadaActualizarSelectorFamiliasExcluir_(); temporadaBuscarExcluirYRenderizar_(); });
+        $('temporadas-excluir-buscar-familia').addEventListener('change', temporadaBuscarExcluirYRenderizar_);
+        $('temporadas-excluidas-masivo-btn').addEventListener('click', () => {
+            $('temporadas-excluidas-masivo-bloque').style.display = '';
+            $('temporadas-excluidas-masivo-texto').focus();
+        });
+        $('temporadas-excluidas-masivo-cancelar').addEventListener('click', () => {
+            $('temporadas-excluidas-masivo-bloque').style.display = 'none';
+            $('temporadas-excluidas-masivo-texto').value = '';
+            $('temporadas-excluidas-masivo-resultado').textContent = '';
+        });
+        $('temporadas-excluidas-masivo-confirmar').addEventListener('click', temporadaAnadirExcluidasMasivo_);
         $('temporadas-modal-cerrar').addEventListener('click', cerrarModalGestionTemporadas_);
         $('temporadas-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporadas-modal-overlay') cerrarModalGestionTemporadas_(); });
         document.addEventListener('keydown', (e) => {
@@ -14136,7 +14441,7 @@ if (window.OM_PREPRODUCCION) {
                     ['fa-box-open', 'Productos vistos', r.totalProductosVistos],
                     ['fa-layer-group', 'Bloques pulsados', r.totalBloquesClick],
                     ['fa-tags', 'Marcas pulsadas', r.totalMarcasClick],
-                    ['fa-cart-shopping', 'Usos de la lista de la compra', r.totalListaCompraUsada],
+                    ['fa-clipboard-list', 'Usos de la lista de la compra', r.totalListaCompraUsada],
                     ['fa-file-export', 'Listas exportadas/compartidas', r.totalListaCompraExportada],
                 ].map(([icono, etiqueta, total]) => `
                     <div style="background:var(--light);border-radius:10px;padding:10px;text-align:center;">
@@ -15275,9 +15580,34 @@ if (window.OM_PREPRODUCCION) {
         $('resultados-count').innerHTML = `<strong>${n}</strong> resultados sugeridos por IA`;
     }
 
+    // Visible solo con resultados Y con algún filtro más específico que
+    // el de área (ver soloFiltroDeArea_) — se recalcula en cada
+    // renderResultados(), igual que btn-solicitar.
+    function actualizarBotonAnadirResultadosLista_() {
+        const btn = $('btn-anadir-resultados-lista');
+        if (!btn) return;
+        const visible = hayFiltroActivo_() && !soloFiltroDeArea_() && resultadosActuales.length > 0;
+        btn.style.display = visible ? '' : 'none';
+        btn.disabled = !visible;
+    }
+
+    // Añade TODOS los resultados actualmente filtrados a la Lista de la
+    // compra de un golpe — a petición explícita de Eloy, para que un
+    // comercial o un cliente de tienda pueda generar un folleto con
+    // justo los productos que ha filtrado (los que ya estuvieran en la
+    // lista se saltan solos, igual que temporadaModalAnadirTodosVisibles_).
+    function anadirResultadosFiltradosALista_() {
+        if (!resultadosActuales.length) return;
+        let añadidos = 0;
+        resultadosActuales.forEach(p => { if (listaCompraAnadir_(p) === 'ok') añadidos++; });
+        listaCompraActualizarUI_();
+        mostrarToast(añadidos ? `Añadidos ${añadidos} producto(s) a tu lista de la compra.` : 'Ya tenías todos estos productos en tu lista de la compra.');
+    }
+
     // ── Renderizar resultados (con paginación de 12 en 12 aprox) ──
     function renderResultados() {
         $('btn-solicitar').disabled = resultadosActuales.length === 0;
+        actualizarBotonAnadirResultadosLista_();
 
         const cont = $('contenedor-resultados');
         const sinResultados = $('sin-resultados');
@@ -17102,7 +17432,7 @@ if (window.OM_PREPRODUCCION) {
             bloque.innerHTML = `
                 <span class="categoria-bloque__lupa" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <div class="bloque-lista-compra__cabecera">
-                    <p class="bloque-lista-compra__titulo"><i class="fa-solid fa-cart-shopping"></i> Lista de la compra</p>
+                    <p class="bloque-lista-compra__titulo"><i class="fa-solid fa-clipboard-list"></i> Lista de la compra</p>
                     <span class="bloque-lista-compra__contador" id="lista-compra-contador-bloque"></span>
                 </div>
                 <div class="bloque-lista-compra__carrusel" id="lista-compra-carrusel"></div>
@@ -17149,6 +17479,7 @@ if (window.OM_PREPRODUCCION) {
         if ($('modal-lista-compra-overlay').classList.contains('activo')) renderModalListaCompra_();
         actualizarBotonListaCompraEnModalProducto_();
         actualizarBotonFlotanteListaCompra_();
+        temporadaSeleccionSincronizarBotones_();
     }
 
     // Botón flotante de acceso rápido — visible siempre que exista una
