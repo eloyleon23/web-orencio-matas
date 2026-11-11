@@ -1776,6 +1776,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'escaparate'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
 <script src="./assets/js/mantenimiento.js?v=20260924a"></script>
+<!-- Bug real reportado por Eloy: "los precios de los escaparates cuando
+     accedes como profesional aparecen como precio de venta al público y
+     no como precio al por mayor". Causa: este script vivía al final del
+     todo (justo antes de </body>), DESPUÉS del <script> principal de más
+     abajo, cuyo iniciar() ya pide los productos de la campaña activa
+     (cargarProductosDeCampana → PRODUCTOS_REMOTO_URL(), que necesita
+     window.PerfilProfesional.pinActual() para mandar el PIN) antes de
+     que este archivo llegara siquiera a cargarse — así que esa primera
+     petición, la única que carga los productos del escaparate, nunca
+     llevaba el PIN, sin importar que la sesión profesional estuviera
+     activa de verdad. Mismo patrón que ya sigue buscador.html (ver su
+     comentario junto a su propia carga de perfil-profesional.js):
+     siempre ANTES del <script> principal, nunca después. -->
+<script src="./assets/js/perfil-profesional.js?v=20261101d"></script>
 <script>
 (function(){
   "use strict";
@@ -5427,7 +5441,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </script>
     <script src="./src/js/app.js?v=20260829"></script>
     <script src="./src/js/analytics-consent.js?v=20260829"></script>
-      <script src="./assets/js/perfil-profesional.js?v=20261101d"></script>
 </body>
 </html>
 
