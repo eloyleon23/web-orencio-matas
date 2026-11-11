@@ -999,10 +999,11 @@
         }
         .temporada-ver-todos-compartir:hover { background: var(--light); color: var(--dark); border-color: #cbd5e1; }
         .temporada-ver-todos-compartir.copiado { background: #dcfce7; border-color: #86efac; color: #166534; }
-        /* Botón "añadir a mi selección" sobre cada tarjeta — ver
-           temporadaCrearTarjetaConSeleccion_. Esquina inferior derecha
-           (no choca con el chip de destacado, que va arriba a la
-           izquierda, ni con el precio, que va al pie del texto). */
+        /* Botón "añadir a la lista de la compra" sobre cada tarjeta — ver
+           anadirBotonListaCompraATarjeta_ (crearTarjeta lo añade a TODAS
+           las tarjetas del sitio). Esquina inferior derecha (no choca con
+           el chip de destacado, que va arriba a la izquierda, ni con el
+           precio, que va al pie del texto). */
         .temporada-anadir-seleccion-btn {
             position: absolute; bottom: 8px; right: 8px; z-index: 3;
             width: 34px; height: 34px; border-radius: 50%; border: none;
@@ -11420,7 +11421,7 @@ if (window.OM_PREPRODUCCION) {
             // manera aleatoria esos productos de temporada") — se
             // rebaraja cada vez que se recalculan los módulos de
             // descubrimiento, no solo una vez por sesión.
-            barajar_(productos).slice(0, MAX_TARJETAS_TEMPORADA_).forEach(p => lista.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
+            barajar_(productos).slice(0, MAX_TARJETAS_TEMPORADA_).forEach(p => lista.appendChild(crearTarjeta(p)));
             const abrir = () => abrirModalTemporada_(temporada.id);
             const titulo = bloque.querySelector('.seccion-temporada__titulo-clicable');
             titulo.addEventListener('click', abrir);
@@ -11439,15 +11440,19 @@ if (window.OM_PREPRODUCCION) {
     let temporadaModalProductosBase_ = []; // sin agrupar, para el filtro de texto
     let temporadaModalTemporadaActual_ = null; // la temporada abierta ahora mismo en la modal "ver todos" (para el folleto)
 
-    // Registro de todos los botones "añadir a mi selección" actualmente
-    // pintados (preview de la portada + modal "ver todos"), para poder
+    // Registro de TODOS los botones "añadir a la lista de la compra"
+    // actualmente pintados en cualquier tarjeta del sitio (ver
+    // anadirBotonListaCompraATarjeta_, usado por crearTarjeta — grid
+    // principal, temporadas, novedades, últimos vistos...), para poder
     // refrescar su check verde cuando la lista cambia DESDE OTRO SITIO
     // (vaciar/eliminar la lista entera desde su propia modal, o quitar un
     // producto desde allí) — bug real reportado por Eloy: "si añades
     // productos a la lista de la compra y eliminas la lista se quedan
     // marcados los productos de la temporada que se añadieron". Se
     // depura solo (filter por btn.isConnected) cada vez que se usa, así
-    // que no hace falta "desregistrar" nada al cerrar/repintar la modal.
+    // que no hace falta "desregistrar" nada al cerrar/repintar ninguna
+    // vista. El nombre sigue empezando por "temporada" por ser donde
+    // nació el mecanismo (ver su historial), aunque ya no es exclusivo.
     let temporadaSeleccionBotonesSync_ = [];
     function temporadaSeleccionSincronizarBotones_() {
         temporadaSeleccionBotonesSync_ = temporadaSeleccionBotonesSync_.filter(({ btn, actualizar }) => {
@@ -11512,7 +11517,7 @@ if (window.OM_PREPRODUCCION) {
         const fin = Math.min(indiceInicial + TEMPORADA_TARJETAS_POR_TANDA_, productos.length);
         const frag = document.createDocumentFragment();
         for (let i = indiceInicial; i < fin; i++) {
-            frag.appendChild(temporadaCrearTarjetaConSeleccion_(productos[i]));
+            frag.appendChild(crearTarjeta(productos[i]));
         }
         grid.appendChild(frag);
         if (fin < productos.length) {
@@ -11558,50 +11563,11 @@ if (window.OM_PREPRODUCCION) {
         }, generacion);
     }
 
-    // Tarjeta normal (crearTarjeta, sin tocarla) + un botón propio de
-    // "añadir a mi selección" encima — a petición de Eloy: "el comercial
-    // debería poder construir una selección de productos sin tener que
-    // repetir búsquedas ni abrir continuamente distintas fichas". Reutiliza
-    // DIRECTAMENTE la Lista de la compra ya existente en todo el sitio
-    // (listaCompraAnadir_/listaCompraState_, ver más abajo) en vez de un
-    // carrito aparte — mismos productos, mismo PDF, mismo "compartir" que
-    // ya tiene ese sistema, "compatible con el sistema existente" tal
-    // como se pidió explícitamente.
-    function temporadaCrearTarjetaConSeleccion_(p) {
-        const card = crearTarjeta(p);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'temporada-anadir-seleccion-btn';
-        // El check verde refleja SIEMPRE el estado real (¿está ya en mi
-        // selección, sí o no?), no una animación que desaparece sola —
-        // bug real reportado por Eloy: "se marca en verde pero no se
-        // mantiene el check verde". Ahora es un interruptor: un segundo
-        // clic quita el producto de la selección y vuelve al icono de
-        // "+".
-        const actualizarBoton_ = () => {
-            const yaEsta = listaCompraTiene_(p.ref);
-            btn.classList.toggle('temporada-anadir-seleccion-btn--hecho', yaEsta);
-            btn.innerHTML = yaEsta ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-square-plus"></i>';
-            btn.title = yaEsta ? 'Ya está en tu selección — clic para quitarlo' : 'Añadir a mi selección';
-        };
-        actualizarBoton_();
-        temporadaSeleccionBotonesSync_.push({ btn, actualizar: actualizarBoton_ });
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation(); // no abrir la ficha del producto al pulsar el botón
-            if (listaCompraTiene_(p.ref)) {
-                listaCompraEliminarProducto_(p.ref);
-                mostrarToast('Quitado de tu selección.');
-            } else {
-                const resultado = listaCompraAnadir_(p);
-                if (resultado === 'duplicado') mostrarToast('Ya estaba en tu selección.');
-            }
-            listaCompraActualizarUI_();
-            actualizarBoton_();
-            temporadaModalActualizarPanelSeleccion_();
-        });
-        card.appendChild(btn);
-        return card;
-    }
+    // El botón "añadir a la lista de la compra" (ver
+    // anadirBotonListaCompraATarjeta_, junto a crearTarjeta) ya viene
+    // incluido en CUALQUIER tarjeta creada con crearTarjeta(p) — incluidas
+    // las de temporada, que antes tenían su propia función aparte
+    // (temporadaCrearTarjetaConSeleccion_, ya eliminada) para esto mismo.
 
     // true mientras la tanda de grupos en curso TODAVÍA se está
     // construyendo (puede tardar varios fotogramas, ver
@@ -11747,7 +11713,7 @@ if (window.OM_PREPRODUCCION) {
     // folleto a partir de una lista de selección que el usuario vaya
     // marcando, así como limpiar seleccionados... y el añadir a la
     // lista todos". "Marcar" un producto es añadirlo a la MISMA Lista
-    // de la compra de siempre (ver temporadaCrearTarjetaConSeleccion_),
+    // de la compra de siempre (ver anadirBotonListaCompraATarjeta_),
     // así que la selección de esta temporada es, sencillamente, el
     // subconjunto de sus propios productos que ya están en esa lista. ──
     function temporadaModalProductosSeleccionados_() {
@@ -16297,7 +16263,49 @@ if (window.OM_PREPRODUCCION) {
         const destacado = destacadoEfectivoPara_(p.ref);
 
         card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano, destacado });
+        anadirBotonListaCompraATarjeta_(card, p);
         return card;
+    }
+
+    // Botón "añadir a la lista de la compra" directamente sobre la
+    // tarjeta, sin tener que abrir la ficha del producto — a petición
+    // explícita de Eloy: "estandarizar la opción de añadir productos a
+    // la lista de la compra de manera ágil... igual que se ha añadido a
+    // las secciones de temporadas del buscador" (ver más abajo,
+    // temporadaSeleccionBotonesSync_, mecanismo ya existente que esto
+    // reutiliza sin cambios). Esquina inferior derecha (no choca con el
+    // chip de destacado, que va arriba a la izquierda, ni con el precio,
+    // que va al pie del texto).
+    function anadirBotonListaCompraATarjeta_(card, p) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'temporada-anadir-seleccion-btn';
+        // El check verde refleja SIEMPRE el estado real (¿está ya en la
+        // lista, sí o no?), no una animación que desaparece sola — mismo
+        // interruptor ya probado en las tarjetas de temporada: un segundo
+        // clic quita el producto y vuelve al icono "+".
+        const actualizarBoton_ = () => {
+            const yaEsta = listaCompraTiene_(p.ref);
+            btn.classList.toggle('temporada-anadir-seleccion-btn--hecho', yaEsta);
+            btn.innerHTML = yaEsta ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-square-plus"></i>';
+            btn.title = yaEsta ? 'Ya está en tu lista de la compra — clic para quitarlo' : 'Añadir a la lista de la compra';
+        };
+        actualizarBoton_();
+        temporadaSeleccionBotonesSync_.push({ btn, actualizar: actualizarBoton_ });
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // no abrir la ficha del producto al pulsar el botón
+            if (listaCompraTiene_(p.ref)) {
+                listaCompraEliminarProducto_(p.ref);
+                mostrarToast('Quitado de tu lista de la compra.');
+            } else {
+                const resultado = listaCompraAnadir_(p);
+                if (resultado === 'duplicado') mostrarToast('Ya estaba en tu lista de la compra.');
+            }
+            listaCompraActualizarUI_();
+            actualizarBoton_();
+            temporadaModalActualizarPanelSeleccion_();
+        });
+        card.appendChild(btn);
     }
 
     // Misma tarjeta base que crearTarjeta(), con la decoración de
