@@ -1056,9 +1056,19 @@
             padding: 4px 4px 16px;
         }
         .temporada-ver-todos-grid-grupo { margin-bottom: 28px; }
+        /* padding-bottom generoso a propósito: en móvil, el gesto de
+           scroll que revela este bloque (y sus chips de familia) suele
+           terminar justo sobre el propio botón — y un touchend que es el
+           final de un scroll/arrastre NO dispara un "click" en ningún
+           navegador (se necesita un toque aparte, ya quieto, para eso).
+           Eloy reportó justo este síntoma: "se necesita darle dos veces
+           para que te lleve al filtro". Alejando el final real del
+           scroll (más espacio después de los chips) el gesto de "bajar
+           hasta el final" suele terminar más abajo, ya pasado el botón,
+           así que el primer toque sobre él casi siempre llega quieto. */
         .temporada-ver-todos-fin {
             text-align: center;
-            padding: 24px 10px 10px;
+            padding: 24px 10px 70px;
             color: var(--muted);
             font-size: 0.9rem;
         }
@@ -11912,11 +11922,20 @@ if (window.OM_PREPRODUCCION) {
         temporadaModalFiltrarYRenderizar_();
 
         // Opciones de búsqueda al final del scroll: una por cada familia
-        // de ESTA temporada — al clicar, vuelve al buscador ya filtrado
-        // por esa familia.
+        // REALMENTE presente en esta temporada — al clicar, vuelve al
+        // buscador ya filtrado por esa familia. A partir de los propios
+        // productos (temporadaModalProductosBase_, ya resuelto arriba
+        // contra familias+referencias-excluidas), no solo de t.familias:
+        // una temporada creada SOLO con productos concretos (sin marcar
+        // ninguna familia completa, p.ej. "Prepárate para el invierno")
+        // se quedaba sin ningún acceso directo al final — bug real
+        // reportado por Eloy ("no hay nada, ninguna familia por la que
+        // filtrar"). Con esto, las familias de esos productos sueltos
+        // también aparecen.
         const contChips = $('temporada-ver-todos-chips');
         contChips.innerHTML = '';
-        (t.familias || []).slice().sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })).forEach(familia => {
+        const familiasPresentes = [...new Set(temporadaModalProductosBase_.map(p => p.familia).filter(Boolean))];
+        familiasPresentes.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })).forEach(familia => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = 'Ver todo "' + familia + '"';
