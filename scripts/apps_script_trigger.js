@@ -8330,7 +8330,12 @@ function procesarGuardarConfigDestacados(data) {
 // concretos) — exactamente como ya hace la columna "areas"/"productos" de
 // Campañas, sin necesidad de JSON ni de una segunda hoja: cada fila ya es
 // autocontenida.
-const CABECERAS_TEMPORADAS_ = ['id', 'nombre', 'emoji', 'fecha_inicio', 'fecha_fin', 'activa', 'permanente', 'familias', 'referencias', 'orden', 'fecha_creacion', 'fecha_actualizacion'];
+// 'excluidas' (petición explícita de Eloy: "lo suyo es tener una lista
+// de excluidos igual que tenemos la lista de productos individuales a
+// añadir") — productos que NUNCA deben aparecer en la temporada, aunque
+// pertenezcan a una familia incluida; columna añadida por la misma
+// migración automática de más abajo, no hace falta tocar hojas ya creadas.
+const CABECERAS_TEMPORADAS_ = ['id', 'nombre', 'emoji', 'fecha_inicio', 'fecha_fin', 'activa', 'permanente', 'familias', 'referencias', 'excluidas', 'orden', 'fecha_creacion', 'fecha_actualizacion'];
 
 function obtenerHojaTemporadas_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -8380,6 +8385,7 @@ function leerTemporadas_() {
       permanente: (fila[COL['permanente']] || '').toString().trim().toLowerCase() === 'si',
       familias: partirLista(fila[COL['familias']]),
       referencias: partirLista(fila[COL['referencias']]),
+      excluidas: partirLista(fila[COL['excluidas']]),
       orden: isFinite(ordenNum) ? ordenNum : 0,
       fechaCreacion: (fila[COL['fecha_creacion']] || '').toString(),
       fechaActualizacion: (fila[COL['fecha_actualizacion']] || '').toString(),
@@ -8491,6 +8497,7 @@ function procesarGuardarTemporada(data) {
       fila[COL['permanente']] = permanente ? 'si' : 'no';
       fila[COL['familias']] = '';
       fila[COL['referencias']] = '';
+      fila[COL['excluidas']] = '';
       fila[COL['orden']] = orden;
       fila[COL['fecha_creacion']] = ahoraISO;
       fila[COL['fecha_actualizacion']] = ahoraISO;
@@ -8521,12 +8528,12 @@ function procesarGuardarTemporada(data) {
   }
 }
 
-// Reemplaza POR COMPLETO las listas de familias y/o referencias de una
-// temporada — el cliente manda siempre el array final ya con el
-// añadido/quitado aplicado (mismo patrón que procesarActualizarProductosCampana).
-// Solo se toca la lista que venga informada en la petición (familias y/o
-// referencias son independientes); si alguna no viene, se deja tal cual
-// estaba.
+// Reemplaza POR COMPLETO las listas de familias, referencias y/o
+// excluidas de una temporada — el cliente manda siempre el array final
+// ya con el añadido/quitado aplicado (mismo patrón que
+// procesarActualizarProductosCampana). Solo se toca la lista que venga
+// informada en la petición (familias/referencias/excluidas son
+// independientes entre sí); si alguna no viene, se deja tal cual estaba.
 function procesarActualizarItemsTemporada(data) {
   try {
     if (!verificarPin_(data.pin)) {
@@ -8557,6 +8564,9 @@ function procesarActualizarItemsTemporada(data) {
     }
     if (Array.isArray(data.referencias)) {
       sheet.getRange(filaNum, COL['referencias'] + 1).setValue(data.referencias.map(r => r.toString().trim()).filter(Boolean).join(', '));
+    }
+    if (Array.isArray(data.excluidas)) {
+      sheet.getRange(filaNum, COL['excluidas'] + 1).setValue(data.excluidas.map(r => r.toString().trim()).filter(Boolean).join(', '));
     }
     sheet.getRange(filaNum, COL['fecha_actualizacion'] + 1).setValue(new Date().toISOString());
     console.log('Items de temporada actualizados:', id);
