@@ -948,17 +948,40 @@
            fichero su propio max-width:900px/width:90%, y al tener la
            misma especificidad una sola clase, gana quien aparezca último
            en el CSS — así que un simple ".modal-temporada-ver-todos-box"
-           aquí arriba no bastaba para imponerse. */
+           aquí arriba no bastaba para imponerse.
+           Deliberadamente SIN display:flex/flex-direction:column: se
+           probó esa variante (cabecera/filtros fijos arriba y solo la
+           rejilla de productos con su propio scroll) y, con el panel de
+           selección y el carrusel de "Destacados y novedades" añadidos
+           encima, el hueco que le quedaba a la rejilla se volvía
+           minúsculo e inutilizable — bug real reportado por Eloy: "no
+           permite bajar hacia abajo del todo de la temporada". En su
+           lugar se usa el MISMO patrón que .modal-destacados-box (la
+           modal de Destacados, con carruseles igual de grandes): toda la
+           modal es un único bloque con overflow-y:auto heredado de
+           .modal-producto-box, sin ningún hijo con su propio scroll —
+           así siempre hay sitio de sobra y el scroll nunca se queda
+           atascado contra un hijo demasiado pequeño. */
         .modal-producto-box.modal-temporada-ver-todos-box {
             max-width: 1100px;
             width: 95%;
-            display: flex;
-            flex-direction: column;
             max-height: 92vh;
             padding: 28px;
         }
         @media (min-width: 1300px) {
             .modal-producto-box.modal-temporada-ver-todos-box { max-width: 1450px; }
+        }
+        /* El botón de cerrar (dentro de .modal-producto-cerrar-sticky, ver
+           ese comentario) se posiciona con right/top relativos a esta caja
+           — pero aquí, a diferencia del modal de detalle de producto
+           (sin padding propio), la caja SÍ tiene padding:28px, así que el
+           botón quedaba 28px más adentro de lo esperado y parecía "más
+           centrado" de lo que debería — a petición explícita de Eloy:
+           "hay que llevarlo más al margen de la modal". Un margen
+           negativo igual al padding saca de nuevo la esquina del botón
+           hasta el borde real de la caja. */
+        .modal-temporada-ver-todos-box .modal-producto-cerrar-sticky {
+            margin: -28px -28px 0 0;
         }
         #temporada-ver-todos-titulo {
             display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
@@ -976,14 +999,61 @@
         }
         .temporada-ver-todos-compartir:hover { background: var(--light); color: var(--dark); border-color: #cbd5e1; }
         .temporada-ver-todos-compartir.copiado { background: #dcfce7; border-color: #86efac; color: #166534; }
+        /* Botón "añadir a mi selección" sobre cada tarjeta — ver
+           temporadaCrearTarjetaConSeleccion_. Esquina inferior derecha
+           (no choca con el chip de destacado, que va arriba a la
+           izquierda, ni con el precio, que va al pie del texto). */
+        .temporada-anadir-seleccion-btn {
+            position: absolute; bottom: 8px; right: 8px; z-index: 3;
+            width: 34px; height: 34px; border-radius: 50%; border: none;
+            background: rgba(255,255,255,0.95); color: var(--red);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
+            transition: background 0.15s, color 0.15s, transform 0.15s;
+        }
+        .temporada-anadir-seleccion-btn:hover { background: var(--red); color: #fff; transform: scale(1.08); }
+        .temporada-anadir-seleccion-btn--hecho { background: var(--green) !important; color: #fff !important; }
+        .temporada-ver-todos-folleto-acciones {
+            display: flex; gap: 8px; flex-wrap: wrap; margin: -4px 0 14px;
+        }
+        .temporada-ver-todos-folleto-acciones button {
+            flex: 1; min-width: 140px; border: 1px solid var(--border); background: #fff;
+            color: var(--dark); border-radius: 8px; padding: 8px 12px; font-size: 0.82rem;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .temporada-ver-todos-folleto-acciones button:hover { background: var(--light); }
+        .temporada-ver-todos-folleto-acciones button:disabled { opacity: 0.6; cursor: default; }
+        .temporada-ver-todos-seleccion-panel {
+            margin: 10px 0 14px; padding: 10px 12px; background: var(--light);
+            border: 1px solid var(--border); border-radius: 8px;
+        }
+        /* Chips de familia (accesos directos) — mismo estilo base que
+           .temporada-chips-busqueda, con un estado "activo" propio para
+           la familia filtrada ahora mismo. */
+        #temporada-ver-todos-familias-chips button.activo {
+            background: var(--red); border-color: var(--red); color: #fff;
+        }
+        /* Aviso de filtros activos — a petición explícita de Eloy: "si
+           hay filtros, sombrea o añade un estilo a limpiar filtros para
+           que el usuario lo identifique rápidamente". Antes era un
+           simple texto discreto (.destacados-hint); ahora un aviso con
+           fondo propio, igual de visible que el resto de avisos del
+           sitio, con "Limpiar filtros" destacado como acción clara. */
+        .temporada-ver-todos-filtros-activos {
+            font-size: 0.8rem; margin: 8px 0 0; padding: 8px 12px;
+            background: #fff7e6; border: 1px solid var(--yellow); border-radius: 8px;
+            color: var(--dark); display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+        }
+        .temporada-ver-todos-filtros-activos a {
+            font-weight: 800; color: var(--red); text-decoration: underline; white-space: nowrap;
+        }
         .temporada-ver-todos-vigencia { color: var(--muted); font-size: 0.85rem; margin: -6px 0 14px; }
         .temporada-ver-todos-buscar {
             width: 100%; padding: 9px 12px; margin-bottom: 16px;
             border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem;
         }
         .temporada-ver-todos-scroll {
-            overflow-y: auto;
-            padding: 4px 16px 16px 4px;
+            padding: 4px 4px 16px;
         }
         .temporada-ver-todos-grid-grupo { margin-bottom: 28px; }
         .temporada-ver-todos-fin {
@@ -1070,6 +1140,14 @@
         }
         .destacados-config-global input[type="datetime-local"], .destacados-editor input:not([type="checkbox"]), .destacados-editor select {
             width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem;
+        }
+        .destacados-editor textarea {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.9rem; font-family: inherit; resize: vertical; margin-bottom: 8px;
+        }
+        .temporadas-referencias-masivo { margin: 10px 0; }
+        .temporadas-referencias-masivo-bloque {
+            margin-top: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--light);
         }
         .destacados-config-estado { margin-left: 10px; font-size: 0.82rem; color: var(--green); }
         .destacados-listado-lista { display: flex; flex-direction: column; gap: 8px; }
@@ -1330,6 +1408,16 @@
         .modal-lista-compra-aviso-envase i { margin-top: 1px; }
         .modal-lista-compra-cuerpo { padding: 20px; }
         .lista-compra-notas { margin-top: 18px; }
+        .lista-compra-propuesta {
+            margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
+        }
+        .lista-compra-propuesta label {
+            display: block; font-weight: 700; color: var(--dark); font-size: 0.92rem; margin-bottom: 8px;
+        }
+        .lista-compra-propuesta-tipo {
+            width: 100%; max-width: 360px; padding: 8px 10px; margin-bottom: 8px;
+            border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem;
+        }
         .lista-compra-notas label {
             display: flex; align-items: center; gap: 6px; font-size: 0.85rem;
             font-weight: 700; color: var(--dark); margin-bottom: 6px;
@@ -1358,6 +1446,7 @@
         .modal-lista-compra-acciones button:active { transform: translateY(1px); }
         .modal-lista-compra-acciones button:hover { filter: brightness(1.06); }
         .btn-lista-compra-pdf { background: #fef3c7; color: #92400e; }
+        .btn-lista-compra-folleto { background: #ede9fe; color: #5b21b6; }
         .btn-lista-compra-whatsapp { background: #25D366; color: #fff; }
         .btn-lista-compra-correo { background: var(--blue); color: #fff; }
         .btn-lista-compra-vaciar { background: var(--light); color: var(--muted); }
@@ -2787,6 +2876,7 @@
         }
         .om-splash-logo {
             position: relative;
+            z-index: 2;
             display: inline-block;
             width: min(42vw, 260px);
             /* Mismo ratio real del SVG (ver viewBox="5100 3300 2150 2650" en
@@ -2921,6 +3011,121 @@
             .om-splash-logo img { clip-path: none; animation: none; }
         }
 
+        /* ── Efecto estacional de la pantalla de carga (petición de Eloy:
+           "en función de la estación del año... otro pequeño efecto
+           adicional... que vaya cambiando durante el año") — un pequeño
+           detalle decorativo DETRÁS del logo (ver z-index:2 en
+           .om-splash-logo más arriba), generado por JS según el mes
+           actual (ver estacionActualSplash_, en el script de control del
+           splash): hojas cayendo en otoño, copos en invierno, flores
+           brotando del borde inferior en primavera, sol + gotas de
+           piscina en verano. Las partículas en sí son elementos <span>
+           creados por JS (uno por "om-splash-particula", con su emoji
+           dentro) — aquí solo el contenedor y las animaciones. Se omite
+           del todo con prefers-reduced-motion (ver el JS: ni siquiera se
+           crean los elementos). */
+        #om-splash-estacional {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .om-splash-particula {
+            position: absolute;
+            pointer-events: none;
+            will-change: transform, opacity;
+            animation-duration: var(--om-splash-duracion, 8s);
+            animation-delay: var(--om-splash-retraso, 0s);
+            animation-iteration-count: infinite;
+            line-height: 1;
+        }
+        /* Otoño: hojas cayendo con balanceo lateral y giro. */
+        .om-splash-particula--hoja {
+            top: -10%;
+            animation-name: om-splash-hoja-cae;
+            animation-timing-function: ease-in;
+        }
+        @keyframes om-splash-hoja-cae {
+            0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+            8%   { opacity: 0.9; }
+            50%  { transform: translateY(60vh) translateX(22px) rotate(170deg); }
+            92%  { opacity: 0.9; }
+            100% { transform: translateY(125vh) translateX(-14px) rotate(320deg); opacity: 0; }
+        }
+        /* Invierno: copos cayendo, más lentos y rectos que las hojas. */
+        .om-splash-particula--copo {
+            top: -10%;
+            animation-name: om-splash-copo-cae;
+            animation-timing-function: linear;
+        }
+        @keyframes om-splash-copo-cae {
+            0%   { transform: translateY(0) translateX(0); opacity: 0; }
+            10%  { opacity: 0.85; }
+            50%  { transform: translateY(58vh) translateX(12px); }
+            90%  { opacity: 0.85; }
+            100% { transform: translateY(122vh) translateX(-8px); opacity: 0; }
+        }
+        /* Primavera: flores brotando del borde inferior (una sola vez,
+           con un balanceo suave que continúa después). */
+        .om-splash-particula--flor {
+            /* Positivo (no negativo): el reposo final (translateY(0) del
+             * keyframe) debe quedar DENTRO de la pantalla — el propio
+             * translateY(30px → 0) ya es el recorrido de "brotar" desde
+             * justo por debajo. Con bottom negativo aquí, el reposo
+             * quedaba entero fuera de la vista (bug real, visto en la
+             * captura de prueba: ninguna flor llegaba a verse). */
+            bottom: 4%;
+            animation-name: om-splash-flor-brota, om-splash-flor-balanceo;
+            animation-duration: 1.1s, 2.6s;
+            animation-iteration-count: 1, infinite;
+            animation-fill-mode: both, none;
+            animation-timing-function: cubic-bezier(.3, 1.4, .5, 1), ease-in-out;
+        }
+        @keyframes om-splash-flor-brota {
+            0%   { transform: translateY(30px) scale(0.2) rotate(-6deg); opacity: 0; }
+            65%  { transform: translateY(-4px) scale(1.08) rotate(3deg); opacity: 1; }
+            100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes om-splash-flor-balanceo {
+            0%, 100% { transform: rotate(-3deg); }
+            50%      { transform: rotate(3deg); }
+        }
+        /* Verano: sol fijo (pulso suave) + gotas de "piscina" subiendo
+           como burbujas — a petición explícita de Eloy: "en verano sol y
+           agua de piscina". */
+        .om-splash-sol {
+            /* Centrado arriba (ni esquina izquierda, que en preprod tapa
+             * el recuadro de diagnóstico de rendimiento, ni derecha,
+             * donde está el botón de cerrar el splash) — por encima del
+             * logo, sin tocarlo (logo centrado verticalmente, el sol
+             * siempre queda por encima de su borde superior real). */
+            position: absolute;
+            top: 16%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.3rem;
+            animation: om-splash-sol-pulso 2.6s ease-in-out infinite;
+        }
+        @keyframes om-splash-sol-pulso {
+            0%, 100% { transform: translateX(-50%) scale(1); filter: drop-shadow(0 0 6px rgba(255, 193, 7, 0.55)); }
+            50%      { transform: translateX(-50%) scale(1.1); filter: drop-shadow(0 0 16px rgba(255, 193, 7, 0.85)); }
+        }
+        .om-splash-particula--gota {
+            bottom: -6%;
+            animation-name: om-splash-gota-flota;
+            animation-timing-function: ease-in-out;
+        }
+        @keyframes om-splash-gota-flota {
+            0%   { transform: translateY(0) scale(0.7); opacity: 0; }
+            15%  { opacity: 0.9; }
+            85%  { opacity: 0.9; }
+            100% { transform: translateY(-72vh) scale(1); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .om-splash-particula, .om-splash-sol { display: none; }
+        }
+
         /* Modal solicitud catálogo */
         .modal-overlay {
             display: none;
@@ -2983,6 +3188,21 @@
             overflow-y: auto;
             position: relative;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            /* Abrir una modal NUNCA bloquea el scroll de la página de
+               detrás (no se toca document.body.style.overflow en
+               ninguna modal de producto/temporada/destacados). Sin
+               overscroll-behavior:contain, al llegar con la rueda del
+               ratón al final del propio scroll de la modal, el resto
+               del gesto se "encadena" y sigue haciendo scroll en la
+               página de detrás — en la modal de temporada eso disparaba
+               de paso el scroll infinito del buscador principal
+               (cargarMasFamilias(), ligado a window.addEventListener
+               ('scroll', ...)), que repintaba más tarjetas y recalculaba
+               marcas (detectarMarcaAsistente) de la página oculta tras
+               la modal — trabajo pesado e invisible para el usuario que
+               se notaba como el scroll yendo "a trompicones" dentro de
+               la propia modal. Bug real reportado por Eloy. */
+            overscroll-behavior: contain;
         }
         .modal-producto-cerrar-sticky {
             position: sticky;
@@ -4967,6 +5187,91 @@
                 backdrop-filter: blur(2px);
             }
         }
+        /* Mismo botón/estilo que #btn-subir-arriba, pero propio de la
+           modal de temporada (ver el comentario junto a su HTML) — se
+           muestra con la misma clase .visible y la misma regla de móvil. */
+        #temporada-ver-todos-subir-arriba {
+            display: none;
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 4100;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: var(--dark);
+            color: #fff;
+            font-size: 1.1rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .2s, transform .2s, background .15s;
+        }
+        #temporada-ver-todos-subir-arriba.visible { display: flex; opacity: 1; transform: translateY(0); }
+        #temporada-ver-todos-subir-arriba:hover { background: var(--blue); }
+        @media (max-width: 640px) {
+            #temporada-ver-todos-subir-arriba {
+                right: 14px;
+                bottom: 14px;
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+                background: rgba(30, 41, 59, 0.72);
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+                backdrop-filter: blur(2px);
+            }
+        }
+        /* Botón flotante de acceso rápido a la Lista de la compra — a
+           petición explícita de Eloy: "un botón flotante siempre que
+           haya una lista de la compra creada... el color del botón en
+           rojo". En la esquina opuesta a #btn-subir-arriba (izquierda en
+           vez de derecha) para que nunca compita ni se solape con él ni
+           con el de la modal de temporada — "el botón no interferirá con
+           otros botones flotantes". En escritorio, icono + texto; en
+           móvil, solo el icono (mismo criterio de .oculto-por-modal que
+           el resto de botones flotantes, para ocultarse mientras hay
+           alguna modal abierta, incluida la suya propia). */
+        #btn-lista-compra-flotante {
+            display: none;
+            position: fixed;
+            left: 22px;
+            bottom: 22px;
+            z-index: 4000;
+            align-items: center;
+            gap: 9px;
+            border: none;
+            border-radius: 999px;
+            background: var(--red);
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            padding: 13px 20px 13px 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            transition: filter .15s, transform .1s;
+        }
+        #btn-lista-compra-flotante.visible { display: flex; }
+        #btn-lista-compra-flotante.oculto-por-modal { display: none !important; }
+        #btn-lista-compra-flotante:hover { filter: brightness(1.08); }
+        #btn-lista-compra-flotante:active { transform: translateY(1px); }
+        #btn-lista-compra-flotante i { font-size: 1.05rem; }
+        @media (max-width: 640px) {
+            #btn-lista-compra-flotante {
+                left: 14px;
+                bottom: 14px;
+                width: 46px;
+                height: 46px;
+                padding: 0;
+                border-radius: 50%;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            }
+            #btn-lista-compra-flotante .btn-lista-compra-flotante-texto { display: none; }
+        }
 
     </style>
 <!-- Google tag (gtag.js) -->
@@ -5028,6 +5333,11 @@
     <button type="button" id="om-splash-cerrar" class="om-splash-cerrar" aria-label="Cerrar pantalla de carga" hidden>
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
     </button>
+    <!-- Efecto estacional (ver CSS .om-splash-particula/#om-splash-estacional
+         y el JS de control del splash, más abajo) — vacío hasta que ese
+         script lo rellena; queda detrás del logo (z-index:1 contra
+         z-index:2 de .om-splash-logo). -->
+    <div id="om-splash-estacional" aria-hidden="true"></div>
     <div class="om-splash-logo">
         <img src="./assets/logos/logo_calidad.svg" alt="" />
     </div>
@@ -5044,6 +5354,15 @@
 </div>
 <button id="btn-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
     <i class="fa-solid fa-arrow-up"></i>
+</button>
+<!-- Acceso flotante rápido a la Lista de la compra — a petición
+     explícita de Eloy, ver el comentario de #btn-lista-compra-flotante
+     en el CSS. Visible siempre que exista una lista (independiente del
+     scroll, a diferencia de #btn-subir-arriba), se oculta sola si la
+     lista se vacía/elimina (ver actualizarBotonFlotanteListaCompra_). -->
+<button type="button" id="btn-lista-compra-flotante" title="Lista de la compra" aria-label="Abrir lista de la compra">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <span class="btn-lista-compra-flotante-texto">Lista de la compra</span>
 </button>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
@@ -6981,10 +7300,52 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     placeholder="Horario preferido de recogida, alguna indicación sobre el pedido…"></textarea>
                 <span class="lista-compra-notas-contador" id="lista-compra-notas-contador">0 / 500</span>
             </div>
+            <!-- Compartir la lista como un enlace que abre en el navegador
+                 de quien lo reciba (no solo un PDF adjunto) — a petición
+                 explícita: "compartir la propuesta mediante un enlace que
+                 funcione para el destinatario". Ver guardarYCompartirPropuesta_.
+                 "Tipo" es solo una etiqueta informativa (no cambia ningún
+                 cálculo): distingue una selección orientativa de un
+                 presupuesto que el propio comercial ya ha revisado. NUNCA
+                 es un pedido real — el sistema sigue sin stock, pagos ni
+                 procesamiento de pedidos, igual que el resto de la Lista
+                 de la compra; confirmar un pedido de verdad sigue
+                 requiriendo contactar con la tienda. -->
+            <div class="lista-compra-propuesta" id="lista-compra-propuesta-wrap">
+                <label for="lista-compra-propuesta-tipo">
+                    <i class="fa-solid fa-link"></i> Compartir como propuesta (enlace)
+                </label>
+                <select id="lista-compra-propuesta-tipo" class="lista-compra-propuesta-tipo">
+                    <option value="orientativa">Selección orientativa (sin confirmar)</option>
+                    <option value="confirmada">Presupuesto confirmado por el comercial</option>
+                </select>
+                <p class="destacados-hint" style="margin:4px 0 8px;">
+                    El enlace lo puede abrir cualquiera que lo reciba y muestra siempre los precios actuales
+                    del catálogo según su propio perfil (público o profesional) — nunca precios congelados del
+                    momento en que se compartió. No es un pedido confirmado ni una reserva de stock.
+                </p>
+                <button type="button" id="btn-lista-compra-propuesta-compartir" class="destacados-btn-primario">
+                    <i class="fa-solid fa-share-from-square"></i> Guardar y compartir enlace
+                </button>
+                <p id="lista-compra-propuesta-resultado" class="destacados-hint" style="margin-top:8px;"></p>
+            </div>
         </div>
         <div class="modal-lista-compra-acciones" id="modal-lista-compra-acciones">
             <button type="button" id="btn-lista-compra-pdf" class="btn-lista-compra-pdf">
                 <i class="fa-solid fa-file-pdf"></i> Exportar a PDF
+            </button>
+            <!-- Folleto con fotos, precio y QR por producto — mismo motor
+                 que el folleto de Destacados/Temporada (dibujarTarjetaTemporadaPdf_),
+                 a petición explícita de Eloy: "la misma funcionalidad que
+                 se ha añadido para generar el folleto... tal y como esta
+                 ya en temporadas". Convive con "Exportar a PDF" de arriba
+                 (la tabla con subtotales/IVA): esta es una alternativa
+                 visual, no un reemplazo. -->
+            <button type="button" id="btn-lista-compra-folleto-pdf" class="btn-lista-compra-folleto">
+                <i class="fa-solid fa-images"></i> Folleto con fotos
+            </button>
+            <button type="button" id="btn-lista-compra-folleto-compartir" class="btn-lista-compra-folleto">
+                <i class="fa-solid fa-share-nodes"></i> Compartir folleto
             </button>
             <button type="button" id="btn-lista-compra-whatsapp" class="btn-lista-compra-whatsapp">
                 <i class="fa-brands fa-whatsapp"></i> Compartir por WhatsApp
@@ -7002,6 +7363,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="btn-lista-compra-eliminar" class="btn-lista-compra-eliminar">
                 <i class="fa-solid fa-trash"></i> Eliminar la lista
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal "Propuesta recibida" — se abre sola al entrar con un enlace
+     ?propuesta=<id> (ver abrirPropuestaDesdeURL_). Solo lleva
+     referencias/cantidades guardadas en Apps Script (nunca precios): los
+     precios y nombres se resuelven siempre aquí, en vivo, contra el
+     catálogo y el perfil (público/profesional) de quien la ABRE — nunca
+     los que vio quien la compartió. Pública a propósito (sin PIN), igual
+     que compartir un producto o una temporada. -->
+<div class="modal-overlay" id="propuesta-recibida-overlay">
+    <div class="modal-box" style="max-width:560px;" role="dialog" aria-modal="true" aria-labelledby="propuesta-recibida-titulo">
+        <h3 id="propuesta-recibida-titulo"><i class="fa-solid fa-file-invoice"></i> Propuesta recibida</h3>
+        <p id="propuesta-recibida-tipo" class="destacados-hint" style="font-weight:700;"></p>
+        <div id="propuesta-recibida-lista" style="max-height:40vh; overflow-y:auto; margin:10px 0;"></div>
+        <p id="propuesta-recibida-total" style="font-weight:800; font-size:1.05rem; margin:8px 0;"></p>
+        <p id="propuesta-recibida-notas" class="destacados-hint" style="display:none;"></p>
+        <p id="propuesta-recibida-avisos" class="destacados-hint"></p>
+        <p class="destacados-hint">
+            Los precios mostrados son los actuales del catálogo, según tu propio perfil — no es un pedido
+            confirmado ni una reserva de stock. Para confirmar un pedido real, contacta con la tienda.
+        </p>
+        <div class="modal-acciones">
+            <button type="button" id="propuesta-recibida-cerrar" class="modal-cancelar">Cerrar</button>
+            <button type="button" id="propuesta-recibida-cargar" class="modal-enviar">Cargar en mi lista de la compra</button>
         </div>
     </div>
 </div>
@@ -7176,10 +7563,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      usa el resto del sitio para saltarse ese efecto al navegar
      internamente). -->
 <div class="modal-overlay" id="temporada-ver-todos-overlay">
-    <div class="modal-producto-box modal-temporada-ver-todos-box" role="dialog" aria-modal="true" aria-labelledby="temporada-ver-todos-titulo">
-        <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+    <!-- Botón flotante "subir arriba" propio de esta modal — a petición
+         explícita de Eloy: el botón flotante del sitio (#btn-subir-arriba)
+         se oculta mientras cualquier modal está abierta (ver
+         .oculto-por-modal) porque hace scroll en `window`, no dentro de
+         la modal, así que aquí hace falta uno propio que haga scroll en
+         #temporada-ver-todos-box (el elemento con scroll real, ver el
+         comentario de .modal-producto-box.modal-temporada-ver-todos-box). -->
+    <button type="button" id="temporada-ver-todos-subir-arriba" title="Subir arriba" aria-label="Subir arriba">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+    <div class="modal-producto-box modal-temporada-ver-todos-box" id="temporada-ver-todos-box" role="dialog" aria-modal="true" aria-labelledby="temporada-ver-todos-titulo">
+        <!-- Sticky (mismo patrón que modal-producto-box/modal-detalle-
+             bloque-box): desde que la modal entera es el contenedor con
+             scroll (ver el comentario de .modal-producto-box.modal-
+             temporada-ver-todos-box), un botón "position:absolute" normal
+             se queda arriba del todo y desaparece de la vista nada más
+             bajar un poco — a petición explícita de Eloy: "quiero que el
+             botón de cerrar esté siempre a mano ya que ahora mismo se
+             queda ocultado arriba". -->
+        <div class="modal-producto-cerrar-sticky">
+            <button class="modal-producto-cerrar" id="temporada-ver-todos-cerrar" aria-label="Cerrar">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
         <h3 id="temporada-ver-todos-titulo">
             <span id="temporada-ver-todos-titulo-icono"><i class="fa-solid fa-snowflake"></i></span>
             <span id="temporada-ver-todos-titulo-texto">Productos de temporada</span>
@@ -7188,8 +7595,74 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
         </h3>
         <p id="temporada-ver-todos-vigencia" class="temporada-ver-todos-vigencia"></p>
-        <input type="text" id="temporada-ver-todos-buscar" class="temporada-ver-todos-buscar" placeholder="Buscar por nombre o referencia entre estos productos...">
+        <!-- Folleto PDF de la temporada (o de lo que esté filtrado ahora
+             mismo en el buscador de aquí abajo) — mismo motor que el
+             folleto de Destacados (construirDocumentoPdfDestacados_),
+             reutilizado para no duplicar la generación con jsPDF: logo,
+             dirección y horario en cabecera/pie, precio según el perfil
+             (público o profesional al por mayor) y la promoción de
+             Destacados si alguno de los productos también la tuviera. -->
+        <div class="temporada-ver-todos-folleto-acciones">
+            <button type="button" id="temporada-ver-todos-pdf"><i class="fa-solid fa-file-pdf"></i> Descargar folleto</button>
+            <button type="button" id="temporada-ver-todos-compartir-pdf"><i class="fa-solid fa-share-nodes"></i> Compartir folleto</button>
+        </div>
+
+        <!-- Selección propia dentro de la temporada — a petición
+             explícita de Eloy: "generar un folleto a partir de una lista
+             de selección que el usuario vaya marcando". Reutiliza la
+             MISMA marca (el botón "+"/check de cada tarjeta, ya ligado a
+             la Lista de la compra) en vez de un mecanismo de marcado
+             aparte — "seleccionar" un producto aquí es añadirlo a esa
+             misma lista. "Limpiar selección" solo quita los productos DE
+             ESTA TEMPORADA (nunca toca el resto de tu lista si tuviera
+             productos de otras páginas). -->
+        <div class="temporada-ver-todos-seleccion-panel">
+            <p class="destacados-hint" style="margin:0 0 6px;">
+                <strong><span id="temporada-ver-todos-seleccion-contador">0</span></strong> producto(s) marcado(s) de esta temporada en tu selección.
+            </p>
+            <div class="temporada-ver-todos-folleto-acciones">
+                <button type="button" id="temporada-ver-todos-seleccion-anadir-todos"><i class="fa-solid fa-layer-group"></i> Añadir todos los visibles</button>
+                <button type="button" id="temporada-ver-todos-seleccion-limpiar"><i class="fa-solid fa-eraser"></i> Limpiar selección</button>
+                <button type="button" id="temporada-ver-todos-seleccion-pdf" disabled><i class="fa-solid fa-file-pdf"></i> Folleto de mi selección</button>
+                <button type="button" id="temporada-ver-todos-seleccion-compartir-pdf" disabled><i class="fa-solid fa-share-nodes"></i> Compartir folleto de selección</button>
+            </div>
+        </div>
+
+        <!-- Accesos directos por familia — clic filtra la vista de abajo
+             por esa familia (vuelve a pulsarse/clic en "Todas" para
+             quitar el filtro). -->
+        <div id="temporada-ver-todos-familias-chips" class="temporada-chips-busqueda" style="justify-content:flex-start; margin-top:0;"></div>
+
+        <!-- Filtros: marca, presupuesto y ordenación — a petición
+             explícita de Eloy ("selecciones por presupuesto, tipo de
+             regalo, marca o formato", "ordenación por precio, relevancia
+             y otros criterios"). La marca se detecta por nombre, igual
+             que en "Marcas más buscadas" (detectarMarcaAsistente) — no
+             hay un campo de marca en el catálogo. -->
+        <div class="destacados-buscador-controles" style="margin-top:10px;">
+            <!-- oculto mientras se desactiva temporalmente el filtro de marca (ver el comentario en abrirModalTemporada_) -->
+            <select id="temporada-ver-todos-marca" style="display:none;"><option value="">Todas las marcas</option></select>
+            <input type="number" id="temporada-ver-todos-precio-min" placeholder="Precio mín. €" min="0" step="0.5" style="max-width:120px;">
+            <input type="number" id="temporada-ver-todos-precio-max" placeholder="Precio máx. €" min="0" step="0.5" style="max-width:120px;">
+            <select id="temporada-ver-todos-orden">
+                <option value="relevancia">Ordenar: relevancia</option>
+                <option value="nombre">Nombre (A-Z)</option>
+                <option value="familia">Familia (A-Z)</option>
+                <option value="precio-asc">Precio: menor a mayor</option>
+                <option value="precio-desc">Precio: mayor a menor</option>
+                <option value="novedad">Novedades primero</option>
+            </select>
+        </div>
+        <p id="temporada-ver-todos-filtros-activos" class="temporada-ver-todos-filtros-activos" style="display:none;"></p>
+
+        <input type="text" id="temporada-ver-todos-buscar" class="temporada-ver-todos-buscar" placeholder="Buscar por nombre, referencia o marca entre estos productos...">
         <div id="temporada-ver-todos-scroll" class="temporada-ver-todos-scroll">
+            <div id="temporada-ver-todos-estado-vacio" class="lista-compra-vacia" style="display:none; padding:24px 10px;">
+                <i class="fa-solid fa-magnifying-glass" style="font-size:2rem;"></i>
+                <h4>Sin resultados con estos filtros</h4>
+                <p>Prueba a quitar algún filtro o a cambiar el texto de búsqueda.</p>
+                <button type="button" id="temporada-ver-todos-limpiar-filtros-vacio" class="destacados-btn-secundario">Limpiar filtros</button>
+            </div>
             <div id="temporada-ver-todos-grid"></div>
             <div id="temporada-ver-todos-fin" class="temporada-ver-todos-fin" style="display:none;">
                 <p>Has visto todos los productos de esta temporada. ¿Quieres seguir explorando?</p>
@@ -7265,6 +7738,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                     <h4 class="temporadas-separador">Productos concretos incluidos (<span id="temporadas-referencias-total">0</span>) <span id="temporadas-referencias-estado" class="temporadas-items-estado"></span></h4>
                     <div id="temporadas-referencias-chips" class="temporadas-chips"></div>
+                    <div class="temporadas-referencias-masivo">
+                        <button type="button" id="temporadas-referencias-masivo-btn" class="destacados-btn-secundario">+ Añadir varias referencias de golpe</button>
+                        <div id="temporadas-referencias-masivo-bloque" class="temporadas-referencias-masivo-bloque" style="display:none;">
+                            <p class="destacados-hint">Pega una lista de referencias separadas por coma y espacio (ej: REF001, REF002, REF003) — se añaden a las ya incluidas, sin tocarlas.</p>
+                            <textarea id="temporadas-referencias-masivo-texto" rows="3" placeholder="REF001, REF002, REF003..."></textarea>
+                            <div class="destacados-editor-acciones">
+                                <button type="button" id="temporadas-referencias-masivo-cancelar" class="destacados-btn-secundario">Cancelar</button>
+                                <button type="button" id="temporadas-referencias-masivo-confirmar" class="destacados-btn-primario">Añadir referencias</button>
+                            </div>
+                            <p id="temporadas-referencias-masivo-resultado" class="destacados-hint"></p>
+                        </div>
+                    </div>
                     <div class="destacados-buscador-controles">
                         <input type="text" id="temporadas-buscar-texto" placeholder="Buscar producto por nombre o referencia para añadir...">
                         <select id="temporadas-buscar-area"><option value="">Todas las áreas</option></select>
@@ -7425,6 +7910,71 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             animLista = true;
             cerrarSiToca_();
         }, 4700);
+
+        crearEfectoEstacionalSplash_();
+    }
+
+    // ── Efecto estacional de la pantalla de carga — a petición explícita
+    // de Eloy: "en función de la estación del año... otro pequeño efecto
+    // adicional... que vaya cambiando durante el año". Estaciones
+    // meteorológicas (no astronómicas, más sencillas e intuitivas):
+    // diciembre-febrero invierno, marzo-mayo primavera, junio-agosto
+    // verano, septiembre-noviembre otoño. Solo se llama cuando NO hay
+    // prefers-reduced-motion (ver el "if" de más arriba) — con esa
+    // preferencia activada, ni siquiera se crean las partículas.
+    function estacionActualSplash_() {
+        var mes = new Date().getMonth(); // 0 = enero
+        if (mes === 11 || mes <= 1) return 'invierno';
+        if (mes <= 4) return 'primavera';
+        if (mes <= 7) return 'verano';
+        return 'otono';
+    }
+
+    // Una partícula <span> con el emoji indicado, posición horizontal
+    // aleatoria, tamaño dentro del rango dado y un "retraso" NEGATIVO
+    // aleatorio (hasta -duración): así, en vez de que todas arranquen a
+    // la vez desde el principio del bucle (se verían "en fila"), cada
+    // una entra ya a mitad de su propio recorrido — efecto mucho más
+    // natural, como si llevaran un rato cayendo/flotando.
+    function crearParticulaSplash_(contenedor, clase, emoji, tamMin, tamMax, duracionMin, duracionMax) {
+        var el = document.createElement('span');
+        el.className = 'om-splash-particula ' + clase;
+        el.textContent = emoji;
+        el.setAttribute('aria-hidden', 'true');
+        var duracion = duracionMin + Math.random() * (duracionMax - duracionMin);
+        el.style.left = Math.round(Math.random() * 94) + '%';
+        el.style.fontSize = (tamMin + Math.random() * (tamMax - tamMin)).toFixed(2) + 'rem';
+        el.style.setProperty('--om-splash-duracion', duracion.toFixed(2) + 's');
+        el.style.setProperty('--om-splash-retraso', (-Math.random() * duracion).toFixed(2) + 's');
+        contenedor.appendChild(el);
+        return el;
+    }
+
+    function crearEfectoEstacionalSplash_() {
+        var contenedor = document.getElementById('om-splash-estacional');
+        if (!contenedor) return;
+        var estacion = estacionActualSplash_();
+        if (estacion === 'otono') {
+            for (var i = 0; i < 9; i++) crearParticulaSplash_(contenedor, 'om-splash-particula--hoja', '🍂', 1.1, 1.8, 5, 9);
+        } else if (estacion === 'invierno') {
+            for (var j = 0; j < 12; j++) crearParticulaSplash_(contenedor, 'om-splash-particula--copo', '❄️', 0.8, 1.4, 7, 13);
+        } else if (estacion === 'primavera') {
+            var floresEmoji = ['🌼', '🌷'];
+            for (var k = 0; k < 7; k++) {
+                var flor = crearParticulaSplash_(contenedor, 'om-splash-particula--flor', floresEmoji[k % 2], 1.3, 1.9, 1, 1);
+                // El brote es una animación de ENTRADA (no un bucle que
+                // cae/flota), así que el reparto natural se consigue con
+                // un retraso de entrada POSITIVO y escalonado, no negativo.
+                flor.style.setProperty('--om-splash-retraso', (k * 0.18).toFixed(2) + 's');
+            }
+        } else { // verano
+            var sol = document.createElement('span');
+            sol.className = 'om-splash-sol';
+            sol.textContent = '☀️';
+            sol.setAttribute('aria-hidden', 'true');
+            contenedor.appendChild(sol);
+            for (var m = 0; m < 6; m++) crearParticulaSplash_(contenedor, 'om-splash-particula--gota', '💧', 1, 1.5, 4, 7);
+        }
     }
 })();
 </script>
@@ -7501,6 +8051,96 @@ window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 
 console.log('Configuración cargada');
 console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_URL ? 'Sí' : 'No');
+
+// ── Diagnóstico visible temporal de rendimiento (solo preprod) ──────────
+// A petición de Eloy: reporta que, tras dejar la pestaña abierta varios
+// minutos sin tocar nada, el scroll de la modal de temporada pasa de ir
+// "a trompicones" a ir fluido — indicio de que algo sigue de fondo
+// ralentizando el hilo principal justo tras la carga, y que termina por
+// sí solo pasado ese rato. No tiene acceso a las herramientas de
+// desarrollador del móvil donde lo prueba, así que un registro solo en
+// consola no serviría de nada — en su lugar, un pequeño recuadro VISIBLE
+// en pantalla (solo en preprod) con: segundos desde la carga, peticiones
+// de red relevantes todavía en curso y su nombre, y el tiempo total
+// acumulado de bloqueos largos del hilo principal (>150ms). Así puede
+// simplemente mirar el móvil mientras espera y decirnos qué marca el
+// recuadro justo cuando el scroll pasa de ir mal a ir bien. Un botón "×"
+// lo cierra si molesta; no cambia nada del comportamiento real de la
+// página, y nunca aparece en producción (IONOS).
+if (window.OM_PREPRODUCCION) {
+    (function() {
+        const panel = document.createElement('div');
+        panel.id = 'om-diag-rendimiento';
+        // top (no bottom-left): esa esquina la ocupa ahora el botón
+        // flotante real de la Lista de la compra (ver #btn-lista-compra-flotante)
+        // — este recuadro, al ser solo temporal/diagnóstico, no debe
+        // competir con él ni taparlo.
+        panel.style.cssText = 'position:fixed;top:8px;left:8px;z-index:999999;background:rgba(15,23,42,0.88);color:#e2e8f0;font:11px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:280px;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
+        panel.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;"><strong>⏱ Diagnóstico (preprod)</strong><span id="om-diag-cerrar" style="cursor:pointer;opacity:0.7;">✕</span></div><div id="om-diag-cuerpo">Iniciando…</div>';
+        document.body.appendChild(panel);
+        panel.querySelector('#om-diag-cerrar').addEventListener('click', () => panel.remove());
+
+        const peticionesEnCurso_ = new Set();
+        let bloqueosTotalMs_ = 0;
+        let bloqueosCuenta_ = 0;
+        let bloqueoMaximoMs_ = 0;
+
+        const etiqueta_ = (url) => {
+            if (url.includes('accion=obtener_productos')) return 'productos (en vivo)';
+            if (url.includes('accion=obtener_destacados')) return 'destacados';
+            if (url.includes('accion=obtener_temporadas')) return 'temporadas';
+            if (url.includes('accion=obtener_campanas')) return 'campañas escaparate';
+            if (url.includes('accion=obtener_bloques_categorias')) return 'bloques categorías';
+            if (url.includes('script.google.com')) return 'apps script (otra acción)';
+            if (url.includes('/data/productos.json')) return 'productos (estático)';
+            if (url.includes('/data/productos_talleres.json')) return 'talleres';
+            if (url.includes('/data/productos_glasurit.json')) return 'glasurit';
+            if (url.includes('/data/productos_besa.json')) return 'besa';
+            if (url.includes('/data/productos_baslac.json')) return 'baslac';
+            if (url.includes('lh3.googleusercontent.com')) return null; // imágenes: demasiado ruido para este recuadro
+            return null;
+        };
+        const fetchOriginal_ = window.fetch.bind(window);
+        window.fetch = function (recurso, opciones) {
+            const url = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
+            const nombre = etiqueta_(url);
+            if (!nombre) return fetchOriginal_(recurso, opciones);
+            const marca = nombre + '#' + Math.random();
+            peticionesEnCurso_.add(marca);
+            const terminar = () => peticionesEnCurso_.delete(marca);
+            return fetchOriginal_(recurso, opciones).then(
+                (resp) => { terminar(); return resp; },
+                (err) => { terminar(); throw err; }
+            );
+        };
+
+        if (window.PerformanceObserver) {
+            try {
+                const po = new PerformanceObserver((lista) => {
+                    lista.getEntries().forEach((entrada) => {
+                        if (entrada.duration < 150) return; // solo bloqueos realmente notables
+                        bloqueosTotalMs_ += entrada.duration;
+                        bloqueosCuenta_++;
+                        bloqueoMaximoMs_ = Math.max(bloqueoMaximoMs_, entrada.duration);
+                    });
+                });
+                po.observe({ entryTypes: ['longtask'] });
+            } catch (e) { /* Long Tasks API no disponible: el recuadro sigue funcionando sin esa fila */ }
+        }
+
+        const cuerpo = panel.querySelector('#om-diag-cuerpo');
+        const idRefresco_ = setInterval(() => {
+            const segundos = Math.round(performance.now() / 1000);
+            const nombresEnCurso = [...peticionesEnCurso_].map(m => m.split('#')[0]);
+            cuerpo.innerHTML = `${segundos}s desde la carga<br>`
+                + `Peticiones en curso: ${nombresEnCurso.length ? nombresEnCurso.join(', ') : '(ninguna)'}<br>`
+                + `Bloqueos &gt;150ms: ${bloqueosCuenta_} (máx ${Math.round(bloqueoMaximoMs_)}ms, total ${Math.round(bloqueosTotalMs_)}ms)`;
+            // Se detiene solo tras 10 minutos, para no dejar nada corriendo
+            // indefinidamente en una pestaña que se quede abierta horas.
+            if (segundos >= 600) clearInterval(idRefresco_);
+        }, 1000);
+    })();
+}
 
 (function() {
     // ── Endurecer la restricción de administración: eliminar del DOM,
@@ -7668,8 +8308,28 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // Si la foto de un producto falla al cargar (URL rota, imagen borrada
     // en Drive...), en vez de dejar un hueco roto se aplica el mismo
     // tratamiento que un producto sin imagen desde el principio.
+    // Mapa ref→producto, reconstruido perezosamente solo cuando TODOS
+    // cambia de referencia (recarga de catálogo) — bug real de
+    // rendimiento reportado por Eloy: "va a trompicones, no va fluido" al
+    // hacer scroll en la modal de temporada. Con familias grandes (p.ej.
+    // "Colonias Hombre", con cientos de productos) y algún producto sin
+    // imagen válida, cada fallo de carga disparaba manejarErrorImagenProducto_,
+    // que hacía TODOS.find(...) — un recorrido completo de TODO el
+    // catálogo (miles de productos) por cada imagen rota. Varias de esas
+    // búsquedas en ráfaga mientras se hace scroll bloqueaban el hilo
+    // principal el tiempo suficiente para notarse como tirones.
+    let todosMapaCache_ = null;
+    let todosMapaCacheDe_ = null; // la referencia de TODOS para la que se construyó el mapa
+    function productoPorRefRapido_(ref) {
+        if (todosMapaCacheDe_ !== TODOS) {
+            todosMapaCache_ = new Map(TODOS.map(p => [String(p.ref), p]));
+            todosMapaCacheDe_ = TODOS;
+        }
+        return todosMapaCache_.get(String(ref));
+    }
+
     function manejarErrorImagenProducto(imgEl, ref) {
-        const p = TODOS.find(x => String(x.ref) === String(ref));
+        const p = productoPorRefRapido_(ref);
         imgEl.parentElement.innerHTML = p
             ? sinImagenFabricanteHtml(p)
             : '<span class="producto-sin-img">Sin imagen</span>';
@@ -7914,7 +8574,31 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         naftalina: ['polilla'],      // término clásico para antipolillas — el catálogo nombra estos productos por "polilla" (ANTIPOLILLAS Y S/G ROPAS), nunca "naftalina"
     };
 
+    // Memorizada por cadena de entrada — normalizar() es una función
+    // pura (mismo texto, mismo resultado siempre) pero nada barata
+    // (normalize('NFD') + split + recorrido de palabras contra el
+    // diccionario de abreviaturas), y coincide() la llama DOS veces en
+    // cada comparación (campo del producto Y término de búsqueda). Con
+    // ~9.500 productos y varias búsquedas fuzzy por producto (nombre,
+    // ref, familia, subfamilia), el mismo nombre de producto se
+    // normalizaba una y otra vez para cada término distinto — bug real
+    // de rendimiento reportado por Eloy ("necesito que trabajemos mas en
+    // rendimiento"). Memorizar por valor de entrada evita recalcular lo
+    // mismo dos veces, tanto aquí como en cualquier otro sitio del código
+    // que ya reutiliza normalizar() (sugerencias, etiquetas, etc.).
+    const normalizarCache_ = new Map();
     function normalizar(txt) {
+        const clave = txt == null ? '' : String(txt);
+        const cacheado = normalizarCache_.get(clave);
+        if (cacheado !== undefined) return cacheado;
+        const resultado = normalizarSinCache_(clave);
+        // Límite de seguridad para que la caché no crezca sin fin en una
+        // sesión muy larga con búsquedas muy variadas.
+        if (normalizarCache_.size > 20000) normalizarCache_.clear();
+        normalizarCache_.set(clave, resultado);
+        return resultado;
+    }
+    function normalizarSinCache_(txt) {
         const base = (txt || '').toString()
             .toLowerCase()
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -8035,7 +8719,23 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     }
 
     // ── Distancia de Levenshtein para fuzzy matching ──
+    // Memorizada por par de palabras: son textos cortos (palabras
+    // sueltas, no frases) que se repiten muchísimo entre comparaciones
+    // distintas — el mismo par (p.ej. una palabra de búsqueda contra
+    // "spray", "crema", una marca...) vuelve a aparecer en cientos de
+    // productos del catálogo. Función pura (mismo par, mismo resultado
+    // siempre), así que memorizar es siempre seguro.
+    const levenshteinCache_ = new Map();
     function levenshtein(a, b) {
+        const clave = a + '\u0001' + b;
+        const cacheado = levenshteinCache_.get(clave);
+        if (cacheado !== undefined) return cacheado;
+        const resultado = levenshteinSinCache_(a, b);
+        if (levenshteinCache_.size > 20000) levenshteinCache_.clear();
+        levenshteinCache_.set(clave, resultado);
+        return resultado;
+    }
+    function levenshteinSinCache_(a, b) {
         const matrix = [];
         for (let i = 0; i <= b.length; i++) {
             matrix[i] = [i];
@@ -8514,14 +9214,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // Mismo patrón que ?ref= (enlace a un producto), pero para
         // ?temporada=<id> — ver abrirTemporadaDesdeURL_.
         await abrirTemporadaDesdeURL_();
+        // Igual, para ?propuesta=<id> (enlace a una propuesta comercial
+        // compartida) — ver abrirPropuestaDesdeURL_.
+        await abrirPropuestaDesdeURL_();
         // A petición de Eloy: al entrar o recargar la página, el foco del
         // teclado se pone automáticamente en la barra de búsqueda — muy
         // útil con el lector de códigos de barras, que "escribe"
         // directamente donde esté el foco sin tener que tocar antes la
-        // pantalla. Si ?ref= o ?temporada= ya abrieron un modal (enlace
-        // compartido), se respeta esa vista y no se le quita el foco —
-        // el usuario probablemente quiere verlo, no buscar.
-        if (!$('modal-producto-overlay').classList.contains('activo') && !$('temporada-ver-todos-overlay').classList.contains('activo')) {
+        // pantalla. Si ?ref=, ?temporada= o ?propuesta= ya abrieron un
+        // modal (enlace compartido), se respeta esa vista y no se le
+        // quita el foco — el usuario probablemente quiere verlo, no
+        // buscar.
+        if (!$('modal-producto-overlay').classList.contains('activo')
+            && !$('temporada-ver-todos-overlay').classList.contains('activo')
+            && !$('propuesta-recibida-overlay').classList.contains('activo')) {
             $('f-texto').focus();
         }
     }
@@ -8556,7 +9262,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             renderAtributosTaller();
             renderAtributosPintura();
             aplicarFiltros(); // Actualizar resultados con los nuevos productos
-            actualizarModulosDescubrimiento_(); // TODOS ha cambiado (nuevos catálogos de proveedor) — ver el porqué junto a su definición
+            actualizarModulosDescubrimiento_(true); // TODOS ha cambiado (nuevos catálogos de proveedor) — ver el porqué junto a su definición; soloRepintar: Destacados/Temporadas/Campañas no cambian por esto, solo el catálogo
             // TODOS ya está completo (catálogo principal + proveedores de
             // Talleres): ahora sí se puede comprobar con seguridad que los
             // productos de la lista de la compra sigan activos, sin falsos
@@ -8572,6 +9278,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     async function cargarProductosPrincipales() {
         let primerPintadoHecho = false;
+
+        // La petición EN VIVO a Apps Script (la lenta: puede tardar varios
+        // segundos) se lanza YA, en paralelo con el pintado instantáneo de
+        // abajo, en vez de esperar a que ese pintado termine del todo
+        // (incluido el arranque de los módulos de portada) para ni
+        // siquiera EMPEZAR a pedirla — antes esperaba su turno detrás del
+        // "await" del JSON estático, perdiendo varios segundos de
+        // solapamiento gratis. A petición explícita de Eloy: "la carga
+        // sea practicamente instantánea sin perder la actualización de
+        // los productos evitando cachear" — el pintado instantáneo sigue
+        // igual de rápido, pero la corrección en vivo llega antes al
+        // arrancar su petición de red desde el primer instante.
+        const peticionEnVivo_ = fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' })
+            .catch(e => { console.warn('No se pudo cargar la fuente en vivo de Apps Script:', e); return null; });
 
         // 1) Pintado instantáneo desde el JSON estático del despliegue
         //    (rápido gracias a la caché HTTP normal del navegador).
@@ -8594,15 +9314,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             console.warn('No se pudo cargar el JSON estático de productos:', e);
         }
 
-        // 2) Reconciliar de inmediato con la fuente EN VIVO de Apps
-        //    Script — así una imagen actualizada por cualquier persona
-        //    (incluida la propia, tras recargar la página) se corrige a
-        //    los pocos segundos de cargar, sin esperar a ningún
-        //    despliegue. Si el primer pintado ha fallado, esta pasa a
-        //    ser directamente la fuente principal.
+        // 2) Reconciliar con la respuesta en vivo de Apps Script que ya
+        //    se lanzó en paralelo arriba (puede incluso haber llegado ya)
+        //    — así una imagen actualizada por cualquier persona (incluida
+        //    la propia, tras recargar la página) se corrige a los pocos
+        //    segundos de cargar, sin esperar a ningún despliegue. Si el
+        //    primer pintado ha fallado, esta pasa a ser directamente la
+        //    fuente principal.
         try {
-            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
-            if (resp.ok) {
+            const resp = await peticionEnVivo_;
+            if (resp && resp.ok) {
                 const texto = await resp.text();
                 const hash = await calcularHash(texto);
                 // Se comprueba ANTES de aplicar el hash/reconciliación de
@@ -8616,7 +9337,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     if (primerPintadoHecho) {
                         reconciliarConTextoEnVivo(texto);
                         aplicarFiltros();
-                        actualizarModulosDescubrimiento_(); // corrige los módulos si la reconciliación cambió algo (p.ej. una imagen)
+                        // soloRepintar=true: Destacados/Temporadas/Campañas
+                        // ya se pidieron en el primer actualizarModulosDescubrimiento_()
+                        // de hace unos segundos — lo único que cambió aquí es
+                        // el catálogo, así que basta con repintar esos tres
+                        // módulos con los datos que ya se cargaron, sin
+                        // repetir sus peticiones a Apps Script.
+                        actualizarModulosDescubrimiento_(true);
                     } else {
                         poblarDesdeTexto(texto);
                         await mostrarResultadosPorPrimeraVez();
@@ -8635,7 +9362,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
                     // compra si están abiertas en ese momento. Bug real
                     // MUY GRAVE reportado por Eloy, ver preciosMayorConfirmados_.
                     aplicarFiltros();
-                    actualizarModulosDescubrimiento_();
+                    actualizarModulosDescubrimiento_(true); // soloRepintar: solo cambió el precio al por mayor confirmado, no Destacados/Temporadas/Campañas
                     repintarPendientesPrecioMayor_();
                 }
             }
@@ -8747,7 +9474,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // no se veía reflejada en la lista hasta el siguiente cambio
             // de filtro o el sondeo periódico (hasta 5 minutos después).
             aplicarFiltros();
-            actualizarModulosDescubrimiento_();
+            actualizarModulosDescubrimiento_(true); // soloRepintar: esta resincronización solo toca el catálogo (ver el comentario de la función)
         } catch (e) {
             // Si falla, no pasa nada: el próximo sondeo periódico lo comprobará igual
         }
@@ -9510,7 +10237,17 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // nada a que llegue o no — si SUPABASE_URL/SUPABASE_ANON_KEY no
     // están configuradas todavía, o la petición falla, simplemente no
     // pasa nada (ver registro `.catch(() => {})`).
+    // Registro de analítica de búsquedas DESACTIVADO TEMPORALMENTE — a
+    // petición explícita de Eloy: "bloquea que se registren las búsquedas
+    // para no ralentizar y así con ello mejorar el rendimiento. Mas
+    // adelante se valorara el como mejorarlo y reactivarlo". Con las
+    // secciones que leían estos datos ("Más buscados esta semana"/
+    // "Marcas más buscadas") ya ocultas, bloquear el registro no quita
+    // ninguna funcionalidad visible ahora mismo — para reactivarlo basta
+    // con volver a poner esta constante a true.
+    const ANALITICA_BUSQUEDAS_ACTIVA_ = false;
     function registrarEventoBusqueda_(eventType, datos) {
+        if (!ANALITICA_BUSQUEDAS_ACTIVA_) return;
         const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
         if (!url || !key) return;
         const fila = Object.assign({
@@ -9598,12 +10335,39 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // tras la reconciliación inicial, tras cargar catálogos adicionales
     // en segundo plano, tras re-sincronizar tras una acción propia, y
     // tras aceptar el banner de "hay una versión más reciente".
-    function actualizarModulosDescubrimiento_() {
-        cargarDestacados_();
-        cargarTemporadas_().then(renderTemporada_);
+    // soloRepintar=true — a petición explícita de Eloy: "revisar las
+    // peticiones que se hacen en la carga del buscador, ver si se hacen
+    // peticiones duplicadas". Esta función se llama DOS veces en cada
+    // carga de página (ver cargarProductosPrincipales): una nada más
+    // pintar con el JSON estático, y otra justo después al reconciliar
+    // con la fuente EN VIVO de Apps Script — pero entre esas dos
+    // llamadas, a los pocos segundos una de otra, lo único que cambia de
+    // verdad es el CATÁLOGO (TODOS); los propios datos de Destacados,
+    // Temporadas y Campañas de escaparate (cada uno con su propio
+    // endpoint) casi nunca cambian en esa ventana tan corta. Aun así, la
+    // función siempre volvía a pedirlos los dos, duplicando sin
+    // necesidad las peticiones a obtener_destacados, obtener_temporadas y
+    // obtener_campanas EN CADA CARGA DE PÁGINA. Con soloRepintar=true se
+    // repintan esos tres módulos con los datos que YA se cargaron la
+    // primera vez (destacadosDatos_/temporadasDatos_/campanasEscaparate_,
+    // variables de módulo que no se vacían entre llamadas), reflejando el
+    // catálogo ya corregido sin repetir la petición de red. Los que no
+    // dependen de una petición propia (Novedades/Últimos vistos, puramente
+    // locales; Bloques de categorías, que ya cachea su propia respuesta en
+    // bloquesCategoriasCache_) se recalculan igual en los dos casos, sin
+    // coste de red añadido.
+    let primeraCargaCampanasReutilizada_ = false;
+    function actualizarModulosDescubrimiento_(soloRepintar) {
+        if (soloRepintar) {
+            renderDestacados_();
+            renderTemporada_();
+        } else {
+            cargarDestacados_();
+            cargarTemporadas_().then(renderTemporada_);
+        }
         cargarNovedades_();
-        cargarMasBuscados_();
-        cargarMarcasMasBuscadas_();
+        // cargarMasBuscados_()/cargarMarcasMasBuscadas_() desactivadas —
+        // ver el comentario junto a modulosDescubrimientoConContenido_.masBuscados.
         cargarBloquesCategorias_();
         cargarUltimosVistos_();
         // A diferencia de los módulos de arriba (secciones propias,
@@ -9611,8 +10375,25 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         // afectan al grid general (ver crearTarjeta/destacadoEfectivoPara_
         // más abajo) — si ya había algo pintado antes de que esta carga
         // termine, hay que repintarlo para que las tarjetas ya visibles
-        // reflejen la promoción en cuanto llega.
-        cargarCampanasEscaparate_().then(() => { if (TODOS.length) aplicarFiltros(); });
+        // reflejen la promoción en cuanto llega. Con soloRepintar no hace
+        // falta ni eso: aplicarFiltros() ya se llama aparte justo después
+        // de reconciliar el catálogo (ver cargarProductosPrincipales).
+        if (!soloRepintar) {
+            // La primera vez, se reutiliza la MISMA petición ya lanzada al
+            // arrancar el script (campanasEscaparateCargadas_, ver su
+            // definición — existe para que abrirProductoDesdeURL() no
+            // tenga que esperar a este punto) en vez de lanzar una
+            // SEGUNDA petición a obtener_campanas casi en el mismo
+            // instante: para cuando esta función llega a ejecutarse (tras
+            // el pintado instantáneo del JSON estático), el guardado de
+            // peticiones solapadas de cargarCampanasEscaparate_ ya no
+            // sirve de nada porque la primera petición suele haber
+            // terminado. Las llamadas siguientes (p.ej. "Actualizar
+            // ahora") si vuelven a pedir datos frescos de verdad.
+            const promesaCampanas_ = primeraCargaCampanasReutilizada_ ? cargarCampanasEscaparate_() : campanasEscaparateCargadas_;
+            primeraCargaCampanasReutilizada_ = true;
+            promesaCampanas_.then(() => { if (TODOS.length) aplicarFiltros(); });
+        }
     }
 
     // A petición de Eloy: con filtros/búsqueda activos, estos módulos solo
@@ -9673,6 +10454,18 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const cacheado = modulosDescubrimientoCacheInicial_[clave];
         modulosDescubrimientoConContenido_[clave] = (cacheado === 'vacio' || cacheado === 'con-contenido') ? cacheado : 'cargando';
     });
+    // "Más buscados esta semana" y "Marcas más buscadas" desactivadas a
+    // petición explícita de Eloy: "no tenemos un volumen [de búsquedas]
+    // para hacer que los usuarios acaben guiándose por esas secciones.
+    // Además tenemos otras secciones más importantes que ayudan mucho
+    // más" — se fuerza 'vacio' siempre (nunca se muestran, aunque
+    // quedara cacheado 'con-contenido' de una visita anterior) y no se
+    // vuelve a llamar a cargarMasBuscados_/cargarMarcasMasBuscadas_, así
+    // que tampoco se recorre el catálogo para resolverlas (de paso, el
+    // mayor cuello de botella de rendimiento identificado en la modal de
+    // temporada desaparece del todo en vez de solo mitigarse).
+    modulosDescubrimientoConContenido_.masBuscados = 'vacio';
+    modulosDescubrimientoConContenido_.marcas = 'vacio';
 
     function hayFiltroActivo_() {
         if ($('f-texto').value.trim()) return true;
@@ -9751,14 +10544,46 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // posterior de actualizarModulosDescubrimiento_() solo vuelve a
     // RESOLVER esos mismos términos contra el TODOS más reciente, sin
     // repetir la petición de red.
-    function productosQueCoincidenConTexto_(texto) {
-        const activos = TODOS.filter(p => estaActivoEnCatalogo_(p));
-        if (esBusquedaNumerica(texto)) {
-            return activos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto));
+    // Dos cachés, ambas invalidadas solo cuando TODOS cambia de
+    // referencia (recarga de catálogo) — bug real de rendimiento
+    // reportado por Eloy ("en un pc o móvil con bajas características
+    // apenas funcionará"): "Más buscados" y "Marcas más buscadas" llaman
+    // a esta función una vez POR CADA término (5-10 términos típicos), y
+    // cada llamada repetía TODOS.filter(...) desde cero para calcular
+    // "activos" (idéntico en las dos llamadas) Y volvía a recorrer el
+    // catálogo entero con coincide()/levenshtein — con dos secciones
+    // llamando a los MISMOS términos por separado, el catálogo completo
+    // se recorría el doble de veces de las necesarias. Ahora "activos" se
+    // calcula una sola vez, y el resultado por término se memoriza (los
+    // términos son un puñado y siempre los mismos dentro de la misma
+    // carga de página), así que el recorrido caro por catálogo + fuzzy
+    // matching se hace como mucho UNA vez por término, nunca una vez por
+    // término Y por sección que lo use.
+    let catalogoActivoCache_ = null;
+    let catalogoActivoCacheDe_ = null;
+    function productosActivosCache_() {
+        if (catalogoActivoCacheDe_ !== TODOS) {
+            catalogoActivoCache_ = TODOS.filter(p => estaActivoEnCatalogo_(p));
+            catalogoActivoCacheDe_ = TODOS;
         }
-        return activos.filter(p =>
-            coincide(p.nombre, texto) || coincide(p.ref, texto) ||
-            coincide(p.familia, texto) || coincide(p.subfamilia, texto));
+        return catalogoActivoCache_;
+    }
+    let coincidenConTextoCache_ = null;
+    let coincidenConTextoCacheDe_ = null;
+    function productosQueCoincidenConTexto_(texto) {
+        if (coincidenConTextoCacheDe_ !== TODOS) {
+            coincidenConTextoCache_ = new Map();
+            coincidenConTextoCacheDe_ = TODOS;
+        }
+        if (coincidenConTextoCache_.has(texto)) return coincidenConTextoCache_.get(texto);
+        const activos = productosActivosCache_();
+        const resultado = esBusquedaNumerica(texto)
+            ? activos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+            : activos.filter(p =>
+                coincide(p.nombre, texto) || coincide(p.ref, texto) ||
+                coincide(p.familia, texto) || coincide(p.subfamilia, texto));
+        coincidenConTextoCache_.set(texto, resultado);
+        return resultado;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -10287,6 +11112,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function abrirModalDestacados_() {
         $('modal-destacados-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         const pinGuardado = (() => { try { return localStorage.getItem('omDestacadosPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
             destacadosValidarPinYArrancar_(pinGuardado);
@@ -10303,6 +11129,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         destacadosCerrarEditor_();
         $('modal-destacados-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-destacados')) {
@@ -10439,7 +11266,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // manera aleatoria esos productos de temporada") — se
             // rebaraja cada vez que se recalculan los módulos de
             // descubrimiento, no solo una vez por sesión.
-            barajar_(productos).slice(0, MAX_TARJETAS_TEMPORADA_).forEach(p => lista.appendChild(crearTarjeta(p)));
+            barajar_(productos).slice(0, MAX_TARJETAS_TEMPORADA_).forEach(p => lista.appendChild(temporadaCrearTarjetaConSeleccion_(p)));
             const abrir = () => abrirModalTemporada_(temporada.id);
             const titulo = bloque.querySelector('.seccion-temporada__titulo-clicable');
             titulo.addEventListener('click', abrir);
@@ -10456,6 +11283,20 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // principal), solo que aquí se reordenan los productos de cada
     // familia al azar (sigue siendo "aleatorio" dentro del agrupado). ──
     let temporadaModalProductosBase_ = []; // sin agrupar, para el filtro de texto
+    let temporadaModalTemporadaActual_ = null; // la temporada abierta ahora mismo en la modal "ver todos" (para el folleto)
+    // Filtros propios de la modal "ver todos" — a petición de Eloy:
+    // "funcionalidades que ayuden a comerciales y clientes a seleccionar
+    // productos de las temporadas activas" (accesos directos por
+    // familia, marca, presupuesto, ordenación). Se reinician cada vez
+    // que se abre la modal (ver abrirModalTemporada_).
+    // Conjunto de familias activas (vacío = todas) — a petición explícita
+    // de Eloy: "que se pueda seleccionar múltiples familias y no solo
+    // una como hasta ahora". Antes era un único string.
+    let temporadaModalFiltrosFamilia_ = new Set();
+    let temporadaModalFiltroMarca_ = '';
+    let temporadaModalPrecioMin_ = null;
+    let temporadaModalPrecioMax_ = null;
+    let temporadaModalOrden_ = 'relevancia';
     let temporadaModalGrupos_ = [];
     let temporadaModalGruposMostrados_ = 0;
     const TEMPORADA_MODAL_GRUPOS_LOTE_ = 3;
@@ -10465,59 +11306,456 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return iso.split('-').reverse().join('/');
     }
 
-    function temporadaRenderizarGrupoEnModal_(grupo) {
+    // Construir TODAS las tarjetas de golpe (algunas familias de una
+    // temporada grande, p.ej. "Colonias Hombre", tienen cientos de
+    // productos) bloqueaba el hilo principal el tiempo suficiente como
+    // para que el scroll se notara "a trompicones" justo al cargar cada
+    // tanda — bug real reportado por Eloy. En vez de eso, se construyen
+    // en tandas pequeñas repartidas en varios fotogramas
+    // (requestAnimationFrame): el resultado final en el DOM es
+    // exactamente el mismo, pero el navegador puede seguir pintando/
+    // atendiendo al scroll entre tanda y tanda en vez de congelarse.
+    // 12 (no 24): en un equipo de gama baja, incluso 24 tarjetas por
+    // fotograma pueden superar los ~16ms de presupuesto de un frame —
+    // mejor repartir en más tandas más pequeñas (algo más lento en total,
+    // pero cada tanda individual es más barata y dejan hueco de sobra
+    // para que el navegador atienda al scroll entre tanda y tanda).
+    const TEMPORADA_TARJETAS_POR_TANDA_ = 12;
+    // "Generación" de la vista actual de la modal: se incrementa cada vez
+    // que temporadaModalFiltrarYRenderizar_ vuelve a pintar desde cero
+    // (cambio de filtro/orden/búsqueda). Cada cadena de tandas en curso
+    // lleva consigo el valor vigente en el momento en que arrancó y lo
+    // comprueba antes de seguir — si ya no coincide con la generación
+    // actual, se para sin más. Bug real reportado por Eloy: "al clicar un
+    // chip de familia no filtra el listado… siguen apareciendo más
+    // productos de otras familias" — sin esto, una cadena de tandas
+    // todavía en curso de la vista ANTERIOR (p.ej. "relevancia" sin
+    // filtrar, cargando sus grupos en segundo plano) seguía añadiendo sus
+    // propios grupos al grid incluso después de limpiarlo y repintarlo ya
+    // filtrado, porque cada tanda vuelve a buscar el contenedor por su id
+    // en vez de guardar una referencia fija.
+    let temporadaRenderGeneracion_ = 0;
+    function temporadaAnadirTarjetasEnTandas_(grid, productos, indiceInicial, alTerminar, generacion) {
+        if (generacion !== temporadaRenderGeneracion_) return;
+        const fin = Math.min(indiceInicial + TEMPORADA_TARJETAS_POR_TANDA_, productos.length);
+        const frag = document.createDocumentFragment();
+        for (let i = indiceInicial; i < fin; i++) {
+            frag.appendChild(temporadaCrearTarjetaConSeleccion_(productos[i]));
+        }
+        grid.appendChild(frag);
+        if (fin < productos.length) {
+            requestAnimationFrame(() => temporadaAnadirTarjetasEnTandas_(grid, productos, fin, alTerminar, generacion));
+        } else if (alTerminar) {
+            alTerminar();
+        }
+    }
+
+    // alTerminar (opcional) — avisa cuando ESTE grupo ha terminado de
+    // construir todas sus tarjetas (puede tardar varios fotogramas). Lo
+    // usa temporadaCargarMasEnModal_ para no lanzar la siguiente tanda de
+    // grupos hasta que la anterior haya terminado de verdad — ver el
+    // comentario junto a temporadaCargandoMasGrupos_, más abajo.
+    function temporadaRenderizarGrupoEnModal_(grupo, alTerminar, generacion) {
+        if (generacion !== temporadaRenderGeneracion_) return;
         const cont = $('temporada-ver-todos-grid');
         const bloque = document.createElement('div');
         bloque.className = 'familia-seccion temporada-ver-todos-grid-grupo';
         bloque.innerHTML = `<h3 class="familia-titulo">${escapeHtml(grupo.nombre)} <span class="count">${grupo.productos.length}</span></h3><div class="grid-productos"></div>`;
         const grid = bloque.querySelector('.grid-productos');
-        grupo.productos.forEach(p => grid.appendChild(crearTarjeta(p)));
         cont.appendChild(bloque);
+        temporadaAnadirTarjetasEnTandas_(grid, grupo.productos, 0, alTerminar, generacion);
     }
 
+    // Renderiza varios grupos UNO DETRÁS DE OTRO (nunca a la vez): llamar
+    // a temporadaRenderizarGrupoEnModal_ en bucle con .forEach lanzaba
+    // TODAS las cadenas de tandas de todos los grupos a la vez, en
+    // paralelo — cada una metiendo sus propias TEMPORADA_TARJETAS_POR_TANDA_
+    // tarjetas en el MISMO fotograma, así que con 2-3 familias grandes
+    // cargándose de golpe (p.ej. el lote de 3 grupos del scroll infinito)
+    // el trabajo por fotograma volvía a multiplicarse por el número de
+    // grupos, anulando en la práctica el reparto en tandas. Bug real
+    // reportado por Eloy: "sigue sin ir fluido […] en un pc o móvil con
+    // bajas características apenas funcionará".
+    function temporadaRenderizarGruposSecuencial_(grupos, alTerminarTodos, indice, generacion) {
+        if (generacion === undefined) generacion = temporadaRenderGeneracion_;
+        if (generacion !== temporadaRenderGeneracion_) return;
+        indice = indice || 0;
+        if (indice >= grupos.length) { if (alTerminarTodos) alTerminarTodos(); return; }
+        temporadaRenderizarGrupoEnModal_(grupos[indice], () => {
+            temporadaRenderizarGruposSecuencial_(grupos, alTerminarTodos, indice + 1, generacion);
+        }, generacion);
+    }
+
+    // Tarjeta normal (crearTarjeta, sin tocarla) + un botón propio de
+    // "añadir a mi selección" encima — a petición de Eloy: "el comercial
+    // debería poder construir una selección de productos sin tener que
+    // repetir búsquedas ni abrir continuamente distintas fichas". Reutiliza
+    // DIRECTAMENTE la Lista de la compra ya existente en todo el sitio
+    // (listaCompraAnadir_/listaCompraState_, ver más abajo) en vez de un
+    // carrito aparte — mismos productos, mismo PDF, mismo "compartir" que
+    // ya tiene ese sistema, "compatible con el sistema existente" tal
+    // como se pidió explícitamente.
+    function temporadaCrearTarjetaConSeleccion_(p) {
+        const card = crearTarjeta(p);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'temporada-anadir-seleccion-btn';
+        // El check verde refleja SIEMPRE el estado real (¿está ya en mi
+        // selección, sí o no?), no una animación que desaparece sola —
+        // bug real reportado por Eloy: "se marca en verde pero no se
+        // mantiene el check verde". Ahora es un interruptor: un segundo
+        // clic quita el producto de la selección y vuelve al icono de
+        // "+".
+        const actualizarBoton_ = () => {
+            const yaEsta = listaCompraTiene_(p.ref);
+            btn.classList.toggle('temporada-anadir-seleccion-btn--hecho', yaEsta);
+            btn.innerHTML = yaEsta ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-cart-plus"></i>';
+            btn.title = yaEsta ? 'Ya está en tu selección — clic para quitarlo' : 'Añadir a mi selección';
+        };
+        actualizarBoton_();
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // no abrir la ficha del producto al pulsar el botón
+            if (listaCompraTiene_(p.ref)) {
+                listaCompraEliminarProducto_(p.ref);
+                mostrarToast('Quitado de tu selección.');
+            } else {
+                const resultado = listaCompraAnadir_(p);
+                if (resultado === 'duplicado') mostrarToast('Ya estaba en tu selección.');
+            }
+            listaCompraActualizarUI_();
+            actualizarBoton_();
+            temporadaModalActualizarPanelSeleccion_();
+        });
+        card.appendChild(btn);
+        return card;
+    }
+
+    // true mientras la tanda de grupos en curso TODAVÍA se está
+    // construyendo (puede tardar varios fotogramas, ver
+    // temporadaAnadirTarjetasEnTandas_). Sin este guardado, un solo gesto
+    // de scroll podía disparar temporadaCargarMasEnModal_ varias veces
+    // seguidas antes de que el DOM llegara a crecer (scrollHeight tarda
+    // en reflejar las tarjetas que todavía se están construyendo en
+    // fotogramas futuros), "vaciando" de golpe TODOS los grupos restantes
+    // en vez de 3 en 3 — tantas cadenas de tandas corriendo a la vez
+    // volvían a juntar, fotograma a fotograma, el mismo trabajo pesado
+    // que se quería repartir. Bug real reportado por Eloy: "sigue sin ir
+    // fluido […] en un pc o móvil con bajas características apenas
+    // funcionará".
+    let temporadaCargandoMasGrupos_ = false;
     function temporadaCargarMasEnModal_() {
+        if (temporadaCargandoMasGrupos_) return;
         const siguientes = temporadaModalGrupos_.slice(temporadaModalGruposMostrados_, temporadaModalGruposMostrados_ + TEMPORADA_MODAL_GRUPOS_LOTE_);
-        siguientes.forEach(temporadaRenderizarGrupoEnModal_);
+        if (!siguientes.length) return;
+        temporadaCargandoMasGrupos_ = true;
         temporadaModalGruposMostrados_ += siguientes.length;
-        if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) {
-            $('temporada-ver-todos-fin').style.display = '';
-        }
+        temporadaRenderizarGruposSecuencial_(siguientes, () => {
+            temporadaCargandoMasGrupos_ = false;
+            if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) {
+                $('temporada-ver-todos-fin').style.display = '';
+            }
+        });
     }
 
+    // Throttle vía requestAnimationFrame — mismo patrón que el scroll
+    // infinito del buscador principal (ver el comentario junto a
+    // cargarMasFamilias): sin esto, un solo gesto de scroll dispara
+    // decenas de eventos 'scroll' en rápida sucesión, cada uno
+    // comprobando la posición de golpe.
+    let temporadaScrollTicking_ = false;
     function temporadaObservarScroll_(e) {
+        if (temporadaScrollTicking_) return;
+        temporadaScrollTicking_ = true;
         const el = e.target;
-        if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) return; // ya está todo cargado
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
-            temporadaCargarMasEnModal_();
-        }
+        requestAnimationFrame(() => {
+            temporadaScrollTicking_ = false;
+            if (temporadaModalGruposMostrados_ >= temporadaModalGrupos_.length) return; // ya está todo cargado
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+                temporadaCargarMasEnModal_();
+            }
+        });
     }
 
-    // Filtro de texto/referencia dentro del propio modal — solo sobre los
+    // Filtro de texto/referencia/marca + familia/marca/presupuesto +
+    // ordenación, todo dentro del propio modal — solo sobre los
     // productos YA incluidos en la(s) temporada(s) vigente(s), no sobre
     // todo el catálogo (a petición de Eloy: "solo los productos añadidos
-    // a la temporada"). Al vaciar el filtro, vuelve al scroll infinito
-    // agrupado y aleatorio de siempre; con texto, se muestran TODOS los
-    // grupos que coincidan de golpe (conjunto ya acotado, no hace falta
-    // paginar).
+    // a la temporada"). Reutilizada tanto para pintar el grid como para
+    // el folleto PDF, que así genera siempre exactamente lo que se está
+    // viendo (petición de Eloy: "poder generar un folleto a partir de
+    // los productos filtrados").
+    function temporadaModalProductosFiltrados_() {
+        const texto = ($('temporada-ver-todos-buscar').value || '').trim().toLowerCase();
+        let lista = temporadaModalProductosBase_;
+        if (temporadaModalFiltrosFamilia_.size) lista = lista.filter(p => temporadaModalFiltrosFamilia_.has(p.familia));
+        if (temporadaModalFiltroMarca_) lista = lista.filter(p => detectarMarcaAsistente(p.nombre) === temporadaModalFiltroMarca_);
+        if (temporadaModalPrecioMin_ != null || temporadaModalPrecioMax_ != null) {
+            lista = lista.filter(p => {
+                const info = precioAMostrar_(p);
+                if (!info || info.pending || info.con == null) return false;
+                if (temporadaModalPrecioMin_ != null && info.con < temporadaModalPrecioMin_) return false;
+                if (temporadaModalPrecioMax_ != null && info.con > temporadaModalPrecioMax_) return false;
+                return true;
+            });
+        }
+        if (texto) {
+            lista = esBusquedaNumerica(texto)
+                ? lista.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : lista.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto) || (detectarMarcaAsistente(p.nombre) || '').toLowerCase().includes(texto));
+        }
+        return lista;
+    }
+
+    // Mismo criterio de orden que ve el usuario en la rejilla de la modal
+    // (temporadaModalOrden_), pero devuelto como lista plana — para que el
+    // folleto PDF de temporada respete el orden elegido en el desplegable
+    // "Ordenar por" en vez de generarse siempre en el orden bruto del
+    // catálogo. A petición explícita de Eloy: "el orden debe ser el
+    // seleccionado por el usuario en la modalidad".
+    function temporadaModalProductosEnOrdenActual_(productos) {
+        if (temporadaModalOrden_ === 'nombre') {
+            return productos.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }));
+        }
+        if (temporadaModalOrden_ === 'familia') {
+            return agruparPorFamilia(productos).flatMap(g => g.productos.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' })));
+        }
+        if (temporadaModalOrden_ === 'precio-asc' || temporadaModalOrden_ === 'precio-desc') {
+            const conPrecio = productos
+                .map(p => ({ p, precio: (precioAMostrar_(p) || {}).con }))
+                .filter(x => x.precio != null);
+            conPrecio.sort((a, b) => temporadaModalOrden_ === 'precio-asc' ? a.precio - b.precio : b.precio - a.precio);
+            // Los que no tienen precio no desaparecen del folleto (a
+            // diferencia de la rejilla en pantalla): se añaden al final,
+            // en su orden original.
+            const sinPrecio = productos.filter(p => (precioAMostrar_(p) || {}).con == null);
+            return conPrecio.map(x => x.p).concat(sinPrecio);
+        }
+        if (temporadaModalOrden_ === 'novedad') {
+            return productos.slice().sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta));
+        }
+        // Relevancia (por defecto): agrupado por familia, igual que en la rejilla.
+        return agruparPorFamilia(productos).flatMap(g => barajar_(g.productos));
+    }
+
+    function temporadaModalHayFiltrosActivos_() {
+        return !!(temporadaModalFiltrosFamilia_.size || temporadaModalFiltroMarca_
+            || temporadaModalPrecioMin_ != null || temporadaModalPrecioMax_ != null
+            || ($('temporada-ver-todos-buscar').value || '').trim());
+    }
+
+    function temporadaModalActualizarIndicadorFiltros_() {
+        const activos = [];
+        if (temporadaModalFiltrosFamilia_.size) activos.push('Familia: ' + [...temporadaModalFiltrosFamilia_].join(', '));
+        if (temporadaModalFiltroMarca_) activos.push('Marca: ' + temporadaModalFiltroMarca_);
+        if (temporadaModalPrecioMin_ != null) activos.push('Desde ' + temporadaModalPrecioMin_ + ' €');
+        if (temporadaModalPrecioMax_ != null) activos.push('Hasta ' + temporadaModalPrecioMax_ + ' €');
+        const el = $('temporada-ver-todos-filtros-activos');
+        if (!activos.length) { el.style.display = 'none'; return; }
+        el.style.display = '';
+        el.innerHTML = `<i class="fa-solid fa-filter"></i> Filtros activos: ${escapeHtml(activos.join(' · '))} — <a href="#" id="temporada-ver-todos-limpiar-filtros-link">Limpiar filtros</a>`;
+        $('temporada-ver-todos-limpiar-filtros-link').addEventListener('click', (e) => { e.preventDefault(); temporadaModalLimpiarFiltros_(); });
+    }
+
+    function temporadaModalLimpiarFiltros_() {
+        temporadaModalFiltrosFamilia_.clear();
+        temporadaModalFiltroMarca_ = '';
+        temporadaModalPrecioMin_ = null;
+        temporadaModalPrecioMax_ = null;
+        $('temporada-ver-todos-buscar').value = '';
+        $('temporada-ver-todos-marca').value = '';
+        $('temporada-ver-todos-precio-min').value = '';
+        $('temporada-ver-todos-precio-max').value = '';
+        temporadaRenderizarChipsFamilias_();
+        temporadaModalFiltrarYRenderizar_();
+    }
+
+    // ── Selección propia de la temporada (marcar productos para el
+    // folleto) — a petición explícita de Eloy: "poder generar un
+    // folleto a partir de una lista de selección que el usuario vaya
+    // marcando, así como limpiar seleccionados... y el añadir a la
+    // lista todos". "Marcar" un producto es añadirlo a la MISMA Lista
+    // de la compra de siempre (ver temporadaCrearTarjetaConSeleccion_),
+    // así que la selección de esta temporada es, sencillamente, el
+    // subconjunto de sus propios productos que ya están en esa lista. ──
+    function temporadaModalProductosSeleccionados_() {
+        return temporadaModalProductosBase_.filter(p => listaCompraTiene_(p.ref));
+    }
+
+    function temporadaModalActualizarPanelSeleccion_() {
+        const n = temporadaModalProductosSeleccionados_().length;
+        $('temporada-ver-todos-seleccion-contador').textContent = n;
+        $('temporada-ver-todos-seleccion-pdf').disabled = n === 0;
+        $('temporada-ver-todos-seleccion-compartir-pdf').disabled = n === 0;
+        $('temporada-ver-todos-seleccion-limpiar').disabled = n === 0;
+    }
+
+    // Añade TODOS los productos actualmente visibles (según el filtro/
+    // orden activo en ese momento, no toda la temporada) a la Lista de
+    // la compra de un golpe — los que ya estuvieran se saltan solos.
+    function temporadaModalAnadirTodosVisibles_() {
+        const visibles = temporadaModalProductosFiltrados_();
+        if (!visibles.length) return;
+        let añadidos = 0;
+        visibles.forEach(p => { if (listaCompraAnadir_(p) === 'ok') añadidos++; });
+        listaCompraActualizarUI_();
+        temporadaModalActualizarVistaTrasCambioSeleccion_();
+        mostrarToast(añadidos ? `Añadidos ${añadidos} producto(s) a tu selección.` : 'Ya tenías todos los productos visibles en tu selección.');
+    }
+
+    // Solo quita de la Lista de la compra los productos DE ESTA
+    // TEMPORADA — nunca toca el resto de la lista si tuviera productos
+    // añadidos desde otras páginas/temporadas.
+    function temporadaModalLimpiarSeleccion_() {
+        const seleccionados = temporadaModalProductosSeleccionados_();
+        if (!seleccionados.length) return;
+        pedirConfirmacionListaCompra_(
+            '¿Limpiar la selección de esta temporada?',
+            `Se quitarán de tu lista de la compra los ${seleccionados.length} producto(s) marcados de "${(temporadaModalTemporadaActual_ && temporadaModalTemporadaActual_.nombre) || 'esta temporada'}". El resto de tu lista (si tuviera productos de otras páginas) no se toca.`,
+            () => {
+                seleccionados.forEach(p => listaCompraEliminarProducto_(p.ref));
+                listaCompraActualizarUI_();
+                temporadaModalActualizarVistaTrasCambioSeleccion_();
+                mostrarToast('Selección de esta temporada vaciada.');
+            }
+        );
+    }
+
+    // Tras un cambio masivo de selección (añadir/limpiar todos), hay que
+    // refrescar tanto el panel (contador/botones) como el check de cada
+    // tarjeta ya pintada — repintar la vista entera es lo más simple y
+    // fiable, ya filtrada/ordenada igual que estaba.
+    function temporadaModalActualizarVistaTrasCambioSeleccion_() {
+        temporadaModalActualizarPanelSeleccion_();
+        temporadaModalFiltrarYRenderizar_();
+    }
+
+    // Lista plana (sin agrupar por familia) — usada cuando hay una
+    // ordenación explícita por precio o novedad: agrupar por familia
+    // mezclaría el criterio de orden pedido con el de cada grupo.
+    function temporadaRenderizarListaPlanaEnModal_(productos) {
+        const cont = $('temporada-ver-todos-grid');
+        const grid = document.createElement('div');
+        grid.className = 'grid-productos';
+        cont.appendChild(grid);
+        temporadaAnadirTarjetasEnTandas_(grid, productos, 0, null, temporadaRenderGeneracion_);
+    }
+
     function temporadaModalFiltrarYRenderizar_() {
-        const texto = ($('temporada-ver-todos-buscar').value || '').trim();
+        // Invalida cualquier cadena de tandas todavía en curso de la
+        // vista anterior — ver el comentario junto a
+        // temporadaRenderGeneracion_, más arriba.
+        temporadaRenderGeneracion_++;
+        const filtrados = temporadaModalProductosFiltrados_();
         const cont = $('temporada-ver-todos-grid');
         cont.innerHTML = '';
         $('temporada-ver-todos-fin').style.display = 'none';
-        if (!texto) {
-            temporadaModalGrupos_ = agruparPorFamilia(temporadaModalProductosBase_).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
+        temporadaModalActualizarIndicadorFiltros_();
+
+        $('temporada-ver-todos-estado-vacio').style.display = filtrados.length ? 'none' : '';
+        if (!filtrados.length) return;
+
+        // Ordenación explícita (nombre/familia/precio/novedad): lista
+        // plana o agrupada sin aleatorizar, sin paginar por scroll — ya
+        // es un conjunto acotado por los filtros, no hace falta.
+        if (temporadaModalOrden_ === 'nombre') {
+            const ordenados = filtrados.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }));
+            temporadaRenderizarListaPlanaEnModal_(ordenados);
+            $('temporada-ver-todos-fin').style.display = '';
+            return;
+        }
+        if (temporadaModalOrden_ === 'familia') {
+            // Mismo agrupado por familia que "relevancia" (alfabético,
+            // vía agruparPorFamilia), pero SIN barajar_ dentro de cada
+            // grupo — aquí los productos van también por nombre, para
+            // un orden de catálogo predecible en vez de aleatorio.
+            const gruposFamilia_ = agruparPorFamilia(filtrados, true).map(g => ({
+                nombre: g.nombre,
+                productos: g.productos.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' })),
+            }));
+            temporadaRenderizarGruposSecuencial_(gruposFamilia_);
+            $('temporada-ver-todos-fin').style.display = '';
+            return;
+        }
+        if (temporadaModalOrden_ === 'precio-asc' || temporadaModalOrden_ === 'precio-desc') {
+            const conPrecio = filtrados
+                .map(p => ({ p, precio: (precioAMostrar_(p) || {}).con }))
+                .filter(x => x.precio != null);
+            conPrecio.sort((a, b) => temporadaModalOrden_ === 'precio-asc' ? a.precio - b.precio : b.precio - a.precio);
+            temporadaRenderizarListaPlanaEnModal_(conPrecio.map(x => x.p));
+            $('temporada-ver-todos-fin').style.display = '';
+            return;
+        }
+        if (temporadaModalOrden_ === 'novedad') {
+            const ordenados = filtrados.slice().sort((a, b) => parseFecha(b.fecha_alta) - parseFecha(a.fecha_alta));
+            temporadaRenderizarListaPlanaEnModal_(ordenados);
+            $('temporada-ver-todos-fin').style.display = '';
+            return;
+        }
+
+        // Relevancia (por defecto): agrupado por familia, aleatorio
+        // dentro de cada grupo. Sin ningún filtro activo, con scroll
+        // infinito por grupos; con algún filtro, todos los grupos que
+        // coincidan de golpe (conjunto ya acotado, no hace falta paginar).
+        if (!temporadaModalHayFiltrosActivos_()) {
+            temporadaModalGrupos_ = agruparPorFamilia(filtrados, true).map(g => ({ nombre: g.nombre, productos: barajar_(g.productos) }));
             temporadaModalGruposMostrados_ = 0;
+            // Por si quedaba una tanda anterior todavía construyéndose
+            // (p.ej. el usuario cambió de filtro/orden a media carga): sin
+            // esto, el guardado de temporadaCargarMasEnModal_ bloquearía
+            // también esta llamada nueva y la modal se quedaría sin
+            // cargar nada.
+            temporadaCargandoMasGrupos_ = false;
             temporadaCargarMasEnModal_();
             return;
         }
-        const filtrados = esBusquedaNumerica(texto)
-            ? temporadaModalProductosBase_.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
-            : temporadaModalProductosBase_.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
-        if (!filtrados.length) {
-            cont.innerHTML = '<p class="destacados-hint" style="text-align:center;">Sin resultados en esta temporada.</p>';
-            return;
-        }
-        agruparPorFamilia(filtrados).forEach(temporadaRenderizarGrupoEnModal_);
+        temporadaRenderizarGruposSecuencial_(agruparPorFamilia(filtrados, true));
+    }
+
+    // ── Accesos directos por familia, selector de marca y destacados/
+    // novedades de la temporada — a petición explícita de Eloy:
+    // "funcionalidades que ayuden a comerciales y clientes a seleccionar
+    // productos de las temporadas activas". Selección MÚLTIPLE de
+    // familias (a petición explícita de Eloy: "que se pueda seleccionar
+    // múltiples familias y no solo una como hasta ahora") — cada chip de
+    // familia se activa/desactiva de forma independiente (como una lista
+    // de checkboxes), "Todas" las desmarca todas de golpe. ──
+    function temporadaRenderizarChipsFamilias_() {
+        const cont = $('temporada-ver-todos-familias-chips');
+        const familias = [...new Set(temporadaModalProductosBase_.map(p => p.familia).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+        cont.innerHTML = '';
+        const chipTodas = document.createElement('button');
+        chipTodas.type = 'button';
+        chipTodas.textContent = 'Todas';
+        chipTodas.className = temporadaModalFiltrosFamilia_.size ? '' : 'activo';
+        chipTodas.addEventListener('click', () => {
+            temporadaModalFiltrosFamilia_.clear();
+            temporadaRenderizarChipsFamilias_();
+            temporadaModalFiltrarYRenderizar_();
+        });
+        cont.appendChild(chipTodas);
+        familias.forEach(familia => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.textContent = familia;
+            chip.className = temporadaModalFiltrosFamilia_.has(familia) ? 'activo' : '';
+            chip.addEventListener('click', () => {
+                if (temporadaModalFiltrosFamilia_.has(familia)) temporadaModalFiltrosFamilia_.delete(familia);
+                else temporadaModalFiltrosFamilia_.add(familia);
+                temporadaRenderizarChipsFamilias_();
+                temporadaModalFiltrarYRenderizar_();
+            });
+            cont.appendChild(chip);
+        });
+    }
+
+    async function temporadaPoblarSelectorMarca_() {
+        await cargarMapaMarcasAsistente();
+        const marcas = [...new Set(temporadaModalProductosBase_.map(p => detectarMarcaAsistente(p.nombre)).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+        const sel = $('temporada-ver-todos-marca');
+        sel.innerHTML = '<option value="">Todas las marcas</option>' +
+            marcas.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
     }
 
     // Siempre acotada a UNA temporada concreta (nunca mezclada con otras
@@ -10529,6 +11767,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         const productos = productosDeTemporada_(t);
         if (!productos.length) return;
         temporadaModalProductosBase_ = productos;
+        temporadaModalTemporadaActual_ = t;
+        // La modal entera es ahora el elemento con scroll (ver el
+        // comentario de .modal-producto-box.modal-temporada-ver-todos-box)
+        // y persiste en el DOM entre aperturas — sin esto, reabrir la
+        // modal (o cambiar de temporada) podía dejarla donde se había
+        // quedado la vez anterior en vez de empezar arriba del todo.
+        $('temporada-ver-todos-box').scrollTop = 0;
         $('temporada-ver-todos-titulo-icono').innerHTML = t.emoji ? escapeHtml(t.emoji) : '<i class="fa-solid fa-snowflake"></i>';
         $('temporada-ver-todos-titulo-texto').textContent = t.nombre || 'Productos de temporada';
         configurarBotonCompartirTemporada_(t);
@@ -10537,7 +11782,29 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             ? 'Disponible todo el año'
             : `Del ${temporadaFormatearFecha_(t.fechaInicio)} al ${temporadaFormatearFecha_(t.fechaFin)}`;
 
+        // Filtros/orden siempre reiniciados al (re)abrir una temporada —
+        // los de la anterior no deben "arrastrarse" a esta.
+        temporadaModalFiltrosFamilia_.clear();
+        temporadaModalFiltroMarca_ = '';
+        temporadaModalPrecioMin_ = null;
+        temporadaModalPrecioMax_ = null;
+        temporadaModalOrden_ = 'relevancia';
         $('temporada-ver-todos-buscar').value = '';
+        $('temporada-ver-todos-precio-min').value = '';
+        $('temporada-ver-todos-precio-max').value = '';
+        $('temporada-ver-todos-orden').value = 'relevancia';
+        temporadaRenderizarChipsFamilias_();
+        // Filtro de marca DESACTIVADO TEMPORALMENTE — a petición
+        // explícita de Eloy, para ir descartando extras uno a uno
+        // mientras se localiza qué sigue yendo "a trompicones" en móvil
+        // dentro de esta modal. temporadaPoblarSelectorMarca_() llama a
+        // detectarMarcaAsistente(p.nombre) para CADA producto de la
+        // temporada en el momento de abrir la modal — candidato real a
+        // coste notable con temporadas grandes. Para reactivarlo: quitar
+        // este comentario y la línea de abajo, y quitar `display:none` del
+        // <select id="temporada-ver-todos-marca"> en el HTML.
+        // temporadaPoblarSelectorMarca_().then(() => { $('temporada-ver-todos-marca').value = ''; });
+        temporadaModalActualizarPanelSeleccion_();
         temporadaModalFiltrarYRenderizar_();
 
         // Opciones de búsqueda al final del scroll: una por cada familia
@@ -10555,6 +11822,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         $('temporada-ver-todos-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
 
         // Deja también situada en pantalla la sección/bloque de esta
         // temporada (si ya está pintado) — a petición de Eloy: poder
@@ -10620,6 +11888,499 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalTemporadaVerTodos_() {
         $('temporada-ver-todos-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── FOLLETO PDF DE TEMPORADA ─────────────────────────────────────────
+    // A petición de Eloy: "poder generar un folleto a partir de los
+    // productos filtrados en la temporada a la que el usuario ha
+    // accedido... tendrá sentido comercial y deberá tener en cuenta el
+    // perfil (normal o profesional)". Reutiliza el MISMO motor que el
+    // folleto de Destacados (cargarImagenComoDataURL_/
+    // cargarImagenesFolletoDestacadosEnTandas_/urlImagenProductoFolletoDestacados_/
+    // LISTA_COMPRA_EMPRESA_/DESTACADOS_PDF_COLOR_ACCENT_) en vez de montar
+    // uno nuevo: misma cabecera con logo, mismo pie con dirección/horario/
+    // web, mismo criterio de precio según perfil (precioAMostrar_/
+    // preciosMayorConfirmados_) — solo cambia qué productos entran y el
+    // título. Si alguno de los productos tiene también una promoción de
+    // Destacados vigente (destacadoEfectivoPara_), se indica igual que en
+    // el folleto de Destacados — un producto puede estar en una temporada
+    // y en Destacados a la vez, son sistemas independientes.
+    // ══════════════════════════════════════════════════════════════════
+
+    // Marca de agua muy sutil con el logo de la empresa, de fondo en cada
+    // página de cualquier folleto con fotos (Destacados/Temporada/Lista
+    // de la compra) — a petición explícita de Eloy: "una marca de agua
+    // con el logo de la empresa... muy sutil para que no interfiera en
+    // los productos". Se dibuja SIEMPRE antes que la cabecera y las
+    // tarjetas de esa página (ambas opacas): así solo queda visible en
+    // los márgenes y huecos entre tarjetas, nunca por encima de ningún
+    // producto. Opacidad vía GState, nativo de jsPDF 2.x (sin plugin
+    // adicional) — si por lo que sea no estuviera disponible, se omite
+    // en silencio y el folleto se genera igual, solo sin marca de agua.
+    function dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, pageH) {
+        if (!logo) return;
+        try {
+            const anchoMarca = pageW * 0.55;
+            const altoMarca = anchoMarca * (logo.height / logo.width);
+            const x = (pageW - anchoMarca) / 2;
+            const y = (pageH - altoMarca) / 2;
+            doc.saveGraphicsState();
+            doc.setGState(new doc.GState({ opacity: 0.045 }));
+            doc.addImage(logo.dataUrl, 'PNG', x, y, anchoMarca, altoMarca);
+            doc.restoreGraphicsState();
+        } catch (e) {
+            // Sin marca de agua en este navegador/versión de jsPDF — nunca
+            // debe romper la generación del folleto por esto.
+        }
+    }
+
+    // Versión recortada de dibujarTarjetaDestacadoPdf_: la mayoría de
+    // productos de una temporada NO tendrán un destacado asociado (a
+    // diferencia del folleto de Destacados, donde SIEMPRE lo hay), así
+    // que aquí "d" puede ser null — se cubre con un objeto vacío para
+    // calcularPrecioDestacado_ (que sí espera siempre un objeto) y se
+    // omite el chip/banner de promoción cuando no hay destacado real.
+    function dibujarTarjetaTemporadaPdf_(doc, x, y, w, h, foto, p, colorAccent) {
+        const d = destacadoEfectivoPara_(p.ref);
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 228, 232);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(x, y, w, h, 2.5, 2.5, 'FD');
+
+        const precioInfo = precioAMostrar_(p);
+        const esMayor = !!(precioInfo && precioInfo.esMayor);
+        const mapaChip = {
+            oferta: ['OFERTA', [0, 135, 67]],
+            oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
+            liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
+        };
+        const chipEntrada = (d && d.tipoDestacado && !esMayor) ? mapaChip[d.tipoDestacado] : null;
+        const colorFranja = chipEntrada ? chipEntrada[1] : colorAccent;
+        doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
+        doc.roundedRect(x, y, w, 2.5, 2.5, 2.5, 'F');
+        doc.rect(x, y + 1.3, w, 1.2, 'F');
+
+        // Tarjeta más compacta que la de Destacados — aquí caben hasta 9
+        // por página, así que paddings, tamaños de letra e imagen se
+        // reducen respecto a la versión original de 4/página.
+        const pad = 3.2;
+        // 0.36 → 0.42 — a petición explícita de Eloy: "se pueden hacer
+        // más grandes las imágenes ya que cada bloque tiene mucho espacio
+        // entre el importe y el QR". El resto del texto (nombre, ref,
+        // precio) ocupa siempre la misma altura fija, así que ese hueco
+        // sobrante de abajo es justo lo que se gana aquí dándole más
+        // espacio a la imagen — sin pasarse, para que siga quedando sitio
+        // de sobra para el banner de promoción cuando lo hay.
+        const imgBoxH = h * 0.42;
+        const imgBoxY = y + 2.5 + pad * 0.5;
+        if (foto) {
+            const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
+            const dw = foto.width * escala, dh = foto.height * escala;
+            doc.addImage(foto.dataUrl, 'JPEG', x + (w - dw) / 2, imgBoxY + (imgBoxH - dh) / 2, dw, dh);
+        } else {
+            doc.setFillColor(248, 249, 250);
+            doc.rect(x + pad, imgBoxY, w - pad * 2, imgBoxH, 'F');
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7);
+            doc.setTextColor(170, 173, 180);
+            doc.text('Sin imagen', x + w / 2, imgBoxY + imgBoxH / 2, { align: 'center' });
+        }
+
+        if (chipEntrada) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(6.5);
+            const txt = chipEntrada[0];
+            const tw = doc.getTextWidth(txt) + 5, th = 4.8;
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(x + pad + 0.4, imgBoxY + 1.8, tw, th, 1.4, 1.4, 'F');
+            doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
+            doc.roundedRect(x + pad, imgBoxY + 1.4, tw, th, 1.4, 1.4, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(txt, x + pad + tw / 2, imgBoxY + 1.4 + th / 2 + 0.9, { align: 'center' });
+        }
+
+        let ty = imgBoxY + imgBoxH + 5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(30, 33, 37);
+        const nombreLineas = doc.splitTextToSize(p.nombre || p.ref, w - pad * 2).slice(0, 2);
+        doc.text(nombreLineas, x + pad, ty);
+        ty += nombreLineas.length * 3.3 + 1.2;
+
+        // Ref + familia en una sola línea, truncada si no cabe — a
+        // petición explícita de Eloy: "añade la familia a los productos".
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.8);
+        doc.setTextColor(140, 143, 150);
+        let lineaRefFamilia = `Ref: ${p.ref}` + (p.familia ? ` · ${p.familia}` : '');
+        const maxRefFamiliaW = w - pad * 2;
+        while (doc.getTextWidth(lineaRefFamilia) > maxRefFamiliaW && lineaRefFamilia.length > 1) {
+            lineaRefFamilia = lineaRefFamilia.slice(0, -1);
+        }
+        doc.text(lineaRefFamilia, x + pad, ty);
+        ty += 4.3;
+
+        const dCalc = calcularPrecioDestacado_(p, d || {});
+        // "Sin IVA" a petición explícita de Eloy: "añade el precio sin IVA
+        // a los productos" — misma fracción de descuento que el precio
+        // con IVA cuando hay una promoción activa (ver promoSin/
+        // promoMayorSin en calcularPrecioDestacado_), si no el valor base
+        // de precioAMostrar_ (ya resuelto por perfil normal/profesional).
+        const dibujarPrecio_ = (original, promo, pct, sinIva) => {
+            if (original === null) {
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(7);
+                doc.setTextColor(150, 153, 160);
+                doc.text('Consultar precio', x + pad, ty);
+                ty += 5.5;
+                return;
+            }
+            if (promo !== null) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6.6);
+                doc.setTextColor(170, 173, 180);
+                const origTxt = `${original.toFixed(2).replace('.', ',')} €`;
+                doc.text(origTxt, x + pad, ty);
+                const wOrig = doc.getTextWidth(origTxt);
+                doc.setDrawColor(170, 173, 180);
+                doc.setLineWidth(0.25);
+                doc.line(x + pad, ty - 1, x + pad + wOrig, ty - 1);
+                ty += 5.4;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13.5);
+                doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+                const promoTxt = `${promo.toFixed(2).replace('.', ',')} €`;
+                doc.text(promoTxt, x + pad, ty);
+                if (pct) {
+                    const wPromo = doc.getTextWidth(promoTxt);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    const pctTxt = `-${pct}%`;
+                    const wPct = doc.getTextWidth(pctTxt) + 3.6;
+                    doc.setFillColor(217, 27, 27);
+                    doc.roundedRect(x + pad + wPromo + 2, ty - 4, wPct, 4.8, 1.3, 1.3, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(pctTxt, x + pad + wPromo + 2 + wPct / 2, ty - 0.9, { align: 'center' });
+                }
+                ty += 4.2;
+            } else {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13.5);
+                doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+                doc.text(`${original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
+                ty += 5.6;
+            }
+            if (sinIva) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6);
+                doc.setTextColor(140, 143, 150);
+                doc.text(`${sinIva.toFixed(2).replace('.', ',')} € sin IVA`, x + pad, ty);
+                ty += 3.6;
+            }
+        };
+        if (esMayor) {
+            dibujarPrecio_(dCalc.originalMayor, dCalc.promoMayor, dCalc.pct, dCalc.promoMayor !== null ? dCalc.promoMayorSin : (precioInfo && precioInfo.sin));
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(5.8);
+            doc.setTextColor(150, 153, 160);
+            doc.text('Precio profesional (al por mayor)', x + pad, ty);
+            ty += 4.2;
+        } else {
+            dibujarPrecio_(dCalc.original, dCalc.promo, dCalc.pct, dCalc.promo !== null ? dCalc.promoSin : (precioInfo && precioInfo.sin));
+        }
+
+        if (!esMayor && d && d.textoPromocion) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7.5);
+            // Deja sitio al QR de la esquina inferior derecha (ver más
+            // abajo) para que el banner no se le monte encima.
+            const maxTextW = w - pad * 2 - 11;
+            const todasLasLineas = doc.splitTextToSize(d.textoPromocion.toUpperCase(), maxTextW);
+            const lineasPromo = todasLasLineas.slice(0, 2);
+            if (todasLasLineas.length > 2) {
+                let ultima = lineasPromo[1];
+                while (doc.getTextWidth(ultima + '…') > maxTextW && ultima.length > 1) ultima = ultima.slice(0, -1);
+                lineasPromo[1] = ultima + '…';
+            }
+            const lineH = 3.1;
+            const thPromo = lineasPromo.length * lineH + 2.4;
+            const twPromo = Math.max(...lineasPromo.map(l => doc.getTextWidth(l))) + 6.5;
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(x + pad + 0.5, ty + 0.5, twPromo, thPromo, 1.8, 1.8, 'F');
+            doc.setFillColor(241, 179, 0);
+            doc.roundedRect(x + pad, ty, twPromo, thPromo, 1.8, 1.8, 'F');
+            doc.setTextColor(26, 26, 26);
+            lineasPromo.forEach((linea, i) => doc.text(linea, x + pad + twPromo / 2, ty + 2.5 + i * lineH, { align: 'center' }));
+        }
+
+        // Pequeño QR en la esquina inferior derecha de la tarjeta, con el
+        // enlace de PRODUCCIÓN al buscador para esa referencia — a
+        // petición explícita de Eloy: "añade un pequeño QR en la esquina
+        // derecha-abajo con el enlace a produccion (orenciomatas.es) al
+        // buscador con la referencia del producto". Siempre apunta a
+        // producción, nunca a preproducción (mismo criterio que el QR de
+        // las etiquetas de producto, ver urlCompartirProductoProduccion_).
+        const qrInfo = generarQrDataUrl_(urlCompartirProductoProduccion_(p));
+        if (qrInfo) {
+            const qrSize = 9.5, qrPad = 1.6;
+            const qrX = x + w - qrSize - qrPad;
+            const qrY = y + h - qrSize - qrPad;
+            doc.addImage(qrInfo.dataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+        }
+    }
+
+    // Emoticono de la temporada (campo "emoji" del editor de temporadas)
+    // rasterizado a PNG para poder incrustarlo en el PDF — jsPDF con las
+    // fuentes estándar (helvetica) no sabe dibujar emoji, así que se
+    // delega en el <canvas> del propio navegador (igual que
+    // generarQrDataUrl_ para el QR), que sí renderiza emoji en color.
+    function generarEmojiDataUrl_(emoji) {
+        if (!emoji) return null;
+        try {
+            const tam = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = tam;
+            canvas.height = tam;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, tam, tam);
+            ctx.font = `${Math.round(tam * 0.82)}px "Noto Color Emoji", "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, tam / 2, tam / 2 + tam * 0.04);
+            return { dataUrl: canvas.toDataURL('image/png'), width: tam, height: tam };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // soloSeleccion=true: el folleto se genera SOLO con los productos de
+    // esta temporada que el usuario ya ha marcado (ver
+    // temporadaModalProductosSeleccionados_), ignorando el FILTRO activo
+    // en ese momento (pero no el orden, ver más abajo) — a petición
+    // explícita de Eloy: "generar un folleto a partir de una lista de
+    // selección que el usuario vaya marcando".
+    async function construirDocumentoPdfTemporada_(onProgreso, soloSeleccion) {
+        if (typeof window.jspdf === 'undefined') return null;
+        // Nunca con el precio al por mayor todavía sin confirmar — mismo
+        // motivo que construirDocumentoPdfDestacados_.
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) return 'pendiente';
+        const t = temporadaModalTemporadaActual_;
+        const base = soloSeleccion ? temporadaModalProductosSeleccionados_() : temporadaModalProductosFiltrados_();
+        // El folleto siempre sigue el mismo orden que el usuario ve/eligió
+        // en el desplegable "Ordenar por" de la modal — a petición
+        // explícita de Eloy: "el orden debe ser el seleccionado por el
+        // usuario en la modalidad".
+        const productos = temporadaModalProductosEnOrdenActual_(base);
+        if (!t || !productos.length) return null;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const pageW = 210, margin = 14;
+        const headerBottomY = 30, footerTopY = 272;
+        const contentRight = pageW - margin;
+        const contentWidth = contentRight - margin;
+        const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+        // Color de marca del folleto según el perfil que lo genera — rojo
+        // de marca de siempre para el profesional (precio al por mayor),
+        // azul para el normal (PVP) — a petición explícita de Eloy (ajuste
+        // sobre el criterio anterior, invertido), para distinguir de un
+        // vistazo qué tipo de precio lleva cada folleto. Mismo azul que ya
+        // se usa para el chip "OPORTUNIDAD".
+        const colorAccent = esProfesionalFolleto ? [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b] : [25, 118, 210];
+        const textoTipoPrecio = esProfesionalFolleto ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)';
+
+        const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+        const emojiImg = generarEmojiDataUrl_(t.emoji);
+        const vigenciaTxt = t.permanente ? 'Disponible todo el año' : `Válido del ${temporadaFormatearFecha_(t.fechaInicio)} al ${temporadaFormatearFecha_(t.fechaFin)}`;
+
+        function dibujarCabecera() {
+            doc.setFillColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+            doc.rect(0, 0, pageW, 3, 'F');
+            if (logo) {
+                const logoH = 11, logoW = logoH * (logo.width / logo.height);
+                doc.addImage(logo.dataUrl, 'PNG', margin, 8, logoW, logoH);
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.setTextColor(30, 33, 37);
+            // El emoticono de la temporada se dibuja justo a la izquierda
+            // del título — a petición explícita de Eloy: "incluye también
+            // el emoticono seleccionado para la temporada".
+            const tituloTxt = (t.nombre || 'PRODUCTOS DE TEMPORADA').toUpperCase() + (soloSeleccion ? ' — SELECCIÓN' : '');
+            doc.text(tituloTxt, contentRight, 12, { align: 'right' });
+            if (emojiImg) {
+                const tituloW = doc.getTextWidth(tituloTxt);
+                const emojiSize = 5;
+                doc.addImage(emojiImg.dataUrl, 'PNG', contentRight - tituloW - emojiSize - 2, 12 - emojiSize * 0.72, emojiSize, emojiSize);
+            }
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(120, 123, 130);
+            doc.text(`${textoTipoPrecio} · ${vigenciaTxt}`, contentRight, 17, { align: 'right' });
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
+        }
+
+        function dibujarPie(numPagina, totalPaginas) {
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, footerTopY, contentRight, footerTopY);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text(LISTA_COMPRA_EMPRESA_.nombre, margin, footerTopY + 6);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(110, 113, 120);
+            doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
+            doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+            doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(150, 153, 160);
+            doc.text(`Página ${numPagina} de ${totalPaginas}`, contentRight, footerTopY + 14.5, { align: 'right' });
+        }
+
+        const itemsFotos = productos.map(p => ({ url: urlImagenProductoFolletoDestacados_(p) }));
+        const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
+
+        // 3 columnas × 3 filas = 9 tarjetas por página — a petición
+        // explícita de Eloy: "si se puede incluir 6 productos o incluso 9
+        // por pagina estaria genial". Las filas se fijan en 3 (en vez de
+        // calcularse a partir de una cardH fija como antes) para que el
+        // alto de tarjeta se adapte al hueco disponible.
+        const numCols = 3, numFilas = 3;
+        const colGap = 6, rowGap = 6;
+        const colW = (contentWidth - colGap * (numCols - 1)) / numCols;
+        const cardH = (footerTopY - headerBottomY - 6 - rowGap * (numFilas - 1)) / numFilas;
+        const porPagina = numCols * numFilas;
+
+        productos.forEach((p, i) => {
+            const indiceEnPagina = i % porPagina;
+            if (indiceEnPagina === 0) {
+                if (i > 0) doc.addPage();
+                // Antes que la cabecera (opaca) y las tarjetas (opacas):
+                // así la marca de agua solo queda visible en los huecos
+                // entre tarjetas y márgenes, nunca por encima de ningún
+                // producto — a petición explícita de Eloy.
+                dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, 297);
+                dibujarCabecera();
+            }
+            const fila = Math.floor(indiceEnPagina / numCols);
+            const col = indiceEnPagina % numCols;
+            const x = margin + col * (colW + colGap);
+            const y = headerBottomY + 6 + fila * (cardH + rowGap);
+            dibujarTarjetaTemporadaPdf_(doc, x, y, colW, cardH, fotos[i], p, colorAccent);
+        });
+
+        const totalPaginas = doc.internal.getNumberOfPages();
+        for (let pag = 1; pag <= totalPaginas; pag++) {
+            doc.setPage(pag);
+            dibujarPie(pag, totalPaginas);
+        }
+        return doc;
+    }
+
+    function temporadaNombreArchivoPdf_(soloSeleccion) {
+        const t = temporadaModalTemporadaActual_;
+        const slug = (t && t.nombre ? t.nombre : 'temporada').toLowerCase()
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        return `${slug || 'temporada'}${soloSeleccion ? '-seleccion' : ''}-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
+    }
+
+    let temporadaFolletoGenerando_ = false;
+    async function temporadaEjecutarAccionFolleto_(btnPulsado, soloSeleccion, accion) {
+        if (temporadaFolletoGenerando_) return;
+        const hayProductos = soloSeleccion ? temporadaModalProductosSeleccionados_().length : temporadaModalProductosFiltrados_().length;
+        if (!hayProductos) {
+            mostrarToast(soloSeleccion
+                ? 'Tu selección de esta temporada está vacía — marca algún producto primero.'
+                : 'No hay productos que mostrar en el folleto con el filtro actual.', 'error');
+            return;
+        }
+        temporadaFolletoGenerando_ = true;
+        const botonesAfectados = soloSeleccion
+            ? [$('temporada-ver-todos-seleccion-pdf'), $('temporada-ver-todos-seleccion-compartir-pdf')]
+            : [$('temporada-ver-todos-pdf'), $('temporada-ver-todos-compartir-pdf')];
+        const textoPulsadoOriginal = btnPulsado.innerHTML;
+        const fijarEstado = (texto) => { btnPulsado.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`; };
+        botonesAfectados.forEach(b => { b.disabled = true; });
+        fijarEstado('Preparando…');
+        try {
+            const doc = await construirDocumentoPdfTemporada_((completadas, total, restantesMs) => {
+                fijarEstado(completadas < total
+                    ? `Generando… (${completadas}/${total}, ~${Math.max(1, Math.round(restantesMs / 1000))}s)`
+                    : 'Componiendo folleto…');
+            }, soloSeleccion);
+            if (doc === 'pendiente') {
+                mostrarToast('Todavía se está confirmando el precio profesional, espera unos segundos y vuelve a intentarlo.', 'error');
+                return;
+            }
+            if (!doc) {
+                mostrarToast('No se ha podido generar el folleto. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+                return;
+            }
+            await accion(doc);
+        } catch (e) {
+            console.error('Error generando el folleto de temporada:', e);
+            mostrarToast('No se ha podido generar el folleto. Inténtalo de nuevo.', 'error');
+        } finally {
+            temporadaFolletoGenerando_ = false;
+            btnPulsado.innerHTML = textoPulsadoOriginal;
+            // Los botones de "mi selección" solo se reactivan si sigue
+            // habiendo algo seleccionado — temporadaModalActualizarPanelSeleccion_
+            // ya decide eso; para los del folleto general, siempre.
+            if (soloSeleccion) temporadaModalActualizarPanelSeleccion_();
+            else botonesAfectados.forEach(b => { b.disabled = false; });
+        }
+    }
+
+    function temporadaDescargarPdf_() {
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-pdf'), false, async (doc) => {
+            doc.save(temporadaNombreArchivoPdf_(false));
+        });
+    }
+
+    function temporadaCompartirPdf_() {
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-compartir-pdf'), false, async (doc) => {
+            await temporadaCompartirODescargarDoc_(doc, false);
+        });
+    }
+
+    function temporadaDescargarPdfSeleccion_() {
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-seleccion-pdf'), true, async (doc) => {
+            doc.save(temporadaNombreArchivoPdf_(true));
+        });
+    }
+
+    function temporadaCompartirPdfSeleccion_() {
+        return temporadaEjecutarAccionFolleto_($('temporada-ver-todos-seleccion-compartir-pdf'), true, async (doc) => {
+            await temporadaCompartirODescargarDoc_(doc, true);
+        });
+    }
+
+    async function temporadaCompartirODescargarDoc_(doc, soloSeleccion) {
+        const blob = doc.output('blob');
+        const nombreArchivo = temporadaNombreArchivoPdf_(soloSeleccion);
+        const file = new File([blob], nombreArchivo, { type: 'application/pdf' });
+        const t = temporadaModalTemporadaActual_;
+        const titulo = (t ? t.nombre : 'Productos de temporada') + (soloSeleccion ? ' — Selección' : '');
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file], title: titulo, text: titulo + ' — Orencio Matas y Hnos' });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+        doc.save(nombreArchivo);
+        mostrarToast('Tu navegador no permite compartir archivos directamente — se ha descargado el PDF, puedes adjuntarlo a mano.');
     }
 
     // Vuelve al buscador principal ya filtrado por esta familia — SIN
@@ -10782,6 +12543,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             $('temporadas-buscar-area').value = '';
             temporadaPoblarSelectoresAreaFamilia_();
             $('temporadas-buscar-resultados').innerHTML = '';
+            $('temporadas-referencias-masivo-bloque').style.display = 'none';
+            $('temporadas-referencias-masivo-texto').value = '';
+            $('temporadas-referencias-masivo-resultado').textContent = '';
         } else {
             $('temporadas-items-bloque').style.display = 'none';
         }
@@ -10991,6 +12755,60 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         temporadaGuardarReferencias_((t.referencias || []).concat([ref]));
     }
 
+    // Alta masiva de referencias — a petición de Eloy: "un botón que abra
+    // un campo de texto para poder añadir una lista de referencias
+    // separadas por coma y espacio... de manera masiva". Se pegan contra
+    // el catálogo (TODOS) una a una: las que no existen o ya estaban
+    // incluidas se informan aparte en vez de fallar en silencio, y solo
+    // las válidas y nuevas se añaden a las ya existentes (nunca se
+    // sustituye la lista entera).
+    async function temporadaAnadirReferenciasMasivo_() {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        const resultadoEl = $('temporadas-referencias-masivo-resultado');
+        if (!t) { resultadoEl.textContent = 'Guarda primero la temporada antes de añadir productos.'; return; }
+
+        const refsPegadas = ($('temporadas-referencias-masivo-texto').value || '')
+            .split(',').map(s => s.trim()).filter(Boolean);
+        if (!refsPegadas.length) { resultadoEl.textContent = 'Pega al menos una referencia.'; return; }
+
+        const yaIncluidas = new Set((t.referencias || []).map(r => String(r)));
+        const nuevas = [];
+        const repetidas = [];
+        const noEncontradas = [];
+        const vistasEnEstaTanda = new Set();
+        refsPegadas.forEach(ref => {
+            const producto = TODOS.find(p => String(p.ref).toUpperCase() === ref.toUpperCase());
+            if (!producto) { noEncontradas.push(ref); return; }
+            const refReal = String(producto.ref);
+            if (yaIncluidas.has(refReal) || vistasEnEstaTanda.has(refReal)) { repetidas.push(ref); return; }
+            vistasEnEstaTanda.add(refReal);
+            nuevas.push(refReal);
+        });
+
+        if (!nuevas.length) {
+            resultadoEl.textContent = 'Ninguna referencia nueva que añadir.' +
+                (noEncontradas.length ? ' No encontradas en el catálogo: ' + noEncontradas.join(', ') + '.' : '') +
+                (repetidas.length ? ' Ya incluidas: ' + repetidas.join(', ') + '.' : '');
+            return;
+        }
+
+        const btn = $('temporadas-referencias-masivo-confirmar');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Añadiendo...';
+        try {
+            await temporadaGuardarReferencias_((t.referencias || []).concat(nuevas));
+            let mensaje = `✓ Añadidas ${nuevas.length} referencia(s) nueva(s).`;
+            if (repetidas.length) mensaje += ` Ya estaban incluidas (sin duplicar): ${repetidas.join(', ')}.`;
+            if (noEncontradas.length) mensaje += ` No encontradas en el catálogo: ${noEncontradas.join(', ')}.`;
+            resultadoEl.textContent = mensaje;
+            $('temporadas-referencias-masivo-texto').value = '';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
     // Filtros de área/familia para el buscador de productos concretos —
     // mismo patrón que destacadosPoblarSelectoresAreaFamilia_/
     // destacadosActualizarSelectorFamilias_.
@@ -11061,6 +12879,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function abrirModalGestionTemporadas_() {
         $('temporadas-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         temporadaCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omTemporadasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -11074,6 +12893,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalGestionTemporadas_() {
         $('temporadas-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     // ── Listeners del modal público "ver todos" (siempre presentes) ──
@@ -11083,8 +12903,54 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // propio listener acotado a esa temporada en concreto.
     $('temporada-ver-todos-cerrar').addEventListener('click', cerrarModalTemporadaVerTodos_);
     $('temporada-ver-todos-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporada-ver-todos-overlay') cerrarModalTemporadaVerTodos_(); });
-    $('temporada-ver-todos-scroll').addEventListener('scroll', temporadaObservarScroll_);
+    // El scroll ahora ocurre en la modal entera (ver el comentario junto a
+    // .modal-producto-box.modal-temporada-ver-todos-box), no en un div
+    // interior aparte — así que el scroll infinito observa ese elemento.
+    $('temporada-ver-todos-box').addEventListener('scroll', temporadaObservarScroll_);
+    // Botón flotante "subir arriba" propio de la modal — a petición
+    // explícita de Eloy. Mismo throttle por requestAnimationFrame que el
+    // botón equivalente del sitio (ver actualizarVisibilidadBotonSubir).
+    (() => {
+        const btn = $('temporada-ver-todos-subir-arriba');
+        const box = $('temporada-ver-todos-box');
+        let ticking = false;
+        const actualizar = () => {
+            btn.classList.toggle('visible', box.scrollTop > 400);
+            ticking = false;
+        };
+        box.addEventListener('scroll', () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(actualizar);
+        });
+        btn.addEventListener('click', () => box.scrollTo({ top: 0, behavior: 'smooth' }));
+    })();
     $('temporada-ver-todos-buscar').addEventListener('input', temporadaModalFiltrarYRenderizar_);
+    $('temporada-ver-todos-pdf').addEventListener('click', temporadaDescargarPdf_);
+    $('temporada-ver-todos-compartir-pdf').addEventListener('click', temporadaCompartirPdf_);
+    $('temporada-ver-todos-marca').addEventListener('change', (e) => {
+        temporadaModalFiltroMarca_ = e.target.value;
+        temporadaModalFiltrarYRenderizar_();
+    });
+    $('temporada-ver-todos-precio-min').addEventListener('input', debounce((e) => {
+        const v = parseFloat(e.target.value);
+        temporadaModalPrecioMin_ = isFinite(v) && e.target.value !== '' ? v : null;
+        temporadaModalFiltrarYRenderizar_();
+    }, 300));
+    $('temporada-ver-todos-precio-max').addEventListener('input', debounce((e) => {
+        const v = parseFloat(e.target.value);
+        temporadaModalPrecioMax_ = isFinite(v) && e.target.value !== '' ? v : null;
+        temporadaModalFiltrarYRenderizar_();
+    }, 300));
+    $('temporada-ver-todos-orden').addEventListener('change', (e) => {
+        temporadaModalOrden_ = e.target.value;
+        temporadaModalFiltrarYRenderizar_();
+    });
+    $('temporada-ver-todos-limpiar-filtros-vacio').addEventListener('click', temporadaModalLimpiarFiltros_);
+    $('temporada-ver-todos-seleccion-anadir-todos').addEventListener('click', temporadaModalAnadirTodosVisibles_);
+    $('temporada-ver-todos-seleccion-limpiar').addEventListener('click', temporadaModalLimpiarSeleccion_);
+    $('temporada-ver-todos-seleccion-pdf').addEventListener('click', temporadaDescargarPdfSeleccion_);
+    $('temporada-ver-todos-seleccion-compartir-pdf').addEventListener('click', temporadaCompartirPdfSeleccion_);
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && $('temporada-ver-todos-overlay').classList.contains('activo')) cerrarModalTemporadaVerTodos_();
     });
@@ -11106,6 +12972,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('temporadas-buscar-texto').addEventListener('input', temporadaBuscarYRenderizar_);
         $('temporadas-buscar-area').addEventListener('change', () => { temporadaActualizarSelectorFamilias_(); temporadaBuscarYRenderizar_(); });
         $('temporadas-buscar-familia').addEventListener('change', temporadaBuscarYRenderizar_);
+        $('temporadas-referencias-masivo-btn').addEventListener('click', () => {
+            $('temporadas-referencias-masivo-bloque').style.display = '';
+            $('temporadas-referencias-masivo-texto').focus();
+        });
+        $('temporadas-referencias-masivo-cancelar').addEventListener('click', () => {
+            $('temporadas-referencias-masivo-bloque').style.display = 'none';
+            $('temporadas-referencias-masivo-texto').value = '';
+            $('temporadas-referencias-masivo-resultado').textContent = '';
+        });
+        $('temporadas-referencias-masivo-confirmar').addEventListener('click', temporadaAnadirReferenciasMasivo_);
         $('temporadas-modal-cerrar').addEventListener('click', cerrarModalGestionTemporadas_);
         $('temporadas-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporadas-modal-overlay') cerrarModalGestionTemporadas_(); });
         document.addEventListener('keydown', (e) => {
@@ -11116,6 +12992,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     const MAX_TARJETAS_MAS_BUSCADOS = 10;
     const MAX_PRODUCTOS_POR_TERMINO = 2; // para que un único término muy genérico no acapare toda la fila
 
+    // Resolver cada término contra el catálogo (productosQueCoincidenConTexto_)
+    // es caro (recorre el catálogo entero con fuzzy matching) — con los
+    // 5-20 términos típicos, resolverlos todos en el mismo bucle síncrono
+    // bloqueaba el hilo principal varios segundos de golpe en equipos
+    // lentos — bug real de rendimiento reportado por Eloy: "en un pc o
+    // móvil con bajas características apenas funcionará". Se reparte en
+    // un término por fotograma (requestAnimationFrame) — el resultado
+    // final es idéntico, pero el navegador puede atender scroll/pintado
+    // entre término y término en vez de congelarse.
     function renderMasBuscados_(terminos) {
         if (!TODOS.length || !terminos.length) {
             modulosDescubrimientoConContenido_.masBuscados = 'vacio';
@@ -11124,23 +13009,30 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         }
         const refsUsadas = new Set();
         const productos = [];
-        for (const t of terminos) {
-            if (productos.length >= MAX_TARJETAS_MAS_BUSCADOS) break;
-            const coincidencias = productosQueCoincidenConTexto_(t.query_normalized)
+        const procesarTermino_ = (indice) => {
+            if (indice >= terminos.length || productos.length >= MAX_TARJETAS_MAS_BUSCADOS) {
+                terminarMasBuscados_();
+                return;
+            }
+            const coincidencias = productosQueCoincidenConTexto_(terminos[indice].query_normalized)
                 .filter(p => !refsUsadas.has(p.ref))
                 .slice(0, MAX_PRODUCTOS_POR_TERMINO);
             coincidencias.forEach(p => { refsUsadas.add(p.ref); productos.push(p); });
-        }
-        if (!productos.length) {
-            modulosDescubrimientoConContenido_.masBuscados = 'vacio';
+            requestAnimationFrame(() => procesarTermino_(indice + 1));
+        };
+        const terminarMasBuscados_ = () => {
+            if (!productos.length) {
+                modulosDescubrimientoConContenido_.masBuscados = 'vacio';
+                actualizarVisibilidadModulosDescubrimiento_();
+                return;
+            }
+            const cont = $('mas-buscados-lista');
+            cont.innerHTML = '';
+            productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
+            modulosDescubrimientoConContenido_.masBuscados = 'con-contenido';
             actualizarVisibilidadModulosDescubrimiento_();
-            return;
-        }
-        const cont = $('mas-buscados-lista');
-        cont.innerHTML = '';
-        productos.slice(0, MAX_TARJETAS_MAS_BUSCADOS).forEach(p => cont.appendChild(crearTarjeta(p)));
-        modulosDescubrimientoConContenido_.masBuscados = 'con-contenido';
-        actualizarVisibilidadModulosDescubrimiento_();
+        };
+        procesarTermino_(0);
     }
 
     // Petición compartida: "más buscados" y "marcas más buscadas" parten
@@ -11160,9 +13052,22 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
           .catch(() => []); // sin esto, los módulos siguen sin mostrarse — el buscador sigue funcionando igual
     }
 
+    // requestIdleCallback (con setTimeout de respaldo en Safari, que no lo
+    // implementa): este módulo es caro incluso ya optimizado (recorre el
+    // catálogo activo con fuzzy matching por cada término) — a petición
+    // de Eloy de seguir mejorando el rendimiento, se aplaza a que el
+    // navegador tenga un hueco libre en vez de competir por el hilo
+    // principal justo cuando el catálogo termina de cargar, que es
+    // también cuando el usuario puede estar ya interactuando con la
+    // página (p. ej. abriendo la modal de una temporada).
+    function enHuecoLibre_(fn) {
+        if (window.requestIdleCallback) requestIdleCallback(fn, { timeout: 2000 });
+        else setTimeout(fn, 300);
+    }
+
     function cargarMasBuscados_() {
         if (!TODOS.length) return;
-        obtenerTerminosMasBuscados_().then(renderMasBuscados_);
+        enHuecoLibre_(() => obtenerTerminosMasBuscados_().then(renderMasBuscados_));
     }
 
     // ── Módulo "🏆 Marcas más buscadas" ──────────────────────────────────
@@ -11185,6 +13090,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     // un término cuenta como mucho una vez por marca, para que un
     // término con 50 SKUs de la misma marca no la infle de más.
     const MAX_MARCAS_MAS_BUSCADAS = 8;
+    // Mismo motivo y mismo reparto en requestAnimationFrame que
+    // renderMasBuscados_ (ver su comentario): resolver cada término
+    // contra el catálogo es caro, y este módulo lo hacía en el mismo
+    // bucle síncrono para TODOS los términos de golpe.
     function renderMarcasMasBuscadas_(terminos) {
         if (!TODOS.length || !terminos.length) {
             modulosDescubrimientoConContenido_.marcas = 'vacio';
@@ -11192,7 +13101,12 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             return;
         }
         const sesionesPorMarca = new Map();
-        terminos.forEach(t => {
+        const procesarTermino_ = (indice) => {
+            if (indice >= terminos.length) {
+                terminarMarcasMasBuscadas_();
+                return;
+            }
+            const t = terminos[indice];
             const marcasDeEsteTermino = new Set();
             productosQueCoincidenConTexto_(t.query_normalized).forEach(p => {
                 const marca = detectarMarcaAsistente(p.nombre);
@@ -11201,53 +13115,57 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             marcasDeEsteTermino.forEach(marca => {
                 sesionesPorMarca.set(marca, (sesionesPorMarca.get(marca) || 0) + (t.sesiones_unicas || 0));
             });
-        });
-        if (!sesionesPorMarca.size) {
-            modulosDescubrimientoConContenido_.marcas = 'vacio';
-            actualizarVisibilidadModulosDescubrimiento_();
-            return;
-        }
-
-        const marcasOrdenadas = [...sesionesPorMarca.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, MAX_MARCAS_MAS_BUSCADAS)
-            .map(([marca]) => marca);
-
-        const cont = $('marcas-buscadas-lista');
-        cont.innerHTML = '';
-        marcasOrdenadas.forEach(marca => {
-            // Productos reales de esta marca — de aquí salen tanto la
-            // miniatura (logo del fabricante si existe, si no la foto de
-            // uno de sus productos) como el área/familia a aplicar al
-            // filtrar, para no mezclar resultados de otras áreas que
-            // coincidan por casualidad con el mismo nombre de marca.
-            const productosMarca = TODOS.filter(p => detectarMarcaAsistente(p.nombre) === marca);
-            const areas = new Set(productosMarca.map(p => p.area).filter(Boolean));
-            const familias = new Set(productosMarca.map(p => p.familia).filter(Boolean));
-            const areaUnica = areas.size === 1 ? [...areas][0] : null;
-            const familiaUnica = familias.size === 1 ? [...familias][0] : null;
-
-            const logoFabricante = LOGOS_FABRICANTE[marca];
-            const productoConFoto = productosMarca.find(p => urlImagenProducto(p, 80));
-
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'marcas-buscadas__chip' + (logoFabricante ? ' marcas-buscadas__chip--solo-logo' : '');
-            chip.setAttribute('aria-label', `Filtrar por ${marca}`);
-            if (logoFabricante) {
-                chip.innerHTML = `<img class="marcas-buscadas__chip-logo" src="${logoFabricante}" alt="${escapeHtml(marca)}">`;
-            } else {
-                const fotoHtml = productoConFoto
-                    ? `<img class="marcas-buscadas__chip-foto" src="${urlImagenProducto(productoConFoto, 80)}" alt="" loading="lazy">`
-                    : `<span class="marcas-buscadas__chip-foto"></span>`;
-                chip.innerHTML = `${fotoHtml}<span>${escapeHtml(marca)}</span>`;
+            requestAnimationFrame(() => procesarTermino_(indice + 1));
+        };
+        const terminarMarcasMasBuscadas_ = () => {
+            if (!sesionesPorMarca.size) {
+                modulosDescubrimientoConContenido_.marcas = 'vacio';
+                actualizarVisibilidadModulosDescubrimiento_();
+                return;
             }
-            const refsMarca = productosMarca.map(p => p.ref);
-            chip.onclick = () => aplicarFiltroMarca_(marca, areaUnica, familiaUnica, refsMarca);
-            cont.appendChild(chip);
-        });
-        modulosDescubrimientoConContenido_.marcas = 'con-contenido';
-        actualizarVisibilidadModulosDescubrimiento_();
+
+            const marcasOrdenadas = [...sesionesPorMarca.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, MAX_MARCAS_MAS_BUSCADAS)
+                .map(([marca]) => marca);
+
+            const cont = $('marcas-buscadas-lista');
+            cont.innerHTML = '';
+            marcasOrdenadas.forEach(marca => {
+                // Productos reales de esta marca — de aquí salen tanto la
+                // miniatura (logo del fabricante si existe, si no la foto de
+                // uno de sus productos) como el área/familia a aplicar al
+                // filtrar, para no mezclar resultados de otras áreas que
+                // coincidan por casualidad con el mismo nombre de marca.
+                const productosMarca = TODOS.filter(p => detectarMarcaAsistente(p.nombre) === marca);
+                const areas = new Set(productosMarca.map(p => p.area).filter(Boolean));
+                const familias = new Set(productosMarca.map(p => p.familia).filter(Boolean));
+                const areaUnica = areas.size === 1 ? [...areas][0] : null;
+                const familiaUnica = familias.size === 1 ? [...familias][0] : null;
+
+                const logoFabricante = LOGOS_FABRICANTE[marca];
+                const productoConFoto = productosMarca.find(p => urlImagenProducto(p, 80));
+
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'marcas-buscadas__chip' + (logoFabricante ? ' marcas-buscadas__chip--solo-logo' : '');
+                chip.setAttribute('aria-label', `Filtrar por ${marca}`);
+                if (logoFabricante) {
+                    chip.innerHTML = `<img class="marcas-buscadas__chip-logo" src="${logoFabricante}" alt="${escapeHtml(marca)}">`;
+                } else {
+                    const fotoHtml = productoConFoto
+                        ? `<img class="marcas-buscadas__chip-foto" src="${urlImagenProducto(productoConFoto, 80)}" alt="" loading="lazy">`
+                        : `<span class="marcas-buscadas__chip-foto"></span>`;
+                    chip.innerHTML = `${fotoHtml}<span>${escapeHtml(marca)}</span>`;
+                }
+                const refsMarca = productosMarca.map(p => p.ref);
+                chip.onclick = () => aplicarFiltroMarca_(marca, areaUnica, familiaUnica, refsMarca);
+                cont.appendChild(chip);
+            });
+            modulosDescubrimientoConContenido_.marcas = 'con-contenido';
+            actualizarVisibilidadModulosDescubrimiento_();
+        };
+        procesarTermino_(0);
     }
 
     // Clic en un chip de "Marcas más buscadas": restringe el resultado a
@@ -11288,8 +13206,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
     function cargarMarcasMasBuscadas_() {
         if (!TODOS.length) return;
-        Promise.all([obtenerTerminosMasBuscados_(), cargarMapaMarcasAsistente()])
-          .then(([terminos]) => renderMarcasMasBuscadas_(terminos));
+        enHuecoLibre_(() => {
+            Promise.all([obtenerTerminosMasBuscados_(), cargarMapaMarcasAsistente()])
+              .then(([terminos]) => renderMarcasMasBuscadas_(terminos));
+        });
     }
 
     // ── Módulo "🆕 Novedades" ────────────────────────────────────────────
@@ -12000,6 +13920,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function bcAbrirModal_() {
         $('bc-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         bcCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omBloquesCategoriasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -12014,6 +13935,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         bcCerrarEditor_();
         $('bc-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-bloques-categorias')) {
@@ -12185,6 +14107,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function paAbrirModal_() {
         $('pa-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('pa-vista-pin').style.display = 'block';
         $('pa-vista-principal').style.display = 'none';
         $('pa-pin-input').value = '';
@@ -12200,6 +14123,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function paCerrarModal_() {
         $('pa-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-panel-analitica')) {
@@ -12731,6 +14655,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         backdrop.classList.add('visible');
         document.body.style.overflow = 'hidden';
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
 
         // Igual que al escribir en el buscador: más espacio libre, y el
         // icono del botón se invierte para indicar que el panel está abierto
@@ -12760,6 +14685,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         $('filtros-backdrop').classList.remove('visible');
         document.body.style.overflow = '';
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-abrir-filtros-movil').classList.remove('activo');
         $('btn-limpiar-arriba').classList.remove('clicable');
     }
@@ -13164,7 +15090,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return arr;
     }
 
-    function agruparPorFamilia(lista) {
+    function agruparPorFamilia(lista, omitirSubgrupos) {
         const grupos = {};
         lista.forEach(p => {
             const fam = p.familia || 'Sin clasificar';
@@ -13179,6 +15105,14 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         return nombresFamilias.map(nombre => {
             const productosFamilia = grupos[nombre];
+
+            // La modal de temporada solo necesita nombre+productos por
+            // familia (nunca lee subgrupos) — nos ahorramos agrupar por
+            // subfamilia y el ordenarProductos() de cada una (coste real
+            // detectado al perfilar el scroll "a trompicones" en móvil).
+            if (omitirSubgrupos) {
+                return { nombre, productos: productosFamilia, subgrupos: [] };
+            }
 
             // Subagrupar por subfamilia
             const subgruposMap = {};
@@ -14409,6 +16343,10 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             const indiceEnPagina = i % porPagina;
             if (indiceEnPagina === 0) {
                 if (i > 0) doc.addPage();
+                // Antes que la cabecera y las tarjetas (ambas opacas) —
+                // a petición explícita de Eloy: marca de agua sutil que
+                // nunca tape ningún producto.
+                dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, 297);
                 dibujarCabecera();
             }
             const fila = Math.floor(indiceEnPagina / 2);
@@ -14634,8 +16572,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // Igual que avisosMostrados: campo añadido después de la v2
             // original, se sanea aparte sin forzar otro bump de versión.
             const notas = typeof data.notas === 'string' ? data.notas.slice(0, LISTA_COMPRA_NOTAS_MAX_) : '';
+            // Igual que notas/avisosMostrados: campo añadido después de la
+            // v2 original (id de la última propuesta guardada en Apps
+            // Script para esta lista, ver guardarYCompartirPropuesta_ — así
+            // volver a compartir actualiza el MISMO enlace en vez de crear
+            // uno nuevo cada vez), se sanea aparte sin forzar otro bump de
+            // versión.
+            const propuestaId = typeof data.propuestaId === 'string' ? data.propuestaId : null;
             const productos = data.productos.map(listaCompraSanear_).filter(Boolean);
-            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos, notas };
+            return { version: LISTA_COMPRA_VERSION_, creado, avisosMostrados, productos, notas, propuestaId };
         } catch (e) {
             return null;
         }
@@ -14666,7 +16611,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function listaCompraProductoPorRef_(ref) { return listaCompraProductos_().find(p => p.ref === ref) || null; }
 
     function listaCompraCrear_() {
-        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [], notas: '' };
+        listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [], notas: '', propuestaId: null };
         listaCompraPersistir_();
     }
 
@@ -14929,6 +16874,11 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         listaCompraState_.creado = Date.now();
         listaCompraState_.avisosMostrados = [];
         listaCompraState_.notas = '';
+        // Igual que las notas: el enlace de propuesta ya compartido era de
+        // ESTA lista, no tendría sentido que un futuro "compartir" sobre
+        // una lista vaciada y reconstruida siguiera actualizando en
+        // silencio un enlace que alguien ya pueda tener guardado.
+        listaCompraState_.propuestaId = null;
         listaCompraPersistir_();
     }
 
@@ -15140,6 +17090,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         actualizarPosicionBloqueListaCompra_(hayFiltroActivo_());
         if ($('modal-lista-compra-overlay').classList.contains('activo')) renderModalListaCompra_();
         actualizarBotonListaCompraEnModalProducto_();
+        actualizarBotonFlotanteListaCompra_();
+    }
+
+    // Botón flotante de acceso rápido — visible siempre que exista una
+    // lista (listaCompraExiste_(), mismo criterio que renderBloqueListaCompra_,
+    // no "cantidad > 0": una lista recién creada pero aún vacía también
+    // cuenta como "creada").
+    function actualizarBotonFlotanteListaCompra_() {
+        $('btn-lista-compra-flotante').classList.toggle('visible', listaCompraExiste_());
     }
 
     // ── Modal de gestión ─────────────────────────────────────────────
@@ -15169,13 +17128,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             // btn-lista-compra-etiquetas puede no existir en el DOM (se
             // elimina en producción, ver window.MOSTRAR_ETIQUETA_PRECIO) —
             // de ahí la comprobación antes de tocar su estilo.
-            ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
+            ['btn-lista-compra-pdf', 'btn-lista-compra-folleto-pdf', 'btn-lista-compra-folleto-compartir', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
             return;
         }
         grid.style.display = '';
         vacia.style.display = 'none';
         notasWrap.style.display = '';
-        ['btn-lista-compra-pdf', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = ''; });
+        ['btn-lista-compra-pdf', 'btn-lista-compra-folleto-pdf', 'btn-lista-compra-folleto-compartir', 'btn-lista-compra-whatsapp', 'btn-lista-compra-correo', 'btn-lista-compra-etiquetas', 'btn-lista-compra-vaciar'].forEach(id => { const el = $(id); if (el) el.style.display = ''; });
 
         grid.innerHTML = '';
         listaCompraOrdenada_().forEach(p => grid.appendChild(crearTarjetaListaCompraModal_(p)));
@@ -15198,9 +17157,13 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         if (!listaCompraExiste_()) return; // puede haber caducado en la comprobación anterior
         renderModalListaCompra_();
         $('modal-lista-compra-overlay').classList.add('activo');
+        // Sin sentido mostrar el propio botón flotante de acceso rápido
+        // mientras la modal que abre ya está abierta.
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
     }
     function cerrarModalListaCompra_() {
         $('modal-lista-compra-overlay').classList.remove('activo');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
 
     // ── Confirmación genérica (Vaciar / Eliminar lista) ───────────────
@@ -15624,6 +17587,186 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'pdf' });
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    // ── FOLLETO PDF DE LA LISTA DE LA COMPRA (con fotos, precio y QR) ───
+    // Mismo motor que el folleto de Destacados/Temporada
+    // (dibujarTarjetaTemporadaPdf_, cargarImagenesFolletoDestacadosEnTandas_,
+    // misma marca de agua con el logo vía dibujarMarcaDeAguaFolletoPdf_) —
+    // a petición explícita de Eloy: "la misma funcionalidad que se ha
+    // añadido para generar el folleto quiero que la incluyas en la modal
+    // de la lista de la compra tal y como esta ya en temporadas".
+    // Convive con "Exportar a PDF" de arriba (construirDocumentoPdfListaCompra_,
+    // la tabla con subtotales/IVA, que no se toca): esta es una
+    // alternativa visual con foto y QR por producto, no un reemplazo.
+    // ══════════════════════════════════════════════════════════════════
+    async function construirDocumentoPdfListaCompraFolleto_(onProgreso) {
+        if (typeof window.jspdf === 'undefined') return null;
+        // Nunca con el precio al por mayor todavía sin confirmar — mismo
+        // motivo que construirDocumentoPdfTemporada_.
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) return 'pendiente';
+        const productos = listaCompraOrdenada_();
+        if (!productos.length) return null;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const pageW = 210, margin = 14;
+        const headerBottomY = 30, footerTopY = 272;
+        const contentRight = pageW - margin;
+        const contentWidth = contentRight - margin;
+        const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+        // Mismo criterio de color que el folleto de temporada: rojo de
+        // marca para el profesional, azul para el normal (PVP).
+        const colorAccent = esProfesionalFolleto ? [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b] : [25, 118, 210];
+        const textoTipoPrecio = esProfesionalFolleto ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)';
+
+        const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
+
+        function dibujarCabecera() {
+            doc.setFillColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+            doc.rect(0, 0, pageW, 3, 'F');
+            if (logo) {
+                const logoH = 11, logoW = logoH * (logo.width / logo.height);
+                doc.addImage(logo.dataUrl, 'PNG', margin, 8, logoW, logoH);
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text('MI LISTA DE LA COMPRA', contentRight, 12, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(120, 123, 130);
+            doc.text(`${textoTipoPrecio} · Generado el ${listaCompraFechaFormateada_()}`, contentRight, 17, { align: 'right' });
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, headerBottomY - 4, contentRight, headerBottomY - 4);
+        }
+
+        function dibujarPie(numPagina, totalPaginas) {
+            doc.setDrawColor(226, 228, 232);
+            doc.setLineWidth(0.3);
+            doc.line(margin, footerTopY, contentRight, footerTopY);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(30, 33, 37);
+            doc.text(LISTA_COMPRA_EMPRESA_.nombre, margin, footerTopY + 6);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(110, 113, 120);
+            doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
+            doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+            doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.6);
+            doc.setTextColor(150, 153, 160);
+            doc.text(`Página ${numPagina} de ${totalPaginas}`, contentRight, footerTopY + 14.5, { align: 'right' });
+        }
+
+        const itemsFotos = productos.map(p => ({ url: urlImagenProductoFolletoDestacados_(p) }));
+        const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
+
+        const numCols = 3, numFilas = 3;
+        const colGap = 6, rowGap = 6;
+        const colW = (contentWidth - colGap * (numCols - 1)) / numCols;
+        const cardH = (footerTopY - headerBottomY - 6 - rowGap * (numFilas - 1)) / numFilas;
+        const porPagina = numCols * numFilas;
+
+        productos.forEach((p, i) => {
+            const indiceEnPagina = i % porPagina;
+            if (indiceEnPagina === 0) {
+                if (i > 0) doc.addPage();
+                // La marca de agua se dibuja ANTES que la cabecera y las
+                // tarjetas (que son opacas) — así solo queda visible en
+                // los huecos entre tarjetas y márgenes, nunca por encima
+                // de ningún producto.
+                dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, 297);
+                dibujarCabecera();
+            }
+            const fila = Math.floor(indiceEnPagina / numCols);
+            const col = indiceEnPagina % numCols;
+            const x = margin + col * (colW + colGap);
+            const y = headerBottomY + 6 + fila * (cardH + rowGap);
+            dibujarTarjetaTemporadaPdf_(doc, x, y, colW, cardH, fotos[i], p, colorAccent);
+        });
+
+        const totalPaginas = doc.internal.getNumberOfPages();
+        for (let pag = 1; pag <= totalPaginas; pag++) {
+            doc.setPage(pag);
+            dibujarPie(pag, totalPaginas);
+        }
+        return doc;
+    }
+
+    function listaCompraFolletoNombreArchivoPdf_() {
+        return `folleto-lista-de-la-compra-orencio-matas-${listaCompraFechaFormateada_().replace(/\//g, '-')}.pdf`;
+    }
+
+    let listaCompraFolletoGenerando_ = false;
+    async function listaCompraEjecutarAccionFolleto_(btnPulsado, accion) {
+        if (listaCompraFolletoGenerando_) return;
+        if (!listaCompraOrdenada_().length) {
+            mostrarToast('Tu lista de la compra está vacía — añade algún producto primero.', 'error');
+            return;
+        }
+        listaCompraFolletoGenerando_ = true;
+        const botonesAfectados = [$('btn-lista-compra-folleto-pdf'), $('btn-lista-compra-folleto-compartir')];
+        const textoPulsadoOriginal = btnPulsado.innerHTML;
+        const fijarEstado = (texto) => { btnPulsado.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${texto}</span>`; };
+        botonesAfectados.forEach(b => { b.disabled = true; });
+        fijarEstado('Preparando…');
+        try {
+            const doc = await construirDocumentoPdfListaCompraFolleto_((completadas, total, restantesMs) => {
+                fijarEstado(completadas < total
+                    ? `Generando… (${completadas}/${total}, ~${Math.max(1, Math.round(restantesMs / 1000))}s)`
+                    : 'Componiendo folleto…');
+            });
+            if (doc === 'pendiente') {
+                mostrarToast('Todavía se está confirmando el precio profesional, espera unos segundos y vuelve a intentarlo.', 'error');
+                return;
+            }
+            if (!doc) {
+                mostrarToast('No se ha podido generar el folleto. Comprueba tu conexión e inténtalo de nuevo.', 'error');
+                return;
+            }
+            await accion(doc);
+        } catch (e) {
+            console.error('Error generando el folleto de la lista de la compra:', e);
+            mostrarToast('No se ha podido generar el folleto. Inténtalo de nuevo.', 'error');
+        } finally {
+            listaCompraFolletoGenerando_ = false;
+            btnPulsado.innerHTML = textoPulsadoOriginal;
+            botonesAfectados.forEach(b => { b.disabled = false; });
+        }
+    }
+
+    function listaCompraDescargarFolletoPdf_() {
+        return listaCompraEjecutarAccionFolleto_($('btn-lista-compra-folleto-pdf'), async (doc) => {
+            doc.save(listaCompraFolletoNombreArchivoPdf_());
+            enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'folleto_pdf' });
+        });
+    }
+
+    function listaCompraCompartirFolletoPdf_() {
+        return listaCompraEjecutarAccionFolleto_($('btn-lista-compra-folleto-compartir'), async (doc) => {
+            const blob = doc.output('blob');
+            const nombreArchivo = listaCompraFolletoNombreArchivoPdf_();
+            const file = new File([blob], nombreArchivo, { type: 'application/pdf' });
+            const titulo = 'Mi lista de la compra — Orencio Matas y Hnos';
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: titulo, text: titulo });
+                    enviarEventoAnalitica_('lista_compra_exportada', { lista_compra_medio: 'folleto_compartido' });
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return;
+                }
+            }
+            doc.save(nombreArchivo);
+            mostrarToast('Tu navegador no permite compartir archivos directamente — se ha descargado el PDF, puedes adjuntarlo a mano.');
+        });
+    }
+
     // Devuelve el PDF ya generado como File (para adjuntarlo vía Web
     // Share API) o null si no se ha podido generar.
     async function generarArchivoPdfListaCompra_() {
@@ -15742,6 +17885,188 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         mostrarToast('Se ha abierto tu programa de correo. Si quieres adjuntar también el PDF, expórtalo con el botón de al lado.');
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    // ── PROPUESTA COMERCIAL (compartir la Lista de la compra por enlace) ──
+    // A petición explícita: "compartir la propuesta mediante un enlace
+    // que funcione para el destinatario". Guarda en Apps Script solo
+    // referencias/cantidades/tipo/notas — NUNCA precios (ver el bloque
+    // "PROPUESTAS COMERCIALES" en scripts/apps_script_trigger.js para el
+    // porqué). Volver a compartir la MISMA lista actualiza el mismo
+    // enlace (listaCompraState_.propuestaId) en vez de crear uno nuevo
+    // cada vez; "Vaciar la lista" lo reinicia (ver listaCompraVaciar_).
+    // ══════════════════════════════════════════════════════════════════
+    async function propuestaFetchPost_(payload) {
+        for (let intento = 0; intento < 2; intento++) {
+            const resp = await fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+            });
+            const d = await resp.json();
+            if (d.success !== undefined || intento === 1) return d;
+            console.warn('propuestaFetchPost_: respuesta sin "success" (posible redirección a doGet) — reintentando...', d);
+        }
+    }
+
+    function urlCompartirPropuesta_(id) {
+        const base = window.location.origin + window.location.pathname;
+        return `${base}?propuesta=${encodeURIComponent(id)}`;
+    }
+
+    async function guardarYCompartirPropuesta_() {
+        if (!listaCompraExiste_() || !listaCompraProductos_().length) {
+            mostrarToast('Tu lista está vacía — añade algún producto antes de compartirla.', 'error');
+            return;
+        }
+        const btn = $('btn-lista-compra-propuesta-compartir');
+        const resultadoEl = $('lista-compra-propuesta-resultado');
+        const tipo = $('lista-compra-propuesta-tipo').value === 'confirmada' ? 'confirmada' : 'orientativa';
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        resultadoEl.textContent = '';
+        try {
+            const productos = listaCompraProductos_().map(p => ({
+                ref: p.ref, unidades: p.unidades, modoCompra: p.modoCompra, cantidadEnvases: p.cantidadEnvases,
+            }));
+            const resp = await propuestaFetchPost_({
+                accion: 'guardar_propuesta',
+                id: listaCompraState_.propuestaId || undefined,
+                tipo: tipo, productos: productos, notas: listaCompraNotas_(),
+            });
+            if (!resp || !resp.success) {
+                resultadoEl.textContent = (resp && resp.error) || 'No se ha podido guardar la propuesta. Inténtalo de nuevo.';
+                return;
+            }
+            listaCompraState_.propuestaId = resp.id;
+            listaCompraPersistir_();
+            const url = urlCompartirPropuesta_(resp.id);
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: 'Propuesta — Orencio Matas y Hnos', text: 'Esta es la selección de productos que te propongo:', url: url });
+                    resultadoEl.textContent = '✓ Enlace compartido.';
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return; // cancelado a propósito
+                }
+            }
+            try {
+                await navigator.clipboard.writeText(url);
+                resultadoEl.textContent = '✓ Enlace copiado al portapapeles: ' + url;
+            } catch (e) {
+                window.prompt('Copia este enlace para compartir la propuesta:', url);
+            }
+        } catch (e) {
+            resultadoEl.textContent = 'Error de conexión al guardar la propuesta.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    // Si la URL incluye ?propuesta=<id>, la carga y muestra en un modal
+    // propio al arrancar la página — mismo patrón que abrirProductoDesdeURL/
+    // abrirTemporadaDesdeURL_ (?ref=/?temporada=), limpiando el parámetro
+    // al terminar. Los precios/nombres se resuelven SIEMPRE aquí, contra
+    // TODOS (el catálogo ya cargado) y el perfil de quien abre el enlace
+    // — nunca lo que vio quien la compartió — así que un producto
+    // descatalogado o con el precio cambiado desde entonces se refleja
+    // correctamente, sin ningún dato obsoleto guardado en el servidor.
+    async function abrirPropuestaDesdeURL_() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('propuesta');
+        if (!id) return;
+        try {
+            const resp = await fetch(`${window.GOOGLE_APPS_SCRIPT_URL}?accion=obtener_propuesta&id=${encodeURIComponent(id)}`, { cache: 'no-store' });
+            const datos = await resp.json();
+            if (!datos || !datos.success || !datos.propuesta) {
+                mostrarToast('Esta propuesta ya no está disponible.', 'error');
+            } else {
+                mostrarPropuestaRecibida_(datos.propuesta);
+            }
+        } catch (e) {
+            mostrarToast('No se ha podido cargar la propuesta compartida.', 'error');
+        }
+        const limpia = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', limpia);
+    }
+
+    let propuestaRecibidaActual_ = null;
+
+    function mostrarPropuestaRecibida_(propuesta) {
+        propuestaRecibidaActual_ = propuesta;
+        $('propuesta-recibida-tipo').textContent = propuesta.tipo === 'confirmada'
+            ? '✓ Presupuesto confirmado por nuestro equipo'
+            : 'Selección orientativa (sin confirmar)';
+        $('propuesta-recibida-notas').style.display = propuesta.notas ? '' : 'none';
+        $('propuesta-recibida-notas').textContent = propuesta.notas ? ('Observaciones: ' + propuesta.notas) : '';
+
+        const cont = $('propuesta-recibida-lista');
+        cont.innerHTML = '';
+        let total = 0;
+        let encontrados = 0;
+        const noEncontrados = [];
+        (propuesta.productos || []).forEach(item => {
+            const p = TODOS.find(x => String(x.ref) === String(item.ref));
+            if (!p) { noEncontrados.push(item.ref); return; }
+            encontrados++;
+            const precioInfo = precioAMostrar_(p);
+            const unidades = Math.max(1, parseInt(item.unidades, 10) || 1);
+            const cantidadTexto = (item.modoCompra === 'envase' && item.cantidadEnvases > 1)
+                ? `${item.cantidadEnvases} caja(s)/envase(s) · ${unidades} ud.`
+                : `${unidades} ud.`;
+            let precioTexto = 'Pendiente de confirmar';
+            if (precioInfo && !precioInfo.pending && precioInfo.con != null) {
+                const subtotal = precioInfo.con * unidades;
+                total += subtotal;
+                precioTexto = `${precioInfo.con.toFixed(2).replace('.', ',')} € / ud. — ${subtotal.toFixed(2).replace('.', ',')} €`;
+            }
+            const fila = document.createElement('div');
+            fila.style.cssText = 'display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.88rem;';
+            fila.innerHTML = `
+                <span style="flex:1;">${escapeHtml(p.nombre)} <span style="color:var(--muted);">· Ref: ${escapeHtml(p.ref)} · ${escapeHtml(cantidadTexto)}</span></span>
+                <span style="white-space:nowrap;font-weight:600;">${escapeHtml(precioTexto)}</span>
+            `;
+            cont.appendChild(fila);
+        });
+
+        $('propuesta-recibida-total').textContent = encontrados
+            ? `Total estimado: ${total.toFixed(2).replace('.', ',')} €`
+            : '';
+        $('propuesta-recibida-avisos').textContent = noEncontrados.length
+            ? `${noEncontrados.length} producto(s) de la propuesta ya no están disponibles en el catálogo (ref: ${noEncontrados.join(', ')}).`
+            : '';
+
+        $('propuesta-recibida-overlay').classList.add('activo');
+    }
+
+    function cerrarPropuestaRecibida_() {
+        $('propuesta-recibida-overlay').classList.remove('activo');
+    }
+
+    // Fusiona (no sustituye) la propuesta recibida con la lista de la
+    // compra propia de quien la abre — si ya tenía productos guardados,
+    // se respetan; los de la propuesta se añaden (o se dejan como
+    // estaban si ya los tenía). Igual que listaCompraAnadir_, resuelto
+    // contra el catálogo actual, nunca contra datos guardados.
+    function cargarPropuestaEnListaCompra_() {
+        if (!propuestaRecibidaActual_) return;
+        let añadidos = 0;
+        (propuestaRecibidaActual_.productos || []).forEach(item => {
+            const p = TODOS.find(x => String(x.ref) === String(item.ref));
+            if (!p) return;
+            if (listaCompraTiene_(p.ref)) return;
+            const productoConCantidad = Object.assign({}, p, {
+                unidades: item.unidades, modoCompra: item.modoCompra, cantidadEnvases: item.cantidadEnvases,
+            });
+            if (listaCompraAnadir_(productoConCantidad) === 'ok') añadidos++;
+        });
+        listaCompraActualizarUI_();
+        cerrarPropuestaRecibida_();
+        mostrarToast(añadidos ? `Añadidos ${añadidos} producto(s) a tu lista de la compra.` : 'Ya tenías todos estos productos en tu lista.');
+        abrirModalListaCompra_();
+    }
+
     // ── Wiring de toda la funcionalidad ────────────────────────────────
     function inicializarListaCompra_() {
         listaCompraState_ = listaCompraCargarDeStorage_();
@@ -15792,6 +18117,16 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             listaCompraCrear_();
             mostrarToast(`Lista de la compra creada. Tendrá una validez de ${LISTA_COMPRA_VALIDEZ_DIAS_} días desde hoy.`);
             listaCompraActualizarUI_();
+        });
+
+        $('btn-lista-compra-propuesta-compartir').addEventListener('click', guardarYCompartirPropuesta_);
+        $('propuesta-recibida-cerrar').addEventListener('click', cerrarPropuestaRecibida_);
+        $('propuesta-recibida-cargar').addEventListener('click', cargarPropuestaEnListaCompra_);
+        $('propuesta-recibida-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'propuesta-recibida-overlay') cerrarPropuestaRecibida_();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('propuesta-recibida-overlay').classList.contains('activo')) cerrarPropuestaRecibida_();
         });
 
         $('modal-lista-compra-cerrar').addEventListener('click', cerrarModalListaCompra_);
@@ -15855,6 +18190,8 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         });
 
         $('btn-lista-compra-pdf').addEventListener('click', exportarListaCompraPDF_);
+        $('btn-lista-compra-folleto-pdf').addEventListener('click', listaCompraDescargarFolletoPdf_);
+        $('btn-lista-compra-folleto-compartir').addEventListener('click', listaCompraCompartirFolletoPdf_);
         $('btn-lista-compra-whatsapp').addEventListener('click', compartirListaCompraWhatsapp_);
         $('btn-lista-compra-correo').addEventListener('click', compartirListaCompraCorreo_);
         // Solo preproducción — el botón se elimina del DOM en producción
@@ -16603,6 +18940,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
 
         $('modal-producto-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
 
         // A petición de Eloy: "si clico en un producto sugerido... si le
         // das atrás te saca del buscador. Debería ir al producto del que
@@ -16652,6 +18990,21 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function urlCompartirProducto(p) {
         const base = window.location.origin + window.location.pathname;
         return `${base}?ref=${encodeURIComponent(p.ref)}`;
+    }
+
+    // Misma URL de compartir, pero SIEMPRE con el dominio de producción
+    // (orenciomatas.es), nunca el de preproducción/GitHub Pages desde el
+    // que se haya generado — a petición explícita de Eloy: el QR de una
+    // etiqueta de producto es algo físico que se imprime y queda pegado
+    // en una estantería; si se genera desde preproducción (como ya pasa
+    // al probar/gestionar etiquetas ahí), el QR debe seguir llevando al
+    // cliente real que lo escanee a la web pública de verdad, nunca a la
+    // URL de pruebas de GitHub Pages. Usada SOLO para el QR impreso en
+    // las etiquetas (ver etiquetaQrPara_) — el botón "Compartir" de la
+    // ficha de producto sigue usando urlCompartirProducto tal cual, con
+    // el dominio desde el que se esté navegando en cada momento.
+    function urlCompartirProductoProduccion_(p) {
+        return `https://orenciomatas.es/buscador.html?ref=${encodeURIComponent(p.ref)}`;
     }
 
     function configurarBotonCompartir(p) {
@@ -17324,13 +19677,15 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
             }
         }
         // URL para buscar el producto directamente en la web a partir de
-        // su referencia — reutiliza urlCompartirProducto (más arriba en
-        // este archivo, ya usada por el botón "Compartir" de la ficha):
-        // la página actual + ?ref=<referencia>, que el propio buscador ya
-        // sabe detectar y abrir automáticamente el detalle de ese
-        // producto (ver abrirProductoDesdeURL) — ningún enlace ni lógica
-        // nueva, el QR solo codifica ese mismo enlace.
-        const urlQr = urlCompartirProducto(p);
+        // su referencia — urlCompartirProductoProduccion_ (más arriba en
+        // este archivo) en vez de urlCompartirProducto a propósito: el QR
+        // de una etiqueta impresa debe llevar SIEMPRE al dominio de
+        // producción (orenciomatas.es), nunca al de preproducción desde
+        // el que se haya generado la etiqueta (bug real reportado por
+        // Eloy). El resto es igual: ?ref=<referencia>, que el propio
+        // buscador ya sabe detectar y abrir automáticamente (ver
+        // abrirProductoDesdeURL).
+        const urlQr = urlCompartirProductoProduccion_(p);
         return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo, urlQr };
     }
 
@@ -20212,6 +22567,7 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
     function cerrarModalProducto() {
         $('modal-producto-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         // Si se llegó aquí con un ?ref= en la URL (por haber navegado por
         // productos del listado o sugeridos dentro del modal), se limpia
         // sin crear ni quitar ninguna entrada de historial — un cierre
@@ -21289,14 +23645,27 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         return mapaMarcasAsistente;
     }
 
+    // Caché de los patrones ya compilados, construida una sola vez (a
+    // partir de mapaMarcasAsistente, que a su vez solo se carga una vez
+    // por sesión — ver cargarMapaMarcasAsistente). Antes, detectarMarcaAsistente
+    // reconstruía Object.keys(...).sort(...) Y COMPILABA UN "new RegExp"
+    // por cada una de las ~65 marcas EN CADA LLAMADA — con cientos de
+    // productos (p.ej. una temporada grande con varias familias de
+    // perfumería) eso eran miles de regex nuevos por cada apertura de la
+    // modal de temporada, bloqueando el hilo principal más de un segundo
+    // de golpe — bug real de rendimiento reportado por Eloy: "va a
+    // trompicones, no va fluido".
+    let marcasAsistenteRegexCache_ = null;
     function detectarMarcaAsistente(nombre) {
         if (!mapaMarcasAsistente) return null;
+        if (!marcasAsistenteRegexCache_) {
+            marcasAsistenteRegexCache_ = Object.keys(mapaMarcasAsistente)
+                .sort((a, b) => b.length - a.length)
+                .map(m => ({ marca: m, regex: new RegExp(`\\b${m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`) }));
+        }
         const n = sinAcentosAsistente(nombre).replace(/^\./, '').trim();
-        const marcas = Object.keys(mapaMarcasAsistente).sort((a, b) => b.length - a.length);
-        for (const m of marcas) {
-            if (new RegExp(`\\b${m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(n)) {
-                return m;
-            }
+        for (const { marca, regex } of marcasAsistenteRegexCache_) {
+            if (regex.test(n)) return marca;
         }
         return null;
     }
@@ -22351,6 +24720,9 @@ console.log('URL de Google Apps Script configurada:', window.GOOGLE_APPS_SCRIPT_
         mostrarCabeceraBuscador();
     });
     actualizarVisibilidadBotonSubir();
+
+    $('btn-lista-compra-flotante').addEventListener('click', () => abrirModalListaCompra_());
+    actualizarBotonFlotanteListaCompra_();
 })();
 </script>
     <!-- Contenedor de notificaciones toast -->
