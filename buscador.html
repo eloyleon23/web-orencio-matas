@@ -3293,6 +3293,13 @@
         .modal-producto-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            /* align-items:start evita que la columna de la imagen se
+               estire para igualar la altura de la columna de info
+               (que puede ser mucho más alta si la descripción es
+               larga) — si se estira, la foto queda centrada dentro de
+               ese hueco alargado y aparece por debajo del viewport
+               inicial al abrir la ficha, en vez de arriba. */
+            align-items: start;
             gap: 0;
         }
         .modal-producto-imagen {
