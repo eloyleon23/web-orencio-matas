@@ -3046,12 +3046,19 @@
             animation-name: om-splash-hoja-cae;
             animation-timing-function: ease-in;
         }
+        /* Balanceo lateral marcado ("de un lado a otro", a petición
+           explícita de Eloy) — varios tramos alternando el signo de
+           translateX en vez de un único desvío pequeño, como un zigzag
+           real de una hoja cayendo. */
         @keyframes om-splash-hoja-cae {
             0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
             8%   { opacity: 0.9; }
-            50%  { transform: translateY(60vh) translateX(22px) rotate(170deg); }
+            20%  { transform: translateY(23vh) translateX(-34px) rotate(-60deg); }
+            40%  { transform: translateY(46vh) translateX(34px) rotate(70deg); }
+            60%  { transform: translateY(70vh) translateX(-34px) rotate(-60deg); }
+            80%  { transform: translateY(96vh) translateX(34px) rotate(80deg); }
             92%  { opacity: 0.9; }
-            100% { transform: translateY(125vh) translateX(-14px) rotate(320deg); opacity: 0; }
+            100% { transform: translateY(125vh) translateX(-20px) rotate(220deg); opacity: 0; }
         }
         /* Invierno: copos cayendo, más lentos y rectos que las hojas. */
         .om-splash-particula--copo {
@@ -3059,12 +3066,17 @@
             animation-name: om-splash-copo-cae;
             animation-timing-function: linear;
         }
+        /* Mismo criterio de balanceo marcado que las hojas (a petición
+           explícita de Eloy), sin el giro (los copos no rotan) y con
+           menos amplitud — una deriva más suave, propia de la nieve. */
         @keyframes om-splash-copo-cae {
             0%   { transform: translateY(0) translateX(0); opacity: 0; }
             10%  { opacity: 0.85; }
-            50%  { transform: translateY(58vh) translateX(12px); }
+            25%  { transform: translateY(30vh) translateX(-22px); }
+            50%  { transform: translateY(60vh) translateX(22px); }
+            75%  { transform: translateY(90vh) translateX(-22px); }
             90%  { opacity: 0.85; }
-            100% { transform: translateY(122vh) translateX(-8px); opacity: 0; }
+            100% { transform: translateY(122vh) translateX(14px); opacity: 0; }
         }
         /* Primavera: flores brotando del borde inferior (una sola vez,
            con un balanceo suave que continúa después). */
@@ -3111,16 +3123,24 @@
             0%, 100% { transform: translateX(-50%) scale(1); filter: drop-shadow(0 0 6px rgba(255, 193, 7, 0.55)); }
             50%      { transform: translateX(-50%) scale(1.1); filter: drop-shadow(0 0 16px rgba(255, 193, 7, 0.85)); }
         }
+        /* A petición explícita de Eloy: "el efecto [del agua] sea como
+           el de las hojas de otoño" — en vez de burbujas subiendo, las
+           gotas caen igual que las hojas (mismo zigzag lateral), solo
+           que sin el giro (una gota no rota como una hoja). */
         .om-splash-particula--gota {
-            bottom: -6%;
-            animation-name: om-splash-gota-flota;
-            animation-timing-function: ease-in-out;
+            top: -10%;
+            animation-name: om-splash-gota-cae;
+            animation-timing-function: ease-in;
         }
-        @keyframes om-splash-gota-flota {
-            0%   { transform: translateY(0) scale(0.7); opacity: 0; }
-            15%  { opacity: 0.9; }
-            85%  { opacity: 0.9; }
-            100% { transform: translateY(-72vh) scale(1); opacity: 0; }
+        @keyframes om-splash-gota-cae {
+            0%   { transform: translateY(0) translateX(0); opacity: 0; }
+            8%   { opacity: 0.9; }
+            20%  { transform: translateY(23vh) translateX(-30px); }
+            40%  { transform: translateY(46vh) translateX(30px); }
+            60%  { transform: translateY(70vh) translateX(-30px); }
+            80%  { transform: translateY(96vh) translateX(30px); }
+            92%  { opacity: 0.9; }
+            100% { transform: translateY(125vh) translateX(-18px); opacity: 0; }
         }
         @media (prefers-reduced-motion: reduce) {
             .om-splash-particula, .om-splash-sol { display: none; }
@@ -7959,13 +7979,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         } else if (estacion === 'invierno') {
             for (var j = 0; j < 12; j++) crearParticulaSplash_(contenedor, 'om-splash-particula--copo', '❄️', 0.8, 1.4, 7, 13);
         } else if (estacion === 'primavera') {
+            // A petición explícita de Eloy: "deben aparecer y crecer
+            // mientras carga y termina el efecto" — el brote de cada
+            // flor se reparte a lo largo de TODA la duración conocida
+            // del splash (las 3 fases del logo duran 4.62s, con el
+            // mismo margen de 4.7s que usa el propio script más abajo),
+            // no solo en los primeros 1-2 segundos, para que sigan
+            // apareciendo flores nuevas hasta que el logo termina de
+            // revelarse.
             var floresEmoji = ['🌼', '🌷'];
-            for (var k = 0; k < 7; k++) {
+            var numFlores = 7;
+            var ventanaTotal = 4.5; // algo por debajo de 4.7s, para que la última termine de brotar antes del cierre
+            for (var k = 0; k < numFlores; k++) {
                 var flor = crearParticulaSplash_(contenedor, 'om-splash-particula--flor', floresEmoji[k % 2], 1.3, 1.9, 1, 1);
                 // El brote es una animación de ENTRADA (no un bucle que
                 // cae/flota), así que el reparto natural se consigue con
                 // un retraso de entrada POSITIVO y escalonado, no negativo.
-                flor.style.setProperty('--om-splash-retraso', (k * 0.18).toFixed(2) + 's');
+                var retrasoBase = (k / numFlores) * ventanaTotal;
+                var jitter = (Math.random() - 0.5) * 0.3;
+                flor.style.setProperty('--om-splash-retraso', Math.max(0, retrasoBase + jitter).toFixed(2) + 's');
             }
         } else { // verano
             var sol = document.createElement('span');
