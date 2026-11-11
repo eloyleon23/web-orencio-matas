@@ -16359,6 +16359,7 @@ if (window.OM_PREPRODUCCION) {
         card.dataset.ref = p.ref;
         card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
         card.innerHTML = construirContenidoTarjeta_(p, { destacado: d });
+        anadirBotonListaCompraATarjeta_(card, p);
         return card;
     }
 
