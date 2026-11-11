@@ -9552,6 +9552,7 @@ if (window.OM_PREPRODUCCION) {
         if ($('modal-producto-overlay').classList.contains('activo') && productoModalActual_) {
             abrirModalProducto(productoModalActual_, { soloRefrescoPrecio: true });
         }
+        if (typeof listaCompraSincronizarPrecioMayor_ === 'function') listaCompraSincronizarPrecioMayor_();
         if (typeof listaCompraActualizarUI_ === 'function') listaCompraActualizarUI_();
     }
 
@@ -17067,6 +17068,42 @@ if (window.OM_PREPRODUCCION) {
     function listaCompraCrear_() {
         listaCompraState_ = { version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], productos: [], notas: '', propuestaId: null };
         listaCompraPersistir_();
+    }
+
+    // Bug real reportado por Eloy: "he añadido productos a la lista de la
+    // compra como usuario normal... después he entrado como profesional
+    // y carga el precio bien al mayor pero en la lista de la compra
+    // muestra el precio normal". Causa: cada producto de la lista guarda
+    // una FOTO FIJA de sus precios al añadirlo (listaCompraSanear_) — un
+    // producto añadido sin sesión profesional nunca tuvo
+    // precio_mayor_sin/con en memoria (TODOS los elimina para cualquiera
+    // sin esa sesión, ver limpiarPrecioMayorSiProcede_), así que esos dos
+    // campos quedaban grabados vacíos PARA SIEMPRE en esa foto, sin
+    // volver a mirarse nunca más — ni siquiera tras iniciar sesión
+    // profesional más tarde (misma lista, recargada de localStorage).
+    // precio_mayor no es "el precio de cuando se añadió" como el resto
+    // de la foto (pensado para recordar lo que el cliente vio en su
+    // momento): es un dato que depende de QUIÉN mira la lista AHORA, así
+    // que debe refrescarse contra el catálogo en vivo cada vez que una
+    // sesión profesional se confirma de verdad (ver
+    // repintarPendientesPrecioMayor_, el único sitio desde el que se
+    // llama) — el resto de la foto (precio_sin/precio_con/nombre...) no
+    // se toca.
+    function listaCompraSincronizarPrecioMayor_() {
+        if (!listaCompraState_ || !window.OM_SESION_PROFESIONAL_ACTIVA || !preciosMayorConfirmados_) return;
+        let cambiado = false;
+        listaCompraState_.productos.forEach(item => {
+            const actual = TODOS.find(x => String(x.ref) === String(item.ref));
+            if (!actual) return;
+            const nuevoSin = actual.precio_mayor_sin != null ? String(actual.precio_mayor_sin) : '';
+            const nuevoCon = actual.precio_mayor_con != null ? String(actual.precio_mayor_con) : '';
+            if (item.precio_mayor_sin !== nuevoSin || item.precio_mayor_con !== nuevoCon) {
+                item.precio_mayor_sin = nuevoSin;
+                item.precio_mayor_con = nuevoCon;
+                cambiado = true;
+            }
+        });
+        if (cambiado) listaCompraPersistir_();
     }
 
     // Texto libre del cliente (observaciones, horario preferido de
