@@ -5571,6 +5571,25 @@ window.SOLUCIONES_DATA = (function () {
     revest: 'revestimiento',
     efect: 'efecto',
     prof: 'profesional',
+    concent: 'concentrado',
+    acond: 'acondicionador',
+    // Misma ronda que en buscador.html (ver ese archivo para el detalle
+    // completo de verificación contra el catálogo real y los descartes
+    // por colisión, p.ej. "maq"/"col").
+    est: 'estuche',
+    vap: 'vaporizador',
+    desod: 'desodorante',
+    desmaq: 'desmaquillante',
+    antisept: 'antiseptico',
+    pest: 'pestañas',
+    afeit: 'afeitado',
+    dosif: 'dosificador',
+    hidrat: 'hidratante',
+    hid: 'hidratante',
+    corp: 'corporal',
+    reaf: 'reafirmante',
+    cep: 'cepillo',
+    liq: 'liquido',
   };
 
   // Añade al final la forma completa de cualquier abreviatura conocida
