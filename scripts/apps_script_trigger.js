@@ -196,10 +196,100 @@ function onOpen() {
 }
 
 // ── Trigger de edición ─────────────────────────────────────────────────────
-// La generación de catálogos es MANUAL — usar el menú "Generar catálogos ahora"
-// Se mantiene el trigger para posibles usos futuros pero no dispara el workflow
+// La generación de catálogos sigue siendo MANUAL — usar el menú "Generar
+// catálogos ahora", este trigger NUNCA dispara ese workflow.
+//
+// Lo que SÍ hace desde ahora: sincronizar al instante la caché en Drive
+// (productos_cache.json, lo único que lee obtener_productos — ver
+// regenerarCacheCompletaDesdeSheet_/actualizarProductoEnCache_) cuando se
+// edita a mano una celda relevante de la hoja "Productos". Antes, un
+// cambio manual directo en la hoja (p.ej. rellenar precio_mayor_con_iva
+// para un producto) solo llegaba a la web tras la regeneración completa
+// programada cada hora (ver el trigger de regenerarCacheCompletaDesdeSheet_)
+// — hasta una hora mostrando el precio equivocado para cualquier
+// profesional, bug real reportado por Eloy: "sigue mostrando el precio
+// normal... el problema que intuyo es que algo se queda cacheado". La
+// sincronización vía CRM (sincronizarRegistroProductos) y el resto de
+// ediciones desde la propia web (panel_admin, buscador en preproducción)
+// YA se reflejan al instante — cada una llama a actualizarProductoEnCache_
+// por su cuenta justo después de escribir en el Sheet; a esta función
+// solo le faltaba cubrir la edición DIRECTA de una celda a mano.
+//
+// Deliberadamente defensivo: cualquier fallo aquí se registra y se
+// descarta sin propagarse — un error en esta sincronización nunca debe
+// romper ni avisar sobre la propia edición del usuario en la hoja. Si
+// fallara, la regeneración horaria sigue cubriendo el caso igual que
+// antes.
 function onEdit(e) {
-  // Generación desactivada por volumen de productos — lanzar manualmente
+  try {
+    if (!e || !e.range) return;
+    const sheet = e.range.getSheet();
+    if (sheet.getName() !== 'Productos') return;
+    if (e.range.getRow() === 1) return; // fila de cabecera
+
+    const ultimaColumna = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, ultimaColumna).getValues()[0]
+      .map(h => h.toString().trim().toLowerCase().replace(/ /g, '_'));
+    const PROD = {};
+    headers.forEach((h, i) => { PROD[h] = i; });
+    if (PROD['referencia'] === undefined) return;
+
+    // Solo estas columnas alimentan de verdad lo que ve el buscador en
+    // vivo — editar cualquier otra (notas internas, columnas de apoyo del
+    // CRM, etc.) no dispara ninguna escritura extra en Drive. A petición
+    // explícita de Eloy, las dos de precio de mayor son las que de verdad
+    // importan aquí, pero se cubren también sus vecinas más relacionadas
+    // para no dejar huecos parecidos.
+    const COLUMNAS_SINCRONIZADAS_ = [
+      'nombre', 'precio_sin_iva', 'precio_con_iva', 'iva',
+      'precio_mayor_sin_iva', 'precio_mayor_con_iva',
+      'mostrar_precio', 'oferta', 'tipologia', 'subfamilia',
+    ];
+    const colIndices = COLUMNAS_SINCRONIZADAS_.map(c => PROD[c]).filter(i => i !== undefined);
+    if (!colIndices.length) return;
+
+    const colEditadaInicio = e.range.getColumn();
+    const colEditadaFin = colEditadaInicio + e.range.getNumColumns() - 1;
+    const tocaColumnaRelevante = colIndices.some(i => (i + 1) >= colEditadaInicio && (i + 1) <= colEditadaFin);
+    if (!tocaColumnaRelevante) return;
+
+    const zona = sheet.getParent().getSpreadsheetTimeZone();
+    const valorCelda_ = (rowValues, col) => {
+      if (PROD[col] === undefined) return '';
+      const v = rowValues[PROD[col]];
+      if (v === undefined || v === null || v === '') return '';
+      if (v instanceof Date) return Utilities.formatDate(v, zona, 'dd/MM/yyyy HH:mm:ss');
+      if (typeof v === 'number') return v.toString().replace('.', ',');
+      return v.toString().trim();
+    };
+    const esSi_ = (val) => ['sí', 'si', 'yes', 'true', '1', '✓'].includes((val || '').toString().trim().toLowerCase());
+
+    // Una sola edición puede tocar varias filas a la vez (pegar un rango),
+    // cada una se sincroniza por separado.
+    const filaInicio = e.range.getRow();
+    const filaFin = filaInicio + e.range.getNumRows() - 1;
+    for (let fila = filaInicio; fila <= filaFin; fila++) {
+      if (fila === 1) continue;
+      const rowValues = sheet.getRange(fila, 1, 1, ultimaColumna).getValues()[0];
+      const ref = (rowValues[PROD['referencia']] || '').toString().trim();
+      if (!ref) continue;
+
+      actualizarProductoEnCache_(ref, {
+        nombre: valorCelda_(rowValues, 'nombre'),
+        precio_sin: valorCelda_(rowValues, 'precio_sin_iva'),
+        precio_con: valorCelda_(rowValues, 'precio_con_iva'),
+        iva: valorCelda_(rowValues, 'iva'),
+        precio_mayor_sin: valorCelda_(rowValues, 'precio_mayor_sin_iva'),
+        precio_mayor_con: valorCelda_(rowValues, 'precio_mayor_con_iva'),
+        mostrar_precio: esSi_(valorCelda_(rowValues, 'mostrar_precio')),
+        oferta: esSi_(valorCelda_(rowValues, 'oferta')),
+        familia: valorCelda_(rowValues, 'tipologia'),
+        subfamilia: valorCelda_(rowValues, 'subfamilia'),
+      });
+    }
+  } catch (err) {
+    console.error('onEdit: error sincronizando la caché tras una edición manual:', err);
+  }
 }
 
 // ── Disparar GitHub Actions ─────────────────────────────────────────────────
