@@ -8681,6 +8681,34 @@ if (window.OM_PREPRODUCCION) {
         prof: 'profesional',
         concent: 'concentrado',
         acond: 'acondicionador',
+        // Ronda centrada en perfumería a petición de Eloy ("prioritario
+        // ahora"), empezando por "EST."/"EST" (estuche) que señaló él
+        // mismo — 190 productos de perfumería (y 10 más de droguería)
+        // usan esta abreviatura y ninguno tenía la palabra completa, así
+        // que buscar "estuche" no los encontraba. El resto de esta ronda
+        // sigue el mismo criterio que las de arriba: cada candidato
+        // contrastado contra el catálogo real (cuántos productos usan la
+        // forma abreviada vs. la completa) y descartado si hay colisión
+        // real con otro significado — por eso NO se incluyen "maq" (en
+        // este catálogo significa tanto "maquillaje" como "máquina": MAX
+        // FACTOR MAQ.FACE FINITY es maquillaje, pero WINS DETERG.MAQ.
+        // LAVAVAJILLAS es máquina lavavajillas) ni "col" (normalmente
+        // "colonia", pero p.ej. "RECOGEDOR...COL.STDOS" es "colores
+        // estándar", no colonia).
+        est: 'estuche',
+        vap: 'vaporizador',
+        desod: 'desodorante',
+        desmaq: 'desmaquillante',
+        antisept: 'antiseptico',
+        pest: 'pestañas',
+        afeit: 'afeitado',
+        dosif: 'dosificador',
+        hidrat: 'hidratante',
+        hid: 'hidratante',
+        corp: 'corporal',
+        reaf: 'reafirmante',
+        cep: 'cepillo',
+        liq: 'liquido',
     };
 
     // Sinónimos reales del catálogo — distinto de ABREVIATURAS_CATALOGO
