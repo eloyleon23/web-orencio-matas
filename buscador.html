@@ -9437,6 +9437,43 @@ if (window.OM_PREPRODUCCION) {
         });
     }
 
+    // Reintenta confirmar el precio al por mayor contra la fuente en vivo
+    // de Apps Script, con backoff corto (2s, 4s, 8s, 16s) — usado cuando el
+    // primer intento (el de cargarProductosPrincipales, lanzado nada más
+    // cargar la página) no ha llegado a confirmarlo, para no depender del
+    // sondeo periódico de 5 minutos (comprobarActualizacionProductos) como
+    // única red de seguridad. Nunca bloquea nada más: si todos los
+    // intentos fallan, el sondeo periódico sigue cubriendo el caso igual
+    // que antes, y "Cargando precio..." se mantiene mientras tanto (nunca
+    // se cae al precio normal).
+    async function confirmarPrecioMayorConReintentos_(intentoActual) {
+        intentoActual = intentoActual || 0;
+        const MAX_INTENTOS_ = 4;
+        if (preciosMayorConfirmados_ || intentoActual >= MAX_INTENTOS_) return;
+        try {
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
+            if (resp && resp.ok) {
+                const texto = await resp.text();
+                comprobarValidezBackendProfesional_(texto);
+                const hash = await calcularHash(texto);
+                if (hash !== hashConocido) {
+                    hashConocido = hash;
+                    reconciliarConTextoEnVivo(texto);
+                }
+                preciosMayorConfirmados_ = true;
+                aplicarFiltros();
+                actualizarModulosDescubrimiento_(true);
+                repintarPendientesPrecioMayor_();
+                return;
+            }
+        } catch (e) {
+            console.warn(`confirmarPrecioMayorConReintentos_: intento ${intentoActual + 1}/${MAX_INTENTOS_} fallido:`, e);
+        }
+        if (intentoActual + 1 < MAX_INTENTOS_) {
+            setTimeout(() => confirmarPrecioMayorConReintentos_(intentoActual + 1), 2000 * Math.pow(2, intentoActual));
+        }
+    }
+
     async function cargarProductosPrincipales() {
         let primerPintadoHecho = false;
 
@@ -9530,6 +9567,23 @@ if (window.OM_PREPRODUCCION) {
             }
         } catch (e) {
             console.warn('No se pudo cargar la fuente en vivo de Apps Script:', e);
+        }
+
+        // Si hay sesión profesional activa y, pese a todo lo anterior, el
+        // precio al por mayor TODAVÍA no se ha podido confirmar (la
+        // petición en vivo de arriba falló del todo — red, CORS, cuota de
+        // Apps Script agotada por las otras peticiones que se lanzan a la
+        // vez al cargar la página — o tardó tanto que ni siquiera llegó a
+        // intentarse por completo), antes solo quedaba esperar hasta 5
+        // minutos a que el sondeo periódico (comprobarActualizacionProductos)
+        // lo detectara y mostrara el banner de actualización — demasiado
+        // tiempo mostrando "Cargando precio..." (o peor, arriesgándose a
+        // mostrarlo mal si algo fallara en esa lógica) para un profesional.
+        // Se reintenta aquí, en segundo plano (sin bloquear el resto de la
+        // carga de la página), con un backoff corto, hasta confirmarlo de
+        // verdad o agotar los intentos.
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) {
+            confirmarPrecioMayorConReintentos_();
         }
 
         if (!primerPintadoHecho) {
