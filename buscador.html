@@ -9556,6 +9556,91 @@ if (window.OM_PREPRODUCCION) {
         if (typeof listaCompraActualizarUI_ === 'function') listaCompraActualizarUI_();
     }
 
+    // ── Revalidación de la sesión profesional tras bfcache/cambio de pestaña ──
+    // window.OM_SESION_PROFESIONAL_ACTIVA se calcula UNA SOLA VEZ, al cargar
+    // este script (ver más arriba). limpiarPrecioMayorSiProcede_ usa ese
+    // valor para decidir si borra precio_mayor_sin/con de CUALQUIER
+    // respuesta en vivo que llegue después, en cualquier reconciliación
+    // posterior durante el resto de la vida de esta pestaña.
+    //
+    // Bug real reportado por Eloy: un producto que hacía un rato se veía
+    // bien (precio normal y profesional correctos) de repente pasaba a
+    // verse SIEMPRE con el precio normal, sin que nadie tocara nada en el
+    // Sheet. Causa real: esta pestaña se abrió (o se restauró) en un
+    // momento en que la sesión profesional NO estaba activa — ese "false"
+    // quedó fijado en OM_SESION_PROFESIONAL_ACTIVA para siempre, aunque
+    // después se iniciara sesión profesional (normalmente desde
+    // acceso-profesional.html, una página distinta) y se volviera a ESTA
+    // misma pestaña sin recargarla (botón "Atrás" del navegador — eso
+    // restaura la página completa desde la bfcache sin volver a ejecutar
+    // ningún script, "pageshow" se dispara con persisted=true pero nada
+    // más — o simplemente cambiando a esta pestaña ya abierta tras iniciar
+    // sesión desde otra). A partir de ahí, aunque el backend siguiera
+    // devolviendo el precio al por mayor correctamente en cada
+    // reconciliación, limpiarPrecioMayorSiProcede_ lo seguía borrando en
+    // el cliente porque el indicador nunca se había vuelto a calcular.
+    //
+    // Se revalida en los dos momentos en que esta pestaña puede volver a
+    // primer plano sin que el script se reinicie: "pageshow" con
+    // persisted=true (bfcache) y "visibilitychange" a visible (cambiar de
+    // pestaña o volver de otra app). Si el estado real no ha cambiado
+    // desde la última vez, no hace nada (barato en el caso normal).
+    async function revalidarSesionProfesional_() {
+        const activaAhora = !!(window.PerfilProfesional && window.PerfilProfesional.sesionActiva());
+        if (activaAhora === window.OM_SESION_PROFESIONAL_ACTIVA) return;
+        window.OM_SESION_PROFESIONAL_ACTIVA = activaAhora;
+        if (window.PerfilProfesional && window.PerfilProfesional.actualizarNavegacion) window.PerfilProfesional.actualizarNavegacion();
+
+        if (!activaAhora) {
+            // Ha dejado de ser profesional (sesión caducada/cerrada desde
+            // otra pestaña): quitar de memoria cualquier precio mayor que
+            // quedara de la sesión anterior y repintar ya, sin esperar
+            // ninguna petición de red.
+            preciosMayorConfirmados_ = true;
+            limpiarPrecioMayorSiProcede_(TODOS);
+            aplicarFiltros();
+            actualizarModulosDescubrimiento_(true);
+            repintarPendientesPrecioMayor_();
+            return;
+        }
+
+        // Ha pasado a ser profesional: nunca mostrar temporalmente el
+        // precio normal como si fuera el único — mejor el estado
+        // "pendiente" (ver preciosMayorConfirmados_/precioAMostrar_) hasta
+        // tener la confirmación real del backend, a petición explícita de
+        // Eloy ("es preferible no cargar temporalmente los precios que
+        // cargar un precio que no corresponde"). Se fuerza además una
+        // petición nueva al backend (nunca la caché HTTP del navegador,
+        // cache:'no-store') en vez de limitarse a reconciliar lo que ya
+        // había en TODOS, porque ese "ya había" puede llevar el precio
+        // mayor borrado por limpiarPrecioMayorSiProcede_ bajo el estado
+        // antiguo.
+        preciosMayorConfirmados_ = false;
+        aplicarFiltros();
+        actualizarModulosDescubrimiento_(true);
+        try {
+            hashConocido = null;
+            const resp = await fetch(PRODUCTOS_REMOTO_URL_(), { cache: 'no-store' });
+            if (!resp.ok) return;
+            const texto = await resp.text();
+            comprobarValidezBackendProfesional_(texto);
+            hashConocido = await calcularHash(texto);
+            reconciliarConTextoEnVivo(texto);
+            preciosMayorConfirmados_ = true;
+            aplicarFiltros();
+            actualizarModulosDescubrimiento_(true);
+            repintarPendientesPrecioMayor_();
+        } catch (e) {
+            console.warn('No se pudo revalidar la sesión profesional tras volver a la pestaña:', e);
+        }
+    }
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) revalidarSesionProfesional_();
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') revalidarSesionProfesional_();
+    });
+
     // Campañas de escaparate: se lanza la carga YA, en PARALELO con el
     // catálogo (no solo como parte de actualizarModulosDescubrimiento_,
     // que llega DESPUÉS del primer pintado) — si no, el flujo "Ver
