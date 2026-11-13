@@ -135,6 +135,7 @@
     const precioReal = tieneMayor || (p.mostrar_precio && p.precio_con);
     const precio = precioReal ? `${tieneMayor ? p.precio_mayor_con : p.precio_con} €` : 'Consultar precio y disponibilidad';
     const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
+    const etiquetaMayorHtml = tieneMayor ? `<span class="precio-mayor-etiqueta">Precio al por mayor</span>` : '';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     const ctx = contexto || {};
     // A petición de Eloy: "que la IA además busque fichas técnicas de
@@ -167,6 +168,7 @@
           <div class="cs-producto-card__nombre">${escaparHtml(p.nombre)}</div>
           <div class="cs-producto-card__ref">Ref: ${p.ref}</div>
           <div class="${precioClass}">${precio}</div>
+          ${etiquetaMayorHtml}
         </a>
         <button type="button" class="cs-producto-quitar no-imprimir" data-ref="${escaparHtml(p.ref)}" title="Quitar «${escaparHtml(p.nombre)}» de la lista" aria-label="Quitar este producto de la lista">✕</button>
         ${fichaTecnica ? `<a class="cs-producto-card__ficha no-imprimir" href="${fichaTecnica.href}" target="_blank" rel="noopener">📋 Ficha técnica del fabricante</a>` : ''}

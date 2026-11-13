@@ -1099,6 +1099,7 @@
         <span class="cs-alternativa-card__etiqueta">${p.categoria}</span>
         <div class="cs-alternativa-card__nombre">${p.nombre}</div>
         <div class="cs-alternativa-card__precio">${p.mostrarPrecio ? p.precio : (p.esReal ? 'Consultar precio y disponibilidad' : p.precio)}</div>
+        ${p.esMayor ? `<span class="precio-mayor-etiqueta">Precio al por mayor</span>` : ''}
       </button>
     `).join('');
 
@@ -1173,6 +1174,12 @@
       precioCon: mostrarPrecioFinal ? precioConFormateado : null,
       precioSin: mostrarPrecioFinal ? precioSinFormateado : null,
       mostrarPrecio: mostrarPrecioFinal,
+      // Perfil profesional, con precio al por mayor realmente aplicado
+      // (no solo "hay sesión profesional" — si el producto no tiene
+      // precio mayor configurado, cae al PVP y esto debe quedar en
+      // false). Usado para mostrar la etiqueta "Precio al por mayor"
+      // junto al precio, tanto en la tarjeta como en su modal de detalle.
+      esMayor: !!tieneMayor,
       // A petición de Eloy: si el producto REAL del catálogo tiene su
       // propio enlace a ficha técnica editado (campo ficha_url, ver
       // procesarActualizarFichaUrl en Apps Script), ese enlace manda
@@ -1201,6 +1208,7 @@
           ${p.formato ? `<div class="cs-producto-card__formato">Formato: ${p.formato}</div>` : ''}
           ${p.ref ? `<div class="cs-producto-card__ref">Ref: ${p.ref}</div>` : ''}
           <div class="cs-producto-card__precio${p.mostrarPrecio ? '' : ' cs-producto-card__precio--consultar'}">${p.mostrarPrecio ? p.precio : 'Consultar precio y disponibilidad'}</div>
+          ${p.esMayor ? `<span class="precio-mayor-etiqueta">Precio al por mayor</span>` : ''}
         </button>
       `;
     }).join('');
@@ -1256,6 +1264,7 @@
       if (p.mostrarPrecio && p.precioCon) {
         precioHtml = `<div class="modal-producto-precio-con">${p.precioCon} €</div>`;
         if (p.precioSin) precioHtml += `<div class="modal-producto-precio-sin">${p.precioSin} € sin IVA</div>`;
+        if (p.esMayor) precioHtml += `<div class="precio-mayor-etiqueta">Precio al por mayor</div>`;
       } else {
         precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
       }
