@@ -234,6 +234,14 @@
     function tarjetaHtml(p) {
         const img = urlImagenProductoCatalogo(p, 400);
         const precio = formatearPrecio(p);
+        // Perfil profesional: mismo criterio que formatearPrecio — la duda
+        // principal de los profesionales es si el precio que ven es el
+        // suyo o el público, así que se indica explícitamente junto al
+        // precio (ver el mismo motivo en buscador.html/escaparate.html).
+        const esProfesional = window.PerfilProfesional && window.PerfilProfesional.sesionActiva();
+        const etiquetaMayorHtml = (esProfesional && p.precio_mayor_con)
+            ? `<span style="display:inline-block;margin-top:3px;font-size:0.68rem;font-weight:700;color:#0369a1;background:#e0f2fe;padding:1px 7px;border-radius:4px;">Precio al por mayor</span>`
+            : '';
         return `
             <div style="height:100%;background:white;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.05);display:flex;flex-direction:column;">
                 <div style="aspect-ratio:1;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
@@ -242,6 +250,7 @@
                 <div style="padding:10px 12px 12px;display:flex;flex-direction:column;flex:1;">
                     <p style="margin:0;font-size:0.8rem;color:#334155;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.15em;">${escaparHtml(p.nombre)}</p>
                     <p style="margin:6px 0 0;font-size:0.9rem;font-weight:700;color:#1e293b;min-height:1.2em;">${precio}</p>
+                    ${etiquetaMayorHtml}
                 </div>
             </div>`;
     }

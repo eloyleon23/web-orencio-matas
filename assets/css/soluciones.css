@@ -1361,6 +1361,22 @@
   font-style: italic;
   font-weight: 500;
 }
+/* Etiqueta "Precio al por mayor" — mismo criterio que en buscador.html/
+   escaparate.html (ver renderTarjetaProductoCatalogo/solucion-detalle.js):
+   la duda principal de los profesionales es si el precio que ven es el
+   suyo o el público, así que se indica junto a cualquier precio real
+   mostrado como mayorista. */
+.precio-mayor-etiqueta {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 1px 7px;
+  border-radius: 4px;
+  margin-top: 4px;
+  width: fit-content;
+}
 .cs-producto-card-wrap {
   position: relative;
   z-index: 0;

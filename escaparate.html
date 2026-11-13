@@ -613,6 +613,17 @@
          aquí a partir del % de IVA. */
       .precio-siniva{ font-size:11px; color:var(--ink-faint); }
       .precio-siniva-tachado{ text-decoration:line-through; }
+      /* Etiqueta "Precio al por mayor" — mismo criterio y mismo motivo
+         que en buscador.html (ver precioMayorEscaparate_): la duda
+         principal de los profesionales es si el precio que ven es el
+         suyo o el público, así que se indica junto a cualquier precio
+         mostrado como mayorista, tanto en la tarjeta del estante como en
+         su ficha de detalle. */
+      .precio-mayor-etiqueta{
+        display:inline-block; font-size:10px; font-weight:700;
+        color:#0369a1; background:#e0f2fe; padding:1px 7px;
+        border-radius:4px; margin-top:3px;
+      }
 
       .barcode{ height:20px; align-self:flex-start; min-width:74px; opacity:.85; }
       .ref-line{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -2568,7 +2579,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // directo, sin descuentos (son promociones sobre el PVP público).
     const bloquePrecio = precioMayor
       ? `<span class="precio">${fmtEUR(precioMayor.con)}&nbsp;€<span class="iva">IVA inc.</span></span>
-         ${precioMayor.sin != null ? `<span class="precio-siniva">${fmtEUR(precioMayor.sin)}&nbsp;€ sin IVA</span>` : ''}`
+         ${precioMayor.sin != null ? `<span class="precio-siniva">${fmtEUR(precioMayor.sin)}&nbsp;€ sin IVA</span>` : ''}
+         <span class="precio-mayor-etiqueta">Precio al por mayor</span>`
       : tieneOferta
       ? `<span class="precio-tachado">${fmtEUR(p.precio_con)}&nbsp;€</span>
          <span class="precio-siniva precio-siniva-tachado">${fmtEUR(p.precio_sin)}&nbsp;€ sin IVA</span>
@@ -2651,7 +2663,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     let precioHtml;
     if(precioMayorModal){
       precioHtml = `<div class="modal-producto-precio-con">${fmtEUR(precioMayorModal.con)} € <span style="font-size:0.9rem; font-weight:400;">IVA inc.</span></div>` +
-        (precioMayorModal.sin != null ? `<div class="modal-producto-precio-sin">${fmtEUR(precioMayorModal.sin)} € sin IVA</div>` : '');
+        (precioMayorModal.sin != null ? `<div class="modal-producto-precio-sin">${fmtEUR(precioMayorModal.sin)} € sin IVA</div>` : '') +
+        `<div class="precio-mayor-etiqueta">Precio al por mayor</div>`;
     } else if(tieneOfertaModal){
       const precioRebajado = tienePrecioPromo ? precioNum(precioPromo) : precioConDescuento(p.precio_con, descuento);
       precioHtml = `<div class="modal-producto-precio-con precio-tachado" style="font-size:1rem;">${fmtEUR(p.precio_con)} €</div>
