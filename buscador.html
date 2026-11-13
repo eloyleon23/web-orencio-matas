@@ -13881,6 +13881,14 @@ if (window.OM_PREPRODUCCION) {
         // Igual que crearTarjeta(): si el producto está destacado (ver
         // destacadoEfectivoPara_), también se muestra aquí.
         card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano, destacado: destacadoEfectivoPara_(p.ref) });
+        // Botón "añadir a la lista de la compra" — a petición explícita de
+        // Eloy: faltaba en Novedades, aunque sí estaba en el grid
+        // principal y en Destacados (ver anadirBotonListaCompraATarjeta_).
+        // Seguro de llamar en cada relleno (también en la rotación
+        // automática de estas tarjetas, ver rotarTarjetaNovedad_): el
+        // innerHTML de arriba ya ha vaciado la tarjeta, así que esto
+        // añade exactamente un botón, nunca duplicados.
+        anadirBotonListaCompraATarjeta_(card, p);
     }
 
     function rotarTarjetaNovedad_(card) {
