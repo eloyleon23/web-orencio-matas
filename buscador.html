@@ -2458,6 +2458,24 @@
             color: var(--muted);
             font-style: italic;
         }
+        /* Etiqueta "Precio al por mayor" — a petición explícita de Eloy:
+           la duda principal que tienen los profesionales al usar el
+           buscador es si el precio que ven es el suyo (al por mayor) o el
+           público, así que se indica de forma explícita junto a CUALQUIER
+           precio mostrado a un profesional, no solo en la ficha de
+           detalle. Mismo criterio que usa precioAMostrar_/esMayor — nunca
+           aparece si el producto no tiene precio mayor configurado y se
+           ha caído al PVP (ahí sería engañoso decir "al por mayor"). */
+        .producto-precio-mayor-etiqueta {
+            display: inline-block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #0369a1;
+            background: #e0f2fe;
+            padding: 1px 7px;
+            border-radius: 4px;
+            margin-top: 3px;
+        }
         /* Precio al por mayor todavía sin confirmar contra la fuente EN
            VIVO (ver preciosMayorConfirmados_ en el script) — nunca se
            muestra el PVP público mientras tanto, bug real muy grave
@@ -2491,6 +2509,7 @@
             .producto-precio-sin { font-size: 0.6rem; }
             .producto-sin-precio { font-size: 0.65rem; }
             .producto-precio-cargando { font-size: 0.65rem; }
+            .producto-precio-mayor-etiqueta { font-size: 0.58rem; padding: 1px 5px; }
             .badge-oferta {
                 font-size: 0.55rem;
                 padding: 3px 7px;
@@ -6254,11 +6273,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-image"></i>
-                        Actualizar
-                    </button>
-                    <button class="modal-producto-reportar" id="modal-producto-buscar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
-                        <i class="fa-solid fa-search"></i>
-                        Buscar
+                        Actualizar imagen
                     </button>
                     <button class="modal-producto-reportar" id="modal-producto-validar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-check-circle"></i>
@@ -7004,6 +7019,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </button>
         <h3>Actualizar imagen del producto</h3>
         <p id="modal-actualizar-imagen-nombre"></p>
+
+        <!-- Búsqueda de la imagen correcta — unificada aquí dentro de la
+             propia modal de actualizar (antes era un botón "Buscar"
+             aparte en la vista detalle, que abría Google Imágenes y
+             dejaba al usuario volver a la ficha y abrir esta otra modal
+             por su cuenta para subir lo que encontrara; a petición
+             explícita de Eloy, ahora todo el flujo de buscar+subir vive
+             en un único sitio). "Buscar por EAN/ref." es el mismo
+             enlace que ya usa el Asistente de imágenes (ver
+             generarEnlacesAsistente/esEanValido) — más preciso que
+             buscar por nombre cuando el nombre del catálogo es genérico
+             o ambiguo, pero solo tiene sentido si la referencia es
+             realmente un código EAN (8/12/13/14 dígitos), así que ese
+             botón se oculta si no lo es (ver abrirModalActualizarImagen).
+        -->
+        <div style="display: flex; gap: 8px; margin-top: 18px; padding: 0 28px;">
+            <button type="button" id="modal-actualizar-imagen-buscar-nombre" style="flex: 1; padding: 10px; font-size: 0.85rem; background: #f0f9ff; color: #0369a1; border: 1px solid #7dd3fc; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-magnifying-glass"></i> Buscar imagen
+            </button>
+            <button type="button" id="modal-actualizar-imagen-buscar-ean" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem; background: #f0f9ff; color: #0369a1; border: 1px solid #7dd3fc; border-radius: 8px; font-weight: 600; cursor: pointer; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-barcode"></i> Buscar por EAN/ref.
+            </button>
+        </div>
+
         <div class="modal-actualizar-imagen-content">
             <div class="modal-actualizar-imagen-upload">
                 <input type="file" id="modal-actualizar-imagen-file" accept="image/*" style="display: none;">
@@ -8111,8 +8150,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 window.MOSTRAR_BOTON_REPORTAR_IMAGEN = window.OM_PREPRODUCCION;
 // Botón para validar imágenes (fase de desarrollo)
 window.MOSTRAR_BOTON_VALIDAR_IMAGEN = window.OM_PREPRODUCCION;
-// Botón para buscar imágenes en Bing (fase de desarrollo)
-window.MOSTRAR_BOTON_BUSCAR_IMAGEN = window.OM_PREPRODUCCION;
+// La búsqueda de imagen ya no es un botón aparte en la vista detalle —
+// se unificó dentro de la propia modal de actualizar imagen (ver
+// abrirModalActualizarImagen), que ya depende por completo de
+// MOSTRAR_BOTON_REPORTAR_IMAGEN de arriba.
 // Bloque completo de "Gestión de imágenes" (filtros de imagen validada/
 // sin validar/sin imagen) Y el botón "Asistente de imágenes" que vive
 // dentro de ese mismo bloque — un único flag para las dos cosas, ya que
@@ -8304,7 +8345,6 @@ if (window.OM_PREPRODUCCION) {
     eliminarSiRestringido_('modal-confirmar-sin-imagen-overlay', window.MOSTRAR_BOTON_REPORTAR_IMAGEN);
     eliminarSiRestringido_('modal-producto-validar-imagen', window.MOSTRAR_BOTON_VALIDAR_IMAGEN);
     eliminarSiRestringido_('modal-confirmar-validacion-overlay', window.MOSTRAR_BOTON_VALIDAR_IMAGEN);
-    eliminarSiRestringido_('modal-producto-buscar-imagen', window.MOSTRAR_BOTON_BUSCAR_IMAGEN);
     eliminarSiRestringido_('grupo-gestion-imagenes', window.MOSTRAR_FILTRO_IMAGENES_REVISADAS);
     eliminarSiRestringido_('modal-asistente-imagenes-overlay', window.MOSTRAR_FILTRO_IMAGENES_REVISADAS);
     eliminarSiRestringido_('modal-producto-gestionar-relacionados', window.MOSTRAR_GESTION_RELACIONADOS);
@@ -13860,6 +13900,14 @@ if (window.OM_PREPRODUCCION) {
         // Igual que crearTarjeta(): si el producto está destacado (ver
         // destacadoEfectivoPara_), también se muestra aquí.
         card.innerHTML = construirContenidoTarjeta_(p, { mostrarAreaFamilia: enModoPlano, destacado: destacadoEfectivoPara_(p.ref) });
+        // Botón "añadir a la lista de la compra" — a petición explícita de
+        // Eloy: faltaba en Novedades, aunque sí estaba en el grid
+        // principal y en Destacados (ver anadirBotonListaCompraATarjeta_).
+        // Seguro de llamar en cada relleno (también en la rotación
+        // automática de estas tarjetas, ver rotarTarjetaNovedad_): el
+        // innerHTML de arriba ya ha vaciado la tarjeta, así que esto
+        // añade exactamente un botón, nunca duplicados.
+        anadirBotonListaCompraATarjeta_(card, p);
     }
 
     function rotarTarjetaNovedad_(card) {
@@ -16354,6 +16402,18 @@ if (window.OM_PREPRODUCCION) {
             }
         }
 
+        // "Precio al por mayor" — a petición explícita de Eloy: la duda
+        // principal que tienen los profesionales es si el precio que ven
+        // es el suyo o el público, así que se indica siempre que el
+        // precio mostrado sea realmente el mayorista (nunca si el
+        // producto no tiene precio mayor configurado y se ha caído al
+        // PVP — esMayor_ ya refleja eso). Vale tanto para el precio
+        // normal como para el rebajado de un destacado (precioHtml ya
+        // decidido arriba en los dos casos).
+        const etiquetaPrecioMayorHtml_ = esMayor_
+            ? `<div class="producto-precio-mayor-etiqueta">Precio al por mayor</div>`
+            : '';
+
         const etiquetaAreaFamilia = opciones.mostrarAreaFamilia
             ? `<p class="producto-area-familia">${escapeHtml(AREAS_NOMBRE[p.area] || p.area || '')}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}${(opciones.mostrarSubfamilia && p.subfamilia) ? ' · ' + escapeHtml(p.subfamilia) : ''}</p>`
             : '';
@@ -16365,6 +16425,7 @@ if (window.OM_PREPRODUCCION) {
                 <p class="producto-nombre">${escapeHtml(p.nombre)}</p>
                 <p class="producto-ref">Ref: ${escapeHtml(p.ref)}</p>
                 ${precioHtml}
+                ${etiquetaPrecioMayorHtml_}
                 ${promoTextoHtml}
             </div>
         `;
@@ -18030,12 +18091,24 @@ if (window.OM_PREPRODUCCION) {
     // no ha podido cargarse o la lista está vacía.
     async function construirDocumentoPdfListaCompra_() {
         if (typeof window.jspdf === 'undefined') return null;
+        // Nunca con el precio al por mayor todavía sin confirmar — mismo
+        // motivo que construirDocumentoPdfListaCompraFolleto_/
+        // construirDocumentoPdfTemporada_.
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) return 'pendiente';
         const productos = listaCompraOrdenada_();
         if (!productos.length) return null;
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'pt', format: 'a4' });
         const pieTexto = `${LISTA_COMPRA_EMPRESA_.direccion}  ·  ${LISTA_COMPRA_EMPRESA_.horario}`;
+        // A petición explícita de Eloy: este documento (tabla de texto,
+        // distinta del folleto con fotos — ver
+        // construirDocumentoPdfListaCompraFolleto_, que ya lo indicaba)
+        // no decía en ningún sitio si los precios eran al por mayor o de
+        // venta al público — mismo criterio que el resto de documentos
+        // del sitio.
+        const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+        const textoTipoPrecio = esProfesionalFolleto ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)';
 
         const dibujarPie = (datos) => {
             const alturaPagina = doc.internal.pageSize.getHeight();
@@ -18078,7 +18151,7 @@ if (window.OM_PREPRODUCCION) {
         doc.text('Lista de la compra', 40, 85);
         doc.setFontSize(9.5);
         doc.setTextColor(100);
-        doc.text(`Generado el ${listaCompraFechaFormateada_()}`, 40, 102);
+        doc.text(`${textoTipoPrecio} · Generado el ${listaCompraFechaFormateada_()}`, 40, 102);
         doc.text(LISTA_COMPRA_EMPRESA_.nombre, doc.internal.pageSize.getWidth() - 40, 85, { align: 'right' });
 
         // Espacio NO separable entre el importe y el símbolo "€" — sin
@@ -18508,9 +18581,11 @@ if (window.OM_PREPRODUCCION) {
     function listaCompraTextoCompartir_() {
         const productos = listaCompraOrdenada_();
         const totales = listaCompraTotales_();
+        const esProfesionalTexto_ = !!window.OM_SESION_PROFESIONAL_ACTIVA;
         const lineas = [
             'Lista de la compra — Orencio Matas y Hnos',
             `${productos.length} producto${productos.length === 1 ? '' : 's'}`,
+            esProfesionalTexto_ ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)',
             '',
             ...productos.flatMap(p => {
                 const unidades = p.unidades || 1;
@@ -18723,16 +18798,18 @@ if (window.OM_PREPRODUCCION) {
                 ? `${item.cantidadEnvases} caja(s)/envase(s) · ${unidades} ud.`
                 : `${unidades} ud.`;
             let precioTexto = 'Pendiente de confirmar';
+            let esMayorTexto = false;
             if (precioInfo && !precioInfo.pending && precioInfo.con != null) {
                 const subtotal = precioInfo.con * unidades;
                 total += subtotal;
                 precioTexto = `${precioInfo.con.toFixed(2).replace('.', ',')} € / ud. — ${subtotal.toFixed(2).replace('.', ',')} €`;
+                esMayorTexto = !!precioInfo.esMayor;
             }
             const fila = document.createElement('div');
             fila.style.cssText = 'display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.88rem;';
             fila.innerHTML = `
                 <span style="flex:1;">${escapeHtml(p.nombre)} <span style="color:var(--muted);">· Ref: ${escapeHtml(p.ref)} · ${escapeHtml(cantidadTexto)}</span></span>
-                <span style="white-space:nowrap;font-weight:600;">${escapeHtml(precioTexto)}</span>
+                <span style="white-space:nowrap;font-weight:600;text-align:right;">${escapeHtml(precioTexto)}${esMayorTexto ? '<br><span class="producto-precio-mayor-etiqueta">Precio al por mayor</span>' : ''}</span>
             `;
             cont.appendChild(fila);
         });
@@ -19518,6 +19595,13 @@ if (window.OM_PREPRODUCCION) {
         } else {
             chipDestacadoModal.style.display = 'none';
         }
+        // "Precio al por mayor" — mismo criterio y mismo motivo que en
+        // construirContenidoTarjeta_ (ver ese comentario): se indica
+        // siempre que el precio mostrado sea realmente el mayorista,
+        // tanto si está rebajado por un destacado como si no.
+        if (esMayorModal_ && !precioPendienteModal_) {
+            precioHtml += `<div class="producto-precio-mayor-etiqueta">Precio al por mayor</div>`;
+        }
         $('modal-producto-precio').innerHTML = precioHtml;
 
         // Precio de venta a MAYOR, oculto tras un botón — información
@@ -19609,12 +19693,6 @@ if (window.OM_PREPRODUCCION) {
                 : deshabilitarProductoCatalogo(p);
         }
 
-        // Botón de buscar imagen — mismo tratamiento.
-        const btnBuscarImagen = $('modal-producto-buscar-imagen');
-        if (btnBuscarImagen) {
-            btnBuscarImagen.style.display = 'flex';
-            btnBuscarImagen.onclick = () => buscarImagen(p);
-        }
 
         // Botón de ficha técnica: solo para productos de pinturas que no sean
         // herramientas (brochas, lijas...). Enlaza a la búsqueda del
@@ -20393,7 +20471,14 @@ if (window.OM_PREPRODUCCION) {
         // buscador ya sabe detectar y abrir automáticamente (ver
         // abrirProductoDesdeURL).
         const urlQr = urlCompartirProductoProduccion_(p);
-        return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo, urlQr };
+        // A petición explícita de Eloy: esta etiqueta YA mostraba el
+        // precio al por mayor para un profesional (ver el comentario de
+        // arriba, bug ya corregido en su día), pero en ningún sitio lo
+        // indicaba — ni en la vista previa en pantalla ni en el PDF
+        // generado, con el mismo riesgo de confusión que en el resto del
+        // sitio (ver etiquetaPrecioMayorHtml_/producto-precio-mayor-etiqueta).
+        const esMayor = !!(efectivo && !efectivo.pending && efectivo.esMayor && con !== null);
+        return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo, urlQr, esMayor };
     }
 
     function etiquetaFormatoEuros_(valor) {
@@ -20860,6 +20945,13 @@ if (window.OM_PREPRODUCCION) {
                 ctx.fillText(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, w / 2, precioY + 4 * precioFactor * mm);
                 ctx.textAlign = 'left';
             }
+            if (datos.esMayor) {
+                ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+                ctx.font = `bold ${Math.round(2.3 * precioFactor * mm)}px Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText('PRECIO AL POR MAYOR', w / 2, precioY + (datos.promo.promoSin ? 7.5 : 4) * precioFactor * mm);
+                ctx.textAlign = 'left';
+            }
         } else if (datos.con !== null) {
             const precioTxt = etiquetaFormatoEuros_(datos.con);
             ctx.font = `bold ${Math.round(precioTamanoMM * mm)}px Arial, sans-serif`;
@@ -20898,6 +20990,13 @@ if (window.OM_PREPRODUCCION) {
             ctx.textAlign = 'center';
             ctx.fillText(precioTxt, w / 2, precioY + 4 * precioFactor * mm);
             ctx.textAlign = 'left';
+            if (datos.esMayor) {
+                ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+                ctx.font = `bold ${Math.round(2.3 * precioFactor * mm)}px Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText('PRECIO AL POR MAYOR', w / 2, precioY + 8 * precioFactor * mm);
+                ctx.textAlign = 'left';
+            }
         } else {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
             ctx.font = `italic ${Math.round(3.2 * precioFactor * mm)}px Arial, sans-serif`;
@@ -21059,6 +21158,12 @@ if (window.OM_PREPRODUCCION) {
                 setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
                 doc.text(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, centroX, precioY + 4 * precioFactor, { align: 'center' });
             }
+            if (datos.esMayor) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.5 * precioFactor);
+                setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+                doc.text('PRECIO AL POR MAYOR', centroX, precioY + (datos.promo.promoSin ? 7.5 : 4) * precioFactor, { align: 'center' });
+            }
         } else if (datos.con !== null) {
             const precioTxt = etiquetaFormatoEuros_(datos.con);
             doc.setFont('helvetica', 'bold');
@@ -21091,6 +21196,12 @@ if (window.OM_PREPRODUCCION) {
             doc.setFontSize(31 * precioFactor);
             setColor('setTextColor', ETIQUETA_COLOR_RED_);
             doc.text(precioTxt, centroX, precioY + 4 * precioFactor, { align: 'center' });
+            if (datos.esMayor) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.5 * precioFactor);
+                setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+                doc.text('PRECIO AL POR MAYOR', centroX, precioY + 8 * precioFactor, { align: 'center' });
+            }
         } else {
             doc.setFont('helvetica', 'italic');
             doc.setFontSize(9.5 * precioFactor);
@@ -23314,6 +23425,17 @@ if (window.OM_PREPRODUCCION) {
         $('modal-actualizar-imagen-file-name').textContent = '';
         $('modal-actualizar-imagen-preview').style.display = 'none';
         $('modal-actualizar-imagen-submit').disabled = true;
+
+        $('modal-actualizar-imagen-buscar-nombre').onclick = () => buscarImagenPorNombre_(p);
+        const btnBuscarEan = $('modal-actualizar-imagen-buscar-ean');
+        if (esEanValido(p.ref)) {
+            btnBuscarEan.style.display = 'flex';
+            btnBuscarEan.onclick = () => buscarImagenPorEan_(p);
+        } else {
+            btnBuscarEan.style.display = 'none';
+            btnBuscarEan.onclick = null;
+        }
+
         $('modal-actualizar-imagen-overlay').classList.add('activo');
     }
 
@@ -23645,25 +23767,40 @@ if (window.OM_PREPRODUCCION) {
         };
     }
 
-    function buscarImagen(p) {
-        if (!window.MOSTRAR_BOTON_BUSCAR_IMAGEN) return;
-        // Construir query de búsqueda para Google Images
-        const query = encodeURIComponent(`${p.nombre} ${p.ref} producto`);
-        const googleUrl = `https://www.google.com/search?tbm=isch&q=${query}`;
-
-        // Un <a> con target="_blank" (clic simulado) en vez de
-        // window.open(): en Safari/WebKit (iPhone), window.open()
-        // llamado desde JS a veces muestra una pestaña en blanco un
-        // instante antes de navegar de verdad — con un enlace nativo no
-        // pasa, es el mismo mecanismo que ya usan los enlaces rápidos
-        // del Asistente de imágenes.
+    // Abre una búsqueda de Google Imágenes con el texto dado en una pestaña
+    // nueva — mismo mecanismo para los dos botones de búsqueda de la modal
+    // de actualizar imagen (por nombre y por EAN/referencia).
+    // Un <a> con target="_blank" (clic simulado) en vez de window.open():
+    // en Safari/WebKit (iPhone), window.open() llamado desde JS a veces
+    // muestra una pestaña en blanco un instante antes de navegar de verdad
+    // — con un enlace nativo no pasa, es el mismo mecanismo que ya usan
+    // los enlaces rápidos del Asistente de imágenes.
+    function abrirBusquedaGoogleImagenes_(query) {
+        const googleUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
         const enlaceTemporal = document.createElement('a');
         enlaceTemporal.href = googleUrl;
         enlaceTemporal.target = '_blank';
         enlaceTemporal.rel = 'noopener';
         enlaceTemporal.click();
-
         mostrarToast('Búsqueda abierta en Google Images. Selecciona la imagen correcta y usa "Actualizar imagen" para subirla.');
+    }
+
+    // Botón "Buscar imagen" de la modal de actualizar — búsqueda por
+    // nombre del producto (más resultados, pero puede traer variantes de
+    // envase/formato distintas si el nombre es genérico).
+    function buscarImagenPorNombre_(p) {
+        abrirBusquedaGoogleImagenes_(`${p.nombre} ${p.ref} producto`);
+    }
+
+    // Botón "Buscar por EAN/ref." de la modal de actualizar — búsqueda
+    // únicamente por el código, para cuando el nombre del catálogo es
+    // demasiado genérico o ambiguo y la búsqueda por nombre trae variantes
+    // que no son el envase exacto. Mismo enlace que ya usa el Asistente de
+    // imágenes para este caso (ver generarEnlacesAsistente) — solo tiene
+    // sentido si la referencia es realmente un EAN, así que el botón que
+    // la llama se oculta si no lo es (ver abrirModalActualizarImagen).
+    function buscarImagenPorEan_(p) {
+        abrirBusquedaGoogleImagenes_(p.ref);
     }
 
     function ejecutarValidacion(p) {

@@ -912,6 +912,7 @@
     const precioReal = tieneMayor || (p.mostrar_precio && p.precio_con);
     const precio = precioReal ? `${tieneMayor ? p.precio_mayor_con : p.precio_con} €` : 'Consultar precio y disponibilidad';
     const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
+    const etiquetaMayorHtml = tieneMayor ? `<span class="precio-mayor-etiqueta">Precio al por mayor</span>` : '';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     const ctx = contexto || {};
     return `
@@ -927,6 +928,7 @@
         <div class="cs-producto-card__nombre">${p.nombre}</div>
         <div class="cs-producto-card__ref">Ref: ${p.ref}</div>
         <div class="${precioClass}">${precio}</div>
+        ${etiquetaMayorHtml}
       </a>
     `;
   }
