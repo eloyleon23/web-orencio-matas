@@ -18091,12 +18091,24 @@ if (window.OM_PREPRODUCCION) {
     // no ha podido cargarse o la lista está vacía.
     async function construirDocumentoPdfListaCompra_() {
         if (typeof window.jspdf === 'undefined') return null;
+        // Nunca con el precio al por mayor todavía sin confirmar — mismo
+        // motivo que construirDocumentoPdfListaCompraFolleto_/
+        // construirDocumentoPdfTemporada_.
+        if (window.OM_SESION_PROFESIONAL_ACTIVA && !preciosMayorConfirmados_) return 'pendiente';
         const productos = listaCompraOrdenada_();
         if (!productos.length) return null;
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'pt', format: 'a4' });
         const pieTexto = `${LISTA_COMPRA_EMPRESA_.direccion}  ·  ${LISTA_COMPRA_EMPRESA_.horario}`;
+        // A petición explícita de Eloy: este documento (tabla de texto,
+        // distinta del folleto con fotos — ver
+        // construirDocumentoPdfListaCompraFolleto_, que ya lo indicaba)
+        // no decía en ningún sitio si los precios eran al por mayor o de
+        // venta al público — mismo criterio que el resto de documentos
+        // del sitio.
+        const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+        const textoTipoPrecio = esProfesionalFolleto ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)';
 
         const dibujarPie = (datos) => {
             const alturaPagina = doc.internal.pageSize.getHeight();
@@ -18139,7 +18151,7 @@ if (window.OM_PREPRODUCCION) {
         doc.text('Lista de la compra', 40, 85);
         doc.setFontSize(9.5);
         doc.setTextColor(100);
-        doc.text(`Generado el ${listaCompraFechaFormateada_()}`, 40, 102);
+        doc.text(`${textoTipoPrecio} · Generado el ${listaCompraFechaFormateada_()}`, 40, 102);
         doc.text(LISTA_COMPRA_EMPRESA_.nombre, doc.internal.pageSize.getWidth() - 40, 85, { align: 'right' });
 
         // Espacio NO separable entre el importe y el símbolo "€" — sin
@@ -18569,9 +18581,11 @@ if (window.OM_PREPRODUCCION) {
     function listaCompraTextoCompartir_() {
         const productos = listaCompraOrdenada_();
         const totales = listaCompraTotales_();
+        const esProfesionalTexto_ = !!window.OM_SESION_PROFESIONAL_ACTIVA;
         const lineas = [
             'Lista de la compra — Orencio Matas y Hnos',
             `${productos.length} producto${productos.length === 1 ? '' : 's'}`,
+            esProfesionalTexto_ ? 'Precios profesionales (al por mayor)' : 'Precios de venta al público (PVP)',
             '',
             ...productos.flatMap(p => {
                 const unidades = p.unidades || 1;
@@ -20457,7 +20471,14 @@ if (window.OM_PREPRODUCCION) {
         // buscador ya sabe detectar y abrir automáticamente (ver
         // abrirProductoDesdeURL).
         const urlQr = urlCompartirProductoProduccion_(p);
-        return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo, urlQr };
+        // A petición explícita de Eloy: esta etiqueta YA mostraba el
+        // precio al por mayor para un profesional (ver el comentario de
+        // arriba, bug ya corregido en su día), pero en ningún sitio lo
+        // indicaba — ni en la vista previa en pantalla ni en el PDF
+        // generado, con el mismo riesgo de confusión que en el resto del
+        // sitio (ver etiquetaPrecioMayorHtml_/producto-precio-mayor-etiqueta).
+        const esMayor = !!(efectivo && !efectivo.pending && efectivo.esMayor && con !== null);
+        return { nombre: p.nombre || '', ref: (p.ref || '').toString().trim(), con, sin, ivaPct, promo, urlQr, esMayor };
     }
 
     function etiquetaFormatoEuros_(valor) {
@@ -20924,6 +20945,13 @@ if (window.OM_PREPRODUCCION) {
                 ctx.fillText(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, w / 2, precioY + 4 * precioFactor * mm);
                 ctx.textAlign = 'left';
             }
+            if (datos.esMayor) {
+                ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+                ctx.font = `bold ${Math.round(2.3 * precioFactor * mm)}px Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText('PRECIO AL POR MAYOR', w / 2, precioY + (datos.promo.promoSin ? 7.5 : 4) * precioFactor * mm);
+                ctx.textAlign = 'left';
+            }
         } else if (datos.con !== null) {
             const precioTxt = etiquetaFormatoEuros_(datos.con);
             ctx.font = `bold ${Math.round(precioTamanoMM * mm)}px Arial, sans-serif`;
@@ -20962,6 +20990,13 @@ if (window.OM_PREPRODUCCION) {
             ctx.textAlign = 'center';
             ctx.fillText(precioTxt, w / 2, precioY + 4 * precioFactor * mm);
             ctx.textAlign = 'left';
+            if (datos.esMayor) {
+                ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
+                ctx.font = `bold ${Math.round(2.3 * precioFactor * mm)}px Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText('PRECIO AL POR MAYOR', w / 2, precioY + 8 * precioFactor * mm);
+                ctx.textAlign = 'left';
+            }
         } else {
             ctx.fillStyle = rgb(ETIQUETA_COLOR_MUTED_);
             ctx.font = `italic ${Math.round(3.2 * precioFactor * mm)}px Arial, sans-serif`;
@@ -21123,6 +21158,12 @@ if (window.OM_PREPRODUCCION) {
                 setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
                 doc.text(`${etiquetaFormatoEuros_(datos.promo.promoSin)} sin IVA`, centroX, precioY + 4 * precioFactor, { align: 'center' });
             }
+            if (datos.esMayor) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.5 * precioFactor);
+                setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+                doc.text('PRECIO AL POR MAYOR', centroX, precioY + (datos.promo.promoSin ? 7.5 : 4) * precioFactor, { align: 'center' });
+            }
         } else if (datos.con !== null) {
             const precioTxt = etiquetaFormatoEuros_(datos.con);
             doc.setFont('helvetica', 'bold');
@@ -21155,6 +21196,12 @@ if (window.OM_PREPRODUCCION) {
             doc.setFontSize(31 * precioFactor);
             setColor('setTextColor', ETIQUETA_COLOR_RED_);
             doc.text(precioTxt, centroX, precioY + 4 * precioFactor, { align: 'center' });
+            if (datos.esMayor) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.5 * precioFactor);
+                setColor('setTextColor', ETIQUETA_COLOR_MUTED_);
+                doc.text('PRECIO AL POR MAYOR', centroX, precioY + 8 * precioFactor, { align: 'center' });
+            }
         } else {
             doc.setFont('helvetica', 'italic');
             doc.setFontSize(9.5 * precioFactor);
