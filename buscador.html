@@ -6254,11 +6254,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="modal-producto-reportar" id="modal-producto-actualizar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-image"></i>
-                        Actualizar
-                    </button>
-                    <button class="modal-producto-reportar" id="modal-producto-buscar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
-                        <i class="fa-solid fa-search"></i>
-                        Buscar
+                        Actualizar imagen
                     </button>
                     <button class="modal-producto-reportar" id="modal-producto-validar-imagen" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem;">
                         <i class="fa-solid fa-check-circle"></i>
@@ -7004,6 +7000,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </button>
         <h3>Actualizar imagen del producto</h3>
         <p id="modal-actualizar-imagen-nombre"></p>
+
+        <!-- Búsqueda de la imagen correcta — unificada aquí dentro de la
+             propia modal de actualizar (antes era un botón "Buscar"
+             aparte en la vista detalle, que abría Google Imágenes y
+             dejaba al usuario volver a la ficha y abrir esta otra modal
+             por su cuenta para subir lo que encontrara; a petición
+             explícita de Eloy, ahora todo el flujo de buscar+subir vive
+             en un único sitio). "Buscar por EAN/ref." es el mismo
+             enlace que ya usa el Asistente de imágenes (ver
+             generarEnlacesAsistente/esEanValido) — más preciso que
+             buscar por nombre cuando el nombre del catálogo es genérico
+             o ambiguo, pero solo tiene sentido si la referencia es
+             realmente un código EAN (8/12/13/14 dígitos), así que ese
+             botón se oculta si no lo es (ver abrirModalActualizarImagen).
+        -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <button type="button" id="modal-actualizar-imagen-buscar-nombre" style="flex: 1; padding: 10px; font-size: 0.85rem; background: #f0f9ff; color: #0369a1; border: 1px solid #7dd3fc; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-magnifying-glass"></i> Buscar imagen
+            </button>
+            <button type="button" id="modal-actualizar-imagen-buscar-ean" style="display:none; flex: 1; padding: 10px; font-size: 0.85rem; background: #f0f9ff; color: #0369a1; border: 1px solid #7dd3fc; border-radius: 8px; font-weight: 600; cursor: pointer; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-barcode"></i> Buscar por EAN/ref.
+            </button>
+        </div>
+
         <div class="modal-actualizar-imagen-content">
             <div class="modal-actualizar-imagen-upload">
                 <input type="file" id="modal-actualizar-imagen-file" accept="image/*" style="display: none;">
@@ -8111,8 +8131,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 window.MOSTRAR_BOTON_REPORTAR_IMAGEN = window.OM_PREPRODUCCION;
 // Botón para validar imágenes (fase de desarrollo)
 window.MOSTRAR_BOTON_VALIDAR_IMAGEN = window.OM_PREPRODUCCION;
-// Botón para buscar imágenes en Bing (fase de desarrollo)
-window.MOSTRAR_BOTON_BUSCAR_IMAGEN = window.OM_PREPRODUCCION;
+// La búsqueda de imagen ya no es un botón aparte en la vista detalle —
+// se unificó dentro de la propia modal de actualizar imagen (ver
+// abrirModalActualizarImagen), que ya depende por completo de
+// MOSTRAR_BOTON_REPORTAR_IMAGEN de arriba.
 // Bloque completo de "Gestión de imágenes" (filtros de imagen validada/
 // sin validar/sin imagen) Y el botón "Asistente de imágenes" que vive
 // dentro de ese mismo bloque — un único flag para las dos cosas, ya que
@@ -8304,7 +8326,6 @@ if (window.OM_PREPRODUCCION) {
     eliminarSiRestringido_('modal-confirmar-sin-imagen-overlay', window.MOSTRAR_BOTON_REPORTAR_IMAGEN);
     eliminarSiRestringido_('modal-producto-validar-imagen', window.MOSTRAR_BOTON_VALIDAR_IMAGEN);
     eliminarSiRestringido_('modal-confirmar-validacion-overlay', window.MOSTRAR_BOTON_VALIDAR_IMAGEN);
-    eliminarSiRestringido_('modal-producto-buscar-imagen', window.MOSTRAR_BOTON_BUSCAR_IMAGEN);
     eliminarSiRestringido_('grupo-gestion-imagenes', window.MOSTRAR_FILTRO_IMAGENES_REVISADAS);
     eliminarSiRestringido_('modal-asistente-imagenes-overlay', window.MOSTRAR_FILTRO_IMAGENES_REVISADAS);
     eliminarSiRestringido_('modal-producto-gestionar-relacionados', window.MOSTRAR_GESTION_RELACIONADOS);
@@ -19609,12 +19630,6 @@ if (window.OM_PREPRODUCCION) {
                 : deshabilitarProductoCatalogo(p);
         }
 
-        // Botón de buscar imagen — mismo tratamiento.
-        const btnBuscarImagen = $('modal-producto-buscar-imagen');
-        if (btnBuscarImagen) {
-            btnBuscarImagen.style.display = 'flex';
-            btnBuscarImagen.onclick = () => buscarImagen(p);
-        }
 
         // Botón de ficha técnica: solo para productos de pinturas que no sean
         // herramientas (brochas, lijas...). Enlaza a la búsqueda del
@@ -23314,6 +23329,17 @@ if (window.OM_PREPRODUCCION) {
         $('modal-actualizar-imagen-file-name').textContent = '';
         $('modal-actualizar-imagen-preview').style.display = 'none';
         $('modal-actualizar-imagen-submit').disabled = true;
+
+        $('modal-actualizar-imagen-buscar-nombre').onclick = () => buscarImagenPorNombre_(p);
+        const btnBuscarEan = $('modal-actualizar-imagen-buscar-ean');
+        if (esEanValido(p.ref)) {
+            btnBuscarEan.style.display = 'flex';
+            btnBuscarEan.onclick = () => buscarImagenPorEan_(p);
+        } else {
+            btnBuscarEan.style.display = 'none';
+            btnBuscarEan.onclick = null;
+        }
+
         $('modal-actualizar-imagen-overlay').classList.add('activo');
     }
 
@@ -23645,25 +23671,40 @@ if (window.OM_PREPRODUCCION) {
         };
     }
 
-    function buscarImagen(p) {
-        if (!window.MOSTRAR_BOTON_BUSCAR_IMAGEN) return;
-        // Construir query de búsqueda para Google Images
-        const query = encodeURIComponent(`${p.nombre} ${p.ref} producto`);
-        const googleUrl = `https://www.google.com/search?tbm=isch&q=${query}`;
-
-        // Un <a> con target="_blank" (clic simulado) en vez de
-        // window.open(): en Safari/WebKit (iPhone), window.open()
-        // llamado desde JS a veces muestra una pestaña en blanco un
-        // instante antes de navegar de verdad — con un enlace nativo no
-        // pasa, es el mismo mecanismo que ya usan los enlaces rápidos
-        // del Asistente de imágenes.
+    // Abre una búsqueda de Google Imágenes con el texto dado en una pestaña
+    // nueva — mismo mecanismo para los dos botones de búsqueda de la modal
+    // de actualizar imagen (por nombre y por EAN/referencia).
+    // Un <a> con target="_blank" (clic simulado) en vez de window.open():
+    // en Safari/WebKit (iPhone), window.open() llamado desde JS a veces
+    // muestra una pestaña en blanco un instante antes de navegar de verdad
+    // — con un enlace nativo no pasa, es el mismo mecanismo que ya usan
+    // los enlaces rápidos del Asistente de imágenes.
+    function abrirBusquedaGoogleImagenes_(query) {
+        const googleUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
         const enlaceTemporal = document.createElement('a');
         enlaceTemporal.href = googleUrl;
         enlaceTemporal.target = '_blank';
         enlaceTemporal.rel = 'noopener';
         enlaceTemporal.click();
-
         mostrarToast('Búsqueda abierta en Google Images. Selecciona la imagen correcta y usa "Actualizar imagen" para subirla.');
+    }
+
+    // Botón "Buscar imagen" de la modal de actualizar — búsqueda por
+    // nombre del producto (más resultados, pero puede traer variantes de
+    // envase/formato distintas si el nombre es genérico).
+    function buscarImagenPorNombre_(p) {
+        abrirBusquedaGoogleImagenes_(`${p.nombre} ${p.ref} producto`);
+    }
+
+    // Botón "Buscar por EAN/ref." de la modal de actualizar — búsqueda
+    // únicamente por el código, para cuando el nombre del catálogo es
+    // demasiado genérico o ambiguo y la búsqueda por nombre trae variantes
+    // que no son el envase exacto. Mismo enlace que ya usa el Asistente de
+    // imágenes para este caso (ver generarEnlacesAsistente) — solo tiene
+    // sentido si la referencia es realmente un EAN, así que el botón que
+    // la llama se oculta si no lo es (ver abrirModalActualizarImagen).
+    function buscarImagenPorEan_(p) {
+        abrirBusquedaGoogleImagenes_(p.ref);
     }
 
     function ejecutarValidacion(p) {
