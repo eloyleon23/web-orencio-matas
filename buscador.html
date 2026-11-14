@@ -12724,12 +12724,14 @@ if (window.OM_PREPRODUCCION) {
         }
     }
 
-    // Versión recortada de dibujarTarjetaDestacadoPdf_: la mayoría de
-    // productos de una temporada NO tendrán un destacado asociado (a
-    // diferencia del folleto de Destacados, donde SIEMPRE lo hay), así
-    // que aquí "d" puede ser null — se cubre con un objeto vacío para
-    // calcularPrecioDestacado_ (que sí espera siempre un objeto) y se
-    // omite el chip/banner de promoción cuando no hay destacado real.
+    // Nació como versión recortada de una tarjeta propia de Destacados
+    // (dibujarTarjetaDestacadoPdf_, eliminada — ver construirDocumentoPdfDestacados_,
+    // que ahora reutiliza esta misma tarjeta): la mayoría de productos de
+    // una temporada NO tendrán un destacado asociado (a diferencia del
+    // folleto de Destacados, donde SIEMPRE lo hay), así que aquí "d" puede
+    // ser null — se cubre con un objeto vacío para calcularPrecioDestacado_
+    // (que sí espera siempre un objeto) y se omite el chip/banner de
+    // promoción cuando no hay destacado real.
     function dibujarTarjetaTemporadaPdf_(doc, x, y, w, h, foto, p, colorAccent) {
         const d = destacadoEfectivoPara_(p.ref);
         doc.setFillColor(255, 255, 255);
@@ -17209,247 +17211,20 @@ if (window.OM_PREPRODUCCION) {
 
     const DESTACADOS_PDF_COLOR_ACCENT_ = { r: 211, g: 47, b: 47 }; // rojo de marca
 
-    // Una tarjeta del folleto — mismo contenido que se ve en pantalla
-    // (chip, precio con/sin descuento y su porcentaje, promoción
-    // adicional), más la fecha límite del producto (no se muestra en la
-    // propia tarjeta en pantalla, solo aquí, a petición explícita) y,
-    // para el perfil profesional, el precio al por mayor con una
-    // etiqueta que lo distingue claramente del PVP.
-    // Tarjeta grande y vistosa, a petición explícita de Eloy tras ver la
-    // primera versión ("muy simple, la imagen pequeña, el chip pequeño,
-    // el detalle 3x2 apenas se ve, el precio pequeño"): imagen mucho más
-    // grande, chip con más presencia, precio como elemento principal de
-    // la tarjeta, y la promoción adicional (textoPromocion, p.ej. "3x2")
-    // como un banner de color propio en vez de una línea de texto pequeña.
-    function dibujarTarjetaDestacadoPdf_(doc, x, y, w, h, foto, p, d) {
-        doc.setFillColor(255, 255, 255);
-        doc.setDrawColor(226, 228, 232);
-        doc.setLineWidth(0.4);
-        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
-
-        const precioInfo = precioAMostrar_(p);
-        const esMayor = !!(precioInfo && precioInfo.esMayor);
-        const mapaChip = {
-            oferta: ['OFERTA', [0, 135, 67]],
-            oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
-            liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
-        };
-        // Igual que en dibujarTarjetaTemporadaPdf_: el chip/banner es
-        // informativo y se muestra con o sin sesión profesional, igual
-        // que la propia tarjeta en la web.
-        const chipEntrada = d.tipoDestacado ? mapaChip[d.tipoDestacado] : null;
-
-        // Franja de color superior — mismo color que el chip (o el rojo de
-        // marca si no hay chip) a modo de "cabecera" de la tarjeta, para
-        // que destaque como una ficha comercial y no una fila de tabla.
-        const colorFranja = chipEntrada ? chipEntrada[1] : [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b];
-        doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
-        doc.roundedRect(x, y, w, 3, 3, 3, 'F');
-        doc.rect(x, y + 1.5, w, 1.5, 'F'); // cuadra las esquinas inferiores de la franja con el resto de la tarjeta
-
-        const pad = 5;
-        const imgBoxH = h * 0.48; // la imagen domina la tarjeta, no el texto
-        const imgBoxY = y + 3 + pad * 0.6;
-        if (foto) {
-            const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
-            const dw = foto.width * escala, dh = foto.height * escala;
-            doc.addImage(foto.dataUrl, 'JPEG', x + (w - dw) / 2, imgBoxY + (imgBoxH - dh) / 2, dw, dh);
-        } else {
-            doc.setFillColor(248, 249, 250);
-            doc.rect(x + pad, imgBoxY, w - pad * 2, imgBoxH, 'F');
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(8.5);
-            doc.setTextColor(170, 173, 180);
-            doc.text('Sin imagen', x + w / 2, imgBoxY + imgBoxH / 2, { align: 'center' });
-        }
-
-        // Chip del tipo de destacado, grande y con sombra simulada (doble
-        // rectángulo) para que resalte de verdad sobre la imagen — nunca
-        // con precio mayor (es una promoción sobre el PVP público).
-        if (chipEntrada) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            const txt = chipEntrada[0];
-            const tw = doc.getTextWidth(txt) + 7;
-            const th = 6.6;
-            doc.setFillColor(0, 0, 0);
-            doc.roundedRect(x + pad + 0.5, imgBoxY + 2.5, tw, th, 1.8, 1.8, 'F');
-            doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
-            doc.roundedRect(x + pad, imgBoxY + 2, tw, th, 1.8, 1.8, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.text(txt, x + pad + tw / 2, imgBoxY + 2 + th / 2 + 1.1, { align: 'center' });
-        }
-
-        let ty = imgBoxY + imgBoxH + 7;
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.5);
-        doc.setTextColor(30, 33, 37);
-        const nombreLineas = doc.splitTextToSize(p.nombre || p.ref, w - pad * 2).slice(0, 2);
-        doc.text(nombreLineas, x + pad, ty);
-        ty += nombreLineas.length * 4.2 + 1.5;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.2);
-        doc.setTextColor(140, 143, 150);
-        doc.text(`Ref: ${p.ref}`, x + pad, ty);
-        ty += 5.5;
-
-        // Mismo % de descuento del destacado aplicado también al precio al
-        // por mayor (ver calcularPrecioDestacado_) — bug real reportado:
-        // antes el PDF solo mostraba aquí el precio mayorista fijo, sin
-        // ninguna rebaja, aunque el producto estuviera en Destacados con
-        // descuento.
-        const dCalc = calcularPrecioDestacado_(p, d);
-        if (esMayor) {
-            if (dCalc.originalMayor !== null && dCalc.promoMayor !== null) {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8.5);
-                doc.setTextColor(170, 173, 180);
-                const origTxt = `${dCalc.originalMayor.toFixed(2).replace('.', ',')} €`;
-                doc.text(origTxt, x + pad, ty);
-                const wOrig = doc.getTextWidth(origTxt);
-                doc.setDrawColor(170, 173, 180);
-                doc.setLineWidth(0.3);
-                doc.line(x + pad, ty - 1.2, x + pad + wOrig, ty - 1.2);
-                ty += 7;
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(19);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-                const promoTxt = `${dCalc.promoMayor.toFixed(2).replace('.', ',')} €`;
-                doc.text(promoTxt, x + pad, ty);
-                if (dCalc.pct) {
-                    const wPromo = doc.getTextWidth(promoTxt);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    const pctTxt = `-${dCalc.pct}%`;
-                    const wPct = doc.getTextWidth(pctTxt) + 4.6;
-                    doc.setFillColor(217, 27, 27);
-                    doc.roundedRect(x + pad + wPromo + 3, ty - 5.2, wPct, 6.2, 1.6, 1.6, 'F');
-                    doc.setTextColor(255, 255, 255);
-                    doc.text(pctTxt, x + pad + wPromo + 3 + wPct / 2, ty - 1.1, { align: 'center' });
-                }
-                ty += 5;
-            } else {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(19);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-                doc.text(`${precioInfo.con.toFixed(2).replace('.', ',')} €`, x + pad, ty);
-                ty += 5;
-            }
-            // Discreto a propósito (a petición explícita de Eloy: "de
-            // manera más sutil") — sin fondo ni mayúsculas, como una nota
-            // al pie del precio, no como una etiqueta que compita con él.
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(7.2);
-            doc.setTextColor(150, 153, 160);
-            doc.text('Precio profesional (al por mayor)', x + pad, ty);
-            ty += 7;
-        } else {
-            if (dCalc.original === null) {
-                doc.setFont('helvetica', 'italic');
-                doc.setFontSize(8.5);
-                doc.setTextColor(150, 153, 160);
-                doc.text('Consultar precio y disponibilidad', x + pad, ty);
-                ty += 7;
-            } else if (dCalc.promo !== null) {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8.5);
-                doc.setTextColor(170, 173, 180);
-                const origTxt = `${dCalc.original.toFixed(2).replace('.', ',')} €`;
-                doc.text(origTxt, x + pad, ty);
-                const wOrig = doc.getTextWidth(origTxt);
-                doc.setDrawColor(170, 173, 180);
-                doc.setLineWidth(0.3);
-                doc.line(x + pad, ty - 1.2, x + pad + wOrig, ty - 1.2);
-                ty += 7;
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(19);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-                const promoTxt = `${dCalc.promo.toFixed(2).replace('.', ',')} €`;
-                doc.text(promoTxt, x + pad, ty);
-                if (dCalc.pct) {
-                    const wPromo = doc.getTextWidth(promoTxt);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    const pctTxt = `-${dCalc.pct}%`;
-                    const wPct = doc.getTextWidth(pctTxt) + 4.6;
-                    doc.setFillColor(217, 27, 27);
-                    doc.roundedRect(x + pad + wPromo + 3, ty - 5.2, wPct, 6.2, 1.6, 1.6, 'F');
-                    doc.setTextColor(255, 255, 255);
-                    doc.text(pctTxt, x + pad + wPromo + 3 + wPct / 2, ty - 1.1, { align: 'center' });
-                }
-                ty += 5;
-            } else {
-                // Precio sin descuento: mismo rojo de marca que el resto de
-                // precios de la tarjeta — a petición explícita de Eloy, "en
-                // color más resaltado que solo en negro".
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(19);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-                doc.text(`${dCalc.original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
-                ty += 7;
-            }
-        }
-
-        // Promoción adicional (p.ej. "2x1", "Últimas unidades") — chip con
-        // sombra, mismo tratamiento que el chip del tipo de destacado y a
-        // la misma escala que el precio, en vez del banner a todo lo ancho
-        // de antes ("no me gusta así como si fuera un botón"; "que
-        // resalte tanto o más que el precio en modo chip"). Hasta 2 líneas
-        // dentro del propio chip (antes se recortaba en silencio a la
-        // primera línea sin más, cortando el texto a medias).
-        if (d.textoPromocion) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            const maxTextW = w - pad * 2 - 10;
-            const todasLasLineas = doc.splitTextToSize(d.textoPromocion.toUpperCase(), maxTextW);
-            const lineasPromo = todasLasLineas.slice(0, 2);
-            if (todasLasLineas.length > 2) {
-                let ultima = lineasPromo[1];
-                while (doc.getTextWidth(ultima + '…') > maxTextW && ultima.length > 1) ultima = ultima.slice(0, -1);
-                lineasPromo[1] = ultima + '…';
-            }
-            const lineH = 4.2;
-            const thPromo = lineasPromo.length * lineH + 3.2;
-            const twPromo = Math.max(...lineasPromo.map(l => doc.getTextWidth(l))) + 9;
-            doc.setFillColor(0, 0, 0);
-            doc.roundedRect(x + pad + 0.6, ty + 0.6, twPromo, thPromo, 2.2, 2.2, 'F');
-            doc.setFillColor(241, 179, 0); // amarillo de marca — nunca se usa ya para precio ni chip de tipo, así resalta sin confundirse con ellos
-            doc.roundedRect(x + pad, ty, twPromo, thPromo, 2.2, 2.2, 'F');
-            doc.setTextColor(26, 26, 26);
-            lineasPromo.forEach((linea, i) => {
-                doc.text(linea, x + pad + twPromo / 2, ty + 3.3 + i * lineH, { align: 'center' });
-            });
-            ty += thPromo + 2.5;
-        }
-
-        // Fecha límite — normalmente fija al pie de la tarjeta, pero nunca
-        // por encima del contenido de arriba (si una tarjeta llega muy
-        // cargada — nombre a 2 líneas, descuento y promoción larga — se
-        // desplaza hacia abajo junto con el resto en vez de solapar). La
-        // propia fecha del producto manda; si no tiene, se usa la fecha
-        // límite general de la sección Destacados (si está informada) — a
-        // petición explícita: "si la tiene informada hay que indicarlo en
-        // cada producto", y antes un producto sin fecha propia dentro de
-        // una sección con fecha límite general se quedaba sin indicarlo.
-        const fechaFinEfectiva = d.fechaFin || destacadosDatos_.fechaFin;
-        if (fechaFinEfectiva) {
-            const fecha = new Date(fechaFinEfectiva);
-            if (!isNaN(fecha.getTime())) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7.2);
-                doc.setTextColor(140, 143, 150);
-                const fechaTxt = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-                doc.text(`Válido hasta el ${fechaTxt}`, x + pad, Math.max(y + h - 4, ty + 3));
-            }
-        }
-    }
-
     // Construye el documento (sin guardarlo ni compartirlo) para que
     // "Descargar" y "Compartir" generen exactamente el mismo PDF sin
     // duplicar esta lógica — mismo patrón que construirDocumentoPdfListaCompra_.
     // onProgreso(completadas, total, msRestantes), si se pasa, se reenvía
     // tal cual desde cargarImagenesFolletoDestacadosEnTandas_.
+    //
+    // A petición explícita de Eloy ("que sea con el mismo estilo que la del
+    // folleto"): mismo diseño, misma rejilla de 3×3 (9 por página) y misma
+    // tarjeta (dibujarTarjetaTemporadaPdf_) que construirDocumentoPdfTemporada_
+    // — antes este folleto tenía su propia tarjeta más grande
+    // (dibujarTarjetaDestacadoPdf_, eliminada) con solo 2 por página. El
+    // precio al por mayor para el perfil profesional y el aviso de "todavía
+    // sin confirmar" (ver preciosMayorConfirmados_, justo abajo) ya
+    // funcionaban igual en ambos — eso no cambia, solo el estilo visual.
     async function construirDocumentoPdfDestacados_(onProgreso) {
         if (typeof window.jspdf === 'undefined') return null;
         // Nunca generar el PDF con el precio al por mayor todavía sin
@@ -17471,11 +17246,15 @@ if (window.OM_PREPRODUCCION) {
         const contentRight = pageW - margin;
         const contentWidth = contentRight - margin;
         const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+        // Mismo color de marca según el perfil que el folleto de Temporada
+        // (rojo de marca para el profesional/precio al por mayor, azul para
+        // el normal/PVP) — a petición explícita de Eloy, mismo estilo.
+        const colorAccent = esProfesionalFolleto ? [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b] : [25, 118, 210];
 
         const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
 
         function dibujarCabecera() {
-            doc.setFillColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.setFillColor(colorAccent[0], colorAccent[1], colorAccent[2]);
             doc.rect(0, 0, pageW, 3, 'F');
             if (logo) {
                 const logoH = 11, logoW = logoH * (logo.width / logo.height);
@@ -17489,7 +17268,7 @@ if (window.OM_PREPRODUCCION) {
             doc.setFontSize(8);
             doc.setTextColor(120, 123, 130);
             doc.text(
-                esProfesionalFolleto ? 'Precios profesionales (al por mayor) · ' + LISTA_COMPRA_EMPRESA_.web : LISTA_COMPRA_EMPRESA_.web,
+                esProfesionalFolleto ? 'Precios profesionales (al por mayor) · ' + LISTA_COMPRA_EMPRESA_.web : 'Precios de venta al público (PVP) · ' + LISTA_COMPRA_EMPRESA_.web,
                 contentRight, 17, { align: 'right' }
             );
             doc.setDrawColor(226, 228, 232);
@@ -17512,7 +17291,7 @@ if (window.OM_PREPRODUCCION) {
             doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
             doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
             doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.6);
@@ -17525,17 +17304,16 @@ if (window.OM_PREPRODUCCION) {
         const itemsFotos = visibles.map(({ producto }) => ({ url: urlImagenProductoFolletoDestacados_(producto) }));
         const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
 
-        // Tarjetas más grandes (a petición explícita de Eloy, "muy
-        // simple... hay que darle una vuelta al estilo para que sea más
-        // llamativo") — con esta altura caben 2 filas (4 tarjetas) por
-        // página, igual que antes, pero cada una con mucho más protagonismo.
-        const colGap = 8, rowGap = 8;
-        const colW = (contentWidth - colGap) / 2;
-        const cardH = 114;
-        const filasPorPagina = Math.max(1, Math.floor((footerTopY - headerBottomY - 6 + rowGap) / (cardH + rowGap)));
-        const porPagina = filasPorPagina * 2;
+        // 3 columnas × 3 filas = 9 tarjetas por página — mismo estilo y
+        // misma rejilla que construirDocumentoPdfTemporada_ (ver el
+        // comentario de más arriba sobre este cambio).
+        const numCols = 3, numFilas = 3;
+        const colGap = 6, rowGap = 6;
+        const colW = (contentWidth - colGap * (numCols - 1)) / numCols;
+        const cardH = (footerTopY - headerBottomY - 6 - rowGap * (numFilas - 1)) / numFilas;
+        const porPagina = numCols * numFilas;
 
-        visibles.forEach(({ producto, destacado }, i) => {
+        visibles.forEach(({ producto }, i) => {
             const indiceEnPagina = i % porPagina;
             if (indiceEnPagina === 0) {
                 if (i > 0) doc.addPage();
@@ -17545,11 +17323,11 @@ if (window.OM_PREPRODUCCION) {
                 dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, 297);
                 dibujarCabecera();
             }
-            const fila = Math.floor(indiceEnPagina / 2);
-            const col = indiceEnPagina % 2;
+            const fila = Math.floor(indiceEnPagina / numCols);
+            const col = indiceEnPagina % numCols;
             const x = margin + col * (colW + colGap);
             const y = headerBottomY + 6 + fila * (cardH + rowGap);
-            dibujarTarjetaDestacadoPdf_(doc, x, y, colW, cardH, fotos[i], producto, destacado);
+            dibujarTarjetaTemporadaPdf_(doc, x, y, colW, cardH, fotos[i], producto, colorAccent);
         });
 
         const totalPaginas = doc.internal.getNumberOfPages();
