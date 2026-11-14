@@ -587,5 +587,14 @@
       try { history.replaceState(null, '', location.href); } catch (err) {}
       location.href = './index.html';
     },
+    // Variante de "salir" que NUNCA navega — a petición explícita de
+    // Eloy, para el botón de salir del modo profesional del propio
+    // buscador.html: solo borra la sesión guardada, sin redirigir a
+    // ningún sitio. Quien llama es responsable de refrescar la UI que
+    // corresponda (p. ej. recargando su propia página) — este método
+    // solo gestiona el almacenamiento, igual que iniciarSesion/salir.
+    salirSinRedirigir: function () {
+      cerrarSesion_();
+    },
   };
 })();
