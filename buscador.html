@@ -1838,6 +1838,11 @@
             background: white;
         }
 
+        .buscador-lista-filtro {
+            margin-bottom: 6px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+        }
         .familias-lista {
             max-height: 220px;
             overflow-y: auto;
@@ -2020,11 +2025,23 @@
            la derecha) en vez de repartir cada botón por separado, que
            dejaba el icono de información "suelto" a medio camino entre
            el contador y el de compartir en vez de pegado a él. */
+        /* Bug real reportado por Eloy, con captura: al aparecer "Añadir
+           todos a mi lista" (ver actualizarBotonAnadirResultadosLista_),
+           este grupo deja de caber en la misma línea que el contador de
+           resultados y pasa a su PROPIA línea dentro de .resultados-header
+           (que es flex-wrap) — en una línea con un único elemento,
+           "justify-content:space-between" del padre no tiene nada de qué
+           separarse y lo deja pegado a la IZQUIERDA en vez de a la derecha,
+           donde vive siempre que comparte línea con el contador.
+           margin-left:auto empuja este grupo al extremo derecho de SU
+           línea tanto si la comparte con el contador como si no, así que
+           su posición ya no depende de si el otro botón está presente. */
         .resultados-header__acciones {
             display: flex;
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
+            margin-left: auto;
         }
         /* Chips de filtros activos — ver renderizarFiltrosChips_(). */
         .filtros-chips {
@@ -5653,11 +5670,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="filtro-grupo collapsable" id="grupo-familias">
             <label class="titulo">Familia</label>
+            <!-- A petición explícita de Eloy ("ayudar al usuario" con listas
+                 largas de familias/subfamilias): filtra por texto las
+                 opciones YA renderizadas debajo, sin tocar cuáles están
+                 marcadas — ver filtrarListaPorTexto_(). -->
+            <input type="text" class="input-texto buscador-lista-filtro" id="f-familias-buscar" placeholder="Buscar familia…">
             <div class="familias-lista" id="f-familias"></div>
         </div>
 
         <div class="filtro-grupo collapsable collapsed" id="grupo-subfamilias" style="display: none;">
             <label class="titulo">Subfamilia</label>
+            <input type="text" class="input-texto buscador-lista-filtro" id="f-subfamilias-buscar" placeholder="Buscar subfamilia…">
             <div class="familias-lista" id="f-subfamilias"></div>
         </div>
 
@@ -10259,6 +10282,8 @@ if (window.OM_PREPRODUCCION) {
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+        $('f-familias-buscar').addEventListener('input', () => filtrarListaPorTexto_('f-familias', 'f-familias-buscar'));
+        $('f-subfamilias-buscar').addEventListener('input', () => filtrarListaPorTexto_('f-subfamilias', 'f-subfamilias-buscar'));
         $('f-orden').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         ['f-fecha-desde', 'f-fecha-hasta'].forEach(id => {
             $(id).addEventListener('change', () => {
@@ -14944,6 +14969,22 @@ if (window.OM_PREPRODUCCION) {
     }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
+    // Filtra por texto, SIN perder la selección, las opciones ya
+    // renderizadas de un listado largo de checkboxes (familia/subfamilia) —
+    // a petición explícita de Eloy, para ayudar a encontrar una opción
+    // concreta en listas con decenas de familias. Solo oculta/muestra
+    // (nunca desmarca) cada <label class="familia-item">, así que lo ya
+    // marcado se conserva aunque quede oculto por el texto buscado.
+    function filtrarListaPorTexto_(contId, buscadorId) {
+        const buscador = $(buscadorId);
+        const cont = $(contId);
+        if (!buscador || !cont) return;
+        const texto = normalizar(buscador.value.trim());
+        cont.querySelectorAll('.familia-item').forEach(label => {
+            label.style.display = (!texto || normalizar(label.textContent).includes(texto)) ? '' : 'none';
+        });
+    }
+
     function renderFamilias() {
         const areasSel = areasSeleccionadas();
         const cont = $('f-familias');
@@ -14981,6 +15022,7 @@ if (window.OM_PREPRODUCCION) {
             });
             cont.appendChild(label);
         });
+        filtrarListaPorTexto_('f-familias', 'f-familias-buscar');
 
         // Mostrar/ocultar filtro de subfamilia según si hay familias seleccionadas
         renderSubfamilias();
@@ -15035,6 +15077,7 @@ if (window.OM_PREPRODUCCION) {
             });
             cont.appendChild(label);
         });
+        filtrarListaPorTexto_('f-subfamilias', 'f-subfamilias-buscar');
     }
 
     // Orden inteligente para el filtro de Talla/Variante: los granos de
@@ -20296,10 +20339,11 @@ if (window.OM_PREPRODUCCION) {
         CAMPOS_FILTRO_URL.forEach(c => {
             if (c.tipo !== 'checkbox-grupo') return;
             const esArea = c.contId === 'f-area-opciones';
-            // Área empieza con TODAS marcadas (=sin filtro) — a diferencia
-            // del resto de grupos, que empiezan vacíos, aquí solo hay chip
-            // si de verdad se ha desmarcado alguna (ver hayFiltroDeArea_).
-            if (esArea && !hayFiltroDeArea_()) return;
+            // A petición explícita de Eloy: a diferencia del resto de
+            // grupos (que empiezan vacíos y solo muestran chip si el
+            // usuario marca algo), Área siempre muestra un chip por cada
+            // área marcada — también con todas marcadas (el estado por
+            // defecto, sin ningún filtro real de área todavía).
             document.querySelectorAll(`#${c.contId} input:checked`).forEach(input => {
                 chips.push({
                     etiqueta: `${c.etiqueta}: ${esArea ? (AREAS_NOMBRE[input.value] || input.value) : input.value}`,
