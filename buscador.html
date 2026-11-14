@@ -858,37 +858,16 @@
         }
 
         /* ── Sección "Destacados" (ofertas/oportunidad/liquidación) ──────
-           A petición de Eloy: jerarquía visual claramente por encima de
-           los módulos .mas-buscados (Más buscados/Novedades/Marcas/
-           Seguir comprando) — franja de acento con los colores
-           corporativos (azul→rojo) arriba del todo, título más grande, y
-           tarjetas más anchas con la etiqueta de tipo de promoción y el
-           precio rebajado con más protagonismo. Deliberadamente no se
-           usan los 4 colores de marca a la vez en el mismo elemento
-           (spec: "sin usar todos los colores indiscriminadamente") — la
-           franja usa azul/rojo, y cada chip de tipo usa UN color propio
-           (ver .destacado-chip--*). */
-        #destacados.seccion-destacados {
-            /* A petición de Eloy: el bloque no debe quedarse siempre con el
-               ancho completo de la columna de resultados cuando hay pocos
-               productos (se veía como una franja medio vacía) — se ajusta
-               al contenido (width: fit-content) y solo llega hasta el
-               máximo disponible (max-width: 100%) cuando hace falta. */
-            width: fit-content;
-            max-width: 100%;
-            margin: 0 0 22px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, rgba(25,118,210,.07), rgba(211,47,47,.05));
-            border: 1px solid rgba(25,118,210,.18);
-            padding: 16px 16px 14px;
-            position: relative;
-            overflow: hidden;
-        }
-        #destacados.seccion-destacados::before {
-            content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, var(--blue), var(--red));
-        }
+           A petición explícita de Eloy: mismo estilo "suelto" (sin caja
+           contenedora propia — nada de fondo degradado, borde ni franja
+           de acento) que cada bloque de Temporada, ver
+           .temporada-bloque.seccion-destacados un poco más abajo. Mismo
+           margen que esa regla, a propósito: jerarquía visual por
+           encima de .mas-buscados (Más buscados/Novedades/Marcas/Seguir
+           comprando) viene ya del título más grande y las tarjetas más
+           anchas con la etiqueta de tipo de promoción y el precio
+           rebajado con más protagonismo, no de una caja aparte. */
+        #destacados.seccion-destacados { margin: 0 0 22px; }
         .seccion-destacados__cabecera {
             display: flex; align-items: center; justify-content: space-between;
             flex-wrap: wrap; gap: 10px;
@@ -2131,7 +2110,13 @@
             flex-wrap: wrap;
             gap: 6px;
             margin-top: 2px;
-            margin-bottom: 12px;
+            margin-bottom: 18px;
+        }
+        /* Bug real reportado por Eloy en un móvil Android: quedaba poco
+           aire entre los chips y la primera sección justo debajo — en
+           pantallas pequeñas, un poco más de margen que en escritorio. */
+        @media (max-width: 480px) {
+            .filtros-chips { margin-bottom: 22px; }
         }
         .filtro-chip {
             display: inline-flex;
@@ -8185,6 +8170,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     var animLista = false;
     var datosListos = false;
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // A petición explícita de Eloy: el efecto de entrada (gota + trazo +
+    // partículas estacionales, ~4.7s) solo debe verse la PRIMERA vez que
+    // el usuario entra al buscador — si vuelve a entrar dentro de la
+    // misma sesión del navegador (otra pestaña, recargar, volver atrás...)
+    // ya no se repite. sessionStorage, no localStorage: "misma sesión",
+    // se olvida al cerrar la pestaña/navegador, igual que el resto de
+    // mecanismos de sesión de este buscador (ver FILTROS_SESION_CLAVE_).
+    // Se marca como visto YA, no al terminar la animación: si el usuario
+    // recarga a medio efecto, esta vez SÍ contó como vista.
+    var SPLASH_VISTO_SESION_CLAVE_ = 'omSplashVistoEnSesion';
+    var yaVistoEnEstaSesion = false;
+    try { yaVistoEnEstaSesion = sessionStorage.getItem(SPLASH_VISTO_SESION_CLAVE_) === '1'; } catch (e) { /* sessionStorage no disponible (privado/bloqueado) — se trata como "no visto", sin más */ }
+    try { sessionStorage.setItem(SPLASH_VISTO_SESION_CLAVE_, '1'); } catch (e) { /* ídem */ }
 
     function cerrarSiToca_() {
         if (!animLista || !datosListos) return;
@@ -8222,7 +8220,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // de carga atascada para siempre.
     setTimeout(function () { window.om_splash_datosListos_(); }, 15000);
 
-    if (reduceMotion) {
+    if (reduceMotion || yaVistoEnEstaSesion) {
         animLista = true;
         cerrarSiToca_();
     } else {
@@ -11103,6 +11101,23 @@ if (window.OM_PREPRODUCCION) {
     // funciones como aplicarFiltroAModulosDescubrimiento_() de abajo.
     let refsFiltroActivoSet_ = null;
 
+    // Bug real reportado por Eloy ("la sección de destacados se queda
+    // cargando"): destacadosDatos_/temporadasDatos_ empiezan vacíos
+    // (fetch en vuelo todavía) — si aplicarFiltroAModulosDescubrimiento_
+    // repinta renderDestacados_/renderTemporada_ ANTES de que su propio
+    // fetch resuelva por primera vez (p. ej. en la primerísima pasada de
+    // aplicarFiltros(), nada más cargar la página), las ve vacías y las
+    // marca 'vacio' — ocultándolas de golpe en vez de dejarlas en
+    // 'cargando' (con su skeleton) hasta que de verdad haya datos.
+    // Estos dos flags, puestos a true al final de cargarDestacados_()/
+    // cargarTemporadas_() la primera vez que cada una resuelve (éxito o
+    // error, ver sus propios comentarios), evitan que el filtro las
+    // repinte mientras siguen genuinamente en vuelo — una vez cargadas
+    // de verdad, son ellas mismas (al terminar su fetch) las que llaman
+    // a renderDestacados_()/renderTemporada_() con el filtro ya vigente.
+    let destacadosCargadoUnaVez_ = false;
+    let temporadasCargadoUnaVez_ = false;
+
     function destacadosProductosVigentesFiltrados_() {
         const visibles = destacadosProductosVigentes_();
         if (!refsFiltroActivoSet_) return visibles;
@@ -11164,9 +11179,12 @@ if (window.OM_PREPRODUCCION) {
     }
 
     // Punto de entrada único llamado desde aplicarFiltros(): repinta
-    // (Destacados/Temporadas, sin red, baratos) o re-filtra sin repintar
-    // (Novedades/Últimos vistos/Sigue explorando) los cinco módulos
-    // filtrables, y al final actualiza qué se ve de verdad.
+    // (Destacados/Temporadas, sin red, baratos — cada una se guarda ella
+    // misma de repintarse antes de que su propio fetch haya resuelto por
+    // primera vez, ver el guard al principio de renderDestacados_()/
+    // renderTemporada_()) o re-filtra sin repintar (Novedades/Últimos
+    // vistos/Sigue explorando) los cinco módulos filtrables, y al final
+    // actualiza qué se ve de verdad.
     function aplicarFiltroAModulosDescubrimiento_() {
         renderDestacados_();
         renderTemporada_();
@@ -11187,16 +11205,24 @@ if (window.OM_PREPRODUCCION) {
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
         $('categorias-descubrimiento-seccion').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
         if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
-        // Botones de gestión en preproducción (Estadísticas / Gestionar
-        // productos de temporada): viven FUERA de sus secciones a
-        // propósito (ver sus comentarios en el HTML, para seguir
-        // accesibles aunque la sección esté vacía) — pero eso mismo hacía
-        // que, con un filtro aplicado y las secciones de alrededor ya
-        // ocultas, quedaran los dos pegados y solapados entre sí. Bug
-        // real reportado por Eloy: se ocultan igual que el resto de
-        // módulos de descubrimiento, solo visibles con filtros limpios.
+        // Botón de "Estadísticas" (panel-analitica-cabecera): vive FUERA
+        // de su sección a propósito (ver su comentario en el HTML, para
+        // seguir accesible aunque la sección esté vacía) — pero eso mismo
+        // hacía que, con un filtro aplicado y las secciones de alrededor
+        // ya ocultas, quedara solapado con lo de al lado. Bug real
+        // reportado por Eloy: se oculta igual que el resto de módulos de
+        // descubrimiento, solo visible con filtros limpios.
         if ($('panel-analitica-cabecera')) $('panel-analitica-cabecera').style.display = oculto ? 'none' : '';
-        if ($('gestionar-temporadas-cabecera')) $('gestionar-temporadas-cabecera').style.display = oculto ? 'none' : '';
+        // "Gestionar productos de temporada" (gestionar-temporadas-cabecera):
+        // a diferencia del de Estadísticas, este SÍ debe verse siempre en
+        // preproducción (y solo ahí — en producción el propio botón
+        // interior ya se elimina del DOM del todo, ver eliminarSiRestringido_
+        // con window.MOSTRAR_GESTION_TEMPORADAS), sin depender de si hay
+        // algún filtro activo. Bug real reportado por Eloy: "el botón de
+        // edición de temporadas en preproducción ha desaparecido" — se
+        // ocultaba con cualquier filtro igual que el resto, cuando debía
+        // quedarse siempre disponible para poder editar.
+        if ($('gestionar-temporadas-cabecera')) $('gestionar-temporadas-cabecera').style.display = window.MOSTRAR_GESTION_TEMPORADAS ? '' : 'none';
         // Mismo booleano para el aviso visual en móvil (botón "Filtros" en
         // rojo con el panel cerrado) — ver su CSS, .tiene-filtro-activo.
         $('btn-abrir-filtros-movil').classList.toggle('tiene-filtro-activo', oculto);
@@ -11353,6 +11379,7 @@ if (window.OM_PREPRODUCCION) {
                 console.error('cargarDestacados_: error cargando la sección Destacados', e);
                 destacadosDatos_ = { activo: false, fechaFin: '', productos: [] };
             }
+            destacadosCargadoUnaVez_ = true;
             renderDestacados_();
             if ($('destacados-vista-principal') && $('destacados-vista-principal').style.display !== 'none') {
                 destacadosRenderizarListadoGestion_();
@@ -11481,6 +11508,17 @@ if (window.OM_PREPRODUCCION) {
 
     function renderDestacados_() {
         if (!$('destacados-lista')) return; // defensivo: HTML aún no montado
+        // Bug real reportado por Eloy ("la sección de destacados se queda
+        // cargando"): esta función tiene VARIOS puntos de llamada (fin de
+        // cargarDestacados_(), aplicarFiltroAModulosDescubrimiento_(),
+        // actualizarModulosDescubrimiento_(soloRepintar=true)...) — si
+        // cualquiera de ellos llega ANTES de que cargarDestacados_()
+        // resuelva por primera vez, destacadosDatos_ todavía está vacío
+        // (fetch en vuelo) y esto marcaría 'vacio' (ocultando la sección)
+        // en vez de dejarla en 'cargando' (con su skeleton) hasta que de
+        // verdad haya datos. Guarda único aquí, no en cada punto de
+        // llamada, para no tener que recordar añadirlo en cada uno nuevo.
+        if (!destacadosCargadoUnaVez_) return;
         const visibles = destacadosProductosVigentesFiltrados_();
         const cont = $('destacados-lista');
         cont.innerHTML = '';
@@ -11882,6 +11920,7 @@ if (window.OM_PREPRODUCCION) {
             console.error('cargarTemporadas_: error cargando temporadas', e);
             temporadasDatos_ = [];
         }
+        temporadasCargadoUnaVez_ = true;
     }
 
     function temporadasVigentesAhora_() {
@@ -11939,6 +11978,10 @@ if (window.OM_PREPRODUCCION) {
     function renderTemporada_() {
         const cont = $('temporadas-bloques-contenedor');
         if (!cont) return; // defensivo: HTML aún no montado
+        // Mismo motivo y mismo bug que el guard de renderDestacados_() —
+        // ver su comentario: varios puntos de llamada pueden repintar
+        // esto antes de que cargarTemporadas_() resuelva por primera vez.
+        if (!temporadasCargadoUnaVez_) return;
         const bloques = temporadasVigentesAhora_()
             .slice()
             .sort((a, b) => (a.orden || 0) - (b.orden || 0))
@@ -20475,11 +20518,14 @@ if (window.OM_PREPRODUCCION) {
         CAMPOS_FILTRO_URL.forEach(c => {
             if (c.tipo !== 'checkbox-grupo') return;
             const esArea = c.contId === 'f-area-opciones';
-            // A petición explícita de Eloy: a diferencia del resto de
-            // grupos (que empiezan vacíos y solo muestran chip si el
-            // usuario marca algo), Área siempre muestra un chip por cada
-            // área marcada — también con todas marcadas (el estado por
-            // defecto, sin ningún filtro real de área todavía).
+            // Área empieza con TODAS marcadas (=sin filtro) — a diferencia
+            // del resto de grupos, que empiezan vacíos, aquí solo hay chip
+            // si de verdad se ha desmarcado alguna (ver hayFiltroDeArea_).
+            // Vuelta atrás explícita a petición de Eloy: un intento
+            // anterior de mostrar siempre un chip por área (también con
+            // todas marcadas) no convencía — con todas marcadas no hay
+            // ningún filtro real de área que mostrar.
+            if (esArea && !hayFiltroDeArea_()) return;
             document.querySelectorAll(`#${c.contId} input:checked`).forEach(input => {
                 chips.push({
                     etiqueta: `${c.etiqueta}: ${esArea ? (AREAS_NOMBRE[input.value] || input.value) : input.value}`,
