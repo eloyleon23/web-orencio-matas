@@ -593,7 +593,13 @@
             width: 100%;
             padding: 14px;
             margin-top: 16px;
-            background: var(--red);
+            /* Antes --red: a petición de Eloy, el rojo transmitía alarma en
+               un botón de acción normal — se cambia por --blue (ya es el
+               color de acción habitual del sitio, ver p.ej. #banner-
+               actualizacion .btn-actualizar o .btn-destacados-compartir),
+               dentro de la gama de colores del logo (--blue/--green/
+               --yellow/--red en :root). */
+            background: var(--blue);
             color: white;
             border: none;
             border-radius: 8px;
