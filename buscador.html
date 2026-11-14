@@ -106,6 +106,110 @@
         }
         .btn-volver:hover { color: white; }
 
+        /* ── Barra "Acceso profesional" (ver HTML junto a <main class="layout">
+           y inicializarAccesoProfesionalBuscador_ más abajo) ── */
+        .om-acceso-profesional-barra {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+        }
+        .om-acceso-profesional-barra__inner {
+            max-width: min(96vw, 1760px);
+            margin: 0 auto;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .btn-acceso-profesional,
+        .btn-salir-profesional {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: filter .15s, transform .1s;
+        }
+        .btn-acceso-profesional:active,
+        .btn-salir-profesional:active { transform: translateY(1px); }
+        .btn-acceso-profesional:hover,
+        .btn-salir-profesional:hover { filter: brightness(1.08); }
+        .btn-acceso-profesional { background: #1a1a1a; color: #fff; }
+        .btn-salir-profesional { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+
+        .modal-acceso-profesional-box { max-width: 440px; padding: 26px; }
+        .modal-acceso-profesional-box h3 {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ap-modal-subtitulo { margin: 0 0 20px; font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+        .ap-modal-campo { margin-bottom: 14px; }
+        .ap-modal-campo label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--dark);
+        }
+        .ap-modal-recordar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 2px 0 6px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            cursor: pointer;
+        }
+        .ap-modal-error { min-height: 18px; margin: 8px 0 0; color: var(--red); font-weight: 700; font-size: 0.85rem; }
+        .ap-modal-estado {
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.86rem;
+        }
+        .ap-modal-btn-primario {
+            width: 100%;
+            margin-top: 6px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: filter .15s, transform .1s;
+        }
+        .ap-modal-btn-primario:hover { filter: brightness(1.08); }
+        .ap-modal-btn-primario:active { transform: translateY(1px); }
+        .ap-modal-btn-primario:disabled { opacity: .7; cursor: default; }
+        .ap-modal-btn-enlace {
+            display: block;
+            width: 100%;
+            margin-top: 14px;
+            background: none;
+            border: none;
+            color: var(--blue);
+            font-size: 0.83rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .ap-modal-btn-enlace:hover { color: var(--dark); }
+
         /* Por defecto, un hijo directo de un grid tiene min-width:auto
            — no se encoge por debajo del ancho de su propio contenido.
            Sin esto, una fila con scroll horizontal interno (como
@@ -5640,6 +5744,98 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Acceso profesional — a petición explícita de Eloy: acceso más ágil
+     desde el propio buscador (hasta ahora solo existía como opción del
+     menú de navegación, tras entrar el PIN en acceso-profesional.html),
+     sin salir de esta página para entrar ni para salir. Vive FUERA de
+     <main class="layout"> a propósito: ese grid tiene sus filas/columnas
+     ya muy ajustadas (sticky, spans entre filtros y toolbar de
+     escritorio), y meter aquí un elemento más habría obligado a tocar
+     todo eso — como simple barra de ancho completo justo encima, no
+     hace falta. Ver inicializarAccesoProfesionalBuscador_ más abajo. -->
+<div class="om-acceso-profesional-barra" id="om-acceso-profesional-barra">
+    <div class="om-acceso-profesional-barra__inner">
+        <button type="button" id="btn-acceso-profesional" class="btn-acceso-profesional">
+            <i class="fa-solid fa-user-tie"></i> Acceso profesional
+        </button>
+        <button type="button" id="btn-salir-profesional" class="btn-salir-profesional" style="display:none;">
+            <i class="fa-solid fa-right-from-bracket"></i> Salir del modo profesional
+        </button>
+    </div>
+</div>
+
+<!-- Modal del botón de arriba — dos pasos dentro del mismo diálogo (PIN
+     o solicitar código por email), nunca una navegación a otra página:
+     el usuario se queda siempre en el buscador. -->
+<div class="modal-overlay" id="modal-acceso-profesional-overlay">
+    <div class="modal-producto-box modal-acceso-profesional-box">
+        <button class="modal-producto-cerrar" id="modal-acceso-profesional-cerrar" aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <!-- Paso 1: introducir el PIN ya conocido (vista por defecto al abrir) -->
+        <div id="ap-paso-pin">
+            <h3><i class="fa-solid fa-user-tie"></i> Acceso profesional</h3>
+            <p class="ap-modal-subtitulo">Introduce tu PIN profesional para ver precios y catálogos al por mayor sin salir del buscador.</p>
+            <form id="ap-modal-form-pin" autocomplete="off">
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-pin-input">PIN profesional</label>
+                    <input type="password" inputmode="numeric" id="ap-modal-pin-input" class="input-texto" placeholder="PIN profesional" required>
+                </div>
+                <label class="ap-modal-recordar"><input type="checkbox" id="ap-modal-recordar"> Recordar PIN en este dispositivo</label>
+                <p id="ap-modal-pin-error" class="ap-modal-error"></p>
+                <button type="submit" class="ap-modal-btn-primario" id="ap-modal-btn-entrar">
+                    <span>Entrar</span> <i class="fa-solid fa-spinner fa-spin" id="ap-modal-pin-spinner" style="display:none;"></i>
+                </button>
+            </form>
+            <button type="button" class="ap-modal-btn-enlace" id="ap-modal-btn-ir-solicitar">¿No tienes código de acceso? Solicítalo por email</button>
+        </div>
+
+        <!-- Paso 2: solicitar código por email — mismo formulario/envío
+             que acceso-profesional.html (#ap-solicitud-form), con otros
+             id para no chocar con esa página (no comparten documento). -->
+        <div id="ap-paso-solicitar" style="display:none;">
+            <h3><i class="fa-solid fa-envelope"></i> Solicitar código de acceso</h3>
+            <p class="ap-modal-subtitulo">Rellena tus datos y nos pondremos en contacto para facilitarte tu código de acceso como profesional.</p>
+            <form id="ap-modal-form-solicitar" novalidate>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-nombre">Nombre</label>
+                    <input class="input-texto" type="text" id="ap-modal-sol-nombre" autocomplete="name" placeholder="Tu nombre" required>
+                </div>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-empresa">Nombre comercial / Empresa</label>
+                    <input class="input-texto" type="text" id="ap-modal-sol-empresa" autocomplete="organization" placeholder="Nombre de tu empresa" required>
+                </div>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-email">Email</label>
+                    <input class="input-texto" type="email" id="ap-modal-sol-email" autocomplete="email" placeholder="tu@email.com" required>
+                </div>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-telefono">Teléfono</label>
+                    <input class="input-texto" type="tel" id="ap-modal-sol-telefono" autocomplete="tel" placeholder="Tu teléfono" required>
+                </div>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-area">Área profesional</label>
+                    <select class="input-texto" id="ap-modal-sol-area" required>
+                        <option value="general" selected>Droguería, Perfumería y Pinturas</option>
+                        <option value="talleres">Talleres y Carrocerías</option>
+                    </select>
+                </div>
+                <!-- Honeypot anti-bots — mismo patrón que acceso-profesional.html. -->
+                <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+                    <label>No rellenar este campo
+                        <input type="text" id="ap-modal-sol-honeypot" tabindex="-1" autocomplete="off">
+                    </label>
+                </div>
+                <div class="g-recaptcha" id="ap-modal-sol-recaptcha" data-sitekey="6LeXpLMtAAAAALjpLDNDAHEOy0zWOCtZmeCa9rad" style="margin-bottom:16px;"></div>
+                <div id="ap-modal-sol-estado" class="ap-modal-estado" style="display:none;"></div>
+                <button class="ap-modal-btn-primario" type="submit" id="ap-modal-sol-btn-enviar">Solicitar código →</button>
+            </form>
+            <button type="button" class="ap-modal-btn-enlace" id="ap-modal-btn-ir-pin">← Ya tengo un código, volver</button>
+        </div>
+    </div>
+</div>
+
 <main class="layout">
     <!-- Franja decorativa de fondo (petición de Eloy, ref. Amazon): solo
          la parte de arriba, detrás de filtros/resultados — ver
@@ -8153,7 +8349,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      etc.): esta página necesita saber si hay una sesión profesional
      activa ANTES de decidir qué mostrar, así que perfil-profesional.js
      tiene que cargarse aquí, no al final del body. -->
-<script src="./assets/js/perfil-profesional.js?v=20261101d"></script>
+<script src="./assets/js/perfil-profesional.js?v=20261114a"></script>
+<!-- Modal "Acceso profesional" (ver HTML junto a <aside class="filtros">
+     y la inicialización más abajo) — formulario "Solicitar código por
+     email", mismo widget que ya usa acceso-profesional.html. defer, no
+     bloquea nada más mientras carga. -->
+<script src="https://www.google.com/recaptcha/api.js" defer></script>
 <!-- Control de la pantalla de carga inicial (#om-splash-carga, ver HTML al
      principio del <body> y el <style> de la cabecera): se cierra solo
      cuando se cumplen DOS condiciones — la animación de las 3 fases ha
@@ -9632,6 +9833,7 @@ if (window.OM_PREPRODUCCION) {
         inicializarFiltros();
         inicializarListaCompra_();
         inicializarFolletoDestacados_();
+        inicializarAccesoProfesionalBuscador_();
         // Si había filtros guardados de una visita anterior en esta misma
         // sesión del navegador, restaurarFiltrosDesdeSesion_() ya los
         // aplica (y llama a aplicarFiltros() por su cuenta) — si no había
@@ -17419,6 +17621,212 @@ if (window.OM_PREPRODUCCION) {
     function inicializarFolletoDestacados_() {
         $('btn-destacados-pdf').addEventListener('click', destacadosDescargarPdf_);
         $('btn-destacados-compartir').addEventListener('click', destacadosCompartirPdf_);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── ACCESO PROFESIONAL DESDE EL PROPIO BUSCADOR ──────────────────────
+    // A petición explícita de Eloy: acceso más ágil desde el buscador
+    // (hasta ahora solo existía como opción del menú de navegación,
+    // entrando el PIN en acceso-profesional.html) — una modal con dos
+    // pasos (PIN ya conocido, o solicitar código por email si no se
+    // tiene) que nunca saca al usuario de esta página, ni para entrar ni
+    // para salir. Reutiliza siempre window.PerfilProfesional (ver
+    // assets/js/perfil-profesional.js) como única fuente de verdad de la
+    // sesión — esta función solo añade la interfaz, nunca duplica esa
+    // lógica.
+    function inicializarAccesoProfesionalBuscador_() {
+        const btnAcceso = $('btn-acceso-profesional');
+        const btnSalir = $('btn-salir-profesional');
+        const overlay = $('modal-acceso-profesional-overlay');
+        if (!btnAcceso || !btnSalir || !overlay) return; // defensivo
+
+        const pasoPin = $('ap-paso-pin');
+        const pasoSolicitar = $('ap-paso-solicitar');
+
+        function actualizarBotones_() {
+            const activa = !!(window.PerfilProfesional && window.PerfilProfesional.sesionActiva());
+            btnAcceso.style.display = activa ? 'none' : '';
+            btnSalir.style.display = activa ? '' : 'none';
+        }
+        actualizarBotones_();
+
+        function mostrarPasoPin_() {
+            pasoPin.style.display = '';
+            pasoSolicitar.style.display = 'none';
+            $('ap-modal-pin-error').textContent = '';
+        }
+        function mostrarPasoSolicitar_() {
+            pasoPin.style.display = 'none';
+            pasoSolicitar.style.display = '';
+        }
+        function abrirModal_() {
+            mostrarPasoPin_();
+            $('ap-modal-form-pin').reset();
+            overlay.classList.add('activo');
+            setTimeout(() => $('ap-modal-pin-input').focus(), 50);
+        }
+        function cerrarModal_() {
+            overlay.classList.remove('activo');
+        }
+
+        btnAcceso.addEventListener('click', abrirModal_);
+        $('modal-acceso-profesional-cerrar').addEventListener('click', cerrarModal_);
+        overlay.addEventListener('click', (e) => { if (e.target.id === 'modal-acceso-profesional-overlay') cerrarModal_(); });
+        $('ap-modal-btn-ir-solicitar').addEventListener('click', mostrarPasoSolicitar_);
+        $('ap-modal-btn-ir-pin').addEventListener('click', mostrarPasoPin_);
+
+        $('ap-modal-form-pin').addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const pin = $('ap-modal-pin-input').value.trim();
+            const recordar = $('ap-modal-recordar').checked;
+            if (!pin) return;
+            const btn = $('ap-modal-btn-entrar');
+            const spinner = $('ap-modal-pin-spinner');
+            const error = $('ap-modal-pin-error');
+            error.textContent = '';
+            btn.disabled = true;
+            spinner.style.display = '';
+            try {
+                const resultado = await window.PerfilProfesional.iniciarSesion(pin, recordar);
+                if (resultado.ok) {
+                    // Recarga para que todo el motor de precios
+                    // (window.OM_SESION_PROFESIONAL_ACTIVA, preciosMayorConfirmados_,
+                    // reconciliación con el pin en vivo...) arranque
+                    // exactamente igual que si ya se hubiera entrado desde
+                    // antes de cargar la página — el usuario se queda en
+                    // el buscador (misma URL), solo se refresca.
+                    location.reload();
+                    return;
+                }
+                error.textContent = resultado.error === 'conexion'
+                    ? 'No se ha podido comprobar el PIN. Revisa tu conexión e inténtalo de nuevo.'
+                    : 'PIN incorrecto. Inténtalo de nuevo.';
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        });
+
+        btnSalir.addEventListener('click', () => {
+            if (window.PerfilProfesional && window.PerfilProfesional.salirSinRedirigir) {
+                window.PerfilProfesional.salirSinRedirigir();
+            }
+            location.reload(); // mismo motivo que al entrar: se queda en el buscador
+        });
+
+        // Solicitar código por email — mismo backend/plantilla que
+        // acceso-profesional.html (accion: 'solicitar_codigo_profesional'),
+        // con los id propios de esta modal.
+        $('ap-modal-form-solicitar').addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const nombre = $('ap-modal-sol-nombre').value.trim();
+            const empresa = $('ap-modal-sol-empresa').value.trim();
+            const email = $('ap-modal-sol-email').value.trim();
+            const telefono = $('ap-modal-sol-telefono').value.trim();
+            const area = $('ap-modal-sol-area').value;
+            const honeypot = $('ap-modal-sol-honeypot').value;
+            const btn = $('ap-modal-sol-btn-enviar');
+            const estado = $('ap-modal-sol-estado');
+
+            function mostrarEstadoSolicitud_(texto, color, fondo) {
+                estado.textContent = texto;
+                estado.style.color = color;
+                estado.style.backgroundColor = fondo;
+                estado.style.border = '1px solid ' + color;
+                estado.style.display = 'block';
+            }
+
+            // Honeypot: igual que acceso-profesional.html — se finge éxito
+            // sin mandar nada de verdad, sin dar pistas al bot.
+            if (honeypot) {
+                mostrarEstadoSolicitud_('✓ Solicitud enviada correctamente. En breve nos pondremos en contacto contigo para indicarte tu código de acceso como profesional.', '#1a7a4a', '#edfaf3');
+                $('ap-modal-form-solicitar').reset();
+                return;
+            }
+
+            if (!nombre || !empresa || !email || !telefono) {
+                mostrarEstadoSolicitud_('Por favor, rellena todos los campos obligatorios.', '#c0392b', '#fdf0ef');
+                return;
+            }
+
+            const tokenRecaptcha = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
+            if (!tokenRecaptcha) {
+                mostrarEstadoSolicitud_('Por favor, confirma que no eres un robot marcando la casilla de reCAPTCHA.', '#c0392b', '#fdf0ef');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'ENVIANDO...';
+
+            const nombreArea = area === 'talleres' ? 'Talleres y Carrocerías' : 'Droguería, Perfumería y Pinturas';
+            // URLs absolutas de producción — mismo motivo que
+            // acceso-profesional.html: los clientes de correo no pueden
+            // cargar rutas relativas.
+            const logoUrl = 'https://orenciomatas.es/assets/logos/logo-orencio.png';
+            const logoCalUrl = 'https://orenciomatas.es/assets/logos/logo_calidad.svg';
+
+            const cuerpo = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f0f0f0;font-family:Arial,sans-serif;">' +
+                '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f0f0;padding:20px 0;">' +
+                '<tr><td align="center">' +
+                '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">' +
+                '<tr><td style="background:#1a1a1a;padding:20px;text-align:center;">' +
+                '<img src="' + logoUrl + '" alt="Orencio Matas y Hnos" style="height:44px;width:auto;" />' +
+                '</td></tr>' +
+                '<tr><td style="background:#d91b1b;height:5px;font-size:0;">&nbsp;</td></tr>' +
+                '<tr><td style="background:#ffffff;padding:32px;">' +
+                '<h2 style="margin:0 0 6px;font-size:18px;color:#1a1a1a;">&#128273; Solicitud de código de acceso profesional</h2>' +
+                '<p style="margin:0 0 20px;font-size:11px;color:#888888;">Alguien ha solicitado un código de acceso profesional desde el buscador de orenciomatas.es</p>' +
+                '<hr style="border:none;border-top:1px solid #e0e0e0;margin:0 0 16px;" />' +
+                '<table width="100%" cellpadding="0" cellspacing="0">' +
+                '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;width:100px;">Nombre</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombre + '</td></tr>' +
+                '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Empresa</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + empresa + '</td></tr>' +
+                '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Email</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + email + '</td></tr>' +
+                '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Teléfono</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + telefono + '</td></tr>' +
+                '<tr><td style="padding:8px 0;color:#888;font-size:11px;">Área</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombreArea + '</td></tr>' +
+                '</table>' +
+                '</td></tr>' +
+                '<tr><td style="background:#f7f7f7;border-top:1px solid #e0e0e0;padding:14px 20px;">' +
+                '<table cellpadding="0" cellspacing="0"><tr>' +
+                '<td style="padding-right:14px;vertical-align:middle;">' +
+                '<img src="' + logoCalUrl + '" alt="Logo calidad" style="height:44px;width:auto;" />' +
+                '</td>' +
+                '<td style="vertical-align:middle;font-size:10px;color:#888;line-height:1.6;">Orencio Matas y Hermanos, S.L.<br>orenciomatas.es · 926 221 217</td>' +
+                '</tr></table>' +
+                '</td></tr>' +
+                '</table>' +
+                '</td></tr></table>' +
+                '</body></html>';
+
+            fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    accion: 'solicitar_codigo_profesional',
+                    nombre: nombre,
+                    email: email,
+                    cuerpoHtml: cuerpo,
+                    tokenRecaptcha: tokenRecaptcha,
+                    honeypot: honeypot,
+                }),
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.success) {
+                        mostrarEstadoSolicitud_('✓ Solicitud enviada correctamente. En breve nos pondremos en contacto contigo para indicarte tu código de acceso como profesional.', '#1a7a4a', '#edfaf3');
+                        $('ap-modal-form-solicitar').reset();
+                    } else {
+                        throw new Error(data.error || 'Error desconocido');
+                    }
+                })
+                .catch(() => {
+                    mostrarEstadoSolicitud_('Ha ocurrido un error al enviar la solicitud. Por favor, inténtalo de nuevo o llámanos al 926 221 217.', '#c0392b', '#fdf0ef');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = 'Solicitar código →';
+                    if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+                });
+        });
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -26024,11 +26432,23 @@ if (window.OM_PREPRODUCCION) {
         const grupoBuscador = $('grupo-buscador-principal');
         const espaciador = $('espaciador-buscador-movil');
         const navbar = document.querySelector('.navbar-wrapper');
+        // Barra "Acceso profesional" (ver su HTML, justo antes de <main
+        // class="layout">): en móvil cae en normal flow justo donde el
+        // buscador fijo flota por encima (mismo "top" que él) — bug real
+        // detectado al añadirla: quedaba tapada del todo detrás de la
+        // barra de búsqueda, invisible e inalcanzable. Mismo mecanismo
+        // que el propio espaciador (reservar la altura real del
+        // buscador fijo), pero como margin-top de esta barra en vez de
+        // como altura de un hueco: ella SÍ debe seguir viéndose (no es
+        // un hueco vacío), solo desplazada hacia abajo lo justo para
+        // quedar DEBAJO del buscador fijo en vez de debajo de él.
+        const barraProfesional = $('om-acceso-profesional-barra');
         if (!grupoBuscador || !navbar) return;
         const alturaNavbar = navbar.getBoundingClientRect().height;
         if (window.innerWidth > 768) {
             grupoBuscador.style.top = ''; // en escritorio no es fixed, no aplica
             if (espaciador) espaciador.style.height = '';
+            if (barraProfesional) barraProfesional.style.marginTop = '';
             // A petición de Eloy: la barra de búsqueda (sticky a partir de
             // 769px, ver #toolbar-buscador-pc y .filtros) quedaba un poco
             // escondida bajo la cabecera del sitio al hacer scroll — el
@@ -26044,7 +26464,9 @@ if (window.OM_PREPRODUCCION) {
             return;
         }
         grupoBuscador.style.top = alturaNavbar + 'px';
-        if (espaciador) espaciador.style.height = grupoBuscador.getBoundingClientRect().height + 'px';
+        const alturaBuscadorFijo = grupoBuscador.getBoundingClientRect().height;
+        if (espaciador) espaciador.style.height = alturaBuscadorFijo + 'px';
+        if (barraProfesional) barraProfesional.style.marginTop = alturaBuscadorFijo + 'px';
         // Limpia el "top" de escritorio por si se redimensiona desde una
         // pantalla ancha a una estrecha sin recargar la página.
         const toolbarPc = $('toolbar-buscador-pc');
