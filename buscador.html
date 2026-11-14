@@ -1617,7 +1617,42 @@
             .modal-lista-compra-resumen { font-size: 0.8rem; gap: 10px; width: 100%; justify-content: space-between; }
             .modal-lista-compra-cuerpo { padding: 14px; }
             .modal-lista-compra-acciones { padding: 10px 14px; }
-            .modal-lista-compra-acciones button { flex: 1 1 calc(50% - 5px); }
+        }
+        /* A petición explícita de Eloy: en móvil Y tablet (≤880px, mismo
+           corte que el resto del sitio para "responsive móvil/tablet", ver
+           p. ej. .filtros) los 7 botones de acción con icono+texto se
+           comían media modal de alto — el icono ya identifica cada botón
+           de sobra, así que el texto se oculta visualmente (nunca con
+           display:none: sigue en el DOM para lectores de pantalla, y cada
+           botón ya lleva su aria-label/title con el mismo texto completo
+           como refuerzo) y cada botón pasa a ser un simple icono cuadrado.
+           flex-basis en vez de width/height: con muchos botones en la
+           misma fila siguen repartiéndose igual de anchos que antes, solo
+           que ahora caben muchos más por fila al no llevar texto. */
+        @media (max-width: 880px) {
+            .modal-lista-compra-acciones { gap: 8px; }
+            .modal-lista-compra-acciones button {
+                position: relative;
+                /* Sin flex-grow (el "1 1" de antes): con menos botones en
+                   la última fila que en las de arriba, crecían para
+                   repartirse el hueco libre y quedaban mucho más grandes
+                   que el resto — bug real visto en la propia captura de
+                   pantalla al construir este ajuste. Tamaño fijo, igual
+                   en todas las filas. */
+                flex: 0 0 44px;
+                aspect-ratio: 1;
+                padding: 0;
+                font-size: 1.05rem;
+            }
+            .btn-lista-compra-texto {
+                position: absolute;
+                width: 1px; height: 1px;
+                padding: 0; margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
         }
         .marcas-buscadas__chip:hover { background: var(--light); }
 
@@ -7591,9 +7626,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <p id="lista-compra-propuesta-resultado" class="destacados-hint" style="margin-top:8px;"></p>
             </div>
         </div>
+        <!-- Cada botón lleva su texto envuelto en .btn-lista-compra-texto y
+             un aria-label/title con el mismo texto completo — a petición
+             explícita de Eloy: en móvil/tablet (≤880px, ver media query
+             más abajo) el texto se oculta visualmente (el icono ya es
+             suficientemente reconocible y antes se comían media modal) sin
+             perder el nombre accesible para lectores de pantalla ni el
+             tooltip al mantener pulsado/pasar el cursor. -->
         <div class="modal-lista-compra-acciones" id="modal-lista-compra-acciones">
-            <button type="button" id="btn-lista-compra-pdf" class="btn-lista-compra-pdf">
-                <i class="fa-solid fa-file-pdf"></i> Exportar a PDF
+            <button type="button" id="btn-lista-compra-pdf" class="btn-lista-compra-pdf" aria-label="Exportar a PDF" title="Exportar a PDF">
+                <i class="fa-solid fa-file-pdf"></i> <span class="btn-lista-compra-texto">Exportar a PDF</span>
             </button>
             <!-- Folleto con fotos, precio y QR por producto — mismo motor
                  que el folleto de Destacados/Temporada (dibujarTarjetaTemporadaPdf_),
@@ -7602,27 +7644,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                  ya en temporadas". Convive con "Exportar a PDF" de arriba
                  (la tabla con subtotales/IVA): esta es una alternativa
                  visual, no un reemplazo. -->
-            <button type="button" id="btn-lista-compra-folleto-pdf" class="btn-lista-compra-folleto">
-                <i class="fa-solid fa-images"></i> Folleto con fotos
+            <button type="button" id="btn-lista-compra-folleto-pdf" class="btn-lista-compra-folleto" aria-label="Folleto con fotos" title="Folleto con fotos">
+                <i class="fa-solid fa-images"></i> <span class="btn-lista-compra-texto">Folleto con fotos</span>
             </button>
-            <button type="button" id="btn-lista-compra-folleto-compartir" class="btn-lista-compra-folleto">
-                <i class="fa-solid fa-share-nodes"></i> Compartir folleto
+            <button type="button" id="btn-lista-compra-folleto-compartir" class="btn-lista-compra-folleto" aria-label="Compartir folleto" title="Compartir folleto">
+                <i class="fa-solid fa-share-nodes"></i> <span class="btn-lista-compra-texto">Compartir folleto</span>
             </button>
-            <button type="button" id="btn-lista-compra-whatsapp" class="btn-lista-compra-whatsapp">
-                <i class="fa-brands fa-whatsapp"></i> Compartir por WhatsApp
+            <button type="button" id="btn-lista-compra-whatsapp" class="btn-lista-compra-whatsapp" aria-label="Compartir por WhatsApp" title="Compartir por WhatsApp">
+                <i class="fa-brands fa-whatsapp"></i> <span class="btn-lista-compra-texto">Compartir por WhatsApp</span>
             </button>
-            <button type="button" id="btn-lista-compra-correo" class="btn-lista-compra-correo">
-                <i class="fa-solid fa-envelope"></i> Compartir por correo
+            <button type="button" id="btn-lista-compra-correo" class="btn-lista-compra-correo" aria-label="Compartir por correo" title="Compartir por correo">
+                <i class="fa-solid fa-envelope"></i> <span class="btn-lista-compra-texto">Compartir por correo</span>
             </button>
             <!-- Solo preproducción (ver window.MOSTRAR_ETIQUETA_PRECIO) -->
-            <button type="button" id="btn-lista-compra-etiquetas" class="btn-lista-compra-pdf" style="display:none;">
-                <i class="fa-solid fa-tag"></i> Imprimir etiquetas
+            <button type="button" id="btn-lista-compra-etiquetas" class="btn-lista-compra-pdf" style="display:none;" aria-label="Imprimir etiquetas" title="Imprimir etiquetas">
+                <i class="fa-solid fa-tag"></i> <span class="btn-lista-compra-texto">Imprimir etiquetas</span>
             </button>
-            <button type="button" id="btn-lista-compra-vaciar" class="btn-lista-compra-vaciar">
-                <i class="fa-solid fa-broom"></i> Vaciar la lista
+            <button type="button" id="btn-lista-compra-vaciar" class="btn-lista-compra-vaciar" aria-label="Vaciar la lista" title="Vaciar la lista">
+                <i class="fa-solid fa-broom"></i> <span class="btn-lista-compra-texto">Vaciar la lista</span>
             </button>
-            <button type="button" id="btn-lista-compra-eliminar" class="btn-lista-compra-eliminar">
-                <i class="fa-solid fa-trash"></i> Eliminar la lista
+            <button type="button" id="btn-lista-compra-eliminar" class="btn-lista-compra-eliminar" aria-label="Eliminar la lista" title="Eliminar la lista">
+                <i class="fa-solid fa-trash"></i> <span class="btn-lista-compra-texto">Eliminar la lista</span>
             </button>
         </div>
     </div>
