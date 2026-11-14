@@ -2031,6 +2031,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
+            margin-top: 2px;
             margin-bottom: 12px;
         }
         .filtro-chip {
@@ -2111,6 +2112,7 @@
             justify-content: center;
             width: 40px;
             height: 40px;
+            min-width: 40px;
             padding: 0;
             background: #fff;
             color: var(--dark);
@@ -2138,6 +2140,7 @@
             justify-content: center;
             width: 40px;
             height: 40px;
+            min-width: 40px;
             padding: 0;
             background: #fff;
             color: var(--yellow);
@@ -10957,16 +10960,104 @@ if (window.OM_PREPRODUCCION) {
     // tanto 'cargando' como 'con-contenido' la dejan visible, para que el
     // bloque nunca "aparezca de repente" — ya está ahí con su skeleton
     // desde la primera pintura de la página.
+    //
+    // A petición explícita de Eloy: con un filtro activo, Destacados,
+    // Temporadas, Novedades, "Sigue explorando" y "Últimos productos
+    // vistos" ya NO se ocultan en bloque — se quedan visibles mostrando
+    // solo los productos que TAMBIÉN cumplen el filtro vigente, y solo se
+    // ocultan si ninguno de sus productos lo cumple (estado 'vacio', igual
+    // que siempre). "Más buscados" y "Marcas más buscadas" (desactivadas,
+    // ver más arriba) no entran en este mecanismo: no se ha pedido
+    // cambiarlas, se siguen ocultando en bloque con cualquier filtro.
+    // refsFiltroActivoSet_ (null si no hay ningún filtro activo) lo
+    // recalcula aplicarFiltros() en cada pasada; lo usan tanto estas
+    // funciones como aplicarFiltroAModulosDescubrimiento_() de abajo.
+    let refsFiltroActivoSet_ = null;
+
+    function destacadosProductosVigentesFiltrados_() {
+        const visibles = destacadosProductosVigentes_();
+        if (!refsFiltroActivoSet_) return visibles;
+        return visibles.filter(x => refsFiltroActivoSet_.has(String(x.producto.ref)));
+    }
+
+    // Oculta/muestra, sin volver a pintar nada, cada tarjeta YA
+    // renderizada de Novedades o "Últimos productos vistos" según pase o
+    // no el filtro vigente — a propósito, en vez de recalcular la
+    // selección desde cero: evita reiniciar la rotación automática en
+    // curso (que además ya se congela sola mientras haya un filtro
+    // activo, ver rotarTarjetaNovedad_) y repintar de golpe en cada tecla
+    // escrita en el buscador.
+    function aplicarFiltroATarjetasRenderizadas_(contenedorId, claveModulo) {
+        const cont = $(contenedorId);
+        if (!cont) return;
+        let visibles = 0;
+        [...cont.children].forEach(el => {
+            const pasa = !refsFiltroActivoSet_ || !el.dataset.ref || refsFiltroActivoSet_.has(String(el.dataset.ref));
+            el.style.display = pasa ? '' : 'none';
+            if (pasa) visibles++;
+        });
+        if (modulosDescubrimientoConContenido_[claveModulo] !== 'cargando') {
+            modulosDescubrimientoConContenido_[claveModulo] = visibles > 0 ? 'con-contenido' : 'vacio';
+        }
+    }
+
+    // "Sigue explorando": cada bloque guarda sus candidatos reales
+    // (bloquesCategoriasActivos_, ver cargarBloquesCategorias_) — con
+    // filtro activo la rejilla se rellena SOLO con los que también lo
+    // cumplen (hasta los 4 huecos de siempre, el resto se oculta en vez
+    // de repetir un mismo producto) y el bloque entero se oculta si
+    // ninguno de sus candidatos pasa el filtro.
+    function aplicarFiltroABloquesCategorias_() {
+        let algunoVisible = false;
+        bloquesCategoriasActivos_.forEach(entrada => {
+            const candidatosFiltrados = refsFiltroActivoSet_
+                ? entrada.candidatos.filter(p => refsFiltroActivoSet_.has(String(p.ref)))
+                : entrada.candidatos;
+            const items = entrada.grid ? [...entrada.grid.children] : [];
+            if (!candidatosFiltrados.length) {
+                if (entrada.bloque) entrada.bloque.style.display = 'none';
+                return;
+            }
+            if (entrada.bloque) entrada.bloque.style.display = '';
+            algunoVisible = true;
+            items.forEach((item, i) => {
+                if (i < candidatosFiltrados.length) {
+                    rellenarItemBloqueCategoria_(item, candidatosFiltrados[i]);
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        if (modulosDescubrimientoConContenido_.categorias !== 'cargando') {
+            modulosDescubrimientoConContenido_.categorias = algunoVisible ? 'con-contenido' : 'vacio';
+        }
+    }
+
+    // Punto de entrada único llamado desde aplicarFiltros(): repinta
+    // (Destacados/Temporadas, sin red, baratos) o re-filtra sin repintar
+    // (Novedades/Últimos vistos/Sigue explorando) los cinco módulos
+    // filtrables, y al final actualiza qué se ve de verdad.
+    function aplicarFiltroAModulosDescubrimiento_() {
+        renderDestacados_();
+        renderTemporada_();
+        aplicarFiltroATarjetasRenderizadas_('novedades-lista', 'novedades');
+        aplicarFiltroATarjetasRenderizadas_('ultimos-vistos-lista', 'vistos');
+        aplicarFiltroABloquesCategorias_();
+        actualizarVisibilidadModulosDescubrimiento_();
+    }
+
     function actualizarVisibilidadModulosDescubrimiento_() {
         const oculto = hayFiltroActivo_();
         const visible_ = (estado) => estado !== 'vacio' && !oculto;
-        if ($('destacados')) $('destacados').style.display = visible_(modulosDescubrimientoConContenido_.destacados) ? '' : 'none';
-        if ($('temporadas-bloques-contenedor')) $('temporadas-bloques-contenedor').style.display = visible_(modulosDescubrimientoConContenido_.temporada) ? '' : 'none';
+        const visibleFiltrable_ = (estado) => estado !== 'vacio';
+        if ($('destacados')) $('destacados').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.destacados) ? '' : 'none';
+        if ($('temporadas-bloques-contenedor')) $('temporadas-bloques-contenedor').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.temporada) ? '' : 'none';
         $('mas-buscados').style.display = visible_(modulosDescubrimientoConContenido_.masBuscados) ? '' : 'none';
-        $('novedades').style.display = visible_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
+        $('novedades').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
-        $('categorias-descubrimiento-seccion').style.display = visible_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
-        if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visible_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
+        $('categorias-descubrimiento-seccion').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
+        if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
         // Botones de gestión en preproducción (Estadísticas / Gestionar
         // productos de temporada): viven FUERA de sus secciones a
         // propósito (ver sus comentarios en el HTML, para seguir
@@ -11261,7 +11352,7 @@ if (window.OM_PREPRODUCCION) {
 
     function renderDestacados_() {
         if (!$('destacados-lista')) return; // defensivo: HTML aún no montado
-        const visibles = destacadosProductosVigentes_();
+        const visibles = destacadosProductosVigentesFiltrados_();
         const cont = $('destacados-lista');
         cont.innerHTML = '';
         if (!visibles.length) {
@@ -11723,6 +11814,11 @@ if (window.OM_PREPRODUCCION) {
             .slice()
             .sort((a, b) => (a.orden || 0) - (b.orden || 0))
             .map(t => ({ temporada: t, productos: productosDeTemporada_(t) }))
+            // A petición explícita de Eloy: con un filtro activo, cada
+            // bloque de temporada se queda solo con los productos que
+            // TAMBIÉN lo cumplen (el bloque entero se oculta más abajo si
+            // no queda ninguno) — ver refsFiltroActivoSet_.
+            .map(b => refsFiltroActivoSet_ ? { ...b, productos: b.productos.filter(p => refsFiltroActivoSet_.has(String(p.ref))) } : b)
             .filter(b => b.productos.length);
 
         cont.innerHTML = '';
@@ -14049,6 +14145,7 @@ if (window.OM_PREPRODUCCION) {
             programarSiguienteRotacionNovedad_(card, ESPERA_MINIMA_NOVEDADES_MS + Math.random() * (INTERVALO_ROTACION_NOVEDADES_MS - ESPERA_MINIMA_NOVEDADES_MS));
         });
         modulosDescubrimientoConContenido_.novedades = 'con-contenido';
+        aplicarFiltroATarjetasRenderizadas_('novedades-lista', 'novedades');
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -14119,6 +14216,7 @@ if (window.OM_PREPRODUCCION) {
         cont.innerHTML = '';
         productos.forEach(p => cont.appendChild(crearTarjeta(p)));
         modulosDescubrimientoConContenido_.vistos = 'con-contenido';
+        aplicarFiltroATarjetasRenderizadas_('ultimos-vistos-lista', 'vistos');
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -14397,12 +14495,13 @@ if (window.OM_PREPRODUCCION) {
             const color = colores[n % colores.length];
             const bloque = crearBloqueCategoria_(def, muestra, color);
             cont.appendChild(bloque);
-            const entrada = { candidatos, grid: bloque.querySelector('.categoria-bloque__grid') };
+            const entrada = { candidatos, grid: bloque.querySelector('.categoria-bloque__grid'), bloque };
             bloquesCategoriasActivos_.push(entrada);
             iniciarRotacionBloque_(entrada);
             n++;
         }
         modulosDescubrimientoConContenido_.categorias = n > 0 ? 'con-contenido' : 'vacio';
+        aplicarFiltroABloquesCategorias_();
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -15689,7 +15788,13 @@ if (window.OM_PREPRODUCCION) {
 
         renderResultados();
         actualizarBotonMostrarResultadosMovil();
-        actualizarVisibilidadModulosDescubrimiento_(); // ver su porqué junto a su definición: solo con filtros limpios
+        // A petición explícita de Eloy: Destacados, Temporadas, Novedades,
+        // "Sigue explorando" y "Últimos productos vistos" ya no se ocultan
+        // en bloque con un filtro activo — se filtran ellos también (ver
+        // refsFiltroActivoSet_ y aplicarFiltroAModulosDescubrimiento_,
+        // junto a la definición de actualizarVisibilidadModulosDescubrimiento_).
+        refsFiltroActivoSet_ = hayFiltroActivo_() ? new Set(resultadosActuales.map(p => String(p.ref))) : null;
+        aplicarFiltroAModulosDescubrimiento_();
         // Chips de filtros activos + persistencia en sesión — se repintan/
         // guardan aquí, al final de aplicarFiltros(), para quedar siempre
         // sincronizados con cualquier cambio de filtro venga de donde
