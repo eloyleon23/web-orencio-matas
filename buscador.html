@@ -226,6 +226,53 @@
             #toolbar-buscador-pc .input-buscador-wrap { height: 100%; display: flex; align-items: center; }
         }
 
+        /* ── Plegar el panel de filtros (solo donde vive siempre abierto en
+           el lateral, ≥881px) — a petición explícita de Eloy, para que el
+           grid de productos y el resto de secciones ganen ese espacio.
+           btn-colapsar-filtros-pc oculto por defecto: en móvil/tablet
+           (≤880px) el panel ya es un cajón que se abre/cierra a demanda
+           (ver #filtros-extra/.btn-abrir-filtros-movil), este botón no
+           pinta nada ahí. */
+        .btn-colapsar-filtros-pc { display: none; }
+        @media (min-width: 881px) {
+            .btn-colapsar-filtros-pc {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 28px;
+                height: 28px;
+                margin: 0 0 14px auto;
+                background: var(--light);
+                color: var(--dark);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            .btn-colapsar-filtros-pc:hover { background: var(--border); }
+            /* Plegado: la columna de filtros se encoge a una franja estrecha
+               (justo el ancho que necesita este botón) y TODO lo demás
+               dentro de <aside> se oculta — excepto el propio botón, que
+               sigue siendo hijo directo y por tanto se libra del ":not()".
+               Girar la flecha 180° reutiliza el mismo icono para "desplegar". */
+            .layout.layout--filtros-colapsados {
+                grid-template-columns: 48px 1fr;
+            }
+            .layout--filtros-colapsados .filtros {
+                padding: 14px 10px;
+                overflow: hidden;
+            }
+            .layout--filtros-colapsados .filtros > *:not(.btn-colapsar-filtros-pc) {
+                display: none;
+            }
+            .layout--filtros-colapsados .btn-colapsar-filtros-pc {
+                margin: 0 auto;
+            }
+            .layout--filtros-colapsados .btn-colapsar-filtros-pc i {
+                transform: rotate(180deg);
+            }
+        }
+
         @media (max-width: 880px) {
             /* En una sola columna (apilado), el "gap" del grid ya no separa
                dos columnas — se convierte en puro espacio vertical entre
@@ -1838,6 +1885,11 @@
             background: white;
         }
 
+        .buscador-lista-filtro {
+            margin-bottom: 6px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+        }
         .familias-lista {
             max-height: 220px;
             overflow-y: auto;
@@ -2020,17 +2072,30 @@
            la derecha) en vez de repartir cada botón por separado, que
            dejaba el icono de información "suelto" a medio camino entre
            el contador y el de compartir en vez de pegado a él. */
+        /* Bug real reportado por Eloy, con captura: al aparecer "Añadir
+           todos a mi lista" (ver actualizarBotonAnadirResultadosLista_),
+           este grupo deja de caber en la misma línea que el contador de
+           resultados y pasa a su PROPIA línea dentro de .resultados-header
+           (que es flex-wrap) — en una línea con un único elemento,
+           "justify-content:space-between" del padre no tiene nada de qué
+           separarse y lo deja pegado a la IZQUIERDA en vez de a la derecha,
+           donde vive siempre que comparte línea con el contador.
+           margin-left:auto empuja este grupo al extremo derecho de SU
+           línea tanto si la comparte con el contador como si no, así que
+           su posición ya no depende de si el otro botón está presente. */
         .resultados-header__acciones {
             display: flex;
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
+            margin-left: auto;
         }
         /* Chips de filtros activos — ver renderizarFiltrosChips_(). */
         .filtros-chips {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
+            margin-top: 2px;
             margin-bottom: 12px;
         }
         .filtro-chip {
@@ -2111,6 +2176,7 @@
             justify-content: center;
             width: 40px;
             height: 40px;
+            min-width: 40px;
             padding: 0;
             background: #fff;
             color: var(--dark);
@@ -2138,6 +2204,7 @@
             justify-content: center;
             width: 40px;
             height: 40px;
+            min-width: 40px;
             padding: 0;
             background: #fff;
             color: var(--yellow);
@@ -5566,6 +5633,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- ── FILTROS ── -->
     <aside class="filtros">
+        <!-- A petición explícita de Eloy: en las pantallas donde el panel de
+             filtros está siempre abierto en el lateral (≥881px, ver
+             alternarColapsoFiltros_ y el media query de .btn-colapsar-filtros-pc
+             más abajo — en móvil/tablet, donde es un cajón que ya se abre y
+             cierra a demanda, este botón no se muestra), permite plegarlo a
+             una franja estrecha a la izquierda para que el grid de
+             productos y el resto de secciones ganen ese espacio. Vive como
+             hijo DIRECTO de <aside>, hermano de todo lo demás (nunca
+             anidado en nada que se oculte al plegar), para seguir siendo
+             clicable incluso con el resto del panel oculto. -->
+        <button type="button" id="btn-colapsar-filtros-pc" class="btn-colapsar-filtros-pc" aria-label="Plegar panel de filtros" title="Plegar panel de filtros">
+            <i class="fa-solid fa-angles-left"></i>
+        </button>
         <h3>
             <span><i class="fa-solid fa-filter"></i> Filtros</span>
         </h3>
@@ -5650,11 +5730,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="filtro-grupo collapsable" id="grupo-familias">
             <label class="titulo">Familia</label>
+            <!-- A petición explícita de Eloy ("ayudar al usuario" con listas
+                 largas de familias/subfamilias): filtra por texto las
+                 opciones YA renderizadas debajo, sin tocar cuáles están
+                 marcadas — ver filtrarListaPorTexto_(). -->
+            <input type="text" class="input-texto buscador-lista-filtro" id="f-familias-buscar" placeholder="Buscar familia…">
             <div class="familias-lista" id="f-familias"></div>
         </div>
 
         <div class="filtro-grupo collapsable collapsed" id="grupo-subfamilias" style="display: none;">
             <label class="titulo">Subfamilia</label>
+            <input type="text" class="input-texto buscador-lista-filtro" id="f-subfamilias-buscar" placeholder="Buscar subfamilia…">
             <div class="familias-lista" id="f-subfamilias"></div>
         </div>
 
@@ -10256,6 +10342,8 @@ if (window.OM_PREPRODUCCION) {
         $('f-precio-min').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-precio-max').addEventListener('input', debounce(() => { resetPaginacion(); aplicarFiltros(); }, 300));
         $('f-oferta').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
+        $('f-familias-buscar').addEventListener('input', () => filtrarListaPorTexto_('f-familias', 'f-familias-buscar'));
+        $('f-subfamilias-buscar').addEventListener('input', () => filtrarListaPorTexto_('f-subfamilias', 'f-subfamilias-buscar'));
         $('f-orden').addEventListener('change', () => { resetPaginacion(); aplicarFiltros(); });
         ['f-fecha-desde', 'f-fecha-hasta'].forEach(id => {
             $(id).addEventListener('change', () => {
@@ -10276,6 +10364,8 @@ if (window.OM_PREPRODUCCION) {
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-limpiar-arriba').addEventListener('click', limpiarFiltros);
+        $('btn-colapsar-filtros-pc').addEventListener('click', alternarColapsoFiltrosPc_);
+        inicializarColapsoFiltrosPc_();
         $('btn-vistos-borrar').addEventListener('click', () => {
             guardarHistorialVistos_([]);
             modulosDescubrimientoConContenido_.vistos = 'vacio';
@@ -10957,16 +11047,104 @@ if (window.OM_PREPRODUCCION) {
     // tanto 'cargando' como 'con-contenido' la dejan visible, para que el
     // bloque nunca "aparezca de repente" — ya está ahí con su skeleton
     // desde la primera pintura de la página.
+    //
+    // A petición explícita de Eloy: con un filtro activo, Destacados,
+    // Temporadas, Novedades, "Sigue explorando" y "Últimos productos
+    // vistos" ya NO se ocultan en bloque — se quedan visibles mostrando
+    // solo los productos que TAMBIÉN cumplen el filtro vigente, y solo se
+    // ocultan si ninguno de sus productos lo cumple (estado 'vacio', igual
+    // que siempre). "Más buscados" y "Marcas más buscadas" (desactivadas,
+    // ver más arriba) no entran en este mecanismo: no se ha pedido
+    // cambiarlas, se siguen ocultando en bloque con cualquier filtro.
+    // refsFiltroActivoSet_ (null si no hay ningún filtro activo) lo
+    // recalcula aplicarFiltros() en cada pasada; lo usan tanto estas
+    // funciones como aplicarFiltroAModulosDescubrimiento_() de abajo.
+    let refsFiltroActivoSet_ = null;
+
+    function destacadosProductosVigentesFiltrados_() {
+        const visibles = destacadosProductosVigentes_();
+        if (!refsFiltroActivoSet_) return visibles;
+        return visibles.filter(x => refsFiltroActivoSet_.has(String(x.producto.ref)));
+    }
+
+    // Oculta/muestra, sin volver a pintar nada, cada tarjeta YA
+    // renderizada de Novedades o "Últimos productos vistos" según pase o
+    // no el filtro vigente — a propósito, en vez de recalcular la
+    // selección desde cero: evita reiniciar la rotación automática en
+    // curso (que además ya se congela sola mientras haya un filtro
+    // activo, ver rotarTarjetaNovedad_) y repintar de golpe en cada tecla
+    // escrita en el buscador.
+    function aplicarFiltroATarjetasRenderizadas_(contenedorId, claveModulo) {
+        const cont = $(contenedorId);
+        if (!cont) return;
+        let visibles = 0;
+        [...cont.children].forEach(el => {
+            const pasa = !refsFiltroActivoSet_ || !el.dataset.ref || refsFiltroActivoSet_.has(String(el.dataset.ref));
+            el.style.display = pasa ? '' : 'none';
+            if (pasa) visibles++;
+        });
+        if (modulosDescubrimientoConContenido_[claveModulo] !== 'cargando') {
+            modulosDescubrimientoConContenido_[claveModulo] = visibles > 0 ? 'con-contenido' : 'vacio';
+        }
+    }
+
+    // "Sigue explorando": cada bloque guarda sus candidatos reales
+    // (bloquesCategoriasActivos_, ver cargarBloquesCategorias_) — con
+    // filtro activo la rejilla se rellena SOLO con los que también lo
+    // cumplen (hasta los 4 huecos de siempre, el resto se oculta en vez
+    // de repetir un mismo producto) y el bloque entero se oculta si
+    // ninguno de sus candidatos pasa el filtro.
+    function aplicarFiltroABloquesCategorias_() {
+        let algunoVisible = false;
+        bloquesCategoriasActivos_.forEach(entrada => {
+            const candidatosFiltrados = refsFiltroActivoSet_
+                ? entrada.candidatos.filter(p => refsFiltroActivoSet_.has(String(p.ref)))
+                : entrada.candidatos;
+            const items = entrada.grid ? [...entrada.grid.children] : [];
+            if (!candidatosFiltrados.length) {
+                if (entrada.bloque) entrada.bloque.style.display = 'none';
+                return;
+            }
+            if (entrada.bloque) entrada.bloque.style.display = '';
+            algunoVisible = true;
+            items.forEach((item, i) => {
+                if (i < candidatosFiltrados.length) {
+                    rellenarItemBloqueCategoria_(item, candidatosFiltrados[i]);
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        if (modulosDescubrimientoConContenido_.categorias !== 'cargando') {
+            modulosDescubrimientoConContenido_.categorias = algunoVisible ? 'con-contenido' : 'vacio';
+        }
+    }
+
+    // Punto de entrada único llamado desde aplicarFiltros(): repinta
+    // (Destacados/Temporadas, sin red, baratos) o re-filtra sin repintar
+    // (Novedades/Últimos vistos/Sigue explorando) los cinco módulos
+    // filtrables, y al final actualiza qué se ve de verdad.
+    function aplicarFiltroAModulosDescubrimiento_() {
+        renderDestacados_();
+        renderTemporada_();
+        aplicarFiltroATarjetasRenderizadas_('novedades-lista', 'novedades');
+        aplicarFiltroATarjetasRenderizadas_('ultimos-vistos-lista', 'vistos');
+        aplicarFiltroABloquesCategorias_();
+        actualizarVisibilidadModulosDescubrimiento_();
+    }
+
     function actualizarVisibilidadModulosDescubrimiento_() {
         const oculto = hayFiltroActivo_();
         const visible_ = (estado) => estado !== 'vacio' && !oculto;
-        if ($('destacados')) $('destacados').style.display = visible_(modulosDescubrimientoConContenido_.destacados) ? '' : 'none';
-        if ($('temporadas-bloques-contenedor')) $('temporadas-bloques-contenedor').style.display = visible_(modulosDescubrimientoConContenido_.temporada) ? '' : 'none';
+        const visibleFiltrable_ = (estado) => estado !== 'vacio';
+        if ($('destacados')) $('destacados').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.destacados) ? '' : 'none';
+        if ($('temporadas-bloques-contenedor')) $('temporadas-bloques-contenedor').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.temporada) ? '' : 'none';
         $('mas-buscados').style.display = visible_(modulosDescubrimientoConContenido_.masBuscados) ? '' : 'none';
-        $('novedades').style.display = visible_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
+        $('novedades').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.novedades) ? '' : 'none';
         $('marcas-buscadas').style.display = visible_(modulosDescubrimientoConContenido_.marcas) ? '' : 'none';
-        $('categorias-descubrimiento-seccion').style.display = visible_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
-        if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visible_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
+        $('categorias-descubrimiento-seccion').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.categorias) ? '' : 'none';
+        if ($('ultimos-vistos')) $('ultimos-vistos').style.display = visibleFiltrable_(modulosDescubrimientoConContenido_.vistos) ? '' : 'none';
         // Botones de gestión en preproducción (Estadísticas / Gestionar
         // productos de temporada): viven FUERA de sus secciones a
         // propósito (ver sus comentarios en el HTML, para seguir
@@ -11261,7 +11439,7 @@ if (window.OM_PREPRODUCCION) {
 
     function renderDestacados_() {
         if (!$('destacados-lista')) return; // defensivo: HTML aún no montado
-        const visibles = destacadosProductosVigentes_();
+        const visibles = destacadosProductosVigentesFiltrados_();
         const cont = $('destacados-lista');
         cont.innerHTML = '';
         if (!visibles.length) {
@@ -11723,6 +11901,11 @@ if (window.OM_PREPRODUCCION) {
             .slice()
             .sort((a, b) => (a.orden || 0) - (b.orden || 0))
             .map(t => ({ temporada: t, productos: productosDeTemporada_(t) }))
+            // A petición explícita de Eloy: con un filtro activo, cada
+            // bloque de temporada se queda solo con los productos que
+            // TAMBIÉN lo cumplen (el bloque entero se oculta más abajo si
+            // no queda ninguno) — ver refsFiltroActivoSet_.
+            .map(b => refsFiltroActivoSet_ ? { ...b, productos: b.productos.filter(p => refsFiltroActivoSet_.has(String(p.ref))) } : b)
             .filter(b => b.productos.length);
 
         cont.innerHTML = '';
@@ -14049,6 +14232,7 @@ if (window.OM_PREPRODUCCION) {
             programarSiguienteRotacionNovedad_(card, ESPERA_MINIMA_NOVEDADES_MS + Math.random() * (INTERVALO_ROTACION_NOVEDADES_MS - ESPERA_MINIMA_NOVEDADES_MS));
         });
         modulosDescubrimientoConContenido_.novedades = 'con-contenido';
+        aplicarFiltroATarjetasRenderizadas_('novedades-lista', 'novedades');
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -14119,6 +14303,7 @@ if (window.OM_PREPRODUCCION) {
         cont.innerHTML = '';
         productos.forEach(p => cont.appendChild(crearTarjeta(p)));
         modulosDescubrimientoConContenido_.vistos = 'con-contenido';
+        aplicarFiltroATarjetasRenderizadas_('ultimos-vistos-lista', 'vistos');
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -14397,12 +14582,13 @@ if (window.OM_PREPRODUCCION) {
             const color = colores[n % colores.length];
             const bloque = crearBloqueCategoria_(def, muestra, color);
             cont.appendChild(bloque);
-            const entrada = { candidatos, grid: bloque.querySelector('.categoria-bloque__grid') };
+            const entrada = { candidatos, grid: bloque.querySelector('.categoria-bloque__grid'), bloque };
             bloquesCategoriasActivos_.push(entrada);
             iniciarRotacionBloque_(entrada);
             n++;
         }
         modulosDescubrimientoConContenido_.categorias = n > 0 ? 'con-contenido' : 'vacio';
+        aplicarFiltroABloquesCategorias_();
         actualizarVisibilidadModulosDescubrimiento_();
     }
 
@@ -14845,6 +15031,22 @@ if (window.OM_PREPRODUCCION) {
     }
 
     // ── Renderizar checkboxes de familia según el área seleccionado ──
+    // Filtra por texto, SIN perder la selección, las opciones ya
+    // renderizadas de un listado largo de checkboxes (familia/subfamilia) —
+    // a petición explícita de Eloy, para ayudar a encontrar una opción
+    // concreta en listas con decenas de familias. Solo oculta/muestra
+    // (nunca desmarca) cada <label class="familia-item">, así que lo ya
+    // marcado se conserva aunque quede oculto por el texto buscado.
+    function filtrarListaPorTexto_(contId, buscadorId) {
+        const buscador = $(buscadorId);
+        const cont = $(contId);
+        if (!buscador || !cont) return;
+        const texto = normalizar(buscador.value.trim());
+        cont.querySelectorAll('.familia-item').forEach(label => {
+            label.style.display = (!texto || normalizar(label.textContent).includes(texto)) ? '' : 'none';
+        });
+    }
+
     function renderFamilias() {
         const areasSel = areasSeleccionadas();
         const cont = $('f-familias');
@@ -14882,6 +15084,7 @@ if (window.OM_PREPRODUCCION) {
             });
             cont.appendChild(label);
         });
+        filtrarListaPorTexto_('f-familias', 'f-familias-buscar');
 
         // Mostrar/ocultar filtro de subfamilia según si hay familias seleccionadas
         renderSubfamilias();
@@ -14936,6 +15139,7 @@ if (window.OM_PREPRODUCCION) {
             });
             cont.appendChild(label);
         });
+        filtrarListaPorTexto_('f-subfamilias', 'f-subfamilias-buscar');
     }
 
     // Orden inteligente para el filtro de Talla/Variante: los granos de
@@ -15329,6 +15533,38 @@ if (window.OM_PREPRODUCCION) {
         cerrarFiltrosMovil();
     }
 
+    // ── Plegar/desplegar el panel de filtros en escritorio ──────────────
+    // A petición explícita de Eloy: en las pantallas donde el panel vive
+    // siempre abierto en el lateral (≥881px — en móvil/tablet ya es un
+    // cajón que se abre/cierra a demanda, ver abrirFiltrosMovil/
+    // cerrarFiltrosMovil, esto no les afecta en absoluto), permite
+    // plegarlo a una franja estrecha a la izquierda para que el grid de
+    // productos y el resto de secciones ganen ese espacio (ver el CSS de
+    // .layout--filtros-colapsados). Preferencia de interfaz, no un
+    // filtro: se recuerda en localStorage (persistente entre sesiones),
+    // nunca en sessionStorage ni en la URL.
+    const FILTROS_PC_COLAPSADO_CLAVE_ = 'omFiltrosPanelPcColapsado';
+    function aplicarColapsoFiltrosPc_(colapsado) {
+        const layout = document.querySelector('.layout');
+        const btn = $('btn-colapsar-filtros-pc');
+        if (!layout || !btn) return;
+        layout.classList.toggle('layout--filtros-colapsados', colapsado);
+        const etiqueta = colapsado ? 'Desplegar panel de filtros' : 'Plegar panel de filtros';
+        btn.setAttribute('aria-label', etiqueta);
+        btn.title = etiqueta;
+    }
+    function alternarColapsoFiltrosPc_() {
+        const layout = document.querySelector('.layout');
+        const colapsado = !(layout && layout.classList.contains('layout--filtros-colapsados'));
+        aplicarColapsoFiltrosPc_(colapsado);
+        try { localStorage.setItem(FILTROS_PC_COLAPSADO_CLAVE_, colapsado ? '1' : '0'); } catch (e) { /* localStorage no disponible (privado/bloqueado) — se pierde la preferencia, sin más */ }
+    }
+    function inicializarColapsoFiltrosPc_() {
+        let colapsado = false;
+        try { colapsado = localStorage.getItem(FILTROS_PC_COLAPSADO_CLAVE_) === '1'; } catch (e) { /* ídem */ }
+        if (colapsado) aplicarColapsoFiltrosPc_(true);
+    }
+
     // ── Panel de filtros como modal deslizante en móvil ──
     function abrirFiltrosMovil() {
         const filtrosExtra = $('filtros-extra');
@@ -15689,7 +15925,13 @@ if (window.OM_PREPRODUCCION) {
 
         renderResultados();
         actualizarBotonMostrarResultadosMovil();
-        actualizarVisibilidadModulosDescubrimiento_(); // ver su porqué junto a su definición: solo con filtros limpios
+        // A petición explícita de Eloy: Destacados, Temporadas, Novedades,
+        // "Sigue explorando" y "Últimos productos vistos" ya no se ocultan
+        // en bloque con un filtro activo — se filtran ellos también (ver
+        // refsFiltroActivoSet_ y aplicarFiltroAModulosDescubrimiento_,
+        // junto a la definición de actualizarVisibilidadModulosDescubrimiento_).
+        refsFiltroActivoSet_ = hayFiltroActivo_() ? new Set(resultadosActuales.map(p => String(p.ref))) : null;
+        aplicarFiltroAModulosDescubrimiento_();
         // Chips de filtros activos + persistencia en sesión — se repintan/
         // guardan aquí, al final de aplicarFiltros(), para quedar siempre
         // sincronizados con cualquier cambio de filtro venga de donde
@@ -20191,10 +20433,11 @@ if (window.OM_PREPRODUCCION) {
         CAMPOS_FILTRO_URL.forEach(c => {
             if (c.tipo !== 'checkbox-grupo') return;
             const esArea = c.contId === 'f-area-opciones';
-            // Área empieza con TODAS marcadas (=sin filtro) — a diferencia
-            // del resto de grupos, que empiezan vacíos, aquí solo hay chip
-            // si de verdad se ha desmarcado alguna (ver hayFiltroDeArea_).
-            if (esArea && !hayFiltroDeArea_()) return;
+            // A petición explícita de Eloy: a diferencia del resto de
+            // grupos (que empiezan vacíos y solo muestran chip si el
+            // usuario marca algo), Área siempre muestra un chip por cada
+            // área marcada — también con todas marcadas (el estado por
+            // defecto, sin ningún filtro real de área todavía).
             document.querySelectorAll(`#${c.contId} input:checked`).forEach(input => {
                 chips.push({
                     etiqueta: `${c.etiqueta}: ${esArea ? (AREAS_NOMBRE[input.value] || input.value) : input.value}`,
