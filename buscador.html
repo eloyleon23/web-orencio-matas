@@ -107,35 +107,37 @@
         .btn-volver:hover { color: white; }
 
         /* ── Botón "Acceso profesional" dentro del panel de filtros (ver HTML
-           dentro de <aside class="filtros"> #filtros-extra, justo encima de
-           "ÁREA", e inicializarAccesoProfesionalBuscador_ más abajo). A
-           petición de Eloy: vive DENTRO del panel de filtros (antes era una
-           barra suelta encima de todo, que no le gustó), en la misma
-           posición tanto en el cajón móvil como en el lateral de
-           escritorio/tablet — por eso un único punto de inserción en el
-           HTML, justo después de #filtros-extra-cabecera, sirve para
-           ambos casos (ver el comentario junto al HTML). */
+           dentro de <aside class="filtros"> e inicializarAccesoProfesionalBuscador_
+           más abajo). A petición de Eloy: vive DENTRO del panel de filtros
+           (antes era una barra suelta encima de todo), y alineado en la
+           misma fila que el botón de cerrar/plegar del panel (antes
+           quedaba en su propia fila debajo de "Filtros", dejando un hueco
+           en blanco) — tanto en el cajón móvil (fila de
+           #filtros-extra-cabecera, junto a "Limpiar filtros" y la X de
+           cerrar) como en el lateral de escritorio (fila junto a
+           btn-colapsar-filtros-pc). Como esas dos filas son contenedores
+           DISTINTOS del DOM (uno dentro de #filtros-extra, el otro al
+           principio de <aside>), reposicionarAccesoProfesionalPanel_ (ver
+           moverBuscadorSegunViewport más abajo) mueve este bloque de uno a
+           otro según el ancho — por eso el HTML de partida (dentro de
+           #filtros-extra-cabecera) es solo el punto de partida en móvil. */
         .om-acceso-profesional-panel {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin: 0 0 18px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
+            align-items: center;
+            gap: 6px;
         }
         .btn-acceso-profesional,
         .btn-salir-profesional {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 0.85rem;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
             border: 1px solid transparent;
+            white-space: nowrap;
             transition: filter .15s, transform .1s;
         }
         .btn-acceso-profesional:active,
@@ -351,7 +353,14 @@
                 justify-content: center;
                 width: 28px;
                 height: 28px;
-                margin: 0 0 14px auto;
+                /* float (no margin-left:auto): comparte fila con
+                   #om-acceso-profesional-panel, que en escritorio se mueve
+                   por JS a ser su hermano directo justo antes (ver
+                   reposicionarAccesoProfesionalPanel_) — a petición de
+                   Eloy, alineado con este botón en vez de quedar en su
+                   propia fila debajo de "Filtros". */
+                float: right;
+                margin: 0 0 14px;
                 background: var(--light);
                 color: var(--dark);
                 border: 1px solid var(--border);
@@ -360,6 +369,13 @@
                 flex-shrink: 0;
             }
             .btn-colapsar-filtros-pc:hover { background: var(--border); }
+            #om-acceso-profesional-panel {
+                float: left;
+                margin: 0 0 14px;
+            }
+            /* El título "Filtros" debe quedar DEBAJO de la fila flotante del
+               botón de plegar + el acceso profesional, nunca a su lado. */
+            .filtros h3 { clear: both; }
             /* Plegado: la columna de filtros se encoge a una franja estrecha
                (justo el ancho que necesita este botón) y TODO lo demás
                dentro de <aside> se oculta — excepto el propio botón, que
@@ -376,6 +392,7 @@
                 display: none;
             }
             .layout--filtros-colapsados .btn-colapsar-filtros-pc {
+                float: none;
                 margin: 0 auto;
             }
             .layout--filtros-colapsados .btn-colapsar-filtros-pc i {
@@ -5884,6 +5901,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div id="filtros-extra">
         <div id="filtros-extra-cabecera" class="filtros-extra-cabecera">
+            <!-- Acceso profesional — a petición explícita de Eloy: acceso
+                 más ágil desde el propio buscador (hasta ahora solo existía
+                 como opción del menú de navegación, tras entrar el PIN en
+                 acceso-profesional.html), sin salir de esta página para
+                 entrar ni para salir. Punto de partida en el HTML: primer
+                 hijo de esta cabecera, alineado con "Limpiar filtros" y la
+                 X de cerrar — en escritorio (≥881px),
+                 reposicionarAccesoProfesionalPanel_ (ver
+                 moverBuscadorSegunViewport más abajo) lo mueve junto a
+                 btn-colapsar-filtros-pc para que quede alineado con ESE
+                 botón en vez de con la X (que no existe en escritorio). Ver
+                 inicializarAccesoProfesionalBuscador_ más abajo para la
+                 lógica de los botones. -->
+            <div class="om-acceso-profesional-panel" id="om-acceso-profesional-panel">
+                <button type="button" id="btn-acceso-profesional" class="btn-acceso-profesional">
+                    <i class="fa-solid fa-user-tie"></i> Acceso profesional
+                </button>
+                <button type="button" id="btn-salir-profesional" class="btn-salir-profesional" style="display:none;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir del modo profesional
+                </button>
+            </div>
             <!-- A petición de Eloy: con el panel abierto, si hay algún filtro
                  aplicado aparece aquí "Limpiar filtros" para no tener que
                  bajar a buscarlo — mismo nivel y alineado a la izquierda del
@@ -5894,29 +5932,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
             <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
                 <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-
-        <!-- Acceso profesional — a petición explícita de Eloy: acceso más
-             ágil desde el propio buscador (hasta ahora solo existía como
-             opción del menú de navegación, tras entrar el PIN en
-             acceso-profesional.html), sin salir de esta página para entrar
-             ni para salir. Antes vivía como barra suelta encima de todo el
-             buscador — a petición de Eloy, ahora vive DENTRO del panel de
-             filtros, justo aquí (tras la cabecera del cajón móvil/antes de
-             "ÁREA"): esta misma posición en el HTML sirve tanto para el
-             cajón deslizante móvil/tablet como para el lateral fijo de
-             escritorio, porque en escritorio #filtros-extra-cabecera queda
-             vacía (sus botones solo se muestran en móvil) y este bloque
-             queda como lo primero visible justo debajo del título
-             "Filtros". Ver inicializarAccesoProfesionalBuscador_ más
-             abajo. -->
-        <div class="om-acceso-profesional-panel" id="om-acceso-profesional-panel">
-            <button type="button" id="btn-acceso-profesional" class="btn-acceso-profesional">
-                <i class="fa-solid fa-user-tie"></i> Acceso profesional
-            </button>
-            <button type="button" id="btn-salir-profesional" class="btn-salir-profesional" style="display:none;">
-                <i class="fa-solid fa-right-from-bracket"></i> Salir del modo profesional
             </button>
         </div>
 
@@ -26504,6 +26519,31 @@ if (window.OM_PREPRODUCCION) {
             if (grupoArea.parentElement !== filtrosExtra) {
                 filtrosExtra.insertBefore(grupoArea, anclaArea);
             }
+        }
+        reposicionarAccesoProfesionalPanel_(esPC, filtrosAside);
+    }
+
+    // A petición de Eloy: el bloque "Acceso profesional" debe quedar
+    // ALINEADO EN LA MISMA FILA que el botón de cerrar/plegar del panel de
+    // filtros, no en una fila propia debajo de "Filtros" (dejaba un hueco
+    // en blanco). Ese botón es distinto según el ancho — la X de
+    // #filtros-extra-cabecera en móvil/tablet, btn-colapsar-filtros-pc en
+    // escritorio — y cada uno vive en un contenedor distinto del DOM, así
+    // que (igual que grupoBuscador/grupoArea un poco más arriba) el propio
+    // nodo se mueve de uno a otro según el ancho, en vez de duplicar los
+    // botones.
+    function reposicionarAccesoProfesionalPanel_(esPC, filtrosAside) {
+        const panel = $('om-acceso-profesional-panel');
+        const btnColapsarPc = $('btn-colapsar-filtros-pc');
+        const cabeceraExtra = $('filtros-extra-cabecera');
+        const btnLimpiarArriba = $('btn-limpiar-arriba');
+        if (!panel || !btnColapsarPc || !cabeceraExtra) return;
+        if (esPC) {
+            if (panel.nextElementSibling !== btnColapsarPc || panel.parentElement !== filtrosAside) {
+                filtrosAside.insertBefore(panel, btnColapsarPc);
+            }
+        } else if (panel.parentElement !== cabeceraExtra) {
+            cabeceraExtra.insertBefore(panel, btnLimpiarArriba || cabeceraExtra.firstChild);
         }
     }
     window.addEventListener('resize', debounce(moverBuscadorSegunViewport, 150));
