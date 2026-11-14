@@ -226,6 +226,53 @@
             #toolbar-buscador-pc .input-buscador-wrap { height: 100%; display: flex; align-items: center; }
         }
 
+        /* ── Plegar el panel de filtros (solo donde vive siempre abierto en
+           el lateral, ≥881px) — a petición explícita de Eloy, para que el
+           grid de productos y el resto de secciones ganen ese espacio.
+           btn-colapsar-filtros-pc oculto por defecto: en móvil/tablet
+           (≤880px) el panel ya es un cajón que se abre/cierra a demanda
+           (ver #filtros-extra/.btn-abrir-filtros-movil), este botón no
+           pinta nada ahí. */
+        .btn-colapsar-filtros-pc { display: none; }
+        @media (min-width: 881px) {
+            .btn-colapsar-filtros-pc {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 28px;
+                height: 28px;
+                margin: 0 0 14px auto;
+                background: var(--light);
+                color: var(--dark);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            .btn-colapsar-filtros-pc:hover { background: var(--border); }
+            /* Plegado: la columna de filtros se encoge a una franja estrecha
+               (justo el ancho que necesita este botón) y TODO lo demás
+               dentro de <aside> se oculta — excepto el propio botón, que
+               sigue siendo hijo directo y por tanto se libra del ":not()".
+               Girar la flecha 180° reutiliza el mismo icono para "desplegar". */
+            .layout.layout--filtros-colapsados {
+                grid-template-columns: 48px 1fr;
+            }
+            .layout--filtros-colapsados .filtros {
+                padding: 14px 10px;
+                overflow: hidden;
+            }
+            .layout--filtros-colapsados .filtros > *:not(.btn-colapsar-filtros-pc) {
+                display: none;
+            }
+            .layout--filtros-colapsados .btn-colapsar-filtros-pc {
+                margin: 0 auto;
+            }
+            .layout--filtros-colapsados .btn-colapsar-filtros-pc i {
+                transform: rotate(180deg);
+            }
+        }
+
         @media (max-width: 880px) {
             /* En una sola columna (apilado), el "gap" del grid ya no separa
                dos columnas — se convierte en puro espacio vertical entre
@@ -5586,6 +5633,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- ── FILTROS ── -->
     <aside class="filtros">
+        <!-- A petición explícita de Eloy: en las pantallas donde el panel de
+             filtros está siempre abierto en el lateral (≥881px, ver
+             alternarColapsoFiltros_ y el media query de .btn-colapsar-filtros-pc
+             más abajo — en móvil/tablet, donde es un cajón que ya se abre y
+             cierra a demanda, este botón no se muestra), permite plegarlo a
+             una franja estrecha a la izquierda para que el grid de
+             productos y el resto de secciones ganen ese espacio. Vive como
+             hijo DIRECTO de <aside>, hermano de todo lo demás (nunca
+             anidado en nada que se oculte al plegar), para seguir siendo
+             clicable incluso con el resto del panel oculto. -->
+        <button type="button" id="btn-colapsar-filtros-pc" class="btn-colapsar-filtros-pc" aria-label="Plegar panel de filtros" title="Plegar panel de filtros">
+            <i class="fa-solid fa-angles-left"></i>
+        </button>
         <h3>
             <span><i class="fa-solid fa-filter"></i> Filtros</span>
         </h3>
@@ -10304,6 +10364,8 @@ if (window.OM_PREPRODUCCION) {
         
         $('btn-limpiar').addEventListener('click', limpiarFiltros);
         $('btn-limpiar-arriba').addEventListener('click', limpiarFiltros);
+        $('btn-colapsar-filtros-pc').addEventListener('click', alternarColapsoFiltrosPc_);
+        inicializarColapsoFiltrosPc_();
         $('btn-vistos-borrar').addEventListener('click', () => {
             guardarHistorialVistos_([]);
             modulosDescubrimientoConContenido_.vistos = 'vacio';
@@ -15469,6 +15531,38 @@ if (window.OM_PREPRODUCCION) {
         // de quedarse mirando el panel de filtros ya vacío. En escritorio
         // (sin panel modal) esta llamada no tiene efecto visible.
         cerrarFiltrosMovil();
+    }
+
+    // ── Plegar/desplegar el panel de filtros en escritorio ──────────────
+    // A petición explícita de Eloy: en las pantallas donde el panel vive
+    // siempre abierto en el lateral (≥881px — en móvil/tablet ya es un
+    // cajón que se abre/cierra a demanda, ver abrirFiltrosMovil/
+    // cerrarFiltrosMovil, esto no les afecta en absoluto), permite
+    // plegarlo a una franja estrecha a la izquierda para que el grid de
+    // productos y el resto de secciones ganen ese espacio (ver el CSS de
+    // .layout--filtros-colapsados). Preferencia de interfaz, no un
+    // filtro: se recuerda en localStorage (persistente entre sesiones),
+    // nunca en sessionStorage ni en la URL.
+    const FILTROS_PC_COLAPSADO_CLAVE_ = 'omFiltrosPanelPcColapsado';
+    function aplicarColapsoFiltrosPc_(colapsado) {
+        const layout = document.querySelector('.layout');
+        const btn = $('btn-colapsar-filtros-pc');
+        if (!layout || !btn) return;
+        layout.classList.toggle('layout--filtros-colapsados', colapsado);
+        const etiqueta = colapsado ? 'Desplegar panel de filtros' : 'Plegar panel de filtros';
+        btn.setAttribute('aria-label', etiqueta);
+        btn.title = etiqueta;
+    }
+    function alternarColapsoFiltrosPc_() {
+        const layout = document.querySelector('.layout');
+        const colapsado = !(layout && layout.classList.contains('layout--filtros-colapsados'));
+        aplicarColapsoFiltrosPc_(colapsado);
+        try { localStorage.setItem(FILTROS_PC_COLAPSADO_CLAVE_, colapsado ? '1' : '0'); } catch (e) { /* localStorage no disponible (privado/bloqueado) — se pierde la preferencia, sin más */ }
+    }
+    function inicializarColapsoFiltrosPc_() {
+        let colapsado = false;
+        try { colapsado = localStorage.getItem(FILTROS_PC_COLAPSADO_CLAVE_) === '1'; } catch (e) { /* ídem */ }
+        if (colapsado) aplicarColapsoFiltrosPc_(true);
     }
 
     // ── Panel de filtros como modal deslizante en móvil ──
