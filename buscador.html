@@ -811,6 +811,13 @@
                ">*", esta regla (que va DESPUÉS en el CSS) ganaría el
                empate de especificidad y rompería esa protección. */
             .filtros-extra-cabecera .btn-cerrar-filtros-movil { pointer-events: auto; }
+            /* Bug real reportado por Eloy ("pincho en Acceso profesional y
+               no funciona"): al mover este bloque dentro de la cabecera
+               (ver #om-acceso-profesional-panel más abajo en el HTML y
+               reposicionarAccesoProfesionalPanel_), heredaba el
+               pointer-events:none de arriba sin que nada se lo
+               devolviera — igual que la X unas líneas arriba. */
+            .filtros-extra-cabecera .om-acceso-profesional-panel { pointer-events: auto; }
             .btn-cerrar-filtros-movil {
                 display: block;
                 margin-left: auto;
