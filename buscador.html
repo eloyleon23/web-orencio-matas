@@ -45,6 +45,12 @@
             --blue: #1976D2;
             --green: #388E3C;
             --yellow: #FBC02D;
+            /* Naranja melocotón — a petición de Eloy, color de identidad de
+               la Lista de la compra (antes usaba --red, que no le gustaba
+               ahí). --peach-dark es el tono oscuro para degradados, mismo
+               papel que "#9a1f1f" cumplía junto a --red. */
+            --peach: #F2994A;
+            --peach-dark: #D9772B;
             --dark: #1e293b;
             --muted: #475569;
             --light: #f8fafc;
@@ -1477,34 +1483,33 @@
 
         /* ── Lista de la compra ──────────────────────────────────────────
            Botón para crear la lista (visible solo si no existe ninguna
-           todavía) — mismo lenguaje visual que .btn-asistente-imagenes,
-           con los colores corporativos del logo en vez del morado. */
+           todavía) — mismo lenguaje visual que .btn-asistente-imagenes.
+           A petición de Eloy: color de identidad de toda esta sección en
+           naranja melocotón (--peach/--peach-dark) en vez de --red — las
+           acciones realmente destructivas (eliminar producto, vaciar
+           lista) siguen en rojo más abajo, ese uso sí es apropiado. */
         .btn-crear-lista-compra {
             display: flex; align-items: center; justify-content: center; gap: 8px;
             width: 100%; margin: 4px 0 16px; padding: 12px 16px;
-            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            background: linear-gradient(135deg, var(--peach), var(--peach-dark));
             color: #fff; border: none; border-radius: 10px;
             font-size: 0.95rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 2px 8px rgba(211,47,47,0.3);
+            box-shadow: 0 2px 8px rgba(242,153,74,0.35);
             transition: filter 0.15s, transform 0.1s, box-shadow 0.15s;
         }
-        .btn-crear-lista-compra:hover { filter: brightness(1.08); box-shadow: 0 5px 16px rgba(211,47,47,0.4); }
+        .btn-crear-lista-compra:hover { filter: brightness(1.08); box-shadow: 0 5px 16px rgba(242,153,74,0.45); }
         .btn-crear-lista-compra:active { transform: translateY(1px); }
 
         /* Bloque de la lista ya creada: mismo contenedor "una fila con
-           scroll horizontal" que .mas-buscados__lista. A petición de Eloy:
-           mismos colores corporativos del logo (--red/--blue) que antes,
-           pero en una versión más apagada/mate — un tinte suave en vez del
-           degradado animado saturado de antes — para que siga destacando
-           sin resultar tan llamativo que rompa el estilo general de la
-           página. Se mantiene un degradado muy sutil entre los dos tonos
-           (casi plano) y se retira la animación de "ola", que ya no tiene
-           sentido sobre un fondo tan apagado.*/
+           scroll horizontal" que .mas-buscados__lista, en una versión
+           apagada/mate del color de identidad — un tinte suave en vez de
+           un degradado saturado, para que siga destacando sin resultar
+           tan llamativo que rompa el estilo general de la página. */
         .bloque-lista-compra {
             position: relative; overflow: hidden;
             margin: 0 0 16px; padding: 18px 20px; border-radius: 14px;
-            cursor: pointer; border: 1px solid rgba(211,47,47,0.18); text-align: left; width: 100%;
-            background: linear-gradient(120deg, #fbebea, #eaf1fa);
+            cursor: pointer; border: 1px solid rgba(242,153,74,0.25); text-align: left; width: 100%;
+            background: linear-gradient(120deg, #fdecdc, #eaf1fa);
             box-shadow: 0 4px 14px -6px rgba(15,23,42,0.18);
         }
         .bloque-lista-compra__cabecera {
@@ -1515,9 +1520,9 @@
             margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--dark);
             display: flex; align-items: center; gap: 10px;
         }
-        .bloque-lista-compra__titulo i { font-size: 1.05rem; color: var(--red); }
+        .bloque-lista-compra__titulo i { font-size: 1.05rem; color: var(--peach-dark); }
         .bloque-lista-compra__contador {
-            background: rgba(211,47,47,0.12); color: #9a2626;
+            background: rgba(242,153,74,0.16); color: #9a5118;
             padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;
             flex-shrink: 0;
         }
@@ -1530,7 +1535,7 @@
             background: rgba(255,255,255,0.95);
         }
         .bloque-lista-compra:focus-visible {
-            outline: 3px solid var(--red); outline-offset: 2px;
+            outline: 3px solid var(--peach); outline-offset: 2px;
         }
         @media (max-width: 768px) {
             .bloque-lista-compra { padding: 14px 14px; }
@@ -1556,7 +1561,7 @@
             gap: 12px; flex-wrap: wrap;
         }
         .modal-lista-compra-titulo { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--dark); display: flex; align-items: center; gap: 10px; }
-        .modal-lista-compra-titulo i { color: var(--red); }
+        .modal-lista-compra-titulo i { color: var(--peach-dark); }
         .modal-lista-compra-resumen { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
         .modal-lista-compra-resumen strong { color: var(--dark); }
         .modal-lista-compra-contador { background: var(--light); padding: 4px 12px; border-radius: 20px; font-weight: 700; color: var(--dark); white-space: nowrap; }
@@ -1592,13 +1597,13 @@
             display: flex; align-items: center; gap: 6px; font-size: 0.85rem;
             font-weight: 700; color: var(--dark); margin-bottom: 6px;
         }
-        .lista-compra-notas label i { color: var(--red); }
+        .lista-compra-notas label i { color: var(--peach-dark); }
         .lista-compra-notas-input {
             width: 100%; box-sizing: border-box; resize: vertical; min-height: 60px;
             padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
             font-family: inherit; font-size: 0.9rem; color: var(--dark);
         }
-        .lista-compra-notas-input:focus { outline: 2px solid var(--red); outline-offset: 1px; }
+        .lista-compra-notas-input:focus { outline: 2px solid var(--peach); outline-offset: 1px; }
         .lista-compra-notas-contador {
             display: block; margin-top: 4px; font-size: 0.75rem; color: var(--muted); text-align: right;
         }
@@ -1623,7 +1628,7 @@
         .btn-lista-compra-eliminar { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
 
         .lista-compra-vacia { text-align: center; padding: 40px 20px; color: var(--muted); }
-        .lista-compra-vacia i { font-size: 2.6rem; color: var(--red); margin-bottom: 14px; display: block; }
+        .lista-compra-vacia i { font-size: 2.6rem; color: var(--peach-dark); margin-bottom: 14px; display: block; }
         .lista-compra-vacia h4 { margin: 0 0 8px; color: var(--dark); font-size: 1.1rem; }
         .lista-compra-vacia p { margin: 0 0 6px; font-size: 0.9rem; }
         .lista-compra-vacia ul { text-align: left; max-width: 420px; margin: 16px auto; padding: 0; list-style: none; font-size: 0.88rem; }
@@ -1654,7 +1659,7 @@
         .modal-producto-lista-fila { display: flex; align-items: stretch; gap: 8px; margin: 10px 0 4px; }
         .modal-producto-lista-btn {
             flex: 1; min-width: 0; margin: 0; padding: 12px 16px;
-            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            background: linear-gradient(135deg, var(--peach), var(--peach-dark));
             color: #fff; border: none; border-radius: 8px;
             font-size: 0.92rem; font-weight: 700; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -1692,7 +1697,7 @@
         }
         .lista-compra-modo-btn:not(:last-child) { border-right: 1px solid var(--border); }
         .lista-compra-modo-btn:hover { background: #e2e8f0; }
-        .lista-compra-modo-btn.activo { background: var(--red); color: #fff; }
+        .lista-compra-modo-btn.activo { background: var(--peach); color: #fff; }
         .lista-compra-equivalencia {
             margin: 0; font-size: 0.72rem; color: var(--gray); text-align: center;
         }
@@ -5582,7 +5587,9 @@
         /* Botón flotante de acceso rápido a la Lista de la compra — a
            petición explícita de Eloy: "un botón flotante siempre que
            haya una lista de la compra creada... el color del botón en
-           rojo". En la esquina opuesta a #btn-subir-arriba (izquierda en
+           rojo" — más tarde, a petición de Eloy, ese rojo pasó a naranja
+           melocotón (--peach), el color de identidad del resto de la
+           sección. En la esquina opuesta a #btn-subir-arriba (izquierda en
            vez de derecha) para que nunca compita ni se solape con él ni
            con el de la modal de temporada — "el botón no interferirá con
            otros botones flotantes". En escritorio, icono + texto; en
@@ -5599,7 +5606,7 @@
             gap: 9px;
             border: none;
             border-radius: 999px;
-            background: var(--red);
+            background: var(--peach);
             color: #fff;
             font-size: 0.92rem;
             font-weight: 700;
@@ -7736,7 +7743,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <i class="fa-solid fa-xmark"></i>
         </button>
         <div style="text-align:center; padding: 8px 4px 20px;">
-            <i class="fa-solid fa-clipboard-list" style="font-size: 2rem; color: var(--red); margin-bottom: 12px;"></i>
+            <i class="fa-solid fa-clipboard-list" style="font-size: 2rem; color: var(--peach-dark); margin-bottom: 12px;"></i>
             <h3 style="margin:0 0 10px;font-size:1.05rem;color:#1f2937;">¿Sigues con tu lista de la compra?</h3>
             <p id="aviso-validez-lista-compra-mensaje" style="margin: 0; color: #4b5563; font-size: 0.9rem; line-height: 1.5;"></p>
         </div>
@@ -7744,7 +7751,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button id="aviso-validez-lista-compra-ahora-no" style="flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
                 Ahora no
             </button>
-            <button id="aviso-validez-lista-compra-ver" style="flex: 1; padding: 12px; background: linear-gradient(135deg, var(--red), #9a1f1f); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+            <button id="aviso-validez-lista-compra-ver" style="flex: 1; padding: 12px; background: linear-gradient(135deg, var(--peach), var(--peach-dark)); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
                 Ver mi lista
             </button>
         </div>
