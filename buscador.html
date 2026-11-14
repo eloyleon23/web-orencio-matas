@@ -106,25 +106,31 @@
         }
         .btn-volver:hover { color: white; }
 
-        /* ── Barra "Acceso profesional" (ver HTML junto a <main class="layout">
-           y inicializarAccesoProfesionalBuscador_ más abajo) ── */
-        .om-acceso-profesional-barra {
-            background: #f8fafc;
-            border-bottom: 1px solid var(--border);
-        }
-        .om-acceso-profesional-barra__inner {
-            max-width: min(96vw, 1760px);
-            margin: 0 auto;
-            padding: 10px 20px;
+        /* ── Botón "Acceso profesional" dentro del panel de filtros (ver HTML
+           dentro de <aside class="filtros"> #filtros-extra, justo encima de
+           "ÁREA", e inicializarAccesoProfesionalBuscador_ más abajo). A
+           petición de Eloy: vive DENTRO del panel de filtros (antes era una
+           barra suelta encima de todo, que no le gustó), en la misma
+           posición tanto en el cajón móvil como en el lateral de
+           escritorio/tablet — por eso un único punto de inserción en el
+           HTML, justo después de #filtros-extra-cabecera, sirve para
+           ambos casos (ver el comentario junto al HTML). */
+        .om-acceso-profesional-panel {
             display: flex;
-            justify-content: flex-end;
+            flex-direction: column;
+            gap: 8px;
+            margin: 0 0 18px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
         }
         .btn-acceso-profesional,
         .btn-salir-profesional {
-            display: inline-flex;
+            display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            padding: 9px 16px;
+            width: 100%;
+            padding: 10px 14px;
             border-radius: 8px;
             font-size: 0.85rem;
             font-weight: 700;
@@ -5744,27 +5750,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
-<!-- Acceso profesional — a petición explícita de Eloy: acceso más ágil
-     desde el propio buscador (hasta ahora solo existía como opción del
-     menú de navegación, tras entrar el PIN en acceso-profesional.html),
-     sin salir de esta página para entrar ni para salir. Vive FUERA de
-     <main class="layout"> a propósito: ese grid tiene sus filas/columnas
-     ya muy ajustadas (sticky, spans entre filtros y toolbar de
-     escritorio), y meter aquí un elemento más habría obligado a tocar
-     todo eso — como simple barra de ancho completo justo encima, no
-     hace falta. Ver inicializarAccesoProfesionalBuscador_ más abajo. -->
-<div class="om-acceso-profesional-barra" id="om-acceso-profesional-barra">
-    <div class="om-acceso-profesional-barra__inner">
-        <button type="button" id="btn-acceso-profesional" class="btn-acceso-profesional">
-            <i class="fa-solid fa-user-tie"></i> Acceso profesional
-        </button>
-        <button type="button" id="btn-salir-profesional" class="btn-salir-profesional" style="display:none;">
-            <i class="fa-solid fa-right-from-bracket"></i> Salir del modo profesional
-        </button>
-    </div>
-</div>
-
-<!-- Modal del botón de arriba — dos pasos dentro del mismo diálogo (PIN
+<!-- Modal del botón de acceso profesional (ver HTML dentro de
+     <aside class="filtros">) — dos pasos dentro del mismo diálogo (PIN
      o solicitar código por email), nunca una navegación a otra página:
      el usuario se queda siempre en el buscador. -->
 <div class="modal-overlay" id="modal-acceso-profesional-overlay">
@@ -5907,6 +5894,29 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </button>
             <button type="button" id="btn-cerrar-filtros-movil" class="btn-cerrar-filtros-movil" aria-label="Cerrar filtros">
                 <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Acceso profesional — a petición explícita de Eloy: acceso más
+             ágil desde el propio buscador (hasta ahora solo existía como
+             opción del menú de navegación, tras entrar el PIN en
+             acceso-profesional.html), sin salir de esta página para entrar
+             ni para salir. Antes vivía como barra suelta encima de todo el
+             buscador — a petición de Eloy, ahora vive DENTRO del panel de
+             filtros, justo aquí (tras la cabecera del cajón móvil/antes de
+             "ÁREA"): esta misma posición en el HTML sirve tanto para el
+             cajón deslizante móvil/tablet como para el lateral fijo de
+             escritorio, porque en escritorio #filtros-extra-cabecera queda
+             vacía (sus botones solo se muestran en móvil) y este bloque
+             queda como lo primero visible justo debajo del título
+             "Filtros". Ver inicializarAccesoProfesionalBuscador_ más
+             abajo. -->
+        <div class="om-acceso-profesional-panel" id="om-acceso-profesional-panel">
+            <button type="button" id="btn-acceso-profesional" class="btn-acceso-profesional">
+                <i class="fa-solid fa-user-tie"></i> Acceso profesional
+            </button>
+            <button type="button" id="btn-salir-profesional" class="btn-salir-profesional" style="display:none;">
+                <i class="fa-solid fa-right-from-bracket"></i> Salir del modo profesional
             </button>
         </div>
 
@@ -26432,23 +26442,11 @@ if (window.OM_PREPRODUCCION) {
         const grupoBuscador = $('grupo-buscador-principal');
         const espaciador = $('espaciador-buscador-movil');
         const navbar = document.querySelector('.navbar-wrapper');
-        // Barra "Acceso profesional" (ver su HTML, justo antes de <main
-        // class="layout">): en móvil cae en normal flow justo donde el
-        // buscador fijo flota por encima (mismo "top" que él) — bug real
-        // detectado al añadirla: quedaba tapada del todo detrás de la
-        // barra de búsqueda, invisible e inalcanzable. Mismo mecanismo
-        // que el propio espaciador (reservar la altura real del
-        // buscador fijo), pero como margin-top de esta barra en vez de
-        // como altura de un hueco: ella SÍ debe seguir viéndose (no es
-        // un hueco vacío), solo desplazada hacia abajo lo justo para
-        // quedar DEBAJO del buscador fijo en vez de debajo de él.
-        const barraProfesional = $('om-acceso-profesional-barra');
         if (!grupoBuscador || !navbar) return;
         const alturaNavbar = navbar.getBoundingClientRect().height;
         if (window.innerWidth > 768) {
             grupoBuscador.style.top = ''; // en escritorio no es fixed, no aplica
             if (espaciador) espaciador.style.height = '';
-            if (barraProfesional) barraProfesional.style.marginTop = '';
             // A petición de Eloy: la barra de búsqueda (sticky a partir de
             // 769px, ver #toolbar-buscador-pc y .filtros) quedaba un poco
             // escondida bajo la cabecera del sitio al hacer scroll — el
@@ -26466,7 +26464,6 @@ if (window.OM_PREPRODUCCION) {
         grupoBuscador.style.top = alturaNavbar + 'px';
         const alturaBuscadorFijo = grupoBuscador.getBoundingClientRect().height;
         if (espaciador) espaciador.style.height = alturaBuscadorFijo + 'px';
-        if (barraProfesional) barraProfesional.style.marginTop = alturaBuscadorFijo + 'px';
         // Limpia el "top" de escritorio por si se redimensiona desde una
         // pantalla ancha a una estrecha sin recargar la página.
         const toolbarPc = $('toolbar-buscador-pc');
