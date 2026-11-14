@@ -11150,7 +11150,14 @@ if (window.OM_PREPRODUCCION) {
         [...cont.children].forEach(el => {
             const pasa = !refsFiltroActivoSet_ || !el.dataset.ref || refsFiltroActivoSet_.has(String(el.dataset.ref));
             el.style.display = pasa ? '' : 'none';
-            if (pasa) visibles++;
+            // Defensa adicional (más allá de ya vaciar el contenedor en
+            // cargarNovedades_()/cargarUltimosVistos_() cuando no hay
+            // contenido real, ver sus comentarios): un hueco sin
+            // "dataset.ref" (p. ej. un .om-skeleton que por lo que sea
+            // siguiera ahí) nunca cuenta como contenido real, aunque se
+            // deje visible — si no, esta función reabriría la sección
+            // con solo huecos vacíos dentro.
+            if (pasa && el.dataset.ref) visibles++;
         });
         if (modulosDescubrimientoConContenido_[claveModulo] !== 'cargando') {
             modulosDescubrimientoConContenido_[claveModulo] = visibles > 0 ? 'con-contenido' : 'vacio';
@@ -14297,6 +14304,7 @@ if (window.OM_PREPRODUCCION) {
         timersRotacionNovedades_ = [];
         refsNovedadesReservadas_.clear();
         if (!TODOS.length) {
+            $('novedades-lista').innerHTML = '';
             modulosDescubrimientoConContenido_.novedades = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
@@ -14312,6 +14320,13 @@ if (window.OM_PREPRODUCCION) {
         poolNovedadesActivo_ = pool;
         const productos = barajar_(pool).slice(0, MAX_TARJETAS_NOVEDADES);
         if (!productos.length) {
+            // Mismo motivo que la rama de arriba (y que el bug ya
+            // corregido en cargarUltimosVistos_): sin esto, los
+            // om-skeleton del HTML inicial se quedan en el contenedor y
+            // aplicarFiltroATarjetasRenderizadas_() los cuenta como
+            // tarjetas "visibles" (no tienen dataset.ref) en la siguiente
+            // pasada de filtros, volviendo a mostrar la sección vacía.
+            $('novedades-lista').innerHTML = '';
             modulosDescubrimientoConContenido_.novedades = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
@@ -14382,7 +14397,21 @@ if (window.OM_PREPRODUCCION) {
         // Aprovecha para limpiar ya del almacenamiento las entradas caducadas
         // (>7 días), aunque no haya catálogo para resolverlas todavía.
         guardarHistorialVistos_(historial);
+        // Bug real reportado por Eloy ("Últimos productos vistos se queda
+        // cargando cuando no hay nada en sesión"): estas dos salidas
+        // tempranas (sin historial, o historial sin ningún producto que
+        // siga resolviendo a algo real) marcaban 'vacio' pero NUNCA
+        // vaciaban #ultimos-vistos-lista — los 4 om-skeleton del HTML
+        // inicial se quedaban ahí para siempre. Como no tienen
+        // "dataset.ref", aplicarFiltroATarjetasRenderizadas_() los contaba
+        // como tarjetas "visibles" en la siguiente pasada de filtros (su
+        // condición trata "sin ref" como "pasa cualquier filtro"),
+        // marcando el módulo 'con-contenido' y volviendo a mostrar la
+        // sección — pero solo con esos 4 huecos vacíos, nunca con
+        // contenido real. Vaciar aquí el contenedor, igual que ya se hace
+        // más abajo cuando sí hay productos, lo evita de raíz.
         if (!historial.length) {
+            $('ultimos-vistos-lista').innerHTML = '';
             modulosDescubrimientoConContenido_.vistos = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
@@ -14392,6 +14421,7 @@ if (window.OM_PREPRODUCCION) {
             .map(it => mapaProductos.get(String(it.ref)))
             .filter(p => p && estaActivoEnCatalogo_(p));
         if (!productos.length) {
+            $('ultimos-vistos-lista').innerHTML = '';
             modulosDescubrimientoConContenido_.vistos = 'vacio';
             actualizarVisibilidadModulosDescubrimiento_();
             return;
