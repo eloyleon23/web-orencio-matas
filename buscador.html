@@ -8220,7 +8220,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // de carga atascada para siempre.
     setTimeout(function () { window.om_splash_datosListos_(); }, 15000);
 
-    if (reduceMotion || yaVistoEnEstaSesion) {
+    if (yaVistoEnEstaSesion) {
+        // Bug real reportado por Eloy: con reduceMotion (o antes de este
+        // ajuste) el splash seguía apareciendo un instante mientras se
+        // esperaba a datosListos (el catálogo) — "si el usuario ya lo ha
+        // visto y se ha guardado en sesión no debe aparecer" en absoluto,
+        // ni un instante. Se quita YA, sin esperar a ninguna de las dos
+        // condiciones de cerrarSiToca_().
+        document.body.classList.remove('om-cargando');
+        var elYaVisto = document.getElementById('om-splash-carga');
+        if (elYaVisto) elYaVisto.remove();
+        animLista = true;
+        datosListos = true;
+    } else if (reduceMotion) {
         animLista = true;
         cerrarSiToca_();
     } else {
