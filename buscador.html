@@ -17705,6 +17705,15 @@ if (window.OM_PREPRODUCCION) {
             pasoSolicitar.style.display = '';
         }
         function abrirModal_() {
+            // Bug real reportado por Eloy: con el cajón de filtros móvil
+            // abierto, la modal se quedaba detrás de él (#filtros-extra
+            // tiene z-index:6000, muy por encima del de .modal-overlay) —
+            // se cierra el cajón primero, igual que ya hace el propio
+            // botón de "Filtros" (ver alternarFiltrosMovil/cerrarFiltrosMovil).
+            const filtrosExtra = $('filtros-extra');
+            if (filtrosExtra && filtrosExtra.classList.contains('abierto')) {
+                cerrarFiltrosMovil();
+            }
             mostrarPasoPin_();
             $('ap-modal-form-pin').reset();
             overlay.classList.add('activo');
