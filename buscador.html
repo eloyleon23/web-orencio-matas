@@ -45,6 +45,12 @@
             --blue: #1976D2;
             --green: #388E3C;
             --yellow: #FBC02D;
+            /* Naranja melocotón — a petición de Eloy, color de identidad de
+               la Lista de la compra (antes usaba --red, que no le gustaba
+               ahí). --peach-dark es el tono oscuro para degradados, mismo
+               papel que "#9a1f1f" cumplía junto a --red. */
+            --peach: #F2994A;
+            --peach-dark: #D9772B;
             --dark: #1e293b;
             --muted: #475569;
             --light: #f8fafc;
@@ -105,6 +111,118 @@
             margin-bottom: 14px;
         }
         .btn-volver:hover { color: white; }
+
+        /* ── Botón "Acceso profesional" dentro del panel de filtros (ver HTML
+           dentro de <aside class="filtros"> e inicializarAccesoProfesionalBuscador_
+           más abajo). A petición de Eloy: vive DENTRO del panel de filtros
+           (antes era una barra suelta encima de todo), y alineado en la
+           misma fila que el botón de cerrar/plegar del panel (antes
+           quedaba en su propia fila debajo de "Filtros", dejando un hueco
+           en blanco) — tanto en el cajón móvil (fila de
+           #filtros-extra-cabecera, junto a "Limpiar filtros" y la X de
+           cerrar) como en el lateral de escritorio (fila junto a
+           btn-colapsar-filtros-pc). Como esas dos filas son contenedores
+           DISTINTOS del DOM (uno dentro de #filtros-extra, el otro al
+           principio de <aside>), reposicionarAccesoProfesionalPanel_ (ver
+           moverBuscadorSegunViewport más abajo) mueve este bloque de uno a
+           otro según el ancho — por eso el HTML de partida (dentro de
+           #filtros-extra-cabecera) es solo el punto de partida en móvil. */
+        .om-acceso-profesional-panel {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-acceso-profesional,
+        .btn-salir-profesional {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            transition: filter .15s, transform .1s;
+        }
+        .btn-acceso-profesional:active,
+        .btn-salir-profesional:active { transform: translateY(1px); }
+        .btn-acceso-profesional:hover,
+        .btn-salir-profesional:hover { filter: brightness(1.08); }
+        .btn-acceso-profesional { background: #1a1a1a; color: #fff; }
+        .btn-salir-profesional { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+
+        .modal-acceso-profesional-box { max-width: 440px; padding: 26px; }
+        .modal-acceso-profesional-box h3 {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ap-modal-subtitulo { margin: 0 0 20px; font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+        .ap-modal-campo { margin-bottom: 14px; }
+        .ap-modal-campo label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--dark);
+        }
+        .ap-modal-recordar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 2px 0 6px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            cursor: pointer;
+        }
+        .ap-modal-error { min-height: 18px; margin: 8px 0 0; color: var(--red); font-weight: 700; font-size: 0.85rem; }
+        .ap-modal-estado {
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.86rem;
+        }
+        .ap-modal-btn-primario {
+            width: 100%;
+            margin-top: 6px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: filter .15s, transform .1s;
+        }
+        .ap-modal-btn-primario:hover { filter: brightness(1.08); }
+        .ap-modal-btn-primario:active { transform: translateY(1px); }
+        .ap-modal-btn-primario:disabled { opacity: .7; cursor: default; }
+        .ap-modal-btn-enlace {
+            display: block;
+            width: 100%;
+            margin-top: 14px;
+            background: none;
+            border: none;
+            color: var(--blue);
+            font-size: 0.83rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .ap-modal-btn-enlace:hover { color: var(--dark); }
 
         /* Por defecto, un hijo directo de un grid tiene min-width:auto
            — no se encoge por debajo del ancho de su propio contenido.
@@ -241,7 +359,14 @@
                 justify-content: center;
                 width: 28px;
                 height: 28px;
-                margin: 0 0 14px auto;
+                /* float (no margin-left:auto): comparte fila con
+                   #om-acceso-profesional-panel, que en escritorio se mueve
+                   por JS a ser su hermano directo justo antes (ver
+                   reposicionarAccesoProfesionalPanel_) — a petición de
+                   Eloy, alineado con este botón en vez de quedar en su
+                   propia fila debajo de "Filtros". */
+                float: right;
+                margin: 0 0 14px;
                 background: var(--light);
                 color: var(--dark);
                 border: 1px solid var(--border);
@@ -250,6 +375,13 @@
                 flex-shrink: 0;
             }
             .btn-colapsar-filtros-pc:hover { background: var(--border); }
+            #om-acceso-profesional-panel {
+                float: left;
+                margin: 0 0 14px;
+            }
+            /* El título "Filtros" debe quedar DEBAJO de la fila flotante del
+               botón de plegar + el acceso profesional, nunca a su lado. */
+            .filtros h3 { clear: both; }
             /* Plegado: la columna de filtros se encoge a una franja estrecha
                (justo el ancho que necesita este botón) y TODO lo demás
                dentro de <aside> se oculta — excepto el propio botón, que
@@ -266,6 +398,7 @@
                 display: none;
             }
             .layout--filtros-colapsados .btn-colapsar-filtros-pc {
+                float: none;
                 margin: 0 auto;
             }
             .layout--filtros-colapsados .btn-colapsar-filtros-pc i {
@@ -466,7 +599,13 @@
             width: 100%;
             padding: 14px;
             margin-top: 16px;
-            background: var(--red);
+            /* Antes --red: a petición de Eloy, el rojo transmitía alarma en
+               un botón de acción normal — se cambia por --blue (ya es el
+               color de acción habitual del sitio, ver p.ej. #banner-
+               actualizacion .btn-actualizar o .btn-destacados-compartir),
+               dentro de la gama de colores del logo (--blue/--green/
+               --yellow/--red en :root). */
+            background: var(--blue);
             color: white;
             border: none;
             border-radius: 8px;
@@ -672,6 +811,13 @@
                ">*", esta regla (que va DESPUÉS en el CSS) ganaría el
                empate de especificidad y rompería esa protección. */
             .filtros-extra-cabecera .btn-cerrar-filtros-movil { pointer-events: auto; }
+            /* Bug real reportado por Eloy ("pincho en Acceso profesional y
+               no funciona"): al mover este bloque dentro de la cabecera
+               (ver #om-acceso-profesional-panel más abajo en el HTML y
+               reposicionarAccesoProfesionalPanel_), heredaba el
+               pointer-events:none de arriba sin que nada se lo
+               devolviera — igual que la X unas líneas arriba. */
+            .filtros-extra-cabecera .om-acceso-profesional-panel { pointer-events: auto; }
             .btn-cerrar-filtros-movil {
                 display: block;
                 margin-left: auto;
@@ -1344,34 +1490,33 @@
 
         /* ── Lista de la compra ──────────────────────────────────────────
            Botón para crear la lista (visible solo si no existe ninguna
-           todavía) — mismo lenguaje visual que .btn-asistente-imagenes,
-           con los colores corporativos del logo en vez del morado. */
+           todavía) — mismo lenguaje visual que .btn-asistente-imagenes.
+           A petición de Eloy: color de identidad de toda esta sección en
+           naranja melocotón (--peach/--peach-dark) en vez de --red — las
+           acciones realmente destructivas (eliminar producto, vaciar
+           lista) siguen en rojo más abajo, ese uso sí es apropiado. */
         .btn-crear-lista-compra {
             display: flex; align-items: center; justify-content: center; gap: 8px;
             width: 100%; margin: 4px 0 16px; padding: 12px 16px;
-            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            background: linear-gradient(135deg, var(--peach), var(--peach-dark));
             color: #fff; border: none; border-radius: 10px;
             font-size: 0.95rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 2px 8px rgba(211,47,47,0.3);
+            box-shadow: 0 2px 8px rgba(242,153,74,0.35);
             transition: filter 0.15s, transform 0.1s, box-shadow 0.15s;
         }
-        .btn-crear-lista-compra:hover { filter: brightness(1.08); box-shadow: 0 5px 16px rgba(211,47,47,0.4); }
+        .btn-crear-lista-compra:hover { filter: brightness(1.08); box-shadow: 0 5px 16px rgba(242,153,74,0.45); }
         .btn-crear-lista-compra:active { transform: translateY(1px); }
 
         /* Bloque de la lista ya creada: mismo contenedor "una fila con
-           scroll horizontal" que .mas-buscados__lista. A petición de Eloy:
-           mismos colores corporativos del logo (--red/--blue) que antes,
-           pero en una versión más apagada/mate — un tinte suave en vez del
-           degradado animado saturado de antes — para que siga destacando
-           sin resultar tan llamativo que rompa el estilo general de la
-           página. Se mantiene un degradado muy sutil entre los dos tonos
-           (casi plano) y se retira la animación de "ola", que ya no tiene
-           sentido sobre un fondo tan apagado.*/
+           scroll horizontal" que .mas-buscados__lista, en una versión
+           apagada/mate del color de identidad — un tinte suave en vez de
+           un degradado saturado, para que siga destacando sin resultar
+           tan llamativo que rompa el estilo general de la página. */
         .bloque-lista-compra {
             position: relative; overflow: hidden;
             margin: 0 0 16px; padding: 18px 20px; border-radius: 14px;
-            cursor: pointer; border: 1px solid rgba(211,47,47,0.18); text-align: left; width: 100%;
-            background: linear-gradient(120deg, #fbebea, #eaf1fa);
+            cursor: pointer; border: 1px solid rgba(242,153,74,0.25); text-align: left; width: 100%;
+            background: linear-gradient(120deg, #fdecdc, #eaf1fa);
             box-shadow: 0 4px 14px -6px rgba(15,23,42,0.18);
         }
         .bloque-lista-compra__cabecera {
@@ -1382,9 +1527,9 @@
             margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--dark);
             display: flex; align-items: center; gap: 10px;
         }
-        .bloque-lista-compra__titulo i { font-size: 1.05rem; color: var(--red); }
+        .bloque-lista-compra__titulo i { font-size: 1.05rem; color: var(--peach-dark); }
         .bloque-lista-compra__contador {
-            background: rgba(211,47,47,0.12); color: #9a2626;
+            background: rgba(242,153,74,0.16); color: #9a5118;
             padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;
             flex-shrink: 0;
         }
@@ -1397,7 +1542,7 @@
             background: rgba(255,255,255,0.95);
         }
         .bloque-lista-compra:focus-visible {
-            outline: 3px solid var(--red); outline-offset: 2px;
+            outline: 3px solid var(--peach); outline-offset: 2px;
         }
         @media (max-width: 768px) {
             .bloque-lista-compra { padding: 14px 14px; }
@@ -1423,7 +1568,7 @@
             gap: 12px; flex-wrap: wrap;
         }
         .modal-lista-compra-titulo { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--dark); display: flex; align-items: center; gap: 10px; }
-        .modal-lista-compra-titulo i { color: var(--red); }
+        .modal-lista-compra-titulo i { color: var(--peach-dark); }
         .modal-lista-compra-resumen { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
         .modal-lista-compra-resumen strong { color: var(--dark); }
         .modal-lista-compra-contador { background: var(--light); padding: 4px 12px; border-radius: 20px; font-weight: 700; color: var(--dark); white-space: nowrap; }
@@ -1459,13 +1604,13 @@
             display: flex; align-items: center; gap: 6px; font-size: 0.85rem;
             font-weight: 700; color: var(--dark); margin-bottom: 6px;
         }
-        .lista-compra-notas label i { color: var(--red); }
+        .lista-compra-notas label i { color: var(--peach-dark); }
         .lista-compra-notas-input {
             width: 100%; box-sizing: border-box; resize: vertical; min-height: 60px;
             padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
             font-family: inherit; font-size: 0.9rem; color: var(--dark);
         }
-        .lista-compra-notas-input:focus { outline: 2px solid var(--red); outline-offset: 1px; }
+        .lista-compra-notas-input:focus { outline: 2px solid var(--peach); outline-offset: 1px; }
         .lista-compra-notas-contador {
             display: block; margin-top: 4px; font-size: 0.75rem; color: var(--muted); text-align: right;
         }
@@ -1490,7 +1635,7 @@
         .btn-lista-compra-eliminar { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
 
         .lista-compra-vacia { text-align: center; padding: 40px 20px; color: var(--muted); }
-        .lista-compra-vacia i { font-size: 2.6rem; color: var(--red); margin-bottom: 14px; display: block; }
+        .lista-compra-vacia i { font-size: 2.6rem; color: var(--peach-dark); margin-bottom: 14px; display: block; }
         .lista-compra-vacia h4 { margin: 0 0 8px; color: var(--dark); font-size: 1.1rem; }
         .lista-compra-vacia p { margin: 0 0 6px; font-size: 0.9rem; }
         .lista-compra-vacia ul { text-align: left; max-width: 420px; margin: 16px auto; padding: 0; list-style: none; font-size: 0.88rem; }
@@ -1521,7 +1666,7 @@
         .modal-producto-lista-fila { display: flex; align-items: stretch; gap: 8px; margin: 10px 0 4px; }
         .modal-producto-lista-btn {
             flex: 1; min-width: 0; margin: 0; padding: 12px 16px;
-            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            background: linear-gradient(135deg, var(--peach), var(--peach-dark));
             color: #fff; border: none; border-radius: 8px;
             font-size: 0.92rem; font-weight: 700; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -1559,7 +1704,7 @@
         }
         .lista-compra-modo-btn:not(:last-child) { border-right: 1px solid var(--border); }
         .lista-compra-modo-btn:hover { background: #e2e8f0; }
-        .lista-compra-modo-btn.activo { background: var(--red); color: #fff; }
+        .lista-compra-modo-btn.activo { background: var(--peach); color: #fff; }
         .lista-compra-equivalencia {
             margin: 0; font-size: 0.72rem; color: var(--gray); text-align: center;
         }
@@ -5449,7 +5594,9 @@
         /* Botón flotante de acceso rápido a la Lista de la compra — a
            petición explícita de Eloy: "un botón flotante siempre que
            haya una lista de la compra creada... el color del botón en
-           rojo". En la esquina opuesta a #btn-subir-arriba (izquierda en
+           rojo" — más tarde, a petición de Eloy, ese rojo pasó a naranja
+           melocotón (--peach), el color de identidad del resto de la
+           sección. En la esquina opuesta a #btn-subir-arriba (izquierda en
            vez de derecha) para que nunca compita ni se solape con él ni
            con el de la modal de temporada — "el botón no interferirá con
            otros botones flotantes". En escritorio, icono + texto; en
@@ -5466,7 +5613,7 @@
             gap: 9px;
             border: none;
             border-radius: 999px;
-            background: var(--red);
+            background: var(--peach);
             color: #fff;
             font-size: 0.92rem;
             font-weight: 700;
@@ -5640,6 +5787,79 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
+<!-- Modal del botón de acceso profesional (ver HTML dentro de
+     <aside class="filtros">) — dos pasos dentro del mismo diálogo (PIN
+     o solicitar código por email), nunca una navegación a otra página:
+     el usuario se queda siempre en el buscador. -->
+<div class="modal-overlay" id="modal-acceso-profesional-overlay">
+    <div class="modal-producto-box modal-acceso-profesional-box">
+        <button class="modal-producto-cerrar" id="modal-acceso-profesional-cerrar" aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <!-- Paso 1: introducir el PIN ya conocido (vista por defecto al abrir) -->
+        <div id="ap-paso-pin">
+            <h3><i class="fa-solid fa-user-tie"></i> Acceso profesional</h3>
+            <p class="ap-modal-subtitulo">Introduce tu PIN profesional para ver precios y catálogos al por mayor sin salir del buscador.</p>
+            <form id="ap-modal-form-pin" autocomplete="off">
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-pin-input">PIN profesional</label>
+                    <input type="password" inputmode="numeric" id="ap-modal-pin-input" class="input-texto" placeholder="PIN profesional" required>
+                </div>
+                <label class="ap-modal-recordar"><input type="checkbox" id="ap-modal-recordar"> Recordar PIN en este dispositivo</label>
+                <p id="ap-modal-pin-error" class="ap-modal-error"></p>
+                <button type="submit" class="ap-modal-btn-primario" id="ap-modal-btn-entrar">
+                    <span>Entrar</span> <i class="fa-solid fa-spinner fa-spin" id="ap-modal-pin-spinner" style="display:none;"></i>
+                </button>
+            </form>
+            <button type="button" class="ap-modal-btn-enlace" id="ap-modal-btn-ir-solicitar">¿No tienes código de acceso? Solicítalo por email</button>
+        </div>
+
+        <!-- Paso 2: solicitar código por email — mismo formulario/envío
+             que acceso-profesional.html (#ap-solicitud-form), con otros
+             id para no chocar con esa página (no comparten documento). -->
+        <div id="ap-paso-solicitar" style="display:none;">
+            <h3><i class="fa-solid fa-envelope"></i> Solicitar código de acceso</h3>
+            <p class="ap-modal-subtitulo">Rellena tus datos y nos pondremos en contacto para facilitarte tu código de acceso como profesional.</p>
+            <form id="ap-modal-form-solicitar" novalidate>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-nombre">Nombre</label>
+                    <input class="input-texto" type="text" id="ap-modal-sol-nombre" autocomplete="name" placeholder="Tu nombre" required>
+                </div>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-empresa">Nombre comercial / Empresa</label>
+                    <input class="input-texto" type="text" id="ap-modal-sol-empresa" autocomplete="organization" placeholder="Nombre de tu empresa" required>
+                </div>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-email">Email</label>
+                    <input class="input-texto" type="email" id="ap-modal-sol-email" autocomplete="email" placeholder="tu@email.com" required>
+                </div>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-telefono">Teléfono</label>
+                    <input class="input-texto" type="tel" id="ap-modal-sol-telefono" autocomplete="tel" placeholder="Tu teléfono" required>
+                </div>
+                <div class="ap-modal-campo">
+                    <label for="ap-modal-sol-area">Área profesional</label>
+                    <select class="input-texto" id="ap-modal-sol-area" required>
+                        <option value="general" selected>Droguería, Perfumería y Pinturas</option>
+                        <option value="talleres">Talleres y Carrocerías</option>
+                    </select>
+                </div>
+                <!-- Honeypot anti-bots — mismo patrón que acceso-profesional.html. -->
+                <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+                    <label>No rellenar este campo
+                        <input type="text" id="ap-modal-sol-honeypot" tabindex="-1" autocomplete="off">
+                    </label>
+                </div>
+                <div class="g-recaptcha" id="ap-modal-sol-recaptcha" data-sitekey="6LeXpLMtAAAAALjpLDNDAHEOy0zWOCtZmeCa9rad" style="margin-bottom:16px;"></div>
+                <div id="ap-modal-sol-estado" class="ap-modal-estado" style="display:none;"></div>
+                <button class="ap-modal-btn-primario" type="submit" id="ap-modal-sol-btn-enviar">Solicitar código →</button>
+            </form>
+            <button type="button" class="ap-modal-btn-enlace" id="ap-modal-btn-ir-pin">← Ya tengo un código, volver</button>
+        </div>
+    </div>
+</div>
+
 <main class="layout">
     <!-- Franja decorativa de fondo (petición de Eloy, ref. Amazon): solo
          la parte de arriba, detrás de filtros/resultados — ver
@@ -5701,6 +5921,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div id="filtros-extra">
         <div id="filtros-extra-cabecera" class="filtros-extra-cabecera">
+            <!-- Acceso profesional — a petición explícita de Eloy: acceso
+                 más ágil desde el propio buscador (hasta ahora solo existía
+                 como opción del menú de navegación, tras entrar el PIN en
+                 acceso-profesional.html), sin salir de esta página para
+                 entrar ni para salir. Punto de partida en el HTML: primer
+                 hijo de esta cabecera, alineado con "Limpiar filtros" y la
+                 X de cerrar — en escritorio (≥881px),
+                 reposicionarAccesoProfesionalPanel_ (ver
+                 moverBuscadorSegunViewport más abajo) lo mueve junto a
+                 btn-colapsar-filtros-pc para que quede alineado con ESE
+                 botón en vez de con la X (que no existe en escritorio). Ver
+                 inicializarAccesoProfesionalBuscador_ más abajo para la
+                 lógica de los botones. -->
+            <div class="om-acceso-profesional-panel" id="om-acceso-profesional-panel">
+                <button type="button" id="btn-acceso-profesional" class="btn-acceso-profesional">
+                    <i class="fa-solid fa-user-tie"></i> Acceso profesional
+                </button>
+                <button type="button" id="btn-salir-profesional" class="btn-salir-profesional" style="display:none;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir del modo profesional
+                </button>
+            </div>
             <!-- A petición de Eloy: con el panel abierto, si hay algún filtro
                  aplicado aparece aquí "Limpiar filtros" para no tener que
                  bajar a buscarlo — mismo nivel y alineado a la izquierda del
@@ -7509,7 +7750,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <i class="fa-solid fa-xmark"></i>
         </button>
         <div style="text-align:center; padding: 8px 4px 20px;">
-            <i class="fa-solid fa-clipboard-list" style="font-size: 2rem; color: var(--red); margin-bottom: 12px;"></i>
+            <i class="fa-solid fa-clipboard-list" style="font-size: 2rem; color: var(--peach-dark); margin-bottom: 12px;"></i>
             <h3 style="margin:0 0 10px;font-size:1.05rem;color:#1f2937;">¿Sigues con tu lista de la compra?</h3>
             <p id="aviso-validez-lista-compra-mensaje" style="margin: 0; color: #4b5563; font-size: 0.9rem; line-height: 1.5;"></p>
         </div>
@@ -7517,7 +7758,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button id="aviso-validez-lista-compra-ahora-no" style="flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
                 Ahora no
             </button>
-            <button id="aviso-validez-lista-compra-ver" style="flex: 1; padding: 12px; background: linear-gradient(135deg, var(--red), #9a1f1f); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+            <button id="aviso-validez-lista-compra-ver" style="flex: 1; padding: 12px; background: linear-gradient(135deg, var(--peach), var(--peach-dark)); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
                 Ver mi lista
             </button>
         </div>
@@ -8153,7 +8394,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      etc.): esta página necesita saber si hay una sesión profesional
      activa ANTES de decidir qué mostrar, así que perfil-profesional.js
      tiene que cargarse aquí, no al final del body. -->
-<script src="./assets/js/perfil-profesional.js?v=20261101d"></script>
+<script src="./assets/js/perfil-profesional.js?v=20261114a"></script>
+<!-- Modal "Acceso profesional" (ver HTML junto a <aside class="filtros">
+     y la inicialización más abajo) — formulario "Solicitar código por
+     email", mismo widget que ya usa acceso-profesional.html. defer, no
+     bloquea nada más mientras carga. -->
+<script src="https://www.google.com/recaptcha/api.js" defer></script>
 <!-- Control de la pantalla de carga inicial (#om-splash-carga, ver HTML al
      principio del <body> y el <style> de la cabecera): se cierra solo
      cuando se cumplen DOS condiciones — la animación de las 3 fases ha
@@ -9632,6 +9878,7 @@ if (window.OM_PREPRODUCCION) {
         inicializarFiltros();
         inicializarListaCompra_();
         inicializarFolletoDestacados_();
+        inicializarAccesoProfesionalBuscador_();
         // Si había filtros guardados de una visita anterior en esta misma
         // sesión del navegador, restaurarFiltrosDesdeSesion_() ya los
         // aplica (y llama a aplicarFiltros() por su cuenta) — si no había
@@ -12724,12 +12971,14 @@ if (window.OM_PREPRODUCCION) {
         }
     }
 
-    // Versión recortada de dibujarTarjetaDestacadoPdf_: la mayoría de
-    // productos de una temporada NO tendrán un destacado asociado (a
-    // diferencia del folleto de Destacados, donde SIEMPRE lo hay), así
-    // que aquí "d" puede ser null — se cubre con un objeto vacío para
-    // calcularPrecioDestacado_ (que sí espera siempre un objeto) y se
-    // omite el chip/banner de promoción cuando no hay destacado real.
+    // Nació como versión recortada de una tarjeta propia de Destacados
+    // (dibujarTarjetaDestacadoPdf_, eliminada — ver construirDocumentoPdfDestacados_,
+    // que ahora reutiliza esta misma tarjeta): la mayoría de productos de
+    // una temporada NO tendrán un destacado asociado (a diferencia del
+    // folleto de Destacados, donde SIEMPRE lo hay), así que aquí "d" puede
+    // ser null — se cubre con un objeto vacío para calcularPrecioDestacado_
+    // (que sí espera siempre un objeto) y se omite el chip/banner de
+    // promoción cuando no hay destacado real.
     function dibujarTarjetaTemporadaPdf_(doc, x, y, w, h, foto, p, colorAccent) {
         const d = destacadoEfectivoPara_(p.ref);
         doc.setFillColor(255, 255, 255);
@@ -17209,247 +17458,20 @@ if (window.OM_PREPRODUCCION) {
 
     const DESTACADOS_PDF_COLOR_ACCENT_ = { r: 211, g: 47, b: 47 }; // rojo de marca
 
-    // Una tarjeta del folleto — mismo contenido que se ve en pantalla
-    // (chip, precio con/sin descuento y su porcentaje, promoción
-    // adicional), más la fecha límite del producto (no se muestra en la
-    // propia tarjeta en pantalla, solo aquí, a petición explícita) y,
-    // para el perfil profesional, el precio al por mayor con una
-    // etiqueta que lo distingue claramente del PVP.
-    // Tarjeta grande y vistosa, a petición explícita de Eloy tras ver la
-    // primera versión ("muy simple, la imagen pequeña, el chip pequeño,
-    // el detalle 3x2 apenas se ve, el precio pequeño"): imagen mucho más
-    // grande, chip con más presencia, precio como elemento principal de
-    // la tarjeta, y la promoción adicional (textoPromocion, p.ej. "3x2")
-    // como un banner de color propio en vez de una línea de texto pequeña.
-    function dibujarTarjetaDestacadoPdf_(doc, x, y, w, h, foto, p, d) {
-        doc.setFillColor(255, 255, 255);
-        doc.setDrawColor(226, 228, 232);
-        doc.setLineWidth(0.4);
-        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
-
-        const precioInfo = precioAMostrar_(p);
-        const esMayor = !!(precioInfo && precioInfo.esMayor);
-        const mapaChip = {
-            oferta: ['OFERTA', [0, 135, 67]],
-            oportunidad: ['OPORTUNIDAD', [25, 118, 210]],
-            liquidacion: ['LIQUIDACIÓN', [217, 27, 27]],
-        };
-        // Igual que en dibujarTarjetaTemporadaPdf_: el chip/banner es
-        // informativo y se muestra con o sin sesión profesional, igual
-        // que la propia tarjeta en la web.
-        const chipEntrada = d.tipoDestacado ? mapaChip[d.tipoDestacado] : null;
-
-        // Franja de color superior — mismo color que el chip (o el rojo de
-        // marca si no hay chip) a modo de "cabecera" de la tarjeta, para
-        // que destaque como una ficha comercial y no una fila de tabla.
-        const colorFranja = chipEntrada ? chipEntrada[1] : [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b];
-        doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
-        doc.roundedRect(x, y, w, 3, 3, 3, 'F');
-        doc.rect(x, y + 1.5, w, 1.5, 'F'); // cuadra las esquinas inferiores de la franja con el resto de la tarjeta
-
-        const pad = 5;
-        const imgBoxH = h * 0.48; // la imagen domina la tarjeta, no el texto
-        const imgBoxY = y + 3 + pad * 0.6;
-        if (foto) {
-            const escala = Math.min((w - pad * 2) / foto.width, imgBoxH / foto.height);
-            const dw = foto.width * escala, dh = foto.height * escala;
-            doc.addImage(foto.dataUrl, 'JPEG', x + (w - dw) / 2, imgBoxY + (imgBoxH - dh) / 2, dw, dh);
-        } else {
-            doc.setFillColor(248, 249, 250);
-            doc.rect(x + pad, imgBoxY, w - pad * 2, imgBoxH, 'F');
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(8.5);
-            doc.setTextColor(170, 173, 180);
-            doc.text('Sin imagen', x + w / 2, imgBoxY + imgBoxH / 2, { align: 'center' });
-        }
-
-        // Chip del tipo de destacado, grande y con sombra simulada (doble
-        // rectángulo) para que resalte de verdad sobre la imagen — nunca
-        // con precio mayor (es una promoción sobre el PVP público).
-        if (chipEntrada) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            const txt = chipEntrada[0];
-            const tw = doc.getTextWidth(txt) + 7;
-            const th = 6.6;
-            doc.setFillColor(0, 0, 0);
-            doc.roundedRect(x + pad + 0.5, imgBoxY + 2.5, tw, th, 1.8, 1.8, 'F');
-            doc.setFillColor(colorFranja[0], colorFranja[1], colorFranja[2]);
-            doc.roundedRect(x + pad, imgBoxY + 2, tw, th, 1.8, 1.8, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.text(txt, x + pad + tw / 2, imgBoxY + 2 + th / 2 + 1.1, { align: 'center' });
-        }
-
-        let ty = imgBoxY + imgBoxH + 7;
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.5);
-        doc.setTextColor(30, 33, 37);
-        const nombreLineas = doc.splitTextToSize(p.nombre || p.ref, w - pad * 2).slice(0, 2);
-        doc.text(nombreLineas, x + pad, ty);
-        ty += nombreLineas.length * 4.2 + 1.5;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.2);
-        doc.setTextColor(140, 143, 150);
-        doc.text(`Ref: ${p.ref}`, x + pad, ty);
-        ty += 5.5;
-
-        // Mismo % de descuento del destacado aplicado también al precio al
-        // por mayor (ver calcularPrecioDestacado_) — bug real reportado:
-        // antes el PDF solo mostraba aquí el precio mayorista fijo, sin
-        // ninguna rebaja, aunque el producto estuviera en Destacados con
-        // descuento.
-        const dCalc = calcularPrecioDestacado_(p, d);
-        if (esMayor) {
-            if (dCalc.originalMayor !== null && dCalc.promoMayor !== null) {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8.5);
-                doc.setTextColor(170, 173, 180);
-                const origTxt = `${dCalc.originalMayor.toFixed(2).replace('.', ',')} €`;
-                doc.text(origTxt, x + pad, ty);
-                const wOrig = doc.getTextWidth(origTxt);
-                doc.setDrawColor(170, 173, 180);
-                doc.setLineWidth(0.3);
-                doc.line(x + pad, ty - 1.2, x + pad + wOrig, ty - 1.2);
-                ty += 7;
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(19);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-                const promoTxt = `${dCalc.promoMayor.toFixed(2).replace('.', ',')} €`;
-                doc.text(promoTxt, x + pad, ty);
-                if (dCalc.pct) {
-                    const wPromo = doc.getTextWidth(promoTxt);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    const pctTxt = `-${dCalc.pct}%`;
-                    const wPct = doc.getTextWidth(pctTxt) + 4.6;
-                    doc.setFillColor(217, 27, 27);
-                    doc.roundedRect(x + pad + wPromo + 3, ty - 5.2, wPct, 6.2, 1.6, 1.6, 'F');
-                    doc.setTextColor(255, 255, 255);
-                    doc.text(pctTxt, x + pad + wPromo + 3 + wPct / 2, ty - 1.1, { align: 'center' });
-                }
-                ty += 5;
-            } else {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(19);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-                doc.text(`${precioInfo.con.toFixed(2).replace('.', ',')} €`, x + pad, ty);
-                ty += 5;
-            }
-            // Discreto a propósito (a petición explícita de Eloy: "de
-            // manera más sutil") — sin fondo ni mayúsculas, como una nota
-            // al pie del precio, no como una etiqueta que compita con él.
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(7.2);
-            doc.setTextColor(150, 153, 160);
-            doc.text('Precio profesional (al por mayor)', x + pad, ty);
-            ty += 7;
-        } else {
-            if (dCalc.original === null) {
-                doc.setFont('helvetica', 'italic');
-                doc.setFontSize(8.5);
-                doc.setTextColor(150, 153, 160);
-                doc.text('Consultar precio y disponibilidad', x + pad, ty);
-                ty += 7;
-            } else if (dCalc.promo !== null) {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8.5);
-                doc.setTextColor(170, 173, 180);
-                const origTxt = `${dCalc.original.toFixed(2).replace('.', ',')} €`;
-                doc.text(origTxt, x + pad, ty);
-                const wOrig = doc.getTextWidth(origTxt);
-                doc.setDrawColor(170, 173, 180);
-                doc.setLineWidth(0.3);
-                doc.line(x + pad, ty - 1.2, x + pad + wOrig, ty - 1.2);
-                ty += 7;
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(19);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-                const promoTxt = `${dCalc.promo.toFixed(2).replace('.', ',')} €`;
-                doc.text(promoTxt, x + pad, ty);
-                if (dCalc.pct) {
-                    const wPromo = doc.getTextWidth(promoTxt);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    const pctTxt = `-${dCalc.pct}%`;
-                    const wPct = doc.getTextWidth(pctTxt) + 4.6;
-                    doc.setFillColor(217, 27, 27);
-                    doc.roundedRect(x + pad + wPromo + 3, ty - 5.2, wPct, 6.2, 1.6, 1.6, 'F');
-                    doc.setTextColor(255, 255, 255);
-                    doc.text(pctTxt, x + pad + wPromo + 3 + wPct / 2, ty - 1.1, { align: 'center' });
-                }
-                ty += 5;
-            } else {
-                // Precio sin descuento: mismo rojo de marca que el resto de
-                // precios de la tarjeta — a petición explícita de Eloy, "en
-                // color más resaltado que solo en negro".
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(19);
-                doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
-                doc.text(`${dCalc.original.toFixed(2).replace('.', ',')} €`, x + pad, ty);
-                ty += 7;
-            }
-        }
-
-        // Promoción adicional (p.ej. "2x1", "Últimas unidades") — chip con
-        // sombra, mismo tratamiento que el chip del tipo de destacado y a
-        // la misma escala que el precio, en vez del banner a todo lo ancho
-        // de antes ("no me gusta así como si fuera un botón"; "que
-        // resalte tanto o más que el precio en modo chip"). Hasta 2 líneas
-        // dentro del propio chip (antes se recortaba en silencio a la
-        // primera línea sin más, cortando el texto a medias).
-        if (d.textoPromocion) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            const maxTextW = w - pad * 2 - 10;
-            const todasLasLineas = doc.splitTextToSize(d.textoPromocion.toUpperCase(), maxTextW);
-            const lineasPromo = todasLasLineas.slice(0, 2);
-            if (todasLasLineas.length > 2) {
-                let ultima = lineasPromo[1];
-                while (doc.getTextWidth(ultima + '…') > maxTextW && ultima.length > 1) ultima = ultima.slice(0, -1);
-                lineasPromo[1] = ultima + '…';
-            }
-            const lineH = 4.2;
-            const thPromo = lineasPromo.length * lineH + 3.2;
-            const twPromo = Math.max(...lineasPromo.map(l => doc.getTextWidth(l))) + 9;
-            doc.setFillColor(0, 0, 0);
-            doc.roundedRect(x + pad + 0.6, ty + 0.6, twPromo, thPromo, 2.2, 2.2, 'F');
-            doc.setFillColor(241, 179, 0); // amarillo de marca — nunca se usa ya para precio ni chip de tipo, así resalta sin confundirse con ellos
-            doc.roundedRect(x + pad, ty, twPromo, thPromo, 2.2, 2.2, 'F');
-            doc.setTextColor(26, 26, 26);
-            lineasPromo.forEach((linea, i) => {
-                doc.text(linea, x + pad + twPromo / 2, ty + 3.3 + i * lineH, { align: 'center' });
-            });
-            ty += thPromo + 2.5;
-        }
-
-        // Fecha límite — normalmente fija al pie de la tarjeta, pero nunca
-        // por encima del contenido de arriba (si una tarjeta llega muy
-        // cargada — nombre a 2 líneas, descuento y promoción larga — se
-        // desplaza hacia abajo junto con el resto en vez de solapar). La
-        // propia fecha del producto manda; si no tiene, se usa la fecha
-        // límite general de la sección Destacados (si está informada) — a
-        // petición explícita: "si la tiene informada hay que indicarlo en
-        // cada producto", y antes un producto sin fecha propia dentro de
-        // una sección con fecha límite general se quedaba sin indicarlo.
-        const fechaFinEfectiva = d.fechaFin || destacadosDatos_.fechaFin;
-        if (fechaFinEfectiva) {
-            const fecha = new Date(fechaFinEfectiva);
-            if (!isNaN(fecha.getTime())) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7.2);
-                doc.setTextColor(140, 143, 150);
-                const fechaTxt = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-                doc.text(`Válido hasta el ${fechaTxt}`, x + pad, Math.max(y + h - 4, ty + 3));
-            }
-        }
-    }
-
     // Construye el documento (sin guardarlo ni compartirlo) para que
     // "Descargar" y "Compartir" generen exactamente el mismo PDF sin
     // duplicar esta lógica — mismo patrón que construirDocumentoPdfListaCompra_.
     // onProgreso(completadas, total, msRestantes), si se pasa, se reenvía
     // tal cual desde cargarImagenesFolletoDestacadosEnTandas_.
+    //
+    // A petición explícita de Eloy ("que sea con el mismo estilo que la del
+    // folleto"): mismo diseño, misma rejilla de 3×3 (9 por página) y misma
+    // tarjeta (dibujarTarjetaTemporadaPdf_) que construirDocumentoPdfTemporada_
+    // — antes este folleto tenía su propia tarjeta más grande
+    // (dibujarTarjetaDestacadoPdf_, eliminada) con solo 2 por página. El
+    // precio al por mayor para el perfil profesional y el aviso de "todavía
+    // sin confirmar" (ver preciosMayorConfirmados_, justo abajo) ya
+    // funcionaban igual en ambos — eso no cambia, solo el estilo visual.
     async function construirDocumentoPdfDestacados_(onProgreso) {
         if (typeof window.jspdf === 'undefined') return null;
         // Nunca generar el PDF con el precio al por mayor todavía sin
@@ -17471,11 +17493,15 @@ if (window.OM_PREPRODUCCION) {
         const contentRight = pageW - margin;
         const contentWidth = contentRight - margin;
         const esProfesionalFolleto = !!window.OM_SESION_PROFESIONAL_ACTIVA;
+        // Mismo color de marca según el perfil que el folleto de Temporada
+        // (rojo de marca para el profesional/precio al por mayor, azul para
+        // el normal/PVP) — a petición explícita de Eloy, mismo estilo.
+        const colorAccent = esProfesionalFolleto ? [DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b] : [25, 118, 210];
 
         const logo = await cargarImagenComoDataURL_(LISTA_COMPRA_EMPRESA_.logo);
 
         function dibujarCabecera() {
-            doc.setFillColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.setFillColor(colorAccent[0], colorAccent[1], colorAccent[2]);
             doc.rect(0, 0, pageW, 3, 'F');
             if (logo) {
                 const logoH = 11, logoW = logoH * (logo.width / logo.height);
@@ -17489,7 +17515,7 @@ if (window.OM_PREPRODUCCION) {
             doc.setFontSize(8);
             doc.setTextColor(120, 123, 130);
             doc.text(
-                esProfesionalFolleto ? 'Precios profesionales (al por mayor) · ' + LISTA_COMPRA_EMPRESA_.web : LISTA_COMPRA_EMPRESA_.web,
+                esProfesionalFolleto ? 'Precios profesionales (al por mayor) · ' + LISTA_COMPRA_EMPRESA_.web : 'Precios de venta al público (PVP) · ' + LISTA_COMPRA_EMPRESA_.web,
                 contentRight, 17, { align: 'right' }
             );
             doc.setDrawColor(226, 228, 232);
@@ -17512,7 +17538,7 @@ if (window.OM_PREPRODUCCION) {
             doc.text(LISTA_COMPRA_EMPRESA_.direccion, margin, footerTopY + 10.5);
             doc.text(LISTA_COMPRA_EMPRESA_.horario, margin, footerTopY + 14.5);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(DESTACADOS_PDF_COLOR_ACCENT_.r, DESTACADOS_PDF_COLOR_ACCENT_.g, DESTACADOS_PDF_COLOR_ACCENT_.b);
+            doc.setTextColor(colorAccent[0], colorAccent[1], colorAccent[2]);
             doc.textWithLink(LISTA_COMPRA_EMPRESA_.web, contentRight, footerTopY + 10.5, { url: 'https://' + LISTA_COMPRA_EMPRESA_.web, align: 'right' });
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.6);
@@ -17525,17 +17551,16 @@ if (window.OM_PREPRODUCCION) {
         const itemsFotos = visibles.map(({ producto }) => ({ url: urlImagenProductoFolletoDestacados_(producto) }));
         const fotos = await cargarImagenesFolletoDestacadosEnTandas_(itemsFotos, onProgreso);
 
-        // Tarjetas más grandes (a petición explícita de Eloy, "muy
-        // simple... hay que darle una vuelta al estilo para que sea más
-        // llamativo") — con esta altura caben 2 filas (4 tarjetas) por
-        // página, igual que antes, pero cada una con mucho más protagonismo.
-        const colGap = 8, rowGap = 8;
-        const colW = (contentWidth - colGap) / 2;
-        const cardH = 114;
-        const filasPorPagina = Math.max(1, Math.floor((footerTopY - headerBottomY - 6 + rowGap) / (cardH + rowGap)));
-        const porPagina = filasPorPagina * 2;
+        // 3 columnas × 3 filas = 9 tarjetas por página — mismo estilo y
+        // misma rejilla que construirDocumentoPdfTemporada_ (ver el
+        // comentario de más arriba sobre este cambio).
+        const numCols = 3, numFilas = 3;
+        const colGap = 6, rowGap = 6;
+        const colW = (contentWidth - colGap * (numCols - 1)) / numCols;
+        const cardH = (footerTopY - headerBottomY - 6 - rowGap * (numFilas - 1)) / numFilas;
+        const porPagina = numCols * numFilas;
 
-        visibles.forEach(({ producto, destacado }, i) => {
+        visibles.forEach(({ producto }, i) => {
             const indiceEnPagina = i % porPagina;
             if (indiceEnPagina === 0) {
                 if (i > 0) doc.addPage();
@@ -17545,11 +17570,11 @@ if (window.OM_PREPRODUCCION) {
                 dibujarMarcaDeAguaFolletoPdf_(doc, logo, pageW, 297);
                 dibujarCabecera();
             }
-            const fila = Math.floor(indiceEnPagina / 2);
-            const col = indiceEnPagina % 2;
+            const fila = Math.floor(indiceEnPagina / numCols);
+            const col = indiceEnPagina % numCols;
             const x = margin + col * (colW + colGap);
             const y = headerBottomY + 6 + fila * (cardH + rowGap);
-            dibujarTarjetaDestacadoPdf_(doc, x, y, colW, cardH, fotos[i], producto, destacado);
+            dibujarTarjetaTemporadaPdf_(doc, x, y, colW, cardH, fotos[i], producto, colorAccent);
         });
 
         const totalPaginas = doc.internal.getNumberOfPages();
@@ -17641,6 +17666,221 @@ if (window.OM_PREPRODUCCION) {
     function inicializarFolletoDestacados_() {
         $('btn-destacados-pdf').addEventListener('click', destacadosDescargarPdf_);
         $('btn-destacados-compartir').addEventListener('click', destacadosCompartirPdf_);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── ACCESO PROFESIONAL DESDE EL PROPIO BUSCADOR ──────────────────────
+    // A petición explícita de Eloy: acceso más ágil desde el buscador
+    // (hasta ahora solo existía como opción del menú de navegación,
+    // entrando el PIN en acceso-profesional.html) — una modal con dos
+    // pasos (PIN ya conocido, o solicitar código por email si no se
+    // tiene) que nunca saca al usuario de esta página, ni para entrar ni
+    // para salir. Reutiliza siempre window.PerfilProfesional (ver
+    // assets/js/perfil-profesional.js) como única fuente de verdad de la
+    // sesión — esta función solo añade la interfaz, nunca duplica esa
+    // lógica.
+    function inicializarAccesoProfesionalBuscador_() {
+        const btnAcceso = $('btn-acceso-profesional');
+        const btnSalir = $('btn-salir-profesional');
+        const overlay = $('modal-acceso-profesional-overlay');
+        if (!btnAcceso || !btnSalir || !overlay) return; // defensivo
+
+        const pasoPin = $('ap-paso-pin');
+        const pasoSolicitar = $('ap-paso-solicitar');
+
+        function actualizarBotones_() {
+            const activa = !!(window.PerfilProfesional && window.PerfilProfesional.sesionActiva());
+            btnAcceso.style.display = activa ? 'none' : '';
+            btnSalir.style.display = activa ? '' : 'none';
+        }
+        actualizarBotones_();
+
+        function mostrarPasoPin_() {
+            pasoPin.style.display = '';
+            pasoSolicitar.style.display = 'none';
+            $('ap-modal-pin-error').textContent = '';
+        }
+        function mostrarPasoSolicitar_() {
+            pasoPin.style.display = 'none';
+            pasoSolicitar.style.display = '';
+        }
+        function abrirModal_() {
+            // Bug real reportado por Eloy: con el cajón de filtros móvil
+            // abierto, la modal se quedaba detrás de él (#filtros-extra
+            // tiene z-index:6000, muy por encima del de .modal-overlay) —
+            // se cierra el cajón primero, igual que ya hace el propio
+            // botón de "Filtros" (ver alternarFiltrosMovil/cerrarFiltrosMovil).
+            const filtrosExtra = $('filtros-extra');
+            if (filtrosExtra && filtrosExtra.classList.contains('abierto')) {
+                cerrarFiltrosMovil();
+            }
+            mostrarPasoPin_();
+            $('ap-modal-form-pin').reset();
+            overlay.classList.add('activo');
+            setTimeout(() => $('ap-modal-pin-input').focus(), 50);
+        }
+        function cerrarModal_() {
+            overlay.classList.remove('activo');
+        }
+
+        btnAcceso.addEventListener('click', abrirModal_);
+        $('modal-acceso-profesional-cerrar').addEventListener('click', cerrarModal_);
+        overlay.addEventListener('click', (e) => { if (e.target.id === 'modal-acceso-profesional-overlay') cerrarModal_(); });
+        $('ap-modal-btn-ir-solicitar').addEventListener('click', mostrarPasoSolicitar_);
+        $('ap-modal-btn-ir-pin').addEventListener('click', mostrarPasoPin_);
+
+        $('ap-modal-form-pin').addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const pin = $('ap-modal-pin-input').value.trim();
+            const recordar = $('ap-modal-recordar').checked;
+            if (!pin) return;
+            const btn = $('ap-modal-btn-entrar');
+            const spinner = $('ap-modal-pin-spinner');
+            const error = $('ap-modal-pin-error');
+            error.textContent = '';
+            btn.disabled = true;
+            spinner.style.display = '';
+            try {
+                const resultado = await window.PerfilProfesional.iniciarSesion(pin, recordar);
+                if (resultado.ok) {
+                    // Recarga para que todo el motor de precios
+                    // (window.OM_SESION_PROFESIONAL_ACTIVA, preciosMayorConfirmados_,
+                    // reconciliación con el pin en vivo...) arranque
+                    // exactamente igual que si ya se hubiera entrado desde
+                    // antes de cargar la página — el usuario se queda en
+                    // el buscador (misma URL), solo se refresca.
+                    location.reload();
+                    return;
+                }
+                error.textContent = resultado.error === 'conexion'
+                    ? 'No se ha podido comprobar el PIN. Revisa tu conexión e inténtalo de nuevo.'
+                    : 'PIN incorrecto. Inténtalo de nuevo.';
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        });
+
+        btnSalir.addEventListener('click', () => {
+            if (window.PerfilProfesional && window.PerfilProfesional.salirSinRedirigir) {
+                window.PerfilProfesional.salirSinRedirigir();
+            }
+            location.reload(); // mismo motivo que al entrar: se queda en el buscador
+        });
+
+        // Solicitar código por email — mismo backend/plantilla que
+        // acceso-profesional.html (accion: 'solicitar_codigo_profesional'),
+        // con los id propios de esta modal.
+        $('ap-modal-form-solicitar').addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const nombre = $('ap-modal-sol-nombre').value.trim();
+            const empresa = $('ap-modal-sol-empresa').value.trim();
+            const email = $('ap-modal-sol-email').value.trim();
+            const telefono = $('ap-modal-sol-telefono').value.trim();
+            const area = $('ap-modal-sol-area').value;
+            const honeypot = $('ap-modal-sol-honeypot').value;
+            const btn = $('ap-modal-sol-btn-enviar');
+            const estado = $('ap-modal-sol-estado');
+
+            function mostrarEstadoSolicitud_(texto, color, fondo) {
+                estado.textContent = texto;
+                estado.style.color = color;
+                estado.style.backgroundColor = fondo;
+                estado.style.border = '1px solid ' + color;
+                estado.style.display = 'block';
+            }
+
+            // Honeypot: igual que acceso-profesional.html — se finge éxito
+            // sin mandar nada de verdad, sin dar pistas al bot.
+            if (honeypot) {
+                mostrarEstadoSolicitud_('✓ Solicitud enviada correctamente. En breve nos pondremos en contacto contigo para indicarte tu código de acceso como profesional.', '#1a7a4a', '#edfaf3');
+                $('ap-modal-form-solicitar').reset();
+                return;
+            }
+
+            if (!nombre || !empresa || !email || !telefono) {
+                mostrarEstadoSolicitud_('Por favor, rellena todos los campos obligatorios.', '#c0392b', '#fdf0ef');
+                return;
+            }
+
+            const tokenRecaptcha = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
+            if (!tokenRecaptcha) {
+                mostrarEstadoSolicitud_('Por favor, confirma que no eres un robot marcando la casilla de reCAPTCHA.', '#c0392b', '#fdf0ef');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'ENVIANDO...';
+
+            const nombreArea = area === 'talleres' ? 'Talleres y Carrocerías' : 'Droguería, Perfumería y Pinturas';
+            // URLs absolutas de producción — mismo motivo que
+            // acceso-profesional.html: los clientes de correo no pueden
+            // cargar rutas relativas.
+            const logoUrl = 'https://orenciomatas.es/assets/logos/logo-orencio.png';
+            const logoCalUrl = 'https://orenciomatas.es/assets/logos/logo_calidad.svg';
+
+            const cuerpo = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f0f0f0;font-family:Arial,sans-serif;">' +
+                '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f0f0;padding:20px 0;">' +
+                '<tr><td align="center">' +
+                '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">' +
+                '<tr><td style="background:#1a1a1a;padding:20px;text-align:center;">' +
+                '<img src="' + logoUrl + '" alt="Orencio Matas y Hnos" style="height:44px;width:auto;" />' +
+                '</td></tr>' +
+                '<tr><td style="background:#d91b1b;height:5px;font-size:0;">&nbsp;</td></tr>' +
+                '<tr><td style="background:#ffffff;padding:32px;">' +
+                '<h2 style="margin:0 0 6px;font-size:18px;color:#1a1a1a;">&#128273; Solicitud de código de acceso profesional</h2>' +
+                '<p style="margin:0 0 20px;font-size:11px;color:#888888;">Alguien ha solicitado un código de acceso profesional desde el buscador de orenciomatas.es</p>' +
+                '<hr style="border:none;border-top:1px solid #e0e0e0;margin:0 0 16px;" />' +
+                '<table width="100%" cellpadding="0" cellspacing="0">' +
+                '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;width:100px;">Nombre</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombre + '</td></tr>' +
+                '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Empresa</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + empresa + '</td></tr>' +
+                '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Email</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + email + '</td></tr>' +
+                '<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px 0;color:#888;font-size:11px;">Teléfono</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + telefono + '</td></tr>' +
+                '<tr><td style="padding:8px 0;color:#888;font-size:11px;">Área</td><td style="padding:8px 0;color:#1a1a1a;font-size:11px;font-weight:bold;">' + nombreArea + '</td></tr>' +
+                '</table>' +
+                '</td></tr>' +
+                '<tr><td style="background:#f7f7f7;border-top:1px solid #e0e0e0;padding:14px 20px;">' +
+                '<table cellpadding="0" cellspacing="0"><tr>' +
+                '<td style="padding-right:14px;vertical-align:middle;">' +
+                '<img src="' + logoCalUrl + '" alt="Logo calidad" style="height:44px;width:auto;" />' +
+                '</td>' +
+                '<td style="vertical-align:middle;font-size:10px;color:#888;line-height:1.6;">Orencio Matas y Hermanos, S.L.<br>orenciomatas.es · 926 221 217</td>' +
+                '</tr></table>' +
+                '</td></tr>' +
+                '</table>' +
+                '</td></tr></table>' +
+                '</body></html>';
+
+            fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    accion: 'solicitar_codigo_profesional',
+                    nombre: nombre,
+                    email: email,
+                    cuerpoHtml: cuerpo,
+                    tokenRecaptcha: tokenRecaptcha,
+                    honeypot: honeypot,
+                }),
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.success) {
+                        mostrarEstadoSolicitud_('✓ Solicitud enviada correctamente. En breve nos pondremos en contacto contigo para indicarte tu código de acceso como profesional.', '#1a7a4a', '#edfaf3');
+                        $('ap-modal-form-solicitar').reset();
+                    } else {
+                        throw new Error(data.error || 'Error desconocido');
+                    }
+                })
+                .catch(() => {
+                    mostrarEstadoSolicitud_('Ha ocurrido un error al enviar la solicitud. Por favor, inténtalo de nuevo o llámanos al 926 221 217.', '#c0392b', '#fdf0ef');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = 'Solicitar código →';
+                    if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+                });
+        });
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -26266,7 +26506,8 @@ if (window.OM_PREPRODUCCION) {
             return;
         }
         grupoBuscador.style.top = alturaNavbar + 'px';
-        if (espaciador) espaciador.style.height = grupoBuscador.getBoundingClientRect().height + 'px';
+        const alturaBuscadorFijo = grupoBuscador.getBoundingClientRect().height;
+        if (espaciador) espaciador.style.height = alturaBuscadorFijo + 'px';
         // Limpia el "top" de escritorio por si se redimensiona desde una
         // pantalla ancha a una estrecha sin recargar la página.
         const toolbarPc = $('toolbar-buscador-pc');
@@ -26307,6 +26548,31 @@ if (window.OM_PREPRODUCCION) {
             if (grupoArea.parentElement !== filtrosExtra) {
                 filtrosExtra.insertBefore(grupoArea, anclaArea);
             }
+        }
+        reposicionarAccesoProfesionalPanel_(esPC, filtrosAside);
+    }
+
+    // A petición de Eloy: el bloque "Acceso profesional" debe quedar
+    // ALINEADO EN LA MISMA FILA que el botón de cerrar/plegar del panel de
+    // filtros, no en una fila propia debajo de "Filtros" (dejaba un hueco
+    // en blanco). Ese botón es distinto según el ancho — la X de
+    // #filtros-extra-cabecera en móvil/tablet, btn-colapsar-filtros-pc en
+    // escritorio — y cada uno vive en un contenedor distinto del DOM, así
+    // que (igual que grupoBuscador/grupoArea un poco más arriba) el propio
+    // nodo se mueve de uno a otro según el ancho, en vez de duplicar los
+    // botones.
+    function reposicionarAccesoProfesionalPanel_(esPC, filtrosAside) {
+        const panel = $('om-acceso-profesional-panel');
+        const btnColapsarPc = $('btn-colapsar-filtros-pc');
+        const cabeceraExtra = $('filtros-extra-cabecera');
+        const btnLimpiarArriba = $('btn-limpiar-arriba');
+        if (!panel || !btnColapsarPc || !cabeceraExtra) return;
+        if (esPC) {
+            if (panel.nextElementSibling !== btnColapsarPc || panel.parentElement !== filtrosAside) {
+                filtrosAside.insertBefore(panel, btnColapsarPc);
+            }
+        } else if (panel.parentElement !== cabeceraExtra) {
+            cabeceraExtra.insertBefore(panel, btnLimpiarArriba || cabeceraExtra.firstChild);
         }
     }
     window.addEventListener('resize', debounce(moverBuscadorSegunViewport, 150));
