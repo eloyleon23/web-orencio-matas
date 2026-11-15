@@ -1429,6 +1429,19 @@ textarea.form-input {
 
 .navbar__cta {
   flex: 0 0 auto;
+  /* El rojo de alarma de .btn-primary no es el tono adecuado para un
+     botón de "Contactar" (invita, no advierte) — se sustituye aquí por
+     el azul de marca, reservando el rojo para los CTAs que sí necesitan
+     urgencia. */
+  background: var(--primary-blue);
+  border-bottom-color: var(--primary-yellow);
+  box-shadow: 0 14px 30px rgba(0, 109, 174, 0.28);
+}
+
+.navbar__cta:hover,
+.navbar__cta:focus-visible {
+  background: color-mix(in srgb, var(--primary-blue) 86%, #000000);
+  box-shadow: 0 18px 38px rgba(0, 109, 174, 0.34);
 }
 
 .navbar__toggle {

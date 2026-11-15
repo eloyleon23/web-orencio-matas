@@ -11,6 +11,7 @@
   --primary-black: #1a1a1a;
   --primary-red: #d91b1b;
   --primary-yellow: #f1b300;
+  --primary-blue: #006dae;
   --primary-white: #ffffff;
   --text-dark: #121417;
   --radius-small: 6px;
@@ -213,19 +214,22 @@
   padding: 0 22px;
   border-radius: var(--radius-small);
   color: var(--primary-white);
-  background: var(--primary-red);
+  /* El rojo de alarma no es el tono adecuado para un botón de
+     "Contactar" (invita, no advierte) — se usa el azul de marca en su
+     lugar, reservando el rojo para los CTAs que sí necesitan urgencia. */
+  background: var(--primary-blue);
   border-bottom: 4px solid var(--primary-yellow);
   font-family: 'Inter', sans-serif;
   font-size: 0.84rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-decoration: none;
-  box-shadow: 0 14px 30px rgba(217, 27, 27, 0.28);
+  box-shadow: 0 14px 30px rgba(0, 109, 174, 0.28);
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .navbar__cta:hover {
-  background: color-mix(in srgb, var(--primary-red) 86%, #000000);
+  background: color-mix(in srgb, var(--primary-blue) 86%, #000000);
   transform: translateY(-2px);
 }
 
