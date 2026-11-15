@@ -9916,7 +9916,15 @@ if (window.OM_PREPRODUCCION) {
         // modal (enlace compartido), se respeta esa vista y no se le
         // quita el foco — el usuario probablemente quiere verlo, no
         // buscar.
-        if (!$('modal-producto-overlay').classList.contains('activo')
+        //
+        // Solo en escritorio (≥881px, mismo corte que BREAKPOINT_TOOLBAR_PC
+        // y el resto del sitio): a petición de Eloy, en móvil/tablet este
+        // foco automático abre el teclado virtual en cuanto se entra a la
+        // página, sin que el usuario lo haya pedido — ahí se entra sin
+        // foco en el campo, y el usuario lo activa tocándolo cuando quiera
+        // escribir.
+        if (window.innerWidth >= 881
+            && !$('modal-producto-overlay').classList.contains('activo')
             && !$('temporada-ver-todos-overlay').classList.contains('activo')
             && !$('propuesta-recibida-overlay').classList.contains('activo')) {
             $('f-texto').focus();
