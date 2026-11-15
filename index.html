@@ -8374,22 +8374,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<!-- Lista de la compra: exportación a PDF — único cliente de jsPDF/
-     autoTable en el sitio, no existía ya ninguna solución de PDF en el
-     cliente. Mismo patrón de carga que el resto de librerías de
-     terceros (cdnjs). Si falla la carga (red, bloqueador...), el botón
-     "Exportar a PDF" lo detecta y avisa con el mismo sistema de toasts,
-     sin romper el resto de la funcionalidad. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<!-- Etiquetas de precio para tienda (solo preproducción, ver
-     window.MOSTRAR_ETIQUETA_PRECIO) — genera el código de barras y el
-     QR de la referencia 100% en el navegador, sin pasar por ningún
-     backend propio, igual que el resto de exportaciones de esta
-     página. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<!-- A petición de Eloy, revisión de rendimiento de esta página (ahora la
+     home del sitio, el principal punto de entrada de clientes): estas
+     4 librerías (html5-qrcode, jsPDF+autoTable, JsBarcode,
+     qrcode-generator) se cargaban aquí con un <script> fijo para el
+     100% de las visitas, aunque cada una solo la usa quien pulsa una
+     acción minoritaria (escanear un código, exportar a PDF) o incluso
+     una función exclusiva de preproducción que en el sitio real
+     (producción, IONOS) ni siquiera es accesible (etiquetas de precio
+     para tienda, ver window.MOSTRAR_ETIQUETA_PRECIO) — en producción
+     esto era peso muerto en TODAS las visitas, sin ningún uso posible.
+     Ahora se inyectan solo la primera vez que de verdad se necesitan
+     (ver cargarScriptExterno_ y cargarJsPdfSiFalta_/
+     cargarEtiquetaLibsSiFalta_/cargarQrLibSiFalta_, más abajo en este
+     mismo archivo) — el código que las usa ya comprobaba
+     "typeof X === 'undefined'" antes de cada uso, así que no necesita
+     ningún cambio para tolerar que tarden en llegar. -->
 <script src="./src/js/app.js?v=20260829"></script>
 <script>window.OM_CLAVE_MANTENIMIENTO = 'buscador'; window.OM_RUTA_RAIZ = './';</script>
 <script src="./assets/js/entorno.js?v=20260924a"></script>
@@ -8401,9 +8401,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="./assets/js/perfil-profesional.js?v=20261114a"></script>
 <!-- Modal "Acceso profesional" (ver HTML junto a <aside class="filtros">
      y la inicialización más abajo) — formulario "Solicitar código por
-     email", mismo widget que ya usa acceso-profesional.html. defer, no
-     bloquea nada más mientras carga. -->
-<script src="https://www.google.com/recaptcha/api.js" defer></script>
+     email", mismo widget que ya usa acceso-profesional.html.
+     A petición de Eloy, revisión de rendimiento de esta página (ahora la
+     home del sitio): este script (~350KB + su propio iframe) se cargaba
+     SIEMPRE, para el 100% de las visitas, aunque solo lo usa quien abre
+     el modal de acceso profesional y además pulsa "¿No tienes código de
+     acceso?" — un paso minoritario dentro de un flujo ya minoritario. Se
+     inyecta ahora solo al llegar a ese paso (ver mostrarPasoSolicitar_
+     más abajo, con cargarRecaptchaSiFalta_). El resto del código ya
+     comprobaba "typeof grecaptcha !== 'undefined'" antes de usarlo, así
+     que no necesita ningún cambio para tolerar que tarde en llegar. -->
+<!-- (recaptcha ya no se carga aquí — ver cargarRecaptchaSiFalta_) -->
 <!-- Control de la pantalla de carga inicial (#om-splash-carga, ver HTML al
      principio del <body> y el <style> de la cabecera): se cierra solo
      cuando se cumplen DOS condiciones — la animación de las 3 fases ha
@@ -10732,6 +10740,81 @@ if (window.OM_PREPRODUCCION) {
         return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 640;
     }
 
+    // A petición de Eloy, revisión de rendimiento de esta página (ahora
+    // la home del sitio): varias librerías de terceros (html5-qrcode,
+    // jsPDF/autoTable) solo las usa quien pulsa una acción minoritaria
+    // (escanear un código, exportar a PDF) — antes se cargaban con un
+    // <script> fijo para el 100% de las visitas. Se cargan ahora solo la
+    // primera vez que de verdad se necesitan, con esta función
+    // compartida (memoiza la promesa para no inyectar el mismo <script>
+    // dos veces si el usuario pulsa el botón varias veces seguidas antes
+    // de que termine de cargar).
+    const scriptsExternosCargando_ = {};
+    function cargarScriptExterno_(src) {
+        if (scriptsExternosCargando_[src]) return scriptsExternosCargando_[src];
+        scriptsExternosCargando_[src] = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => { delete scriptsExternosCargando_[src]; reject(new Error('No se pudo cargar ' + src)); };
+            document.head.appendChild(s);
+        });
+        return scriptsExternosCargando_[src];
+    }
+
+    // jsPDF + su plugin autoTable: usados por las 6 exportaciones a PDF
+    // de esta página (lista de la compra, folleto de destacados/
+    // temporada, etiquetas de precio) — ninguna se necesita para la
+    // búsqueda/filtrado, así que ya no se cargan con un <script> fijo.
+    // autoTable depende de que jsPDF ya esté definido, así que se
+    // encadenan con .then() en vez de pedirlos en paralelo: los <script>
+    // creados dinámicamente no garantizan por sí solos el orden de
+    // ejecución entre sí.
+    let jsPdfCargando_ = null;
+    function cargarJsPdfSiFalta_() {
+        if (typeof window.jspdf !== 'undefined') return Promise.resolve();
+        if (!jsPdfCargando_) {
+            jsPdfCargando_ = cargarScriptExterno_('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+                .then(() => cargarScriptExterno_('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'))
+                .catch(() => { jsPdfCargando_ = null; });
+        }
+        return jsPdfCargando_;
+    }
+
+    // JsBarcode + qrcode-generator: solo los usa la etiqueta de precio
+    // para tienda (función de preproducción, ver
+    // window.MOSTRAR_ETIQUETA_PRECIO) — en producción esta función ni
+    // siquiera es accesible, así que antes se descargaban ambas
+    // librerías sin ningún uso posible en el sitio real. Mismo patrón
+    // de carga perezosa que jsPDF, en vez de depender del flag en el
+    // momento de cargar la página (más simple y cubre igual el caso de
+    // preproducción: solo se piden si de verdad se llega a generar una
+    // etiqueta).
+    let etiquetaLibsCargando_ = null;
+    function cargarEtiquetaLibsSiFalta_() {
+        if (typeof JsBarcode !== 'undefined' && typeof qrcode !== 'undefined') return Promise.resolve();
+        if (!etiquetaLibsCargando_) {
+            etiquetaLibsCargando_ = Promise.all([
+                cargarScriptExterno_('https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js'),
+                cargarScriptExterno_('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'),
+            ]).catch(() => { etiquetaLibsCargando_ = null; });
+        }
+        return etiquetaLibsCargando_;
+    }
+
+    // Igual que cargarEtiquetaLibsSiFalta_, pero solo qrcode-generator —
+    // lo usa también el pequeño QR del folleto de temporada en PDF (ver
+    // construirDocumentoPdfTemporada_), que no necesita JsBarcode.
+    let qrLibCargando_ = null;
+    function cargarQrLibSiFalta_() {
+        if (typeof qrcode !== 'undefined') return Promise.resolve();
+        if (!qrLibCargando_) {
+            qrLibCargando_ = cargarScriptExterno_('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js')
+                .catch(() => { qrLibCargando_ = null; });
+        }
+        return qrLibCargando_;
+    }
+
     function inicializarEscanerCodigoBarras() {
         const btn = $('btn-escanear');
         if (!btn) return;
@@ -10755,6 +10838,11 @@ if (window.OM_PREPRODUCCION) {
         overlay.classList.add('activo');
         estado.textContent = 'Activando cámara...';
 
+        if (typeof Html5Qrcode === 'undefined') {
+            try {
+                await cargarScriptExterno_('https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js');
+            } catch (e) { /* el aviso de abajo ya cubre este caso */ }
+        }
         if (typeof Html5Qrcode === 'undefined') {
             estado.textContent = 'No se pudo cargar el lector de códigos. Inténtalo de nuevo.';
             return;
@@ -10992,7 +11080,12 @@ if (window.OM_PREPRODUCCION) {
 
         // ── Intento 2 (respaldo): ZXing vía html5-qrcode, sobre la MISMA
         //    imagen ya reducida (no se recarga el archivo original) ──
-        if (!html5QrCodeArchivo) {
+        if (!html5QrCodeArchivo && typeof Html5Qrcode === 'undefined') {
+            try {
+                await cargarScriptExterno_('https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js');
+            } catch (e) { diagnostico.push('ZXing: no se pudo cargar el lector'); }
+        }
+        if (!html5QrCodeArchivo && typeof Html5Qrcode !== 'undefined') {
             html5QrCodeArchivo = new Html5Qrcode('scanner-archivo-wrap', {
                 formatsToSupport: [
                     Html5QrcodeSupportedFormats.EAN_13,
@@ -11006,6 +11099,7 @@ if (window.OM_PREPRODUCCION) {
             });
         }
         try {
+            if (!html5QrCodeArchivo) throw new Error('lector no disponible');
             let encontrado = false;
             for (const binarizar of [false, true]) {
                 const version = await canvasAFile(canvasBase, binarizar, archivo.name);
@@ -13218,6 +13312,7 @@ if (window.OM_PREPRODUCCION) {
     // explícita de Eloy: "generar un folleto a partir de una lista de
     // selección que el usuario vaya marcando".
     async function construirDocumentoPdfTemporada_(onProgreso, soloSeleccion) {
+        await Promise.all([cargarJsPdfSiFalta_(), cargarQrLibSiFalta_()]);
         if (typeof window.jspdf === 'undefined') return null;
         // Nunca con el precio al por mayor todavía sin confirmar — mismo
         // motivo que construirDocumentoPdfDestacados_.
@@ -14811,6 +14906,20 @@ if (window.OM_PREPRODUCCION) {
 
     // null = todavía no se ha pedido al servidor en esta visita.
     let bloquesCategoriasCache_ = null;
+    // Bug real de rendimiento detectado al revisar las peticiones de la
+    // home: actualizarModulosDescubrimiento_() llama a
+    // cargarBloquesCategorias_() varias veces durante la carga (tras el
+    // JSON estático, tras cada catálogo adicional, tras la reconciliación
+    // en vivo...) y el guard "if (!bloquesCategoriasCache_)" de más abajo
+    // no protegía contra dos llamadas CASI simultáneas: si la primera
+    // petición todavía no había respondido (y por tanto no había podido
+    // rellenar la caché todavía) cuando llegaba la segunda llamada, esta
+    // también la veía vacía y lanzaba su propia petición duplicada —
+    // confirmado viendo dos peticiones reales a obtener_bloques_categorias
+    // en una sola carga de página. Esta promesa en curso evita que una
+    // segunda llamada mientras la primera todavía está en vuelo dispare
+    // otra petición: en vez de eso, espera al mismo resultado.
+    let bloquesCategoriasCargando_ = null;
 
     // Pide SIEMPRE las filas crudas (activas e inactivas) — tanto la
     // sección pública (que solo usa las activas) como el editor de
@@ -14938,8 +15047,13 @@ if (window.OM_PREPRODUCCION) {
             return;
         }
         if (!bloquesCategoriasCache_) {
-            const filas = await obtenerBloquesCategoriasDesdeApi_();
-            bloquesCategoriasCache_ = barajar_(filas.filter(f => f.activo).map(construirDefDesdeFilaBloqueCategoria_));
+            if (!bloquesCategoriasCargando_) {
+                bloquesCategoriasCargando_ = obtenerBloquesCategoriasDesdeApi_().then((filas) => {
+                    bloquesCategoriasCache_ = barajar_(filas.filter(f => f.activo).map(construirDefDesdeFilaBloqueCategoria_));
+                    bloquesCategoriasCargando_ = null;
+                });
+            }
+            await bloquesCategoriasCargando_;
         }
         const estacion = estacionActual_();
         const colores = ['rojo', 'verde', 'amarillo', 'azul'];
@@ -17485,6 +17599,7 @@ if (window.OM_PREPRODUCCION) {
     // sin confirmar" (ver preciosMayorConfirmados_, justo abajo) ya
     // funcionaban igual en ambos — eso no cambia, solo el estilo visual.
     async function construirDocumentoPdfDestacados_(onProgreso) {
+        await cargarJsPdfSiFalta_();
         if (typeof window.jspdf === 'undefined') return null;
         // Nunca generar el PDF con el precio al por mayor todavía sin
         // confirmar (ver preciosMayorConfirmados_) — saldría con el PVP
@@ -17700,6 +17815,19 @@ if (window.OM_PREPRODUCCION) {
         const pasoPin = $('ap-paso-pin');
         const pasoSolicitar = $('ap-paso-solicitar');
 
+        // A petición de Eloy, revisión de rendimiento: recaptcha (~350KB
+        // más su propio iframe) solo se inyecta la primera vez que se
+        // llega a este paso, no para toda visita a la home — ver el
+        // comentario donde antes estaba el <script> fijo.
+        let recaptchaCargando_ = false;
+        function cargarRecaptchaSiFalta_() {
+            if (recaptchaCargando_ || (typeof grecaptcha !== 'undefined')) return;
+            recaptchaCargando_ = true;
+            const s = document.createElement('script');
+            s.src = 'https://www.google.com/recaptcha/api.js';
+            document.head.appendChild(s);
+        }
+
         function actualizarBotones_() {
             const activa = !!(window.PerfilProfesional && window.PerfilProfesional.sesionActiva());
             btnAcceso.style.display = activa ? 'none' : '';
@@ -17715,6 +17843,7 @@ if (window.OM_PREPRODUCCION) {
         function mostrarPasoSolicitar_() {
             pasoPin.style.display = 'none';
             pasoSolicitar.style.display = '';
+            cargarRecaptchaSiFalta_();
         }
         function abrirModal_() {
             // Bug real reportado por Eloy: con el cajón de filtros móvil
@@ -18823,6 +18952,7 @@ if (window.OM_PREPRODUCCION) {
     // el mismo documento sin duplicar esta lógica. Devuelve null si jsPDF
     // no ha podido cargarse o la lista está vacía.
     async function construirDocumentoPdfListaCompra_() {
+        await cargarJsPdfSiFalta_();
         if (typeof window.jspdf === 'undefined') return null;
         // Nunca con el precio al por mayor todavía sin confirmar — mismo
         // motivo que construirDocumentoPdfListaCompraFolleto_/
@@ -19109,6 +19239,7 @@ if (window.OM_PREPRODUCCION) {
     // alternativa visual con foto y QR por producto, no un reemplazo.
     // ══════════════════════════════════════════════════════════════════
     async function construirDocumentoPdfListaCompraFolleto_(onProgreso) {
+        await cargarJsPdfSiFalta_();
         if (typeof window.jspdf === 'undefined') return null;
         // Nunca con el precio al por mayor todavía sin confirmar — mismo
         // motivo que construirDocumentoPdfTemporada_.
@@ -22623,6 +22754,7 @@ if (window.OM_PREPRODUCCION) {
     async function descargarEtiquetasPdf_() {
         const p = productoEtiquetaActual_;
         if (!p) return;
+        await Promise.all([cargarJsPdfSiFalta_(), cargarEtiquetaLibsSiFalta_()]);
         if (typeof window.jspdf === 'undefined') {
             mostrarToast('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.', 'error');
             return;
@@ -22948,6 +23080,7 @@ if (window.OM_PREPRODUCCION) {
     // producto).
     async function descargarEtiquetasListaPdf_() {
         if (!etiquetasListaProductos_.length) return;
+        await Promise.all([cargarJsPdfSiFalta_(), cargarEtiquetaLibsSiFalta_()]);
         if (typeof window.jspdf === 'undefined') {
             mostrarToast('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.', 'error');
             return;
