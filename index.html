@@ -9941,6 +9941,20 @@ if (window.OM_PREPRODUCCION) {
     }
 
     function cargarProductosAdicionalesEnSegundoPlano() {
+        // Desactivado a petición de Eloy: estos 4 catálogos estáticos de
+        // proveedor (Zaphiro/Glasurit/Besa/Baslac, ver sus funciones
+        // cargarProductosTalleres/Glasurit/Besa/Baslac más arriba) no
+        // vienen del CRM/Sheet real, no interesan ya, y suponían ~650KB
+        // de descarga innecesaria en cada visita a la página de
+        // productos. Tal y como ya anticipaba el comentario original de
+        // cargarProductosTalleres ("este archivo puede simplemente dejar
+        // de cargarse"): basta con no llamar a este Promise.all. El área
+        // "Talleres y Carrocerías" queda sin productos hasta que haya
+        // datos reales de talleres en el Sheet — las funciones de carga y
+        // el resto de este bloque se dejan intactos, sin borrar, para
+        // poder reactivarlos sin más que descomentar este "return" si en
+        // algún momento se decide lo contrario.
+        return;
         // Cargar productos adicionales en segundo plano (talleres, Glasurit, Besa, Baslac)
         Promise.all([
             cargarProductosTalleres(),
