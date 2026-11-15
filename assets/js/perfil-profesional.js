@@ -53,10 +53,18 @@
   // y sea cual sea la profundidad de carpeta desde la que se cargue.
   // 'taller.html'/'pinturas.html'/'mezcla-colores.html' cubren la suite
   // de minijuegos del laboratorio (lab/) — no está pensada para
-  // profesionales. El hub de la suite (lab/index.html) ya queda fuera
-  // por tener el mismo nombre de archivo que la home pública (ver
-  // esPaginaInicioPublica_ más abajo), así que no necesita entrada aquí.
-  const PAGINAS_EXCLUIDAS = ['empresa.html', 'historia.html', 'servicios.html', 'actualidad.html', 'profesionales.html', 'taller.html', 'pinturas.html', 'mezcla-colores.html', 'limpieza.html', 'insectos.html', 'almacen.html', 'pedido.html', 'memoria.html', 'clasifica.html', 'apila.html', 'fragancia.html', 'estela.html', 'salta.html'];
+  // profesionales. El hub de la suite (lab/index.html) NO puede entrar
+  // aquí por nombre de archivo (colisiona con la home pública, ver
+  // esHubCreativoEnSubcarpeta_ más abajo); su enlace de navegación ya se
+  // oculta aparte con data-oculto-perfil-profesional (ver aplicarUI_,
+  // paso 2b).
+  //
+  // Reestructuración (feature/web-reestructuracion): 'quienes-somos.html'
+  // sustituye aquí al papel que antes jugaba la propia index.html (la
+  // home pública/corporativa) — index.html pasó a ser el buscador, que
+  // SÍ aporta al profesional (precios de mayor incluidos) y por tanto ya
+  // no debe excluirse ni redirigirse en ningún caso.
+  const PAGINAS_EXCLUIDAS = ['empresa.html', 'historia.html', 'quienes-somos.html', 'servicios.html', 'actualidad.html', 'profesionales.html', 'taller.html', 'pinturas.html', 'mezcla-colores.html', 'limpieza.html', 'insectos.html', 'almacen.html', 'pedido.html', 'memoria.html', 'clasifica.html', 'apila.html', 'fragancia.html', 'estela.html', 'salta.html'];
 
   function nombreArchivoDe_(href) {
     if (!href) return '';
@@ -412,7 +420,31 @@
   function aplicarUI_() {
     inyectarEstilos_();
 
-    // 1) Oculta en TODOS los menús (cabecera, submenús desplegables y
+    // 1) "Contacto" es un caso aparte: su enlace (quienes-somos.html#contacto)
+    // apunta a una página que está en PAGINAS_EXCLUIDAS, así que el paso 2
+    // de abajo eliminaría el <li> entero (ocultando "Contacto" del todo)
+    // si se evaluara antes de repuntarlo. Por eso este repunte se hace
+    // ANTES del paso 2 — así el href ya no coincide con
+    // "quienes-somos.html" cuando el paso 2 evalúa los enlaces, y el <li>
+    // de "Contacto" se conserva. Se repunta al mismo formulario de
+    // contacto, ya incluido también al final de la página de acceso
+    // profesional (ver acceso-profesional.html, sección #contacto) — bug
+    // real reportado por Eloy en su momento: "la pagina de contacto para
+    // profesionales... ya no sale".
+    //
+    // Reestructuración (feature/web-reestructuracion): index.html pasó a
+    // ser el buscador — ya no se repunta ningún enlace "Inicio"/logo a
+    // index.html hacia el acceso profesional, porque el buscador SÍ
+    // aporta al profesional (es justo donde quiere estar).
+    document.querySelectorAll('a[href]').forEach((a) => {
+      const href = a.getAttribute('href');
+      if (!href) return;
+      if (nombreArchivoDe_(href) === 'quienes-somos.html' && href.indexOf('#contacto') !== -1) {
+        a.setAttribute('href', './' + PAGINA_INICIO_PROFESIONAL + '#contacto');
+      }
+    });
+
+    // 2) Oculta en TODOS los menús (cabecera, submenús desplegables y
     // columnas del footer) cualquier enlace a una página excluida — el
     // marcado de navegación está duplicado en cada página (no hay
     // includes compartidos en este proyecto), así que se filtra por el
@@ -426,7 +458,7 @@
       if (li) li.remove(); else a.remove();
     });
 
-    // 1b) Enlaces marcados a mano con data-oculto-perfil-profesional —
+    // 2b) Enlaces marcados a mano con data-oculto-perfil-profesional —
     // para el hub de minijuegos "Espacio Creativo" (lab/index.html) no
     // sirve el filtro por nombre de archivo de arriba: su archivo se
     // llama "index.html", igual que la home pública, y añadirlo a
@@ -435,7 +467,7 @@
     // en vez de depender del nombre de archivo.
     document.querySelectorAll('[data-oculto-perfil-profesional]').forEach((el) => el.remove());
 
-    // 2) Distintivo "PROFESIONALES" junto al logotipo de la cabecera, y
+    // 3) Distintivo "PROFESIONALES" junto al logotipo de la cabecera, y
     // un efecto visual diferencial en el propio logo (gotita cayendo +
     // línea recorriendo el contorno real de la gota, ver
     // inyectarEstilos_) — a petición de Eloy: mantener la palabra
@@ -456,42 +488,6 @@
       logo.insertAdjacentElement('afterend', distintivo);
     });
 
-    // 3) Repunta cualquier enlace "Inicio" (al index.html público, sin
-    // ancla) hacia el inicio profesional — a petición de Eloy: "no
-    // quiero páginas innecesarias o que a los profesionales no les
-    // aporten, para eso está la vista de perfil de usuario normal".
-    // Cubre el logo, "Inicio" del menú (escritorio y móvil, mismo
-    // <ul>) y cualquier otro enlace a index.html del pie de página —
-    // selector amplio a propósito, sin limitarlo a .navbar__menu, para
-    // no tener que mantener una lista de sitios donde pueda aparecer.
-    //
-    // "Contacto" (index.html#contacto) es un caso aparte: al principio
-    // se dejaba tal cual, razonando que un enlace con ancla "sigue
-    // aportando, no es ir al inicio" — pero el guard de más abajo
-    // (esPaginaInicioPublica_) redirige SIEMPRE fuera de index.html a
-    // cualquier profesional que llegue ahí, ancla o no (location.
-    // pathname no incluye el "#"), así que ese razonamiento no se
-    // sostenía: el enlace llevaba a un formulario que el profesional
-    // nunca llegaba a ver, perdía el ancla por el camino. Bug real
-    // reportado por Eloy: "la pagina de contacto para profesionales...
-    // ya no sale". Ahora ese enlace concreto se repunta al mismo
-    // formulario, ya incluido también al final de la página de acceso
-    // profesional (ver acceso-profesional.html, sección #contacto).
-    // El resto de enlaces con ancla a index.html (#inicio, #marcas,
-    // #profesionales) no se tocan: son secciones de la portada pública
-    // sin equivalente en la vista profesional.
-    document.querySelectorAll('a[href]').forEach((a) => {
-      const href = a.getAttribute('href');
-      if (!href) return;
-      if (nombreArchivoDe_(href) === 'index.html' && href.indexOf('#contacto') !== -1) {
-        a.setAttribute('href', './' + PAGINA_INICIO_PROFESIONAL + '#contacto');
-        return;
-      }
-      if (href.indexOf('#') !== -1) return;
-      if (nombreArchivoDe_(href) !== 'index.html') return;
-      a.setAttribute('href', './' + PAGINA_INICIO_PROFESIONAL);
-    });
-
     // 4) "Salir" — última opción del menú (escritorio y móvil comparten
     // el mismo <ul>, ver nota arriba).
     document.querySelectorAll('.navbar__menu').forEach((menu) => {
@@ -510,22 +506,21 @@
   const sesionActual = leerSesion_();
   const paginaActual = nombreArchivoDe_(location.pathname);
 
-  // La home pública (index.html) tampoco aporta nada al profesional, a
-  // petición explícita de Eloy — mismo criterio que PAGINAS_EXCLUIDAS,
-  // así que si se llega aquí con sesión activa se redirige igual. Se
-  // comprueba aparte (no se mete directamente en PAGINAS_EXCLUIDAS)
-  // porque esa lista también decide qué enlaces del menú se OCULTAN
-  // (ver aplicarUI_, paso 1) — para "Inicio" no se oculta el enlace,
-  // se REAPUNTA al inicio profesional (ver aplicarUI_, paso 3).
-  // location.pathname da "" (cadena vacía) para la raíz del sitio
-  // ("/"), que el servidor sirve como index.html — se trata igual.
-  const esPaginaInicioPublica_ = paginaActual === '' || paginaActual === 'index.html';
+  // El hub de minijuegos "Espacio Creativo" (lab/index.html) tampoco
+  // aporta nada al profesional (ver nota en PAGINAS_EXCLUIDAS más
+  // arriba), así que si se llega aquí con sesión activa se redirige
+  // igual. No puede entrar en PAGINAS_EXCLUIDAS por nombre de archivo
+  // porque colisiona con la home pública (index.html, el buscador, que
+  // SÍ aporta al profesional) — se distingue por carpeta usando
+  // window.OM_RUTA_RAIZ, que lab/index.html declara como '../' (la home
+  // pública, en la raíz, lo deja sin declarar o como './').
+  const esHubCreativoEnSubcarpeta_ = paginaActual === 'index.html' && !!window.OM_RUTA_RAIZ && window.OM_RUTA_RAIZ !== './';
 
   if (sesionActual) {
-    if (PAGINAS_EXCLUIDAS.indexOf(paginaActual) !== -1 || esPaginaInicioPublica_) {
-      // Página pública excluida (o la home pública) con sesión
-      // profesional activa: se redirige al inicio profesional en vez
-      // de dejar ver una mezcla de ambos contextos (petición
+    if (PAGINAS_EXCLUIDAS.indexOf(paginaActual) !== -1 || esHubCreativoEnSubcarpeta_) {
+      // Página pública excluida (o el hub de Espacio Creativo) con
+      // sesión profesional activa: se redirige al inicio profesional en
+      // vez de dejar ver una mezcla de ambos contextos (petición
       // explícita) — con replace() para que "Atrás" no vuelva a dejar
       // a medio camino.
       // Mismo convenio de window.OM_RUTA_RAIZ que ya usa mantenimiento.js:

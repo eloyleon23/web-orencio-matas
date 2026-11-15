@@ -1484,34 +1484,34 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </button>
       <nav class="navbar__nav" id="main-navigation" aria-label="Navegación principal" data-mobile-menu>
         <ul class="navbar__menu">
-          <li><a href="index.html">Inicio</a></li>
-          <li><a href="empresa.html">Empresa</a></li>
-          <li><a href="historia.html">Historia</a></li>
-          <li class="navbar__item--dropdown">
-            <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
-            <ul class="navbar__submenu">
-              <li><a href="buscador.html">Buscador</a></li>
-              <li class="navbar__item--dropdown">
-                <a href="productos.html">Ver catálogos <span class="navbar__caret">&#9662;</span></a>
-                <ul class="navbar__submenu">
-                  <li><a href="catalogo_drogueria.html">Droguería</a></li>
-                  <li><a href="catalogo_perfumeria.html">Perfumería</a></li>
-                  <li><a href="catalogo_pinturas.html">Pinturas</a></li>
-                  <li><a href="catalogo_talleres.html">Talleres</a></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-          <li><a href="escaparate-campanas.html">Exposición</a></li>
-              <li><a href="servicios.html">Servicios</a></li>
-          <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
-          <li><a href="anuncios.html">Anuncios/Recursos</a></li>
-          <li><a href="profesionales.html">Profesionales</a></li>
-          <li data-oculto-perfil-profesional><a href="lab/index.html">Espacio Creativo</a></li>
-          <li><a href="actualidad.html">Actualidad</a></li>
-          <li><a href="index.html#contacto">Contacto</a></li>
-        </ul>
-        <a class="btn-primary navbar__cta" href="index.html#contacto">CONTACTAR</a>
+        <li><a href="index.html">Buscador</a></li>
+        <li class="navbar__item--dropdown">
+          <a href="productos.html">Catálogos <span class="navbar__caret">&#9662;</span></a>
+          <ul class="navbar__submenu">
+            <li><a href="catalogo_drogueria.html">Droguería</a></li>
+            <li><a href="catalogo_perfumeria.html">Perfumería</a></li>
+            <li><a href="catalogo_pinturas.html">Pinturas</a></li>
+            <li><a href="catalogo_talleres.html">Talleres</a></li>
+          </ul>
+        </li>
+        <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+        <li><a href="escaparate-campanas.html">Exposición</a></li>
+        <li><a href="profesionales.html">Profesionales</a></li>
+        <li data-oculto-perfil-profesional><a href="lab/index.html">Espacio Creativo</a></li>
+        <li class="navbar__item--dropdown">
+          <a href="empresa.html">Empresa <span class="navbar__caret">&#9662;</span></a>
+          <ul class="navbar__submenu">
+            <li><a href="quienes-somos.html">Quiénes somos</a></li>
+            <li><a href="empresa.html">Empresa</a></li>
+            <li><a href="historia.html">Historia</a></li>
+          </ul>
+        </li>
+        <li><a href="servicios.html">Servicios</a></li>
+        <li><a href="anuncios.html">Anuncios/Recursos</a></li>
+        <li><a href="actualidad.html">Actualidad</a></li>
+        <li><a href="quienes-somos.html#contacto">Contacto</a></li>
+      </ul>
+      <a class="btn-primary navbar__cta" href="quienes-somos.html#contacto">CONTACTAR</a>
       </nav>
     </div>
   </div>
@@ -1621,7 +1621,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <li><a href="profesionales.html">Profesionales</a></li>
         <li><a href="servicios.html">Servicios</a></li>
         <li><a href="actualidad.html">Actualidad</a></li>
-        <li><a href="index.html#contacto">Contacto</a></li>
+        <li><a href="quienes-somos.html#contacto">Contacto</a></li>
       </ul>
     </nav>
     <nav class="site-footer__column" aria-label="Servicios del footer">
@@ -2532,7 +2532,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const p = PRODUCTS[ref];
     if(!p) return `<article class="card"><span class="fam">Referencia no encontrada</span><span class="nombre mono">${ref}</span></article>`;
     const imgUrl = urlImagenProducto(p, 300);
-    const buscadorURL = `./buscador.html?ref=${encodeURIComponent(ref)}`;
+    const buscadorURL = `./index.html?ref=${encodeURIComponent(ref)}`;
     const tam = destacado && destacado.tamano > 1 ? destacado.tamano : 1;
     const atributoTam = tam > 1 ? ` data-tam="${tam}" data-alin="${destacado.alinH || 'centro'}"` : '';
     const precioMayor = precioMayorEscaparate_(p);
@@ -2707,7 +2707,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
 
     const btnBuscador = $("#modal-producto-verbuscador");
-    btnBuscador.href = `./buscador.html?ref=${encodeURIComponent(p.ref)}`;
+    btnBuscador.href = `./index.html?ref=${encodeURIComponent(p.ref)}`;
 
     overlay.classList.add('activo');
     document.body.style.overflow = 'hidden';

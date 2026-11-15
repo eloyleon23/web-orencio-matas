@@ -172,7 +172,7 @@
     if (metaDesc) metaDesc.setAttribute('content', seoDescription);
 
     // Canonical y Open Graph por guía — mismo criterio que ya usa el
-    // resto del sitio (buscador.html, escaparate.html, etc.): cada URL
+    // resto del sitio (index.html, escaparate.html, etc.): cada URL
     // real e indexable (aquí, cada ?slug=) declara su propio canonical
     // apuntando siempre al dominio de producción, para que Google trate
     // cada solución como una página distinta con su propio contenido,
@@ -1139,7 +1139,7 @@
     // de celda tipado como NÚMERO en el Sheet se convierte con
     // Number.toString(), que siempre usa punto, sin importar el
     // idioma). Se deja esta normalización aquí también como red de
-    // seguridad, igual que ya hace buscador.html en todos los sitios
+    // seguridad, igual que ya hace index.html en todos los sitios
     // donde muestra un precio.
     const formatearPrecio_ = (valor) => {
       if (!valor) return valor;
@@ -1147,7 +1147,7 @@
       return isNaN(num) ? valor : num.toFixed(2).replace('.', ',');
     };
     // Perfil profesional: precio al por mayor siempre, en vez del PVP —
-    // mismo criterio que buscador.html (precioAMostrar_). No depende de
+    // mismo criterio que index.html (precioAMostrar_). No depende de
     // mostrar_precio (ese flag solo gobierna el PVP público).
     const esProfesional = window.PerfilProfesional && window.PerfilProfesional.sesionActiva();
     const tieneMayor = esProfesional && real.precio_mayor_con;
@@ -1184,7 +1184,7 @@
       // propio enlace a ficha técnica editado (campo ficha_url, ver
       // procesarActualizarFichaUrl en Apps Script), ese enlace manda
       // siempre sobre el de los datos de ejemplo de la guía (mock) —
-      // mismo criterio que ya aplica buscador.html.
+      // mismo criterio que ya aplica index.html.
       fichaTecnica: real.ficha_url || mock.fichaTecnica || null,
     };
   }
@@ -1278,7 +1278,7 @@
 
     const btnBuscador = $('#modal-producto-verbuscador');
     if (p.ref) {
-      btnBuscador.href = `../buscador.html?ref=${encodeURIComponent(p.ref)}`;
+      btnBuscador.href = `../index.html?ref=${encodeURIComponent(p.ref)}`;
       btnBuscador.style.display = '';
     } else {
       btnBuscador.style.display = 'none';

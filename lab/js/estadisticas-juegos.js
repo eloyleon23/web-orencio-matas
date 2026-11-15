@@ -213,7 +213,7 @@
             const juegoActual = sesionTiempo.juego || '(ninguno)';
             enviarEventoGA_('conversion_buscador', { juego: juegoActual });
             enviarEventoBackend_('conversion', juegoActual);
-            window.location.href = '../buscador.html';
+            window.location.href = '../index.html';
         });
 
         const botonCancelar = document.createElement('button');

@@ -503,7 +503,7 @@
         barajadas.slice(0, 6).forEach((logo) => {
             const a = document.createElement('a');
             a.className = 'premium-provider-card';
-            a.href = '../buscador.html';
+            a.href = '../index.html';
             const img = document.createElement('img');
             img.src = logo.archivo;
             img.alt = logo.clave.replace(/_/g, ' ');
