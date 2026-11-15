@@ -198,7 +198,9 @@
             width: 100%;
             margin-top: 6px;
             padding: 12px 16px;
-            background: linear-gradient(135deg, var(--red), #9a1f1f);
+            /* Azul, no rojo: "Entrar"/"Solicitar código" son acciones
+               normales, no de advertencia. */
+            background: linear-gradient(135deg, var(--blue), color-mix(in srgb, var(--blue) 70%, #000000));
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -542,9 +544,9 @@
            regla va ANTES que ".activo" (panel abierto) para que, si
            coinciden ambas clases, gane el aspecto de "panel abierto". */
         .btn-abrir-filtros-movil.tiene-filtro-activo {
-            background: var(--red);
+            background: var(--blue);
             color: white;
-            border-color: var(--red);
+            border-color: var(--blue);
         }
         .btn-abrir-filtros-movil.activo {
             background: var(--dark);
@@ -1184,12 +1186,12 @@
         .temporada-anadir-seleccion-btn {
             position: absolute; bottom: 8px; right: 8px; z-index: 3;
             width: 34px; height: 34px; border-radius: 50%; border: none;
-            background: rgba(255,255,255,0.95); color: var(--red);
+            background: rgba(255,255,255,0.95); color: var(--blue);
             box-shadow: 0 2px 8px rgba(0,0,0,0.18); cursor: pointer;
             display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
             transition: background 0.15s, color 0.15s, transform 0.15s;
         }
-        .temporada-anadir-seleccion-btn:hover { background: var(--red); color: #fff; transform: scale(1.08); }
+        .temporada-anadir-seleccion-btn:hover { background: var(--blue); color: #fff; transform: scale(1.08); }
         .temporada-anadir-seleccion-btn--hecho { background: var(--green) !important; color: #fff !important; }
         .temporada-ver-todos-folleto-acciones {
             display: flex; gap: 8px; flex-wrap: wrap; margin: -4px 0 14px;
@@ -1209,7 +1211,7 @@
            .temporada-chips-busqueda, con un estado "activo" propio para
            la familia filtrada ahora mismo. */
         #temporada-ver-todos-familias-chips button.activo {
-            background: var(--red); border-color: var(--red); color: #fff;
+            background: var(--blue); border-color: var(--blue); color: #fff;
         }
         /* Aviso de filtros activos — a petición explícita de Eloy: "si
            hay filtros, sombrea o añade un estilo a limpiar filtros para
@@ -1309,7 +1311,7 @@
             border: none; border-radius: 8px; padding: 9px 18px; font-size: 0.88rem;
             font-weight: 700; cursor: pointer;
         }
-        .destacados-btn-primario { background: var(--red); color: #fff; }
+        .destacados-btn-primario { background: var(--blue); color: #fff; }
         .destacados-btn-secundario { background: var(--light); color: var(--muted); }
         .destacados-hint { font-size: 0.78rem; color: var(--muted); margin: 4px 0 10px; }
         .destacados-config-global label, .destacados-editor label {
@@ -2877,25 +2879,24 @@
             letter-spacing: 0.02em;
             border: none;
             border-radius: 10px;
-            /* Mismo patrón que .btn-primary del resto del sitio (rojo
-               con acento amarillo debajo) — a petición de Eloy: "ponle
-               un color que vaya conforme al estilo del logo". El logo
-               real usa exactamente estos colores (rojo/azul/verde/
-               amarillo), y el rojo+amarillo es además el color de
-               acción ya establecido en todo el sitio (botón CONTACTAR
-               del menú, etc.), así que se reutiliza el mismo patrón en
-               vez de inventar uno nuevo sin relación con la marca. */
-            background: var(--red);
+            /* Mismo patrón que .btn-primary del resto del sitio (azul
+               con acento amarillo debajo, dentro de la gama del logo) —
+               a petición de Eloy: el rojo transmitía alarma en un botón
+               de acción normal como este, así que se reutiliza el
+               mismo azul ya establecido en el resto del sitio (botón
+               CONTACTAR del menú, etc.) en vez de inventar un color sin
+               relación con la marca. */
+            background: var(--blue);
             border-bottom: 4px solid var(--yellow);
             color: #fff;
             cursor: pointer;
-            box-shadow: 0 10px 22px rgba(211, 47, 47, 0.3);
+            box-shadow: 0 10px 22px rgba(25, 118, 210, 0.3);
             transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
         }
         .btn-preguntar-ia-producto:hover {
-            background: color-mix(in srgb, var(--red) 86%, #000000);
+            background: color-mix(in srgb, var(--blue) 86%, #000000);
             transform: translateY(-2px);
-            box-shadow: 0 14px 28px rgba(211, 47, 47, 0.36);
+            box-shadow: 0 14px 28px rgba(25, 118, 210, 0.36);
         }
         .btn-preguntar-ia-producto:disabled { opacity: 0.7; cursor: default; transform: none; }
         .btn-preguntar-ia-producto .icono-ia-producto { width: 1.3em; height: 1.3em; }
@@ -3540,7 +3541,7 @@
             border: none;
         }
         .modal-cancelar { background: var(--light); color: var(--muted); }
-        .modal-enviar { background: var(--red); color: white; }
+        .modal-enviar { background: var(--blue); color: white; }
 
         /* Modal detalle de producto */
         .modal-producto-box {
