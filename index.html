@@ -9279,6 +9279,22 @@ if (window.OM_PREPRODUCCION) {
         algicida: ['antialgas'],     // variante ortográfica de "alguicida", mismo caso
         mechero: ['encendedor'],     // sinónimo coloquial muy habitual — el catálogo solo dice "encendedor"
         naftalina: ['polilla'],      // término clásico para antipolillas — el catálogo nombra estos productos por "polilla" (ANTIPOLILLAS Y S/G ROPAS), nunca "naftalina"
+        // A petición de Eloy, contexto sobre las siglas de perfumería
+        // (EDP = Eau de Parfum/Agua de Perfume, EDT = Eau de Toilette,
+        // EDC = Eau de Cologne/Agua de Colonia — tres concentraciones
+        // de fragancia distintas, no sinónimos entre sí). Verificado
+        // contra el catálogo real: EDP y EDT YA aparecen literalmente
+        // en el nombre de 47 y 429 productos respectivamente, así que
+        // buscarlos ya funcionaba sin tocar nada — pero "EDC" no
+        // aparece en ningún producto, el catálogo siempre usa
+        // "COLONIA"/"AGUA DE COLONIA" (47 productos) para ese mismo
+        // tipo de producto. Va aquí y no en ABREVIATURAS_CATALOGO
+        // (que expande la query entera, exigiendo luego que CADA
+        // palabra resultante —incluida "edc", que no aparece en ningún
+        // producto— coincida por separado) porque palabraCoincide()
+        // prueba cada sinónimo de la lista como alternativa válida
+        // para ESA palabra de la búsqueda, sin esa exigencia.
+        edc: ['colonia'],
     };
 
     // Memorizada por cadena de entrada — normalizar() es una función
