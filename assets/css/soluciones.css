@@ -894,7 +894,9 @@
   margin: 0 0 16px 0;
 }
 .modal-producto-precio { margin-bottom: 20px; }
-.modal-producto-precio-con { font-size: 1.8rem; font-weight: 700; color: var(--primary-red); }
+/* A petición de Eloy: negro por defecto, rojo solo con oferta/descuento
+   (ver .precio-con-oferta más abajo) — antes era siempre rojo. */
+.modal-producto-precio-con { font-size: 1.8rem; font-weight: 700; color: var(--text-dark); }
 .modal-producto-precio-sin { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; }
 .modal-producto-detalles p { margin: 8px 0; color: var(--text-gray); font-size: 0.95rem; }
 .modal-producto-detalles strong { color: var(--text-dark); }
@@ -1355,7 +1357,9 @@
 .cs-producto-card__nombre { margin-bottom: 6px; font-weight: 800; color: var(--text-dark); line-height: 1.3; overflow-wrap: break-word; }
 .cs-producto-card__formato { margin-bottom: 6px; color: var(--text-muted); font-size: 0.82rem; }
 .cs-producto-card__ref { margin-bottom: 10px; color: var(--text-muted); font-size: 0.76rem; font-family: monospace; overflow-wrap: break-word; }
-.cs-producto-card__precio { color: var(--primary-red); font-weight: 900; font-size: 1.15rem; }
+/* A petición de Eloy: negro por defecto, rojo solo con oferta/descuento
+   (ver .precio-con-oferta) — antes era siempre rojo. */
+.cs-producto-card__precio { color: var(--text-dark); font-weight: 900; font-size: 1.15rem; }
 .cs-producto-card__precio--consultar,
 .producto-sin-precio {
   font-size: 0.78rem;
@@ -1363,6 +1367,10 @@
   font-style: italic;
   font-weight: 500;
 }
+/* !important: se reutiliza en dos clases base distintas
+   (.cs-producto-card__precio y .modal-producto-precio-con) — sin esto,
+   el orden de aparición en la hoja decidiría cuál gana. */
+.precio-con-oferta { color: var(--primary-red) !important; }
 /* Etiqueta "Precio al por mayor" — mismo criterio que en buscador.html/
    escaparate.html (ver renderTarjetaProductoCatalogo/solucion-detalle.js):
    la duda principal de los profesionales es si el precio que ven es el

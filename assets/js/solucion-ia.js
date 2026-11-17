@@ -134,7 +134,13 @@
     const tieneMayor = esProfesional && p.precio_mayor_con;
     const precioReal = tieneMayor || (p.mostrar_precio && p.precio_con);
     const precio = precioReal ? `${tieneMayor ? p.precio_mayor_con : p.precio_con} €` : 'Consultar precio y disponibilidad';
-    const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
+    // A petición de Eloy: el precio se ve en negro salvo que el producto
+    // tenga oferta activa, en cuyo caso se mantiene en rojo (ver
+    // .precio-con-oferta en soluciones.css) — mismo criterio que
+    // index.html/solucion-detalle.js.
+    const precioClass = precioReal
+      ? ('cs-producto-card__precio' + (p.oferta ? ' precio-con-oferta' : ''))
+      : 'cs-producto-card__precio cs-producto-card__precio--consultar';
     const etiquetaMayorHtml = tieneMayor ? `<span class="precio-mayor-etiqueta">Precio al por mayor</span>` : '';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     const ctx = contexto || {};

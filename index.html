@@ -2737,7 +2737,19 @@
         .producto-precio-con {
             font-size: 1.05rem;
             font-weight: 800;
-            color: var(--red);
+            /* A petición de Eloy: negro por defecto, rojo solo si el
+               producto tiene oferta activa (ver claseOferta_ en
+               construirContenidoTarjeta_) — antes era siempre rojo. */
+            color: var(--dark);
+        }
+        /* !important: esta clase se reutiliza también en
+           .modal-producto-precio-con (definida más abajo en este mismo
+           archivo, después de esta regla) — sin !important, el orden de
+           aparición en la hoja de estilos haría que esa regla posterior
+           ganara y el precio en oferta de la ficha de detalle se viera
+           negro en vez de rojo. */
+        .producto-precio-con--oferta {
+            color: var(--red) !important;
         }
         .producto-precio-sin {
             font-size: 0.7rem;
@@ -3725,7 +3737,10 @@
         .modal-producto-precio-con {
             font-size: 1.8rem;
             font-weight: 700;
-            color: var(--red);
+            /* A petición de Eloy: negro por defecto, rojo solo con oferta
+               (ver .producto-precio-con--oferta, compartida con la
+               tarjeta de la rejilla). */
+            color: var(--dark);
         }
         .modal-producto-precio-sin {
             font-size: 0.9rem;
@@ -17216,6 +17231,15 @@ if (window.OM_PREPRODUCCION) {
 
         const ofertaBadge = (!d && p.oferta) ? `<span class="badge-oferta"><i class="fa-solid fa-star"></i> Oferta</span>` : '';
         const destacadoChip = d ? etiquetaDestacadoHtml_(d.tipoDestacado) : '';
+        // A petición de Eloy: el precio se ve en negro salvo que el
+        // producto tenga oferta/descuento activo, en cuyo caso se
+        // mantiene en rojo para destacarlo — antes era siempre rojo,
+        // tuviera o no oferta. Esta clase modificadora se añade en los
+        // dos sitios de abajo donde se pinta el precio "normal" (sin
+        // descuento de Destacados calculado); el bloque
+        // .destacado-precio-promo (cuando sí hay descuento real) ya
+        // tiene su propio rojo fijo, sin tocar.
+        const claseOferta_ = p.oferta ? ' producto-precio-con--oferta' : '';
 
         // Precio todavía sin confirmar contra la fuente EN VIVO (ver
         // preciosMayorConfirmados_) — nunca se muestra el PVP público
@@ -17236,7 +17260,7 @@ if (window.OM_PREPRODUCCION) {
 
         let precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
         if (precioMayor_) {
-            precioHtml = `<div class="producto-precio-con">${precioMayor_.con.toFixed(2).replace('.', ',')} €</div>`;
+            precioHtml = `<div class="producto-precio-con${claseOferta_}">${precioMayor_.con.toFixed(2).replace('.', ',')} €</div>`;
             if (precioMayor_.sin) precioHtml += `<div class="producto-precio-sin">${precioMayor_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         }
         let promoTextoHtml = '';
@@ -17264,7 +17288,7 @@ if (window.OM_PREPRODUCCION) {
                         (precioDestacado.pct ? `<span class="destacado-precio-pct">-${precioDestacado.pct}%</span>` : '') +
                         `</div>`;
                 } else {
-                    precioHtml = `<div class="producto-precio-con">${precioDestacado.original.toFixed(2).replace('.', ',')} €</div>`;
+                    precioHtml = `<div class="producto-precio-con${claseOferta_}">${precioDestacado.original.toFixed(2).replace('.', ',')} €</div>`;
                 }
             }
             if (d.textoPromocion) {
@@ -20396,6 +20420,10 @@ if (window.OM_PREPRODUCCION) {
         const esMayorModal_ = !!(precioMayorModal_ && precioMayorModal_.esMayor);
 
         let precioHtml = '';
+        // A petición de Eloy: el precio se ve en negro salvo que el
+        // producto tenga oferta/descuento activo — mismo criterio y
+        // misma clase modificadora que construirContenidoTarjeta_.
+        const claseOfertaModal_ = p.oferta ? ' producto-precio-con--oferta' : '';
         // Precio al por mayor todavía sin confirmar (ver
         // preciosMayorConfirmados_) — nunca el PVP público como si fuera
         // el definitivo, bug real muy grave reportado por Eloy. Solo se
@@ -20406,7 +20434,7 @@ if (window.OM_PREPRODUCCION) {
         if (precioPendienteModal_) {
             precioHtml = '<p class="producto-precio-cargando"><i class="fa-solid fa-spinner fa-spin"></i> Cargando precio...</p>';
         } else if (precioMayorModal_) {
-            precioHtml = `<div class="modal-producto-precio-con">${precioMayorModal_.con.toFixed(2).replace('.', ',')} €</div>`;
+            precioHtml = `<div class="modal-producto-precio-con${claseOfertaModal_}">${precioMayorModal_.con.toFixed(2).replace('.', ',')} €</div>`;
             if (precioMayorModal_.sin) precioHtml += `<div class="modal-producto-precio-sin">${precioMayorModal_.sin.toFixed(2).replace('.', ',')} € sin IVA</div>`;
         } else {
             precioHtml = '<p class="producto-sin-precio">Consultar precio y disponibilidad</p>';
@@ -20464,7 +20492,7 @@ if (window.OM_PREPRODUCCION) {
                         (precioDestacadoModal.pct ? `<span class="destacado-precio-pct">-${precioDestacadoModal.pct}%</span>` : '') +
                         `</div>`;
                 } else {
-                    precioHtml = `<div class="modal-producto-precio-con">${precioDestacadoModal.original.toFixed(2).replace('.', ',')} €</div>`;
+                    precioHtml = `<div class="modal-producto-precio-con${claseOfertaModal_}">${precioDestacadoModal.original.toFixed(2).replace('.', ',')} €</div>`;
                 }
             }
             if (destacadoModal.textoPromocion) {

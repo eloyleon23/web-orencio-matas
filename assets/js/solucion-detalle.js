@@ -1130,6 +1130,7 @@
         precioCon: null,
         precioSin: null,
         mostrarPrecio: false,
+        oferta: false,
         fichaTecnica: mock.fichaTecnica || null,
       };
     }
@@ -1174,6 +1175,11 @@
       precioCon: mostrarPrecioFinal ? precioConFormateado : null,
       precioSin: mostrarPrecioFinal ? precioSinFormateado : null,
       mostrarPrecio: mostrarPrecioFinal,
+      // A petición de Eloy: el precio se ve en negro salvo que el
+      // producto tenga oferta activa, en cuyo caso se mantiene en rojo
+      // (ver .precio-con-oferta en soluciones.css) — mismo criterio que
+      // index.html (construirContenidoTarjeta_).
+      oferta: !!real.oferta,
       // Perfil profesional, con precio al por mayor realmente aplicado
       // (no solo "hay sesión profesional" — si el producto no tiene
       // precio mayor configurado, cae al PVP y esto debe quedar en
@@ -1207,7 +1213,7 @@
           <div class="cs-producto-card__nombre">${p.nombre}</div>
           ${p.formato ? `<div class="cs-producto-card__formato">Formato: ${p.formato}</div>` : ''}
           ${p.ref ? `<div class="cs-producto-card__ref">Ref: ${p.ref}</div>` : ''}
-          <div class="cs-producto-card__precio${p.mostrarPrecio ? '' : ' cs-producto-card__precio--consultar'}">${p.mostrarPrecio ? p.precio : 'Consultar precio y disponibilidad'}</div>
+          <div class="cs-producto-card__precio${p.mostrarPrecio ? '' : ' cs-producto-card__precio--consultar'}${p.mostrarPrecio && p.oferta ? ' precio-con-oferta' : ''}">${p.mostrarPrecio ? p.precio : 'Consultar precio y disponibilidad'}</div>
           ${p.esMayor ? `<span class="precio-mayor-etiqueta">Precio al por mayor</span>` : ''}
         </button>
       `;
@@ -1262,7 +1268,7 @@
     let precioHtml = '';
     if (p.esReal) {
       if (p.mostrarPrecio && p.precioCon) {
-        precioHtml = `<div class="modal-producto-precio-con">${p.precioCon} €</div>`;
+        precioHtml = `<div class="modal-producto-precio-con${p.oferta ? ' precio-con-oferta' : ''}">${p.precioCon} €</div>`;
         if (p.precioSin) precioHtml += `<div class="modal-producto-precio-sin">${p.precioSin} € sin IVA</div>`;
         if (p.esMayor) precioHtml += `<div class="precio-mayor-etiqueta">Precio al por mayor</div>`;
       } else {
