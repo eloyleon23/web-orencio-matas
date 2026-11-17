@@ -1440,6 +1440,27 @@
            más allá de la pequeña etiqueta de texto. */
         .destacados-buscar-item--incluido { opacity: 0.55; background: var(--light); }
         .destacados-buscar-item--incluido img { filter: grayscale(70%); }
+        .destacados-buscar-item input[type="checkbox"] { flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+        .temporadas-buscar-acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+        .temporadas-buscar-acciones button:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Selector de emoticono (temporadas-editor-emoji) — botón junto al
+           campo de texto que abre un panel con una lista curada, a
+           petición de Eloy, en vez de obligar a teclearlo/pegarlo. */
+        .temporadas-emoji-selector { position: relative; display: inline-flex; gap: 6px; align-items: center; }
+        .temporadas-emoji-selector input[type="text"] { max-width: 100px; }
+        #temporadas-emoji-abrir { font-size: 1.05rem; line-height: 1; padding: 4px 10px; }
+        .temporadas-emoji-panel {
+            position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
+            background: #fff; border: 1px solid var(--border); border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            padding: 8px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+            width: 252px; max-height: 220px; overflow-y: auto;
+        }
+        .temporadas-emoji-panel button {
+            border: none; background: none; font-size: 1.15rem; line-height: 1;
+            padding: 5px; border-radius: 6px; cursor: pointer; text-align: center;
+        }
+        .temporadas-emoji-panel button:hover { background: var(--light); }
         .destacados-ver-producto {
             flex-shrink: 0; border: 1px solid var(--border); background: #fff; border-radius: 6px;
             padding: 4px 9px; font-size: 0.74rem; font-weight: 600; color: var(--blue); cursor: pointer;
@@ -8247,6 +8268,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button type="button" id="temporadas-pin-entrar" class="destacados-btn-primario">Entrar</button>
         </div>
 
+        <!-- Se muestra mientras se entra con un PIN ya recordado (ver
+             abrirModalGestionTemporadas_) — antes, en ese caso, no había
+             ningún indicador visible durante la validación del PIN y la
+             carga de temporadas, y la modal se quedaba en blanco (ni la
+             vista del PIN ni la principal) hasta que todo terminaba. -->
+        <div id="temporadas-vista-cargando" class="destacados-vista-pin" style="display:none;">
+            <p><i class="fa-solid fa-spinner fa-spin"></i> Cargando temporadas...</p>
+        </div>
+
         <div id="temporadas-vista-principal" style="display:none;">
             <section class="destacados-listado">
                 <h4>Temporadas (<span id="temporadas-listado-total">0</span>)</h4>
@@ -8260,7 +8290,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <label for="temporadas-editor-nombre">Nombre</label>
                 <input type="text" id="temporadas-editor-nombre" placeholder="Ej: Invierno y Navidad 2026">
                 <label for="temporadas-editor-emoji">Emoticono (se muestra junto al nombre, en el buscador y en la modal)</label>
-                <input type="text" id="temporadas-editor-emoji" placeholder="❄️" maxlength="8" style="max-width:120px;">
+                <div class="temporadas-emoji-selector">
+                    <input type="text" id="temporadas-editor-emoji" placeholder="❄️" maxlength="8">
+                    <button type="button" id="temporadas-emoji-abrir" class="destacados-btn-secundario" title="Elegir emoticono" aria-label="Elegir emoticono" aria-haspopup="true" aria-expanded="false">🙂</button>
+                    <!-- Panel de selección rápida — a petición de Eloy, en vez
+                         de obligar a teclear o pegar el emoji a mano. Lista
+                         curada (temas de temporada/comercio habituales en
+                         este negocio) en vez de un selector de emojis
+                         completo del sistema: no requiere cargar ninguna
+                         librería externa y cubre de sobra el caso de uso
+                         real (campañas de Navidad, rebajas, verano...). -->
+                    <div id="temporadas-emoji-panel" class="temporadas-emoji-panel" role="menu" aria-label="Emoticonos disponibles" style="display:none;"></div>
+                </div>
                 <label><input type="checkbox" id="temporadas-editor-permanente"> Permanente (ignora las fechas, solo manda "Activa")</label>
                 <label for="temporadas-editor-fecha-inicio">Fecha de inicio</label>
                 <input type="date" id="temporadas-editor-fecha-inicio">
@@ -8303,6 +8344,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <select id="temporadas-buscar-area"><option value="">Todas las áreas</option></select>
                         <select id="temporadas-buscar-familia"><option value="">Todas las familias</option></select>
                     </div>
+                    <!-- Antes, cada resultado del buscador se añadía con su
+                         propia petición independiente al backend al
+                         pulsarlo — a petición explícita de Eloy: "no es
+                         práctico... ir uno a uno". Ahora cada resultado sin
+                         añadir todavía lleva una casilla y estos dos botones
+                         agrupan todo en UN solo guardado (ver
+                         temporadaAnadirSeleccionados_/
+                         temporadaAnadirTodosResultados_), tanto para varios
+                         elegidos a mano como para todo lo que coincide con
+                         el filtro actual (no solo lo pintado en pantalla). -->
+                    <div id="temporadas-buscar-acciones" class="temporadas-buscar-acciones" style="display:none;">
+                        <button type="button" id="temporadas-buscar-anadir-seleccion" class="destacados-btn-secundario" disabled>Añadir seleccionados (<span id="temporadas-buscar-seleccion-total">0</span>)</button>
+                        <button type="button" id="temporadas-buscar-anadir-todos" class="destacados-btn-secundario" disabled>Añadir todos los resultados (<span id="temporadas-buscar-todos-total">0</span>)</button>
+                    </div>
                     <div id="temporadas-buscar-resultados" class="destacados-buscar-resultados"></div>
 
                     <!-- Productos excluidos — a petición explícita de Eloy:
@@ -8337,6 +8392,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <input type="text" id="temporadas-excluir-buscar-texto" placeholder="Buscar producto por nombre o referencia para excluir...">
                         <select id="temporadas-excluir-buscar-area"><option value="">Todas las áreas</option></select>
                         <select id="temporadas-excluir-buscar-familia"><option value="">Todas las familias</option></select>
+                    </div>
+                    <div id="temporadas-excluir-buscar-acciones" class="temporadas-buscar-acciones" style="display:none;">
+                        <button type="button" id="temporadas-excluir-anadir-seleccion" class="destacados-btn-secundario" disabled>Excluir seleccionados (<span id="temporadas-excluir-seleccion-total">0</span>)</button>
+                        <button type="button" id="temporadas-excluir-anadir-todos" class="destacados-btn-secundario" disabled>Excluir todos los resultados (<span id="temporadas-excluir-todos-total">0</span>)</button>
                     </div>
                     <div id="temporadas-excluir-buscar-resultados" class="destacados-buscar-resultados"></div>
                 </div>
@@ -13623,6 +13682,20 @@ if (window.OM_PREPRODUCCION) {
     let temporadaPin_ = null;
     let temporadaEditandoId_ = null; // id de la temporada abierta en el formulario, o null si es nueva
 
+    // Selección para el alta/exclusión masiva desde el buscador de
+    // resultados (ver temporadaBuscarYRenderizar_/
+    // temporadaBuscarExcluirYRenderizar_) — se reinicia en cada repintado
+    // de la lista (cada tecleo/cambio de filtro), ya que las filas
+    // mostradas cambian. *PendientesCompletos_ guarda TODAS las
+    // coincidencias del filtro actual que aún no están añadidas/excluidas
+    // (no solo las primeras 40 pintadas en pantalla), para que "Añadir/
+    // Excluir todos los resultados" cubra de verdad todo lo que coincide
+    // con el filtro, no solo lo visible.
+    let temporadaBuscarSeleccion_ = new Set();
+    let temporadaBuscarPendientesCompletos_ = [];
+    let temporadaExcluirSeleccion_ = new Set();
+    let temporadaExcluirPendientesCompletos_ = [];
+
     function temporadaGuardarPinLocal_(pin, recordar) {
         if (recordar) { try { localStorage.setItem('omTemporadasPin', pin); } catch (e) {} }
     }
@@ -13637,15 +13710,21 @@ if (window.OM_PREPRODUCCION) {
             const d = await temporadaFetchPost_({ accion: 'panel_validar_pin', pin: pin });
             if (d.success) {
                 temporadaPin_ = pin;
+                $('temporadas-vista-cargando').style.display = 'none';
                 $('temporadas-vista-pin').style.display = 'none';
                 $('temporadas-vista-principal').style.display = '';
+                $('temporadas-listado-lista').innerHTML = '<p class="destacados-hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando temporadas...</p>';
                 await cargarTemporadas_();
                 temporadaRenderizarListado_();
             } else {
+                $('temporadas-vista-cargando').style.display = 'none';
+                $('temporadas-vista-pin').style.display = '';
                 $('temporadas-pin-error').textContent = 'PIN incorrecto.';
                 try { localStorage.removeItem('omTemporadasPin'); } catch (e) {}
             }
         } catch (e) {
+            $('temporadas-vista-cargando').style.display = 'none';
+            $('temporadas-vista-pin').style.display = '';
             $('temporadas-pin-error').textContent = 'Error de conexión.';
         } finally {
             btn.disabled = false;
@@ -13734,6 +13813,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporadas-editor-error').textContent = '';
         $('temporadas-editor-eliminar').style.display = t ? '' : 'none';
         $('temporadas-editor').style.display = '';
+        temporadaCerrarPanelEmoji_();
         if (t) {
             $('temporadas-items-bloque').style.display = '';
             $('temporadas-familias-filtro').value = '';
@@ -13743,6 +13823,9 @@ if (window.OM_PREPRODUCCION) {
             $('temporadas-buscar-area').value = '';
             temporadaPoblarSelectoresAreaFamilia_();
             $('temporadas-buscar-resultados').innerHTML = '';
+            $('temporadas-buscar-acciones').style.display = 'none';
+            temporadaBuscarSeleccion_.clear();
+            temporadaBuscarPendientesCompletos_ = [];
             $('temporadas-referencias-masivo-bloque').style.display = 'none';
             $('temporadas-referencias-masivo-texto').value = '';
             $('temporadas-referencias-masivo-resultado').textContent = '';
@@ -13752,6 +13835,9 @@ if (window.OM_PREPRODUCCION) {
             $('temporadas-excluir-buscar-area').value = '';
             temporadaPoblarSelectoresAreaFamiliaExcluir_();
             $('temporadas-excluir-buscar-resultados').innerHTML = '';
+            $('temporadas-excluir-buscar-acciones').style.display = 'none';
+            temporadaExcluirSeleccion_.clear();
+            temporadaExcluirPendientesCompletos_ = [];
             $('temporadas-excluidas-masivo-bloque').style.display = 'none';
             $('temporadas-excluidas-masivo-texto').value = '';
             $('temporadas-excluidas-masivo-resultado').textContent = '';
@@ -13764,6 +13850,51 @@ if (window.OM_PREPRODUCCION) {
     function temporadaCerrarEditor_() {
         $('temporadas-editor').style.display = 'none';
         temporadaEditandoId_ = null;
+        temporadaCerrarPanelEmoji_();
+    }
+
+    // Selección rápida de emoticono para "temporadas-editor-emoji" — a
+    // petición explícita de Eloy: "debería tener un botón que abra los
+    // emoticonos disponibles y que el usuario pueda seleccionar", en vez
+    // de obligar a teclearlo o pegarlo a mano. Lista curada (no un
+    // selector de emojis del sistema completo) con los temas habituales
+    // de las campañas de este negocio — de sobra para el caso de uso
+    // real y sin necesidad de cargar ninguna librería externa.
+    const TEMPORADAS_EMOJIS_ = [
+        '❄️', '⛄', '🎄', '🎅', '🎁', '✨', '🧊', '🔥',
+        '☀️', '🌞', '🏖️', '🕶️', '🍉', '🌻', '🌸', '🐰',
+        '🎃', '👻', '🦇', '🍂', '🍁', '🎆', '🎉', '🥳',
+        '❤️', '💘', '🌹', '👨‍👩‍👧‍👦', '🏷️', '💥', '⭐', '🛍️',
+        '🚗', '🔧', '🛠️', '🧽', '🧴', '💧', '🧼', '🎨',
+    ];
+
+    function temporadaPoblarPanelEmoji_() {
+        const panel = $('temporadas-emoji-panel');
+        if (panel.childElementCount) return; // ya poblado, no hace falta repetir
+        panel.innerHTML = TEMPORADAS_EMOJIS_.map(e => `<button type="button" role="menuitem">${e}</button>`).join('');
+        panel.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                $('temporadas-editor-emoji').value = btn.textContent;
+                temporadaCerrarPanelEmoji_();
+            });
+        });
+    }
+
+    function temporadaCerrarPanelEmoji_() {
+        $('temporadas-emoji-panel').style.display = 'none';
+        $('temporadas-emoji-abrir').setAttribute('aria-expanded', 'false');
+    }
+
+    function temporadaAlternarPanelEmoji_() {
+        const panel = $('temporadas-emoji-panel');
+        const abriendo = panel.style.display === 'none';
+        if (abriendo) {
+            temporadaPoblarPanelEmoji_();
+            panel.style.display = '';
+            $('temporadas-emoji-abrir').setAttribute('aria-expanded', 'true');
+        } else {
+            temporadaCerrarPanelEmoji_();
+        }
     }
 
     async function temporadaGuardarMeta_() {
@@ -14145,36 +14276,101 @@ if (window.OM_PREPRODUCCION) {
         const area = $('temporadas-excluir-buscar-area').value;
         const familia = $('temporadas-excluir-buscar-familia').value;
         const cont = $('temporadas-excluir-buscar-resultados');
-        if (!texto && !area && !familia) { cont.innerHTML = ''; return; }
-        if (!temporadaEditandoId_) { cont.innerHTML = ''; return; }
+        const acciones = $('temporadas-excluir-buscar-acciones');
+        temporadaExcluirSeleccion_.clear();
+        temporadaExcluirPendientesCompletos_ = [];
+        if ((!texto && !area && !familia) || !temporadaEditandoId_) {
+            cont.innerHTML = '';
+            acciones.style.display = 'none';
+            return;
+        }
         const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
         const refsYaExcluidas = new Set(t ? (t.excluidas || []) : []);
-        let resultados = TODOS.filter(p => estaActivoEnCatalogo_(p));
-        if (area) resultados = resultados.filter(p => p.area === area);
-        if (familia) resultados = resultados.filter(p => p.familia === familia);
+        let resultadosCompletos = TODOS.filter(p => estaActivoEnCatalogo_(p));
+        if (area) resultadosCompletos = resultadosCompletos.filter(p => p.area === area);
+        if (familia) resultadosCompletos = resultadosCompletos.filter(p => p.familia === familia);
         if (texto) {
-            resultados = esBusquedaNumerica(texto)
-                ? resultados.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
-                : resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+            resultadosCompletos = esBusquedaNumerica(texto)
+                ? resultadosCompletos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : resultadosCompletos.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
         }
-        resultados = resultados.slice(0, 40);
-        if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
+        temporadaExcluirPendientesCompletos_ = resultadosCompletos.filter(p => !refsYaExcluidas.has(p.ref));
+        const resultados = resultadosCompletos.slice(0, 40);
+        if (!resultados.length) {
+            cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>';
+            acciones.style.display = 'none';
+            temporadaExcluirActualizarAcciones_();
+            return;
+        }
+        acciones.style.display = '';
+        temporadaExcluirActualizarAcciones_();
         const scrollPrevio = cont.scrollTop;
         cont.innerHTML = '';
         resultados.forEach(p => {
+            const ref = String(p.ref);
             const yaExcluido = refsYaExcluidas.has(p.ref);
             const urlImg = urlImagenProducto(p, 60);
             const fila = document.createElement('div');
             fila.className = 'destacados-buscar-item' + (yaExcluido ? ' destacados-buscar-item--incluido' : '');
             fila.innerHTML = `
+                ${yaExcluido ? '' : `<input type="checkbox" aria-label="Seleccionar ${escapeHtml(p.nombre)}">`}
                 ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
                 <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
                 ${yaExcluido ? '<span class="ya-incluido">Ya excluido</span>' : ''}
             `;
-            if (yaExcluido) { fila.style.cursor = 'default'; } else { fila.addEventListener('click', () => temporadaAnadirExcluida_(p.ref)); }
+            if (yaExcluido) {
+                fila.style.cursor = 'default';
+            } else {
+                const check = fila.querySelector('input[type="checkbox"]');
+                const alternar_ = () => {
+                    check.checked = !check.checked;
+                    if (check.checked) temporadaExcluirSeleccion_.add(ref); else temporadaExcluirSeleccion_.delete(ref);
+                    temporadaExcluirActualizarAcciones_();
+                };
+                check.addEventListener('click', (e) => e.stopPropagation());
+                check.addEventListener('change', () => {
+                    if (check.checked) temporadaExcluirSeleccion_.add(ref); else temporadaExcluirSeleccion_.delete(ref);
+                    temporadaExcluirActualizarAcciones_();
+                });
+                fila.addEventListener('click', alternar_);
+            }
             cont.appendChild(fila);
         });
         cont.scrollTop = scrollPrevio;
+    }
+
+    function temporadaExcluirActualizarAcciones_() {
+        const btnSel = $('temporadas-excluir-anadir-seleccion');
+        const btnTodos = $('temporadas-excluir-anadir-todos');
+        $('temporadas-excluir-seleccion-total').textContent = temporadaExcluirSeleccion_.size;
+        $('temporadas-excluir-todos-total').textContent = temporadaExcluirPendientesCompletos_.length;
+        btnSel.disabled = temporadaExcluirSeleccion_.size === 0;
+        btnTodos.disabled = temporadaExcluirPendientesCompletos_.length === 0;
+    }
+
+    async function temporadaExcluirAnadirSeleccionados_() {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t || !temporadaExcluirSeleccion_.size) return;
+        const refsActuales = (t.excluidas || []).map(String);
+        const nuevas = Array.from(temporadaExcluirSeleccion_).filter(ref => !refsActuales.includes(ref));
+        temporadaExcluirSeleccion_.clear();
+        if (!nuevas.length) return;
+        const btnSel = $('temporadas-excluir-anadir-seleccion');
+        const btnTodos = $('temporadas-excluir-anadir-todos');
+        btnSel.disabled = true; btnTodos.disabled = true;
+        await temporadaGuardarExcluidas_(refsActuales.concat(nuevas));
+    }
+
+    async function temporadaExcluirAnadirTodosResultados_() {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t || !temporadaExcluirPendientesCompletos_.length) return;
+        const refsActuales = (t.excluidas || []).map(String);
+        const nuevas = temporadaExcluirPendientesCompletos_.map(p => String(p.ref)).filter(ref => !refsActuales.includes(ref));
+        if (!nuevas.length) return;
+        const btnSel = $('temporadas-excluir-anadir-seleccion');
+        const btnTodos = $('temporadas-excluir-anadir-todos');
+        btnSel.disabled = true; btnTodos.disabled = true;
+        await temporadaGuardarExcluidas_(refsActuales.concat(nuevas));
     }
 
     // Filtros de área/familia para el buscador de productos concretos —
@@ -14197,25 +14393,52 @@ if (window.OM_PREPRODUCCION) {
             familias.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
     }
 
+    function temporadaBuscarActualizarAcciones_() {
+        const btnSel = $('temporadas-buscar-anadir-seleccion');
+        const btnTodos = $('temporadas-buscar-anadir-todos');
+        $('temporadas-buscar-seleccion-total').textContent = temporadaBuscarSeleccion_.size;
+        $('temporadas-buscar-todos-total').textContent = temporadaBuscarPendientesCompletos_.length;
+        btnSel.disabled = temporadaBuscarSeleccion_.size === 0;
+        btnTodos.disabled = temporadaBuscarPendientesCompletos_.length === 0;
+    }
+
     function temporadaBuscarYRenderizar_() {
         const texto = ($('temporadas-buscar-texto').value || '').trim();
         const area = $('temporadas-buscar-area').value;
         const familia = $('temporadas-buscar-familia').value;
         const cont = $('temporadas-buscar-resultados');
-        if (!texto && !area && !familia) { cont.innerHTML = ''; return; }
-        if (!temporadaEditandoId_) { cont.innerHTML = ''; return; }
+        const acciones = $('temporadas-buscar-acciones');
+        temporadaBuscarSeleccion_.clear();
+        temporadaBuscarPendientesCompletos_ = [];
+        if ((!texto && !area && !familia) || !temporadaEditandoId_) {
+            cont.innerHTML = '';
+            acciones.style.display = 'none';
+            return;
+        }
         const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
         const refsYaIncluidas = new Set(t ? (t.referencias || []) : []);
-        let resultados = TODOS.filter(p => estaActivoEnCatalogo_(p));
-        if (area) resultados = resultados.filter(p => p.area === area);
-        if (familia) resultados = resultados.filter(p => p.familia === familia);
+        let resultadosCompletos = TODOS.filter(p => estaActivoEnCatalogo_(p));
+        if (area) resultadosCompletos = resultadosCompletos.filter(p => p.area === area);
+        if (familia) resultadosCompletos = resultadosCompletos.filter(p => p.familia === familia);
         if (texto) {
-            resultados = esBusquedaNumerica(texto)
-                ? resultados.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
-                : resultados.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
+            resultadosCompletos = esBusquedaNumerica(texto)
+                ? resultadosCompletos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : resultadosCompletos.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
         }
-        resultados = resultados.slice(0, 40);
-        if (!resultados.length) { cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>'; return; }
+        // Todo lo que coincide con el filtro y aún no está incluido — no
+        // solo lo pintado abajo (limitado a 40 filas por rendimiento) —
+        // para que "Añadir todos los resultados" añada de verdad TODO lo
+        // que venga del buscador, a petición explícita de Eloy.
+        temporadaBuscarPendientesCompletos_ = resultadosCompletos.filter(p => !refsYaIncluidas.has(p.ref));
+        const resultados = resultadosCompletos.slice(0, 40);
+        if (!resultados.length) {
+            cont.innerHTML = '<p class="destacados-hint">Sin resultados.</p>';
+            acciones.style.display = 'none';
+            temporadaBuscarActualizarAcciones_();
+            return;
+        }
+        acciones.style.display = '';
+        temporadaBuscarActualizarAcciones_();
         // Se conserva la posición de scroll al volver a pintar la lista
         // (bug real reportado por Eloy: al añadir productos uno tras
         // otro, cont.innerHTML se reconstruía entera cada vez y el
@@ -14229,19 +14452,61 @@ if (window.OM_PREPRODUCCION) {
         const scrollPrevio = cont.scrollTop;
         cont.innerHTML = '';
         resultados.forEach(p => {
+            const ref = String(p.ref);
             const yaIncluido = refsYaIncluidas.has(p.ref);
             const urlImg = urlImagenProducto(p, 60);
             const fila = document.createElement('div');
             fila.className = 'destacados-buscar-item' + (yaIncluido ? ' destacados-buscar-item--incluido' : '');
             fila.innerHTML = `
+                ${yaIncluido ? '' : `<input type="checkbox" aria-label="Seleccionar ${escapeHtml(p.nombre)}">`}
                 ${urlImg ? `<img src="${urlImg}" alt="">` : '<div style="width:32px;height:32px;border-radius:5px;background:var(--light);flex-shrink:0;"></div>'}
                 <span class="nombre">${escapeHtml(p.nombre)} <span style="color:var(--muted);font-weight:400;">· Ref: ${escapeHtml(p.ref)}${p.familia ? ' · ' + escapeHtml(p.familia) : ''}</span></span>
                 ${yaIncluido ? '<span class="ya-incluido">Ya incluido</span>' : ''}
             `;
-            if (yaIncluido) { fila.style.cursor = 'default'; } else { fila.addEventListener('click', () => temporadaAnadirReferencia_(p.ref)); }
+            if (yaIncluido) {
+                fila.style.cursor = 'default';
+            } else {
+                const check = fila.querySelector('input[type="checkbox"]');
+                const alternar_ = () => {
+                    check.checked = !check.checked;
+                    if (check.checked) temporadaBuscarSeleccion_.add(ref); else temporadaBuscarSeleccion_.delete(ref);
+                    temporadaBuscarActualizarAcciones_();
+                };
+                check.addEventListener('click', (e) => e.stopPropagation());
+                check.addEventListener('change', () => {
+                    if (check.checked) temporadaBuscarSeleccion_.add(ref); else temporadaBuscarSeleccion_.delete(ref);
+                    temporadaBuscarActualizarAcciones_();
+                });
+                fila.addEventListener('click', alternar_);
+            }
             cont.appendChild(fila);
         });
         cont.scrollTop = scrollPrevio;
+    }
+
+    async function temporadaAnadirSeleccionados_() {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t || !temporadaBuscarSeleccion_.size) return;
+        const refsActuales = (t.referencias || []).map(String);
+        const nuevas = Array.from(temporadaBuscarSeleccion_).filter(ref => !refsActuales.includes(ref));
+        temporadaBuscarSeleccion_.clear();
+        if (!nuevas.length) return;
+        const btnSel = $('temporadas-buscar-anadir-seleccion');
+        const btnTodos = $('temporadas-buscar-anadir-todos');
+        btnSel.disabled = true; btnTodos.disabled = true;
+        await temporadaGuardarReferencias_(refsActuales.concat(nuevas));
+    }
+
+    async function temporadaAnadirTodosResultados_() {
+        const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
+        if (!t || !temporadaBuscarPendientesCompletos_.length) return;
+        const refsActuales = (t.referencias || []).map(String);
+        const nuevas = temporadaBuscarPendientesCompletos_.map(p => String(p.ref)).filter(ref => !refsActuales.includes(ref));
+        if (!nuevas.length) return;
+        const btnSel = $('temporadas-buscar-anadir-seleccion');
+        const btnTodos = $('temporadas-buscar-anadir-todos');
+        btnSel.disabled = true; btnTodos.disabled = true;
+        await temporadaGuardarReferencias_(refsActuales.concat(nuevas));
     }
 
     function abrirModalGestionTemporadas_() {
@@ -14251,8 +14516,12 @@ if (window.OM_PREPRODUCCION) {
         temporadaCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omTemporadasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
+            $('temporadas-vista-pin').style.display = 'none';
+            $('temporadas-vista-principal').style.display = 'none';
+            $('temporadas-vista-cargando').style.display = '';
             temporadaValidarPinYArrancar_(pinGuardado);
         } else {
+            $('temporadas-vista-cargando').style.display = 'none';
             $('temporadas-vista-pin').style.display = '';
             $('temporadas-vista-principal').style.display = 'none';
         }
@@ -14340,6 +14609,13 @@ if (window.OM_PREPRODUCCION) {
         $('temporadas-buscar-texto').addEventListener('input', temporadaBuscarYRenderizar_);
         $('temporadas-buscar-area').addEventListener('change', () => { temporadaActualizarSelectorFamilias_(); temporadaBuscarYRenderizar_(); });
         $('temporadas-buscar-familia').addEventListener('change', temporadaBuscarYRenderizar_);
+        $('temporadas-buscar-anadir-seleccion').addEventListener('click', temporadaAnadirSeleccionados_);
+        $('temporadas-buscar-anadir-todos').addEventListener('click', temporadaAnadirTodosResultados_);
+        $('temporadas-emoji-abrir').addEventListener('click', (e) => { e.stopPropagation(); temporadaAlternarPanelEmoji_(); });
+        document.addEventListener('click', (e) => {
+            const selector = document.querySelector('.temporadas-emoji-selector');
+            if (selector && !selector.contains(e.target)) temporadaCerrarPanelEmoji_();
+        });
         $('temporadas-referencias-masivo-btn').addEventListener('click', () => {
             $('temporadas-referencias-masivo-bloque').style.display = '';
             $('temporadas-referencias-masivo-texto').focus();
@@ -14353,6 +14629,8 @@ if (window.OM_PREPRODUCCION) {
         $('temporadas-excluir-buscar-texto').addEventListener('input', temporadaBuscarExcluirYRenderizar_);
         $('temporadas-excluir-buscar-area').addEventListener('change', () => { temporadaActualizarSelectorFamiliasExcluir_(); temporadaBuscarExcluirYRenderizar_(); });
         $('temporadas-excluir-buscar-familia').addEventListener('change', temporadaBuscarExcluirYRenderizar_);
+        $('temporadas-excluir-anadir-seleccion').addEventListener('click', temporadaExcluirAnadirSeleccionados_);
+        $('temporadas-excluir-anadir-todos').addEventListener('click', temporadaExcluirAnadirTodosResultados_);
         $('temporadas-excluidas-masivo-btn').addEventListener('click', () => {
             $('temporadas-excluidas-masivo-bloque').style.display = '';
             $('temporadas-excluidas-masivo-texto').focus();
@@ -14366,7 +14644,9 @@ if (window.OM_PREPRODUCCION) {
         $('temporadas-modal-cerrar').addEventListener('click', cerrarModalGestionTemporadas_);
         $('temporadas-modal-overlay').addEventListener('click', (e) => { if (e.target.id === 'temporadas-modal-overlay') cerrarModalGestionTemporadas_(); });
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && $('temporadas-modal-overlay').classList.contains('activo')) cerrarModalGestionTemporadas_();
+            if (e.key !== 'Escape') return;
+            if ($('temporadas-emoji-panel').style.display !== 'none') { temporadaCerrarPanelEmoji_(); return; }
+            if ($('temporadas-modal-overlay').classList.contains('activo')) cerrarModalGestionTemporadas_();
         });
     }
 
