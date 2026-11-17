@@ -13798,28 +13798,46 @@ if (window.OM_PREPRODUCCION) {
     // por defecto, y con varias en empate el resultado de ordenar por
     // "orden" no sería predecible).
     async function temporadaMoverOrden_(id, direccion) {
-        const lista = temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
-        const idx = lista.findIndex(x => x.id === id);
-        const destino = direccion === 'arriba' ? idx - 1 : idx + 1;
-        if (idx === -1 || destino < 0 || destino >= lista.length) return;
-        const tmp = lista[idx];
-        lista[idx] = lista[destino];
-        lista[destino] = tmp;
-
-        const botones = [...document.querySelectorAll('.temporada-mover-btn')];
-        botones.forEach(b => b.disabled = true);
+        document.querySelectorAll('.temporada-mover-btn').forEach(b => b.disabled = true);
         try {
+            // Se refresca contra el backend justo antes de reordenar — este
+            // flujo reescribe el "orden" de TODAS las temporadas de golpe,
+            // así que si la modal llevaba un rato abierta y alguien cambió
+            // algo directamente en la hoja mientras tanto (p. ej. el propio
+            // orden, a mano), reordenar con los datos ya desactualizados
+            // del navegador deshacía ese cambio sin querer. Esto reemplaza
+            // los botones del DOM (ver temporadaRenderizarListado_), así
+            // que a partir de aquí no se reutiliza ninguna referencia
+            // capturada antes de esta llamada.
+            await cargarTemporadas_();
+            temporadaRenderizarListado_();
+            document.querySelectorAll('.temporada-mover-btn').forEach(b => b.disabled = true);
+            const lista = temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+            const idx = lista.findIndex(x => x.id === id);
+            const destino = direccion === 'arriba' ? idx - 1 : idx + 1;
+            if (idx === -1 || destino < 0 || destino >= lista.length) return;
+            const tmp = lista[idx];
+            lista[idx] = lista[destino];
+            lista[destino] = tmp;
+
             for (let i = 0; i < lista.length; i++) {
                 const t = lista[i];
+                // Mismo motivo que el comentario de temporadaGuardarMeta_
+                // sobre "orden": guardar_temporada no hace un merge
+                // parcial, así que cualquier campo que no se mande aquí
+                // se pierde para TODAS las temporadas en cada reordenado,
+                // no solo la movida. Faltaba "emoji" — se perdía al
+                // reordenar, aunque la propia temporada no se hubiera
+                // tocado desde el editor.
                 await temporadaFetchPost_({
                     accion: 'guardar_temporada', pin: temporadaPin_, id: t.id,
-                    nombre: t.nombre, permanente: t.permanente, fechaInicio: t.fechaInicio, fechaFin: t.fechaFin,
+                    nombre: t.nombre, emoji: t.emoji, permanente: t.permanente, fechaInicio: t.fechaInicio, fechaFin: t.fechaFin,
                     activa: t.activa, orden: i,
                 });
             }
             await temporadaRecargarListadoAdmin_();
         } finally {
-            botones.forEach(b => b.disabled = false);
+            document.querySelectorAll('.temporada-mover-btn').forEach(b => b.disabled = false);
         }
     }
 
