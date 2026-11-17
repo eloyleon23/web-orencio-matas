@@ -1453,14 +1453,32 @@
             position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
             background: #fff; border: 1px solid var(--border); border-radius: 10px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            padding: 8px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
-            width: 252px; max-height: 220px; overflow-y: auto;
+            width: 300px;
         }
-        .temporadas-emoji-panel button {
+        /* Pestañas por categoría — con más de 1000 emojis (a petición de
+           Eloy: "añade todos los emojis posibles para tener libertad"),
+           una lista plana sería interminable; se navegan por categoría,
+           cada pestaña con su propio emoji representativo como icono. */
+        .temporadas-emoji-tabs {
+            display: flex; gap: 2px; overflow-x: auto; padding: 6px 6px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .temporadas-emoji-tab {
+            border: none; background: none; font-size: 1.05rem; line-height: 1;
+            padding: 6px 7px; border-radius: 6px 6px 0 0; cursor: pointer; flex-shrink: 0;
+            opacity: 0.55;
+        }
+        .temporadas-emoji-tab:hover { background: var(--light); opacity: 0.85; }
+        .temporadas-emoji-tab.activa { opacity: 1; background: var(--light); box-shadow: inset 0 -2px 0 var(--primary-blue, var(--blue)); }
+        .temporadas-emoji-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+            padding: 8px; max-height: 220px; overflow-y: auto;
+        }
+        .temporadas-emoji-grid button {
             border: none; background: none; font-size: 1.15rem; line-height: 1;
             padding: 5px; border-radius: 6px; cursor: pointer; text-align: center;
         }
-        .temporadas-emoji-panel button:hover { background: var(--light); }
+        .temporadas-emoji-grid button:hover { background: var(--light); }
         .destacados-ver-producto {
             flex-shrink: 0; border: 1px solid var(--border); background: #fff; border-radius: 6px;
             padding: 4px 9px; font-size: 0.74rem; font-weight: 600; color: var(--blue); cursor: pointer;
@@ -13853,26 +13871,50 @@ if (window.OM_PREPRODUCCION) {
         temporadaCerrarPanelEmoji_();
     }
 
-    // Selección rápida de emoticono para "temporadas-editor-emoji" — a
-    // petición explícita de Eloy: "debería tener un botón que abra los
+    // Selección de emoticono para "temporadas-editor-emoji" — a petición
+    // explícita de Eloy: "debería tener un botón que abra los
     // emoticonos disponibles y que el usuario pueda seleccionar", en vez
-    // de obligar a teclearlo o pegarlo a mano. Lista curada (no un
-    // selector de emojis del sistema completo) con los temas habituales
-    // de las campañas de este negocio — de sobra para el caso de uso
-    // real y sin necesidad de cargar ninguna librería externa.
-    const TEMPORADAS_EMOJIS_ = [
-        '❄️', '⛄', '🎄', '🎅', '🎁', '✨', '🧊', '🔥',
-        '☀️', '🌞', '🏖️', '🕶️', '🍉', '🌻', '🌸', '🐰',
-        '🎃', '👻', '🦇', '🍂', '🍁', '🎆', '🎉', '🥳',
-        '❤️', '💘', '🌹', '👨‍👩‍👧‍👦', '🏷️', '💥', '⭐', '🛍️',
-        '🚗', '🔧', '🛠️', '🧽', '🧴', '💧', '🧼', '🎨',
-    ];
+    // de obligar a teclearlo o pegarlo a mano. A petición posterior
+    // ("añade todos los emojis posibles para tener libertad"): el set
+    // completo de emojis Unicode de un solo carácter (sin banderas de
+    // país ni variantes de tono de piel — esas son secuencias de varios
+    // códigos, y añadirlas no aporta nada al caso de uso real de esta
+    // temporada), agrupado por categoría con pestañas para poder
+    // navegar más de 1000 emojis sin que sea una lista interminable.
+    // Generado una vez contra el catálogo Unicode y embebido tal cual
+    // (~5 KB) — sin cargar ninguna librería externa.
+    const TEMPORADAS_EMOJIS_CATEGORIAS_ = {
+        "Caras y emociones": ["😀", "😁", "😂", "😃", "😄", "😅", "😆", "😇", "😈", "😉", "😊", "😋", "😌", "😍", "😎", "😏", "😐", "😑", "😒", "😓", "😔", "😕", "😖", "😗", "😘", "😙", "😚", "😛", "😜", "😝", "😞", "😟", "😠", "😡", "😢", "😣", "😤", "😥", "😦", "😧", "😨", "😩", "😪", "😫", "😬", "😭", "😮", "😯", "😰", "😱", "😲", "😳", "😴", "😵", "😶", "😷", "😸", "😹", "😺", "😻", "😼", "😽", "😾", "😿", "🙀", "🙁", "🙂", "🙃", "🙄", "🙅", "🙆", "🙇", "🙈", "🙉", "🙊", "🙋", "🙌", "🙍", "🙎", "🙏"],
+        "Gestos y personas": ["👦", "👧", "👨", "👩", "👪", "👫", "👬", "👭", "👮", "👯", "👰", "👱", "👲", "👳", "👴", "👵", "👶", "👷", "👸", "👹", "👺", "👻", "👼", "👽", "👾", "👿", "💀", "💁", "💂", "💃", "💄", "💅", "💆", "💇", "🚣", "🚤", "🚥", "🚦", "🚧", "🚨", "🚩", "🚪", "🚫", "🚬", "🚭", "🚮", "🚯", "🚰", "🚱", "🚲", "🚳", "🚴", "🚵", "🚶", "🧐", "🧑", "🧒", "🧓", "🧔", "🧕", "🧖", "🧗", "🧘", "🧙", "🧚", "🧛", "🧜", "🧝", "🧞", "🧟", "🧠", "🧡", "🧢", "🧣", "🧤", "🧥", "🧦", "🧧", "🧨", "🧩", "🧪", "🧫", "🧬", "🧭", "🧮", "🧯", "🧰", "🧱", "🧲", "🧳", "🧴", "🧵", "🧶", "🧷", "🧸", "🧹", "🧺", "🧻", "🧼", "🧽", "🧾", "🧿"],
+        "Animales y naturaleza": ["🐀", "🐁", "🐂", "🐃", "🐄", "🐅", "🐆", "🐇", "🐈", "🐉", "🐊", "🐋", "🐌", "🐍", "🐎", "🐏", "🐐", "🐑", "🐒", "🐓", "🐔", "🐕", "🐖", "🐗", "🐘", "🐙", "🐚", "🐛", "🐜", "🐝", "🐞", "🐟", "🐠", "🐡", "🐢", "🐣", "🐤", "🐥", "🐦", "🐧", "🐨", "🐩", "🐪", "🐫", "🐬", "🐭", "🐮", "🐯", "🐰", "🐱", "🐲", "🐳", "🐴", "🐵", "🐶", "🐷", "🐸", "🐹", "🐺", "🐻", "🐼", "🐽", "🐾", "🌰", "🌱", "🌲", "🌳", "🌴", "🌵", "🌶", "🌷", "🌸", "🌹", "🌺", "🌻", "🌼", "🌽", "🌾", "🌿", "🍀", "🍁", "🍂", "🍃", "🍄", "🍅", "🍆", "🍇", "🍈", "🍉", "🍊", "🍋", "🍌", "🍍", "🍎", "🍏", "🍐", "🍑", "🍒", "🍓", "🍔", "🍕", "🍖", "🍗"],
+        "Comida y bebida": ["🌭", "🌮", "🌯", "🍘", "🍙", "🍚", "🍛", "🍜", "🍝", "🍞", "🍟", "🍠", "🍡", "🍢", "🍣", "🍤", "🍥", "🍦", "🍧", "🍨", "🍩", "🍪", "🍫", "🍬", "🍭", "🍮", "🍯", "🍰", "🍱", "🍲", "🍳", "🍴", "🍵", "🍶", "🍷", "🍸", "🍹", "🍺", "🍻", "🍼", "🍽", "🍾", "🍿", "🥐", "🥑", "🥒", "🥓", "🥔", "🥕", "🥖", "🥗", "🥘", "🥙", "🥚", "🥛", "🥜", "🥝", "🥞", "🥟", "🥠", "🥡", "🥢", "🥣", "🥤", "🥥", "🥦", "🥧", "🥨", "🥩", "🥪", "🥫", "🥬", "🥭", "🥮", "🥯"],
+        "Actividades y deportes": ["🎠", "🎡", "🎢", "🎣", "🎤", "🎥", "🎦", "🎧", "🎨", "🎩", "🎪", "🎫", "🎬", "🎭", "🎮", "🎯", "🎰", "🎱", "🎲", "🎳", "🎴", "🎵", "🎶", "🎷", "🎸", "🎹", "🎺", "🎻", "🎼", "🎽", "🎾", "🎿", "🏀", "🏁", "🏂", "🏃", "🏄", "🏅", "🏆", "🏇", "🏈", "🏉", "🏊", "🏋", "🏌", "🏍", "🏎", "🏏", "🏐", "🏑", "🏒", "🏓", "🏔", "🏕", "🏖", "🏗", "🏘", "🏙", "🏚", "🏛", "🏜", "🏝", "🏞", "🏟", "🏠", "🏡", "🏢", "🏣", "🏤", "🏥", "🏦", "🏧", "🏨", "🏩", "🏪", "🏫", "🏬", "🏭", "🏮", "🏯", "🏰", "🏱", "🏲", "🏳", "🏴", "🏵", "🏶", "🏷", "🏸", "🏹", "🏺", "🤺", "🤻", "🤼", "🤽", "🤾", "🤿", "🥀", "🥁", "🥂", "🥃", "🥄", "🥅", "🥆", "🥇", "🥈", "🥉", "🥊", "🥋", "🥌", "🥍", "🥎", "🥏"],
+        "Viajes y lugares": ["🚀", "🚁", "🚂", "🚃", "🚄", "🚅", "🚆", "🚇", "🚈", "🚉", "🚊", "🚋", "🚌", "🚍", "🚎", "🚏", "🚐", "🚑", "🚒", "🚓", "🚔", "🚕", "🚖", "🚗", "🚘", "🚙", "🚚", "🚛", "🚜", "🚝", "🚞", "🚟", "🚠", "🚡", "🚢", "🚷", "🚸", "🚹", "🚺", "🚻", "🚼", "🚽", "🚾", "🚿", "🛀", "🛁", "🛂", "🛃", "🛄", "🛅", "🛆", "🛇", "🛈", "🛉", "🛊", "🛋", "🛌", "🛍", "🛎", "🛏", "🛐", "🛑", "🛒", "🛓", "🛔", "🛕", "🛖", "🛗", "🛝", "🛞", "🛟", "🛠", "🛡", "🛢", "🛣", "🛤", "🛥", "🛦", "🛧", "🛨", "🛩", "🛪", "🛫", "🛬", "🛰", "🛱", "🛲", "🛳", "🛴", "🛵", "🛶", "🛷", "🛸", "🛹", "🛺", "🛻", "🛼", "🗺", "🗻", "🗼", "🗽", "🗾", "🗿"],
+        "Objetos": ["💠", "💡", "💢", "💣", "💤", "💥", "💦", "💧", "💨", "💩", "💪", "💫", "💬", "💭", "💮", "💯", "💰", "💱", "💲", "💳", "💴", "💵", "💶", "💷", "💸", "💹", "💺", "💻", "💼", "💽", "💾", "💿", "📀", "📁", "📂", "📃", "📄", "📅", "📆", "📇", "📈", "📉", "📊", "📋", "📌", "📍", "📎", "📏", "📐", "📑", "📒", "📓", "📔", "📕", "📖", "📗", "📘", "📙", "📚", "📛", "📜", "📝", "📞", "📟", "📠", "📡", "📢", "📣", "📤", "📥", "📦", "📧", "📨", "📩", "📪", "📫", "📬", "📭", "📮", "📯", "📰", "📱", "📲", "📳", "📴", "📵", "📶", "📷", "📸", "📹", "📺", "📻", "📼", "📽", "📾", "📿"],
+        "Símbolos": ["☀️", "☁️", "☂️", "☃️", "❄️", "⛄", "☔", "⚡", "🌈", "☄️", "⭐", "🌟", "✨", "💫", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓", "✅", "❌", "✔️", "✖️", "➕", "➖", "➗", "❓", "❗", "❕", "❔", "‼️", "⁉️", "⚠️", "☢️", "☣️", "♻️", "⚕️", "🚫", "🔞", "📵", "🔇", "🔕", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💖", "💗", "💘", "💝", "✝️", "☪️", "🕉️", "☮️", "☯️", "✡️", "🔯", "🕎", "☦️", "🛐", "⛎", "🔥", "💥", "💦", "💧", "🌊", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛"],
+        "Pictogramas suplementarios": ["🤀", "🤁", "🤂", "🤃", "🤄", "🤅", "🤆", "🤇", "🤈", "🤉", "🤊", "🤋", "🤌", "🤍", "🤎", "🤏", "🤐", "🤑", "🤒", "🤓", "🤔", "🤕", "🤖", "🤗", "🤘", "🤙", "🤚", "🤛", "🤜", "🤝", "🤞", "🤟", "🤠", "🤡", "🤢", "🤣", "🤤", "🤥", "🤦", "🤧", "🤨", "🤩", "🤪", "🤫", "🤬", "🤭", "🤮", "🤯", "🤰", "🤱", "🤲", "🤳", "🤴", "🤵", "🤶", "🤷", "🤸", "🤹", "🥰", "🥱", "🥲", "🥳", "🥴", "🥵", "🥶", "🥷", "🥸", "🥹", "🥺", "🥻", "🥼", "🥽", "🥾", "🥿", "🦀", "🦁", "🦂", "🦃", "🦄", "🦅", "🦆", "🦇", "🦈", "🦉", "🦊", "🦋", "🦌", "🦍", "🦎", "🦏", "🦐", "🦑", "🦒", "🦓", "🦔", "🦕", "🦖", "🦗", "🦘", "🦙", "🦚", "🦛", "🦜", "🦝", "🦞", "🦟", "🦠", "🦡", "🦢", "🦣", "🦤", "🦥", "🦦", "🦧", "🦨", "🦩", "🦪", "🦫", "🦬", "🦭", "🦮", "🦯", "🦰", "🦱", "🦲", "🦳", "🦴", "🦵", "🦶", "🦷", "🦸", "🦹", "🦺", "🦻", "🦼", "🦽", "🦾", "🦿", "🧀", "🧁", "🧂", "🧃", "🧄", "🧅", "🧆", "🧇", "🧈", "🧉", "🧊", "🧋", "🧌", "🧍", "🧎", "🧏"],
+        "Símbolos extendidos": ["🩰", "🩱", "🩲", "🩳", "🩴", "🩸", "🩹", "🩺", "🩻", "🩼", "🪀", "🪁", "🪂", "🪃", "🪄", "🪅", "🪆", "🪐", "🪑", "🪒", "🪓", "🪔", "🪕", "🪖", "🪗", "🪘", "🪙", "🪚", "🪛", "🪜", "🪝", "🪞", "🪟", "🪠", "🪡", "🪢", "🪣", "🪤", "🪥", "🪦", "🪧", "🪨", "🪩", "🪪", "🪫", "🪬", "🪰", "🪱", "🪲", "🪳", "🪴", "🪵", "🪶", "🪷", "🪸", "🪹", "🪺", "🫀", "🫁", "🫂", "🫃", "🫄", "🫅", "🫐", "🫑", "🫒", "🫓", "🫔", "🫕", "🫖", "🫗", "🫘", "🫙", "🫠", "🫡", "🫢", "🫣", "🫤", "🫥", "🫦", "🫧", "🫰", "🫱", "🫲", "🫳", "🫴", "🫵", "🫶"],
+    };
+
+    let temporadaEmojiCategoriaActiva_ = Object.keys(TEMPORADAS_EMOJIS_CATEGORIAS_)[0];
 
     function temporadaPoblarPanelEmoji_() {
         const panel = $('temporadas-emoji-panel');
-        if (panel.childElementCount) return; // ya poblado, no hace falta repetir
-        panel.innerHTML = TEMPORADAS_EMOJIS_.map(e => `<button type="button" role="menuitem">${e}</button>`).join('');
-        panel.querySelectorAll('button').forEach(btn => {
+        const categorias = Object.keys(TEMPORADAS_EMOJIS_CATEGORIAS_);
+        const pestañas = categorias.map(c =>
+            `<button type="button" class="temporadas-emoji-tab${c === temporadaEmojiCategoriaActiva_ ? ' activa' : ''}" data-categoria="${escapeHtml(c)}" title="${escapeHtml(c)}">${TEMPORADAS_EMOJIS_CATEGORIAS_[c][0]}</button>`
+        ).join('');
+        const grid = TEMPORADAS_EMOJIS_CATEGORIAS_[temporadaEmojiCategoriaActiva_]
+            .map(e => `<button type="button" class="temporadas-emoji-opcion" role="menuitem">${e}</button>`).join('');
+        panel.innerHTML = `<div class="temporadas-emoji-tabs" role="tablist">${pestañas}</div><div class="temporadas-emoji-grid">${grid}</div>`;
+        panel.querySelectorAll('.temporadas-emoji-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                temporadaEmojiCategoriaActiva_ = btn.dataset.categoria;
+                temporadaPoblarPanelEmoji_();
+            });
+        });
+        panel.querySelectorAll('.temporadas-emoji-opcion').forEach(btn => {
             btn.addEventListener('click', () => {
                 $('temporadas-editor-emoji').value = btn.textContent;
                 temporadaCerrarPanelEmoji_();
