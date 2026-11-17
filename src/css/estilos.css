@@ -1322,12 +1322,13 @@ textarea.form-input {
 
 .site-footer__grid {
   display: grid;
-  /* A petición de Eloy: el footer pasa de 4 a 2 columnas (se quitan
-     "Navegación" y "Servicios", se dejan solo la marca y el contacto
-     rápido) — las media queries de abajo (tablet: 2 columnas iguales,
-     móvil: 1 columna) ya encajaban igual con solo 2 columnas, sin
-     necesitar ningún cambio. */
-  grid-template-columns: 1.6fr 1fr;
+  /* A petición de Eloy: el footer pasa de 4 a 3 columnas (se quitan
+     "Navegación" y "Servicios"; el horario se separa del bloque de
+     contacto en su propia columna, en vez de apilarse debajo dentro de
+     la misma, para aprovechar el ancho y no dejar tanto hueco vacío en
+     el centro). Las media queries de abajo (tablet: 2 columnas,
+     móvil: 1 columna) ya encajaban igual, sin necesitar cambios. */
+  grid-template-columns: 1.4fr 1fr 1fr;
   gap: 44px;
   padding: 78px 20px 56px;
 }
@@ -1390,8 +1391,8 @@ textarea.form-input {
 }
 
 .site-footer__column a,
-.site-footer__contact span,
-.site-footer__contact p {
+.site-footer__column span,
+.site-footer__column p {
   color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.55;
@@ -1748,8 +1749,8 @@ textarea.form-input {
   }
 
   .site-footer__column a,
-  .site-footer__contact span,
-  .site-footer__contact p {
+  .site-footer__column span,
+  .site-footer__column p {
     font-size: 0.875rem;
     line-height: 1.6;
   }
